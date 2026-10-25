@@ -19,11 +19,11 @@
   "changedNotes": 586,
   "htmlOnlyNotes": 0,
   "unchangedNotes": 1,
-  "changeItems": 1354,
+  "changeItems": 1365,
   "notesBySeverity": {
-   "Kritik": 30,
-   "Yüksek": 56,
-   "Orta": 392,
+   "Kritik": 28,
+   "Yüksek": 65,
+   "Orta": 385,
    "Düşük": 108
   },
   "notesByTopic": {
@@ -36,37 +36,44 @@
    "İmmünoloji": 51
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 30,
-    "Yüksek": 20
+   "Biçim": {
+    "Düşük": 545
    },
-   "Güncellik": {
-    "Yüksek": 2,
-    "Orta": 4
-   },
-   "Eksik kritik bilgi": {
-    "Yüksek": 27
-   },
-   "Soru netliği": {
-    "Yüksek": 12,
-    "Orta": 64
-   },
-   "Yapısal": {
-    "Orta": 2
-   },
-   "Terim/yazım": {
-    "Orta": 85,
-    "Düşük": 170
-   },
-   "Kısaltma": {
-    "Orta": 382
+   "Cevap görünürlüğü": {
+    "Yüksek": 7
    },
    "Dil bilgisi": {
     "Orta": 3,
     "Düşük": 8
    },
-   "Biçim": {
-    "Düşük": 545
+   "Eksik kritik bilgi": {
+    "Yüksek": 27
+   },
+   "Güncellik": {
+    "Yüksek": 2,
+    "Orta": 4
+   },
+   "Kısaltma": {
+    "Orta": 382
+   },
+   "Soru netliği": {
+    "Yüksek": 12,
+    "Orta": 64
+   },
+   "Terim/yazım": {
+    "Orta": 85,
+    "Düşük": 170
+   },
+   "Tıbbi doğruluk": {
+    "Kritik": 30,
+    "Yüksek": 20
+   },
+   "Yapısal": {
+    "Orta": 2
+   },
+   "Ön/arka kapsam uyumu": {
+    "Kritik": 1,
+    "Yüksek": 3
    }
   },
   "secondReview": {}
@@ -679,13 +686,17 @@
    "noteId": 1627303087231,
    "guid": "E`gIZ*+g5p",
    "topic": "Parazitoloji",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "<b>Klorokin Dirençli P. Falc sıtmalı</b><div>1. Trimester <b>Gebe</b> tdv:</div><div><br></div><div>{{c1::Kinin}} + {{c1::Klindamisin}}</div>",
      "after": "<b>Komplike olmayan P. falciparum sıtmasında</b> 1. trimester <b>gebelikte</b> tercih edilen tedavi:<div><br></div><div>{{c1::Artemeter}} + {{c1::lumefantrin}}</div>"
+    },
+    "Extra": {
+     "before": "Artemisin kullanılmaz&nbsp;",
+     "after": "WHO, komplike olmayan P. falciparum sıtmasında ilk trimester gebelikte artemeter-lumefantrini tercih edilen tedavi olarak önerir. Artemeter bir artemisinin türevidir; “artemisinin ilk trimesterde kullanılmaz” şeklindeki eski genel hüküm güncel değildir."
     }
    },
    "changes": [
@@ -706,24 +717,36 @@
      "category": "Biçim",
      "text": "Klorokin Dirençli → Klorokine dirençli; iki satır ve iki c1 korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Doğru artemeter-lumefantrin yanıtını geçersiz gösteren eski Extra cümlesi düzeltildi.",
+     "rationale": "Kaynak: https://www.who.int/publications/i/item/9789240069404"
     }
    ],
-   "aiNote": "Ne: İlk trimesterde tercih edilen tedavi artemeter-lumefantrin olarak güncellendi.\nNeden: Kinin-klindamisin eski ilk tercih şemasıdır.\nNasıl: [TD1, KS1, YP1] İki satır, kalın vurgular ve iki c1 korunarak ilaçlar düzeltildi.\nKaynak: WHO, Safety of artemisinin and non-artemisinin antimalarials in the first trimester of pregnancy (2024).",
+   "aiNote": "Ne: Doğru artemeter-lumefantrin yanıtını geçersiz gösteren eski Extra cümlesi düzeltildi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.who.int/publications/i/item/9789240069404",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: İlk trimesterde tercih edilen tedavi artemeter-lumefantrin olarak güncellendi.\nNeden: Kinin-klindamisin eski ilk tercih şemasıdır.\nNasıl: [TD1, KS1, YP1] İki satır, kalın vurgular ve iki c1 korunarak ilaçlar düzeltildi.\nKaynak: WHO, Safety of artemisinin and non-artemisinin antimalarials in the first trimester of pregnancy (2024)."
+    }
+   ]
   },
   {
    "order": 17,
    "noteId": 1604340723705,
    "guid": "iRas(V:+v5",
    "topic": "Viroloji",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "<b>Viral Tutunma Proteinleri&nbsp;</b><div><br></div><div>RhinoV --&gt; {{c1::VP1-2-3}}</div><div><b><br></b></div><div><b>AdenoV --&gt;&nbsp;</b>{{c2::Fiber Protein}}</div><div><b><br></b></div><div><b>RotaV --&gt;</b>{{c3::VP4-7}}</div><div><b><br></b></div><div><b>Kuduz --&gt;</b>{{c1::G protein}}</div><div><br></div><div>HIV --&gt; {{c2::Gp120}}</div><div><br></div><div>EBV --&gt; {{c3::gp350-220}}</div><div><br></div><div>Kızamık --&gt; {{c1::Hemagg}}</div><div><br></div><div>İnf A --&gt; {{c2::Hemagg}}</div>",
-     "after": "<b>Viral tutunma proteinleri</b><div><br></div><div>Rinovirüs → {{c1::VP1}}</div><div><b><br></b></div><div><b>Adenovirüs → </b>{{c2::fiber proteini}}</div><div><b><br></b></div><div><b>Rotavirüs → </b>{{c3::VP4}}</div><div><b><br></b></div><div><b>Kuduz → </b>{{c1::G proteini}}</div><div><br></div><div>HIV → {{c2::gp120}}</div><div><br></div><div>EBV → {{c3::gp350/gp220}}</div><div><br></div><div>Kızamık → {{c1::hemaglütinin (H)}}</div><div><br></div><div>İnfluenza A → {{c2::hemaglütinin}}</div>"
+     "after": "<b>Viral tutunma proteinleri</b><div><br></div><div>Rinovirüs → {{c1::VP1}}</div><div><b><br></b></div><div><b>Adenovirüs → </b>{{c2::fiber proteini}}</div><div><b><br></b></div><div><b>Rotavirüs → </b>{{c3::VP4}}</div><div><b><br></b></div><div><b>Kuduz → </b>{{c1::G proteini}}</div><div><br></div><div>HIV → {{c2::gp120}}</div><div><br></div><div>EBV → {{c3::gp350/gp220}}</div><div><br></div><div>Kızamık → {{c2::{{c1::hemaglütinin (H)}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>İnfluenza A → {{c1::{{c2::hemaglütinin}}::ilişkili yanıt arka yüzde}}</div>"
     },
     "Extra": {
      "before": "Çok High Yield",
@@ -748,11 +771,23 @@
      "category": "Biçim",
      "text": "--&gt; → →; Büyük harfler ve &nbsp; düzeltildi; Çok High Yield kaldırıldı",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Kızamık ve influenza satırları hemaglütinin yanıtını birbirine göstermiyor.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Rinovirüs için VP1, rotavirüs için VP4 bırakıldı; sekiz virüs satırındaki kısaltmalar ve tutunma proteinlerinin yazımı düzeltildi.\nNeden: Özgün satırlar rinovirüsün VP2/VP3'ünü ve rotavirüsün VP7'sini doğrudan tutunma proteini gibi öğretiyordu; arka yüz yalnız kişisel önem notuydu.\nNasıl: [TD1, KS1, YP1, YP3] Yanlış üyeler ilgili cloze içinden çıkarıldı; sekiz satırın sırası, boşlukları, kalın vurguları ve c1/c2/c3 dağılımı korundu.\nKaynak: Rhinoviruses and Their Receptors (2019); Interactions among Capsid Proteins Orchestrate Rotavirus Particle Functions (2012); CDC Pink Book, Rotavirus.",
+   "aiNote": "Ne: Kızamık ve influenza satırları hemaglütinin yanıtını birbirine göstermiyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Rinovirüs için VP1, rotavirüs için VP4 bırakıldı; sekiz virüs satırındaki kısaltmalar ve tutunma proteinlerinin yazımı düzeltildi.\nNeden: Özgün satırlar rinovirüsün VP2/VP3'ünü ve rotavirüsün VP7'sini doğrudan tutunma proteini gibi öğretiyordu; arka yüz yalnız kişisel önem notuydu.\nNasıl: [TD1, KS1, YP1, YP3] Yanlış üyeler ilgili cloze içinden çıkarıldı; sekiz satırın sırası, boşlukları, kalın vurguları ve c1/c2/c3 dağılımı korundu.\nKaynak: Rhinoviruses and Their Receptors (2019); Interactions among Capsid Proteins Orchestrate Rotavirus Particle Functions (2012); CDC Pink Book, Rotavirus."
+    }
+   ]
   },
   {
    "order": 18,
@@ -1109,11 +1144,11 @@
    "fields": {
     "Text": {
      "before": "HIV Pfx:<div><br></div><div><b>Annesi gebelik boyunca Komb. ART kullanmış ve anne sütü alan bebek:</b></div><div><br></div><div>{{c1::6}} Hafta Oral {{c1::Zidovudin}} veya {{c1::Nevirapin}}</div><div><br></div><div><b>Daha önce tdv almayan HIV1 enf'lu</b>&nbsp;</div><div>anneye --&gt;<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Travay sırasın}}da 1 kez</span></div><div>YD'a --&gt; {{c2::doğar doğmaz}} + {{c2::2}} + {{c2::6}}. günlerde {{c3::Nevirapin}}</div><div><br></div><div>Doğumdan itibaren {{c2::6}} Hf Oral {{c3::Zidovudin}}</div>",
-     "after": "HIV perinatal profilaksisi<div><br></div><div><b>Düşük risk (gebelikte kalıcı viral baskılanma):</b></div><div>{{c1::2 hafta zidovudin}}</div><div><br></div><div><b>Yüksek risk (doğuma yakın viremi veya anne tedavisiz):</b></div><div>Yenidoğana doğumdan itibaren {{c2::üçlü antiretroviral tedavi}}: {{c3::zidovudin + lamivudin + dolutegravir}} verilir</div><div><br></div><div><b>Emzirme:</b> Ek bebek profilaksisi maternal viral yük ve izleme göre belirlenir</div>"
+     "after": "HIV perinatal profilaksisi (NIH, 25 Haziran 2026)<div><br></div><div><b>Düşük risk (gebelikte kalıcı viral baskılanma):</b></div><div>{{c1::2 hafta zidovudin}}</div><div><br></div><div><b>Yüksek risk (doğuma yakın viremi veya anne tedavisiz):</b></div><div>Doğumda ≥37 gestasyon haftası ve ≥2 kg olan yüksek riskli yenidoğana {{c2::üçlü antiretroviral tedavi}}: {{c3::zidovudin + lamivudin + dolutegravir}} verilir</div><div><br></div><div><b>Emzirme:</b> Ek bebek profilaksisi maternal viral yük ve izleme göre belirlenir</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Yüksek riskte üçlü rejim genellikle 2–6 hafta sürer; emzirme sırasında profilaksi ortak kararla bireyselleştirilir."
+     "after": "Yüksek riskte üçlü rejim 2–6 hafta sürer. Üçlü rejim 6 haftadan önce biterse zidovudin tek başına toplam 6 haftaya tamamlanır. DTG doğumda ≥37 hafta ve ≥2 kg bebeklerdeki rejim içindir; daha küçük/prematüre bebeklerde üçüncü ilaç ve doz yaş/kiloya göre değişir. Emzirme sırasında profilaksi maternal viral yük ve izleme göre bireyselleştirilir."
     }
    },
    "changes": [
@@ -1140,11 +1175,23 @@
      "category": "Biçim",
      "text": "Pfx → profilaksisi; özel kısaltmalar kaldırıldı",
      "rationale": ""
+    },
+    {
+     "severity": "Kritik",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Dolutegravirli yenidoğan rejimine gestasyon haftası ve kilo koşulu eklendi; ZDV toplam süre kuralı arka yüzde tamamlandı.",
+     "rationale": "Kaynak: https://clinicalinfo.hiv.gov/en/guidelines/pediatric-arv/management-infants-utero-intrapartum-breastfeeding-hiv-exposure"
     }
    ],
-   "aiNote": "Ne: Perinatal HIV profilaksisi düşük/yüksek bulaş riskine göre güncellendi; emzirme ayrı satırda korundu.\nNeden: Taslağın tek doz nevirapin ve altı haftalık genel monoterapi şeması güncel öneri değildir.\nNasıl: [TD1, EK1, YP1] Geçersiz cloze dozları kaldırılıp doğru risk yanıtları c1/c2/c3 ile yazıldı; emzirme için tek şema uydurulmadı.\nKaynak: NIH, Antiretroviral Management of Infants with Perinatal or Breastfeeding Exposure to HIV (2026).",
+   "aiNote": "Ne: Dolutegravirli yenidoğan rejimine gestasyon haftası ve kilo koşulu eklendi; ZDV toplam süre kuralı arka yüzde tamamlandı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://clinicalinfo.hiv.gov/en/guidelines/pediatric-arv/management-infants-utero-intrapartum-breastfeeding-hiv-exposure",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Perinatal HIV profilaksisi düşük/yüksek bulaş riskine göre güncellendi; emzirme ayrı satırda korundu.\nNeden: Taslağın tek doz nevirapin ve altı haftalık genel monoterapi şeması güncel öneri değildir.\nNasıl: [TD1, EK1, YP1] Geçersiz cloze dozları kaldırılıp doğru risk yanıtları c1/c2/c3 ile yazıldı; emzirme için tek şema uydurulmadı.\nKaynak: NIH, Antiretroviral Management of Infants with Perinatal or Breastfeeding Exposure to HIV (2026)."
+    }
+   ]
   },
   {
    "order": 27,
@@ -1539,7 +1586,7 @@
    "fields": {
     "Text": {
      "before": "KF Pnömoni&nbsp;<div><br></div><div>ilk 2 yaş&nbsp;</div><div>1- {{c1::S. aureus}}</div><div>2- {{c1::H. inf}}</div><div><br></div><div>&gt; 2 yaş</div><div>1- {{c1::PsodoM}}</div><div>2- {{c2::S. Aureus}}</div><div>3 - {{c2::Burkholderia}}</div><div>4- {{c2::MAC}}</div>",
-     "after": "Kistik fibroziste solunum yolu etkenleri<div><br></div><div>Erken çocuklukta sık görülenler</div><div>1- {{c1::S. aureus}}</div><div>2- {{c1::H. influenzae}}</div><div><br></div><div>Yaşla birlikte görülebilenler</div><div>1- {{c1::Pseudomonas aeruginosa}}</div><div>2- {{c2::S. aureus}}</div><div>3- {{c2::Burkholderia}}</div><div>4- {{c2::MAC}}</div>"
+     "after": "Kistik fibroziste solunum yolu etkenleri<div><br></div><div>Erken çocuklukta sık görülenler</div><div>1- {{c2::{{c1::S. aureus}}::ilişkili yanıt arka yüzde}}</div><div>2- {{c1::H. influenzae}}</div><div><br></div><div>Yaşla birlikte görülebilenler</div><div>1- {{c1::Pseudomonas aeruginosa}}</div><div>2- {{c1::{{c2::S. aureus}}::ilişkili yanıt arka yüzde}}</div><div>3- {{c2::Burkholderia}}</div><div>4- {{c2::MAC}}</div>"
     },
     "Extra": {
      "before": "",
@@ -1564,11 +1611,23 @@
      "category": "Biçim",
      "text": "İki yaş bölümü ve 2+4 numaralı yanıt satırı ile c1/c2 sırası korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Kistik fibrozis listesindeki aynı etkenin karşılıklı görünmesi kapatıldı; yaşın kesin eşik olmadığı açıklaması korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Kistik fibroziste etkenlerin yaşla ilişkisi kesin iki yaş sınırı olmadan verildi.\nNeden: Özgün kart ve reddedilen taslak Pseudomonas'ı iki yaş öncesi dışlıyordu.\nNasıl: [EK1, KS1, YP1] Altı yanıt, numaraları ve iki bölüm korundu; sınıra bir cümlelik nüans eklendi.\nKaynak: Cystic Fibrosis Foundation, Infant Care Clinical Care Guidelines, P. aeruginosa önerileri.",
+   "aiNote": "Ne: Kistik fibrozis listesindeki aynı etkenin karşılıklı görünmesi kapatıldı; yaşın kesin eşik olmadığı açıklaması korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kistik fibroziste etkenlerin yaşla ilişkisi kesin iki yaş sınırı olmadan verildi.\nNeden: Özgün kart ve reddedilen taslak Pseudomonas'ı iki yaş öncesi dışlıyordu.\nNasıl: [EK1, KS1, YP1] Altı yanıt, numaraları ve iki bölüm korundu; sınıra bir cümlelik nüans eklendi.\nKaynak: Cystic Fibrosis Foundation, Infant Care Clinical Care Guidelines, P. aeruginosa önerileri."
+    }
+   ]
   },
   {
    "order": 38,
@@ -7175,13 +7234,13 @@
    "noteId": 1629125686314,
    "guid": "NN&{@}k0v$",
    "topic": "Bakteriyoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<b>İntrensek İmipenem</b> direncini olan EnteroBact:<div><br></div><div>{{c1::Proteus}} - Morganella - Provodencia</div><div><br></div><div>---------------</div><div><br></div><div><b>İntrensek Kolistin</b> Direnci olan Enterobact:</div><div><br></div><div>Proteus - Morganella - {{c1::Serratia}}</div><div><br></div>",
-     "after": "<b>İntrensek imipenem</b> direnci olan enterobakteriler:<div><br></div><div>{{c1::Proteus}} - Morganella - Providencia</div><div><br></div><div>---------------</div><div><br></div><div><b>İntrensek kolistin</b> direnci olan enterobakteriler:</div><div><br></div><div>Proteus - Morganella - {{c1::Serratia}}</div>"
+     "after": "<b>İntrensek imipenem</b> direnci olan enterobakteriler:<div><br></div><div>{{c1::Proteus}} - Morganella - Providencia</div><div><br></div><div>---------------</div><div><br></div><div><b>İntrensek kolistin</b> direnci olan enterobakteriler:</div><div><br></div><div>{{c1::Proteus}} - Morganella - {{c1::Serratia}}</div>"
     }
    },
    "changes": [
@@ -7202,11 +7261,23 @@
      "category": "Biçim",
      "text": "Büyük harfler düzeltildi; her iki blok ve iki c1 yanıtı korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Proteus cevabının alt direnç satırında açık kalması aynı c1 ile giderildi; direnç önermelerinin ayrıca kaynakla kapsamlandırılması gerekir.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, imla hatası düzeltildi, her iki direnç bloku korundu.\nNeden: Kısaltma ve tıbbi bütünlük sağlandı.\nNasıl: [KS1, YZ1, BÇ1, YP1] İmipenem ve kolistin direnci blokları, ara çizgi ve iki c1 yanıtı korundu.",
+   "aiNote": "Ne: Proteus cevabının alt direnç satırında açık kalması aynı c1 ile giderildi; direnç önermelerinin ayrıca kaynakla kapsamlandırılması gerekir.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltmalar açıldı, imla hatası düzeltildi, her iki direnç bloku korundu.\nNeden: Kısaltma ve tıbbi bütünlük sağlandı.\nNasıl: [KS1, YZ1, BÇ1, YP1] İmipenem ve kolistin direnci blokları, ara çizgi ve iki c1 yanıtı korundu."
+    }
+   ]
   },
   {
    "order": 197,
@@ -7909,13 +7980,13 @@
    "noteId": 1607442897224,
    "guid": "m8Ixg?%@cO",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "ParamiksoV'ler&nbsp;<div><br></div><div>HemAgg / Nöraminidaz / G glikoprotein</div><div><br></div><div>Kabakulak: {{c1::+ / + / -}}</div><div><br></div><div>Kızamık: {{c1::+ / - / -}}</div><div><br></div><div>Parainf: {{c1::+ / + / -}}</div><div><br></div><div>RSV: {{c1::- / - / +}}</div>",
-     "after": "Paramiksovirüsler yüzey glikoproteinleri:<div><br></div><div>Hemaglütinin / nöraminidaz / G glikoproteini:<div><br></div><div>Kabakulak: {{c1::hemaglütinin + nöraminidaz}}</div><div><br></div><div>Kızamık: {{c1::hemaglütinin}}</div><div><br></div><div>RSV: {{c1::G glikoproteini}}</div><div><br></div><div>Metapnömovirüs: {{c1::G glikoproteini}}</div></div>"
+     "after": "Paramiksovirüsler yüzey glikoproteinleri:<div><br></div><div>Virüse göre tutunma proteinini belirt:<div><br></div><div>Kabakulak: {{c1::hemaglütinin + nöraminidaz}}</div><div><br></div><div>Kızamık: {{c1::hemaglütinin}}</div><div><br></div><div>RSV: {{c1::G glikoproteini}}</div><div><br></div><div>Metapnömovirüs: {{c1::G glikoproteini}}</div></div>"
     }
    },
    "changes": [
@@ -7936,11 +8007,23 @@
      "category": "Biçim",
      "text": "Büyük harfler ve &nbsp; düzeltildi; altı satır ve dört c1 korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Sorulan protein adlarını başlıkta açık veren liste kaldırıldı; virüs örnekleri ve c1 korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Virüs adlarındaki kısaltmalar açıldı, glikoprotein adları standart yazıma getirildi.\nNeden: \"ParamiksoV\" ve \"MetapnömoV\" kişisel kısaltmalardı.\nNasıl: [KS1, YZ1, BÇ1, YP1] Altı satırlı liste düzeni, boş satırlar ve dört c1 yanıtı korundu.",
+   "aiNote": "Ne: Sorulan protein adlarını başlıkta açık veren liste kaldırıldı; virüs örnekleri ve c1 korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Virüs adlarındaki kısaltmalar açıldı, glikoprotein adları standart yazıma getirildi.\nNeden: \"ParamiksoV\" ve \"MetapnömoV\" kişisel kısaltmalardı.\nNasıl: [KS1, YZ1, BÇ1, YP1] Altı satırlı liste düzeni, boş satırlar ve dört c1 yanıtı korundu."
+    }
+   ]
   },
   {
    "order": 218,
@@ -12669,13 +12752,13 @@
    "noteId": 1604307382326,
    "guid": "lnEDC`PIq*",
    "topic": "Parazitoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Muz gametosit --&gt; {{c1::P. Falc&nbsp;}}<div><br></div><div>Maurer Lekesi --&gt; {{c1::P. Falc}}</div><div><br></div><div>Walkmann Kulaklığı (Eritrositte iki taşlı yüzük) --&gt; {{c1:: P. Falc&nbsp;}}</div>",
-     "after": "Plasmodium falciparum'un periferik kan yayması bulguları:<div><br></div><div>Muz (hilal) şekilli gametosit → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Maurer lekeleri → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Walkman kulaklığı manzarası (eritrositte birden fazla taşlı yüzük) → {{c1::Plasmodium falciparum}}</div>"
+     "after": "Periferik kan yayması bulgularından sıtma etkenini belirle:<div><br></div><div>Muz (hilal) şekilli gametosit → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Maurer lekeleri → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Walkman kulaklığı manzarası (eritrositte birden fazla taşlı yüzük) → {{c1::Plasmodium falciparum}}</div>"
     }
    },
    "changes": [
@@ -12696,11 +12779,23 @@
      "category": "Biçim",
      "text": "Maurer Lekesi → Maurer lekeleri; --&gt; → →; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Sorulan etkeni doğrudan veren başlık tarafsızlaştırıldı.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"P. Falc\" → \"Plasmodium falciparum\" açıldı; \"Walkmann\" → \"Walkman\" düzeltildi ve başlıklar standartlaştırıldı.\nNeden: Tür adı kısaltmalı ve büyük harfliydi, \"Walkmann\"da harf fazlalığı vardı.\nNasıl: [KS1, YZ2, BÇ1, YP1] P. falciparum'un periferik kanda ayırt ettirici 3 patognomonik morfolojik bulgusu ve c1 yanıtları korundu.",
+   "aiNote": "Ne: Sorulan etkeni doğrudan veren başlık tarafsızlaştırıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"P. Falc\" → \"Plasmodium falciparum\" açıldı; \"Walkmann\" → \"Walkman\" düzeltildi ve başlıklar standartlaştırıldı.\nNeden: Tür adı kısaltmalı ve büyük harfliydi, \"Walkmann\"da harf fazlalığı vardı.\nNasıl: [KS1, YZ2, BÇ1, YP1] P. falciparum'un periferik kanda ayırt ettirici 3 patognomonik morfolojik bulgusu ve c1 yanıtları korundu."
+    }
+   ]
   },
   {
    "order": 355,
@@ -13343,13 +13438,13 @@
    "noteId": 1604316428338,
    "guid": "r|>tBEIRd?",
    "topic": "Parazitoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<b>Sestod Konak durumları&nbsp;</b><div><br></div><div>Tenya saginata --&gt; {{c1::Son konak}}</div><div><br></div><div>Tenya solium --&gt; {{c2::Hem ara Hem Son konak}}</div><div><br></div><div>Himen. nana --&gt; {{c1::Ara konak ihtiyacı yok&nbsp;}}</div><div><br></div><div>Diphy. latum --&gt; {{c2::1'den fazla ara konak&nbsp;}}</div><div><br></div><div>Ekinokok --&gt; {{c1::Ara konak}}&nbsp;</div>",
-     "after": "<b>Sestodlarda insan konak durumları:</b><br><br>Taenia saginata → {{c1::Son konak}}<br>Taenia solium → {{c2::Hem ara hem son konak}}<br>Hymenolepis nana → {{c1::Ara konak ihtiyacı yok}}<br>Diphyllobothrium latum → {{c2::1'den fazla ara konak}}<br>Echinococcus granulosus → {{c1::Ara konak}}"
+     "after": "<b>Sestodlarda insan konak durumları:</b><br><br>Taenia saginata → {{c1::Son konak}}<br>Taenia solium → {{c1::{{c2::Hem ara hem son konak}}::ilişkili yanıt arka yüzde}}<br>Hymenolepis nana → {{c1::Ara konak ihtiyacı yok}}<br>Diphyllobothrium latum → {{c1::{{c2::1'den fazla ara konak}}::ilişkili yanıt arka yüzde}}<br>Echinococcus granulosus → {{c1::Ara konak}}"
     }
    },
    "changes": [
@@ -13370,11 +13465,23 @@
      "category": "Biçim",
      "text": "c1, c2, c1, c2, c1 cloze dizilimi korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Ara/son konak yanıtları diğer sestod satırlarından okunamıyor; birleşik konak bilgisi arkada korunuyor.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Parazit isimleri bilimsel formata çevrildi, c1-c2-c1-c2-c1 cloze dizilimi korundu.\nNeden: Kısaltmalar açıldı ve taksonomi düzeltildi.\nNasıl: [KS1, YZ2, BÇ1, YP1] Sestodlarda konak ilişkileri ve cloze dizilimi korundu.",
+   "aiNote": "Ne: Ara/son konak yanıtları diğer sestod satırlarından okunamıyor; birleşik konak bilgisi arkada korunuyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Parazit isimleri bilimsel formata çevrildi, c1-c2-c1-c2-c1 cloze dizilimi korundu.\nNeden: Kısaltmalar açıldı ve taksonomi düzeltildi.\nNasıl: [KS1, YZ2, BÇ1, YP1] Sestodlarda konak ilişkileri ve cloze dizilimi korundu."
+    }
+   ]
   },
   {
    "order": 374,
@@ -13845,13 +13952,13 @@
    "noteId": 1607427611825,
    "guid": "hB%.~jQ62c",
    "topic": "Parazitoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Yumurtalari kapakli helmintler:<div><br></div><div>{{c1::D. Latum}}</div><div><br></div><div>{{c1::Schistosoma}} hariç {{c1::trematodlar}}</div>",
-     "after": "Yumurtaları kapaklı (operkulumlu) olan helmintler:<br><br>Sestod istisnası → {{c1::Diphyllobothrium latum}}<br>Trematodlar → {{c1::Schistosoma türleri}} hariç tüm {{c1::trematodlar}}"
+     "after": "Yumurtaları kapaklı (operkulumlu) olan helmintler:<br><br>Sestod istisnası → {{c1::Diphyllobothrium latum}}<br>Diğer grup → {{c1::Schistosoma türleri}} hariç tüm {{c1::trematodlar}}"
     }
    },
    "changes": [
@@ -13872,11 +13979,23 @@
      "category": "Biçim",
      "text": "3 adet c1 cloze'u ve liste düzeni korundu, HTML temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Grup adı soru kökünde doğrudan cevap olarak görünüyordu; kök tarafsızlaştırıldı.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Kısaltma açıldı, operkulum terimi eklendi, 3 adet c1 cloze'u korundu.\nNeden: Kısaltma giderildi.\nNasıl: [KS1, YZ2, BÇ1, YP1] Kapaklı yumurtaya sahip D. latum ve trematodlar ile c1 cloze yapısı korundu.",
+   "aiNote": "Ne: Grup adı soru kökünde doğrudan cevap olarak görünüyordu; kök tarafsızlaştırıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltma açıldı, operkulum terimi eklendi, 3 adet c1 cloze'u korundu.\nNeden: Kısaltma giderildi.\nNasıl: [KS1, YZ2, BÇ1, YP1] Kapaklı yumurtaya sahip D. latum ve trematodlar ile c1 cloze yapısı korundu."
+    }
+   ]
   },
   {
    "order": 388,
@@ -14579,13 +14698,13 @@
    "noteId": 1604343138992,
    "guid": "d4:Zrf>E0T",
    "topic": "Viroloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "KKKA virusu ---&gt; {{c1::BunyaV }} ailesinden {{c1::NairoV}}",
-     "after": "KKKA virüsü → {{c1::Bunyavirales}} takımındaki {{c1::Orthonairovirus}} cinsindendir"
+     "after": "KKKA virüsü → {{c1::Hareavirales}} takımında, Nairoviridae ailesindeki {{c1::Orthonairovirus}} cinsindendir"
     }
    },
    "changes": [
@@ -14600,11 +14719,23 @@
      "category": "Biçim",
      "text": "---&gt; → →; &nbsp; kaldırıldı",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "KKKA için güncel ICTV takım/aile kapsamı soru tarafına taşındı.",
+     "rationale": "Kaynak: https://ictv.global/report/chapter/nairoviridae/nairoviridae"
     }
    ],
-   "aiNote": "Ne: “BunyaV ailesi” güncel Bunyavirales takımı, “NairoV” Orthonairovirus cinsi olarak yazıldı.\nNeden: Eski Bunyaviridae aile adı güncel sınıflamada KKKA etkeninin ailesi değildir.\nNasıl: [GN2, YP1] KKKA ilişkisi ve iki c1 yanıtı korundu; taksonomik basamaklar doğru adlandırıldı.\nKaynak: ICTV, Family Nairoviridae ve Genus Orthonairovirus.",
+   "aiNote": "Ne: KKKA için güncel ICTV takım/aile kapsamı soru tarafına taşındı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://ictv.global/report/chapter/nairoviridae/nairoviridae",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: “BunyaV ailesi” güncel Bunyavirales takımı, “NairoV” Orthonairovirus cinsi olarak yazıldı.\nNeden: Eski Bunyaviridae aile adı güncel sınıflamada KKKA etkeninin ailesi değildir.\nNasıl: [GN2, YP1] KKKA ilişkisi ve iki c1 yanıtı korundu; taksonomik basamaklar doğru adlandırıldı.\nKaynak: ICTV, Family Nairoviridae ve Genus Orthonairovirus."
+    }
+   ]
   },
   {
    "order": 409,
@@ -15113,13 +15244,13 @@
    "noteId": 1611909891157,
    "guid": "L|yMU|t>4/",
    "topic": "Viroloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<b>ArenaV</b>:<div><br></div><div>Tek İplik 2 parçalı RNA Virus</div><div><br></div><div>{{c1::Ambisense}} RNA:<br></div><div>{{c1::1 parça: (-) &nbsp;/&nbsp;<span style=\"color: var(--field-fg); background: var(--field-bg);\">1 parça: (+) polariteli</span>}}<br></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b>Kum(Arena)</b> şeklinde {{c1::işlevsel olmayan ribozomları}} var</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Lenfositer Koryomenenjit V(LMCV)}} ve {{c2::Lassa ateşi}} Virusleri</span></div><div><br></div>",
-     "after": "<b>Arenavirüsler:</b><div><br></div><div>Tek iplikli 2 parçalı RNA virüsü</div><div><br></div><div>{{c1::Ambisense}} RNA:<div>{{c1::1 parça: (-) / 1 parça: (+) polariteli}}</div><div><br></div><div><b>Kum (arena)</b> şeklinde {{c1::işlevsel olmayan ribozomları}} vardır</div><div><br></div><div>{{c2::Lenfositer koryomenenjit virüsü (LCMV)}} ve {{c2::Lassa ateşi virüsü}}</div></div>"
+     "after": "<b>Mammarenavirüsler (LCMV/Lassa):</b><div><br></div><div>Tek iplikli 2 parçalı RNA virüsü</div><div><br></div><div>{{c1::Ambisense}} RNA:<div>{{c1::iki segmentin her birinde karşıt yönlerde kodlanan genler}}</div><div><br></div><div><b>Kum (arena)</b> şeklinde {{c1::işlevsel olmayan ribozomları}} vardır</div><div><br></div><div>{{c2::Lenfositer koryomenenjit virüsü (LCMV)}} ve {{c2::Lassa ateşi virüsü}}</div></div>"
     }
    },
    "changes": [
@@ -15140,11 +15271,23 @@
      "category": "Biçim",
      "text": "span ve &nbsp; temizlendi; c1, c1, c1, c2, c2 dağılımı korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Ambisense düzeninin bir negatif/bir pozitif segment olarak yanlış anlatılması düzeltildi.",
+     "rationale": "Kaynak: https://ictv.global/report/chapter/arenaviridae/arenaviridae/mammarenavirus"
     }
    ],
-   "aiNote": "Ne: \"ArenaV\" ve virüs kısaltmaları açıldı, span ve &nbsp; artıkları temizlendi.\nNeden: Kısaltma ve HTML debris temizliği yapıldı.\nNasıl: [KS1, YZ1, YP4, BÇ1, YP1] Altı satırlı özgün yapı, boş satırlar ve c1/c2 cloze dağılımı korundu.",
+   "aiNote": "Ne: Ambisense düzeninin bir negatif/bir pozitif segment olarak yanlış anlatılması düzeltildi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://ictv.global/report/chapter/arenaviridae/arenaviridae/mammarenavirus",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"ArenaV\" ve virüs kısaltmaları açıldı, span ve &nbsp; artıkları temizlendi.\nNeden: Kısaltma ve HTML debris temizliği yapıldı.\nNasıl: [KS1, YZ1, YP4, BÇ1, YP1] Altı satırlı özgün yapı, boş satırlar ve c1/c2 cloze dağılımı korundu."
+    }
+   ]
   },
   {
    "order": 424,

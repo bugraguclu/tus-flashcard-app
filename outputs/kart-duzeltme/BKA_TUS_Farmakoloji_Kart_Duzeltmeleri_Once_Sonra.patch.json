@@ -1902,8 +1902,8 @@
    "guid": "Og;Ce)dAO?",
    "level": "Yüksek",
    "fields": {
-    "Text": "İNH<div><br></div><div>Hızlı asetilleyen → {{c1::toksik metabolit artar → hepatit}}</div><div><br></div><div>Yavaş asetilleyen → {{c1::İNH artar → B6 azalır → periferik nöropati}}</div>",
-    "Extra": "Klasik bilgi asetilhidrazin artışına dayanır; güncel NAT2 genotip çalışmalarında hepatotoksisite riski yavaş asetilleyicilerde daha yüksek bulunmuştur."
+    "Text": "İzoniazid (İNH) ve NAT2 asetilleyici fenotipi:<br><br>Hızlı asetilleyen → İNH klirensi {{c1::daha yüksek}}<br><br>Yavaş asetilleyen → İNH maruziyeti {{c1::daha yüksek}}; hepatotoksisite riski {{c1::daha yüksek bulunmuştur}}<br><br>İNH ile B6 azalması → {{c1::periferik nöropati}} riski",
+    "Extra": "Hızlı asetilleyen → hepatit eşlemesi, eski asetilhidrazin metabolit şemasıdır; güncel klinik risk sınıflaması olarak kullanılmaz. NAT2 yavaş asetilleyici fenotipi çalışmalarda daha yüksek hepatotoksisite riskiyle ilişkilidir; risk ilaç rejimi ve diğer hasta özelliklerinden de etkilenir."
    },
    "items": [
     {
@@ -1923,9 +1923,21 @@
      "category": "Biçim",
      "change": "INH → İNH (kartta tek biçim); --> → →; büyük harfler; &nbsp; temizlendi",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "change": "Klinik hepatotoksisite riskini ters öğreten eski metabolit eşlemesi, NAT2 maruziyet/risk ilişkisiyle değiştirildi.",
+     "reason": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/39727196/; https://pubmed.ncbi.nlm.nih.gov/3691615/"
     }
    ],
-   "ainote": "Ne: \"met\" → \"metabolit\" ve \"Per. Nöropati\" → \"periferik nöropati\" açıldı, \"INH\" → \"İNH\" yapıldı ve Extra'ya güncel NAT2 verisi eklendi; iki satırın cevapları değişmedi.\nNeden: Kart, hepatiti hızlı asetilleyicilere bağlayan klasik açıklamayı tek başına öğretiyordu; güncel genotip çalışmalarında risk yavaş asetilleyicilerde daha yüksek bulunmuştur.\nNasıl: [TD2, KS1, BÇ1] Kaynaklar arasındaki ayrım araştırılarak karara bağlandı: yazarın klasik TUS sürümü ve tek cloze numarası korundu, güncel genotip bulgusu tek cümleyle Extra'da anıldı; böylece kart hem klasik hem güncel soru biçimini karşılıyor.\nKaynak: ATS bildirisi Hepatotoxicity of Antituberculosis Therapy (Saukkonen ve ark., 2006): yavaş asetilleyicilerde ALT yüksekliği %26, hızlı asetilleyicilerde %11; izoniyazid ürün bilgisi (DailyMed): periferik nöropati yavaş inaktive edenlerde daha sıktır."
+   "ainote": "Ne: Klinik hepatotoksisite riskini ters öğreten eski metabolit eşlemesi, NAT2 maruziyet/risk ilişkisiyle değiştirildi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/39727196/; https://pubmed.ncbi.nlm.nih.gov/3691615/",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"met\" → \"metabolit\" ve \"Per. Nöropati\" → \"periferik nöropati\" açıldı, \"INH\" → \"İNH\" yapıldı ve Extra'ya güncel NAT2 verisi eklendi; iki satırın cevapları değişmedi.\nNeden: Kart, hepatiti hızlı asetilleyicilere bağlayan klasik açıklamayı tek başına öğretiyordu; güncel genotip çalışmalarında risk yavaş asetilleyicilerde daha yüksek bulunmuştur.\nNasıl: [TD2, KS1, BÇ1] Kaynaklar arasındaki ayrım araştırılarak karara bağlandı: yazarın klasik TUS sürümü ve tek cloze numarası korundu, güncel genotip bulgusu tek cümleyle Extra'da anıldı; böylece kart hem klasik hem güncel soru biçimini karşılıyor.\nKaynak: ATS bildirisi Hepatotoxicity of Antituberculosis Therapy (Saukkonen ve ark., 2006): yavaş asetilleyicilerde ALT yüksekliği %26, hızlı asetilleyicilerde %11; izoniyazid ürün bilgisi (DailyMed): periferik nöropati yavaş inaktive edenlerde daha sıktır."
+    }
+   ]
   },
   {
    "id": 1604662098553,
@@ -4677,7 +4689,7 @@
    "guid": "J3;9z=drhI",
    "level": "Yüksek",
    "fields": {
-    "Text": "Malarya tedavisi<div><br></div><div><b>Primer karaciğer evresine</b> etkili ajanlar → {{c1::atovakuon-proguanil}}, {{c1::primakin}}</div><div><br><b>Sporozoitlere</b> etkili ajanlar → {{c2::yok}}<br><br><b>Hipnozoitlere</b> etkili ajanlar → {{c2::primakin}}</div>",
+    "Text": "Malarya tedavisi<div><br></div><div><b>Primer karaciğer evresine</b> etkili ajanlar → {{c1::atovakuon-proguanil}}, {{c2::{{c1::primakin}}::ilişkili yanıt arka yüzde}}</div><div><br><b>Sporozoitlere</b> etkili ajanlar → {{c2::yok}}<br><br><b>Hipnozoitlere</b> etkili ajanlar → {{c1::{{c2::primakin}}::ilişkili yanıt arka yüzde}}</div>",
     "Extra": "Hipnozoitlere etkili diğer ilaç: tafenokin"
    },
    "items": [
@@ -4704,9 +4716,21 @@
      "category": "Biçim",
      "change": "--> ve -> → →; liste ayracı virgül; YOK → yok (cevap içinde); büyük/küçük harf; &nbsp; temizlendi",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "change": "İlaç adı başka etki/evre satırından okunuyordu; karşılıklı sızıntı mevcut ordinal hedefleri korunarak kapatıldı.",
+     "reason": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "ainote": "Ne: \"Malarya tdv\" → \"Malarya tedavisi\", \"Primer KC Tut\" → \"Primer karaciğer evresine\", \"Sporozoid\" ve \"Hipnozoid\" → \"sporozoit\" ve \"hipnozoit\", \"Atovokuan\" → \"atovakuon\" yapıldı ve Extra'ya \"Hipnozoitlere etkili diğer ilaç: tafenokin\" eklendi.\nNeden: Sıtma ilaçları parazitin karaciğerdeki primer (preeritrositer) evresine göre sınıflanır; \"tutulum\" organ tutulumunu çağrıştıran yanlış bir terimdi. Hipnozoit satırı yalnız primakini veriyordu, oysa tafenokin 2018'den beri aynı amaçla onaylıdır.\nNasıl: [EK2, YZ2, YP1] Yeni ilaç, cevabı değiştirmemek için boşluğa değil Extra'ya yazıldı; \"sporozoitlere etkili ilaç yok\" bilgisi ve c1, c2 numaraları korundu. Primakin iki ayrı sorunun cevabı olduğu için iki numarada da bırakıldı, numaralar birleştirilmedi.\nKaynak: FDA Drugs@FDA kaydı (Krintafel, tafenokin: onay 20 Temmuz 2018)."
+   "ainote": "Ne: İlaç adı başka etki/evre satırından okunuyordu; karşılıklı sızıntı mevcut ordinal hedefleri korunarak kapatıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Malarya tdv\" → \"Malarya tedavisi\", \"Primer KC Tut\" → \"Primer karaciğer evresine\", \"Sporozoid\" ve \"Hipnozoid\" → \"sporozoit\" ve \"hipnozoit\", \"Atovokuan\" → \"atovakuon\" yapıldı ve Extra'ya \"Hipnozoitlere etkili diğer ilaç: tafenokin\" eklendi.\nNeden: Sıtma ilaçları parazitin karaciğerdeki primer (preeritrositer) evresine göre sınıflanır; \"tutulum\" organ tutulumunu çağrıştıran yanlış bir terimdi. Hipnozoit satırı yalnız primakini veriyordu, oysa tafenokin 2018'den beri aynı amaçla onaylıdır.\nNasıl: [EK2, YZ2, YP1] Yeni ilaç, cevabı değiştirmemek için boşluğa değil Extra'ya yazıldı; \"sporozoitlere etkili ilaç yok\" bilgisi ve c1, c2 numaraları korundu. Primakin iki ayrı sorunun cevabı olduğu için iki numarada da bırakıldı, numaralar birleştirilmedi.\nKaynak: FDA Drugs@FDA kaydı (Krintafel, tafenokin: onay 20 Temmuz 2018)."
+    }
+   ]
   },
   {
    "id": 1627373139641,
@@ -4981,8 +5005,8 @@
    "guid": "Od,L66hlgd",
    "level": "Yüksek",
    "fields": {
-    "Text": "{{c1::CYP2C19}} → tamoksifen ve klopidogrel<div><br></div><div>Hızlı çalışırsa → etkinlikleri {{c1::artar}}</div>",
-    "Extra": "İkisi de ön ilaçtır. Tamoksifeni endoksifene çeviren başlıca enzim CYP2D6'dır."
+    "Text": "Ön ilaç aktivasyonu:<div><br></div><div>Tamoksifen: N-desmetiltamoksifen → endoksifen dönüşümündeki temel enzim {{c1::CYP2D6}}.</div><div><br></div><div>Klopidogrel: aktif metabolit oluşumunda başlıca enzim {{c1::CYP2C19}}; bu enzimin işlevi azaldığında antiplatelet etki {{c1::azalır}}.</div>",
+    "Extra": "Tamoksifen metabolizmasına CYP2C19 dahil birden çok enzim katılır; endoksifen oluşumunda CYP2D6 temel rol oynar. Enzim aktivitesinden her iki ilaç için koşulsuz klinik etkinlik artışı çıkarılamaz. Tamoksifende metabolit düzeyi ile klinik sonlanım aynı ölçüt değildir."
    },
    "items": [
     {
@@ -5002,9 +5026,21 @@
      "category": "Biçim",
      "change": "---> → →; ARTAR → artar; büyük harfler; &nbsp; temizlendi",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "change": "Ortak CYP2C19 ve kesin etkinlik artışı cevabı yerine iki ilacın aktivasyon enzimleri ayrıldı; farmakokinetik ilişki klinik etkinlikle karıştırılmadı.",
+     "reason": "Kaynak: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=1e6ff055-590c-41e6-9530-1fdf04cdbd02; https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=de8b0b67-eb25-4684-83b5-7ad785314227"
     }
    ],
-   "ainote": "Ne: Extra'daki \"İkisi de ön ilaç\" ifadesi cümle hâline getirildi ve yanına \"Tamoksifeni endoksifene çeviren başlıca enzim CYP2D6'dır.\" eklendi; Text değişmedi.\nNeden: Kart tamoksifeni klopidogrelle birlikte CYP2C19 altında sayarak asıl aktivasyon yolunu gizliyordu; CYP2C19'un tamoksifen yanıtındaki klinik rolü ise doğrulanmamıştır.\nNasıl: [EK1, TD2, YP1] CYP2C19'un tamoksifen biyoaktivasyonuna katkısı gerçek olduğu için yazarın listesi ve cloze cevapları korundu, eksik niteleyici tek cümleyle Extra'ya eklendi; kurs içindeki 1604660348352 ve 1604660413863 kartlarıyla tutarlılık sağlandı.\nKaynak: CPIC CYP2D6-tamoksifen kılavuzu (Goetz ve ark., Clin Pharmacol Ther 2018); CYP2C19 için ITPC veri analizi (Damkier ve ark., Sci Rep 2017): klinik anlamlı rol gösterilememiştir."
+   "ainote": "Ne: Ortak CYP2C19 ve kesin etkinlik artışı cevabı yerine iki ilacın aktivasyon enzimleri ayrıldı; farmakokinetik ilişki klinik etkinlikle karıştırılmadı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=1e6ff055-590c-41e6-9530-1fdf04cdbd02; https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=de8b0b67-eb25-4684-83b5-7ad785314227",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Extra'daki \"İkisi de ön ilaç\" ifadesi cümle hâline getirildi ve yanına \"Tamoksifeni endoksifene çeviren başlıca enzim CYP2D6'dır.\" eklendi; Text değişmedi.\nNeden: Kart tamoksifeni klopidogrelle birlikte CYP2C19 altında sayarak asıl aktivasyon yolunu gizliyordu; CYP2C19'un tamoksifen yanıtındaki klinik rolü ise doğrulanmamıştır.\nNasıl: [EK1, TD2, YP1] CYP2C19'un tamoksifen biyoaktivasyonuna katkısı gerçek olduğu için yazarın listesi ve cloze cevapları korundu, eksik niteleyici tek cümleyle Extra'ya eklendi; kurs içindeki 1604660348352 ve 1604660413863 kartlarıyla tutarlılık sağlandı.\nKaynak: CPIC CYP2D6-tamoksifen kılavuzu (Goetz ve ark., Clin Pharmacol Ther 2018); CYP2C19 için ITPC veri analizi (Damkier ve ark., Sci Rep 2017): klinik anlamlı rol gösterilememiştir."
+    }
+   ]
   },
   {
    "id": 1604660413863,
@@ -5349,7 +5385,7 @@
    "guid": "O|r^X$%l1L",
    "level": "Yüksek",
    "fields": {
-    "Text": "<div>Antiepileptikler ve enzim inhibisyonu/indüksiyonu<br><br>Mikrozomal enzim <b>indüksiyonu</b> + glukuronil transferaz <b>indüksiyonu</b>:<br><br>{{c2::Karbamazepin}}, {{c2::fenobarbital}}, {{c2::fenitoin}}, primidon, rufinamid<br><br>Sadece <b>glukuronil transferaz indüksiyonu</b> yapan antiepileptik:<div><br></div><div>{{c1::Lamotrijin}}<br><br>---------------------------<br><br>Sadece mikrozomal enzim <b>inhibisyonu</b>: {{c3::topiramat}}<br><br>Mikrozomal enzim + glukuronil transferaz <b>inhibisyonu</b>: {{c3::valproik asit}}</div><br></div>",
+    "Text": "<div>Antiepileptikler ve enzim inhibisyonu/indüksiyonu<br><br>Mikrozomal enzim <b>indüksiyonu</b> + glukuronil transferaz <b>indüksiyonu</b>:<br><br>{{c2::Karbamazepin}}, {{c2::fenobarbital}}, {{c2::fenitoin}}, primidon, rufinamid<br><br>Sadece <b>glukuronil transferaz indüksiyonu</b> yapan antiepileptik:<div><br></div><div>{{c1::Lamotrijin}}<br><br>---------------------------<br><br>CYP2C19'u <b>zayıf inhibe</b> eden ve CYP3A4'ü <b>zayıf indükleyen</b>: {{c3::topiramat}}<br><br>Mikrozomal enzim + glukuronil transferaz <b>inhibisyonu</b>: {{c3::valproik asit}}</div><br></div>",
     "Extra": "Klasik antiepileptiklerin çoğu CYP indüksiyonu yapar; CYP inhibisyonu yapanlar topiramat ve valproik asittir. Topiramat 200 mg/gün üzerindeki dozlarda CYP3A4 indüksiyonu yaparak oral kontraseptif etkinliğini azaltır."
    },
    "items": [
@@ -5376,9 +5412,21 @@
      "category": "Biçim",
      "change": "\" - \" ayraçları virgül; Extra'daki \"bilmek çok önemli\" yazar notu kaldırıldı; büyük/küçük harf; &nbsp; temizlendi",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "change": "Topiramatın yalnız inhibisyon yaptığı sınıflama kaldırıldı; iki CYP etkisi ön yüzde ayrı belirtildi.",
+     "reason": "Kaynak: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=610d4df7-703f-4070-9adc-3e57ca05a2f1"
     }
    ],
-   "ainote": "Ne: Extra'daki \"Antiepileptiklerin çoğu CYP indüksiyonu yapar. CYP İnh yapanları bilmek çok önemli\" cümlesi \"Klasik antiepileptiklerin çoğu CYP indüksiyonu yapar; CYP inhibisyonu yapanlar topiramat ve valproik asittir.\" yapıldı, topiramatın yüksek dozda CYP3A4 indüksiyonu eklendi ve \"Glukronil\" → \"glukuronil\" düzeltildi.\nNeden: İndüksiyon klasik ajanlara özgüdür, yeni antiepileptiklerin çoğu enzim etkisizdir; topiramat da yalnız inhibitör gibi sunuluyor, oral kontraseptif etkinliğini azaltan CYP3A4 indüksiyonu kartta yer almıyordu.\nNasıl: [EK1, TD1, SN2, KS1] Liste ve cloze numaraları korundu, düzeltme Extra'da bir niteleyici ve bir güvenlik cümlesiyle yapıldı; \"sadece mikrozomal enzim inhibisyonu\" ifadesi kartın karşılaştırma ekseni (mikrozomal enzim ile glukuronil transferaz) içinde doğru olduğu için değiştirilmedi.\nKaynak: FDA topiramat ürün bilgisi (DailyMed): zayıf CYP2C19 inhibitörü ve zayıf CYP3A4 indükleyicisi; 200 mg/gün üzeri dozlarda kontraseptif etkinlikte azalma."
+   "ainote": "Ne: Topiramatın yalnız inhibisyon yaptığı sınıflama kaldırıldı; iki CYP etkisi ön yüzde ayrı belirtildi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=610d4df7-703f-4070-9adc-3e57ca05a2f1",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Extra'daki \"Antiepileptiklerin çoğu CYP indüksiyonu yapar. CYP İnh yapanları bilmek çok önemli\" cümlesi \"Klasik antiepileptiklerin çoğu CYP indüksiyonu yapar; CYP inhibisyonu yapanlar topiramat ve valproik asittir.\" yapıldı, topiramatın yüksek dozda CYP3A4 indüksiyonu eklendi ve \"Glukronil\" → \"glukuronil\" düzeltildi.\nNeden: İndüksiyon klasik ajanlara özgüdür, yeni antiepileptiklerin çoğu enzim etkisizdir; topiramat da yalnız inhibitör gibi sunuluyor, oral kontraseptif etkinliğini azaltan CYP3A4 indüksiyonu kartta yer almıyordu.\nNasıl: [EK1, TD1, SN2, KS1] Liste ve cloze numaraları korundu, düzeltme Extra'da bir niteleyici ve bir güvenlik cümlesiyle yapıldı; \"sadece mikrozomal enzim inhibisyonu\" ifadesi kartın karşılaştırma ekseni (mikrozomal enzim ile glukuronil transferaz) içinde doğru olduğu için değiştirilmedi.\nKaynak: FDA topiramat ürün bilgisi (DailyMed): zayıf CYP2C19 inhibitörü ve zayıf CYP3A4 indükleyicisi; 200 mg/gün üzeri dozlarda kontraseptif etkinlikte azalma."
+    }
+   ]
   },
   {
    "id": 1626766771689,
@@ -5654,7 +5702,7 @@
    "guid": "p}I&+2<DzP",
    "level": "Yüksek",
    "fields": {
-    "Text": "<div>Otakoidlerin damar ve düz kas etkileri<br><br></div><div>Histamin → {{c1::vazodilatasyon + diğer düz kaslar kasılır}}<br><br></div><div>Serotonin → {{c1::tüm düz kasları kasar; iskelet kası damarlarını gevşetir}}<br><br></div><div>Anjiyotensin → {{c2::tüm düz kasları kasar}}<br><br></div><div>Endotelin → {{c2::tüm düz kasları kasar}}<br><br></div><div>Bradikinin → {{c3::histamin gibi}} ama arterleri {{c1::gevşetir}} / venleri {{c1::kasar}}<br><br></div><div>P maddesi → {{c3::vazodilatasyon (arter gevşer / ven kasılır) + düz kasları kasar}}<br><br></div><div>PAF → {{c4::vazodilatasyon (pulmoner ve yüksek dozda renal damarları kasar) + diğer düz kasları kasar}}<br><br></div><div>NO → {{c4::tüm düz kasları gevşetir}}<br><br></div><div>ANP / BNP / ürodilatin → {{c5::NO gibi (sadece renal efferent arteriyolü kasar)}}<br><br></div><div>VIP → {{c5::NO gibi}}<br><br></div><div>PGD2 → {{c6::histamin gibi}}<br><br></div><div>PGE → {{c6::NO gibi (ama gebe uterusunu kasar) + diyare + diürez}}<br><br></div><div>PGI2 → {{c7::tüm düz kasları gevşetir}}<br><br></div><div>TxA2 → {{c7::tüm düz kasları kasar}}<br><br></div><div>Lökotrienler → {{c1::tüm düz kasları kasar}}</div>"
+    "Text": "<div>Otakoidlerin damar ve düz kas etkileri<br><br></div><div>Histamin → {{c1::vazodilatasyon + diğer düz kaslar kasılır}}<br><br></div><div>Serotonin → {{c2::{{c7::{{c1::tüm düz kasları kasar; iskelet kası damarlarını gevşetir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}<br><br></div><div>Anjiyotensin → {{c1::{{c7::{{c2::tüm düz kasları kasar}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}<br><br></div><div>Endotelin → {{c1::{{c7::{{c2::tüm düz kasları kasar}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}<br><br></div><div>Bradikinin → {{c6::{{c3::histamin gibi}}::ilişkili yanıt arka yüzde}} ama arterleri {{c1::gevşetir}} / venleri {{c1::kasar}}<br><br></div><div>P maddesi → {{c3::vazodilatasyon (arter gevşer / ven kasılır) + düz kasları kasar}}<br><br></div><div>PAF → {{c4::vazodilatasyon (pulmoner ve yüksek dozda renal damarları kasar) + diğer düz kasları kasar}}<br><br></div><div>NO → {{c7::{{c4::tüm düz kasları gevşetir}}::ilişkili yanıt arka yüzde}}<br><br></div><div>ANP / BNP / ürodilatin → {{c6::{{c5::NO gibi (sadece renal efferent arteriyolü kasar)}}::ilişkili yanıt arka yüzde}}<br><br></div><div>VIP → {{c6::{{c5::NO gibi}}::ilişkili yanıt arka yüzde}}<br><br></div><div>PGD2 → {{c3::{{c6::histamin gibi}}::ilişkili yanıt arka yüzde}}<br><br></div><div>PGE → {{c5::{{c6::NO gibi (ama gebe uterusunu kasar) + diyare + diürez}}::ilişkili yanıt arka yüzde}}<br><br></div><div>PGI2 → {{c4::{{c7::tüm düz kasları gevşetir}}::ilişkili yanıt arka yüzde}}<br><br></div><div>TxA2 → {{c1::{{c2::{{c7::tüm düz kasları kasar}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}<br><br></div><div>Lökotrienler → {{c2::{{c7::{{c1::tüm düz kasları kasar}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div>"
    },
    "items": [
     {
@@ -5686,9 +5734,21 @@
      "category": "Biçim",
      "change": "--> ve -----> → →; KASAR, GEVŞETİR, GEVŞER, KASILIR → küçük harf; \" - \" → \"; \"; Pg → PG; sondaki boş satırlar ve &nbsp; temizlendi",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "change": "Otakoid tablosundaki aynı tam yanıtların karşılıklı sızması kapatıldı; özgün numaralar korundu.",
+     "reason": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "ainote": "Ne: Satırlardaki \"MoA\" kaldırılıp \"Otakoidlerin damar ve düz kas etkileri\" başlığı eklendi, \"her şeyi kasar/gevşetir\" \"tüm düz kasları kasar/gevşetir\" olarak yazıldı ve kısaltmalar açıldı (V.dil, Hist, Pulm, Eff.). Bradikinin c3 cevabı \"histamin gibi\" olarak kısaltıldı, ANP/BNP ve VIP cevaplarından \"her şeyi gevşetir\" çıkarıldı.\nNeden: c1 kartında bradikinin satırı histaminin cevabını, c4 kartında c5 satırları NO'nun cevabını açık ediyordu; \"MoA\" mekanizma soruyormuş gibi okunuyordu ve \"her şeyi kasar\" ders notu ağzıydı.\nNasıl: [YP2, YP1, SN1, SN2, KS1] Cevap sızıntısı, sızan ifadeyi diğer satırın cevabından çıkarmakla giderildi; yedi cloze numarası ve satır sırası korundu. Tüm satırların tıbbi içeriği (ör. ANP'nin yalnız renal efferent arteriyolü kasması, PGE'nin gebe uterusunu kasması, P maddesinin arteri gevşetip veni kasması) doğru bulundu ve değiştirilmedi."
+   "ainote": "Ne: Otakoid tablosundaki aynı tam yanıtların karşılıklı sızması kapatıldı; özgün numaralar korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Satırlardaki \"MoA\" kaldırılıp \"Otakoidlerin damar ve düz kas etkileri\" başlığı eklendi, \"her şeyi kasar/gevşetir\" \"tüm düz kasları kasar/gevşetir\" olarak yazıldı ve kısaltmalar açıldı (V.dil, Hist, Pulm, Eff.). Bradikinin c3 cevabı \"histamin gibi\" olarak kısaltıldı, ANP/BNP ve VIP cevaplarından \"her şeyi gevşetir\" çıkarıldı.\nNeden: c1 kartında bradikinin satırı histaminin cevabını, c4 kartında c5 satırları NO'nun cevabını açık ediyordu; \"MoA\" mekanizma soruyormuş gibi okunuyordu ve \"her şeyi kasar\" ders notu ağzıydı.\nNasıl: [YP2, YP1, SN1, SN2, KS1] Cevap sızıntısı, sızan ifadeyi diğer satırın cevabından çıkarmakla giderildi; yedi cloze numarası ve satır sırası korundu. Tüm satırların tıbbi içeriği (ör. ANP'nin yalnız renal efferent arteriyolü kasması, PGE'nin gebe uterusunu kasması, P maddesinin arteri gevşetip veni kasması) doğru bulundu ve değiştirilmedi."
+    }
+   ]
   },
   {
    "id": 1604749612433,
@@ -6179,7 +6239,7 @@
    "guid": "n@pngV4}8g",
    "level": "Yüksek",
    "fields": {
-    "Text": "Tourette sendromu tedavisi:<div><br></div><div>1. tercih: {{c1::pimozid}}</div><div><br></div><div>(3)</div><div>{{c1::<div>Haloperidol</div><div>Aripiprazol</div><div>Klonidin</div><div></div>}}<br></div>",
+    "Text": "Tourette sendromunda tikler için kullanılabilen ilaç örnekleri:<div><br></div><div>Örnek antipsikotik: {{c1::pimozid}}</div><div><br></div><div>Diğer örnekler (3)</div><div>{{c1::<div>Haloperidol</div><div>Aripiprazol</div><div>Klonidin</div><div></div>}}<br></div>",
     "Extra": "Güncel kılavuzlarda tiklerde ilk basamak davranışsal tedavidir; ilaç gerektiğinde aripiprazol ve alfa-2 agonistleri (klonidin, guanfasin) öne çıkar, pimozid QT uzaması riski nedeniyle EKG izlemi gerektirir."
    },
    "items": [
@@ -6200,9 +6260,21 @@
      "category": "Biçim",
      "change": "Büyük/küçük harf; sondaki boş satır kaldırıldı",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "change": "Pimozidin koşulsuz birinci tercih olduğu hükmü kaldırıldı; davranışsal tedavinin önceliğiyle uyumlu ilaç örnekleri soruluyor.",
+     "reason": "Kaynak: https://www.aan.com/PressRoom/Home/PressRelease/2721"
     }
    ],
-   "ainote": "Ne: \"Tourette Send Tdv\" başlığı \"Tourette sendromu tedavisi\" yapıldı, \"1. Tercih\" küçük harfe çevrildi ve Extra'ya güncel kılavuzlardaki basamak sıralaması eklendi; cevaplar (pimozid; haloperidol, aripiprazol, klonidin) korundu.\nNeden: Kart pimozidi tartışmasız birinci tercih gibi sunuyordu; güncel kılavuzlarda tiklerde ilk basamak davranışsal tedavi, ilaç seçeneklerinde ise aripiprazol ve alfa-2 agonistleridir.\nNasıl: [TD2, GN1, KS1] Klasik TUS sıralaması cloze cevabının parçası olduğu için Text'te korundu, güncel kılavuz bilgisi tek cümleyle Extra'ya alındı; böylece eski tip soru da güncel bilgi de kayıpsız öğretiliyor. Sıralama kılavuzla karşılaştırılarak kesinleştirildi, c1 numarası korundu.\nKaynak: AAN 2019 tik tedavisi kılavuzu (Pringsheim ve ark., Neurology) ve pimozid ürün bilgisindeki QT uzaması uyarısı."
+   "ainote": "Ne: Pimozidin koşulsuz birinci tercih olduğu hükmü kaldırıldı; davranışsal tedavinin önceliğiyle uyumlu ilaç örnekleri soruluyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.aan.com/PressRoom/Home/PressRelease/2721",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Tourette Send Tdv\" başlığı \"Tourette sendromu tedavisi\" yapıldı, \"1. Tercih\" küçük harfe çevrildi ve Extra'ya güncel kılavuzlardaki basamak sıralaması eklendi; cevaplar (pimozid; haloperidol, aripiprazol, klonidin) korundu.\nNeden: Kart pimozidi tartışmasız birinci tercih gibi sunuyordu; güncel kılavuzlarda tiklerde ilk basamak davranışsal tedavi, ilaç seçeneklerinde ise aripiprazol ve alfa-2 agonistleridir.\nNasıl: [TD2, GN1, KS1] Klasik TUS sıralaması cloze cevabının parçası olduğu için Text'te korundu, güncel kılavuz bilgisi tek cümleyle Extra'ya alındı; böylece eski tip soru da güncel bilgi de kayıpsız öğretiliyor. Sıralama kılavuzla karşılaştırılarak kesinleştirildi, c1 numarası korundu.\nKaynak: AAN 2019 tik tedavisi kılavuzu (Pringsheim ve ark., Neurology) ve pimozid ürün bilgisindeki QT uzaması uyarısı."
+    }
+   ]
   },
   {
    "id": 1621975748360,
@@ -6299,7 +6371,7 @@
    "guid": "A3DaCIAANe",
    "level": "Yüksek",
    "fields": {
-    "Text": "G<sub>i</sub> → 5-HT{{c1::1}} / D{{c2::<sub>2-3-4</sub>}} / H{{c2::3-4}} / alfa-{{c3::2}} / M{{c4::2-4}} / AT{{c4::<sub>2</sub>}} / opioid / somatostatin / GABA-{{c5::B}}<div><br></div><div>G<sub>q</sub> → 5-HT{{c1::2}} / H{{c2::1}} / V{{c3::1}} / alfa-{{c3::1}} / M{{c4::<sub>1-3-5</sub>}} / AT{{c4::1}} / EP{{c5::1-3}} / TxA<sub>2</sub></div><div><br></div><div>G<sub>s</sub> → 5-HT{{c1::4-6-7}} / D{{c2::1-5}} / H{{c2::2}} / V{{c3::2}} / beta-{{c4::1-2-3}} / glukagon / EP{{c5::2-3-4}}</div>",
+    "Text": "G<sub>i</sub> → 5-HT{{c1::1}} / D{{c2::<sub>2-3-4</sub>}} / H{{c2::3-4}} / alfa-{{c3::2}} / M{{c4::2-4}} / AT{{c4::<sub>2</sub>}} / opioid / somatostatin / GABA-{{c5::B}} / EP{{c5::3}} (başlıca eşleşme)<div><br></div><div>G<sub>q</sub> → 5-HT{{c1::2}} / H{{c2::1}} / V{{c3::1}} / alfa-{{c3::1}} / M{{c4::<sub>1-3-5</sub>}} / AT{{c4::1}} / EP{{c5::1}} / EP{{c5::3}} (bazı alternatif izoformlarda) / TxA<sub>2</sub></div><div><br></div><div>G<sub>s</sub> → 5-HT{{c1::4-6-7}} / D{{c2::1-5}} / H{{c2::2}} / V{{c3::2}} / beta-{{c4::1-2-3}} / glukagon / EP{{c5::2-4}} / EP{{c5::3}} (bazı alternatif izoformlarda)</div>",
     "Extra": "EP3 reseptörü başlıca Gi ile eşleşir; bazı izoformları Gs ve Gq ile de eşleşebilir."
    },
    "items": [
@@ -6326,9 +6398,21 @@
      "category": "Biçim",
      "change": "---> → →; boş sub etiketleri ve &nbsp; temizlendi; Opioid, Glukagon → küçük harf; alfa 2, alfa1, beta 1-2-3 → alfa-2, alfa-1, beta-1-2-3; ÖNEMLİ kaldırıldı",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "change": "EP3 için başlıca Gi eşleşmesi ön yüze eklendi; Gq/Gs bağlantıları alternatif izoform kapsamını taşıyor.",
+     "reason": "Kaynak: https://bpspubs.onlinelibrary.wiley.com/doi/10.1038/sj.bjp.0706923"
     }
    ],
-   "ainote": "Ne: Extra'daki \"ÖNEMLİ\" işareti yerine \"EP3 reseptörü başlıca Gi ile eşleşir; bazı izoformları Gs ve Gq ile de eşleşebilir.\" cümlesi yazıldı; \"Soamtostatin\" → \"somatostatin\", \"Hist\" → \"H\" ve \"5HT\" → \"5-HT\" düzeltildi.\nNeden: \"ÖNEMLİ\" yazarın kişisel işaretiydi; tablo EP3'ü yalnız Gq ve Gs satırlarında sayarak reseptörün başlıca eşleşmesi olan Gi'yi gizliyordu.\nNasıl: [EK1, SN2, TD2, YP1] EP3'ün G proteini eşleşmesi araştırılarak karara bağlandı: izoformları gerçekten Gs ve Gq ile de eşleştiği için yazarın satırları ve beş cloze numarası korundu, eksik Gi bilgisi tek cümleyle Extra'ya alındı.\nKaynak: Dey, Lejeune ve Chadee, Br J Pharmacol 2006: EP3 Gi'yi aktive ederek adenilat siklazı inhibe eder, bazı kırpılma varyantları Gs ile de eşleşir; PGE2'nin mide asit salgısını baskılaması EP3 üzerindendir."
+   "ainote": "Ne: EP3 için başlıca Gi eşleşmesi ön yüze eklendi; Gq/Gs bağlantıları alternatif izoform kapsamını taşıyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://bpspubs.onlinelibrary.wiley.com/doi/10.1038/sj.bjp.0706923",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Extra'daki \"ÖNEMLİ\" işareti yerine \"EP3 reseptörü başlıca Gi ile eşleşir; bazı izoformları Gs ve Gq ile de eşleşebilir.\" cümlesi yazıldı; \"Soamtostatin\" → \"somatostatin\", \"Hist\" → \"H\" ve \"5HT\" → \"5-HT\" düzeltildi.\nNeden: \"ÖNEMLİ\" yazarın kişisel işaretiydi; tablo EP3'ü yalnız Gq ve Gs satırlarında sayarak reseptörün başlıca eşleşmesi olan Gi'yi gizliyordu.\nNasıl: [EK1, SN2, TD2, YP1] EP3'ün G proteini eşleşmesi araştırılarak karara bağlandı: izoformları gerçekten Gs ve Gq ile de eşleştiği için yazarın satırları ve beş cloze numarası korundu, eksik Gi bilgisi tek cümleyle Extra'ya alındı.\nKaynak: Dey, Lejeune ve Chadee, Br J Pharmacol 2006: EP3 Gi'yi aktive ederek adenilat siklazı inhibe eder, bazı kırpılma varyantları Gs ile de eşleşir; PGE2'nin mide asit salgısını baskılaması EP3 üzerindendir."
+    }
+   ]
   },
   {
    "id": 1604733427872,
@@ -7529,9 +7613,10 @@
   {
    "id": 1624188510902,
    "guid": "iuurG45<nj",
-   "level": "Orta",
+   "level": "Yüksek",
    "fields": {
-    "Text": "Kemoterapi ilaçlarının etki ettiği hücre siklusu dönemleri:<div><br></div><div><b>G1</b>: {{c3::L-asparaginaz}}</div><div><br></div><div><b>G1-S</b>: {{c3::etoposid}}</div><div><br></div><div><b>G2-M</b>: {{c1::bleomisin}}, {{c1::irinotekan}}<br><br><b>M</b>: {{c2::vinkristin}}, {{c2::vinblastin}}, {{c4::paklitaksel}}, {{c4::dosetaksel}}, eribulin, iksabepilon</div>"
+    "Text": "Kemoterapi ilaçlarının etki ettiği hücre siklusu dönemleri:<div><br></div><div><b>G1</b>: {{c3::L-asparaginaz}}</div><div><br></div><div><b>S/G2</b>: {{c3::etoposid}}</div><div><br></div><div><b>S</b>: {{c1::irinotekan}}<br><br><b>G2-M</b>: {{c1::bleomisin}}<br><br><b>M</b>: {{c2::vinkristin}}, {{c2::vinblastin}}, {{c4::paklitaksel}}, {{c4::dosetaksel}}, eribulin, iksabepilon</div>",
+    "Extra": "İrinotekan S fazına özgüdür; etoposid başlıca S ve G2 fazlarında etkilidir. İlaçların faz ağırlıkları tek bir geçiş noktasında etkili oldukları anlamına gelmez."
    },
    "items": [
     {
@@ -7545,9 +7630,21 @@
      "category": "Biçim",
      "change": "Liste ayracı virgül; büyük/küçük harf; &nbsp; temizlendi",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "change": "İrinotekan yanlış G2–M satırından S fazına taşındı; aynı tabloda etoposidin G1–S eşlemesi S/G2 olarak düzeltildi. c1–c4 ve diğer ilaçlar korundu.",
+     "reason": "Kaynak: https://www.cancer.gov/publications/dictionaries/cancer-drug/def/irinotecan-hydrochloride; https://www.cancer.gov/publications/dictionaries/cancer-drug/def/etoposide; https://pubmed.ncbi.nlm.nih.gov/7947097/"
     }
    ],
-   "ainote": "Ne: \"KT - Etki Ettiği Hc Siklus Dönemleri\" başlığı \"Kemoterapi ilaçlarının etki ettiği hücre siklusu dönemleri\" yapıldı, \"L-Asp\" → \"L-asparaginaz\" açıldı, \" - \" ayraçları virgül oldu; irinotekanın G2-M satırındaki yeri kaynakla doğrulanıp korundu.\nNeden: Kamptotesinler bazı kaynaklarda S dönemine özgü ajanlar sayıldığı için irinotekanın G2-M satırında yer alması şüpheliydi.\nNasıl: [TD2, KS1, BÇ1] Kaynaklar arasında meşru fark bulundu: ilaçları siklus dönemine göre sıralayan klasik tablo irinotekan, topotekan, bleomisin ve mitoksantronu G2 dönemine bağımlı ajanlar arasında gösterir. Bu nedenle yazarın TUS sürümü ile c1, c2, c3 ve c4 cloze dağılımı korundu.\nKaynak: Dorr RT ve Von Hoff DD, The Cancer Chemotherapy Handbook tablosundan uyarlanan \"Cell-cycle-phase-specific drugs\" tablosu (Cancer Management: A Multidisciplinary Approach, kemoterapi ilkeleri bölümü)."
+   "ainote": "Ne: İrinotekan yanlış G2–M satırından S fazına taşındı; aynı tabloda etoposidin G1–S eşlemesi S/G2 olarak düzeltildi. c1–c4 ve diğer ilaçlar korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.cancer.gov/publications/dictionaries/cancer-drug/def/irinotecan-hydrochloride; https://www.cancer.gov/publications/dictionaries/cancer-drug/def/etoposide; https://pubmed.ncbi.nlm.nih.gov/7947097/",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"KT - Etki Ettiği Hc Siklus Dönemleri\" başlığı \"Kemoterapi ilaçlarının etki ettiği hücre siklusu dönemleri\" yapıldı, \"L-Asp\" → \"L-asparaginaz\" açıldı, \" - \" ayraçları virgül oldu; irinotekanın G2-M satırındaki yeri kaynakla doğrulanıp korundu.\nNeden: Kamptotesinler bazı kaynaklarda S dönemine özgü ajanlar sayıldığı için irinotekanın G2-M satırında yer alması şüpheliydi.\nNasıl: [TD2, KS1, BÇ1] Kaynaklar arasında meşru fark bulundu: ilaçları siklus dönemine göre sıralayan klasik tablo irinotekan, topotekan, bleomisin ve mitoksantronu G2 dönemine bağımlı ajanlar arasında gösterir. Bu nedenle yazarın TUS sürümü ile c1, c2, c3 ve c4 cloze dağılımı korundu.\nKaynak: Dorr RT ve Von Hoff DD, The Cancer Chemotherapy Handbook tablosundan uyarlanan \"Cell-cycle-phase-specific drugs\" tablosu (Cancer Management: A Multidisciplinary Approach, kemoterapi ilkeleri bölümü)."
+    }
+   ]
   },
   {
    "id": 1604679763045,
@@ -13734,9 +13831,10 @@
   {
    "id": 1604674576990,
    "guid": "v^;QA]d5`!",
-   "level": "Orta",
+   "level": "Yüksek",
    "fields": {
-    "Text": "Ön ilaç <b>olan</b> ARB'ler<div><br></div><div><div>{{c1::Kandesartan}}</div><div>{{c1::Olmesartan}}</div><div>{{c1::Azilsartan}}</div></div><div><br></div><div>-----------------</div><div><br></div><div>Karaciğer ve böbrek yetmezliğinde doz ayarlaması gerekmeyen ARB'ler →</div><div><br></div><div>{{c2::Olmesartan}}, {{c2::azilsartan}}<br></div>"
+    "Text": "{{c2::<b>Ön ilaç formuyla kullanılan ARB'ler (üç örnek):</b><br><br>{{c1::Kandesartan sileksetil}}<br>{{c1::Olmesartan medoksomil}}<br>{{c1::Azilsartan medoksomil}}::ön ilaç listesi arka yüzde}}<br><br>{{c1::<b>ABD ürün bilgilerine göre böbrek yetmezliğinde ve hafif–orta karaciğer yetmezliğinde rutin başlangıç dozu ayarı gerektirmeyen iki ARB örneği:</b><br><br>{{c2::Olmesartan}}, {{c2::azilsartan}}::doz ayarı listesi arka yüzde}}",
+    "Extra": "Başlangıç dozu bilgisi tüm ülkelerin ürün bilgilerine veya her klinik duruma genellenmez. Azilsartan ağır karaciğer yetmezliğinde çalışılmamıştır. Volüm kaybı ve böbrek fonksiyonunun izlenmesi ayrıca değerlendirilir."
    },
    "items": [
     {
@@ -13750,9 +13848,21 @@
      "category": "Biçim",
      "change": "\"Ön- İlaç\" → \"Ön ilaç\"; --> → →; liste ayracı virgül; &nbsp; ve fazla satır sonu temizlendi",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "change": "İki görev c1/c2 iç içe gizlemeyle ayrıldı: aktif kartta yalnız ilgili soru gösterilir, diğer görev arka yüzde açılır. İlaç adları karşı satırdan okunmaz; doz kapsamı ABD etiketleriyle sınırlandı.",
+     "reason": "Kaynak: https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=e43e5643-b258-469d-812a-887f913cfe71; https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=52b27c75-9f5a-4816-bafd-dace9d7d2063"
     }
    ],
-   "ainote": "Ne: \"Ön- İlaç\" → \"Ön ilaç\" ve \"KC - Renal Yet'de\" → \"Karaciğer ve böbrek yetmezliğinde\" yapıldı; ayraç virgüle çevrildi, &nbsp; ve fazla satır sonu temizlendi.\nNeden: KC ve \"Yet\" yazarın kısaltmalarıydı; tireli yazımlar ev stiline uymuyordu.\nNasıl: [KS1, BÇ1, YP1] Kandesartan, olmesartan ve azilsartanın ön ilaç olduğu bilgisi ile yazarın doz ayarı listesi korundu; c1 ve c2 dağılımı ile ayırıcı çizgi satırı aynen bırakıldı."
+   "ainote": "Ne: İki görev c1/c2 iç içe gizlemeyle ayrıldı: aktif kartta yalnız ilgili soru gösterilir, diğer görev arka yüzde açılır. İlaç adları karşı satırdan okunmaz; doz kapsamı ABD etiketleriyle sınırlandı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=e43e5643-b258-469d-812a-887f913cfe71; https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=52b27c75-9f5a-4816-bafd-dace9d7d2063",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Ön- İlaç\" → \"Ön ilaç\" ve \"KC - Renal Yet'de\" → \"Karaciğer ve böbrek yetmezliğinde\" yapıldı; ayraç virgüle çevrildi, &nbsp; ve fazla satır sonu temizlendi.\nNeden: KC ve \"Yet\" yazarın kısaltmalarıydı; tireli yazımlar ev stiline uymuyordu.\nNasıl: [KS1, BÇ1, YP1] Kandesartan, olmesartan ve azilsartanın ön ilaç olduğu bilgisi ile yazarın doz ayarı listesi korundu; c1 ve c2 dağılımı ile ayırıcı çizgi satırı aynen bırakıldı."
+    }
+   ]
   },
   {
    "id": 1604674901522,
@@ -15527,9 +15637,9 @@
   {
    "id": 1604673893495,
    "guid": "zCxjdZ{NeB",
-   "level": "Orta",
+   "level": "Yüksek",
    "fields": {
-    "Text": "3. kuşak beta blokörler (vazodilatör etkili)<div><br></div><div>NO salınımı → {{c1::<b>nebivolol</b>}}, {{c1::seliprolol}}, {{c1::karteolol}}, {{c1::bopindolol}}</div><div><br></div><div>Beta-2 agonist etki → {{c2::seliprolol}}, {{c2::karteolol}}, {{c2::bopindolol}}</div><div><br></div><div>Alfa-1 antagonizma → {{c3::karvedilol}}, {{c3::labetalol}}</div><div><br></div><div>Ca kanalı blokajı → {{c4::karvedilol}}</div><div><br></div><div>K kanalı aktivasyonu → {{c4::tilisolol}}</div><div><br></div><div>Antioksidan/antiproliferatif etki → {{c4::karvedilol}}</div>"
+    "Text": "3. kuşak beta blokörler (vazodilatör etkili)<div><br></div><div>NO salınımı → {{c1::<b>nebivolol</b>}}, {{c2::{{c1::seliprolol}}::ilişkili yanıt arka yüzde}}, {{c2::{{c1::karteolol}}::ilişkili yanıt arka yüzde}}, {{c2::{{c1::bopindolol}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Beta-2 agonist etki → {{c1::{{c2::seliprolol}}::ilişkili yanıt arka yüzde}}, {{c1::{{c2::karteolol}}::ilişkili yanıt arka yüzde}}, {{c1::{{c2::bopindolol}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Alfa-1 antagonizma → {{c4::{{c3::karvedilol}}::ilişkili yanıt arka yüzde}}, {{c3::labetalol}}</div><div><br></div><div>Ca kanalı blokajı → {{c3::{{c4::karvedilol}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>K kanalı aktivasyonu → {{c4::tilisolol}}</div><div><br></div><div>Antioksidan/antiproliferatif etki → {{c3::{{c4::karvedilol}}::ilişkili yanıt arka yüzde}}</div>"
    },
    "items": [
     {
@@ -15549,9 +15659,21 @@
      "category": "Biçim",
      "change": "---> ve --> → →; liste ayracı virgül; boş <b> ve &nbsp; kaldırıldı; büyük/küçük harf; Anti-oksidan → antioksidan; beta2 → Beta-2; alfa1 → Alfa-1",
      "reason": ""
+    },
+    {
+     "level": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "change": "İlaç adı başka etki/evre satırından okunuyordu; karşılıklı sızıntı mevcut ordinal hedefleri korunarak kapatıldı.",
+     "reason": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "ainote": "Ne: \"3. Nesil\" → \"3. kuşak\", \"V.dil'ler\" → \"vazodilatör etkili\", \"K Kanal Akt'u\" → \"K kanalı aktivasyonu\" ve \"Antiprolif\" → \"antiproliferatif\" yapıldı; ayraçlar virgül, oklar \"→\" oldu.\nNeden: \"Nesil\" kursun tek yazım listesine uymuyordu; kısaltmalar yazarın notlarıydı.\nNasıl: [YZ1, KS1, BÇ1, YP1] Mekanizmaya göre gruplanmış ilaçlar vazodilatör beta blokör sınıflamasıyla örtüştüğü için tüm üyeler ve c1–c4 dağılımı korundu; nebivololün c1'deki kalın yazımı bırakıldı."
+   "ainote": "Ne: İlaç adı başka etki/evre satırından okunuyordu; karşılıklı sızıntı mevcut ordinal hedefleri korunarak kapatıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"3. Nesil\" → \"3. kuşak\", \"V.dil'ler\" → \"vazodilatör etkili\", \"K Kanal Akt'u\" → \"K kanalı aktivasyonu\" ve \"Antiprolif\" → \"antiproliferatif\" yapıldı; ayraçlar virgül, oklar \"→\" oldu.\nNeden: \"Nesil\" kursun tek yazım listesine uymuyordu; kısaltmalar yazarın notlarıydı.\nNasıl: [YZ1, KS1, BÇ1, YP1] Mekanizmaya göre gruplanmış ilaçlar vazodilatör beta blokör sınıflamasıyla örtüştüğü için tüm üyeler ve c1–c4 dağılımı korundu; nebivololün c1'deki kalın yazımı bırakıldı."
+    }
+   ]
   },
   {
    "id": 1604673964856,

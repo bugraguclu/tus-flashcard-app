@@ -16,15 +16,15 @@
  "reviewStage": "complete",
  "summary": {
   "reviewedNotes": 510,
-  "changedNotes": 507,
+  "changedNotes": 509,
   "htmlOnlyNotes": 2,
   "unchangedNotes": 1,
-  "changeItems": 1101,
+  "changeItems": 1119,
   "notesBySeverity": {
-   "Kritik": 26,
-   "Yüksek": 65,
-   "Orta": 319,
-   "Düşük": 99
+   "Kritik": 22,
+   "Yüksek": 76,
+   "Orta": 314,
+   "Düşük": 97
   },
   "notesByTopic": {
    "Böbrek ve Sıvı-Elektrolit": 19,
@@ -40,40 +40,46 @@
    "Solunum Fizyolojisi": 21
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 23,
-    "Yüksek": 34
+   "Biçim": {
+    "Düşük": 491
+   },
+   "Cevap görünürlüğü": {
+    "Yüksek": 2
+   },
+   "Dil bilgisi": {
+    "Orta": 23,
+    "Düşük": 6
+   },
+   "Eksik kritik bilgi": {
+    "Yüksek": 21
    },
    "Güncellik": {
     "Yüksek": 1,
     "Orta": 4
    },
-   "Eksik kritik bilgi": {
-    "Yüksek": 21
+   "Kısaltma": {
+    "Yüksek": 1,
+    "Orta": 264
    },
    "Soru netliği": {
     "Yüksek": 7,
     "Orta": 40
+   },
+   "Terim/yazım": {
+    "Orta": 139,
+    "Düşük": 34
+   },
+   "Tıbbi doğruluk": {
+    "Kritik": 23,
+    "Yüksek": 39
    },
    "Yapısal": {
     "Kritik": 4,
     "Yüksek": 5,
     "Orta": 4
    },
-   "Terim/yazım": {
-    "Orta": 139,
-    "Düşük": 34
-   },
-   "Kısaltma": {
-    "Yüksek": 1,
-    "Orta": 264
-   },
-   "Dil bilgisi": {
-    "Orta": 23,
-    "Düşük": 6
-   },
-   "Biçim": {
-    "Düşük": 491
+   "Ön/arka kapsam uyumu": {
+    "Yüksek": 11
    }
   },
   "secondReview": {}
@@ -290,13 +296,13 @@
    "noteId": 1610032231724,
    "guid": "KI?i7LZceX",
    "topic": "Endokrin ve Üreme Fizyolojisi",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Erkekte İlk Spermatogonium:&nbsp;<div><br></div><div>{{c1::Puberte}}'de oluşur<div><br></div><div>Kadında ilk Oogonium:&nbsp;</div><div><br></div><div>{{c1::5. Hf'}}da oluşur</div><div>{{c1::5. Ay}}da Sayı MAX</div></div><div><br></div><div>{{c1::7. Ay}}da --&gt;&nbsp;<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::</span></div><div>Hayatta Kalan Oogoniumların Tümü --&gt;&nbsp;</div><div>Primer Oosit olup 1. mayoza girer - Diploten evresinde durur</div>}}",
-     "after": "Erkekte ilk spermatogonium:<div><br></div><div>{{c1::Puberte}}de oluşur</div><div><br></div><div>Kadında ilk oogonium:</div><div><br></div><div>{{c1::5. hafta}}da oluşur</div><div>{{c1::5. ay}}da sayıca en fazla</div><div><br></div><div>{{c1::7. ay}}da → {{c2::</div><div>hayatta kalan oogoniumların tümü →</div><div>primer oosit olup 1. mayoza girer, diploten evresinde durur}}</div>"
+     "after": "Erkekte aktif spermatogenezin başlangıcı:<div><br></div><div>{{c1::Puberte}}</div><div><br></div><div>Kadında ilk oogonium:</div><div><br></div><div>{{c1::5. hafta}}da oluşur</div><div>{{c1::5. ay}}da sayıca en fazla</div><div><br></div><div>{{c1::7. ay}}da → {{c2::hayatta kalan oogoniumların tümü → primer oosit olup 1. mayoza girer, diploten evresinde durur}}</div>"
     }
    },
    "changes": [
@@ -317,11 +323,23 @@
      "category": "Biçim",
      "text": "\"'de\" → \"de\"; \"-\" → \",\"; büyük harfler düzeltildi; --&gt; → →; renk span'leri ve &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "İlk soru kökünü değiştir; c2 içindeki blok kapanışlarını tek cevap bloğuna al. Eski inceleme cloze sınırına odaklanmış. İlk spermatogoniumun pubertede oluştuğu önermesi kalmış; insan prepubertal testisinde spermatogonium vardır. Puberte yanıtı aktif spermatogenez başlangıcını sormalıdır.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/20018717/; https://www.ncbi.nlm.nih.gov/books/NBK10095/"
     }
    ],
-   "aiNote": "Ne: \"5. Hf'\" → \"5. hafta\" yazıldı, \"Sayı MAX\" → \"sayıca en fazla\" açıldı ve satır dışına taşan c2 cloze'u son satırın içinde kapatıldı.\nNeden: Cevabın içinde kesme işareti kalmıştı ve c2 HTML satırlarının dışında kapanıyordu; \"MAX\" kişisel kısaltmaydı.\nNasıl: [YP1, KS1, YP4] Satır sırası, boş satırlar ve c1/c2 cevapları korundu. Pubertede spermatogonyum, 5. ayda en yüksek oogonyum sayısı ve 7. ayda diplotende duran primer oositler Langman ile uyumludur.\nKaynak: Langman's Medical Embryology, gametogenez (oogenez ve spermatogenez).",
+   "aiNote": "Ne: İlk soru kökünü değiştir; c2 içindeki blok kapanışlarını tek cevap bloğuna al. Eski inceleme cloze sınırına odaklanmış. İlk spermatogoniumun pubertede oluştuğu önermesi kalmış; insan prepubertal testisinde spermatogonium vardır. Puberte yanıtı aktif spermatogenez başlangıcını sormalıdır.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/20018717/; https://www.ncbi.nlm.nih.gov/books/NBK10095/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"5. Hf'\" → \"5. hafta\" yazıldı, \"Sayı MAX\" → \"sayıca en fazla\" açıldı ve satır dışına taşan c2 cloze'u son satırın içinde kapatıldı.\nNeden: Cevabın içinde kesme işareti kalmıştı ve c2 HTML satırlarının dışında kapanıyordu; \"MAX\" kişisel kısaltmaydı.\nNasıl: [YP1, KS1, YP4] Satır sırası, boş satırlar ve c1/c2 cevapları korundu. Pubertede spermatogonyum, 5. ayda en yüksek oogonyum sayısı ve 7. ayda diplotende duran primer oositler Langman ile uyumludur.\nKaynak: Langman's Medical Embryology, gametogenez (oogenez ve spermatogenez)."
+    }
+   ]
   },
   {
    "order": 7,
@@ -582,13 +600,13 @@
    "noteId": 1618745987053,
    "guid": "pT=0qaeJT",
    "topic": "Genel",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Fertilizasyonda Vajinal Plak oluşumu sağlayan enzim:<div><br></div><div>{{c1::Vezikülaz}}</div><div><br></div><div>{{c1::Vesicula Seminalis}}'te üretilir&nbsp;</div>",
-     "after": "Fertilizasyonda vajinal plak oluşumunu sağlayan enzim:<div><br></div><div>{{c1::Vezikülaz}}</div><div><br></div><div>{{c1::Prostat}}ta üretilir</div>"
+     "after": "Kemirgenlerde kopülasyon tıkacı oluşumunu sağlayan enzim:<div><br></div><div>{{c1::Vezikülaz}}</div><div><br></div><div>{{c1::Koagülasyon bezinde (anterior prostat)}} üretilir</div>"
     },
     "Extra": {
      "before": "",
@@ -607,11 +625,23 @@
      "category": "Biçim",
      "text": "\"Vajinal Plak oluşumu\" → \"vajinal plak oluşumunu\"; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Tür ve kopülasyon tıkacı bağlamını soru köküne al. Koagülasyon bezi vezikülazı ve veziküler substrat bilgisi kemirgen araştırmasıyla uyumlu. Tür yalnız Extra’da kalıyor; genel “fertilizasyonda vajinal plak” sorusu insan fizyolojisine genellenebilir.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/513000/; https://pubmed.ncbi.nlm.nih.gov/884720/"
     }
    ],
-   "aiNote": "Ne: İkinci cevap \"Vesicula Seminalis\" → \"Prostat\" yapıldı ve Extra'ya \"Kemirgenlerde koagülasyon bezinden (prostat ön lobu) salgılanır; substratı vesicula seminalis proteinleridir.\" eklendi.\nNeden: Kart enzimin üretim yerini yanlış veriyordu; vezikülaz koagülasyon bezinden salgılanır ve vesicula seminalis salgısındaki bazik proteinleri pıhtılaştırarak kopülasyon tıkacını oluşturur.\nNasıl: [TD1, EK1, YP1] Kökte doğru olan enzim adı (vezikülaz) korundu, yalnız yanlış cevap düzeltildi; vesicula seminalisin rolü Extra'da substrat olarak belirtildi ve kopülasyon tıkacının kemirgene özgü olduğu aynı cümleye yazıldı. c1 numarası değişmedi.\nKaynak: PubMed, vezikülaz üzerine çalışmalar (PMID 164547: sıçan vesicula seminalis salgısının koagülasyonu; PMID 513000: koagülasyon bezi vezikülazının vesicula seminalis substratına etkisi).",
+   "aiNote": "Ne: Tür ve kopülasyon tıkacı bağlamını soru köküne al. Koagülasyon bezi vezikülazı ve veziküler substrat bilgisi kemirgen araştırmasıyla uyumlu. Tür yalnız Extra’da kalıyor; genel “fertilizasyonda vajinal plak” sorusu insan fizyolojisine genellenebilir.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/513000/; https://pubmed.ncbi.nlm.nih.gov/884720/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: İkinci cevap \"Vesicula Seminalis\" → \"Prostat\" yapıldı ve Extra'ya \"Kemirgenlerde koagülasyon bezinden (prostat ön lobu) salgılanır; substratı vesicula seminalis proteinleridir.\" eklendi.\nNeden: Kart enzimin üretim yerini yanlış veriyordu; vezikülaz koagülasyon bezinden salgılanır ve vesicula seminalis salgısındaki bazik proteinleri pıhtılaştırarak kopülasyon tıkacını oluşturur.\nNasıl: [TD1, EK1, YP1] Kökte doğru olan enzim adı (vezikülaz) korundu, yalnız yanlış cevap düzeltildi; vesicula seminalisin rolü Extra'da substrat olarak belirtildi ve kopülasyon tıkacının kemirgene özgü olduğu aynı cümleye yazıldı. c1 numarası değişmedi.\nKaynak: PubMed, vezikülaz üzerine çalışmalar (PMID 164547: sıçan vesicula seminalis salgısının koagülasyonu; PMID 513000: koagülasyon bezi vezikülazının vesicula seminalis substratına etkisi)."
+    }
+   ]
   },
   {
    "order": 14,
@@ -894,13 +924,13 @@
    "noteId": 1606905093563,
    "guid": "tUGS*8sF8:",
    "topic": "Kas ve Sinir Fizyolojisi",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Retina katmanları:<br>(İçten Dışa)<br><br>{{c1::Pigment}} tabakası&nbsp;<div><br></div><div>{{c1::Dış nükleer}} tabaka: {{c2::fotores}} hc gövdeleri&nbsp;</div><div><br></div><div>{{c1::Dış pleksiform}} tabaka: {{c2::fotores}} hc - {{c2:::bipolar}} hc sinaps / yancisi: {{c2::horizontal}} hc</div><div><br></div><div>{{c1::İc nükleer}} tabaka: {{c3::bipolar}} hc gövdesi&nbsp;</div><div><br></div><div>{{c1:: İc pleksiform}} tabaka: {{c3::bipolar}} hc - {{c3::ganglion}} hc sinaps / yancisi: {{c3::amakrin}} hc</div>",
-     "after": "Retina katmanları:<br>(Dıştan içe)<br><br>{{c1::Pigment}} tabakası<div><br></div><div>{{c1::Dış nükleer}} tabaka: {{c2::fotoreseptör}} hücre gövdeleri</div><div><br></div><div>{{c1::Dış pleksiform}} tabaka: {{c2::fotoreseptör}} hücre - {{c2::bipolar}} hücre sinapsı / eşlik eden: {{c2::horizontal}} hücre</div><div><br></div><div>{{c1::İç nükleer}} tabaka: {{c3::bipolar}} hücre gövdeleri</div><div><br></div><div>{{c1::İç pleksiform}} tabaka: {{c3::bipolar}} hücre - {{c3::ganglion}} hücre sinapsı / eşlik eden: {{c3::amakrin}} hücre</div>"
+     "after": "Retina katmanları:<br>(Dıştan içe)<br><br>{{c1::Pigment}} tabakası<div><br></div><div>{{c1::Dış nükleer}} tabaka: {{c2::fotoreseptör}} hücre gövdeleri</div><div><br></div><div>{{c1::Dış pleksiform}} tabaka: {{c2::fotoreseptör}} hücre - {{c3::{{c2::bipolar}}::ilişkili yanıt arka yüzde}} hücre sinapsı / eşlik eden: {{c2::horizontal}} hücre</div><div><br></div><div>{{c1::İç nükleer}} tabaka: {{c2::{{c3::bipolar}}::ilişkili yanıt arka yüzde}} hücre gövdeleri</div><div><br></div><div>{{c1::İç pleksiform}} tabaka: {{c2::{{c3::bipolar}}::ilişkili yanıt arka yüzde}} hücre - {{c3::ganglion}} hücre sinapsı / eşlik eden: {{c3::amakrin}} hücre</div>"
     }
    },
    "changes": [
@@ -927,24 +957,36 @@
      "category": "Biçim",
      "text": "\"İc\" → \"İç\"; \"gövdesi\" → \"gövdeleri\"; &nbsp; ve cevap başındaki boşluk temizlendi; satırlar ve boşluklar korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Retina veya plasenta tablosunda farklı ordinale ait satırların gizlenen aynı hücre/katman yanıtını vermesi giderildi; ordinal ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Başlıktaki \"(İçten Dışa)\" → \"(Dıştan içe)\" düzeltildi, bozuk \"{{c2:::bipolar}}\" onarıldı ve \"fotores hc\", \"yancisi\" açıldı.\nNeden: Pigment epiteli retinanın en dışındadır, liste de dıştan içe sıralanmıştı; başlık bu sırayı ters söylüyordu.\nNasıl: [TD1, YP1, KS1, YP4] Beş katmanın sırası, satır ve boşluk düzeni ile c1/c2/c3 dağılımı korundu; listeye katman eklenmedi.\nKaynak: Junqueira's Basic Histology, göz bölümü (retina katmanları).",
+   "aiNote": "Ne: Retina veya plasenta tablosunda farklı ordinale ait satırların gizlenen aynı hücre/katman yanıtını vermesi giderildi; ordinal ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlıktaki \"(İçten Dışa)\" → \"(Dıştan içe)\" düzeltildi, bozuk \"{{c2:::bipolar}}\" onarıldı ve \"fotores hc\", \"yancisi\" açıldı.\nNeden: Pigment epiteli retinanın en dışındadır, liste de dıştan içe sıralanmıştı; başlık bu sırayı ters söylüyordu.\nNasıl: [TD1, YP1, KS1, YP4] Beş katmanın sırası, satır ve boşluk düzeni ile c1/c2/c3 dağılımı korundu; listeye katman eklenmedi.\nKaynak: Junqueira's Basic Histology, göz bölümü (retina katmanları)."
+    }
+   ]
   },
   {
    "order": 23,
    "noteId": 1607152161300,
    "guid": "Fj>2otnNr/",
    "topic": "Nörofizyoloji ve Duyular",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Tat Res. Leri<div><br></div><div>Tatlı:&nbsp;</div><div>G protein {{c1::T1R2}} ve {{c1::T1R3}} / Gq bağlantılı/</div><div>dilin {{c1::ön}} kısmı {{c1::fungiform}} papilla/&nbsp;</div><div>sinir: {{c1::7. KS korda timpani}}</div><div><br></div><div>Acı:&nbsp;</div><div>G protein {{c2::T2R}} / Gq bağlantı, bazıları {{c2::K}} kanal blokaji /&nbsp;</div><div>dilin {{c2::arkasi}} {{c2::sirkumvallat}} ve {{c2::foliat}} papillalar /&nbsp;</div><div>sinir: {{c2::9. KS}}</div><div><br></div><div>Umami:&nbsp;</div><div>G protein Ganong: {{c3::mGlu4}} Diğerleri: {{c3::T1R1 - T1R3}} / Gq bağlantı/&nbsp;</div><div>dilin {{c3::arkasi}} {{c3::sirkumvallat}} ve {{c3::foliat}} papillalar / sinir: {{c3::9. KS}}</div><div><br></div><div>Ekşi:&nbsp;</div><div>{{c4::İyonotropik}} Res H+ iyonu geçirgen {{c4::EnaC}} kanalı /&nbsp;</div><div>dilin {{c4::arkasi}} {{c4::sirkumvallat}} ve {{c4::foliat}} papillalar / sinir: {{c4::9. KS}}</div><div><br></div><div>Tuzlu:&nbsp;</div><div>{{c5::İyonotropik}} Res Na+ iyonu geçirgen {{c5::EnaC}} kanalı /&nbsp;</div><div>dilin {{c5::ön}} kısmı {{c5::fungiform}} papilla/&nbsp;</div><div>sinir: {{c5::7. KS korda timpani}}</div>\n\n",
-     "after": "Tat reseptörleri<div><br></div><div>Tatlı:</div><div>G protein kenetli {{c1::T1R2}} ve {{c1::T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c1::ön}} kısmı, {{c1::fungiform}} papilla /</div><div>sinir: {{c1::VII. kraniyal sinir, korda timpani}}</div><div><br></div><div>Acı:</div><div>G protein kenetli {{c2::T2R}} / gustdusin bağlantılı, bazıları {{c2::K}} kanal blokajı yapar /</div><div>dilin {{c2::arkası}}, {{c2::sirkumvallat}} ve {{c2::foliat}} papillalar /</div><div>sinir: {{c2::IX. kraniyal sinir}}</div><div><br></div><div>Umami:</div><div>G protein kenetli; Ganong: {{c3::mGlu4}}, diğerleri: {{c3::T1R1-T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c3::arkası}}, {{c3::sirkumvallat}} ve {{c3::foliat}} papillalar / sinir: {{c3::IX. kraniyal sinir}}</div><div><br></div><div>Ekşi:</div><div>{{c4::İyonotropik}} reseptör, H+ iyonu geçirgen {{c4::OTOP1}} kanalı /</div><div>dilin {{c4::arkası}}, {{c4::sirkumvallat}} ve {{c4::foliat}} papillalar / sinir: {{c4::IX. kraniyal sinir}}</div><div><br></div><div>Tuzlu:</div><div>{{c5::İyonotropik}} reseptör, Na+ iyonu geçirgen {{c5::ENaC}} kanalı /</div><div>dilin {{c5::ön}} kısmı, {{c5::fungiform}} papilla /</div><div>sinir: {{c5::VII. kraniyal sinir, korda timpani}}</div>"
+     "after": "Tat reseptörleri ve seçilmiş anatomik iletim örnekleri (tat kaliteleri tek bir dil bölgesine özgü değildir)<div><br></div><div>Tatlı:</div><div>G protein kenetli {{c1::T1R2}} ve {{c1::T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c5::{{c1::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c5::{{c1::fungiform}}::ilişkili yanıt arka yüzde}} papilla /</div><div>sinir: {{c5::{{c1::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Acı:</div><div>G protein kenetli {{c2::T2R}} / gustdusin bağlantılı, bazıları {{c2::K}} kanal blokajı yapar /</div><div>dilin {{c3::{{c4::{{c2::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c3::{{c4::{{c2::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c3::{{c4::{{c2::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar /</div><div>sinir: {{c3::{{c4::{{c2::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Umami:</div><div>G protein kenetli; Ganong: {{c3::mGlu4}}, diğerleri: {{c3::T1R1-T1R3}} / gustdusin bağlantılı /</div><div>dilin {{c2::{{c4::{{c3::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c4::{{c3::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c4::{{c3::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c4::{{c3::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Ekşi:</div><div>{{c5::{{c4::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, H+ iyonu geçirgen {{c4::OTOP1}} kanalı /</div><div>dilin {{c2::{{c3::{{c4::arkası}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}, {{c2::{{c3::{{c4::sirkumvallat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} ve {{c2::{{c3::{{c4::foliat}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} papillalar / sinir: {{c2::{{c3::{{c4::IX. kraniyal sinir}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Tuzlu:</div><div>{{c4::{{c5::İyonotropik}}::ilişkili yanıt arka yüzde}} reseptör, Na+ iyonu geçirgen {{c5::ENaC}} kanalı /</div><div>dilin {{c1::{{c5::ön}}::ilişkili yanıt arka yüzde}} kısmı, {{c1::{{c5::fungiform}}::ilişkili yanıt arka yüzde}} papilla /</div><div>sinir: {{c1::{{c5::VII. kraniyal sinir, korda timpani}}::ilişkili yanıt arka yüzde}}</div>"
     },
     "Extra": {
      "before": "<img src=\"paste-94353404adf40de101213b09e2904ed861de185c.jpg\"><br><img src=\"paste-b2e17aeca026cd06a9537e1d58ab40422a8e330a.jpg\">",
@@ -987,11 +1029,23 @@
      "category": "Biçim",
      "text": "\"T1R1 - T1R3\" → \"T1R1-T1R3\"; ayraçlar ve &nbsp; düzeltildi; sondaki boş satırlar silindi; beş tat bloğu, satır düzeni ve iki görsel korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Tat kalitelerine kesin bir dil haritası atfedilmediği kökte belirtildi; aynı papilla/sinir yanıtlarının diğer satırlardan okunması kapatıldı.",
+     "rationale": "Kaynak: https://www.nidcd.nih.gov/health/taste-disorders"
     }
    ],
-   "aiNote": "Ne: Ekşi tatta \"EnaC\" → \"OTOP1\", üç G protein kenetli tatta \"Gq bağlantılı\" → \"gustdusin bağlantılı\" yazıldı; \"KS\" ve \"Res\" açıldı, Extra'ya bölgesel algı ve eski ENaC bilgisi tek cümleyle eklendi.\nNeden: Ekşi tadın proton kanalı OTOP1'dir, ENaC tuzlu tada aittir; tatlı, acı ve umami gustdusinle çalışır ve tatlar dilin tek bölgesine sınırlı değildir.\nNasıl: [TD1, TD2, EK1, KS1, YP3] Yazarın 19 satırlık düzeni, \" / \" ayraçları, c1–c5 cevapları (acıdaki K kanalı ve Ganong'un mGlu4 bilgisi dâhil) ve görseller korundu; \"İyonotropik Res … EnaC\" baş harfleri kodlama değil yazım alışkanlığıdır. Eski ENaC bilgisi TD2 gereği Extra'da adlandırıldı.\nKaynak: Tu YH ve ark., Science 2018 (OTOP1 proton seçici kanal); Teng B ve ark., Curr Biol 2019 (ekşi yanıtlar için Otop1 gerekir); Ganong's Review of Medical Physiology, tat duyusu (gustdusin, ENaC).",
+   "aiNote": "Ne: Tat kalitelerine kesin bir dil haritası atfedilmediği kökte belirtildi; aynı papilla/sinir yanıtlarının diğer satırlardan okunması kapatıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.nidcd.nih.gov/health/taste-disorders",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Ekşi tatta \"EnaC\" → \"OTOP1\", üç G protein kenetli tatta \"Gq bağlantılı\" → \"gustdusin bağlantılı\" yazıldı; \"KS\" ve \"Res\" açıldı, Extra'ya bölgesel algı ve eski ENaC bilgisi tek cümleyle eklendi.\nNeden: Ekşi tadın proton kanalı OTOP1'dir, ENaC tuzlu tada aittir; tatlı, acı ve umami gustdusinle çalışır ve tatlar dilin tek bölgesine sınırlı değildir.\nNasıl: [TD1, TD2, EK1, KS1, YP3] Yazarın 19 satırlık düzeni, \" / \" ayraçları, c1–c5 cevapları (acıdaki K kanalı ve Ganong'un mGlu4 bilgisi dâhil) ve görseller korundu; \"İyonotropik Res … EnaC\" baş harfleri kodlama değil yazım alışkanlığıdır. Eski ENaC bilgisi TD2 gereği Extra'da adlandırıldı.\nKaynak: Tu YH ve ark., Science 2018 (OTOP1 proton seçici kanal); Teng B ve ark., Curr Biol 2019 (ekşi yanıtlar için Otop1 gerekir); Ganong's Review of Medical Physiology, tat duyusu (gustdusin, ENaC)."
+    }
+   ]
   },
   {
    "order": 24,
@@ -1318,11 +1372,11 @@
    "fields": {
     "Text": {
      "before": "Plasenta BM:<div><br></div><div>Tip {{c1::5}} Kol</div>",
-     "after": "Plasenta bazal membranı (klasik bilgi):<div><br></div><div>Tip {{c1::5}} kollajen</div>"
+     "after": "İnsan term plasentasında bazal membran kollajeni:<div><br></div><div>Tip {{c1::IV}} kollajen</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Bazal membranın ana kollajeni plasentada da tip IV'tür."
+     "after": "İnsan term plasentasının bazal membranında tip IV kollajen ve laminin bulunur. Tip V kollajenin stromal matrikste bulunması, bazal membranın ana kollajenini tip V yapmaz."
     }
    },
    "changes": [
@@ -1337,11 +1391,23 @@
      "category": "Kısaltma",
      "text": "\"BM\" → \"bazal membranı\"; \"Kol\" → \"kollajen\"",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "Ön yüzdeki tip V, insan term plasentası bazal membran bulgusuna uygun tip IV olarak düzeltildi; arka yüzle çelişki kapatıldı.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/3731745/"
     }
    ],
-   "aiNote": "Ne: \"Plasenta BM: Tip 5 Kol\" → \"Plasenta bazal membranı (klasik bilgi): Tip 5 kollajen\" yapıldı ve Extra'ya \"Bazal membranın ana kollajeni plasentada da tip IV'tür.\" eklendi.\nNeden: Kart plasenta bazal membranının kollajenini tip V olarak tek başına veriyordu; bazal laminanın temel kollajeni her dokuda tip IV'tür ve \"BM\", \"Kol\" kişisel kısaltmalardı.\nNasıl: [TD2, KS1, YP1] TUS'un plasentayla eşleştirdiği tip V cevabı korunup kökte klasik bilgi olarak çerçevelendi, tip IV gerçeği tek cümleyle Extra'ya yazıldı; c1 cevabı \"5\" değişmedi.\nKaynak: Junqueira's Basic Histology, kollajen tipleri tablosu (tip IV bazal lamina, tip V plasenta ve fetal dokular).",
+   "aiNote": "Ne: Ön yüzdeki tip V, insan term plasentası bazal membran bulgusuna uygun tip IV olarak düzeltildi; arka yüzle çelişki kapatıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/3731745/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Plasenta BM: Tip 5 Kol\" → \"Plasenta bazal membranı (klasik bilgi): Tip 5 kollajen\" yapıldı ve Extra'ya \"Bazal membranın ana kollajeni plasentada da tip IV'tür.\" eklendi.\nNeden: Kart plasenta bazal membranının kollajenini tip V olarak tek başına veriyordu; bazal laminanın temel kollajeni her dokuda tip IV'tür ve \"BM\", \"Kol\" kişisel kısaltmalardı.\nNasıl: [TD2, KS1, YP1] TUS'un plasentayla eşleştirdiği tip V cevabı korunup kökte klasik bilgi olarak çerçevelendi, tip IV gerçeği tek cümleyle Extra'ya yazıldı; c1 cevabı \"5\" değişmedi.\nKaynak: Junqueira's Basic Histology, kollajen tipleri tablosu (tip IV bazal lamina, tip V plasenta ve fetal dokular)."
+    }
+   ]
   },
   {
    "order": 33,
@@ -1498,11 +1564,11 @@
    "fields": {
     "Text": {
      "before": "Pre-Mens Send yapan hormon:<div><br></div><div>{{c1::Progesteron}}</div>",
-     "after": "Premenstrüel sendromdan sorumlu tutulan hormon:<div><br></div><div>{{c1::Progesteron}}</div>"
+     "after": "Nöroaktif metaboliti allopregnanolon olan hormon: {{c1::Progesteron}}"
     },
     "Extra": {
      "before": "SSS'de GABA-A bağlanır&nbsp;",
-     "after": "Metaboliti allopregnanolon SSS'de GABA-A reseptörüne bağlanır."
+     "after": "Allopregnanolon GABA-A reseptörünün pozitif allosterik modülatörüdür. PMDD’de steroid değişimlerine duyarlılık önemlidir; bu ilişki tüm premenstrüel sendrom için tek neden açıklaması değildir."
     }
    },
    "changes": [
@@ -1523,11 +1589,23 @@
      "category": "Kısaltma",
      "text": "\"Pre-Mens Send\" → \"Premenstrüel sendrom\"",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Soru kökünü metabolit bağlantısı ile sınırla; GABA-A için pozitif allosterik modülasyonu belirt. Allopregnanolonun GABA-A modülasyonu destekleniyor. PMDD kanıtı değişen hormona duyarlılığı da içerir; bütün PMS olgularını tek progesteron nedeni olarak onaylamaz.",
+     "rationale": "Kaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC7231988/"
     }
    ],
-   "aiNote": "Ne: \"Pre-Mens Send yapan hormon\" → \"Premenstrüel sendromdan sorumlu tutulan hormon\" yapıldı; Extra \"SSS'de GABA-A bağlanır\" → \"Metaboliti allopregnanolon SSS'de GABA-A reseptörüne bağlanır.\" oldu.\nNeden: GABA-A reseptörüne etki eden progesteronun metaboliti allopregnanolondur; ayrıca premenstrüel sendrom tek bir hormonun \"yaptığı\" bir tablo değil, luteal faz progesteron dalgalanmasına duyarlılıkla ilişkilendirilir.\nNasıl: [TD1, SN1, KS1] Cevap (progesteron) ve c1 korundu; Extra'daki eksik özne doğru molekülle tamamlandı ve kök nedensellik iddiasını yumuşatacak biçimde yazıldı.\nKaynak: Guyton and Hall, kadın üreme hormonları bölümü; allopregnanolonun GABA-A pozitif allosterik modülatörü olarak PMS/PMDD'deki rolü (Bäckström ve ark., Prog Neurobiol 2014).",
+   "aiNote": "Ne: Soru kökünü metabolit bağlantısı ile sınırla; GABA-A için pozitif allosterik modülasyonu belirt. Allopregnanolonun GABA-A modülasyonu destekleniyor. PMDD kanıtı değişen hormona duyarlılığı da içerir; bütün PMS olgularını tek progesteron nedeni olarak onaylamaz.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC7231988/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Pre-Mens Send yapan hormon\" → \"Premenstrüel sendromdan sorumlu tutulan hormon\" yapıldı; Extra \"SSS'de GABA-A bağlanır\" → \"Metaboliti allopregnanolon SSS'de GABA-A reseptörüne bağlanır.\" oldu.\nNeden: GABA-A reseptörüne etki eden progesteronun metaboliti allopregnanolondur; ayrıca premenstrüel sendrom tek bir hormonun \"yaptığı\" bir tablo değil, luteal faz progesteron dalgalanmasına duyarlılıkla ilişkilendirilir.\nNasıl: [TD1, SN1, KS1] Cevap (progesteron) ve c1 korundu; Extra'daki eksik özne doğru molekülle tamamlandı ve kök nedensellik iddiasını yumuşatacak biçimde yazıldı.\nKaynak: Guyton and Hall, kadın üreme hormonları bölümü; allopregnanolonun GABA-A pozitif allosterik modülatörü olarak PMS/PMDD'deki rolü (Bäckström ve ark., Prog Neurobiol 2014)."
+    }
+   ]
   },
   {
    "order": 38,
@@ -1680,11 +1758,15 @@
    "topic": "Genel",
    "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "FEF<sub>25-75</sub>&nbsp;<div><br></div><div>Elastikiyete {{c1::bağlı}}&nbsp;</div><div><br></div><div>\nEfora {{c1::bağımlı değil}}&nbsp;&nbsp;<br></div>",
-     "after": "FEF<sub>25–75</sub><div><br></div><div>Akciğer elastikiyetine {{c1::bağlı}}</div><div><br></div><div>Efora {{c1::görece bağımsızdır}}</div>"
+     "after": "FEF<sub>25–75</sub><div><br></div><div>Akciğerin elastik geri çekilmesine {{c1::bağlıdır}}.</div><div><br></div><div>Klinik ölçüm değeri, FVC ölçümünün geçerliliğine ve ekspiratuvar efora {{c1::güçlü biçimde bağımlıdır}}.</div>"
+    },
+    "Extra": {
+     "before": "",
+     "after": "ATS/ERS 2019 standardı, FEF25–75 yorumunda FVC ölçümünün geçerliliğini ve ekspiratuvar eforu dikkate almayı ister. Elastik geri çekilmenin fizyolojik rolü, klinik ölçümün efordan bağımsız olduğu anlamına gelmez."
     }
    },
    "changes": [
@@ -1705,11 +1787,23 @@
      "category": "Biçim",
      "text": "&nbsp; ve fazla boşluk temizlendi; iki olgu ayrı satırlarda tutuldu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "Görece efor bağımsızlığı yerine ATS/ERS standardındaki FVC ve ekspiratuvar efor bağımlılığı soru tarafında açıklandı.",
+     "rationale": "Kaynak: https://www.aarc.org/wp-content/uploads/2026/06/ers-ats-standardization-of-spirometry.pdf#page=13"
     }
    ],
-   "aiNote": "Ne: Efor bağımsızlığı mutlak değil görece olarak ifade edildi; elastikiyetin akciğere ait olduğu belirtildi.\nNeden: FEF25–75 zorlu ekspiratuvar manevra ve akciğer hacminden etkilenir; \"bağımlı değil\" kesinliği yanıltıcıydı.\nNasıl: [TD1, EK1, YP4] İki c1 boşluğu ve özgün ayrı satır düzeni korundu.\nKaynak: American Thoracic Society/European Respiratory Society, Standardization of Spirometry 2019 Update (FEF25–75 değişkenliği).",
+   "aiNote": "Ne: Görece efor bağımsızlığı yerine ATS/ERS standardındaki FVC ve ekspiratuvar efor bağımlılığı soru tarafında açıklandı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.aarc.org/wp-content/uploads/2026/06/ers-ats-standardization-of-spirometry.pdf#page=13",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Efor bağımsızlığı mutlak değil görece olarak ifade edildi; elastikiyetin akciğere ait olduğu belirtildi.\nNeden: FEF25–75 zorlu ekspiratuvar manevra ve akciğer hacminden etkilenir; \"bağımlı değil\" kesinliği yanıltıcıydı.\nNasıl: [TD1, EK1, YP4] İki c1 boşluğu ve özgün ayrı satır düzeni korundu.\nKaynak: American Thoracic Society/European Respiratory Society, Standardization of Spirometry 2019 Update (FEF25–75 değişkenliği)."
+    }
+   ]
   },
   {
    "order": 43,
@@ -2116,7 +2210,7 @@
    "fields": {
     "Text": {
      "before": "% 5 Dekstroz --&gt; {{c1::Hipo}}Tonik",
-     "after": "%5 dekstroz → {{c1::hipo}}tonik"
+     "after": "Glukoz metabolize olduktan sonra %5 dekstroz çözeltisinin etkisi → {{c1::hipo}}tonik"
     },
     "Extra": {
      "before": "",
@@ -2135,11 +2229,23 @@
      "category": "Biçim",
      "text": "\"% 5\" → \"%5\"; \"--&gt;\" → \"→\"; \"Hipo}}Tonik\" → \"hipo}}tonik\"",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Arka yüz açıklamasını koru; bağlamı soru köküne de taşı. Dekstroz metabolize olduktan sonra serbest su / hipotonik etki açıklaması IV sıvı tablosuyla uyumludur. Şişe ozmolaritesi ile vücuttaki tonisiteyi ayıran Extra uygundur.",
+     "rationale": "Kaynak: https://www.ncbi.nlm.nih.gov/books/NBK591820/?report=printable"
     }
    ],
-   "aiNote": "Ne: Extra'ya \"Şişede plazmayla izoozmotiktir; glukoz metabolize olunca vücutta hipotonik sıvı gibi davranır.\" eklendi; yüzde işareti ve ok düzeltildi.\nNeden: %5 dekstroz ozmolarite bakımından plazmaya yakındır; hipotonik sayılması glukozun metabolize olup geride serbest su bırakmasından kaynaklanır ve kart bu ayrımı vermiyordu.\nNasıl: [EK1, BÇ1, YP1] Cevap (hipotonik) korundu, izoozmotik-hipotonik ayrımı tek cümleyle Extra'ya yazıldı.\nKaynak: Guyton & Hall, vücut sıvı bölmeleri (izotonik, hipotonik ve hipertonik çözeltiler; glukoz çözeltilerinin metabolizması).",
+   "aiNote": "Ne: Arka yüz açıklamasını koru; bağlamı soru köküne de taşı. Dekstroz metabolize olduktan sonra serbest su / hipotonik etki açıklaması IV sıvı tablosuyla uyumludur. Şişe ozmolaritesi ile vücuttaki tonisiteyi ayıran Extra uygundur.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.ncbi.nlm.nih.gov/books/NBK591820/?report=printable",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Extra'ya \"Şişede plazmayla izoozmotiktir; glukoz metabolize olunca vücutta hipotonik sıvı gibi davranır.\" eklendi; yüzde işareti ve ok düzeltildi.\nNeden: %5 dekstroz ozmolarite bakımından plazmaya yakındır; hipotonik sayılması glukozun metabolize olup geride serbest su bırakmasından kaynaklanır ve kart bu ayrımı vermiyordu.\nNasıl: [EK1, BÇ1, YP1] Cevap (hipotonik) korundu, izoozmotik-hipotonik ayrımı tek cümleyle Extra'ya yazıldı.\nKaynak: Guyton & Hall, vücut sıvı bölmeleri (izotonik, hipotonik ve hipertonik çözeltiler; glukoz çözeltilerinin metabolizması)."
+    }
+   ]
   },
   {
    "order": 54,
@@ -2232,7 +2338,7 @@
    "fields": {
     "Text": {
      "before": "3 major besin (yağ, protein, KH) ile salınımı uyarılan tek GİS Hormonu:<div><br></div><div>{{c1::<b>GLIP</b> (Glu Bagimli İns.Tropik Peptid)}}</div>",
-     "after": "3 major besin (yağ, protein, karbonhidrat) ile salınımı uyarılan tek klasik GİS hormonu:<div><br></div><div>{{c1::<b>GIP</b> (glukoza bağımlı insülinotropik peptid)}}</div>"
+     "after": "Yağ, protein ve karbonhidratla salınımı uyarılan, bağırsak K hücrelerinden salgılanan hormon:<div><br></div><div>{{c1::<b>GIP</b> (glukoza bağımlı insülinotropik peptid)}}</div>"
     }
    },
    "changes": [
@@ -2253,11 +2359,23 @@
      "category": "Kısaltma",
      "text": "\"KH\" → \"karbonhidrat\"",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "K hücresinden salınan ve makrobesinlerle uyarılan hormonu sor; tek ve major ifadelerini kaldır. GIP’nin üç makrobesine yanıtı desteklenir; fakat belirsiz bir klasik hormon listesi üzerinden tek hormon üstünlüğü kurulamaz. K hücresi sorusu aynı GIP yanıtını karşılaştırma iddiası olmadan korur.",
+     "rationale": "Kaynak: https://www.ncbi.nlm.nih.gov/books/NBK537284/?report=reader"
     }
    ],
-   "aiNote": "Ne: \"GLIP (Glu Bagimli İns.Tropik Peptid)\" → \"GIP (glukoza bağımlı insülinotropik peptid)\" yazıldı, \"KH\" açıldı ve köke \"klasik\" niteleyicisi eklendi.\nNeden: Hormonun kısaltması ve açılımı hatalı ve kısaltmalı yazılmıştı; üç besinle de salgılanan tek hormon iddiası yalnız klasik GİS hormonları için geçerlidir.\nNasıl: [EK1, YZ2, KS1] Cevap ve kalın \"GIP\" korunup açılım düzeltildi; \"tek\" üstünlüğü klasik hormon tablosuyla sınırlandı, c1 değişmedi.\nKaynak: Guyton and Hall, gastrointestinal hormonlar tablosu (GIP: protein, yağ, karbonhidrat).",
+   "aiNote": "Ne: K hücresinden salınan ve makrobesinlerle uyarılan hormonu sor; tek ve major ifadelerini kaldır. GIP’nin üç makrobesine yanıtı desteklenir; fakat belirsiz bir klasik hormon listesi üzerinden tek hormon üstünlüğü kurulamaz. K hücresi sorusu aynı GIP yanıtını karşılaştırma iddiası olmadan korur.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.ncbi.nlm.nih.gov/books/NBK537284/?report=reader",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"GLIP (Glu Bagimli İns.Tropik Peptid)\" → \"GIP (glukoza bağımlı insülinotropik peptid)\" yazıldı, \"KH\" açıldı ve köke \"klasik\" niteleyicisi eklendi.\nNeden: Hormonun kısaltması ve açılımı hatalı ve kısaltmalı yazılmıştı; üç besinle de salgılanan tek hormon iddiası yalnız klasik GİS hormonları için geçerlidir.\nNasıl: [EK1, YZ2, KS1] Cevap ve kalın \"GIP\" korunup açılım düzeltildi; \"tek\" üstünlüğü klasik hormon tablosuyla sınırlandı, c1 değişmedi.\nKaynak: Guyton and Hall, gastrointestinal hormonlar tablosu (GIP: protein, yağ, karbonhidrat)."
+    }
+   ]
   },
   {
    "order": 57,
@@ -3128,7 +3246,7 @@
    "fields": {
     "Text": {
      "before": "<b>Fick</b> Prensibiyle <b>CO</b>&nbsp;(Kardiyak Output) Hesabı:<div><br></div><div>{{c1::O2 Tüketimi&nbsp;}}</div><div>/</div><div>{{c1::Arteriyel O2}} - {{c1::Venöz O2}}</div>",
-     "after": "<b>Fick</b> prensibiyle <b>CO</b> (kalp debisi) hesabı:<div><br></div><div>{{c1::O2 tüketimi}}</div><div>/</div><div>{{c1::Arteriyel O2}} - {{c1::venöz O2}}</div>"
+     "after": "<b>Fick</b> prensibiyle <b>CO</b> (kalp debisi) hesabı:<div><br></div><div>CO = {{c1::dakikadaki O2 tüketimi}} / ({{c1::arteriyel O2 içeriği}} − {{c1::mikst venöz O2 içeriği}})</div>"
     },
     "Extra": {
      "before": "",
@@ -3153,11 +3271,23 @@
      "category": "Biçim",
      "text": "\"Prensibiyle\", \"Hesabı\", \"Tüketimi\", \"Venöz\" küçük harfe çevrildi; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Ön yüzde içerik sözcüğünü ve tam payda parantezini yaz. Mevcut dikey düzen salt matematik hatası diye sayılmadı. Extra doğru olarak arteriyel–mikst venöz O2 içerik farkını belirtir. Text’teki “O2” basınç veya satürasyon gibi okunabilir; parantez de kesri bağımsız okunur kılar.",
+     "rationale": "Kaynak: https://www.ncbi.nlm.nih.gov/books/NBK470455/?report=printable"
     }
    ],
-   "aiNote": "Ne: \"(Kardiyak Output)\" → \"(kalp debisi)\" yazıldı ve Extra'ya mikst venöz kan ile O2 içeriği farkını belirten tek cümle eklendi.\nNeden: \"Arteriyel O2 - venöz O2\" ifadesi kısmi basınç farkı ya da periferik ven örneği gibi okunabiliyordu; doğru hesap pulmoner arterdeki mikst venöz kanın O2 içeriğini ister.\nNasıl: [EK1, YZ2, YP1] Formül ve dört satırlık kesir düzeni korundu; niteleyici cevapları uzatmamak için Extra'ya yazıldı, c1 değişmedi. HINT'teki niteleyici kendi gerekçesiyle benimsendi.\nKaynak: Guyton and Hall, kalp debisinin ölçülmesi bölümü (Fick yöntemi).",
+   "aiNote": "Ne: Ön yüzde içerik sözcüğünü ve tam payda parantezini yaz. Mevcut dikey düzen salt matematik hatası diye sayılmadı. Extra doğru olarak arteriyel–mikst venöz O2 içerik farkını belirtir. Text’teki “O2” basınç veya satürasyon gibi okunabilir; parantez de kesri bağımsız okunur kılar.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.ncbi.nlm.nih.gov/books/NBK470455/?report=printable",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"(Kardiyak Output)\" → \"(kalp debisi)\" yazıldı ve Extra'ya mikst venöz kan ile O2 içeriği farkını belirten tek cümle eklendi.\nNeden: \"Arteriyel O2 - venöz O2\" ifadesi kısmi basınç farkı ya da periferik ven örneği gibi okunabiliyordu; doğru hesap pulmoner arterdeki mikst venöz kanın O2 içeriğini ister.\nNasıl: [EK1, YZ2, YP1] Formül ve dört satırlık kesir düzeni korundu; niteleyici cevapları uzatmamak için Extra'ya yazıldı, c1 değişmedi. HINT'teki niteleyici kendi gerekçesiyle benimsendi.\nKaynak: Guyton and Hall, kalp debisinin ölçülmesi bölümü (Fick yöntemi)."
+    }
+   ]
   },
   {
    "order": 80,
@@ -3338,7 +3468,7 @@
    "fields": {
     "Text": {
      "before": "Umami Tat Res'leri:<div><br></div><div><b>MSG--&gt;</b><br><div><br></div><div>Tip {{c1::2}} Hc üzeri GPCR'e bağlanır&nbsp;</div></div><div><br></div><div>Ca salınımı Zar ve Depol</div><div><br></div><div><b>Paneksin</b> yarım kanalları açılır --&gt; {{c1::ATP}} salar&nbsp;</div><div><br></div><div><br></div>",
-     "after": "Umami tat reseptörleri:<div><br></div><div><b>MSG →</b><br><div><br></div><div>Tip {{c1::2}} hücre üzerindeki GPCR'ye bağlanır</div></div><div><br></div><div>Ca salınımı ve zar depolarizasyonu</div><div><br></div><div><b>Paneksin</b> yarım kanalları açılır (klasik bilgi) → {{c1::ATP}} salar</div>"
+     "after": "Umami tat reseptörleri:<div><br></div><div><b>MSG →</b><br><div><br></div><div>Tip {{c1::2}} hücre üzerindeki GPCR'ye bağlanır</div></div><div><br></div><div>Ca salınımı ve zar depolarizasyonu</div><div><br></div><div><b>CALHM1/CALHM3</b> kanalları açılır → {{c1::ATP}} salar</div>"
     },
     "Extra": {
      "before": "",
@@ -3363,11 +3493,23 @@
      "category": "Biçim",
      "text": "\"--&gt;\" → \"→\"; \"GPCR'e\" → \"GPCR'ye\"; sondaki boş satırlar ve &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "CALHM1/CALHM3 kanalını ön yüzde doğru mekanizma olarak yaz. Extra’daki CALHM1/3 açıklaması destekleniyor; ön yüzde paneksin zorunlu mekanizma gibi kalmış. Kullanılan yeni kanal çalışması bu önermeyi desteklemiyor.",
+     "rationale": "Kaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC5934295/"
     }
    ],
-   "aiNote": "Ne: \"Res\", \"Hc\" ve \"Depol\" kısaltmaları açıldı, \"Ca salınımı Zar ve Depol\" → \"Ca salınımı ve zar depolarizasyonu\" yazıldı; paneksin satırı \"(klasik bilgi)\" ile çerçevelendi ve Extra'ya CALHM1/CALHM3 cümlesi eklendi.\nNeden: Kart ATP salınımını yalnız paneksin yarım kanallarına bağlıyordu; güncel çalışmalar tip 2 hücrelerde ATP'nin voltaj kapılı CALHM1/CALHM3 kanallarından salındığını göstermiştir.\nNasıl: [TD2, KS1, YP4] Klasik kaynaklardaki paneksin bilgisi TUS'ta sorulabildiği için silinmedi, klasik olarak işaretlendi ve güncel görüş tek cümleyle Extra'ya yazıldı; tip 2 hücre ve ATP cevapları ile c1 korundu.\nKaynak: Taruno ve ark., Nature 2013 (CALHM1 tat hücrelerinde ATP salınım kanalı); Ma ve ark., Neuron 2018 (CALHM1/CALHM3 kanal kompleksi).",
+   "aiNote": "Ne: CALHM1/CALHM3 kanalını ön yüzde doğru mekanizma olarak yaz. Extra’daki CALHM1/3 açıklaması destekleniyor; ön yüzde paneksin zorunlu mekanizma gibi kalmış. Kullanılan yeni kanal çalışması bu önermeyi desteklemiyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC5934295/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Res\", \"Hc\" ve \"Depol\" kısaltmaları açıldı, \"Ca salınımı Zar ve Depol\" → \"Ca salınımı ve zar depolarizasyonu\" yazıldı; paneksin satırı \"(klasik bilgi)\" ile çerçevelendi ve Extra'ya CALHM1/CALHM3 cümlesi eklendi.\nNeden: Kart ATP salınımını yalnız paneksin yarım kanallarına bağlıyordu; güncel çalışmalar tip 2 hücrelerde ATP'nin voltaj kapılı CALHM1/CALHM3 kanallarından salındığını göstermiştir.\nNasıl: [TD2, KS1, YP4] Klasik kaynaklardaki paneksin bilgisi TUS'ta sorulabildiği için silinmedi, klasik olarak işaretlendi ve güncel görüş tek cümleyle Extra'ya yazıldı; tip 2 hücre ve ATP cevapları ile c1 korundu.\nKaynak: Taruno ve ark., Nature 2013 (CALHM1 tat hücrelerinde ATP salınım kanalı); Ma ve ark., Neuron 2018 (CALHM1/CALHM3 kanal kompleksi)."
+    }
+   ]
   },
   {
    "order": 85,
@@ -4560,13 +4702,13 @@
    "noteId": 1610048600387,
    "guid": "o{!:2]%L^r",
    "topic": "Embriyoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Plasental Bariyer (İlk Oluşum) Kat Kat:<div><br></div><div>1- {{c1::SinsityoTB}}</div><div>2- {{c1::SitoTB}}</div><div>3- {{c1::Mezenkim}}</div><div>4- {{c1::Kapil BL}}</div><div>5- {{c1::Endotel}}</div><div><br></div><div>\nPlasental Bariyer (Term Plasenta):&nbsp;<br></div><div><br></div><div>1- {{c2::SinsityoTB}}</div><div>2- {{c2::BL}}</div><div>3- {{c2::Endotel}}</div>",
-     "after": "Plasental bariyer (ilk oluşum) kat kat:<div><br></div><div>1- {{c1::Sinsityotrofoblast}}</div><div>2- {{c1::Sitotrofoblast}}</div><div>3- {{c1::Mezenkim}}</div><div>4- {{c1::Kapiller bazal lamina}}</div><div>5- {{c1::Endotel}}</div><div><br></div><div>Plasental bariyer (term plasenta):<br></div><div><br></div><div>1- {{c2::Sinsityotrofoblast}}</div><div>2- {{c2::Bazal lamina}}</div><div>3- {{c2::Endotel}}</div>"
+     "after": "Plasental bariyer (ilk oluşum) kat kat:<div><br></div><div>1- {{c2::{{c1::Sinsityotrofoblast}}::ilişkili yanıt arka yüzde}}</div><div>2- {{c1::Sitotrofoblast}}</div><div>3- {{c1::Mezenkim}}</div><div>4- {{c2::{{c1::Kapiller bazal lamina}}::ilişkili yanıt arka yüzde}}</div><div>5- {{c2::{{c1::Endotel}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Plasental bariyer (term plasenta):<br></div><div><br></div><div>1- {{c1::{{c2::Sinsityotrofoblast}}::ilişkili yanıt arka yüzde}}</div><div>2- {{c1::{{c2::Bazal lamina}}::ilişkili yanıt arka yüzde}}</div><div>3- {{c1::{{c2::Endotel}}::ilişkili yanıt arka yüzde}}</div>"
     }
    },
    "changes": [
@@ -4581,11 +4723,23 @@
      "category": "Biçim",
      "text": "Başlıklardaki büyük harfler düzeltildi; &nbsp; ve satır içi kırılma temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Retina veya plasenta tablosunda farklı ordinale ait satırların gizlenen aynı hücre/katman yanıtını vermesi giderildi; ordinal ve öğrenme görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"SinsityoTB\", \"SitoTB\", \"Kapil BL\" ve \"BL\" açıldı, başlıklardaki büyük harfler düzeltildi.\nNeden: Kişisel kısaltmalar kartı yazar dışında okunmaz kılıyordu; iki bariyerin katları doğruydu.\nNasıl: [KS1, BÇ1, YP4] Numaralı iki liste, sıraları, boş satırlar ve c1/c2 cevapları korundu; \"Mezenkim\" cevabına açıklama eklenmedi.",
+   "aiNote": "Ne: Retina veya plasenta tablosunda farklı ordinale ait satırların gizlenen aynı hücre/katman yanıtını vermesi giderildi; ordinal ve öğrenme görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"SinsityoTB\", \"SitoTB\", \"Kapil BL\" ve \"BL\" açıldı, başlıklardaki büyük harfler düzeltildi.\nNeden: Kişisel kısaltmalar kartı yazar dışında okunmaz kılıyordu; iki bariyerin katları doğruydu.\nNasıl: [KS1, BÇ1, YP4] Numaralı iki liste, sıraları, boş satırlar ve c1/c2 cevapları korundu; \"Mezenkim\" cevabına açıklama eklenmedi."
+    }
+   ]
   },
   {
    "order": 119,
@@ -6916,13 +7070,17 @@
    "noteId": 1604130656359,
    "guid": "z=kC4)V:_*",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "RVLM&nbsp;<div>C1 --&gt; {{c1::V. konst}} alan</div><div>A2 --&gt; {{c2::V. dil}} alan&nbsp;</div>",
-     "after": "Bulber vazomotor alanlar:<div>C1 (RVLM) → {{c1::vazokonstriktör}} alan</div><div>A2 (CVLM) → {{c2::vazodilatatör}} alan</div>"
+     "after": "Bulber vazomotor alanlar:<div>C1 (RVLM) → {{c1::vazokonstriktör}} alan</div><div>CVLM → {{c2::vazodilatatör}} alan</div>"
+    },
+    "Extra": {
+     "before": "",
+     "after": "Barorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır."
     }
    },
    "changes": [
@@ -6937,11 +7095,23 @@
      "category": "Biçim",
      "text": "Başlık düzenlendi; --&gt; → →; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "A2 ile CVLM eşlemesi kaldırıldı; üç ilişkili not, önceden düzeltilmiş 1604130849876 barorefleks zinciriyle tutarlı hale getirildi.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/9331908/"
     }
    ],
-   "aiNote": "Ne: \"V. konst\" → \"vazokonstriktör\" ve \"V. dil\" → \"vazodilatatör\" olarak açıldı, başlık düzenlendi.\nNeden: \"V. konst\" ve \"V. dil\" kişisel kısaltmalardı.\nNasıl: [KS1, BÇ1] Bulber kardiyovasküler merkezde C1 nöronlarının vazokonstriktör, A2 nöronlarının vazodilatatör etki göstermesi Guyton ile doğrulandı; c1 ve c2 korundu.",
+   "aiNote": "Ne: A2 ile CVLM eşlemesi kaldırıldı; üç ilişkili not, önceden düzeltilmiş 1604130849876 barorefleks zinciriyle tutarlı hale getirildi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/9331908/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"V. konst\" → \"vazokonstriktör\" ve \"V. dil\" → \"vazodilatatör\" olarak açıldı, başlık düzenlendi.\nNeden: \"V. konst\" ve \"V. dil\" kişisel kısaltmalardı.\nNasıl: [KS1, BÇ1] Bulber kardiyovasküler merkezde C1 nöronlarının vazokonstriktör, A2 nöronlarının vazodilatatör etki göstermesi Guyton ile doğrulandı; c1 ve c2 korundu."
+    }
+   ]
   },
   {
    "order": 188,
@@ -11112,13 +11282,13 @@
    "noteId": 1604090894848,
    "guid": "zj03a!aQP2",
    "topic": "Kan ve İmmün Fizyolojisi",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Kan yapımı prehepatik dönem --&gt; sadece {{c1::eritrositler}} var --&gt;\n\nÇekirdekli Dev&nbsp;&nbsp;{{c1:: Eritrositler&nbsp;}}",
-     "after": "Kan yapımının prehepatik (mezoblastik) dönemi → sadece {{c1::eritrositler}} üretilir; dolaşımda çekirdekli dev {{c1::eritrositler}} bulunur"
+     "after": "Kan yapımının prehepatik (mezoblastik) dönemi → {{c1::eritrositler}} yanında miyeloid hücreler de gelişir; dolaşımda çekirdekli dev {{c1::eritrositler}} bulunur"
     }
    },
    "changes": [
@@ -11133,11 +11303,23 @@
      "category": "Biçim",
      "text": "Kırık satır ve &nbsp; temizlendi; büyük harfler küçültüldü; --&gt; → →",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "“Sadece”yi kaldır; eritroid özelliği korurken miyeloid gelişime de yer ver. İki c1 işareti korunur. İnsan yolk sac atlası erken dönemde eritroid hücrelerle birlikte miyeloid soyları da gösterir. Makrofaj ve megakaryosit soylarını dışlayan “sadece” ifadesi savunulamaz. Çalışmanın haftaları postkonsepsiyoneldir; obstetrik haftalarla karıştırılmamalı.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/37590359/"
     }
    ],
-   "aiNote": "Ne: Kök prehepatik dönemin diğer adıyla (mezoblastik) zenginleştirildi, kırık satır ve &nbsp; temizlendi, büyük harfler küçültüldü.\nNeden: Metin satır ortasında gereksiz bölünmüştü ve terimler cümle düzenine getirildi.\nNasıl: [SN1, YP4, BÇ1] Prehepatik (mezoblastik/vitellin) dönemde yalnızca eritrosit serisinin üretildiği ve bunların çekirdekli megaloblastik hücreler olduğu Guyton ve Langman ile doğrulandı; iki c1 korundu.",
+   "aiNote": "Ne: “Sadece”yi kaldır; eritroid özelliği korurken miyeloid gelişime de yer ver. İki c1 işareti korunur. İnsan yolk sac atlası erken dönemde eritroid hücrelerle birlikte miyeloid soyları da gösterir. Makrofaj ve megakaryosit soylarını dışlayan “sadece” ifadesi savunulamaz. Çalışmanın haftaları postkonsepsiyoneldir; obstetrik haftalarla karıştırılmamalı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/37590359/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kök prehepatik dönemin diğer adıyla (mezoblastik) zenginleştirildi, kırık satır ve &nbsp; temizlendi, büyük harfler küçültüldü.\nNeden: Metin satır ortasında gereksiz bölünmüştü ve terimler cümle düzenine getirildi.\nNasıl: [SN1, YP4, BÇ1] Prehepatik (mezoblastik/vitellin) dönemde yalnızca eritrosit serisinin üretildiği ve bunların çekirdekli megaloblastik hücreler olduğu Guyton ve Langman ile doğrulandı; iki c1 korundu."
+    }
+   ]
   },
   {
    "order": 314,
@@ -11710,13 +11892,17 @@
    "noteId": 1604130778095,
    "guid": "uZ..=W$Zj1",
    "topic": "Kardiyovasküler Fizyoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Barores Aff (9-10.KS) --&gt; Nuc. tr. solitarii ---<b>{{c1::Glutamat}}</b>---&gt; {{c2::V. dil alan (A2)}}",
-     "after": "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>{{c1::glutamat}}</b> salınımı → {{c2::vazodilatatör alan (A2)}}"
+     "after": "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>{{c1::glutamat}}</b> salınımı → {{c2::kaudal ventrolateral medulla (CVLM)}}"
+    },
+    "Extra": {
+     "before": "",
+     "after": "Barorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır."
     }
    },
    "changes": [
@@ -11731,24 +11917,40 @@
      "category": "Biçim",
      "text": "Glutamat küçültüldü; bozuk oklar → ile düzenlendi; kalın yazı korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "A2 ile CVLM eşlemesi kaldırıldı; üç ilişkili not, önceden düzeltilmiş 1604130849876 barorefleks zinciriyle tutarlı hale getirildi.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/9331908/"
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, bozuk ok arasına sıkışmış biçim düzeltildi ve kalın glutamat korundu.\nNeden: Kişisel kısaltmalar giderildi ve ok zinciri standartlaştırıldı.\nNasıl: [KS1, YZ1, BÇ1, YP3] Baroreseptör aferentlerinin NTS'ye ulaştıktan sonra NTS nöronlarının glutamat ile CVLM'yi uyarması Guyton ile doğrulandı; c1 ve c2 korundu.",
+   "aiNote": "Ne: A2 ile CVLM eşlemesi kaldırıldı; üç ilişkili not, önceden düzeltilmiş 1604130849876 barorefleks zinciriyle tutarlı hale getirildi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/9331908/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltmalar açıldı, bozuk ok arasına sıkışmış biçim düzeltildi ve kalın glutamat korundu.\nNeden: Kişisel kısaltmalar giderildi ve ok zinciri standartlaştırıldı.\nNasıl: [KS1, YZ1, BÇ1, YP3] Baroreseptör aferentlerinin NTS'ye ulaştıktan sonra NTS nöronlarının glutamat ile CVLM'yi uyarması Guyton ile doğrulandı; c1 ve c2 korundu."
+    }
+   ]
   },
   {
    "order": 332,
    "noteId": 1604130826422,
    "guid": "zZWy.YeKuy",
    "topic": "Kardiyovasküler Fizyoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Barores Aff (9-10.KS) --&gt; Nuc. tr. solitarii ---<b>Glutamat</b>---&gt; V. dil alan (A2) ---<b>{{c1::GABA}}</b>---<b>X</b> {{c2::V. konst alan (C1)}}",
-     "after": "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>glutamat</b> → vazodilatatör alan (A2) → <b>{{c1::GABA}}</b> ile inhibe eder → {{c2::vazokonstriktör alan (C1)}}"
+     "after": "Baroreseptör aferentleri (9. ve 10. kraniyal sinirler) → nucleus tractus solitarii → <b>glutamat</b> → kaudal ventrolateral medulla (CVLM) → <b>{{c1::GABA}}</b> ile inhibe eder → {{c2::vazokonstriktör alan (C1)}}"
+    },
+    "Extra": {
+     "before": "",
+     "after": "Barorefleksin CVLM ara durağındaki GABAerjik nöronlar RVLM üzerindeki sempatik uyarıyı inhibe eder; sempatik tonus azalır."
     }
    },
    "changes": [
@@ -11763,11 +11965,23 @@
      "category": "Biçim",
      "text": "İnhibisyon işareti (---X) \"inhibe eder\" ile değiştirildi; oklar → yapıldı; kalın yazılar korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Tıbbi doğruluk",
+     "text": "A2 ile CVLM eşlemesi kaldırıldı; üç ilişkili not, önceden düzeltilmiş 1604130849876 barorefleks zinciriyle tutarlı hale getirildi.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/9331908/"
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, bozuk ASCII oklar ve inhibisyon işareti \"---X\" yerine \"inhibe eder\" yazıldı; kalın GABA ve C1 korundu.\nNeden: Kişisel kısaltmalar açıldı ve kılavuzun inhibisyon kuralı uygulandı.\nNasıl: [KS1, YZ1, BÇ1, YP3] Baroreseptör arkında CVLM nöronlarının GABA salgılayarak RVLM'deki sempatik nöronları inhibe etmesi Guyton ile doğrulandı; c1 ve c2 korundu.",
+   "aiNote": "Ne: A2 ile CVLM eşlemesi kaldırıldı; üç ilişkili not, önceden düzeltilmiş 1604130849876 barorefleks zinciriyle tutarlı hale getirildi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/9331908/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltmalar açıldı, bozuk ASCII oklar ve inhibisyon işareti \"---X\" yerine \"inhibe eder\" yazıldı; kalın GABA ve C1 korundu.\nNeden: Kişisel kısaltmalar açıldı ve kılavuzun inhibisyon kuralı uygulandı.\nNasıl: [KS1, YZ1, BÇ1, YP3] Baroreseptör arkında CVLM nöronlarının GABA salgılayarak RVLM'deki sempatik nöronları inhibe etmesi Guyton ile doğrulandı; c1 ve c2 korundu."
+    }
+   ]
   },
   {
    "order": 333,
@@ -16004,13 +16218,17 @@
    "noteId": 1623522806620,
    "guid": "O[X*.^A,):",
    "topic": "Genel",
-   "severity": "Düşük",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Kan <b>Sinir</b> Bariyerini yapan:<div><br></div><div>{{c1::Peri}}Nöryum</div>",
-     "after": "Kan-<b>sinir</b> bariyerini yapan:<div><br></div><div>{{c1::Peri}}nöryum</div>"
+     "after": "<b>Sinir</b> fasikülünü çevreleyen difüzyon bariyerini oluşturan kılıf:<div><br></div><div>{{c1::Peri}}nöryum</div>"
+    },
+    "Extra": {
+     "before": "",
+     "after": "Kan-sinir bariyerine endonöryal mikrodamar endotelinin sıkı bağlantıları da katkıda bulunur."
     }
    },
    "changes": [
@@ -16019,11 +16237,23 @@
      "category": "Biçim",
      "text": "\"Kan Sinir Bariyerini\" → \"Kan-sinir bariyerini\"; \"Nöryum\" → \"nöryum\"",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Kökte sinir fasikülünü çevreleyen kılıfı sor; Extra’da endonöryal damar bileşenini belirt. Bölünmüş {{c1::Peri}}nöryum cevabı korunur. Perinöryum fasikülü çevreleyen difüzyon bariyeridir. Kan-sinir bariyeri teriminin önemli bileşeni endonöryal mikrodamar endotelidir; insan biyopsisi çalışması bu damar bariyerini inceler. Perinöryum bilgisini silmek yerine kökü somut kılıf sorusuna daraltmak uygun.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/31119823/; https://www.ncbi.nlm.nih.gov/mesh/68049428"
     }
    ],
-   "aiNote": "Ne: \"Kan Sinir Bariyerini\" → \"Kan-sinir bariyerini\" yazıldı ve cevaptan sonraki \"Nöryum\" küçük harfe çevrildi.\nNeden: Bileşik terim ayrı ve büyük harfle yazılmıştı.\nNasıl: [BÇ1, TD3, YP1] Perinöryum hücreleri arasındaki sıkı bağlantıların kan-sinir bariyerini oluşturduğu doğrulandığından cevap korundu; kalın \"sinir\" vurgusu ve c1 aynen bırakıldı.",
+   "aiNote": "Ne: Kökte sinir fasikülünü çevreleyen kılıfı sor; Extra’da endonöryal damar bileşenini belirt. Bölünmüş {{c1::Peri}}nöryum cevabı korunur. Perinöryum fasikülü çevreleyen difüzyon bariyeridir. Kan-sinir bariyeri teriminin önemli bileşeni endonöryal mikrodamar endotelidir; insan biyopsisi çalışması bu damar bariyerini inceler. Perinöryum bilgisini silmek yerine kökü somut kılıf sorusuna daraltmak uygun.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/31119823/; https://www.ncbi.nlm.nih.gov/mesh/68049428",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Kan Sinir Bariyerini\" → \"Kan-sinir bariyerini\" yazıldı ve cevaptan sonraki \"Nöryum\" küçük harfe çevrildi.\nNeden: Bileşik terim ayrı ve büyük harfle yazılmıştı.\nNasıl: [BÇ1, TD3, YP1] Perinöryum hücreleri arasındaki sıkı bağlantıların kan-sinir bariyerini oluşturduğu doğrulandığından cevap korundu; kalın \"sinir\" vurgusu ve c1 aynen bırakıldı."
+    }
+   ]
   },
   {
    "order": 469,
@@ -16748,13 +16978,17 @@
    "noteId": 1604092085701,
    "guid": "FQ9J.sB3V`",
    "topic": "Nörofizyoloji ve Duyular",
-   "severity": "Düşük",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Ekşi ve Tuzlu tat --&gt; {{c1::İyonotropik ENaC kanalı}}<div><br></div><div>Na --&gt; {{c1::Tuzlu}}</div><div>H--&gt; {{c1::ekşi}}</div>",
-     "after": "Ekşi ve tuzlu tat algısı → {{c1::iyonotropik kanallar (ENaC)}}<div><br></div><div>Na+ → {{c1::tuzlu tat}}</div><div>H+ → {{c1::ekşi tat}}</div>"
+     "after": "İyon kanalı aracılı tat iletimi → {{c1::iyonotropik}}<div><br></div><div>Na+ → {{c1::tuzlu tat}} (amiloride duyarlı bileşende ENaC)</div><div>H+ → {{c1::ekşi tat}} (OTOP1 proton kanalı)</div>"
+    },
+    "Extra": {
+     "before": "",
+     "after": "ENaC için doğrudan genetik kanıt farede amiloride duyarlı sodyum tadına aittir; insanın tüm tuz tadı yollarına genellenmemelidir."
     }
    },
    "changes": [
@@ -16763,11 +16997,23 @@
      "category": "Biçim",
      "text": "İyonotropik ENaC kanalı küçültüldü; Na ve H iyonlarına + işareti eklendi; Tuzlu → tuzlu; --&gt; → →",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "İki kanalın bağlamını ayır; tarama adayını cevap sızıntısı diye sayma. Yeni bulgu: ENaC her iki tat için ortak kanal gibi yazılmış. Ekşi proton iletimi OTOP1 ile ilişkilidir. Ön yüz taramasındaki “ekşi/tuzlu” eşleşmesi ise yalnız başlıktır; Na+/H+ eşleştirmelerinin tamamını açık etmiyor.",
+     "rationale": "Kaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC7299528/; https://pubmed.ncbi.nlm.nih.gov/20107438/"
     }
    ],
-   "aiNote": "Ne: Baş harfler küçültüldü, Na+ ve H+ iyon yükleri eklendi, ASCII oklar → yapıldı.\nNeden: Cümle düzeni sağlandı, kimyasal iyon gösterimi tamamlandı.\nNasıl: [BÇ1] Tuzlu (Na+) ve ekşi (H+) tat duyularının iyonotropik kanallar aracılığıyla iletildiği Guyton ile doğrulandı; c1 korundu.",
+   "aiNote": "Ne: İki kanalın bağlamını ayır; tarama adayını cevap sızıntısı diye sayma. Yeni bulgu: ENaC her iki tat için ortak kanal gibi yazılmış. Ekşi proton iletimi OTOP1 ile ilişkilidir. Ön yüz taramasındaki “ekşi/tuzlu” eşleşmesi ise yalnız başlıktır; Na+/H+ eşleştirmelerinin tamamını açık etmiyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC7299528/; https://pubmed.ncbi.nlm.nih.gov/20107438/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Baş harfler küçültüldü, Na+ ve H+ iyon yükleri eklendi, ASCII oklar → yapıldı.\nNeden: Cümle düzeni sağlandı, kimyasal iyon gösterimi tamamlandı.\nNasıl: [BÇ1] Tuzlu (Na+) ve ekşi (H+) tat duyularının iyonotropik kanallar aracılığıyla iletildiği Guyton ile doğrulandı; c1 korundu."
+    }
+   ]
   },
   {
    "order": 497,

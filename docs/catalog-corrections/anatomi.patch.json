@@ -19,11 +19,11 @@
   "changedNotes": 381,
   "htmlOnlyNotes": 0,
   "unchangedNotes": 0,
-  "changeItems": 817,
+  "changeItems": 824,
   "notesBySeverity": {
    "Kritik": 1,
-   "Yüksek": 17,
-   "Orta": 352,
+   "Yüksek": 23,
+   "Orta": 346,
    "Düşük": 11
   },
   "notesByTopic": {
@@ -38,33 +38,39 @@
    "Üst Ekstremite": 36
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 1,
-    "Yüksek": 3
+   "Biçim": {
+    "Düşük": 379
+   },
+   "Cevap görünürlüğü": {
+    "Yüksek": 6
+   },
+   "Dil bilgisi": {
+    "Orta": 103
    },
    "Eksik kritik bilgi": {
     "Yüksek": 5
    },
+   "Kısaltma": {
+    "Orta": 79
+   },
    "Soru netliği": {
     "Orta": 29
-   },
-   "Yapısal": {
-    "Yüksek": 5,
-    "Orta": 2
    },
    "Terim/yazım": {
     "Yüksek": 4,
     "Orta": 200,
     "Düşük": 7
    },
-   "Kısaltma": {
-    "Orta": 79
+   "Tıbbi doğruluk": {
+    "Kritik": 1,
+    "Yüksek": 3
    },
-   "Dil bilgisi": {
-    "Orta": 103
+   "Yapısal": {
+    "Yüksek": 5,
+    "Orta": 2
    },
-   "Biçim": {
-    "Düşük": 379
+   "Ön/arka kapsam uyumu": {
+    "Yüksek": 1
    }
   },
   "secondReview": {}
@@ -553,7 +559,7 @@
    "fields": {
     "Text": {
      "before": "Art. iliolumbale hangi eklemde --&gt; Art. {{c1::lumbosacralis}}<br><br>Art. lumbosacralis eklem tipi --&gt; {{c1::Symphysis}}<br><br>Art. sacroiliaca eklem tipi --&gt; {{c1::Plana}}",
-     "after": "Lig. iliolumbale'nin desteklediği eklem → Art. {{c1::lumbosacralis}}<br><br>Art. lumbosacralis'in tipi → {{c1::Symphysis}}<br><br>Art. sacroiliaca'nın tipi → Art. {{c1::plana}}"
+     "after": "Lig. iliolumbale'nin desteklediği eklem kompleksi → Art. {{c1::lumbosacralis}}<br><br>Bu komplekste L5–S1 korpusları arasındaki bağlantının tipi → {{c1::Symphysis}}<br><br>Art. sacroiliaca'nın sinovyal bölümünün tipi → Art. {{c1::plana}}"
     }
    },
    "changes": [
@@ -574,11 +580,23 @@
      "category": "Biçim",
      "text": "Plana → plana; başlık eklendi; parantez içi eklem sınıflandırmaları detaylandırıldı",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Lumbosakral kompleksin tamamı yerine L5–S1 korpus bağlantısı soruldu; açık eklem adı tekrarından gelen cevap sızıntısı kaldırıldı.",
+     "rationale": "Kaynak: https://www.ncbi.nlm.nih.gov/sites/books/NBK538523/; https://openstax.org/books/anatomy-and-physiology-2e/pages/9-1-classification-of-joints"
     }
    ],
-   "aiNote": "Ne: 2. satırdaki lumbosacralis sızıntısı nötrleştirildi, lig. iliolumbale terimi düzeltildi, eklem tipleri maddelendi.\nNeden: İkinci satırda açıkça yazan eklem adı birinci satırdaki cloze 1 cevabını ele veriyordu.\nNasıl: [YP2, DB1, BÇ1] Art. lumbosacralis'in symphysis, art. sacroiliaca'nın art. plana olduğu doğrulandı; c1 (3 adet) korundu.",
+   "aiNote": "Ne: Lumbosakral kompleksin tamamı yerine L5–S1 korpus bağlantısı soruldu; açık eklem adı tekrarından gelen cevap sızıntısı kaldırıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.ncbi.nlm.nih.gov/sites/books/NBK538523/; https://openstax.org/books/anatomy-and-physiology-2e/pages/9-1-classification-of-joints",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: 2. satırdaki lumbosacralis sızıntısı nötrleştirildi, lig. iliolumbale terimi düzeltildi, eklem tipleri maddelendi.\nNeden: İkinci satırda açıkça yazan eklem adı birinci satırdaki cloze 1 cevabını ele veriyordu.\nNasıl: [YP2, DB1, BÇ1] Art. lumbosacralis'in symphysis, art. sacroiliaca'nın art. plana olduğu doğrulandı; c1 (3 adet) korundu."
+    }
+   ]
   },
   {
    "order": 14,
@@ -1813,13 +1831,13 @@
    "noteId": 1609006816187,
    "guid": "kzK|<q:Ma.",
    "topic": "Alt Ekstremite",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<b>For. Suprapiriforme</b>'den geçenler:<div><br></div><div>V. A. N {{c1::gluteus sup}}</div><div><br></div><div><b>For. İnfrapiriforme</b>'den geçenler:</div><div><br></div><div>AVN. {{c2::Gluteus inf}}</div><div>A.V {{c2::pudenda interna}}</div><div>N. {{c2::Pudendus}}</div><div>N. {{c2::İschiadicus}}</div><div>N. {{c2::Cut. Fem. Pos}}</div><div><br></div><div><b>For. İsch. Minus</b>'tan geçenler:</div><div><br></div><div>AV {{c1::pudenda interna}}</div><div>N. {{c1::Pudendus}}</div>",
-     "after": "Foramen suprapiriforme'den geçenler:<br><br><br>v., a., n. {{c1::gluteus superior}}<br><br><br>Foramen infrapiriforme'den geçenler:<br><br><br>a., v., n. {{c2::gluteus inferior}}<br>A., v. {{c2::pudenda interna}}<br>n. {{c2::pudendus}}<br>n. {{c2::ischiadicus}}<br>n. {{c2::cutaneus femoris posterior}}<br><br><br>Foramen ischiadicum minus'tan geçenler:<br><br><br>A., v. {{c1::pudenda interna}}<br>n. {{c1::pudendus}}"
+     "after": "Foramen suprapiriforme'den geçenler:<br><br><br>v., a., n. {{c1::gluteus superior}}<br><br><br>Foramen infrapiriforme'den geçenler:<br><br><br>a., v., n. {{c2::gluteus inferior}}<br>A., v. {{c1::{{c2::pudenda interna}}::ilişkili yanıt arka yüzde}}<br>n. {{c1::{{c2::pudendus}}::ilişkili yanıt arka yüzde}}<br>n. {{c2::ischiadicus}}<br>n. {{c2::cutaneus femoris posterior}}<br><br><br>Foramen ischiadicum minus'tan geçenler:<br><br><br>A., v. {{c2::{{c1::pudenda interna}}::ilişkili yanıt arka yüzde}}<br>n. {{c2::{{c1::pudendus}}::ilişkili yanıt arka yüzde}}"
     }
    },
    "changes": [
@@ -1834,11 +1852,23 @@
      "category": "Biçim",
      "text": "Kalın yazılar standartlaştırıldı, liste maddelendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"gluteus sup\" → \"gluteus superior\", \"Cut. Fem. Pos\" → \"cutaneus femoris posterior\", foramen adları tam yazıldı.\nNeden: Aşırı telgraf kısaltmaları ve tutarsız baş harfler düzeltildi.\nNasıl: [YZ1, BÇ1] Foramen ischiadicum majus ve minus'tan geçen nörovasküler yapılar doğrulandı; c1 (3 adet) ve c2 (5 adet) cloze sayıları tam korundu.",
+   "aiNote": "Ne: Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"gluteus sup\" → \"gluteus superior\", \"Cut. Fem. Pos\" → \"cutaneus femoris posterior\", foramen adları tam yazıldı.\nNeden: Aşırı telgraf kısaltmaları ve tutarsız baş harfler düzeltildi.\nNasıl: [YZ1, BÇ1] Foramen ischiadicum majus ve minus'tan geçen nörovasküler yapılar doğrulandı; c1 (3 adet) ve c2 (5 adet) cloze sayıları tam korundu."
+    }
+   ]
   },
   {
    "order": 51,
@@ -5413,13 +5443,13 @@
    "noteId": 1626524919666,
    "guid": "u|&uC$k?ZS",
    "topic": "Baş ve Boyun",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Kulak <b>Memesi</b> Duyusu:<div><br></div><div>N. {{c1::auricularis magnus}}<br><br><b>Kulak kepçesi</b> inervasyonu:<br><br>N. occipitalis min.<br>N. {{c1::auricularis magnus}}<br>N. {{c2::auriculotemporalis}}<br><br><b>Dış kulak yolu</b> inervasyonu:<br><br>N. vagus r. auricularis<br>N. auriculotemporalis<br>N. {{c2::facialis}}</div>",
-     "after": "Kulak <b>memesi</b> duyusu:<div><br></div><div>N. {{c1::auricularis magnus}}</div><div><br></div><div><b>Kulak kepçesi</b> innervasyonu:</div><div>N. occipitalis minor</div><div>N. {{c1::auricularis magnus}}</div><div>N. {{c2::auriculotemporalis}}</div><div><br></div><div><b>Dış kulak yolu</b> innervasyonu:</div><div>N. vagus (r. auricularis)</div><div>N. auriculotemporalis</div><div>N. {{c2::facialis}}</div>"
+     "after": "Kulak <b>memesi</b> duyusu:<div><br></div><div>N. {{c1::auricularis magnus}}</div><div><br></div><div><b>Kulak kepçesi</b> innervasyonu:</div><div>N. occipitalis minor</div><div>N. {{c1::auricularis magnus}}</div><div>N. {{c2::auriculotemporalis}}</div><div><br></div><div><b>Dış kulak yolu</b> innervasyonu:</div><div>N. vagus (r. auricularis)</div><div>N. {{c2::auriculotemporalis}}</div><div>N. {{c2::facialis}}</div>"
     }
    },
    "changes": [
@@ -5434,11 +5464,23 @@
      "category": "Biçim",
      "text": "Büyük harfler düzeltildi, satır düzeni ve c1/c2 cloze yapısı korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, imla düzeltildi, Terminologia Anatomica yazımı sağlandı.\nNeden: Kısaltma ve biçim düzeltildi.\nNasıl: [KS1, YZ1, BÇ1, YP1] Üçlü blok yapısı, kalın vurgular ve orijinal dörtlü c1/c2 cloze yapısı korundu.",
+   "aiNote": "Ne: Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltmalar açıldı, imla düzeltildi, Terminologia Anatomica yazımı sağlandı.\nNeden: Kısaltma ve biçim düzeltildi.\nNasıl: [KS1, YZ1, BÇ1, YP1] Üçlü blok yapısı, kalın vurgular ve orijinal dörtlü c1/c2 cloze yapısı korundu."
+    }
+   ]
   },
   {
    "order": 160,
@@ -8361,13 +8403,13 @@
    "noteId": 1604007846566,
    "guid": "Oum%+RmNjq",
    "topic": "Nöroanatomi",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Cerebellum <b>Ön</b> Lobu --&gt; {{c4::Medulla Spinalis}} ile bağlantılı<div><br></div><div>{{c1::Lingula}}<div>Lobulus {{c2::centralis}} - Ala lobuli {{c1::centrales}}</div><div>{{c2::Culmen}} - Lobulus {{c1::quadrangularis&nbsp;}}<br>---<br>Ön Lob - Arka Lobu ayıran (Culmen ile Declive arasında) --&gt; Fissura {{c3::Prima}}<br>----<br>Cerebellum <b>Arka</b> Lob --&gt; {{c4::Kortex}} ile bağlantılı<br>Declive<br>Folium<br>Tuber<br>Pyramis<br>{{c3::Uvula (Tonsilla cerebelli)}}<br>Nodulus (Flocculus) --&gt; {{c4::Vestibüler sistem}} ile bağlantılı</div></div>",
-     "after": "Cerebellum <b>ön</b> lobu → {{c4::medulla spinalis}} ile bağlantılıdır:<div>{{c1::Lingula}}<div>Lobulus {{c2::centralis}} - ala lobuli {{c1::centralis}}</div><div>{{c2::Culmen}} - lobulus {{c1::quadrangularis}}</div><div>---</div><div>Ön lob ile arka lobu ayıran yarık (culmen ile declive arasında) → fissura {{c3::prima}}</div><div>---</div><div>Cerebellum <b>arka</b> lobu → {{c4::korteks}} ile bağlantılıdır (declive, folium, tuber, pyramis, {{c3::uvula / tonsilla cerebelli}})</div><div>Nodulus ve flocculus → {{c4::vestibüler sistem}} ile bağlantılıdır</div></div>"
+     "after": "Cerebellum <b>ön</b> lobu → {{c4::medulla spinalis}} ile bağlantılıdır:<div>{{c1::Lingula}}<div>Lobulus {{c1::{{c2::centralis}}::ilişkili yanıt arka yüzde}} - ala lobuli {{c2::{{c1::centralis}}::ilişkili yanıt arka yüzde}}</div><div>{{c2::Culmen}} - lobulus {{c1::quadrangularis}}</div><div>---</div><div>Ön lob ile arka lobu ayıran yarık ({{c2::culmen}} ile declive arasında) → fissura {{c3::prima}}</div><div>---</div><div>Cerebellum <b>arka</b> lobu → {{c4::korteks}} ile bağlantılıdır (declive, folium, tuber, pyramis, {{c3::uvula / tonsilla cerebelli}})</div><div>Nodulus ve flocculus → {{c4::vestibüler sistem}} ile bağlantılıdır</div></div>"
     }
    },
    "changes": [
@@ -8382,11 +8424,23 @@
      "category": "Biçim",
      "text": "Büyük harfler küçültüldü; --&gt; → →; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"centrales\" tekil uyumu \"centralis\" yapıldı, \"Kortex\" Türkçe imlaya (\"korteks\") uyarlandı, büyük harfler ve oklar düzenlendi.\nNeden: Latince tamlama eki yanlışı ve büyük harf karmaşası vardı.\nNasıl: [YZ1, BÇ1] Serebellum lobları, fissura prima ve lobus flocculonodularis fonksiyonel bölümleri doğrulandı; c1, c2, c3, c4 cloze yapısı korundu.",
+   "aiNote": "Ne: Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"centrales\" tekil uyumu \"centralis\" yapıldı, \"Kortex\" Türkçe imlaya (\"korteks\") uyarlandı, büyük harfler ve oklar düzenlendi.\nNeden: Latince tamlama eki yanlışı ve büyük harf karmaşası vardı.\nNasıl: [YZ1, BÇ1] Serebellum lobları, fissura prima ve lobus flocculonodularis fonksiyonel bölümleri doğrulandı; c1, c2, c3, c4 cloze yapısı korundu."
+    }
+   ]
   },
   {
    "order": 248,
@@ -8569,13 +8623,13 @@
    "noteId": 1604008209851,
    "guid": "yMfX{5*n<Y",
    "topic": "Nöroanatomi",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Papez Halkası&nbsp;<div><br></div><div>{{c1::Hipocampus}} - {{c2::Subiculum}} - {{c1::Fornix}} - {{c2::Corpus mamm}}. - Tr. {{c3::mammillotalamicus}} - Nuc. {{c4::ant. thalami}} - {{c3::Cingulum}} - {{c3::Entorinal}} korteks - {{c4::Hipokampus}}<br></div>",
-     "after": "Papez halkasının dizilimi:<div><br></div><div>{{c1::Hippocampus}} → {{c2::subiculum}} → {{c1::fornix}} → {{c2::corpus mammillare}} → tractus {{c3::mammillothalamicus}} → nucleus {{c4::anterior thalami}} → {{c3::cingulum}} → {{c3::entorinal}} korteks → {{c4::hippocampus}}</div>"
+     "after": "Papez halkasının dizilimi:<div><br></div><div>{{c4::{{c1::Hippocampus}}::ilişkili yanıt arka yüzde}} → {{c2::subiculum}} → {{c1::fornix}} → {{c2::corpus mammillare}} → tractus {{c3::mammillothalamicus}} → nucleus {{c4::anterior thalami}} → {{c3::cingulum}} → {{c3::entorinal}} korteks → {{c1::{{c4::hippocampus}}::ilişkili yanıt arka yüzde}}</div>"
     },
     "Extra": {
      "before": "ÖNEMLİ",
@@ -8594,11 +8648,23 @@
      "category": "Biçim",
      "text": "Tireler ok yapıldı; &nbsp; ve gereksiz div artıkları temizlendi; Extra'daki kişisel marker (ÖNEMLİ) kaldırıldı",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Papez halkasındaki terimler Terminologia Anatomica biçiminde düzeltildi, kısaltmalar açıldı, tireler oka dönüştürüldü ve Extra'daki \"ÖNEMLİ\" silindi.\nNeden: Kişisel kısaltmalar, karmaşık yazım hataları ve kişisel not uyarısı mevcuttu.\nNasıl: [YZ1, KS1, BÇ1] Limbik sistemin klasik hafıza ve emosyon halkası olan Papez halkası sırası doğrulandı; c1, c2, c3, c4 cloze yapısı korundu.",
+   "aiNote": "Ne: Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Papez halkasındaki terimler Terminologia Anatomica biçiminde düzeltildi, kısaltmalar açıldı, tireler oka dönüştürüldü ve Extra'daki \"ÖNEMLİ\" silindi.\nNeden: Kişisel kısaltmalar, karmaşık yazım hataları ve kişisel not uyarısı mevcuttu.\nNasıl: [YZ1, KS1, BÇ1] Limbik sistemin klasik hafıza ve emosyon halkası olan Papez halkası sırası doğrulandı; c1, c2, c3, c4 cloze yapısı korundu."
+    }
+   ]
   },
   {
    "order": 254,
@@ -11061,13 +11127,13 @@
    "noteId": 1609077632416,
    "guid": "KUBW7#*oBb",
    "topic": "Toraks",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "İntercostal Venler<div><br></div><div>Vv. İntercostales Ant'lar :</div><div><br></div><div>1-6 --&gt; V. {{c1::Th. İnt}}'ya</div><div>7-9 --&gt; V. {{c1::MusculoPhrenica}}'ya açılır&nbsp;</div><div><br></div><div>Vv. İntercostales Pos'lar</div><div><br></div><div>Her iki taraf <b>1</b>. V. İntercostalis Pos --&gt;Kendi {{c2::V. BrachioCeph' }} larına</div>\n<div><br></div><div>Sağ&nbsp;</div><div><b>2-3 (4)</b>'ler --&gt; V. {{c2::İntercostalis Sup Dextra}} ile + <b>5-11</b>'ler --&gt; V. {{c2::Azygos}}'a açılır&nbsp;</div><div><br></div><div>Sol</div><div><b>2-3 (4)</b>'ler --&gt; V. {{c3::İntercostalis Sup Sin}} --&gt; V. {{c3::BrachioCeph Sin}}'a açılır&nbsp;</div><div><br></div><div><b>5-8</b>'ler --&gt; V. {{c4::Hemiazygos Accs}}'a</div><div><b>9-11</b>'ler --&gt; V. {{c4::Hemiazygos}}'a açılır&nbsp;</div>",
-     "after": "İnterkostal venler:<br><br><br>Vv. intercostales anteriores:<br><br><br>1–6 → V. {{c1::thoracica interna}}'ya<br>7–9 → V. {{c1::musculophrenica}}'ya açılır<br><br><br>Vv. intercostales posteriores:<br><br><br>Her iki tarafın 1. veni → Kendi {{c2::v. brachiocephalica}}'sına<br><br><br><br>Sağ:<br>2–4 → V. {{c2::intercostalis superior dextra}}; 5–11 → V. {{c2::azygos}}'a açılır<br><br><br>Sol:<br>2–4 → V. {{c3::intercostalis superior sinistra}} → V. {{c3::brachiocephalica sinistra}}'ya<br><br><br>5–8 → V. {{c4::hemiazygos accessoria}}'ya<br>9–11 → V. {{c4::hemiazygos}}'a açılır"
+     "after": "İnterkostal venler:<br><br><br>Vv. intercostales anteriores:<br><br><br>1–6 → V. {{c1::thoracica interna}}'ya<br>7–9 → V. {{c1::musculophrenica}}'ya açılır<br><br><br>Vv. intercostales posteriores:<br><br><br>Her iki tarafın 1. veni → Kendi {{c3::{{c2::v. brachiocephalica}}::ilişkili yanıt arka yüzde}}'sına<br><br><br><br>Sağ:<br>2–4 → V. {{c2::intercostalis superior dextra}}; 5–11 → V. {{c2::azygos}}'a açılır<br><br><br>Sol:<br>2–4 → V. {{c3::intercostalis superior sinistra}} → V. {{c2::{{c3::brachiocephalica sinistra}}::ilişkili yanıt arka yüzde}}'ya<br><br><br>5–8 → V. {{c4::hemiazygos accessoria}}'ya<br>9–11 → V. {{c4::hemiazygos}}'a açılır"
     }
    },
    "changes": [
@@ -11082,11 +11148,23 @@
      "category": "Biçim",
      "text": "ASCII oklar standart oklara çevrildi; başlıklar ve maddeler düzenlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: ASCII oklar Unicode oklara dönüştürüldü, kısaltmalar tam Latinceye çevrildi, başlıklar düzenlendi.\nNeden: ASCII ok hatası ve aşırı telgraf kısaltmaları giderildi.\nNasıl: [YZ1, BÇ1] İnterkostal venlerin ön ve arka drenaj şeması doğrulandı; c1 (2 adet), c2 (3 adet), c3 (2 adet), c4 (2 adet) cloze sayıları tam korundu.",
+   "aiNote": "Ne: Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: ASCII oklar Unicode oklara dönüştürüldü, kısaltmalar tam Latinceye çevrildi, başlıklar düzenlendi.\nNeden: ASCII ok hatası ve aşırı telgraf kısaltmaları giderildi.\nNasıl: [YZ1, BÇ1] İnterkostal venlerin ön ve arka drenaj şeması doğrulandı; c1 (2 adet), c2 (3 adet), c3 (2 adet), c4 (2 adet) cloze sayıları tam korundu."
+    }
+   ]
   },
   {
    "order": 330,
@@ -11257,13 +11335,13 @@
    "noteId": 1627300074203,
    "guid": "PZeuzf&AZj",
    "topic": "Toraks",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Karın Duvarını besleyen damarlar:<br><br>A. thoracica interna (A. epigastrica {{c3::sup}} ve A. musculophrenica dalları ile)<br><br>Aorta {{c2::thoracica}} (Ae. intercostales pos. A. subcostalis)<br><br>Aorta {{c2::abdominalis}} (Ae. {{c4::lumbales}})<br><br>A. {{c1::femoralis}} (A. epigastrica {{c3::superf.}} ve A. circumflexa ilium superf.)<br><br>A. {{c1::iliaca externa}} (A. epigastrica {{c3::inf.}} ve A. circumflexa ilium profunda)<br><br>A. {{c1::iliaca interna}} (A. {{c4::iliolumbalis}})",
-     "after": "Karın ön duvarını besleyen damar kaynakları:<br><br>a. thoracica interna (a. epigastrica {{c3::superior}} ve a. musculophrenica dalları ile)<br><br>Aorta {{c2::thoracica}} (arteriae intercostales posteriores ve a. subcostalis)<br><br>Aorta {{c2::abdominalis}} (arteriae {{c4::lumbales}})<br><br>a. {{c1::femoralis}} (a. epigastrica {{c3::superficialis}} ve a. circumflexa ilium superficialis)<br><br>a. {{c1::iliaca externa}} (a. epigastrica {{c3::inferior}} ve a. circumflexa ilium profunda)<br><br>a. {{c1::iliaca interna}} (a. {{c4::iliolumbalis}})"
+     "after": "Karın ön duvarını besleyen damar kaynakları:<br><br>a. thoracica interna (a. epigastrica {{c3::superior}} ve a. musculophrenica dalları ile)<br><br>Aorta {{c2::thoracica}} (arteriae intercostales posteriores ve a. subcostalis)<br><br>Aorta {{c2::abdominalis}} (arteriae {{c4::lumbales}})<br><br>a. {{c1::femoralis}} (a. epigastrica {{c3::superficialis}} ve a. circumflexa ilium {{c3::superficialis}})<br><br>a. {{c1::iliaca externa}} (a. epigastrica {{c3::inferior}} ve a. circumflexa ilium profunda)<br><br>a. {{c1::iliaca interna}} (a. {{c4::iliolumbalis}})"
     }
    },
    "changes": [
@@ -11278,11 +11356,23 @@
      "category": "Biçim",
      "text": "Liste maddelendi; cloze dizilimi ve sayıları tam korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı, imla düzeltildi, orijinal cloze dizilimi tam korundu.\nNeden: Kısaltmalar ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Karın duvarının vasküler beslenmesi doğrulandı; c1 (3 adet), c2 (2 adet), c3 (3 adet), c4 (2 adet) cloze sayıları tam korundu.",
+   "aiNote": "Ne: Başka satırdan okunan aynı yanıtlar, mevcut cloze görevleri korunarak gizlendi. İlişkili diğer ordinal yanıtı açık bir arka yüz etiketiyle maskelendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltmalar açıldı, imla düzeltildi, orijinal cloze dizilimi tam korundu.\nNeden: Kısaltmalar ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Karın duvarının vasküler beslenmesi doğrulandı; c1 (3 adet), c2 (2 adet), c3 (3 adet), c4 (2 adet) cloze sayıları tam korundu."
+    }
+   ]
   },
   {
    "order": 336,

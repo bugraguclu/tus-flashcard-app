@@ -16,14 +16,14 @@
  "reviewStage": "complete",
  "summary": {
   "reviewedNotes": 524,
-  "changedNotes": 521,
+  "changedNotes": 522,
   "htmlOnlyNotes": 1,
   "unchangedNotes": 2,
-  "changeItems": 1470,
+  "changeItems": 1481,
   "notesBySeverity": {
-   "Kritik": 17,
-   "Yüksek": 141,
-   "Orta": 295,
+   "Kritik": 19,
+   "Yüksek": 142,
+   "Orta": 292,
    "Düşük": 69
   },
   "notesByTopic": {
@@ -37,46 +37,56 @@
    "Üreme Endokrinolojisi": 41
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 15,
-    "Yüksek": 34
+   "Biçim": {
+    "Düşük": 532
+   },
+   "Cevap görünürlüğü": {
+    "Yüksek": 4
+   },
+   "Cevap görünürlüğü / kapsam": {
+    "Yüksek": 1
+   },
+   "Dil bilgisi": {
+    "Orta": 1,
+    "Düşük": 124
+   },
+   "Doğrulama gerekli": {
+    "Kritik": 1,
+    "Yüksek": 16
+   },
+   "Eksik kritik bilgi": {
+    "Yüksek": 63
    },
    "Güncellik": {
     "Kritik": 1,
     "Yüksek": 21,
     "Orta": 18
    },
-   "Eksik kritik bilgi": {
-    "Yüksek": 63
+   "Kısaltma": {
+    "Yüksek": 5,
+    "Orta": 368
    },
    "Soru netliği": {
     "Yüksek": 6,
     "Orta": 56
-   },
-   "Doğrulama gerekli": {
-    "Kritik": 1,
-    "Yüksek": 16
-   },
-   "Yapısal": {
-    "Yüksek": 18,
-    "Orta": 4,
-    "Düşük": 3
    },
    "Terim/yazım": {
     "Yüksek": 2,
     "Orta": 144,
     "Düşük": 38
    },
-   "Kısaltma": {
-    "Yüksek": 5,
-    "Orta": 368
+   "Tıbbi doğruluk": {
+    "Kritik": 15,
+    "Yüksek": 34
    },
-   "Dil bilgisi": {
-    "Orta": 1,
-    "Düşük": 124
+   "Yapısal": {
+    "Yüksek": 18,
+    "Orta": 4,
+    "Düşük": 3
    },
-   "Biçim": {
-    "Düşük": 532
+   "Ön/arka kapsam uyumu": {
+    "Kritik": 2,
+    "Yüksek": 4
    }
   },
   "secondReview": {
@@ -1055,7 +1065,7 @@
    "fields": {
     "Text": {
      "before": "Seksüel Gelişim Bzk'larından&nbsp;<div><br></div><div>Memesi olanlar ----&gt; {{c1::Tes. Feminizasyon}}&nbsp; /&nbsp; {{c1::Müllerian Agenezi&nbsp;}}</div><div><br></div><div>Kısa Boylular ---&gt; {{c2::Turner}} / {{c2::KAH&nbsp;}}</div><div><br></div><div>Gonadektomi yapılması gerekenler ---&gt; {{c3::Swyer Send}} (hemen) / {{c4::45 X0 - 45 XY Mozaik Turner}} / {{c3::5 alfa Redüktaz eks.}} / {{c4::Test. Feminizasyon}} (Pubertede)&nbsp;</div><div><br></div><div>Dışarıdan hormon verdiğin halde Adet YOK ----&gt; {{c5::Test. Feminizasyon}} / {{c5::5 alfa Red. eks}} / {{c5::Müllerian Agenezi}}</div>",
-     "after": "Seksüel gelişim bozukluklarından<div><br></div><div>Memesi olanlar → {{c1::testiküler feminizasyon}} / {{c1::Müller agenezisi}}</div><div><br></div><div>Kısa boylular → {{c2::Turner}} / {{c2::konjenital adrenal hiperplazi}}</div><div><br></div><div>Gonadektomi yapılması gerekenler → {{c3::Swyer sendromu}} (hemen) / {{c4::45,X/46,XY mozaik Turner}} / {{c3::5-alfa redüktaz eksikliği}} / {{c4::testiküler feminizasyon}} (puberte tamamlandıktan sonra)</div><div><br></div><div>Dışarıdan hormon verildiği hâlde adet kanaması olmayanlar → {{c5::testiküler feminizasyon}} / {{c5::5-alfa redüktaz eksikliği}} / {{c5::Müller agenezisi}}</div>"
+     "after": "Seksüel gelişim bozukluklarından<div><br></div><div>Memesi olanlar → {{c4::{{c5::{{c1::testiküler feminizasyon}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} / {{c5::{{c1::Müller agenezisi}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Kısa boylular → {{c4::{{c2::Turner}}::ilişkili yanıt arka yüzde}} / {{c2::konjenital adrenal hiperplazi}}</div><div><br></div><div>Gonadektomi yapılması gerekenler → {{c3::Swyer sendromu}} (hemen) / {{c2::{{c4::45,X/46,XY mozaik Turner}}::ilişkili yanıt arka yüzde}} / {{c5::{{c3::5-alfa redüktaz eksikliği}}::ilişkili yanıt arka yüzde}} / {{c1::{{c5::{{c4::testiküler feminizasyon}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} (puberte tamamlandıktan sonra)</div><div><br></div><div>Dışarıdan hormon verildiği hâlde adet kanaması olmayanlar → {{c1::{{c4::{{c5::testiküler feminizasyon}}::ilişkili yanıt arka yüzde}}::ilişkili yanıt arka yüzde}} / {{c3::{{c5::5-alfa redüktaz eksikliği}}::ilişkili yanıt arka yüzde}} / {{c1::{{c5::Müller agenezisi}}::ilişkili yanıt arka yüzde}}</div>"
     },
     "Extra": {
      "before": "",
@@ -1093,11 +1103,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "----> ve ---> → →; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Kadın Doğum tablosunda aynı öğrenme yanıtının farklı ordinalde görünmesi kapatıldı; sayı, kimlik ve görevler korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"45 X0 - 45 XY Mozaik Turner\" → \"45,X/46,XY mozaik Turner\" düzeltildi, kısaltmalar (Test., Send, eks., KAH) açıldı, \"(Pubertede)\" → \"(puberte tamamlandıktan sonra)\" ve \"verdiğin halde Adet YOK\" → \"verildiği hâlde adet kanaması olmayanlar\" yapıldı; Extra'ya güncel ad eklendi.\nNeden: Karyotip yanlış yazılmıştı (\"45,XY\" Y içeren Turner mozaikliğini tanımlamaz); \"KAH\" koroner arter hastalığı olarak da okunabiliyordu, son satır kişisel not diliyle yazılmıştı.\nNasıl: [TD1, GN2, KS1, SN2, YP1] Doğru karyotip aynı c4 boşluğunda yazıldı; TUS'ta kullanılan \"testiküler feminizasyon\" adı korunup güncel adı Extra'da verildi. Grupların üyeleri (meme: CAIS, MRKH; kısa boy: Turner, KAH; gonadektomi: Swyer, Y'li mozaik Turner, 5-alfa redüktaz eksikliği, CAIS; çekilme kanaması yok: uterusu olmayanlar) doğru olduğundan c1–c5 dağılımı değişmedi; aynı tanıların farklı numaralarda yinelenmesi yazarın tasarımıdır ve numaralar sabit olduğu için birleştirilmedi.\nKaynak: Speroff's Clinical Gynecologic Endocrinology and Infertility, cinsel gelişim bozuklukları ve amenore bölümleri.",
+   "aiNote": "Ne: Kadın Doğum tablosunda aynı öğrenme yanıtının farklı ordinalde görünmesi kapatıldı; sayı, kimlik ve görevler korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"45 X0 - 45 XY Mozaik Turner\" → \"45,X/46,XY mozaik Turner\" düzeltildi, kısaltmalar (Test., Send, eks., KAH) açıldı, \"(Pubertede)\" → \"(puberte tamamlandıktan sonra)\" ve \"verdiğin halde Adet YOK\" → \"verildiği hâlde adet kanaması olmayanlar\" yapıldı; Extra'ya güncel ad eklendi.\nNeden: Karyotip yanlış yazılmıştı (\"45,XY\" Y içeren Turner mozaikliğini tanımlamaz); \"KAH\" koroner arter hastalığı olarak da okunabiliyordu, son satır kişisel not diliyle yazılmıştı.\nNasıl: [TD1, GN2, KS1, SN2, YP1] Doğru karyotip aynı c4 boşluğunda yazıldı; TUS'ta kullanılan \"testiküler feminizasyon\" adı korunup güncel adı Extra'da verildi. Grupların üyeleri (meme: CAIS, MRKH; kısa boy: Turner, KAH; gonadektomi: Swyer, Y'li mozaik Turner, 5-alfa redüktaz eksikliği, CAIS; çekilme kanaması yok: uterusu olmayanlar) doğru olduğundan c1–c5 dağılımı değişmedi; aynı tanıların farklı numaralarda yinelenmesi yazarın tasarımıdır ve numaralar sabit olduğu için birleştirilmedi.\nKaynak: Speroff's Clinical Gynecologic Endocrinology and Infertility, cinsel gelişim bozuklukları ve amenore bölümleri."
+    }
+   ]
   },
   {
    "order": 25,
@@ -2337,11 +2359,11 @@
    "fields": {
     "Text": {
      "before": "<b>Total Abd. Histerektom</b>i Ab Pfx:<div><br></div><div><b>VKİ</b></div><div><b>&lt;35:</b> {{c1::1}} g Sefazolin</div><div><br></div><div><b>&gt; 35</b>: {{c1::2}} g Sefazolin</div>",
-     "after": "<b>Total abdominal histerektomi</b> antibiyotik profilaksisi:<div><br></div><div><b>VKİ</b></div><div><b>&lt; 35:</b> {{c1::1}} g sefazolin</div><div><br></div><div><b>&gt; 35</b>: {{c1::2}} g sefazolin</div>"
+     "after": "<b>Total abdominal histerektomi</b> antibiyotik profilaksisi (ASHP/IDSA/SIS/SHEA 2013):<div><br></div><div>Sefazolin: erişkin standart doz {{c1::2}} g İV; vücut ağırlığı ≥120 kg ise {{c1::3}} g İV.</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel ACOG önerisi (2018): bütün erişkinlerde 2 g İV sefazolin, 120 kg'ın üzerindeki hastalarda 3 g; VKİ'ye göre 1 g / 2 g ayrımı eski öneridir."
+     "after": "Bu dozlar ASHP/IDSA/SIS/SHEA ortak cerrahi profilaksi kılavuzunun erişkin tablosudur. Kurum protokolü, alerji ve işlem özellikleri ayrıca değerlendirilir; eski VKİ 35'e göre 1 g / 2 g ayrımı bu tabloda kullanılmaz."
     }
    },
    "changes": [
@@ -2360,11 +2382,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Sözcük ortasında kapanan kalın etiket (\"Histerektom</b>i\") düzeltildi; Sefazolin → sefazolin; \"<35\" → \"< 35\""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "ASHP ortak kılavuzu erişkin sefazolin dozunu 2 g, ≥120 kg için 3 g olarak verir. Ön yüz eski VKİ 35 ayrımını güncelmiş gibi sunar; tam 35 için de boşluk bırakır. ACOG'a atfedilen tüm erişkin dozu bu denetimde doğrudan PB195 tam metniyle doğrulanmadı.",
+     "rationale": "Kaynak: https://www.ashp.org/-/media/assets/policy-guidelines/docs/therapeutic-guidelines/therapeutic-guidelines-antimicrobial-prophylaxis-surgery.pdf"
     }
    ],
-   "aiNote": "Ne: \"Total Abd. Histerektomi Ab Pfx\" → \"Total abdominal histerektomi antibiyotik profilaksisi\" açıldı, sözcük ortasında kapanan kalın etiket düzeltildi; Extra'ya güncel ACOG sefazolin dozu eklendi.\nNeden: Kartın VKİ'ye göre 1 g / 2 g ayrımı eski öneridir; güncel ACOG kılavuzu bütün erişkinlerde 2 g önerir. Kök kişisel kısaltmalar ve bozuk HTML taşıyordu.\nNasıl: [TD2, KS1, YP4, YP1] TUS'ta sorulabilecek klasik ayrım ve c1 cevapları korundu, güncel doz Extra'da tek cümleyle verildi; bozuk kalın etiket bütün terimi kapsayacak biçimde düzeltildi.\nKaynak: ACOG Practice Bulletin No. 195, Prevention of Infection After Gynecologic Procedures (2018).",
+   "aiNote": "Ne: ASHP ortak kılavuzu erişkin sefazolin dozunu 2 g, ≥120 kg için 3 g olarak verir. Ön yüz eski VKİ 35 ayrımını güncelmiş gibi sunar; tam 35 için de boşluk bırakır. ACOG'a atfedilen tüm erişkin dozu bu denetimde doğrudan PB195 tam metniyle doğrulanmadı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.ashp.org/-/media/assets/policy-guidelines/docs/therapeutic-guidelines/therapeutic-guidelines-antimicrobial-prophylaxis-surgery.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Total Abd. Histerektomi Ab Pfx\" → \"Total abdominal histerektomi antibiyotik profilaksisi\" açıldı, sözcük ortasında kapanan kalın etiket düzeltildi; Extra'ya güncel ACOG sefazolin dozu eklendi.\nNeden: Kartın VKİ'ye göre 1 g / 2 g ayrımı eski öneridir; güncel ACOG kılavuzu bütün erişkinlerde 2 g önerir. Kök kişisel kısaltmalar ve bozuk HTML taşıyordu.\nNasıl: [TD2, KS1, YP4, YP1] TUS'ta sorulabilecek klasik ayrım ve c1 cevapları korundu, güncel doz Extra'da tek cümleyle verildi; bozuk kalın etiket bütün terimi kapsayacak biçimde düzeltildi.\nKaynak: ACOG Practice Bulletin No. 195, Prevention of Infection After Gynecologic Procedures (2018)."
+    }
+   ]
   },
   {
    "order": 55,
@@ -2579,17 +2613,17 @@
    "noteId": 1605859298768,
    "guid": "eL[f_u3+S(",
    "topic": "Jinekolojik Enfeksiyonlar",
-   "severity": "Yüksek",
+   "severity": "Kritik",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "PID Ayaktan Tdv ---&gt; {{c1::Sefalosporin (Sefoksitin(im) veya Seftriakson(im))}} + {{c1::Doks}} / {{c1::Azitro}}<div><br></div><div>Yatarak tdv ---&gt;</div><div><br></div><div>Rejim A ---&gt; {{c2::Sefoksitin}}(iv)&nbsp; /&nbsp; {{c2::Sefotetan}}(iv)&nbsp; &nbsp; &nbsp; +&nbsp; &nbsp; &nbsp; {{c2::Doks}}(iv)</div><div>Rejim B ---&gt; {{c3::Klindamisin&nbsp; &nbsp; &nbsp;}} +&nbsp; &nbsp; &nbsp; &nbsp; {{c3::Genta}} / {{c3::Seftriakson&nbsp;}}</div>",
-     "after": "PİD ayaktan tedavi → {{c1::sefalosporin (sefoksitin İM veya seftriakson İM)}} + {{c1::doksisiklin}} / {{c1::azitromisin}}<div><br></div><div>Yatarak tedavi →</div><div><br></div><div>Rejim A → {{c2::sefoksitin}} (İV) / {{c2::sefotetan}} (İV) + {{c2::doksisiklin}} (İV)</div><div>Rejim B → {{c3::klindamisin}} + {{c3::gentamisin}} / {{c3::seftriakson}}</div>"
+     "after": "Pelvik inflamatuar hastalık tedavisi (CDC 2021)<div><br></div><div>Ayaktan önerilen rejim → {{c2::{{c1::seftriakson İM + doksisiklin + metronidazol}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Parenteral seçenek → {{c1::{{c2::sefoksitin veya sefotetan + doksisiklin}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Alternatif parenteral rejim → {{c3::klindamisin + gentamisin}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "CDC (2021): ayaktan tedavide seftriakson 500 mg İM tek doz + doksisiklin + metronidazol (14 gün); yatarak tedavide seftriakson İV + doksisiklin + metronidazol ya da sefoksitin/sefotetan İV + doksisiklin önerilir, klindamisin + gentamisin alternatif rejimdir."
+     "after": "Ayaktan tedavide doksisiklin ve metronidazol 14 gün verilir. Parenteral tedavide alternatif rejimler ve oral geçiş, klinik yanıt ve tubo-ovaryan apse durumuna göre seçilir. Kaynak: CDC STI Treatment Guidelines, PID (2021)."
     }
    },
    "changes": [
@@ -2614,11 +2648,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; (im)/(iv) → İM/İV; PID → PİD; büyük/küçük harf; &nbsp; ve fazla boşluklar temizlendi"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "CDC 2021 ayaktan rejimine metronidazol dahildir. Klindamisin–gentamisin alternatifine seftriaksonun gentamisin yerine yazılması da kılavuzdaki rejim değildir. Extra doğru olsa da yanlış ön yüzü düzeltmez.",
+     "rationale": "Kaynak: https://www.cdc.gov/std/treatment-guidelines/pid.htm"
     }
    ],
-   "aiNote": "Ne: \"Doks\", \"Azitro\", \"Genta\" ve \"Tdv\" açıldı, \"(im)/(iv)\" → \"İM/İV\" ve \"PID\" → \"PİD\" yapıldı, &nbsp; ve fazla boşluklar temizlendi; Extra'ya CDC 2021 rejimleri eklendi, rejim B'deki seftriakson doğrulamaya işaretlendi.\nNeden: Kart güncel kılavuzda rutin olan metronidazolü içermiyordu ve klindamisin + gentamisini ilk seçenek gibi sunuyordu; rejim B'deki seftriaksonun kaynağı doğrulanamadı. Kısaltmalar yazarın notlarıydı.\nNasıl: [TD2, KS1, BÇ1, YP1] TUS'un sorabileceği klasik rejim A/B ayrımı ve c1–c3 dağılımı korundu, güncel rejimler Extra'da tek cümleyle verildi; emin olunamayan c3 üyesi silinmeden işaretlendi.\nKaynak: CDC Sexually Transmitted Infections Treatment Guidelines, 2021, pelvik inflamatuar hastalık bölümü.",
+   "aiNote": "Ne: CDC 2021 ayaktan rejimine metronidazol dahildir. Klindamisin–gentamisin alternatifine seftriaksonun gentamisin yerine yazılması da kılavuzdaki rejim değildir. Extra doğru olsa da yanlış ön yüzü düzeltmez.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.cdc.gov/std/treatment-guidelines/pid.htm",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Doks\", \"Azitro\", \"Genta\" ve \"Tdv\" açıldı, \"(im)/(iv)\" → \"İM/İV\" ve \"PID\" → \"PİD\" yapıldı, &nbsp; ve fazla boşluklar temizlendi; Extra'ya CDC 2021 rejimleri eklendi, rejim B'deki seftriakson doğrulamaya işaretlendi.\nNeden: Kart güncel kılavuzda rutin olan metronidazolü içermiyordu ve klindamisin + gentamisini ilk seçenek gibi sunuyordu; rejim B'deki seftriaksonun kaynağı doğrulanamadı. Kısaltmalar yazarın notlarıydı.\nNasıl: [TD2, KS1, BÇ1, YP1] TUS'un sorabileceği klasik rejim A/B ayrımı ve c1–c3 dağılımı korundu, güncel rejimler Extra'da tek cümleyle verildi; emin olunamayan c3 üyesi silinmeden işaretlendi.\nKaynak: CDC Sexually Transmitted Infections Treatment Guidelines, 2021, pelvik inflamatuar hastalık bölümü."
+    }
+   ]
   },
   {
    "order": 61,
@@ -3736,7 +3782,7 @@
    "fields": {
     "Text": {
      "before": "KOK kesin KEND ---&gt; &gt; {{c1::35}} yaş + {{c1::Sigara içimi&nbsp;}}",
-     "after": "KOK kesin kontrendikasyonu → ≥ {{c1::35}} yaş + {{c1::sigara içimi}}"
+     "after": "KOK kesin kontrendikasyonu → ≥ {{c1::35}} yaş + günde ≥15 {{c1::sigara içimi}}"
     },
     "Extra": {
      "before": "",
@@ -3759,28 +3805,40 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; \"---> >\" çift işaret tek \"≥\" oldu; Sigara → sigara; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "CDC 2024 ≥35 yaş için <15 sigara/gün kategori 3, ≥15 sigara/gün kategori 4 ayırır. Extra doğru eşik verse de kök her sigara miktarını kesin kontrendikasyon sayar.",
+     "rationale": "Kaynak: https://www.cdc.gov/contraception/hcp/usmec/combined-hormonal-contraceptives.html"
     }
    ],
-   "aiNote": "Ne: \"KOK kesin KEND ---> > 35 yaş\" → \"KOK kesin kontrendikasyonu → ≥ 35 yaş\" yapıldı ve Extra'ya günlük sigara sayısına göre kategori 4/kategori 3 ayrımı eklendi. Extra'daki \"WHO\" → \"DSÖ\" yazıldı.\nNeden: Kesin kontrendikasyon yalnız günde 15 ve daha fazla sigara içen 35 yaş ve üstü kadın için geçerlidir; niteleyicisiz kart her miktarda sigara içimini kategori 4 gibi öğretiyordu.\nNasıl: [EK1, KS1, YP2, YP1, YZ1] Klasik iki bileşenli cevap (35 yaş + sigara) korundu, cevabı ele verecek doz niteleyicisi kök yerine Extra'ya yazıldı; c1 değişmedi. Türkçe kısaltma \"DSÖ\" ders genelinde \"WHO\" yerine tek biçim olarak kullanıldı. Karşılaştırma işaretinden sonra ders genelindeki gibi bir boşluk bırakıldı (≥ 25 mm, > %50).\nKaynak: CDC, U.S. Medical Eligibility Criteria for Contraceptive Use, 2024 (sigara içimi ve yaş); WHO Medical Eligibility Criteria for Contraceptive Use.",
+   "aiNote": "Ne: CDC 2024 ≥35 yaş için <15 sigara/gün kategori 3, ≥15 sigara/gün kategori 4 ayırır. Extra doğru eşik verse de kök her sigara miktarını kesin kontrendikasyon sayar.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.cdc.gov/contraception/hcp/usmec/combined-hormonal-contraceptives.html",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"KOK kesin KEND ---> > 35 yaş\" → \"KOK kesin kontrendikasyonu → ≥ 35 yaş\" yapıldı ve Extra'ya günlük sigara sayısına göre kategori 4/kategori 3 ayrımı eklendi. Extra'daki \"WHO\" → \"DSÖ\" yazıldı.\nNeden: Kesin kontrendikasyon yalnız günde 15 ve daha fazla sigara içen 35 yaş ve üstü kadın için geçerlidir; niteleyicisiz kart her miktarda sigara içimini kategori 4 gibi öğretiyordu.\nNasıl: [EK1, KS1, YP2, YP1, YZ1] Klasik iki bileşenli cevap (35 yaş + sigara) korundu, cevabı ele verecek doz niteleyicisi kök yerine Extra'ya yazıldı; c1 değişmedi. Türkçe kısaltma \"DSÖ\" ders genelinde \"WHO\" yerine tek biçim olarak kullanıldı. Karşılaştırma işaretinden sonra ders genelindeki gibi bir boşluk bırakıldı (≥ 25 mm, > %50).\nKaynak: CDC, U.S. Medical Eligibility Criteria for Contraceptive Use, 2024 (sigara içimi ve yaş); WHO Medical Eligibility Criteria for Contraceptive Use."
+    }
+   ]
   },
   {
    "order": 87,
    "noteId": 1605853657386,
    "guid": "Btdu>Qcw:h",
    "topic": "Kontrasepsiyon",
-   "severity": "Yüksek",
+   "severity": "Kritik",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "KOK hast ilişkisi&nbsp;<div><br></div><div>SLE {{c1::alevlenir}}</div><div><br></div><div>RA {{c2::hafifler}}</div><div><br></div><div>Orak Hc'li Anemi {{c1::alevlenir}}</div><div><br></div><div>DEA {{c2::azalır}}</div><div><br></div><div>Epilepsi {{c1::rölatrif KEND (ilaç etkileşimi)}}</div>",
-     "after": "KOK kullanımının hastalıklara etkisi (klasik bilgi)<div><br></div><div>SLE {{c1::alevlenir}}</div><div><br></div><div>RA {{c2::hafifler}}</div><div><br></div><div>Orak hücreli anemi {{c1::alevlenir}}</div><div><br></div><div>Demir eksikliği anemisi {{c2::azalır}}</div><div><br></div><div>Epilepsi {{c1::rölatif kontrendikasyon (ilaç etkileşimi)}}</div>"
+     "after": "Kombine oral kontraseptif kullanımında seçilmiş hastalıklar (CDC U.S. MEC 2024):<br><br>Stabil, antifosfolipid antikoru negatif SLE: KOK ile alevlenme {{c1::artmış bulunmamıştır}}; antikor pozitif/bilinmeyen ise {{c1::kategori 4}}.<br><br>Orak hücreli hastalık: {{c1::kategori 4 (kabul edilemez sağlık riski)}}.<br><br>RA semptomları {{c2::hafifleyebilir}}.<br><br>Demir eksikliği anemisi riski {{c2::azalabilir}}.<br><br>Epilepside uygunluk {{c1::kullanılan antiepileptiklerle etkileşime göre değerlendirilir}}."
     },
     "Extra": {
      "before": "",
-     "after": "Güncel bilgi: randomize çalışmalarda stabil ve antifosfolipid antikoru negatif SLE'de KOK alevlenmeyi artırmadı; antifosfolipid antikoru pozitif (veya bilinmeyen) SLE'de KOK kontrendikedir. CDC uygunluk ölçütlerinde orak hücreli hastalık KOK için kategori 2'dir (yararı riskinden fazla)."
+     "after": "Güncel bilgi: randomize çalışmalarda stabil ve antifosfolipid antikoru negatif SLE'de KOK alevlenmeyi artırmadı; antifosfolipid antikoru pozitif (veya bilinmeyen) SLE'de KOK kontrendikedir. CDC U.S. MEC 2024 uygunluk ölçütlerinde orak hücreli hastalık, kombine hormonal kontraseptifler için kategori 4'tür (kabul edilemez sağlık riski)."
     }
    },
    "changes": [
@@ -3804,11 +3862,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"KOK hast ilişkisi\" → \"KOK kullanımının hastalıklara etkisi\"; Anemi → anemi; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "CDC U.S. MEC 2024 kombine hormonal kontraseptifleri orak hücreli hastalık için kategori 4 olarak sınıflar. Extra'daki kategori 2 ifadesi güncel tabloyla çelişir.",
+     "rationale": "Kaynak: https://www.cdc.gov/contraception/hcp/usmec/combined-hormonal-contraceptives.html"
     }
    ],
-   "aiNote": "Ne: Başlık \"KOK kullanımının hastalıklara etkisi (klasik bilgi)\" yapıldı, \"rölatrif\" → \"rölatif\" düzeltildi, \"Hc'li\", \"DEA\", \"KEND\" açıldı ve Extra'ya SLE ile orak hücreli anemideki güncel değerlendirme eklendi.\nNeden: SLE ve orak hücreli anemide KOK'un hastalığı alevlendirdiği klasik bir bilgidir; güncel kanıt stabil, antifosfolipid antikoru negatif SLE'de alevlenme artışı göstermez ve orak hücreli hastalık kategori 2'dir. Kart bunu genel kural gibi sunuyordu.\nNasıl: [TD2, KS1, YZ1, YP1] TUS'un beklediği \"alevlenir\" cevapları başlıktaki \"klasik bilgi\" çerçevesiyle korundu, güncel bilgi Extra'da verildi; RA, demir eksikliği anemisi ve epilepsi (enzim indükleyici ilaç etkileşimi) satırları doğru olduğundan c1/c2 dağılımı değişmedi.\nKaynak: Speroff's Clinical Gynecologic Endocrinology and Infertility, oral kontrasepsiyon bölümü; CDC, U.S. Medical Eligibility Criteria for Contraceptive Use, 2024 (SLE ve orak hücreli hastalık).",
+   "aiNote": "Ne: CDC U.S. MEC 2024 kombine hormonal kontraseptifleri orak hücreli hastalık için kategori 4 olarak sınıflar. Extra'daki kategori 2 ifadesi güncel tabloyla çelişir.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.cdc.gov/contraception/hcp/usmec/combined-hormonal-contraceptives.html",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlık \"KOK kullanımının hastalıklara etkisi (klasik bilgi)\" yapıldı, \"rölatrif\" → \"rölatif\" düzeltildi, \"Hc'li\", \"DEA\", \"KEND\" açıldı ve Extra'ya SLE ile orak hücreli anemideki güncel değerlendirme eklendi.\nNeden: SLE ve orak hücreli anemide KOK'un hastalığı alevlendirdiği klasik bir bilgidir; güncel kanıt stabil, antifosfolipid antikoru negatif SLE'de alevlenme artışı göstermez ve orak hücreli hastalık kategori 2'dir. Kart bunu genel kural gibi sunuyordu.\nNasıl: [TD2, KS1, YZ1, YP1] TUS'un beklediği \"alevlenir\" cevapları başlıktaki \"klasik bilgi\" çerçevesiyle korundu, güncel bilgi Extra'da verildi; RA, demir eksikliği anemisi ve epilepsi (enzim indükleyici ilaç etkileşimi) satırları doğru olduğundan c1/c2 dağılımı değişmedi.\nKaynak: Speroff's Clinical Gynecologic Endocrinology and Infertility, oral kontrasepsiyon bölümü; CDC, U.S. Medical Eligibility Criteria for Contraceptive Use, 2024 (SLE ve orak hücreli hastalık)."
+    }
+   ]
   },
   {
    "order": 88,
@@ -4049,7 +4119,7 @@
    "fields": {
     "Text": {
      "before": "<b>Komb. HRT</b> kullanımı ile<div><br></div><div>Riski ARTANLAR ---&gt; {{c1::KAH}} / {{c2::Meme}} Ca / Trombemb vs.</div><div><br></div><div>Riski AZALAN ---&gt; {{c1::Kalça}} kırığı / {{c2::Kolorektal}} Ca&nbsp;</div><div><br></div><br><div><b>Sadece ÖST:</b> Kullanımı ile</div><div><br></div><div>Riski Artan ----&gt; Trombemb vs</div><div><br></div><div>Riski Azalan ---&gt; {{c3::Kalça&nbsp;<span style=\"color: var(--field-fg); background: var(--field-bg);\">kırığı</span><span style=\"color: var(--field-fg); background: var(--field-bg);\">&nbsp;}}&nbsp;</span></div>\n<div><br></div><div>Risk <b>DEĞİŞMEYEN </b>----&gt; {{c4::KAH}} / {{c4::Meme Ca}} / {{c4::Kolorektal}} Ca&nbsp;</div>",
-     "after": "<b>Kombine HRT</b> kullanımı ile<div><br></div><div>Riski <b>artanlar</b> → {{c1::KAH}} / {{c2::meme}} kanseri / tromboemboli vb.</div><div><br></div><div>Riski <b>azalanlar</b> → {{c1::kalça}} kırığı / {{c2::kolorektal}} kanser</div><div><br></div><div><b>Sadece östrojen</b> kullanımı ile (klasik WHI sonuçları)</div><div><br></div><div>Riski artan → tromboemboli vb.</div><div><br></div><div>Riski azalan → {{c3::kalça kırığı}}</div><div><br></div><div>Riski <b>değişmeyen </b>→ {{c4::KAH}} / {{c4::meme kanseri}} / {{c4::kolorektal}} kanser</div>"
+     "after": "İlk WHI raporlarının tedavi kolları karşılaştırması (tarihsel sonuçlar):<br><br><b>Kombine HRT</b> kullanımı ile<div><br></div><div>Riski <b>artanlar</b> → {{c1::KAH}} / {{c2::meme}} kanseri / tromboemboli vb.</div><div><br></div><div>Riski <b>azalanlar</b> → {{c3::{{c1::kalça}}::ilişkili yanıt arka yüzde}} kırığı / {{c2::kolorektal}} kanser</div><div><br></div><div><b>Sadece östrojen</b> kullanımı ile (klasik WHI sonuçları)</div><div><br></div><div>Riski artan → tromboemboli vb.</div><div><br></div><div>Riski azalan → {{c1::{{c3::kalça kırığı}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Riski <b>değişmeyen </b>→ {{c4::KAH}} / {{c4::meme kanseri}} / {{c4::kolorektal}} kanser</div>"
     },
     "Extra": {
      "before": "",
@@ -4072,11 +4142,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> ve ----> → →; yapıştırmadan kalan stil span'ları, alan içi satır sonu ve span içinde kapanan c3 cloze'u temizlendi; art arda iki boş satır teke indirildi; ARTANLAR, AZALAN → kalın küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü / kapsam",
+     "text": "Kalça kırığı yanıtının karşılıklı görünmesi kapatıldı; ilk WHI sonuçlarının kökü tarihsel kapsamı açıkça taşıyor, uzun dönem Extra açıklamasıyla ayrılıyor.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Komb.\", \"Ca\", \"Trombemb vs.\" ve \"ÖST\" açıldı, \"Sadece östrojen\" bölümüne \"(klasik WHI sonuçları)\" eklendi ve Extra'ya WHI uzun dönem izleminde tek başına östrojenin meme kanseri sıklığını azalttığı yazıldı; c3 cloze'unu bölen yapıştırma span'ları ve alan içi satır sonu temizlendi.\nNeden: Tek başına östrojenin meme kanseri riskini \"değiştirmediği\" bilgisi WHI'nin müdahale dönemine aittir; uzun dönem izlemde risk anlamlı olarak azalmıştır. Alan, c3 boşluğunun bir span içinde kapandığı bozuk HTML taşıyordu.\nNasıl: [TD2, YP4, KS1, YP1] TUS'un beklediği klasik WHI tablosu (c4: KAH, meme kanseri, kolorektal kanser değişmez) çerçeve içinde korundu, güncel sonuç Extra'da tek cümleyle verildi; kombine HRT satırları WHI ile uyumlu olduğundan c1–c4 dağılımı ve kalın vurgular değişmedi.\nKaynak: Chlebowski RT ve ark., Association of Menopausal Hormone Therapy With Breast Cancer Incidence and Mortality During Long-term Follow-up of the Women's Health Initiative Randomized Clinical Trials (JAMA 2020).",
+   "aiNote": "Ne: Kalça kırığı yanıtının karşılıklı görünmesi kapatıldı; ilk WHI sonuçlarının kökü tarihsel kapsamı açıkça taşıyor, uzun dönem Extra açıklamasıyla ayrılıyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Komb.\", \"Ca\", \"Trombemb vs.\" ve \"ÖST\" açıldı, \"Sadece östrojen\" bölümüne \"(klasik WHI sonuçları)\" eklendi ve Extra'ya WHI uzun dönem izleminde tek başına östrojenin meme kanseri sıklığını azalttığı yazıldı; c3 cloze'unu bölen yapıştırma span'ları ve alan içi satır sonu temizlendi.\nNeden: Tek başına östrojenin meme kanseri riskini \"değiştirmediği\" bilgisi WHI'nin müdahale dönemine aittir; uzun dönem izlemde risk anlamlı olarak azalmıştır. Alan, c3 boşluğunun bir span içinde kapandığı bozuk HTML taşıyordu.\nNasıl: [TD2, YP4, KS1, YP1] TUS'un beklediği klasik WHI tablosu (c4: KAH, meme kanseri, kolorektal kanser değişmez) çerçeve içinde korundu, güncel sonuç Extra'da tek cümleyle verildi; kombine HRT satırları WHI ile uyumlu olduğundan c1–c4 dağılımı ve kalın vurgular değişmedi.\nKaynak: Chlebowski RT ve ark., Association of Menopausal Hormone Therapy With Breast Cancer Incidence and Mortality During Long-term Follow-up of the Women's Health Initiative Randomized Clinical Trials (JAMA 2020)."
+    }
+   ]
   },
   {
    "order": 94,
@@ -4536,7 +4618,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Bu eşiğin üzerinde intrauterin kese görülmemesi canlı olmayan gebeliği gösterir; ektopik gebeliğin yanında erken gebelik kaybı da olabilir. Klasik diskriminatuar zon 1500–2000 mIU/mL'dir."
+     "after": "Connolly ve ark. (2013) çalışmasında 3510 mIU/mL, canlı intrauterin gebelikte kesenin transvajinal USG'de görülmesi için %99 olasılık eşiğidir; %100 kesinlik sınırı değildir. Bu düzeyin üzerinde kese görülmemesi tek başına gebeliğin canlılığını veya yerini kesinleştirmez; klinik değerlendirme, seri β-hCG ve tekrar USG gerekir. Klasik diskriminatuar zon 1500–2000 mIU/mL olarak anılır."
     }
    },
    "changes": [
@@ -4560,11 +4642,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> ve ---> → →; birim (mIU/mL) eklendi; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Connolly 2013 eşiği %99 görünürlük tahminidir. Tek hCG/USG gözlemi %100 canlılık dışlama kuralı değildir. Kök şüphe ifadesi uygun; Extra kesin tanı diliyle aşırı iddia kurar.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/23262929/; https://pubmed.ncbi.nlm.nih.gov/22123998/"
     }
    ],
-   "aiNote": "Ne: \"Keseyi göremiyorsan → Ektopik\" → \"transvajinal USG'de intrauterin kese görülmüyorsa → ektopik gebelik düşünülür\" yapıldı, eşiğe birim (mIU/mL) eklendi ve Extra'ya erken gebelik kaybı olasılığı ile klasik 1500–2000 mIU/mL eşiği yazıldı. \"Beta hCG\" → \"β-hCG\" yazıldı.\nNeden: Diskriminatuar düzeyin üzerinde kese görülmemesi yalnız ektopik gebeliği değil canlı olmayan her gebeliği düşündürür; kart bunu kesin tanı gibi ve yöntem belirtmeden veriyordu. Kök kişisel hitapla yazılmıştı.\nNasıl: [EK1, SN2, BÇ1, YP1, YZ1] Yazarın 3510 değeri (transvajinal USG'de kesenin %99 görüldüğü eşik) korundu; ifadeyi doğru kılan yöntem ve \"düşünülür\" niteleyicisi cloze dışına yazıldı, ayırıcı tanı Extra'ya alındı. \"β-hCG\" (TGF-β gibi yerleşik molekül simgesi) ders genelinde tek biçim seçildi; hormonun genel adı \"hCG\" olarak kaldı ve cevabın anlamı değişmedi.\nKaynak: ACOG, tubal ektopik gebelik kılavuzu (diskriminatuar hCG düzeyi); Williams Obstetrics, ektopik gebelik bölümü.",
+   "aiNote": "Ne: Connolly 2013 eşiği %99 görünürlük tahminidir. Tek hCG/USG gözlemi %100 canlılık dışlama kuralı değildir. Kök şüphe ifadesi uygun; Extra kesin tanı diliyle aşırı iddia kurar.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/23262929/; https://pubmed.ncbi.nlm.nih.gov/22123998/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Keseyi göremiyorsan → Ektopik\" → \"transvajinal USG'de intrauterin kese görülmüyorsa → ektopik gebelik düşünülür\" yapıldı, eşiğe birim (mIU/mL) eklendi ve Extra'ya erken gebelik kaybı olasılığı ile klasik 1500–2000 mIU/mL eşiği yazıldı. \"Beta hCG\" → \"β-hCG\" yazıldı.\nNeden: Diskriminatuar düzeyin üzerinde kese görülmemesi yalnız ektopik gebeliği değil canlı olmayan her gebeliği düşündürür; kart bunu kesin tanı gibi ve yöntem belirtmeden veriyordu. Kök kişisel hitapla yazılmıştı.\nNasıl: [EK1, SN2, BÇ1, YP1, YZ1] Yazarın 3510 değeri (transvajinal USG'de kesenin %99 görüldüğü eşik) korundu; ifadeyi doğru kılan yöntem ve \"düşünülür\" niteleyicisi cloze dışına yazıldı, ayırıcı tanı Extra'ya alındı. \"β-hCG\" (TGF-β gibi yerleşik molekül simgesi) ders genelinde tek biçim seçildi; hormonun genel adı \"hCG\" olarak kaldı ve cevabın anlamı değişmedi.\nKaynak: ACOG, tubal ektopik gebelik kılavuzu (diskriminatuar hCG düzeyi); Williams Obstetrics, ektopik gebelik bölümü."
+    }
+   ]
   },
   {
    "order": 106,
@@ -5407,11 +5501,11 @@
    "fields": {
     "Text": {
      "before": "preterm eylem öyküsü olan hasta'da PreTerm eylem <b>Pfx </b>----&gt; {{c1::Progesteron&nbsp;}}",
-     "after": "Preterm eylem öyküsü olan hastada preterm eylem <b>profilaksisi</b> → {{c1::progesteron}}"
+     "after": "Spontan preterm doğum öyküsü olan, tekil gebelikte <b>kısa serviksi bulunan</b> hastada (ACOG 2023; 2025 güncellemesi) tekrarlayan preterm doğumun önlenmesinde düşünülebilen seçenek → vajinal {{c1::progesteron}}"
     },
     "Extra": {
      "before": "",
-     "after": "17-OHP kaproat (Makena), PROLONG çalışmasında etkisiz bulunduğu için 2023'te ABD'de piyasadan çekildi; bu endikasyonda vajinal progesteron (özellikle kısa serviks varlığında) kullanılır."
+     "after": "17-OHP kaproat (Makena), PROLONG çalışmasında etkisiz bulunduğu için 2023'te ABD'de piyasadan çekildi; ACOG 2023'e göre vajinal progesteron, spontan preterm doğum öyküsü olan tekil gebelikte kısa serviks varsa düşünülebilir; kısa serviks yoksa bu amaçla önerilmez."
     }
    },
    "changes": [
@@ -5435,11 +5529,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "----> → →; preterm, PreTerm, Progesteron → büyük/küçük harf düzenlendi; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "ACOG 2023, önceki spontan preterm doğum öyküsü olup serviksi kısalmamış hastada vajinal progesteronu önermemektedir. Kart koşulsuz öykü→progesteron ilişkisi kurar; özellikle kısa serviks ifadesi yeterli sınırlama değildir.",
+     "rationale": "Kaynak: https://www.acog.org/clinical/clinical-guidance/practice-advisory/articles/2023/04/updated-guidance-use-of-progestogen-supplementation-for-prevention-of-recurrent-preterm-birth"
     }
    ],
-   "aiNote": "Ne: \"Pfx\" → \"profilaksisi\" açıldı, \"hasta'da\" → \"hastada\" düzeltildi ve Extra'ya 17-OHP kaproatın 2023'te ABD'de piyasadan çekildiği ile vajinal progesteron seçeneği eklendi.\nNeden: Kart progesteronu genel olarak veriyordu; klasik olarak kastedilen 17-OHP kaproat etkisiz bulunup 2023'te çekildiği hâlde bu durum kartta yoktu.\nNasıl: [GN1, KS1, DB1] Cevap (progesteron) vajinal progesteron için hâlâ geçerli olduğundan c1 korundu; çekilen ilaç ve güncel seçenek cevabı değiştirmeden Extra'da tek cümleyle verildi.\nKaynak: FDA'nın Makena (hidroksiprogesteron kaproat) onayını geri çekme kararı (Nisan 2023, Federal Register); SMFM Statement: Response to the Food and Drug Administration's withdrawal of 17-alpha hydroxyprogesterone caproate (AJOG 2023).",
+   "aiNote": "Ne: ACOG 2023, önceki spontan preterm doğum öyküsü olup serviksi kısalmamış hastada vajinal progesteronu önermemektedir. Kart koşulsuz öykü→progesteron ilişkisi kurar; özellikle kısa serviks ifadesi yeterli sınırlama değildir.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.acog.org/clinical/clinical-guidance/practice-advisory/articles/2023/04/updated-guidance-use-of-progestogen-supplementation-for-prevention-of-recurrent-preterm-birth",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Pfx\" → \"profilaksisi\" açıldı, \"hasta'da\" → \"hastada\" düzeltildi ve Extra'ya 17-OHP kaproatın 2023'te ABD'de piyasadan çekildiği ile vajinal progesteron seçeneği eklendi.\nNeden: Kart progesteronu genel olarak veriyordu; klasik olarak kastedilen 17-OHP kaproat etkisiz bulunup 2023'te çekildiği hâlde bu durum kartta yoktu.\nNasıl: [GN1, KS1, DB1] Cevap (progesteron) vajinal progesteron için hâlâ geçerli olduğundan c1 korundu; çekilen ilaç ve güncel seçenek cevabı değiştirmeden Extra'da tek cümleyle verildi.\nKaynak: FDA'nın Makena (hidroksiprogesteron kaproat) onayını geri çekme kararı (Nisan 2023, Federal Register); SMFM Statement: Response to the Food and Drug Administration's withdrawal of 17-alpha hydroxyprogesterone caproate (AJOG 2023)."
+    }
+   ]
   },
   {
    "order": 128,
@@ -12217,13 +12323,13 @@
    "noteId": 1606053028628,
    "guid": "K_u!<C<;4c",
    "topic": "Obstetri",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "İmp. olan blastokistin altındaki endomet ---&gt; Desidua {{c1::Basalis}}<div><br></div><div>İmp'unun üstünü örten uterin boşluktan ayıran ---&gt; Desidua {{c1::Kapsülaris}}</div><div><br></div><div>Geri kalan Endomet ---&gt; Desidua {{c1::Parietalis&nbsp;}}</div><div><br></div><div><br></div><div>14-16. Hf'da Desidua {{c2::Kapsülaris}} ve {{c2::Parietalis}} birleşir ----&gt; Desidua {{c3::Vera}} olur&nbsp;</div>",
-     "after": "İmplante olan blastokistin altındaki endometrium → desidua {{c1::bazalis}}<div><br></div><div>İmplantasyon yerinin üstünü örtüp uterus boşluğundan ayıran → desidua {{c1::kapsülaris}}</div><div><br></div><div>Geri kalan endometrium → desidua {{c1::parietalis}}</div><div><br></div><div>14–16. haftada desidua {{c2::kapsülaris}} ve {{c2::parietalis}} birleşir → desidua {{c3::vera}} olur</div>"
+     "after": "İmplante olan blastokistin altındaki endometrium → desidua {{c1::bazalis}}<div><br></div><div>İmplantasyon yerinin üstünü örtüp uterus boşluğundan ayıran → desidua {{c2::{{c1::kapsülaris}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Geri kalan endometrium → desidua {{c2::{{c1::parietalis}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>14–16. haftada desidua {{c1::{{c2::kapsülaris}}::ilişkili yanıt arka yüzde}} ve {{c1::{{c2::parietalis}}::ilişkili yanıt arka yüzde}} birleşir → desidua {{c3::vera}} olur</div>"
     }
    },
    "changes": [
@@ -12246,11 +12352,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> ve ----> → →; \"14-16\" → \"14–16\"; Desidua, Kapsülaris, Parietalis, Vera → küçük harf; art arda iki boş satır teke indirildi; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Kadın Doğum tablosunda aynı öğrenme yanıtının farklı ordinalde görünmesi kapatıldı; sayı, kimlik ve görevler korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"İmp.\", \"İmp'unun\", \"endomet\" ve \"Hf\" açıldı, ikinci satırdaki sıfat zinciri \"üstünü örtüp uterus boşluğundan ayıran\" yapıldı ve büyük harfler küçültüldü. \"Basalis\" → \"bazalis\" yazıldı.\nNeden: Kart kişisel kısaltmalar ve bağlaçsız sıfat zinciriyle yazılmıştı; içerik ders kitabıyla uyumluydu.\nNasıl: [KS1, DB1, BÇ1, YZ1] Desidua bazalis, kapsülaris ve parietalisin tanımları ile 14–16. haftada kapsülaris ve parietalisin birleşmesi doğru olduğundan c1–c3 dağılımı korundu. \"Desidua bazalis / kapsülaris / parietalis\" ders genelinde aynı (Türkçe okunuşlu) yazımla tek biçime getirildi; c1 cevabının anlamı değişmedi.",
+   "aiNote": "Ne: Kadın Doğum tablosunda aynı öğrenme yanıtının farklı ordinalde görünmesi kapatıldı; sayı, kimlik ve görevler korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"İmp.\", \"İmp'unun\", \"endomet\" ve \"Hf\" açıldı, ikinci satırdaki sıfat zinciri \"üstünü örtüp uterus boşluğundan ayıran\" yapıldı ve büyük harfler küçültüldü. \"Basalis\" → \"bazalis\" yazıldı.\nNeden: Kart kişisel kısaltmalar ve bağlaçsız sıfat zinciriyle yazılmıştı; içerik ders kitabıyla uyumluydu.\nNasıl: [KS1, DB1, BÇ1, YZ1] Desidua bazalis, kapsülaris ve parietalisin tanımları ile 14–16. haftada kapsülaris ve parietalisin birleşmesi doğru olduğundan c1–c3 dağılımı korundu. \"Desidua bazalis / kapsülaris / parietalis\" ders genelinde aynı (Türkçe okunuşlu) yazımla tek biçime getirildi; c1 cevabının anlamı değişmedi."
+    }
+   ]
   },
   {
    "order": 325,
@@ -13202,13 +13320,13 @@
    "noteId": 1606112468722,
    "guid": "uA,+>]Bf@s",
    "topic": "Obstetri",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Biyofizik Profil 5 parametre ----&gt; {{c1::NST}} + USG (Fetal {{c1::Solunum}} + Fetal {{c1::hareket}} +&nbsp; Fetal {{c1::Tonus}} + {{c1::Amniyon Sıvı}} Miktarı)<div><br></div><div>en son bozulan ---&gt; {{c2::fetal&nbsp;tonus}}</div><div>kronik olduğunu gösterir ----&gt; {{c2::Amniyon Sıvı Miktarı}}</div>",
-     "after": "Biyofizik profil (5 parametre) → {{c1::NST}} + USG (fetal {{c1::solunum}} + fetal {{c1::hareket}} + fetal {{c1::tonus}} + {{c1::amniyon sıvısı}} miktarı)<div><br></div><div>Hipokside en son bozulan → {{c2::fetal tonus}}</div><div>Hipoksinin kronik olduğunu gösteren → {{c2::amniyon sıvısı miktarı}}</div>"
+     "after": "Biyofizik profil (5 parametre) → {{c1::NST}} + USG (fetal {{c1::solunum}} + fetal {{c1::hareket}} + fetal {{c2::{{c1::tonus}}::ilişkili yanıt arka yüzde}} + {{c2::{{c1::amniyon sıvısı}}::ilişkili yanıt arka yüzde}} miktarı)<div><br></div><div>Hipokside en son bozulan → {{c1::{{c2::fetal tonus}}::ilişkili yanıt arka yüzde}}</div><div>Hipoksinin kronik olduğunu gösteren → {{c1::{{c2::amniyon sıvısı miktarı}}::ilişkili yanıt arka yüzde}}</div>"
     }
    },
    "changes": [
@@ -13226,11 +13344,23 @@
      "severity": "Düşük",
      "category": "Dil bilgisi",
      "text": "amniyon sıvı miktarı → amniyon sıvısı miktarı"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Kadın Doğum tablosunda aynı öğrenme yanıtının farklı ordinalde görünmesi kapatıldı; sayı, kimlik ve görevler korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Alt satırlara \"Hipokside en son bozulan\" ve \"Hipoksinin kronik olduğunu gösteren\" kökleri yazıldı; oklar → oldu, büyük harfler küçültüldü ve &nbsp; temizlendi. \"amniyon sıvı\" → \"amniyon sıvısı\" yazıldı.\nNeden: \"En son bozulan\" ve \"kronik olduğunu gösterir\" satırları neyin bozulduğunu ve neyin kronik olduğunu söylemiyordu; içerik doğruydu.\nNasıl: [SN1, BÇ1, YP4, YZ1, DB1] Fetal hipokside fetal tonusun en son kaybolduğu ve amniyon sıvısı miktarının kronik hipoksiyi yansıttığı ders kitabıyla uyumlu olduğundan c1 ve c2 korundu. \"Amniyon sıvısı\" tamlaması (ASİ: amniyon sıvısı indeksi) ders genelinde tek biçim olarak uygulandı; cevabın anlamı değişmedi.",
+   "aiNote": "Ne: Kadın Doğum tablosunda aynı öğrenme yanıtının farklı ordinalde görünmesi kapatıldı; sayı, kimlik ve görevler korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Alt satırlara \"Hipokside en son bozulan\" ve \"Hipoksinin kronik olduğunu gösteren\" kökleri yazıldı; oklar → oldu, büyük harfler küçültüldü ve &nbsp; temizlendi. \"amniyon sıvı\" → \"amniyon sıvısı\" yazıldı.\nNeden: \"En son bozulan\" ve \"kronik olduğunu gösterir\" satırları neyin bozulduğunu ve neyin kronik olduğunu söylemiyordu; içerik doğruydu.\nNasıl: [SN1, BÇ1, YP4, YZ1, DB1] Fetal hipokside fetal tonusun en son kaybolduğu ve amniyon sıvısı miktarının kronik hipoksiyi yansıttığı ders kitabıyla uyumlu olduğundan c1 ve c2 korundu. \"Amniyon sıvısı\" tamlaması (ASİ: amniyon sıvısı indeksi) ders genelinde tek biçim olarak uygulandı; cevabın anlamı değişmedi."
+    }
+   ]
   },
   {
    "order": 354,
@@ -14306,13 +14436,13 @@
    "noteId": 1606128814696,
    "guid": "n<Y7BvvFje",
    "topic": "Obstetri",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Koryonisite&nbsp;<div><br></div><div>Dizigotik ---&gt; Her zaman {{c1::Dikoryonik Diamniyotik}}</div><div><br></div><div>Monozigotik&nbsp;</div><div><br></div><div>İlk {{c2::72}} saat ---&gt; {{c3::Dikoryon Diamniyon}}</div><div><br></div><div>{{c2::4-8}} gün sonra ---&gt; {{c3::Monokoryon Diamniyon}} ---&gt; en sık monozigot tip</div><div><br></div><div>{{c2::8-13}} gün sonra ----&gt; {{c3::Monokoryon Monoamniyotik}}</div><div><br></div><div>&gt; {{c2::2}} hf ---&gt; {{c3::Yapışık}} İkiz&nbsp;</div>",
-     "after": "Koryonisite<div><br></div><div>Dizigotik → her zaman {{c1::dikoryonik diamniyotik}}</div><div><br></div><div>Monozigotik</div><div><br></div><div>İlk {{c2::72}} saat → {{c3::dikoryonik diamniyotik}}</div><div><br></div><div>{{c2::4–8}} gün sonra → {{c3::monokoryonik diamniyotik}} → en sık monozigotik tip</div><div><br></div><div>{{c2::8–13}} gün sonra → {{c3::monokoryonik monoamniyotik}}</div><div><br></div><div>&gt; {{c2::2}} hafta → {{c3::yapışık}} ikiz</div>"
+     "after": "Koryonisite<div><br></div><div>Dizigotik → her zaman {{c3::{{c1::dikoryonik diamniyotik}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Monozigotik</div><div><br></div><div>İlk {{c2::72}} saat → {{c1::{{c3::dikoryonik diamniyotik}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>{{c2::4–8}} gün sonra → {{c3::monokoryonik diamniyotik}} → en sık monozigotik tip</div><div><br></div><div>{{c2::8–13}} gün sonra → {{c3::monokoryonik monoamniyotik}}</div><div><br></div><div>&gt; {{c2::2}} hafta → {{c3::yapışık}} ikiz</div>"
     }
    },
    "changes": [
@@ -14330,11 +14460,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "4-8 ve 8-13 → 4–8 ve 8–13; ---> ve ----> → →; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Kadın Doğum tablosunda aynı öğrenme yanıtının farklı ordinalde görünmesi kapatıldı; sayı, kimlik ve görevler korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Koryonisite adları tek biçimde yazıldı (dikoryonik diamniyotik, monokoryonik diamniyotik, monokoryonik monoamniyotik), \"hf\" → \"hafta\" açıldı ve aralıklar uzun çizgiyle yazıldı.\nNeden: Aynı terim kartta iki farklı biçimde (Dikoryonik Diamniyotik / Dikoryon Diamniyon) yazılmıştı; içerik doğruydu.\nNasıl: [YZ1, KS1, BÇ1] Bölünme zamanına göre ilk 72 saatte DK-DA, 4–8. günlerde MK-DA (en sık), 8–13. günlerde MK-MA, daha geç bölünmede yapışık ikiz gelişmesi doğru olduğundan c1–c3 dağılımı korundu.",
+   "aiNote": "Ne: Kadın Doğum tablosunda aynı öğrenme yanıtının farklı ordinalde görünmesi kapatıldı; sayı, kimlik ve görevler korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Koryonisite adları tek biçimde yazıldı (dikoryonik diamniyotik, monokoryonik diamniyotik, monokoryonik monoamniyotik), \"hf\" → \"hafta\" açıldı ve aralıklar uzun çizgiyle yazıldı.\nNeden: Aynı terim kartta iki farklı biçimde (Dikoryonik Diamniyotik / Dikoryon Diamniyon) yazılmıştı; içerik doğruydu.\nNasıl: [YZ1, KS1, BÇ1] Bölünme zamanına göre ilk 72 saatte DK-DA, 4–8. günlerde MK-DA (en sık), 8–13. günlerde MK-MA, daha geç bölünmede yapışık ikiz gelişmesi doğru olduğundan c1–c3 dağılımı korundu."
+    }
+   ]
   },
   {
    "order": 387,

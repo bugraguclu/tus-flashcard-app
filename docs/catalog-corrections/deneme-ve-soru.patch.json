@@ -18,15 +18,15 @@
  "reviewStage": "complete",
  "summary": {
   "reviewedNotes": 745,
-  "changedNotes": 744,
+  "changedNotes": 745,
   "htmlOnlyNotes": 1,
   "unchangedNotes": 0,
-  "changeItems": 1255,
+  "changeItems": 1258,
   "notesBySeverity": {
    "Kritik": 91,
-   "Yüksek": 146,
-   "Orta": 329,
-   "Düşük": 179
+   "Yüksek": 149,
+   "Orta": 327,
+   "Düşük": 178
   },
   "notesByTopic": {
    "Deneme 1": 115,
@@ -36,38 +36,41 @@
    "Genel": 507
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 89,
-    "Yüksek": 134
+   "Biçim": {
+    "Düşük": 360
    },
-   "Güncellik": {
-    "Yüksek": 2
-   },
-   "Eksik kritik bilgi": {
-    "Yüksek": 9
-   },
-   "Soru netliği": {
-    "Yüksek": 14,
-    "Orta": 85
-   },
-   "Yapısal": {
-    "Kritik": 2,
-    "Yüksek": 2,
-    "Orta": 2
-   },
-   "Terim/yazım": {
-    "Orta": 89,
-    "Düşük": 183
-   },
-   "Kısaltma": {
-    "Orta": 272
+   "Cevap görünürlüğü": {
+    "Yüksek": 3
    },
    "Dil bilgisi": {
     "Orta": 3,
     "Düşük": 9
    },
-   "Biçim": {
-    "Düşük": 360
+   "Eksik kritik bilgi": {
+    "Yüksek": 9
+   },
+   "Güncellik": {
+    "Yüksek": 2
+   },
+   "Kısaltma": {
+    "Orta": 272
+   },
+   "Soru netliği": {
+    "Yüksek": 14,
+    "Orta": 85
+   },
+   "Terim/yazım": {
+    "Orta": 89,
+    "Düşük": 183
+   },
+   "Tıbbi doğruluk": {
+    "Kritik": 89,
+    "Yüksek": 134
+   },
+   "Yapısal": {
+    "Kritik": 2,
+    "Yüksek": 2,
+    "Orta": 2
    }
   },
   "secondReview": {}
@@ -14198,13 +14201,13 @@
    "noteId": 1621110550012,
    "guid": "pz[,eoZ;z<",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "AF HAS-BLED Kriterleri:<div><br></div><div>HT</div><div><br></div><div>A{{c1::normal Renal/Hep}}</div><div><br></div><div>Stroke</div><div><br></div><div>B{{c1::leeding öykü}}</div><div><br></div><div>Labil İNR</div><div><br></div><div>E{{c1::lderly(Yaş&gt;65)}}</div><div><br></div><div>Drug(ilaç - alkol)</div>",
-     "after": "AF için HAS-BLED kanama riski bileşenleri:<div><br></div><div>Hipertansiyon</div><div><br></div><div>Anormal {{c1::böbrek/karaciğer}} işlevi</div><div><br></div><div>İnme öyküsü</div><div><br></div><div>{{c1::Kanama}} öyküsü</div><div><br></div><div>Değişken INR</div><div><br></div><div>Yaş {{c1::&gt;65}}</div><div><br></div><div>İlaç / alkol</div>"
+     "after": "AF için HAS-BLED bileşenleri:<div><br></div><div>Hipertansiyon</div><div><br></div><div>Anormal {{c1::böbrek/karaciğer}} işlevi</div><div><br></div><div>İnme öyküsü</div><div><br></div><div>{{c1::Kanama}} öyküsü</div><div><br></div><div>Değişken INR</div><div><br></div><div>Yaş {{c1::&gt;65}}</div><div><br></div><div>İlaç / alkol</div>"
     },
     "Extra": {
      "before": "Cinsiyet YOK&nbsp;",
@@ -14217,11 +14220,23 @@
      "category": "Kısaltma",
      "text": "“HT”, “normal Renal/Hep”, “Stroke”, “Bleeding”, “Elderly” → Türkçe bileşenler",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Kanama öyküsü cevabını veren başlık sözcüğü kaldırıldı; skorlama adı ve diğer bileşenler korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Yedi HAS-BLED bileşeni korundu.\nNeden: Akronim satırları anlaşılabilir terime dönüştürüldü.\nNasıl: [KS1, YZ1, YP1] Yedi satır ve üç c1 korundu.",
+   "aiNote": "Ne: Kanama öyküsü cevabını veren başlık sözcüğü kaldırıldı; skorlama adı ve diğer bileşenler korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Yedi HAS-BLED bileşeni korundu.\nNeden: Akronim satırları anlaşılabilir terime dönüştürüldü.\nNasıl: [KS1, YZ1, YP1] Yedi satır ve üç c1 korundu."
+    }
+   ]
   },
   {
    "order": 443,
@@ -17394,13 +17409,13 @@
    "noteId": 1627152191305,
    "guid": "GYQ|u5XW`*",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "<b>Os İlium</b> üzeri işaretler:<div><br></div><div>Facies {{c1::Auricularis}}</div><div><br></div><div>Facies Glutea</div><div><br></div><div>Linea {{c1::Glutea}}</div><div><br></div><div>Fossa iliaca</div>",
-     "after": "<b>Os ilium</b> üzerindeki işaretler:<div><br></div><div>Facies {{c1::auricularis}}</div><div><br></div><div>Facies glutea</div><div><br></div><div>Linea {{c1::glutea}}</div><div><br></div><div>Fossa iliaca</div>"
+     "after": "<b>Os ilium</b> üzerindeki işaretler:<div><br></div><div>Facies {{c1::auricularis}}</div><div><br></div><div>Facies {{c1::glutea}}</div><div><br></div><div>Linea {{c1::glutea}}</div><div><br></div><div>Fossa iliaca</div>"
     },
     "Extra": {
      "before": "Tuberositas glutea --&gt; Femur'da&nbsp;",
@@ -17413,11 +17428,23 @@
      "category": "Terim/yazım",
      "text": "“Os İlium”, “Facies Glutea”, “Tuberositas glutea → Femur’da” → standart küçük harf ve temiz ek",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "İlium çizgisinin adı açık yüz adı tekrarından okunmuyor.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: “Os İlium”, “Facies Glutea”, “Tuberositas glutea → Femur’da” → standart küçük harf ve temiz ek.\nNeden: Dört anatomik işaret ve femur ayrımı korundu.\nNasıl: [YZ1, YP1, YP3] İki c1 ve kalın vurgu korundu.",
+   "aiNote": "Ne: İlium çizgisinin adı açık yüz adı tekrarından okunmuyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: “Os İlium”, “Facies Glutea”, “Tuberositas glutea → Femur’da” → standart küçük harf ve temiz ek.\nNeden: Dört anatomik işaret ve femur ayrımı korundu.\nNasıl: [YZ1, YP1, YP3] İki c1 ve kalın vurgu korundu."
+    }
+   ]
   },
   {
    "order": 563,
@@ -21956,13 +21983,13 @@
    "noteId": 1629608318645,
    "guid": "B$BMVoxrkh",
    "topic": "Genel",
-   "severity": "Düşük",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "<div>Anemi</div>PY'da <b>Mikrosit + Makrosit (Dimorfik Tablo)</b><div>Demir Yüksek --&gt;</div><div><br></div><div>{{c1::Sideroblastik Anemi}}</div>",
-     "after": "<b>Sideroblastik anemi:</b><div><br></div>Periferik yaymada <b>mikrosit + makrosit (dimorfik eritrosit tablosu)</b> ve yüksek serum demiri ile karakterizedir.<div><br></div>{{c1::Sideroblastik anemi}}"
+     "after": "<b>Hematolojik tabloyu tanımla:</b><div><br></div>Periferik yaymada <b>mikrosit + makrosit (dimorfik eritrosit tablosu)</b> ve yüksek serum demiri ile karakterizedir.<div><br></div>{{c1::Sideroblastik anemi}}"
     }
    },
    "changes": [
@@ -21977,11 +22004,23 @@
      "category": "Biçim",
      "text": "ASCII ok kaldırıldı; hematoloji sorusu akıcı hale getirildi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Tanısı sorulan hastalığın adını doğrudan veren başlık kaldırıldı.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: ASCII oku kaldırıldı, \"PY\" kısaltması açıldı, sideroblastik anemi dimorfik eritrosit bulgusu korundu.\nNeden: Debris temizlendi ve hematoloji standart dili sağlandı, c1 korundu.\nNasıl: [YP4, KS1] Williams Hematoloji ve Hoffbrand Temel Hematoloji'ye göre doğrulandı.",
+   "aiNote": "Ne: Tanısı sorulan hastalığın adını doğrudan veren başlık kaldırıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: ASCII oku kaldırıldı, \"PY\" kısaltması açıldı, sideroblastik anemi dimorfik eritrosit bulgusu korundu.\nNeden: Debris temizlendi ve hematoloji standart dili sağlandı, c1 korundu.\nNasıl: [YP4, KS1] Williams Hematoloji ve Hoffbrand Temel Hematoloji'ye göre doğrulandı."
+    }
+   ]
   },
   {
    "order": 708,
