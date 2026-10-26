@@ -30,6 +30,19 @@ Tam soru kökü için birebir eşleşme bulunmadı. 20 madde resmi açık ÖSYM
 kitapçıklarıyla karşılaştırıldı; kalan 180 madde sitenin metin sürümüne dayanır.
 Sayfadaki referans kartlarının cevabı desteklemesi ayrıca değerlendirildi.
 
+## Son 6 sınavın tamamı ve referans sistemi (26 Ekim 2026)
+
+[Rapor](referans-sistemi-2026-10-26/RAPOR.md) ·
+[Yapısal veri](referans-sistemi-2026-10-26/referanslar.json)
+
+rea arşivinden 2024/1–2026/2 dönemlerinin 1.195 sorusu, her ders için bir alt
+ajanla kart metnine dayanarak rozetlendi: 333 doğrudan ve 188 tek adımlı
+çıkarımla 521 soruya (%43,6) çözüm desteği bulundu. 2026/2'de destek 82/200;
+bunun 76'sında çözdüren bilgi sınav öncesi katalogda (a78ae1f) da vardı.
+Rapor ayrıca Tusworld Referans.pdf'ini, önceki masaüstü çalışmasını ve
+uygulamaya eklenecek referans sisteminin tasarımını ele alır. Yapısal veri
+soru metni içermez; not GUID'leriyle uygulama verisinin tohumudur.
+
 ## Okuma sınırı
 
 Bu dosyalar uygulama davranışını veya kart içeriğini değiştirmez. Olumlu
