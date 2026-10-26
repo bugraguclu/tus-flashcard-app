@@ -1386,7 +1386,8 @@ export default function SettingsScreen() {
                                             style={[styles.choiceButton, selected && styles.choiceButtonActive]}
                                             onPress={() => updateSettingsKeepingGrading(SWIPE_PRESETS[preset])}
                                             accessibilityRole="radio"
-                                            accessibilityState={{ selected }}
+                                            accessibilityState={{ checked: selected }}
+                                            aria-checked={selected}
                                         >
                                             <Text style={[styles.choiceText, selected && styles.choiceTextActive]}>{label}</Text>
                                         </TouchableOpacity>
