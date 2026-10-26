@@ -28,6 +28,14 @@ import {
 } from '../lib/blankCanvasSetup';
 import { useI18n } from '../hooks/useI18n';
 import SwipeDismissSheet from './SwipeDismissSheet';
+import {
+    compressPhotoForAttachment,
+    formatByteSize,
+    planPhotoCompressionForUri,
+    readUriByteLength,
+    withPhotoExtension,
+    type PhotoCompressionPlan,
+} from '../lib/photoCompression';
 
 interface MediaAttachButtonProps {
     /** Appends an Anki-style media reference (`<img src="…">`, `[sound:…]`, …) to the field. */
@@ -42,6 +50,12 @@ export { FIELD_MEDIA_RE } from '../lib/mediaAttachment';
 
 type MediaKind = 'image' | 'audio' | 'video' | 'file';
 
+/** A picked photo with its size and what shrinking it would do, read before the sheet opens. */
+type PickedPhoto = EditablePhoto & {
+    byteLength: number | null;
+    plan: PhotoCompressionPlan;
+};
+
 function escapeHtml(value: string): string {
     return value
         .replace(/&/g, '&amp;')
@@ -51,7 +65,7 @@ function escapeHtml(value: string): string {
 }
 
 const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert }, ref) {
-    const { t, l } = useI18n();
+    const { t, l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [menuVisible, setMenuVisible] = useState(false);
@@ -59,7 +73,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const [showRecorder, setShowRecorder] = useState(false);
     const [photoToEdit, setPhotoToEdit] = useState<EditablePhoto | null>(null);
     // A picked photo waits here until the user says whether to insert it untouched or edit it.
-    const [pickedPhoto, setPickedPhoto] = useState<EditablePhoto | null>(null);
+    const [pickedPhoto, setPickedPhoto] = useState<PickedPhoto | null>(null);
     // The new-page sheet: the paper is chosen here, then the editor opens on it.
     const [pageSetup, setPageSetup] = useState(false);
     const [pagePaper, setPagePaper] = useState(DEFAULT_BLANK_CANVAS_SETUP.paper);
@@ -144,7 +158,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             });
             if (result.canceled || !result.assets?.length) return;
             const asset = result.assets[0];
-            setPickedPhoto({
+            await offerPickedPhoto({
                 uri: asset.uri,
                 name: mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.fileName || 'gorsel', fallbackExtension: 'jpg' }),
                 width: asset.width,
@@ -178,7 +192,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             });
             if (result.canceled || !result.assets?.length) return;
             const asset = result.assets[0];
-            setPickedPhoto({
+            await offerPickedPhoto({
                 uri: asset.uri,
                 name: mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.fileName || 'kamera', fallbackExtension: 'jpg' }),
                 width: asset.width,
@@ -188,6 +202,35 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             console.warn('[MediaAttach] camera capture failed:', e);
             alert(t('common.error'), l('Fotoğraf çekilemedi.', 'Could not take the photo.'));
         }
+    };
+
+    const offerPickedPhoto = async (photo: EditablePhoto) => {
+        const byteLength = await readUriByteLength(photo.uri);
+        const plan = await planPhotoCompressionForUri(photo, byteLength);
+        setPickedPhoto({ ...photo, byteLength, plan });
+    };
+
+    /**
+     * Insert a smaller copy of the picked photo. `compressPhotoForAttachment` hands back the
+     * original when the result is not meaningfully smaller, may carry transparency, or fails.
+     */
+    const insertPickedPhotoOptimised = async () => {
+        const photo = pickedPhoto;
+        if (!photo) return;
+        setPickedPhoto(null);
+        setBusy(true);
+        let source = photo.uri;
+        let name = photo.name;
+        try {
+            const result = await compressPhotoForAttachment(photo);
+            source = result.uri;
+            if (result.extension) name = withPhotoExtension(photo.name, result.extension);
+        } catch (e) {
+            console.warn('[MediaAttach] optimise failed, storing the original:', e);
+        } finally {
+            setBusy(false);
+        }
+        await saveAndInsert(source, name, 'image');
     };
 
     /** Insert the picked photo byte-for-byte, at its full original resolution. */
@@ -435,9 +478,37 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                                 <Text style={styles.optionLabel}>{l('Olduğu gibi ekle', 'Insert as is')}</Text>
                                 <Text style={styles.optionCaption}>
                                     {l('Kırpılmadan, tam çözünürlükte eklenir.', 'Added uncropped, at full resolution.')}
+                                    {formatByteSize(pickedPhoto?.byteLength, locale) ? ` (${formatByteSize(pickedPhoto?.byteLength, locale)})` : ''}
                                 </Text>
                             </View>
                         </TouchableOpacity>
+                        {/* Offered only when shrinking gains something; an efficient or transparent photo plans to keep. */}
+                        {pickedPhoto?.plan.action === 'recompress' ? (
+                            <TouchableOpacity
+                                style={styles.optionRow}
+                                onPress={insertPickedPhotoOptimised}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Fotoğrafı küçülterek ekle', 'Add a smaller copy of the photo')}
+                            >
+                                <Text style={styles.optionIcon}>🪶</Text>
+                                <View style={styles.optionCopy}>
+                                    <Text style={styles.optionLabel}>{l('Küçültüp ekle', 'Add optimised')}</Text>
+                                    <Text style={styles.optionCaption}>
+                                        {formatByteSize(pickedPhoto.byteLength, locale)}
+                                        {' → ~'}
+                                        {formatByteSize(pickedPhoto.plan.estimatedBytes, locale)}
+                                        {' · '}
+                                        {pickedPhoto.plan.width}×{pickedPhoto.plan.height}
+                                    </Text>
+                                    <Text style={styles.optionCaption}>
+                                        {l(
+                                            'Ekranda görülebilir bir kalite kaybı olmadan. Sonuç küçülmezse orijinali eklenir.',
+                                            'No difference you can see on screen. The original is kept if it does not get smaller.',
+                                        )}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        ) : null}
                         <TouchableOpacity
                             style={styles.optionRow}
                             onPress={editPickedPhoto}
