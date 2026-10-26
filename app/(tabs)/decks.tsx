@@ -75,6 +75,7 @@ import StatsGlyph from '../../components/StatsGlyph';
 import GearGlyph from '../../components/GearGlyph';
 import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/DeckListTable';
+import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -99,6 +100,12 @@ import {
     toggleDeckBranchRows,
     type DeckListRowModel,
 } from '../../lib/deckListRows';
+import {
+    decodeDeckDropTarget,
+    resolveDeckDropTarget,
+    ROOT_DROP_TARGET,
+    type DeckDropRow,
+} from '../../lib/deckDropTarget';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -120,25 +127,6 @@ function parseCount(text: string, fallback: number = 0): number {
     return Number.isFinite(value) ? Math.max(0, value) : fallback;
 }
 
-const ROOT_DROP_TARGET = '__root_deck_drop_target__';
-type DeckDropPlacement = 'before' | 'inside' | 'after';
-
-function decodeDeckDropTarget(target: string | null):
-    | { kind: 'root' }
-    | { kind: 'deck'; name: string; placement: DeckDropPlacement }
-    | null {
-    if (!target) return null;
-    if (target === ROOT_DROP_TARGET) return { kind: 'root' };
-    const separator = target.indexOf(':');
-    if (separator < 0) return null;
-    const placement = target.slice(0, separator) as DeckDropPlacement;
-    if (placement !== 'before' && placement !== 'inside' && placement !== 'after') return null;
-    return { kind: 'deck', placement, name: target.slice(separator + 1) };
-}
-
-function encodeDeckDropTarget(name: string, placement: DeckDropPlacement): string {
-    return `${placement}:${name}`;
-}
 // A deliberate spring-open delay prevents a parent from expanding while the pointer merely
 // passes over it. 800 ms sits in the familiar 0.6–1.0 s range used by tree/list drag UIs.
 const DECK_HOVER_EXPAND_DELAY_MS = 800;
@@ -275,10 +263,11 @@ export default function DecksScreen() {
         };
     }, [collectionVersion, countSettings]));
 
-    // Drag-and-drop state: rows report their content-space layout; the active drag
-    // tracks the pointer against those rows to pick a drop target.
-    const rowLayouts = useRef(new Map<string, { y: number; h: number }>());
-    const deckRowRefs = useRef(new Map<string, View>());
+    // Drag-and-drop state: cells report their content-space layout under the deck id, which
+    // survives a rename; the active drag tracks the pointer against those rows to pick a target.
+    const rowLayouts = useRef<DeckRowLayouts>(new Map());
+    // Built once: a new cell component type would remount every row of the list.
+    const [DeckDragCell] = useState(() => createDeckDragCell(rowLayouts.current));
     const scrollOffsetRef = useRef(0);
     const listTopRef = useRef(0);
     const listHeightRef = useRef(0);
@@ -946,64 +935,25 @@ export default function DecksScreen() {
         if (listY < 0 || (listHeightRef.current > 0 && listY > listHeightRef.current)) return null;
 
         const contentY = listY + scrollOffsetRef.current;
-        let nearestTarget: { name: string; placement: 'before' | 'after'; distance: number } | null = null;
-        let firstValidRow: { name: string; y: number } | null = null;
-        let lastValidRow: { name: string; bottom: number } | null = null;
+        const candidates: DeckDropRow[] = [];
         for (const row of visibleRowsRef.current) {
-            const layout = rowLayouts.current.get(row.deck.name);
+            const layout = rowLayouts.current.get(row.deck.id);
             if (!layout) continue;
             const name = row.deck.name;
             const isLockedCatalogTarget = catalogTier === 'trial'
                 && row.deck.catalogPack === BKA_CATALOG_PACK;
-            const isInvalidTarget = name === dragged
-                || isDescendantOf(name, dragged)
-                || isLockedCatalogTarget
-                || isCatalogDeck(row.deck);
-            if (!isInvalidTarget) {
-                if (!firstValidRow || layout.y < firstValidRow.y) firstValidRow = { name, y: layout.y };
-                if (!lastValidRow || layout.y + layout.h > lastValidRow.bottom) {
-                    lastValidRow = { name, bottom: layout.y + layout.h };
-                }
-            }
-            if (contentY >= layout.y && contentY <= layout.y + layout.h) {
-                if (isInvalidTarget) return null;
-                const position = (contentY - layout.y) / Math.max(1, layout.h);
-                // The edge zones make list reordering effortless. The generous
-                // centre zone provides reliable Anki drop-onto-parent nesting for creating subdecks.
-                const placement: DeckDropPlacement = position < 0.25
-                    ? 'before'
-                    : position > 0.75
-                        ? 'after'
-                        : 'inside';
-                if (placement === 'inside' && row.deck.isFiltered) return null;
-                return encodeDeckDropTarget(name, placement);
-            }
-
-            // Nested cards have small visual gaps between their rows. Snap those gaps to the
-            // nearest valid deck so the target does not flicker away while the finger moves.
-            if (isInvalidTarget) continue;
-            const distance = contentY < layout.y
-                ? layout.y - contentY
-                : contentY - (layout.y + layout.h);
-            if (distance <= 12 && (!nearestTarget || distance < nearestTarget.distance)) {
-                nearestTarget = {
-                    name,
-                    distance,
-                    placement: contentY < layout.y ? 'before' : 'after',
-                };
-            }
+            candidates.push({
+                name,
+                y: layout.y,
+                h: layout.h,
+                invalid: name === dragged
+                    || isDescendantOf(name, dragged)
+                    || isLockedCatalogTarget
+                    || isCatalogDeck(row.deck),
+                acceptsInside: !row.deck.isFiltered,
+            });
         }
-        // Keep the empty breathing room below the final card useful: dragging all the way down
-        // still means “place last”, rather than silently cancelling the move.
-        if (lastValidRow && contentY > lastValidRow.bottom) {
-            return encodeDeckDropTarget(lastValidRow.name, 'after');
-        }
-        if (firstValidRow && contentY < firstValidRow.y) {
-            return encodeDeckDropTarget(firstValidRow.name, 'before');
-        }
-        return nearestTarget
-            ? encodeDeckDropTarget(nearestTarget.name, nearestTarget.placement)
-            : null;
+        return resolveDeckDropTarget(contentY, candidates);
     };
 
     const updateDropTarget = (target: string | null) => {
@@ -1270,20 +1220,6 @@ export default function DecksScreen() {
 
         return (
             <View
-                ref={(view) => {
-                    if (view) deckRowRefs.current.set(deck.name, view);
-                    else {
-                        deckRowRefs.current.delete(deck.name);
-                        rowLayouts.current.delete(deck.name);
-                    }
-                }}
-                onLayout={(e) => {
-                    const { y, height } = e.nativeEvent.layout;
-                    rowLayouts.current.set(deck.name, {
-                        y,
-                        h: height,
-                    });
-                }}
                 style={[
                     styles.deckRow,
                     { paddingLeft: contentIndent },
@@ -2405,6 +2341,7 @@ export default function DecksScreen() {
                     data={visibleRows}
                     renderItem={renderVirtualizedRow}
                     keyExtractor={deckRowKey}
+                    CellRendererComponent={DeckDragCell}
                     ListHeaderComponent={deckListHeader}
                     ListEmptyComponent={deckListEmpty}
                     ListFooterComponent={<View style={{ height: 80 }} />}
