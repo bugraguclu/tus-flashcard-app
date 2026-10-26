@@ -1,5 +1,6 @@
 // Backups and the Kronometre, against real SQLite: sessions and preferences travel with a backup,
-// a backup made before them restores without wiping them, and a reset clears them.
+// a backup made before them restores without wiping them, one made before the session type, break
+// count and note restores its sessions as "N. Tekrar", and a reset clears them.
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
@@ -63,7 +64,7 @@ vi.mock('./noteManager', () => ({
 }));
 
 import { exportAllData, importAllData, resetAllData } from './storage';
-import { DEFAULT_STOPWATCH_PREFS } from './stopwatch';
+import { DEFAULT_STOPWATCH_PREFS, type StudySessionDraft } from './stopwatch';
 import {
     insertStudySession,
     loadStopwatchPrefs,
@@ -99,12 +100,21 @@ afterEach(() => {
     db.close();
 });
 
-function addSession(subject: string, startMs: number, studyMinutes: number) {
+function addSession(subject: string, startMs: number, studyMinutes: number, extra: Partial<StudySessionDraft> = {}) {
     return insertStudySession(
-        { subject, pass: 1, startMs, endMs: startMs + studyMinutes * MINUTE, studyMs: studyMinutes * MINUTE, breakMs: 0 },
+        {
+            subject, kind: 'pass', pass: 1, startMs, endMs: startMs + studyMinutes * MINUTE,
+            studyMs: studyMinutes * MINUTE, breakMs: 0, breakCount: 0, note: '', ...extra,
+        },
         'timer',
         startMs + studyMinutes * MINUTE,
     );
+}
+
+/** The session columns a build from before the type, break count and note wrote. */
+function withoutNewColumns(row: Record<string, unknown>) {
+    const { kind: _kind, breakCount: _breakCount, note: _note, ...older } = row;
+    return older;
 }
 
 describe('Kronometre data in backups', () => {
@@ -125,6 +135,46 @@ describe('Kronometre data in backups', () => {
         expect(await importAllData(exported)).toBe(true);
         expect(readStudySessionsForBackup()).toEqual([first, second]);
         expect(loadStopwatchPrefs()).toMatchObject({ dailyGoalMinutes: 360, examDate: '2027-03-21' });
+    });
+
+    it('carries the session type, break count and note through a backup', async () => {
+        const questions = addSession('Farmakoloji', T0, 40, {
+            kind: 'questions', pass: 2, breakMs: 10 * MINUTE, endMs: T0 + 50 * MINUTE, breakCount: 2, note: 'Sayfa 120-140, 30 soru',
+        });
+        const exam = addSession('Karışık', T0 + 3 * 60 * MINUTE, 120, { kind: 'mockExam', note: 'Deneme 4 · 😀' });
+
+        const exported = await exportAllData();
+        expect(JSON.parse(exported).tables.study_sessions).toEqual([questions, exam]);
+        expect(JSON.parse(exported).tables.study_sessions[0]).toMatchObject({ kind: 'questions', breakCount: 2, note: 'Sayfa 120-140, 30 soru' });
+
+        db.runSync('DELETE FROM study_sessions');
+        expect(await importAllData(exported)).toBe(true);
+        expect(readStudySessionsForBackup()).toEqual([questions, exam]);
+    });
+
+    it('restores sessions from a backup made before the type, break count and note as "N. Tekrar" without them', async () => {
+        const older = addSession('Patoloji', T0, 40, { pass: 3, breakMs: 5 * MINUTE, endMs: T0 + 45 * MINUTE });
+        const newer = addSession('Anatomi', T0 + 2 * 60 * MINUTE, 30, { kind: 'video', breakCount: 1, note: 'Kas sistemi' });
+        const parsed = JSON.parse(await exportAllData());
+        // The first row as an older build wrote it, the second as this one does.
+        parsed.tables.study_sessions[0] = withoutNewColumns(parsed.tables.study_sessions[0]);
+        db.runSync("UPDATE study_sessions SET kind = 'course', breakCount = 9, note = 'device'");
+
+        expect(await importAllData(JSON.stringify(parsed))).toBe(true);
+        expect(readStudySessionsForBackup()).toEqual([
+            { ...older, kind: 'pass', pass: 3, breakCount: 0, note: '' },
+            newer,
+        ]);
+    });
+
+    it('rejects a backup whose session has a malformed type, break count or note, and changes nothing', async () => {
+        const kept = addSession('Biyokimya', T0, 20, { kind: 'course', note: 'kept' });
+        const parsed = JSON.parse(await exportAllData());
+        for (const patch of [{ kind: 'nap' }, { breakCount: 1.5 }, { note: 'x'.repeat(101) }]) {
+            const broken = { ...parsed, tables: { ...parsed.tables, study_sessions: [{ ...parsed.tables.study_sessions[0], ...patch }] } };
+            expect(await importAllData(JSON.stringify(broken))).toBe(false);
+            expect(readStudySessionsForBackup()).toEqual([kept]);
+        }
     });
 
     it('keeps the sessions on the device when the backup was made before them', async () => {

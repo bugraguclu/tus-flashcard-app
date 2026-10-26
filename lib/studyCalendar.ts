@@ -7,7 +7,7 @@
 import { dayNumberToYmd, localDayNumber, ymdToLocalDayNumber } from './ankiState';
 import { getDB } from './db';
 import type { SupportedLocale } from './i18n';
-import type { StudySessionRecord, StudySessionSource } from './stopwatch';
+import type { StudyKind, StudySessionRecord, StudySessionSource } from './stopwatch';
 import { fetchStudySessionsBetween } from './stopwatchStore';
 
 const DAY_MS = 86_400_000;
@@ -73,6 +73,12 @@ export interface StudySession {
     repeatIndex: number;
     /** A Kronometre session's pass through its subject ("N. Tekrar"); null for card sessions. */
     pass: number | null;
+    /** A Kronometre session's type ("Tür"); null for card sessions. */
+    kind: StudyKind | null;
+    /** Breaks a Kronometre session recorded ("Mola Sayısı"); null for card sessions. */
+    breakCount: number | null;
+    /** A Kronometre session's note ("Çalışma Notu"); empty when there is none. */
+    note: string;
     /** The `study_sessions` row behind a Kronometre session; null for card sessions. */
     recordId: number | null;
 }
@@ -351,6 +357,9 @@ function buildSession(
         cardCount: cardIds.size,
         repeatIndex,
         pass: null,
+        kind: null,
+        breakCount: null,
+        note: '',
         recordId: null,
     };
 }
@@ -371,6 +380,9 @@ function timerSession(record: StudySessionRecord, dayNumber: number): StudySessi
         cardCount: 0,
         repeatIndex: record.pass,
         pass: record.pass,
+        kind: record.kind,
+        breakCount: record.breakCount,
+        note: record.note,
         recordId: record.id,
     };
 }

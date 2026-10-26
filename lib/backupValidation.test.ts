@@ -48,6 +48,18 @@ describe('canonical backup validation', () => {
             },
         };
         expect(validateCanonicalBackupData(withSessions)).toEqual({ valid: true });
+
+        const withTypedSessions = {
+            ...validBackup(),
+            tables: {
+                ...validBackup().tables,
+                study_sessions: [{
+                    id: 1, subject: 'Fizyoloji', kind: 'mockExam', pass: 1, startMs: 1_000, endMs: 61_000,
+                    studyMs: 50_000, breakMs: 10_000, breakCount: 1, note: 'Deneme 3', source: 'manual',
+                }],
+            },
+        };
+        expect(validateCanonicalBackupData(withTypedSessions)).toEqual({ valid: true });
     });
 
     it('rejects a Kronometre table that is malformed, oversized in its parts or has duplicate ids', () => {
@@ -59,6 +71,10 @@ describe('canonical backup validation', () => {
             .toEqual({ valid: false, reason: 'invalid-row:study_sessions' });
         expect(validateCanonicalBackupData(withTable([session, { ...session }])))
             .toEqual({ valid: false, reason: 'invalid-id:study_sessions' });
+        for (const patch of [{ kind: 'nap' }, { breakCount: -1 }, { note: 'x'.repeat(101) }]) {
+            expect(validateCanonicalBackupData(withTable([{ ...session, ...patch }])))
+                .toEqual({ valid: false, reason: 'invalid-row:study_sessions' });
+        }
     });
 });
 

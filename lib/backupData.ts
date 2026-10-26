@@ -10,7 +10,7 @@ import { initAnkiData, migrateLegacySubjectTopicsToDecks } from './ankiInit';
 import { getSearchIndexCards } from './noteManager';
 import { canonicalBackupContainsCatalog } from './catalogProtection';
 import { validateCanonicalBackupData } from './backupValidation';
-import { normalizeStopwatchPrefs, type StudySessionRecord } from './stopwatch';
+import { normalizeStopwatchPrefs, type StudySessionRow } from './stopwatch';
 import { replaceStudySessions, saveStopwatchPrefs } from './stopwatchStore';
 import {
     DEFAULT_SETTINGS,
@@ -252,8 +252,9 @@ function importCanonicalTables(data: any): void {
 
         // A backup made before the Kronometre has no sessions or preferences to give back; the
         // ones on the device are then kept rather than wiped by a file that never knew about them.
+        // Sessions from before the type, break count and note come back as "N. Tekrar" without them.
         if (Array.isArray(data.tables.study_sessions)) {
-            replaceStudySessions(data.tables.study_sessions as StudySessionRecord[]);
+            replaceStudySessions(data.tables.study_sessions as StudySessionRow[]);
         }
         if (data.stopwatchPrefs) saveStopwatchPrefs(normalizeStopwatchPrefs(data.stopwatchPrefs));
         db.execSync('COMMIT;');

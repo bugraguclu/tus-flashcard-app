@@ -42,7 +42,10 @@ afterEach(() => {
 });
 
 function draft(subject: string, startMs: number, studyMinutes: number, pass = 1): StudySessionDraft {
-    return { subject, pass, startMs, endMs: startMs + studyMinutes * MINUTE, studyMs: studyMinutes * MINUTE, breakMs: 0 };
+    return {
+        subject, kind: 'pass', pass, startMs, endMs: startMs + studyMinutes * MINUTE,
+        studyMs: studyMinutes * MINUTE, breakMs: 0, breakCount: 0, note: '',
+    };
 }
 
 describe('study sessions', () => {
@@ -70,6 +73,29 @@ describe('study sessions', () => {
         expect(() => insertStudySession(draft('   ', T0, 30), 'manual', T0)).toThrow();
     });
 
+    it('stores the type, break count and note, cleaning the note and clamping the count', () => {
+        const record = insertStudySession(
+            { ...draft('Farmakoloji', T0, 40), kind: 'questions', breakMs: 10 * MINUTE, endMs: T0 + 50 * MINUTE, breakCount: 500, note: `  ${'x'.repeat(120)}` },
+            'manual',
+            T0 + 50 * MINUTE,
+        );
+        expect(record).toMatchObject({ kind: 'questions', breakCount: 99, note: 'x'.repeat(100) });
+        expect(readStudySessionsForBackup()).toEqual([record]);
+    });
+
+    it('stores an unknown type as "N. Tekrar"', () => {
+        const record = insertStudySession({ ...draft('Anatomi', T0, 10), kind: 'nap' as never }, 'manual', T0);
+        expect(record.kind).toBe('pass');
+    });
+
+    it('edits the type, break count and note of a session', () => {
+        const record = insertStudySession(draft('Biyokimya', T0, 30), 'timer', T0);
+        updateStudySession(record.id, { ...draft('Biyokimya', T0, 30), kind: 'video', breakCount: 3, note: 'Enzimler videosu' });
+        expect(readStudySessionsForBackup()).toEqual([{ ...record, kind: 'video', breakCount: 3, note: 'Enzimler videosu' }]);
+        updateStudySession(record.id, draft('Biyokimya', T0, 30));
+        expect(readStudySessionsForBackup()).toEqual([record]);
+    });
+
     it('edits and deletes a session by id', () => {
         const record = insertStudySession(draft('Biyokimya', T0, 30), 'timer', T0);
         updateStudySession(record.id, draft('Biyokimya', T0, 45, 2));
@@ -86,6 +112,14 @@ describe('study sessions', () => {
         expect(latestStudyPass('Pediatri')).toBeNull();
     });
 
+    it('continues the pass from the latest "N. Tekrar" session, not from a session of another type', () => {
+        insertStudySession(draft('Dahiliye', T0, 30, 3), 'timer', T0);
+        insertStudySession({ ...draft('Dahiliye', T0 + 60 * MINUTE, 30, 1), kind: 'questions' }, 'manual', T0 + 60 * MINUTE);
+        expect(latestStudyPass('Dahiliye')).toBe(3);
+        insertStudySession({ ...draft('Pediatri', T0, 30, 2), kind: 'video' }, 'manual', T0);
+        expect(latestStudyPass('Pediatri')).toBeNull();
+    });
+
     it('lists recent subjects newest first without repeats', () => {
         insertStudySession(draft('Anatomi', T0, 10), 'timer', T0);
         insertStudySession(draft('Fizyoloji', T0 + 30 * MINUTE, 10), 'timer', T0 + 30 * MINUTE);
@@ -96,9 +130,18 @@ describe('study sessions', () => {
 
     it('replaces every session with a restored set', () => {
         insertStudySession(draft('Anatomi', T0, 10), 'timer', T0);
-        const restored = { id: 42, subject: 'Mikrobiyoloji', pass: 3, startMs: T0, endMs: T0 + 20 * MINUTE, studyMs: 15 * MINUTE, breakMs: 5 * MINUTE, source: 'manual' as const };
+        const restored = {
+            id: 42, subject: 'Mikrobiyoloji', kind: 'course' as const, pass: 3, startMs: T0, endMs: T0 + 20 * MINUTE,
+            studyMs: 15 * MINUTE, breakMs: 5 * MINUTE, breakCount: 2, note: 'Dershane notları', source: 'manual' as const,
+        };
         replaceStudySessions([restored]);
         expect(readStudySessionsForBackup()).toEqual([restored]);
+    });
+
+    it('restores a session saved before the type, break count and note as "N. Tekrar" without them', () => {
+        const older = { id: 43, subject: 'Patoloji', pass: 2, startMs: T0, endMs: T0 + 20 * MINUTE, studyMs: 20 * MINUTE, breakMs: 0, source: 'timer' as const };
+        replaceStudySessions([older]);
+        expect(readStudySessionsForBackup()).toEqual([{ ...older, kind: 'pass', breakCount: 0, note: '' }]);
     });
 });
 
@@ -111,7 +154,7 @@ describe('preferences and the running stopwatch', () => {
     });
 
     it('keeps the running stopwatch until it is cleared', () => {
-        const state = startStopwatch('Farmakoloji', 1, T0);
+        const state = startStopwatch('Farmakoloji', 1, T0, 'pastQuestions');
         saveRunningStopwatch(state);
         expect(loadRunningStopwatch()).toEqual(state);
         saveRunningStopwatch(null);

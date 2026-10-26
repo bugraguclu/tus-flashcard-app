@@ -11,6 +11,7 @@ import SessionEditorSheet, { type SessionEditorInitial } from '../components/sto
 import StopwatchSettingsSheet from '../components/stopwatch/StopwatchSettingsSheet';
 import StopwatchAlertsSheet from '../components/stopwatch/StopwatchAlertsSheet';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
+import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { BellIcon, CalendarIcon, GearIcon, PlusCircleIcon } from '../components/stopwatch/StopwatchIcons';
 import { FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
@@ -27,6 +28,7 @@ import {
     stepDailyGoal,
     type RunningStopwatch,
     type StopwatchPrefs,
+    type StudyKind,
     type StudySessionDraft,
 } from '../lib/stopwatch';
 import {
@@ -189,8 +191,8 @@ export default function StopwatchScreen() {
         );
     };
 
-    const startSession = (subject: string, pass: number) => {
-        stopwatch.start(subject, pass);
+    const startSession = (subject: string, pass: number, kind: StudyKind) => {
+        stopwatch.start(subject, pass, kind);
         lightHaptic();
     };
 
@@ -201,7 +203,7 @@ export default function StopwatchScreen() {
             return;
         }
         if (!running) {
-            startSession(plan.subject, plan.pass);
+            startSession(plan.subject, plan.pass, plan.kind);
             return;
         }
         if (running.subject === plan.subject) return;
@@ -212,7 +214,7 @@ export default function StopwatchScreen() {
                 `Save the ${running.subject} session and start ${plan.subject}?`,
             ),
             () => {
-                if (saveFinished()) startSession(plan.subject, plan.pass);
+                if (saveFinished()) startSession(plan.subject, plan.pass, plan.kind);
             },
         );
     };
@@ -243,6 +245,11 @@ export default function StopwatchScreen() {
                 l(`Deste: ${session.deckName}`, `Deck: ${session.deckName}`),
             );
         } else {
+            const type = studyTypeLabel(l, session.kind ?? 'pass', session.pass ?? 1);
+            const breakCount = session.breakCount ?? 0;
+            lines.splice(1, 0, l(`Tür: ${type}`, `Type: ${type}`));
+            lines.push(l(`Mola sayısı: ${breakCount}`, `Breaks: ${breakCount}`));
+            if (session.note) lines.push(l(`Not: ${session.note}`, `Note: ${session.note}`));
             lines.push(session.source === 'timer'
                 ? l('Kronometre ile ölçüldü', 'Measured by the stopwatch')
                 : l('Elle eklendi', 'Added by hand'));
@@ -281,10 +288,13 @@ export default function StopwatchScreen() {
                     openEditor({
                         recordId,
                         subject: session.subject,
+                        kind: session.kind ?? 'pass',
                         pass: session.pass ?? 1,
                         startMs: session.startMs,
                         studyMs: session.studyMs,
                         breakMs: session.breakMs,
+                        breakCount: session.breakCount ?? 0,
+                        note: session.note,
                     });
                 },
             },
@@ -380,7 +390,7 @@ export default function StopwatchScreen() {
                     plan={prefs.plan}
                     goalRemainingMs={goalRemainingMs}
                     live={running && runningCountsToday
-                        ? { subject: running.subject, pass: running.pass, studyMs: elapsed?.studyMs ?? 0, onBreak: running.phase === 'break' }
+                        ? { subject: running.subject, kind: running.kind, pass: running.pass, studyMs: elapsed?.studyMs ?? 0, onBreak: running.phase === 'break' }
                         : null}
                     onOpenExamSettings={() => setSettingsOpen(true)}
                     onPlanStart={handlePlanStart}
@@ -407,9 +417,9 @@ export default function StopwatchScreen() {
                 recentSubjects={recentSubjects}
                 passOf={passOf}
                 onClose={() => setPicker(null)}
-                onPick={(subject, pass) => {
-                    if (picker === 'plan') stopwatch.updatePrefs({ plan: { subject, pass } });
-                    else startSession(subject, pass);
+                onPick={(subject, pass, kind) => {
+                    if (picker === 'plan') stopwatch.updatePrefs({ plan: { subject, kind, pass } });
+                    else startSession(subject, pass, kind);
                     setPicker(null);
                 }}
                 onClearPlan={() => {
@@ -421,6 +431,7 @@ export default function StopwatchScreen() {
                 visible={editor !== null}
                 initial={editor?.initial ?? null}
                 defaultSubject={prefs.plan?.subject ?? null}
+                defaultKind={prefs.plan?.kind ?? 'pass'}
                 defaultPass={prefs.plan?.pass ?? 1}
                 recentSubjects={recentSubjects}
                 passOf={passOf}

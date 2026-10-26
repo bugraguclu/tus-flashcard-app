@@ -9,22 +9,35 @@
 import { getDB } from './db';
 import { getDbSetting, setDbSetting } from './dbSettings';
 import {
+    clampBreakCount,
     clampPass,
     isValidStudySessionRecord,
     normalizeStopwatchPrefs,
+    normalizeStudyKind,
+    normalizeStudyNote,
     normalizeSubjectName,
     parseRunningStopwatch,
+    withStudySessionDefaults,
     type RunningStopwatch,
     type StopwatchPrefs,
     type StudySessionDraft,
     type StudySessionRecord,
+    type StudySessionRow,
     type StudySessionSource,
 } from './stopwatch';
 
 const PREFS_KEY = 'tus_stopwatch_prefs_v1';
 const RUNNING_KEY = 'tus_stopwatch_running_v1';
 
-const SESSION_COLUMNS = 'id, subject, pass, startMs, endMs, studyMs, breakMs, source';
+const SESSION_COLUMNS = 'id, subject, kind, pass, startMs, endMs, studyMs, breakMs, breakCount, note, source';
+const SESSION_PLACEHOLDERS = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
+
+function sessionValues(record: StudySessionRecord): unknown[] {
+    return [
+        record.id, record.subject, record.kind, record.pass, record.startMs, record.endMs,
+        record.studyMs, record.breakMs, record.breakCount, record.note, record.source,
+    ];
+}
 
 export function loadStopwatchPrefs(): StopwatchPrefs {
     const raw = getDbSetting(PREFS_KEY);
@@ -58,8 +71,9 @@ export function saveRunningStopwatch(state: RunningStopwatch | null): void {
 
 function readRecords(sql: string, ...params: unknown[]): StudySessionRecord[] {
     return getDB()
-        .getAllSync<StudySessionRecord>(sql, ...params)
-        .filter(isValidStudySessionRecord);
+        .getAllSync<StudySessionRow>(sql, ...params)
+        .filter(isValidStudySessionRecord)
+        .map(withStudySessionDefaults);
 }
 
 /**
@@ -77,11 +91,14 @@ function sanitizeDraft(draft: StudySessionDraft): StudySessionDraft {
     const startMs = Math.round(draft.startMs);
     return {
         subject: normalizeSubjectName(draft.subject),
+        kind: normalizeStudyKind(draft.kind),
         pass: clampPass(draft.pass),
         startMs,
         endMs: Math.max(Math.round(draft.endMs), startMs + studyMs + breakMs),
         studyMs,
         breakMs,
+        breakCount: clampBreakCount(draft.breakCount),
+        note: normalizeStudyNote(draft.note),
     };
 }
 
@@ -92,10 +109,7 @@ export function insertStudySession(
 ): StudySessionRecord {
     const record: StudySessionRecord = { id: nextSessionId(nowMs), source, ...sanitizeDraft(draft) };
     if (!isValidStudySessionRecord(record)) throw new Error('Invalid study session');
-    getDB().runSync(
-        `INSERT INTO study_sessions (${SESSION_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        record.id, record.subject, record.pass, record.startMs, record.endMs, record.studyMs, record.breakMs, record.source,
-    );
+    getDB().runSync(`INSERT INTO study_sessions (${SESSION_COLUMNS}) VALUES (${SESSION_PLACEHOLDERS})`, ...sessionValues(record));
     return record;
 }
 
@@ -105,8 +119,10 @@ export function updateStudySession(id: number, draft: StudySessionDraft): void {
     const probe = { id, source: 'manual', ...clean };
     if (!isValidStudySessionRecord(probe)) throw new Error('Invalid study session');
     getDB().runSync(
-        'UPDATE study_sessions SET subject = ?, pass = ?, startMs = ?, endMs = ?, studyMs = ?, breakMs = ? WHERE id = ?',
-        clean.subject, clean.pass, clean.startMs, clean.endMs, clean.studyMs, clean.breakMs, id,
+        `UPDATE study_sessions SET subject = ?, kind = ?, pass = ?, startMs = ?, endMs = ?, studyMs = ?, breakMs = ?,
+            breakCount = ?, note = ? WHERE id = ?`,
+        clean.subject, clean.kind, clean.pass, clean.startMs, clean.endMs, clean.studyMs, clean.breakMs,
+        clean.breakCount, clean.note, id,
     );
 }
 
@@ -124,10 +140,13 @@ export function fetchStudySessionsBetween(startMs: number, endMs: number): Study
     );
 }
 
-/** The pass of the latest session of a subject, so a new session continues where it stopped. */
+/**
+ * The pass of the latest "N. Tekrar" session of a subject, so a new session continues where it
+ * stopped. Sessions of another type (question practice, a video lesson...) do not move it.
+ */
 export function latestStudyPass(subject: string): number | null {
     const row = getDB().getFirstSync<{ pass: number }>(
-        'SELECT pass FROM study_sessions WHERE subject = ? ORDER BY startMs DESC, id DESC LIMIT 1',
+        `SELECT pass FROM study_sessions WHERE subject = ? AND kind = 'pass' ORDER BY startMs DESC, id DESC LIMIT 1`,
         normalizeSubjectName(subject),
     );
     return row ? clampPass(row.pass) : null;
@@ -148,14 +167,15 @@ export function readStudySessionsForBackup(): StudySessionRecord[] {
     return readRecords(`SELECT ${SESSION_COLUMNS} FROM study_sessions ORDER BY id`);
 }
 
-/** Replace every stored session. Runs inside the restore's own transaction. */
-export function replaceStudySessions(rows: StudySessionRecord[]): void {
+/**
+ * Replace every stored session. Runs inside the restore's own transaction. Rows from a backup
+ * made before the type, break count and note existed come back as "N. Tekrar", with no breaks
+ * counted and no note.
+ */
+export function replaceStudySessions(rows: readonly StudySessionRow[]): void {
     const db = getDB();
     db.execSync('DELETE FROM study_sessions;');
     for (const row of rows) {
-        db.runSync(
-            `INSERT INTO study_sessions (${SESSION_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            row.id, row.subject, row.pass, row.startMs, row.endMs, row.studyMs, row.breakMs, row.source,
-        );
+        db.runSync(`INSERT INTO study_sessions (${SESSION_COLUMNS}) VALUES (${SESSION_PLACEHOLDERS})`, ...sessionValues(withStudySessionDefaults(row)));
     }
 }

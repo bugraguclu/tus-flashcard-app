@@ -3,10 +3,11 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { dayNumberToYmd } from '../../lib/ankiState';
-import { formatGoalRemaining, formatStopwatchClock, type StudyPlan } from '../../lib/stopwatch';
+import { formatGoalRemaining, formatStopwatchClock, type StudyKind, type StudyPlan } from '../../lib/stopwatch';
 import { studySubjectGlyph, type StudySession } from '../../lib/studyCalendar';
 import SleepingPanda from './SleepingPanda';
 import StudySessionCard from './StudySessionCard';
+import { studyTypeLabel } from './StudyTypeChips';
 import { ClockIcon, GearIcon, HourglassIcon, StopwatchIcon } from './StopwatchIcons';
 import { TIMELINE_LINE_X, timelineStyles } from './timelineStyles';
 
@@ -19,6 +20,7 @@ export interface TimelineDay {
 /** The stopwatch that is running now, shown as today's latest entry. */
 export interface LiveSession {
     subject: string;
+    kind: StudyKind;
     pass: number;
     studyMs: number;
     onBreak: boolean;
@@ -113,7 +115,7 @@ export default function StopwatchTimeline({
                         <View style={shared.titleRow}>
                             <Text style={shared.subject} numberOfLines={1}>{live.subject}</Text>
                             <View style={shared.chip}>
-                                <Text style={shared.chipText}>{l(`${live.pass}. Tekrar`, `Pass ${live.pass}`)}</Text>
+                                <Text style={shared.chipText}>{studyTypeLabel(l, live.kind, live.pass)}</Text>
                             </View>
                         </View>
                         <Text style={[styles.liveStatus, live.onBreak && styles.liveStatusBreak]}>
@@ -158,7 +160,7 @@ export default function StopwatchTimeline({
                             <View style={shared.titleRow}>
                                 <Text style={shared.subject} numberOfLines={1}>{plan.subject}</Text>
                                 <View style={styles.planChip}>
-                                    <Text style={styles.planChipText}>{l(`${plan.pass}. Tekrar`, `Pass ${plan.pass}`)}</Text>
+                                    <Text style={styles.planChipText}>{studyTypeLabel(l, plan.kind, plan.pass)}</Text>
                                 </View>
                             </View>
                             <View style={styles.planFooter}>
@@ -194,7 +196,7 @@ export default function StopwatchTimeline({
                         accessibilityRole="button"
                     >
                         <Text style={styles.planPromptTitle}>{l('Bugün hangi dersi çalışacaksınız?', 'What will you study today?')}</Text>
-                        <Text style={styles.planPromptHint}>{l('Bir ders ve tekrar seçin; buradan tek dokunuşla başlarsınız.', 'Choose a subject and pass to start it from here in one tap.')}</Text>
+                        <Text style={styles.planPromptHint}>{l('Bir ders ve tür seçin; buradan tek dokunuşla başlarsınız.', 'Choose a subject and type to start it from here in one tap.')}</Text>
                     </TouchableOpacity>
                 )}
             </View>

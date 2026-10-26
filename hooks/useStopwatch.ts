@@ -10,6 +10,7 @@ import {
     stopwatchElapsed,
     type RunningStopwatch,
     type StopwatchPrefs,
+    type StudyKind,
     type StudySessionRecord,
 } from '../lib/stopwatch';
 import {
@@ -84,10 +85,12 @@ export function useStopwatch(buildAlertCopy: (state: RunningStopwatch, prefs: St
         return next;
     }, [prefs, running, syncAlert]);
 
-    const start = useCallback((subject: string, pass: number) => {
-        const state = startStopwatch(subject, pass, Date.now());
+    const start = useCallback((subject: string, pass: number, kind: StudyKind) => {
+        const state = startStopwatch(subject, pass, Date.now(), kind);
         // The first subject ever started becomes the plan, so the card below the hero has one to offer.
-        const nextPrefs = prefs.plan ? prefs : saveStopwatchPrefs({ ...prefs, plan: { subject: state.subject, pass: state.pass } });
+        const nextPrefs = prefs.plan
+            ? prefs
+            : saveStopwatchPrefs({ ...prefs, plan: { subject: state.subject, kind: state.kind, pass: state.pass } });
         setPrefs(nextPrefs);
         commitRunning(state, nextPrefs);
     }, [prefs, commitRunning]);

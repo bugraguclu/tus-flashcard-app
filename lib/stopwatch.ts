@@ -18,6 +18,29 @@ export const MAX_SUBJECT_LENGTH = 80;
 export const MAX_STUDY_PASS = 20;
 /** A stopwatch stopped sooner than this is discarded rather than saved as a session. */
 export const MIN_SESSION_MS = MINUTE_MS;
+/** Longest study note ("Çalışma Notu"), in UTF-16 units as the text field counts them. */
+export const MAX_STUDY_NOTE_LENGTH = 100;
+/** Most breaks ("Mola Sayısı") one session records. */
+export const MAX_BREAK_COUNT = 99;
+
+/**
+ * What a session was spent on ("Tür"). `pass` is a pass through the subject ("N. Tekrar") and
+ * keeps its number in the session's `pass`; the others are the kinds of TUS study that are not a
+ * pass: past exam questions, question practice, a prep course, a video lesson and a mock exam.
+ */
+export type StudyKind = 'pass' | 'pastQuestions' | 'questions' | 'course' | 'video' | 'mockExam';
+
+/** Every kind, in the order the type pickers list them. */
+export const STUDY_KINDS: readonly StudyKind[] = ['pass', 'pastQuestions', 'questions', 'course', 'video', 'mockExam'];
+
+export function isStudyKind(value: unknown): value is StudyKind {
+    return typeof value === 'string' && (STUDY_KINDS as readonly string[]).includes(value);
+}
+
+/** A stored kind, or `pass` for a session saved before kinds existed. */
+export function normalizeStudyKind(value: unknown): StudyKind {
+    return isStudyKind(value) ? value : 'pass';
+}
 
 export type StopwatchPhase = 'study' | 'break';
 
@@ -30,6 +53,7 @@ export type StopwatchPhase = 'study' | 'break';
  */
 export interface RunningStopwatch {
     subject: string;
+    kind: StudyKind;
     /** The pass through the subject this session belongs to ("N. Tekrar"). */
     pass: number;
     startedAtMs: number;
@@ -37,6 +61,8 @@ export interface RunningStopwatch {
     studyMs: number;
     /** Break time in the break phases already finished. */
     breakMs: number;
+    /** Breaks taken so far, the current one included. */
+    breakCount: number;
     phase: StopwatchPhase;
     phaseStartedAtMs: number;
 }
@@ -51,6 +77,11 @@ export interface StopwatchElapsed {
 /** A finished or hand-entered session, before it has a row id. */
 export interface StudySessionDraft {
     subject: string;
+    kind: StudyKind;
+    /**
+     * The pass through the subject ("N. Tekrar"). Kept for every kind, so a session of another
+     * kind still says which pass it was part of, and a build that predates kinds still reads it.
+     */
     pass: number;
     startMs: number;
     endMs: number;
@@ -58,6 +89,10 @@ export interface StudySessionDraft {
     studyMs: number;
     /** Paused time inside the session ("Mola"). */
     breakMs: number;
+    /** Number of breaks ("Mola Sayısı"). */
+    breakCount: number;
+    /** The learner's own note ("Çalışma Notu"); empty for none. */
+    note: string;
 }
 
 /** `timer` sessions were measured by the stopwatch; `manual` ones were entered by hand. */
@@ -68,6 +103,13 @@ export interface StudySessionRecord extends StudySessionDraft {
     id: number;
     source: StudySessionSource;
 }
+
+/**
+ * A stored session as a backup may carry it: one made before the type, the break count and the
+ * note existed has none of them, and reads as "N. Tekrar" with no breaks counted and no note.
+ */
+export type StudySessionRow = Omit<StudySessionRecord, 'kind' | 'breakCount' | 'note'>
+    & Partial<Pick<StudySessionRecord, 'kind' | 'breakCount' | 'note'>>;
 
 /** Trim and collapse whitespace; an empty result means "no subject". */
 export function normalizeSubjectName(raw: unknown): string {
@@ -81,13 +123,36 @@ export function clampPass(value: unknown): number {
     return Math.max(1, Math.min(MAX_STUDY_PASS, number));
 }
 
-export function startStopwatch(subject: string, pass: number, nowMs: number): RunningStopwatch {
+export function clampBreakCount(value: unknown): number {
+    const number = Math.round(Number(value));
+    if (!Number.isFinite(number)) return 0;
+    return Math.max(0, Math.min(MAX_BREAK_COUNT, number));
+}
+
+/**
+ * Trim a note and cut it to its longest length. A cut never splits a character written as two
+ * UTF-16 units (an emoji), so what is stored is still valid text.
+ */
+export function normalizeStudyNote(raw: unknown): string {
+    if (typeof raw !== 'string') return '';
+    let note = raw.trim();
+    if (note.length > MAX_STUDY_NOTE_LENGTH) {
+        note = note.slice(0, MAX_STUDY_NOTE_LENGTH);
+        if (/[\uD800-\uDBFF]$/.test(note)) note = note.slice(0, -1);
+        note = note.trimEnd();
+    }
+    return note;
+}
+
+export function startStopwatch(subject: string, pass: number, nowMs: number, kind: StudyKind = 'pass'): RunningStopwatch {
     return {
         subject: normalizeSubjectName(subject),
+        kind: normalizeStudyKind(kind),
         pass: clampPass(pass),
         startedAtMs: nowMs,
         studyMs: 0,
         breakMs: 0,
+        breakCount: 0,
         phase: 'study',
         phaseStartedAtMs: nowMs,
     };
@@ -114,9 +179,10 @@ function switchPhase(state: RunningStopwatch, next: StopwatchPhase, nowMs: numbe
     return { ...state, studyMs, breakMs, phase: next, phaseStartedAtMs: Math.max(nowMs, state.phaseStartedAtMs) };
 }
 
-/** Start a break ("Mola"). A stopwatch already on a break is returned unchanged. */
+/** Start a break ("Mola"), which counts one more. A stopwatch already on a break is returned unchanged. */
 export function pauseStopwatch(state: RunningStopwatch, nowMs: number): RunningStopwatch {
-    return switchPhase(state, 'break', nowMs);
+    const next = switchPhase(state, 'break', nowMs);
+    return next === state ? state : { ...next, breakCount: clampBreakCount(state.breakCount + 1) };
 }
 
 /** End the break and count study time again. */
@@ -135,11 +201,14 @@ export function finishStopwatch(state: RunningStopwatch, nowMs: number): StudySe
     const { studyMs, breakMs } = stopwatchElapsed(state, nowMs);
     return {
         subject: state.subject,
+        kind: state.kind,
         pass: state.pass,
         startMs: state.startedAtMs,
         endMs: Math.max(nowMs, state.startedAtMs + studyMs + breakMs),
         studyMs,
         breakMs,
+        breakCount: state.breakCount,
+        note: '',
     };
 }
 
@@ -164,17 +233,26 @@ export function parseRunningStopwatch(raw: string | null): RunningStopwatch | nu
     if (![value.startedAtMs, value.studyMs, value.breakMs, value.phaseStartedAtMs].every(isFiniteNumber)) return null;
     return {
         subject,
+        kind: normalizeStudyKind(value.kind),
         pass: clampPass(value.pass),
         startedAtMs: value.startedAtMs as number,
         studyMs: Math.max(0, value.studyMs as number),
         breakMs: Math.max(0, value.breakMs as number),
+        // A stopwatch saved before breaks were counted has had at least the one it is on.
+        breakCount: isFiniteNumber(value.breakCount)
+            ? clampBreakCount(value.breakCount)
+            : value.phase === 'break' ? 1 : 0,
         phase: value.phase,
         phaseStartedAtMs: value.phaseStartedAtMs as number,
     };
 }
 
-/** Whether a row is a well-formed stored session. Backups are checked row by row with this. */
-export function isValidStudySessionRecord(value: unknown): value is StudySessionRecord {
+/**
+ * Whether a row is a well-formed stored session. Backups are checked row by row with this. The
+ * type, break count and note may be missing, as in a backup made before them, but a row that
+ * has one must hold a valid one.
+ */
+export function isValidStudySessionRecord(value: unknown): value is StudySessionRow {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
     const row = value as Record<string, unknown>;
     const integers = [row.id, row.pass, row.startMs, row.endMs, row.studyMs, row.breakMs];
@@ -190,13 +268,28 @@ export function isValidStudySessionRecord(value: unknown): value is StudySession
         && studyMs >= 0
         && breakMs >= 0
         && studyMs + breakMs <= endMs - startMs
-        && (row.source === 'timer' || row.source === 'manual');
+        && (row.source === 'timer' || row.source === 'manual')
+        && (row.kind === undefined || isStudyKind(row.kind))
+        && (row.breakCount === undefined
+            || (Number.isSafeInteger(row.breakCount) && (row.breakCount as number) >= 0 && (row.breakCount as number) <= MAX_BREAK_COUNT))
+        && (row.note === undefined || (typeof row.note === 'string' && row.note.length <= MAX_STUDY_NOTE_LENGTH));
+}
+
+/** A valid row with the type, break count and note an older row lacks filled in. */
+export function withStudySessionDefaults(row: StudySessionRow): StudySessionRecord {
+    return {
+        ...row,
+        kind: normalizeStudyKind(row.kind),
+        breakCount: clampBreakCount(row.breakCount ?? 0),
+        note: typeof row.note === 'string' ? row.note : '',
+    };
 }
 
 // --- Preferences ---
 
 export interface StudyPlan {
     subject: string;
+    kind: StudyKind;
     pass: number;
 }
 
@@ -253,7 +346,7 @@ function normalizePlan(value: unknown): StudyPlan | null {
     if (!value || typeof value !== 'object') return null;
     const raw = value as Record<string, unknown>;
     const subject = normalizeSubjectName(raw.subject);
-    return subject ? { subject, pass: clampPass(raw.pass) } : null;
+    return subject ? { subject, kind: normalizeStudyKind(raw.kind), pass: clampPass(raw.pass) } : null;
 }
 
 /** Fill in defaults and clamp every field, so stored or restored preferences are always usable. */

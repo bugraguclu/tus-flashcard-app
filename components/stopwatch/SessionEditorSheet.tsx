@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
+    MAX_BREAK_COUNT,
+    MAX_STUDY_NOTE_LENGTH,
     MAX_STUDY_PASS,
     MIN_SESSION_MS,
+    clampBreakCount,
     clampPass,
     splitHoursMinutes,
+    type StudyKind,
     type StudySessionDraft,
 } from '../../lib/stopwatch';
 import { studySubjectGlyph } from '../../lib/studyCalendar';
 import StopwatchSheet from './StopwatchSheet';
+import StudyTypeChips, { studyTypeLabel } from './StudyTypeChips';
 import SubjectList from './SubjectList';
 import { SettingRow, SheetButton, Stepper } from './SheetControls';
 
@@ -22,10 +27,13 @@ const MAX_BREAK_MINUTES = 180;
 export interface SessionEditorInitial {
     recordId: number;
     subject: string;
+    kind: StudyKind;
     pass: number;
     startMs: number;
     studyMs: number;
     breakMs: number;
+    breakCount: number;
+    note: string;
 }
 
 interface SessionEditorSheetProps {
@@ -33,6 +41,7 @@ interface SessionEditorSheetProps {
     /** The session being edited, or null to add a new one. */
     initial: SessionEditorInitial | null;
     defaultSubject: string | null;
+    defaultKind: StudyKind;
     defaultPass: number;
     recentSubjects: string[];
     passOf: (subject: string) => number;
@@ -48,13 +57,15 @@ function defaultStart(): Date {
 
 /**
  * "Çalışma Ekle": a session studied without the stopwatch, entered by hand — or an existing
- * session corrected after the fact. Picking the subject replaces the form with the subject list
- * inside the same sheet rather than stacking a second modal on top of it.
+ * session corrected after the fact: its subject and type, when it ran, its study and break time,
+ * how many breaks it had and a short note. Picking the subject replaces the form with the subject
+ * list inside the same sheet rather than stacking a second modal on top of it.
  */
 export default function SessionEditorSheet({
     visible,
     initial,
     defaultSubject,
+    defaultKind,
     defaultPass,
     recentSubjects,
     passOf,
@@ -65,11 +76,14 @@ export default function SessionEditorSheet({
     const colors = useThemeColors();
     const [step, setStep] = useState<'form' | 'subject'>('form');
     const [subject, setSubject] = useState('');
+    const [kind, setKind] = useState<StudyKind>('pass');
     const [pass, setPass] = useState(1);
     const [start, setStart] = useState(defaultStart);
     const [studyHours, setStudyHours] = useState(1);
     const [studyMinutes, setStudyMinutes] = useState(0);
     const [breakMinutes, setBreakMinutes] = useState(0);
+    const [breakCount, setBreakCount] = useState(0);
+    const [note, setNote] = useState('');
 
     useEffect(() => {
         if (!visible) return;
@@ -77,20 +91,26 @@ export default function SessionEditorSheet({
         if (initial) {
             const study = splitHoursMinutes(initial.studyMs);
             setSubject(initial.subject);
+            setKind(initial.kind);
             setPass(initial.pass);
             setStart(new Date(initial.startMs));
             setStudyHours(study.hours);
             setStudyMinutes(study.minutes);
             setBreakMinutes(Math.round(initial.breakMs / MINUTE_MS));
+            setBreakCount(initial.breakCount);
+            setNote(initial.note);
         } else {
             setSubject(defaultSubject ?? '');
+            setKind(defaultKind);
             setPass(defaultPass);
             setStart(defaultStart());
             setStudyHours(1);
             setStudyMinutes(0);
             setBreakMinutes(0);
+            setBreakCount(0);
+            setNote('');
         }
-    }, [visible, initial, defaultSubject, defaultPass]);
+    }, [visible, initial, defaultSubject, defaultKind, defaultPass]);
 
     const studyMs = (studyHours * 60 + studyMinutes) * MINUTE_MS;
     const breakMs = breakMinutes * MINUTE_MS;
@@ -120,11 +140,14 @@ export default function SessionEditorSheet({
         if (error) return;
         onSave({
             subject,
+            kind,
             pass,
             startMs: start.getTime(),
             endMs,
             studyMs,
             breakMs,
+            breakCount,
+            note,
         }, initial?.recordId ?? null);
     };
 
@@ -172,16 +195,19 @@ export default function SessionEditorSheet({
                         <Text style={[styles.chevron, { color: colors.textMuted }]}>›</Text>
                     </TouchableOpacity>
 
-                    <SettingRow label={l('Tekrar', 'Pass')}>
-                        <Stepper
-                            value={l(`${pass}. Tekrar`, `Pass ${pass}`)}
-                            onStep={(direction) => setPass((current) => clampPass(current + direction))}
-                            decreaseLabel={l('Önceki tekrar', 'Previous pass')}
-                            increaseLabel={l('Sonraki tekrar', 'Next pass')}
-                            canDecrease={pass > 1}
-                            canIncrease={pass < MAX_STUDY_PASS}
-                        />
-                    </SettingRow>
+                    <StudyTypeChips value={kind} onChange={setKind} />
+                    {kind === 'pass' ? (
+                        <SettingRow label={l('Tekrar', 'Pass')}>
+                            <Stepper
+                                value={studyTypeLabel(l, 'pass', pass)}
+                                onStep={(direction) => setPass((current) => clampPass(current + direction))}
+                                decreaseLabel={l('Önceki tekrar', 'Previous pass')}
+                                increaseLabel={l('Sonraki tekrar', 'Next pass')}
+                                canDecrease={pass > 1}
+                                canIncrease={pass < MAX_STUDY_PASS}
+                            />
+                        </SettingRow>
+                    ) : null}
                     <SettingRow label={l('Tarih', 'Date')}>
                         <DateTimePicker
                             value={start}
@@ -229,6 +255,35 @@ export default function SessionEditorSheet({
                             canIncrease={breakMinutes < MAX_BREAK_MINUTES}
                         />
                     </SettingRow>
+                    <SettingRow label={l('Mola sayısı', 'Breaks')} hint={l('Kaç kez ara verdiniz', 'How many times you stopped')}>
+                        <Stepper
+                            value={String(breakCount)}
+                            onStep={(direction) => setBreakCount((current) => clampBreakCount(current + direction))}
+                            decreaseLabel={l('Bir mola az', 'One break fewer')}
+                            increaseLabel={l('Bir mola fazla', 'One break more')}
+                            canDecrease={breakCount > 0}
+                            canIncrease={breakCount < MAX_BREAK_COUNT}
+                        />
+                    </SettingRow>
+
+                    <View style={styles.noteSection}>
+                        <Text style={[styles.noteLabel, { color: colors.textPrimary }]}>{l('Çalışma notu', 'Study note')}</Text>
+                        <TextInput
+                            style={[styles.noteInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
+                            value={note}
+                            onChangeText={setNote}
+                            placeholder={l('Sayfa 120-140 arasını çalıştım, 30 soru çözdüm.', 'Studied pages 120-140, solved 30 questions.')}
+                            placeholderTextColor={colors.textMuted}
+                            maxLength={MAX_STUDY_NOTE_LENGTH}
+                            multiline
+                            textAlignVertical="top"
+                            accessibilityLabel={l('Çalışma notu', 'Study note')}
+                            accessibilityHint={l(`En fazla ${MAX_STUDY_NOTE_LENGTH} karakter`, `Up to ${MAX_STUDY_NOTE_LENGTH} characters`)}
+                        />
+                        <Text style={[styles.noteCount, { color: colors.textMuted }]}>
+                            {l(`Kalan: ${MAX_STUDY_NOTE_LENGTH - note.length}`, `${MAX_STUDY_NOTE_LENGTH - note.length} left`)}
+                        </Text>
+                    </View>
 
                     {error ? <Text style={[styles.error, { color: colors.btnAgain }]} accessibilityLiveRegion="polite">{error}</Text> : null}
                     <View style={styles.footer}>
@@ -255,6 +310,18 @@ const styles = StyleSheet.create({
     subjectText: { flex: 1, fontSize: FontSize.lg, fontWeight: '700' },
     chevron: { fontSize: FontSize.xxl, fontWeight: '300' },
     stack: { gap: Spacing.sm, alignItems: 'flex-end' },
+    noteSection: { gap: Spacing.xs, paddingTop: Spacing.md },
+    noteLabel: { fontSize: FontSize.lg, fontWeight: '600' },
+    noteInput: {
+        minHeight: 72,
+        borderRadius: BorderRadius.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        paddingHorizontal: Spacing.md,
+        paddingTop: Spacing.sm,
+        paddingBottom: Spacing.sm,
+        fontSize: FontSize.md,
+    },
+    noteCount: { alignSelf: 'flex-end', fontSize: FontSize.sm, fontVariant: ['tabular-nums'] },
     error: { marginTop: Spacing.md, fontSize: FontSize.md, fontWeight: '600' },
     footer: { paddingTop: Spacing.md, paddingBottom: Spacing.xs },
 });

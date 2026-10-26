@@ -112,6 +112,14 @@ function createTimelineStyles(colors: ColorScheme) {
         metricLabel: { fontSize: FontSize.md, fontWeight: '500', color: colors.textSecondary },
         metricLabelBreak: { fontSize: FontSize.md, fontWeight: '500', color: colors.streak },
         metricValue: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
+        metricAside: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textMuted },
+        note: {
+            paddingTop: Spacing.sm,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: colors.borderLight,
+            fontSize: FontSize.md,
+            color: colors.textPrimary,
+        },
         timeRange: {
             marginTop: Spacing.xs,
             textAlign: 'right',

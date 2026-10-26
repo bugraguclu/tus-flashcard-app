@@ -13,6 +13,7 @@ import { HeaderBackIcon, HeaderForwardIcon } from '../components/HeaderBackIcon'
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
 import { AnalyticsIcon, StopwatchIcon } from '../components/stopwatch/StopwatchIcons';
 import StudySessionCard from '../components/stopwatch/StudySessionCard';
+import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { timelineStyles } from '../components/stopwatch/timelineStyles';
 import {
     BorderRadius,
@@ -210,6 +211,13 @@ export default function StudyCalendarScreen() {
                 l(`Yanıt sayısı: ${session.reviewCount}`, `Answers: ${session.reviewCount}`),
             ]
             : [];
+        const type = session.source === 'cards' ? null : studyTypeLabel(l, session.kind ?? 'pass', session.pass ?? 1);
+        const stopwatchDetails = session.source === 'cards'
+            ? []
+            : [
+                l(`Mola sayısı: ${session.breakCount ?? 0}`, `Breaks: ${session.breakCount ?? 0}`),
+                ...(session.note ? [l(`Not: ${session.note}`, `Note: ${session.note}`)] : []),
+            ];
         const origin = session.source === 'cards'
             ? l(`Deste: ${session.deckName}`, `Deck: ${session.deckName}`)
             : session.source === 'timer'
@@ -219,6 +227,7 @@ export default function StudyCalendarScreen() {
             session.subject,
             [
                 `${dayLabel} · ${formatClockHhMm(session.startMs)} – ${formatClockHhMm(session.endMs)}`,
+                ...(type ? [l(`Tür: ${type}`, `Type: ${type}`)] : []),
                 ...counts,
                 l(
                     `Çalışma: ${formatSessionDuration(session.studyMs, locale)}`,
@@ -228,6 +237,7 @@ export default function StudyCalendarScreen() {
                     `Mola: ${formatSessionDuration(session.breakMs, locale)}`,
                     `Break: ${formatSessionDuration(session.breakMs, locale)}`,
                 ),
+                ...stopwatchDetails,
                 origin,
             ].join('\n'),
         );

@@ -526,6 +526,9 @@ describe('Kronometre sessions', () => {
             studyMs: studyMinutes * MINUTE,
             breakMs: breakMinutes * MINUTE,
             source: 'timer',
+            kind: 'pass',
+            breakCount: breakMinutes > 0 ? 1 : 0,
+            note: '',
         };
     }
 
@@ -549,9 +552,21 @@ describe('Kronometre sessions', () => {
             breakMs: 10 * MINUTE,
             spanMs: 60 * MINUTE,
             pass: 2,
+            kind: 'pass',
+            breakCount: 1,
+            note: '',
             recordId: 7,
         });
         expect(totalsByDay.get(days[0]!.dayNumber)).toBe(50 * MINUTE);
+    });
+
+    it('carries a session type, break count and note onto the timeline, and none onto a card session', () => {
+        const session = { ...timer(8, '2026-10-03T10:00:00', 40, 15, 'Farmakoloji', 3), kind: 'questions' as const, breakCount: 2, note: '30 soru çözdüm' };
+        const { days } = aggregateWith([review('2026-10-03T14:00:00', 30, 'TUS Kartları', 1)], [session]);
+        expect(days[0]!.sessions.map(({ source, kind, pass, breakCount, note }) => ({ source, kind, pass, breakCount, note }))).toEqual([
+            { source: 'timer', kind: 'questions', pass: 3, breakCount: 2, note: '30 soru çözdüm' },
+            { source: 'cards', kind: null, pass: null, breakCount: null, note: '' },
+        ]);
     });
 
     it('does not count an answer twice when it was given while a stopwatch ran', () => {
@@ -617,8 +632,8 @@ describe('getRecentStudySnapshot', () => {
         const today = localDayNumber(now, ROLLOVER);
         const startMs = now - 2 * 60 * MINUTE;
         db.runSync(
-            'INSERT INTO study_sessions (id, subject, pass, startMs, endMs, studyMs, breakMs, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            1, 'Fizyoloji', 1, startMs, startMs + 30 * MINUTE, 30 * MINUTE, 0, 'manual',
+            'INSERT INTO study_sessions (id, subject, kind, pass, startMs, endMs, studyMs, breakMs, breakCount, note, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            1, 'Fizyoloji', 'video', 1, startMs, startMs + 30 * MINUTE, 30 * MINUTE, 0, 0, 'Böbrek fizyolojisi', 'manual',
         );
         // One answer inside the session, one after it.
         for (const atMs of [startMs + 5 * MINUTE, startMs + 60 * MINUTE]) {
@@ -628,5 +643,6 @@ describe('getRecentStudySnapshot', () => {
         const sessions = snapshot.days.flatMap((day) => day.sessions);
         expect(sessions.map((session) => session.source).sort()).toEqual(['cards', 'manual']);
         expect(sessions.find((session) => session.source === 'cards')!.reviewCount).toBe(1);
+        expect(sessions.find((session) => session.source === 'manual')).toMatchObject({ kind: 'video', note: 'Böbrek fizyolojisi' });
     });
 });

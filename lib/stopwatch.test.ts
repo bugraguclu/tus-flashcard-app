@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     DEFAULT_STOPWATCH_PREFS,
+    MAX_BREAK_COUNT,
     MAX_GOAL_MINUTES,
+    MAX_STUDY_NOTE_LENGTH,
     MAX_STUDY_PASS,
     MIN_GOAL_MINUTES,
     examDaysLeft,
@@ -14,6 +16,7 @@ import {
     isValidStudySessionRecord,
     nextStopwatchAlert,
     normalizeStopwatchPrefs,
+    normalizeStudyNote,
     normalizeSubjectName,
     parseRunningStopwatch,
     pauseStopwatch,
@@ -22,6 +25,7 @@ import {
     stepBlockMinutes,
     stepDailyGoal,
     stopwatchElapsed,
+    withStudySessionDefaults,
 } from './stopwatch';
 
 const MINUTE = 60_000;
@@ -48,6 +52,17 @@ describe('stopwatch state machine', () => {
         expect(pauseStopwatch(paused, T0 + 2 * MINUTE)).toBe(paused);
     });
 
+    it('counts each break as it starts', () => {
+        let state = startStopwatch('Fizyoloji', 1, T0);
+        expect(state.breakCount).toBe(0);
+        state = pauseStopwatch(state, T0 + 10 * MINUTE);
+        expect(state.breakCount).toBe(1);
+        state = pauseStopwatch(state, T0 + 11 * MINUTE);
+        expect(state.breakCount).toBe(1);
+        state = pauseStopwatch(resumeStopwatch(state, T0 + 15 * MINUTE), T0 + 30 * MINUTE);
+        expect(state.breakCount).toBe(2);
+    });
+
     it('turns into a session whose parts fit inside its span', () => {
         let state = startStopwatch('  Fizyoloji  ', 2, T0);
         state = pauseStopwatch(state, T0 + 40 * MINUTE);
@@ -55,12 +70,22 @@ describe('stopwatch state machine', () => {
         const session = finishStopwatch(state, T0 + 65 * MINUTE);
         expect(session).toEqual({
             subject: 'Fizyoloji',
+            kind: 'pass',
             pass: 2,
             startMs: T0,
             endMs: T0 + 65 * MINUTE,
             studyMs: 60 * MINUTE,
             breakMs: 5 * MINUTE,
+            breakCount: 1,
+            note: '',
         });
+    });
+
+    it('keeps the type it was started with', () => {
+        const state = startStopwatch('Dahiliye', 2, T0, 'mockExam');
+        expect(state.kind).toBe('mockExam');
+        expect(finishStopwatch(state, T0 + 30 * MINUTE)).toMatchObject({ kind: 'mockExam', pass: 2 });
+        expect(startStopwatch('Dahiliye', 1, T0, 'nap' as never).kind).toBe('pass');
     });
 
     it('never yields negative time or a session ending before its own time when the clock moves back', () => {
@@ -84,13 +109,31 @@ describe('stopwatch state machine', () => {
         expect(parseRunningStopwatch(JSON.stringify({ ...state, studyMs: 'a lot' }))).toBeNull();
         expect(parseRunningStopwatch(JSON.stringify({ ...state, pass: 99 }))?.pass).toBe(MAX_STUDY_PASS);
     });
+
+    it('reads a stopwatch saved before types and break counts as "N. Tekrar" with the break it is on', () => {
+        const { kind: _kind, breakCount: _breakCount, ...older } = pauseStopwatch(startStopwatch('Patoloji', 3, T0), T0 + MINUTE);
+        expect(parseRunningStopwatch(JSON.stringify(older))).toMatchObject({ kind: 'pass', pass: 3, breakCount: 1 });
+        expect(parseRunningStopwatch(JSON.stringify({ ...older, phase: 'study' }))?.breakCount).toBe(0);
+        expect(parseRunningStopwatch(JSON.stringify({ ...older, kind: 'video', breakCount: 4 }))).toMatchObject({ kind: 'video', breakCount: 4 });
+    });
 });
 
 describe('isValidStudySessionRecord', () => {
-    const valid = { id: 5, subject: 'Farmakoloji', pass: 1, startMs: T0, endMs: T0 + 70 * MINUTE, studyMs: 60 * MINUTE, breakMs: 10 * MINUTE, source: 'manual' };
+    const valid = {
+        id: 5, subject: 'Farmakoloji', kind: 'questions', pass: 1, startMs: T0, endMs: T0 + 70 * MINUTE,
+        studyMs: 60 * MINUTE, breakMs: 10 * MINUTE, breakCount: 2, note: 'Sayfa 120-140', source: 'manual',
+    };
 
     it('accepts a well-formed session', () => {
         expect(isValidStudySessionRecord(valid)).toBe(true);
+        expect(isValidStudySessionRecord({ ...valid, note: 'x'.repeat(MAX_STUDY_NOTE_LENGTH), breakCount: MAX_BREAK_COUNT })).toBe(true);
+    });
+
+    it('accepts a session stored before the type, break count and note, and reads it as "N. Tekrar"', () => {
+        const { kind: _kind, breakCount: _breakCount, note: _note, ...older } = valid;
+        expect(isValidStudySessionRecord(older)).toBe(true);
+        expect(withStudySessionDefaults(older as never)).toEqual({ ...older, kind: 'pass', breakCount: 0, note: '' });
+        expect(withStudySessionDefaults(valid as never)).toEqual(valid);
     });
 
     it.each([
@@ -101,8 +144,30 @@ describe('isValidStudySessionRecord', () => {
         ['a pass of zero', { pass: 0 }],
         ['a fractional id', { id: 1.5 }],
         ['negative break time', { breakMs: -1 }],
+        ['an unknown type', { kind: 'nap' }],
+        ['a null type', { kind: null }],
+        ['a negative break count', { breakCount: -1 }],
+        ['a fractional break count', { breakCount: 1.5 }],
+        ['too many breaks', { breakCount: MAX_BREAK_COUNT + 1 }],
+        ['a note longer than its limit', { note: 'x'.repeat(MAX_STUDY_NOTE_LENGTH + 1) }],
+        ['a note that is not text', { note: 42 }],
     ])('rejects %s', (_label, patch) => {
         expect(isValidStudySessionRecord({ ...valid, ...patch })).toBe(false);
+    });
+});
+
+describe('normalizeStudyNote', () => {
+    it('trims a note and keeps nothing for anything that is not text', () => {
+        expect(normalizeStudyNote('  Sayfa 120-140 arasını çalıştım.\n ')).toBe('Sayfa 120-140 arasını çalıştım.');
+        expect(normalizeStudyNote(undefined)).toBe('');
+        expect(normalizeStudyNote(42)).toBe('');
+    });
+
+    it('cuts a long note to its limit without splitting an emoji', () => {
+        expect(normalizeStudyNote('a'.repeat(150))).toBe('a'.repeat(MAX_STUDY_NOTE_LENGTH));
+        const cut = normalizeStudyNote(`${'a'.repeat(MAX_STUDY_NOTE_LENGTH - 1)}😀b`);
+        expect(cut).toBe('a'.repeat(MAX_STUDY_NOTE_LENGTH - 1));
+        expect(isValidStudySessionRecord({ id: 1, subject: 'A', pass: 1, startMs: 1, endMs: 1, studyMs: 0, breakMs: 0, source: 'manual', note: cut })).toBe(true);
     });
 });
 
@@ -126,8 +191,14 @@ describe('preferences', () => {
             focusMinutes: 0,
             breakMinutes: 5,
             alertsEnabled: false,
-            plan: { subject: 'Biyokimya', pass: 4 },
+            plan: { subject: 'Biyokimya', kind: 'pass', pass: 4 },
         });
+    });
+
+    it('keeps the type of the plan', () => {
+        expect(normalizeStopwatchPrefs({ plan: { subject: 'Anatomi', kind: 'video', pass: 2 } }).plan)
+            .toEqual({ subject: 'Anatomi', kind: 'video', pass: 2 });
+        expect(normalizeStopwatchPrefs({ plan: { subject: 'Anatomi', kind: 'nap', pass: 2 } }).plan?.kind).toBe('pass');
     });
 
     it('steps the daily goal by half an hour and snaps an odd goal onto the grid', () => {

@@ -9,6 +9,7 @@ import {
     type StudySession,
 } from '../../lib/studyCalendar';
 import { StopwatchIcon } from './StopwatchIcons';
+import { studyTypeLabel } from './StudyTypeChips';
 import { timelineStyles } from './timelineStyles';
 
 interface StudySessionCardProps {
@@ -18,19 +19,21 @@ interface StudySessionCardProps {
 
 /**
  * One session on a study timeline, as the Kronometre and the study calendar both draw it: the
- * options button and a node on the line, then the subject, its "N. Tekrar" chip, the study and
- * break time, and the time of day it ran. A card session's node is a tick; a Kronometre session
- * shows a stopwatch, or a pencil when it was entered by hand.
+ * options button and a node on the line, then the subject, its type chip ("N. Tekrar", "Soru
+ * Çözümü"...), the study and break time with the number of breaks, the learner's note and the
+ * time of day it ran. A card session's node is a tick; a Kronometre session shows a stopwatch, or
+ * a pencil when it was entered by hand.
  */
 function StudySessionCard({ session, onOpenMenu }: StudySessionCardProps) {
     const { l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = timelineStyles(colors);
     // A card session's number counts that day's sessions of the subject; a Kronometre session's
-    // is the learner's pass through it. Turkish calls both "Tekrar".
+    // is the learner's pass through it, or the kind of study it was. Turkish calls both "Tekrar".
     const repeatLabel = session.pass === null
         ? l(`${session.repeatIndex}. Tekrar`, `Session ${session.repeatIndex}`)
-        : l(`${session.pass}. Tekrar`, `Pass ${session.pass}`);
+        : studyTypeLabel(l, session.kind ?? 'pass', session.pass);
+    const breakCount = session.breakCount ?? 0;
 
     return (
         <View style={styles.row}>
@@ -77,9 +80,17 @@ function StudySessionCard({ session, onOpenMenu }: StudySessionCardProps) {
                             </View>
                             <View style={styles.metric}>
                                 <Text style={styles.metricLabelBreak}>{l('Mola', 'Break')}</Text>
-                                <Text style={styles.metricValue}>{formatSessionDuration(session.breakMs, locale)}</Text>
+                                <Text style={styles.metricValue}>
+                                    {formatSessionDuration(session.breakMs, locale)}
+                                    {breakCount > 0 ? (
+                                        <Text style={styles.metricAside}>
+                                            {' · '}{l(`${breakCount} mola`, breakCount === 1 ? '1 break' : `${breakCount} breaks`)}
+                                        </Text>
+                                    ) : null}
+                                </Text>
                             </View>
                         </View>
+                        {session.note ? <Text style={styles.note}>{session.note}</Text> : null}
                     </View>
                 </View>
                 <Text style={styles.timeRange}>

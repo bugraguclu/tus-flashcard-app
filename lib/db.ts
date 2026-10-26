@@ -359,10 +359,24 @@ const migrations: Migration[] = [
 ];
 
 /**
+ * Columns added to `study_sessions` after it first shipped: the session's type ("Tür"), its
+ * number of breaks ("Mola Sayısı") and the learner's note ("Çalışma Notu"). Their defaults read
+ * an older row as "N. Tekrar" with no breaks counted and no note, and fill them in when a build
+ * that predates them adds or restores a session.
+ */
+const STUDY_SESSION_ADDED_COLUMNS: readonly [name: string, definition: string][] = [
+    ['kind', "TEXT NOT NULL DEFAULT 'pass'"],
+    ['breakCount', 'INTEGER NOT NULL DEFAULT 0'],
+    ['note', "TEXT NOT NULL DEFAULT ''"],
+];
+
+/**
  * Tables that a build predating them can safely ignore. They are created on every open rather
  * than behind a schema version: a numbered migration would make every older build refuse the
  * collection (see the version guard below), and nothing in these tables changes how an older
  * build reads the rest of it. A table that does change that belongs in `migrations` instead.
+ * Columns added to them later follow the same rule: an older build names the columns it reads
+ * and writes, so a column with a default is invisible to it.
  *
  * `study_sessions` holds the Kronometre's stopwatch and hand-entered sessions (`lib/stopwatch.ts`).
  */
@@ -380,6 +394,9 @@ function ensureAdditiveTables(db: DBHandle): void {
         );
         CREATE INDEX IF NOT EXISTS idx_study_sessions_startMs ON study_sessions(startMs);
     `);
+    for (const [name, definition] of STUDY_SESSION_ADDED_COLUMNS) {
+        if (!hasColumn(db, 'study_sessions', name)) db.execSync(`ALTER TABLE study_sessions ADD COLUMN ${name} ${definition};`);
+    }
 }
 
 // ---------- Run Migrations ----------
