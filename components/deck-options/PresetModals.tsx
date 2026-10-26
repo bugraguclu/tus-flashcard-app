@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleShee
 import type { useI18n } from '../../hooks/useI18n';
 import { getAllDeckConfigs, getDecksUsingConfig } from '../../lib/deckManager';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
+import type { DeckConfig } from '../../lib/models';
 
 type I18n = Pick<ReturnType<typeof useI18n>, 'l' | 't'>;
 
@@ -60,7 +61,9 @@ export function PresetActionsMenu({ visible, actions, onClose, styles }: {
 }
 
 /** Every preset in the collection, with how many decks use it and one of them by name. */
-export function PresetPickerModal({ activePresetId, hiddenPresetIds = [], onPick, onClose, styles, l, t }: I18n & {
+export function PresetPickerModal({ presets, activePresetId, hiddenPresetIds = [], onPick, onClose, styles, l, t }: I18n & {
+    /** The presets as the screen shows them, staged additions and renames included. */
+    presets?: DeckConfig[];
     activePresetId: number;
     /** Presets removed in this unsaved session. */
     hiddenPresetIds?: number[];
@@ -79,7 +82,7 @@ export function PresetPickerModal({ activePresetId, hiddenPresetIds = [], onPick
                 <View style={styles.modalCard}>
                     <Text style={styles.modalTitle}>{l('Ayar grubu seç', 'Choose Preset')}</Text>
                     <ScrollView style={{ maxHeight: 320 }}>
-                        {getAllDeckConfigs().filter((preset) => !hiddenPresetIds.includes(preset.id)).map((preset) => {
+                        {(presets ?? getAllDeckConfigs()).filter((preset) => !hiddenPresetIds.includes(preset.id)).map((preset) => {
                             const presetDecks = getDecksUsingConfig(preset.id);
                             const representative = presetDecks[0];
                             return (

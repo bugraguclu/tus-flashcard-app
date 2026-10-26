@@ -34,6 +34,7 @@ import {
     getAllDecks,
     getDeckByName,
     getAvailableDeckName,
+    getAvailableDeckSubtreeName,
     getDeck,
     createDeck,
     createFilteredDeck,
@@ -63,6 +64,8 @@ import {
 import { useI18n } from '../../hooks/useI18n';
 import { filteredOrderLabel, formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
+import { normalizeDeckName } from '../../lib/deckNames';
+import { createBackupNow } from '../../lib/backup';
 import CustomStudyModal from '../../components/CustomStudyModal';
 import DeckPickerModal from '../../components/DeckPickerModal';
 import DisclosureChevron from '../../components/DisclosureChevron';
@@ -214,6 +217,7 @@ export default function DecksScreen() {
     const [renameText, setRenameText] = useState('');
     const [newSubdeckName, setNewSubdeckName] = useState('');
     const [descriptionText, setDescriptionText] = useState('');
+    const [descriptionMarkdown, setDescriptionMarkdown] = useState(false);
     // Filtered-deck options form.
     const [filterSearch, setFilterSearch] = useState('');
     const [filterLimit, setFilterLimit] = useState('100');
@@ -389,6 +393,14 @@ export default function DecksScreen() {
     const handleAddDeck = () => {
         const name = newDeckName.trim();
         if (!name) return;
+        // A `::` path may not reach under a catalog deck, which takes no decks of the learner's own.
+        for (let parent = getParentDeckName(normalizeDeckName(name)); parent; parent = getParentDeckName(parent)) {
+            const ancestor = getDeckByName(parent);
+            if (ancestor && isCatalogDeck(ancestor)) {
+                alert(l('Korumalı Deste', 'Protected Deck'), l('Dahili TUS destelerine alt deste eklenemez.', 'Cannot add subdecks to built-in TUS decks.'));
+                return;
+            }
+        }
 
         try {
             createDeck(name);
@@ -435,10 +447,20 @@ export default function DecksScreen() {
         action();
     };
 
+    // Anki's File > Create Backup writes a snapshot straight away and says so; naming one is
+    // still available on the Backups screen.
     const handleCreateBackup = () => {
-        // Route to the canonical backup workflow so the learner can name the snapshot before
-        // it is written; the overflow menu itself never owns a second backup modal.
-        openOverflowRoute('/backups');
+        runAfterOverflowClose(() => {
+            void (async () => {
+                try {
+                    await createBackupNow();
+                    alert(l('Yedek oluşturuldu', 'Backup created'), l('Güncel veriler yerel bir yedek olarak kaydedildi.', 'Current data was saved as a local backup.'));
+                } catch (e) {
+                    console.warn('[Decks] create backup failed:', e);
+                    alert(t('common.error'), l('Yedek oluşturulamadı.', 'Could not create a backup.'));
+                }
+            })();
+        });
     };
 
     const openDeckMenuRoute = (path: string) => {
@@ -608,7 +630,8 @@ export default function DecksScreen() {
             alert(l('Korumalı Deste', 'Protected Deck'), l('Dahili TUS desteleri yeniden adlandırılamaz.', 'Built-in TUS decks cannot be renamed.'));
             return;
         }
-        setRenameText(getDeckDisplayName(deck.name));
+        // Anki's Rename prompt starts from the full path, so editing a `::` level moves the deck.
+        setRenameText(deck.name);
         setModal({ kind: 'rename', deck });
     };
 
@@ -658,13 +681,14 @@ export default function DecksScreen() {
             return;
         }
         setDescriptionText(deck.description ?? '');
+        setDescriptionMarkdown(deck.descriptionMarkdown === true);
         setModal({ kind: 'description', deck });
     };
 
     const handleSaveDescription = () => {
         if (modal?.kind !== 'description') return;
         try {
-            setDeckDescription(modal.deck.id, descriptionText);
+            setDeckDescription(modal.deck.id, descriptionText, descriptionMarkdown);
             setModal(null);
             refresh();
         } catch (e) {
@@ -811,12 +835,16 @@ export default function DecksScreen() {
     const handleRename = () => {
         if (modal?.kind !== 'rename') return;
         if (!normalizeDeckLeafInput(renameText)) return;
-        const parentName = getParentDeckName(modal.deck.name);
-        // `::` in the new name nests, as in the top-level Add; renaming onto an existing deck is
-        // refused with a message, as in Anki, rather than picking a numbered name.
-        const nextName = parentName ? `${parentName}::${renameText.trim()}` : renameText.trim();
+        // The field holds the full path, as Anki's Rename does. A name another deck already has
+        // gets `+` appended until it is free (`ensure_deck_name_unique`).
+        const typedName = normalizeDeckName(renameText);
+        if (typedName === modal.deck.name) {
+            setModal(null);
+            return;
+        }
 
         try {
+            const nextName = getAvailableDeckSubtreeName(modal.deck.id, typedName);
             renameDeck(modal.deck.id, nextName);
             const renamedName = getDeck(modal.deck.id)?.name ?? nextName;
             updateExpandedDecks((prev) => remapExpandedDeckPaths(prev, modal.deck.name, renamedName));
@@ -1604,6 +1632,24 @@ export default function DecksScreen() {
                 autoFocus
                 textAlignVertical="top"
             />
+            <View style={styles.filteredToggleRow}>
+                <View style={styles.filteredToggleCopy}>
+                    <Text style={styles.filteredToggleTitle}>{l('Markdown olarak yorumla', 'Interpret as Markdown')}</Text>
+                    <Text style={styles.filteredToggleSubtitle}>
+                        {l(
+                            'Metni Markdown olarak işler: başlıklar, kalın ve italik yazı, listeler ve bağlantılar biçimli görünür.',
+                            'Treats the text as Markdown: headings, bold and italic text, lists and links are shown formatted.',
+                        )}
+                    </Text>
+                </View>
+                <Switch
+                    value={descriptionMarkdown}
+                    onValueChange={setDescriptionMarkdown}
+                    trackColor={{ false: colors.border, true: colors.accent }}
+                    thumbColor={colors.white}
+                    accessibilityLabel={l('Markdown olarak yorumla', 'Interpret as Markdown')}
+                />
+            </View>
             <View style={styles.modalActions}>
                 <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal(null)}>
                     <Text style={styles.modalBtnSecondaryText}>{t('common.cancel')}</Text>

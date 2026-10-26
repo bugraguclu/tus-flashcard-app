@@ -54,8 +54,10 @@ export function getDecksUsingConfig(configId: number): Deck[] {
 
 /** Create a new preset, cloned from an existing config (default: the shared preset). */
 export function createPreset(name: string, cloneFromId: number = DEFAULT_DECK_CONFIG.id): DeckConfig {
-    const base = getDeckConfig(cloneFromId);
-    const preset: DeckConfig = { ...base, id: uniqueId(), name: name.trim() || 'Yeni Ayar Grubu' };
+    // A copy belongs to the learner: it never inherits the source's catalog ownership or the
+    // package it was imported from.
+    const { catalogPack: _catalogPack, sourcePackageId: _sourcePackageId, ...owned } = getDeckConfig(cloneFromId);
+    const preset: DeckConfig = { ...owned, id: uniqueId(), name: name.trim() || 'Yeni Ayar Grubu' };
     saveDeckConfig(preset);
     return preset;
 }

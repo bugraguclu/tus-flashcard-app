@@ -27,6 +27,7 @@ import { Redirect, useFocusEffect, useLocalSearchParams, usePathname, useRouter 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Spacing, FontSize, Shadows, BorderRadius, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
+import { rememberSetDueDateInput } from '../../lib/setDueDateDefaults';
 import { schedulerForSettings, withClassicReviewContext, todayLocalYMD } from '../../lib/scheduler';
 import { getTypeAnswerField, renderCardHtml } from '../../lib/templates';
 import { nextRolloverMs } from '../../lib/ankiState';
@@ -61,6 +62,7 @@ import {
     completeFilteredCard,
     getAllDecks,
     getBuriedCountForDeck,
+    getBuriedKindsForDeck,
     getDeck,
     getDeckByName,
     getDeckConfigForDeck,
@@ -100,6 +102,10 @@ import {
 import DeckPickerModal from '../../components/DeckPickerModal';
 import CatalogUnlockSheet from '../../components/CatalogUnlockSheet';
 import CustomStudyModal from '../../components/CustomStudyModal';
+import FilteredDeckOptionsModal from '../../components/FilteredDeckOptionsModal';
+import { deckDescriptionHtml } from '../../lib/deckDescription';
+import { chooseUnburyKind } from '../../lib/unburyChoice';
+import type { Deck } from '../../lib/models';
 import GearGlyph from '../../components/GearGlyph';
 import FlameGlyph from '../../components/FlameGlyph';
 import FlagGlyph from '../../components/FlagGlyph';
@@ -156,7 +162,7 @@ import {
     shouldRunAutoAdvance,
 } from '../../lib/reviewerTimers';
 import { useRouteDeckScope } from '../../hooks/useRouteDeckScope';
-import { hasExplicitStudyScope } from '../../lib/deckNavigation';
+import { deckDescriptionText, hasExplicitStudyScope } from '../../lib/deckNavigation';
 import {
     answerScrollTarget,
     canUndoReview,
@@ -327,6 +333,7 @@ export default function StudyScreen() {
     const [deckPickerVisible, setDeckPickerVisible] = useState(false);
     const [catalogUnlockVisible, setCatalogUnlockVisible] = useState(false);
     const [customStudyOpen, setCustomStudyOpen] = useState(false);
+    const [filteredOptionsDeck, setFilteredOptionsDeck] = useState<Deck | null>(null);
 
     const [sessionStats, setSessionStats] = useState<SessionStats>({
         reviewed: 0,
@@ -1399,6 +1406,7 @@ export default function StudyScreen() {
         if (!currentCard) return;
         const range = parseDueRange(spec);
         if (!range) return;
+        rememberSetDueDateInput('reviewer', spec);
         recordUndoableOp('setDueDate', [currentCard.cardId], [], () => (
             setSelectedDueDate([currentCard.cardId], range, settings)
         ));
@@ -1425,9 +1433,15 @@ export default function StudyScreen() {
 
     const handleDeckOptions = useCallback(() => {
         const deckId = currentCard ? (getAnkiCard(currentCard.cardId)?.deckId ?? targetDeckId) : targetDeckId;
-        if (deckId) {
-            router.push(`/deck-options?deckId=${deckId}&scope=deck` as any);
+        if (!deckId) return;
+        // Anki opens the options of the card's current deck; for a card in a filtered deck that is
+        // the filtered deck itself, whose options are its searches and order.
+        const deck = getDeck(deckId);
+        if (deck?.isFiltered) {
+            setFilteredOptionsDeck(deck);
+            return;
         }
+        router.push(`/deck-options?deckId=${deckId}&scope=deck` as any);
     }, [currentCard, targetDeckId, router]);
 
     const handleCardInfo = useCallback(() => {
@@ -1733,11 +1747,13 @@ export default function StudyScreen() {
         rebuildFilteredDeck(emptyStateDeck.id);
         invalidateCollection();
     }, [emptyStateDeck, invalidateCollection]);
-    const handleUnburyDeck = useCallback(() => {
+    // Anki's congratulations screen asks the overview's question when both kinds are buried.
+    const handleUnburyDeck = useCallback(async () => {
         if (!emptyStateDeck) return;
-        unburyDeck(emptyStateDeck.id, settings.dayRolloverHour);
+        const kind = await chooseUnburyKind(getBuriedKindsForDeck(emptyStateDeck.id), l);
+        unburyDeck(emptyStateDeck.id, settings.dayRolloverHour, kind);
         invalidateCollection();
-    }, [emptyStateDeck, settings.dayRolloverHour, invalidateCollection]);
+    }, [emptyStateDeck, settings.dayRolloverHour, invalidateCollection, l]);
     // Anki opens a new custom session as the current deck; here the reviewer simply studies it.
     const handleCustomStudySession = useCallback((sessionDeckName: string) => {
         setCustomStudyOpen(false);
@@ -2199,7 +2215,9 @@ export default function StudyScreen() {
     // Deck description (Anki shows it on the deck's study screen).
     const deckDescription = useMemo(() => {
         if (!selectedDeckName) return '';
-        return getDeckByName(selectedDeckName)?.description?.trim() ?? '';
+        // Read as text, as the overview shows it; a filtered deck has no description of its own.
+        const deck = getDeckByName(selectedDeckName);
+        return deck && !deck.isFiltered ? deckDescriptionText(deckDescriptionHtml(deck, '')) : '';
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedDeckName, collectionVersion]);
 
@@ -2618,7 +2636,7 @@ export default function StudyScreen() {
             {buriedInDeck > 0 ? (
                 <TouchableOpacity
                     style={styles.secondaryActionBtn}
-                    onPress={handleUnburyDeck}
+                    onPress={() => { void handleUnburyDeck(); }}
                     accessibilityRole="button"
                     accessibilityLabel={l(
                         `${buriedInDeck} gömülü kartı şimdi aç`,
@@ -3459,6 +3477,21 @@ export default function StudyScreen() {
                     onClose={() => setCustomStudyOpen(false)}
                     onChanged={invalidateCollection}
                     onSessionCreated={handleCustomStudySession}
+                />
+            ) : null}
+            {filteredOptionsDeck ? (
+                <FilteredDeckOptionsModal
+                    visible
+                    deck={filteredOptionsDeck}
+                    settings={settings}
+                    onClose={() => setFilteredOptionsDeck(null)}
+                    onSaved={(nextDeckName) => {
+                        if (selectedDeckName === filteredOptionsDeck.name && nextDeckName !== selectedDeckName) {
+                            setSelectedDeckName(nextDeckName);
+                        }
+                        setFilteredOptionsDeck(null);
+                        invalidateCollection();
+                    }}
                 />
             ) : null}
         </View>

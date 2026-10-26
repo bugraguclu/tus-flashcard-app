@@ -1544,7 +1544,7 @@ export default function SettingsScreen() {
             <Group title={l('Yedekleme', 'Backup')} styles={styles}>
                 <ToggleRow
                     label={l('Otomatik yedekleme', 'Automatic backup')}
-                    summary={l('Haftada bir', 'Weekly')}
+                    summary={l('30 dakikada bir; 12 günlük, 10 haftalık, 9 aylık kopya', 'Every 30 minutes; 12 daily, 10 weekly, 9 monthly copies')}
                     value={settings.autoBackupEnabled !== false}
                     onChange={(value) => updateSetting('autoBackupEnabled', value)}
                     divider={false}

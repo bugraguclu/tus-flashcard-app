@@ -17,6 +17,7 @@ import { updateAnkiCardData } from './fsrsCardData';
 import { learningLeftAfterDeckMove } from './deckPresetSteps';
 import {
     createCardForNote,
+    notePositionForPass,
     createNote,
     deleteNote,
     getAnkiCard,
@@ -261,8 +262,9 @@ export function updateTusCardByCardId(
                 .map((template) => template.ord);
         const existingByOrd = new Map(getCardsForNote(note.id).map((sibling) => [sibling.ord, sibling]));
 
+        const position = notePositionForPass([...existingByOrd.values()]);
         for (const ord of requiredOrds) {
-            if (!existingByOrd.has(ord)) createCardForNote(note, destinationDeckId, ord);
+            if (!existingByOrd.has(ord)) createCardForNote(note, destinationDeckId, ord, position());
         }
         // Empty siblings remain until the learner explicitly runs Empty Cards.
     }

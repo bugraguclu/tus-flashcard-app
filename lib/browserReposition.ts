@@ -4,7 +4,9 @@
  *
  * - only new cards move; siblings of one note share one position;
  * - notes keep the order they were selected in, or a random one with "Randomize order";
- * - note i gets `start + i × step`;
+ * - note i gets `start + i × step`, with Anki's dialog bounds: start 0–1,000,000, step 1–10,000;
+ * - a new card gathered into a filtered deck gets its home position (`odue`), as
+ *   `Card::set_new_position` does;
  * - "Shift position of existing cards" first moves every other new card at or after `start` on
  *   by `step × the number of selected cards` (Anki counts cards, not notes);
  * - all of it is one transaction, and the last reposition can be undone.
@@ -18,7 +20,11 @@ export interface RepositionOptions {
     random?: () => number;
 }
 
-interface PositionSnapshot { id: number; due: number; mod: number; usn: number }
+/** Anki's Reposition dialog bounds (qt/aqt/forms/reposition.ui). */
+export const REPOSITION_MAX_START = 1_000_000;
+export const REPOSITION_MAX_STEP = 10_000;
+
+interface PositionSnapshot { id: number; due: number; odue: number; mod: number; usn: number }
 
 let lastReposition: PositionSnapshot[] = [];
 
@@ -42,8 +48,8 @@ export function repositionSelectedNewCards(
     shiftExisting: boolean,
     options: RepositionOptions = {},
 ): number {
-    const normalizedStart = Math.max(1, Math.floor(start) || 1);
-    const normalizedStep = Math.max(1, Math.floor(step) || 1);
+    const normalizedStart = Math.min(REPOSITION_MAX_START, Math.max(0, Math.floor(start) || 0));
+    const normalizedStep = Math.min(REPOSITION_MAX_STEP, Math.max(1, Math.floor(step) || 1));
     const selected = [...new Set(cardIds)]
         .map((cardId) => getAnkiCard(cardId))
         .filter((card): card is AnkiCard => card !== null);
@@ -71,17 +77,30 @@ export function repositionSelectedNewCards(
                 .filter((card) => card.type === 0 && !selectedIds.has(card.id) && card.due >= normalizedStart)
                 .sort((a, b) => b.due - a.due || b.id - a.id);
             for (const card of displaced) {
-                snapshot.push({ id: card.id, due: card.due, mod: card.mod, usn: card.usn });
+                snapshot.push({ id: card.id, due: card.due, odue: card.odue, mod: card.mod, usn: card.usn });
                 saveAnkiCard({ ...card, due: card.due + shift, mod, usn: -1 });
             }
         }
         for (const card of cards) {
-            snapshot.push({ id: card.id, due: card.due, mod: card.mod, usn: card.usn });
-            saveAnkiCard({ ...card, due: notePositions.get(card.noteId)!, mod, usn: -1 });
+            snapshot.push({ id: card.id, due: card.due, odue: card.odue, mod: card.mod, usn: card.usn });
+            const position = notePositions.get(card.noteId)!;
+            saveAnkiCard({ ...card, ...(card.odid ? { odue: position } : { due: position }), mod, usn: -1 });
         }
     });
     lastReposition = snapshot;
     return cards.length;
+}
+
+/** First and last position in the new queue, which Anki's dialog shows above its fields. */
+export function getNewQueuePositionRange(): { top: number; bottom: number } {
+    let top: number | null = null;
+    let bottom = 0;
+    for (const card of getAllAnkiCards()) {
+        if (card.type !== 0 || card.odid) continue;
+        top = top === null ? card.due : Math.min(top, card.due);
+        bottom = Math.max(bottom, card.due);
+    }
+    return { top: Math.max(top ?? 0, 0), bottom };
 }
 
 export function canUndoLastReposition(): boolean {
@@ -100,7 +119,7 @@ export function undoLastReposition(): number {
         for (const entry of snapshot) {
             const card = getAnkiCard(entry.id);
             if (!card || card.type !== 0) continue;
-            saveAnkiCard({ ...card, due: entry.due, mod: entry.mod, usn: entry.usn });
+            saveAnkiCard({ ...card, due: entry.due, odue: entry.odue, mod: entry.mod, usn: entry.usn });
             restored++;
         }
     });
