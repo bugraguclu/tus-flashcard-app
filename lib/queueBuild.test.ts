@@ -144,6 +144,21 @@ describe('buryBuildTimeSiblings', () => {
         expect(buried).toEqual([]);
     });
 
+    it('lets the earlier siblings\' decks decide, merging their toggles as Anki does', () => {
+        const onDeck = (deckId: number) => ({ buryNewSiblings: deckId === 2 } as DeckConfig);
+        const news = [
+            { cardId: 1, noteId: 100, deckId: 1, state: { status: 'new', dueTime: 0 } },
+            { cardId: 2, noteId: 100, deckId: 2, state: { status: 'new', dueTime: 0 } },
+            { cardId: 3, noteId: 100, deckId: 1, state: { status: 'new', dueTime: 0 } },
+        ] as unknown as StudyCard[];
+
+        const result = buryBuildTimeSiblings([], [], news, onDeck, () => {});
+
+        // Card 2 stays: only deck 1, which does not bury, was seen before it. Card 3 goes: by then
+        // the note carries deck 2's toggle, although card 3's own deck would not bury it.
+        expect(result.news.map((c) => c.cardId)).toEqual([1, 2]);
+    });
+
     it('never buries intraday learning siblings (no Anki toggle for them)', () => {
         const buried: number[] = [];
         const learning = [sib(1, 100, 'learning', Date.now()), sib(2, 100, 'learning', Date.now())];

@@ -238,6 +238,21 @@ function nextNewCardPosition(): number {
     return (row?.maxDue ?? 0) + 1;
 }
 
+/**
+ * The new-card position for cards generated for an existing note, as Anki chooses it
+ * (`extract_data_from_existing_cards` and `CardGenCache::next_position` in
+ * rslib/src/notetype/cardgen.rs): the position of a sibling that is still new, otherwise one
+ * fresh position, taken once and shared by every card this pass creates.
+ */
+export function notePositionForPass(existing: readonly AnkiCard[] = []): () => number {
+    const newSibling = existing.find((card) => card.type === 0);
+    let position = newSibling ? (newSibling.odid ? newSibling.odue : newSibling.due) : undefined;
+    return () => {
+        position ??= nextNewCardPosition();
+        return position;
+    };
+}
+
 export function createCardForNote(note: Note, deckId: number, ord: number, position?: number): AnkiCard {
     const id = generateUniqueCardId();
     const card: AnkiCard = {

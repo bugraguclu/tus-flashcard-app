@@ -330,7 +330,12 @@ export function sortNewCards(
 }
 
 
-/** Suppress siblings in memory, considering only cards that fit the active limits. */
+/**
+ * Suppress siblings in memory, considering only cards that fit the active limits. As Anki's
+ * gather-time burying does (`get_and_update_bury_mode_for_note` in rslib's queue builder), a note
+ * carries the union of the bury toggles of the decks its cards seen so far sit in, so it is the
+ * earlier siblings' decks that decide whether a later card is left out, not the later card's own.
+ */
 export function buryBuildTimeSiblings(
     learning: StudyCard[],
     reviews: StudyCard[],
@@ -339,16 +344,25 @@ export function buryBuildTimeSiblings(
     _bury: (cardId: number) => void,
     accept: (card: StudyCard) => boolean = () => true,
 ): { learning: StudyCard[]; reviews: StudyCard[]; news: StudyCard[] } {
-    const seenNotes = new Map<number, StudyCard>();
+    type BuryMode = { news: boolean; reviews: boolean; interdayLearning: boolean };
+    const modes = new Map<number, BuryMode>();
 
-    const shouldBury = (card: StudyCard): boolean => {
-        const first = seenNotes.get(card.noteId)!;
-        const config = configForDeck(first.deckId);
+    const see = (card: StudyCard) => {
+        const config = configForDeck(card.deckId);
+        const previous = modes.get(card.noteId);
+        modes.set(card.noteId, {
+            news: Boolean(previous?.news || config.buryNewSiblings),
+            reviews: Boolean(previous?.reviews || config.buryReviewSiblings),
+            interdayLearning: Boolean(previous?.interdayLearning || config.buryInterdayLearningSiblings),
+        });
+    };
+
+    const shouldBury = (card: StudyCard, mode: BuryMode): boolean => {
         switch (card.state.status) {
-            case 'new': return config.buryNewSiblings;
-            case 'review': return config.buryReviewSiblings;
+            case 'new': return mode.news;
+            case 'review': return mode.reviews;
             // Only interday learning (queue 3, no intraday dueTime) has a bury toggle in Anki.
-            case 'learning': return card.state.dueTime === 0 ? config.buryInterdayLearningSiblings : false;
+            case 'learning': return card.state.dueTime === 0 ? mode.interdayLearning : false;
             default: return false;
         }
     };
@@ -356,9 +370,13 @@ export function buryBuildTimeSiblings(
     const pass = (pool: StudyCard[]): StudyCard[] => {
         const kept: StudyCard[] = [];
         for (const card of pool) {
-            if (seenNotes.has(card.noteId) && shouldBury(card)) continue;
+            const mode = modes.get(card.noteId);
+            if (mode && shouldBury(card, mode)) {
+                see(card);
+                continue;
+            }
             if (!accept(card)) continue;
-            if (!seenNotes.has(card.noteId)) seenNotes.set(card.noteId, card);
+            see(card);
             kept.push(card);
         }
         return kept;

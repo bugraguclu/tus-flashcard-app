@@ -20,6 +20,7 @@ import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm } from '../lib/confirm';
+import { getSetDueDateDefault } from '../lib/setDueDateDefaults';
 import { useI18n } from '../hooks/useI18n';
 import HeaderBackIcon from './HeaderBackIcon';
 import PencilGlyph from './PencilGlyph';
@@ -107,7 +108,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const translateX = useRef(new Animated.Value(360)).current;
     const [view, setView] = useState<MenuView>('menu');
-    const [dueDateInput, setDueDateInput] = useState('1');
+    const [dueDateInput, setDueDateInput] = useState('');
     const dueDateSpecValid = parseDueRange(dueDateInput) !== null;
     const [tagsInput, setTagsInput] = useState('');
     const [resetOptions, setResetOptions] = useState<ResetCardOptions>({ restorePosition: true, resetCounts: false });
@@ -132,6 +133,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
 
     useEffect(() => {
         if (view === 'tags') setTagsInput(props.noteTags);
+        if (view === 'dueDate') setDueDateInput(getSetDueDateDefault('reviewer'));
     }, [view, props.noteTags]);
 
 
@@ -140,7 +142,6 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         // Keep the current panel rendered while the native Modal fades out. Switching a flag
         // panel back to the main menu here makes the overflow menu flash for one frame during
         // dismissal. The opening effect selects the correct view on the next presentation.
-        setDueDateInput('1');
         props.onClose();
     };
 

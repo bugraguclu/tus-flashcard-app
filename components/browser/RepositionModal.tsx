@@ -1,7 +1,7 @@
-import { useState, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { alert } from '../../lib/confirm';
-import { canUndoLastReposition, repositionSelectedNewCards, undoLastReposition } from '../../lib/browserReposition';
+import { canUndoLastReposition, getNewQueuePositionRange, repositionSelectedNewCards, undoLastReposition } from '../../lib/browserReposition';
 import { setDbSetting } from '../../lib/storage';
 import { readBrowserBoolean } from './browserHelpers';
 import type { BrowserI18n } from './types';
@@ -45,6 +45,11 @@ export function RepositionModal({
 }: RepositionModalProps) {
     const [randomize, setRandomize] = useState(() => readBrowserBoolean(REPOSITION_RANDOM_KEY, false));
     const close = () => setShowRepositionDialog(false);
+    // Anki's dialog opens by showing where the new queue starts and ends.
+    const queueRange = useMemo(
+        () => (showRepositionDialog ? getNewQueuePositionRange() : { top: 0, bottom: 0 }),
+        [showRepositionDialog],
+    );
 
     const checkbox = (checked: boolean, label: string, onPress: () => void) => (
         <TouchableOpacity style={styles.checkboxRow} onPress={onPress} accessibilityRole="checkbox" accessibilityState={{ checked }} aria-checked={checked}>
@@ -87,6 +92,9 @@ export function RepositionModal({
                 <View style={styles.modalCard} accessibilityViewIsModal>
                     <Text style={styles.modalTitle}>{l('Yeniden Konumlandır', 'Reposition')}</Text>
                     <Text style={styles.modalCaption}>{l('Yalnızca seçili yeni kartlar etkilenir.', 'Only selected new cards are affected.')}</Text>
+                    <Text style={styles.modalCaption}>
+                        {l(`Kuyruk başı: ${queueRange.top}\nKuyruk sonu: ${queueRange.bottom}`, `Queue top: ${queueRange.top}\nQueue bottom: ${queueRange.bottom}`)}
+                    </Text>
                     <Text style={styles.fieldLabel}>{l('Başlangıç konumu', 'Start position')}</Text>
                     <TextInput style={styles.dialogInput} value={repositionStart} onChangeText={(value) => setRepositionStart(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" inputMode="numeric" />
                     <Text style={styles.fieldLabel}>{l('Adım', 'Step')}</Text>

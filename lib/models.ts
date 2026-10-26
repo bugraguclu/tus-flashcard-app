@@ -243,6 +243,8 @@ export interface Deck {
     mod: number;
     usn: number;
     description: string;
+    /** Anki's "Interpret as Markdown" (`md`): the description is Markdown rather than HTML. */
+    descriptionMarkdown?: boolean;
     collapsed: boolean;
     isFiltered: boolean;
     /** Complete source deck JSON for lossless Anki package re-export. */

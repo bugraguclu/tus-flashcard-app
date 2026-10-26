@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable,
 import { useRouter } from 'expo-router';
 import type { ColorScheme } from '../../constants/theme';
 import type { StudyCard, AppSettings } from '../../lib/types';
+import { getSetDueDateDefault } from '../../lib/setDueDateDefaults';
 import { FLAG_COLORS, type CardFlag } from '../../lib/models';
 import type { BrowserCardSortKey, BrowserTableMode } from '../../lib/studyRepository';
 import { cardFlagName, type SupportedLocale } from '../../lib/i18n';
@@ -140,10 +141,10 @@ export function SelectionMenuModal({
                         >
                             <Text style={styles.selectionMenuIcon}>▤</Text><Text style={styles.selectionMenuText}>{l('Desteyi değiştir', 'Change deck')}</Text><Text style={styles.overflowChevron}>›</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setRepositionStart('1'); setRepositionStep('1'); setRepositionShiftExisting(true); setShowRepositionDialog(true); }}>
+                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setRepositionStart('0'); setRepositionStep('1'); setShowRepositionDialog(true); }}>
                             <Text style={styles.selectionMenuIcon}>↕</Text><Text style={styles.selectionMenuText}>{l('Yeniden konumlandır', 'Reposition')}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setDueInput('0'); setShowDueDialog(true); }}>
+                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setDueInput(getSetDueDateDefault('browser')); setShowDueDialog(true); }}>
                             <Text style={styles.selectionMenuIcon}>📅</Text><Text style={styles.selectionMenuText}>{l('Vade tarihini ayarla', 'Set due date')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.selectionMenuItem} onPress={openSelectionTags}>

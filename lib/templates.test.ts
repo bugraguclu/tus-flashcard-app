@@ -70,6 +70,17 @@ describe('templates', () => {
         expect(renderTemplate(template, { fields: { A: '', B: 'x' } })).toBe('NA');
     });
 
+    it('renders a card whose front went blank as Anki\'s empty-front notice on both sides', () => {
+        const reversed = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 2)!;
+        const note: Note = {
+            id: 2, guid: 'rev', noteTypeId: reversed.id, mod: 0, usn: -1, tags: [],
+            fields: ['Ön', ''], sfld: 'Ön', csum: 0, flags: 0,
+        };
+        expect(renderCardHtml(reversed, note, 1, 'question')).toContain('Bu kartın ön yüzü boş.');
+        expect(renderCardHtml(reversed, note, 1, 'answer')).toContain('Bu kartın ön yüzü boş.');
+        expect(renderCardHtml(reversed, note, 0, 'question')).not.toContain('ön yüzü boş');
+    });
+
     it('sanitizes svg/event-handler/javascript/data-uri vectors while preserving safe html', () => {
         const basic = BUILTIN_NOTE_TYPES.find((nt) => nt.id === 1)!;
         const note: Note = {
@@ -448,7 +459,8 @@ describe('Anki cloze parity (rslib/src/cloze.rs)', () => {
         const html = render('Yaş &lt; {{c1::60}} ve {{c1::yatmıyor}} olma<div>', 1, 'question');
         expect(html).toContain('data-ordinal="1">[...]</span>');
         expect(extractClozeNumbers('{{c1::kapanmamış')).toEqual([]);
-        expect(render('{{c1::kapanmamış', 1, 'question')).toContain('{{c1::kapanmamış');
+        // With no cloze 1 left, Anki renders the card as its missing-cloze notice.
+        expect(render('{{c1::kapanmamış', 1, 'question')).toContain('1 numaralı boşluk bulunamadı');
     });
 
     it('recovers the legacy editor typo that splits the cloze delimiter around an emphasis tag', () => {
