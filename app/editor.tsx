@@ -59,6 +59,9 @@ import { safeExternalCallbackUrl } from '../lib/externalLinking';
 import { goBackOr } from '../lib/backNavigation';
 import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type AnkiCard, type Note, type NoteTypeField } from '../lib/models';
 import MediaAttachButton from '../components/MediaAttachButton';
+import ImageOcclusionFieldPanel from '../components/image-occlusion/ImageOcclusionFieldPanel';
+import { imageOcclusionFields } from '../lib/imageOcclusionNoteType';
+import { parseOcclusionField } from '../lib/imageOcclusion';
 import RichTextEditor, {
     type RichTextEditorHandle,
     type RichTextCommand,
@@ -264,6 +267,8 @@ export default function EditorScreen() {
         [cardTypeId, dataVersion],
     );
     const isCloze = selectedNoteType?.kind === 'cloze';
+    // An Image Occlusion note edits its Occlusion and Image fields through the mask editor.
+    const occlusionFields = useMemo(() => imageOcclusionFields(selectedNoteType), [selectedNoteType]);
 
     const availableNoteTypes = useMemo(() => {
         const list = getAllNoteTypes().filter((nt) => !isLegacyTusNoteType(nt));
@@ -900,6 +905,15 @@ export default function EditorScreen() {
             flags: 0,
         };
         const cardsCount = selectedNoteType ? countCardsForNote(selectedNoteType, mockNote) : 0;
+        if (occlusionFields && !parseOcclusionField(currentFields[occlusionFields.occlusion] || '').some((shape) => shape.ordinal > 0)) {
+            alert(
+                t('common.error'),
+                currentFields[occlusionFields.image]
+                    ? l('En az bir maske çizin. “Maskeleri düzenle”ye dokunun.', 'Draw at least one mask. Tap “Edit Masks”.')
+                    : l('Önce örtülecek bir görsel seçin.', 'Choose a picture to occlude first.'),
+            );
+            return;
+        }
         if (cardsCount === 0) {
             alert(
                 t('common.error'),
@@ -1197,6 +1211,23 @@ export default function EditorScreen() {
                 </View>
 
                 {fieldsToRender.map((field, index) => {
+                    if (occlusionFields && index === occlusionFields.image) return null;
+                    if (occlusionFields && index === occlusionFields.occlusion) {
+                        return (
+                            <ImageOcclusionFieldPanel
+                                key={`${selectedNoteType?.id ?? cardTypeId}-occlusion`}
+                                occlusion={fieldValues[occlusionFields.occlusion] || ''}
+                                image={fieldValues[occlusionFields.image] || ''}
+                                editable={!isContentReadOnly}
+                                onChange={(occlusion, image) => setFieldValues((prev) => {
+                                    const next = [...prev];
+                                    next[occlusionFields.occlusion] = occlusion;
+                                    next[occlusionFields.image] = image;
+                                    return next;
+                                })}
+                            />
+                        );
+                    }
                     const localizedName = localizeFieldName(locale, field.name);
                     const isPinned = pinnedFields.has(field.ord);
                     // Anki stores a font, a size and a right-to-left flag on every field; the

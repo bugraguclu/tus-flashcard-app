@@ -573,17 +573,62 @@ Trial scheduling writes are permitted only on an existing card with unchanged id
 
 ## Image Occlusion note authoring
 
-**Status:** Not implemented; imported notes keep Anki's occlusion markup and show their masks
+**Status:** Implemented: an offline mask editor for Anki's stock Image Occlusion note type
 
-**Evidence:** An imported Image Occlusion note travels unchanged through import and export, and its
-`{{cN::image-occlusion:…}}` deletions render as the shape `<div>` Anki 26.09.3 writes (`cloze`
-while asked, `cloze-highlight` on the answer, `cloze-inactive` otherwise; known properties only,
-`oi` as `occludeInactive` and `fs` as `font-size`), measured through `scripts/anki-oracle` and
-pinned by `lib/templates.test.ts`. Card scripts do not run here, so the masks Anki's occlusion
-script paints are drawn ahead of time as an SVG over the image (`lib/imageOcclusionMasks.ts`,
-`lib/imageOcclusionMasks.test.ts`) with Anki 26.09.3's rules and colours: the asked shapes in the
-active colour, the others only when they hide all, the answered shapes outlined, text shapes as
-labels, and Toggle Masks shown only when a shape hides the others. Creating occlusion notes needs
-an image editor this app does not have yet.
+**Evidence:** The app carries Anki 26.09.3's stock "Image Occlusion" type as a built-in
+(`lib/imageOcclusionNoteType.ts`: `originalStockKind` 6, fields tagged 0–4, Anki's templates and
+CSS), and recognises an imported one or a clone by that kind and those tags. Choosing it on the
+Add screen replaces the Occlusion and Image fields with a picture panel; Header, Back Extra and
+Comments stay ordinary fields. The mask editor (`components/image-occlusion/`) draws rectangles,
+ellipses, polygons and text labels, moves and resizes them, groups masks into one question,
+zooms with two fingers or buttons, has undo and redo, and switches the note between Anki's
+"Hide All, Guess One" (the default for a new note, `oi=1` on every shape) and "Hide One, Guess
+One". It needs no network and runs no card script. The picture is stored unchanged in the media
+folder and the Image field is `<img src="…">`, as Anki writes it.
 
-**Next compatibility gate:** Add a native/offline editor and package fixtures
+The Occlusion field is read and written with Anki's own grammar (`lib/imageOcclusion.ts`,
+`lib/imageOcclusion.test.ts`), measured through `scripts/anki-oracle/image_occlusion.py`: one
+`{{cN::image-occlusion:shape:name=value:…}}<br>` per shape, a name running to the first `=` and a
+value to the next unescaped `:`, with `\:` and `\\` the only escapes (any other backslash ends the
+shape's properties, a piece without `=` is dropped, and no `::` hint is split off); positions and
+sizes as fractions of the image written to four decimals without outer zeros (`.1`, `1.`,
+`.0000`); an angle in ten-thousandths of a turn; a label's `fs` as a fraction of the image height
+(Anki's 40 image pixels for a new label), its number `c0`; new properties in the order Anki's
+editor writes them; a new mask numbered with the lowest free number. Editing keeps what it does
+not change: an untouched shape is written back as the exact text it was read from, a touched one
+keeps its property order and any property the app does not know, and an editor session that
+changes nothing leaves the field byte for byte.
+
+`lib/imageOcclusion.oracle.test.ts` (opt-in, `ANKI_ORACLE=1`) exports notes made in the app as a
+package, imports it into Anki 26.09.3 and checks that Anki's Image Occlusion editor
+(`get_image_occlusion_note`) loads exactly the app's shapes, groups, hide-all mode, image, header
+and back extra, and that every card's question and answer render the same shape `<div>`s as the
+app's renderer, so Anki's script and the app draw the same masks; it also checks the app reads six
+hand-written and malformed fields exactly as Anki does. A fresh Anki collection already holds its
+own Image Occlusion type, so Anki keeps the imported one beside it as `Image Occlusion+`, as it does
+for one from any other collection.
+
+The card renderer (`lib/templates.ts`, pinned by `lib/templates.test.ts`) writes the shape `<div>`
+Anki writes (`cloze` while asked, `cloze-highlight` on the answer, `cloze-inactive` otherwise;
+known properties only; `oi` as `occludeInactive`, `fs` as `font-size`), with two rules measured for
+this work: a `c0` occlusion (a label) is `cloze` on both sides of every card, and attribute
+characters are hex references of at least two digits (`&#x0A;`). Card scripts do not run here, so
+`lib/imageOcclusionMasks.ts` lays the masks out ahead of time with Anki's rules: asked shapes in the
+active colour, then the others only when they hide all, then the answered outline; boxes turned by
+their angle about their top-left corner, a polygon moved so its corner is the shape's own, and a
+label sized as a fraction of the image height through container query units on its white box.
+
+Divergences: the editor keeps but cannot change a shape's rotation or colour, Anki's alignment
+tools and fill picker are not offered, and a mask is moved or resized whole (no per-point polygon
+editing).
+
+**Named iPhone smoke — Image Occlusion:** In Not ekle choose Görüntü Örtme; pick a photo from the
+library and once from the camera. Draw a rectangle, an ellipse and a polygon, pinch to zoom and
+draw a small mask, add a label with the keyboard up, group two masks with Çoklu, undo and redo,
+switch to "Birini gizle, birini sor", save, then study: each card asks its own mask, the label
+stays readable at the image's scale, and Toggle Masks works on the answer. Reopen the note from
+the browser, open the mask editor and press Tamam without changes; the Occlusion field must be
+unchanged. Export the deck and import it into Anki: the masks match.
+
+**Next compatibility gate:** Rotation, colour and per-point polygon editing; run the Image
+Occlusion iPhone smoke on a device

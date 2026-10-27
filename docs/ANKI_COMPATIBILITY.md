@@ -1,6 +1,6 @@
 # Anki compatibility baseline
 
-Last reviewed: 2026-10-27
+Last reviewed: 2026-10-28
 
 TusAnkiM is an independent Anki alternative with local-first storage and iPhone as its sole
 release target; web is a local/CI regression target, also published as a browser preview, not a
@@ -59,7 +59,7 @@ When an Anki-facing capability changes, update its row here and its section ther
 | [AnkiWeb synchronization](ANKI_COMPATIBILITY_NOTES.md#ankiweb-synchronization) | Not implemented | Local-only architecture | Requires a documented protocol/backend, conflict model, encryption and recovery plan |
 | [Profiles](ANKI_COMPATIBILITY_NOTES.md#profiles) | Not implemented | Single local collection; no inert profile toggle is exposed | Design isolation, migration, backup and recovery before UI |
 | [Shared-deck marketplace](ANKI_COMPATIBILITY_NOTES.md#shared-deck-marketplace) | Product-specific catalog; purchased note fields editable | `lib/ai2CatalogStudy.test.ts` (trial scheduling and tag deltas without content unlock), `lib/catalogEditing.test.ts`, `lib/catalogEditorMenu.test.ts`, `lib/bkaCatalog.install.test.ts`, catalog protection/tag tests | Do not present it as AnkiWeb shared decks |
-| [Image Occlusion note authoring](ANKI_COMPATIBILITY_NOTES.md#image-occlusion-note-authoring) | Not implemented; imported notes keep Anki's occlusion markup and show their masks | `lib/templates.test.ts` (occlusion deletions as Anki 26.09.3 renders them), `lib/imageOcclusionMasks.test.ts` (masks drawn with Anki's rules) | Add a native/offline editor and package fixtures |
+| [Image Occlusion note authoring](ANKI_COMPATIBILITY_NOTES.md#image-occlusion-note-authoring) | Implemented: offline mask editor for Anki's stock Image Occlusion type | `lib/imageOcclusion.test.ts` (Anki's Occlusion field grammar both ways, untouched shapes written back unchanged), `lib/imageOcclusion.oracle.test.ts` (Anki 26.09.3 loads the app's shapes and renders the same masks; opt-in), `lib/templates.test.ts`, `lib/imageOcclusionMasks.test.ts` | Run the Image Occlusion iPhone smoke; shape rotation and colour are kept but cannot be edited |
 
 ## Priority roadmap
 

@@ -211,8 +211,8 @@ change type.
 - A different deck set on a template (deck override): new cards go to the deck you choose.
 
 > **Different from Anki:** Scripts (JavaScript) in templates are not run, for security; such cards may
-> look plain. MathJax formulas are not rendered; the source text is shown. Image Occlusion notes
-> cannot be created. Filters that belong to add-ons are ignored.
+> look plain. MathJax formulas are not rendered; the source text is shown. Image Occlusion masks
+> cannot be rotated or recoloured. Filters that belong to add-ons are ignored.
 
 ## Related topics
 

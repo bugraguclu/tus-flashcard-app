@@ -22,34 +22,49 @@ function note(occlusions: string): Note {
 
 const shapes = '{{c1::image-occlusion:rect:left=.1:top=.2:width=.3:height=.4:oi=1}}'
     + '{{c2::image-occlusion:ellipse:left=.5:top=.5:rx=.1:ry=.2}}'
-    + '{{c3::image-occlusion:polygon:points=.1,.1 .2,.1 .2,.2:oi=1}}'
-    + '{{c2::image-occlusion:text:left=.6:top=.1:text=Sol & sağ:scale=2:fs=12}}';
+    + '{{c3::image-occlusion:polygon:left=.1:top=.1:points=.1,.1 .2,.1 .2,.2:oi=1}}'
+    + '{{c2::image-occlusion:text:left=.6:top=.1:text=Sol & sağ:scale=2:fs=.05}}';
+
+const active = 'background:var(--active-shape-color, #ff8e8e);border:1px solid #212121';
+const inactive = 'background:var(--inactive-shape-color, #ffeba2);border:1px solid #212121';
+const highlight = 'background:var(--highlight-shape-color, #ff8e8e00);border:1px solid #ff8e8e';
 
 describe('Image Occlusion masks', () => {
     it('masks the asked shape and, marked "hide all", the others', () => {
         const html = renderCardHtml(occlusion, note(shapes), 0, 'question', { clozeOrd: 1 });
         expect(html).not.toContain('<canvas');
-        expect(html).toContain('<rect x="0.1" y="0.2" width="0.3" height="0.4" style="fill:var(--active-shape-color, #ff8e8e)" stroke="#212121"');
+        expect(html).toContain(`<div class="io-shape" style="left:10%;top:20%;width:30%;height:40%;${active}"></div>`);
         // c3 hides the others; c2's ellipse does not, so it is not drawn while c1 is asked.
         expect(html).toContain('<polygon points="0.1,0.1 0.2,0.1 0.2,0.2" style="fill:var(--inactive-shape-color, #ffeba2)"');
-        expect(html).not.toContain('<ellipse');
-        expect(html).not.toContain('<text');
+        expect(html).not.toContain('border-radius');
+        expect(html).not.toContain('io-label"');
         expect(html).toContain('<img src="kalp.png">');
     });
 
-    it('labels a text shape while its deletion is asked', () => {
+    it('labels a text shape while its deletion is asked, sized by the image height', () => {
         const html = renderCardHtml(occlusion, note(shapes), 0, 'question', { clozeOrd: 2 });
-        expect(html).toContain('<text x="60%" y="10%" font-family="Arial" font-size="24px"');
-        expect(html).toContain('>Sol &amp; sağ</tspan>');
-        expect(html).toContain('<ellipse cx="0.6" cy="0.7" rx="0.1" ry="0.2" style="fill:var(--active-shape-color, #ff8e8e)"');
+        expect(html).toContain('<div class="io-label" style="left:60%;top:10%;font-size:10cqh;padding:0 10px 10px 0;color:#000">Sol &amp; sağ</div>');
+        expect(html).toContain(`<div class="io-shape" style="left:50%;top:50%;width:20%;height:40%;${active};border-radius:50%"></div>`);
     });
 
     it('outlines the answered shape and keeps the masks it hides', () => {
         const html = renderCardHtml(occlusion, note(shapes), 0, 'answer', { clozeOrd: 2 });
-        expect(html).toContain('<ellipse cx="0.6" cy="0.7" rx="0.1" ry="0.2" style="fill:var(--highlight-shape-color, #ff8e8e00)" stroke="#ff8e8e"');
-        expect(html).toContain('style="fill:var(--inactive-shape-color, #ffeba2)"');
+        expect(html).toContain(`<div class="io-shape" style="left:50%;top:50%;width:20%;height:40%;${highlight};border-radius:50%"></div>`);
+        expect(html).toContain(inactive);
+        // Anki paints the hidden others before the answered outline.
+        expect(html.indexOf(inactive)).toBeLessThan(html.indexOf(highlight));
         expect(html).toContain('<label id="toggle"><input id="io-toggle" type="checkbox" hidden>Toggle Masks</label>');
         expect(html).toContain('#toggle{-webkit-appearance:button;appearance:button;display:inline-block');
+    });
+
+    it('turns a box by its stored angle about its corner, and moves a polygon to its own corner', () => {
+        const html = renderCardHtml(occlusion, note('{{c1::image-occlusion:rect:left=.1:top=.1:angle=250:width=.2:height=.1}}'
+            + '{{c2::image-occlusion:polygon:left=.3:top=.4:points=.1,.1 .2,.1 .2,.3:oi=1}}'
+            + '{{c0::image-occlusion:text:left=.1:top=.6:text=A\\:B:scale=1.5:oi=1}}'), 0, 'question', { clozeOrd: 1 });
+        expect(html).toContain(`<div class="io-shape" style="left:10%;top:10%;width:20%;height:10%;${active};transform:rotate(9deg)"></div>`);
+        expect(html).toContain('<polygon points="0.3,0.4 0.4,0.4 0.4,0.6"');
+        // Without fs a label is Anki's 40 pixels, times its scale.
+        expect(html).toContain('<div class="io-label" style="left:10%;top:60%;font-size:60px;padding:0 7.5px 7.5px 0;color:#000">A:B</div>');
     });
 
     it('hides Toggle Masks when no shape hides the others', () => {
@@ -60,6 +75,6 @@ describe('Image Occlusion masks', () => {
     it('leaves the canvas in a text export, as Anki writes the card', () => {
         const html = renderCardHtml(occlusion, note(shapes), 0, 'question', { clozeOrd: 1, forTextExport: true });
         expect(html).toContain('<canvas id="image-occlusion-canvas"></canvas>');
-        expect(html).not.toContain('<svg');
+        expect(html).not.toContain('io-shape');
     });
 });

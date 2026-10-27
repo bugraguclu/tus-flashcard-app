@@ -97,8 +97,8 @@ With a hardware keyboard, using Cmd (or Ctrl): B bold, I italic, U underline, Z 
 Shift+7 and Shift+8 lists, L/E/R/J alignment, Alt+1…3 headings. Shift+F3 changes case.
 
 > **Different from Anki:** The MathJax button inserts `\( … \)` markers, but TusAnkiM does not render
-> formulas yet; the card shows the source text (Anki renders it after export). Image Occlusion notes
-> cannot be created. Scripts (JavaScript), SVG, MathML and form elements in fields and templates are
+> formulas yet; the card shows the source text (Anki renders it after export). For an Image Occlusion note,
+> choose the Image Occlusion type and draw masks over a picture; a mask cannot be rotated or recoloured. Scripts (JavaScript), SVG, MathML and form elements in fields and templates are
 > neither run nor shown on cards. Shortcuts follow word processors rather than Anki, and there is no
 > cloze shortcut.
 

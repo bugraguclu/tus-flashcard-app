@@ -222,6 +222,7 @@ export function localizeNoteTypeName(locale: SupportedLocale, name: string): str
     if (name === 'Basic (optional reversed card)') return 'Temel (seçimli ters kart)';
     if (name === 'Basic (type in the answer)') return 'Temel (yanıtı yazarak)';
     if (name === 'Cloze') return 'Boşluklu';
+    if (name === 'Image Occlusion') return 'Görüntü Örtme';
     return name;
 }
 
@@ -233,6 +234,10 @@ export function localizeFieldName(locale: SupportedLocale, name: string): string
     if (name === 'Text') return 'Metin';
     if (name === 'Back Extra') return 'Arka Ek';
     if (name === 'Add Reverse') return 'Tersini Ekle';
+    if (name === 'Occlusion') return 'Örtme';
+    if (name === 'Image') return 'Görsel';
+    if (name === 'Header') return 'Başlık';
+    if (name === 'Comments') return 'Yorumlar';
     return name;
 }
 

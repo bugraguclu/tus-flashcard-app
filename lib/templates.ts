@@ -1,3 +1,4 @@
+import { parseOcclusionBody } from './imageOcclusion';
 import { withOcclusionMasks } from './imageOcclusionMasks';
 import { sanitizeUntrustedHtml as normalizeFieldHtml, scrubCss } from './templateSecurity';
 export { sanitizeUntrustedHtml } from './templateSecurity';
@@ -141,12 +142,12 @@ const NAMED_ATTRIBUTE_ENTITIES: Record<string, string> = { '&': '&amp;', '<': '&
 /**
  * Text in an attribute, encoded as Anki encodes it (measured in Anki 26.09.3): `& < > "` as named
  * entities, and every other character below U+0100 that is not an ASCII letter or digit as a hex
- * reference, so the attribute cannot break out of its quotes. A browser reads the same text back
+ * reference of at least two digits, so the attribute cannot break out of its quotes. A browser reads the same text back
  * either way; a card text export is then the bytes Anki writes.
  */
 function encodeClozeAttribute(value: string): string {
     return value.replace(/[^A-Za-z0-9\u0100-\uffff]/g, (char) => NAMED_ATTRIBUTE_ENTITIES[char]
-        ?? `&#x${char.charCodeAt(0).toString(16).toUpperCase()};`);
+        ?? `&#x${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')};`);
 }
 
 /** The Image Occlusion shape properties Anki writes, under the attribute names it gives them. */
@@ -159,18 +160,17 @@ const OCCLUSION_PROPERTIES: Record<string, string> = {
  * An Image Occlusion deletion (`{{c1::image-occlusion:rect:left=.1:top=.2:…}}`) as Anki renders it:
  * an empty `<div>` carrying the shape for Anki's occlusion script — `cloze` while it is asked,
  * `cloze-highlight` on its answer and `cloze-inactive` otherwise. Properties Anki does not know
- * are left out, and only the text of a text shape is encoded.
+ * are left out, and only the text of a text shape is encoded. The properties are read with Anki's
+ * grammar (lib/imageOcclusion.ts), so an escaped `\:` in a label stays part of it.
  */
 function renderOcclusion(text: string, ordinals: string, className: string): string {
-    const [shape, ...properties] = text.slice('image-occlusion:'.length).split(':');
+    const { kind, properties } = parseOcclusionBody(text.slice('image-occlusion:'.length));
     let out = `<div class="${className}" data-ordinal="${ordinals}" `;
-    if (shape) out += `data-shape="${shape}" `;
+    if (kind) out += `data-shape="${kind}" `;
     for (const property of properties) {
-        const split = property.indexOf('=');
-        const name = OCCLUSION_PROPERTIES[property.slice(0, split)];
-        if (split < 0 || !name) continue;
-        const value = property.slice(split + 1);
-        out += `data-${name}="${name === 'text' ? encodeClozeAttribute(value) : value}" `;
+        const name = OCCLUSION_PROPERTIES[property.name];
+        if (!name) continue;
+        out += `data-${name}="${name === 'text' ? encodeClozeAttribute(property.value) : property.value}" `;
     }
     return `${out}></div>`;
 }
@@ -189,7 +189,12 @@ function renderClozeChildren(
         const active = child.ordinals.includes(activeOrd);
         const ownText = child.children.map((part) => (part.kind === 'text' ? part.value : '')).join('');
         if (ownText.startsWith('image-occlusion:')) {
-            out += renderOcclusion(ownText, child.ordinalsText, !active ? 'cloze-inactive' : side === 'question' ? 'cloze' : 'cloze-highlight');
+            // An occlusion has no hint: a `::` in it is part of its properties. A `c0` deletion (a
+            // text label) is asked on both sides of every card, so Anki's script always draws it.
+            const body = child.hint === null ? ownText : `${ownText}::${child.hint}`;
+            const className = child.ordinals.includes(0) ? 'cloze'
+                : !active ? 'cloze-inactive' : side === 'question' ? 'cloze' : 'cloze-highlight';
+            out += renderOcclusion(body, child.ordinalsText, className);
             continue;
         }
         const inner = renderClozeChildren(child.children, activeOrd, side);

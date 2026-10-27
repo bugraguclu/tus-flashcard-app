@@ -908,4 +908,21 @@ describe('Image Occlusion deletions as Anki 26.09.3 renders them', () => {
             + '<span class="cloze" data-cloze="IMAGE&#x2D;OCCLUSION&#x3A;rect&#x3A;left&#x3D;1" data-ordinal="1">[...]</span>'
             + '<div class="cloze" data-ordinal="1" data-shape="rect" data-left=".1" data-fill="#00ff00" ></div>');
     });
+
+    it('asks a c0 label on both sides of every card, and keeps a :: inside an occlusion', () => {
+        const field = '{{c0::image-occlusion:text:left=.2}}{{c1::image-occlusion:rect:left=0::top=.1}} {{c0::plain}}';
+        expect(renderClozeQuestion(field, 1)).toBe('<div class="cloze" data-ordinal="0" data-shape="text" data-left=".2" ></div>'
+            + '<div class="cloze" data-ordinal="1" data-shape="rect" data-left="0" ></div> <span class="cloze-inactive" data-ordinal="0">plain</span>');
+        expect(renderClozeAnswer(field, 2)).toBe('<div class="cloze" data-ordinal="0" data-shape="text" data-left=".2" ></div>'
+            + '<div class="cloze-inactive" data-ordinal="1" data-shape="rect" data-left="0" ></div> <span class="cloze-inactive" data-ordinal="0">plain</span>');
+    });
+
+    it('reads escaped and malformed labels as Anki does', () => {
+        const label = (text: string) => renderClozeQuestion(`{{c1::image-occlusion:text:left=.1:top=.2:text=${text}:scale=1:fs=.04}}`, 1);
+        const start = '<div class="cloze" data-ordinal="1" data-shape="text" data-left=".1" data-top=".2" ';
+        expect(label('a\\:b')).toBe(`${start}data-text="a&#x3A;b" data-scale="1" data-font-size=".04" ></div>`);
+        expect(label('a\\\\c')).toBe(`${start}data-text="a&#x5C;c" data-scale="1" data-font-size=".04" ></div>`);
+        expect(label('a:b')).toBe(`${start}data-text="a" data-font-size=".04" ></div>`);
+        expect(label('a\\xb')).toBe(`${start}></div>`);
+    });
 });

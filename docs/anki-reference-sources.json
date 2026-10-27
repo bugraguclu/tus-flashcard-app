@@ -1260,6 +1260,29 @@
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/template.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["empty-front and missing-cloze notice on both sides"]
+    },
+    {
+      "id": "anki-manual-image-occlusion",
+      "priority": 1,
+      "platform": "cross-platform note/card semantics",
+      "url": "https://docs.ankiweb.net/editing.html#image-occlusion",
+      "useFor": [
+        "Image Occlusion notes: masks, groups, Hide All, Guess One and Hide One, Guess One",
+        "the Header and Back Extra fields beside the masks"
+      ]
+    },
+    {
+      "id": "anki-26.09.3-image-occlusion-oracle",
+      "priority": 2,
+      "platform": "Image Occlusion note format, measured against Anki 26.09.3",
+      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/image_occlusion",
+      "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 on 2026-10-28 by scripts/anki-oracle/image_occlusion.py",
+      "useFor": [
+        "the stock Image Occlusion note type (originalStockKind 6, field tags 0-4) a new collection holds",
+        "the Occlusion field grammar: a name runs to the first =, a value to an unescaped colon, \\: and \\\\ are the only escapes; numbers to four decimals without outer zeros, angles in ten-thousandths of a turn, label size as a fraction of the image height, labels as c0",
+        "a c0 occlusion rendered as an asked shape on both sides of every card; attribute characters as hex references of at least two digits",
+        "lib/imageOcclusion.oracle.test.ts: notes made in the app load the same shapes into Anki's Image Occlusion editor and render the same shape divs on every card"
+      ]
     }
   ],
   "requiredDocs": [

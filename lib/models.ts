@@ -5,6 +5,7 @@ import {
     FSRS_DEFAULT_DESIRED_RETENTION,
     FSRS_DEFAULT_HISTORICAL_RETENTION,
 } from './fsrs';
+import { IMAGE_OCCLUSION_NOTE_TYPE } from './imageOcclusionNoteType';
 import type { AutoAdvanceAnswerAction, AutoAdvanceQuestionAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from './types';
 
 export type NoteTypeKind = 'standard' | 'cloze';
@@ -167,6 +168,7 @@ export const BUILTIN_NOTE_TYPES: NoteType[] = [
         sortFieldIdx: 0,
         mod: 0,
     },
+    IMAGE_OCCLUSION_NOTE_TYPE,
 ];
 
 // Mirrors Anki's notes table. One note generates one or more cards.
