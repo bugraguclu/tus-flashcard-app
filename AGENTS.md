@@ -20,9 +20,10 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   (answer, undo, suspend, bury), `resetCards` (Reset Card), `filteredDeckQueue`, `browserRepository` (browser queries),
   `studyCardRows` and `studySearchSql` (search to SQL). Queue ordering is `lib/queueBuild.ts`,
   review logging `lib/reviewLogger.ts`.
-- Kronometre (study stopwatch, opened from the Statistics streak card): `lib/stopwatch.ts` (pure
-  state machine, preferences, display), `lib/stopwatchStore.ts` (the `study_sessions` table, its
-  preferences and the running stopwatch), `lib/stopwatchNotifications*.ts` (block reminders);
+- Kronometre (study stopwatch, opened from the deck list's bottom bar and the Statistics streak
+  card): `lib/stopwatch.ts` (pure state machine, preferences, display), `lib/stopwatchStore.ts`
+  (the `study_sessions` table, its preferences and the running stopwatch),
+  `lib/stopwatchNotifications*.ts` (block reminders);
   `lib/studyCalendar.ts` merges its sessions with card sessions for the timeline and the calendar.
 - Scheduling: `lib/scheduler.ts` (classic), `lib/fsrs*.ts` (FSRS), `lib/ankiState.ts` (card state,
   day numbers). Reviewer behaviour: `lib/reviewer*.ts`; card rendering `components/CardWebView.tsx`

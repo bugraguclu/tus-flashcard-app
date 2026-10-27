@@ -57,8 +57,9 @@ function lightHaptic(): void {
 
 /**
  * Kronometre: today's study time against the daily goal, a stopwatch with breaks, and the last
- * week of study — card sessions and Kronometre sessions on one timeline. It opens from the
- * Statistics screen's daily streak, which these sessions also keep alive.
+ * week of study — card sessions and Kronometre sessions on one timeline. It opens from the deck
+ * list's bottom bar and from the Statistics screen's daily streak, which these sessions also keep
+ * alive.
  */
 export default function StopwatchScreen() {
     const { l, locale, localeTag } = useI18n();

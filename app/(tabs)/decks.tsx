@@ -73,6 +73,7 @@ import LockGlyph from '../../components/LockGlyph';
 import CardsGlyph from '../../components/CardsGlyph';
 import StatsGlyph from '../../components/StatsGlyph';
 import GearGlyph from '../../components/GearGlyph';
+import { StopwatchIcon } from '../../components/stopwatch/StopwatchIcons';
 import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/DeckListTable';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
@@ -2484,6 +2485,15 @@ export default function DecksScreen() {
                 >
                     <CardsGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText}>{t('sidebar.myCards')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.bottomBtn}
+                    onPress={() => router.push('/stopwatch' as any)}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Kronometreyi aç', 'Open stopwatch')}
+                >
+                    <StopwatchIcon color={colors.textSecondary} size={20} />
+                    <Text style={styles.bottomBtnText}>{l('Kronometre', 'Stopwatch')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.bottomBtn}

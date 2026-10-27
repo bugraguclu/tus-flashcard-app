@@ -1,4 +1,5 @@
 import Svg, { Path, Rect } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 
 type Props = {
     color: string;
@@ -9,7 +10,7 @@ type Props = {
 /** A clean Apple SF-style rectangle.stack glyph for Browse / Cards. */
 export default function CardsGlyph({ color, size = 20, filled = false }: Props) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
             <Path
                 d="M7 3h11a3 3 0 0 1 3 3v10"
                 stroke={color}

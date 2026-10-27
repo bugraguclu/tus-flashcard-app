@@ -1,4 +1,5 @@
 import Svg, { Path, Circle } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 
 type Props = {
     color: string;
@@ -10,7 +11,7 @@ type Props = {
 export default function GearGlyph({ color, size = 20, filled = false }: Props) {
     if (filled) {
         return (
-            <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden>
+            <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
                 <Path
                     d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"
                     fill={color}
@@ -24,7 +25,7 @@ export default function GearGlyph({ color, size = 20, filled = false }: Props) {
     }
 
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
             <Circle
                 cx="12"
                 cy="12"
