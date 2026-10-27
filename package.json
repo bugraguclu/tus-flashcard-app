@@ -24,7 +24,8 @@
     "pack:catalog": "node scripts/pack-catalog-asset.ts",
     "audit:catalog": "sucrase-node scripts/audit-catalog.ts",
     "share:lan": "node scripts/share-expo-go.mjs --lan",
-    "share:ngrok": "node scripts/share-expo-go.mjs --ngrok"
+    "share:ngrok": "node scripts/share-expo-go.mjs --ngrok",
+    "build:past-exams": "node scripts/build-past-exam-pack.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

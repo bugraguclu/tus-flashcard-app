@@ -170,6 +170,14 @@ import {
     visibleReviewerGrades,
 } from '../../lib/reviewerPresentation';
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
+import type { OptionLetter } from '../../lib/pastExamPack';
+import {
+    TUS_QUESTION_SKIPPED,
+    isTusQuestionNoteType,
+    tusQuestionAnswer,
+    tusQuestionVerdict,
+    type TusQuestionChoice,
+} from '../../lib/tusQuestionCard';
 import { advanceQueueAfterAnswer, coordinatePostAnswerQueueRefresh } from '../../lib/reviewerQueueRefresh';
 import { reviewerAddNoteDeckId } from '../../lib/reviewerAddNote';
 import { KeyRepeatGuard, RevealGradeGuard, isAutoRepeatKey } from '../../lib/reviewerInputGuards';
@@ -345,6 +353,8 @@ export default function StudyScreen() {
     const [currentCard, setCurrentCard] = useState<StudyCard | null>(null);
     const [showingAnswer, setShowingAnswer] = useState(false);
     const [typedAnswer, setTypedAnswer] = useState('');
+    // The option tapped on a "TUS Sorusu" card; null until one is, and again once the card turns back.
+    const [tusQuestionChoice, setTusQuestionChoice] = useState<TusQuestionChoice | null>(null);
     const [answerFeedback, setAnswerFeedback] = useState<{ nonce: number } | null>(null);
     const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
     const [redoStack, setRedoStack] = useState<UndoEntry[]>([]);
@@ -2244,6 +2254,20 @@ export default function StudyScreen() {
         setShowingAnswer(true);
     }, []);
 
+    // A question card is answered by tapping an option: the tap turns the card and the answer side
+    // marks it. The grade stays the learner's, with the one matching the result suggested.
+    const isTusQuestionCard = Boolean(renderPayload && isTusQuestionNoteType(renderPayload.noteType));
+    const handleTusQuestionChoice = useCallback((letter: OptionLetter) => {
+        setTusQuestionChoice(letter);
+        setShowingAnswer(true);
+    }, []);
+    useEffect(() => {
+        if (!showingAnswer) setTusQuestionChoice(null);
+    }, [showingAnswer, currentCard?.cardId]);
+    const suggestedGrade: Grade | null = isTusQuestionCard && showingAnswer && renderPayload
+        ? (tusQuestionVerdict(tusQuestionChoice, tusQuestionAnswer(renderPayload.noteType, renderPayload.note)) === 'correct' ? 3 : 1)
+        : null;
+
     useEffect(() => {
         if (!typeAnswerField || typeAnswerInCard
             || settings.focusTypeAnswer === false || showingAnswer
@@ -2570,11 +2594,14 @@ export default function StudyScreen() {
                 styles.answerBtn,
                 settings.twoRowAnswerButtons && styles.answerBtnTwoRow,
                 { backgroundColor: color, borderColor: color, minHeight: 56 * answerScale },
+                suggestedGrade !== null && grade !== suggestedGrade && styles.answerBtnNotSuggested,
             ]}
             onPress={() => answerCard(grade)}
             activeOpacity={0.78}
             accessibilityRole="button"
-            accessibilityLabel={l(`${label}, sonraki gösterim ${time}`, `${label}, next review ${time}`)}
+            accessibilityLabel={suggestedGrade === grade
+                ? l(`${label}, önerilen, sonraki gösterim ${time}`, `${label}, suggested, next review ${time}`)
+                : l(`${label}, sonraki gösterim ${time}`, `${label}, next review ${time}`)}
         >
             {settings.showNextReviewTimes && <Text numberOfLines={1} style={[styles.btnTime, { fontSize: FontSize.sm * answerScale }]}>{time}</Text>}
             <Text numberOfLines={1} style={[styles.btnLabel, { fontSize: (isCompact ? 15 : 16) * answerScale }]}>{label}</Text>
@@ -3131,6 +3158,8 @@ export default function StudyScreen() {
                                         onCardSwipe={Platform.OS === 'web' ? handleCardSwipe : undefined}
                                         audioPlaybackRate={cardDeckOptions.audioPlaybackRate}
                                         onAnswerAnchor={showingAnswer ? handleAnswerAnchor : undefined}
+                                        onTusQuestionChoice={isTusQuestionCard && !showingAnswer ? handleTusQuestionChoice : undefined}
+                                        tusQuestionChoice={isTusQuestionCard && showingAnswer ? tusQuestionChoice ?? TUS_QUESTION_SKIPPED : undefined}
                                     />
                                 ) : !showingAnswer ? (
                                     settings.ninePointTouchEnabled ? (
@@ -3747,6 +3776,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         ...Shadows.sm,
     },
     answerBtnTwoRow: { flexBasis: '47%', flexGrow: 1 },
+    // On a question card the grade that matches the result stays bright; the others step back.
+    answerBtnNotSuggested: { opacity: 0.5 },
     btnTime: { color: colors.white, opacity: 0.85, fontSize: FontSize.sm, fontWeight: '700', fontVariant: ['tabular-nums'] as any },
     btnLabel: { color: colors.white, fontSize: isCompact ? 15 : 16, fontWeight: '800' },
 

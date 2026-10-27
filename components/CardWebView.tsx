@@ -23,6 +23,9 @@ import {
 } from '../lib/embeddedWebViewScroll';
 import { defaultCardTextCss, nightModeCardCss } from '../lib/cardPageDefaults';
 import WebHtmlFrame from './WebHtmlFrame';
+import type { OptionLetter } from '../lib/pastExamPack';
+import { isTusQuestionNoteType, withTusQuestionChoice, type TusQuestionChoice } from '../lib/tusQuestionCard';
+import { bindTusQuestionDocument, parseTusQuestionMessage, tusQuestionBridgeScript } from '../lib/tusQuestionBridge';
 
 /**
  * Anki's document classes. AnkiDroid ships `<html class="mobile android linux js">` and the
@@ -195,6 +198,10 @@ interface CardWebViewProps {
      * card, once the side's images have loaded. Intrinsic frames only.
      */
     onAnswerAnchor?: (offsetY: number) => void;
+    /** Question side of a "TUS Sorusu" card: the option the learner tapped (lib/tusQuestionBridge.ts). */
+    onTusQuestionChoice?: (letter: OptionLetter) => void;
+    /** Answer side of a "TUS Sorusu" card: the option chosen, or `-` when it was skipped. */
+    tusQuestionChoice?: TusQuestionChoice | null;
 }
 
 export default function CardWebView({
@@ -224,6 +231,8 @@ export default function CardWebView({
     onCardSwipe,
     audioPlaybackRate = 1.0,
     onAnswerAnchor,
+    onTusQuestionChoice,
+    tusQuestionChoice,
 }: CardWebViewProps) {
     const colors = useThemeColors();
     const { l } = useI18n();
@@ -255,12 +264,20 @@ export default function CardWebView({
     typeAnswerSubmitRef.current = onTypeAnswerSubmit;
     const cardSwipeRef = useRef(onCardSwipe);
     cardSwipeRef.current = onCardSwipe;
+    const tusQuestionTokenRef = useRef(
+        `tus-question-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+    );
+    const tusQuestionToken = tusQuestionTokenRef.current;
+    const tusQuestionChoiceRef = useRef(onTusQuestionChoice);
+    tusQuestionChoiceRef.current = onTusQuestionChoice;
+    const isTusQuestion = isTusQuestionNoteType(noteType);
+    const bindsTusQuestion = isTusQuestion && side === 'question' && Boolean(onTusQuestionChoice);
     // Held in a ref so the playback effects never have to list the callback as a dependency —
     // a new function identity from the parent must not re-trigger playback.
     const audioActiveRef = useRef(onAudioActiveChange);
     audioActiveRef.current = onAudioActiveChange;
     const mediaBaseUrl = getMediaBaseUrl();
-    const renderedHtml = renderCardHtml(noteType, note, card.ord, side, {
+    const sideHtml = renderCardHtml(noteType, note, card.ord, side, {
         deckName: deck?.name,
         clozeOrd: card.ord + 1,
         typedAnswer,
@@ -273,6 +290,10 @@ export default function CardWebView({
         nightMode: isDark,
         platformClasses: ankiPlatformClasses(),
     });
+    // The answer side of a question card shows which option was chosen, through its stylesheet.
+    const renderedHtml = isTusQuestion && side === 'answer'
+        ? withTusQuestionChoice(sideHtml, tusQuestionChoice)
+        : sideHtml;
     // The base template caps media at 60vh. Inside a self-sizing frame that unit would feed back
     // into measurement, so media is capped against the stable screen/contained-frame budget.
     const mediaCap = Math.round((scrollMode === 'contained' ? frameHeight : windowHeight) * 0.7);
@@ -357,6 +378,7 @@ export default function CardWebView({
     const typedAnswerBinder = typeAnswerInCard && side === 'question'
         ? typeAnswerBridgeScript(typeAnswerToken, autoFocusTypeAnswer)
         : '';
+    const tusQuestionBinder = bindsTusQuestion ? tusQuestionBridgeScript(tusQuestionToken) : '';
     const sizingScript = scrollMode === 'intrinsic' ? HEIGHT_REPORTER : `${HINT_BINDER}true;`;
     const anchorScript = onAnswerAnchor && side === 'answer' && scrollMode === 'intrinsic'
         ? ANSWER_ANCHOR_REPORTER
@@ -580,6 +602,12 @@ export default function CardWebView({
                             openExternalLink(link.getAttribute('href') ?? '');
                         });
                     });
+                    if (bindsTusQuestion) {
+                        bindTusQuestionDocument(doc, tusQuestionToken, (raw) => {
+                            const choice = parseTusQuestionMessage(raw, tusQuestionToken);
+                            if (choice) tusQuestionChoiceRef.current?.(choice);
+                        });
+                    }
                     if (typeAnswerInCard && side === 'question') {
                         const input = Array.from(doc.querySelectorAll<HTMLInputElement>('input[data-tus-type-answer-token]'))
                             .find((candidate) => candidate.getAttribute('data-tus-type-answer-token') === typeAnswerToken);
@@ -699,7 +727,7 @@ export default function CardWebView({
             source={nativeSource}
             dataDetectorTypes="none"
             style={[styles.webView, { height: frameHeight }]}
-            injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}true;`}
+            injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${tusQuestionBinder}${audioSpeedScript}true;`}
             onMessage={(event) => {
                 const data = String(event.nativeEvent.data);
                 if (data.startsWith('AUDIO:')) {
@@ -718,6 +746,11 @@ export default function CardWebView({
                     if (onCardTap && Number.isFinite(xRatio) && Number.isFinite(yRatio)) {
                         onCardTap(xRatio, yRatio);
                     }
+                    return;
+                }
+                const choice = bindsTusQuestion ? parseTusQuestionMessage(data, tusQuestionToken) : null;
+                if (choice) {
+                    tusQuestionChoiceRef.current?.(choice);
                     return;
                 }
                 const typeAnswerMessage = parseTypeAnswerBridgeMessage(data, typeAnswerToken);

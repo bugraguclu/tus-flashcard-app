@@ -1244,6 +1244,13 @@
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/template.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["empty-front and missing-cloze notice on both sides"]
+    },
+    {
+      "id": "anki-manual-template-javascript",
+      "priority": 1,
+      "platform": "cross-platform card template behavior",
+      "url": "https://docs.ankiweb.net/templates/styling.html#javascript",
+      "useFor": ["why the TUS Sorusu cards are answered through trusted reviewer code rather than template scripts", "keeping that note type readable as a static card in other clients"]
     }
   ],
   "requiredDocs": [

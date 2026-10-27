@@ -40,6 +40,11 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   `lib/exportAnkiPackage.ts`, `lib/exportNotes.ts`.
 - Storage: `lib/db.ts` (SQLite, schema, migrations); `lib/storage.ts` re-exports `settingsStore`
   and `backupData`; backups `lib/backup*.ts`; database check `lib/maintenance*.ts`.
+- Çıkmış TUS Denemeleri (bundled past exams, offered in the deck list): `lib/pastExamPack.ts` (pack
+  format, names, tags), `lib/pastExams.ts` (installer, Doğru/Yanlış/Boş), the "TUS Sorusu" note type
+  `lib/tusQuestionCard.ts` and its tap-to-answer reviewer bridge `lib/tusQuestionBridge.ts`; the pack is
+  built by `npm run build:past-exams -- --source <rea-tusbuddy>` and never committed (ÖSYM's
+  copyright): without it the app builds and simply does not offer the exams (`lib/pastExamAsset.ts`).
 - Catalog and purchases: `lib/bkaCatalog.ts`, `lib/catalog*.ts`, `lib/catalogProtection.ts`,
   `lib/purchasesSdk.ts`. App-wide state: `contexts/AppContext.tsx`. Theme: `constants/theme.ts`.
   Copy: `lib/i18n.ts` keys and inline `l('Türkçe', 'English')`. Web-only code is in `*.web.ts`.

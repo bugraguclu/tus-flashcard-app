@@ -34,6 +34,7 @@ import { filteredOrderLabel } from '../lib/i18n';
 import CustomStudyModal from '../components/CustomStudyModal';
 import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
 import HeaderBackIcon from '../components/HeaderBackIcon';
+import PastExamProgressCard from '../components/decks/PastExamProgressCard';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { getDeckOverviewSnapshot } from '../lib/screenSnapshots';
 
@@ -237,6 +238,10 @@ export default function DeckOverviewScreen() {
                         <Text style={styles.countLabel}>{t('anki.review')}</Text>
                     </View>
                 </View>
+
+                {!deck.isFiltered && (
+                    <PastExamProgressCard deckName={deck.name} version={`${dataVersion}:${schedulingRevision}:${refreshToken}`} />
+                )}
 
                 {deck.isFiltered && (
                     <View style={styles.filterCard}>

@@ -77,6 +77,8 @@ import { StopwatchIcon } from '../../components/stopwatch/StopwatchIcons';
 import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/DeckListTable';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
+import PastExamsCard from '../../components/decks/PastExamsCard';
+import { countInstalledPastExamQuestions, getBundledPastExamManifest } from '../../lib/pastExams';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -2167,9 +2169,23 @@ export default function DecksScreen() {
         />
     ), [renderDeckRow]);
     const deckRowKey = useCallback((item: DeckListRowModel) => item.key, []);
+    // Offered until the past exams are in the collection; deleting their decks offers them again.
+    // A build without the pack (it is not in git) never offers them.
+    const pastExamManifest = useMemo(() => getBundledPastExamManifest(), []);
+    const pastExamsMissing = useMemo(
+        () => pastExamManifest !== null && countInstalledPastExamQuestions() === 0,
+        // collectionVersion is the invalidation signal for this read.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [collectionVersion, pastExamManifest],
+    );
     const deckListHeader = useMemo(
-        () => fullCatalogPresent ? null : renderLockedCatalogCard(),
-        [fullCatalogPresent, renderLockedCatalogCard],
+        () => (fullCatalogPresent && !pastExamsMissing ? null : (
+            <>
+                {fullCatalogPresent ? null : renderLockedCatalogCard()}
+                {pastExamsMissing && pastExamManifest ? <PastExamsCard manifest={pastExamManifest} onInstalled={refresh} /> : null}
+            </>
+        )),
+        [fullCatalogPresent, pastExamManifest, pastExamsMissing, refresh, renderLockedCatalogCard],
     );
     const deckListEmpty = useMemo(() => (
         <View style={styles.emptyState}>

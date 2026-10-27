@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 
@@ -55,8 +56,18 @@ const WEB_MODULE_OVERRIDES = {
   '@react-native-community/datetimepicker': path.resolve(__dirname, 'components/WebDateTimePicker.tsx'),
 };
 
+// The past TUS exams are ÖSYM's questions and stay out of git. `npm run build:past-exams` writes
+// the pack with this loader; without it the app gets an empty module and offers no past exams
+// (lib/pastExamAsset.ts). Restart Metro with --clear after adding or removing the pack.
+const PAST_EXAM_PACK_LOADER = path.resolve(__dirname, 'assets/catalog/cikmis-tus-pack.js');
+
 const upstreamResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === 'tus-past-exam-pack') {
+    return fs.existsSync(PAST_EXAM_PACK_LOADER)
+      ? { type: 'sourceFile', filePath: PAST_EXAM_PACK_LOADER }
+      : { type: 'empty' };
+  }
   if (platform === 'web' && Object.prototype.hasOwnProperty.call(WEB_MODULE_OVERRIDES, moduleName)) {
     return { type: 'sourceFile', filePath: WEB_MODULE_OVERRIDES[moduleName] };
   }
