@@ -14,7 +14,7 @@ import {
     type StudyKind,
     type StudySessionDraft,
 } from '../../lib/stopwatch';
-import { studySubjectGlyph } from '../../lib/studyCalendar';
+import { studySubjectGlyph, type StudySession } from '../../lib/studyCalendar';
 import StopwatchSheet from './StopwatchSheet';
 import StudyTypeChips, { studyTypeLabel } from './StudyTypeChips';
 import SubjectList from './SubjectList';
@@ -34,6 +34,22 @@ export interface SessionEditorInitial {
     breakMs: number;
     breakCount: number;
     note: string;
+}
+
+/** A Kronometre session as the editor opens it, or null for a card session, which is not edited. */
+export function editorInitialFor(session: StudySession): SessionEditorInitial | null {
+    if (session.source === 'cards' || session.recordId === null) return null;
+    return {
+        recordId: session.recordId,
+        subject: session.subject,
+        kind: session.kind ?? 'pass',
+        pass: session.pass ?? 1,
+        startMs: session.startMs,
+        studyMs: session.studyMs,
+        breakMs: session.breakMs,
+        breakCount: session.breakCount ?? 0,
+        note: session.note,
+    };
 }
 
 interface SessionEditorSheetProps {

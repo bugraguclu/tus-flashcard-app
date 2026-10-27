@@ -582,6 +582,7 @@ const SUBJECT_GLYPHS: readonly (readonly [readonly string[], string])[] = [
     [['kucuk stajlar', 'minor rotations'], '🩹'],
     [['soru cozumu', 'question practice'], '📝'],
     [['deneme sinavi', 'mock exam', 'practice exam'], '🎯'],
+    [['karisik', 'mixed'], '📚'],
 ];
 
 /**

@@ -11,6 +11,7 @@ import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';
 import { HeaderBackIcon, HeaderForwardIcon } from '../components/HeaderBackIcon';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
+import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
 import { AnalyticsIcon, StopwatchIcon } from '../components/stopwatch/StopwatchIcons';
 import StudySessionCard from '../components/stopwatch/StudySessionCard';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
@@ -26,10 +27,12 @@ import {
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { useI18n } from '../hooks/useI18n';
+import { useStudySubjects } from '../hooks/useStudySubjects';
 import { goBackOr, openOrReturnTo } from '../lib/backNavigation';
 import { alert, confirm } from '../lib/confirm';
 import { dayNumberToYmd, localDayNumber } from '../lib/ankiState';
-import { deleteStudySession } from '../lib/stopwatchStore';
+import type { StudySessionDraft } from '../lib/stopwatch';
+import { deleteStudySession, updateStudySession } from '../lib/stopwatchStore';
 import {
     buildMonthGrid,
     buildWeekGrid,
@@ -94,6 +97,8 @@ export default function StudyCalendarScreen() {
     const [anchor, setAnchor] = useState<AnchorDate>(() => anchorFromDate(new Date()));
     const [selectedDayNumber, setSelectedDayNumber] = useState(todayDayNumber);
     const [menuSession, setMenuSession] = useState<StudySession | null>(null);
+    const [editing, setEditing] = useState<SessionEditorInitial | null>(null);
+    const { recentSubjects, loadRecentSubjects, passOf } = useStudySubjects('StudyCalendar');
 
     useFocusEffect(useCallback(() => {
         setSchedulingRevision(getSchedulingRevision());
@@ -243,9 +248,34 @@ export default function StudyCalendarScreen() {
         );
     }, [l, locale, localeTag]);
 
+    // The session is corrected over the calendar, which refreshes in place once it is saved.
+    const handleSaveEdit = useCallback((draft: StudySessionDraft, recordId: number | null) => {
+        if (recordId === null) return;
+        try {
+            updateStudySession(recordId, draft);
+            setEditing(null);
+            invalidateCollection();
+        } catch (saveError) {
+            console.warn('[StudyCalendar] edit failed:', saveError);
+            alert(l('Kaydedilemedi', 'Could not save'), l('Oturum kaydedilemedi. Lütfen yeniden deneyin.', 'The session could not be saved. Please try again.'));
+        }
+    }, [l, invalidateCollection]);
+
     const menuItems = useCallback((session: StudySession): SessionMenuItem[] => {
         const close = () => setMenuSession(null);
         const items: SessionMenuItem[] = [];
+        const initial = editorInitialFor(session);
+        if (initial) {
+            items.push({
+                key: 'edit',
+                label: l('Düzenle', 'Edit'),
+                onPress: () => {
+                    close();
+                    loadRecentSubjects();
+                    setEditing(initial);
+                },
+            });
+        }
         if (session.source === 'cards') {
             items.push({
                 key: 'deck',
@@ -301,7 +331,7 @@ export default function StudyCalendarScreen() {
             });
         }
         return items;
-    }, [l, router, handleShowDetails, invalidateCollection]);
+    }, [l, router, handleShowDetails, invalidateCollection, loadRecentSubjects]);
 
     const renderSession = useCallback(({ item }: { item: StudySession }) => (
         <StudySessionCard session={item} onOpenMenu={setMenuSession} />
@@ -478,6 +508,17 @@ export default function StudyCalendarScreen() {
                 title={menuSession?.subject ?? ''}
                 items={menuSession ? menuItems(menuSession) : []}
                 onClose={() => setMenuSession(null)}
+            />
+            <SessionEditorSheet
+                visible={editing !== null}
+                initial={editing}
+                defaultSubject={null}
+                defaultKind="pass"
+                defaultPass={1}
+                recentSubjects={recentSubjects}
+                passOf={passOf}
+                onClose={() => setEditing(null)}
+                onSave={handleSaveEdit}
             />
         </SafeAreaView>
     );

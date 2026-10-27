@@ -7,7 +7,7 @@ import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';
 import StopwatchHero from '../components/stopwatch/StopwatchHero';
 import StopwatchTimeline from '../components/stopwatch/StopwatchTimeline';
 import SubjectPickerSheet from '../components/stopwatch/SubjectPickerSheet';
-import SessionEditorSheet, { type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
+import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
 import StopwatchSettingsSheet from '../components/stopwatch/StopwatchSettingsSheet';
 import StopwatchAlertsSheet from '../components/stopwatch/StopwatchAlertsSheet';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
@@ -18,6 +18,7 @@ import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContex
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { useI18n } from '../hooks/useI18n';
 import { useStopwatch } from '../hooks/useStopwatch';
+import { useStudySubjects } from '../hooks/useStudySubjects';
 import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';
 import { goBackOr, openOrReturnTo } from '../lib/backNavigation';
 import { alert, confirm } from '../lib/confirm';
@@ -31,13 +32,7 @@ import {
     type StudyKind,
     type StudySessionDraft,
 } from '../lib/stopwatch';
-import {
-    deleteStudySession,
-    insertStudySession,
-    latestStudyPass,
-    recentStudySubjects,
-    updateStudySession,
-} from '../lib/stopwatchStore';
+import { deleteStudySession, insertStudySession, updateStudySession } from '../lib/stopwatchStore';
 import {
     formatClockHhMm,
     formatSessionDuration,
@@ -124,23 +119,7 @@ export default function StopwatchScreen() {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [alertsOpen, setAlertsOpen] = useState(false);
     const [menuSession, setMenuSession] = useState<StudySession | null>(null);
-    const [recentSubjects, setRecentSubjects] = useState<string[]>([]);
-
-    const loadRecentSubjects = useCallback(() => {
-        try {
-            setRecentSubjects(recentStudySubjects(12));
-        } catch (error) {
-            console.warn('[Stopwatch] recent subjects failed:', error);
-        }
-    }, []);
-
-    const passOf = useCallback((subject: string) => {
-        try {
-            return latestStudyPass(subject) ?? 1;
-        } catch {
-            return 1;
-        }
-    }, []);
+    const { recentSubjects, loadRecentSubjects, passOf } = useStudySubjects('Stopwatch');
 
     const openPicker = (mode: 'start' | 'plan') => {
         loadRecentSubjects();
@@ -264,8 +243,8 @@ export default function StopwatchScreen() {
             label: l('Oturum ayrıntıları', 'Session details'),
             onPress: () => { close(); showDetails(session); },
         };
-        const recordId = session.recordId;
-        if (session.source === 'cards' || recordId === null) {
+        const initial = editorInitialFor(session);
+        if (initial === null) {
             return [
                 {
                     key: 'deck',
@@ -285,17 +264,7 @@ export default function StopwatchScreen() {
                 label: l('Düzenle', 'Edit'),
                 onPress: () => {
                     close();
-                    openEditor({
-                        recordId,
-                        subject: session.subject,
-                        kind: session.kind ?? 'pass',
-                        pass: session.pass ?? 1,
-                        startMs: session.startMs,
-                        studyMs: session.studyMs,
-                        breakMs: session.breakMs,
-                        breakCount: session.breakCount ?? 0,
-                        note: session.note,
-                    });
+                    openEditor(initial);
                 },
             },
             details,
@@ -310,7 +279,7 @@ export default function StopwatchScreen() {
                         l(`${session.subject} oturumu kalıcı olarak silinecek.`, `The ${session.subject} session will be deleted for good.`),
                         () => {
                             try {
-                                deleteStudySession(recordId);
+                                deleteStudySession(initial.recordId);
                                 invalidateCollection();
                             } catch (error) {
                                 reportFailure(error);

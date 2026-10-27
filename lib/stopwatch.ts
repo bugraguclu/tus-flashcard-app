@@ -486,7 +486,10 @@ export function splitHoursMinutes(ms: number): { hours: number; minutes: number 
 
 /**
  * The TUS courses offered when a subject is picked, in the order of the exam's two tests, followed
- * by the two kinds of study that are not a course but are tracked the same way.
+ * by "Karışık" for study that spans several courses, such as a mock exam. What the time is spent on
+ * (question practice, a mock exam) is the session's type, not its subject, so neither is listed
+ * here; sessions recorded under those names before types existed keep them and still appear among
+ * the recent subjects.
  */
 export const TUS_STUDY_SUBJECTS: readonly string[] = [
     'Anatomi',
@@ -502,6 +505,5 @@ export const TUS_STUDY_SUBJECTS: readonly string[] = [
     'Genel Cerrahi',
     'Kadın Hastalıkları ve Doğum',
     'Küçük Stajlar',
-    'Soru Çözümü',
-    'Deneme Sınavı',
+    'Karışık',
 ];

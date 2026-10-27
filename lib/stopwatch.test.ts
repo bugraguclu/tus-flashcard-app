@@ -6,6 +6,7 @@ import {
     MAX_STUDY_NOTE_LENGTH,
     MAX_STUDY_PASS,
     MIN_GOAL_MINUTES,
+    TUS_STUDY_SUBJECTS,
     examDaysLeft,
     finishStopwatch,
     formatGoalClock,
@@ -168,6 +169,17 @@ describe('normalizeStudyNote', () => {
         const cut = normalizeStudyNote(`${'a'.repeat(MAX_STUDY_NOTE_LENGTH - 1)}😀b`);
         expect(cut).toBe('a'.repeat(MAX_STUDY_NOTE_LENGTH - 1));
         expect(isValidStudySessionRecord({ id: 1, subject: 'A', pass: 1, startMs: 1, endMs: 1, studyMs: 0, breakMs: 0, source: 'manual', note: cut })).toBe(true);
+    });
+});
+
+describe('TUS_STUDY_SUBJECTS', () => {
+    it('offers Karışık rather than subjects that are now study types', () => {
+        expect(TUS_STUDY_SUBJECTS).toContain('Karışık');
+        // Question practice and mock exams are types; listing them as subjects too would let a
+        // session read "Soru Çözümü" twice, or file a mock exam under two different headings.
+        expect(TUS_STUDY_SUBJECTS).not.toContain('Soru Çözümü');
+        expect(TUS_STUDY_SUBJECTS).not.toContain('Deneme Sınavı');
+        expect(new Set(TUS_STUDY_SUBJECTS).size).toBe(TUS_STUDY_SUBJECTS.length);
     });
 });
 

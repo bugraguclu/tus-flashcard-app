@@ -23,7 +23,7 @@ import {
     subjectOfDeck,
     type StudyReviewRow,
 } from './studyCalendar';
-import type { StudySessionRecord } from './stopwatch';
+import { TUS_STUDY_SUBJECTS, type StudySessionRecord } from './stopwatch';
 
 const ROLLOVER = 4;
 const MINUTE = 60_000;
@@ -500,6 +500,18 @@ describe('studySubjectGlyph', () => {
         expect(studySubjectGlyph('\u00c7ocuk Cerrahisi')).not.toBe(studySubjectGlyph('Genel Cerrahi'));
         expect(studySubjectGlyph('Beyin Cerrahisi')).not.toBe(studySubjectGlyph('Genel Cerrahi'));
         expect(studySubjectGlyph('T\u0131bbi Genetik')).toBe('\u{1F9EC}');
+    });
+
+    it('draws a tile for every subject the Kronometre offers', () => {
+        for (const subject of TUS_STUDY_SUBJECTS) {
+            expect(studySubjectGlyph(subject), subject).not.toBe(subject.charAt(0).toLocaleUpperCase('tr'));
+        }
+        expect(studySubjectGlyph('Karışık')).toBe('\u{1F4DA}');
+    });
+
+    it('keeps the tiles of sessions recorded under subjects that are now types', () => {
+        expect(studySubjectGlyph('Soru Çözümü')).toBe('\u{1F4DD}');
+        expect(studySubjectGlyph('Deneme Sınavı')).toBe('\u{1F3AF}');
     });
 
     it('falls back to the subject initial for a deck that is not a TUS branch', () => {
