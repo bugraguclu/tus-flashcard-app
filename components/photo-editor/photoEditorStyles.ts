@@ -32,13 +32,6 @@ export function createPhotoEditorStyles(colors: ColorScheme) {
         saveButtonText: { color: '#fff', fontWeight: '800', fontSize: FontSize.md },
         saveButtonDisabled: { opacity: 0.5 },
         stage: { flex: 1, minHeight: 0, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', padding: 8 },
-        exportSurface: {
-        position: 'absolute',
-        // Far enough off screen that it can never be seen, close enough to stay laid out.
-        left: -30000,
-        top: 0,
-        overflow: 'hidden',
-    },
     canvas: { backgroundColor: '#000', overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
         controls: {
             backgroundColor: '#1f2937',

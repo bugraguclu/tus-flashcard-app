@@ -180,13 +180,17 @@ resmi alana ekler. **İptal** değişiklikleri atmadan önce sorar.
 <a id="drawing-page"></a>
 ## Boş tuvale çizim
 
-📎 › **Boş tuvale çiz** önce **Yeni çizim sayfası**'nı açar: **Kağıt** (Düz, Kareli, Çizgili,
-Noktalı), **Zemin** (Beyaz, Krem, Koyu) ve **Biçim** (Yatay, Kare, Dikey) seçip **Çizmeye başla**'ya
-dokunun. Seçiminiz bir sonraki çizim için hatırlanır.
+📎 › **Boş tuvale çiz** çizim sayfasını doğrudan, son çiziminizdeki kağıtla açar. Parmağınızla
+çizin; alttaki çubukta üç araç vardır: **Kalem**, yarı saydam **Fosforlu** ve dokunduğu yeri silen
+**Silgi**. Altlarında renkler ve üç kalınlık (İnce, Orta, Kalın) durur; her araç kendi renk ve
+kalınlığını hatırlar. ↶ ve ↷ geri alır ve yineler, 🗑 sayfayı temizler (bu da geri alınabilir).
 
-Çizim sayfasında fotoğraf düzenleyicideki araçlara iki tane eklenir: **Görsel** sayfaya galeriden
-veya kameradan bir resim yerleştirir; **Kağıt** çizerken kağıdı ve zemini değiştirir. Silgi
-yerleştirilen resimlere dokunmaz; resmi seçip kendi 🗑 düğmesiyle silin. Boş bir sayfa kaydedilmez.
+Başlığın altındaki sayfa satırına (ör. **Düz · Beyaz · Yatay**) dokunarak **Kağıt** (Düz, Kareli,
+Çizgili, Noktalı), **Zemin** (Beyaz, Krem, Koyu) ve **Biçim** (Yatay, Kare, Dikey) değiştirilebilir;
+çizim sayfada kalır, biçim değişince oranı bozulmadan yeni sayfaya sığdırılır. Seçiminiz bir sonraki
+çizim için hatırlanır. **Ekle** çizimi PNG olarak alana ekler; boş bir sayfa eklenemez. **Vazgeç**
+çizimi atmadan önce sorar. Bir resmin üzerine çizmek, metin veya şekil eklemek için resmi
+**Galeriden fotoğraf seç** ile ekleyip **Kırp ve düzenle**'yi seçin.
 
 <a id="tags"></a>
 ## Etiketler

@@ -1168,7 +1168,16 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                 : l(`${toolItems.find((item) => item.id === tool)?.label ?? 'Kalem'} seçili`, `${toolItems.find((item) => item.id === tool)?.label ?? 'Pen'} selected`);
 
     return (
-        <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={closeEditor}>
+        // The canvas is first laid out while the modal is still sliding up from below the
+        // screen, so the origin measured then is a screen-height too low and every touch would
+        // clamp to the top edge. Measuring again once the modal has settled puts it right.
+        <Modal
+            visible={visible}
+            animationType="slide"
+            presentationStyle="fullScreen"
+            onRequestClose={closeEditor}
+            onShow={measureCanvasOrigin}
+        >
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
                     <TouchableOpacity
@@ -1410,7 +1419,6 @@ export default function PhotoEditorModal({ visible, photo, blankPage, onClose, o
                         sourceUri={sourceUri}
                         sourceSize={sourceSize}
                         annotations={annotations}
-                        styles={styles}
                     />
                 )}
             </SafeAreaView>

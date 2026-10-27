@@ -11,20 +11,7 @@ import { attachmentMediaFilename, mediaFilenameForPickedAsset } from '../lib/med
 import { mediaReferenceSnippet, soundSafeMediaFilename, type MediaReferenceKind } from '../lib/mediaAttachment';
 import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
-import PaperSwatch, { pageColorLabel, paperLabel } from './PaperSwatch';
-import {
-    BLANK_CANVAS_BACKGROUNDS,
-    BLANK_CANVAS_PAPERS,
-    BLANK_CANVAS_SHAPES,
-    type BlankCanvasPage,
-    type BlankCanvasShape,
-} from '../lib/blankCanvas';
-import {
-    DEFAULT_BLANK_CANVAS_SETUP,
-    blankCanvasPageFromSetup,
-    loadBlankCanvasSetup,
-    saveBlankCanvasSetup,
-} from '../lib/blankCanvasSetup';
+import DrawingPadModal from './drawing/DrawingPadModal';
 import { useI18n } from '../hooks/useI18n';
 import SwipeDismissSheet from './SwipeDismissSheet';
 import {
@@ -61,12 +48,8 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const [photoToEdit, setPhotoToEdit] = useState<EditablePhoto | null>(null);
     // A picked photo waits here until the user says whether to insert it untouched or edit it.
     const [pickedPhoto, setPickedPhoto] = useState<PickedPhoto | null>(null);
-    // The new-page sheet: the paper is chosen here, then the editor opens on it.
-    const [pageSetup, setPageSetup] = useState(false);
-    const [pagePaper, setPagePaper] = useState(DEFAULT_BLANK_CANVAS_SETUP.paper);
-    const [pageBackground, setPageBackground] = useState(DEFAULT_BLANK_CANVAS_SETUP.background);
-    const [pageShape, setPageShape] = useState<BlankCanvasShape>(DEFAULT_BLANK_CANVAS_SETUP.shape);
-    const [pageToDraw, setPageToDraw] = useState<BlankCanvasPage | null>(null);
+    // The blank drawing page opens straight away, on the paper the last drawing used.
+    const [drawing, setDrawing] = useState(false);
 
     const pendingActionRef = useRef<(() => void) | null>(null);
     const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -342,43 +325,10 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         }
     };
 
-    /**
-     * Open the sheet on the page the last drawing was made on. Read here rather than in the
-     * initial state so the collection is certainly open: a read taken while it is still opening
-     * would find no row and quietly pin the sheet to the defaults for the rest of the session.
-     */
-    const openPageSetup = () => {
-        const stored = loadBlankCanvasSetup();
-        setPagePaper(stored.paper);
-        setPageBackground(stored.background);
-        setPageShape(stored.shape);
-        setPageSetup(true);
-    };
-
-    const startDrawing = () => {
-        const setup = { paper: pagePaper, background: pageBackground, shape: pageShape };
-        saveBlankCanvasSetup(setup);
-        setPageSetup(false);
-        setPageToDraw(blankCanvasPageFromSetup(setup));
-    };
-
-    const shapeLabel = (shape: BlankCanvasShape) => (
-        shape === 'square' ? l('Kare', 'Square') : shape === 'portrait' ? l('Dikey', 'Portrait') : l('Yatay', 'Landscape')
-    );
-
-    const previewSize = useMemo(() => {
-        const shape = BLANK_CANVAS_SHAPES.find((option) => option.id === pageShape) ?? BLANK_CANVAS_SHAPES[0];
-        const longEdge = 168;
-        const ratio = shape.width / shape.height;
-        return ratio >= 1
-            ? { width: longEdge, height: Math.round(longEdge / ratio) }
-            : { width: Math.round(longEdge * ratio), height: longEdge };
-    }, [pageShape]);
-
     const options: { icon: string; label: string; onPress: () => void }[] = [
         { icon: '🖼️', label: l('Galeriden fotoğraf seç', 'Choose Photo'), onPress: () => runAfterMenuClose(pickFromGallery) },
         { icon: '📷', label: l('Fotoğraf çek', 'Take Photo'), onPress: () => runAfterMenuClose(captureFromCamera) },
-        { icon: '✏️', label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => runAfterMenuClose(openPageSetup) },
+        { icon: '✏️', label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => runAfterMenuClose(() => setDrawing(true)) },
         { icon: '🎙️', label: l('Ses kaydet', 'Record Audio'), onPress: () => runAfterMenuClose(() => setShowRecorder(true)) },
         { icon: '🎵', label: l('Ses klibi ekle', 'Attach Audio Clip'), onPress: () => runAfterMenuClose(pickAudioClip) },
         { icon: '🎬', label: l('Video klibi ekle', 'Attach Video Clip'), onPress: () => runAfterMenuClose(pickVideoClip) },
@@ -522,132 +472,15 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 onClose={() => setShowRecorder(false)}
                 onSaved={(filename) => onInsert(mediaReferenceSnippet('audio', filename))}
             />
-            <Modal visible={pageSetup} transparent animationType="fade" onRequestClose={() => setPageSetup(false)}>
-                <View style={styles.overlay}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={() => setPageSetup(false)}
-                        accessibilityLabel={l('Sayfa seçimini kapat', 'Close page options')}
-                    />
-                    <SwipeDismissSheet active={pageSetup} style={styles.sheet} onDismiss={() => setPageSetup(false)}>
-                        <Text style={styles.sheetTitle}>{l('Yeni çizim sayfası', 'New Drawing Page')}</Text>
-
-                        <View style={styles.pagePreviewWrap}>
-                            <PaperSwatch
-                                paper={pagePaper}
-                                background={pageBackground}
-                                width={previewSize.width}
-                                height={previewSize.height}
-                                style={styles.pagePreview}
-                            />
-                        </View>
-
-                        <Text style={styles.pageGroupLabel}>{l('Kağıt', 'Paper')}</Text>
-                        <View style={styles.pageChipRow}>
-                            {BLANK_CANVAS_PAPERS.map((option) => {
-                                const isSelected = pagePaper === option;
-                                return (
-                                    <TouchableOpacity
-                                        key={option}
-                                        style={[styles.pageChip, isSelected && styles.pageChipActive]}
-                                        onPress={() => setPagePaper(option)}
-                                        accessibilityRole="button"
-                                        accessibilityState={{ selected: isSelected }}
-                                        accessibilityLabel={paperLabel(option, l)}
-                                    >
-                                        <PaperSwatch
-                                            paper={option}
-                                            background={pageBackground}
-                                            width={40}
-                                            height={30}
-                                            style={styles.pageChipSwatch}
-                                        />
-                                        <Text style={[styles.pageChipText, isSelected && styles.pageChipTextActive]}>
-                                            {paperLabel(option, l)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-
-                        <Text style={styles.pageGroupLabel}>{l('Zemin', 'Page colour')}</Text>
-                        <View style={styles.pageChipRow}>
-                            {BLANK_CANVAS_BACKGROUNDS.map((option) => {
-                                const isSelected = pageBackground === option.color;
-                                return (
-                                    <TouchableOpacity
-                                        key={option.id}
-                                        style={[styles.pageChip, isSelected && styles.pageChipActive]}
-                                        onPress={() => setPageBackground(option.color)}
-                                        accessibilityRole="button"
-                                        accessibilityState={{ selected: isSelected }}
-                                        accessibilityLabel={pageColorLabel(option.id, l)}
-                                    >
-                                        <View style={[styles.pageColorDot, { backgroundColor: option.color }]} />
-                                        <Text style={[styles.pageChipText, isSelected && styles.pageChipTextActive]}>
-                                            {pageColorLabel(option.id, l)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-
-                        <Text style={styles.pageGroupLabel}>{l('Biçim', 'Shape')}</Text>
-                        <View style={styles.pageChipRow}>
-                            {BLANK_CANVAS_SHAPES.map((option) => {
-                                const isSelected = pageShape === option.id;
-                                return (
-                                    <TouchableOpacity
-                                        key={option.id}
-                                        style={[styles.pageChip, isSelected && styles.pageChipActive]}
-                                        onPress={() => setPageShape(option.id)}
-                                        accessibilityRole="button"
-                                        accessibilityState={{ selected: isSelected }}
-                                        accessibilityLabel={shapeLabel(option.id)}
-                                    >
-                                        <View
-                                            style={[
-                                                styles.pageShapeGlyph,
-                                                {
-                                                    width: option.width >= option.height ? 40 : 40 * (option.width / option.height),
-                                                    height: option.height >= option.width ? 30 : 30 * (option.height / option.width),
-                                                },
-                                            ]}
-                                        />
-                                        <Text style={[styles.pageChipText, isSelected && styles.pageChipTextActive]}>
-                                            {shapeLabel(option.id)}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-
-                        <TouchableOpacity
-                            style={styles.pageStartBtn}
-                            onPress={startDrawing}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Bu sayfada çizmeye başla', 'Start drawing on this page')}
-                        >
-                            <Text style={styles.pageStartText}>{l('Çizmeye başla', 'Start Drawing')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.cancelRow} onPress={() => setPageSetup(false)}>
-                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </SwipeDismissSheet>
-                </View>
-            </Modal>
-
             <PhotoEditorModal
                 visible={photoToEdit !== null}
                 photo={photoToEdit}
                 onClose={() => setPhotoToEdit(null)}
                 onSaved={(filename) => onInsert(mediaReferenceSnippet('image', filename))}
             />
-            <PhotoEditorModal
-                visible={pageToDraw !== null}
-                photo={null}
-                blankPage={pageToDraw}
-                onClose={() => setPageToDraw(null)}
+            <DrawingPadModal
+                visible={drawing}
+                onClose={() => setDrawing(false)}
                 onSaved={(filename) => onInsert(mediaReferenceSnippet('image', filename))}
             />
         </>
@@ -698,58 +531,6 @@ function createStyles(colors: ColorScheme) {
         optionCaption: { fontSize: FontSize.xs, color: colors.textMuted },
         cancelRow: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.xs },
         cancelText: { color: colors.textMuted, fontWeight: '600' },
-        pagePreviewWrap: { alignItems: 'center', paddingVertical: Spacing.sm },
-        pagePreview: {
-            borderRadius: BorderRadius.sm,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            ...Shadows.sm,
-        },
-        pageGroupLabel: {
-            fontSize: FontSize.sm,
-            fontWeight: '700',
-            color: colors.textSecondary,
-            marginTop: Spacing.sm,
-            marginBottom: Spacing.xs,
-        },
-        pageChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-        pageChip: {
-            minWidth: 72,
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            paddingVertical: Spacing.sm,
-            paddingHorizontal: Spacing.sm,
-            borderRadius: BorderRadius.md,
-            borderWidth: 2,
-            borderColor: colors.border,
-            backgroundColor: colors.bgInput,
-        },
-        pageChipActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-        pageChipSwatch: { borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
-        pageChipText: { fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '600' },
-        pageChipTextActive: { color: colors.textPrimary },
-        pageColorDot: {
-            width: 40,
-            height: 30,
-            borderRadius: 4,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-        },
-        pageShapeGlyph: {
-            borderRadius: 4,
-            borderWidth: 2,
-            borderColor: colors.textMuted,
-        },
-        pageStartBtn: {
-            marginTop: Spacing.lg,
-            minHeight: 50,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        pageStartText: { color: colors.white, fontWeight: '800', fontSize: FontSize.md },
     });
 }
 

@@ -176,14 +176,18 @@ before discarding changes.
 <a id="drawing-page"></a>
 ## Drawing on a blank page
 
-📎 › **Draw on Blank Canvas** first opens **New Drawing Page**: choose **Paper** (Plain, Grid, Lined,
-Dotted), **Page colour** (White, Cream, Dark) and **Shape** (Landscape, Square, Portrait), then tap
-**Start Drawing**. Your choice is remembered for the next drawing.
+📎 › **Draw on Blank Canvas** opens the drawing page straight away, on the paper your last drawing
+used. Draw with a finger; the bar at the bottom has three tools: **Pen**, a see-through
+**Highlighter** and an **Eraser** that rubs out what it passes over. Below them sit the colours and
+three sizes (Thin, Medium, Thick); each tool keeps its own colour and size. ↶ and ↷ undo and redo,
+and 🗑 clears the page (that can be undone too).
 
-A drawing page has the photo editor's tools plus two more: **Picture** places an image from the
-library or the camera on the page, and **Paper** changes the paper and page colour while you draw.
-The eraser leaves placed pictures alone; select a picture and use its own 🗑 to delete it. An empty
-page cannot be saved.
+Tap the page line under the title (for example **Plain · White · Landscape**) to change the
+**Paper** (Plain, Grid, Lined, Dotted), **Page colour** (White, Cream, Dark) and **Shape**
+(Landscape, Square, Portrait). The drawing stays on the page; a new shape fits it in without
+stretching. Your choice is remembered for the next drawing. **Add** puts the drawing in the field as
+a PNG; an empty page cannot be added. **Cancel** asks before throwing a drawing away. To draw on a
+picture, or to add text or shapes, add it with **Choose Photo** and pick **Crop & edit**.
 
 <a id="tags"></a>
 ## Tags

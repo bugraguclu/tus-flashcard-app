@@ -6,7 +6,6 @@ import { scaleBlankCanvasRuling } from '../../lib/blankCanvas';
 import PaperSwatch from '../PaperSwatch';
 import type { EditorPage, ExportSurface } from './editorModel';
 import { renderAnnotation, renderPlacedPictures } from './annotationRendering';
-import type { PhotoEditorStyles } from './photoEditorStyles';
 
 interface ExportSurfaceViewProps {
     exportSurface: ExportSurface;
@@ -18,7 +17,6 @@ interface ExportSurfaceViewProps {
     sourceUri: string;
     sourceSize: { width: number; height: number };
     annotations: PhotoAnnotation[];
-    styles: PhotoEditorStyles;
 }
 
 /** The drawing again, at export size and off screen, for the native export to photograph. */
@@ -32,7 +30,6 @@ export function ExportSurfaceView({
     sourceUri,
     sourceSize,
     annotations,
-    styles,
 }: ExportSurfaceViewProps) {
     return (
         <View
@@ -40,7 +37,7 @@ export function ExportSurfaceView({
             collapsable={false}
             onLayout={() => { exportLaidOutRef.current = true; }}
             style={[
-                styles.exportSurface,
+                styles.surface,
                 { width: exportSurface.width, height: exportSurface.height },
                 { pointerEvents: 'none' },
             ]}
@@ -91,3 +88,13 @@ export function ExportSurfaceView({
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    surface: {
+        position: 'absolute',
+        // Far enough off screen that it can never be seen, close enough to stay laid out.
+        left: -30000,
+        top: 0,
+        overflow: 'hidden',
+    },
+});
