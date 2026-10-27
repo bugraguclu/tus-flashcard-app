@@ -69,3 +69,36 @@ export class ScreenSnapshotRepository<T> {
         this.snapshots.clear();
     }
 }
+
+export interface CancellableTask {
+    cancel(): void;
+}
+
+/**
+ * Runs `work` once the screen's interactions have settled, and at the latest after `maxWaitMs`.
+ *
+ * `InteractionManager` waits for every running animation to end. One that never does (a page whose
+ * animation frames are paused, as in a hidden browser tab) would otherwise hold a screen's refresh
+ * back for good, and the screen would keep showing data the learner has just changed.
+ */
+export function runAfterInteractionsWithin(
+    work: () => void,
+    afterInteractions: (callback: () => void) => CancellableTask,
+    maxWaitMs: number,
+): CancellableTask {
+    let finished = false;
+    let task: CancellableTask | null = null;
+    const stop = () => {
+        finished = true;
+        clearTimeout(timer);
+        task?.cancel();
+    };
+    const run = () => {
+        if (finished) return;
+        stop();
+        work();
+    };
+    const timer = setTimeout(run, maxWaitMs);
+    task = afterInteractions(run);
+    return { cancel: stop };
+}

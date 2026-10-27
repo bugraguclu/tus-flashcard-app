@@ -3,7 +3,11 @@ import { InteractionManager } from 'react-native';
 import {
     LatestSnapshotGeneration,
     ScreenSnapshotRepository,
+    runAfterInteractionsWithin,
 } from '../lib/screenSnapshotLoader';
+
+/** The longest a snapshot waits for running animations before it is built anyway. */
+const MAX_INTERACTION_WAIT_MS = 500;
 
 export interface DeferredScreenSnapshot<T> {
     snapshot: T | null;
@@ -53,7 +57,7 @@ export function useDeferredScreenSnapshot<T>(
             error: null,
         }));
 
-        const task = InteractionManager.runAfterInteractions(() => {
+        const task = runAfterInteractionsWithin(() => {
             try {
                 const snapshot = repository.getOrCreate(key, load);
                 generation.commit(token, () => {
@@ -64,7 +68,7 @@ export function useDeferredScreenSnapshot<T>(
                     setState({ key, snapshot: null, loading: false, error });
                 });
             }
-        });
+        }, (callback) => InteractionManager.runAfterInteractions(callback), MAX_INTERACTION_WAIT_MS);
 
         return () => {
             task.cancel();

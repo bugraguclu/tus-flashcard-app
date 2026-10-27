@@ -100,10 +100,14 @@ export default function SessionEditorSheet({
     const [breakMinutes, setBreakMinutes] = useState(0);
     const [breakCount, setBreakCount] = useState(0);
     const [note, setNote] = useState('');
+    // Kept from when the sheet opened: the parent clears `initial` as it closes, and the sheet must
+    // still read as the session it edited while it slides away.
+    const [recordId, setRecordId] = useState<number | null>(null);
 
     useEffect(() => {
         if (!visible) return;
         setStep('form');
+        setRecordId(initial?.recordId ?? null);
         if (initial) {
             const study = splitHoursMinutes(initial.studyMs);
             setSubject(initial.subject);
@@ -153,7 +157,8 @@ export default function SessionEditorSheet({
     };
 
     const save = () => {
-        if (error) return;
+        // A sheet that is already closing has saved once; a second tap must not add the session again.
+        if (error || !visible) return;
         onSave({
             subject,
             kind,
@@ -164,7 +169,7 @@ export default function SessionEditorSheet({
             breakMs,
             breakCount,
             note,
-        }, initial?.recordId ?? null);
+        }, recordId);
     };
 
     const hourUnit = l('sa', 'h');
@@ -176,7 +181,7 @@ export default function SessionEditorSheet({
             onClose={onClose}
             title={step === 'subject'
                 ? l('Ders seçin', 'Choose a subject')
-                : initial ? l('Çalışmayı düzenle', 'Edit session') : l('Çalışma ekle', 'Add a session')}
+                : recordId !== null ? l('Çalışmayı düzenle', 'Edit session') : l('Çalışma ekle', 'Add a session')}
         >
             {step === 'subject' ? (
                 <>
@@ -184,7 +189,7 @@ export default function SessionEditorSheet({
                         recentSubjects={recentSubjects}
                         onSelect={(chosen) => {
                             setSubject(chosen);
-                            if (!initial) setPass(passOf(chosen));
+                            if (recordId === null) setPass(passOf(chosen));
                             setStep('form');
                         }}
                     />

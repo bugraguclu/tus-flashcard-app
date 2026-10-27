@@ -24,6 +24,7 @@ interface StopwatchSheetProps {
 /**
  * The Kronometre's bottom sheet: a dimmed backdrop that closes it, and a sheet whose grabber can
  * be tapped or pulled down (`SwipeDismissSheet`), lifted above the keyboard when a field has focus.
+ * While it slides away it takes no more touches, so a second tap cannot repeat what closed it.
  */
 export default function StopwatchSheet({ visible, title, subtitle, onClose, children }: StopwatchSheetProps) {
     const { l } = useI18n();
@@ -33,7 +34,7 @@ export default function StopwatchSheet({ visible, title, subtitle, onClose, chil
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
             <KeyboardAvoidingView
-                style={styles.overlay}
+                style={[styles.overlay, { pointerEvents: visible ? 'auto' : 'none' }]}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 <TouchableOpacity
