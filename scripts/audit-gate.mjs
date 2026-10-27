@@ -9,8 +9,14 @@ import { spawnSync } from 'node:child_process';
  * the package it is filed against and why it is tolerated. The gate fails again as soon as npm
  * reports a fix that needs no breaking upgrade, so an exception cannot outlive its reason.
  *
+ * A newly published advisory changes the verdict without any change to the code. CI therefore
+ * passes `--warn-only` when a push or PR leaves package.json and package-lock.json alone: the
+ * findings appear as warnings on the run instead of failing it, and the next dependency change
+ * has to resolve them.
+ *
  *   node scripts/audit-gate.mjs                   runs `npm audit --json` itself
  *   node scripts/audit-gate.mjs --report <file>   checks a saved `npm audit --json` report
+ *   node scripts/audit-gate.mjs --warn-only       reports findings as warnings and exits 0
  */
 const EXCEPTIONS = [
     {
@@ -21,16 +27,25 @@ const EXCEPTIONS = [
 ];
 
 const BLOCKING_SEVERITIES = new Set(['high', 'critical']);
+const WARN_ONLY = process.argv.includes('--warn-only');
+
+/** Ends the run with a failure, or in warn-only mode with a GitHub Actions warning and success. */
+function fail(lines, exitCode) {
+    if (!WARN_ONLY) {
+        for (const line of lines) console.error(line);
+        process.exit(exitCode);
+    }
+    for (const line of lines) if (line.trim()) console.log(`::warning title=Dependency advisories::${line.trim()}`);
+    console.log('Not blocking: this change leaves the dependencies alone.');
+    process.exit(0);
+}
 
 function readReport() {
     const flag = process.argv.indexOf('--report');
     if (flag !== -1) return JSON.parse(fs.readFileSync(process.argv[flag + 1], 'utf8'));
     // npm audit exits non-zero whenever it finds anything, so its exit status is not the verdict.
     const run = spawnSync('npm', ['audit', '--json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-    if (!run.stdout) {
-        console.error(run.stderr || 'npm audit produced no report.');
-        process.exit(2);
-    }
+    if (!run.stdout) fail([run.stderr || 'npm audit produced no report.'], 2);
     return JSON.parse(run.stdout);
 }
 
@@ -39,10 +54,7 @@ function advisoryId(advisory) {
 }
 
 const report = readReport();
-if (report.error) {
-    console.error(`npm audit failed: ${report.error.summary ?? JSON.stringify(report.error)}`);
-    process.exit(2);
-}
+if (report.error) fail([`npm audit failed: ${report.error.summary ?? JSON.stringify(report.error)}`], 2);
 
 const vulnerabilities = report.vulnerabilities ?? {};
 const blocking = new Map();
@@ -72,8 +84,6 @@ for (const exception of EXCEPTIONS) {
 }
 
 if (failures.length) {
-    console.error(`\n${failures.length} blocking advisor${failures.length === 1 ? 'y' : 'ies'}:`);
-    for (const failure of failures) console.error(`  - ${failure}`);
-    process.exit(1);
+    fail([`\n${failures.length} blocking advisor${failures.length === 1 ? 'y' : 'ies'}:`, ...failures.map((failure) => `  - ${failure}`)], 1);
 }
 console.log('No blocking advisories.');
