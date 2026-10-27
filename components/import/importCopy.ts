@@ -94,12 +94,6 @@ export function importCopy(l: (tr: string, en: string) => string) {
                 'The package\'s deck and note type data could not be read; notes were imported with simplified note types.',
             ) });
         }
-        if (summary.structurePreserved) {
-            lines.push({ text: l(
-                'Deste yapısı, not türleri, alanlar, şablonlar ve CSS korundu.',
-                'Deck structure, note types, fields, templates and CSS were retained.',
-            ) });
-        }
         return lines;
     };
 

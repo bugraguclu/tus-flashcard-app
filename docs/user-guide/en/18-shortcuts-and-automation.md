@@ -135,7 +135,7 @@ You can install the web version like an app: on iPhone, add it to the Home Scree
 share menu; on a computer, use the install option in the browser's address bar or menu. The
 installed app opens in its own window. Its icon's shortcut menu offers **Desteler**, **Kart ekle**
 and **İstatistikler** (these names are in Turkish). On a computer, opening an `.apkg`, `.colpkg`,
-`.csv`, `.tsv` or `.txt` file with the installed app opens the **Import deck** screen with that
+`.csv`, `.tsv` or `.txt` file with the installed app opens the **Import** screen with that
 file.
 
 <a id="offline"></a>
@@ -155,7 +155,7 @@ in the background). You grant permission by turning on **Settings › Notificati
 ### Importing by drag and drop
 
 Drag a deck file onto the browser window. When **Drop to import** appears, let go; the
-**Import deck** screen opens with that file. `.apkg`, `.colpkg`, `.zip`, `.csv`, `.tsv` and `.txt`
+**Import** screen opens with that file. `.apkg`, `.colpkg`, `.zip`, `.csv`, `.tsv` and `.txt`
 files are accepted; any other file shows **Unknown file format**. See
 [Import and export](14-import-export.md).
 

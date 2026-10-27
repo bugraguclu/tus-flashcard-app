@@ -137,7 +137,7 @@ The **⋮** button at the top right holds actions for the whole collection:
 
 - **Empty Cards:** finds and cleans up cards whose template no longer shows anything.
   See [Empty Cards](15-backups-and-maintenance.md#empty-cards).
-- **Import deck:** brings in `.apkg`, `.colpkg` and text files.
+- **Import:** brings in `.apkg`, `.colpkg` and text files.
   See [Import and export](14-import-export.md).
 - **Export:** saves decks or the whole collection as a file.
 - **Create Backup** and **Restore from Backup:** both open the **Backups** screen, where you

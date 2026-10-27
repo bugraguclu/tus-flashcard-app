@@ -6,7 +6,7 @@ order: 14
 web_path: /yardim/ice-disa-aktarma
 app_help: help?article=import-export
 app_screens:
-  - "Deste içe aktar — app/import.tsx"
+  - "İçe aktar — app/import.tsx"
   - "İçe aktarma günlüğü — components/ImportLogView.tsx"
   - "Dışa aktar — app/export.tsx, components/DeckExportSelector.tsx"
   - "Dosya devri (Paylaş › TusAnkiM) — app/_layout.tsx; web: components/WebAppIntegrations.tsx"
@@ -23,18 +23,18 @@ eşitleme olmadığı için bir cihazdan diğerine geçerken de bu dosyaları ku
 
 <a id="import"></a>
 ## İçe aktarma
-<!-- Uygulamada: Deste içe aktar ekranı başlığındaki ⓘ (yeni, app/import.tsx:643-647) → help.import.sheet → "Daha fazla bilgi" → bu bölüm -->
+<!-- Uygulamada: İçe aktar ekranı başlığındaki ⓘ (yeni, app/import.tsx:643-647) → help.import.sheet → "Daha fazla bilgi" → bu bölüm -->
 
-**Deste içe aktar** ekranı bütün dosya türlerini içe aktarır. Açmak için:
+**İçe aktar** ekranı bütün dosya türlerini içe aktarır. Açmak için:
 
-- **Desteler** ekranında sağ üstteki **•••** düğmesi › **Deste içe aktar**
+- **Desteler** ekranında sağ üstteki **•••** düğmesi › **İçe aktar**
 - **Ayarlar › Veri yönetimi › Deste ve verileri içe aktar**
 - Ya da dosyayı başka bir uygulamadan TusAnkiM'e gönderin (bkz. [aşağıda](#open-from-files)).
 
 1. **Dosya seç**'e dokunun ve dosyayı seçin.
 2. Uygulama dosyanın türünü uzantısından anlar ve o türün seçeneklerini gösterir. Başka bir
    dosya seçmek için **Değiştir**'e dokunun.
-3. Seçenekleri gözden geçirip alttaki **Deste içe aktar** düğmesine dokunun.
+3. Seçenekleri gözden geçirip alttaki **İçe aktar** düğmesine dokunun.
 4. İşlem bitince **İçe aktarma günlüğü** açılır. **Tamamlandı** sizi önceki ekrana döndürür.
 
 | Dosya | Ne olur? |
@@ -64,7 +64,7 @@ aktar** ekranı dosya seçilmiş olarak açılır. `.zip` uzantılı bir paketi 
 
 <a id="import-apkg"></a>
 ## Deste paketi (.apkg)
-<!-- Uygulamada: Deste içe aktar › İÇE AKTARMA SEÇENEKLERİ (.apkg) app/import.tsx:878-915 -->
+<!-- Uygulamada: İçe aktar › İÇE AKTARMA SEÇENEKLERİ (.apkg) app/import.tsx:878-915 -->
 
 Paylaşılan desteler ve Anki'den veya TusAnkiM'den dışa aktarılan desteler bu biçimdedir. Paketin
 içeriği koleksiyonunuza eklenir; sizin kartlarınızdan hiçbiri silinmez. Seçenekler:
@@ -96,7 +96,7 @@ içeriği koleksiyonunuza eklenir; sizin kartlarınızdan hiçbiri silinmez. Se�
 
 <a id="import-colpkg"></a>
 ## Koleksiyon paketi (.colpkg)
-<!-- Uygulamada: Deste içe aktar › .colpkg uyarısı app/import.tsx:916-923; Koleksiyon değiştirilsin mi? onayı app/import.tsx:449-458 -->
+<!-- Uygulamada: İçe aktar › .colpkg uyarısı app/import.tsx:916-923; Koleksiyon değiştirilsin mi? onayı app/import.tsx:449-458 -->
 
 Koleksiyon paketi, [koleksiyonunuzun](02-key-concepts.md#collection) tamamının yerine geçer:
 desteler, notlar, kartlar, not türleri, ayar grupları ve tekrar geçmişi paketteki hâline döner.
@@ -105,7 +105,7 @@ FSRS anahtarı ve günlük sınır kurallarını da getirir. Bu cihazdaki medya 
 ayarlarınız, Kronometre kayıtlarınız ve yedekleriniz olduğu gibi kalır.
 
 1. Dosyayı seçin. Seçenekler yerine bir uyarı görürsünüz.
-2. **Deste içe aktar**'a dokunun; **Koleksiyon değiştirilsin mi?** sorusunu **Tamam** ile onaylayın.
+2. **İçe aktar**'a dokunun; **Koleksiyon değiştirilsin mi?** sorusunu **Tamam** ile onaylayın.
 3. Başlamadan önce bir güvenlik yedeği alınır. Vazgeçerseniz o yedeği **Yedekler** ekranından geri
    yükleyebilirsiniz (bkz. [Yedeği geri yükleme](15-backups-and-maintenance.md#restore)).
 
@@ -115,7 +115,7 @@ Koleksiyonunuzda okunamayan satırlar varsa işlem başlamadan durur ve **Önce 
 
 <a id="import-text"></a>
 ## Metin dosyaları (CSV, TSV, TXT)
-<!-- Uygulamada: Deste içe aktar › metin dosyası seçenekleri app/import.tsx:708-876 -->
+<!-- Uygulamada: İçe aktar › metin dosyası seçenekleri app/import.tsx:708-876 -->
 
 Metin dosyasında her satır bir not, her sütun bir alandır. Dosyayı Excel, Numbers veya Google
 E-Tablolar ile hazırlayabilirsiniz:
@@ -176,7 +176,7 @@ Atropinin etki mekanizması?	Muskarinik reseptör antagonisti	farmakoloji
   sütundan gelebilir. En fazla 24 sütun gösterilir.
 - **ÖNİZLEME:** İlk 5 satırın nasıl bölündüğünü gösterir.
 
-**Deste içe aktar**'a dokunduğunuzda var olan notlardan bazıları güncellenecekse uygulama önce
+**İçe aktar**'a dokunduğunuzda var olan notlardan bazıları güncellenecekse uygulama önce
 **Mevcut notlar güncellensin mi?** sorusuyla kaç notun ekleneceğini, güncelleneceğini ve
 atlanacağını gösterir ve onayınızdan sonra bir güvenlik yedeği alır. Yalnızca yeni not ekleyen bir
 içe aktarma yedek almaz.
@@ -276,7 +276,7 @@ istediğiniz kadar gidip gelse de içindeki hiçbir şey değişmez.
 
 <a id="move-to-new-device"></a>
 ## Koleksiyonu yeni bir cihaza taşıma
-<!-- Uygulamada: Dışa aktar (colpkg) app/export.tsx; Deste içe aktar (colpkg) app/import.tsx:449-458 -->
+<!-- Uygulamada: Dışa aktar (colpkg) app/export.tsx; İçe aktar (colpkg) app/import.tsx:449-458 -->
 
 TusAnkiM cihazlar arasında eşitleme yapmaz; koleksiyonu bir dosyayla taşırsınız.
 
@@ -284,7 +284,7 @@ TusAnkiM cihazlar arasında eşitleme yapmaz; koleksiyonu bir dosyayla taşırs�
    **Anki Koleksiyon Paketi (.colpkg)** ve **Medyayı dahil et** açık olsun.
 2. **Dışa aktar**'a dokunun. Paylaşım sayfasında AirDrop ile yeni cihaza gönderin ya da
    **Dosyalar'a Kaydet** ile iCloud Drive'a kaydedin.
-3. Yeni cihazda TusAnkiM'i kurun, dosyayı **Paylaş › TusAnkiM** ile açın, **Deste içe aktar**'a
+3. Yeni cihazda TusAnkiM'i kurun, dosyayı **Paylaş › TusAnkiM** ile açın, **İçe aktar**'a
    dokunun ve **Koleksiyon değiştirilsin mi?** sorusunu onaylayın.
 4. Destelerinizi ve birkaç kartı kontrol edin. Eski cihazdaki koleksiyonu ancak bundan sonra silin.
 
@@ -310,7 +310,7 @@ geçiyorsanız [Anki ile birlikte kullanma](19-using-with-anki.md) bölümüne b
    et** açık olsun.
 3. **Dışa aktar**'a dokunun ve dosyayı gönderin.
 
-Alıcı dosyayı TusAnkiM'de **Deste içe aktar** ile açabilir; Anki de bu paketleri açar. Kişisel not
+Alıcı dosyayı TusAnkiM'de **İçe aktar** ile açabilir; Anki de bu paketleri açar. Kişisel not
 veya etiket içeren desteleri paylaşmadan önce gözden geçirin. TUS Kartları paketindeki desteler
 paylaşılamaz.
 

@@ -63,8 +63,8 @@ See [Adding and editing cards](08-adding-and-editing.md).
 
 1. Move the `.apkg` file you exported from Anki to your iPhone (AirDrop, iCloud Drive, Files).
 2. In the **Files** app, tap the file and choose TusAnkiM from the share menu. Or, in TusAnkiM,
-   go to **⋮ › Import deck › Choose File**.
-3. Check the options and tap **Import deck**.
+   go to **⋮ › Import › Choose File**.
+3. Check the options and tap **Import**.
 
 If you want to move your whole Anki collection, read
 [Using TusAnkiM with Anki](19-using-with-anki.md#move-whole-collection) first: a collection

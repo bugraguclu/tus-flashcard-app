@@ -76,13 +76,3 @@ export const ALL_IMPORT_EXTENSIONS: string[] = Array.from(
 export function isPackageImport(type: ImportFileType): boolean {
     return type === 'apkg' || type === 'colpkg';
 }
-
-export function importFormatLabel(type: ImportFileType): string {
-    switch (type) {
-        case 'csv': return 'CSV';
-        case 'tsv': return 'TSV';
-        case 'txt': return 'TXT';
-        case 'apkg': return '.apkg';
-        case 'colpkg': return '.colpkg';
-    }
-}

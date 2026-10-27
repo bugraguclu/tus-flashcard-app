@@ -1,6 +1,6 @@
 # Uygulama içi metinler — içe/dışa aktarma, yedekler, bakım
 
-Kapsam: **Deste içe aktar** (`app/import.tsx`), **İçe aktarma günlüğü**
+Kapsam: **İçe aktar** (`app/import.tsx`), **İçe aktarma günlüğü**
 (`components/ImportLogView.tsx`), **Dışa aktar** / **Yedeği dışa aktar** (`app/export.tsx`,
 `components/DeckExportSelector.tsx`), **Yedekler** ve **Medyayı denetle** (`app/backups.tsx`,
 `components/backups/MediaCheckSection.tsx`), **Boş kartlar** (`app/empty-cards.tsx`), **Ayarlar ›
@@ -20,8 +20,8 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 
 ## Bilgi sayfaları
 
-### help.import.sheet — Deste içe aktar bilgi sayfası (yeni)
-- **Yer:** **Deste içe aktar** ekranı başlığı, sağda ⓘ düğmesi (yeni), `app/import.tsx:643-647` (`ScreenHeader` `actions`)
+### help.import.sheet — İçe aktar bilgi sayfası (yeni)
+- **Yer:** **İçe aktar** ekranı başlığı, sağda ⓘ düğmesi (yeni), `app/import.tsx:643-647` (`ScreenHeader` `actions`)
 - **Tetikleyici:** ⓘ'ye dokunma. Erişilebilirlik etiketi: "İçe aktarma hakkında" / "About importing"
 - **Bileşen:** bilgi sayfası (eyebrow, title, summary, points[], note, more)
 - **Daha fazla bilgi:** `tr/14-import-export.md#import` (`help?article=import-export&section=import`)
@@ -106,7 +106,7 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 
 ---
 
-## Deste içe aktar (`app/import.tsx`)
+## İçe aktar (`app/import.tsx`)
 
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
@@ -129,7 +129,7 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 | help.import.updateChoice.never | Aynı liste, **Asla** | seçenek ipucu | Sizdeki sürüm olduğu gibi kalır. | Your version stays as it is. | Yeni |
 | help.import.colpkgNotice | .colpkg uyarı metni, `app/import.tsx:919-920` | uyarı | Mevcut metne ek: "Yeni gün başlangıcı, FSRS ve günlük sınır kuralları paketteki koleksiyondan gelir; diğer uygulama ayarlarınız, Kronometre kayıtlarınız ve yedekleriniz korunur. Başlamadan önce güvenlik yedeği alınır." | Add: "Next day starts at, FSRS and the daily-limit rules come from the collection in the package; your other app settings, Stopwatch records and backups are kept. A safety backup is made before it starts." | Mevcut — genişlet |
 | help.import.colpkgConfirm | **Koleksiyon değiştirilsin mi?** onayı, `app/import.tsx:450-456` | onay | (mevcut metin) | (existing text) | Mevcut — koru |
-| help.import.packageBackupNote | .apkg seçiliyken **Deste içe aktar** düğmesinin üstü, `app/import.tsx:939-951` | dipnot | İçe aktarmadan önce otomatik bir güvenlik yedeği alınır. Büyük paketler birkaç dakika sürebilir. | A safety backup is made before the import. Large packages can take a few minutes. | Yeni |
+| help.import.packageBackupNote | .apkg seçiliyken **İçe aktar** düğmesinin üstü, `app/import.tsx:939-951` | dipnot | İçe aktarmadan önce otomatik bir güvenlik yedeği alınır. Büyük paketler birkaç dakika sürebilir. | A safety backup is made before the import. Large packages can take a few minutes. | Yeni |
 | help.import.sizeError | Dosya okuma uyarısı, `app/import.tsx:275` | hata | Dosya çok büyük. Paketler en fazla 400 MB, metin dosyaları en fazla 50 MB olabilir. | The file is too large. Packages can be up to 400 MB and text files up to 50 MB. | Mevcut — güncelle (eski metin: Dosya güvenli boyut sınırını aşıyor. / The file exceeds the safe size limit.) |
 | help.import.unknownFormat | **Bilinmeyen dosya biçimi** uyarısı, `app/import.tsx:306-307`; web aynı metin `components/WebAppIntegrations.tsx:91-92`, bırakma kutusu `:113` | hata | Yalnızca .apkg (veya .zip), .colpkg, .csv, .tsv ve .txt dosyaları içe aktarılabilir. | Only .apkg (or .zip), .colpkg, .csv, .tsv and .txt files can be imported. | Mevcut — güncelle (eski metin: .zip anılmıyor) |
 

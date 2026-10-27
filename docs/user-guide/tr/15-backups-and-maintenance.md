@@ -263,7 +263,7 @@ ekranında kartları seçip **Diğer** › **Kartları sıfırla…** komutunu k
 Yedekler uygulamanın içinde saklandığı için **uygulamayı silerseniz koleksiyonunuz ve bütün
 yedekleriniz birlikte silinir.** Uygulamayı silmeden veya telefonunuzu değiştirmeden önce
 koleksiyonunuzu **.colpkg** olarak dışa aktarın ve dosyayı iCloud Drive'a, bilgisayarınıza veya
-başka güvenli bir yere kaydedin. Dosyayı daha sonra **Deste içe aktar** ile geri yüklersiniz.
+başka güvenli bir yere kaydedin. Dosyayı daha sonra **İçe aktar** ile geri yüklersiniz.
 
 > **Web sürümünde:** Tarayıcının site verilerini silmek koleksiyonu ve yedekleri de siler. Önemli
 > bir değişiklikten önce koleksiyonu dışa aktarıp indirin.

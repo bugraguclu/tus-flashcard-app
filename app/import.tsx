@@ -45,7 +45,6 @@ import { BackupNotRestorableError, createBackupNow } from '../lib/backup';
 import {
     ALL_IMPORT_MIME_TYPES,
     importFileNameFromUri,
-    importFormatLabel,
     inferImportFileType,
     isPackageImport,
     type ImportFileType,
@@ -504,14 +503,11 @@ export default function ImportScreen() {
                         <View style={styles.fileRow}>
                             <View style={styles.fileCopy}>
                                 <Text style={styles.fileName} numberOfLines={2}>{file.name}</Text>
-                                <Text style={styles.fileMeta}>
-                                    {packageImport
-                                        ? importFormatLabel(file.type)
-                                        : l(
-                                            `${importFormatLabel(file.type)} · ${parsed?.rows.length ?? 0} not`,
-                                            `${importFormatLabel(file.type)} · ${parsed?.rows.length ?? 0} notes`,
-                                        )}
-                                </Text>
+                                {packageImport ? null : (
+                                    <Text style={styles.fileMeta}>
+                                        {l(`${parsed?.rows.length ?? 0} not`, `${parsed?.rows.length ?? 0} notes`)}
+                                    </Text>
+                                )}
                             </View>
                             <TouchableOpacity
                                 style={styles.secondaryButton}

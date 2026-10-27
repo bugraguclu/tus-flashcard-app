@@ -6,7 +6,7 @@ order: 14
 web_path: /en/help/import-export
 app_help: help?article=import-export
 app_screens:
-  - "Import deck — app/import.tsx"
+  - "Import — app/import.tsx"
   - "Import Log — components/ImportLogView.tsx"
   - "Export — app/export.tsx, components/DeckExportSelector.tsx"
   - "File hand-off (Share › TusAnkiM) — app/_layout.tsx; web: components/WebAppIntegrations.tsx"
@@ -23,18 +23,18 @@ files when you move from one device to another.
 
 <a id="import"></a>
 ## Importing
-<!-- In the app: ⓘ in the Import deck screen header (new, app/import.tsx:643-647) → help.import.sheet → "Learn more" → this section -->
+<!-- In the app: ⓘ in the Import screen header (new, app/import.tsx:643-647) → help.import.sheet → "Learn more" → this section -->
 
-The **Import deck** screen imports every supported file type. To open it:
+The **Import** screen imports every supported file type. To open it:
 
-- On the **Decks** screen, tap **•••** at the top right › **Import deck**
+- On the **Decks** screen, tap **•••** at the top right › **Import**
 - **Settings › Data Management › Import decks and data**
 - Or send the file to TusAnkiM from another app (see [below](#open-from-files)).
 
 1. Tap **Choose File** and pick the file.
 2. The app recognises the file type from its extension and shows the options for that type. To
    pick a different file, tap **Change**.
-3. Review the options and tap the **Import deck** button at the bottom.
+3. Review the options and tap the **Import** button at the bottom.
 4. When the import finishes, the **Import Log** opens. **Done** takes you back to the previous screen.
 
 | File | What happens |
@@ -64,7 +64,7 @@ inside the app with **Choose File**.
 
 <a id="import-apkg"></a>
 ## Deck packages (.apkg)
-<!-- In the app: Import deck › IMPORT OPTIONS (.apkg) app/import.tsx:878-915 -->
+<!-- In the app: Import › IMPORT OPTIONS (.apkg) app/import.tsx:878-915 -->
 
 Shared decks, and decks exported from Anki or from TusAnkiM, come in this format. The package is
 added to your collection; none of your own cards are deleted. The options:
@@ -96,7 +96,7 @@ added to your collection; none of your own cards are deleted. The options:
 
 <a id="import-colpkg"></a>
 ## Collection packages (.colpkg)
-<!-- In the app: Import deck › .colpkg warning app/import.tsx:916-923; Replace Collection? confirmation app/import.tsx:449-458 -->
+<!-- In the app: Import › .colpkg warning app/import.tsx:916-923; Replace Collection? confirmation app/import.tsx:449-458 -->
 
 A collection package replaces your whole [collection](02-key-concepts.md#collection): decks,
 notes, cards, note types, presets and review history become what is in the package. As in Anki, the
@@ -105,7 +105,7 @@ daily-limit rules. The media files on this device, your other app settings, your
 and your backups stay as they are.
 
 1. Choose the file. Instead of options you see a warning.
-2. Tap **Import deck** and confirm **Replace Collection?** with **OK**.
+2. Tap **Import** and confirm **Replace Collection?** with **OK**.
 3. A safety backup is made before anything changes. If you change your mind, restore that backup
    from the **Backups** screen (see [Restoring a backup](15-backups-and-maintenance.md#restore)).
 
@@ -115,7 +115,7 @@ If your collection contains unreadable rows, the import stops before it starts a
 
 <a id="import-text"></a>
 ## Text files (CSV, TSV, TXT)
-<!-- In the app: Import deck › text file options app/import.tsx:708-876 -->
+<!-- In the app: Import › text file options app/import.tsx:708-876 -->
 
 In a text file every line is a note and every column is a field. You can prepare the file in
 Excel, Numbers or Google Sheets:
@@ -177,7 +177,7 @@ Mechanism of action of atropine?	Muscarinic receptor antagonist	pharmacology
   from one column only. At most 24 columns are shown.
 - **PREVIEW:** shows how the first 5 lines are split.
 
-When you tap **Import deck** and some existing notes would be updated, the app first asks **Update
+When you tap **Import** and some existing notes would be updated, the app first asks **Update
 Existing Notes?**, showing how many notes will be added, updated and skipped, and makes a safety
 backup after you confirm. An import that only adds new notes makes no backup.
 
@@ -275,7 +275,7 @@ times as you like without anything in it changing.
 
 <a id="move-to-new-device"></a>
 ## Moving your collection to a new device
-<!-- In the app: Export (colpkg) app/export.tsx; Import deck (colpkg) app/import.tsx:449-458 -->
+<!-- In the app: Export (colpkg) app/export.tsx; Import (colpkg) app/import.tsx:449-458 -->
 
 TusAnkiM does not sync between devices; you move the collection with a file.
 
@@ -283,7 +283,7 @@ TusAnkiM does not sync between devices; you move the collection with a file.
    Collection Package (.colpkg)** and **Include media** on.
 2. Tap **Export**. In the share sheet, send the file to the new device with AirDrop, or keep it in
    iCloud Drive with **Save to Files**.
-3. On the new device install TusAnkiM, open the file with **Share › TusAnkiM**, tap **Import deck**
+3. On the new device install TusAnkiM, open the file with **Share › TusAnkiM**, tap **Import**
    and confirm **Replace Collection?**.
 4. Check your decks and a few cards. Only then delete the collection on the old device.
 
@@ -309,7 +309,7 @@ Anki, see [Using TusAnkiM with Anki](19-using-with-anki.md).
    Keep **Include media** on.
 3. Tap **Export** and send the file.
 
-The recipient can open the file in TusAnkiM with **Import deck**; Anki opens these packages too.
+The recipient can open the file in TusAnkiM with **Import**; Anki opens these packages too.
 Check decks for personal notes or tags before you share them. Decks from the TUS Cards pack cannot
 be shared.
 

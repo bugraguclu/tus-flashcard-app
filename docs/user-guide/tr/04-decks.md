@@ -137,7 +137,7 @@ Sağ üstteki **⋮** düğmesi koleksiyonun tamamıyla ilgili işlemleri açar:
 
 - **Boş kartlar:** Şablonu artık bir şey göstermeyen kartları bulur ve temizler.
   Bkz. [Boş kartlar](15-backups-and-maintenance.md#empty-cards).
-- **Deste içe aktar:** `.apkg`, `.colpkg` ve metin dosyalarını getirir.
+- **İçe aktar:** `.apkg`, `.colpkg` ve metin dosyalarını getirir.
   Bkz. [İçe ve dışa aktarma](14-import-export.md).
 - **Dışa aktar:** Desteleri veya koleksiyonu dosya olarak kaydeder.
 - **Yedek oluştur** ve **Yedekten geri yükle:** İkisi de **Yedekler** ekranını açar. Yedeği orada

@@ -129,7 +129,7 @@ You can also narrow the list by deck, tag or flag. See
 1. On the old phone, open **⋮ › Export** and, with all decks selected, export in the
    **Anki Collection Package (.colpkg)** format with **Include media** on.
 2. Move the file to the new phone through AirDrop, iCloud Drive or a computer.
-3. Install TusAnkiM on the new phone and open the file with **⋮ › Import deck**.
+3. Install TusAnkiM on the new phone and open the file with **⋮ › Import**.
 
 A collection package replaces the cards already on the new phone; on a fresh install this is not
 a problem. The **TUS Kartları** pack is not included in this file: on the new phone you install

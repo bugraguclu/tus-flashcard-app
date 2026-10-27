@@ -66,16 +66,16 @@ export default function PackageImportOptions(props: {
                         )}
                         <Text style={styles.optionHint}>
                             {l(
-                                'Şeması değişmiş bir not türü birleştirilmez: paketteki tür ayrı bir kopya olarak eklenir ve yerel notlarınız olduğu gibi kalır.',
-                                'A note type whose schema has changed is not merged: the package’s type is added as a separate copy and your local notes are left as they are.',
+                                'Alanları ya da kart türleri değişmiş bir not türü birleştirilmez, ayrı bir kopya olarak eklenir.',
+                                'A note type whose fields or card types have changed is not merged; it is added as a separate copy.',
                             )}
                         </Text>
                     </>
                 ) : (
                     <Text style={styles.destructiveNotice}>
                         {l(
-                            '⚠️ Bu işlem kartlarınızı, destelerinizi ve çalışma geçmişinizi paketteki koleksiyonla değiştirecek. Yeni gün başlangıcı, FSRS ve günlük sınır kuralları da paketteki koleksiyondan gelir. Mevcut medya dosyaları silinmez.',
-                            '⚠️ This will replace your cards, decks and review history with the collection in the package. Next day starts at, FSRS and the daily-limit rules also come from the collection in the package. Existing media files are not deleted.',
+                            '⚠️ Koleksiyonunuz, ayarları ve çalışma geçmişiyle birlikte paketteki koleksiyonla değiştirilir. Medya dosyaları silinmez.',
+                            '⚠️ Your collection, with its settings and review history, is replaced by the one in the package. Media files are not deleted.',
                         )}
                     </Text>
                 )}

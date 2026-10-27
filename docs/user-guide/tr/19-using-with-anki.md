@@ -6,7 +6,7 @@ order: 19
 web_path: /yardim/anki-ile-kullanma
 app_help: help?article=anki
 app_screens:
-  - "Deste içe aktar — app/import.tsx"
+  - "İçe aktar — app/import.tsx"
   - "Dışa aktar — app/export.tsx"
 verified_against: master c6108e6 (2026-10-25)
 ---
@@ -42,7 +42,7 @@ TusAnkiM'e yeni başlıyorsanız ve Anki'deki her şeyi getirmek istiyorsanız:
 2. Dosyayı iPhone'unuza aktarın: AirDrop, iCloud Drive veya bilgisayardan **Dosyalar** uygulamasına
    kopyalama işinizi görür.
 3. **Dosyalar**'da dosyaya dokunun ve paylaşım menüsünden TusAnkiM'i seçin. Ya da TusAnkiM'de
-   **Desteler › ⋮ › Deste içe aktar › Dosya seç** yolunu izleyin.
+   **Desteler › ⋮ › İçe aktar › Dosya seç** yolunu izleyin.
 4. **Koleksiyon değiştirilsin mi?** sorusunu okuyun. Onaylarsanız TusAnkiM önce mevcut
    koleksiyonunuzun bir güvenlik yedeğini alır, sonra paketi yükler.
 5. Bitince **İçe aktarma günlüğü** kaç kartın, tekrar kaydının ve medya dosyasının geldiğini
@@ -69,7 +69,7 @@ Kronometre oturumlarınız ve cihazdaki medya dosyaları yerinde kalır.
    - **Notları güncelle** ve **Not türlerini güncelle**: **Yeniyse** (varsayılan), **Her zaman** veya
      **Asla**. Daha önce içe aktardığınız bir paketin yeni sürümünü açtığınızda notların nasıl
      güncelleneceğini belirler.
-3. **Deste içe aktar** düğmesine dokunun. Paketli her içe aktarmadan önce otomatik bir güvenlik yedeği alınır.
+3. **İçe aktar** düğmesine dokunun. Paketli her içe aktarmadan önce otomatik bir güvenlik yedeği alınır.
 
 Aynı paketi ikinci kez içe aktarmak kartları çoğaltmaz: Notlar benzersiz kimlikleriyle tanınır.
 Güncelleme yalnızca not içeriğini ve etiketleri değiştirir; TusAnkiM'deki çalışma durumunuz

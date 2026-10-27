@@ -128,7 +128,7 @@ için de kullanabilirsiniz.
 
 | Türkçe | İngilizce | Açıklama |
 | --- | --- | --- |
-| Deste içe aktar / Dışa aktar | Import deck / Export | Dosyadan kart getirme / dosyaya kart yazma. Bkz. [İçe ve dışa aktarma](14-import-export.md). |
+| İçe aktar / Dışa aktar | Import / Export | Dosyadan kart getirme / dosyaya kart yazma. Bkz. [İçe ve dışa aktarma](14-import-export.md). |
 | Anki Deste Paketi (.apkg) | Anki Deck Package (.apkg) | Bir veya birkaç deste. İçe aktarınca koleksiyona eklenir. |
 | Anki Koleksiyon Paketi (.colpkg) | Anki Collection Package (.colpkg) | Koleksiyonun tamamı. İçe aktarınca mevcut koleksiyonun yerine geçer. |
 | Çalışma ilerlemesini içe aktar | Import any learning progress | Paketteki çalışma durumunu ve geçmişi de getirir. |

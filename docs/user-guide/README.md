@@ -112,7 +112,7 @@ sayfasının altındaki **Daha fazla bilgi** bağlantısı **Makale** sütununda
 | İstatistikler — `app/stats.tsx` | Sağ üstteki **Bilgi** (mevcut, genişletilecek) → `help.stats.sheet` | `in-app/06-progress.md` | 12 |
 | Kronometre — `app/stopwatch.tsx` | Başlıkta zilin solunda ⓘ (yeni) → `help.stopwatch.sheet` | `in-app/06-progress.md` | 13 |
 | Çalışma Takvimi — `app/study-calendar.tsx` | Başlıkta **Çalışma analizleri**'nin solunda ⓘ (yeni) → `help.calendar.sheet` | `in-app/06-progress.md` | 13 |
-| Deste içe aktar — `app/import.tsx` | Başlıkta ⓘ (yeni) → `help.import.sheet` | `in-app/07-import-export-backups.md` | 14, 19 |
+| İçe aktar — `app/import.tsx` | Başlıkta ⓘ (yeni) → `help.import.sheet` | `in-app/07-import-export-backups.md` | 14, 19 |
 | Dışa aktar — `app/export.tsx` | Başlıkta ⓘ (yeni) → `help.export.sheet` | `in-app/07-import-export-backups.md` | 14, 19 |
 | Yedekler — `app/backups.tsx` | Başlıkta ⓘ ve **Ayarlar › Veri yönetimi › Yedekleme**'deki **?** (yeni) → `help.backups.sheet` | `in-app/07-import-export-backups.md` | 15 |
 | Ayarlar › Veri yönetimi › Bakım | Grup başlığındaki **?** (yeni) → `help.settings.maintenanceSheet` | `in-app/07-import-export-backups.md` | 15 |

@@ -135,7 +135,7 @@ Web sürümünü uygulama gibi yükleyebilirsiniz: iPhone'da Safari'nin paylaş 
 ekleyin; bilgisayarda tarayıcının adres çubuğundaki veya menüsündeki yükleme seçeneğini kullanın.
 Yüklenen uygulama kendi penceresinde açılır. Simgesinin kısayol menüsünde **Desteler**,
 **Kart ekle** ve **İstatistikler** bulunur. Bilgisayarda yüklü uygulamayla bir `.apkg`, `.colpkg`,
-`.csv`, `.tsv` veya `.txt` dosyasını açarsanız **Deste içe aktar** ekranı o dosyayla açılır.
+`.csv`, `.tsv` veya `.txt` dosyasını açarsanız **İçe aktar** ekranı o dosyayla açılır.
 
 <a id="offline"></a>
 ### İnternetsiz açılış
@@ -154,7 +154,7 @@ olabilir). İzni **Ayarlar › Bildirimler** anahtarını açarak verirsiniz. Bk
 ### Sürükleyip bırakarak içe aktarma
 
 Bir deste dosyasını tarayıcı penceresinin üstüne sürükleyin. **İçe aktarmak için bırakın** yazısı
-çıkınca bırakın; **Deste içe aktar** ekranı o dosyayla açılır. `.apkg`, `.colpkg`, `.zip`, `.csv`,
+çıkınca bırakın; **İçe aktar** ekranı o dosyayla açılır. `.apkg`, `.colpkg`, `.zip`, `.csv`,
 `.tsv` ve `.txt` dosyaları kabul edilir; başka bir dosya bırakırsanız **Bilinmeyen dosya biçimi**
 uyarısı çıkar. Bkz. [İçe ve dışa aktarma](14-import-export.md).
 

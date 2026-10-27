@@ -70,7 +70,7 @@ bir metin bugün yoktur.
   1. **TUS paketini aç** → `router.push('/catalog')` (yalnızca tam paket kurulu değilse; kilitli
      satırla aynı hedef, `decks.tsx:1386`)
   2. **Kart ekle** → `router.push('/editor')` (`openAddCard` ile aynı, `decks.tsx:471-474`)
-  3. **Deste içe aktar** → `router.push(DATA_IMPORT_ROUTE)` (kanonik `/import`, AGENTS.md kuralı)
+  3. **İçe aktar** → `router.push(DATA_IMPORT_ROUTE)` (kanonik `/import`, AGENTS.md kuralı)
   - Bağlantı **Kılavuzu aç** → `/help?article=quick-start`
   - **×** → kartı kalıcı olarak gizler
 - **Daha fazla bilgi:** `tr/03-quick-start.md#first-screen`
@@ -81,7 +81,7 @@ bir metin bugün yoktur.
 - Metin: Çalışmaya başlamak için kart gerekir. Hazır TUS paketini ücretsiz açabilir, kendi
   kartınızı yazabilir veya Anki'den bir deste getirebilirsiniz.
 - Eylemler: **TUS paketini aç** — 9.575 hazır kart, ücretsiz · **Kart ekle** — kendi kartınızı
-  yazın · **Deste içe aktar** — .apkg, .colpkg veya metin dosyası
+  yazın · **İçe aktar** — .apkg, .colpkg veya metin dosyası
 - Bağlantı: Kılavuzu aç
 - × erişilebilirlik etiketi: Hoş geldiniz kartını kapat
 
@@ -90,7 +90,7 @@ bir metin bugün yoktur.
 - Text: You need cards to start studying. Unlock the ready-made TUS pack for free, write your own
   card, or bring in a deck from Anki.
 - Actions: **Unlock the TUS pack** — 9,575 ready-made cards, free · **Add note** — write your own
-  card · **Import deck** — .apkg, .colpkg or text file
+  card · **Import** — .apkg, .colpkg or text file
 - Link: Open the guide
 - × accessibility label: Close the welcome card
 

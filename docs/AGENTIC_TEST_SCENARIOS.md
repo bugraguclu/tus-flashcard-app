@@ -80,8 +80,8 @@ denenemedi).
   `127.0.0.1` ile açmak da temiz kullanıcı verir. Koleksiyonda yalnızca boş "Varsayılan" destesi
   ve hazır not türleri olur. "TUS Kartları" katalog satırı kilitli görünür.
 - **S1 — örnek paket.** S0'a ek olarak `test/fixtures/anki-26.05-modern.apkg` içe aktarılır:
-  Desteler ••• "Diğer seçenekler" → "Deste içe aktar" → "Dosya seç". "Çalışma ilerlemesini içe
-  aktar" ve "Deste ayarlarını içe aktar" açık kalır, sonra "Deste içe aktar".
+  Desteler ••• "Diğer seçenekler" → "İçe aktar" → "Dosya seç". "Çalışma ilerlemesini içe
+  aktar" ve "Deste ayarlarını içe aktar" açık kalır, sonra "İçe aktar".
   - Desteler "TUS Örnek" ve "TUS Örnek::Kardiyoloji".
   - 5 not, 7 kart: bir tekrar kartı, iki öğrenme kartı, kardeşi gömülü ve turuncu bayraklı bir
     kart, bir askıdaki kart, bir elle gömülmüş kart.
@@ -205,7 +205,7 @@ Aşağıdakiler bilinçli ürün kararı ya da henüz olmayan özelliktir. İlgi
 - **Anki:** Get Shared ile paylaşılan deste indirilir, sonra içe aktarılır.
   [Kılavuz](https://docs.ankiweb.net/manual/getting-started#shared-decks)
 - **TusAnkiM:** AnkiWeb paylaşılan desteleri yok. Deste listesindeki "TUS Kartları" satırı →
-  "Ücretsiz aç" → `/catalog` → "Kartları ücretsiz aç". Elde bir `.apkg` varsa "Deste içe aktar".
+  "Ücretsiz aç" → `/catalog` → "Kartları ücretsiz aç". Elde bir `.apkg` varsa "İçe aktar".
 - **Geçer:** Ajan katalog yolunu ya da içe aktarmayı önerir, AnkiWeb'de gezinmeyi iddia etmez.
 - **Bilinen fark:** Katalog yaklaşık 9 575 kart ve 106 alt deste kurar, ağırdır. Bu destelerde
   yeniden adlandırma, silme ve dışa aktarma kapalıdır.
@@ -1216,14 +1216,14 @@ Not türleri yalnızca editörden açılır: "Tür:" → "Not türlerini yönet�
 
 ## 11. İçe aktarma (IMPORT)
 
-İçe aktarma: Desteler ••• → "Deste içe aktar", Ayarlar → "Veri yönetimi" → "Deste ve verileri içe
+İçe aktarma: Desteler ••• → "İçe aktar", Ayarlar → "Veri yönetimi" → "Deste ve verileri içe
 aktar", ya da dosyayı pencereye sürüklemek.
 
 #### IMPORT-01 · İstek · P1 · S0
 - **Kullanıcı:** "Arkadaşımın gönderdiği .apkg desteyi içe aktar."
 - **Anki:** `.apkg` koleksiyona ekler, üzerine yazmaz.
   [Kılavuz](https://docs.ankiweb.net/manual/importing/packaged-decks#updating)
-- **TusAnkiM:** "Dosya seç" → `test/fixtures/anki-26.05-modern.apkg` → "Deste içe aktar".
+- **TusAnkiM:** "Dosya seç" → `test/fixtures/anki-26.05-modern.apkg` → "İçe aktar".
 - **Geçer:** "İçe aktarma günlüğü" ve "Tamamlandı" görünür. S1'de sayılan desteler, kartlar ve
   medya gelir. Daha önce eklenen notlar korunur.
 
@@ -1239,7 +1239,7 @@ aktar", ya da dosyayı pencereye sürüklemek.
 - **Anki:** UTF-8 düz metin; ayırıcı tahmin edilir; sütunlar alanlarla eşlenir.
   [Kılavuz](https://docs.ankiweb.net/manual/importing/text-files)
 - **TusAnkiM:** CSV dosyası → "Alanları ayıran" → "Not türü" → "Deste" → "ALAN EŞLEMESİ" →
-  "Deste içe aktar". Örnek dosya: `soru;cevap` biçiminde üç satır, başlık satırı yok. Anki ilk
+  "İçe aktar". Örnek dosya: `soru;cevap` biçiminde üç satır, başlık satırı yok. Anki ilk
   satırı da not sayar.
 - **Geçer:** Üç not doğru alanlarla eklenir. Türkçe karakterler bozulmaz.
 

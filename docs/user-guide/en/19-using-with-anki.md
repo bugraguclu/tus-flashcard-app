@@ -6,7 +6,7 @@ order: 19
 web_path: /en/help/using-with-anki
 app_help: help?article=anki
 app_screens:
-  - "Import deck — app/import.tsx"
+  - "Import — app/import.tsx"
   - "Export — app/export.tsx"
 verified_against: master c6108e6 (2026-10-25)
 ---
@@ -42,7 +42,7 @@ If you are new to TusAnkiM and want to bring over everything you have in Anki:
 2. Move the file to your iPhone: AirDrop, iCloud Drive or copying it from a computer to the
    **Files** app all work.
 3. In **Files**, tap the file and choose TusAnkiM from the share menu. Or, in TusAnkiM, go to
-   **Decks › ⋮ › Import deck › Choose File**.
+   **Decks › ⋮ › Import › Choose File**.
 4. Read the **Replace Collection?** question. If you confirm, TusAnkiM first makes a safety backup
    of your current collection and then loads the package.
 5. When it finishes, the **Import Log** shows how many cards, review entries and media files came
@@ -70,7 +70,7 @@ and the media files on the device stay where they are.
    - **Update notes** and **Update note types**: **If newer** (the default), **Always** or
      **Never**. These decide how notes are updated when you open a newer version of a package you
      imported before.
-3. Tap **Import deck**. An automatic safety backup is made before every package import.
+3. Tap **Import**. An automatic safety backup is made before every package import.
 
 Importing the same package a second time does not duplicate cards: notes are recognized by their
 unique IDs. An update changes only the note content and tags; your study state in TusAnkiM is

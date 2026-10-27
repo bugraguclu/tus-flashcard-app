@@ -4,7 +4,6 @@ import {
     ALL_IMPORT_MIME_TYPES,
     getImportFileExtension,
     importFileNameFromUri,
-    importFormatLabel,
     inferImportFileType,
     isPackageImport,
 } from './importFile';
@@ -42,7 +41,5 @@ describe('incoming import files', () => {
         expect(isPackageImport('apkg')).toBe(true);
         expect(isPackageImport('colpkg')).toBe(true);
         expect(isPackageImport('csv')).toBe(false);
-        expect(importFormatLabel('colpkg')).toBe('.colpkg');
-        expect(importFormatLabel('tsv')).toBe('TSV');
     });
 });

@@ -262,7 +262,7 @@ in the **Card Browser** and tap **More** › **Reset cards…**
 Because backups are kept inside the app, **deleting the app deletes your collection and all your
 backups with it.** Before you delete the app or change phones, export your collection as
 **.colpkg** and save the file to iCloud Drive, your computer or another safe place. You can bring
-it back later with **Import deck**.
+it back later with **Import**.
 
 > **In the web version:** Clearing the browser's site data also deletes the collection and the
 > backups. Export the collection and download it before any important change.

@@ -61,8 +61,8 @@ Bkz. [Kart ekleme ve düzenleme](08-adding-and-editing.md).
 
 1. Anki'den dışa aktardığınız `.apkg` dosyasını iPhone'a aktarın (AirDrop, iCloud Drive, Dosyalar).
 2. **Dosyalar** uygulamasında dosyaya dokunun ve paylaşım menüsünden TusAnkiM'i seçin. Ya da
-   TusAnkiM'de **⋮ › Deste içe aktar › Dosya seç** yolunu kullanın.
-3. Seçenekleri kontrol edip **Deste içe aktar** düğmesine dokunun.
+   TusAnkiM'de **⋮ › İçe aktar › Dosya seç** yolunu kullanın.
+3. Seçenekleri kontrol edip **İçe aktar** düğmesine dokunun.
 
 Anki'deki koleksiyonunuzun tamamını taşımak istiyorsanız önce
 [Anki ile birlikte kullanma](19-using-with-anki.md#move-whole-collection) bölümünü okuyun:

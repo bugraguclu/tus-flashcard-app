@@ -130,7 +130,7 @@ etiket veya bayrağa göre de daraltabilirsiniz. Bkz. [Kartlarım ve arama](10-b
 1. Eski telefonda **⋮ › Dışa aktar** ekranını açın ve bütün desteler seçiliyken
    **Anki Koleksiyon Paketi (.colpkg)** biçimiyle, **Medyayı dahil et** açık olarak dışa aktarın.
 2. Dosyayı AirDrop, iCloud Drive veya bilgisayar üzerinden yeni telefona aktarın.
-3. Yeni telefonda TusAnkiM'i kurun ve dosyayı **⋮ › Deste içe aktar** ile açın.
+3. Yeni telefonda TusAnkiM'i kurun ve dosyayı **⋮ › İçe aktar** ile açın.
 
 Koleksiyon paketi yeni telefondaki mevcut kartların yerine geçer; yeni kurulumda bu bir sorun
 değildir. **TUS Kartları** paketi bu dosyaya girmez: yeni telefonda paketi

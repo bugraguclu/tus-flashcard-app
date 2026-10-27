@@ -24,10 +24,6 @@ export function createImportStyles(colors: ColorScheme) {
         },
         emptyTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
         emptyBody: { fontSize: FontSize.sm, lineHeight: 19, color: colors.textSecondary },
-        formatList: { gap: Spacing.sm },
-        formatItem: { gap: 2 },
-        formatName: { fontSize: FontSize.sm, fontWeight: '800', color: colors.textPrimary },
-        formatDescription: { fontSize: FontSize.xs, lineHeight: 17, color: colors.textMuted },
 
         section: {
             padding: Spacing.md,

@@ -128,7 +128,7 @@ you are looking for in Anki resources.
 
 | English | Turkish | Description |
 | --- | --- | --- |
-| Import deck / Export | Deste içe aktar / Dışa aktar | Bringing cards in from a file / writing cards to a file. See [Import and export](14-import-export.md). |
+| Import / Export | İçe aktar / Dışa aktar | Bringing cards in from a file / writing cards to a file. See [Import and export](14-import-export.md). |
 | Anki Deck Package (.apkg) | Anki Deste Paketi (.apkg) | One or more decks. Importing one adds it to your collection. |
 | Anki Collection Package (.colpkg) | Anki Koleksiyon Paketi (.colpkg) | The whole collection. Importing one replaces your current collection. |
 | Import any learning progress | Çalışma ilerlemesini içe aktar | Also brings in the study state and history from the package. |
