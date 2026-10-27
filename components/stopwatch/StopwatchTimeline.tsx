@@ -6,11 +6,12 @@ import { dayNumberToYmd } from '../../lib/ankiState';
 import { formatGoalRemaining, formatStopwatchClock, type StudyKind, type StudyPlan } from '../../lib/stopwatch';
 import { studySubjectGlyph, type StudySession } from '../../lib/studyCalendar';
 import type { StudyPlanBlock } from '../../lib/studyPlans';
+import NoStudyPlanCard from './NoStudyPlanCard';
 import PlannedStudyCard from './PlannedStudyCard';
 import SleepingPanda from './SleepingPanda';
 import StudySessionCard from './StudySessionCard';
 import { studyTypeLabel } from './StudyTypeChips';
-import { ClockIcon, GearIcon, HourglassIcon, StopwatchIcon } from './StopwatchIcons';
+import { CalendarIcon, ClockIcon, GearIcon, HourglassIcon, StopwatchIcon } from './StopwatchIcons';
 import { TIMELINE_LINE_X, timelineStyles } from './timelineStyles';
 
 export interface TimelineDay {
@@ -43,7 +44,10 @@ interface StopwatchTimelineProps {
     onOpenCalendar: () => void;
     /** Today's blocks from "Çalışma Planlama". */
     todayPlans: StudyPlanBlock[];
+    /** Whether "Çalışma Planlama" holds any plan; without one, today offers to create it. */
+    hasStudyPlans: boolean;
     onOpenPlans: () => void;
+    onCreatePlan: () => void;
     onStartPlanned: (plan: StudyPlanBlock) => void;
 }
 
@@ -64,7 +68,9 @@ export default function StopwatchTimeline({
     onSessionMenu,
     onOpenCalendar,
     todayPlans,
+    hasStudyPlans,
     onOpenPlans,
+    onCreatePlan,
     onStartPlanned,
 }: StopwatchTimelineProps) {
     const { l, locale, localeTag } = useI18n();
@@ -94,7 +100,7 @@ export default function StopwatchTimeline({
                 ? l(`Sınava ${examLabel}. Sınav tarihini değiştirin.`, `${examLabel} until the exam. Change the exam date.`)
                 : examLabel}
         >
-            <HourglassIcon color={colors.streak} size={18} />
+            <HourglassIcon color={colors.streak} size={16} />
             <Text style={styles.examText}>{examLabel}</Text>
         </TouchableOpacity>
     );
@@ -230,7 +236,7 @@ export default function StopwatchTimeline({
                         <View style={shared.row}>
                             <View style={shared.gutter}><View style={shared.line} /></View>
                             <View style={[shared.column, styles.todayEmpty]}>
-                                <SleepingPanda width={112} snoreColor={colors.badgeNew} />
+                                <SleepingPanda width={92} snoreColor={colors.badgeNew} />
                                 <Text style={styles.todayEmptyText}>{l('Henüz çalışmanız yok', 'No study yet today')}</Text>
                             </View>
                         </View>
@@ -249,6 +255,7 @@ export default function StopwatchTimeline({
                             onStart={live?.subject === planned.subject ? undefined : () => onStartPlanned(planned)}
                         />
                     )) : null}
+                    {index === 0 && !hasStudyPlans ? <NoStudyPlanCard onCreate={onCreatePlan} /> : null}
                     {index === 0 ? planRow : null}
 
                     {index > 0 && day.sessions.length === 0 ? (
@@ -263,7 +270,7 @@ export default function StopwatchTimeline({
                             </View>
                             <View style={shared.column}>
                                 <View style={[shared.card, styles.missedCard]}>
-                                    <SleepingPanda width={64} snoreColor={colors.badgeNew} />
+                                    <SleepingPanda width={52} snoreColor={colors.badgeNew} />
                                     <Text style={styles.missedText}>{l('Hiç çalışmanız yok!', 'No study this day!')}</Text>
                                 </View>
                             </View>
@@ -273,11 +280,19 @@ export default function StopwatchTimeline({
             ))}
 
             <TouchableOpacity
-                style={styles.calendarLink}
+                style={styles.calendarCard}
                 onPress={onOpenCalendar}
                 accessibilityRole="button"
+                accessibilityLabel={l('Çalışma Takvimi. Tüm çalışmalarınızı takvimde görün.', 'Study Calendar. See all your sessions on the calendar.')}
             >
-                <Text style={styles.calendarLinkText}>{l('Tüm çalışmalarınız Çalışma Takvimi’nde ›', 'All your sessions are in the Study Calendar ›')}</Text>
+                <View style={styles.calendarTile}>
+                    <CalendarIcon color={colors.streak} size={22} />
+                </View>
+                <View style={styles.calendarCopy}>
+                    <Text style={styles.calendarTitle}>{l('Çalışma Takvimi', 'Study Calendar')}</Text>
+                    <Text style={styles.calendarHint}>{l('Tüm çalışmalarınızı takvimde görün', 'See all your sessions on the calendar')}</Text>
+                </View>
+                <Text style={styles.calendarChevron}>›</Text>
             </TouchableOpacity>
         </View>
     );
@@ -301,12 +316,12 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgCard,
             borderRadius: BorderRadius.md,
             paddingHorizontal: Spacing.md,
-            paddingVertical: 7,
+            paddingVertical: 5,
             ...Shadows.sm,
         },
-        examText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
-        todayEmpty: { alignItems: 'center', paddingVertical: Spacing.lg, gap: Spacing.sm },
-        todayEmptyText: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textSecondary },
+        examText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+        todayEmpty: { alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.sm },
+        todayEmptyText: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
         planChip: {
             borderWidth: 1,
             borderColor: colors.badgeNew,
@@ -317,7 +332,7 @@ function createStyles(colors: ColorScheme) {
         planChipText: { fontSize: FontSize.xs, fontWeight: '700', color: colors.badgeNew },
         // When "Kalan" and the button do not fit side by side, the button moves under it, right-aligned.
         planFooter: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: Spacing.sm, rowGap: Spacing.xs },
-        remaining: { fontSize: FontSize.md, fontWeight: '600', color: colors.textSecondary },
+        remaining: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
         remainingValue: { color: colors.accent, fontWeight: '800' },
         goalMet: { color: colors.btnGood, fontWeight: '800' },
         startButton: {
@@ -325,22 +340,43 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.accent,
             borderRadius: BorderRadius.md,
             paddingHorizontal: Spacing.md,
-            paddingVertical: 7,
+            paddingVertical: 5,
         },
         startButtonBusy: { backgroundColor: colors.textMuted },
-        startText: { fontSize: FontSize.md, fontWeight: '800', color: colors.white },
+        startText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.white },
         planPrompt: { flexDirection: 'column', gap: Spacing.xs },
-        planPromptTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.accent },
-        planPromptHint: { fontSize: FontSize.md, color: colors.textSecondary },
+        planPromptTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
+        planPromptHint: { fontSize: FontSize.sm, color: colors.textSecondary },
         nodeBreak: { backgroundColor: colors.streak },
         liveCard: { borderWidth: 1.5, borderColor: colors.accent },
-        liveStatus: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
+        liveStatus: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
         liveStatusBreak: { color: colors.streak },
         liveClock: { fontWeight: '800', fontVariant: ['tabular-nums'] },
         missedGlyph: { color: colors.white, fontSize: FontSize.xl, fontWeight: '900', lineHeight: 22 },
         missedCard: { alignItems: 'center' },
-        missedText: { flex: 1, fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
-        calendarLink: { alignItems: 'center', paddingVertical: Spacing.xl },
-        calendarLinkText: { fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
+        missedText: { flex: 1, fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
+        calendarCard: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: Spacing.md,
+            marginHorizontal: Spacing.lg,
+            marginTop: Spacing.lg,
+            backgroundColor: colors.bgCard,
+            borderRadius: BorderRadius.lg,
+            padding: Spacing.md,
+            ...Shadows.sm,
+        },
+        calendarTile: {
+            width: 40,
+            height: 40,
+            borderRadius: BorderRadius.md,
+            backgroundColor: colors.bgInput,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        calendarCopy: { flex: 1, gap: 2 },
+        calendarTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+        calendarHint: { fontSize: FontSize.sm, color: colors.textSecondary },
+        calendarChevron: { fontSize: FontSize.xxl, color: colors.textMuted },
     });
 }

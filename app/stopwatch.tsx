@@ -3,8 +3,9 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { setStatusBarStyle } from 'expo-status-bar';
 import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';
-import StopwatchHero from '../components/stopwatch/StopwatchHero';
+import StopwatchHero, { useStopwatchHeroColor } from '../components/stopwatch/StopwatchHero';
 import StopwatchTimeline from '../components/stopwatch/StopwatchTimeline';
 import SubjectPickerSheet from '../components/stopwatch/SubjectPickerSheet';
 import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
@@ -14,7 +15,7 @@ import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatc
 import StudyToolsMenu, { STUDY_TOOLS_FAB_SIZE } from '../components/stopwatch/StudyToolsMenu';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { BellIcon, CalendarIcon, GearIcon, PlusCircleIcon } from '../components/stopwatch/StopwatchIcons';
-import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { useI18n } from '../hooks/useI18n';
@@ -66,6 +67,8 @@ function lightHaptic(): void {
 export default function StopwatchScreen() {
     const { l, locale, localeTag } = useI18n();
     const colors = useThemeColors();
+    const isDark = useIsDarkTheme();
+    const heroColor = useStopwatchHeroColor();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const router = useRouter();
     const navigation = useNavigation();
@@ -78,6 +81,13 @@ export default function StopwatchScreen() {
     useFocusEffect(useCallback(() => {
         setSchedulingRevision(getSchedulingRevision());
     }, [getSchedulingRevision]));
+
+    // White status bar text over the coloured header while this screen is in front; the screens
+    // opened over it get the theme's own back.
+    useFocusEffect(useCallback(() => {
+        setStatusBarStyle('light');
+        return () => setStatusBarStyle(isDark ? 'light' : 'dark');
+    }, [isDark]));
 
     const buildAlertCopy = useCallback((state: RunningStopwatch, prefs: StopwatchPrefs) => ({
         focusTitle: l('Ders süresi doldu', 'Study block is over'),
@@ -328,9 +338,10 @@ export default function StopwatchScreen() {
     const openCalendar = () => openOrReturnTo(router, navigation, 'study-calendar', '/study-calendar');
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: heroColor }]} edges={['top', 'left', 'right']}>
             <ScreenHeader
                 title={l('Kronometre', 'Stopwatch')}
+                tint={{ background: heroColor, foreground: colors.white }}
                 backAccessibilityLabel={l('Geri dön', 'Go back')}
                 onBack={() => goBackOr(router)}
                 actions={(
@@ -341,19 +352,19 @@ export default function StopwatchScreen() {
                                 : l('Hatırlatmalar kapalı', 'Reminders off')}
                             onPress={() => setAlertsOpen(true)}
                         >
-                            <BellIcon color={colors.textPrimary} size={24} muted={!prefs.alertsEnabled} />
+                            <BellIcon color={colors.white} size={24} muted={!prefs.alertsEnabled} />
                         </HeaderIconButton>
                         <HeaderIconButton
                             accessibilityLabel={l('Çalışma Takvimi', 'Study Calendar')}
                             onPress={openCalendar}
                         >
-                            <CalendarIcon color={colors.textPrimary} size={23} />
+                            <CalendarIcon color={colors.white} size={23} />
                         </HeaderIconButton>
                         <HeaderIconButton
                             accessibilityLabel={l('Kronometre ayarları', 'Stopwatch settings')}
                             onPress={() => setSettingsOpen(true)}
                         >
-                            <GearIcon color={colors.textPrimary} size={24} />
+                            <GearIcon color={colors.white} size={24} />
                         </HeaderIconButton>
                     </>
                 )}
@@ -387,7 +398,7 @@ export default function StopwatchScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={l('Elle çalışma ekle', 'Add a session by hand')}
                     >
-                        <PlusCircleIcon color={colors.accent} size={22} />
+                        <PlusCircleIcon color={colors.accent} size={20} />
                         <Text style={styles.addText}>{l('Çalışma Ekle', 'Add Session')}</Text>
                     </TouchableOpacity>
                 </View>
@@ -406,7 +417,9 @@ export default function StopwatchScreen() {
                     onSessionMenu={setMenuSession}
                     onOpenCalendar={openCalendar}
                     todayPlans={todayPlans}
+                    hasStudyPlans={studyPlans.length > 0}
                     onOpenPlans={() => router.push('/study-plans' as any)}
+                    onCreatePlan={() => router.push('/study-plan-wizard' as any)}
                     onStartPlanned={(planned) => handleStartPlanned(planned)}
                 />
             </ScrollView>
@@ -465,17 +478,17 @@ export default function StopwatchScreen() {
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        container: { flex: 1, backgroundColor: colors.bgCard },
+        container: { flex: 1 },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
         sectionHeader: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
             paddingHorizontal: Spacing.lg,
-            paddingTop: Spacing.xl,
+            paddingTop: Spacing.lg,
         },
-        sectionTitle: { fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
+        sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
         addButton: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-        addText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+        addText: { fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
     });
 }

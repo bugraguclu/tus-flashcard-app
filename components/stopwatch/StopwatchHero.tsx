@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { BorderRadius, FontSize, Shadows, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
     MAX_GOAL_MINUTES,
@@ -17,6 +17,18 @@ import { Stepper } from './SheetControls';
 import { PauseIcon, PlayIcon, StopIcon } from './StopwatchIcons';
 
 const MINUTE_MS = 60_000;
+/** Secondary text and the ring's track on the coloured hero. */
+const ON_HERO_SOFT = 'rgba(255, 255, 255, 0.85)';
+const RING_TRACK = 'rgba(255, 255, 255, 0.3)';
+
+/**
+ * The hero's background, which the Kronometre's header shares: the accent, or in dark mode its
+ * deep tint, on which white text keeps its contrast.
+ */
+export function useStopwatchHeroColor(): string {
+    const colors = useThemeColors();
+    return useIsDarkTheme() ? colors.accentLight : colors.accent;
+}
 
 interface StopwatchHeroProps {
     /** Today's study time, the running stopwatch's included. */
@@ -53,14 +65,15 @@ export default function StopwatchHero({
 }: StopwatchHeroProps) {
     const { l, locale } = useI18n();
     const colors = useThemeColors();
+    const heroColor = useStopwatchHeroColor();
     const { width } = useWindowDimensions();
-    const ringSize = Math.round(Math.min(184, Math.max(132, width * 0.4)));
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const ringSize = Math.round(Math.min(156, Math.max(116, width * 0.34)));
+    const styles = useMemo(() => createStyles(colors, heroColor), [colors, heroColor]);
     const onBreak = running?.phase === 'break';
     const total = formatStudyTotal(todayStudyMs, locale);
     // "2 sa 30 dk" at the size of "0 dk" would reach the ring and its knob. Sized by length rather
     // than with adjustsFontSizeToFit, which the web build does not support.
-    const totalFontSize = total.length > 9 ? FontSize.lg : total.length > 7 ? FontSize.xl : FontSize.xxl + 2;
+    const totalFontSize = total.length > 9 ? FontSize.md : total.length > 7 ? FontSize.lg : FontSize.xl;
 
     const blockMinutes = onBreak ? breakMinutes : focusMinutes;
     const phaseMs = elapsed?.phaseMs ?? 0;
@@ -86,16 +99,17 @@ export default function StopwatchHero({
                 <View accessible accessibilityRole="summary" accessibilityLabel={summary}>
                     <ProgressRing
                         size={ringSize}
-                        strokeWidth={12}
+                        strokeWidth={10}
                         progress={goalProgress(todayStudyMs, goalMinutes)}
-                        trackColor={colors.border}
-                        progressColor={colors.accent}
-                        knobColor={colors.bgCard}
+                        trackColor={RING_TRACK}
+                        progressColor={colors.white}
+                        knobColor={colors.white}
+                        knobDotColor={heroColor}
                     >
                         <View style={[styles.ringCenter, { maxWidth: ringSize * 0.66 }]}>
                             {running ? (
                                 <>
-                                    <Text style={[styles.ringCaption, onBreak ? styles.breakText : styles.subjectText]} numberOfLines={1}>
+                                    <Text style={styles.ringCaption} numberOfLines={1}>
                                         {onBreak ? l('Molada', 'On a break') : running.subject}
                                     </Text>
                                     <Text style={styles.ringClock} numberOfLines={1}>
@@ -132,7 +146,7 @@ export default function StopwatchHero({
                             accessibilityLabel={l('Kronometreyi başlat', 'Start the stopwatch')}
                         >
                             <View style={styles.iconCircle}>
-                                <PlayIcon color={colors.white} size={24} />
+                                <PlayIcon color={colors.white} size={20} />
                             </View>
                             <Text style={styles.startText}>{l('Başla', 'Start')}</Text>
                         </TouchableOpacity>
@@ -150,7 +164,7 @@ export default function StopwatchHero({
                             accessibilityLabel={onBreak ? l('Moladan dön', 'End the break') : l('Mola ver', 'Take a break')}
                         >
                             <View style={styles.pillIcon}>
-                                {onBreak ? <PlayIcon color={colors.white} size={18} /> : <PauseIcon color={colors.white} size={18} />}
+                                {onBreak ? <PlayIcon color={colors.white} size={16} /> : <PauseIcon color={colors.white} size={16} />}
                             </View>
                             <Text style={styles.pillText}>{onBreak ? l('Devam et', 'Resume') : l('Mola ver', 'Break')}</Text>
                         </TouchableOpacity>
@@ -161,7 +175,7 @@ export default function StopwatchHero({
                             accessibilityLabel={l('Çalışmayı bitir ve kaydet', 'Finish and save the session')}
                         >
                             <View style={[styles.pillIcon, styles.pillIconStop]}>
-                                <StopIcon color={colors.white} size={16} />
+                                <StopIcon color={colors.white} size={14} />
                             </View>
                             <Text style={styles.pillText}>{l('Bitir', 'Finish')}</Text>
                         </TouchableOpacity>
@@ -177,61 +191,40 @@ export default function StopwatchHero({
     );
 }
 
-function createStyles(colors: ColorScheme) {
+function createStyles(colors: ColorScheme, heroColor: string) {
     return StyleSheet.create({
         hero: {
-            backgroundColor: colors.bgCard,
+            backgroundColor: heroColor,
             borderBottomLeftRadius: 28,
             borderBottomRightRadius: 28,
             paddingHorizontal: Spacing.lg,
-            paddingTop: Spacing.lg,
-            paddingBottom: Spacing.xl,
+            paddingTop: Spacing.md,
+            paddingBottom: Spacing.lg,
             gap: Spacing.md,
             ...Shadows.sm,
         },
         row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md },
         ringCenter: { alignItems: 'center', gap: 2 },
-        ringLabel: { fontSize: FontSize.md, color: colors.textSecondary, textAlign: 'center', lineHeight: 19 },
-        ringValue: { fontWeight: '800', color: colors.textPrimary, marginTop: 2 },
-        ringCaption: { fontSize: FontSize.sm, fontWeight: '700' },
-        subjectText: { color: colors.accent },
-        breakText: { color: colors.streak },
-        ringClock: { fontSize: FontSize.xl + 2, fontWeight: '800', color: colors.textPrimary, fontVariant: ['tabular-nums'] },
-        ringFootnote: { fontSize: FontSize.xs, color: colors.textMuted },
-        controls: { flex: 1, alignItems: 'center', gap: Spacing.md },
-        goalLabel: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+        ringLabel: { fontSize: FontSize.sm, color: ON_HERO_SOFT, textAlign: 'center', lineHeight: 16 },
+        ringValue: { fontWeight: '800', color: colors.white, marginTop: 2 },
+        ringCaption: { fontSize: FontSize.xs, fontWeight: '700', color: colors.white },
+        ringClock: { fontSize: FontSize.lg, fontWeight: '800', color: colors.white, fontVariant: ['tabular-nums'] },
+        ringFootnote: { fontSize: FontSize.xs, color: ON_HERO_SOFT },
+        controls: { flex: 1, alignItems: 'center', gap: Spacing.sm },
+        goalLabel: { fontSize: FontSize.md, fontWeight: '700', color: colors.white },
         startButton: {
             flexDirection: 'row',
             alignItems: 'center',
-            gap: Spacing.md,
+            gap: Spacing.sm,
             width: '100%',
-            maxWidth: 220,
-            backgroundColor: colors.bgInput,
+            maxWidth: 188,
+            marginTop: Spacing.xs,
+            backgroundColor: colors.bgCard,
             borderRadius: BorderRadius.full,
-            padding: 6,
-            paddingRight: Spacing.xl,
+            padding: 4,
+            paddingRight: Spacing.lg,
         },
         iconCircle: {
-            width: 42,
-            height: 42,
-            borderRadius: 21,
-            backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        startText: { flex: 1, textAlign: 'center', fontSize: FontSize.xxl, fontWeight: '800', color: colors.accent },
-        runningRow: { flexDirection: 'row', gap: Spacing.sm },
-        pill: {
-            flex: 1,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            backgroundColor: colors.bgInput,
-            borderRadius: BorderRadius.full,
-            padding: 5,
-            paddingRight: Spacing.md,
-        },
-        pillIcon: {
             width: 34,
             height: 34,
             borderRadius: 17,
@@ -239,9 +232,29 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             justifyContent: 'center',
         },
+        startText: { flex: 1, textAlign: 'center', fontSize: FontSize.xl, fontWeight: '800', color: colors.accent },
+        runningRow: { flexDirection: 'row', gap: Spacing.sm },
+        pill: {
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: Spacing.sm,
+            backgroundColor: colors.bgCard,
+            borderRadius: BorderRadius.full,
+            padding: 4,
+            paddingRight: Spacing.md,
+        },
+        pillIcon: {
+            width: 30,
+            height: 30,
+            borderRadius: 15,
+            backgroundColor: colors.accent,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
         pillIconStop: { backgroundColor: colors.btnAgain },
-        pillText: { flex: 1, textAlign: 'center', fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
-        blockText: { textAlign: 'center', fontSize: FontSize.md, fontWeight: '600', color: colors.textSecondary, fontVariant: ['tabular-nums'] },
-        blockTextOver: { color: colors.streak },
+        pillText: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '800', color: colors.textPrimary },
+        blockText: { textAlign: 'center', fontSize: FontSize.sm, fontWeight: '600', color: ON_HERO_SOFT, fontVariant: ['tabular-nums'] },
+        blockTextOver: { color: colors.white, fontWeight: '800' },
     });
 }

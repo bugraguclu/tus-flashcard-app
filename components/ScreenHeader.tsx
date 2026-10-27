@@ -9,17 +9,21 @@ interface ScreenHeaderProps {
     title: string;
     /** Icon buttons on the right; without them an empty slot keeps the title's position. */
     actions?: React.ReactNode;
+    /** A coloured header (the Kronometre's): its background, and the back arrow and title on it. */
+    tint?: { background: string; foreground: string };
 }
 
 /** Shared header for full-screen utility workflows such as Browse, Import and Export. */
-export default function ScreenHeader({ backAccessibilityLabel, onBack, title, actions }: ScreenHeaderProps) {
+export default function ScreenHeader({ backAccessibilityLabel, onBack, title, actions, tint }: ScreenHeaderProps) {
     const colors = useThemeColors();
 
     return (
         <View
             style={[
                 styles.header,
-                { backgroundColor: colors.bgCard, borderBottomColor: colors.border },
+                tint
+                    ? { backgroundColor: tint.background, borderBottomWidth: 0 }
+                    : { backgroundColor: colors.bgCard, borderBottomColor: colors.border },
             ]}
         >
             <TouchableOpacity
@@ -29,9 +33,9 @@ export default function ScreenHeader({ backAccessibilityLabel, onBack, title, ac
                 accessibilityRole="button"
                 accessibilityLabel={backAccessibilityLabel}
             >
-                <HeaderBackIcon color={colors.accent} />
+                <HeaderBackIcon color={tint?.foreground ?? colors.accent} />
             </TouchableOpacity>
-            <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
+            <Text style={[styles.title, { color: tint?.foreground ?? colors.textPrimary }]} numberOfLines={1}>
                 {title}
             </Text>
             {actions ? <View style={styles.actions}>{actions}</View> : <View style={styles.spacer} />}

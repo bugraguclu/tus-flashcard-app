@@ -11,7 +11,7 @@ interface StepperProps {
     increaseLabel: string;
     canDecrease?: boolean;
     canIncrease?: boolean;
-    /** Larger hero variant (the daily goal) or the compact one used in sheets. */
+    /** The hero variant (the daily goal, on a card-coloured track over the coloured hero) or the compact one used in sheets. */
     size?: 'hero' | 'compact';
 }
 
@@ -31,7 +31,6 @@ export function Stepper({
     const decrease = useRepeatPress(() => onStep(-1));
     const increase = useRepeatPress(() => onStep(1));
     const hero = size === 'hero';
-    const buttonSize = hero ? 34 : 30;
 
     const button = (direction: 1 | -1) => {
         const enabled = direction > 0 ? canIncrease : canDecrease;
@@ -40,7 +39,7 @@ export function Stepper({
             <TouchableOpacity
                 style={[
                     styles.button,
-                    { width: buttonSize, height: buttonSize, borderRadius: buttonSize / 2, backgroundColor: colors.accent },
+                    { backgroundColor: colors.accent },
                     !enabled && styles.disabled,
                 ]}
                 onPress={handlers.onPress}
@@ -53,14 +52,14 @@ export function Stepper({
                 accessibilityState={{ disabled: !enabled }}
             >
                 {direction > 0
-                    ? <PlusIcon color={colors.white} size={hero ? 20 : 18} />
-                    : <MinusIcon color={colors.white} size={hero ? 20 : 18} />}
+                    ? <PlusIcon color={colors.white} size={18} />
+                    : <MinusIcon color={colors.white} size={18} />}
             </TouchableOpacity>
         );
     };
 
     return (
-        <View style={[styles.track, { backgroundColor: colors.bgInput }, hero && styles.trackHero]}>
+        <View style={[styles.track, { backgroundColor: hero ? colors.bgCard : colors.bgInput }, hero && styles.trackHero]}>
             {button(-1)}
             <Text
                 style={[styles.value, { color: colors.accent }, hero && styles.valueHero]}
@@ -136,11 +135,11 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.full,
         padding: 4,
     },
-    trackHero: { padding: 5, gap: Spacing.md },
-    button: { alignItems: 'center', justifyContent: 'center' },
+    trackHero: { gap: Spacing.sm },
+    button: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
     disabled: { opacity: 0.4 },
     value: { minWidth: 58, textAlign: 'center', fontSize: FontSize.lg, fontWeight: '700', fontVariant: ['tabular-nums'] },
-    valueHero: { minWidth: 64, fontSize: FontSize.xl },
+    valueHero: { minWidth: 60, fontSize: FontSize.lg },
     row: {
         flexDirection: 'row',
         alignItems: 'center',

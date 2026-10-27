@@ -11,6 +11,8 @@ interface ProgressRingProps {
     trackColor: string;
     progressColor: string;
     knobColor: string;
+    /** The dot inside the knob; the progress colour unless given. */
+    knobDotColor?: string;
     children?: React.ReactNode;
 }
 
@@ -26,6 +28,7 @@ export default function ProgressRing({
     trackColor,
     progressColor,
     knobColor,
+    knobDotColor = progressColor,
     children,
 }: ProgressRingProps) {
     const knobRadius = strokeWidth * 0.95;
@@ -47,7 +50,7 @@ export default function ProgressRing({
                     <Path d={arc} stroke={progressColor} strokeWidth={strokeWidth} strokeLinecap="round" fill="none" />
                 ) : null}
                 <Circle cx={endX} cy={endY} r={knobRadius} fill={knobColor} stroke={trackColor} strokeWidth={1} />
-                <Circle cx={endX} cy={endY} r={knobRadius * 0.38} fill={progressColor} />
+                <Circle cx={endX} cy={endY} r={knobRadius * 0.38} fill={knobDotColor} />
             </Svg>
             {children}
         </View>
