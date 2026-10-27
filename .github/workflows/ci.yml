@@ -31,8 +31,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # A newly published advisory is not this change's fault: when package.json and the lockfile
+      # are unchanged, report it as a warning instead of failing the run. Dependency changes, new
+      # branches and Dependabot PRs still have to pass.
       - name: Verify dependency advisories
-        run: node scripts/audit-gate.mjs
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != 0000000000000000000000000000000000000000 ] \
+            && git fetch --quiet --depth=1 origin "$BASE_SHA" \
+            && git diff --quiet "$BASE_SHA" HEAD -- package.json package-lock.json; then
+            node scripts/audit-gate.mjs --warn-only
+          else
+            node scripts/audit-gate.mjs
+          fi
 
       - name: Verify registry signatures
         run: npm audit signatures

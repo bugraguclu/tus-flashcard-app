@@ -33,6 +33,10 @@ updates:
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "@types/react-test-renderer"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # TypeScript 7 is the native compiler and drops the JavaScript API that
+      # lib/localizationCopy.test.ts parses source with; move to it deliberately.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
