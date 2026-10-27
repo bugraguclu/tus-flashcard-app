@@ -200,6 +200,22 @@ describe('photo editor geometry', () => {
         expect(boundsBadge.paddingX).toBeGreaterThanOrEqual(12);
     });
 
+    it('sets a plain label as ink on paper: no plate padding, glyphs in the ink itself', () => {
+        const plain: PhotoText = {
+            id: 't3',
+            type: 'text',
+            point: { x: 0.5, y: 0.5 },
+            text: 'Mitral',
+            fontSize: 26,
+            bgStyle: 'plain',
+            color: '#2563eb',
+            width: 1,
+            opacity: 1,
+        };
+        expect(calculatePhotoTextBounds(plain, 400, 400).paddingX).toBe(6);
+        expect(photoTextColors(plain).text).toBe('#2563eb');
+    });
+
     it('erases solid cover annotations when tapping inside the filled interior', () => {
         const cover: PhotoAnnotation = {
             id: 'cov1',

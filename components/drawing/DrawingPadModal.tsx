@@ -1,15 +1,14 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Image as NativeImage,
     Modal,
-    PanResponder,
     PixelRatio,
     Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
-    type GestureResponderEvent,
     type LayoutChangeEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,31 +19,36 @@ import { useI18n } from '../../hooks/useI18n';
 import { alert, confirm } from '../../lib/confirm';
 import { sanitizeMediaFilename } from '../../lib/mediaFilename';
 import { saveMediaBytes, saveMediaFromUri } from '../../lib/mediaStore';
-import { applyPhotoEraserSweep, photoExportSurface, type PhotoPoint, type PhotoStroke } from '../../lib/photoEditor';
+import { photoExportSurface, type PhotoAnnotation, type PhotoImage, type PhotoPoint, type PhotoText } from '../../lib/photoEditor';
 import { BLANK_CANVAS_BACKGROUNDS, BLANK_CANVAS_SHAPES, defaultBlankCanvasRuling } from '../../lib/blankCanvas';
 import { loadBlankCanvasSetup, saveBlankCanvasSetup, type BlankCanvasSetup } from '../../lib/blankCanvasSetup';
 import {
     HIGHLIGHTER_INKS,
-    HIGHLIGHTER_OPACITY,
+    TEXT_SIZES,
+    drawingImageBox,
     drawingInkForPage,
     drawingInks,
     drawingPenInks,
-    drawingPointFromPage,
-    drawingToolWidth,
     fitDrawingPage,
-    refitDrawingStrokes,
-    shouldAddDrawingPoint,
+    keepDrawingObjectOnPage,
+    refitDrawingAnnotations,
+    type DrawingShapeTool,
     type DrawingSize,
     type DrawingTool,
 } from '../../lib/drawingPad';
 import PaperSwatch, { pageColorLabel, paperLabel } from '../PaperSwatch';
 import { EXPORT_MAX_DIMENSION, makeId, type ExportSurface } from '../photo-editor/editorModel';
-import { renderAnnotation } from '../photo-editor/annotationRendering';
+import { renderAnnotation, renderPlacedPictures } from '../photo-editor/annotationRendering';
 import { rasterizeBlankCanvasWeb } from '../photo-editor/webExport';
 import { ExportSurfaceView } from '../photo-editor/ExportSurfaceView';
 import { DrawingToolbar } from './DrawingToolbar';
+import { MoreToolsSheet } from './MoreToolsSheet';
 import { PageOptionsSheet, shapeLabel } from './PageOptionsSheet';
-import { ChevronDownGlyph } from './drawingGlyphs';
+import { SelectionFrame } from './SelectionFrame';
+import { TextEntrySheet } from './TextEntrySheet';
+import { ChevronDownGlyph, ClearGlyph, RedoGlyph, UndoGlyph } from './drawingGlyphs';
+import { pickDrawingPicture } from './pickDrawingPicture';
+import { useDrawingGestures, type DrawingBrush } from './useDrawingGestures';
 
 interface DrawingPadModalProps {
     visible: boolean;
@@ -53,27 +57,34 @@ interface DrawingPadModalProps {
     onSaved: (filename: string) => void;
 }
 
-/** One state the page can return to: the ink and the sheet it was drawn on. */
-type PadSnapshot = { strokes: PhotoStroke[]; setup: BlankCanvasSetup };
+/** One state the page can return to: what is on it and the sheet it was drawn on. */
+type PadSnapshot = { annotations: PhotoAnnotation[]; setup: BlankCanvasSetup };
 
 const HISTORY_LIMIT = 50;
+const DEFAULT_SIZES: Record<DrawingTool, DrawingSize> = {
+    pen: 1, highlighter: 1, eraser: 1, text: 1, arrow: 1, rect: 1, ellipse: 1, cover: 1, image: 1,
+};
 
 function pageSizeFor(setup: BlankCanvasSetup) {
     return BLANK_CANVAS_SHAPES.find((shape) => shape.id === setup.shape) ?? BLANK_CANVAS_SHAPES[0];
 }
 
-/** The finished strokes. Kept apart from the live one so a stroke in progress redraws alone. */
-const StrokeLayer = memo(function StrokeLayer({ strokes, width, height }: { strokes: PhotoStroke[]; width: number; height: number }) {
+/** What is already on the page. Kept apart from the live mark so a stroke in progress redraws alone. */
+const AnnotationLayer = memo(function AnnotationLayer({ annotations, width, height }: { annotations: PhotoAnnotation[]; width: number; height: number }) {
     return (
-        <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
-            {strokes.map((stroke) => renderAnnotation(stroke, width, height))}
-        </Svg>
+        <>
+            <View style={StyleSheet.absoluteFill}>{renderPlacedPictures(annotations, width, height)}</View>
+            <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+                {annotations.map((annotation) => renderAnnotation(annotation, width, height))}
+            </Svg>
+        </>
     );
 });
 
 /**
- * A blank page to draw on for a card: pen, highlighter and eraser, undo and redo, and the paper
- * underneath. It saves a PNG through the same export path the photo editor uses.
+ * A blank page to draw on for a card: pen, highlighter, eraser and text on the bar, arrows,
+ * boxes, cover-ups and pictures under "More", undo and redo, and the paper underneath. It saves
+ * a PNG through the same export path the photo editor uses.
  */
 export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPadModalProps) {
     const { t, l } = useI18n();
@@ -82,17 +93,20 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
     const insets = useSafeAreaInsets();
 
     const [setup, setSetup] = useState<BlankCanvasSetup>(() => loadBlankCanvasSetup());
-    const [strokes, setStrokes] = useState<PhotoStroke[]>([]);
-    const [liveStroke, setLiveStroke] = useState<PhotoStroke | null>(null);
+    const [annotations, setAnnotations] = useState<PhotoAnnotation[]>([]);
+    const [liveAnnotation, setLiveAnnotation] = useState<PhotoAnnotation | null>(null);
     const [undoStack, setUndoStack] = useState<PadSnapshot[]>([]);
     const [redoStack, setRedoStack] = useState<PadSnapshot[]>([]);
     const [tool, setTool] = useState<DrawingTool>('pen');
     const [penColor, setPenColor] = useState(() => drawingPenInks(setup.background)[0]);
     const [highlighterColor, setHighlighterColor] = useState<string>(HIGHLIGHTER_INKS[0]);
-    const [sizes, setSizes] = useState<Record<DrawingTool, DrawingSize>>({ pen: 1, highlighter: 1, eraser: 1 });
+    const [sizes, setSizes] = useState<Record<DrawingTool, DrawingSize>>(DEFAULT_SIZES);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
     const [eraserRing, setEraserRing] = useState<{ x: number; y: number; radius: number } | null>(null);
     const [stage, setStage] = useState<{ width: number; height: number } | null>(null);
     const [pageSheet, setPageSheet] = useState(false);
+    const [moreSheet, setMoreSheet] = useState(false);
+    const [textEntry, setTextEntry] = useState<{ point: PhotoPoint } | { id: string } | null>(null);
     const [saving, setSaving] = useState(false);
     const [exportSurface, setExportSurface] = useState<ExportSurface | null>(null);
 
@@ -101,14 +115,17 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
         if (!visible) return;
         const stored = loadBlankCanvasSetup();
         setSetup(stored);
-        setStrokes([]);
-        setLiveStroke(null);
+        setAnnotations([]);
+        setLiveAnnotation(null);
         setUndoStack([]);
         setRedoStack([]);
         setTool('pen');
         setPenColor(drawingPenInks(stored.background)[0]);
+        setSelectedId(null);
         setEraserRing(null);
         setPageSheet(false);
+        setMoreSheet(false);
+        setTextEntry(null);
     }, [visible]);
 
     const pageSize = pageSizeFor(setup);
@@ -117,14 +134,14 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
         [stage, pageSize],
     );
 
-    // The gesture handlers are built once, so whatever they read that changes is read through a ref.
-    const strokesRef = useRef(strokes);
-    strokesRef.current = strokes;
+    // What the gesture handlers and the history read, kept current on every render.
+    const annotationsRef = useRef(annotations);
+    annotationsRef.current = annotations;
     const setupRef = useRef(setup);
     setupRef.current = setup;
     const canvasSizeRef = useRef(canvasSize);
     canvasSizeRef.current = canvasSize;
-    const brushRef = useRef({ tool, penColor, highlighterColor, sizes });
+    const brushRef = useRef<DrawingBrush>({ tool, penColor, highlighterColor, sizes });
     brushRef.current = { tool, penColor, highlighterColor, sizes };
     const undoStackRef = useRef(undoStack);
     undoStackRef.current = undoStack;
@@ -132,108 +149,43 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
     redoStackRef.current = redoStack;
 
     /** Remember the page as it was before an edit, and drop the redo branch the edit replaces. */
-    const remember = (before: PadSnapshot) => {
-        undoStackRef.current = [...undoStackRef.current.slice(-(HISTORY_LIMIT - 1)), before];
+    const remember = (before: PhotoAnnotation[], beforeSetup = setupRef.current) => {
+        undoStackRef.current = [...undoStackRef.current.slice(-(HISTORY_LIMIT - 1)), { annotations: before, setup: beforeSetup }];
         setUndoStack(undoStackRef.current);
         redoStackRef.current = [];
         setRedoStack([]);
     };
 
-    const applyStrokes = (next: PhotoStroke[]) => {
-        strokesRef.current = next;
-        setStrokes(next);
+    const applyAnnotations = (next: PhotoAnnotation[]) => {
+        annotationsRef.current = next;
+        setAnnotations(next);
     };
 
-    const gestureRef = useRef<{
-        origin: { x: number; y: number };
-        last: PhotoPoint;
-        stroke: PhotoStroke | null;
-        before: PhotoStroke[];
-        erased: boolean;
-    } | null>(null);
-
-    const eraseAlong = (from: PhotoPoint, to: PhotoPoint) => {
-        const gesture = gestureRef.current;
-        const { width, height } = canvasSizeRef.current;
-        const radius = drawingToolWidth('eraser', brushRef.current.sizes.eraser);
-        setEraserRing({ x: to.x * width, y: to.y * height, radius });
-        const result = applyPhotoEraserSweep(strokesRef.current, from, to, width, height, radius, 'partial');
-        if (!result.changed || !gesture) return;
-        gesture.erased = true;
-        applyStrokes(result.annotations as PhotoStroke[]);
+    /** Change one label or picture, as one step of history. */
+    const updateObject = (id: string, change: (object: PhotoText | PhotoImage) => PhotoText | PhotoImage) => {
+        const before = annotationsRef.current;
+        let changed = false;
+        const next = before.map((annotation) => {
+            if (annotation.id !== id || (annotation.type !== 'text' && annotation.type !== 'image')) return annotation;
+            changed = true;
+            return change(annotation);
+        });
+        if (!changed) return;
+        remember(before);
+        applyAnnotations(next);
     };
 
-    const finishGesture = () => {
-        const gesture = gestureRef.current;
-        gestureRef.current = null;
-        setEraserRing(null);
-        if (!gesture) return;
-        if (gesture.stroke) {
-            const points = gesture.stroke.points;
-            // A tap leaves a dot. The PNG is drawn as a polyline, and a one-point line draws
-            // nothing, so the dot is given a second point a hair away.
-            const finished = {
-                ...gesture.stroke,
-                points: points.length === 1 ? [points[0], { x: points[0].x + 0.0005, y: points[0].y }] : points,
-            };
-            remember({ strokes: gesture.before, setup: setupRef.current });
-            applyStrokes([...strokesRef.current, finished]);
-            setLiveStroke(null);
-        } else if (gesture.erased) {
-            remember({ strokes: gesture.before, setup: setupRef.current });
-        }
-    };
-
-    /** Carry the stroke, or the eraser, on to where the finger is now. */
-    const extendGesture = (event: GestureResponderEvent) => {
-        const gesture = gestureRef.current;
-        if (!gesture) return;
-        const native = event.nativeEvent;
-        const point = drawingPointFromPage({ x: native.pageX, y: native.pageY }, gesture.origin, canvasSizeRef.current);
-        if (!shouldAddDrawingPoint(gesture.last, point, canvasSizeRef.current)) return;
-        const from = gesture.last;
-        gesture.last = point;
-        if (gesture.stroke) {
-            gesture.stroke = { ...gesture.stroke, points: [...gesture.stroke.points, point] };
-            setLiveStroke(gesture.stroke);
-        } else {
-            eraseAlong(from, point);
-        }
-    };
-
-    const panResponder = useRef(PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        // A stroke belongs to the page until the finger lifts.
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: (event: GestureResponderEvent) => {
-            const native = event.nativeEvent;
-            // Everything on the page ignores touches, so `location` is measured from the page
-            // itself and the page's origin falls out of the very touch that started the stroke.
-            const origin = { x: native.pageX - native.locationX, y: native.pageY - native.locationY };
-            const point = drawingPointFromPage({ x: native.pageX, y: native.pageY }, origin, canvasSizeRef.current);
-            const brush = brushRef.current;
-            const stroke: PhotoStroke | null = brush.tool === 'eraser' ? null : {
-                id: makeId(),
-                type: 'stroke',
-                color: brush.tool === 'highlighter' ? brush.highlighterColor : brush.penColor,
-                width: drawingToolWidth(brush.tool, brush.sizes[brush.tool]),
-                opacity: brush.tool === 'highlighter' ? HIGHLIGHTER_OPACITY : 1,
-                points: [point],
-            };
-            gestureRef.current = { origin, last: point, stroke, before: strokesRef.current, erased: false };
-            if (stroke) setLiveStroke(stroke);
-            else eraseAlong(point, point);
-        },
-        onPanResponderMove: (event: GestureResponderEvent) => extendGesture(event),
-        // The lift can arrive with a position no move reported, so the stroke is taken that far
-        // before it is finished; otherwise a quick flick ends short of where the finger left.
-        onPanResponderRelease: (event: GestureResponderEvent) => {
-            extendGesture(event);
-            finishGesture();
-        },
-        onPanResponderTerminate: finishGesture,
-    })).current;
+    const panResponder = useDrawingGestures({
+        annotationsRef,
+        canvasSizeRef,
+        brushRef,
+        applyAnnotations,
+        remember: (before) => remember(before),
+        setLiveAnnotation,
+        setEraserRing,
+        select: setSelectedId,
+        openText: setTextEntry,
+    });
 
     /** Move onto a remembered page, carrying the pen's ink across a change of page colour. */
     const restore = (target: PadSnapshot) => {
@@ -242,42 +194,46 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
         }
         setupRef.current = target.setup;
         setSetup(target.setup);
-        applyStrokes(target.strokes);
+        applyAnnotations(target.annotations);
+        setSelectedId((id) => (id && target.annotations.some((annotation) => annotation.id === id) ? id : null));
     };
 
     const undo = () => {
+        const current: PadSnapshot = { annotations: annotationsRef.current, setup: setupRef.current };
         const stack = undoStackRef.current;
         if (!stack.length) return;
-        redoStackRef.current = [...redoStackRef.current, { strokes: strokesRef.current, setup: setupRef.current }];
-        setRedoStack(redoStackRef.current);
+        redoStackRef.current = [...redoStackRef.current, current];
         undoStackRef.current = stack.slice(0, -1);
+        setRedoStack(redoStackRef.current);
         setUndoStack(undoStackRef.current);
         restore(stack[stack.length - 1]);
     };
 
     const redo = () => {
+        const current: PadSnapshot = { annotations: annotationsRef.current, setup: setupRef.current };
         const stack = redoStackRef.current;
         if (!stack.length) return;
-        undoStackRef.current = [...undoStackRef.current, { strokes: strokesRef.current, setup: setupRef.current }];
-        setUndoStack(undoStackRef.current);
+        undoStackRef.current = [...undoStackRef.current, current];
         redoStackRef.current = stack.slice(0, -1);
+        setUndoStack(undoStackRef.current);
         setRedoStack(redoStackRef.current);
         restore(stack[stack.length - 1]);
     };
 
     const clear = () => {
-        if (!strokesRef.current.length) return;
-        remember({ strokes: strokesRef.current, setup: setupRef.current });
-        applyStrokes([]);
+        if (!annotationsRef.current.length) return;
+        remember(annotationsRef.current);
+        applyAnnotations([]);
+        setSelectedId(null);
     };
 
     /** A new paper, colour or shape. The drawing stays; a new shape is fitted, not stretched. */
     const changeSetup = (next: BlankCanvasSetup) => {
         const current = setupRef.current;
         if (next.paper === current.paper && next.background === current.background && next.shape === current.shape) return;
-        remember({ strokes: strokesRef.current, setup: current });
+        remember(annotationsRef.current, current);
         if (next.shape !== current.shape) {
-            applyStrokes(refitDrawingStrokes(strokesRef.current, pageSizeFor(current), pageSizeFor(next)));
+            applyAnnotations(refitDrawingAnnotations(annotationsRef.current, pageSizeFor(current), pageSizeFor(next)));
         }
         if (next.background !== current.background) {
             setPenColor((color) => drawingInkForPage(color, current.background, next.background));
@@ -287,9 +243,123 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
         saveBlankCanvasSetup(next);
     };
 
+    const chooseTool = (next: DrawingTool) => {
+        setSelectedId(null);
+        setTool(next);
+    };
+
+    const selectedObject = useMemo(() => {
+        const found = selectedId ? annotations.find((annotation) => annotation.id === selectedId) : undefined;
+        return found && (found.type === 'text' || found.type === 'image') ? found : null;
+    }, [annotations, selectedId]);
+
+    const changeColor = (color: string) => {
+        if (tool === 'highlighter') {
+            setHighlighterColor(color);
+            return;
+        }
+        setPenColor(color);
+        // A label in hand takes the colour too, the way selected text does everywhere else.
+        if (selectedObject?.type === 'text' && selectedObject.color !== color) {
+            updateObject(selectedObject.id, (object) => ({ ...object, color }));
+        }
+    };
+
+    const changeSize = (size: DrawingSize) => {
+        setSizes((current) => ({ ...current, [tool]: size }));
+        if (selectedObject?.type === 'text' && tool === 'text') {
+            updateObject(selectedObject.id, (object) => keepDrawingObjectOnPage({ ...object, fontSize: TEXT_SIZES[size] } as PhotoText, canvasSizeRef.current));
+        } else if (selectedObject?.type === 'image' && tool === 'image') {
+            const box = drawingImageBox(selectedObject, canvasSizeRef.current, size);
+            updateObject(selectedObject.id, (object) => keepDrawingObjectOnPage({ ...object, width: box.width, height: box.height } as PhotoImage, canvasSizeRef.current));
+        }
+    };
+
+    const deleteSelected = () => {
+        if (!selectedObject) return;
+        remember(annotationsRef.current);
+        applyAnnotations(annotationsRef.current.filter((annotation) => annotation.id !== selectedObject.id));
+        setSelectedId(null);
+    };
+
+    /** Put a picture from the library in the middle of the page, ready to be moved. */
+    const addPicture = async () => {
+        try {
+            const asset = await pickDrawingPicture(l, t('common.cancel'));
+            if (!asset) return;
+            const box = drawingImageBox(asset, canvasSizeRef.current, brushRef.current.sizes.image);
+            const picture: PhotoImage = {
+                id: makeId(),
+                type: 'image',
+                uri: asset.uri,
+                point: { x: 0.5, y: 0.5 },
+                width: box.width,
+                height: box.height,
+                // A picture has no ink of its own; only the box and the source reach the page.
+                color: '#ffffff',
+                opacity: 1,
+            };
+            // Decode it now, so the export never photographs an empty box.
+            if (Platform.OS !== 'web') NativeImage.prefetch(asset.uri).catch(() => {});
+            remember(annotationsRef.current);
+            applyAnnotations([...annotationsRef.current, picture]);
+            setTool('image');
+            setSelectedId(picture.id);
+        } catch (error) {
+            console.warn('[DrawingPad] picture pick failed:', error);
+            alert(t('common.error'), l('Görsel eklenemedi.', 'Could not add the picture.'));
+        }
+    };
+
+    const pickMoreTool = (next: DrawingShapeTool | 'image') => {
+        setMoreSheet(false);
+        if (next !== 'image') {
+            chooseTool(next);
+            return;
+        }
+        // The picker cannot be presented while the sheet is still leaving the screen.
+        setTimeout(() => { void addPicture(); }, Platform.OS === 'ios' ? 450 : 0);
+    };
+
+    const editingText = textEntry && 'id' in textEntry
+        ? annotations.find((annotation): annotation is PhotoText => annotation.id === textEntry.id && annotation.type === 'text') ?? null
+        : null;
+
+    const submitText = (text: string) => {
+        const entry = textEntry;
+        setTextEntry(null);
+        if (!entry) return;
+        if ('id' in entry) {
+            if (!text) {
+                remember(annotationsRef.current);
+                applyAnnotations(annotationsRef.current.filter((annotation) => annotation.id !== entry.id));
+                setSelectedId(null);
+            } else {
+                updateObject(entry.id, (object) => keepDrawingObjectOnPage({ ...object, text } as PhotoText, canvasSizeRef.current));
+            }
+            return;
+        }
+        if (!text) return;
+        const label = keepDrawingObjectOnPage<PhotoText>({
+            id: makeId(),
+            type: 'text',
+            text,
+            point: entry.point,
+            fontSize: TEXT_SIZES[brushRef.current.sizes.text],
+            bgStyle: 'plain',
+            textAlign: 'center',
+            color: brushRef.current.penColor,
+            width: 1,
+            opacity: 1,
+        }, canvasSizeRef.current);
+        remember(annotationsRef.current);
+        applyAnnotations([...annotationsRef.current, label]);
+        setSelectedId(label.id);
+    };
+
     const close = () => {
         if (saving) return;
-        if (!strokesRef.current.length && !undoStackRef.current.length) {
+        if (!annotationsRef.current.length && !undoStackRef.current.length) {
             onClose();
             return;
         }
@@ -317,10 +387,16 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
 
     const captureNative = async (surface: ExportSurface): Promise<string> => {
         exportLaidOutRef.current = false;
+        exportPicturesReadyRef.current = 0;
+        const pictures = annotationsRef.current.filter((annotation) => annotation.type === 'image').length;
         setExportSurface(surface);
         try {
+            // Wait for the layout and for every picture to decode; a picture that never loads
+            // costs the save a moment, not the drawing.
             const deadline = Date.now() + 4000;
-            while (!exportLaidOutRef.current && Date.now() < deadline) await nextFrame();
+            while ((!exportLaidOutRef.current || exportPicturesReadyRef.current < pictures) && Date.now() < deadline) {
+                await nextFrame();
+            }
             await nextFrame();
             return await captureRef(exportSurfaceRef, { format: 'png', quality: 1, result: 'tmpfile', useRenderInContext: true });
         } finally {
@@ -329,7 +405,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
     };
 
     const save = async () => {
-        if (saving || !strokesRef.current.length) return;
+        if (saving || !annotationsRef.current.length) return;
         setSaving(true);
         try {
             const filename = sanitizeMediaFilename(`${Date.now()}_cizim.png`);
@@ -344,7 +420,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
             if (Platform.OS === 'web') {
                 const bytes = await rasterizeBlankCanvasWeb(
                     { background: page.background, paper: page.paper, width: size.width, height: size.height },
-                    strokesRef.current,
+                    annotationsRef.current,
                     surface,
                 );
                 await saveMediaBytes(filename, bytes, 'image/png');
@@ -377,7 +453,21 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
     const color = tool === 'highlighter' ? highlighterColor : penColor;
     const backgroundId = BLANK_CANVAS_BACKGROUNDS.find((option) => option.color === setup.background)?.id ?? 'white';
     const pageSummary = [paperLabel(setup.paper, l), pageColorLabel(backgroundId, l), shapeLabel(setup.shape, l)].join(' · ');
-    const nothingDrawn = strokes.length === 0;
+    const nothingDrawn = annotations.length === 0;
+    const showSelection = selectedObject && (tool === 'text' || tool === 'image');
+
+    const historyButton = (label: string, enabled: boolean, onPress: () => void, Glyph: typeof UndoGlyph) => (
+        <TouchableOpacity
+            style={[styles.historyButton, !enabled && styles.disabled]}
+            onPress={onPress}
+            disabled={!enabled}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: !enabled }}
+        >
+            <Glyph color={colors.textPrimary} size={20} />
+        </TouchableOpacity>
+    );
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={close}>
@@ -420,6 +510,12 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                     </View>
                 </View>
 
+                <View style={styles.historyBar}>
+                    {historyButton(l('Geri al', 'Undo'), undoStack.length > 0, undo, UndoGlyph)}
+                    {historyButton(l('Yinele', 'Redo'), redoStack.length > 0, redo, RedoGlyph)}
+                    {historyButton(l('Sayfayı temizle', 'Clear page'), !nothingDrawn, clear, ClearGlyph)}
+                </View>
+
                 <View style={styles.stage} onLayout={onStageLayout}>
                     {stage && (
                         <View style={[styles.pageShadow, { width: canvasSize.width, height: canvasSize.height }]}>
@@ -438,10 +534,10 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                                         height={canvasSize.height}
                                         style={StyleSheet.absoluteFill}
                                     />
-                                    <StrokeLayer strokes={strokes} width={canvasSize.width} height={canvasSize.height} />
-                                    {liveStroke && (
+                                    <AnnotationLayer annotations={annotations} width={canvasSize.width} height={canvasSize.height} />
+                                    {liveAnnotation && (
                                         <Svg width={canvasSize.width} height={canvasSize.height} style={StyleSheet.absoluteFill}>
-                                            {renderAnnotation(liveStroke, canvasSize.width, canvasSize.height)}
+                                            {renderAnnotation(liveAnnotation, canvasSize.width, canvasSize.height)}
                                         </Svg>
                                     )}
                                     {eraserRing && (
@@ -459,6 +555,9 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                                         />
                                     )}
                                 </View>
+                                {showSelection && (
+                                    <SelectionFrame object={selectedObject} canvas={canvasSize} onDelete={deleteSelected} />
+                                )}
                             </View>
                         </View>
                     )}
@@ -466,18 +565,13 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
 
                 <DrawingToolbar
                     tool={tool}
-                    onToolChange={setTool}
+                    onToolChange={chooseTool}
+                    onMorePress={() => setMoreSheet(true)}
                     inks={inks}
                     color={color}
-                    onColorChange={tool === 'highlighter' ? setHighlighterColor : setPenColor}
+                    onColorChange={changeColor}
                     size={sizes[tool]}
-                    onSizeChange={(size) => setSizes((current) => ({ ...current, [tool]: size }))}
-                    canUndo={undoStack.length > 0}
-                    canRedo={redoStack.length > 0}
-                    canClear={!nothingDrawn}
-                    onUndo={undo}
-                    onRedo={redo}
-                    onClear={clear}
+                    onSizeChange={changeSize}
                     bottomInset={insets.bottom}
                 />
 
@@ -486,6 +580,20 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                     setup={setup}
                     onChange={changeSetup}
                     onClose={() => setPageSheet(false)}
+                />
+                <MoreToolsSheet
+                    visible={moreSheet}
+                    tool={tool}
+                    onPick={pickMoreTool}
+                    onClose={() => setMoreSheet(false)}
+                />
+                <TextEntrySheet
+                    visible={textEntry !== null}
+                    initialText={editingText?.text ?? ''}
+                    editing={editingText !== null}
+                    color={editingText?.color ?? penColor}
+                    onSubmit={submitText}
+                    onClose={() => setTextEntry(null)}
                 />
 
                 {exportSurface && (
@@ -502,7 +610,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                         }}
                         sourceUri=""
                         sourceSize={pageSize}
-                        annotations={strokes}
+                        annotations={annotations}
                     />
                 )}
             </View>
@@ -547,6 +655,23 @@ function createStyles(colors: ColorScheme) {
         },
         addButtonDisabled: { opacity: 0.4 },
         addText: { color: colors.white, fontWeight: '700', fontSize: FontSize.md },
+        historyBar: {
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            gap: Spacing.sm,
+            paddingHorizontal: Spacing.md,
+            paddingTop: Spacing.sm,
+        },
+        historyButton: {
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: colors.bgCard,
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...Shadows.sm,
+        },
+        disabled: { opacity: 0.35 },
         stage: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
         // The shadow sits on a wrapper: iOS clips a shadow drawn by a view that clips its content.
         pageShadow: { borderRadius: BorderRadius.sm, backgroundColor: colors.bgCard, ...Shadows.md },

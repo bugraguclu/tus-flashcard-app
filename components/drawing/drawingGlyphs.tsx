@@ -39,3 +39,39 @@ export function ClearGlyph(props: GlyphProps) {
 export function ChevronDownGlyph(props: GlyphProps) {
     return <LineGlyph {...props} d="m7 10 5 5 5-5" />;
 }
+
+export function TextGlyph(props: GlyphProps) {
+    return <LineGlyph {...props} d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6" />;
+}
+
+export function MoreGlyph({ color, size = 22 }: GlyphProps) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
+            <Path d="M6 12h.01M12 12h.01M18 12h.01" stroke={color} strokeWidth={3.2} strokeLinecap="round" />
+        </Svg>
+    );
+}
+
+export function ArrowGlyph(props: GlyphProps) {
+    return <LineGlyph {...props} d="M5 19 19 5m0 0h-8m8 0v8" />;
+}
+
+export function RectGlyph(props: GlyphProps) {
+    return <LineGlyph {...props} d="M4.5 6.5h15v11h-15z" />;
+}
+
+export function EllipseGlyph(props: GlyphProps) {
+    return <LineGlyph {...props} d="M3.5 12a8.5 6 0 1 0 17 0 8.5 6 0 1 0-17 0" />;
+}
+
+export function CoverGlyph({ color, size = 22 }: GlyphProps) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
+            <Path d="M4.5 6.5h15v11h-15z" fill={color} stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+        </Svg>
+    );
+}
+
+export function ImageGlyph(props: GlyphProps) {
+    return <LineGlyph {...props} d="M4.5 5.5h15v13h-15zM4.5 15.5l4-4 3.5 3.5 2.5-2.5 5 5M15 9.5h.01" />;
+}

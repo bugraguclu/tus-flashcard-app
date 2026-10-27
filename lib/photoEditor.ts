@@ -18,7 +18,11 @@ export type PhotoShape = AnnotationBase & {
     end: PhotoPoint;
 };
 
-export type PhotoTextStyle = 'classic' | 'badge' | 'frosted' | 'outline';
+/**
+ * How a label is set off from what is under it. `plain` is ink on paper: no plate and no halo,
+ * for the blank drawing page, where there is no photo to read the words against.
+ */
+export type PhotoTextStyle = 'classic' | 'badge' | 'frosted' | 'outline' | 'plain';
 export type PhotoTextAlign = 'left' | 'center' | 'right';
 
 export type PhotoText = AnnotationBase & {
@@ -138,7 +142,7 @@ export function calculatePhotoTextBounds(
         if (estWidth > maxLineWidth) maxLineWidth = estWidth;
     });
 
-    const isPill = textAnnotation.bgStyle && textAnnotation.bgStyle !== 'classic';
+    const isPill = textAnnotation.bgStyle && textAnnotation.bgStyle !== 'classic' && textAnnotation.bgStyle !== 'plain';
     const paddingX = isPill ? Math.max(12, fontSize * 0.4) : 6;
     const paddingY = isPill ? Math.max(6, fontSize * 0.25) : 3;
 

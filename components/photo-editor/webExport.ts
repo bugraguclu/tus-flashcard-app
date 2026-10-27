@@ -65,7 +65,7 @@ function drawAnnotationOnCanvas(
         const textAlign = resolvePhotoTextAlign(annotation);
         const { background: badgeBgColor, text: finalTextColor } = photoTextColors(annotation);
 
-        if (bgStyle !== 'classic') {
+        if (bgStyle !== 'classic' && bgStyle !== 'plain') {
             const radius = Math.max(6 * scale, fontSize * 0.3);
             ctx.beginPath();
             if (typeof ctx.roundRect === 'function') {

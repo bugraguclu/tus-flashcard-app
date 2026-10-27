@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image as NativeImage } from 'react-native';
+import { Image as NativeImage, Platform } from 'react-native';
 import { Ellipse, G, Line, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import {
     calculatePhotoTextBounds,
@@ -14,6 +14,10 @@ import {
     type PhotoAnnotation,
     type PhotoPoint,
 } from '../../lib/photoEditor';
+
+// A browser falls back to a serif face for SVG text with no family; the web export letters in
+// the system face, so the page on screen is set in it too.
+const LABEL_FONT_FAMILY = Platform.OS === 'web' ? '-apple-system, BlinkMacSystemFont, sans-serif' : undefined;
 
 function smoothPath(points: PhotoPoint[], width: number, height: number): string {
     if (!points.length) return '';
@@ -84,7 +88,7 @@ export function renderAnnotation(
                 key={annotation.id}
                 transform={rotation ? `rotate(${rotation}, ${anchor.x}, ${anchor.y})` : undefined}
             >
-                {bgStyle !== 'classic' && (
+                {bgStyle !== 'classic' && bgStyle !== 'plain' && (
                     <Rect
                         x={bounds.x}
                         y={bounds.y}
@@ -113,6 +117,7 @@ export function renderAnnotation(
                                     strokeLinecap="round"
                                     fontSize={annotation.fontSize || 20 * scale}
                                     fontWeight="800"
+                                    fontFamily={LABEL_FONT_FAMILY}
                                     textAnchor={textAnchor}
                                 >
                                     {line}
@@ -124,6 +129,7 @@ export function renderAnnotation(
                                 fill={finalTextColor}
                                 fontSize={annotation.fontSize || 20 * scale}
                                 fontWeight="800"
+                                fontFamily={LABEL_FONT_FAMILY}
                                 textAnchor={textAnchor}
                             >
                                 {line}
