@@ -7,6 +7,7 @@ import {
     drawingInkForPage,
     drawingInks,
     drawingPointFromPage,
+    followedTouch,
     drawingToolWidth,
     fitDrawingPage,
     refitDrawingAnnotations,
@@ -161,5 +162,31 @@ describe('drawing pad objects', () => {
         expect(text.point.y).toBeCloseTo(350 / 1600);
         expect(image.point.y).toBeCloseTo(1250 / 1600);
         expect(rect.end.y).toBeCloseTo(1250 / 1600);
+    });
+});
+
+describe('followedTouch', () => {
+    const pen = { identifier: 1, pageX: 100, pageY: 200 };
+    const palm = { identifier: 2, pageX: 300, pageY: 600 };
+
+    it('keeps to the finger that began the stroke while a palm rests on the glass', () => {
+        // The palm moved, so the event itself is about the palm.
+        const event = { ...palm, touches: [pen, palm], changedTouches: [palm] };
+        expect(followedTouch(event, 1)).toEqual(pen);
+    });
+
+    it('finds the stroke finger as it lifts, when it is no longer among the fingers down', () => {
+        const event = { ...pen, touches: [palm], changedTouches: [pen] };
+        expect(followedTouch(event, 1)).toEqual(pen);
+    });
+
+    it('reports nothing for an event about other fingers only', () => {
+        expect(followedTouch({ ...palm, touches: [palm], changedTouches: [palm] }, 1)).toBeNull();
+        expect(followedTouch({ ...palm }, 1)).toBeNull();
+    });
+
+    it('takes the event itself when it carries no finger identity', () => {
+        expect(followedTouch({ pageX: 5, pageY: 6 }, undefined)).toEqual({ pageX: 5, pageY: 6 });
+        expect(followedTouch({ pageX: 5, pageY: 6 }, 1)).toEqual({ pageX: 5, pageY: 6 });
     });
 });

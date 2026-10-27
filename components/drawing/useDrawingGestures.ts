@@ -14,6 +14,7 @@ import {
     HIGHLIGHTER_OPACITY,
     drawingObjectAt,
     drawingPointFromPage,
+    followedTouch,
     drawingToolWidth,
     isDrawingShapeTool,
     keepDrawingObjectOnPage,
@@ -68,12 +69,8 @@ export function useDrawingGestures(deps: DrawingGestureDeps) {
     const depsRef = useRef(deps);
     depsRef.current = deps;
     const gestureRef = useRef<Gesture | null>(null);
-
-    const pointOf = (event: GestureResponderEvent, origin: PhotoPoint) => drawingPointFromPage(
-        { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY },
-        origin,
-        depsRef.current.canvasSizeRef.current,
-    );
+    // The finger that began the gesture; any other on the glass is ignored until it lifts.
+    const fingerRef = useRef<number | string | undefined>(undefined);
 
     const eraseAlong = (gesture: Extract<Gesture, { kind: 'erase' }>, from: PhotoPoint, to: PhotoPoint) => {
         const { canvasSizeRef, brushRef, annotationsRef, applyAnnotations, setEraserRing } = depsRef.current;
@@ -89,6 +86,7 @@ export function useDrawingGestures(deps: DrawingGestureDeps) {
     const begin = (event: GestureResponderEvent) => {
         const { annotationsRef, canvasSizeRef, brushRef, setLiveAnnotation, select } = depsRef.current;
         const native = event.nativeEvent;
+        fingerRef.current = native.identifier;
         const origin = { x: native.pageX - native.locationX, y: native.pageY - native.locationY };
         const point = drawingPointFromPage({ x: native.pageX, y: native.pageY }, origin, canvasSizeRef.current);
         const brush = brushRef.current;
@@ -145,7 +143,9 @@ export function useDrawingGestures(deps: DrawingGestureDeps) {
         if (!gesture) return;
         const { canvasSizeRef, annotationsRef, applyAnnotations, setLiveAnnotation } = depsRef.current;
         const canvas = canvasSizeRef.current;
-        const point = pointOf(event, gesture.origin);
+        const finger = followedTouch(event.nativeEvent, fingerRef.current);
+        if (!finger) return;
+        const point = drawingPointFromPage({ x: finger.pageX, y: finger.pageY }, gesture.origin, canvas);
 
         if (gesture.kind === 'tap' || gesture.kind === 'drag') {
             const travelled = Math.hypot((point.x - gesture.start.x) * canvas.width, (point.y - gesture.start.y) * canvas.height);

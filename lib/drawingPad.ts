@@ -121,6 +121,32 @@ export function drawingPointFromPage(
     });
 }
 
+/** One finger on the glass, as a touch event reports it. */
+export interface DrawingTouch {
+    identifier?: number | string;
+    pageX: number;
+    pageY: number;
+}
+
+/** A touch event: the finger that changed, plus every finger down and every finger that changed. */
+export interface DrawingTouchEvent extends DrawingTouch {
+    touches?: DrawingTouch[];
+    changedTouches?: DrawingTouch[];
+}
+
+/**
+ * The finger a gesture follows, out of everything on the glass, or null when this event is about
+ * other fingers only. A stroke keeps to the finger that began it, so a palm or a second finger set
+ * down mid-stroke can neither drag the line across the page nor end it where that palm lifts.
+ */
+export function followedTouch(event: DrawingTouchEvent, identifier: DrawingTouch['identifier']): DrawingTouch | null {
+    if (identifier === undefined) return event;
+    // A finger that has just lifted is no longer among `touches`, only among `changedTouches`.
+    const fingers = [...(event.changedTouches ?? []), ...(event.touches ?? [])];
+    if (!fingers.length) return event.identifier === undefined || event.identifier === identifier ? event : null;
+    return fingers.find((finger) => finger.identifier === identifier) ?? null;
+}
+
 /** The largest page of this aspect that fits the stage, leaving `margin` on every side. */
 export function fitDrawingPage(
     stage: { width: number; height: number },
