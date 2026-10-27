@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { dayNumberToYmd } from '../../lib/ankiState';
+import { openOrDismissTo } from '../../lib/backNavigation';
 import type { StudyStreak, TodayAnswerStats } from '../../lib/reviewLogger';
 import { HeaderForwardIcon } from '../HeaderBackIcon';
 import WeekStreakStrip from '../WeekStreakStrip';
@@ -19,11 +21,13 @@ interface TodaySectionProps {
 /**
  * The top of the screen: what was done today in the chosen deck, and the study streak across the
  * whole collection. Neither depends on the period picked for the charts below. The streak pill
- * opens the Kronometre, whose sessions keep the streak going too.
+ * opens the Kronometre, whose sessions keep the streak going too, and a day of the week strip
+ * opens that day in the Çalışma Takvimi, which draws its days the same way.
  */
 export default function TodaySection({ today, streak, rolloverHour, dataVersion, currentWeekStudiedDays }: TodaySectionProps) {
     const colors = useThemeColors();
     const router = useRouter();
+    const navigation = useNavigation();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const f = useStatsFormat();
     const { l } = f;
@@ -69,6 +73,12 @@ export default function TodaySection({ today, streak, rolloverHour, dataVersion,
                     rolloverHour={rolloverHour}
                     dataVersion={dataVersion}
                     initialWeekStudiedDays={currentWeekStudiedDays}
+                    onSelectDay={(dayNumber) => openOrDismissTo(
+                        router,
+                        navigation,
+                        'study-calendar',
+                        `/study-calendar?day=${dayNumberToYmd(dayNumber, rolloverHour)}`,
+                    )}
                 />
                 <Text style={styles.best}>{l(`En uzun seri: ${days(streak.best)}`, `Longest streak: ${days(streak.best)}`)}</Text>
             </View>

@@ -41,3 +41,23 @@ export function openOrReturnTo(
     }
     router.push(href);
 }
+
+/**
+ * Open `href` on the screen `routeName`: when that screen is already somewhere beneath this one,
+ * close the screens above it and hand it `href`'s params; otherwise push it. Statistics opens a
+ * day in the study calendar this way, which the learner may have come from.
+ */
+export function openOrDismissTo(
+    router: { push: (href: any) => void; dismissTo: (href: any) => void },
+    navigation: StackStateReader,
+    routeName: string,
+    href: string,
+): void {
+    const state = navigation.getState();
+    const beneath = state?.routes.slice(0, state.index).some((route) => route.name === routeName) ?? false;
+    if (beneath) {
+        router.dismissTo(href);
+        return;
+    }
+    router.push(href);
+}

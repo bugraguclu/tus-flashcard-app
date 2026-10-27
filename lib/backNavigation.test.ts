@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { goBackOr, openOrReturnTo, type BackNavigator } from './backNavigation';
+import { goBackOr, openOrDismissTo, openOrReturnTo, type BackNavigator } from './backNavigation';
 
 function fakeRouter(canGoBack: boolean) {
     const calls: string[] = [];
@@ -57,5 +57,40 @@ describe('openOrReturnTo', () => {
         const { router, calls } = pushRouter();
         openOrReturnTo(router, fakeNavigation(['stopwatch']), 'study-calendar', '/study-calendar');
         expect(calls).toEqual(['push:/study-calendar']);
+    });
+});
+
+describe('openOrDismissTo', () => {
+    function fakeNavigation(names: string[]) {
+        return { getState: () => ({ index: names.length - 1, routes: names.map((name) => ({ name })) }) };
+    }
+
+    function dismissRouter() {
+        const calls: string[] = [];
+        return {
+            calls,
+            router: {
+                push: (href: string) => { calls.push(`push:${href}`); },
+                dismissTo: (href: string) => { calls.push(`dismissTo:${href}`); },
+            },
+        };
+    }
+
+    it('closes back down to the screen when it lies anywhere beneath', () => {
+        const { router, calls } = dismissRouter();
+        openOrDismissTo(router, fakeNavigation(['decks', 'study-calendar', 'study-analysis', 'stats']), 'study-calendar', '/study-calendar?day=2026-10-27');
+        expect(calls).toEqual(['dismissTo:/study-calendar?day=2026-10-27']);
+    });
+
+    it('opens the screen when it is not on the stack', () => {
+        const { router, calls } = dismissRouter();
+        openOrDismissTo(router, fakeNavigation(['decks', 'stats']), 'study-calendar', '/study-calendar?day=2026-10-27');
+        expect(calls).toEqual(['push:/study-calendar?day=2026-10-27']);
+    });
+
+    it('does not count the current screen as one beneath it', () => {
+        const { router, calls } = dismissRouter();
+        openOrDismissTo(router, fakeNavigation(['decks', 'study-calendar']), 'study-calendar', '/study-calendar?day=2026-10-27');
+        expect(calls).toEqual(['push:/study-calendar?day=2026-10-27']);
     });
 });

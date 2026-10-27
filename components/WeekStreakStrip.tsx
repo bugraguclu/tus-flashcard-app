@@ -11,6 +11,7 @@ import { getStudiedDaysBetween } from '../lib/reviewLogger';
 import { useI18n } from '../hooks/useI18n';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { HeaderBackIcon, HeaderForwardIcon } from './HeaderBackIcon';
+import StudyDayBox, { formatWeekRange, mondayIndex, studyWeekdayLabels } from './StudyDayBox';
 
 const DAY_MS = 86400000;
 
@@ -27,32 +28,6 @@ interface DayCell {
     isFuture: boolean;
 }
 
-/** Monday-first weekday index of a study-day number (its date is encoded at UTC midnight). */
-function mondayIndex(dayNumber: number): number {
-    return (new Date(dayNumber * DAY_MS).getUTCDay() + 6) % 7;
-}
-
-/** "14 – 20 Tem 2026" for one month, "29 Haz – 5 Tem 2026" across months, years spelled out when they differ. */
-function formatWeekRange(monday: number, sunday: number, localeTag: string): string {
-    const from = new Date(monday * DAY_MS);
-    const to = new Date(sunday * DAY_MS);
-    const fromDay = from.getUTCDate();
-    const toDay = to.getUTCDate();
-    const monthFormatter = new Intl.DateTimeFormat(localeTag, { month: 'short', timeZone: 'UTC' });
-    const fromMonth = monthFormatter.format(from);
-    const toMonth = monthFormatter.format(to);
-    const fromYear = from.getUTCFullYear();
-    const toYear = to.getUTCFullYear();
-
-    if (fromYear !== toYear) {
-        return `${fromDay} ${fromMonth} ${fromYear} – ${toDay} ${toMonth} ${toYear}`;
-    }
-    if (fromMonth !== toMonth) {
-        return `${fromDay} ${fromMonth} – ${toDay} ${toMonth} ${toYear}`;
-    }
-    return `${fromDay} – ${toDay} ${fromMonth} ${toYear}`;
-}
-
 interface WeekStreakStripProps {
     rolloverHour: number;
     /** Bumped after every answer/import/restore; retriggers the studied-day query. */
@@ -61,6 +36,8 @@ interface WeekStreakStripProps {
     initialWeekStudiedDays?: ReadonlySet<string>;
     /** Use full-contrast labels in the plain Statistics layout. */
     highContrast?: boolean;
+    /** Makes each day a button; Statistics opens that day in the Çalışma Takvimi. */
+    onSelectDay?: (dayNumber: number) => void;
 }
 
 export default function WeekStreakStrip({
@@ -68,9 +45,10 @@ export default function WeekStreakStrip({
     dataVersion,
     initialWeekStudiedDays,
     highContrast = false,
+    onSelectDay,
 }: WeekStreakStripProps) {
     const { l, localeTag } = useI18n();
-    const dayLabels = l('Pzt,Sal,Çar,Per,Cum,Cmt,Paz', 'Mon,Tue,Wed,Thu,Fri,Sat,Sun').split(',');
+    const dayLabels = studyWeekdayLabels(l);
     const { width } = useWindowDimensions();
     const isCompact = width < 430;
     const colors = useThemeColors();
@@ -160,39 +138,40 @@ export default function WeekStreakStrip({
             <View style={styles.daysRow}>
                 {days.map((day, i) => {
                     const studied = studiedDays.has(day.ymd);
+                    const tooltip = day.isToday
+                        ? (studied ? l('Bugün — çalışıldı', 'Today — studied') : l('Bugün — henüz çalışılmadı', 'Today — not studied yet'))
+                        : (studied ? l(`${day.ymd} — çalışıldı`, `${day.ymd} — studied`) : l(`${day.ymd} — çalışılmadı`, `${day.ymd} — not studied`));
+                    const label = day.isToday
+                        ? (studied ? l('Bugün, çalışıldı', 'Today, studied') : l('Bugün, henüz çalışılmadı', 'Today, not studied yet'))
+                        : `${dayLabels[i]}, ${day.ymd}, ${studied ? l('çalışıldı', 'studied') : l('çalışılmadı', 'not studied')}`;
+                    const box = (
+                        <StudyDayBox
+                            dateOfMonth={day.dateOfMonth}
+                            studied={studied}
+                            isToday={day.isToday}
+                            dimmed={day.isFuture && !highContrast}
+                            isCompact={isCompact}
+                            highContrast={highContrast}
+                            {...(onSelectDay ? {} : { accessible: true, accessibilityLabel: label, ...webTitle(tooltip) })}
+                        />
+                    );
                     return (
                         <View key={day.ymd} style={styles.dayColumn}>
                             <Text style={[styles.dayLabel, day.isToday && styles.dayLabelToday]}>
                                 {dayLabels[i]}
                             </Text>
-                            <View
-                                style={[
-                                    styles.dayBox,
-                                    studied && styles.dayBoxStudied,
-                                    day.isToday && !studied && styles.dayBoxToday,
-                                    day.isFuture && !highContrast && styles.dayBoxFuture,
-                                ]}
-                                {...webTitle(
-                                    day.isToday
-                                        ? (studied ? l('Bugün — çalışıldı', 'Today — studied') : l('Bugün — henüz çalışılmadı', 'Today — not studied yet'))
-                                        : (studied ? l(`${day.ymd} — çalışıldı`, `${day.ymd} — studied`) : l(`${day.ymd} — çalışılmadı`, `${day.ymd} — not studied`)),
-                                )}
-                                accessible
-                                accessibilityLabel={
-                                    day.isToday
-                                        ? (studied ? l('Bugün, çalışıldı', 'Today, studied') : l('Bugün, henüz çalışılmadı', 'Today, not studied yet'))
-                                        : `${dayLabels[i]}, ${day.ymd}, ${studied ? l('çalışıldı', 'studied') : l('çalışılmadı', 'not studied')}`
-                                }
-                            >
-                                <Text style={[
-                                    styles.dayDate,
-                                    studied && styles.dayDateStudied,
-                                    day.isFuture && styles.dayDateFuture,
-                                ]}>
-                                    {day.dateOfMonth}
-                                </Text>
-                                {studied && <View style={styles.studiedDot} />}
-                            </View>
+                            {onSelectDay ? (
+                                <TouchableOpacity
+                                    onPress={() => onSelectDay(day.dayNumber)}
+                                    activeOpacity={0.7}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={label}
+                                    accessibilityHint={l('Bu günü Çalışma Takvimi\'nde açar', 'Opens this day in the Study Calendar')}
+                                    {...webTitle(tooltip)}
+                                >
+                                    {box}
+                                </TouchableOpacity>
+                            ) : box}
                         </View>
                     );
                 })}
@@ -243,28 +222,5 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
         textTransform: 'uppercase',
     },
     dayLabelToday: { color: highContrast ? colors.textPrimary : colors.streak, fontWeight: '700' },
-    dayBox: {
-        width: isCompact ? 32 : 36,
-        height: isCompact ? 32 : 36,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1.5,
-        borderColor: colors.border,
-        backgroundColor: colors.bgCard,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    dayBoxStudied: {
-        backgroundColor: colors.streak,
-        borderColor: colors.streak,
-    },
-    dayBoxToday: {
-        borderColor: colors.streak,
-        backgroundColor: colors.streakBg,
-    },
-    dayBoxFuture: { opacity: 0.45 },
-    dayDate: { color: highContrast ? colors.textPrimary : colors.textSecondary, fontSize: FontSize.sm, fontWeight: '800' },
-    dayDateStudied: { color: colors.white },
-    dayDateFuture: { color: highContrast ? colors.textPrimary : colors.textMuted },
-    studiedDot: { position: 'absolute', bottom: 3, width: 3, height: 3, borderRadius: 2, backgroundColor: colors.white },
     });
 }

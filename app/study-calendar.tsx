@@ -1,15 +1,17 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     SectionList,
     StyleSheet,
     Text,
     TouchableOpacity,
+    useWindowDimensions,
     View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';
 import { HeaderBackIcon, HeaderForwardIcon } from '../components/HeaderBackIcon';
+import StudyDayBox, { formatWeekRange, mondayIndex, studyWeekdayLabels } from '../components/StudyDayBox';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
 import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
 import { AnalyticsIcon, StopwatchIcon } from '../components/stopwatch/StopwatchIcons';
@@ -32,7 +34,8 @@ import { useI18n } from '../hooks/useI18n';
 import { useStudySubjects } from '../hooks/useStudySubjects';
 import { goBackOr, openOrReturnTo } from '../lib/backNavigation';
 import { alert, confirm } from '../lib/confirm';
-import { dayNumberToYmd, localDayNumber } from '../lib/ankiState';
+import { dayNumberToYmd, localDayNumber, ymdToLocalDayNumber } from '../lib/ankiState';
+import { getStudiedDaysBetween } from '../lib/reviewLogger';
 import type { StudySessionDraft } from '../lib/stopwatch';
 import { deleteStudySession, updateStudySession } from '../lib/stopwatchStore';
 import { readStudyPlansForDisplay } from '../lib/studyPlanStore';
@@ -59,6 +62,7 @@ interface AnchorDate {
 }
 
 const EMPTY_AGGREGATE: StudyCalendarAggregate = { days: [], totalsByDay: new Map() };
+const EMPTY_STUDIED_DAYS: ReadonlySet<string> = new Set();
 
 function anchorFromDate(date: Date): AnchorDate {
     return { year: date.getFullYear(), month: date.getMonth(), day: date.getDate() };
@@ -86,10 +90,13 @@ function shiftAnchor(anchor: AnchorDate, mode: ViewMode, direction: 1 | -1): Anc
 export default function StudyCalendarScreen() {
     const { l, locale, localeTag } = useI18n();
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const isCompact = useWindowDimensions().width < 430;
+    const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
     const router = useRouter();
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
+    // Statistics opens a day of its week strip here (`?day=YYYY-MM-DD`), in the weekly view.
+    const { day: dayParam } = useLocalSearchParams<{ day?: string }>();
     const { settings } = useAppSettings();
     const rolloverHour = settings.dayRolloverHour;
     const { collectionVersion, invalidateCollection, getSchedulingRevision } = useCollectionInvalidation();
@@ -97,9 +104,23 @@ export default function StudyCalendarScreen() {
     const listRef = useRef<SectionList<StudySession, StudyDaySection>>(null);
 
     const todayDayNumber = localDayNumber(Date.now(), rolloverHour);
-    const [mode, setMode] = useState<ViewMode>('month');
-    const [anchor, setAnchor] = useState<AnchorDate>(() => anchorFromDate(new Date()));
-    const [selectedDayNumber, setSelectedDayNumber] = useState(todayDayNumber);
+    const requestedDayNumber = typeof dayParam === 'string' ? ymdToLocalDayNumber(dayParam, -1) : -1;
+    const [mode, setMode] = useState<ViewMode>(() => (requestedDayNumber >= 0 ? 'week' : 'month'));
+    const [anchor, setAnchor] = useState<AnchorDate>(() => (requestedDayNumber >= 0
+        ? anchorFromDayNumber(requestedDayNumber)
+        : anchorFromDate(new Date())));
+    const [selectedDayNumber, setSelectedDayNumber] = useState(() => (requestedDayNumber >= 0 ? requestedDayNumber : todayDayNumber));
+
+    // Statistics may bring the learner back here with another day; the views after that are local.
+    const appliedDayParam = useRef(dayParam);
+    useEffect(() => {
+        if (dayParam === appliedDayParam.current) return;
+        appliedDayParam.current = dayParam;
+        if (requestedDayNumber < 0) return;
+        setSelectedDayNumber(requestedDayNumber);
+        setAnchor(anchorFromDayNumber(requestedDayNumber));
+        setMode('week');
+    }, [dayParam, requestedDayNumber]);
     const [menuSession, setMenuSession] = useState<StudySession | null>(null);
     const [editing, setEditing] = useState<SessionEditorInitial | null>(null);
     const { recentSubjects, loadRecentSubjects, passOf } = useStudySubjects('StudyCalendar');
@@ -127,12 +148,18 @@ export default function StudyCalendarScreen() {
         cells[0]?.dayNumber ?? 0,
         cells[cells.length - 1]?.dayNumber ?? 0,
     ]), [collectionVersion, schedulingRevision, rolloverHour, cells]);
-    const loadSnapshot = useCallback(
-        () => getStudyCalendarSnapshot(cells, rolloverHour),
-        [cells, rolloverHour],
-    );
+    const loadSnapshot = useCallback(() => ({
+        aggregate: getStudyCalendarSnapshot(cells, rolloverHour),
+        // The Statistics week strip's own query, so both calendars mark exactly the same days.
+        studiedDays: getStudiedDaysBetween(
+            cells[0]?.dayNumber ?? 0,
+            cells[cells.length - 1]?.dayNumber ?? -1,
+            rolloverHour,
+        ),
+    }), [cells, rolloverHour]);
     const { snapshot, loading, error } = useDeferredScreenSnapshot(snapshotKey, loadSnapshot);
-    const aggregate = snapshot ?? EMPTY_AGGREGATE;
+    const aggregate = snapshot?.aggregate ?? EMPTY_AGGREGATE;
+    const studiedDays: ReadonlySet<string> = snapshot?.studiedDays ?? EMPTY_STUDIED_DAYS;
 
     // The grid always queries whole weeks, so a month view also loads its neighbours' edge days.
     // Those cells are dimmed and carry no total, and their sessions stay out of the timeline.
@@ -169,12 +196,8 @@ export default function StudyCalendarScreen() {
         });
     }, [aggregate.days, visibleDayNumbers, plans, localeTag]);
 
-    const weekdayLetters = useMemo(
-        () => (locale === 'tr'
-            ? ['P', 'S', 'Ç', 'P', 'C', 'C', 'P']
-            : ['M', 'T', 'W', 'T', 'F', 'S', 'S']),
-        [locale],
-    );
+    const weekdayLabels = useMemo(() => studyWeekdayLabels(l), [l]);
+    const todayColumn = cells.some((cell) => cell.dayNumber === todayDayNumber) ? mondayIndex(todayDayNumber) : -1;
 
     const rangeTitle = useMemo(() => {
         if (mode === 'month') {
@@ -185,11 +208,7 @@ export default function StudyCalendarScreen() {
         const first = cells[0];
         const last = cells[cells.length - 1];
         if (!first || !last) return '';
-        const startLabel = new Date(first.year, first.month, first.day)
-            .toLocaleDateString(localeTag, { day: 'numeric', month: 'short' });
-        const endLabel = new Date(last.year, last.month, last.day)
-            .toLocaleDateString(localeTag, { day: 'numeric', month: 'short', year: 'numeric' });
-        return `${startLabel} – ${endLabel}`;
+        return formatWeekRange(first.dayNumber, last.dayNumber, localeTag);
     }, [mode, anchor, cells, localeTag]);
 
     const scrollToDay = useCallback((dayNumber: number) => {
@@ -414,7 +433,7 @@ export default function StudyCalendarScreen() {
                         ? l('Önceki ay', 'Previous month')
                         : l('Önceki hafta', 'Previous week')}
                 >
-                    <HeaderBackIcon color={colors.textPrimary} size={18} />
+                    <HeaderBackIcon color={colors.textSecondary} size={20} />
                 </TouchableOpacity>
                 <Text style={styles.rangeTitle} numberOfLines={1}>{rangeTitle}</Text>
                 <TouchableOpacity
@@ -426,7 +445,7 @@ export default function StudyCalendarScreen() {
                         ? l('Sonraki ay', 'Next month')
                         : l('Sonraki hafta', 'Next week')}
                 >
-                    <HeaderForwardIcon color={colors.textPrimary} size={18} />
+                    <HeaderForwardIcon color={colors.textSecondary} size={20} />
                 </TouchableOpacity>
                 <View style={styles.segmentTrack}>
                     {(['week', 'month'] as const).map((option) => {
@@ -449,8 +468,10 @@ export default function StudyCalendarScreen() {
             </View>
 
             <View style={styles.weekdayRow}>
-                {weekdayLetters.map((letter, index) => (
-                    <Text key={`${letter}-${index}`} style={styles.weekdayLetter}>{letter}</Text>
+                {weekdayLabels.map((label, index) => (
+                    <Text key={label} style={[styles.weekdayLabel, index === todayColumn && styles.weekdayLabelToday]}>
+                        {label}
+                    </Text>
                 ))}
             </View>
 
@@ -458,6 +479,7 @@ export default function StudyCalendarScreen() {
                 {cells.map((cell) => {
                     const selected = cell.dayNumber === selectedDayNumber;
                     const isToday = cell.dayNumber === todayDayNumber;
+                    const studied = studiedDays.has(dayNumberToYmd(cell.dayNumber, rolloverHour));
                     const totalLabel = cell.inRange
                         ? formatDayTotalHhMm(aggregate.totalsByDay.get(cell.dayNumber) ?? 0)
                         : '';
@@ -470,21 +492,16 @@ export default function StudyCalendarScreen() {
                             accessibilityState={{ selected }}
                             accessibilityLabel={totalLabel
                                 ? l(`${cell.day}: ${totalLabel} çalışma`, `${cell.day}: ${totalLabel} studied`)
-                                : String(cell.day)}
+                                : `${cell.day}, ${studied ? l('çalışıldı', 'studied') : l('çalışılmadı', 'not studied')}`}
                         >
-                            <View style={[
-                                styles.dayBox,
-                                isToday && !selected && styles.dayBoxToday,
-                                selected && styles.dayBoxSelected,
-                            ]}>
-                                <Text style={[
-                                    styles.dayNumber,
-                                    !cell.inRange && styles.dayNumberDim,
-                                    selected && styles.dayNumberSelected,
-                                ]}>
-                                    {cell.day}
-                                </Text>
-                            </View>
+                            <StudyDayBox
+                                dateOfMonth={cell.day}
+                                studied={studied}
+                                isToday={isToday}
+                                dimmed={!cell.inRange || cell.dayNumber > todayDayNumber}
+                                selected={selected}
+                                isCompact={isCompact}
+                            />
                             <Text style={styles.dayTotal} numberOfLines={1}>{totalLabel}</Text>
                         </TouchableOpacity>
                     );
@@ -568,7 +585,7 @@ const STOPWATCH_BUTTON_SIZE = 56;
 /** Tail padding that keeps the last card out from under the floating stopwatch and tools buttons. */
 const STOPWATCH_BUTTON_CLEARANCE = STOPWATCH_BUTTON_SIZE + STUDY_TOOLS_FAB_SIZE + Spacing.md + 2 * Spacing.lg;
 
-function createStyles(colors: ColorScheme) {
+function createStyles(colors: ColorScheme, isCompact: boolean) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgSecondary },
 
@@ -580,8 +597,8 @@ function createStyles(colors: ColorScheme) {
             paddingBottom: Spacing.sm,
             gap: Spacing.xs,
         },
-        stepButton: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
-        rangeTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
+        stepButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm },
+        rangeTitle: { flexShrink: 1, fontSize: isCompact ? FontSize.sm : FontSize.lg, fontWeight: '700', color: colors.textSecondary },
         segmentTrack: {
             marginLeft: 'auto',
             flexDirection: 'row',
@@ -595,36 +612,23 @@ function createStyles(colors: ColorScheme) {
         segmentTextSelected: { color: colors.textPrimary },
 
         weekdayRow: { flexDirection: 'row', paddingHorizontal: Spacing.sm, paddingBottom: Spacing.xs },
-        weekdayLetter: {
+        weekdayLabel: {
             flex: 1,
             textAlign: 'center',
-            fontSize: FontSize.sm,
+            fontSize: FontSize.xs,
             fontWeight: '600',
             color: colors.textMuted,
+            textTransform: 'uppercase',
         },
+        weekdayLabelToday: { color: colors.streak, fontWeight: '700' },
 
         grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: Spacing.sm },
         cell: {
             width: `${100 / 7}%`,
             alignItems: 'center',
-            paddingVertical: Spacing.xs,
+            paddingVertical: 3,
         },
-        dayBox: {
-            minWidth: 30,
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-            borderRadius: 8,
-            borderWidth: 1.5,
-            borderColor: colors.transparent,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        dayBoxToday: { borderColor: colors.accent },
-        dayBoxSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
-        dayNumber: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        dayNumberDim: { color: colors.textMuted, opacity: 0.45 },
-        dayNumberSelected: { color: colors.white },
-        dayTotal: { marginTop: 1, fontSize: FontSize.sm, fontWeight: '500', color: colors.accent, minHeight: 15 },
+        dayTotal: { marginTop: 2, fontSize: FontSize.xs, fontWeight: '600', color: colors.textSecondary, minHeight: 13 },
 
         timeline: { flex: 1, marginTop: Spacing.sm, backgroundColor: colors.bgPrimary },
         timelineContent: {},
