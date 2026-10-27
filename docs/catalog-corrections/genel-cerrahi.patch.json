@@ -19,11 +19,11 @@
   "changedNotes": 563,
   "htmlOnlyNotes": 0,
   "unchangedNotes": 1,
-  "changeItems": 1661,
+  "changeItems": 1680,
   "notesBySeverity": {
-   "Kritik": 25,
-   "Yüksek": 169,
-   "Orta": 318,
+   "Kritik": 26,
+   "Yüksek": 172,
+   "Orta": 314,
    "Düşük": 51
   },
   "notesByTopic": {
@@ -39,46 +39,53 @@
    "İnce Bağırsak ve Kolorektal": 58
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 20,
-    "Yüksek": 34
+   "Biçim": {
+    "Düşük": 560
+   },
+   "Cevap görünürlüğü": {
+    "Yüksek": 7
+   },
+   "Dil bilgisi": {
+    "Orta": 3,
+    "Düşük": 128
+   },
+   "Doğrulama gerekli": {
+    "Kritik": 1,
+    "Yüksek": 26
+   },
+   "Eksik kritik bilgi": {
+    "Yüksek": 79
    },
    "Güncellik": {
     "Kritik": 4,
     "Yüksek": 37,
     "Orta": 24
    },
-   "Eksik kritik bilgi": {
-    "Yüksek": 79
+   "Kısaltma": {
+    "Yüksek": 3,
+    "Orta": 420
    },
    "Soru netliği": {
     "Yüksek": 7,
     "Orta": 51
-   },
-   "Doğrulama gerekli": {
-    "Kritik": 1,
-    "Yüksek": 26
-   },
-   "Yapısal": {
-    "Yüksek": 13,
-    "Orta": 2,
-    "Düşük": 2
    },
    "Terim/yazım": {
     "Yüksek": 1,
     "Orta": 191,
     "Düşük": 55
    },
-   "Kısaltma": {
-    "Yüksek": 3,
-    "Orta": 420
+   "Tıbbi doğruluk": {
+    "Kritik": 20,
+    "Yüksek": 34
    },
-   "Dil bilgisi": {
-    "Orta": 3,
-    "Düşük": 128
+   "Yapısal": {
+    "Yüksek": 13,
+    "Orta": 2,
+    "Düşük": 2
    },
-   "Biçim": {
-    "Düşük": 560
+   "Ön/arka kapsam uyumu": {
+    "Kritik": 3,
+    "Yüksek": 9
    }
   },
   "secondReview": {
@@ -183,11 +190,11 @@
    "fields": {
     "Text": {
      "before": "{{c1::Hidroksi Etil Nişasta Laktat içindeki Çözeltisi (Hextend)}} ---&gt; koagülopati yapmaz&nbsp;<div><br></div><div>OH etil Nişasta --&gt; {{c1::Kanama}} riski artırır&nbsp;</div>",
-     "after": "{{c1::Hidroksietil nişastanın laktatlı elektrolit çözeltisi (Hextend)}} → klasik bilgiye göre koagülopati yapmaz<div><br></div><div>Hidroksietil nişasta → {{c1::kanama}} riskini artırır</div>"
+     "after": "{{c1::Hidroksietil nişastanın laktatlı elektrolit çözeltisi (Hextend)}} → koagülopati riskini artırır<div><br></div><div>Hidroksietil nişasta → {{c1::kanama}} riskini artırır</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel bilgi: FDA kutulu uyarısına göre Hextend dâhil bütün hidroksietil nişasta ürünleri mortalite, böbrek hasarı ve koagülopati riskini artırır; Avrupa Birliği'nde ruhsatları 2022'de askıya alındı."
+     "after": "FDA kutulu uyarısı: Hextend dahil hidroksietil nişasta ürünleri mortalite, böbrek hasarı ve koagülopati riskini artırır; yeterli alternatif tedavi varken kullanılmamalıdır."
     }
    },
    "changes": [
@@ -226,11 +233,23 @@
      "severity": "Düşük",
      "category": "Terim/yazım",
      "text": "dahil → dâhil (TDK)"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Hextend klasik bilgiye göre koagülopati yapmaz; Extra tam tersini söylüyor.",
+     "rationale": "Kaynak: https://www.fda.gov/media/87249/download"
     }
    ],
-   "aiNote": "Ne: Cevap \"Hidroksietil nişastanın laktatlı elektrolit çözeltisi (Hextend)\" olarak düzgün yazıldı, \"koagülopati yapmaz\" ifadesi \"klasik bilgiye göre\" çerçevesine alındı ve Extra'ya HES ürünlerinin güncel güvenlik durumu eklendi; \"OH etil Nişasta\" → \"Hidroksietil nişasta\" açıldı. Extra'da \"AB'de\" → \"Avrupa Birliği'nde\" ve \"dahil\" → \"dâhil\" yazıldı.\nNeden: Kart Hextend'i koagülopati yapmayan bir HES gibi öğretiyordu; oysa FDA etiketindeki kutulu uyarı Hextend dâhil bütün HES ürünlerinde koagülopati, böbrek hasarı ve mortalite artışını belirtir ve Avrupa Birliği'nde bu çözeltilerin ruhsatı 2022'de askıya alındı. \"AB\" derste antibiyotik kısaltması olarak da kullanıldığı için yanlış okunabiliyordu.\nNasıl: [TD2, GN1, YP1, KS1, YZ2] TUS'un beklediği klasik karşıtlık (laktatlı çözeltideki Hextend ile serum fizyolojikli HES) \"klasik bilgiye göre\" çerçevesiyle korundu, güncel güvenlik bilgisi Extra'da tek cümleyle verildi; iki c1 cevabı ve satır düzeni değişmedi. Çok anlamlı kısaltma açıldı ve TDK yazımı (dâhil) uygulandı.\nKaynak: HEXTEND (hetastarch) FDA etiketi kutulu uyarısı (DailyMed); EMA PRAC Şubat 2022 tavsiyesi ve Avrupa Komisyonu'nun 2022 askıya alma kararı.",
+   "aiNote": "Ne: Hextend klasik bilgiye göre koagülopati yapmaz; Extra tam tersini söylüyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.fda.gov/media/87249/download",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Cevap \"Hidroksietil nişastanın laktatlı elektrolit çözeltisi (Hextend)\" olarak düzgün yazıldı, \"koagülopati yapmaz\" ifadesi \"klasik bilgiye göre\" çerçevesine alındı ve Extra'ya HES ürünlerinin güncel güvenlik durumu eklendi; \"OH etil Nişasta\" → \"Hidroksietil nişasta\" açıldı. Extra'da \"AB'de\" → \"Avrupa Birliği'nde\" ve \"dahil\" → \"dâhil\" yazıldı.\nNeden: Kart Hextend'i koagülopati yapmayan bir HES gibi öğretiyordu; oysa FDA etiketindeki kutulu uyarı Hextend dâhil bütün HES ürünlerinde koagülopati, böbrek hasarı ve mortalite artışını belirtir ve Avrupa Birliği'nde bu çözeltilerin ruhsatı 2022'de askıya alındı. \"AB\" derste antibiyotik kısaltması olarak da kullanıldığı için yanlış okunabiliyordu.\nNasıl: [TD2, GN1, YP1, KS1, YZ2] TUS'un beklediği klasik karşıtlık (laktatlı çözeltideki Hextend ile serum fizyolojikli HES) \"klasik bilgiye göre\" çerçevesiyle korundu, güncel güvenlik bilgisi Extra'da tek cümleyle verildi; iki c1 cevabı ve satır düzeni değişmedi. Çok anlamlı kısaltma açıldı ve TDK yazımı (dâhil) uygulandı.\nKaynak: HEXTEND (hetastarch) FDA etiketi kutulu uyarısı (DailyMed); EMA PRAC Şubat 2022 tavsiyesi ve Avrupa Komisyonu'nun 2022 askıya alma kararı."
+    }
+   ]
   },
   {
    "order": 4,
@@ -716,7 +735,7 @@
    "fields": {
     "Text": {
      "before": "Dalak Yaralanması Sınıflama&nbsp;<div><br></div><div>1. derece ---&gt; Subkapsüler &lt; %{{c1::10}}</div><div>2. derece --&gt;&nbsp; Subkapsüler % {{c1::10 - 50}}&nbsp;</div><div>3. Derece ---&gt; Subkapsüler &gt; % {{c1::50}} veya &gt; {{c1::10}} cm&nbsp;</div><div><br></div><div>HemoD stabilse TAKİP&nbsp;</div><div><br></div><div>4. derece ---&gt; &gt; % {{c2::25}} devask - {{c2::Hilus}} yaralanması&nbsp;</div><div>5. derece ---&gt; Tamamen kopmuş dalak / {{c2::tam}} devask</div><div><br></div><div>Tdv --&gt; Splenektomi</div>",
-     "after": "Dalak yaralanması sınıflaması (AAST)<div><br></div><div>1. derece → subkapsüler hematom &lt; %{{c1::10}}</div><div>2. derece → subkapsüler hematom %{{c1::10–50}}</div><div>3. derece → subkapsüler hematom &gt; %{{c1::50}} veya intraparankimal hematom ≥ {{c1::5}} cm</div><div><br></div><div>Hemodinamik olarak stabilse <b>takip</b></div><div><br></div><div>4. derece → &gt; %{{c2::25}} devaskülarizasyon, {{c2::hilus}} yaralanması</div><div>5. derece → tamamen kopmuş dalak / {{c2::tam}} devaskülarizasyon</div><div><br></div><div>Tedavi → splenektomi</div>"
+     "after": "Dalak yaralanması sınıflaması (AAST)<div><br></div><div>1. derece → subkapsüler hematom &lt; %{{c1::10}}</div><div>2. derece → subkapsüler hematom %{{c1::10–50}}</div><div>3. derece → subkapsüler hematom &gt; %{{c1::50}} veya intraparankimal hematom ≥ {{c1::5}} cm</div><div><br></div><div>Hemodinamik olarak stabilse <b>takip</b></div><div><br></div><div>4. derece → &gt; %{{c2::25}} devaskülarizasyon, {{c2::hilus}} yaralanması</div><div>5. derece → tamamen kopmuş dalak / {{c2::tam}} devaskülarizasyon</div><div><br></div><div>Tedavi → hemodinamik instabilitede cerrahi; stabil erişkinde uygun merkezde nonoperatif izlem ve gerektiğinde anjiyoembolizasyon</div>"
     },
     "Extra": {
      "before": "",
@@ -755,11 +774,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Karşılaştırma işaretinden sonra boşluk (<%10, >%50, ≥5, >%25 → < %10, > %50, ≥ 5, > %25)"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "AAST IV–V ardından kayıtsız splenektomi yazıyor.",
+     "rationale": "Kaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC9560023/"
     }
    ],
-   "aiNote": "Ne: 3. derecedeki \"> 10 cm\" → \"intraparankimal hematom ≥ 5 cm\" düzeltildi; \"Subkapsüler\" → \"subkapsüler hematom\", \"HemoD\" → \"Hemodinamik\", \"devask\" → \"devaskülarizasyon\", \"Tdv\" → \"Tedavi\" açıldı; başlığa \"(AAST)\" eklendi ve Extra'ya güncel nonoperatif izlem bilgisi yazıldı. Karşılaştırma işaretlerinden sonra boşluk bırakıldı.\nNeden: AAST dalak yaralanma ölçeğinde 3. derecenin intraparankimal hematom eşiği 5 cm'dir; 10 cm eşiği karaciğer ölçeğine aittir. Kart ayrıca 4–5. derecede splenektomiyi tek seçenek gibi sunuyordu; güncel kılavuzlarda kararı derece değil hemodinamik durum belirler.\nNasıl: [TD1, TD2, KS1, YP1, BÇ1] Yanlış sayı aynı c1 boşluğu içinde düzeltildi; klasik derece–tedavi şeması TUS için kartta bırakılıp güncel yaklaşım Extra'da tek cümleyle verildi; c1/c2 numaraları korundu. Ders genelinde karşılaştırma işaretinden sonra bir boşluk bırakılır (yazım birliği tablosu).\nKaynak: AAST organ yaralanma ölçeği (dalak); \"Splenic trauma: WSES classification and guidelines for adult and pediatric patients\"; Schwartz's Principles of Surgery, travma bölümü.",
+   "aiNote": "Ne: AAST IV–V ardından kayıtsız splenektomi yazıyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC9560023/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: 3. derecedeki \"> 10 cm\" → \"intraparankimal hematom ≥ 5 cm\" düzeltildi; \"Subkapsüler\" → \"subkapsüler hematom\", \"HemoD\" → \"Hemodinamik\", \"devask\" → \"devaskülarizasyon\", \"Tdv\" → \"Tedavi\" açıldı; başlığa \"(AAST)\" eklendi ve Extra'ya güncel nonoperatif izlem bilgisi yazıldı. Karşılaştırma işaretlerinden sonra boşluk bırakıldı.\nNeden: AAST dalak yaralanma ölçeğinde 3. derecenin intraparankimal hematom eşiği 5 cm'dir; 10 cm eşiği karaciğer ölçeğine aittir. Kart ayrıca 4–5. derecede splenektomiyi tek seçenek gibi sunuyordu; güncel kılavuzlarda kararı derece değil hemodinamik durum belirler.\nNasıl: [TD1, TD2, KS1, YP1, BÇ1] Yanlış sayı aynı c1 boşluğu içinde düzeltildi; klasik derece–tedavi şeması TUS için kartta bırakılıp güncel yaklaşım Extra'da tek cümleyle verildi; c1/c2 numaraları korundu. Ders genelinde karşılaştırma işaretinden sonra bir boşluk bırakılır (yazım birliği tablosu).\nKaynak: AAST organ yaralanma ölçeği (dalak); \"Splenic trauma: WSES classification and guidelines for adult and pediatric patients\"; Schwartz's Principles of Surgery, travma bölümü."
+    }
+   ]
   },
   {
    "order": 15,
@@ -1448,11 +1479,11 @@
    "fields": {
     "Text": {
      "before": "&gt; {{c1::20}} mg/gün ve &gt; {{c1::3}} Hf uzun <b>Steroid alan Hasta Ameliyat Yönetim</b>i:<br><br><b>Minör cerrahi/Lokal anestezi</b> --&gt; PreOp Normal GK dozu ver + Ek doz:{{c2::a gerek yok (Ad. Yet bulguları olmadıkça)}} + Daha sonra 25 mg iv hidrokortizon&nbsp;<br><br><b>Orta dereceli cerrahi </b>--&gt; PreOp {{c3::50}} mg iv Hidrokortizon + 24-48 saat her 8 saatte bir 50 mg Hidrokortizon<br><br><b>Major ameliyat</b> --&gt; PreOp {{c3::100}} mg Hidrokortizon + 48-72 saat her 8 saatte bir 50 mg Hidrokortizon<br><br>&lt; {{c1::5}} mg'dan az veya {{c1::3}} haftadan daha kısa süre GK kullanan hasta --&gt; Günlük kendi dozu yeterli (Ek bir şeye gerek yok)",
-     "after": "&gt; {{c1::20}} mg/gün (prednizon eşdeğeri) ve &gt; {{c1::3}} hafta <b>steroid alan hastada ameliyat yönetimi</b>:<br><br><b>Minör cerrahi/lokal anestezi</b> → preoperatif normal glukokortikoid dozu ver + ek doza {{c2::gerek yok (adrenal yetmezlik bulguları olmadıkça)}} + daha sonra 25 mg İV hidrokortizon<br><br><b>Orta dereceli cerrahi</b> → preoperatif {{c3::50}} mg İV hidrokortizon + 24–48 saat boyunca 8 saatte bir 50 mg hidrokortizon<br><br><b>Majör ameliyat</b> → preoperatif {{c3::100}} mg hidrokortizon + 48–72 saat boyunca 8 saatte bir 50 mg hidrokortizon<br><br>Günde {{c1::5}} mg'dan az veya {{c1::3}} haftadan kısa süre glukokortikoid kullanan hasta → günlük kendi dozu yeterli (ek bir şeye gerek yok)"
+     "after": "Steroid ilişkili adrenal yetmezlik riski ve cerrahi stres dozu (ESE/Endocrine Society 2024):<br><br>Oral maruziyette risk eşikleri → yaklaşık {{c1::3–4}} haftayı aşan süre ve fizyolojik eşdeğerin üstünde doz (prednizon/prednizolon {{c1::4–6}} mg/gün üstü).<br><br>Adrenal yetmezliği dışlanmamış mevcut/yakın dönem steroid kullanıcısında, lokal anestezili minör işlem ve oral alım uygunsa → gerektiğinde günlük toplam {{c2::40}} mg oral hidrokortizon eşdeğerine yükselt; zaten yeterli doz alıyorsa ek artış gerekmez.<br><br>Genel/bölgesel anestezili cerrahi için kılavuz şeması → indüksiyonda {{c3::100}} mg İV hidrokortizon; ardından {{c3::200}} mg/24 saat infüzyon (mümkün değilse {{c3::50}} mg İV, 6 saatte bir)."
     },
     "Extra": {
      "before": "ÖNEMLİ - Zor bir bilgi ama fark yaratır",
-     "after": ""
+     "after": "Minör işlem için örnek oral dağılım: işlemden 1 saat önce 20 mg, 6 saat sonra 10 mg, sonraki 6 saatte 10 mg hidrokortizon. Hemodinamik instabilite, kusma/ishal veya oral alımın uygun olmaması parenteral değerlendirme gerektirir. Ameliyat sonrası doz ve süre oral alım, komplikasyonlar ve klinik yanıta göre ayarlanır. Kaynak: 2024 ortak kılavuz, R3.1 ve Tablo 8."
     }
    },
    "changes": [
@@ -1477,11 +1508,33 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Sözcük ortasında kapanan kalın (\"Yönetim</b>i\") düzeltildi; cloze'a taşan \"a\" eki (\"Ek doz:{{c2::a gerek yok\") düzeltildi; \"< 5 mg'dan az\" yinelemesi giderildi; Major → Majör; iv → İV; 24-48 → 24–48; --> → →; büyük/küçük harf; &nbsp; temizlendi; Extra'daki \"ÖNEMLİ - Zor bir bilgi ama fark yaratır\" kişisel notu kaldırıldı"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı hidrokortizon dozunun idame satırında açık kalması c3 ile kapatıldı; minör cerrahi yönetimi çelişkisi ayrıca kaynakla düzeltilmelidir.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Tekrarlanan doz sızıntısı kapatıldı; minör işlemde ek doz gereksiz denip ardından IV doz verilmesi çelişkisi giderildi. Adrenal risk ve anestezi/oral alım koşulları ESE 2024 kapsamına alındı.",
+     "rationale": "Kaynak: https://academic.oup.com/jcem/article/109/7/1657/7667842"
     }
    ],
-   "aiNote": "Ne: Eşik doza \"(prednizon eşdeğeri)\" eklendi; \"Hf\", \"GK\", \"Ad. Yet\", \"PreOp\" açıldı, cloze'a taşan \"a\" eki (\"Ek doz:{{c2::a gerek yok\") ve sözcük ortasında kapanan kalın (\"Yönetim</b>i\") düzeltildi; Extra'daki \"ÖNEMLİ - Zor bir bilgi ama fark yaratır\" kaldırıldı. Minör cerrahi satırı 'Doğrulama gerekli' olarak işaretlendi.\nNeden: 20 mg/gün eşiği prednizon eşdeğeri dozdur; niteleyicisiz sayı başka bir steroidin dozu sanılabilirdi. Minör cerrahi satırı \"ek doza gerek yok\" ile \"daha sonra 25 mg İV hidrokortizon\" önerisini aynı anda veriyor; kaynaklarda iki şema da bulunduğundan hangisinin kastedildiği çözülemedi.\nNasıl: [EK1, KS1, SN2, YP1] Çelişen doz şeması değiştirilmeden işaretlendi; HPA baskılanması eşikleri ve 50/100 mg preoperatif hidrokortizon dozları doğru olduğundan c1, c2, c3 cevapları korundu; yalnız kişisel işaretten ibaret Extra boşaltıldı.",
+   "aiNote": "Ne: Tekrarlanan doz sızıntısı kapatıldı; minör işlemde ek doz gereksiz denip ardından IV doz verilmesi çelişkisi giderildi. Adrenal risk ve anestezi/oral alım koşulları ESE 2024 kapsamına alındı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://academic.oup.com/jcem/article/109/7/1657/7667842",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Eşik doza \"(prednizon eşdeğeri)\" eklendi; \"Hf\", \"GK\", \"Ad. Yet\", \"PreOp\" açıldı, cloze'a taşan \"a\" eki (\"Ek doz:{{c2::a gerek yok\") ve sözcük ortasında kapanan kalın (\"Yönetim</b>i\") düzeltildi; Extra'daki \"ÖNEMLİ - Zor bir bilgi ama fark yaratır\" kaldırıldı. Minör cerrahi satırı 'Doğrulama gerekli' olarak işaretlendi.\nNeden: 20 mg/gün eşiği prednizon eşdeğeri dozdur; niteleyicisiz sayı başka bir steroidin dozu sanılabilirdi. Minör cerrahi satırı \"ek doza gerek yok\" ile \"daha sonra 25 mg İV hidrokortizon\" önerisini aynı anda veriyor; kaynaklarda iki şema da bulunduğundan hangisinin kastedildiği çözülemedi.\nNasıl: [EK1, KS1, SN2, YP1] Çelişen doz şeması değiştirilmeden işaretlendi; HPA baskılanması eşikleri ve 50/100 mg preoperatif hidrokortizon dozları doğru olduğundan c1, c2, c3 cevapları korundu; yalnız kişisel işaretten ibaret Extra boşaltıldı."
+    },
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Aynı hidrokortizon dozunun idame satırında açık kalması c3 ile kapatıldı; minör cerrahi yönetimi çelişkisi ayrıca kaynakla düzeltilmelidir.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi."
+    }
+   ]
   },
   {
    "order": 32,
@@ -2112,11 +2165,15 @@
    "topic": "Genel",
    "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "{{c1::( Hep. GF)H}}GF&nbsp; ---&gt; Her şeyi baskılar&nbsp;",
-     "after": "{{c1::HGF (hepatosit büyüme faktörü)}} → her şeyi baskılar"
+     "after": "{{c1::HGF (hepatosit büyüme faktörü)}} → hepatosit DNA sentezini ve proliferasyonunu uyarır"
+    },
+    "Extra": {
+     "before": "",
+     "after": "<div>Bağımsız dayanak: Strain ve ark., 1991 (PMID 1827130), hepatosit kültürü araştırması.</div>"
     }
    },
    "changes": [
@@ -2136,11 +2193,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "HGF her şeyi baskılar.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/1827130/"
     }
    ],
-   "aiNote": "Ne: Bozuk \"{{c1::( Hep. GF)H}}GF\" yapısı \"{{c1::HGF (hepatosit büyüme faktörü)}}\" olarak tek cloze'a toplandı, ok → yapıldı; \"her şeyi baskılar\" bilgisi 'Doğrulama gerekli' olarak işaretlendi.\nNeden: Cevabın bir harfi ve açıklaması cloze içinde, geri kalanı dışında olduğu için arka yüz okunmuyordu; HGF'nin bilinen başlıca etkisi baskılama değil mitojenik uyarı olduğundan kartın iddiası kuşkulu.\nNasıl: [YP1, YP4, BÇ1] Yazarın cevabı (HGF) ve c1 numarası korunarak yalnız cloze sınırları düzeltildi; emin olunamayan tıbbi iddia değiştirilmedi, şüphe kaydedildi.",
+   "aiNote": "Ne: HGF her şeyi baskılar.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/1827130/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Bozuk \"{{c1::( Hep. GF)H}}GF\" yapısı \"{{c1::HGF (hepatosit büyüme faktörü)}}\" olarak tek cloze'a toplandı, ok → yapıldı; \"her şeyi baskılar\" bilgisi 'Doğrulama gerekli' olarak işaretlendi.\nNeden: Cevabın bir harfi ve açıklaması cloze içinde, geri kalanı dışında olduğu için arka yüz okunmuyordu; HGF'nin bilinen başlıca etkisi baskılama değil mitojenik uyarı olduğundan kartın iddiası kuşkulu.\nNasıl: [YP1, YP4, BÇ1] Yazarın cevabı (HGF) ve c1 numarası korunarak yalnız cloze sınırları düzeltildi; emin olunamayan tıbbi iddia değiştirilmedi, şüphe kaydedildi."
+    }
+   ]
   },
   {
    "order": 49,
@@ -2427,11 +2496,11 @@
    "fields": {
     "Text": {
      "before": "Komplike Divetikülit {{c1::Hinchey}} Sınıflaması&nbsp;<div><br></div><div>1 ---&gt; {{c2::perikolik}} / {{c2::mezenterik}} apse&nbsp;</div><div>2 ---&gt; uzak apseler ( {{c3::pelvik}} / {{c3::retroperitoneal}} (inen kolon divertikülü))&nbsp;</div><div>3 ---&gt; yaygın {{c4::pürülan}} peritonit</div><div>4 ---&gt; yaygın {{c4::FEKAL}} peritonit&nbsp;</div><div><br></div><div>{{c1::Hinchey}} 1-2 tdv ---&gt; {{c5::AB + perkütan drenaj}}</div><div><br></div><div>küçük apseler (&lt; {{c5::2}} cm) ---&gt; {{c5::sadece pe AB}}&nbsp;</div>",
-     "after": "Komplike divertikülitte {{c1::Hinchey}} sınıflaması<div><br></div><div>1 → {{c2::perikolik}} / {{c2::mezenterik}} apse</div><div>2 → uzak apseler ({{c3::pelvik}} / {{c3::retroperitoneal}} (inen kolon divertikülü))</div><div>3 → yaygın {{c4::pürülan}} peritonit</div><div>4 → yaygın {{c4::fekal}} peritonit</div><div><br></div><div>{{c1::Hinchey}} 1–2 tedavisi → {{c5::antibiyotik + perkütan drenaj}}</div><div><br></div><div>Küçük apseler (&lt; {{c5::2}} cm; klasik eşik) → {{c5::sadece parenteral antibiyotik}}</div>"
+     "after": "Komplike divertikülitte {{c1::Hinchey}} sınıflaması<div><br></div><div>1 → {{c2::perikolik}} / {{c2::mezenterik}} apse</div><div>2 → uzak apseler ({{c3::pelvik}} / {{c3::retroperitoneal}} (inen kolon divertikülü))</div><div>3 → yaygın {{c4::pürülan}} peritonit</div><div>4 → yaygın {{c4::fekal}} peritonit</div><div><br></div><div>ASCRS Ekim 2026: divertikülit apsesi >{{c5::4}} cm veya klinik kötüleşme → {{c5::antibiyotik tedavisine ek perkütan drenaj değerlendirilir}}</div><div><br></div><div>WSES 2020: küçük apse (&lt; {{c5::4–5}} cm) → başlangıçta {{c5::yalnız antibiyotik tedavisi düşünülebilir}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kılavuzlarda (ASCRS, WSES) yalnız antibiyotikle tedavi edilebilen apse eşiği daha yüksektir (yaklaşık 3–5 cm)."
+     "after": "<div>Hemodinamik durum, drenaja erişilebilirlik ve tedavi yanıtı kararı değiştirir. ASCRS 2020 >3 cm önerisi, Ekim 2026 güncellemesinde >4 cm veya klinik kötüleşme biçiminde değişmiştir. WSES 2020 küçük apseyi <4–5 cm olarak ele alır; eşikler tek ortak kural değildir. Drenajın mümkün olmadığı hastada yakın izlem ve klinik kötüleşmede cerrahi değerlendirme gerekir.</div>"
     }
    },
    "changes": [
@@ -2455,11 +2524,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; FEKAL → fekal; Sınıflaması → sınıflaması; 1-2 → 1–2; parantez içi boşluk; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Hinchey I–II daima drenaj; küçük apse 2 cm; Extra kaynakları 3–5 diye birleştiriyor.",
+     "rationale": "Kaynak: https://staging.fascrs.org/ascrs/media/files/dcr-tics-cpg-2020.pdf; https://www.ascrsu.com/ascrs/view/DC-and-R-Learning/3842145/14/The_Management_of_Left_Sided_Colonic_Diverticulitis; https://doi.org/10.1186/s13017-020-00313-4"
     }
    ],
-   "aiNote": "Ne: \"Divetikülit\" → \"divertikülit\", \"tdv\" → \"tedavisi\", \"AB\" ve \"pe AB\" → \"antibiyotik\" ve \"parenteral antibiyotik\" yapıldı; 2 cm satırına \"klasik eşik\" eklendi ve Extra'ya \"Güncel kılavuzlarda (ASCRS, WSES) yalnız antibiyotikle tedavi edilebilen apse eşiği daha yüksektir (yaklaşık 3–5 cm).\" yazıldı.\nNeden: Güncel kılavuzlar yalnız antibiyotik tedavisi için 2 cm'den büyük apseleri de kabul eder; kart klasik eşiği güncel sınır gibi sunuyordu. Kısaltmalar yazarın kişisel notuydu.\nNasıl: [TD2, KS1, YP1] TUS'un beklediği 2 cm cevabı \"klasik eşik\" diye çerçevelenip korundu, güncel eşik Extra'da tek cümleyle verildi; Hinchey 1–4 tanımları (perikolik/mezenterik apse, uzak apse, pürülan ve fekal peritonit) doğru olduğundan c1–c5 dağılımı değişmedi.\nKaynak: Schwartz's Principles of Surgery, kolon, rektum ve anüs bölümü (divertikülit, Hinchey sınıflaması); ASCRS ve WSES divertikülit kılavuzları; \"Multicentre study of non-surgical management of diverticulitis with abscess formation\", Br J Surg 2019;106(4):458–466.",
+   "aiNote": "Ne: Hinchey I–II daima drenaj; küçük apse 2 cm; Extra kaynakları 3–5 diye birleştiriyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://staging.fascrs.org/ascrs/media/files/dcr-tics-cpg-2020.pdf; https://www.ascrsu.com/ascrs/view/DC-and-R-Learning/3842145/14/The_Management_of_Left_Sided_Colonic_Diverticulitis; https://doi.org/10.1186/s13017-020-00313-4",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Divetikülit\" → \"divertikülit\", \"tdv\" → \"tedavisi\", \"AB\" ve \"pe AB\" → \"antibiyotik\" ve \"parenteral antibiyotik\" yapıldı; 2 cm satırına \"klasik eşik\" eklendi ve Extra'ya \"Güncel kılavuzlarda (ASCRS, WSES) yalnız antibiyotikle tedavi edilebilen apse eşiği daha yüksektir (yaklaşık 3–5 cm).\" yazıldı.\nNeden: Güncel kılavuzlar yalnız antibiyotik tedavisi için 2 cm'den büyük apseleri de kabul eder; kart klasik eşiği güncel sınır gibi sunuyordu. Kısaltmalar yazarın kişisel notuydu.\nNasıl: [TD2, KS1, YP1] TUS'un beklediği 2 cm cevabı \"klasik eşik\" diye çerçevelenip korundu, güncel eşik Extra'da tek cümleyle verildi; Hinchey 1–4 tanımları (perikolik/mezenterik apse, uzak apse, pürülan ve fekal peritonit) doğru olduğundan c1–c5 dağılımı değişmedi.\nKaynak: Schwartz's Principles of Surgery, kolon, rektum ve anüs bölümü (divertikülit, Hinchey sınıflaması); ASCRS ve WSES divertikülit kılavuzları; \"Multicentre study of non-surgical management of diverticulitis with abscess formation\", Br J Surg 2019;106(4):458–466."
+    }
+   ]
   },
   {
    "order": 57,
@@ -2813,7 +2894,7 @@
    "fields": {
     "Text": {
      "before": "<div>Stres Gastriti Kanam riskini artıran 2 faktör&nbsp;</div><div><br></div>{{c1::Koag.pati}} olan / &gt; {{c1::48 saat Vent. desteği}} ihtiyacı duyulan solunum yet&nbsp;<div><br></div><div>Sadece bunlara Pfx verilir&nbsp;</div><div><br></div><div>Pfx ---&gt; {{c2::Sükralfat}}</div><div><br></div><div>Kanarsa ---&gt; {{c2::PPI}}&nbsp;<br><div><br></div></div>",
-     "after": "<div>Stres gastritinde kanama riskini artıran en önemli 2 faktör</div><div><br></div>{{c1::Koagülopati}} olması / &gt; {{c1::48 saat ventilatör desteği}} gerektiren solunum yetmezliği<div><br></div><div>Klasik bilgiye göre profilaksi yalnız bu hastalara verilir</div><div><br></div><div>Profilaksi → {{c2::sükralfat}}</div><div><br></div><div>Kanarsa → {{c2::PPİ}}</div>"
+     "after": "<div>SCCM/ASHP 2024: yoğun bakım erişkininde stres ilişkili kanama riskleri</div><div><br></div>{{c1::Koagülopati}} olması / {{c1::şok}} / kronik karaciğer hastalığı<div><br></div><div>Profilaksi kararı risk ve klinik duruma göre verilir</div><div><br></div><div>Profilaksi → {{c2::PPİ veya H2 reseptör blokörü}}</div><div><br></div><div>Kanarsa → {{c2::PPİ}}</div>"
     },
     "Extra": {
      "before": "",
@@ -2842,24 +2923,36 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "PPI → PPİ; Sükralfat → sükralfat; ---> → →; alan sonundaki boş satır ve &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Yalnız iki risk grubu ve sükralfat ilk tercih, Extra PPİ/H2RA diyor.",
+     "rationale": "Kaynak: https://www.sccm.org/clinical-resources/guidelines/guidelines/sccm-ashp-guideline-prevention-of-ugib"
     }
    ],
-   "aiNote": "Ne: Başlık \"Stres gastritinde kanama riskini artıran en önemli 2 faktör\" yapıldı, \"Sadece bunlara Pfx verilir\" → \"Klasik bilgiye göre profilaksi yalnız bu hastalara verilir\" oldu ve Extra'ya SCCM/ASHP 2024 önerisi eklendi; kısaltmalar açıldı.\nNeden: Güncel kılavuz profilakside sükralfat yerine PPİ veya H2 reseptör blokörü önerir ve risk grubunu farklı tanımlar; kart klasik bilgiyi güncel öneri gibi sunuyordu. Başlıktaki iki faktör tek risk faktörleri değildir.\nNasıl: [TD2, EK1, KS1, YP1] TUS'un beklediği cevaplar (koagülopati, 48 saat ventilasyon, sükralfat, PPİ) \"klasik\" diye çerçevelenip korundu, güncel öneri Extra'da tek cümleyle verildi; c1 ve c2 dağılımı değişmedi.\nKaynak: SCCM/ASHP stres ülseri profilaksisi kılavuzu (2024); Schwartz's Principles of Surgery, mide bölümü (stres gastriti).",
+   "aiNote": "Ne: Yalnız iki risk grubu ve sükralfat ilk tercih, Extra PPİ/H2RA diyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.sccm.org/clinical-resources/guidelines/guidelines/sccm-ashp-guideline-prevention-of-ugib",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlık \"Stres gastritinde kanama riskini artıran en önemli 2 faktör\" yapıldı, \"Sadece bunlara Pfx verilir\" → \"Klasik bilgiye göre profilaksi yalnız bu hastalara verilir\" oldu ve Extra'ya SCCM/ASHP 2024 önerisi eklendi; kısaltmalar açıldı.\nNeden: Güncel kılavuz profilakside sükralfat yerine PPİ veya H2 reseptör blokörü önerir ve risk grubunu farklı tanımlar; kart klasik bilgiyi güncel öneri gibi sunuyordu. Başlıktaki iki faktör tek risk faktörleri değildir.\nNasıl: [TD2, EK1, KS1, YP1] TUS'un beklediği cevaplar (koagülopati, 48 saat ventilasyon, sükralfat, PPİ) \"klasik\" diye çerçevelenip korundu, güncel öneri Extra'da tek cümleyle verildi; c1 ve c2 dağılımı değişmedi.\nKaynak: SCCM/ASHP stres ülseri profilaksisi kılavuzu (2024); Schwartz's Principles of Surgery, mide bölümü (stres gastriti)."
+    }
+   ]
   },
   {
    "order": 66,
    "noteId": 1605527352945,
    "guid": "mtd5syq)s9",
    "topic": "Genel",
-   "severity": "Yüksek",
+   "severity": "Kritik",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "ÜST GİS Kanam şüphesi olan her hastaya ---&gt; {{c1::NG Tüp}} takılır&nbsp;",
-     "after": "Üst GİS kanaması şüphesi olan her hastaya (klasik yaklaşım) → {{c1::NG tüp}} takılır"
+     "after": "ESGE 2021: akut üst GİS kanamasında rutin aspirasyon/lavaj amacıyla → {{c1::NG tüp}} takılması önerilmez"
     },
     "Extra": {
      "before": "",
@@ -2882,11 +2975,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "NG Tüp → NG tüp; ---> → →; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Kritik",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Her üst GİS kanaması hastasına rutin NG tüp.",
+     "rationale": "Kaynak: https://www.esge.com/assets/downloads/pdfs/guidelines/2021_a_1369_5274.pdf"
     }
    ],
-   "aiNote": "Ne: Köke \"(klasik yaklaşım)\" eklendi, \"ÜST GİS Kanam\" → \"Üst GİS kanaması\" yapıldı ve Extra'ya \"ESGE kılavuzu akut üst GİS kanamasında rutin nazogastrik aspirasyon veya lavaj önermez; tanı ve tedavide temel yöntem endoskopidir.\" yazıldı.\nNeden: Güncel kılavuz rutin NG aspirasyonu önermediği hâlde kart onu her hastada yapılan güncel uygulama gibi sunuyordu.\nNasıl: [TD2, BÇ1, YP1] TUS'un beklediği cevap (NG tüp) \"klasik\" diye çerçevelenip korundu, güncel öneri Extra'da tek cümleyle verildi; c1 numarası değişmedi.\nKaynak: ESGE, Diagnosis and management of nonvariceal upper gastrointestinal hemorrhage kılavuzu (rutin nazogastrik aspirasyon/lavaj önerilmez).",
+   "aiNote": "Ne: Her üst GİS kanaması hastasına rutin NG tüp.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.esge.com/assets/downloads/pdfs/guidelines/2021_a_1369_5274.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Köke \"(klasik yaklaşım)\" eklendi, \"ÜST GİS Kanam\" → \"Üst GİS kanaması\" yapıldı ve Extra'ya \"ESGE kılavuzu akut üst GİS kanamasında rutin nazogastrik aspirasyon veya lavaj önermez; tanı ve tedavide temel yöntem endoskopidir.\" yazıldı.\nNeden: Güncel kılavuz rutin NG aspirasyonu önermediği hâlde kart onu her hastada yapılan güncel uygulama gibi sunuyordu.\nNasıl: [TD2, BÇ1, YP1] TUS'un beklediği cevap (NG tüp) \"klasik\" diye çerçevelenip korundu, güncel öneri Extra'da tek cümleyle verildi; c1 numarası değişmedi.\nKaynak: ESGE, Diagnosis and management of nonvariceal upper gastrointestinal hemorrhage kılavuzu (rutin nazogastrik aspirasyon/lavaj önerilmez)."
+    }
+   ]
   },
   {
    "order": 67,
@@ -5989,7 +6094,7 @@
    "fields": {
     "Text": {
      "before": "KC'e hem <b>lenf</b> hem <b>hepatik arter</b> yolu ile Met. yapabilen:<div><br></div><div>{{c1::AC}} Ca</div><div><br></div><div>Meme Ca--&gt; {{c1::Lenfatik}} yol ile</div><div><br></div><div>Malign Melanom--&gt; {{c1::Hep. Arter}} yolu ile</div>",
-     "after": "Karaciğere hem <b>lenf</b> hem <b>hepatik arter</b> yoluyla metastaz yapabilen:<div><br></div><div>{{c1::Akciğer}} kanseri</div><div><br></div><div>Meme kanseri → {{c1::lenfatik}} yolla</div><div><br></div><div>Malign melanom → {{c1::hepatik arter}} yoluyla</div>"
+     "after": "Karaciğere hem <b>lenf</b> hem <b>arteriyel dolaşım</b> yoluyla metastaz yapabilen:<div><br></div><div>{{c1::Akciğer}} kanseri</div><div><br></div><div>Meme kanseri → {{c1::lenfatik}} yolla</div><div><br></div><div>Malign melanom → {{c1::hepatik arter}} yoluyla</div>"
     }
    },
    "changes": [
@@ -6013,11 +6118,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> → →; büyük/küçük harf (Lenfatik, Malign Melanom, Arter); kalın vurgular korundu"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Malign melanom için sorulan hepatik arter yanıtı kökte doğrudan yazılmayacak şekilde yeniden ifade edildi; bu işlem metastaz yolu iddialarına tıbbi onay değildir.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Kısaltmalar açıldı (KC, Met., AC, Ca, Hep.), \"KC'e\" → \"Karaciğere\" düzeltildi ve oklar → oldu; meme kanserinin lenfatik yolla karaciğer metastazı bilgisi Doğrulama gerekli olarak işaretlendi.\nNeden: Kart kişisel kısaltmalarla yazılmıştı; meme kanserinin karaciğere lenfatik yolla yayıldığı bilgisi taranan kaynaklarda doğrulanamadı.\nNasıl: [KS1, DB1, YP3] Doğrulanamayan yol ayrımı içerik olarak değiştirilmedi, yalnız dil ve biçim düzeltildi; kalın \"lenf\" ve \"hepatik arter\" vurguları ile üç c1 boşluğu korundu.",
+   "aiNote": "Ne: Malign melanom için sorulan hepatik arter yanıtı kökte doğrudan yazılmayacak şekilde yeniden ifade edildi; bu işlem metastaz yolu iddialarına tıbbi onay değildir.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Kısaltmalar açıldı (KC, Met., AC, Ca, Hep.), \"KC'e\" → \"Karaciğere\" düzeltildi ve oklar → oldu; meme kanserinin lenfatik yolla karaciğer metastazı bilgisi Doğrulama gerekli olarak işaretlendi.\nNeden: Kart kişisel kısaltmalarla yazılmıştı; meme kanserinin karaciğere lenfatik yolla yayıldığı bilgisi taranan kaynaklarda doğrulanamadı.\nNasıl: [KS1, DB1, YP3] Doğrulanamayan yol ayrımı içerik olarak değiştirilmedi, yalnız dil ve biçim düzeltildi; kalın \"lenf\" ve \"hepatik arter\" vurguları ile üç c1 boşluğu korundu."
+    }
+   ]
   },
   {
    "order": 142,
@@ -6388,11 +6505,11 @@
    "fields": {
     "Text": {
      "before": "Papiller Tiroit Ca tdv ---&gt; {{c1::Total Tiroidektomi}} ----&gt; Servikal LN VARSA ---&gt; aynı tarafa {{c1::Modifiye Radikal Boyun Dx}}",
-     "after": "Papiller tiroit kanseri tedavisi → {{c1::total tiroidektomi}} → lateral servikal lenf nodu metastazı <b>varsa</b> → aynı tarafa {{c1::modifiye radikal boyun diseksiyonu}}"
+     "after": "Papiller tiroit kanseri: >4 cm, makroskopik ekstratiroidal yayılım veya klinik nodal/uzak metastaz varsa cerrahi tedavi → {{c1::total tiroidektomi}} → lateral servikal lenf nodu metastazı <b>varsa</b> → aynı tarafa {{c1::modifiye radikal boyun diseksiyonu}}"
     },
     "Extra": {
      "before": "Pfx boyun Dx&nbsp; YAPILMAZ&nbsp;",
-     "after": "Profilaktik lateral boyun diseksiyonu yapılmaz; profilaktik santral boyun diseksiyonu T3–T4 tümörlerde veya lateral lenf nodu metastazında düşünülebilir.<div>ATA 2015'e göre ekstratiroidal yayılımı ve lenf nodu metastazı olmayan 1–4 cm tümörde lobektomi de seçilebilir.</div>"
+     "after": "<div>ATA 2025, öneri 15: cerrahi seçilmiş unilateral ≤2 cm cN0M0 hastada lobektomi; düşük riskli 2–4 cm hastada lobektomi veya total seçim bireyselleştirilir. Lateral diseksiyon metastaz varsa terapötiktir.</div>"
     }
    },
    "changes": [
@@ -6417,11 +6534,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> ve ----> → →; VARSA → kalın \"varsa\"; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Papiller tiroit kanserinde kayıtsız total tiroidektomi; Extra’da 2015 lobektomi istisnası.",
+     "rationale": "Kaynak: https://thyca.org/wp-content/uploads/DTCGuidelines.pdf"
     }
    ],
-   "aiNote": "Ne: \"Servikal LN VARSA\" → \"lateral servikal lenf nodu metastazı varsa\" yapıldı, \"Boyun Dx\" → \"boyun diseksiyonu\" açıldı; Extra \"Pfx boyun Dx YAPILMAZ\" yerine profilaktik santral diseksiyonun istisnalarını ve ATA 2015'in lobektomi seçeneğini veren iki cümleye çevrildi.\nNeden: Modifiye radikal boyun diseksiyonu yalnız lateral metastazda yapılır; Extra profilaktik diseksiyonu istisnasız yasaklıyordu ve kart güncel lobektomi seçeneğini anmıyordu. \"Dx\" bu kartta diseksiyon anlamındaydı.\nNasıl: [EK1, TD2, KS1, YP1] Klasik tedavi zinciri ve iki c1 cevabı korundu; cevabı doğru kılan \"lateral\" niteleyicisi kökte cloze dışına, istisnalar ve güncel seçenek Extra'ya yazıldı.\nKaynak: ATA 2015 erişkin tiroit nodülü ve diferansiye tiroit kanseri kılavuzu (başlangıç cerrahisi ve boyun diseksiyonu önerileri); Schwartz's Principles of Surgery, tiroit bölümü.",
+   "aiNote": "Ne: Papiller tiroit kanserinde kayıtsız total tiroidektomi; Extra’da 2015 lobektomi istisnası.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://thyca.org/wp-content/uploads/DTCGuidelines.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Servikal LN VARSA\" → \"lateral servikal lenf nodu metastazı varsa\" yapıldı, \"Boyun Dx\" → \"boyun diseksiyonu\" açıldı; Extra \"Pfx boyun Dx YAPILMAZ\" yerine profilaktik santral diseksiyonun istisnalarını ve ATA 2015'in lobektomi seçeneğini veren iki cümleye çevrildi.\nNeden: Modifiye radikal boyun diseksiyonu yalnız lateral metastazda yapılır; Extra profilaktik diseksiyonu istisnasız yasaklıyordu ve kart güncel lobektomi seçeneğini anmıyordu. \"Dx\" bu kartta diseksiyon anlamındaydı.\nNasıl: [EK1, TD2, KS1, YP1] Klasik tedavi zinciri ve iki c1 cevabı korundu; cevabı doğru kılan \"lateral\" niteleyicisi kökte cloze dışına, istisnalar ve güncel seçenek Extra'ya yazıldı.\nKaynak: ATA 2015 erişkin tiroit nodülü ve diferansiye tiroit kanseri kılavuzu (başlangıç cerrahisi ve boyun diseksiyonu önerileri); Schwartz's Principles of Surgery, tiroit bölümü."
+    }
+   ]
   },
   {
    "order": 151,
@@ -6474,7 +6603,7 @@
    "fields": {
     "Text": {
      "before": "Tiroit Ca Hast'ların İzlemi&nbsp;<div><br></div><div>Diferansiye Tiroit Ca ({{c1::Papiller ve Foliküler}}) Takibi ---&gt; {{c1::Tiroglobulin}} (İlk {{c1::2}} yıl --&gt;&nbsp; 6 ayda 1 / Sonra Yılda --&gt; 1 )&nbsp;</div><div><br></div><div>Tg Yüksek çıktı ---&gt; Tüm vücut {{c2::I - 131}} Taraması --&gt; Tarama (-) --&gt; Diğer radyolojik tetkikler</div><div><br></div><div>Tg NORMAL ---&gt; I - 131 taraması {{c3::yapılmayabilir}} yapılacaksa ---&gt; ( İlk {{c3::2}} yıl ---&gt; Yılda 1 / Sonra {{c3::3-5}} yılda 1 I - 131 Tüm vücut taraması)&nbsp;</div><div><br></div>",
-     "after": "Tiroit kanserli hastaların izlemi<div><br></div><div>Diferansiye tiroit kanseri ({{c1::papiller ve foliküler}}) takibi → {{c1::tiroglobulin}} (ilk {{c1::2}} yıl → 6 ayda 1 / sonra → yılda 1)</div><div><br></div><div>{{c1::Tg}} yüksek çıktı → tüm vücut {{c2::I-131}} taraması → tarama negatif → diğer radyolojik tetkikler</div><div><br></div><div>{{c1::Tg}} normal → {{c2::I-131}} taraması {{c3::yapılmayabilir}}; yapılacaksa → (ilk {{c3::2}} yıl → yılda 1 / sonra {{c3::3–5}} yılda 1 {{c2::I-131}} tüm vücut taraması)</div>"
+     "after": "Tiroit kanserli hastaların izlemi<div><br></div><div>Diferansiye tiroit kanseri ({{c1::papiller ve foliküler}}) takibi → {{c1::tiroglobulin}} (ilk {{c3::{{c1::2}}::ilişkili yanıt arka yüzde}} yıl → 6 ayda 1 / sonra → yılda 1)</div><div><br></div><div>{{c1::Tg}} yüksek çıktı → tüm vücut {{c2::I-131}} taraması → tarama negatif → diğer radyolojik tetkikler</div><div><br></div><div>{{c1::Tg}} normal → {{c2::I-131}} taraması {{c3::yapılmayabilir}}; yapılacaksa → (ilk {{c1::{{c3::2}}::ilişkili yanıt arka yüzde}} yıl → yılda 1 / sonra {{c3::3–5}} yılda 1 {{c2::I-131}} tüm vücut taraması)</div>"
     }
    },
    "changes": [
@@ -6493,11 +6622,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> ve --> → →; \"Tarama (-)\" → \"tarama negatif\"; I - 131 → I-131; 3-5 → 3–5; NORMAL → normal; büyük/küçük harf; alan sonundaki boş satır ve &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Aynı ilk iki yıl zaman diliminin farklı takip satırlarından okunması kapatıldı; diğer sürelerin anlamı korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Alt satırlardaki iki \"Tg\" c1, üçüncü satırdaki iki \"I-131\" c2 boşluğuna alındı; \"Ca\" → \"kanseri\", \"Tarama (-)\" → \"tarama negatif\", \"3-5\" → \"3–5\" yapıldı.\nNeden: c1 kartında tiroglobulin \"Tg\" kısaltmasıyla, c2 kartında I-131 üçüncü satırda açık yazılarak ele veriliyordu; metin kısaltma ve büyük harf artıkları taşıyordu.\nNasıl: [YP2, YP1, KS1] Sızıntı, sözcükler aynı numaralı boşluklara alınarak giderildi; yeni kart doğmadı. Tiroglobulinle izlem, Tg yüksekliğinde tüm vücut I-131 taraması ve Tg normalse taramanın yapılmayabileceği klasik izlem şeması olduğundan içerik ve c1–c3 cevapları korundu.",
+   "aiNote": "Ne: Aynı ilk iki yıl zaman diliminin farklı takip satırlarından okunması kapatıldı; diğer sürelerin anlamı korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Alt satırlardaki iki \"Tg\" c1, üçüncü satırdaki iki \"I-131\" c2 boşluğuna alındı; \"Ca\" → \"kanseri\", \"Tarama (-)\" → \"tarama negatif\", \"3-5\" → \"3–5\" yapıldı.\nNeden: c1 kartında tiroglobulin \"Tg\" kısaltmasıyla, c2 kartında I-131 üçüncü satırda açık yazılarak ele veriliyordu; metin kısaltma ve büyük harf artıkları taşıyordu.\nNasıl: [YP2, YP1, KS1] Sızıntı, sözcükler aynı numaralı boşluklara alınarak giderildi; yeni kart doğmadı. Tiroglobulinle izlem, Tg yüksekliğinde tüm vücut I-131 taraması ve Tg normalse taramanın yapılmayabileceği klasik izlem şeması olduğundan içerik ve c1–c3 cevapları korundu."
+    }
+   ]
   },
   {
    "order": 153,
@@ -6506,11 +6647,15 @@
    "topic": "Tiroit",
    "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Medüller Tiroit Ca Tdv ----&gt; {{c1::Total Tiroidektomi}} + {{c1::PFX. Santral Boyun Dx.&nbsp;}}<div><br></div><div>Tm &gt; {{c2::1.5}} cm&nbsp; &nbsp;----&gt; {{c3::PFX Modifiye Radikal Boyun Dx}}&nbsp;</div>",
-     "after": "Medüller tiroit kanseri tedavisi → {{c1::total tiroidektomi}} + {{c1::profilaktik santral boyun diseksiyonu}}<div><br></div><div>Tümör &gt; {{c2::1,5}} cm → {{c3::profilaktik modifiye radikal boyun diseksiyonu}}</div>"
+     "after": "ATA 2015: boyun US’de nodal metastaz ve uzak metastaz bulunmayan medüller tiroit kanserinde tedavi → {{c1::total tiroidektomi}} + {{c1::profilaktik santral boyun diseksiyonu}}<div><br></div><div>İpsilateral lateral nodlar tutulmuş, kontralateral lateral US negatif ise; bazal kalsitonin &gt; {{c2::200}} pg/mL → {{c3::kontralateral lateral kompartıman diseksiyonu düşünülebilir}}</div>"
+    },
+    "Extra": {
+     "before": "",
+     "after": "<div>ATA 2015, öneri 24–26. Tutulmuş lateral kompartımanda diseksiyon terapötiktir. US negatif hastada yalnız kalsitonine dayalı profilaktik lateral diseksiyon için öneri 25’te uzlaşı yoktur; 1,5 cm tek başına koşulsuz lateral diseksiyon eşiği değildir.</div>"
     }
    },
    "changes": [
@@ -6529,11 +6674,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "----> → →; 1.5 → 1,5; büyük/küçük harf; &nbsp; ve fazla boşluklar temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "MTC >1,5 cm → profilaktik modifiye radikal lateral boyun diseksiyonu.",
+     "rationale": "Kaynak: https://thyca.org/wp-content/uploads/wells-et-al-2015-revised-american-thyroid-association-guidelines-for-the-management-of-medullary-thyroid-carcinoma.pdf"
     }
    ],
-   "aiNote": "Ne: \"PFX\", \"Dx\", \"Tm\", \"Ca\" ve \"Tdv\" kısaltmaları açıldı, \"1.5\" → \"1,5\" yazıldı ve büyük harfler küçültüldü.\nNeden: Kart kişisel kısaltmalarla yazılmıştı; lateral boyun diseksiyonu için verilen 1,5 cm eşiği taranan kaynaklardaki 1 cm eşiğiyle ve kalsitonine dayalı güncel yaklaşımla örtüşmüyordu.\nNasıl: [KS1, BÇ1, YP1] Emin olunamayan eşik değiştirilmedi, 'Doğrulama gerekli' kalemiyle işaretlendi; total tiroidektomi ile profilaktik santral diseksiyonun standart tedavi olduğu doğru olduğundan c1 ve c3 korundu.",
+   "aiNote": "Ne: MTC >1,5 cm → profilaktik modifiye radikal lateral boyun diseksiyonu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://thyca.org/wp-content/uploads/wells-et-al-2015-revised-american-thyroid-association-guidelines-for-the-management-of-medullary-thyroid-carcinoma.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"PFX\", \"Dx\", \"Tm\", \"Ca\" ve \"Tdv\" kısaltmaları açıldı, \"1.5\" → \"1,5\" yazıldı ve büyük harfler küçültüldü.\nNeden: Kart kişisel kısaltmalarla yazılmıştı; lateral boyun diseksiyonu için verilen 1,5 cm eşiği taranan kaynaklardaki 1 cm eşiğiyle ve kalsitonine dayalı güncel yaklaşımla örtüşmüyordu.\nNasıl: [KS1, BÇ1, YP1] Emin olunamayan eşik değiştirilmedi, 'Doğrulama gerekli' kalemiyle işaretlendi; total tiroidektomi ile profilaktik santral diseksiyonun standart tedavi olduğu doğru olduğundan c1 ve c3 korundu."
+    }
+   ]
   },
   {
    "order": 154,
@@ -6922,11 +7079,11 @@
    "fields": {
     "Text": {
      "before": "Yanık Hast. Res'u&nbsp;<div><br></div><div>Sıvı tdv'si ---&gt; {{c1::Parkland}} Formülü -&gt;&nbsp;</div><div><br></div><div>Sıvı = {{c1::4 x VA x Yanık Yüzdesi}}</div><div><br></div><div>Sıvı cinsi: {{c1::RL&nbsp;}}</div><div><br></div><div>Yarısı ilk {{c1::8}} saat&nbsp;</div><div>Diğer yarısı Sonraki {{c1::16}} saat</div>",
-     "after": "Yanıklı hastanın resüsitasyonu<div><br></div><div>Sıvı tedavisi → {{c1::Parkland}} formülü</div><div><br></div><div>24 saatlik sıvı = {{c1::4 mL × vücut ağırlığı (kg) × yanık yüzdesi}}</div><div><br></div><div>Sıvı cinsi: {{c1::Ringer laktat}}</div><div><br></div><div>Yarısı yanık anından itibaren ilk {{c1::8}} saatte</div><div>Diğer yarısı sonraki {{c1::16}} saatte</div>"
+     "after": "Tarihsel yanık resüsitasyon formülü<div><br></div><div>Sıvı tedavisi → {{c1::Parkland}} formülü</div><div><br></div><div>24 saatlik sıvı = {{c1::4 mL × vücut ağırlığı (kg) × yanık yüzdesi}}</div><div><br></div><div>Sıvı cinsi: {{c1::Ringer laktat}}</div><div><br></div><div>Yarısı yanık anından itibaren ilk {{c1::8}} saatte</div><div>Diğer yarısı sonraki {{c1::16}} saatte</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Hesaba yalnız 2. ve 3. derece yanıklar katılır; sıvı hızı idrar çıkışına göre ayarlanır.<div>ATLS 10. baskı yetişkin termal yanıkta başlangıç hızını 2 mL × kg × yanık yüzdesi olarak önerir.</div>"
+     "after": "<div>Bu soru adlandırılmış klasik formülü sorar. ABA 2024, ≥%20 yanıklı erişkinlerde başlangıç için 2 mL/kg/% yanık önerir; hacim klinik yanıt ve idrar çıkışına göre titre edilir.</div>"
     }
    },
    "changes": [
@@ -6951,11 +7108,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> ve -> → →; \"4 x\" → \"4 mL ×\"; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Parkland formülü ile güncel başlangıç hacmi kapsamı ayrılmalı.",
+     "rationale": "Kaynak: https://academic.oup.com/jbcr/article/45/3/565/7458089"
     }
    ],
-   "aiNote": "Ne: \"VA\", \"RL\", \"Res\" ve \"tdv\" açıldı, formül \"4 mL × vücut ağırlığı (kg) × yanık yüzdesi\" olarak birimle yazıldı, \"ilk 8 saat\" satırına \"yanık anından itibaren\" eklendi ve Extra'ya 2.–3. derece yanık sınırlaması ile ATLS 10. baskının 2 mL'lik başlangıç önerisi yazıldı.\nNeden: Kart sürenin hangi andan sayıldığını ve hesaba hangi yanıkların katıldığını söylemiyordu; güncel ATLS başlangıç hızını düşürmüştür. Metin kişisel kısaltmalar taşıyordu.\nNasıl: [EK1, TD2, KS1, YP1] TUS'un beklediği Parkland formülü ve beş c1 boşluğu korundu; hesaplamayı doğru kılan niteleyici kökte cloze dışına, güncel başlangıç hızı Extra'ya yazıldı.\nKaynak: ATLS, 10. baskı, termal yaralanmalar bölümü; Schwartz's Principles of Surgery, yanık bölümü (Parkland formülü).",
+   "aiNote": "Ne: Parkland formülü ile güncel başlangıç hacmi kapsamı ayrılmalı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://academic.oup.com/jbcr/article/45/3/565/7458089",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"VA\", \"RL\", \"Res\" ve \"tdv\" açıldı, formül \"4 mL × vücut ağırlığı (kg) × yanık yüzdesi\" olarak birimle yazıldı, \"ilk 8 saat\" satırına \"yanık anından itibaren\" eklendi ve Extra'ya 2.–3. derece yanık sınırlaması ile ATLS 10. baskının 2 mL'lik başlangıç önerisi yazıldı.\nNeden: Kart sürenin hangi andan sayıldığını ve hesaba hangi yanıkların katıldığını söylemiyordu; güncel ATLS başlangıç hızını düşürmüştür. Metin kişisel kısaltmalar taşıyordu.\nNasıl: [EK1, TD2, KS1, YP1] TUS'un beklediği Parkland formülü ve beş c1 boşluğu korundu; hesaplamayı doğru kılan niteleyici kökte cloze dışına, güncel başlangıç hızı Extra'ya yazıldı.\nKaynak: ATLS, 10. baskı, termal yaralanmalar bölümü; Schwartz's Principles of Surgery, yanık bölümü (Parkland formülü)."
+    }
+   ]
   },
   {
    "order": 164,
@@ -7917,11 +8086,11 @@
    "fields": {
     "Text": {
      "before": "Kolorektal Ca Tarama<div><br></div><div>ÜK/Crohn:</div><div><br></div><div>1-{{c1::Tanı Anında&nbsp;}}</div><div><br></div><div>2-&nbsp;</div><div>Pankolit {{c1::8}} yıl&nbsp;</div><div>Sol Kolit {{c1::15}} yıl sonra başlar--&gt;</div><div><br></div><div>Her {{c1::1-2}} yılda bir Kolonoskopi + Multipl Bx'ler</div>",
-     "after": "Kolorektal kanser taraması<div><br></div><div>Ülseratif kolit / Crohn koliti:</div><div><br></div><div>1- {{c1::Tanı anında}}</div><div><br></div><div>2- Pankolitte {{c1::8}} yıl,</div><div>sol kolitte {{c1::15}} yıl sonra başlar →</div><div><br></div><div>Her {{c1::1–2}} yılda bir kolonoskopi + multipl biyopsi</div>"
+     "after": "Kolorektal kanser taraması — IBD (ECCO 2023)<div><br></div><div>İlk tarama kolonoskopisi → ilk semptomlardan {{c1::8}} yıl sonra</div><div><br></div><div>Eşlik eden PSC varsa → {{c1::PSC tanısından itibaren yıllık}} sürveyans</div><div><br></div><div>Rektumun proksimalinde kolonik hastalıkta izlem → yüksek risk: {{c1::1}} yıl; orta risk: {{c1::2–3}} yıl; düşük risk: {{c1::5}} yıl</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kılavuzlar (ECCO, ACG) taramayı yaygınlıktan bağımsız olarak semptomların başlangıcından 8 yıl sonra başlatır; primer sklerozan kolanjit eşlik ediyorsa tarama bu tanıyla başlar ve yıllık yapılır."
+     "after": "<div>Tanı için yapılan kolonoskopi ile kanser sürveyansı ayrı işlemlerdir. İzole proktit veya ince bağırsak hastalığında ulusal genel tarama programı izlenir. ECCO 2023, Statement 2.1–2.5, basılı s.829.</div>"
     }
    },
    "changes": [
@@ -7951,11 +8120,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> → →; \"1-2\" → \"1–2\"; yalnız \"2-\" içeren satır sonraki satırla birleştirildi; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Tanı anında tarama, pankolitte 8/sol kolitte 15 yıl ve herkese 1–2 yıl aralık.",
+     "rationale": "Kaynak: https://eomifne.gr/images/pdf/kateuthidiries_ecco/2023.pdf"
     }
    ],
-   "aiNote": "Ne: \"ÜK/Crohn\" → \"Ülseratif kolit / Crohn koliti\", \"Bx'ler\" → \"biyopsi\" yapıldı, tek başına kalan \"2-\" satırı sonraki satırla birleştirildi ve Extra'ya güncel 8 yıl kuralı ile primer sklerozan kolanjitte yıllık tarama eklendi.\nNeden: Kart sol kolitte 15 yıl sonra başlanan eski tarama önerisini tek bilgi olarak veriyordu; güncel kılavuzlar yaygınlıktan bağımsız 8 yıl önerir. \"1- Tanı anında\" satırının anlamı da belirsizdi.\nNasıl: [TD2, KS1, SN1, YP1] TUS'un klasik cevapları (8 yıl, 15 yıl, 1–2 yılda bir) c1'de korundu, güncel öneri Extra'da tek cümleyle verildi; anlamı çözülemeyen \"Tanı anında\" cevabı değiştirilmeden 'Doğrulama gerekli' olarak işaretlendi.\nKaynak: ECCO ülseratif kolit kılavuzu ve ACG ülseratif kolit kılavuzu (kolorektal kanser taraması); Schwartz's Principles of Surgery, kolon, rektum ve anüs bölümü.",
+   "aiNote": "Ne: Tanı anında tarama, pankolitte 8/sol kolitte 15 yıl ve herkese 1–2 yıl aralık.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://eomifne.gr/images/pdf/kateuthidiries_ecco/2023.pdf",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"ÜK/Crohn\" → \"Ülseratif kolit / Crohn koliti\", \"Bx'ler\" → \"biyopsi\" yapıldı, tek başına kalan \"2-\" satırı sonraki satırla birleştirildi ve Extra'ya güncel 8 yıl kuralı ile primer sklerozan kolanjitte yıllık tarama eklendi.\nNeden: Kart sol kolitte 15 yıl sonra başlanan eski tarama önerisini tek bilgi olarak veriyordu; güncel kılavuzlar yaygınlıktan bağımsız 8 yıl önerir. \"1- Tanı anında\" satırının anlamı da belirsizdi.\nNasıl: [TD2, KS1, SN1, YP1] TUS'un klasik cevapları (8 yıl, 15 yıl, 1–2 yılda bir) c1'de korundu, güncel öneri Extra'da tek cümleyle verildi; anlamı çözülemeyen \"Tanı anında\" cevabı değiştirilmeden 'Doğrulama gerekli' olarak işaretlendi.\nKaynak: ECCO ülseratif kolit kılavuzu ve ACG ülseratif kolit kılavuzu (kolorektal kanser taraması); Schwartz's Principles of Surgery, kolon, rektum ve anüs bölümü."
+    }
+   ]
   },
   {
    "order": 188,
@@ -8008,11 +8189,11 @@
    "fields": {
     "Text": {
      "before": "Daha önce Ameliyat OLMAMIŞ kişilerde&nbsp;<div>İB Obs en sık sebebi:<div><br></div><div>{{c1::Neoplazm}}</div></div>",
-     "after": "Daha önce ameliyat <b>olmamış</b> kişilerde<div>İnce bağırsak obstrüksiyonunun en sık nedeni:<div><br></div><div>{{c1::Neoplazm}}</div></div>"
+     "after": "WSES 2021’de değerlendirilen, daha önce karın ameliyatı <b>olmamış</b> SBO-VA kohortlarında<div>İnce bağırsak obstrüksiyonunun en sık nedeni:<div><br></div><div>{{c1::Yapışıklık}}</div></div>"
     },
     "Extra": {
      "before": "Karın içi diğer kanserlerin lokal inovasyonu&nbsp;",
-     "after": "Karın içi diğer kanserlerin lokal invazyonu"
+     "after": "<div>WSES 2021 pozisyon belgesi; seçilmiş retrospektif kohortlar. Malignite hâlâ araştırılması gereken bir nedendir; cerrahi öyküsü olmaması yapışıklığı dışlamaz.</div>"
     }
    },
    "changes": [
@@ -8036,11 +8217,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "OLMAMIŞ → kalın \"olmamış\"; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Cerrahi öyküsü olmayan SBO’da en sık neoplazm.",
+     "rationale": "Kaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC8254282/"
     }
    ],
-   "aiNote": "Ne: \"İB Obs\" → \"ince bağırsak obstrüksiyonunun\" açıldı, \"OLMAMIŞ\" kalın küçük harfle yazıldı ve Extra'daki \"inovasyonu\" → \"invazyonu\" düzeltildi.\nNeden: Extra'daki yazım hatası anlamı tamamen değiştiriyordu (invazyon yerine inovasyon); ayrıca ameliyat geçirmemiş karında en sık nedenin ne olduğu kaynaklar arasında tartışmalıdır.\nNasıl: [KS1, YZ1, BÇ1] Cevap araştırıldı ama kaynaklar fıtık, yapışıklık ve malignite arasında ayrıştığı için yazarın cevabı değiştirilmeden 'Doğrulama gerekli' olarak işaretlendi; tek c1 korundu.\nKaynak: WSES, Diagnosis and management of small bowel obstruction in virgin abdomen: a WSES position paper (2021).",
+   "aiNote": "Ne: Cerrahi öyküsü olmayan SBO’da en sık neoplazm.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pmc.ncbi.nlm.nih.gov/articles/PMC8254282/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"İB Obs\" → \"ince bağırsak obstrüksiyonunun\" açıldı, \"OLMAMIŞ\" kalın küçük harfle yazıldı ve Extra'daki \"inovasyonu\" → \"invazyonu\" düzeltildi.\nNeden: Extra'daki yazım hatası anlamı tamamen değiştiriyordu (invazyon yerine inovasyon); ayrıca ameliyat geçirmemiş karında en sık nedenin ne olduğu kaynaklar arasında tartışmalıdır.\nNasıl: [KS1, YZ1, BÇ1] Cevap araştırıldı ama kaynaklar fıtık, yapışıklık ve malignite arasında ayrıştığı için yazarın cevabı değiştirilmeden 'Doğrulama gerekli' olarak işaretlendi; tek c1 korundu.\nKaynak: WSES, Diagnosis and management of small bowel obstruction in virgin abdomen: a WSES position paper (2021)."
+    }
+   ]
   },
   {
    "order": 190,
@@ -8235,13 +8428,13 @@
    "noteId": 1605358638096,
    "guid": "z%,UKmS_!v",
    "topic": "Cerrahi Temel Bilimler",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Enteral Beslenme Takip Şeması&nbsp;<div><br></div><div>Akut&nbsp; ve Stabil aynı olan --&gt; {{c1::Aldığı Çıkardığı}} ( Günlük)&nbsp;</div><div><br></div><div>Elektrolitler ve Kan Sayımı --&gt; Akutta {{c1::Günlük}} Stabilde {{c1::1-2 hf}}</div><div><br></div><div>İdrar çıkışı ---&gt; Akutta&nbsp; {{c2::saatlik}} / stabilde {{c2::4 saatte 1}}&nbsp;</div>",
-     "after": "Enteral beslenme takip şeması<div><br></div><div>Akut ve stabil hastada aynı olan → {{c1::aldığı-çıkardığı}} (günlük)</div><div><br></div><div>Elektrolitler ve kan sayımı → akutta {{c1::günlük}}, stabilde {{c1::haftada 1–2}}</div><div><br></div><div>İdrar çıkışı → akutta {{c2::saatlik}}, stabilde {{c2::4 saatte bir}}</div>"
+     "after": "Enteral beslenme takip şeması<div><br></div><div>Akut ve stabil hastada aynı olan → {{c1::aldığı-çıkardığı}} ({{c1::günlük}})</div><div><br></div><div>Elektrolitler ve kan sayımı → akutta {{c1::günlük}}, stabilde {{c1::haftada 1–2}}</div><div><br></div><div>İdrar çıkışı → akutta {{c2::saatlik}}, stabilde {{c2::4 saatte bir}}</div>"
     }
    },
    "changes": [
@@ -8254,11 +8447,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> ve ---> → →; \"Akut ve Stabil\" → \"Akut ve stabil hastada\"; \"( Günlük)\" parantez boşluğu; \"4 saatte 1\" → \"4 saatte bir\"; büyük/küçük harf; &nbsp; ve çift boşluk temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Elektrolit izlem sıklığını veren açık günlük tekrarına aynı cloze numarası eklendi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Akut ve Stabil aynı olan\" → \"Akut ve stabil hastada aynı olan\", \"1-2 hf\" → \"haftada 1–2\", \"4 saatte 1\" → \"4 saatte bir\" yapıldı; oklar → oldu.\nNeden: \"hf\" yazarın kişisel kısaltmasıydı; oklar, &nbsp; artıkları, parantez içi boşluk ve büyük harf kullanımı ev stiline uymuyordu.\nNasıl: [KS1, BÇ1, YP1] Aldığı-çıkardığı takibinin her iki durumda günlük, elektrolit ve kan sayımının akutta günlük/stabilde haftada 1–2, idrar çıkışının akutta saatlik/stabilde 4 saatte bir izlendiği yazar tablosu değiştirilmedi; c1 ve c2 dağılımı korundu.",
+   "aiNote": "Ne: Elektrolit izlem sıklığını veren açık günlük tekrarına aynı cloze numarası eklendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Akut ve Stabil aynı olan\" → \"Akut ve stabil hastada aynı olan\", \"1-2 hf\" → \"haftada 1–2\", \"4 saatte 1\" → \"4 saatte bir\" yapıldı; oklar → oldu.\nNeden: \"hf\" yazarın kişisel kısaltmasıydı; oklar, &nbsp; artıkları, parantez içi boşluk ve büyük harf kullanımı ev stiline uymuyordu.\nNasıl: [KS1, BÇ1, YP1] Aldığı-çıkardığı takibinin her iki durumda günlük, elektrolit ve kan sayımının akutta günlük/stabilde haftada 1–2, idrar çıkışının akutta saatlik/stabilde 4 saatte bir izlendiği yazar tablosu değiştirilmedi; c1 ve c2 dağılımı korundu."
+    }
+   ]
   },
   {
    "order": 196,
@@ -11458,13 +11663,13 @@
    "noteId": 1605548560026,
    "guid": "luG!/L/W=e",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "İnguinal Kanal Sınırları&nbsp;<div><br></div><div>Ön ---&gt; {{c1::eksternal oblik}} aponörozu</div><div>İnf ---&gt; {{c1::İng.}} Lig</div><div>Tavan(Sup) ---&gt; {{c1::internal oblik ve transversus abd.}} (Conjoined tendon)</div><div>Pos duvar ---&gt; {{c1::Transvers}} fasya</div>",
-     "after": "İnguinal kanal sınırları<div><br></div><div>Ön duvar → {{c1::eksternal oblik}} aponörozu</div><div>Taban (alt duvar) → {{c1::inguinal}} ligaman</div><div>Tavan (üst duvar) → {{c1::internal oblik ve transversus abdominis}} (conjoined tendon)</div><div>Arka duvar → {{c1::transversalis}} fasya</div>"
+     "after": "Kasık bölgesindeki kanalın sınırları<div><br></div><div>Ön duvar → {{c1::eksternal oblik}} aponörozu</div><div>Taban (alt duvar) → {{c1::inguinal}} ligaman</div><div>Tavan (üst duvar) → {{c1::internal oblik ve transversus abdominis}} (conjoined tendon)</div><div>Arka duvar → {{c1::transversalis}} fasya</div>"
     }
    },
    "changes": [
@@ -11487,11 +11692,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; Ön → Ön duvar; büyük/küçük harf (Kanal Sınırları, Conjoined); &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Taban ligamanının adı soru başlığından okunmuyor.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"İnf\", \"Tavan(Sup)\", \"Pos duvar\" ve \"İng. Lig\" açıldı (taban/alt duvar, tavan/üst duvar, arka duvar, inguinal ligaman); \"transversus abd.\" → \"transversus abdominis\", \"Transvers fasya\" → \"transversalis fasya\" yapıldı ve oklar → oldu. \"inguinal ligament\" → \"inguinal ligaman\" yazıldı.\nNeden: Duvar adları yazarın kişisel kısaltmalarıydı; arka duvarı oluşturan yapı \"transvers\" değil transversalis fasyadır (fascia transversalis). İçerik doğruydu. Terim ders içinde \"ligament\" ve \"ligaman\" iki biçimde yazılıyordu.\nNasıl: [KS1, YZ1, YP1] Dört duvarın yapıları ders kitabındaki sınırlarla örtüştüğü için korundu; cevap sözcükleri yalnız açıldı veya düzeltildi ve dört boşluğun tek c1 numarası değişmedi. Ders genelinde ve Kadın Doğum dersiyle ortak tek biçim \"ligaman\" (ligamanı) uygulandı; c1 cevapları değişmedi.",
+   "aiNote": "Ne: Taban ligamanının adı soru başlığından okunmuyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"İnf\", \"Tavan(Sup)\", \"Pos duvar\" ve \"İng. Lig\" açıldı (taban/alt duvar, tavan/üst duvar, arka duvar, inguinal ligaman); \"transversus abd.\" → \"transversus abdominis\", \"Transvers fasya\" → \"transversalis fasya\" yapıldı ve oklar → oldu. \"inguinal ligament\" → \"inguinal ligaman\" yazıldı.\nNeden: Duvar adları yazarın kişisel kısaltmalarıydı; arka duvarı oluşturan yapı \"transvers\" değil transversalis fasyadır (fascia transversalis). İçerik doğruydu. Terim ders içinde \"ligament\" ve \"ligaman\" iki biçimde yazılıyordu.\nNasıl: [KS1, YZ1, YP1] Dört duvarın yapıları ders kitabındaki sınırlarla örtüştüğü için korundu; cevap sözcükleri yalnız açıldı veya düzeltildi ve dört boşluğun tek c1 numarası değişmedi. Ders genelinde ve Kadın Doğum dersiyle ortak tek biçim \"ligaman\" (ligamanı) uygulandı; c1 cevapları değişmedi."
+    }
+   ]
   },
   {
    "order": 291,
@@ -17359,13 +17576,13 @@
    "noteId": 1620561637715,
    "guid": "qc+Kogytr!",
    "topic": "Travma ve Yanık",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Yanık Topikal Ab'ler:<div><br></div><div><b>Eskara iyi Penetre:</b> {{c1::Mafenid Asetat}}</div><div><br></div><div><b>Epitelizasyon İnh</b>: {{c1::Gümüş Sülfadiazin}}</div><div><br></div><div><b>Ağrılı</b>: {{c2::Mafenid}}</div><div><br></div><div><b>Ağrısız</b>: {{c2::Gümüş}}</div><div><br></div><div><b>Deride Kalıcı Renk Değ</b>: {{c2::Gümüş}}</div><div><br></div><div><br></div>",
-     "after": "Yanıkta kullanılan topikal antimikrobiyaller:<div><br></div><div><b>Eskara iyi penetre olur:</b> {{c1::mafenid asetat}}</div><div><br></div><div><b>Epitelizasyonu inhibe eder</b>: {{c1::gümüş sülfadiazin}}</div><div><br></div><div><b>Ağrılı</b>: {{c2::mafenid}}</div><div><br></div><div><b>Ağrısız</b>: {{c2::gümüş sülfadiazin}}</div><div><br></div><div><b>Deride kalıcı renk değişikliği</b>: {{c2::gümüş sülfadiazin}}</div>"
+     "after": "Yanıkta kullanılan topikal antimikrobiyaller:<div><br></div><div><b>Eskara iyi penetre olur:</b> {{c2::{{c1::mafenid asetat}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div><b>Epitelizasyonu inhibe eder</b>: {{c2::{{c1::gümüş sülfadiazin}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div><b>Ağrılı</b>: {{c1::{{c2::mafenid}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div><b>Ağrısız</b>: {{c1::{{c2::gümüş sülfadiazin}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div><b>Deride kalıcı renk değişikliği</b>: {{c1::{{c2::gümüş sülfadiazin}}::ilişkili yanıt arka yüzde}}</div>"
     }
    },
    "changes": [
@@ -17378,11 +17595,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "Büyük/küçük harf (Penetre, Mafenid Asetat, Gümüş Sülfadiazin, Kalıcı Renk); alan sonundaki iki boş satır temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Cerrahi tedavi/topikal ilaç tablosunda aynı cevabın diğer ordinalde açık görünmesi kapatıldı.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Yanık Topikal Ab'ler\" → \"Yanıkta kullanılan topikal antimikrobiyaller\", \"Epitelizasyon İnh\" → \"Epitelizasyonu inhibe eder\", \"Deride Kalıcı Renk Değ\" → \"Deride kalıcı renk değişikliği\" yapıldı; kısaltılmış \"Gümüş\" cevapları \"gümüş sülfadiazin\" olarak yazıldı.\nNeden: Gümüş bileşikleri ve mafenid antibiyotik değil topikal antimikrobiyaldir; \"Gümüş\" ve diğer kısaltmalar yazarın notuydu. Gümüş sülfadiazinin kalıcı renk değişikliği yapıp yapmadığı şüphesi araştırıldı.\nNasıl: [KS1, TD3, YP3] Kartın karşılaştırdığı iki ajan c1 satırlarında mafenid asetat ve gümüş sülfadiazin olduğu için \"Gümüş\" aynı ajan olarak açıldı; gümüş sülfadiazinin reepitelizasyonu geciktirdiği ve nadiren kalıcı lokal argiri yaptığı doğrulandığından cevaplar, c1/c2 dağılımı ve kalın etiketler korundu.\nKaynak: Schwartz's Principles of Surgery, yanık bölümü (topikal antimikrobiyaller); gümüş sülfadiazin kremine bağlı skar lokalize argiri olgu bildirimleri.",
+   "aiNote": "Ne: Cerrahi tedavi/topikal ilaç tablosunda aynı cevabın diğer ordinalde açık görünmesi kapatıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Yanık Topikal Ab'ler\" → \"Yanıkta kullanılan topikal antimikrobiyaller\", \"Epitelizasyon İnh\" → \"Epitelizasyonu inhibe eder\", \"Deride Kalıcı Renk Değ\" → \"Deride kalıcı renk değişikliği\" yapıldı; kısaltılmış \"Gümüş\" cevapları \"gümüş sülfadiazin\" olarak yazıldı.\nNeden: Gümüş bileşikleri ve mafenid antibiyotik değil topikal antimikrobiyaldir; \"Gümüş\" ve diğer kısaltmalar yazarın notuydu. Gümüş sülfadiazinin kalıcı renk değişikliği yapıp yapmadığı şüphesi araştırıldı.\nNasıl: [KS1, TD3, YP3] Kartın karşılaştırdığı iki ajan c1 satırlarında mafenid asetat ve gümüş sülfadiazin olduğu için \"Gümüş\" aynı ajan olarak açıldı; gümüş sülfadiazinin reepitelizasyonu geciktirdiği ve nadiren kalıcı lokal argiri yaptığı doğrulandığından cevaplar, c1/c2 dağılımı ve kalın etiketler korundu.\nKaynak: Schwartz's Principles of Surgery, yanık bölümü (topikal antimikrobiyaller); gümüş sülfadiazin kremine bağlı skar lokalize argiri olgu bildirimleri."
+    }
+   ]
   },
   {
    "order": 464,
@@ -18061,13 +18290,13 @@
    "noteId": 1605469064824,
    "guid": "M~E.d}!u3}",
    "topic": "İnce Bağırsak ve Kolorektal",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Sigmoid Volvulus Tdv&nbsp;<div><br></div><div>{{c1::Strangülasyon}} VAR --&gt; {{c2::Acil Hartmann}}</div><div><br></div><div>\" YOK ---&gt; Sıvı tdv VER ---&gt; Kolonoskopik {{c2::Detorsiyon}} Yap</div><div><br></div><div>Başarılı --&gt; {{c3::Elektif cerrahi (rezeksiyon + anastomoz)}}</div><div><br></div><div>Başarısız --&gt; {{c3::Acil Hartmann}}</div>",
-     "after": "Sigmoid volvulus tedavisi<div><br></div><div>{{c1::Strangülasyon}} var → {{c2::acil Hartmann}}</div><div><br></div><div>{{c1::Strangülasyon}} yok → sıvı tedavisi ve kolonoskopik {{c2::detorsiyon}}</div><div><br></div><div>Başarılı → {{c3::elektif cerrahi (rezeksiyon + anastomoz)}}</div><div><br></div><div>Başarısız → {{c3::acil Hartmann}}</div>"
+     "after": "Sigmoid volvulus tedavisi<div><br></div><div>{{c1::Strangülasyon}} var → {{c3::{{c2::acil Hartmann}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>{{c1::Strangülasyon}} yok → sıvı tedavisi ve kolonoskopik {{c2::detorsiyon}}</div><div><br></div><div>Başarılı → {{c3::elektif cerrahi (rezeksiyon + anastomoz)}}</div><div><br></div><div>Başarısız → {{c2::{{c3::acil Hartmann}}::ilişkili yanıt arka yüzde}}</div>"
     }
    },
    "changes": [
@@ -18085,11 +18314,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\"VAR / YOK / Sıvı tdv VER ---> ... Detorsiyon Yap\" telgraf üslubu sadeleştirildi; --> ve ---> → →; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Cerrahi tedavi/topikal ilaç tablosunda aynı cevabın diğer ordinalde açık görünmesi kapatıldı.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Tekrar işareti (\") yerine aynı c1 numarasıyla \"Strangülasyon\" yazıldı, \"Sıvı tdv VER ---> Kolonoskopik Detorsiyon Yap\" → \"sıvı tedavisi ve kolonoskopik detorsiyon\" yapıldı ve büyük harfli \"VAR/YOK\" küçültüldü.\nNeden: Tırnak işareti ve büyük harfli emir cümleleri yazarın kişisel not üslubuydu; tırnağın neyi tekrarladığı kart tek başına okunduğunda belirsizdi.\nNasıl: [SN2, YP2, YP1, KS1] Tekrarlanan sözcük açıkta yazılsaydı c1 cevabını ele vereceği için aynı c1 boşluğuna alındı; strangülasyonda acil Hartmann, yoksa endoskopik detorsiyon ve başarılıysa elektif rezeksiyon, başarısızsa acil cerrahi algoritması doğru olduğundan c2/c3 cevapları korundu.",
+   "aiNote": "Ne: Cerrahi tedavi/topikal ilaç tablosunda aynı cevabın diğer ordinalde açık görünmesi kapatıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Tekrar işareti (\") yerine aynı c1 numarasıyla \"Strangülasyon\" yazıldı, \"Sıvı tdv VER ---> Kolonoskopik Detorsiyon Yap\" → \"sıvı tedavisi ve kolonoskopik detorsiyon\" yapıldı ve büyük harfli \"VAR/YOK\" küçültüldü.\nNeden: Tırnak işareti ve büyük harfli emir cümleleri yazarın kişisel not üslubuydu; tırnağın neyi tekrarladığı kart tek başına okunduğunda belirsizdi.\nNasıl: [SN2, YP2, YP1, KS1] Tekrarlanan sözcük açıkta yazılsaydı c1 cevabını ele vereceği için aynı c1 boşluğuna alındı; strangülasyonda acil Hartmann, yoksa endoskopik detorsiyon ve başarılıysa elektif rezeksiyon, başarısızsa acil cerrahi algoritması doğru olduğundan c2/c3 cevapları korundu."
+    }
+   ]
   },
   {
    "order": 484,

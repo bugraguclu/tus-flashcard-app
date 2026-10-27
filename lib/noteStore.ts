@@ -53,9 +53,13 @@ export function getNote(id: number): Note | null {
 }
 
 export function saveNote(note: Note): void {
+    writeNote(note, false);
+}
+
+function writeNote(note: Note, insertOnly: boolean): void {
     assertCatalogNoteMutable(note);
     const db = getDB();
-    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM notes WHERE id = ?', note.id);
+    const existing = insertOnly ? null : db.getFirstSync<{ data: string }>('SELECT data FROM notes WHERE id = ?', note.id);
     if (existing?.data) {
         try {
             const parsed = JSON.parse(existing.data) as Note;
@@ -71,7 +75,7 @@ export function saveNote(note: Note): void {
         }
     }
     db.runSync(
-        `INSERT OR REPLACE INTO notes
+        `${insertOnly ? 'INSERT' : 'INSERT OR REPLACE'} INTO notes
          (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         note.id,
@@ -130,7 +134,11 @@ export function createNote(
     tags: string[] = [],
     guid?: string,
 ): { note: Note; cards: AnkiCard[] } {
-    const now = uniqueId();
+    const db = getDB();
+    let now = uniqueId();
+    // Imported IDs and prior sessions are not represented by the in-memory counter.
+    while (Number.isSafeInteger(now) && db.getFirstSync('SELECT id FROM notes WHERE id = ?', now)) now++;
+    if (!Number.isSafeInteger(now)) throw new Error('Unable to allocate a note id.');
     const sfld = sortFieldText(fields, noteType.sortFieldIdx);
 
     const note: Note = {
@@ -139,7 +147,7 @@ export function createNote(
         // recognises the same note; otherwise mint a fresh one.
         guid: guid ?? generateGuid(),
         noteTypeId: noteType.id,
-        mod: Math.floor(now / 1000),
+        mod: Math.floor(Date.now() / 1000),
         usn: -1,
         tags,
         fields,
@@ -148,13 +156,21 @@ export function createNote(
         flags: 0,
     };
 
-    saveNote(note);
-    const cards = generateCardsForNote(note, noteType, deckId);
-    return { note, cards };
+    // A savepoint also works when a CSV/package importer owns the outer transaction.
+    db.execSync('SAVEPOINT create_note');
+    try {
+        writeNote(note, true);
+        const cards = generateCardsForNote(note, noteType, deckId);
+        db.execSync('RELEASE create_note');
+        return { note, cards };
+    } catch (error) {
+        db.execSync('ROLLBACK TO create_note; RELEASE create_note');
+        throw error;
+    }
 }
 
 /** Generate cards for a note based on its note type */
-export function generateCardsForNote(note: Note, noteType: NoteType, deckId: number): AnkiCard[] {
+export function generateCardsForNote(note: Note, noteType: NoteType, deckId: number, existingOrds: ReadonlySet<number> = new Set()): AnkiCard[] {
     const cards: AnkiCard[] = [];
     // Anki gives every card of a newly added note the same new-card position.
     const position = nextNewCardPosition();
@@ -165,13 +181,14 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
         const clozeNumbers = numbers.length ? numbers : [1];
 
         for (const clozeNum of clozeNumbers) {
+            if (existingOrds.has(clozeNum - 1)) continue;
             const card = createCardForNote(note, deckId, clozeNum - 1, position);
             cards.push(card);
         }
     } else {
         // Standard: one card per template
         for (let i = 0; i < noteType.templates.length; i++) {
-            if (shouldGenerateCard(noteType, note, i)) {
+            if (!existingOrds.has(i) && shouldGenerateCard(noteType, note, i)) {
                 const card = createCardForNote(note, deckId, i, position);
                 cards.push(card);
             }
@@ -179,6 +196,14 @@ export function generateCardsForNote(note: Note, noteType: NoteType, deckId: num
     }
 
     return cards;
+}
+
+/** Text-import updates add missing cards; they never remove or reschedule existing siblings. */
+export function generateMissingCardsForNote(note: Note, noteType: NoteType, deckId: number): AnkiCard[] {
+    assertCatalogNoteMutable(note);
+    const siblings = getCardsForNote(note.id);
+    const targetDeck = isCatalogNote(note) ? (siblings[0]?.odid || siblings[0]?.deckId || deckId) : deckId;
+    return generateCardsForNote(note, noteType, targetDeck, new Set(siblings.map(card => card.ord)));
 }
 
 const MAX_CARD_ID_ATTEMPTS = 512;
@@ -213,11 +238,27 @@ function nextNewCardPosition(): number {
     return (row?.maxDue ?? 0) + 1;
 }
 
+/**
+ * The new-card position for cards generated for an existing note, as Anki chooses it
+ * (`extract_data_from_existing_cards` and `CardGenCache::next_position` in
+ * rslib/src/notetype/cardgen.rs): the position of a sibling that is still new, otherwise one
+ * fresh position, taken once and shared by every card this pass creates.
+ */
+export function notePositionForPass(existing: readonly AnkiCard[] = []): () => number {
+    const newSibling = existing.find((card) => card.type === 0);
+    let position = newSibling ? (newSibling.odid ? newSibling.odue : newSibling.due) : undefined;
+    return () => {
+        position ??= nextNewCardPosition();
+        return position;
+    };
+}
+
 export function createCardForNote(note: Note, deckId: number, ord: number, position?: number): AnkiCard {
     const id = generateUniqueCardId();
     const card: AnkiCard = {
         id,
         noteId: note.id,
+        ...(note.catalogPack ? { catalogPack: note.catalogPack } : {}),
         deckId,
         ord,
         mod: Math.floor(id / 1000),

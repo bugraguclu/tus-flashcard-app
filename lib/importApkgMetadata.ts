@@ -185,6 +185,8 @@ function readModernCollectionMeta(reader: SqliteReader, crt: number): LegacyColl
                 raw.extendNew = protoNumber(kind, 2);
                 raw.extendRev = protoNumber(kind, 3);
                 raw.desc = protoString(kind, 4);
+                // `bool markdown_description = 5`, kept under the legacy JSON name `md`.
+                raw.md = Boolean(protoNumber(kind, 5));
                 raw.reviewLimit = protoOptionalNumber(kind, 6);
                 raw.newLimit = protoOptionalNumber(kind, 7);
                 // `optional float desired_retention = 10`: the deck's own FSRS target, if set.
@@ -459,6 +461,7 @@ export function importedDeck(raw: Record<string, any>, id: number, configId: num
         mod: numberValue(raw.mod),
         usn: numberValue(raw.usn, -1),
         description: String(raw.desc ?? ''),
+        descriptionMarkdown: boolValue(raw.md) || undefined,
         collapsed: boolValue(raw.collapsed),
         isFiltered: numberValue(raw.dyn) === 1,
         searchQuery: Array.isArray(terms[0]) ? String(terms[0][0] ?? '') : undefined,

@@ -220,6 +220,36 @@ describe('Anki graphs', () => {
         expect(stats.futureDue[1].values).toEqual([1, 0]);
     });
 
+    it('draws Review Intervals on a continuous day axis and counts the cards beyond the period', () => {
+        addDeck(1, 'Aralık');
+        const today = localDayNumber(Date.now(), ROLLOVER);
+        addCard(1, 1, { type: 2, queue: 2, due: today + 1, ivl: 1 });
+        addCard(2, 1, { type: 2, queue: 2, due: today + 1, ivl: 5 });
+        addCard(3, 1, { type: 2, queue: 2, due: today + 1, ivl: 5 });
+        addCard(4, 1, { type: 2, queue: 2, due: today + 1, ivl: 40 });  // longer than a week
+        addCard(5, 1, { type: 0, queue: 0, due: 1 });                    // new: no interval
+
+        const week = getAnkiStatsSnapshot('Aralık', resolveStatsDateRange('week', new Date(), new Date(), ROLLOVER), ROLLOVER, 'tr-TR');
+        // Days 2–4 hold no card but still get a bar, so the axis keeps its scale.
+        expect(week.intervals.map((bucket) => [bucket.firstIvl, bucket.lastIvl, bucket.count])).toEqual([
+            [1, 1, 1], [2, 2, 0], [3, 3, 0], [4, 4, 0], [5, 5, 2],
+        ]);
+        expect(week.intervalsBeyondRange).toBe(1);
+        expect(week.averageInterval).toBeCloseTo(51 / 4);
+        expect(week.longestInterval).toBe(40);
+
+        // Without a cap the buckets widen to cover the longest interval in at most two dozen bars.
+        const all = getAnkiStatsSnapshot('Aralık', resolveStatsDateRange('all', new Date(), new Date(), ROLLOVER), ROLLOVER, 'tr-TR');
+        expect(all.intervalsBeyondRange).toBe(0);
+        expect(all.intervals[0].firstIvl).toBe(1);
+        expect(all.intervals.length).toBeLessThanOrEqual(24);
+        expect(all.intervals.reduce((sum, bucket) => sum + bucket.count, 0)).toBe(4);
+        for (let index = 1; index < all.intervals.length; index += 1) {
+            expect(all.intervals[index].firstIvl).toBe(all.intervals[index - 1].lastIvl + 1);
+        }
+        expect(all.intervals[all.intervals.length - 1].lastIvl).toBeGreaterThanOrEqual(40);
+    });
+
     it('can scope every chart to the live membership of a filtered deck', () => {
         const now = Date.now();
         const today = localDayNumber(now, ROLLOVER);

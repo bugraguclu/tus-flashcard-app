@@ -19,11 +19,11 @@
   "changedNotes": 481,
   "htmlOnlyNotes": 0,
   "unchangedNotes": 3,
-  "changeItems": 1397,
+  "changeItems": 1407,
   "notesBySeverity": {
-   "Kritik": 16,
-   "Yüksek": 125,
-   "Orta": 282,
+   "Kritik": 15,
+   "Yüksek": 128,
+   "Orta": 280,
    "Düşük": 58
   },
   "notesByTopic": {
@@ -45,45 +45,48 @@
    "Üroloji": 14
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 15,
-    "Yüksek": 20
+   "Biçim": {
+    "Düşük": 466
+   },
+   "Dil bilgisi": {
+    "Orta": 2,
+    "Düşük": 91
+   },
+   "Doğrulama gerekli": {
+    "Yüksek": 14
+   },
+   "Eksik kritik bilgi": {
+    "Yüksek": 68
    },
    "Güncellik": {
     "Kritik": 1,
     "Yüksek": 12,
     "Orta": 29
    },
-   "Eksik kritik bilgi": {
-    "Yüksek": 68
+   "Kısaltma": {
+    "Yüksek": 9,
+    "Orta": 319
    },
    "Soru netliği": {
     "Yüksek": 10,
     "Orta": 52
-   },
-   "Doğrulama gerekli": {
-    "Yüksek": 14
-   },
-   "Yapısal": {
-    "Yüksek": 6,
-    "Orta": 2,
-    "Düşük": 2
    },
    "Terim/yazım": {
     "Yüksek": 8,
     "Orta": 213,
     "Düşük": 58
    },
-   "Kısaltma": {
-    "Yüksek": 9,
-    "Orta": 319
+   "Tıbbi doğruluk": {
+    "Kritik": 15,
+    "Yüksek": 20
    },
-   "Dil bilgisi": {
+   "Yapısal": {
+    "Yüksek": 6,
     "Orta": 2,
-    "Düşük": 91
+    "Düşük": 2
    },
-   "Biçim": {
-    "Düşük": 466
+   "Ön/arka kapsam uyumu": {
+    "Yüksek": 10
    }
   },
   "secondReview": {
@@ -142,17 +145,17 @@
    "noteId": 1605606243131,
    "guid": "M]vuDDyP6.",
    "topic": "Beyin Cerrahisi",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "SAK Mort - morbidite en önemli sebebi (&gt;3 gün) ---&gt; {{c1::Vazospazm&nbsp;}}<div><br></div><div>Vazospazm önlemek için (3H) ---&gt; {{c2::HT + HiperV + Hemodilüsyon&nbsp;}}</div>",
-     "after": "Subaraknoid kanamada 3. günden sonra mortalite ve morbiditenin en önemli nedeni → {{c1::vazospazm}}<div><br></div><div>{{c1::Vazospazm}}ı önlemede klasik 3H tedavisi → {{c2::HT + hipervolemi + hemodilüsyon}}</div>"
+     "after": "Anevrizmal subaraknoid kanama sonrası önemli gecikmiş komplikasyon → {{c1::gecikmiş serebral iskemi}}<div><br></div><div>{{c1::Vazospazm}} ile ilişkili eski 3H yaklaşımının bileşenleri → {{c2::hipertansiyon + hipervolemi + hemodilüsyon}}; bu yaklaşım güncel profilaksi olarak önerilmez.</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kılavuzlarda (AHA/ASA 2023) profilaktik hipervolemi ve hemodinamik artırım zararlı olabileceği için önerilmez; övolemi korunur ve gecikmiş serebral iskemiyi önlemek için enteral nimodipin verilir. Kan basıncını yükseltmek yalnız semptomatik vazospazmda düşünülür."
+     "after": "AHA/ASA 2023: övolemi korunur ve enteral nimodipin verilir. Profilaktik hipervolemi/hemodinamik artırım önerilmez. Semptomatik vazospazmda kan basıncını artırma seçilmiş hastada düşünülebilir. Vazospazm gecikmiş serebral iskemiyle eş anlamlı değildir."
     }
    },
    "changes": [
@@ -187,11 +190,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Ön yüzde vazospazm önleme için 3H hâlâ öğretiliyor; Extra karşı çıkıyor.",
+     "rationale": "Kaynak: https://www.ahajournals.org/doi/epdf/10.1161/STR.0000000000000436"
     }
    ],
-   "aiNote": "Ne: \"Vazospazm önlemek için (3H)\" satırı \"Vazospazmı önlemede klasik 3H tedavisi\" olarak çerçevelendi ve Extra'ya AHA/ASA 2023 yaklaşımı (profilaktik hipervolemi önerilmez, övolemi, nimodipin) eklendi; \"Mort\" ve \"HiperV\" açıldı; ikinci satırdaki \"Vazospazm\" sözcüğü c1 boşluğuna alındı. Kökteki \"SAK'ta\" → \"Subaraknoid kanamada\" açıldı.\nNeden: Profilaktik 3H (hipertansiyon, hipervolemi, hemodilüsyon) tedavisi güncel kılavuzlarda terk edilmiştir ve hipervolemi ek morbiditeyle ilişkilidir; kart onu güncel öneri gibi sunuyordu. SAK, Kısaltma Sözlüğü'nde açılan kısaltmalar arasındadır.\nNasıl: [TD2, EK3, YP2, KS1, YP1] İkinci satırda c1 cevabını ele veren \"Vazospazm\" sözcüğü aynı numaralı c1 boşluğuna alındı. TUS'un hâlâ sorabildiği klasik cevap \"klasik 3H tedavisi\" çerçevesiyle c2 içinde korundu, güncel ve güvenli yaklaşım Extra'da verildi; vazospazmın 3. günden sonraki en önemli morbidite ve mortalite nedeni olduğu bilgisi doğru olduğundan c1 değişmedi. Kısaltma sözlüğü ders genelinde uygulandı.\nKaynak: 2023 Guideline for the Management of Patients With Aneurysmal Subarachnoid Hemorrhage, AHA/ASA (Stroke, 2023).",
+   "aiNote": "Ne: Ön yüzde vazospazm önleme için 3H hâlâ öğretiliyor; Extra karşı çıkıyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.ahajournals.org/doi/epdf/10.1161/STR.0000000000000436",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Vazospazm önlemek için (3H)\" satırı \"Vazospazmı önlemede klasik 3H tedavisi\" olarak çerçevelendi ve Extra'ya AHA/ASA 2023 yaklaşımı (profilaktik hipervolemi önerilmez, övolemi, nimodipin) eklendi; \"Mort\" ve \"HiperV\" açıldı; ikinci satırdaki \"Vazospazm\" sözcüğü c1 boşluğuna alındı. Kökteki \"SAK'ta\" → \"Subaraknoid kanamada\" açıldı.\nNeden: Profilaktik 3H (hipertansiyon, hipervolemi, hemodilüsyon) tedavisi güncel kılavuzlarda terk edilmiştir ve hipervolemi ek morbiditeyle ilişkilidir; kart onu güncel öneri gibi sunuyordu. SAK, Kısaltma Sözlüğü'nde açılan kısaltmalar arasındadır.\nNasıl: [TD2, EK3, YP2, KS1, YP1] İkinci satırda c1 cevabını ele veren \"Vazospazm\" sözcüğü aynı numaralı c1 boşluğuna alındı. TUS'un hâlâ sorabildiği klasik cevap \"klasik 3H tedavisi\" çerçevesiyle c2 içinde korundu, güncel ve güvenli yaklaşım Extra'da verildi; vazospazmın 3. günden sonraki en önemli morbidite ve mortalite nedeni olduğu bilgisi doğru olduğundan c1 değişmedi. Kısaltma sözlüğü ders genelinde uygulandı.\nKaynak: 2023 Guideline for the Management of Patients With Aneurysmal Subarachnoid Hemorrhage, AHA/ASA (Stroke, 2023)."
+    }
+   ]
   },
   {
    "order": 3,
@@ -2265,11 +2280,11 @@
    "fields": {
     "Text": {
      "before": "Non Depol NMB Etki<div><br></div><div><b>Hafif Hipotermi</b> ile: {{c1::AZALIR}}&nbsp;</div><div><br></div><div><b>Hipotermi</b> (&lt; 33 C): {{c1::ARTAR}}</div>",
-     "after": "Nondepolarizan nöromüsküler blokörlerin etkisi<div><br></div><div>Klasik bilgiye göre <b>hafif hipotermi</b> ile: {{c1::azalır}}</div><div><br></div><div><b>Hipotermi</b> (&lt; 33 °C): {{c1::artar}}</div>"
+     "after": "Nondepolarizan nöromüsküler blokörlerin etkisi<div><br></div><div>Vekuronyumun klinik blok süresi <b>hafif hipotermi</b> ile: {{c1::uzar}}</div><div><br></div><div>Hipotermide nondepolarizan blok süresi ilaca ve sıcaklığa bağlı olarak {{c1::uzayabilir}}</div>"
     },
     "Extra": {
      "before": "Mg<div>Asidoz</div><div>Dehid da Blok'u UZATIR</div>",
-     "after": "Mg<div>Asidoz</div><div>Dehidratasyon da bloku <b>uzatır</b></div><div><br></div><div>Klinikte hafif hipotermi de bloku uzatır: vücut ısısındaki 2 °C'lik düşüş blok süresini yaklaşık iki katına çıkarabilir.</div>"
+     "after": "Birincil vekuronyum çalışmasında ~34,5 °Cde etki süresi ve spontan toparlanma uzamıştır. Tüm nondepolarizan ilaçlar için her 2 °Cde sabit iki kat kuralı kurulmaz; nöromüsküler monitörizasyonla değerlendirilir."
     }
    },
    "changes": [
@@ -2293,11 +2308,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "AZALIR / ARTAR → azalır / artar; UZATIR → kalın \"uzatır\"; \"< 33 C\" → \"< 33 °C\"; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Hafif hipotermi bloku azaltır ön yüzü, arka yüz ve deneyle çelişiyor.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/1673591/"
     }
    ],
-   "aiNote": "Ne: \"Non Depol NMB Etki\" → \"Nondepolarizan nöromüsküler blokörlerin etkisi\" yapıldı; hafif hipotermi satırına \"Klasik bilgiye göre\" çerçevesi eklendi ve Extra'ya \"Klinikte hafif hipotermi de bloku uzatır: vücut ısısındaki 2 °C'lik düşüş blok süresini yaklaşık iki katına çıkarabilir.\" cümlesi yazıldı; \"Dehid\" açıldı, büyük harfli cevaplar küçültüldü.\nNeden: Hafif hipotermide etkinin azalması eski in vitro gözlemdir; klinikte hafif hipotermi de nondepolarizan bloku uzatır. Çerçevesiz kart hafif hipotermik hastada blok süresinin kısalacağını öğretiyordu.\nNasıl: [TD2, KS1, BÇ1, YP1] TUS'un beklediği iki fazlı cevap (hafif hipotermide azalır, 33 °C altında artar) \"klasik bilgi\" olarak korundu, güncel klinik bilgi Extra'da tek cümleyle verildi; tek c1 numarası ve yazarın Mg/asidoz/dehidratasyon listesi değişmedi.\nKaynak: Heier T, Caldwell JE. Impact of hypothermia on the response to neuromuscular blocking drugs. Anesthesiology 2006; Miller's Anesthesia, nöromüsküler blokörler bölümü.",
+   "aiNote": "Ne: Hafif hipotermi bloku azaltır ön yüzü, arka yüz ve deneyle çelişiyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/1673591/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Non Depol NMB Etki\" → \"Nondepolarizan nöromüsküler blokörlerin etkisi\" yapıldı; hafif hipotermi satırına \"Klasik bilgiye göre\" çerçevesi eklendi ve Extra'ya \"Klinikte hafif hipotermi de bloku uzatır: vücut ısısındaki 2 °C'lik düşüş blok süresini yaklaşık iki katına çıkarabilir.\" cümlesi yazıldı; \"Dehid\" açıldı, büyük harfli cevaplar küçültüldü.\nNeden: Hafif hipotermide etkinin azalması eski in vitro gözlemdir; klinikte hafif hipotermi de nondepolarizan bloku uzatır. Çerçevesiz kart hafif hipotermik hastada blok süresinin kısalacağını öğretiyordu.\nNasıl: [TD2, KS1, BÇ1, YP1] TUS'un beklediği iki fazlı cevap (hafif hipotermide azalır, 33 °C altında artar) \"klasik bilgi\" olarak korundu, güncel klinik bilgi Extra'da tek cümleyle verildi; tek c1 numarası ve yazarın Mg/asidoz/dehidratasyon listesi değişmedi.\nKaynak: Heier T, Caldwell JE. Impact of hypothermia on the response to neuromuscular blocking drugs. Anesthesiology 2006; Miller's Anesthesia, nöromüsküler blokörler bölümü."
+    }
+   ]
   },
   {
    "order": 53,
@@ -3271,11 +3298,11 @@
    "fields": {
     "Text": {
      "before": "İndirekt hesaplanan tek ölçüt ---&gt; {{c1::Anne Ölüm Hızı (Ölen anne / Canlı Doğum)}}",
-     "after": "İndirekt hesaplanan tek ölçüt → {{c1::anne ölüm hızı (ölen anne / canlı doğum)}}"
+     "after": "Anne ölüm oranı (maternal mortality ratio) → {{c1::belirli dönemde anne ölümleri / aynı dönemde canlı doğumlar × 100.000}}"
     },
     "Extra": {
      "before": "",
-     "after": "Payda olarak risk altındaki gebe kadın sayısı bilinemediği için canlı doğum sayısı kullanılır; sonuç 100.000 canlı doğum başına verilir. WHO terminolojisinde bu ölçütün adı anne ölüm oranıdır (maternal mortality ratio)."
+     "after": "WHO anne ölüm oranını kadın nüfusuna göre hesaplanan anne ölüm hızından ayırır. Anne ölümü gebelik sırasında veya sona ermesinden sonraki 42 gün içinde, gebelikle ilişkili ya da gebelikle ağırlaşan nedenlere bağlı ölümdür; tesadüfi nedenler dışlanır. Bu oran yalnız indirekt yöntemle hesaplanan tek ölçüt değildir."
     }
    },
    "changes": [
@@ -3294,11 +3321,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; cevapta büyük/küçük harf (Anne Ölüm Hızı, Canlı Doğum)"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Anne ölüm ölçütü indirekt hesaplanan tek ölçüt diye tanımlanmış.",
+     "rationale": "Kaynak: https://www.who.int/data/gho/indicator-metadata-registry/imr-details/26"
     }
    ],
-   "aiNote": "Ne: Extra'ya \"Payda olarak risk altındaki gebe kadın sayısı bilinemediği için canlı doğum sayısı kullanılır; sonuç 100.000 canlı doğum başına verilir. WHO terminolojisinde bu ölçütün adı anne ölüm oranıdır (maternal mortality ratio).\" eklendi; \"--->\" → \"→\" yapıldı ve cevaptaki büyük harfler küçültüldü.\nNeden: Kart paydanın neden canlı doğum olduğunu ve ölçütün uluslararası adını vermiyordu; kökteki \"indirekt hesaplanan tek ölçüt\" iddiası araştırmayla doğrulanamadı.\nNasıl: [GN2, YP1, BÇ1] TUS kaynaklarında kullanılan \"anne ölüm hızı\" adı cevapta korundu, WHO'nun paydası canlı doğum olan ölçüte verdiği \"oran\" adı Extra'da anıldı; doğrulanamayan \"tek ölçüt\" ifadesine dokunulmadı ve 'Doğrulama gerekli' kalemiyle işaretlendi.\nKaynak: WHO anne ölümü göstergeleri (maternal mortality ratio: 100.000 canlı doğum başına anne ölümü).",
+   "aiNote": "Ne: Anne ölüm ölçütü indirekt hesaplanan tek ölçüt diye tanımlanmış.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.who.int/data/gho/indicator-metadata-registry/imr-details/26",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Extra'ya \"Payda olarak risk altındaki gebe kadın sayısı bilinemediği için canlı doğum sayısı kullanılır; sonuç 100.000 canlı doğum başına verilir. WHO terminolojisinde bu ölçütün adı anne ölüm oranıdır (maternal mortality ratio).\" eklendi; \"--->\" → \"→\" yapıldı ve cevaptaki büyük harfler küçültüldü.\nNeden: Kart paydanın neden canlı doğum olduğunu ve ölçütün uluslararası adını vermiyordu; kökteki \"indirekt hesaplanan tek ölçüt\" iddiası araştırmayla doğrulanamadı.\nNasıl: [GN2, YP1, BÇ1] TUS kaynaklarında kullanılan \"anne ölüm hızı\" adı cevapta korundu, WHO'nun paydası canlı doğum olan ölçüte verdiği \"oran\" adı Extra'da anıldı; doğrulanamayan \"tek ölçüt\" ifadesine dokunulmadı ve 'Doğrulama gerekli' kalemiyle işaretlendi.\nKaynak: WHO anne ölümü göstergeleri (maternal mortality ratio: 100.000 canlı doğum başına anne ölümü)."
+    }
+   ]
   },
   {
    "order": 77,
@@ -4372,11 +4411,11 @@
    "fields": {
     "Text": {
      "before": "SUNCT tdv ---&gt; {{c1::KMP}}",
-     "after": "SUNCT tedavisi → {{c1::karbamazepin}}"
+     "after": "SUNCT önleyici tedavisinde öne çıkan seçenek → {{c1::lamotrijin}}"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kaynaklarda koruyucu tedavide ilk seçenek lamotrijindir; şiddetli atak dönemlerinde İV lidokain kullanılır, karbamazepinin etkisi sınırlıdır."
+     "after": "161 olguluk açık etiketli çalışmanın algoritması lamotrijini öne çıkarır; karbamazepin alternatif olabilir. Şiddetli dönemlerde IV lidokain geçiş tedavisidir. SUNCT: konjonktival enjeksiyon ve göz yaşarmasıyla kısa süreli tek taraflı nöraljiform baş ağrısı atakları."
     }
    },
    "changes": [
@@ -4406,11 +4445,23 @@
      "severity": "Düşük",
      "category": "Terim/yazım",
      "text": "IV → İV (Türkçe kısaltma yazımı)"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "SUNCT genel tedavisi karbamazepin diye ön yüzde kalmış; Extra lamotrijin diyor.",
+     "rationale": "Kaynak: https://pubmed.ncbi.nlm.nih.gov/33361408/"
     }
    ],
-   "aiNote": "Ne: \"KMP\" → \"karbamazepin\" açıldı, \"tdv\" → \"tedavisi\" yapıldı ve Extra'ya lamotrijin ile İV lidokain eklendi. Extra'daki \"IV\" → \"İV\" yazıldı.\nNeden: KMP destede kardiyomiyopati anlamında da geçtiği için kart yanlış okunabiliyordu; güncel kaynaklar SUNCT'ta ilk seçenek olarak lamotrijini gösterir. Kısaltma ders genelindeki Türkçe yazımla (İV) uyumsuzdu.\nNasıl: [KS1, TD2, YZ1, YP1] Kısaltma yazarın farmakoloji kartlarındaki kullanımından çözüldü; TUS'un klasik cevabı (karbamazepin) c1'de korunup güncel ilk seçenek Extra'da tek cümleyle verildi. Rehberin yazım birliği tablosundaki Türkçe harfli kısaltma kuralı uygulandı.\nKaynak: \"SUNCT, SUNA and short-lasting unilateral neuralgiform headache attacks: Debates and an update\", Cephalalgia 2024.",
+   "aiNote": "Ne: SUNCT genel tedavisi karbamazepin diye ön yüzde kalmış; Extra lamotrijin diyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/33361408/",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"KMP\" → \"karbamazepin\" açıldı, \"tdv\" → \"tedavisi\" yapıldı ve Extra'ya lamotrijin ile İV lidokain eklendi. Extra'daki \"IV\" → \"İV\" yazıldı.\nNeden: KMP destede kardiyomiyopati anlamında da geçtiği için kart yanlış okunabiliyordu; güncel kaynaklar SUNCT'ta ilk seçenek olarak lamotrijini gösterir. Kısaltma ders genelindeki Türkçe yazımla (İV) uyumsuzdu.\nNasıl: [KS1, TD2, YZ1, YP1] Kısaltma yazarın farmakoloji kartlarındaki kullanımından çözüldü; TUS'un klasik cevabı (karbamazepin) c1'de korunup güncel ilk seçenek Extra'da tek cümleyle verildi. Rehberin yazım birliği tablosundaki Türkçe harfli kısaltma kuralı uygulandı.\nKaynak: \"SUNCT, SUNA and short-lasting unilateral neuralgiform headache attacks: Debates and an update\", Cephalalgia 2024."
+    }
+   ]
   },
   {
    "order": 104,
@@ -5421,11 +5472,11 @@
    "fields": {
     "Text": {
      "before": "Li kullanımı öncesi BAK&nbsp;<div><br></div><div>{{c2::BFT}} - {{c1::Tiroit}} FT - {{c1::Hemogram}} - {{c2::EKG}} - {{c2::Gebelik&nbsp;}}</div><div><br></div><div>{{c1::KCFT}} bakmana gerek yok</div>",
-     "after": "Lityum kullanımı öncesi bakılması gerekenler<div><br></div><div>{{c2::Böbrek fonksiyon testleri}}, {{c1::tiroit}} fonksiyon testleri, {{c1::hemogram}}, {{c2::EKG}}, {{c2::gebelik}} testi</div><div><br></div><div>{{c1::Karaciğer fonksiyon testlerine}} bakılması gerekmez</div>"
+     "after": "Lityum başlangıcında değerlendirme<div><br></div><div>{{c2::Böbrek fonksiyon testleri}}, {{c1::tiroit}} fonksiyon testleri, {{c1::hemogram}}, kardiyovasküler hastalık/risk varsa {{c2::EKG}}, üreme potansiyeli bulunanlarda {{c2::gebelik testi}}</div><div>Kilo/BMI, serum elektrolitleri ve kalsiyum da değerlendirilir.</div><div><br></div><div>{{c1::Karaciğer fonksiyon testleri}} rutin başlangıç lityum panelinin zorunlu parçası değildir; başka klinik gerekçeyle istenebilir</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kılavuzlar (NICE) ayrıca kilo, serum elektrolitleri ve kalsiyum (lityuma bağlı hiperparatiroidizm) ölçümünü önerir."
+     "after": "NICE CG185 1.10.14: başlangıç kilo/BMI, üre-elektrolitler ve kalsiyum, eGFR, tiroit fonksiyonu ve tam kan sayımı. Gebelik olasılığı ayrıca değerlendirilir. EKG kardiyovasküler hastalık veya risk varsa istenir."
     }
    },
    "changes": [
@@ -5459,11 +5510,33 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "\" - \" ayraçları virgül; Gebelik → gebelik testi; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Başlangıç lityum listesinde kalsiyum Textte yok; EKG ve karaciğer testi koşulsuz.",
+     "rationale": "Kaynak: https://www.nice.org.uk/guidance/cg185/chapter/Recommendations"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Başlangıç lityum listesinde kalsiyum Textte yok; EKG ve karaciğer testi koşulsuz.",
+     "rationale": "Kaynak: https://www.nice.org.uk/guidance/cg185/chapter/Recommendations"
     }
    ],
-   "aiNote": "Ne: \"BAK\" → \"bakılması gerekenler\" yapıldı, \"BFT\", \"Tiroit FT\" ve \"KCFT\" açıldı, \"bakmana gerek yok\" → \"bakılması gerekmez\" oldu ve Extra'ya NICE'ın önerdiği kilo, elektrolit ve kalsiyum ölçümü eklendi. Kökteki \"Li\" → \"Lityum\" açıldı ve yazım birliği için Extra'daki \"hiperparatiroidi\" → \"hiperparatiroidizm\" yazıldı.\nNeden: Kart yazarın kendine hitap eden not dilinde ve kısaltmalarla yazılmıştı; lityuma bağlı hiperkalsemi/hiperparatiroidizm nedeniyle gereken bazal kalsiyum ölçümü listede yoktu. Kökte ilaç adı kimyasal simgeyle yazılmıştı (destedeki 1605557340933 kartında \"lityum\" açık yazılır); terim ders içinde \"hiperparatiroidi/hiperparatiroidizm\" iki biçimde yazılıyordu.\nNasıl: [EK2, KS1, SN2, YZ1, YP1] Beş üyeli liste ve c1/c2 dağılımı korundu, eksik üyeler cevabı değiştirmemek için Extra'da tek cümleyle verildi; lityum böbrekten atılıp karaciğerde metabolize edilmediği için karaciğer fonksiyon testlerinin gerekmediği bilgisi doğru olduğundan bırakıldı. Kısaltma sözlüğündeki açılım (HiperPTH → hiperparatiroidizm) ders genelinde tek biçim olarak uygulandı.\nKaynak: NICE CG185 (bipolar bozukluk), lityum başlamadan önce değerlendirme; Kaplan & Sadock, lityum bölümü.",
+   "aiNote": "Ne: Başlangıç lityum listesinde kalsiyum Textte yok; EKG ve karaciğer testi koşulsuz.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.nice.org.uk/guidance/cg185/chapter/Recommendations",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"BAK\" → \"bakılması gerekenler\" yapıldı, \"BFT\", \"Tiroit FT\" ve \"KCFT\" açıldı, \"bakmana gerek yok\" → \"bakılması gerekmez\" oldu ve Extra'ya NICE'ın önerdiği kilo, elektrolit ve kalsiyum ölçümü eklendi. Kökteki \"Li\" → \"Lityum\" açıldı ve yazım birliği için Extra'daki \"hiperparatiroidi\" → \"hiperparatiroidizm\" yazıldı.\nNeden: Kart yazarın kendine hitap eden not dilinde ve kısaltmalarla yazılmıştı; lityuma bağlı hiperkalsemi/hiperparatiroidizm nedeniyle gereken bazal kalsiyum ölçümü listede yoktu. Kökte ilaç adı kimyasal simgeyle yazılmıştı (destedeki 1605557340933 kartında \"lityum\" açık yazılır); terim ders içinde \"hiperparatiroidi/hiperparatiroidizm\" iki biçimde yazılıyordu.\nNasıl: [EK2, KS1, SN2, YZ1, YP1] Beş üyeli liste ve c1/c2 dağılımı korundu, eksik üyeler cevabı değiştirmemek için Extra'da tek cümleyle verildi; lityum böbrekten atılıp karaciğerde metabolize edilmediği için karaciğer fonksiyon testlerinin gerekmediği bilgisi doğru olduğundan bırakıldı. Kısaltma sözlüğündeki açılım (HiperPTH → hiperparatiroidizm) ders genelinde tek biçim olarak uygulandı.\nKaynak: NICE CG185 (bipolar bozukluk), lityum başlamadan önce değerlendirme; Kaplan & Sadock, lityum bölümü."
+    },
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Başlangıç lityum listesinde kalsiyum Textte yok; EKG ve karaciğer testi koşulsuz.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.nice.org.uk/guidance/cg185/chapter/Recommendations"
+    }
+   ]
   },
   {
    "order": 129,
@@ -5476,7 +5549,7 @@
    "fields": {
     "Text": {
      "before": "OKB en etkili ilaç --&gt; {{c1::klomipramin&nbsp;}}",
-     "after": "OKB'de en etkili ilaç → {{c1::klomipramin}}"
+     "after": "Erişkin OKBde SSRI yanıtı/toleransı yetersizse değerlendirilebilen trisiklik seçenek → {{c1::klomipramin}}"
     },
     "Extra": {
      "before": "",
@@ -5494,11 +5567,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "--> → →; \"OKB en etkili\" → \"OKB'de en etkili\"; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "En etkili klomipramin ifadesi tedavi basamağı/yan etki koşulunu saklıyor.",
+     "rationale": "Kaynak: https://www.nice.org.uk/guidance/cg31/chapter/Recommendations"
     }
    ],
-   "aiNote": "Ne: \"OKB en etkili ilaç\" → \"OKB'de en etkili ilaç\" yapıldı ve Extra'ya \"İlk seçenek ilaç tedavisi, daha iyi tolere edilen SSRI'lardır.\" eklendi.\nNeden: Klomipramin OKB'de en etkili ilaç olarak bilinse de yan etkileri nedeniyle ilk seçenek değildir; kart \"en etkili\" ile \"ilk seçenek\" ayrımını vermiyordu.\nNasıl: [EK1, YP1, BÇ1] Klasik cevap (klomipramin) doğru olduğu için korundu; ilk tercih bilgisi cevabı değiştirmemek için Extra'da tek cümleyle verildi.\nKaynak: Kaplan & Sadock, obsesif kompulsif bozukluk tedavisi; APA obsesif kompulsif bozukluk tedavi kılavuzu.",
+   "aiNote": "Ne: En etkili klomipramin ifadesi tedavi basamağı/yan etki koşulunu saklıyor.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.nice.org.uk/guidance/cg31/chapter/Recommendations",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"OKB en etkili ilaç\" → \"OKB'de en etkili ilaç\" yapıldı ve Extra'ya \"İlk seçenek ilaç tedavisi, daha iyi tolere edilen SSRI'lardır.\" eklendi.\nNeden: Klomipramin OKB'de en etkili ilaç olarak bilinse de yan etkileri nedeniyle ilk seçenek değildir; kart \"en etkili\" ile \"ilk seçenek\" ayrımını vermiyordu.\nNasıl: [EK1, YP1, BÇ1] Klasik cevap (klomipramin) doğru olduğu için korundu; ilk tercih bilgisi cevabı değiştirmemek için Extra'da tek cümleyle verildi.\nKaynak: Kaplan & Sadock, obsesif kompulsif bozukluk tedavisi; APA obsesif kompulsif bozukluk tedavi kılavuzu."
+    }
+   ]
   },
   {
    "order": 130,
@@ -5556,11 +5641,11 @@
    "fields": {
     "Text": {
      "before": "Deliryum ortak tdv ---&gt; {{c1::Haloperidol&nbsp;}}",
-     "after": "Deliryumda ajitasyon ve psikotik belirtilerin semptomatik tedavisi → {{c1::haloperidol}}"
+     "after": "Deliryumda sıkıntı veya kendine/başkasına risk varsa ve de-eskalasyon yetersizse kısa süreli semptomatik seçenek → {{c1::haloperidol}}"
     },
     "Extra": {
      "before": "",
-     "after": "Asıl tedavi altta yatan nedenin düzeltilmesidir; alkol veya benzodiazepin yoksunluğuna bağlı deliryumda benzodiazepin kullanılır."
+     "after": "NICE CG103: altta yatan neden düzeltilir; haloperidol düşünülürse düşük doz ve genellikle ≤1 hafta kullanılır. Kardiyak ve nörolojik riskler, özellikle Parkinson ve Lewy cisimcikli demans, dikkate alınır. Alkol/benzodiazepin yoksunluğu ayrı tedavi gerektirir."
     }
    },
    "changes": [
@@ -5579,11 +5664,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; cevapta küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Haloperidol tüm deliryum hastalarına rutin tedavi gibi okunabilir.",
+     "rationale": "Kaynak: https://www.nice.org.uk/guidance/cg103/chapter/Recommendations"
     }
    ],
-   "aiNote": "Ne: \"Deliryum ortak tdv\" → \"Deliryumda ajitasyon ve psikotik belirtilerin semptomatik tedavisi\" yapıldı; Extra'ya \"Asıl tedavi altta yatan nedenin düzeltilmesidir; alkol veya benzodiazepin yoksunluğuna bağlı deliryumda benzodiazepin kullanılır.\" eklendi.\nNeden: Kart haloperidolü bütün deliryumların ortak tedavisi gibi sunuyordu; haloperidol yalnız semptomatiktir ve yoksunluk deliryumunda nöbet eşiğini düşürdüğü için uygun değildir.\nNasıl: [EK1, EK3, KS1, YP1] Klasik cevap (haloperidol) korundu, kullanım alanı kökte niteleyiciyle sınırlandı ve güvenlik uyarısı Extra'da tek cümleyle verildi.\nKaynak: Kaplan & Sadock, deliryum tedavisi.",
+   "aiNote": "Ne: Haloperidol tüm deliryum hastalarına rutin tedavi gibi okunabilir.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.nice.org.uk/guidance/cg103/chapter/Recommendations",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Deliryum ortak tdv\" → \"Deliryumda ajitasyon ve psikotik belirtilerin semptomatik tedavisi\" yapıldı; Extra'ya \"Asıl tedavi altta yatan nedenin düzeltilmesidir; alkol veya benzodiazepin yoksunluğuna bağlı deliryumda benzodiazepin kullanılır.\" eklendi.\nNeden: Kart haloperidolü bütün deliryumların ortak tedavisi gibi sunuyordu; haloperidol yalnız semptomatiktir ve yoksunluk deliryumunda nöbet eşiğini düşürdüğü için uygun değildir.\nNasıl: [EK1, EK3, KS1, YP1] Klasik cevap (haloperidol) korundu, kullanım alanı kökte niteleyiciyle sınırlandı ve güvenlik uyarısı Extra'da tek cümleyle verildi.\nKaynak: Kaplan & Sadock, deliryum tedavisi."
+    }
+   ]
   },
   {
    "order": 132,
@@ -6356,13 +6453,17 @@
    "noteId": 1605704690157,
    "guid": "P!&_^<<Dg*",
    "topic": "Anesteziyoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Bupivakain'e bağlı Resusitasyona dirençli Arrest tdv ----&gt; {{c1::iv Lipid Emülsiyon&nbsp;}}",
-     "after": "Bupivakaine bağlı, resüsitasyona dirençli arrest tedavisi → {{c1::İV lipid emülsiyonu}}"
+     "after": "Bupivakaine bağlı, ciddi lokal anestezik sistemik toksisitesinde erken değerlendirilen kurtarma tedavisi → {{c1::İV lipid emülsiyonu}}"
+    },
+    "Extra": {
+     "before": "",
+     "after": "ASRA 2020 v1.1: ciddi LASTta %20 lipid emülsiyonu erken düşünülür; arrestin resüsitasyona dirençli olmasını beklemek gerekmez. Hava yolu, konvülziyon kontrolü ve LASTa uygun resüsitasyon eş zamanlı değerlendirilir; bu tek satır tüm doz algoritması değildir."
     }
    },
    "changes": [
@@ -6385,11 +6486,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "----> → →; iv → İV; büyük/küçük harf; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Lipid emülsiyonu doğru fakat dirençli arresti beklemek tedaviyi geç başlatabilir.",
+     "rationale": "Kaynak: https://asra.com/docs/default-source/guidelines-articles/local-anesthetic-systemic-toxicity-rgb.pdf?sfvrsn=33b348e_2"
     }
    ],
-   "aiNote": "Ne: \"Bupivakain'e bağlı Resusitasyona dirençli Arrest tdv\" → \"Bupivakaine bağlı, resüsitasyona dirençli arrest tedavisi\" ve cevap \"İV lipid emülsiyonu\" yapıldı.\nNeden: Kesme işareti, yazım ve kısaltma hataları vardı; içerik doğruydu.\nNasıl: [DB1, YZ2, KS1] Lokal anestezik sistemik toksisitesine bağlı arrestte %20 lipid emülsiyonunun kullanıldığı bilgisi doğru olduğundan c1 korundu.",
+   "aiNote": "Ne: Lipid emülsiyonu doğru fakat dirençli arresti beklemek tedaviyi geç başlatabilir.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://asra.com/docs/default-source/guidelines-articles/local-anesthetic-systemic-toxicity-rgb.pdf?sfvrsn=33b348e_2",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Bupivakain'e bağlı Resusitasyona dirençli Arrest tdv\" → \"Bupivakaine bağlı, resüsitasyona dirençli arrest tedavisi\" ve cevap \"İV lipid emülsiyonu\" yapıldı.\nNeden: Kesme işareti, yazım ve kısaltma hataları vardı; içerik doğruydu.\nNasıl: [DB1, YZ2, KS1] Lokal anestezik sistemik toksisitesine bağlı arrestte %20 lipid emülsiyonunun kullanıldığı bilgisi doğru olduğundan c1 korundu."
+    }
+   ]
   },
   {
    "order": 155,
@@ -11726,13 +11839,17 @@
    "noteId": 1605682517763,
    "guid": "rU!0$f{Y?@",
    "topic": "Halk Sağlığı",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Analitik Araştırmalar<div><br></div><div><b>Vaka Kontrol </b>---&gt; elimizde {{c1::HASTA}} var ---&gt; sonuçta {{c1::ETKENle}} ilişkisini bulmaya çalışıyoruz - {{c1::Retropektif}} - sadece {{c1::Tahmini Rölatif Risk}} hesdaplanır&nbsp;</div><div><br></div><div><b>Kohort Araştırma&nbsp;</b> ---&gt; Elimizde {{c2::ETKEN}} var ---&gt; sonuçta {{c2::HASTA}} ile işikisi bulmaya çalışılır - {{c2::Prospektif}} - {{c2::İnsidans}} hesaplanır ({{c2::İnsidanslar}} oranı ---&gt; {{c3::Rölatif Risk}} / {{c2::İnsidanslar}} Farkı ---&gt; {{c3::Atfedilen&nbsp;Risk}})</div><div><br></div><div>Latent dönemi {{c4::kısa}}&nbsp; - insidansı {{c4::yüksek}} hast'da ---&gt; Kohort kullanılır</div><div><br></div><div><b>Kesitsel Araştırma</b> ---&gt; {{c5::Prevelans}} hesaplanır&nbsp;</div>",
-     "after": "Analitik araştırmalar<div><br></div><div><b>Vaka-kontrol</b> → başlangıçta {{c1::hasta}} grubu vardır → {{c1::etken}}le ilişkisi araştırılır; {{c1::retrospektif}}; yalnız {{c1::tahmini rölatif risk}} hesaplanır</div><div><br></div><div><b>Kohort araştırması</b> → başlangıçta {{c2::etken}}e maruz kalan grup vardır → {{c2::hastalık}}la ilişkisi araştırılır; {{c2::prospektif}}; {{c2::insidans}} hesaplanır ({{c2::insidanslar}} oranı → {{c3::rölatif risk}} / {{c2::insidanslar}} farkı → {{c3::atfedilen risk}})</div><div><br></div><div>Latent dönemi {{c4::kısa}}, insidansı {{c4::yüksek}} hastalıklarda → kohort kullanılır</div><div><br></div><div><b>Kesitsel araştırma</b> → {{c5::prevalans}} hesaplanır</div>"
+     "after": "Analitik araştırmalar<div><br></div><div><b>Vaka-kontrol</b> → başlangıçta {{c1::hasta}} grubu vardır → {{c2::{{c1::etken}}::ilişkili yanıt arka yüzde}}le ilişkisi araştırılır; {{c2::{{c1::retrospektif}}::ilişkili yanıt arka yüzde}}; temel ilişki ölçütü {{c1::odds oranı}}dır</div><div><br></div><div><b>Kohort araştırması</b> → başlangıçta {{c1::{{c2::etken}}::ilişkili yanıt arka yüzde}}e maruz kalan grup vardır → {{c2::hastalık}}la ilişkisi araştırılır; {{c1::{{c2::prospektif veya retrospektif}}::ilişkili yanıt arka yüzde}}; {{c2::insidans}} hesaplanır ({{c2::insidanslar}} oranı → {{c3::rölatif risk}} / {{c2::insidanslar}} farkı → {{c3::atfedilen risk}})</div><div><br></div><div>Latent dönemi {{c4::kısa}}, insidansı {{c4::yüksek}} hastalıklarda → kohort kullanılır</div><div><br></div><div><b>Kesitsel araştırma</b> → {{c5::prevalans}} hesaplanır</div>"
+    },
+    "Extra": {
+     "before": "",
+     "after": "Klasik vaka-kontrolde odds oranı kullanılır; nadir hastalık ve uygun örnekleme koşullarında RRyi yaklaşık temsil edebilir. Kohort yalnız prospektif değildir. Kartın c1/c2 sözcük tekrarları doğrudan tıbbi hata sayılmaz; pedagojik kontrol ayrı kaydedilmiştir."
     }
    },
    "changes": [
@@ -11760,11 +11877,23 @@
      "severity": "Düşük",
      "category": "Biçim",
      "text": "---> → →; HASTA, ETKEN ve diğer büyük harfler küçültüldü; \"Vaka Kontrol\" → \"Vaka-kontrol\"; \" - \" ayraçları noktalı virgül; &nbsp; temizlendi"
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Ön/arka kapsam uyumu",
+     "text": "Kohort yalnız prospektif, vaka-kontrol yalnız tahmini RR diye tanımlanmış; çoklu clozeda sözcük tekrarı adayları var.",
+     "rationale": "Kaynak: https://www.cdc.gov/field-epi-manual/php/chapters/design-conduct-analyze-field-studies.html"
     }
    ],
-   "aiNote": "Ne: \"elimizde HASTA var ---> sonuçta ETKENle ilişkisini bulmaya çalışıyoruz\" gibi birinci kişi notlar \"başlangıçta hasta grubu vardır → etkenle ilişkisi araştırılır\" biçimine çevrildi; \"Retropektif\" → \"retrospektif\", \"Prevelans\" → \"prevalans\" düzeltildi ve kohort satırındaki sonuç \"hastalık\" olarak yazıldı.\nNeden: Kart kişisel not dili, yazım hataları ve büyük harfli vurgularla yazılmıştı; içerik doğruydu.\nNasıl: [SN2, YZ1, BÇ1, YP1] Vaka-kontrolde olasılıklar oranının (tahmini rölatif risk), kohortta insidans, rölatif risk ve atfedilen riskin, kesitsel araştırmada prevalansın hesaplanması ders kitabıyla uyumlu olduğundan c1–c5 cevapları ve dağılımları korundu; cloze'a yapışık ekler cloze dışına alındı.",
+   "aiNote": "Ne: Kohort yalnız prospektif, vaka-kontrol yalnız tahmini RR diye tanımlanmış; çoklu clozeda sözcük tekrarı adayları var.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: https://www.cdc.gov/field-epi-manual/php/chapters/design-conduct-analyze-field-studies.html",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"elimizde HASTA var ---> sonuçta ETKENle ilişkisini bulmaya çalışıyoruz\" gibi birinci kişi notlar \"başlangıçta hasta grubu vardır → etkenle ilişkisi araştırılır\" biçimine çevrildi; \"Retropektif\" → \"retrospektif\", \"Prevelans\" → \"prevalans\" düzeltildi ve kohort satırındaki sonuç \"hastalık\" olarak yazıldı.\nNeden: Kart kişisel not dili, yazım hataları ve büyük harfli vurgularla yazılmıştı; içerik doğruydu.\nNasıl: [SN2, YZ1, BÇ1, YP1] Vaka-kontrolde olasılıklar oranının (tahmini rölatif risk), kohortta insidans, rölatif risk ve atfedilen riskin, kesitsel araştırmada prevalansın hesaplanması ders kitabıyla uyumlu olduğundan c1–c5 cevapları ve dağılımları korundu; cloze'a yapışık ekler cloze dışına alındı."
+    }
+   ]
   },
   {
    "order": 310,

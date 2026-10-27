@@ -82,10 +82,13 @@ import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { useRepeatPress } from '../hooks/useRepeatPress';
 
 import {
+    canGradeRevealedCard,
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
+    matchingSwipePreset,
     normalizeSwipeSensitivity,
     REVIEW_TAP_ZONES,
+    SWIPE_PRESETS,
 } from '../lib/reviewerTouchControls';
 
 type SectionId =
@@ -1182,12 +1185,12 @@ export default function SettingsScreen() {
                     summary={l('Kapalıyken kartlar dokunma bölgeleri veya kaydırma hareketleriyle yanıtlanır.', 'When hidden, cards are answered with tap zones or swipe gestures.')}
                     value={settings.showAnswerButtons !== false}
                     onChange={(value) => {
-                        if (!value && !settings.gesturesEnabled && settings.ninePointTouchEnabled === false) {
+                        if (!value && !canGradeRevealedCard({ ...settings, showAnswerButtons: false })) {
                             alert(
                                 l('Dokunma veya kaydırmayı etkinleştirin', 'Enable taps or swipes'),
                                 l(
-                                    'Yanıt düğmelerini gizlemeden önce Kontroller bölümünde 9 noktalı dokunmayı veya kaydırma hareketlerini etkinleştirin.',
-                                    'Enable 9-point touch or swipe gestures in Controls before hiding answer buttons.',
+                                    'Yanıt düğmelerini gizlemeden önce Kontroller bölümünde bir dokunma bölgesine veya kaydırma yönüne Tekrar, Zor, İyi ya da Kolay atayın.',
+                                    'Before hiding the answer buttons, assign Again, Hard, Good, or Easy to a tap zone or swipe direction in Controls.',
                                 ),
                             );
                             return;
@@ -1289,6 +1292,13 @@ export default function SettingsScreen() {
         </Group>
     );
 
+    const activeSwipePreset = matchingSwipePreset(settings);
+    const gradingIsStranded = !canGradeRevealedCard(settings);
+    // Turning a control off must never leave a revealed card with nothing that can grade it.
+    const updateSettingsKeepingGrading = useCallback((patch: Partial<AppSettings>) => {
+        updateSettings(canGradeRevealedCard({ ...settings, ...patch }) ? patch : { ...patch, showAnswerButtons: true });
+    }, [settings, updateSettings]);
+
     const renderControls = useCallback(() => (
         <>
             <Group
@@ -1305,10 +1315,7 @@ export default function SettingsScreen() {
                     label={l('9 noktalı dokunma', '9-point touch')}
                     summary={l('Kart yüzeyini 3×3 bölgeye ayırır; soru ve yanıt tarafları ayrı ayrı ayarlanır.', 'Divides the card surface into a 3×3 grid; question and answer sides are configured separately.')}
                     value={settings.ninePointTouchEnabled !== false}
-                    onChange={(value) => updateSettings({
-                        ninePointTouchEnabled: value,
-                        ...(value || settings.gesturesEnabled || settings.showAnswerButtons !== false ? {} : { showAnswerButtons: true }),
-                    })}
+                    onChange={(value) => updateSettingsKeepingGrading({ ninePointTouchEnabled: value })}
                     styles={styles}
                 />
                 {settings.ninePointTouchEnabled !== false ? (
@@ -1359,10 +1366,7 @@ export default function SettingsScreen() {
                     label={l('Kaydırma hareketlerini etkinleştir', 'Enable swipe gestures')}
                     summary={l('Kapalıyken çalışma ekranı tüm kaydırmaları normal kart gezinmesine bırakır.', 'When off, the reviewer leaves every swipe to normal card navigation.')}
                     value={Boolean(settings.gesturesEnabled)}
-                    onChange={(value) => updateSettings({
-                        gesturesEnabled: value,
-                        ...(value || settings.showAnswerButtons !== false ? {} : { showAnswerButtons: true }),
-                    })}
+                    onChange={(value) => updateSettingsKeepingGrading({ gesturesEnabled: value })}
                     styles={styles}
                 />
                 {settings.gesturesEnabled ? (
@@ -1370,30 +1374,29 @@ export default function SettingsScreen() {
                         <View style={styles.gesturePresetBlock}>
                             <Text style={styles.preferenceLabel}>{l('Hazır düzenler', 'Presets')}</Text>
                             <Text style={styles.preferenceSummary}>{l('Bir düzen seçin, ardından yönleri tek tek değiştirebilirsiniz.', 'Choose a preset, then fine-tune each direction.')}</Text>
-                            <View style={styles.choiceRow}>
-                                <TouchableOpacity
-                                    style={styles.choiceButton}
-                                    onPress={() => updateSettings({
-                                        swipeLeftAction: 'tools',
-                                        swipeRightAction: 'decks',
-                                        swipeUpAction: 'off',
-                                        swipeDownAction: 'off',
-                                    })}
-                                >
-                                    <Text style={styles.choiceText}>{l('iPhone için dengeli', 'Balanced for iPhone')}</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.choiceButton}
-                                    onPress={() => updateSettings({
-                                        swipeLeftAction: 'again',
-                                        swipeRightAction: 'good',
-                                        swipeUpAction: 'easy',
-                                        swipeDownAction: 'hard',
-                                    })}
-                                >
-                                    <Text style={styles.choiceText}>{l('Hızlı yanıt', 'Fast answers')}</Text>
-                                </TouchableOpacity>
+                            <View style={styles.choiceRow} accessibilityRole="radiogroup">
+                                {([
+                                    ['balanced', l('iPhone için dengeli', 'Balanced for iPhone')],
+                                    ['fastAnswers', l('Hızlı yanıt', 'Fast answers')],
+                                ] as const).map(([preset, label]) => {
+                                    const selected = activeSwipePreset === preset;
+                                    return (
+                                        <TouchableOpacity
+                                            key={preset}
+                                            style={[styles.choiceButton, selected && styles.choiceButtonActive]}
+                                            onPress={() => updateSettingsKeepingGrading(SWIPE_PRESETS[preset])}
+                                            accessibilityRole="radio"
+                                            accessibilityState={{ checked: selected }}
+                                            aria-checked={selected}
+                                        >
+                                            <Text style={[styles.choiceText, selected && styles.choiceTextActive]}>{label}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
+                            {activeSwipePreset === null ? (
+                                <Text style={styles.preferenceSummary}>{l('Özel düzen kullanılıyor.', 'Using a custom layout.')}</Text>
+                            ) : null}
                         </View>
                         {([
                             ['swipeLeftAction', '←', l('Sola kaydırma', 'Swipe left'), settings.swipeLeftAction ?? 'tools'],
@@ -1418,6 +1421,28 @@ export default function SettingsScreen() {
                             styles={styles}
                         />
                     </>
+                ) : null}
+                {gradingIsStranded ? (
+                    <View style={styles.controlsWarning} accessibilityRole="alert">
+                        <Text style={styles.controlsWarningTitle}>
+                            {l('Kartları yanıtlamanın bir yolu kalmadı', 'No way left to answer cards')}
+                        </Text>
+                        <Text style={styles.controlsWarningText}>
+                            {l(
+                                'Yanıt düğmeleri gizli ve etkin hiçbir dokunma bölgesi veya kaydırma yönü Tekrar, Zor, İyi ya da Kolay uygulamıyor. Bir bölgeye veya yöne bir yanıt eylemi atayın ya da yanıt düğmelerini geri açın.',
+                                'The answer buttons are hidden and no enabled tap zone or swipe direction answers Again, Hard, Good, or Easy. Assign an answer action to a zone or direction, or bring the answer buttons back.',
+                            )}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.controlsWarningButton}
+                            onPress={() => updateSetting('showAnswerButtons', true)}
+                            accessibilityRole="button"
+                        >
+                            <Text style={styles.controlsWarningButtonText}>
+                                {l('Yanıt düğmelerini geri aç', 'Show the answer buttons again')}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : null}
             </Group>
             <Group title={l('Ekran kontrolü', 'On-screen control')} styles={styles}>
@@ -1519,7 +1544,7 @@ export default function SettingsScreen() {
             </Group>
             <KeyboardSettingsSection bindings={settings.keyBindings} onChange={handleKeyBindingsChange} />
         </>
-    ), [gestureActionLabel, handleKeyBindingsChange, l, settings, styles, tapSide, updateSetting, updateSettings]);
+    ), [activeSwipePreset, gestureActionLabel, gradingIsStranded, handleKeyBindingsChange, l, settings, styles, tapSide, updateSetting, updateSettings, updateSettingsKeepingGrading]);
 
     const renderAccessibility = () => (
         <>
@@ -1544,7 +1569,7 @@ export default function SettingsScreen() {
             <Group title={l('Yedekleme', 'Backup')} styles={styles}>
                 <ToggleRow
                     label={l('Otomatik yedekleme', 'Automatic backup')}
-                    summary={l('Haftada bir', 'Weekly')}
+                    summary={l('30 dakikada bir; 12 günlük, 10 haftalık, 9 aylık kopya', 'Every 30 minutes; 12 daily, 10 weekly, 9 monthly copies')}
                     value={settings.autoBackupEnabled !== false}
                     onChange={(value) => updateSetting('autoBackupEnabled', value)}
                     divider={false}
@@ -2198,6 +2223,11 @@ function createStyles(colors: ColorScheme) {
         choiceButtonActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
         choiceText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary, textAlign: 'center' },
         choiceTextActive: { color: colors.accent, fontWeight: '800', textAlign: 'center' },
+        controlsWarning: { marginTop: Spacing.md, padding: Spacing.md, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: colors.btnHard, backgroundColor: colors.btnHardBg },
+        controlsWarningTitle: { fontSize: FontSize.sm, fontWeight: '800', color: colors.btnHard },
+        controlsWarningText: { marginTop: Spacing.xs, fontSize: FontSize.xs, lineHeight: 18, color: colors.textSecondary },
+        controlsWarningButton: { marginTop: Spacing.md, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, backgroundColor: colors.btnHard, paddingHorizontal: Spacing.md },
+        controlsWarningButtonText: { fontSize: FontSize.sm, fontWeight: '800', color: colors.white },
         gesturePresetBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
         tapMappingBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingBottom: Spacing.md },
         tapGrid: { flexDirection: 'row', flexWrap: 'wrap', overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.md, backgroundColor: colors.bgSecondary },

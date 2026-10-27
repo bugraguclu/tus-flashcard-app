@@ -92,7 +92,7 @@ async function fixturePackage(
         ],
         req: [[0, 'any', [0]], [1, 'any', [1]]],
     };
-    const deck = { id: 2000, name: 'Medicine::Cardiology', mod: 456, usn: -1, desc: 'Deck HTML', dyn: 0, conf: 1, customDeckKey: 42 };
+    const deck = { id: 2000, name: 'Medicine::Cardiology', mod: 456, usn: -1, desc: 'Deck HTML', md: true, dyn: 0, conf: 1, customDeckKey: 42 };
     const config = {
         id: 1, name: 'Imported Options', mod: 1, usn: -1, maxTaken: 90, autoplay: true, timer: 1,
         stopTimerOnAnswer: true, secondsToShowQuestion: 12, secondsToShowAnswer: 8,
@@ -278,7 +278,7 @@ describe('lossless Anki package roundtrip', () => {
         modern.run('INSERT INTO fields VALUES (100, 1, ?, ?)', ['Response', pb(pbBytes(3, 'Arial'), pbVarint(4, 20))]);
         modern.run('INSERT INTO templates VALUES (100, 0, ?, 20, -1, ?)', ['Card 1', pb(pbBytes(1, '{{Prompt}}'), pbBytes(2, '{{FrontSide}}<hr id=answer>{{Response}}'))]);
         modern.run('INSERT INTO deck_config VALUES (1, ?, 20, -1, ?)', ['Modern Preset', pb(pbVarint(9, 30), pbVarint(10, 300), pbFloat(11, 2.5), pbFloat(12, 1.3))]);
-        const normal = pb(pbVarint(1, 1), pbBytes(4, 'Modern description'));
+        const normal = pb(pbVarint(1, 1), pbBytes(4, '**Modern** description'), pbVarint(5, 1));
         modern.run('INSERT INTO decks VALUES (200, ?, 20, -1, ?, ?)', ['Modern::Child', pb(pbVarint(1, 1)), pbBytes(1, normal)]);
         modern.run('INSERT INTO notes VALUES (300, ?, 100, 30, -1, ?, ?, ?, 1, 0, ?)', ['modern-guid', ' tag ', 'Question\x1fAnswer', 'Question', '']);
         modern.run('INSERT INTO cards VALUES (400, 300, 200, 0, 30, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, ?)', ['']);
@@ -288,6 +288,11 @@ describe('lossless Anki package roundtrip', () => {
         expect(result).toMatchObject({ added: 1, cardsImported: 1, structurePreserved: true });
         expect(getAllNoteTypes().find((type) => type.name === 'Modern Type')).toMatchObject({ css: '.card{color:blue}' });
         expect(getAllDecks().map((deck) => deck.name)).toEqual(expect.arrayContaining(['Modern', 'Modern::Child']));
+        // `markdown_description = 5` survives as the deck's "Interpret as Markdown".
+        expect(getAllDecks().find((deck) => deck.name === 'Modern::Child')).toMatchObject({
+            description: '**Modern** description',
+            descriptionMarkdown: true,
+        });
         reader.close();
         modern.close();
     });
@@ -671,6 +676,8 @@ describe('lossless Anki package roundtrip', () => {
         const exportedDecks = Object.values(JSON.parse(childReader.getFirstSync<{ decks: string }>('SELECT decks FROM col')!.decks)) as any[];
         expect(exportedDecks.map((deck) => deck.name)).toEqual(expect.arrayContaining(['Medicine', 'Medicine::Cardiology']));
         expect(exportedDecks).toHaveLength(3);
+        // "Interpret as Markdown" travels as the deck's legacy `md` key.
+        expect(exportedDecks.find((deck) => deck.name === 'Medicine::Cardiology')).toMatchObject({ desc: 'Deck HTML', md: true });
         childReader.close();
     });
 

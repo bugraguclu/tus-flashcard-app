@@ -76,6 +76,15 @@ export function hasExplicitStudyScope(
 
 const DESCRIPTION_ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
+/** Decode the named and numeric entities a deck description's HTML uses. */
+export function decodeDescriptionEntities(text: string): string {
+    return text.replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (whole, entity: string) => {
+        if (!entity.startsWith('#')) return DESCRIPTION_ENTITIES[entity.toLowerCase()] ?? whole;
+        const n = entity[1].toLowerCase() === 'x' ? parseInt(entity.slice(2), 16) : Number(entity.slice(1));
+        return n > 0 && n <= 0x10ffff && !(n >= 0xd800 && n <= 0xdfff) ? String.fromCodePoint(n) : whole;
+    });
+}
+
 /**
  * A deck description as readable text. Anki shows the description as HTML (imported shared decks
  * use it for headings, lists and links); the overview renders native text, so line-level tags
@@ -89,11 +98,7 @@ export function deckDescriptionText(html: string): string {
         .replace(/<li\b[^>]*>/gi, '\n• ')
         .replace(/<\/?(?:p|div|h[1-6]|ul|ol|li|tr|table|blockquote|pre|hr)\b[^>]*>/gi, '\n')
         .replace(/<[^>]*>/g, '')
-        .replace(/&(#x[\da-f]+|#\d+|[a-z]+);/gi, (whole, entity: string) => {
-            if (!entity.startsWith('#')) return DESCRIPTION_ENTITIES[entity.toLowerCase()] ?? whole;
-            const n = entity[1].toLowerCase() === 'x' ? parseInt(entity.slice(2), 16) : Number(entity.slice(1));
-            return n > 0 && n <= 0x10ffff && !(n >= 0xd800 && n <= 0xdfff) ? String.fromCodePoint(n) : whole;
-        })
+        .replace(/&(?:#x[\da-f]+|#\d+|[a-z]+);/gi, (entity) => decodeDescriptionEntities(entity))
         .replace(/[ \t]+\n/g, '\n')
         .replace(/\n{3,}/g, '\n\n')
         .trim();

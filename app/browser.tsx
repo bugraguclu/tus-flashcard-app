@@ -140,7 +140,7 @@ export default function BrowserScreen() {
     const [showSelectionTags, setShowSelectionTags] = useState(false);
     const [selectionTagBaseline, setSelectionTagBaseline] = useState<string[]>([]);
     const [showRepositionDialog, setShowRepositionDialog] = useState(false);
-    const [repositionStart, setRepositionStart] = useState('1');
+    const [repositionStart, setRepositionStart] = useState('0');
     const [repositionStep, setRepositionStep] = useState('1');
     // Anki remembers the choice and starts with it off.
     const [repositionShiftExisting, setRepositionShiftExisting] = useState(() => readBrowserBoolean('browser_reposition_shift', false));

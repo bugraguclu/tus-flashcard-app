@@ -1,0 +1,303 @@
+{
+ "reviewDate": "2026-10-09",
+ "purpose": "Source identity repairs; a corrected citation does not independently approve all statements in a card.",
+ "corrections": [
+  {
+   "course": "patoloji",
+   "noteId": "1629212608979",
+   "sourceKey": null,
+   "retractedPMID": "32986873",
+   "replacementTitle": "cIMPACT-NOW update 5: recommended grading criteria and terminologies for IDH-mutant astrocytomas.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/31996992/",
+   "year": "2020",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1629212608979",
+   "sourceKey": null,
+   "retractedPMID": "34185886",
+   "replacementTitle": "The 2021 WHO Classification of Tumors of the Central Nervous System: a summary.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/34185076/",
+   "year": "2021",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1629229512813",
+   "sourceKey": null,
+   "retractedPMID": "21814674",
+   "replacementTitle": "Multicenter retrospective analysis of 581 patients with primary intestinal non-hodgkin lymphoma from the Consortium for Improving Survival of Lymphoma (CISL).",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/21798075/",
+   "year": "2011",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1629229512813",
+   "sourceKey": null,
+   "retractedPMID": "18408422",
+   "replacementTitle": "Multicenter retrospective analysis of 581 patients with primary intestinal non-hodgkin lymphoma from the Consortium for Improving Survival of Lymphoma (CISL).",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/21798075/",
+   "year": "2011",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Kaynak kimliği düzeltildi. İncelenen başlık/özet veya belirtilen resmi bölüm, karttaki bütün iddialara son onay değildir."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1630356249879",
+   "sourceKey": null,
+   "retractedPMID": "32490158",
+   "replacementTitle": "The 5th edition of the World Health Organization Classification of Haematolymphoid Tumours: Lymphoid Neoplasms.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/35732829/",
+   "year": "2022",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Kaynak kimliği düzeltildi. İncelenen başlık/özet veya belirtilen resmi bölüm, karttaki bütün iddialara son onay değildir."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1630356249879",
+   "sourceKey": null,
+   "retractedPMID": "35732831",
+   "replacementTitle": "The 5th edition of the World Health Organization Classification of Haematolymphoid Tumours: Lymphoid Neoplasms.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/35732829/",
+   "year": "2022",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Kaynak kimliği düzeltildi. İncelenen başlık/özet veya belirtilen resmi bölüm, karttaki bütün iddialara son onay değildir."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1625595892368",
+   "sourceKey": null,
+   "retractedPMID": "15578051",
+   "replacementTitle": "NCI PDQ: Wilms Tumor and Other Childhood Kidney Tumors Treatment",
+   "replacementURL": "https://www.cancer.gov/types/kidney/hp/wilms-treatment-pdq",
+   "year": "Erişim 2026-10-09",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Evreleme ve metastaz yerleri: bölgesel lenf nodları, akciğer ve karaciğer; bilateral hastalık ayrımı."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1604400644490",
+   "sourceKey": null,
+   "retractedPMID": "17513511",
+   "replacementTitle": "Significance of TP53 Mutation in Wilms Tumors with Diffuse Anaplasia: A Report from the Children's Oncology Group.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/27702824/",
+   "year": "2016",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1604388346258",
+   "sourceKey": null,
+   "retractedPMID": "23049036",
+   "replacementTitle": "2012 revised International Chapel Hill Consensus Conference Nomenclature of Vasculitides.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/23045170/",
+   "year": "2013",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1628704860043",
+   "sourceKey": null,
+   "retractedPMID": "28956254",
+   "replacementTitle": "Nonclassical CD1d-restricted NK T cells that produce IL-13 characterize an atypical Th2 response in ulcerative colitis.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/15146247/",
+   "year": "2004",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Kaynak kimliği düzeltildi. İncelenen başlık/özet veya belirtilen resmi bölüm, karttaki bütün iddialara son onay değildir."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1628704860043",
+   "sourceKey": null,
+   "retractedPMID": "20100788",
+   "replacementTitle": "Inflammatory bowel disease and mutations affecting the interleukin-10 receptor.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/19890111/",
+   "year": "2009",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1627824776379",
+   "sourceKey": null,
+   "retractedPMID": "25852504",
+   "replacementTitle": "Comprehensive Pan-Genomic Characterization of Adrenocortical Carcinoma.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/27165744/",
+   "year": "2016",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Kaynak kimliği düzeltildi. İncelenen başlık/özet veya belirtilen resmi bölüm, karttaki bütün iddialara son onay değildir."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1627824776379",
+   "sourceKey": null,
+   "retractedPMID": "27161491",
+   "replacementTitle": "Comprehensive Pan-Genomic Characterization of Adrenocortical Carcinoma.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/27165744/",
+   "year": "2016",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1627823535802",
+   "sourceKey": null,
+   "retractedPMID": "22100904",
+   "replacementTitle": "Molecular subgroups of medulloblastoma: the current consensus.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/22134537/",
+   "year": "2012",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1627823535802",
+   "sourceKey": null,
+   "retractedPMID": "34185886",
+   "replacementTitle": "The 2021 WHO Classification of Tumors of the Central Nervous System: a summary.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/34185076/",
+   "year": "2021",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1627656938031",
+   "sourceKey": null,
+   "retractedPMID": "28919690",
+   "replacementTitle": "MGMT gene silencing and benefit from temozolomide in glioblastoma.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/15758010/",
+   "year": "2005",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Kaynak kimliği düzeltildi. İncelenen başlık/özet veya belirtilen resmi bölüm, karttaki bütün iddialara son onay değildir."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1604579385372",
+   "sourceKey": null,
+   "retractedPMID": "19066370",
+   "replacementTitle": "NCI PDQ: Prostate Cancer, Nutrition, and Dietary Supplements",
+   "replacementURL": "https://www.cancer.gov/about-cancer/treatment/cam/hp/prostate-supplements-pdq",
+   "year": "Erişim 2026-10-09",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Likopen, soya ve D vitamini için ayrı kanıt değerlendirmeleri. Klasik TUS listesinin gerçek kaynak sayfasını doğrulamaz; kanıtlanmış önleme iddiası yapılmaz."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1604389807636",
+   "sourceKey": null,
+   "retractedPMID": "27174617",
+   "replacementTitle": "Prospective study of mesothelioma mortality in Turkish villages with exposure to fibrous zeolite.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/16537834/",
+   "year": "2006",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1622492118390",
+   "sourceKey": null,
+   "retractedPMID": "12398188",
+   "replacementTitle": "Lymphadenopathy in HIV infection: histological classification and staging.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/2736141/",
+   "year": "1989",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1625242082067",
+   "sourceKey": null,
+   "retractedPMID": "28919690",
+   "replacementTitle": "The molecular basis of Turcot's syndrome.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/7661930/",
+   "year": "1995",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Kaynak kimliği düzeltildi. İncelenen başlık/özet veya belirtilen resmi bölüm, karttaki bütün iddialara son onay değildir."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1620300325642",
+   "sourceKey": null,
+   "retractedPMID": "31862118",
+   "replacementTitle": "2017 European League Against Rheumatism/American College of Rheumatology classification criteria for adult and juvenile idiopathic inflammatory myopathies and their major subgroups.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/29079590/",
+   "year": "2017",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Kaynak kimliği düzeltildi. İncelenen başlık/özet veya belirtilen resmi bölüm, karttaki bütün iddialara son onay değildir."
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1628372282587",
+   "sourceKey": null,
+   "retractedPMID": "24879251",
+   "replacementTitle": "MYO5B mutations cause microvillus inclusion disease and disrupt epithelial cell polarity.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/18724368/",
+   "year": "2008",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "patoloji",
+   "noteId": "1617128529187",
+   "sourceKey": null,
+   "retractedPMID": "26410060",
+   "replacementTitle": "Comprehensive and Integrative Genomic Characterization of Hepatocellular Carcinoma.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/28622513/",
+   "year": "2017",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Kaynak kimliği düzeltildi. İncelenen başlık/özet veya belirtilen resmi bölüm, karttaki bütün iddialara son onay değildir."
+  },
+  {
+   "course": "biyokimya",
+   "noteId": null,
+   "sourceKey": "PUBMED_LCAT",
+   "retractedPMID": "9174366",
+   "replacementTitle": "A molecular defect causing fish eye disease: an amino acid exchange in lecithin-cholesterol acyltransferase (LCAT) leads to the selective loss of alpha-LCAT activity.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/2052566/",
+   "year": "1991",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "biyokimya",
+   "noteId": null,
+   "sourceKey": "PUBMED_SLO",
+   "retractedPMID": "8040222",
+   "replacementTitle": "Defective cholesterol biosynthesis associated with the Smith-Lemli-Opitz syndrome.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/8259166/",
+   "year": "1994",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "biyokimya",
+   "noteId": null,
+   "sourceKey": "PUBMED_APO",
+   "retractedPMID": "6777420",
+   "replacementTitle": "A-IMilano apoprotein. Decreased high density lipoprotein cholesterol levels with significant lipoprotein modifications and without clinical atherosclerosis in an Italian family.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/7430351/",
+   "year": "1980",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  },
+  {
+   "course": "biyokimya",
+   "noteId": null,
+   "sourceKey": "PUBMED_G6PT",
+   "retractedPMID": "11790445",
+   "replacementTitle": "Structure-function analysis of the glucose-6-phosphate transporter deficient in glycogen storage disease type Ib.",
+   "replacementURL": "https://pubmed.ncbi.nlm.nih.gov/12444104/",
+   "year": "2002",
+   "access": "Title/abstract checked via NCBI; official NCI pages checked by section where applicable",
+   "scopeLimit": "Başlık ve özet kontrol edildi; nottaki tüm iddiaların kapsamı ayrıca değerlendirilmeli"
+  }
+ ]
+}

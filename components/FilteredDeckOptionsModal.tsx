@@ -33,6 +33,7 @@ import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount } from '../lib/
 import { findInvalidFilteredSearch } from '../lib/searchValidation';
 import type { AppSettings } from '../lib/types';
 import DeckPickerModal from './DeckPickerModal';
+import InfoCircleGlyph from './InfoCircleGlyph';
 import SwipeDismissSheet from './SwipeDismissSheet';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 
@@ -191,10 +192,17 @@ export default function FilteredDeckOptionsModal({
         if (rejectInvalidSearch([search, ...(secondEnabled ? [search2] : [])])) return;
         const count = getFilteredDeckExcludedCount([search, ...(secondEnabled ? [search2] : [])]);
         alert(
-            l(`${count} kart dahil edilemiyor`, `${count} cards are excluded`),
             l(
-                'Bu kartlar sorguyla eşleşiyor ancak askıya alınmış, gömülmüş veya başka bir filtrelenmiş destede oldukları için alınamıyor.',
-                'These cards match the query but cannot be gathered because they are suspended, buried, or already in another filtered deck.',
+                count > 0 ? `${count} kart dahil edilemiyor` : 'Dahil edilmeyen kart yok',
+                count > 0 ? `${count} cards are excluded` : 'No excluded cards',
+            ),
+            l(
+                count > 0
+                    ? `${count} kart sorguyla eşleşiyor ancak askıya alınmış, gömülmüş veya başka bir filtrelenmiş destede oldukları için desteye dahil edilemiyor.`
+                    : 'Bu arama kriterleriyle eşleşen tüm kartlar desteye dahil edilebilir. Askıya alınmış veya gömülmüş kart bulunmuyor.',
+                count > 0
+                    ? `${count} cards match the query but cannot be gathered because they are suspended, buried, or already in another filtered deck.`
+                    : 'All cards matching the search are eligible. No matching cards are suspended, buried, or in another filtered deck.',
             ),
         );
     };
@@ -504,8 +512,13 @@ export default function FilteredDeckOptionsModal({
                         </View>
                     </View>
 
-                    <TouchableOpacity style={styles.excludedButton} onPress={showExcluded} accessibilityRole="button">
-                        <Text style={styles.excludedIcon}>ℹ</Text>
+                    <TouchableOpacity
+                        style={styles.excludedButton}
+                        onPress={showExcluded}
+                        accessibilityRole="button"
+                        activeOpacity={0.6}
+                    >
+                        <InfoCircleGlyph color={colors.textSecondary} size={15} />
                         <Text style={styles.excludedText}>{l('Dahil edilemeyen kartları göster', 'Show any excluded cards')}</Text>
                     </TouchableOpacity>
                 </ScrollView>
@@ -820,26 +833,20 @@ function createStyles(colors: ColorScheme) {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: 48,
-            paddingVertical: Spacing.md,
-            paddingHorizontal: Spacing.lg,
-            borderRadius: BorderRadius.lg,
-            backgroundColor: colors.bgCard,
-            borderWidth: 1,
-            borderColor: colors.borderLight,
-            marginTop: Spacing.lg,
-            marginBottom: Spacing.xl,
-            gap: Spacing.xs,
-            ...Shadows.sm,
-        },
-        excludedIcon: {
-            fontSize: FontSize.md,
-            color: colors.accent,
+            alignSelf: 'center',
+            minHeight: 40,
+            paddingVertical: Spacing.sm,
+            paddingHorizontal: Spacing.md,
+            borderRadius: BorderRadius.full,
+            backgroundColor: colors.transparent,
+            marginTop: Spacing.md,
+            marginBottom: Spacing.lg,
+            gap: 6,
         },
         excludedText: {
-            color: colors.accent,
-            fontSize: FontSize.sm,
-            fontWeight: '700',
+            color: colors.textSecondary,
+            fontSize: 13,
+            fontWeight: '500',
         },
         footer: {
             borderTopWidth: StyleSheet.hairlineWidth,

@@ -11,6 +11,7 @@ import {
     ScrollView,
     StyleSheet,
     Platform,
+    Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
@@ -24,8 +25,9 @@ import {
 } from '../lib/deckManager';
 import { FILTERED_SEARCH_ORDER } from '../lib/filteredDeckOptions';
 import { getDeckDisplayName } from '../lib/models';
-import { deckDescriptionText } from '../lib/deckNavigation';
-import { alert, choose, confirm } from '../lib/confirm';
+import { deckDescriptionHtml, deckDescriptionRuns } from '../lib/deckDescription';
+import { alert, confirm } from '../lib/confirm';
+import { chooseUnburyKind, type UnburyKind } from '../lib/unburyChoice';
 import { goBackOr } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
 import { filteredOrderLabel } from '../lib/i18n';
@@ -113,32 +115,15 @@ export default function DeckOverviewScreen() {
 
     const totalReady = queue ? queue.cards.length : 0;
 
-    const unburyKind = (kind: 'all' | 'manual' | 'siblings') => {
+    const unburyKind = (kind: UnburyKind) => {
         const count = unburyDeck(deck.id, settings.dayRolloverHour, kind);
         bumpDataVersion();
         setRefreshToken((value) => value + 1);
         alert(l('Gömülü kartlar açıldı', 'Cards Unburied'), l(`${count} kart yeniden çalışılabilir.`, `${count} ${count === 1 ? 'card is' : 'cards are'} available to study again.`));
     };
 
-    // Anki asks which kind to unbury when the deck holds both manually buried cards and buried
-    // siblings; with only one kind there is nothing to choose.
     const handleUnbury = async () => {
-        const kinds = getBuriedKindsForDeck(deck.id);
-        if (!kinds.manual || !kinds.siblings) { unburyKind('all'); return; }
-        const all = await choose(
-            l('Gömülüleri aç', 'Unbury'),
-            l(`${kinds.manual} kart elle, ${kinds.siblings} kart kardeşi yüzünden gömülü.`, `${kinds.manual} cards are buried manually and ${kinds.siblings} as siblings.`),
-            l('Tümünü aç', 'Unbury all'),
-            l('Türünü seç', 'Choose a kind'),
-        );
-        if (all) { unburyKind('all'); return; }
-        const manual = await choose(
-            l('Gömülüleri aç', 'Unbury'),
-            l('Hangi gömülü kartlar açılsın?', 'Which buried cards should be unburied?'),
-            l(`Elle gömülenler (${kinds.manual})`, `Manually buried (${kinds.manual})`),
-            l(`Gömülü kardeşler (${kinds.siblings})`, `Buried siblings (${kinds.siblings})`),
-        );
-        unburyKind(manual ? 'manual' : 'siblings');
+        unburyKind(await chooseUnburyKind(getBuriedKindsForDeck(deck.id), l));
     };
 
     const handleRebuild = () => {
@@ -160,6 +145,12 @@ export default function DeckOverviewScreen() {
         );
     };
 
+    // Anki shows the description as HTML (`Overview._desc`), a filtered deck its fixed
+    // explanation; formatting and http(s) links are kept as native text.
+    const descriptionRuns = deckDescriptionRuns(deckDescriptionHtml(deck, l(
+        'Bu, normal programın dışında çalışmak için özel bir destedir. Kartlar tekrar edildikten sonra kendiliğinden asıl destelerine döner. Bu desteyi deste listesinden silmek kalan tüm kartları asıl destelerine döndürür.',
+        'This is a special deck for studying outside of the normal schedule. Cards will be automatically returned to their original decks after you review them. Deleting this deck from the deck list will return all remaining cards to their original deck.',
+    )));
     const studyDisabled = Boolean(deck.isFiltered && deck.filteredDeckEmpty);
 
     // This screen sits on the root stack, above the stack that holds the deck list and the
@@ -209,10 +200,26 @@ export default function DeckOverviewScreen() {
                     </View>
                 </View>
 
-                {deck.description ? (
+                {descriptionRuns.length > 0 ? (
                     <View style={styles.descriptionCard}>
                         <Text style={styles.descriptionLabel}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
-                        <Text style={styles.description}>{deckDescriptionText(deck.description)}</Text>
+                        <Text style={styles.description}>
+                            {descriptionRuns.map((run, index) => (
+                                <Text
+                                    key={index}
+                                    style={[
+                                        run.bold && styles.descriptionBold,
+                                        run.italic && styles.descriptionItalic,
+                                        (run.underline || run.href) && styles.descriptionUnderline,
+                                        run.href && styles.descriptionLink,
+                                    ]}
+                                    onPress={run.href ? () => { void Linking.openURL(run.href!); } : undefined}
+                                    accessibilityRole={run.href ? 'link' : undefined}
+                                >
+                                    {run.text}
+                                </Text>
+                            ))}
+                        </Text>
                     </View>
                 ) : null}
 
@@ -413,6 +420,10 @@ function createStyles(colors: ColorScheme) {
         },
         descriptionLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: colors.textMuted, marginBottom: 5 },
         description: { fontSize: FontSize.md, color: colors.textSecondary, lineHeight: 21 },
+        descriptionBold: { fontWeight: '700' },
+        descriptionItalic: { fontStyle: 'italic' },
+        descriptionUnderline: { textDecorationLine: 'underline' },
+        descriptionLink: { color: colors.accent },
         countsCard: {
             flexDirection: 'row',
             justifyContent: 'space-around',

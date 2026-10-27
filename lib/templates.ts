@@ -12,6 +12,7 @@ export { getTypeAnswerField, typeAnswerPlainText, renderTypeAnswerDiff } from '.
 
 import type { NoteType, Note } from './models';
 import { MAX_TYPE_ANSWER_CHARS } from './typeAnswerBridge';
+import { translateActive } from './i18n';
 
 // ---- Cloze Parsing ----
 // Anki's cloze grammar, ported from rslib/src/cloze.rs: `{{c1::text}}`, multi-ordinal
@@ -214,6 +215,16 @@ export function clozeFieldIndex(noteType: NoteType): number {
     }
     const named = noteType.fields.findIndex((f) => f.name === 'Text');
     return named === -1 ? 0 : named;
+}
+
+/** Render cloze deletion for a specific ordinal (question side) */
+export function renderClozeQuestion(text: string, targetOrd: number): string {
+    return renderClozeChildren(parseClozeNodes(text), targetOrd, 'question');
+}
+
+/** Render cloze deletion for a specific ordinal (answer side) */
+export function renderClozeAnswer(text: string, targetOrd: number): string {
+    return renderClozeChildren(parseClozeNodes(text), targetOrd, 'answer');
 }
 
 /**
@@ -631,6 +642,18 @@ export function renderCardHtml(
             (_match, block: string) => { templateCss.push(block); return ''; },
         ),
     );
+
+    // A card whose front no longer renders is kept until Empty Cards removes it. Anki shows it
+    // with a notice on both sides instead of a blank page (`render_card` in rslib/src/template.rs).
+    const emptyNotice = noteType.kind === 'cloze'
+        ? (clozeOrd !== undefined
+            && !extractClozeNumbers(note.fields[clozeFieldIndex(noteType)] || '').includes(clozeOrd)
+            ? translateActive('anki.missingCloze', { number: clozeOrd })
+            : null)
+        : (shouldGenerateCard(noteType, note, templateOrd) ? null : translateActive('anki.emptyFront'));
+    if (emptyNotice) {
+        return wrapInCardHtml(`<div>${escapeHtml(emptyNotice)}</div>`, noteType.css, side, shell, '');
+    }
 
     const questionHtml = renderSide(template.qfmt, questionCtx);
 

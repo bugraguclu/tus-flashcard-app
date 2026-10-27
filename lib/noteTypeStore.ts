@@ -17,6 +17,7 @@ import {
 } from './catalogProtection';
 import {
     createCardForNote,
+    notePositionForPass,
     getCardsForNote,
     getNote,
     saveAnkiCard,
@@ -161,8 +162,9 @@ export function changeNotesTypeUndoable(noteIds: number[], targetNoteTypeId: num
                 }
             }
             if (!requiredOrds.length && !keptOrds.size) requiredOrds.push(0);
+            const position = notePositionForPass(mapped.filter(({ ord }) => ord !== null).map(({ card }) => card));
             for (const ord of requiredOrds) {
-                if (!keptOrds.has(ord)) createdCardIds.push(createCardForNote(note, destinationDeckId, ord).id);
+                if (!keptOrds.has(ord)) createdCardIds.push(createCardForNote(note, destinationDeckId, ord, position()).id);
             }
 
             for (const card of getCardsForNote(note.id)) {

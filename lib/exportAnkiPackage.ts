@@ -23,6 +23,7 @@ import { renderCardHtml } from './templates';
 import { readMediaBytes } from './mediaStore';
 import { extractMediaFilenames } from './mediaAttachment';
 import { pristineOriginalForExport } from './ankiPackageArchive';
+import { LATEST_PACKAGE_META, mediaEntriesProtobuf, zstdStoredFrame } from './ankiPackageLatest';
 import { dayNumberToYmd, localDayNumber } from './ankiState';
 import { normalizeNewCardGatherOrder } from './queueBuild';
 import { loadSettings } from './storage';
@@ -55,6 +56,12 @@ export interface AnkiPackageExportOptions {
     includeDeck?: boolean;
     includeNotetype?: boolean;
     includeGuid?: boolean;
+    /**
+     * Anki's "Support older Anki versions". On (the default here, and what earlier versions of
+     * this app always wrote): `collection.anki21` with a JSON media map. Off, as in Anki's own
+     * dialog: the current format, `collection.anki21b` with zstd frames and a protobuf media list.
+     */
+    legacySupport?: boolean;
 }
 
 export interface ExportCollectionSource {
@@ -225,6 +232,7 @@ function deckMap(decks: Deck[], includeScheduling: boolean, includeDeckConfigs: 
                 : {}),
             ...(includeDeckConfigs && !deck.isFiltered ? { newLimit: deck.newLimit, reviewLimit: deck.reviewLimit } : {}),
             id: deck.id, name: deck.name, mod: deck.mod, usn: deck.usn ?? -1, desc: deck.description || '',
+            md: Boolean(deck.descriptionMarkdown),
             dyn: exportsAsFiltered ? 1 : 0,
             collapsed: includeScheduling ? deck.collapsed : false,
             browserCollapsed: false,
@@ -622,8 +630,12 @@ async function buildPackage(
         }
         const collection = db.serializeSync();
         const zip = new JSZip();
-        zip.file('collection.anki21', collection);
+        const legacy = packageOptions.legacySupport !== false;
+        // The current format's collection is read by Anki through its schema upgrade, so the same
+        // schema-11 file serves both; only how it is stored differs.
+        zip.file(legacy ? 'collection.anki21' : 'collection.anki21b', legacy ? collection : zstdStoredFrame(collection));
         const manifest: Record<string, string> = {};
+        const mediaFiles: Array<{ name: string; bytes: Uint8Array }> = [];
         if (includeMedia) {
             // The same scan the media audit runs, so a file the audit calls referenced is a file
             // this package carries. They used to be two patterns that disagreed: an attachment
@@ -640,12 +652,18 @@ async function buildPackage(
                 if (!bytes) continue;
                 const index = String(Object.keys(manifest).length);
                 manifest[index] = filename;
-                zip.file(index, bytes);
+                mediaFiles.push({ name: filename, bytes });
+                zip.file(index, legacy ? bytes : zstdStoredFrame(bytes));
             }
         }
-        zip.file('media', JSON.stringify(manifest));
-        // PackageMeta protobuf: field 1 (version) = 2, matching current legacy-schema exports.
-        zip.file('meta', new Uint8Array([0x08, 0x02]));
+        if (legacy) {
+            zip.file('media', JSON.stringify(manifest));
+            // PackageMeta protobuf: field 1 (version) = 2, matching current legacy-schema exports.
+            zip.file('meta', new Uint8Array([0x08, 0x02]));
+        } else {
+            zip.file('media', zstdStoredFrame(mediaEntriesProtobuf(mediaFiles)));
+            zip.file('meta', LATEST_PACKAGE_META);
+        }
         const bytes = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } });
         const snapshotStem = source.backupName?.replace(/\.json$/i, '');
         return {

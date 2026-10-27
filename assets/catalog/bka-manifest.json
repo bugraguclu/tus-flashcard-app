@@ -1,6 +1,6 @@
 {
   "generatedFrom": "assets/catalog/bka-tus-complete.apkg",
-  "sha256": "794bf7d60e3ccf6e55342583097dc89d248894f098dd064a75b6397e509e7ace",
+  "sha256": "7030ad699f7fd19b9f97ca666321133833bf3dfb47d8c1527bbae8b0e6fa0bd3",
   "noteTypes": [
     {
       "id": 1566160514431,
@@ -7739,7 +7739,7 @@
     "cards": 9575,
     "courses": 12,
     "topics": 106,
-    "ungroupedCards": 2612,
+    "ungroupedCards": 2610,
     "media": 49
   },
   "courses": [
@@ -7872,8 +7872,8 @@
         },
         {
           "name": "Kardiyovasküler Fizyoloji",
-          "notes": 36,
-          "cards": 41,
+          "notes": 37,
+          "cards": 42,
           "deck": true
         },
         {
@@ -7920,8 +7920,8 @@
         },
         {
           "name": "Genel",
-          "notes": 188,
-          "cards": 205,
+          "notes": 187,
+          "cards": 204,
           "deck": false
         }
       ]
@@ -7949,8 +7949,8 @@
         },
         {
           "name": "Lipitler",
-          "notes": 55,
-          "cards": 61,
+          "notes": 56,
+          "cards": 62,
           "deck": true
         },
         {
@@ -7967,8 +7967,8 @@
         },
         {
           "name": "Genel",
-          "notes": 123,
-          "cards": 140,
+          "notes": 122,
+          "cards": 139,
           "deck": false
         }
       ]
@@ -7996,8 +7996,8 @@
         },
         {
           "name": "Viroloji",
-          "notes": 81,
-          "cards": 112,
+          "notes": 82,
+          "cards": 113,
           "deck": true
         },
         {
@@ -8020,8 +8020,8 @@
         },
         {
           "name": "Genel",
-          "notes": 87,
-          "cards": 97,
+          "notes": 86,
+          "cards": 96,
           "deck": false
         }
       ]
@@ -8126,8 +8126,8 @@
         },
         {
           "name": "Antimikrobiyal İlaçlar",
-          "notes": 55,
-          "cards": 68,
+          "notes": 56,
+          "cards": 69,
           "deck": true
         },
         {
@@ -8168,8 +8168,8 @@
         },
         {
           "name": "Genel",
-          "notes": 279,
-          "cards": 320,
+          "notes": 278,
+          "cards": 319,
           "deck": false
         }
       ]
@@ -8215,8 +8215,8 @@
         },
         {
           "name": "Hematoloji",
-          "notes": 172,
-          "cards": 198,
+          "notes": 173,
+          "cards": 199,
           "deck": true
         },
         {
@@ -8233,8 +8233,8 @@
         },
         {
           "name": "Genel",
-          "notes": 196,
-          "cards": 210,
+          "notes": 195,
+          "cards": 209,
           "deck": false
         }
       ]
@@ -8369,8 +8369,8 @@
         },
         {
           "name": "Cerrahi Temel Bilimler",
-          "notes": 43,
-          "cards": 53,
+          "notes": 42,
+          "cards": 50,
           "deck": true
         },
         {
@@ -8411,8 +8411,8 @@
         },
         {
           "name": "Genel",
-          "notes": 177,
-          "cards": 209,
+          "notes": 178,
+          "cards": 212,
           "deck": false
         }
       ]

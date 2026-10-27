@@ -9,6 +9,7 @@ export {
     deleteNote,
     deleteNotes,
     createNote,
+    generateMissingCardsForNote,
     getAllAnkiCards,
     getAnkiCard,
     getCardsForNote,

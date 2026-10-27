@@ -105,6 +105,19 @@ describe('createTusCard: Anki reversed note types', () => {
         });
         expect(getCardsForNote(note.id)).toHaveLength(2);
     });
+
+    it('gives a card an edit adds the position of its still-new sibling, as Anki does', () => {
+        const { note, card } = createTusCard({
+            question: 'Soru metni', answer: 'Cevap metni', deckId: 1, noteTypeId: 7,
+        });
+        createTusCard({ question: 'Sonraki', answer: 'Not', deckId: 1, noteTypeId: 7 });
+
+        updateTusCardByCardId(card.id, {
+            question: 'Soru metni', answer: 'Cevap metni', deckId: 1, reverseAnswer: '1',
+        });
+        const dues = getCardsForNote(note.id).map((sibling) => sibling.due);
+        expect(dues).toEqual([card.due, card.due]);
+    });
 });
 
 describe('editing siblings in different decks', () => {

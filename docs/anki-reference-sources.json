@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-10-01",
+  "lastVerified": "2026-10-25",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -233,7 +233,7 @@
       "platform": "desktop deck overview",
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/overview.py",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["bottom bar offers Rebuild and Empty for a filtered deck", "Custom Study for a regular deck", "Unbury when the deck has buried cards"]
+      "useFor": ["bottom bar offers Rebuild and Empty for a filtered deck", "Custom Study for a regular deck", "Unbury when the deck has buried cards", "on_unbury asks manual or sibling when both kinds are buried", "_desc shows a filtered deck's fixed explanation and renders Markdown descriptions"]
     },
     {
       "id": "anki-manual-styling-scroll",
@@ -296,7 +296,7 @@
       "platform": "collection schema",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/decks/name.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["schema-18 deck names stored with the 0x1F unit separator between components", "the :: form the legacy JSON and the interface use"]
+      "useFor": ["schema-18 deck names stored with the 0x1F unit separator between components", "the :: form the legacy JSON and the interface use", "ensure_deck_name_unique appends + to a taken name on rename, move and add", "from_human_name trims each :: level"]
     },
     {
       "id": "anki-source-deck-config-proto",
@@ -548,7 +548,7 @@
       "platform": "cross-platform statistics data",
       "url": "https://github.com/ankitects/anki/tree/main/rslib/src/stats/graphs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["which answers the Reviews graph counts, by kind", "hourly breakdown without filtered-deck answers", "the date the Added graph files a card under"]
+      "useFor": ["which answers the Reviews graph counts, by kind", "hourly breakdown without filtered-deck answers", "the date the Added graph files a card under", "which review cards the Intervals graph counts"]
     },
     {
       "id": "anki-26.05-pinned-source",
@@ -636,7 +636,7 @@
       "platform": "cross-platform deck options screen",
       "url": "https://github.com/ankitects/anki/tree/main/ts/routes/deck-options",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["desired retention preset and deck-only tabs", "empty learning and relearning steps", "retention input bounds"]
+      "useFor": ["desired retention preset and deck-only tabs", "empty learning and relearning steps", "retention input bounds", "Add, Clone, Rename and Remove Preset held until Save"]
     },
     {
       "id": "anki-source-stats-graphs-ui",
@@ -644,7 +644,7 @@
       "platform": "cross-platform statistics presentation",
       "url": "https://github.com/ankitects/anki/tree/main/ts/routes/graphs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["the table under the Reviews graph", "the browser search a bar of the Added graph opens"]
+      "useFor": ["the table under the Reviews graph", "the browser search a bar of the Added graph opens", "continuous interval bins on the Intervals graph"]
     },
     {
       "id": "rust-1.92-sort-unstable",
@@ -684,7 +684,7 @@
       "platform": "desktop Reset Card dialog",
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/operations/scheduling.py",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["the two checkboxes and their remembered defaults", "reviewer and browser contexts"]
+      "useFor": ["the two checkboxes and their remembered defaults", "reviewer and browser contexts", "reposition dialog bounds, queue top and bottom", "Set Due Date default text from SET_DUE_BROWSER / SET_DUE_REVIEWER"]
     },
     {
       "id": "anki-source-filtered-gather-order",
@@ -1172,7 +1172,7 @@
       "platform": "cross-platform reposition",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/new.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["siblings share a position", "randomize order", "shift by step times selected cards", "one undoable operation", "remembered shift/randomize choices; lib/browserReposition.test.ts"]
+      "useFor": ["siblings share a position", "randomize order", "shift by step times selected cards", "one undoable operation", "remembered shift/randomize choices; lib/browserReposition.test.ts", "set_new_position writes odue for a card in a filtered deck"]
     },
     {
       "id": "anki-source-csv-metadata",
@@ -1204,6 +1204,46 @@
       "url": "https://github.com/ankitects/anki/blob/main/pylib/anki/collection.py",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["legacy col.conf keys (schedVer, rollover, nextPos, curDeck) and col.tags registry in schema-11 packages; lib/transferRemaining.test.ts"]
+    },
+    {
+      "id": "anki-source-bury-mode",
+      "priority": 3,
+      "platform": "cross-platform queue building",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/queue/builder/burying.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["per-note union of sibling bury modes at gather time", "lib/queueBuild.test.ts"]
+    },
+    {
+      "id": "anki-source-export-dialog",
+      "priority": 3,
+      "platform": "desktop export dialog",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/forms/exporting.ui",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["export option defaults", "Support older Anki versions off by default", "scheduling off when opened from one deck (exporting.py)"]
+    },
+    {
+      "id": "anki-source-package-meta",
+      "priority": 2,
+      "platform": "package format",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/package/meta.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["VERSION_LATEST collection.anki21b with zstd media", "MediaEntries protobuf (proto/anki/import_export.proto)", "lib/ankiPackageLatest.test.ts"]
+    },
+    {
+      "id": "anki-source-cardgen-position",
+      "priority": 3,
+      "platform": "cross-platform card generation",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/notetype/cardgen.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["cards generated for an existing note take a new sibling's position or one shared next position"]
+    },
+    {
+      "id": "anki-source-render-card-empty-front",
+      "priority": 3,
+      "platform": "cross-platform card rendering",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/template.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["empty-front and missing-cloze notice on both sides"]
     }
   ],
   "requiredDocs": [

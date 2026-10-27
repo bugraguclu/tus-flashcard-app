@@ -34,6 +34,7 @@ import {
     getAllDecks,
     getDeckByName,
     getAvailableDeckName,
+    getAvailableDeckSubtreeName,
     getDeck,
     createDeck,
     createFilteredDeck,
@@ -63,6 +64,8 @@ import {
 import { useI18n } from '../../hooks/useI18n';
 import { filteredOrderLabel, formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
+import { normalizeDeckName } from '../../lib/deckNames';
+import { createBackupNow } from '../../lib/backup';
 import CustomStudyModal from '../../components/CustomStudyModal';
 import DeckPickerModal from '../../components/DeckPickerModal';
 import DisclosureChevron from '../../components/DisclosureChevron';
@@ -72,6 +75,7 @@ import StatsGlyph from '../../components/StatsGlyph';
 import GearGlyph from '../../components/GearGlyph';
 import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/DeckListTable';
+import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -96,6 +100,12 @@ import {
     toggleDeckBranchRows,
     type DeckListRowModel,
 } from '../../lib/deckListRows';
+import {
+    decodeDeckDropTarget,
+    resolveDeckDropTarget,
+    ROOT_DROP_TARGET,
+    type DeckDropRow,
+} from '../../lib/deckDropTarget';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -117,25 +127,6 @@ function parseCount(text: string, fallback: number = 0): number {
     return Number.isFinite(value) ? Math.max(0, value) : fallback;
 }
 
-const ROOT_DROP_TARGET = '__root_deck_drop_target__';
-type DeckDropPlacement = 'before' | 'inside' | 'after';
-
-function decodeDeckDropTarget(target: string | null):
-    | { kind: 'root' }
-    | { kind: 'deck'; name: string; placement: DeckDropPlacement }
-    | null {
-    if (!target) return null;
-    if (target === ROOT_DROP_TARGET) return { kind: 'root' };
-    const separator = target.indexOf(':');
-    if (separator < 0) return null;
-    const placement = target.slice(0, separator) as DeckDropPlacement;
-    if (placement !== 'before' && placement !== 'inside' && placement !== 'after') return null;
-    return { kind: 'deck', placement, name: target.slice(separator + 1) };
-}
-
-function encodeDeckDropTarget(name: string, placement: DeckDropPlacement): string {
-    return `${placement}:${name}`;
-}
 // A deliberate spring-open delay prevents a parent from expanding while the pointer merely
 // passes over it. 800 ms sits in the familiar 0.6–1.0 s range used by tree/list drag UIs.
 const DECK_HOVER_EXPAND_DELAY_MS = 800;
@@ -203,6 +194,7 @@ export default function DecksScreen() {
     const [showAddMenu, setShowAddMenu] = useState(false);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const pendingOverflowRouteRef = useRef<string | null>(null);
+    const pendingOverflowActionRef = useRef<(() => void) | null>(null);
     const pendingDeckMenuRouteRef = useRef<string | null>(null);
     const [newDeckName, setNewDeckName] = useState('');
     const [newFilteredDeckName, setNewFilteredDeckName] = useState('');
@@ -213,6 +205,7 @@ export default function DecksScreen() {
     const [renameText, setRenameText] = useState('');
     const [newSubdeckName, setNewSubdeckName] = useState('');
     const [descriptionText, setDescriptionText] = useState('');
+    const [descriptionMarkdown, setDescriptionMarkdown] = useState(false);
     // Filtered-deck options form.
     const [filterSearch, setFilterSearch] = useState('');
     const [filterLimit, setFilterLimit] = useState('100');
@@ -267,10 +260,11 @@ export default function DecksScreen() {
         };
     }, [collectionVersion, countSettings]));
 
-    // Drag-and-drop state: rows report their content-space layout; the active drag
-    // tracks the pointer against those rows to pick a drop target.
-    const rowLayouts = useRef(new Map<string, { y: number; h: number }>());
-    const deckRowRefs = useRef(new Map<string, View>());
+    // Drag-and-drop state: cells report their content-space layout under the deck id, which
+    // survives a rename; the active drag tracks the pointer against those rows to pick a target.
+    const rowLayouts = useRef<DeckRowLayouts>(new Map());
+    // Built once: a new cell component type would remount every row of the list.
+    const [DeckDragCell] = useState(() => createDeckDragCell(rowLayouts.current));
     const scrollOffsetRef = useRef(0);
     const listTopRef = useRef(0);
     const listHeightRef = useRef(0);
@@ -385,6 +379,14 @@ export default function DecksScreen() {
     const handleAddDeck = () => {
         const name = newDeckName.trim();
         if (!name) return;
+        // A `::` path may not reach under a catalog deck, which takes no decks of the learner's own.
+        for (let parent = getParentDeckName(normalizeDeckName(name)); parent; parent = getParentDeckName(parent)) {
+            const ancestor = getDeckByName(parent);
+            if (ancestor && isCatalogDeck(ancestor)) {
+                alert(l('Korumalı Deste', 'Protected Deck'), l('Dahili TUS destelerine alt deste eklenemez.', 'Cannot add subdecks to built-in TUS decks.'));
+                return;
+            }
+        }
 
         try {
             createDeck(name);
@@ -413,12 +415,38 @@ export default function DecksScreen() {
         const path = pendingOverflowRouteRef.current;
         pendingOverflowRouteRef.current = null;
         if (path) router.push(path as any);
+        const action = pendingOverflowActionRef.current;
+        pendingOverflowActionRef.current = null;
+        action?.();
     };
 
+    // Run an action after the overflow Modal has fully closed. iOS rejects presenting
+    // another modal (router screen, Alert) while the menu is still dismissing, so defer
+    // via onDismiss; other platforms have no such constraint and run immediately.
+    const runAfterOverflowClose = (action: () => void) => {
+        if (Platform.OS === 'ios') {
+            pendingOverflowActionRef.current = action;
+            setShowOverflowMenu(false);
+            return;
+        }
+        setShowOverflowMenu(false);
+        action();
+    };
+
+    // Anki's File > Create Backup writes a snapshot straight away and says so; naming one is
+    // still available on the Backups screen.
     const handleCreateBackup = () => {
-        // Route to the canonical backup workflow so the learner can name the snapshot before
-        // it is written; the overflow menu itself never owns a second backup modal.
-        openOverflowRoute('/backups');
+        runAfterOverflowClose(() => {
+            void (async () => {
+                try {
+                    await createBackupNow();
+                    alert(l('Yedek oluşturuldu', 'Backup created'), l('Güncel veriler yerel bir yedek olarak kaydedildi.', 'Current data was saved as a local backup.'));
+                } catch (e) {
+                    console.warn('[Decks] create backup failed:', e);
+                    alert(t('common.error'), l('Yedek oluşturulamadı.', 'Could not create a backup.'));
+                }
+            })();
+        });
     };
 
     const openDeckMenuRoute = (path: string) => {
@@ -588,7 +616,8 @@ export default function DecksScreen() {
             alert(l('Korumalı Deste', 'Protected Deck'), l('Dahili TUS desteleri yeniden adlandırılamaz.', 'Built-in TUS decks cannot be renamed.'));
             return;
         }
-        setRenameText(getDeckDisplayName(deck.name));
+        // Anki's Rename prompt starts from the full path, so editing a `::` level moves the deck.
+        setRenameText(deck.name);
         setModal({ kind: 'rename', deck });
     };
 
@@ -638,13 +667,14 @@ export default function DecksScreen() {
             return;
         }
         setDescriptionText(deck.description ?? '');
+        setDescriptionMarkdown(deck.descriptionMarkdown === true);
         setModal({ kind: 'description', deck });
     };
 
     const handleSaveDescription = () => {
         if (modal?.kind !== 'description') return;
         try {
-            setDeckDescription(modal.deck.id, descriptionText);
+            setDeckDescription(modal.deck.id, descriptionText, descriptionMarkdown);
             setModal(null);
             refresh();
         } catch (e) {
@@ -791,12 +821,16 @@ export default function DecksScreen() {
     const handleRename = () => {
         if (modal?.kind !== 'rename') return;
         if (!normalizeDeckLeafInput(renameText)) return;
-        const parentName = getParentDeckName(modal.deck.name);
-        // `::` in the new name nests, as in the top-level Add; renaming onto an existing deck is
-        // refused with a message, as in Anki, rather than picking a numbered name.
-        const nextName = parentName ? `${parentName}::${renameText.trim()}` : renameText.trim();
+        // The field holds the full path, as Anki's Rename does. A name another deck already has
+        // gets `+` appended until it is free (`ensure_deck_name_unique`).
+        const typedName = normalizeDeckName(renameText);
+        if (typedName === modal.deck.name) {
+            setModal(null);
+            return;
+        }
 
         try {
+            const nextName = getAvailableDeckSubtreeName(modal.deck.id, typedName);
             renameDeck(modal.deck.id, nextName);
             const renamedName = getDeck(modal.deck.id)?.name ?? nextName;
             updateExpandedDecks((prev) => remapExpandedDeckPaths(prev, modal.deck.name, renamedName));
@@ -898,64 +932,25 @@ export default function DecksScreen() {
         if (listY < 0 || (listHeightRef.current > 0 && listY > listHeightRef.current)) return null;
 
         const contentY = listY + scrollOffsetRef.current;
-        let nearestTarget: { name: string; placement: 'before' | 'after'; distance: number } | null = null;
-        let firstValidRow: { name: string; y: number } | null = null;
-        let lastValidRow: { name: string; bottom: number } | null = null;
+        const candidates: DeckDropRow[] = [];
         for (const row of visibleRowsRef.current) {
-            const layout = rowLayouts.current.get(row.deck.name);
+            const layout = rowLayouts.current.get(row.deck.id);
             if (!layout) continue;
             const name = row.deck.name;
             const isLockedCatalogTarget = catalogTier === 'trial'
                 && row.deck.catalogPack === BKA_CATALOG_PACK;
-            const isInvalidTarget = name === dragged
-                || isDescendantOf(name, dragged)
-                || isLockedCatalogTarget
-                || isCatalogDeck(row.deck);
-            if (!isInvalidTarget) {
-                if (!firstValidRow || layout.y < firstValidRow.y) firstValidRow = { name, y: layout.y };
-                if (!lastValidRow || layout.y + layout.h > lastValidRow.bottom) {
-                    lastValidRow = { name, bottom: layout.y + layout.h };
-                }
-            }
-            if (contentY >= layout.y && contentY <= layout.y + layout.h) {
-                if (isInvalidTarget) return null;
-                const position = (contentY - layout.y) / Math.max(1, layout.h);
-                // The edge zones make list reordering effortless. The generous
-                // centre zone provides reliable Anki drop-onto-parent nesting for creating subdecks.
-                const placement: DeckDropPlacement = position < 0.25
-                    ? 'before'
-                    : position > 0.75
-                        ? 'after'
-                        : 'inside';
-                if (placement === 'inside' && row.deck.isFiltered) return null;
-                return encodeDeckDropTarget(name, placement);
-            }
-
-            // Nested cards have small visual gaps between their rows. Snap those gaps to the
-            // nearest valid deck so the target does not flicker away while the finger moves.
-            if (isInvalidTarget) continue;
-            const distance = contentY < layout.y
-                ? layout.y - contentY
-                : contentY - (layout.y + layout.h);
-            if (distance <= 12 && (!nearestTarget || distance < nearestTarget.distance)) {
-                nearestTarget = {
-                    name,
-                    distance,
-                    placement: contentY < layout.y ? 'before' : 'after',
-                };
-            }
+            candidates.push({
+                name,
+                y: layout.y,
+                h: layout.h,
+                invalid: name === dragged
+                    || isDescendantOf(name, dragged)
+                    || isLockedCatalogTarget
+                    || isCatalogDeck(row.deck),
+                acceptsInside: !row.deck.isFiltered,
+            });
         }
-        // Keep the empty breathing room below the final card useful: dragging all the way down
-        // still means “place last”, rather than silently cancelling the move.
-        if (lastValidRow && contentY > lastValidRow.bottom) {
-            return encodeDeckDropTarget(lastValidRow.name, 'after');
-        }
-        if (firstValidRow && contentY < firstValidRow.y) {
-            return encodeDeckDropTarget(firstValidRow.name, 'before');
-        }
-        return nearestTarget
-            ? encodeDeckDropTarget(nearestTarget.name, nearestTarget.placement)
-            : null;
+        return resolveDeckDropTarget(contentY, candidates);
     };
 
     const updateDropTarget = (target: string | null) => {
@@ -1222,20 +1217,6 @@ export default function DecksScreen() {
 
         return (
             <View
-                ref={(view) => {
-                    if (view) deckRowRefs.current.set(deck.name, view);
-                    else {
-                        deckRowRefs.current.delete(deck.name);
-                        rowLayouts.current.delete(deck.name);
-                    }
-                }}
-                onLayout={(e) => {
-                    const { y, height } = e.nativeEvent.layout;
-                    rowLayouts.current.set(deck.name, {
-                        y,
-                        h: height,
-                    });
-                }}
                 style={[
                     styles.deckRow,
                     { paddingLeft: contentIndent },
@@ -1584,6 +1565,24 @@ export default function DecksScreen() {
                 autoFocus
                 textAlignVertical="top"
             />
+            <View style={styles.filteredToggleRow}>
+                <View style={styles.filteredToggleCopy}>
+                    <Text style={styles.filteredToggleTitle}>{l('Markdown olarak yorumla', 'Interpret as Markdown')}</Text>
+                    <Text style={styles.filteredToggleSubtitle}>
+                        {l(
+                            'Metni Markdown olarak işler: başlıklar, kalın ve italik yazı, listeler ve bağlantılar biçimli görünür.',
+                            'Treats the text as Markdown: headings, bold and italic text, lists and links are shown formatted.',
+                        )}
+                    </Text>
+                </View>
+                <Switch
+                    value={descriptionMarkdown}
+                    onValueChange={setDescriptionMarkdown}
+                    trackColor={{ false: colors.border, true: colors.accent }}
+                    thumbColor={colors.white}
+                    accessibilityLabel={l('Markdown olarak yorumla', 'Interpret as Markdown')}
+                />
+            </View>
             <View style={styles.modalActions}>
                 <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal(null)}>
                     <Text style={styles.modalBtnSecondaryText}>{t('common.cancel')}</Text>
@@ -2334,6 +2333,7 @@ export default function DecksScreen() {
                     data={visibleRows}
                     renderItem={renderVirtualizedRow}
                     keyExtractor={deckRowKey}
+                    CellRendererComponent={DeckDragCell}
                     ListHeaderComponent={deckListHeader}
                     ListEmptyComponent={deckListEmpty}
                     ListFooterComponent={<View style={{ height: 80 }} />}

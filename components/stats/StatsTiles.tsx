@@ -16,10 +16,12 @@ interface StatsTilesProps {
     tiles: readonly StatTile[];
     /** Tiles per row; rows are filled evenly so no tile is left stretched across a row alone. */
     columns?: 2 | 3;
+    /** A caption naming what every tile measures, so the tile labels can stay one word. */
+    title?: string;
 }
 
 /** A row of headline figures under a chart. */
-export default function StatsTiles({ tiles, columns = 3 }: StatsTilesProps) {
+export default function StatsTiles({ tiles, columns = 3, title }: StatsTilesProps) {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     // Four tiles in rows of three would strand the fourth; two rows of two read as one block.
@@ -28,6 +30,7 @@ export default function StatsTiles({ tiles, columns = 3 }: StatsTilesProps) {
     for (let index = 0; index < tiles.length; index += perRow) rows.push(tiles.slice(index, index + perRow));
     return (
         <View style={styles.grid}>
+            {title ? <Text style={styles.title} accessibilityRole="header">{title}</Text> : null}
             {rows.map((row, rowIndex) => (
                 <View key={rowIndex} style={styles.row}>
                     {row.map((tile) => (
@@ -55,17 +58,17 @@ export default function StatsTiles({ tiles, columns = 3 }: StatsTilesProps) {
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        grid: { gap: Spacing.sm },
-        row: { flexDirection: 'row', gap: Spacing.sm },
-        tile: {
-            flex: 1,
-            minWidth: 0,
-            minHeight: 64,
-            justifyContent: 'flex-start',
-            paddingVertical: Spacing.sm,
+        grid: {
+            gap: Spacing.md,
+            paddingTop: Spacing.md,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: colors.borderLight,
         },
-        value: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
-        label: { color: colors.textPrimary, fontSize: FontSize.sm, lineHeight: 18, marginTop: 2 },
-        detail: { color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', marginTop: 3 },
+        title: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', marginBottom: -Spacing.xs },
+        row: { flexDirection: 'row', gap: Spacing.md },
+        tile: { flex: 1, minWidth: 0, justifyContent: 'flex-start' },
+        value: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
+        label: { color: colors.textSecondary, fontSize: FontSize.sm, lineHeight: 16, marginTop: 2 },
+        detail: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '600', marginTop: 2 },
     });
 }

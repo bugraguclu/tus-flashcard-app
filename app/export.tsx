@@ -64,14 +64,19 @@ export default function ExportScreen() {
         () => selectionExport ? new Set() : new Set(initialDeckScopeIds),
     );
     const [format, setFormat] = useState<AnkiExportFormat>(deckName || selectionExport ? 'apkg' : 'colpkg');
+    // Anki's export dialog defaults (qt/aqt/forms/exporting.ui, exporting.py): scheduling on,
+    // except when the dialog is opened from one deck; deck presets and the deck, note type and
+    // GUID columns off; media, HTML and tags on.
     const [includeMedia, setIncludeMedia] = useState(true);
-    const [includeScheduling, setIncludeScheduling] = useState(backupExport);
-    const [includeDeckConfigs, setIncludeDeckConfigs] = useState(true);
+    const [includeScheduling, setIncludeScheduling] = useState(backupExport || !deckName);
+    const [includeDeckConfigs, setIncludeDeckConfigs] = useState(false);
     const [includeHtml, setIncludeHtml] = useState(true);
     const [includeTags, setIncludeTags] = useState(true);
-    const [includeDeck, setIncludeDeck] = useState(true);
-    const [includeNotetype, setIncludeNotetype] = useState(true);
-    const [includeGuid, setIncludeGuid] = useState(true);
+    const [includeDeck, setIncludeDeck] = useState(false);
+    const [includeNotetype, setIncludeNotetype] = useState(false);
+    const [includeGuid, setIncludeGuid] = useState(false);
+    // Anki's "Support older Anki versions", off by default: packages use the current format.
+    const [legacySupport, setLegacySupport] = useState(false);
     const [pickerOpen, setPickerOpen] = useState(false);
     const [busy, setBusy] = useState(false);
     // Anki confirms what an export actually contained instead of closing silently.
@@ -181,6 +186,7 @@ export default function ExportScreen() {
                 includeDeck,
                 includeNotetype,
                 includeGuid,
+                legacySupport,
             }, backupSource);
             const lines: string[] = [];
             if (artifact.noteCount !== undefined) {
@@ -299,6 +305,15 @@ export default function ExportScreen() {
                         ) : (
                             <Text style={styles.optionHint}>{l('.colpkg tüm koleksiyonu çalışma programıyla birlikte içerir.', '.colpkg always contains the whole collection with scheduling.')}</Text>
                         )}
+                        <TouchableOpacity style={styles.checkboxRow} onPress={() => setLegacySupport((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: legacySupport }} aria-checked={legacySupport}>
+                            <View style={[styles.checkbox, legacySupport && styles.checkboxChecked]}>
+                                {legacySupport ? <Text style={styles.checkmark}>✓</Text> : null}
+                            </View>
+                            <View style={styles.optionCopy}>
+                                <Text style={styles.checkboxText}>{l('Eski Anki sürümlerini destekle', 'Support older Anki versions')}</Text>
+                                <Text style={styles.optionHint}>{l('Paketi, yeni biçimi açamayan eski Anki sürümlerinin (2.1.50 öncesi) de açabileceği biçimde yazar.', 'Writes the package in the format Anki versions before 2.1.50, which cannot read the current one, also open.')}</Text>
+                            </View>
+                        </TouchableOpacity>
                     </View>
                 ) : (
                     <View style={styles.includeBlock}>

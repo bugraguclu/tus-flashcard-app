@@ -13,18 +13,18 @@
  },
  "method": "docs/catalog-corrections/README.md",
  "applied": true,
- "reviewStage": "complete",
+ "reviewStage": "content-corrections-applied-source-review-pending",
  "summary": {
   "reviewedNotes": 609,
   "changedNotes": 609,
   "htmlOnlyNotes": 0,
   "unchangedNotes": 0,
-  "changeItems": 1573,
+  "changeItems": 1585,
   "notesBySeverity": {
-   "Kritik": 21,
-   "Yüksek": 40,
-   "Orta": 528,
-   "Düşük": 20
+   "Kritik": 20,
+   "Yüksek": 51,
+   "Orta": 519,
+   "Düşük": 19
   },
   "notesByTopic": {
    "Böbrek ve Üriner Sistem Patolojisi": 22,
@@ -40,15 +40,24 @@
    "Solunum Sistemi Patolojisi": 20
   },
   "itemsByCategory": {
-   "Tıbbi doğruluk": {
-    "Kritik": 21,
-    "Yüksek": 26
+   "Biçim": {
+    "Düşük": 608
+   },
+   "Cevap görünürlüğü": {
+    "Yüksek": 10
+   },
+   "Dil bilgisi": {
+    "Orta": 6,
+    "Düşük": 4
+   },
+   "Eksik kritik bilgi": {
+    "Yüksek": 16
    },
    "Güncellik": {
     "Yüksek": 3
    },
-   "Eksik kritik bilgi": {
-    "Yüksek": 16
+   "Kısaltma": {
+    "Orta": 445
    },
    "Soru netliği": {
     "Orta": 131
@@ -58,15 +67,12 @@
     "Orta": 308,
     "Düşük": 4
    },
-   "Kısaltma": {
-    "Orta": 445
+   "Tıbbi doğruluk": {
+    "Kritik": 21,
+    "Yüksek": 26
    },
-   "Dil bilgisi": {
-    "Orta": 6,
-    "Düşük": 4
-   },
-   "Biçim": {
-    "Düşük": 608
+   "Yapısal": {
+    "Yüksek": 2
    }
   },
   "secondReview": {}
@@ -373,11 +379,11 @@
    "topic": "Genel",
    "severity": "Kritik",
    "status": "changed",
-   "changedFields": "Metin + Ek bilgi (arka yüz)",
+   "changedFields": "Metin / Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Oral SCC Yerleşim:<br><br>En sık --&gt; Alt dudak lateral kenar<br><br>En iyi prognoz --&gt; {{c1::Dudak}}<br><br>En kötü prognoz --&gt; {{c1::Ağız tabanı}}",
-     "after": "Oral kavite ve dudak skuamöz karsinomu yerleşimi:<br><br>Oral kavitede sık → Dilin lateral kenarı / ağız tabanı<br><br>En iyi prognoz → {{c1::Dudak}}<br><br>En kötü prognoz → {{c1::Ağız tabanı}}"
+     "after": "Oral bölge skuamöz karsinomlarında yerleşim ve prognoz:<br><br>Oral kavitede sık → Dilin lateral kenarı / {{c1::ağız tabanı}}<br><br>En iyi prognoz → {{c1::Dudak}}<br><br>En kötü prognoz → {{c1::Ağız tabanı}}"
     },
     "Extra": {
      "before": "Ağız tabanı lenfatik bol hemen LN met'ı yapar ve tespiti daha zor tabi ki.",
@@ -402,11 +408,17 @@
      "category": "Biçim",
      "text": "Oklar → yapıldı; iki c1 yanıtı ve üç bloklu sıra korundu",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Yapısal",
+     "text": "Gemini ağız tabanını ilk satırdan kaldırıyor ancak Dudak cevabı başlıkta görünmeye devam ediyor. Ayrıca mevcut sık yerleşim bilgisini belirsiz çevre mukozalarla değiştiriyor.",
+     "rationale": "Başlığı nötrleştir; sık yerleşim bilgisini koruyarak tekrar eden ağız tabanını c1 içinde gizle. Kaynak: "
     }
    ],
    "aiNote": "Ne: Alt dudak oral kavitenin en sık yeri olmaktan çıkarıldı; oral kavite ve dudak birlikte anıldı.\nNeden: Özgün başlık anatomik sınırı karıştırıyordu; kötü prognoz açıklaması da kişisel üsluptaydı.\nNasıl: [TD1, KS1, YP1] Oral kavite vaka serilerindeki yerleşim dağılımı kontrol edildi; iki c1 ve blok araları korundu.\nKaynak: https://pubmed.ncbi.nlm.nih.gov/19563504/; https://pubmed.ncbi.nlm.nih.gov/20406474/",
    "decision": null,
-   "editorNote": null
+   "editorNote": "\nCodex 09.10.2026: Başlığı nötrleştir; sık yerleşim bilgisini koruyarak tekrar eden ağız tabanını c1 içinde gizle."
   },
   {
    "order": 9,
@@ -667,13 +679,13 @@
    "noteId": 1604389807636,
    "guid": "r7[F,LCvBo",
    "topic": "Hematopatoloji",
-   "severity": "Kritik",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Çevresel Faktör - Kanser&nbsp;<div><br></div><div>Arsenik --&gt; {{c1::HemanjioSa}}</div><div><br></div><div>Asbest --&gt; {{c2::AC Mezotelyoma}}</div><div><br></div><div>Benzen --&gt; {{c3::Lösemi}}</div><div><b><br></b></div><div><b>Kadmiyum --&gt;&nbsp;</b>{{c1::Prostat&nbsp;}}</div><div><b><br></b></div><div><b>Krom --&gt;&nbsp;</b>{{c2::AC}}</div><div><br></div><div>Etilen Oksit --&gt; {{c3::Lösemi}}</div><div><br></div><div>Vinil Klorid ---&gt; {{c1::AnjiyoSa}}</div><div><br></div><div>Erlonid --&gt; {{c2::Mezotelyoma&nbsp;}}</div>",
-     "after": "Çevresel etkenler ve kanserler<div><br></div><div>Arsenik → {{c1::hemanjiyosarkom}}</div><div><br></div><div>Asbest → {{c2::akciğer kanseri, mezotelyoma}}</div><div><br></div><div>Benzen → {{c3::lösemi}}</div><div><b><br></b></div><div><b>Kadmiyum → </b>{{c1::akciğer kanseri}}</div><div><b><br></b></div><div><b>Krom → </b>{{c2::akciğer kanseri}}</div><div><br></div><div>Etilen oksit → {{c3::lösemi}}</div><div><br></div><div>Vinil klorür → {{c1::anjiyosarkom}}</div><div><br></div><div>Erionit → {{c2::mezotelyoma}}</div>"
+     "after": "Çevresel etkenler ve kanserler<div><br></div><div>Arsenik → {{c1::hemanjiyosarkom}}</div><div><br></div><div>Asbest → {{c1::{{c2::akciğer kanseri, mezotelyoma}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Benzen → {{c3::lösemi}}</div><div><b><br></b></div><div><b>Kadmiyum → </b>{{c2::{{c1::akciğer kanseri}}::ilişkili yanıt arka yüzde}}</div><div><b><br></b></div><div><b>Krom → </b>{{c1::{{c2::akciğer kanseri}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Etilen oksit → {{c3::lösemi}}</div><div><br></div><div>Vinil klorür → {{c1::anjiyosarkom}}</div><div><br></div><div>Erionit → {{c2::mezotelyoma}}</div>"
     },
     "Extra": {
      "before": "",
@@ -704,11 +716,23 @@
      "category": "Biçim",
      "text": "Oklar → işaretiyle yazıldı; &nbsp; temizlendi; satır başı dışındaki büyük harfler düzeltildi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Çevresel etken tablosunda aynı kanser yanıtının farklı ordinalde görünmesi giderildi; kadmiyum için akciğer cevabı korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Erlonid\" → \"Erionit\" ve kadmiyumun yanıtı \"Prostat\" → \"akciğer kanseri\" olarak düzeltildi; oklar standartlaştırıldı.\nNeden: Mezotelyomayla ilişkili mineral erionittir; kadmiyum-prostat eşleşmesi güncel insan verileriyle desteklenmiyordu.\nNasıl: [TD1, KS1, YZ1, YP3, YP4] Erionit–mezotelyoma ve kadmiyum–akciğer ilişkileri doğrulandı; özgün satır sırası, boşluklar, kalın yazı ve c1/c2/c3 dağılımı korundu.\nKaynak: https://www.iarc.who.int/wp-content/uploads/2018/07/IARC_Ch4.2.2_web.pdf; https://pubmed.ncbi.nlm.nih.gov/27174617/; https://www.iarc.who.int/en/publications/pdfs-online/wcr/2003/WorldCancerReport.pdf",
+   "aiNote": "Ne: Çevresel etken tablosunda aynı kanser yanıtının farklı ordinalde görünmesi giderildi; kadmiyum için akciğer cevabı korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Erlonid\" → \"Erionit\" ve kadmiyumun yanıtı \"Prostat\" → \"akciğer kanseri\" olarak düzeltildi; oklar standartlaştırıldı.\nNeden: Mezotelyomayla ilişkili mineral erionittir; kadmiyum-prostat eşleşmesi güncel insan verileriyle desteklenmiyordu.\nNasıl: [TD1, KS1, YZ1, YP3, YP4] Erionit–mezotelyoma ve kadmiyum–akciğer ilişkileri doğrulandı; özgün satır sırası, boşluklar, kalın yazı ve c1/c2/c3 dağılımı korundu.\nKaynak: https://www.iarc.who.int/wp-content/uploads/2018/07/IARC_Ch4.2.2_web.pdf; https://pubmed.ncbi.nlm.nih.gov/27174617/; https://www.iarc.who.int/en/publications/pdfs-online/wcr/2003/WorldCancerReport.pdf"
+    }
+   ]
   },
   {
    "order": 16,
@@ -6509,13 +6533,13 @@
    "noteId": 1604470510973,
    "guid": "d.tU;y_o:&",
    "topic": "Genel",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Heerfordt Send&nbsp;--&gt; {{c2::Üveit}} -&nbsp; {{c2::Parotiste Büyüme }} - {{c2::Ateş&nbsp;}}",
-     "after": "Heerfordt sendromu (üveoparotid ateş) bulguları:<div><br></div><div>{{c2::Üveit}}, {{c2::parotiste büyüme}}, {{c2::ateş}}</div>"
+     "after": "Heerfordt sendromu bulguları:<div><br></div><div>{{c2::Üveit}}, {{c2::parotiste büyüme}}, {{c2::ateş}}</div>"
     }
    },
    "changes": [
@@ -6530,11 +6554,23 @@
      "category": "Biçim",
      "text": "\" - \" → \", \"; büyük harfler küçültüldü; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Sendrom bulgularını doğrudan veren başlık parantezi kaldırıldı; Heerfordt adı ve mevcut c2 korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Heerfordt Send\" → \"Heerfordt sendromu (üveoparotid ateş) bulguları\" yapıldı, \"Parotiste Büyüme\" küçültüldü ve liste virgüle çevrildi.\nNeden: Kısaltma ve telgraf üslubu mevcuttu.\nNasıl: [SN1, BÇ1, YP1] Sarkoidozun üveoparotid ateş tablosu (Heerfordt sendromu) üç c2 cevabı korunarak verildi.",
+   "aiNote": "Ne: Sendrom bulgularını doğrudan veren başlık parantezi kaldırıldı; Heerfordt adı ve mevcut c2 korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Heerfordt Send\" → \"Heerfordt sendromu (üveoparotid ateş) bulguları\" yapıldı, \"Parotiste Büyüme\" küçültüldü ve liste virgüle çevrildi.\nNeden: Kısaltma ve telgraf üslubu mevcuttu.\nNasıl: [SN1, BÇ1, YP1] Sarkoidozun üveoparotid ateş tablosu (Heerfordt sendromu) üç c2 cevabı korunarak verildi."
+    }
+   ]
   },
   {
    "order": 173,
@@ -12991,13 +13027,13 @@
    "noteId": 1604390292097,
    "guid": "xRiF~R+j^^",
    "topic": "Genel Patoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Onkogenler&nbsp;<div><br></div><div>ERB-B1 --&gt; {{c1::AC AdenoCa}}</div><div>ERB-B2 --&gt; {{c1::Meme Ca - Over}}&nbsp;</div><div><br></div><div>RET --&gt; {{c2::MEN-2a-b, Ailesel MTC}}</div><div><br></div><div>KIT --&gt; {{c2::GIST}}&nbsp;</div><div><br></div><div>ALK --&gt; {{c3::AC AdenoCa -<b> Nöroblastom</b>}}<b>&nbsp;</b></div><div><b><br></b></div><div>GNAQ --&gt;{{c3::<b>Melanom</b>}}</div><div><br></div><div>ABL --&gt; {{c2::KML<b>&nbsp;</b>}}</div><div><br></div><div>BRAF --&gt; {{c3::Melanom}}</div><div><br></div><div>Myc --&gt; {{c1::Burkitt - Nöroblastom}}&nbsp;</div><div><br></div><div>Siklin D1 --&gt; {{c3::Mantle Hc. Lenfoma}}&nbsp;</div>",
-     "after": "Onkogenler ve ilişkili tümörler:<div><br></div><div>ERB-B1 → {{c1::akciğer adenokarsinomu}}</div><div>ERB-B2 → {{c1::meme ve over karsinomu}}</div><div><br></div><div>RET → {{c2::MEN 2A, MEN 2B ve ailesel medüller tiroit karsinomu}}</div><div><br></div><div>KIT → {{c2::GIST}}</div><div><br></div><div>ALK → {{c3::akciğer adenokarsinomu ve nöroblastom}}</div><div><br></div><div>GNAQ → {{c3::<b>melanom (üveal melanom)</b>}}</div><div><br></div><div>ABL → {{c2::KML}}</div><div><br></div><div>BRAF → {{c3::melanom}}</div><div><br></div><div>MYC → {{c1::Burkitt lenfoma ve nöroblastom}}</div><div><br></div><div>Siklin D1 → {{c3::mantle hücreli lenfoma}}</div>"
+     "after": "Onkogenler ve ilişkili tümörler:<div><br></div><div>ERB-B1 → {{c3::{{c1::akciğer adenokarsinomu}}::ilişkili yanıt arka yüzde}}</div><div>ERB-B2 → {{c1::meme ve over karsinomu}}</div><div><br></div><div>RET → {{c2::MEN 2A, MEN 2B ve ailesel medüller tiroit karsinomu}}</div><div><br></div><div>KIT → {{c2::GIST}}</div><div><br></div><div>ALK → {{c1::{{c3::akciğer adenokarsinomu ve nöroblastom}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>GNAQ → {{c3::<b>melanom (üveal melanom)</b>}}</div><div><br></div><div>ABL → {{c2::KML}}</div><div><br></div><div>BRAF → {{c3::melanom}}</div><div><br></div><div>MYC → {{c3::{{c1::Burkitt lenfoma ve nöroblastom}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>Siklin D1 → {{c3::mantle hücreli lenfoma}}</div>"
     }
    },
    "changes": [
@@ -13018,11 +13054,23 @@
      "category": "Biçim",
      "text": "--&gt; → →; büyük harfler küçültüldü; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "ALK/ERBB1/MYC satırları arasındaki tam ve kısmi tümör yanıtı sızıntıları kapatıldı.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"AC AdenoCa\", \"Meme Ca\", \"MTC\", \"Mantle Hc.\" kısaltmaları açıldı, \"MEN-2a-b\" → \"MEN 2A, MEN 2B\" ve \"Myc\" → \"MYC\" yazıldı; GNAQ'a parantez içi üveal melanom açıklaması eklendi.\nNeden: Kısaltmalar ve eksik tümör adları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1] Robbins patoloji onkogenler tablosuna göre eşleşmeler doğrulandı; c1, c2 ve c3 dağılımı ile bold vurgular korundu.",
+   "aiNote": "Ne: ALK/ERBB1/MYC satırları arasındaki tam ve kısmi tümör yanıtı sızıntıları kapatıldı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"AC AdenoCa\", \"Meme Ca\", \"MTC\", \"Mantle Hc.\" kısaltmaları açıldı, \"MEN-2a-b\" → \"MEN 2A, MEN 2B\" ve \"Myc\" → \"MYC\" yazıldı; GNAQ'a parantez içi üveal melanom açıklaması eklendi.\nNeden: Kısaltmalar ve eksik tümör adları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1] Robbins patoloji onkogenler tablosuna göre eşleşmeler doğrulandı; c1, c2 ve c3 dağılımı ile bold vurgular korundu."
+    }
+   ]
   },
   {
    "order": 352,
@@ -13959,13 +14007,13 @@
    "noteId": 1608041801311,
    "guid": "IbTa&#o({m",
    "topic": "Genel Patoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "Siklin {{c1::D}} ----- CDK {{c2::4 - 6}} ({{c4::G1 - S}} Geçişi) ( İnh: p{{c3::16 -15 - 18 - 19}})<div><br></div><div>Siklin {{c1::E}} ----- CDK {{c2::1 - 2}}</div><div><br></div><div>Siklin {{c1::A}} ------ CDK {{c2::1}} ( {{c4::S}} Fazı)</div><div><br></div><div>Siklin {{c1::B}} ------ CDK {{c2::1}} ( {{c4::G2 - M}} geçişi)</div><div><br></div><div>Hepsinin İnh'ü: p{{c3::21 - 27 - 57}}</div><div><br></div><div>p53 ---&gt; {{c5::p21}} i kullanır&nbsp;</div><div><br></div><div>Rb: {{c5::G1 - S}} geçişini kontrol eder</div>",
-     "after": "Hücre döngüsü siklin, CDK ve inhibitör eşleşmeleri:<div><br></div><div>Siklin {{c1::D}} → CDK {{c2::4/6}} ({{c4::G1-S}} geçişi; inhibitörler: p{{c3::16, 15, 18, 19}})</div><div><br></div><div>Siklin {{c1::E}} → CDK {{c2::2}} (G1-S geçişi)</div><div><br></div><div>Siklin {{c1::A}} → CDK {{c2::2 ve 1}} ({{c4::S}} fazı)</div><div><br></div><div>Siklin {{c1::B}} → CDK {{c2::1}} ({{c4::G2-M}} geçişi)</div><div><br></div><div>Geniş spektrumlu CDK inhibitörleri: p{{c3::21, 27, 57}}</div><div><br></div><div>TP53 → {{c5::p21}} aracılığıyla siklus duraklaması yaptırır</div><div><br></div><div>RB: {{c5::G1-S}} geçişinin temel kontrol noktasıdır</div>"
+     "after": "Hücre döngüsü siklin, CDK ve inhibitör eşleşmeleri:<div><br></div><div>Siklin {{c1::D}} → CDK {{c2::4/6}} ({{c5::{{c4::G1-S}}::ilişkili yanıt arka yüzde}} geçişi; inhibitörler: p{{c3::16, 15, 18, 19}})</div><div><br></div><div>Siklin {{c1::E}} → CDK {{c2::2}} ({{c4::{{c5::G1-S}}}} geçişi)</div><div><br></div><div>Siklin {{c1::A}} → CDK {{c2::2 ve 1}} ({{c4::S}} fazı)</div><div><br></div><div>Siklin {{c1::B}} → CDK {{c2::1}} ({{c4::G2-M}} geçişi)</div><div><br></div><div>Geniş spektrumlu CDK inhibitörleri: p{{c3::{{c5::21::ilişkili yanıt arka yüzde}}, 27, 57}}</div><div><br></div><div>TP53 → {{c5::p21}} aracılığıyla siklus duraklaması yaptırır</div><div><br></div><div>RB: {{c4::{{c5::G1-S}}::ilişkili yanıt arka yüzde}} geçişinin temel kontrol noktasıdır</div>"
     }
    },
    "changes": [
@@ -13980,11 +14028,23 @@
      "category": "Biçim",
      "text": "Tire dizileri oka çevrildi; aralıklar en dash ile yazıldı; büyük harfler küçültüldü; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "G1–S kontrol noktası ve p21 yanıtının diğer siklin/inhibitör satırlarından okunması giderildi; c1–c5 görevleri korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"İnh\" kısaltmaları açıldı, \"p53\" → \"TP53\" düzeltildi, tire ayraçları düzgün ok ve virgüllere dönüştürüldü.\nNeden: Düzensiz tire dizileri (\"-----\"), kısaltmalar ve biçim bozukluğu mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Robbins patoloji hücre siklusu tablosuna göre siklinler (c1), CDK'lar (c2), inhibitörler (c3), fazlar (c4) ve p53/RB regülasyonu (c5) beş cloze ordinali korunarak verildi.",
+   "aiNote": "Ne: G1–S kontrol noktası ve p21 yanıtının diğer siklin/inhibitör satırlarından okunması giderildi; c1–c5 görevleri korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"İnh\" kısaltmaları açıldı, \"p53\" → \"TP53\" düzeltildi, tire ayraçları düzgün ok ve virgüllere dönüştürüldü.\nNeden: Düzensiz tire dizileri (\"-----\"), kısaltmalar ve biçim bozukluğu mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1] Robbins patoloji hücre siklusu tablosuna göre siklinler (c1), CDK'lar (c2), inhibitörler (c3), fazlar (c4) ve p53/RB regülasyonu (c5) beş cloze ordinali korunarak verildi."
+    }
+   ]
   },
   {
    "order": 379,
@@ -14575,13 +14635,13 @@
    "noteId": 1622492118390,
    "guid": "g9rYMw$GGF",
    "topic": "Genel Patoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "HIV <b>LN:<br></b><br><b>Erken Dönem Bulguları:</b><br>{{c2::Genişlemiş yılanvari (serpiginöz)}} folikül merkezleri<br>İncelmiş mantle<br>{{c2::Sinüs histiyositozu}}<br><br><b>Geç Dönem Bulguları:</b><div>Tükenmiş/Atrofik {{c1::Germinal Merkezler}}</div><div><br></div><div>Dağılmış {{c1::Foliküler Dendritik Ağ}}</div>",
-     "after": "HIV enfeksiyonunda <b>lenf nodu histopatolojik bulguları:</b><div><br></div><div><b>Erken dönem bulguları:</b></div><div>{{c2::Genişlemiş yılanvari (serpiginöz)}} germinal merkezler</div><div>İncelmiş mantle zonu</div><div>{{c2::Sinüs histiyositozu}}</div><div><br></div><div><b>Geç dönem (tükenme) bulguları:</b></div><div>Atrofik {{c1::germinal merkezler}}</div><div>Dağılmış {{c1::foliküler dendritik ağ}}</div>"
+     "after": "HIV enfeksiyonunda <b>lenf nodu histopatolojik bulguları:</b><div><br></div><div><b>Erken dönem bulguları:</b></div><div>{{c2::Genişlemiş yılanvari (serpiginöz)}} {{c1::germinal merkezler}}</div><div>İncelmiş mantle zonu</div><div>{{c2::Sinüs histiyositozu}}</div><div><br></div><div><b>Geç dönem (tükenme) bulguları:</b></div><div>Atrofik {{c1::germinal merkezler}}</div><div>Dağılmış {{c1::foliküler dendritik ağ}}</div>"
     }
    },
    "changes": [
@@ -14596,11 +14656,17 @@
      "category": "Biçim",
      "text": "Başlıklar ve HTML etiketleri düzenlendi; folikül → follikül",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Yapısal",
+     "text": "Gemini önerisinde c1 ön yüzünde c2 içindeki germinal merkezler görünür; gizlemeyi c2 içine genişletmek c1 sızıntısını çözmez.",
+     "rationale": "Erken ve geç satırdaki aynı isim c1 içinde gizlenmeli; c2 sıfatları korunmalı. Kaynak: "
     }
    ],
    "aiNote": "Ne: \"LN\" açıldı, erken ve geç dönem bulguları div etiketleriyle yapılandırıldı.\nNeden: Kısaltma ve biçim bozukluğu mevcuttu.\nNasıl: [KS1, YP4, BÇ1, YP1] HIV lenfadenopatisinin erken ve geç histolojik özellikleri iki cloze ordinaliyle korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": "\nCodex 09.10.2026: Erken ve geç satırdaki aynı isim c1 içinde gizlenmeli; c2 sıfatları korunmalı."
   },
   {
    "order": 397,
@@ -14677,13 +14743,13 @@
    "noteId": 1625238469386,
    "guid": "D6~]%}9GIB",
    "topic": "Genel Patoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "{{c1::Sifiliz}} Patoloji:<div><br></div><div>Aort Valv Yet</div><div><br></div><div>Çıkan Aorta boyunca <b>Lineer Kalsifikasyon</b></div>",
-     "after": "<b>Tersiyer sifiliz</b> kardiyovasküler patolojisi:<div><br></div><div>- Aort kapak yetmezliği</div><div><br></div><div>- Çıkan aort boyunca <b>lineer kalsifikasyon</b> (sifilitik aortit)</div><div><br></div><div>Etken: {{c1::Sifiliz (Treponema pallidum)}}</div>"
+     "after": "Kardiyovasküler enfeksiyon patolojisi:<div><br></div><div>- Aort kapak yetmezliği</div><div><br></div><div>- Çıkan aort boyunca <b>lineer kalsifikasyon</b> (aortit)</div><div><br></div><div>Etken: {{c1::Sifiliz (Treponema pallidum)}}</div>"
     }
    },
    "changes": [
@@ -14704,11 +14770,23 @@
      "category": "Biçim",
      "text": "Madde işaretleri eklendi, biçim düzenlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Etken sorusunun başlık ve aortit parantezinde görünen sifiliz cevabı tarafsızlaştırıldı; c1 cevabı ve patolojik bulgular korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Aort Valv Yet\" açıldı, soru kökü kardiyovasküler sifiliz tablosuyla netleştirildi.\nNeden: Kısaltma ve telgraf üslubu mevcuttu.\nNasıl: [KS1, SN1, BÇ1] Vasa vasorum endarteriti sonucu gelişen sifilitik aortit özellikleri korunarak c1 muhafaza edildi.",
+   "aiNote": "Ne: Etken sorusunun başlık ve aortit parantezinde görünen sifiliz cevabı tarafsızlaştırıldı; c1 cevabı ve patolojik bulgular korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Aort Valv Yet\" açıldı, soru kökü kardiyovasküler sifiliz tablosuyla netleştirildi.\nNeden: Kısaltma ve telgraf üslubu mevcuttu.\nNasıl: [KS1, SN1, BÇ1] Vasa vasorum endarteriti sonucu gelişen sifilitik aortit özellikleri korunarak c1 muhafaza edildi."
+    }
+   ]
   },
   {
    "order": 400,
@@ -16307,13 +16385,17 @@
    "noteId": 1604599510831,
    "guid": "hUc/hn|rgB",
    "topic": "Genital Sistem ve Meme Patolojisi",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
-   "changedFields": "Metin",
+   "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Kemik Paget (Osteitis Deformans) Patogonmonik Bulgu --&gt; {{c1::Mozaik }}&nbsp;Patern<div><br></div><div><div>1) {{c2::OsteoK}}&nbsp; (litik)</div><div>2) {{c2::Mikst}}&nbsp; (OsteoB+K)</div><div>3) {{c2::OsteoB}} (OsteoSklerotik)</div><div><br></div></div>",
-     "after": "Kemik Paget hastalığında (osteitis deformans) patognomonik bulgu ve evreler:<div><br></div><div>Patognomonik bulgu → {{c1::mozaik}} patern<div><br></div><div>1) {{c2::Osteoklastik}} evre (litik)</div><div>2) {{c2::Mikst}} evre (osteoblastik ve osteoklastik)</div><div>3) {{c2::Osteoblastik}} evre (osteosklerotik)</div></div>"
+     "after": "Kemik Paget hastalığında (osteitis deformans) patognomonik bulgu ve evreler:<div><br></div><div>Patognomonik bulgu → {{c1::mozaik}} patern<div><br></div><div>1) {{c2::Osteoklastik}} evre (litik)</div><div>2) {{c2::Mikst}} evre</div><div>3) {{c2::Osteoblastik}} evre (osteosklerotik)</div></div>"
+    },
+    "Extra": {
+     "before": "",
+     "after": "Mikst evrede osteoblastik ve osteoklastik aktivite birlikte bulunur."
     }
    },
    "changes": [
@@ -16328,11 +16410,23 @@
      "category": "Biçim",
      "text": "--&gt; → →; gereksiz br ve &nbsp; temizlendi; büyük harfler küçültüldü",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Evre yanıtlarını gösteren mikst evre açıklaması arka yüze taşındı.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Patogonmonik\" harf hatası düzeltildi, \"OsteoK\" → \"osteoklastik\" ve \"OsteoB\" → \"osteoblastik\" açıldı, CamelCase temizlendi.\nNeden: Yazım hatası, CamelCase ve kısaltmalar mevcuttu.\nNasıl: [YZ1, KS1, BÇ1, YP1] Paget hastalığının üç evresi ve sklerotik evredeki mozaik çini deseni kemik lamelleri c1 ve c2 olarak korundu.",
+   "aiNote": "Ne: Evre yanıtlarını gösteren mikst evre açıklaması arka yüze taşındı.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Patogonmonik\" harf hatası düzeltildi, \"OsteoK\" → \"osteoklastik\" ve \"OsteoB\" → \"osteoblastik\" açıldı, CamelCase temizlendi.\nNeden: Yazım hatası, CamelCase ve kısaltmalar mevcuttu.\nNasıl: [YZ1, KS1, BÇ1, YP1] Paget hastalığının üç evresi ve sklerotik evredeki mozaik çini deseni kemik lamelleri c1 ve c2 olarak korundu."
+    }
+   ]
   },
   {
    "order": 445,
@@ -17955,13 +18049,13 @@
    "noteId": 1620369027703,
    "guid": "As>gw$(]+x",
    "topic": "Hematopatoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "<b>Germinal Merkez</b> kaynaklı Lenfomalar:<div><br></div><div>Foll. Lenfoma</div><div>{{c1::Burkitt}}</div><div>{{c1::Diff. Büyük B}}</div><div>{{c1::Hodgkin}}</div><div><br></div><div>----------</div><div>\n\n<b>Marjinal Zon</b>&nbsp;Kaynaklı Lenfomalar:<div><br></div>\n<div>Marjinal Zon Lenfoma</div>\n<div>Diff. Büyük B</div>\n<div>{{c1::SLL/KLL}}</div></div>",
-     "after": "Lenfomaların anatomik kaynakları:<div><br></div><div><b>Germinal merkez kaynaklı lenfomalar:</b></div><div>Folliküler lenfoma</div><div>{{c1::Burkitt lenfoma}}</div><div>{{c1::Diffüz büyük B hücreli lenfoma}}</div><div>{{c1::Hodgkin lenfoma}}</div><div><br></div><div><b>Marjinal zon veya post-germinal kaynaklı lenfomalar:</b></div><div>Marjinal zon lenfoması</div><div>Diffüz büyük B hücreli lenfoma</div><div>{{c1::Küçük lenfositik lenfoma / KLL}}</div>"
+     "after": "Lenfomaların anatomik kaynakları:<div><br></div><div><b>Germinal merkez kaynaklı lenfomalar:</b></div><div>Folliküler lenfoma</div><div>{{c1::Burkitt lenfoma}}</div><div>{{c1::Diffüz büyük B hücreli lenfoma}}</div><div>{{c1::Hodgkin lenfoma}}</div><div><br></div><div><b>Marjinal zon veya post-germinal kaynaklı lenfomalar:</b></div><div>Marjinal zon lenfoması</div><div>{{c1::Diffüz büyük B hücreli lenfoma}}</div><div>{{c1::Küçük lenfositik lenfoma / KLL}}</div>"
     },
     "Extra": {
      "before": "Diff. Büyük B Marjinal zondan da kaynaklanabilir&nbsp;",
@@ -17980,11 +18074,23 @@
      "category": "Biçim",
      "text": "Tire dizisi kaldırıldı; Extra tam cümleye dönüştürüldü",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Marjinal/post-germinal satırındaki tekrarlanan DLBCL cevabı da c1 içinde gizlendi. Lenfoma listesinin tıbbi içeriği değiştirilmedi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"Foll.\", \"Diff.\" ve \"SLL/KLL\" açıldı, tire dizisi kaldırıldı, Extra akıcı hale getirildi.\nNeden: Kısaltmalar ve biçim bozukluğu mevcuttu.\nNasıl: [KS1, BÇ1, SN2, YP1] B hücreli neoplazilerin foliküler anatomik kökenleri dört c1 yanıtı korunarak verildi.",
+   "aiNote": "Ne: Marjinal/post-germinal satırındaki tekrarlanan DLBCL cevabı da c1 içinde gizlendi. Lenfoma listesinin tıbbi içeriği değiştirilmedi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"Foll.\", \"Diff.\" ve \"SLL/KLL\" açıldı, tire dizisi kaldırıldı, Extra akıcı hale getirildi.\nNeden: Kısaltmalar ve biçim bozukluğu mevcuttu.\nNasıl: [KS1, BÇ1, SN2, YP1] B hücreli neoplazilerin foliküler anatomik kökenleri dört c1 yanıtı korunarak verildi."
+    }
+   ]
   },
   {
    "order": 493,
@@ -18163,13 +18269,13 @@
    "noteId": 1604471389759,
    "guid": "deJsa/M,7*",
    "topic": "Kardiyovasküler Patoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "MI Saatlere Göre Mikroskopik Bulgular&nbsp;<div><br></div><div>1/2-4 saat --&gt;{{c1::Dalgalı Lif }} (En erken bulgu)</div><div><br></div><div>4-12 Saat --&gt; Erken&nbsp;{{c1::Koag. Nekroz}}</div><div><br></div><div>12-24 Saat --&gt; Erken&nbsp;&nbsp;{{c2::Nötrofil akt.&nbsp; }} + {{c2::Kontraksiyon Bant}} Nekrozu</div><div><br></div><div>1-3 Gün --&gt;&nbsp; Tamamen oluşmuş {{c3:: Koag. Nekroz&nbsp; }} + Ağır {{c3::Nötrofil infilt}}.</div>",
-     "after": "Miyokard enfarktüsünde saatlere göre mikroskopik bulgular:<div><br></div><div>30 dakika – 4 saat → {{c1::dalgalı lifler}} (en erken bulgu)</div><div><br></div><div>4–12 saat → erken {{c1::koagülasyon nekrozu}}</div><div><br></div><div>12–24 saat → erken {{c2::nötrofil infiltrasyonu}} + {{c2::kontraksiyon bandı}} nekrozu</div><div><br></div><div>1–3 gün → belirgin {{c3::koagülasyon nekrozu}} + yoğun {{c3::nötrofil infiltrasyonu}}</div>"
+     "after": "Miyokard enfarktüsünde saatlere göre mikroskopik bulgular:<div><br></div><div>30 dakika – 4 saat → {{c1::dalgalı lifler}} (en erken bulgu)</div><div><br></div><div>4–12 saat → erken {{c3::{{c1::koagülasyon nekrozu}}::ilişkili yanıt arka yüzde}}</div><div><br></div><div>12–24 saat → erken {{c3::{{c2::nötrofil infiltrasyonu}}::ilişkili yanıt arka yüzde}} + {{c2::kontraksiyon bandı}} nekrozu</div><div><br></div><div>1–3 gün → belirgin {{c1::{{c3::koagülasyon nekrozu}}::ilişkili yanıt arka yüzde}} + yoğun {{c2::{{c3::nötrofil infiltrasyonu}}::ilişkili yanıt arka yüzde}}</div>"
     }
    },
    "changes": [
@@ -18190,11 +18296,23 @@
      "category": "Biçim",
      "text": "--&gt; → →; aralıklar en dash ile yazıldı; &nbsp; temizlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Enfarktüsün zaman satırlarında tekrarlanan histolojik yanıtlar, süre hedefleri korunarak gizlendi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: \"MI\" → \"Miyokard enfarktüsünde\", \"Koag. Nekroz\" → \"koagülasyon nekrozu\", \"Nötrofil akt./infilt.\" → \"nötrofil infiltrasyonu\" açıldı; zaman aralıkları ve ayraçlar standartlaştırıldı.\nNeden: Kısaltmalar, noktalı ifadeler ve biçim hataları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1] Robbins patoloji tablosundaki miyokard enfarktüsü temporal histopatolojik bulguları c1, c2 ve c3 dağılımı korunarak düzenlendi.",
+   "aiNote": "Ne: Enfarktüsün zaman satırlarında tekrarlanan histolojik yanıtlar, süre hedefleri korunarak gizlendi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: \"MI\" → \"Miyokard enfarktüsünde\", \"Koag. Nekroz\" → \"koagülasyon nekrozu\", \"Nötrofil akt./infilt.\" → \"nötrofil infiltrasyonu\" açıldı; zaman aralıkları ve ayraçlar standartlaştırıldı.\nNeden: Kısaltmalar, noktalı ifadeler ve biçim hataları mevcuttu.\nNasıl: [KS1, YZ1, BÇ1] Robbins patoloji tablosundaki miyokard enfarktüsü temporal histopatolojik bulguları c1, c2 ve c3 dağılımı korunarak düzenlendi."
+    }
+   ]
   },
   {
    "order": 499,
@@ -20679,13 +20797,13 @@
    "noteId": 1625242082067,
    "guid": "m9:jXjWx*R",
    "topic": "Nöropatoloji",
-   "severity": "Orta",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin + Ek bilgi (arka yüz)",
    "fields": {
     "Text": {
      "before": "Herediter Send'lara eşlik eden SSS Tm'leri:<br><br><b>NF1</b><br>- {{c1::Optik sinir gliomu}}<br>- Düşük grade astrositom<br><br><b>NF2</b><br>- Bilateral schwannom<br>- Multipl {{c1::meningiom}}<br>- Multipl {{c1::ependimom}}<br><br>{{c4::<b>vHL</b>}}<b>&nbsp;---&gt;&nbsp;</b>{{c2::Serebellar hemanjiyoblastom}}<br><br>{{c4::<b>Tuberoskleroz</b>}}&nbsp;--&gt;&nbsp;{{c2::Subepandimal Dev Hücreli Astrositom***}}<br><br><b>Gorlin</b> Send --&gt;&nbsp;{{c3::Medulloblastom}}<br><br><b>Cowden</b> --&gt; {{c3::Displastik gangliositom}}<br><br><b>Li Fraumeni </b>send --&gt;&nbsp;&nbsp;Medulloblastom - Glioblastom<br><br><b>Turcot</b> send --&gt; - Medulloblastom - Glioblastom",
-     "after": "Herediter sendromlara eşlik eden santral sinir sistemi tümörleri:<div><br></div><div><b>NF1:</b> {{c1::Optik sinir gliomu}}, düşük dereceli astrositom</div><div><br></div><div><b>NF2:</b> Bilateral schwannom, multipl {{c1::menenjiom}}, multipl {{c1::ependimom}}</div><div><br></div><div>{{c4::<b>vHL sendromu:</b>}} {{c2::Serebellar hemanjiyoblastom}}</div><div><br></div><div>{{c4::<b>Tüberoskleroz:</b>}} {{c2::Subependimal dev hücreli astrositom (SEGA)}}</div><div><br></div><div><b>Gorlin sendromu:</b> {{c3::Medulloblastom}}</div><div><br></div><div><b>Cowden sendromu:</b> {{c3::Displastik serebellar gangliositom (Lhermitte-Duclos)}}</div><div><br></div><div><b>Li-Fraumeni sendromu:</b> Medulloblastom, glioblastom</div><div><br></div><div><b>Turcot sendromu:</b> Medulloblastom, glioblastom</div>"
+     "after": "Herediter sendromlara eşlik eden santral sinir sistemi tümörleri:<div><br></div><div><b>NF1:</b> {{c1::Optik sinir gliomu}}, düşük dereceli astrositom</div><div><br></div><div><b>NF2:</b> Bilateral schwannom, multipl {{c1::menenjiom}}, multipl {{c1::ependimom}}</div><div><br></div><div>{{c4::<b>vHL sendromu:</b>}} {{c2::Serebellar hemanjiyoblastom}}</div><div><br></div><div>{{c4::<b>Tüberoskleroz:</b>}} {{c2::Subependimal dev hücreli astrositom (SEGA)}}</div><div><br></div><div><b>Gorlin sendromu:</b> {{c3::Medulloblastom}}</div><div><br></div><div><b>Cowden sendromu:</b> {{c3::Displastik serebellar gangliositom (Lhermitte-Duclos)}}</div><div><br></div><div><b>Li-Fraumeni sendromu:</b> {{c3::Medulloblastom}}, glioblastom</div><div><br></div><div><b>Turcot sendromu:</b> {{c3::Medulloblastom}}, glioblastom</div>"
     },
     "Extra": {
      "before": "ÖNEMLİ KEsin soru",
@@ -20704,11 +20822,23 @@
      "category": "Biçim",
      "text": "&nbsp; temizlendi; ASCII oklar kaldırıldı; yıldızlar (***) temizlendi; Li Fraumeni → Li-Fraumeni",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Gorlin yanıtının Li-Fraumeni/Turcot satırlarında açık görünmesi giderildi.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Ependimom ve menenjiom yazımları düzeltildi, ASCII oklar ve yıldızlar temizlendi.\nNeden: Yazım hataları ve gereksiz karakterler mevcuttu.\nNasıl: [YZ1, BÇ1, YP1] Herediter sendromlar ve SSS tümörleri eşleşmeleri c1, c2, c3, c4 dağılımı korunarak muhafaza edildi.",
+   "aiNote": "Ne: Gorlin yanıtının Li-Fraumeni/Turcot satırlarında açık görünmesi giderildi.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Ependimom ve menenjiom yazımları düzeltildi, ASCII oklar ve yıldızlar temizlendi.\nNeden: Yazım hataları ve gereksiz karakterler mevcuttu.\nNasıl: [YZ1, BÇ1, YP1] Herediter sendromlar ve SSS tümörleri eşleşmeleri c1, c2, c3, c4 dağılımı korunarak muhafaza edildi."
+    }
+   ]
   },
   {
    "order": 570,
@@ -21669,13 +21799,13 @@
    "noteId": 1620242619131,
    "guid": "s>#`Z~+8v/",
    "topic": "Genel",
-   "severity": "Düşük",
+   "severity": "Yüksek",
    "status": "changed",
    "changedFields": "Metin",
    "fields": {
     "Text": {
      "before": "PAS + iki madde: <b>Glikojen</b> ve <b>Müsin</b><div><br></div><div>Ayrımı:</div><div><br></div><div><span style=\"background: var(--field-bg);\"><span style=\"color: var(--field-fg);\">{{c2::</span><b><font color=\"#ff3b30\">PAS-Diastaz</font></b><span style=\"color: var(--field-fg);\">}}</span></span>&nbsp;ile</div><div><br></div><div>Kaybolan: {{c1::Glikojen}}</div><div><br></div><div>Devam eden: {{c1::Müsin}}</div><div><br></div><div><br></div>",
-     "after": "PAS pozitif boyanan iki madde olan glikojen ve müsinin histokimyasal ayrımı:<div><br></div><div>Kullanılan yöntem: {{c2::PAS-diastaz}} boyaması</div><div><br></div><div>Diastaz sindirimiyle kaybolan: {{c1::Glikojen}}</div><div><br></div><div>Diastaza dirençli kalıp boyanmaya devam eden: {{c1::Müsin}}</div>"
+     "after": "PAS pozitif maddelerin histokimyasal ayrımı:<div><br></div><div>Kullanılan yöntem: {{c2::PAS-diastaz}} boyaması</div><div><br></div><div>Diastaz sindirimiyle kaybolan: {{c1::Glikojen}}</div><div><br></div><div>Diastaza dirençli kalıp boyanmaya devam eden: {{c1::Müsin}}</div>"
     }
    },
    "changes": [
@@ -21684,11 +21814,23 @@
      "category": "Biçim",
      "text": "İstenmeyen font ve span etiketleri temizlendi; başlık ve tanımlar düzenlendi",
      "rationale": ""
+    },
+    {
+     "severity": "Yüksek",
+     "category": "Cevap görünürlüğü",
+     "text": "Glikojen/müsin yanıtlarını açık veren kök tarafsızlaştırıldı; boya yöntemi görevi korundu.",
+     "rationale": "Güncel gerçek ön yüz kanıtı; tıbbi içerik korunuyor."
     }
    ],
-   "aiNote": "Ne: Renkli font ve span etiketleri kaldırıldı, başlık ve tanımlar akıcı hale getirildi.\nNeden: Kirli HTML kodları ve telgraf üslubu mevcuttu.\nNasıl: [YP4, BÇ1, YP1] Glikojenin sindirilip müsinin direnç gösterdiği PAS-diastaz yöntemi c2 ve c1 korunarak verildi.",
+   "aiNote": "Ne: Glikojen/müsin yanıtlarını açık veren kök tarafsızlaştırıldı; boya yöntemi görevi korundu.\nNeden: Son yayın kontrolündeki görünür cevap veya soru/açıklama kapsamı sorunu giderildi.\nNasıl: [YP1, YP2, TD1, TD2] Mevcut GUID, not/kart kimlikleri ve cloze numara kümesi korundu; karar yalnız belirtilen odak düzeltmesi içindir.\nKaynak: Güncel yerel alanlar ve gerçek renderClozeQuestion ön yüzü; tıbbi önerme değişmedi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "publishFollowupHistory": [
+    {
+     "date": "2026-10-09",
+     "previousAiNote": "Ne: Renkli font ve span etiketleri kaldırıldı, başlık ve tanımlar akıcı hale getirildi.\nNeden: Kirli HTML kodları ve telgraf üslubu mevcuttu.\nNasıl: [YP4, BÇ1, YP1] Glikojenin sindirilip müsinin direnç gösterdiği PAS-diastaz yöntemi c2 ve c1 korunarak verildi."
+    }
+   ]
   },
   {
    "order": 600,
@@ -22195,5 +22337,17 @@
    "kisaltma": "Hc",
    "acilim": "hücreler"
   }
- ]
+ ],
+ "independentFollowup": {
+  "date": "2026-10-09",
+  "reference": "docs/catalog-corrections/gemini-followup.md",
+  "correctedNotes": [
+   "1622492118390",
+   "1630168520911"
+  ],
+  "sourceReview": "Yanlış kaynaklar geri çekildi; kayıt düzeltmesi tüm tıbbi içeriğe son onay değildir.",
+  "sourceReviewStage": "claim-scope-review-pending",
+  "sourceIdentityCorrections": 23,
+  "appliedPackageSha256": "5fadd886944365e6e67b6f1b99fd1d89b13f49e916eb7a63789e87312e9990b7"
+ }
 }

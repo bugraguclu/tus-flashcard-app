@@ -8,7 +8,7 @@ vi.mock('./noteManager', () => ({
     getAnkiCard: (id: number) => h.cards.get(id) ?? null,
     saveAnkiCard: (card: AnkiCard) => { if (card.id === h.failOn) throw new Error('disk full'); h.cards.set(card.id, { ...card }); },
 }));
-import { canUndoLastReposition, repositionSelectedNewCards, undoLastReposition } from './browserReposition';
+import { canUndoLastReposition, getNewQueuePositionRange, repositionSelectedNewCards, undoLastReposition } from './browserReposition';
 
 const card = (id: number, overrides: Partial<AnkiCard> = {}): AnkiCard => ({
     id, noteId: id, deckId: 1, ord: 0, mod: 0, usn: 0, type: 0, queue: 0, due: id, ivl: 0, factor: 0,
@@ -47,4 +47,26 @@ it('rolls back when a write fails', () => {
     h.failOn = 2;
     expect(() => repositionSelectedNewCards([1, 2], 5, 1, false)).toThrow('disk full');
     expect(h.sql).toEqual(['BEGIN TRANSACTION;', 'ROLLBACK;']);
+});
+
+it('accepts Anki\'s start of 0 and caps start and step at the dialog bounds', () => {
+    h.cards.set(1, card(1, { noteId: 1, due: 9 })); h.cards.set(2, card(2, { noteId: 2, due: 9 }));
+    repositionSelectedNewCards([1, 2], 0, 1, false);
+    expect(dues()).toEqual([0, 1]);
+    repositionSelectedNewCards([1, 2], 5_000_000, 50_000, false);
+    expect(dues()).toEqual([1_000_000, 1_010_000]);
+});
+
+it('moves a filtered card\'s home position and leaves its filtered-deck due alone', () => {
+    h.cards.set(1, card(1, { odid: 7, odue: 40, due: -100_000 }));
+    repositionSelectedNewCards([1], 3, 1, false);
+    expect(h.cards.get(1)).toMatchObject({ due: -100_000, odue: 3 });
+    undoLastReposition();
+    expect(h.cards.get(1)).toMatchObject({ due: -100_000, odue: 40 });
+});
+
+it('reports the new queue\'s top and bottom without filtered cards', () => {
+    h.cards.set(1, card(1, { due: 4 })); h.cards.set(2, card(2, { due: 12 }));
+    h.cards.set(3, card(3, { odid: 7, due: -5 })); h.cards.set(4, card(4, { type: 2, queue: 2, due: 900 }));
+    expect(getNewQueuePositionRange()).toEqual({ top: 4, bottom: 12 });
 });

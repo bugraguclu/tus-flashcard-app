@@ -97,30 +97,28 @@ function canonicalDeckPath(name: string): string {
     return path;
 }
 
-function deckNameWithNumericSuffix(name: string, suffix: number): string {
-    const parent = getParentDeckName(name);
-    const leaf = getDeckDisplayName(name);
-    const numberedLeaf = `${leaf} (${suffix})`;
-    return parent ? `${parent}::${numberedLeaf}` : numberedLeaf;
+/** Anki's `ensure_deck_name_unique`: a clashing name gets `+` appended until it is free. */
+function deckNameWithPlusSuffix(name: string, count: number): string {
+    return `${name}${'+'.repeat(count)}`;
 }
 
-/** Return the requested deck path, or the first free PC-style `(n)` variant of its leaf name. */
+/** Return the requested deck path, or Anki's first free `+`-suffixed variant of it. */
 export function getAvailableDeckName(name: string): string {
     name = canonicalDeckPath(name);
     if (!getDeckByName(name)) return name;
 
     let suffix = 1;
-    let candidate = deckNameWithNumericSuffix(name, suffix);
+    let candidate = deckNameWithPlusSuffix(name, suffix);
     while (getDeckByName(candidate)) {
         suffix += 1;
-        candidate = deckNameWithNumericSuffix(name, suffix);
+        candidate = deckNameWithPlusSuffix(name, suffix);
     }
     return candidate;
 }
 
 /**
- * Resolve a collision-free destination for an entire deck subtree. The suffix belongs on the
- * moved root's leaf (`Parent::Deck (1)`), while every descendant keeps its relative path.
+ * Resolve a collision-free destination for an entire deck subtree. The `+` suffix belongs on the
+ * moved root's leaf (`Parent::Deck+`), while every descendant keeps its relative path.
  */
 function getAvailableSubtreeName(deck: Deck, desiredName: string): string {
     const subtreePrefix = `${deck.name}::`;
@@ -139,10 +137,10 @@ function getAvailableSubtreeName(deck: Deck, desiredName: string): string {
 
     if (!collides(desiredName)) return desiredName;
     let suffix = 1;
-    let candidate = deckNameWithNumericSuffix(desiredName, suffix);
+    let candidate = deckNameWithPlusSuffix(desiredName, suffix);
     while (collides(candidate)) {
         suffix += 1;
-        candidate = deckNameWithNumericSuffix(desiredName, suffix);
+        candidate = deckNameWithPlusSuffix(desiredName, suffix);
     }
     return candidate;
 }
@@ -385,6 +383,9 @@ export function renameDeck(id: number, newName: string): void {
             if (ancestor?.isFiltered) {
                 throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
             }
+            if (ancestor && isCatalogDeck(ancestor)) {
+                throw new PaidCatalogProtectionError('Katalog desteleri altına başka deste taşınamaz.');
+            }
             ancestorName = getParentDeckName(ancestorName);
         }
 
@@ -412,6 +413,7 @@ export function renameDeck(id: number, newName: string): void {
                 ? newName
                 : `${newName}::${row.name.slice(oldPrefix.length)}`;
 
+            markSourcePackageDirty(parsed.sourcePackageId);
             parsed.name = resolvedName;
             parsed.mod = nowSec;
             parsed.usn = -1;
@@ -511,10 +513,12 @@ export function nextSiblingSortOrderForAppend(parentName: string | null): number
 }
 
 /** Update a deck's description (shown on the study screen, like Anki's deck description). */
-export function setDeckDescription(deckId: number, description: string): void {
+export function setDeckDescription(deckId: number, description: string, markdown?: boolean): void {
     const deck = getDeck(deckId);
     if (!deck) return;
     deck.description = description.trim();
+    // Anki's "Interpret as Markdown" (`md`); left as it was when the caller does not say.
+    if (markdown !== undefined) deck.descriptionMarkdown = markdown || undefined;
     deck.mod = Math.floor(Date.now() / 1000);
     deck.usn = -1;
     saveDeck(deck);

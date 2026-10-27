@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { BorderRadius, FontSize, dropShadow, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { BorderRadius, FontSize, dropShadow, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 
 export interface SegmentOption<T extends string> {
     value: T;
@@ -28,7 +28,8 @@ export default function StatsSegmented<T extends string>({
     fill = false,
 }: StatsSegmentedProps<T>) {
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const isDark = useIsDarkTheme();
+    const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
     return (
         <View style={[styles.track, fill && styles.trackFill]} accessibilityRole="tablist" accessibilityLabel={accessibilityLabel}>
             {options.map((option) => {
@@ -64,7 +65,7 @@ export default function StatsSegmented<T extends string>({
     );
 }
 
-function createStyles(colors: ColorScheme) {
+function createStyles(colors: ColorScheme, isDark: boolean) {
     return StyleSheet.create({
         track: {
             flexDirection: 'row',
@@ -83,7 +84,9 @@ function createStyles(colors: ColorScheme) {
         },
         segmentFill: { flex: 1, paddingHorizontal: 4 },
         segmentSelected: {
-            backgroundColor: colors.bgCard,
+            // On a dark track the card colour is darker than the track itself; the border tone
+            // lifts the chosen segment instead of sinking it.
+            backgroundColor: isDark ? colors.border : colors.bgCard,
             ...dropShadow({ y: 1, blur: 3, opacity: 0.08, elevation: 1 }),
         },
         segmentPressed: { opacity: 0.6 },

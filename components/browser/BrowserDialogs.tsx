@@ -20,6 +20,7 @@ import { localizeNoteTypeName, type SupportedLocale } from '../../lib/i18n';
 import { changeNoteTypeWithConfirmation, noteTypeChangeRemovalPrompt } from '../../lib/noteTypeChangeFlow';
 import CardWebView from '../../components/CardWebView';
 import { alert, choose, confirm } from '../../lib/confirm';
+import { rememberSetDueDateInput } from '../../lib/setDueDateDefaults';
 import {
     gradeSelectedNow,
     parseDueRange,
@@ -214,6 +215,7 @@ export function DueDateModal({
                                     return;
                                 }
                                 setShowDueDialog(false);
+                                rememberSetDueDateInput('browser', dueInput);
                                 runSelectionAction(() => setSelectedDueDate(selectedActionCardIds, range, settings));
                             }}
                         ><Text style={styles.dialogButtonPrimaryText}>{l('Uygula', 'Apply')}</Text></TouchableOpacity>

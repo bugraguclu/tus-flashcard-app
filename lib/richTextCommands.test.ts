@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
     EDITOR_SHORTCUTS,
     isChangeCaseShortcut,
+    MAX_HISTORY_STEPS,
     PENDING_STYLE_MARKER,
     resolveEditorShortcut,
     richTextBridgeScript,
@@ -169,6 +170,96 @@ function createBlockDom(tagName: string, text: string) {
     };
     const bridge = new Function(`${richTextBridgeScript()}\nreturn createTusFormattingBridge;`)()(editor, dom);
     return { bridge, calls };
+}
+
+/**
+ * A document made of real paragraph elements, for the controls that write a declaration onto the
+ * block itself. The style objects behave the way `CSSStyleDeclaration` does for the two things the
+ * bridge asks of them — a camel-cased property assignment and `removeProperty` with the hyphenated
+ * name — so a test can tell "the declaration was cleared" from "an empty one was written".
+ */
+function createParagraphDom(count = 1) {
+    const calls: string[] = [];
+    const editor: any = {
+        nodeType: 1,
+        tagName: 'DIV',
+        focus: () => { dom.activeElement = editor; },
+        contains: (node: any) => {
+            for (let walk = node; walk; walk = walk.parentNode) {
+                if (walk === editor) return true;
+            }
+            return false;
+        },
+    };
+
+    const makeStyle = () => {
+        const style: any = {
+            removeProperty(name: string) {
+                delete style[name.replace(/-([a-z])/g, (_: string, letter: string) => letter.toUpperCase())];
+            },
+        };
+        return style;
+    };
+
+    const paragraphs: any[] = [];
+    const texts: any[] = [];
+    for (let index = 0; index < count; index += 1) {
+        const paragraph: any = { nodeType: 1, tagName: 'P', style: makeStyle(), parentNode: editor };
+        const text: any = { nodeType: 3, nodeValue: `line ${index + 1}`, parentNode: paragraph, length: 6 };
+        paragraph.firstChild = text;
+        paragraphs.push(paragraph);
+        texts.push(text);
+    }
+
+    // No `compareBoundaryPoints`: `rangeHoldsNode` treats a range it cannot measure as holding the
+    // node, so a selection reported as spanning the document reaches every paragraph. The block
+    // walk is what these tests are about, not range arithmetic.
+    const makeRange = (start: any, end: any = start): any => ({
+        startContainer: start,
+        endContainer: end,
+        startOffset: 0,
+        endOffset: start === end ? 0 : 1,
+        commonAncestorContainer: start === end ? start : editor,
+        collapsed: start === end,
+        selectNodeContents(node: any) { this.startContainer = node; this.endContainer = node; this.commonAncestorContainer = node; },
+        collapse() { this.collapsed = true; this.endContainer = this.startContainer; },
+        cloneRange() { return { ...this }; },
+    });
+
+    let currentRange: any = makeRange(texts[0]);
+    const selection = {
+        get rangeCount() { return currentRange ? 1 : 0; },
+        getRangeAt: () => currentRange,
+        removeAllRanges() { calls.push('removeAllRanges'); currentRange = null; },
+        addRange(range: any) { calls.push('addRange'); currentRange = range; },
+    };
+
+    const dom: any = {
+        activeElement: editor,
+        hasFocus: () => true,
+        getSelection: () => selection,
+        createRange: () => makeRange(editor),
+        queryCommandState: () => false,
+        queryCommandValue: () => '',
+        execCommand: (command: string) => { calls.push(`exec:${command}`); return true; },
+        getElementById: () => null,
+        createTreeWalker: (_root: any) => {
+            let cursor = -1;
+            return { nextNode: () => { cursor += 1; return texts[cursor] ?? null; } };
+        },
+    };
+
+    const bridge = new Function(`${richTextBridgeScript()}\nreturn createTusFormattingBridge;`)()(editor, dom);
+    return {
+        bridge,
+        calls,
+        paragraphs,
+        texts,
+        caretIn: (index: number) => { currentRange = makeRange(texts[index]); },
+        selectAll: () => { currentRange = makeRange(texts[0], texts[texts.length - 1]); },
+        caretContainer: () => currentRange?.startContainer ?? null,
+        detach: (index: number) => { paragraphs[index].parentNode = null; },
+    };
 }
 
 describe('rich text selection handling', () => {
@@ -411,6 +502,114 @@ describe('undo history accounting', () => {
         dom.bridge.editDocument(() => { dom.bridge.noteEdit('typing'); return true; });
 
         expect(dom.bridge.historyState().depth).toBe(1);
+    });
+});
+
+describe('paragraph styles and undo', () => {
+    it('puts the spacing back when the change is undone, and returns it on redo', () => {
+        const dom = createParagraphDom();
+
+        expect(dom.bridge.applyBlockStyle('lineHeight', '1.5')).toMatchObject({ applied: true });
+        expect(dom.paragraphs[0].style.lineHeight).toBe('1.5');
+
+        expect(dom.bridge.runCommand('undo', null)).toMatchObject({ applied: true });
+        expect(dom.paragraphs[0].style.lineHeight).toBeUndefined();
+
+        expect(dom.bridge.runCommand('redo', null)).toMatchObject({ applied: true });
+        expect(dom.paragraphs[0].style.lineHeight).toBe('1.5');
+    });
+
+    it('undoes the spacing itself instead of handing the press to WebKit', () => {
+        const dom = createParagraphDom();
+        dom.bridge.runCommand('bold', null);
+        dom.bridge.applyBlockStyle('lineHeight', '2');
+        dom.calls.length = 0;
+
+        // The regression this guards: WebKit records only its own editing commands, so asking it to
+        // undo here would step over the spacing and take the bold with it.
+        dom.bridge.runCommand('undo', null);
+        expect(dom.paragraphs[0].style.lineHeight).toBeUndefined();
+        expect(dom.calls).not.toContain('exec:undo');
+
+        // The bold is still the next thing to undo, and that one is WebKit's.
+        dom.bridge.runCommand('undo', null);
+        expect(dom.calls).toContain('exec:undo');
+        expect(dom.bridge.historyState()).toMatchObject({ canUndo: false });
+    });
+
+    it('clears the declaration rather than writing an empty one, and can undo the clearing', () => {
+        const dom = createParagraphDom();
+        dom.bridge.applyBlockStyle('lineHeight', '1.5');
+
+        dom.bridge.applyBlockStyle('lineHeight', '');
+        expect('lineHeight' in dom.paragraphs[0].style).toBe(false);
+
+        dom.bridge.runCommand('undo', null);
+        expect(dom.paragraphs[0].style.lineHeight).toBe('1.5');
+    });
+
+    it('does not add a step for a press that would write the value the paragraph already has', () => {
+        const dom = createParagraphDom();
+        dom.bridge.applyBlockStyle('lineHeight', '1.5');
+
+        expect(dom.bridge.applyBlockStyle('lineHeight', '1.5')).toMatchObject({ applied: false });
+        expect(dom.bridge.historyState().depth).toBe(1);
+    });
+
+    it('covers every paragraph the selection touches and restores all of them together', () => {
+        const dom = createParagraphDom(3);
+        dom.selectAll();
+
+        dom.bridge.applyBlockStyle('lineHeight', '2');
+        expect(dom.paragraphs.map((paragraph: any) => paragraph.style.lineHeight)).toEqual(['2', '2', '2']);
+
+        // One step for the press, not one per paragraph: Word's paragraph menu undoes in a press.
+        expect(dom.bridge.historyState().depth).toBe(1);
+        dom.bridge.runCommand('undo', null);
+        expect(dom.paragraphs.map((paragraph: any) => paragraph.style.lineHeight)).toEqual([undefined, undefined, undefined]);
+    });
+
+    it('moves the caret back into the paragraph it restored', () => {
+        const dom = createParagraphDom(2);
+        dom.bridge.applyBlockStyle('lineHeight', '1.5');
+        dom.caretIn(1);
+
+        dom.bridge.runCommand('undo', null);
+        expect(dom.caretContainer()).toBe(dom.paragraphs[0]);
+    });
+
+    it('leaves a caret that is already inside the restored paragraph alone', () => {
+        const dom = createParagraphDom();
+        dom.bridge.applyBlockStyle('lineHeight', '1.5');
+        dom.calls.length = 0;
+
+        dom.bridge.runCommand('undo', null);
+        // Reassigning the selection is what clears WebKit's pending typing style, so an undo that
+        // did not need to move the caret must not touch it.
+        expect(dom.calls).not.toContain('addRange');
+        expect(dom.caretContainer()).toBe(dom.texts[0]);
+    });
+
+    it('takes the next step when the paragraph a spacing step recorded is gone', () => {
+        const dom = createParagraphDom();
+        dom.bridge.runCommand('bold', null);
+        dom.bridge.applyBlockStyle('lineHeight', '1.5');
+        dom.detach(0);
+        dom.calls.length = 0;
+
+        // Nothing left to put the declaration back on, so the press must reach the edit under it
+        // rather than report a move that did not happen.
+        expect(dom.bridge.runCommand('undo', null)).toMatchObject({ applied: true });
+        expect(dom.calls).toContain('exec:undo');
+        expect(dom.bridge.historyState()).toMatchObject({ canUndo: false });
+    });
+
+    it('stops the stack growing without bound, since a style step holds on to its elements', () => {
+        const dom = createParagraphDom();
+
+        for (let index = 0; index < MAX_HISTORY_STEPS + 50; index += 1) dom.bridge.noteEdit('command');
+
+        expect(dom.bridge.historyState().depth).toBe(MAX_HISTORY_STEPS);
     });
 });
 

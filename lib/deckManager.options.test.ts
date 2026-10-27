@@ -7,6 +7,7 @@ import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 import { DEFAULT_DECK_CONFIG } from './models';
 import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 import { CUSTOM_STUDY_PREVIEW_DELAYS } from './customStudy';
+import { CATALOG_PACK_ID } from './catalogRows';
 
 const dbHolder = vi.hoisted(() => ({ db: null as any }));
 
@@ -105,17 +106,17 @@ describe('moveDeckUnder', () => {
         expect(getDeckByName('A::C')).toBeNull();
     });
 
-    it('adds a numeric suffix instead of failing when the destination name exists', () => {
+    it('appends Anki\'s + suffix instead of failing when the destination name exists', () => {
         createDeck('Python::Veri Yapıları::Varsayılan');
-        createDeck('Python::Veri Yapıları::Varsayılan (1)');
+        createDeck('Python::Veri Yapıları::Varsayılan+');
         const source = createDeck('Varsayılan');
         createDeck('Varsayılan::Alt Deste');
 
         const movedName = moveDeckUnder(source.id, 'Python::Veri Yapıları');
 
-        expect(movedName).toBe('Python::Veri Yapıları::Varsayılan (2)');
-        expect(getDeckByName('Python::Veri Yapıları::Varsayılan (2)')?.id).toBe(source.id);
-        expect(getDeckByName('Python::Veri Yapıları::Varsayılan (2)::Alt Deste')).not.toBeNull();
+        expect(movedName).toBe('Python::Veri Yapıları::Varsayılan++');
+        expect(getDeckByName('Python::Veri Yapıları::Varsayılan++')?.id).toBe(source.id);
+        expect(getDeckByName('Python::Veri Yapıları::Varsayılan++::Alt Deste')).not.toBeNull();
         expect(getDeckByName('Varsayılan')).toBeNull();
     });
 
@@ -250,11 +251,11 @@ describe('getPopulatedDecksForScope', () => {
 });
 
 describe('getAvailableDeckName', () => {
-    it('returns the first free PC-style numbered leaf name', () => {
+    it('appends + until the name is free, as Anki\'s ensure_deck_name_unique does', () => {
         createDeck('Python::Varsayılan');
-        createDeck('Python::Varsayılan (1)');
+        createDeck('Python::Varsayılan+');
 
-        expect(getAvailableDeckName('Python::Varsayılan')).toBe('Python::Varsayılan (2)');
+        expect(getAvailableDeckName('Python::Varsayılan')).toBe('Python::Varsayılan++');
         expect(getAvailableDeckName('Python::Yeni')).toBe('Python::Yeni');
     });
 
@@ -266,9 +267,26 @@ describe('getAvailableDeckName', () => {
         const availableName = getAvailableDeckSubtreeName(source.id, 'Yeni');
         renameDeck(source.id, availableName);
 
-        expect(availableName).toBe('Yeni (1)');
-        expect(getDeckByName('Yeni (1)')?.id).toBe(source.id);
-        expect(getDeckByName('Yeni (1)::Alt Deste')).not.toBeNull();
+        expect(availableName).toBe('Yeni+');
+        expect(getDeckByName('Yeni+')?.id).toBe(source.id);
+        expect(getDeckByName('Yeni+::Alt Deste')).not.toBeNull();
+    });
+
+    it('a rename to a full path moves the deck under a new parent, as Anki\'s Rename does', () => {
+        const child = createDeck('Eski::Çocuk');
+        renameDeck(child.id, 'Yeni::Çocuk');
+        expect(getDeckByName('Yeni::Çocuk')?.id).toBe(child.id);
+        expect(getDeckByName('Yeni')).not.toBeNull();
+        expect(getDeckByName('Eski::Çocuk')).toBeNull();
+    });
+
+    it('a rename cannot move a deck under a catalog deck', () => {
+        const catalog = createDeck('BKA TUS');
+        // saveDeck refuses catalog rows, so the catalog installer's row is written directly.
+        dbHolder.db.runSync('UPDATE decks SET data = ? WHERE id = ?', JSON.stringify({ ...catalog, catalogPack: CATALOG_PACK_ID }), catalog.id);
+        const mine = createDeck('Benim');
+        expect(() => renameDeck(mine.id, 'BKA TUS::Benim')).toThrow(/Katalog/);
+        expect(getDeckByName('Benim')?.id).toBe(mine.id);
     });
 });
 
@@ -610,6 +628,18 @@ describe('presets', () => {
         expect(getDeckByName('A')!.configId).toBe(preset.id);
         expect(getDecksUsingConfig(preset.id).map((entry) => entry.name)).toEqual(['A']);
         expect(getDeckConfig(preset.id).newPerDay).toBe(DEFAULT_DECK_CONFIG.newPerDay);
+    });
+
+    it('a cloned preset does not inherit catalog ownership or its source package', () => {
+        const source = createPreset('Kaynak');
+        dbHolder.db.runSync(
+            'UPDATE deck_configs SET data = ? WHERE id = ?',
+            JSON.stringify({ ...getDeckConfig(source.id), catalogPack: CATALOG_PACK_ID, sourcePackageId: 'pkg-1' }),
+            source.id,
+        );
+        const cloned = createPreset('Kopya', source.id);
+        expect(getDeckConfig(cloned.id).catalogPack).toBeUndefined();
+        expect(getDeckConfig(cloned.id).sourcePackageId).toBeUndefined();
     });
 
     it('deleting a preset sends its decks back to the shared default', () => {
