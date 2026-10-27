@@ -220,11 +220,22 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
         restore(stack[stack.length - 1]);
     };
 
+    /** Empty the page, after asking: one stray tap on the bin should not cost a whole drawing. */
     const clear = () => {
         if (!annotationsRef.current.length) return;
-        remember(annotationsRef.current);
-        applyAnnotations([]);
-        setSelectedId(null);
+        confirm(
+            l('Sayfa temizlensin mi?', 'Clear the page?'),
+            l(
+                'Sayfadaki çizimler, metinler ve görseller kaldırılacak. Fikrinizi değiştirirseniz geri alabilirsiniz.',
+                'Every drawing, label and picture on the page will be removed. You can undo this if you change your mind.',
+            ),
+            () => {
+                remember(annotationsRef.current);
+                applyAnnotations([]);
+                setSelectedId(null);
+            },
+            { destructive: true, confirmLabel: l('Temizle', 'Clear') },
+        );
     };
 
     /** A new paper, colour or shape. The drawing stays; a new shape is fitted, not stretched. */

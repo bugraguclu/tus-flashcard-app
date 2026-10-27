@@ -183,7 +183,7 @@ resmi alana ekler. **İptal** değişiklikleri atmadan önce sorar.
 📎 › **Boş tuvale çiz** çizim sayfasını doğrudan, son çiziminizdeki kağıtla açar. Parmağınızla
 çizin; alttaki çubukta **Kalem**, yarı saydam **Fosforlu**, dokunduğu yeri silen **Silgi**, **Metin**
 ve **Diğer** vardır. Altlarında renkler ve üç boy durur; her araç kendi renk ve boyunu hatırlar.
-Sayfanın üstündeki ↶ ve ↷ geri alır ve yineler, 🗑 sayfayı temizler (bu da geri alınabilir).
+Sayfanın üstündeki ↶ ve ↷ geri alır ve yineler, 🗑 önce sorup sayfayı temizler (bu da geri alınabilir).
 
 **Metin** seçiliyken sayfaya dokunun, yazın ve **Ekle**'ye dokunun. Bir metni sürükleyerek taşıyın,
 dokunarak değiştirin; seçili metnin rengi ve boyu alttan değişir, köşesindeki 🗑 onu siler.

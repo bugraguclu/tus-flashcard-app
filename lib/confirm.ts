@@ -5,6 +5,8 @@ import { userFacingErrorMessage } from './userFacingError';
 export interface ConfirmOptions {
     /** Style the confirm action as destructive (red) — for delete/overwrite actions. */
     destructive?: boolean;
+    /** The confirm button's own verb ("Clear", "Delete"); "OK" when left out. */
+    confirmLabel?: string;
 }
 
 /** A dialog request handed to the web DialogHost (see components/DialogHost.tsx). */
@@ -47,7 +49,7 @@ export function confirm(
 ): void {
     const safeMessage = userFacingErrorMessage(message);
     if (webHandler) {
-        webHandler({ kind: 'confirm', title, message: safeMessage, destructive: !!options.destructive, onAccept: onConfirm });
+        webHandler({ kind: 'confirm', title, message: safeMessage, destructive: !!options.destructive, acceptLabel: options.confirmLabel, onAccept: onConfirm });
         return;
     }
 
@@ -60,7 +62,7 @@ export function confirm(
 
     Alert.alert(title, safeMessage, [
         { text: translateActive('common.cancel'), style: 'cancel' },
-        { text: translateActive('common.ok'), style: options.destructive ? 'destructive' : 'default', onPress: onConfirm },
+        { text: options.confirmLabel ?? translateActive('common.ok'), style: options.destructive ? 'destructive' : 'default', onPress: onConfirm },
     ]);
 }
 
@@ -85,6 +87,7 @@ export function confirmAsync(
                 title,
                 message: safeMessage,
                 destructive: !!options.destructive,
+                acceptLabel: options.confirmLabel,
                 onAccept: () => finish(true),
                 onCancel: () => finish(false),
             });
@@ -101,7 +104,7 @@ export function confirmAsync(
             safeMessage,
             [
                 { text: translateActive('common.cancel'), style: 'cancel', onPress: () => finish(false) },
-                { text: translateActive('common.ok'), style: options.destructive ? 'destructive' : 'default', onPress: () => finish(true) },
+                { text: options.confirmLabel ?? translateActive('common.ok'), style: options.destructive ? 'destructive' : 'default', onPress: () => finish(true) },
             ],
             { cancelable: true, onDismiss: () => finish(false) },
         );

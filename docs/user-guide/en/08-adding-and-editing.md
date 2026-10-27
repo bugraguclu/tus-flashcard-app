@@ -180,7 +180,7 @@ before discarding changes.
 used. Draw with a finger; the bar at the bottom has **Pen**, a see-through **Highlighter**, an
 **Eraser** that rubs out what it passes over, **Text** and **More**. Below them sit the colours and
 three sizes; each tool keeps its own colour and size. ↶ and ↷ above the page undo and redo, and 🗑
-clears the page (that can be undone too).
+asks, then clears the page (that can be undone too).
 
 With **Text** chosen, tap the page, type and tap **Add**. Drag a label to move it and tap it to
 change it; the colours and sizes below restyle the selected label, and the 🗑 on its corner removes
