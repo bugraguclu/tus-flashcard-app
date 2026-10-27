@@ -42,8 +42,6 @@ export interface ApkgImportOptions {
     rolloverHour?: number;
     /** Injectable for tests. */
     nowMs?: number;
-    /** Original picker filename, retained for byte-identical pristine export. */
-    fileName?: string;
     /** Injectable for tests; defaults to the web sql.js opener. */
     openReader?: (bytes: Uint8Array) => Promise<ApkgReader>;
 }

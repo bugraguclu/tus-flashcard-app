@@ -9,6 +9,7 @@ import { BUILTIN_NOTE_TYPES, type AnkiCard, type Deck, type Note, type NoteType 
 import { getDB } from './db';
 import { getAllDecks } from './deckManager';
 import { isCatalogDeck, isCatalogNote, PaidCatalogProtectionError } from './catalogProtection';
+import { decodeEntitiesLikeAnki } from './noteChecksum';
 
 function escapeField(value: string): string {
     // Anki's text exporter uses real CSV quoting, even though the separator is a tab.
@@ -30,29 +31,25 @@ function stripRedundantSections(value: string): string {
 
 /**
  * Anki's "Include HTML and media references" option, unchecked: the field is reduced to the line
- * of text a human reads. Media markup is removed rather than turned into a placeholder — the
- * exported file is data, and an importer must not read "🖼️" back as note content.
+ * of text Anki writes for it. A line break, a bare `<div>` and a newline each become one space;
+ * sound and TTS tags, comments, scripts, styles and every other tag are dropped; entities are
+ * decoded as Anki decodes them, a non-breaking space to a plain one; and the ends are trimmed. Spaces inside are kept as they
+ * are, and media leaves nothing behind — the file is data, so no placeholder is invented for it.
+ * Checked against Anki 26.09.3's text exports (lib/exportNotes.test.ts).
  *
  * https://docs.ankiweb.net/exporting.html
  */
 export function fieldToPlainText(value: string): string {
-    return stripRedundantSections(value)
-        // Anki's AV tags carry no readable text of their own.
-        .replace(/\[sound:[^\]]*\]/gi, ' ')
-        .replace(/\[anki:tts\b[^\]]*\][\s\S]*?\[\/anki:tts\]/gi, ' ')
-        .replace(/<(?:script|head)\b[^>]*>[\s\S]*?<\/(?:script|head)>/gi, ' ')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/&nbsp;/gi, ' ')
-        .replace(/&lt;/gi, '<')
-        .replace(/&gt;/gi, '>')
-        .replace(/&quot;/gi, '"')
-        .replace(/&#0?39;/g, "'")
-        .replace(/&#x27;/gi, "'")
-        // '&amp;' last, so an encoded '&amp;lt;' does not decay into a tag delimiter.
-        .replace(/&amp;/gi, '&')
-        .replace(/\s+/g, ' ')
+    return decodeEntitiesLikeAnki(stripRedundantSections(value)
+        .replace(/<br\s*\/?>|<div>|\n/gi, ' ')
+        .replace(/\[sound:[^\]]*\]/gi, '')
+        .replace(/\[anki:tts\b[^\]]*\][\s\S]*?\[\/anki:tts\]/gi, '')
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
+        .replace(/<[^>]*>/g, ''))
         .trim();
 }
+
 
 export interface NoteTextExportOptions {
     withHtml?: boolean;
@@ -167,5 +164,6 @@ export function buildExportTextFromData(
         lines.push(row.join('\t'));
     }
 
-    return lines.join('\n');
+    // Anki ends every row, the last one too, with a newline.
+    return `${lines.join('\n')}\n`;
 }

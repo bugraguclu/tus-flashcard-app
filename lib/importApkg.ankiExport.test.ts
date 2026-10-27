@@ -59,7 +59,7 @@ function fixture(name: string): Uint8Array {
 /** Imports package bytes through the web build's own reader, the path the bug report came from. */
 function importPackage(bytes: Uint8Array, fileName: string, withScheduling = true) {
     return importApkg(bytes, {
-        subject: 'tus', topic: 'Anki', nowMs: NOW_MS, rolloverHour: ROLLOVER_HOUR, fileName, withScheduling,
+        subject: 'tus', topic: 'Anki', nowMs: NOW_MS, rolloverHour: ROLLOVER_HOUR, withScheduling,
         openReader: openSqlJsReader,
     });
 }

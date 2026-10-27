@@ -1,0 +1,19 @@
+#separator:tab
+#html:false
+Kalbin doğal pacemaker'ı?	SA düğümü
+Digoksin	Na⁺/K⁺-ATPaz inhibitörü
+Na⁺/K⁺-ATPaz inhibitörü	Digoksin
+Aspirin COX'u [nasıl?] inhibe eder. TXA2	Aspirin COX'u geri dönüşümsüz inhibe eder. TXA2  Trombosit ömrü boyunca
+[...] COX'u geri dönüşümsüz inhibe eder. TXA2	Aspirin COX'u geri dönüşümsüz inhibe eder. TXA2  Trombosit ömrü boyunca
+Aspirin COX'u geri dönüşümsüz inhibe eder. [...]	Aspirin COX'u geri dönüşümsüz inhibe eder. TXA2  Trombosit ömrü boyunca
+Metoprolol	β1 seçici bloker Bradikardi
+β1 seçici bloker	Metoprolol
+Tip 2 diyabette ilk basamak?	Metformin
+"a < b && ""c"" ikinci satır   🫀"	x 1
+Yalnız ön	
+Lapse	Relearn
+Öğreniliyor	Adım
+Yaz	
+Kalp	Kalp                  Toggle Masks
+Kalp	Kalp                  Toggle Masks
+Kalp	Kalp                  Toggle Masks

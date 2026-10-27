@@ -99,8 +99,10 @@ added to your collection; none of your own cards are deleted. The options:
 <!-- In the app: Import deck › .colpkg warning app/import.tsx:916-923; Replace Collection? confirmation app/import.tsx:449-458 -->
 
 A collection package replaces your whole [collection](02-key-concepts.md#collection): decks,
-notes, cards, note types, presets and review history become what is in the package. The media files
-on this device, your app settings, your Stopwatch records and your backups stay as they are.
+notes, cards, note types, presets and review history become what is in the package. As in Anki, the
+collection also brings its own **Next day starts at**, learn ahead limit, timebox, FSRS switch and
+daily-limit rules. The media files on this device, your other app settings, your Stopwatch records
+and your backups stay as they are.
 
 1. Choose the file. Instead of options you see a warning.
 2. Tap **Import deck** and confirm **Replace Collection?** with **OK**.
@@ -214,10 +216,11 @@ There are four ways to open the **Export** screen:
 - In the **Card Browser**, select cards and tap **More** › **Export cards** (in notes view,
   **Export notes**). The other cards of the selected cards' notes are included too.
 
-1. Tick the decks in the **Decks to export** list. Tapping a parent deck selects its subdecks as
-   well; **Select all** and **Clear** change them all at once.
-2. Choose the **Export format** and the **Include** options (below).
-3. Tap **Export**. On iPhone the share sheet opens: keep the file with **Save to Files**, or send it
+1. Choose the **Export format** (below).
+2. For a deck package or a text file, tick the decks in the **Decks to export** list. Tapping a
+   parent deck selects its subdecks as well; **Select all** and **Clear** change them all at once.
+   A collection package is always the whole collection, so it has no list.
+3. Choose the **Include** options (below), then tap **Export**. On iPhone the share sheet opens: keep the file with **Save to Files**, or send it
    with AirDrop or Mail. The screen shows how many notes, cards and media files were exported.
 
 The TUS Cards pack and filtered decks are not in this list. The exported file is not encrypted;
@@ -232,7 +235,7 @@ send it only to people and places you trust.
 
 | Format | What it contains | When to use it |
 | --- | --- | --- |
-| **Anki Collection Package (.colpkg)** | The whole collection, with study progress, review history and presets. | Moving to a new device. Offered only when every deck is selected; not available from the **Card Browser**. |
+| **Anki Collection Package (.colpkg)** | The whole collection, with study progress, review history, presets, the collection's settings and every media file. | Moving to a new device. Not available from the **Card Browser**. |
 | **Anki Deck Package (.apkg)** | The decks or cards you chose, the note types they use, and media. | Sharing a deck, or moving part of your collection. |
 | **Notes in Plain Text (.txt)** | One note per line, fields separated by tabs, with `#` lines at the top. | Editing in a spreadsheet and importing again. |
 | **Cards in Plain Text (.txt)** | One card per line: question and answer as they appear on the card. | Reading or printing; carries no note type information. |
@@ -249,23 +252,26 @@ For packages:
 
 - **Include media** (on): the images and sounds your cards use, as far as they are on this device,
   go into the package.
-- **Include scheduling information** (.apkg only, off): when on, cards keep their progress, review
+- **Include scheduling information** (.apkg only; on, but off when the screen is opened from one
+  deck): when on, cards keep their progress, review
   history and flags. When off, cards go out as new cards; history, flags and the `marked` and
   `leech` tags are removed. Turn it on when you move your own progress; leave it off when you share
   a deck with someone.
-- **Include deck presets** (.apkg only, on): the decks' presets go into the package too.
-- **.colpkg** is always exported with progress and presets.
+- **Include deck presets** (.apkg only, off): the decks' presets go into the package too.
+- **Support older Anki versions** (off): writes the package so that Anki versions before 2.1.50
+  can open it too.
+- **.colpkg** is always exported with progress, presets and the collection's settings.
 
 For text files:
 
 - **Include HTML and media references** (on): when off, fields are turned into plain text and image
   and sound references are removed.
-- For **Notes in Plain Text** also **Include tags**, **Include deck name**, **Include note type
-  name** and **Include unique identifier** (all on). With the unique identifier included, importing
+- For **Notes in Plain Text** also **Include tags** (on), **Include deck name**, **Include note type
+  name** and **Include unique identifier** (off). With the unique identifier included, importing
   the file again later updates the same notes instead of creating copies.
 
-> **Different from Anki:** Filtered decks are never put into a deck package (.apkg). Cards that are
-> in a filtered deck at that moment are exported as if they were back in their own decks.
+Exports are written the way Anki writes them, so a file can go between TusAnkiM and Anki as many
+times as you like without anything in it changing.
 
 <a id="move-to-new-device"></a>
 ## Moving your collection to a new device

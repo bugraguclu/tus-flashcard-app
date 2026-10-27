@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
@@ -18,6 +18,7 @@ import { userFacingErrorMessage } from '../lib/userFacingError';
 import { readBackup } from '../lib/backup';
 import { parseBackupExportSource } from '../lib/backupExport';
 
+/** Anki's export formats, in the order of its dialog. */
 const FORMATS: { id: AnkiExportFormat; tr: string; en: string }[] = [
     { id: 'colpkg', tr: 'Anki Koleksiyon Paketi (.colpkg)', en: 'Anki Collection Package (.colpkg)' },
     { id: 'apkg', tr: 'Anki Deste Paketi (.apkg)', en: 'Anki Deck Package (.apkg)' },
@@ -77,17 +78,16 @@ export default function ExportScreen() {
     const [includeGuid, setIncludeGuid] = useState(false);
     // Anki's "Support older Anki versions", off by default: packages use the current format.
     const [legacySupport, setLegacySupport] = useState(false);
-    const [pickerOpen, setPickerOpen] = useState(false);
     const [busy, setBusy] = useState(false);
     // Anki confirms what an export actually contained instead of closing silently.
     const [summary, setSummary] = useState<string[] | null>(null);
     const allDecksSelected = exportableDecks.length > 0
         && exportableDecks.every((deck) => selectedDeckIds.has(deck.id));
-    const availableFormats = selectionExport || !allDecksSelected
-        ? FORMATS.filter((item) => item.id !== 'colpkg')
-        : FORMATS;
-    const selected = FORMATS.find((item) => item.id === format)!;
+    // A collection package is always the whole collection, so a selection of cards cannot be one.
+    const availableFormats = selectionExport ? FORMATS.filter((item) => item.id !== 'colpkg') : FORMATS;
     const packageFormat = format === 'apkg' || format === 'colpkg';
+    const choosesDecks = !selectionExport && format !== 'colpkg';
+    const nothingSelected = !recoveryArtifact && choosesDecks && selectedDeckIds.size === 0;
 
     const handleBack = () => {
         if (backupExport) {
@@ -142,10 +142,6 @@ export default function ExportScreen() {
     }, [backupName, l]);
 
     useEffect(() => {
-        if (!sourceLoading && exportableDecks.length > 0 && format === 'colpkg' && !allDecksSelected) setFormat('apkg');
-    }, [allDecksSelected, exportableDecks.length, format, sourceLoading]);
-
-    useEffect(() => {
         if (!deckName) return;
         const all = getAllDecks();
         const isRequestedCatalog = all.some((d) => (d.name === deckName || d.name.startsWith(`${deckName}::`)) && isCatalogDeck(d));
@@ -167,7 +163,7 @@ export default function ExportScreen() {
             alert(t('common.error'), l('Dışa aktarılacak seçili kart bulunamadı.', 'No selected cards are available to export.'));
             return;
         }
-        if (!recoveryArtifact && !selectionExport && selectedDeckIds.size === 0) {
+        if (nothingSelected) {
             alert(t('common.error'), l('Dışa aktarılacak en az bir deste seçin.', 'Select at least one deck to export.'));
             return;
         }
@@ -178,7 +174,8 @@ export default function ExportScreen() {
         setSummary(null);
         try {
             const artifact = recoveryArtifact ?? await buildAnkiExport(format, unchangedDeckScope ? deckName : undefined, includeMedia, selectedCardIds, {
-                selectedDeckIds: selectionExport || format === 'colpkg' ? undefined : [...selectedDeckIds],
+                // Every deck selected is Anki's "All Decks": the whole collection.
+                selectedDeckIds: !choosesDecks || allDecksSelected ? undefined : [...selectedDeckIds],
                 includeScheduling,
                 includeDeckConfigs,
                 includeHtml,
@@ -252,103 +249,75 @@ export default function ExportScreen() {
                 {sourceError ? <Text style={styles.sourceError}>{sourceError}</Text> : null}
                 {!sourceLoading && !sourceError ? <>
                 {recoveryArtifact ? <Text style={styles.backupNoticeText}>{l('Bu kopya hasarlı satırları kurtarma için saklar. Ham JSON dosyasını paylaşabilirsiniz; doğrudan geri yüklenemez.', 'This copy preserves damaged rows for recovery. You can share the raw JSON file; it cannot be restored directly.')}</Text> : <>
-                {!selectionExport ? (
+                <Text style={styles.label}>{l('Dışa aktarma biçimi', 'Export format')}</Text>
+                <View accessibilityRole="radiogroup">
+                    {availableFormats.map((item) => (
+                        <TouchableOpacity
+                            key={item.id}
+                            style={styles.checkboxRow}
+                            onPress={() => setFormat(item.id)}
+                            accessibilityRole="radio"
+                            accessibilityState={{ selected: item.id === format }}
+                            aria-checked={item.id === format}
+                        >
+                            <View style={[styles.radio, item.id === format && styles.radioSelected]}>
+                                {item.id === format ? <View style={styles.radioDot} /> : null}
+                            </View>
+                            <Text style={styles.checkboxText}>{l(item.tr, item.en)}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {choosesDecks ? (
                     <DeckExportSelector
                         decks={exportableDecks}
                         selectedIds={selectedDeckIds}
                         onChange={setSelectedDeckIds}
                         initiallyExpandedDeck={deckName}
                     />
-                ) : null}
-                {selectionExport ? (
-                    <Text style={styles.selectionCaption}>{l(`${selectedCardIds?.length ?? 0} seçili kart dışa aktarılacak.`, `${selectedCardIds?.length ?? 0} selected cards will be exported.`)}</Text>
-                ) : null}
-                <Text style={styles.label}>{l('Dışa aktarma biçimi:', 'Export format:')}</Text>
-                <TouchableOpacity style={styles.selector} onPress={() => setPickerOpen(true)} accessibilityRole="button">
-                    <Text style={styles.selectorText}>{l(selected.tr, selected.en)}</Text>
-                    <Text style={styles.chevron}>▾</Text>
-                </TouchableOpacity>
-
-                {packageFormat ? (
-                    <View style={styles.includeBlock}>
-                        <Text style={styles.label}>{l('Dahil et:', 'Include:')}</Text>
-                        <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeMedia((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeMedia }} aria-checked={includeMedia}>
-                            <View style={[styles.checkbox, includeMedia && styles.checkboxChecked]}>
-                                {includeMedia ? <Text style={styles.checkmark}>✓</Text> : null}
-                            </View>
-                            <Text style={styles.checkboxText}>{l('Medyayı dahil et', 'Include media')}</Text>
-                        </TouchableOpacity>
-                        {backupExport ? (
-                            <Text style={styles.optionHint}>{l(
-                                'JSON yedeği medya dosyalarını saklamaz. Açıkken yalnızca bu cihazda hâlâ bulunan eşleşen medya eklenir.',
-                                'JSON backups do not store media files. When enabled, only matching media still present on this device is included.',
-                            )}</Text>
-                        ) : null}
-                        {format === 'apkg' ? (
-                            <>
-                                <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeScheduling((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeScheduling }} aria-checked={includeScheduling}>
-                                    <View style={[styles.checkbox, includeScheduling && styles.checkboxChecked]}>
-                                        {includeScheduling ? <Text style={styles.checkmark}>✓</Text> : null}
-                                    </View>
-                                    <View style={styles.optionCopy}>
-                                        <Text style={styles.checkboxText}>{l('Çalışma programını dahil et', 'Include scheduling information')}</Text>
-                                        <Text style={styles.optionHint}>{l('Kapalıysa kartlar yeni duruma döner; geçmiş, bayraklar, “marked” ve “leech” etiketleri temizlenir.', 'When off, cards are reset to New; history, flags, and “marked” and “leech” tags are removed.')}</Text>
-                                    </View>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeDeckConfigs((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeDeckConfigs }} aria-checked={includeDeckConfigs}>
-                                    <View style={[styles.checkbox, includeDeckConfigs && styles.checkboxChecked]}>
-                                        {includeDeckConfigs ? <Text style={styles.checkmark}>✓</Text> : null}
-                                    </View>
-                                    <Text style={styles.checkboxText}>{l('Deste ayarlarını dahil et', 'Include deck presets')}</Text>
-                                </TouchableOpacity>
-                            </>
-                        ) : (
-                            <Text style={styles.optionHint}>{l('.colpkg tüm koleksiyonu çalışma programıyla birlikte içerir.', '.colpkg always contains the whole collection with scheduling.')}</Text>
-                        )}
-                        <TouchableOpacity style={styles.checkboxRow} onPress={() => setLegacySupport((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: legacySupport }} aria-checked={legacySupport}>
-                            <View style={[styles.checkbox, legacySupport && styles.checkboxChecked]}>
-                                {legacySupport ? <Text style={styles.checkmark}>✓</Text> : null}
-                            </View>
-                            <View style={styles.optionCopy}>
-                                <Text style={styles.checkboxText}>{l('Eski Anki sürümlerini destekle', 'Support older Anki versions')}</Text>
-                                <Text style={styles.optionHint}>{l('Paketi, yeni biçimi açamayan eski Anki sürümlerinin (2.1.50 öncesi) de açabileceği biçimde yazar.', 'Writes the package in the format Anki versions before 2.1.50, which cannot read the current one, also open.')}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
                 ) : (
-                    <View style={styles.includeBlock}>
-                        <Text style={styles.label}>{l('Dahil et:', 'Include:')}</Text>
-                        <TouchableOpacity style={styles.checkboxRow} onPress={() => setIncludeHtml((value) => !value)} accessibilityRole="checkbox" accessibilityState={{ checked: includeHtml }} aria-checked={includeHtml}>
-                            <View style={[styles.checkbox, includeHtml && styles.checkboxChecked]}>{includeHtml ? <Text style={styles.checkmark}>✓</Text> : null}</View>
-                            <Text style={styles.checkboxText}>{l('HTML ve medya referanslarını dahil et', 'Include HTML and media references')}</Text>
-                        </TouchableOpacity>
-                        {format === 'notesTxt' ? (
-                            <>
-                                {([
-                                    [includeTags, setIncludeTags, l('Etiketleri dahil et', 'Include tags')],
-                                    [includeDeck, setIncludeDeck, l('Deste adını dahil et', 'Include deck name')],
-                                    [includeNotetype, setIncludeNotetype, l('Not türü adını dahil et', 'Include note type name')],
-                                    [includeGuid, setIncludeGuid, l('Benzersiz kimliği dahil et', 'Include unique identifier')],
-                                ] as const).map(([checked, setter, label]) => (
-                                    <TouchableOpacity key={label} style={styles.checkboxRow} onPress={() => setter(!checked)} accessibilityRole="checkbox" accessibilityState={{ checked }} aria-checked={checked}>
-                                        <View style={[styles.checkbox, checked && styles.checkboxChecked]}>{checked ? <Text style={styles.checkmark}>✓</Text> : null}</View>
-                                        <Text style={styles.checkboxText}>{label}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </>
-                        ) : null}
-                    </View>
+                    <Text style={styles.selectionCaption}>{selectionExport
+                        ? l(`${selectedCardIds?.length ?? 0} seçili kart dışa aktarılacak.`, `${selectedCardIds?.length ?? 0} selected cards will be exported.`)
+                        : l('Koleksiyonun tamamı, çalışma programıyla birlikte.', 'The whole collection, with its scheduling.')}</Text>
                 )}
 
+                <Text style={styles.label}>{l('Dahil et', 'Include')}</Text>
+                {packageFormat ? <>
+                    {format === 'apkg' ? <>
+                        <CheckboxRow styles={styles} checked={includeScheduling} onToggle={setIncludeScheduling}
+                            label={l('Çalışma programını dahil et', 'Include scheduling information')}
+                            hint={l('Kapalıysa kartlar yeni duruma döner; geçmiş, bayraklar, “marked” ve “leech” etiketleri temizlenir.', 'When off, cards are reset to New; history, flags, and “marked” and “leech” tags are removed.')} />
+                        <CheckboxRow styles={styles} checked={includeDeckConfigs} onToggle={setIncludeDeckConfigs}
+                            label={l('Deste ayarlarını dahil et', 'Include deck presets')} />
+                    </> : null}
+                    <CheckboxRow styles={styles} checked={includeMedia} onToggle={setIncludeMedia}
+                        label={l('Medyayı dahil et', 'Include media')}
+                        hint={backupExport ? l(
+                            'JSON yedeği medya dosyalarını saklamaz. Açıkken yalnızca bu cihazda hâlâ bulunan eşleşen medya eklenir.',
+                            'JSON backups do not store media files. When enabled, only matching media still present on this device is included.',
+                        ) : undefined} />
+                    <CheckboxRow styles={styles} checked={legacySupport} onToggle={setLegacySupport}
+                        label={l('Eski Anki sürümlerini destekle', 'Support older Anki versions')}
+                        hint={l('Paketi, yeni biçimi açamayan eski Anki sürümlerinin (2.1.50 öncesi) de açabileceği biçimde yazar.', 'Writes the package in the format Anki versions before 2.1.50, which cannot read the current one, also open.')} />
+                </> : <>
+                    <CheckboxRow styles={styles} checked={includeHtml} onToggle={setIncludeHtml}
+                        label={l('HTML ve medya referanslarını dahil et', 'Include HTML and media references')} />
+                    {format === 'notesTxt' ? <>
+                        <CheckboxRow styles={styles} checked={includeTags} onToggle={setIncludeTags} label={l('Etiketleri dahil et', 'Include tags')} />
+                        <CheckboxRow styles={styles} checked={includeDeck} onToggle={setIncludeDeck} label={l('Deste adını dahil et', 'Include deck name')} />
+                        <CheckboxRow styles={styles} checked={includeNotetype} onToggle={setIncludeNotetype} label={l('Not türü adını dahil et', 'Include note type name')} />
+                        <CheckboxRow styles={styles} checked={includeGuid} onToggle={setIncludeGuid} label={l('Benzersiz kimliği dahil et', 'Include unique identifier')} />
+                    </> : null}
+                </>}
                 </>}
                 <View style={styles.actions}>
                     <TouchableOpacity
-                        style={[styles.actionButton, (!recoveryArtifact && !selectionExport && selectedDeckIds.size === 0) && styles.actionButtonDisabled]}
+                        style={[styles.actionButton, nothingSelected && styles.actionButtonDisabled]}
                         onPress={handleExport}
-                        disabled={busy || (!recoveryArtifact && !selectionExport && selectedDeckIds.size === 0)}
+                        disabled={busy || nothingSelected}
                         accessibilityRole="button"
                         accessibilityLabel={l('Dışa aktar', 'Export')}
-                        accessibilityState={{ disabled: busy || (!recoveryArtifact && !selectionExport && selectedDeckIds.size === 0), busy }}
+                        accessibilityState={{ disabled: busy || nothingSelected, busy }}
                     >
                         {busy ? <ActivityIndicator color={colors.white} /> : <Text style={styles.actionText}>{l('Dışa aktar', 'Export')}</Text>}
                     </TouchableOpacity>
@@ -364,21 +333,29 @@ export default function ExportScreen() {
                 </View>
             </ScrollView>
 
-            <Modal visible={pickerOpen} transparent animationType="fade" onRequestClose={() => setPickerOpen(false)}>
-                <View style={styles.overlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setPickerOpen(false)} />
-                    <View style={styles.pickerCard}>
-                        <ScrollView>
-                            {availableFormats.map((item) => (
-                                <TouchableOpacity key={item.id} style={[styles.formatOption, item.id === format && styles.formatOptionActive]} onPress={() => { setFormat(item.id); setPickerOpen(false); }}>
-                                    <Text style={[styles.formatOptionText, item.id === format && styles.formatOptionTextActive]}>{l(item.tr, item.en)}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
         </SafeAreaView>
+    );
+}
+
+type Styles = ReturnType<typeof createStyles>;
+
+function CheckboxRow({ styles, checked, onToggle, label, hint }: {
+    styles: Styles;
+    checked: boolean;
+    onToggle: (checked: boolean) => void;
+    label: string;
+    hint?: string;
+}) {
+    return (
+        <TouchableOpacity style={styles.checkboxRow} onPress={() => onToggle(!checked)} accessibilityRole="checkbox" accessibilityState={{ checked }} aria-checked={checked}>
+            <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                {checked ? <Text style={styles.checkmark}>✓</Text> : null}
+            </View>
+            <View style={styles.optionCopy}>
+                <Text style={styles.checkboxText}>{label}</Text>
+                {hint ? <Text style={styles.optionHint}>{hint}</Text> : null}
+            </View>
+        </TouchableOpacity>
     );
 }
 
@@ -387,7 +364,7 @@ function createStyles(colors: ColorScheme) {
         container: { flex: 1, backgroundColor: colors.bgPrimary },
         scrollContent: { flexGrow: 1, width: '100%', maxWidth: 760, alignSelf: 'center', justifyContent: 'flex-start', padding: Spacing.lg, paddingBottom: 100 },
         dialog: { backgroundColor: colors.bgCard, borderRadius: BorderRadius.lg, padding: Spacing.lg, gap: 8, borderWidth: 1, borderColor: colors.border },
-        label: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textPrimary },
+        label: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textPrimary, marginTop: Spacing.sm },
         selectionCaption: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm },
         backupNotice: { padding: Spacing.md, gap: 4, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.accent, backgroundColor: colors.accentLight, marginBottom: Spacing.sm },
         backupNoticeTitle: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '800' },
@@ -395,10 +372,9 @@ function createStyles(colors: ColorScheme) {
         backupNoticeText: { color: colors.textSecondary, fontSize: FontSize.xs, lineHeight: 17 },
         sourceLoader: { marginVertical: Spacing.xl },
         sourceError: { color: colors.btnAgain, fontSize: FontSize.sm, lineHeight: 20, textAlign: 'center', paddingVertical: Spacing.lg },
-        selector: { minHeight: 48, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgPrimary, paddingHorizontal: Spacing.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-        selectorText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-        chevron: { fontSize: 18, color: colors.textSecondary, marginLeft: 8 },
-        includeBlock: { gap: 10, marginTop: 8 },
+        radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.textMuted, alignItems: 'center', justifyContent: 'center' },
+        radioSelected: { borderColor: colors.accent },
+        radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
         checkboxRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10 },
         checkbox: { width: 22, height: 22, borderRadius: 3, borderWidth: 2, borderColor: colors.textMuted, alignItems: 'center', justifyContent: 'center' },
         checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
@@ -412,11 +388,5 @@ function createStyles(colors: ColorScheme) {
         actionButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md, borderRadius: BorderRadius.sm, backgroundColor: colors.accent },
         actionButtonDisabled: { opacity: 0.4 },
         actionText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
-        overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center', padding: Spacing.lg },
-        pickerCard: { width: '100%', maxWidth: 520, backgroundColor: colors.bgCard, borderRadius: BorderRadius.md, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
-        formatOption: { minHeight: 54, justifyContent: 'center', paddingHorizontal: Spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-        formatOptionActive: { backgroundColor: colors.accentLight },
-        formatOptionText: { fontSize: FontSize.md, color: colors.textPrimary },
-        formatOptionTextActive: { color: colors.accent, fontWeight: '700' },
     });
 }

@@ -42,7 +42,7 @@ const HTML4_ENTITIES: ReadonlyMap<string, number> = new Map([
  * `&#digits;` / `&#xhex;` reference ending in `;`. One invalid reference leaves the whole text
  * undecoded, as Anki does; after a successful decode every U+00A0 becomes a plain space.
  */
-function decodeEntitiesLikeAnki(text: string): string {
+export function decodeEntitiesLikeAnki(text: string): string {
     if (!text.includes('&')) return text;
     let out = '';
     let i = 0;

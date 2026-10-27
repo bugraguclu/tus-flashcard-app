@@ -65,7 +65,7 @@ describe('a package this app exports', () => {
         'carries what Anki needs to accept its decks (decks from %s)',
         async (fixture) => {
             await importApkg(new Uint8Array(readFileSync(path.join(FIXTURES, fixture))), {
-                subject: 'tus', topic: 'Anki', fileName: fixture, openReader: openSqlJsReader,
+                subject: 'tus', topic: 'Anki', openReader: openSqlJsReader,
             });
             const madeHere = createDeck('TUS Örnek::Burada yapıldı');
             saveAnkiCard({ ...getAllAnkiCards()[0], deckId: madeHere.id });
@@ -98,7 +98,7 @@ describe('the current package format ("Support older Anki versions" off)', () =>
     it('stores a zstd collection, zstd media and a protobuf media list that read back here', async () => {
         const fixture = 'anki-26.05-modern.apkg';
         await importApkg(new Uint8Array(readFileSync(path.join(FIXTURES, fixture))), {
-            subject: 'tus', topic: 'Anki', fileName: fixture, openReader: openSqlJsReader,
+            subject: 'tus', topic: 'Anki', openReader: openSqlJsReader,
         });
         const note = getAllNotes()[0];
         holder.media.set('oracle.png', new Uint8Array([137, 80, 78, 71, 1, 2, 3]));
@@ -118,7 +118,7 @@ describe('the current package format ("Support older Anki versions" off)', () =>
         holder.db = createAppDb(SQL);
         holder.media.clear();
         const result = await importApkg(artifact.bytes!, {
-            subject: 'tus', topic: 'Anki', fileName: 'latest.apkg', openReader: openSqlJsReader,
+            subject: 'tus', topic: 'Anki', openReader: openSqlJsReader,
         });
         expect(result.added).toBe(getAllNotes().length);
         expect(getAllNotes().some((imported) => imported.fields[0].includes('oracle.png'))).toBe(true);

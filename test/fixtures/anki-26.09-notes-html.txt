@@ -1,0 +1,18 @@
+#separator:tab
+#html:true
+#guid column:1
+#notetype column:2
+#deck column:3
+#tags column:9
+fx;Dcb`N)C	Basic	TUS Örnek::Kardiyoloji	Kalbin doğal pacemaker'ı?	"SA düğümü<img src=""kalp.png"">"				kardiyoloji marked Önemli
+y2&)K)}-v$	Basic (and reversed card)	TUS Örnek::Kardiyoloji	Digoksin	Na⁺/K⁺-ATPaz inhibitörü				TUS::Farmakoloji
+i><4@Kq^G4	Cloze	TUS Örnek::Kardiyoloji	{{c1::Aspirin}} COX'u {{c2::geri dönüşümsüz::nasıl?}} inhibe eder. {{c3::TXA2}}	Trombosit ömrü boyunca [sound:üfürüm.mp3]				TUS::Farmakoloji Önemli
+KrKQWN&SM@	Farmakoloji (TUS)	TUS Örnek::Farmakoloji::Otonom	Metoprolol	β1 seçici bloker	"Bradikardi<img src=""şema 2.png"">"			
+M_1/9`n.}8	Basic	TUS Örnek	Tip 2 diyabette ilk basamak?	Metformin				Şeker
+h=Cx5};?lh	Basic	TUS Örnek	"a &lt; b &amp;&amp; ""c""<br>ikinci satır &nbsp; 🫀"	"<div style=""color: red"">x</div><img src=""ekg.svg"">
+<ul><li>1</li></ul>"				etiket_alt::çizgi UPPER
+nuUW>s,%]%	Basic (optional reversed card)	TUS Örnek::Farmakoloji::Otonom	Yalnız ön					
+H%vuwobi4!	Basic	TUS Örnek::Kardiyoloji	Lapse	Relearn				leech
+O.Se_Nh)bt	Basic	TUS Örnek::Kardiyoloji	Öğreniliyor	Adım				
+e=@%.BLg;A	Basic (type in the answer)	TUS Örnek::Farmakoloji::Otonom	Yaz	cevap				
+Ay*/ENx?b|	Image Occlusion	TUS Örnek::Filtre	{{c1::image-occlusion:rect:left=.1:top=.1:width=.3:height=.2:oi=1}}{{c2::image-occlusion:ellipse:left=.5:top=.5:rx=.1:ry=.2}}{{c2::image-occlusion:text:left=.2:top=.3:text=Sol & sağ:scale=1.5:fs=0.04}}{{c3::image-occlusion:polygon:points=1,2 3,4 5,6:oi=1}}	"<img src=""kalp.png"">"	Kalp			

@@ -100,8 +100,9 @@ içeriği koleksiyonunuza eklenir; sizin kartlarınızdan hiçbiri silinmez. Se�
 
 Koleksiyon paketi, [koleksiyonunuzun](02-key-concepts.md#collection) tamamının yerine geçer:
 desteler, notlar, kartlar, not türleri, ayar grupları ve tekrar geçmişi paketteki hâline döner.
-Bu cihazdaki medya dosyaları, uygulama ayarlarınız, Kronometre kayıtlarınız ve yedekleriniz olduğu
-gibi kalır.
+Anki'de olduğu gibi koleksiyon kendi **Yeni gün başlangıcı**, ileriden öğrenme sınırı, zaman kutusu,
+FSRS anahtarı ve günlük sınır kurallarını da getirir. Bu cihazdaki medya dosyaları, diğer uygulama
+ayarlarınız, Kronometre kayıtlarınız ve yedekleriniz olduğu gibi kalır.
 
 1. Dosyayı seçin. Seçenekler yerine bir uyarı görürsünüz.
 2. **Deste içe aktar**'a dokunun; **Koleksiyon değiştirilsin mi?** sorusunu **Tamam** ile onaylayın.
@@ -215,10 +216,11 @@ okunamadığı için notların basit not türleriyle içe aktarıldığı durum.
 - **Kartlarım** ekranında kartları seçip **Diğer** › **Kartları dışa aktar** (notlar görünümünde
   **Notları dışa aktar**). Seçtiğiniz kartların notlarındaki diğer kartlar da dosyaya eklenir.
 
-1. **Dışa aktarılacak desteler** listesinde desteleri işaretleyin. Bir üst desteye dokunmak alt
-   destelerini de seçer; **Tümünü seç** ve **Temizle** hepsini birden değiştirir.
-2. **Dışa aktarma biçimi** ve **Dahil et** seçeneklerini belirleyin (aşağıda).
-3. **Dışa aktar**'a dokunun. iPhone'da paylaşım sayfası açılır: dosyayı **Dosyalar'a Kaydet** ile
+1. **Dışa aktarma biçimi**ni seçin (aşağıda).
+2. Deste paketi veya metin dosyası için **Dışa aktarılacak desteler** listesinde desteleri
+   işaretleyin. Bir üst desteye dokunmak alt destelerini de seçer; **Tümünü seç** ve **Temizle**
+   hepsini birden değiştirir. Koleksiyon paketi her zaman koleksiyonun tamamıdır, listesi yoktur.
+3. **Dahil et** seçeneklerini belirleyin (aşağıda) ve **Dışa aktar**'a dokunun. iPhone'da paylaşım sayfası açılır: dosyayı **Dosyalar'a Kaydet** ile
    saklayabilir, AirDrop veya Mail ile gönderebilirsiniz. Ekranda kaç not, kart ve medya dosyasının
    dışa aktarıldığı yazar.
 
@@ -234,7 +236,7 @@ TUS Kartları paketi ve filtrelenmiş desteler bu listede yer almaz. Dışa akta
 
 | Biçim | İçinde ne var? | Ne zaman kullanılır? |
 | --- | --- | --- |
-| **Anki Koleksiyon Paketi (.colpkg)** | Bütün koleksiyon, çalışma ilerlemesi, tekrar geçmişi ve ayar gruplarıyla. | Yeni cihaza geçerken. Yalnızca bütün desteler seçiliyken listelenir; **Kartlarım** ekranından açıldığında yoktur. |
+| **Anki Koleksiyon Paketi (.colpkg)** | Bütün koleksiyon; çalışma ilerlemesi, tekrar geçmişi, ayar grupları, koleksiyon ayarları ve bütün medya dosyalarıyla. | Yeni cihaza geçerken. **Kartlarım** ekranından açıldığında yoktur. |
 | **Anki Deste Paketi (.apkg)** | Seçtiğiniz desteler veya kartlar, kullandıkları not türleri ve medya. | Bir desteyi paylaşırken veya bir bölümünü taşırken. |
 | **Düz Metin Notları (.txt)** | Her not bir satırda, alanlar sekmeyle ayrılmış, başta `#` satırları. | Tabloda düzenleyip geri içe aktarmak için. |
 | **Düz Metin Kartları (.txt)** | Her kart bir satırda: soru ve cevap, kartta göründüğü hâliyle. | Okumak veya yazdırmak için; not türü bilgisi taşımaz. |
@@ -251,23 +253,26 @@ Paketlerde:
 
 - **Medyayı dahil et** (açık): Kartlarınızın kullandığı ve bu cihazda bulunan resim ve ses
   dosyaları pakete eklenir.
-- **Çalışma programını dahil et** (yalnızca .apkg, kapalı): Açıkken kartlar ilerlemeleri, tekrar
+- **Çalışma programını dahil et** (yalnızca .apkg; açık, ekran tek bir desteden açıldığında
+  kapalı): Açıkken kartlar ilerlemeleri, tekrar
   geçmişleri ve bayraklarıyla gider. Kapalıyken kartlar yeni kart olarak gider; geçmiş, bayraklar,
   `marked` ve `leech` etiketleri çıkarılır. Kendi ilerlemenizi taşırken açın, desteyi başkasıyla
   paylaşırken kapalı bırakın.
-- **Deste ayarlarını dahil et** (yalnızca .apkg, açık): Destelerin ayar grupları da pakete girer.
-- **.colpkg** her zaman ilerleme ve ayar gruplarıyla birlikte dışa aktarılır.
+- **Deste ayarlarını dahil et** (yalnızca .apkg, kapalı): Destelerin ayar grupları da pakete girer.
+- **Eski Anki sürümlerini destekle** (kapalı): Paketi, 2.1.50'den eski Anki sürümlerinin de
+  açabileceği biçimde yazar.
+- **.colpkg** her zaman ilerleme, ayar grupları ve koleksiyon ayarlarıyla birlikte dışa aktarılır.
 
 Metin dosyalarında:
 
 - **HTML ve medya referanslarını dahil et** (açık): Kapalıyken alanlar düz metne çevrilir; resim
   ve ses referansları çıkarılır.
-- **Düz Metin Notları** için ayrıca **Etiketleri dahil et**, **Deste adını dahil et**, **Not türü
-  adını dahil et** ve **Benzersiz kimliği dahil et** (hepsi açık). Benzersiz kimlik açıkken dosyayı
+- **Düz Metin Notları** için ayrıca **Etiketleri dahil et** (açık), **Deste adını dahil et**, **Not
+  türü adını dahil et** ve **Benzersiz kimliği dahil et** (kapalı). Benzersiz kimlik açıkken dosyayı
   sonradan geri içe aktardığınızda aynı notlar güncellenir, kopyaları oluşmaz.
 
-> **Anki'den farkı:** Deste paketine (.apkg) filtrelenmiş desteler girmez. O anda filtrelenmiş bir
-> destede duran kartlar kendi destelerine dönmüş olarak dışa aktarılır.
+Dışa aktarılan dosyalar Anki'nin yazdığı gibi yazılır; bir dosya TusAnkiM ile Anki arasında
+istediğiniz kadar gidip gelse de içindeki hiçbir şey değişmez.
 
 <a id="move-to-new-device"></a>
 ## Koleksiyonu yeni bir cihaza taşıma

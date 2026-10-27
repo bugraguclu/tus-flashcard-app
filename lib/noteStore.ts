@@ -16,7 +16,6 @@ import { learningLeftAfterDeckMove } from './deckPresetSteps';
 import { getDB } from './db';
 import { getSubjectIdSet } from './subjects';
 import { humanizeCardText } from './displayText';
-import { markSourcePackageDirty } from './ankiPackageArchive';
 import {
     assertCatalogCardMutable,
     assertCatalogCardsMovable,
@@ -68,7 +67,6 @@ function writeNote(note: Note, insertOnly: boolean): void {
                 || JSON.stringify(note.fields) !== JSON.stringify(parsed.fields))) {
                 note.catalogFieldsEdited = true;
             }
-            markSourcePackageDirty(parsed.sourcePackageId);
         } catch (e) {
             if (e instanceof PaidCatalogProtectionError) throw e;
             /* malformed legacy blobs are replaced below */
@@ -339,7 +337,6 @@ export function saveAnkiCard(card: AnkiCard, options: { replaceData?: boolean } 
                     }
                 }
             }
-            markSourcePackageDirty(existingCard.sourcePackageId);
         } catch (e) {
             if (e instanceof PaidCatalogProtectionError) throw e;
             /* malformed legacy blobs are replaced below */

@@ -11,7 +11,6 @@ import { getDB } from './db';
 import { translateActive } from './i18n';
 import { localDayNumber, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
-import { markSourcePackageDirty } from './ankiPackageArchive';
 import { clearDeckWhiteboards } from './whiteboardSession';
 import { returnFilteredDeckCardsHome } from './filteredDeckReturn';
 import {
@@ -160,11 +159,6 @@ export function saveDeck(deck: Deck): void {
     if (!existing || existing.name !== deck.name) {
         const collision = getDeckByName(deck.name);
         if (collision && collision.id !== deck.id) throw new Error(translateActive('decks.nameExists', { name: deck.name }));
-    }
-    if (existing?.data) {
-        try {
-            markSourcePackageDirty((JSON.parse(existing.data) as Deck).sourcePackageId);
-        } catch { /* malformed legacy blobs are replaced below */ }
     }
     db.runSync(
         'INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, ?, ?)',
@@ -413,7 +407,6 @@ export function renameDeck(id: number, newName: string): void {
                 ? newName
                 : `${newName}::${row.name.slice(oldPrefix.length)}`;
 
-            markSourcePackageDirty(parsed.sourcePackageId);
             parsed.name = resolvedName;
             parsed.mod = nowSec;
             parsed.usn = -1;

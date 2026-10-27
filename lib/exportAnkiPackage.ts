@@ -1,34 +1,29 @@
-import { withoutPackageSchedulingData } from './importApkgCardData';
 /** Anki-compatible package and plain-text export. Packages use Anki's schema-11
  * interchange database under the scheduler-v2 collection name understood by
  * current Anki, AnkiMobile and AnkiDroid. */
 
-import { FSRS_DEFAULT_DESIRED_RETENTION, FSRS_DEFAULT_HISTORICAL_RETENTION, formatFsrsCutoffDate } from './fsrs';
+import { withoutPackageSchedulingData } from './importApkgCardData';
 import { Platform } from 'react-native';
 import JSZip from 'jszip';
 import { deleteNativeDatabaseSync, openFtsSafeDatabaseSync } from './sqliteOpenOptions';
-import type { AnkiCard, Deck, DeckConfig, Note, NoteType } from './models';
-import { DEFAULT_DECK_CONFIG } from './models';
+import { BUILTIN_NOTE_TYPES, checksumField, generateGuid, type AnkiCard, type Deck, type DeckConfig, type Note, type NoteType } from './models';
 import { getAllAnkiCards, getAllNotes, getAllNoteTypes } from './noteManager';
 import { getAllDecks, getAllDeckConfigs } from './deckManager';
 import { getDB } from './db';
-import {
-    DEFAULT_SEARCH_LIMIT,
-    DEFAULT_SECOND_SEARCH_LIMIT,
-    FILTERED_SEARCH_ORDER,
-    parsePreviewDelays,
-} from './filteredDeckOptions';
-import { buildExportTextFromData } from './exportNotes';
+import { buildExportTextFromData, fieldToPlainText } from './exportNotes';
 import { renderCardHtml } from './templates';
-import { readMediaBytes } from './mediaStore';
+import { listStoredMediaFilenames, readMediaBytes } from './mediaStore';
 import { extractMediaFilenames } from './mediaAttachment';
-import { pristineOriginalForExport } from './ankiPackageArchive';
 import { LATEST_PACKAGE_META, mediaEntriesProtobuf, zstdStoredFrame } from './ankiPackageLatest';
 import { dayNumberToYmd, localDayNumber } from './ankiState';
-import { normalizeNewCardGatherOrder } from './queueBuild';
 import { loadSettings } from './storage';
-import { humanizeCardText } from './displayText';
 import { isCatalogCard, isCatalogDeck, isCatalogNote, PaidCatalogProtectionError } from './catalogProtection';
+import { stringifyAnkiJson } from './ankiJson';
+import { collectionConf, rememberedCollection, type AnkiCollectionMeta } from './ankiCollectionConfig';
+import type { AppSettings } from './types';
+import { ANKI_DEFAULT_PRESET, deckJson, noteTypeJson, presetJson } from './ankiSchema11';
+
+export { exportedReviewOrder, withoutPreservedReviewOrder } from './ankiSchema11';
 
 export type AnkiExportFormat = 'colpkg' | 'apkg' | 'notesTxt' | 'cardsTxt';
 
@@ -73,6 +68,10 @@ export interface ExportCollectionSource {
     revlog: Array<Record<string, any>>;
     graves: Array<Record<string, any>>;
     rolloverHour: number;
+    /** The collection's other shared options; a stored snapshot leaves them out. */
+    settings?: Partial<AppSettings>;
+    /** The creation day and settings of the collection a `.colpkg` replaced this one with. */
+    collection?: AnkiCollectionMeta | null;
     /** Present only when the source is a stored JSON snapshot. */
     backupName?: string;
     exportDate?: string;
@@ -94,6 +93,7 @@ function safeStem(deckName?: string): string {
 }
 
 function liveExportSource(): ExportCollectionSource {
+    const settings = loadSettings();
     return {
         notes: getAllNotes(),
         cards: getAllAnkiCards(),
@@ -102,235 +102,68 @@ function liveExportSource(): ExportCollectionSource {
         deckConfigs: getAllDeckConfigs(),
         revlog: getDB().getAllSync<any>('SELECT * FROM revlog ORDER BY id'),
         graves: getDB().getAllSync<any>('SELECT * FROM graves'),
-        rolloverHour: loadSettings().dayRolloverHour,
+        rolloverHour: settings.dayRolloverHour,
+        settings,
+        collection: rememberedCollection(),
     };
 }
 
+/**
+ * The notes, cards and decks an export covers, chosen as Anki's exporter chooses them: a selection
+ * picks notes, and every card of a picked note comes along; a deck selection picks the cards that
+ * are in those decks. The decks are the ones those cards are in or come from, with their parents,
+ * except in a collection package, which keeps every deck.
+ */
 function scopedData(
     source: ExportCollectionSource,
     deckName?: string,
     selectedCardIds?: number[],
     selectedDeckIds?: number[],
-    includeFilteredDecks = false,
+    everyDeck = false,
 ): { notes: Note[]; cards: AnkiCard[]; decks: Deck[] } {
-    const rawNotes = source.notes;
-    const protectedNoteIds = new Set(rawNotes.filter(isCatalogNote).map((note) => note.id));
-    const notes = rawNotes.filter((note) => !protectedNoteIds.has(note.id));
-    const rawCards = source.cards;
-    const cards = rawCards.filter((card) => !protectedNoteIds.has(card.noteId));
-    const rawDecks = source.decks.filter((deck) => !deck.isFiltered);
-    const allDecks = rawDecks.filter((deck) => !isCatalogDeck(deck));
-    const wholeCollection = includeFilteredDecks && !deckName && !selectedCardIds && !selectedDeckIds;
-    const withParents = (directDeckIds: Set<number>): Deck[] => {
-        const includedNames = new Set(
-            allDecks.filter((deck) => directDeckIds.has(deck.id)).flatMap((deck) => {
-                const parts = deck.name.split('::');
-                return parts.map((_, index) => parts.slice(0, index + 1).join('::'));
-            }),
-        );
-        return allDecks.filter((deck) => includedNames.has(deck.name));
+    const protectedNoteIds = new Set(source.notes.filter(isCatalogNote).map((note) => note.id));
+    const notes = source.notes.filter((note) => !protectedNoteIds.has(note.id));
+    const cards = source.cards.filter((card) => !protectedNoteIds.has(card.noteId));
+    const decks = source.decks.filter((deck) => !isCatalogDeck(deck));
+    const refuseCatalog = (picked: (card: AnkiCard) => boolean, message: string) => {
+        if (source.cards.some((card) => picked(card) && protectedNoteIds.has(card.noteId))) throw new PaidCatalogProtectionError(message);
     };
+    let picked: ((card: AnkiCard) => boolean) | null = null;
     if (selectedCardIds) {
         const selected = new Set(selectedCardIds);
-        if (rawCards.some((card) => selected.has(card.id) && protectedNoteIds.has(card.noteId))) {
-            throw new PaidCatalogProtectionError('Ücretli katalog kartları dışa aktarılamaz.');
-        }
-        const noteIds = new Set(cards.filter((card) => selected.has(card.id)).map((card) => card.noteId));
-        // Anki's package exporter selects notes first, then includes every card generated by
-        // those notes. This preserves reverse/cloze siblings even if only one card was selected.
-        const scopedCards = cards.filter((card) => noteIds.has(card.noteId));
-        const deckIds = new Set(scopedCards.map((card) => card.deckId));
-        return {
-            notes: notes.filter((note) => noteIds.has(note.id)),
-            cards: scopedCards,
-            decks: withParents(deckIds),
-        };
-    }
-    if (selectedDeckIds) {
-        const selected = new Set(selectedDeckIds);
-        if (rawDecks.some((deck) => selected.has(deck.id) && isCatalogDeck(deck))) {
+        picked = (card) => selected.has(card.id);
+        refuseCatalog(picked, 'Ücretli katalog kartları dışa aktarılamaz.');
+    } else if (selectedDeckIds || deckName) {
+        const selected = new Set(selectedDeckIds
+            ?? source.decks.filter((deck) => deck.name === deckName || deck.name.startsWith(`${deckName}::`)).map((deck) => deck.id));
+        if (source.decks.some((deck) => selected.has(deck.id) && isCatalogDeck(deck))) {
             throw new PaidCatalogProtectionError('Ücretli katalog desteleri dışa aktarılamaz.');
         }
-        const deckIds = new Set(allDecks.filter((deck) => selected.has(deck.id)).map((deck) => deck.id));
-        const noteIds = new Set(cards.filter((card) => deckIds.has(card.deckId)).map((card) => card.noteId));
-        const scopedCards = cards.filter((card) => noteIds.has(card.noteId));
-        const exportedDeckIds = new Set(scopedCards.map((card) => card.deckId));
-        return {
-            notes: notes.filter((note) => noteIds.has(note.id)),
-            cards: scopedCards,
-            decks: withParents(exportedDeckIds),
-        };
+        picked = (card) => selected.has(card.deckId);
+        refuseCatalog(picked, 'Ücretli katalog desteleri dışa aktarılamaz.');
     }
-    // A collection package keeps its filtered decks too, as Anki's collection export does. Their
-    // membership is virtual here, so cards stay in their home decks and Anki shows the deck empty
-    // until it is rebuilt; a card imported while physically in a filtered deck stays in it.
-    if (wholeCollection) {
-        return { notes, cards, decks: [...allDecks, ...source.decks.filter((deck) => deck.isFiltered && !isCatalogDeck(deck))] };
-    }
-    if (!deckName) return { notes, cards, decks: allDecks };
-    const rawDeckIds = new Set(rawDecks.filter((deck) => deck.name === deckName || deck.name.startsWith(`${deckName}::`)).map((deck) => deck.id));
-    if (rawCards.some((card) => rawDeckIds.has(card.deckId) && protectedNoteIds.has(card.noteId))) {
-        throw new PaidCatalogProtectionError('Ücretli katalog desteleri dışa aktarılamaz.');
-    }
-    const deckIds = new Set(allDecks.filter((deck) => deck.name === deckName || deck.name.startsWith(`${deckName}::`)).map((deck) => deck.id));
-    const noteIds = new Set(cards.filter((card) => deckIds.has(card.deckId)).map((card) => card.noteId));
+    const noteIds = new Set(cards.filter(picked ?? (() => true)).map((card) => card.noteId));
     const scopedCards = cards.filter((card) => noteIds.has(card.noteId));
-    const exportedDeckIds = new Set(scopedCards.map((card) => card.deckId));
+    if (everyDeck) return { notes: notes.filter((note) => noteIds.has(note.id)), cards: scopedCards, decks };
+    const used = new Set(scopedCards.flatMap((card) => (card.odid ? [card.deckId, card.odid] : [card.deckId])));
+    const includedNames = new Set(decks.filter((deck) => used.has(deck.id)).flatMap((deck) => {
+        const parts = deck.name.split('::');
+        return parts.map((_, index) => parts.slice(0, index + 1).join('::'));
+    }));
     return {
         notes: notes.filter((note) => noteIds.has(note.id)),
         cards: scopedCards,
-        decks: withParents(exportedDeckIds),
+        decks: decks.filter((deck) => includedNames.has(deck.name)),
     };
 }
 
 function modelMap(noteTypes: NoteType[], exportedDeckIds: ReadonlySet<number>): string {
-    const now = Math.floor(Date.now() / 1000);
-    const map: Record<string, unknown> = {};
-    for (const type of noteTypes) {
-        const raw = type.ankiRaw ?? {};
-        const rawFields = Array.isArray(raw.flds) ? raw.flds as Record<string, unknown>[] : [];
-        const rawTemplates = Array.isArray(raw.tmpls) ? raw.tmpls as Record<string, unknown>[] : [];
-        map[String(type.id)] = {
-            ...raw,
-            id: type.id, name: type.name, type: type.kind === 'cloze' ? 1 : 0,
-            mod: type.mod || now, usn: Number(raw.usn ?? -1), sortf: type.sortFieldIdx, css: type.css,
-            did: raw.did ?? null, latexPre: raw.latexPre ?? '', latexPost: raw.latexPost ?? '', req: raw.req ?? [],
-            flds: type.fields.map((field, index) => ({
-                ...(rawFields[index] ?? {}),
-                name: field.name, ord: field.ord, sticky: field.sticky, rtl: field.rtl,
-                font: rawFields[index]?.font ?? 'Arial', size: rawFields[index]?.size ?? 20,
-                media: rawFields[index]?.media ?? [],
-            })),
-            tmpls: type.templates.map((template, index) => ({
-                ...(rawTemplates[index] ?? {}),
-                name: template.name, ord: template.ord, qfmt: template.qfmt, afmt: template.afmt,
-                // The deck override, when its deck is in the package; a stale source id never is.
-                did: template.deckOverrideId !== undefined && exportedDeckIds.has(template.deckOverrideId) ? template.deckOverrideId : null,
-                bqfmt: rawTemplates[index]?.bqfmt ?? '', bafmt: rawTemplates[index]?.bafmt ?? '',
-            })),
-        };
-    }
-    return JSON.stringify(map);
+    const nowSecs = Math.floor(Date.now() / 1000);
+    return stringifyAnkiJson(Object.fromEntries(noteTypes.map((type) => [type.id, noteTypeJson(type, exportedDeckIds, nowSecs)])));
 }
 
 function deckMap(decks: Deck[], includeScheduling: boolean, includeDeckConfigs: boolean): string {
-    const map: Record<string, unknown> = {};
-    for (const deck of decks) {
-        // Anki turns exported filtered decks into normal decks when scheduling is stripped.
-        const exportsAsFiltered = includeScheduling && deck.isFiltered;
-        // The deck's own desired retention is written from the deck below, never from a stale copy.
-        const raw: Record<string, unknown> = { ...(deck.ankiRaw ?? {}) };
-        delete raw.desiredRetention;
-        delete raw.newLimit;
-        delete raw.reviewLimit;
-        delete raw.desiredRetentionExact;
-        map[String(deck.id)] = {
-            ...raw,
-            // Anki's legacy schema keeps a deck's own desired retention as a whole percent.
-            ...(includeDeckConfigs && !deck.isFiltered && deck.desiredRetention !== undefined
-                ? { desiredRetention: Math.round(deck.desiredRetention * 100) }
-                : {}),
-            ...(includeDeckConfigs && !deck.isFiltered ? { newLimit: deck.newLimit, reviewLimit: deck.reviewLimit } : {}),
-            id: deck.id, name: deck.name, mod: deck.mod, usn: deck.usn ?? -1, desc: deck.description || '',
-            md: Boolean(deck.descriptionMarkdown),
-            dyn: exportsAsFiltered ? 1 : 0,
-            collapsed: includeScheduling ? deck.collapsed : false,
-            browserCollapsed: false,
-            conf: includeDeckConfigs ? deck.configId || 1 : 1,
-            extendNew: includeScheduling ? Number(deck.ankiRaw?.extendNew ?? 0) : 0,
-            extendRev: includeScheduling ? Number(deck.ankiRaw?.extendRev ?? 0) : 0,
-            // Anki refuses the whole package when a deck lacks one of these [day, count] pairs, and
-            // only decks imported from a schema-11 package carry them. A carried pair counts days
-            // from its source collection's creation, while this package is created today, so every
-            // deck starts the day with nothing studied.
-            lrnToday: [0, 0],
-            revToday: [0, 0],
-            newToday: [0, 0],
-            timeToday: [0, 0],
-            // The saved search and preview delays live on the deck, not in ankiRaw, so a deck built
-            // or edited here would otherwise export with whatever terms it was imported with.
-            ...(exportsAsFiltered ? filteredDeckFields(deck) : {}),
-        };
-    }
-    return JSON.stringify(map);
-}
-
-/** Anki's legacy JSON shape for a filtered deck's search terms and preview delays. */
-function filteredDeckFields(deck: Deck): Record<string, unknown> {
-    // A deck that never had a field written falls back to the value `Deck::new_filtered` seeds it
-    // with, so an export says what Anki itself would have stored: 100 cards in Random order for the
-    // first term, and the deliberately smaller 20-card Due top-up for the second.
-    const terms: [string, number, number][] = [
-        [
-            deck.searchQuery ?? '',
-            deck.searchLimit ?? DEFAULT_SEARCH_LIMIT,
-            deck.searchOrder ?? FILTERED_SEARCH_ORDER.random,
-        ],
-    ];
-    if (deck.searchQuery2?.trim()) {
-        terms.push([
-            deck.searchQuery2,
-            deck.searchLimit2 ?? DEFAULT_SECOND_SEARCH_LIMIT,
-            deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due,
-        ]);
-    }
-    const [previewAgainSecs, previewHardSecs, previewGoodSecs] = parsePreviewDelays(deck.previewDelays);
-    return {
-        terms,
-        resched: deck.reschedule !== false,
-        previewAgainSecs,
-        previewHardSecs,
-        previewGoodSecs,
-    };
-}
-
-/** Inverse of the import tables: our string unions back to Anki's dconf ordinals. */
-const REVIEW_MIX_ORDINAL: Record<string, number> = { mix: 0, after: 1, before: 2 };
-const ANSWER_ACTION_ORDINAL: Record<string, number> = { bury: 0, again: 1, good: 2, hard: 3, showReminder: 4 };
-const GATHER_ORDER_ORDINAL: Record<string, number> = {
-    deck: 0, ascendingPosition: 1, descendingPosition: 2,
-    randomNotes: 3, randomCards: 4, deckThenRandomNotes: 5,
-};
-const NEW_SORT_ORDER_ORDINAL: Record<string, number> = {
-    template: 0, noSort: 1, templateThenRandom: 2, randomNoteThenTemplate: 3, randomCard: 4,
-};
-const REVIEW_ORDER_ORDINAL: Record<string, number> = {
-    dueRandom: 0, dueThenDeck: 1, deckThenDue: 2, intervalsAsc: 3, intervalsDesc: 4,
-    easeAsc: 5, easeDesc: 6, retrievabilityAsc: 7, random: 8, added: 9, reverseAdded: 10,
-    retrievabilityDesc: 11, relativeOverdueness: 12,
-};
-
-/**
- * Anki's two retrievability review orders (ordinals 7 and 11) are represented locally now, so a
- * package that carries one imports and exports as itself. Presets imported by an earlier build
- * could not: they were stored as `dueRandom` with the source ordinal parked in `ankiRaw`, and
- * they are still on disk, so that ordinal is still re-emitted for them rather than exported as
- * "day (random)" — a preset the learner has never opened must not lose its author's choice.
- *
- * A user who picks an order in Deck Options is choosing for themselves; that save drops the
- * preserved ordinal (`withoutPreservedReviewOrder`) so their own choice is what gets exported.
- */
-const UNMAPPED_REVIEW_ORDER_ORDINALS = new Set([7, 11]);
-
-export function exportedReviewOrder(config: DeckConfig): number {
-    const order = config.reviewSortOrder ?? 'dueRandom';
-    const mapped = REVIEW_ORDER_ORDINAL[order] ?? 0;
-    if (order !== 'dueRandom') return mapped;
-
-    const preserved = Number(config.ankiRaw?.reviewOrder);
-    return UNMAPPED_REVIEW_ORDER_ORDINALS.has(preserved) ? preserved : mapped;
-}
-
-/**
- * Forget an imported package's FSRS-only review order so an explicit Deck Options save wins over
- * it. Returns the same object when there is nothing to forget, leaving untouched presets pristine.
- */
-export function withoutPreservedReviewOrder(
-    ankiRaw: Record<string, unknown> | undefined,
-): Record<string, unknown> | undefined {
-    if (!ankiRaw || !UNMAPPED_REVIEW_ORDER_ORDINALS.has(Number(ankiRaw.reviewOrder))) return ankiRaw;
-    const { reviewOrder: _preserved, ...rest } = ankiRaw;
-    return rest;
+    return stringifyAnkiJson(Object.fromEntries(decks.map((deck) => [deck.id, deckJson(deck, includeScheduling, includeDeckConfigs)])));
 }
 
 function deckConfigMap(
@@ -340,67 +173,14 @@ function deckConfigMap(
     includeDeckConfigs: boolean,
 ): string {
     // Anki refuses a package whose deck names a preset the package lacks ("No such deck config").
-    // Without presets every deck names preset 1, which is then written with the defaults, the way
-    // Anki's own exports carry its Default preset.
-    const configIds = new Set(decks.map((deck) => deck.configId || 1));
-    const configs = includeDeckConfigs ? sourceConfigs.filter((config) => configIds.has(config.id)) : [];
-    if (!configs.length) configs.push({ ...DEFAULT_DECK_CONFIG });
-    const map: Record<string, unknown> = {};
-    for (const config of configs) {
-        const raw = config.ankiRaw ?? {};
-        const rawReview = raw.rev && typeof raw.rev === 'object' ? raw.rev as Record<string, unknown> : {};
-        const rawNew = raw.new && typeof raw.new === 'object' ? raw.new as Record<string, unknown> : {};
-        const rawLapse = raw.lapse && typeof raw.lapse === 'object' ? raw.lapse as Record<string, unknown> : {};
-        const easyDays = config.easyDays ?? [1, 1, 1, 1, 1, 1, 1];
-        map[String(config.id)] = {
-            ...raw,
-            id: config.id, name: config.name, mod: config.mod, usn: config.usn ?? -1, dyn: false,
-            autoplay: config.autoPlayAudio !== false,
-            replayq: config.skipQuestionWhenReplayingAnswer !== true,
-            timer: config.showTimer ? 1 : 0, stopTimerOnAnswer: config.stopTimerOnAnswer === true,
-            secondsToShowQuestion: config.secondsToShowQuestion ?? 0,
-            secondsToShowAnswer: config.secondsToShowAnswer ?? 0,
-            questionAction: config.questionAction === 'showReminder' ? 1 : 0,
-            waitForAudio: config.waitForAudio !== false,
-            answerAction: ANSWER_ACTION_ORDINAL[config.answerAction ?? 'bury'] ?? 0,
-            interdayLearningMix: REVIEW_MIX_ORDINAL[config.interdayLearningMix ?? 'mix'] ?? 0,
-            newMix: REVIEW_MIX_ORDINAL[config.newReviewOrder ?? 'mix'] ?? 0,
-            newGatherPriority: GATHER_ORDER_ORDINAL[normalizeNewCardGatherOrder(config.newCardGatherOrder)] ?? 0,
-            newSortOrder: NEW_SORT_ORDER_ORDINAL[config.newCardSortOrder ?? 'template'] ?? 0,
-            reviewOrder: exportedReviewOrder(config),
-            // Unlike new and review burying, which sit in `new` and `rev` below, Anki keeps this one
-            // at the top level with the other v3 scheduler options.
-            buryInterdayLearning: config.buryInterdayLearningSiblings === true,
-            // Anki reads Easy Days only from `easyDaysPercentages`, so it must follow `...raw`: a
-            // preset imported from Anki still carries the values it arrived with under that key.
-            // `easyDays` stays for earlier builds of this app, which read only that key.
-            easyDaysPercentages: easyDays,
-            easyDays,
-            // FSRS, under Anki's schema11 names. The parameters are written to the FSRS-6 slot. An
-            // importer that only knows older generations reads `fsrsParams5` or `fsrsWeights`
-            // instead, which a preset made here lacks and an imported one keeps from its package.
-            fsrsParams6: config.fsrsParams ?? [],
-            desiredRetention: config.desiredRetention ?? FSRS_DEFAULT_DESIRED_RETENTION,
-            sm2Retention: config.historicalRetention ?? FSRS_DEFAULT_HISTORICAL_RETENTION,
-            ignoreRevlogsBeforeDate: formatFsrsCutoffDate(config.ignoreRevlogsBeforeMs),
-            maxTaken: config.maxAnswerSecs, rev: { ...rawReview, perDay: config.maxReviewsPerDay, ease4: config.easyBonus,
-                hardFactor: config.hardIvl, ivlFct: config.ivlModifier, maxIvl: config.maxIvl, bury: config.buryReviewSiblings },
-            new: { ...rawNew, perDay: config.newPerDay, delays: config.learningSteps, ints: [config.graduatingIvl, config.easyIvl],
-                initialFactor: config.startingEase, order: config.insertionOrder === 'random' ? 0 : 1, bury: config.buryNewSiblings },
-            lapse: { ...rawLapse, delays: config.relearningSteps, minInt: config.minIvl, leechFails: config.leechThreshold,
-                leechAction: config.leechAction === 'suspend' ? 0 : 1, mult: config.newIvlPercent },
-        };
-        // Without scheduling, Anki 26.09.3 empties only the FSRS parameter lists, which were fitted
-        // to the learner's own review history (`clear_fsrs_params`, ankitects/anki#4721): the FSRS-6
-        // list and its FSRS-5 and FSRS-4 fallbacks. Desired retention, historical retention and the
-        // ignore-before date are preset choices and travel with the package.
-        if (!includeScheduling) {
-            const preset = map[String(config.id)] as Record<string, unknown>;
-            for (const key of ['fsrsWeights', 'fsrsParams5', 'fsrsParams6']) preset[key] = [];
-            delete preset.fsrsParams4;
-        }
-    }
-    return JSON.stringify(map);
+    // Without presets every deck names preset 1, and the package carries Anki's own default
+    // preset under that id, as Anki's exports carry their Default preset.
+    if (!includeDeckConfigs) return stringifyAnkiJson({ 1: ANKI_DEFAULT_PRESET });
+    const configIds = new Set(decks.filter((deck) => !deck.isFiltered).map((deck) => deck.configId || 1));
+    const configs = sourceConfigs.filter((config) => configIds.has(config.id));
+    const map: Record<string, unknown> = Object.fromEntries(configs.map((config) => [config.id, presetJson(config, includeScheduling)]));
+    for (const id of configIds) map[id] ??= { ...ANKI_DEFAULT_PRESET, id };
+    return stringifyAnkiJson(map);
 }
 
 function schemaSql(): string {
@@ -418,7 +198,7 @@ function schemaSql(): string {
         CREATE TABLE revlog (id integer primary key, cid integer not null, usn integer not null, ease integer not null,
             ivl integer not null, lastIvl integer not null, factor integer not null, time integer not null, type integer not null);
         CREATE TABLE graves (usn integer not null, oid integer not null, type integer not null);
-        CREATE INDEX ix_notes_usn on notes (usn); CREATE INDEX ix_cards_usn on cards (usn);
+        CREATE INDEX ix_notes_usn on notes (usn); CREATE INDEX ix_notes_csum on notes (csum); CREATE INDEX ix_cards_usn on cards (usn);
         CREATE INDEX ix_cards_nid on cards (nid); CREATE INDEX ix_cards_sched on cards (did, queue, due);
         CREATE INDEX ix_revlog_usn on revlog (usn); CREATE INDEX ix_revlog_cid on revlog (cid);
     `;
@@ -431,35 +211,6 @@ function tagRegistry(notes: Note[]): string {
     return JSON.stringify(tags);
 }
 
-/**
- * The legacy `col.conf` a collection package needs. Without `schedVer` Anki reads the collection
- * as the retired v1 scheduler and converts it; the rollover hour decides where its days begin, and
- * `nextPos` where the next new card goes.
- */
-function collectionConfig(cards: AnkiCard[], rolloverHour: number, nowMs: number): string {
-    const nextPos = cards.reduce((max, card) => (card.type === 0 ? Math.max(max, card.due) : max), 0) + 1;
-    return JSON.stringify({
-        schedVer: 2,
-        sched2021: true,
-        rollover: rolloverHour,
-        creationOffset: new Date(nowMs).getTimezoneOffset(),
-        localOffset: new Date(nowMs).getTimezoneOffset(),
-        nextPos,
-        curDeck: 1,
-        activeDecks: [1],
-        newSpread: 0,
-        collapseTime: 1200,
-        timeLim: 0,
-        estTimes: true,
-        dueCounts: true,
-        curModel: null,
-        sortType: 'noteFld',
-        sortBackwards: false,
-        addToCur: true,
-        dayLearnFirst: false,
-    });
-}
-
 function ankiDue(card: AnkiCard, collectionDay: number): number {
     if (card.queue === 1 || (card.queue < 0 && (card.type === 1 || card.type === 3) && card.due >= 1_000_000_000)) {
         return Math.floor(card.due / 1000);
@@ -468,50 +219,63 @@ function ankiDue(card: AnkiCard, collectionDay: number): number {
     return card.due;
 }
 
-/**
- * Sends any card still sitting in a filtered deck back to the deck it came from.
- *
- * `scopedData` never exports filtered decks, so a card whose `deckId` is one of them would
- * otherwise be written with a `did` that no row in the package defines, and Anki would import it
- * into a deck that does not exist.
- *
- * This is NOT what upstream does, and the difference is worth stating. Anki's `gather_data`
- * exports filtered decks as filtered whenever every gathered card's original deck is also in the
- * export; when it is not, it converts the filtered deck into a regular one and leaves the cards
- * inside it (`restore_cards_from_filtered_decks` sets `original_deck_id = deck_id`). It never
- * drops the deck. Dropping it is a local simplification that follows from filtered decks being
- * virtual here — they gather on demand instead of holding cards — so the only cards this can
- * affect are ones imported from a real Anki collection while they sat in a filtered deck.
- * Returning them to `odid`, with the pre-gather due date `odue` restored, is the same move
- * `returnFilteredCardsHome` in lib/deckManager.ts makes when a filtered deck is emptied locally.
- *
- * https://github.com/ankitects/anki/blob/main/rslib/src/import_export/gather.rs
- */
-function returnCardsToHomeDeck(cards: AnkiCard[], decks: Deck[]): AnkiCard[] {
-    const exportedDeckIds = new Set(decks.map((deck) => deck.id));
-    if (cards.every((card) => exportedDeckIds.has(card.deckId))) return cards;
-    return cards.map((card) => {
-        if (exportedDeckIds.has(card.deckId)) return card;
-        const homeDeckId = card.odid && exportedDeckIds.has(card.odid) ? card.odid : DEFAULT_DECK_CONFIG.id;
-        return {
-            ...card,
-            deckId: homeDeckId,
-            due: card.odue && card.odue > 0 ? card.odue : card.due,
-            odue: 0,
-            odid: 0,
-        };
-    });
-}
-
 function ankiOriginalDue(card: AnkiCard, collectionDay: number): number {
     if (!card.odue) return 0;
     if ((card.type === 1 || card.type === 3) && card.odue >= 1_000_000_000) return Math.floor(card.odue / 1000);
     return card.type === 1 || card.type === 2 || card.type === 3 ? card.odue - collectionDay : card.odue;
 }
 
-function collectionCreationSeconds(collectionDay: number, rolloverHour: number): number {
-    const [year, month, day] = dayNumberToYmd(collectionDay).split('-').map(Number);
+/** The start of a study day, as Anki stores a new collection's creation time. */
+function dayStartSeconds(dayNumber: number, rolloverHour: number): number {
+    const [year, month, day] = dayNumberToYmd(dayNumber).split('-').map(Number);
     return Math.floor(new Date(year, month - 1, day, rolloverHour, 0, 0, 0).getTime() / 1000);
+}
+
+/** An empty SQLite database a package's collection is written into. */
+async function openExportDatabase(): Promise<{ db: WritableDb; cleanup: () => void }> {
+    if (Platform.OS === 'web') {
+        const { loadSqlJs } = await import('./webDb');
+        const SQL = await loadSqlJs();
+        const sqlDb = new SQL.Database();
+        const db: WritableDb = {
+            execSync: (sql) => { sqlDb.run(sql); },
+            runSync: (sql, ...params) => { sqlDb.run(sql, params.length ? params : undefined); return undefined; },
+            serializeSync: () => sqlDb.export(),
+            closeSync: () => sqlDb.close(),
+        };
+        return { db, cleanup: () => db.closeSync() };
+    }
+    const name = `anki-export-${Date.now()}-${Math.floor(Math.random() * 1e6)}.db`;
+    const db = openFtsSafeDatabaseSync(name) as WritableDb;
+    return { db, cleanup: () => { db.closeSync(); deleteNativeDatabaseSync(name); } };
+}
+
+const UPGRADE_NOTICE = 'Please update to the latest Anki version, then import the .colpkg/.apkg file again.';
+
+/**
+ * The `collection.anki2` every Anki package carries beside its real collection: a new collection
+ * whose one Basic note asks the reader to update Anki, which is what an Anki version too old to
+ * read the package's collection imports instead. Anki writes this text and nothing else into it.
+ */
+async function upgradeNoticeCollection(nowMs: number): Promise<Uint8Array> {
+    const { db, cleanup } = await openExportDatabase();
+    try {
+        const basic = BUILTIN_NOTE_TYPES[0];
+        const id = nowMs;
+        const fields = [UPGRADE_NOTICE, ''];
+        db.execSync(schemaSql());
+        db.runSync('INSERT INTO col VALUES (1, ?, ?, ?, 11, 0, 0, 0, ?, ?, ?, ?, ?)',
+            Math.floor(nowMs / 1000), nowMs, nowMs, stringifyAnkiJson(collectionConf(undefined, {}, { nextPos: 2, deckIds: new Set([1]), creationOffset: new Date(nowMs).getTimezoneOffset() })),
+            stringifyAnkiJson({ [id]: noteTypeJson({ ...basic, id }, new Set(), Math.floor(nowMs / 1000)) }),
+            stringifyAnkiJson({ 1: deckJson({ id: 1, name: 'Default', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false }, true, true) }),
+            stringifyAnkiJson({ 1: ANKI_DEFAULT_PRESET }), '{}');
+        db.runSync('INSERT INTO notes VALUES (?, ?, ?, ?, -1, \'\', ?, ?, ?, 0, \'\')',
+            id, generateGuid(), id, Math.floor(nowMs / 1000), fields.join(FIELD_SEPARATOR), UPGRADE_NOTICE, checksumField(UPGRADE_NOTICE));
+        db.runSync('INSERT INTO cards VALUES (?, ?, 1, 0, ?, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, \'\')', id, id, Math.floor(nowMs / 1000));
+        return db.serializeSync();
+    } finally {
+        cleanup();
+    }
 }
 
 async function buildPackage(
@@ -521,19 +285,21 @@ async function buildPackage(
     includeMedia: boolean,
     selectedCardIds?: number[],
     packageOptions: AnkiPackageExportOptions = {},
-    allowPristineOriginal = false,
 ): Promise<ExportArtifact> {
     const scoped = scopedData(source, deckName, selectedCardIds, packageOptions.selectedDeckIds, format === 'colpkg');
     const includeScheduling = format === 'colpkg' || packageOptions.includeScheduling !== false;
     const includeDeckConfigs = format === 'colpkg' || packageOptions.includeDeckConfigs !== false;
+    const decks = scoped.decks;
     const notes = includeScheduling
         ? scoped.notes
         : scoped.notes.map((note) => ({
             ...note,
             tags: note.tags.filter((tag) => !['marked', 'leech'].includes(tag.toLocaleLowerCase('en-US'))),
         }));
-    const cards = includeScheduling
+    const exportedCards = includeScheduling
         ? scoped.cards
+        // Without scheduling a card in a filtered deck stays there, and the deck goes out as a
+        // regular one, as Anki's exporter leaves it.
         : scoped.cards.map((card, index) => ({
             ...card,
             type: 0 as const,
@@ -550,55 +316,28 @@ async function buildPackage(
             lastReview: 0,
             ankiData: withoutPackageSchedulingData(card.ankiData),
         }));
-    const decks = scoped.decks;
-    const exportedCards = returnCardsToHomeDeck(cards, decks);
     if (notes.some(isCatalogNote) || exportedCards.some(isCatalogCard) || decks.some(isCatalogDeck)) {
         throw new PaidCatalogProtectionError('Ücretli katalog kartları veya desteleri dışa aktarılamaz.');
     }
-    if (allowPristineOriginal && format === 'apkg' && includeScheduling && includeDeckConfigs) {
-        const pristine = await pristineOriginalForExport(notes, cards, includeMedia);
-        if (pristine) {
-            return {
-                fileName: pristine.fileName,
-                mimeType: 'application/zip',
-                bytes: pristine.bytes,
-                noteCount: notes.length,
-                cardCount: exportedCards.length,
-            };
-        }
-    }
 
-    const dbName = `anki-export-${Date.now()}-${Math.floor(Math.random() * 1e6)}.db`;
-    let db: WritableDb;
-    let cleanup: () => void;
-    if (Platform.OS === 'web') {
-        const { loadSqlJs } = await import('./webDb');
-        const SQL = await loadSqlJs();
-        const sqlDb = new SQL.Database();
-        db = {
-            execSync: (sql) => { sqlDb.run(sql); },
-            runSync: (sql, ...params) => { sqlDb.run(sql, params.length ? params : undefined); return undefined; },
-            serializeSync: () => sqlDb.export(),
-            closeSync: () => sqlDb.close(),
-        };
-        cleanup = () => db.closeSync();
-    } else {
-        db = openFtsSafeDatabaseSync(dbName) as WritableDb;
-        cleanup = () => {
-            db.closeSync();
-            deleteNativeDatabaseSync(dbName);
-        };
-    }
+    const { db, cleanup } = await openExportDatabase();
     const noteTypes = source.noteTypes.filter((type) => notes.some((note) => note.noteTypeId === type.id));
     const now = Date.now();
     const rolloverHour = source.rolloverHour;
-    const collectionDay = localDayNumber(now, rolloverHour);
-    const collectionCreation = collectionCreationSeconds(collectionDay, rolloverHour);
+    const today = localDayNumber(now, rolloverHour);
+    // A collection that came from a `.colpkg` keeps its creation day; one made here starts today.
+    // Review due dates are written as days since that creation, as Anki counts them.
+    const collectionCreation = source.collection?.crt ?? dayStartSeconds(today, rolloverHour);
+    const collectionDay = today - Math.max(0, Math.floor((now / 1000 - collectionCreation) / 86_400));
+    const conf = collectionConf(source.collection?.conf, { ...source.settings, dayRolloverHour: rolloverHour }, {
+        nextPos: exportedCards.reduce((max, card) => (card.type === 0 ? Math.max(max, card.due) : max), 0) + 1,
+        deckIds: new Set(decks.map((deck) => deck.id)),
+        creationOffset: new Date(collectionCreation * 1000).getTimezoneOffset(),
+    });
     try {
         db.execSync(schemaSql());
         db.runSync('INSERT INTO col VALUES (?, ?, ?, ?, 11, 0, 0, 0, ?, ?, ?, ?, ?)',
-            1, collectionCreation, now, now,
-            format === 'colpkg' ? collectionConfig(exportedCards, rolloverHour, now) : '{}',
+            1, collectionCreation, now, now, stringifyAnkiJson(conf),
             modelMap(noteTypes, new Set(decks.map((deck) => deck.id))),
             deckMap(decks, includeScheduling, includeDeckConfigs),
             deckConfigMap(decks, source.deckConfigs, includeScheduling, includeDeckConfigs), tagRegistry(notes));
@@ -634,19 +373,27 @@ async function buildPackage(
         // The current format's collection is read by Anki through its schema upgrade, so the same
         // schema-11 file serves both; only how it is stored differs.
         zip.file(legacy ? 'collection.anki21' : 'collection.anki21b', legacy ? collection : zstdStoredFrame(collection));
+        zip.file('collection.anki2', await upgradeNoticeCollection(now));
         const manifest: Record<string, string> = {};
         const mediaFiles: Array<{ name: string; bytes: Uint8Array }> = [];
         if (includeMedia) {
             // The same scan the media audit runs, so a file the audit calls referenced is a file
             // this package carries. They used to be two patterns that disagreed: an attachment
             // written as `<a href="notes.pdf">` was referenced by the audit and left out of here.
-            const filenames = extractMediaFilenames([
-                ...notes.flatMap((note) => note.fields),
-                ...noteTypes.flatMap((type) => [
-                    type.css,
-                    ...type.templates.flatMap((template) => [template.qfmt, template.afmt]),
-                ]),
+            const referencedBy = (fromNotes: Note[], fromTypes: NoteType[]) => extractMediaFilenames([
+                ...fromNotes.flatMap((note) => note.fields),
+                ...fromTypes.flatMap((type) => [type.css, ...type.templates.flatMap((template) => [template.qfmt, template.afmt])]),
             ]);
+            const filenames = referencedBy(notes, noteTypes);
+            if (format === 'colpkg') {
+                // A collection package carries the whole media folder, as Anki's does, unused files
+                // included; but not what only the paid catalog uses, nor the package copies earlier
+                // versions of this app kept.
+                const catalogOnly = referencedBy(source.notes.filter(isCatalogNote), source.noteTypes.filter((type) => type.catalogPack));
+                for (const name of await listStoredMediaFilenames()) {
+                    if (!name.startsWith('.') && !name.startsWith('tusanki-source-') && (filenames.has(name) || !catalogOnly.has(name))) filenames.add(name);
+                }
+            }
             for (const filename of filenames) {
                 const bytes = await readMediaBytes(filename);
                 if (!bytes) continue;
@@ -683,10 +430,11 @@ function csvField(value: string): string {
     return /[\t\r\n"]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
 
+/** One side of a card as Anki's "Cards in Plain Text" writes it; the answer starts after the question. */
 function textCardSide(value: string, withHtml: boolean, answerSide: boolean): string {
-    let result = value.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '').replace(/\[\[type:[^\]]+]]/gi, '');
+    let result = value.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
     if (answerSide) result = result.replace(/^[\s\S]*?<hr\s+id=["']?answer["']?\s*\/?>\s*/i, '');
-    return withHtml ? result : humanizeCardText(result);
+    return withHtml ? result : fieldToPlainText(result);
 }
 
 function buildCardsText(
@@ -702,17 +450,18 @@ function buildCardsText(
     const deckNames = new Map(decks.map((deck) => [deck.id, deck.name]));
     const rows = ['#separator:tab', `#html:${withHtml}`];
     let exported = 0;
-    for (const card of cards) {
+    for (const card of [...cards].sort((a, b) => a.id - b.id)) {
         const note = notesById.get(card.noteId);
         const type = note ? types.get(note.noteTypeId) : undefined;
         if (!note || !type) continue;
-        const options = { deckName: deckNames.get(card.deckId), clozeOrd: card.ord };
+        const options = { deckName: deckNames.get(card.deckId), cardId: card.id, cardFlag: card.flags, forTextExport: true };
         const question = textCardSide(renderCardHtml(type, note, card.ord, 'question', options), withHtml, false);
         const answer = textCardSide(renderCardHtml(type, note, card.ord, 'answer', options), withHtml, true);
         rows.push(`${csvField(question)}\t${csvField(answer)}`);
         exported++;
     }
-    return { text: rows.join('\n'), cardCount: exported };
+    // Anki ends every row, the last one too, with a newline.
+    return { text: `${rows.join('\n')}\n`, cardCount: exported };
 }
 
 export async function buildAnkiExport(
@@ -758,6 +507,5 @@ export async function buildAnkiExport(
         includeMedia,
         selectedCardIds,
         { ...packageOptions, selectedDeckIds },
-        source === undefined,
     );
 }

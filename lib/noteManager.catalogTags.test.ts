@@ -42,7 +42,6 @@ vi.mock('./db', () => ({
     dbUpsertFtsCard: (card: { id: number }) => { indexedCards.push(card.id); },
 }));
 
-vi.mock('./ankiPackageArchive', () => ({ markSourcePackageDirty: () => undefined }));
 
 import { setNoteTags, setNoteTagsByCardId, updateNotesTags } from './noteManager';
 

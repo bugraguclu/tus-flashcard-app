@@ -6,8 +6,7 @@
  * add-ons refer to such files indirectly), and unused files are not deleted outright: they move
  * to a trash folder beside the media folder, from which they can be put back. A collection backup
  * is taken first (the caller asks for it), and nothing is moved without the learner's
- * confirmation. The pristine copy kept of an imported package (lib/ankiPackageArchive.ts) counts
- * as used only while it can still be exported byte for byte.
+ * confirmation.
  */
 import { Platform } from 'react-native';
 import { getDB } from './db';
@@ -24,10 +23,7 @@ export interface MediaCheckResult {
     referencedCount: number;
 }
 
-const SOURCE_ARCHIVE_PREFIX = 'tusanki-source-';
-const SOURCE_META_PREFIX = 'anki_source_package_v1:';
-
-/** Every filename a note field, template or stylesheet refers to, plus usable package copies. */
+/** Every filename a note field, template or stylesheet refers to. */
 export function referencedMediaFilenames(): Set<string> {
     const db = getDB();
     const sources: string[] = [];
@@ -46,14 +42,7 @@ export function referencedMediaFilenames(): Set<string> {
             }
         } catch { /* as above */ }
     }
-    const referenced = extractMediaFilenames(sources);
-    for (const row of db.getAllSync<{ value: string }>('SELECT value FROM settings WHERE substr(key, 1, ?) = ?', SOURCE_META_PREFIX.length, SOURCE_META_PREFIX)) {
-        try {
-            const meta = JSON.parse(row.value);
-            if (meta?.exactEligible && !meta.dirty && typeof meta.archiveName === 'string' && meta.archiveName) referenced.add(meta.archiveName);
-        } catch { /* a broken record keeps nothing */ }
-    }
-    return referenced;
+    return extractMediaFilenames(sources);
 }
 
 export async function checkMedia(list: () => Promise<string[]> = listStoredMediaFilenames): Promise<MediaCheckResult> {
@@ -61,7 +50,7 @@ export async function checkMedia(list: () => Promise<string[]> = listStoredMedia
     const referenced = referencedMediaFilenames();
     const storedSet = new Set(stored);
     const unused = stored.filter((name) => !referenced.has(name) && !name.startsWith('_')).sort();
-    const missing = [...referenced].filter((name) => !storedSet.has(name) && !name.startsWith(SOURCE_ARCHIVE_PREFIX)).sort();
+    const missing = [...referenced].filter((name) => !storedSet.has(name)).sort();
     return { unused, missing, storedCount: stored.length, referencedCount: referenced.size };
 }
 

@@ -1,7 +1,6 @@
 import { remapDeckLearningSteps } from './deckPresetSteps';
 import { DEFAULT_DECK_CONFIG, uniqueId, type Deck, type DeckConfig } from './models';
 import { getDB } from './db';
-import { markSourcePackageDirty } from './ankiPackageArchive';
 import { assertCatalogDeckConfigMutable } from './catalogProtection';
 import { getAllDecks, getDeck, saveDeck } from './deckStore';
 
@@ -27,11 +26,6 @@ export function saveDeckConfig(config: DeckConfig): void {
     assertCatalogDeckConfigMutable(config);
     const db = getDB();
     const existing = db.getFirstSync<{ data: string }>('SELECT data FROM deck_configs WHERE id = ?', config.id);
-    if (existing?.data) {
-        try {
-            markSourcePackageDirty((JSON.parse(existing.data) as DeckConfig).sourcePackageId);
-        } catch { /* malformed legacy blobs are replaced below */ }
-    }
     let before: DeckConfig | null = null;
     try { if (existing?.data) before = JSON.parse(existing.data); } catch { /* No recoverable old steps. */ }
     db.execSync('SAVEPOINT save_deck_preset;');

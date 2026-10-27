@@ -148,8 +148,8 @@ kayıtlı medya dosyalarını notlarınızla ve not türlerinizle karşılaştı
 
 Listelerde ilk 20 dosya adı görünür. Adı `_` ile başlayan dosyalar şablonlar tarafından
 kullanılabileceği için hiçbir zaman kullanılmayan sayılmaz. Adı `tusanki-source-` ile başlayan
-`.apkg` dosyaları, içe aktardığınız paketlerin uygulamanın sakladığı kopyalarıdır; listede
-görünüyorsa artık gerekmez.
+`.apkg` dosyaları, uygulamanın önceki sürümlerinin içe aktarılan paketlerden sakladığı kopyalardır;
+artık hiçbir şey onları kullanmaz.
 
 **Kullanılmayanları çöpe taşı (N)** önce bir koleksiyon yedeği alır, sonra dosyaları bir çöp kutusu
 klasörüne taşır. **Çöptekileri geri getir** çöp kutusundaki bütün dosyaları geri koyar; o sırada aynı

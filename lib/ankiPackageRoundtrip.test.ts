@@ -360,36 +360,37 @@ describe('lossless Anki package roundtrip', () => {
         expect(importLegacyFilteredDeck({})?.previewDelays).toEqual([0, 0, 0]);
     });
 
-    it('returns a gathered card to its home deck instead of exporting a dangling filtered deck', async () => {
+    it('keeps a gathered card in its filtered deck, which goes out as a regular deck without scheduling', async () => {
         importModernFilteredDeck([
             pbVarint(PREVIEW_TAG.againSecs, 45),
             pbVarint(PREVIEW_TAG.hardSecs, 900),
             pbVarint(PREVIEW_TAG.goodSecs, 120),
         ]);
         const homeDeckId = getAllDecks().find((deck) => deck.name === 'Cardiology')!.id;
+        const filteredDeckId = getAllDecks().find((deck) => deck.name === 'Preview Deck')!.id;
 
-        const exported = await buildAnkiExport('apkg', undefined, false);
-        const zip = await JSZip.loadAsync(exported.bytes!);
-        const reader = openReader(await zip.file('collection.anki21')!.async('uint8array'));
-        const decks: Record<string, any> = JSON.parse(reader.getFirstSync<{ decks: string }>('SELECT decks FROM col')!.decks);
-
-        // Filtered decks are virtual here, so they are not exported. Upstream instead converts one
-        // into a regular deck when it cannot export it as filtered; the shared requirement, and
-        // what this pins, is that no exported card points at a deck the package never defines.
-        expect(Object.values(decks).map((deck) => deck.name)).not.toContain('Preview Deck');
-        expect(Object.values(decks).map((deck) => deck.name)).toContain('Cardiology');
-        // The card must therefore point at a deck the package defines, with the filtered
-        // placement undone, or Anki would import it into a deck that does not exist.
-        expect(reader.getAllSync('SELECT id, did, odid FROM cards')).toEqual([
-            { id: 400, did: homeDeckId, odid: 0 },
-        ]);
-        reader.close();
+        // What Anki 26.09.3's exporter does with a card sitting in a filtered deck (measured
+        // through scripts/anki-oracle): with scheduling the deck stays filtered with the card in
+        // it; without, the deck becomes a regular one and the card stays in it.
+        for (const includeScheduling of [true, false]) {
+            const exported = await buildAnkiExport('apkg', undefined, false, undefined, { includeScheduling });
+            const zip = await JSZip.loadAsync(exported.bytes!);
+            const reader = openReader(await zip.file('collection.anki21')!.async('uint8array'));
+            const decks: Record<string, any> = JSON.parse(reader.getFirstSync<{ decks: string }>('SELECT decks FROM col')!.decks);
+            expect(decks[filteredDeckId]).toMatchObject({ name: 'Preview Deck', dyn: includeScheduling ? 1 : 0 });
+            expect('terms' in decks[filteredDeckId]).toBe(includeScheduling);
+            expect(decks[homeDeckId]).toMatchObject({ name: 'Cardiology', dyn: 0 });
+            expect(reader.getAllSync('SELECT id, did, odid FROM cards')).toEqual([
+                { id: 400, did: filteredDeckId, odid: includeScheduling ? homeDeckId : 0 },
+            ]);
+            reader.close();
+        }
     });
 
-    it('preserves original bytes while pristine and reconstructs all source structure after an edit', async () => {
+    it('reconstructs all source structure, with an edit', async () => {
         const input = await fixturePackage();
         const imported = await importApkg(input, {
-            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         expect(imported).toMatchObject({
@@ -409,20 +410,16 @@ describe('lossless Anki package roundtrip', () => {
             waitForAudio: false,
         });
 
-        const pristine = await buildAnkiExport('apkg', undefined, true);
-        expect(pristine.fileName).toBe('professional.apkg');
-        expect(Buffer.compare(Buffer.from(pristine.bytes!), Buffer.from(input))).toBe(0);
-
         const note = getAllNotes()[0];
         saveNote({ ...note, fields: [note.fields[0], 'Edited answer', note.fields[2]] });
         const rebuilt = await buildAnkiExport('apkg', undefined, true);
-        expect(Buffer.compare(Buffer.from(rebuilt.bytes!), Buffer.from(input))).not.toBe(0);
 
         const rebuiltZip = await JSZip.loadAsync(rebuilt.bytes!);
         expect(rebuiltZip.file('meta')).not.toBeNull();
         expect(JSON.parse(await rebuiltZip.file('media')!.async('text'))).toEqual({ 0: 'image.png' });
         const reader = openReader(await rebuiltZip.file('collection.anki21')!.async('uint8array'));
         expect(reader.getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM notes')?.n).toBe(1);
+        expect(reader.getFirstSync<{ flds: string }>('SELECT flds FROM notes')?.flds).toContain('Edited answer');
         expect(reader.getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM cards')?.n).toBe(2);
         expect(reader.getFirstSync<{ data: string }>('SELECT data FROM notes')?.data).toBe('{"note":"opaque"}');
         expect(reader.getFirstSync<{ data: string }>('SELECT data FROM cards WHERE id = 4000')?.data).toBe('{"card":"opaque"}');
@@ -446,7 +443,7 @@ describe('lossless Anki package roundtrip', () => {
     it('matches Anki shareable-deck export by stripping scheduling and system markers', async () => {
         const input = await fixturePackage();
         await importApkg(input, {
-            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
 
@@ -481,7 +478,7 @@ describe('lossless Anki package roundtrip', () => {
 
     it('round-trips FSRS deck options and per-card memory state', async () => {
         await importApkg(await fixturePackage(), {
-            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
 
@@ -519,7 +516,7 @@ describe('lossless Anki package roundtrip', () => {
         db = createAppDb(SQL);
         holder.db = db;
         await importApkg(artifact.bytes!, {
-            subject: 'medicine', topic: 'Imported', fileName: 'fsrs.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         const reimported = getAllDeckConfigs().find((entry) => (entry.fsrsParams?.length ?? 0) > 0);
@@ -538,7 +535,7 @@ describe('lossless Anki package roundtrip', () => {
         expect(oracle).toMatchObject({ fsrsWeights: [], fsrsParams5: [], fsrsParams6: [] });
 
         await importApkg(await fixturePackage(), {
-            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         const config = getAllDeckConfigs()[0];
@@ -569,7 +566,7 @@ describe('lossless Anki package roundtrip', () => {
         // The retention values and the cutoff survive a re-import; the parameters do not.
         resetCollection();
         await importApkg(artifact.bytes!, {
-            subject: 'medicine', topic: 'Imported', fileName: 'shared.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         const reimported = getAllDeckConfigs().find((entry) => entry.name === config.name)!;
@@ -579,9 +576,9 @@ describe('lossless Anki package roundtrip', () => {
         expect(reimported.ignoreRevlogsBeforeMs).toBe(Date.UTC(2025, 5, 1));
     });
 
-    it('exports a preset\u2019s Easy Days under Anki\u2019s key, over the ones it was imported with', async () => {
+    it('exports a preset\u2019s Easy Days under Anki\u2019s key alone, over the ones it was imported with', async () => {
         await importApkg(await fixturePackage(), {
-            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         // The package's preset JSON is kept as ankiRaw, so it still holds Anki's own key with the
@@ -597,13 +594,14 @@ describe('lossless Anki package roundtrip', () => {
         const dconf = Object.values(JSON.parse(reader.getFirstSync<{ dconf: string }>('SELECT dconf FROM col')!.dconf)) as any[];
         reader.close();
         const exported = dconf.find((entry) => entry.name === 'Imported Options');
-        // Anki reads only `easyDaysPercentages`; earlier builds of this app read only `easyDays`.
+        // Anki reads only `easyDaysPercentages`, and a key it does not have would stay in its
+        // collection for good.
         expect(exported.easyDaysPercentages).toEqual(edited);
-        expect(exported.easyDays).toEqual(edited);
+        expect(exported).not.toHaveProperty('easyDays');
 
         resetCollection();
         await importApkg(artifact.bytes!, {
-            subject: 'medicine', topic: 'Imported', fileName: 'easy-days.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         expect(getAllDeckConfigs().find((entry) => entry.name === 'Imported Options')?.easyDays).toEqual(edited);
@@ -614,7 +612,7 @@ describe('lossless Anki package roundtrip', () => {
         // this preset, so the package below carries one preset made here and one from Anki.
         saveDeckConfig({ ...DEFAULT_DECK_CONFIG });
         await importApkg(await fixturePackage(), {
-            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         // The imported preset's JSON, kept as ankiRaw, still says to bury; the learner turns it off.
@@ -632,21 +630,22 @@ describe('lossless Anki package roundtrip', () => {
         const dconf = Object.values(JSON.parse(reader.getFirstSync<{ dconf: string }>('SELECT dconf FROM col')!.dconf)) as any[];
         reader.close();
         expect(dconf.find((entry) => entry.name === 'Imported Options').buryInterdayLearning).toBe(false);
-        expect(dconf.find((entry) => entry.name === DEFAULT_DECK_CONFIG.name).buryInterdayLearning).toBe(true);
+        // Preset 1 goes out under Anki's own name for it, not this app's label.
+        expect(dconf.find((entry) => entry.id === DEFAULT_DECK_CONFIG.id)).toMatchObject({ name: 'Default', buryInterdayLearning: true });
 
         resetCollection();
         await importApkg(artifact.bytes!, {
-            subject: 'medicine', topic: 'Imported', fileName: 'interday-burying.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         const reimported = getAllDeckConfigs();
         expect(reimported.find((entry) => entry.name === 'Imported Options')?.buryInterdayLearningSiblings).toBe(false);
-        expect(reimported.find((entry) => entry.name === DEFAULT_DECK_CONFIG.name)?.buryInterdayLearningSiblings).toBe(true);
+        expect(reimported.find((entry) => entry.name === 'Default')?.buryInterdayLearningSiblings).toBe(true);
     });
 
     it('selects notes from exact deck ids and preserves their cards in other decks', async () => {
         await importApkg(await fixturePackage(), {
-            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         const decks = getAllDecks();
@@ -683,7 +682,7 @@ describe('lossless Anki package roundtrip', () => {
 
     it('builds a backup export from the snapshot instead of the live collection', async () => {
         await importApkg(await fixturePackage(), {
-            subject: 'medicine', topic: 'Imported', fileName: 'professional.apkg',
+            subject: 'medicine', topic: 'Imported',
             openReader: async (bytes) => openReader(bytes),
         });
         const snapshot = JSON.stringify({
@@ -797,7 +796,6 @@ describe('lossless Anki package roundtrip', () => {
 
         const result = await importApkg(await fixturePackage(), {
             subject: 'ignored',
-            fileName: 'collection.colpkg',
             replaceCollection: true,
             withScheduling: true,
             withDeckConfigs: true,
