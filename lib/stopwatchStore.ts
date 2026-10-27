@@ -28,6 +28,8 @@ import {
 
 const PREFS_KEY = 'tus_stopwatch_prefs_v1';
 const RUNNING_KEY = 'tus_stopwatch_running_v1';
+/** Sessions "Çalışmaları Temizle" removed, kept until the learner restores them. */
+const CLEARED_KEY = 'tus_study_sessions_cleared_v1';
 
 const SESSION_COLUMNS = 'id, subject, kind, pass, startMs, endMs, studyMs, breakMs, breakCount, note, source';
 const SESSION_PLACEHOLDERS = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
@@ -159,6 +161,96 @@ export function recentStudySubjects(limit: number): string[] {
         Math.max(1, Math.floor(limit)),
     );
     return rows.map((row) => row.subject).filter((subject) => typeof subject === 'string' && subject.length > 0);
+}
+
+// --- Çalışmaları Temizle ---
+
+/** When a study day starts: its date at the rollover hour, local time. */
+function studyDayStartMs(ymd: string, rolloverHour: number, dayOffset = 0): number {
+    const [year, month, day] = ymd.split('-').map(Number);
+    return new Date(year, month - 1, day + dayOffset, rolloverHour).getTime();
+}
+
+/**
+ * Sessions that started on a study day from `fromYmd` through `throughYmd`, both included, newest
+ * first. A day turns over at the rollover hour, as in the Study Calendar, so a session past
+ * midnight belongs to the day it started on.
+ */
+export function studySessionsStartedBetween(fromYmd: string, throughYmd: string, rolloverHour: number): StudySessionRecord[] {
+    if (throughYmd < fromYmd) return [];
+    return readRecords(
+        `SELECT ${SESSION_COLUMNS} FROM study_sessions WHERE startMs >= ? AND startMs < ? ORDER BY startMs DESC, id DESC`,
+        studyDayStartMs(fromYmd, rolloverHour),
+        studyDayStartMs(throughYmd, rolloverHour, 1),
+    );
+}
+
+/**
+ * The sessions cleared so far and not restored. Throws when the stored list cannot be read, so a
+ * later clear never overwrites sessions it could not keep.
+ */
+export function loadClearedStudySessions(): StudySessionRecord[] {
+    const raw = getDbSetting(CLEARED_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error('Temizlenen çalışmalar okunamadı.');
+    return parsed.filter(isValidStudySessionRecord).map(withStudySessionDefaults);
+}
+
+/**
+ * Remove the sessions that started in the range, keeping them for "Geri Yükle". The kept copy is
+ * written in the same transaction that deletes them, and earlier clears stay restorable too. The
+ * running stopwatch is not a stored session and is never touched. Returns how many were removed.
+ */
+export function clearStudySessions(fromYmd: string, throughYmd: string, rolloverHour: number): number {
+    const removed = studySessionsStartedBetween(fromYmd, throughYmd, rolloverHour);
+    if (removed.length === 0) return 0;
+    const kept = loadClearedStudySessions();
+    const keptIds = new Set(kept.map((session) => session.id));
+    const archive = [...kept, ...removed.filter((session) => !keptIds.has(session.id))];
+    const db = getDB();
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        // Written directly, not through setDbSetting, which swallows a failure: the sessions must
+        // not be deleted unless their copy is stored.
+        db.runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', CLEARED_KEY, JSON.stringify(archive));
+        for (const session of removed) db.runSync('DELETE FROM study_sessions WHERE id = ?', session.id);
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+    return removed.length;
+}
+
+/**
+ * Put every cleared session back and forget the kept copy. A session already in the table (an
+ * interrupted restore) is not added twice; a different session that took its id since is kept,
+ * and the cleared one comes back under a new id. Returns how many sessions were added.
+ */
+export function restoreClearedStudySessions(nowMs: number = Date.now()): number {
+    const cleared = loadClearedStudySessions();
+    const db = getDB();
+    let restored = 0;
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        for (const session of cleared) {
+            const existing = db.getFirstSync<{ startMs: number; subject: string }>(
+                'SELECT startMs, subject FROM study_sessions WHERE id = ?',
+                session.id,
+            );
+            if (existing && existing.startMs === session.startMs && existing.subject === session.subject) continue;
+            const record = existing ? { ...session, id: nextSessionId(nowMs) } : session;
+            db.runSync(`INSERT INTO study_sessions (${SESSION_COLUMNS}) VALUES (${SESSION_PLACEHOLDERS})`, ...sessionValues(record));
+            restored += 1;
+        }
+        db.runSync('DELETE FROM settings WHERE key = ?', CLEARED_KEY);
+        db.execSync('COMMIT;');
+    } catch (error) {
+        db.execSync('ROLLBACK;');
+        throw error;
+    }
+    return restored;
 }
 
 // --- Backup ---

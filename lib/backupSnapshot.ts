@@ -26,6 +26,8 @@ import { CANONICAL_BACKUP_TABLES, createCanonicalBackupValidator } from './backu
 import { loadSessionStats, loadSettings } from './settingsStore';
 import type { StopwatchPrefs, StudySessionRecord } from './stopwatch';
 import { loadStopwatchPrefs, readStudySessionsForBackup } from './stopwatchStore';
+import { loadStudyPlans } from './studyPlanStore';
+import type { StudyPlanBlock } from './studyPlans';
 
 /** Settings rows the study queue keeps per filtered deck and per review answer. */
 export const QUEUE_BOOKKEEPING_PREFIXES = ['filtered_membership_v1:', 'interday_review_usage:'] as const;
@@ -152,11 +154,17 @@ export async function exportAllDataChunks(): Promise<CollectionSnapshot> {
     // from costing the rest of the backup.
     let studySessions: StudySessionRecord[] | undefined;
     let stopwatchPrefs: StopwatchPrefs | undefined;
+    let studyPlans: StudyPlanBlock[] | undefined;
     try {
         studySessions = readStudySessionsForBackup();
         stopwatchPrefs = loadStopwatchPrefs();
     } catch (error) {
         console.warn('[Storage] exportAllData study sessions failed:', error);
+    }
+    try {
+        studyPlans = loadStudyPlans();
+    } catch (error) {
+        console.warn('[Storage] exportAllData study plans failed:', error);
     }
     if (studySessions) {
         validator.addStudySessions(studySessions);
@@ -164,7 +172,7 @@ export async function exportAllDataChunks(): Promise<CollectionSnapshot> {
     }
 
     const validation = validator.finish();
-    chunks.push(`},"catalogProgress":${JSON.stringify(catalogProgress)},"catalogLearnerData":${JSON.stringify(catalogLearnerData)},"queueBookkeeping":${JSON.stringify(queueBookkeeping)}${stopwatchPrefs ? `,"stopwatchPrefs":${JSON.stringify(stopwatchPrefs)}` : ''}`);
+    chunks.push(`},"catalogProgress":${JSON.stringify(catalogProgress)},"catalogLearnerData":${JSON.stringify(catalogLearnerData)},"queueBookkeeping":${JSON.stringify(queueBookkeeping)}${stopwatchPrefs ? `,"stopwatchPrefs":${JSON.stringify(stopwatchPrefs)}` : ''}${studyPlans ? `,"studyPlans":${JSON.stringify(studyPlans)}` : ''}`);
     chunks.push(validation.valid ? '}' : `,"recoveryOnly":true,"recoveryReason":${JSON.stringify(validation.reason)}}`);
     return validation.valid
         ? { chunks, restorable: true }

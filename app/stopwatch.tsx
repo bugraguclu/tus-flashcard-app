@@ -11,9 +11,10 @@ import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from 
 import StopwatchSettingsSheet from '../components/stopwatch/StopwatchSettingsSheet';
 import StopwatchAlertsSheet from '../components/stopwatch/StopwatchAlertsSheet';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
+import StudyToolsMenu, { STUDY_TOOLS_FAB_SIZE } from '../components/stopwatch/StudyToolsMenu';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { BellIcon, CalendarIcon, GearIcon, PlusCircleIcon } from '../components/stopwatch/StopwatchIcons';
-import { FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { useI18n } from '../hooks/useI18n';
@@ -21,6 +22,8 @@ import { useStopwatch } from '../hooks/useStopwatch';
 import { useStudySubjects } from '../hooks/useStudySubjects';
 import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';
 import { goBackOr, openOrReturnTo } from '../lib/backNavigation';
+import { readStudyPlansForDisplay } from '../lib/studyPlanStore';
+import { plansOnDay, type StudyPlanBlock } from '../lib/studyPlans';
 import { alert, confirm } from '../lib/confirm';
 import {
     MIN_SESSION_MS,
@@ -44,7 +47,6 @@ import {
 
 /** Days "Son Çalışmalarınız" covers: today and the six before it. */
 const RECENT_DAYS = 7;
-const FAB_SIZE = 58;
 const EMPTY_AGGREGATE: StudyCalendarAggregate = { days: [], totalsByDay: new Map() };
 
 function lightHaptic(): void {
@@ -114,6 +116,16 @@ export default function StopwatchScreen() {
     const runningCountsToday = running !== null && localDayNumber(running.startedAtMs, rolloverHour) === todayDayNumber;
     const todayStudyMs = (days[0]?.studyMs ?? 0) + (runningCountsToday ? elapsed?.studyMs ?? 0 : 0);
     const goalRemainingMs = Math.max(0, prefs.dailyGoalMinutes * 60_000 - todayStudyMs);
+
+    // Plans are edited on their own screen, which this one stays under; read them on return.
+    const [studyPlans, setStudyPlans] = useState<StudyPlanBlock[]>(() => readStudyPlansForDisplay());
+    useFocusEffect(useCallback(() => {
+        setStudyPlans(readStudyPlansForDisplay());
+    }, []));
+    const todayPlans = useMemo(
+        () => plansOnDay(studyPlans, dayNumberToYmd(todayDayNumber)),
+        [studyPlans, todayDayNumber],
+    );
 
     const [picker, setPicker] = useState<'start' | 'plan' | null>(null);
     const [editor, setEditor] = useState<{ initial: SessionEditorInitial | null } | null>(null);
@@ -195,6 +207,26 @@ export default function StopwatchScreen() {
             ),
             () => {
                 if (saveFinished()) startSession(plan.subject, plan.pass, plan.kind);
+            },
+        );
+    };
+
+    // A block from "Çalışma Planlama" starts like today's plan: a running session of another
+    // subject is saved first, after asking.
+    const handleStartPlanned = (planned: StudyPlanBlock) => {
+        if (!running) {
+            startSession(planned.subject, planned.pass, planned.kind);
+            return;
+        }
+        if (running.subject === planned.subject) return;
+        confirm(
+            l('Derse geç', 'Switch subject'),
+            l(
+                `${running.subject} çalışması kaydedilip ${planned.subject} başlatılsın mı?`,
+                `Save the ${running.subject} session and start ${planned.subject}?`,
+            ),
+            () => {
+                if (saveFinished()) startSession(planned.subject, planned.pass, planned.kind);
             },
         );
     };
@@ -312,6 +344,12 @@ export default function StopwatchScreen() {
                             <BellIcon color={colors.textPrimary} size={24} muted={!prefs.alertsEnabled} />
                         </HeaderIconButton>
                         <HeaderIconButton
+                            accessibilityLabel={l('Çalışma Takvimi', 'Study Calendar')}
+                            onPress={openCalendar}
+                        >
+                            <CalendarIcon color={colors.textPrimary} size={23} />
+                        </HeaderIconButton>
+                        <HeaderIconButton
                             accessibilityLabel={l('Kronometre ayarları', 'Stopwatch settings')}
                             onPress={() => setSettingsOpen(true)}
                         >
@@ -323,7 +361,7 @@ export default function StopwatchScreen() {
 
             <ScrollView
                 style={styles.scroll}
-                contentContainerStyle={{ paddingBottom: insets.bottom + FAB_SIZE + Spacing.xxl }}
+                contentContainerStyle={{ paddingBottom: insets.bottom + STUDY_TOOLS_FAB_SIZE + Spacing.xxl }}
                 showsVerticalScrollIndicator={false}
             >
                 <StopwatchHero
@@ -367,18 +405,13 @@ export default function StopwatchScreen() {
                     onPlanEdit={() => openPicker('plan')}
                     onSessionMenu={setMenuSession}
                     onOpenCalendar={openCalendar}
+                    todayPlans={todayPlans}
+                    onOpenPlans={() => router.push('/study-plans' as any)}
+                    onStartPlanned={(planned) => handleStartPlanned(planned)}
                 />
             </ScrollView>
 
-            <TouchableOpacity
-                style={[styles.fab, { bottom: insets.bottom + Spacing.lg }]}
-                onPress={openCalendar}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={l('Çalışma Takvimi', 'Study Calendar')}
-            >
-                <CalendarIcon color={colors.white} size={26} />
-            </TouchableOpacity>
+            <StudyToolsMenu bottom={insets.bottom + Spacing.lg} />
 
             <SubjectPickerSheet
                 visible={picker !== null}
@@ -444,16 +477,5 @@ function createStyles(colors: ColorScheme) {
         sectionTitle: { fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
         addButton: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
         addText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        fab: {
-            position: 'absolute',
-            right: Spacing.lg,
-            width: FAB_SIZE,
-            height: FAB_SIZE,
-            borderRadius: FAB_SIZE / 2,
-            backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...Shadows.md,
-        },
     });
 }

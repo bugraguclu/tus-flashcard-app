@@ -71,6 +71,8 @@ import {
     readStudySessionsForBackup,
     saveStopwatchPrefs,
 } from './stopwatchStore';
+import { loadStudyPlans, saveStudyPlans } from './studyPlanStore';
+import { emptyStudyPlan } from './studyPlans';
 
 const MINUTE = 60_000;
 const T0 = new Date('2026-10-01T09:00:00').getTime();
@@ -175,6 +177,23 @@ describe('Kronometre data in backups', () => {
             expect(await importAllData(JSON.stringify(broken))).toBe(false);
             expect(readStudySessionsForBackup()).toEqual([kept]);
         }
+    });
+
+    it('carries study plans through a backup, and keeps the device’s plans for a backup without them', async () => {
+        const plan = { ...emptyStudyPlan('2026-10-26', 'plan-1'), subject: 'Patoloji', note: 'Akciğer' };
+        saveStudyPlans([plan]);
+        const exported = await exportAllData();
+        expect(JSON.parse(exported).studyPlans).toEqual([plan]);
+
+        saveStudyPlans([emptyStudyPlan('2026-10-26', 'plan-2')]);
+        expect(await importAllData(exported)).toBe(true);
+        expect(loadStudyPlans()).toEqual([plan]);
+
+        const older = JSON.parse(exported);
+        delete older.studyPlans;
+        saveStudyPlans([emptyStudyPlan('2026-10-26', 'plan-3')]);
+        expect(await importAllData(JSON.stringify(older))).toBe(true);
+        expect(loadStudyPlans().map((entry) => entry.id)).toEqual(['plan-1', 'plan-3']);
     });
 
     it('keeps the sessions on the device when the backup was made before them', async () => {

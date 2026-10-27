@@ -699,6 +699,38 @@ function AppStack() {
                     }}
                 />
                 <Stack.Screen
+                    name="study-analysis"
+                    options={{
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="study-plans"
+                    options={{
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="study-plan-wizard"
+                    options={{
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="study-clear"
+                    options={{
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
                     name="editor"
                     options={{
                         // The note editor is a complete work surface. A full-screen native

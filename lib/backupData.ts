@@ -12,6 +12,7 @@ import { canonicalBackupContainsCatalog } from './catalogProtection';
 import { validateCanonicalBackupData } from './backupValidation';
 import { normalizeStopwatchPrefs, type StudySessionRow } from './stopwatch';
 import { replaceStudySessions, saveStopwatchPrefs } from './stopwatchStore';
+import { replaceStudyPlans } from './studyPlanStore';
 import {
     DEFAULT_SETTINGS,
     KEYS,
@@ -257,6 +258,8 @@ function importCanonicalTables(data: any): void {
             replaceStudySessions(data.tables.study_sessions as StudySessionRow[]);
         }
         if (data.stopwatchPrefs) saveStopwatchPrefs(normalizeStopwatchPrefs(data.stopwatchPrefs));
+        // Likewise a backup made before study plans existed leaves the device's plans alone.
+        if (Array.isArray(data.studyPlans)) replaceStudyPlans(data.studyPlans);
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');
@@ -310,6 +313,11 @@ export async function importAllData(jsonString: string): Promise<boolean> {
 
         if (data.stopwatchPrefs !== undefined && (typeof data.stopwatchPrefs !== 'object' || data.stopwatchPrefs === null)) {
             console.error('Import: stopwatchPrefs bir obje değil');
+            return false;
+        }
+
+        if (data.studyPlans !== undefined && !Array.isArray(data.studyPlans)) {
+            console.error('Import: studyPlans bir dizi değil');
             return false;
         }
 

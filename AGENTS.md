@@ -25,6 +25,10 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   (the `study_sessions` table, its preferences and the running stopwatch),
   `lib/stopwatchNotifications*.ts` (block reminders);
   `lib/studyCalendar.ts` merges its sessions with card sessions for the timeline and the calendar.
+  Its study tools (the orange button on the Kronometre and the calendar): `lib/studyPlans.ts` and
+  `lib/studyPlanStore.ts` (Çalışma Planlama, routes `study-plans`, `study-plan-wizard`),
+  `lib/studyAnalysis.ts` (Çalışma Analiziniz, `study-analysis`) and `clearStudySessions` in
+  `lib/stopwatchStore.ts` (Çalışmaları Temizle, `study-clear`).
 - Scheduling: `lib/scheduler.ts` (classic), `lib/fsrs*.ts` (FSRS), `lib/ankiState.ts` (card state,
   day numbers). Reviewer behaviour: `lib/reviewer*.ts`; card rendering `components/CardWebView.tsx`
   with `lib/templates.ts` and `lib/cardAppearance.ts`.

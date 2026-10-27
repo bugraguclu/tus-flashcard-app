@@ -5,6 +5,8 @@ import { useI18n } from '../../hooks/useI18n';
 import { dayNumberToYmd } from '../../lib/ankiState';
 import { formatGoalRemaining, formatStopwatchClock, type StudyKind, type StudyPlan } from '../../lib/stopwatch';
 import { studySubjectGlyph, type StudySession } from '../../lib/studyCalendar';
+import type { StudyPlanBlock } from '../../lib/studyPlans';
+import PlannedStudyCard from './PlannedStudyCard';
 import SleepingPanda from './SleepingPanda';
 import StudySessionCard from './StudySessionCard';
 import { studyTypeLabel } from './StudyTypeChips';
@@ -39,6 +41,10 @@ interface StopwatchTimelineProps {
     onPlanEdit: () => void;
     onSessionMenu: (session: StudySession) => void;
     onOpenCalendar: () => void;
+    /** Today's blocks from "Çalışma Planlama". */
+    todayPlans: StudyPlanBlock[];
+    onOpenPlans: () => void;
+    onStartPlanned: (plan: StudyPlanBlock) => void;
 }
 
 /**
@@ -57,6 +63,9 @@ export default function StopwatchTimeline({
     onPlanEdit,
     onSessionMenu,
     onOpenCalendar,
+    todayPlans,
+    onOpenPlans,
+    onStartPlanned,
 }: StopwatchTimelineProps) {
     const { l, locale, localeTag } = useI18n();
     const colors = useThemeColors();
@@ -232,6 +241,14 @@ export default function StopwatchTimeline({
                     ))}
 
                     {index === 0 ? liveRow : null}
+                    {index === 0 ? todayPlans.map((planned) => (
+                        <PlannedStudyCard
+                            key={planned.id}
+                            plan={planned}
+                            onOpen={onOpenPlans}
+                            onStart={live?.subject === planned.subject ? undefined : () => onStartPlanned(planned)}
+                        />
+                    )) : null}
                     {index === 0 ? planRow : null}
 
                     {index > 0 && day.sessions.length === 0 ? (

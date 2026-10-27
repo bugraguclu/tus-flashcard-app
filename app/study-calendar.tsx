@@ -13,7 +13,9 @@ import { HeaderBackIcon, HeaderForwardIcon } from '../components/HeaderBackIcon'
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
 import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
 import { AnalyticsIcon, StopwatchIcon } from '../components/stopwatch/StopwatchIcons';
+import PlannedStudyCard from '../components/stopwatch/PlannedStudyCard';
 import StudySessionCard from '../components/stopwatch/StudySessionCard';
+import StudyToolsMenu, { STUDY_TOOLS_FAB_SIZE } from '../components/stopwatch/StudyToolsMenu';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { timelineStyles } from '../components/stopwatch/timelineStyles';
 import {
@@ -33,6 +35,8 @@ import { alert, confirm } from '../lib/confirm';
 import { dayNumberToYmd, localDayNumber } from '../lib/ankiState';
 import type { StudySessionDraft } from '../lib/stopwatch';
 import { deleteStudySession, updateStudySession } from '../lib/stopwatchStore';
+import { readStudyPlansForDisplay } from '../lib/studyPlanStore';
+import { plansOnDay, type StudyPlanBlock } from '../lib/studyPlans';
 import {
     buildMonthGrid,
     buildWeekGrid,
@@ -100,8 +104,11 @@ export default function StudyCalendarScreen() {
     const [editing, setEditing] = useState<SessionEditorInitial | null>(null);
     const { recentSubjects, loadRecentSubjects, passOf } = useStudySubjects('StudyCalendar');
 
+    // Plans change on the planning screen, which this one stays under; read them again on return.
+    const [plans, setPlans] = useState<StudyPlanBlock[]>(() => readStudyPlansForDisplay());
     useFocusEffect(useCallback(() => {
         setSchedulingRevision(getSchedulingRevision());
+        setPlans(readStudyPlansForDisplay());
     }, [getSchedulingRevision]));
 
     const cells = useMemo<CalendarCell[]>(
@@ -134,19 +141,33 @@ export default function StudyCalendarScreen() {
         [cells],
     );
 
-    const sections = useMemo<StudyDaySection[]>(
-        () => aggregate.days
+    // Days with sessions, and the visible days a plan falls on, each with its plans after the
+    // sessions — as TUSBuddy's calendar lists them.
+    const sections = useMemo<StudyDaySection[]>(() => {
+        const byDay = new Map(aggregate.days
             .filter((day) => visibleDayNumbers.has(day.dayNumber))
-            .map((day) => ({
-                dayNumber: day.dayNumber,
-                title: new Date(`${day.ymd}T12:00:00`).toLocaleDateString(localeTag, {
+            .map((day) => [day.dayNumber, { ymd: day.ymd, sessions: day.sessions }]));
+        const planned = new Map<number, StudyPlanBlock[]>();
+        if (plans.length > 0) {
+            for (const dayNumber of visibleDayNumbers) {
+                const onDay = plansOnDay(plans, dayNumberToYmd(dayNumber));
+                if (onDay.length > 0) planned.set(dayNumber, onDay);
+            }
+        }
+        const dayNumbers = [...new Set([...byDay.keys(), ...planned.keys()])].sort((a, b) => a - b);
+        return dayNumbers.map((dayNumber) => {
+            const ymd = byDay.get(dayNumber)?.ymd ?? dayNumberToYmd(dayNumber);
+            return {
+                dayNumber,
+                title: new Date(`${ymd}T12:00:00`).toLocaleDateString(localeTag, {
                     day: 'numeric',
                     month: 'short',
                 }),
-                data: day.sessions,
-            })),
-        [aggregate.days, visibleDayNumbers, localeTag],
-    );
+                data: byDay.get(dayNumber)?.sessions ?? [],
+                plans: planned.get(dayNumber) ?? [],
+            };
+        });
+    }, [aggregate.days, visibleDayNumbers, plans, localeTag]);
 
     const weekdayLetters = useMemo(
         () => (locale === 'tr'
@@ -337,6 +358,15 @@ export default function StudyCalendarScreen() {
         <StudySessionCard session={item} onOpenMenu={setMenuSession} />
     ), []);
 
+    const openPlans = useCallback(() => router.push('/study-plans' as any), [router]);
+    const renderSectionFooter = useCallback(({ section }: { section: StudyDaySection }) => (
+        section.plans.length > 0 ? (
+            <View>
+                {section.plans.map((plan) => <PlannedStudyCard key={plan.id} plan={plan} onOpen={openPlans} />)}
+            </View>
+        ) : null
+    ), [openPlans]);
+
     const renderSectionHeader = useCallback(({ section }: { section: StudyDaySection }) => {
         const shared = timelineStyles(colors);
         return (
@@ -366,7 +396,7 @@ export default function StudyCalendarScreen() {
                 onBack={() => goBackOr(router)}
                 actions={(
                     <HeaderIconButton
-                        accessibilityLabel={l('Çalışma analizleri', 'Study analytics')}
+                        accessibilityLabel={l('İstatistikler', 'Statistics')}
                         onPress={() => router.push('/stats' as any)}
                     >
                         <AnalyticsIcon color={colors.accent} size={22} />
@@ -472,6 +502,7 @@ export default function StudyCalendarScreen() {
                 keyExtractor={(item) => item.key}
                 renderItem={renderSession}
                 renderSectionHeader={renderSectionHeader}
+                renderSectionFooter={renderSectionFooter}
                 stickySectionHeadersEnabled={false}
                 showsVerticalScrollIndicator={false}
                 initialNumToRender={8}
@@ -503,6 +534,8 @@ export default function StudyCalendarScreen() {
                 <StopwatchIcon color={colors.white} size={26} />
             </TouchableOpacity>
 
+            <StudyToolsMenu bottom={insets.bottom + Spacing.lg + STOPWATCH_BUTTON_SIZE + Spacing.md} />
+
             <SessionActionsMenu
                 visible={menuSession !== null}
                 title={menuSession?.subject ?? ''}
@@ -528,11 +561,12 @@ interface StudyDaySection {
     dayNumber: number;
     title: string;
     data: StudySession[];
+    plans: StudyPlanBlock[];
 }
 
 const STOPWATCH_BUTTON_SIZE = 56;
-/** Tail padding that keeps the last session card out from under the floating stopwatch button. */
-const STOPWATCH_BUTTON_CLEARANCE = STOPWATCH_BUTTON_SIZE + 2 * Spacing.lg;
+/** Tail padding that keeps the last card out from under the floating stopwatch and tools buttons. */
+const STOPWATCH_BUTTON_CLEARANCE = STOPWATCH_BUTTON_SIZE + STUDY_TOOLS_FAB_SIZE + Spacing.md + 2 * Spacing.lg;
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
