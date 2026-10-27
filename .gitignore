@@ -55,8 +55,3 @@ docs/expo-go-qr.png
 # generated native folders
 /ios
 /android
-
-# Past TUS exams pack: ÖSYM's questions, built locally by npm run build:past-exams, never committed
-assets/catalog/cikmis-tus.zip
-assets/catalog/cikmis-tus-manifest.json
-assets/catalog/cikmis-tus-pack.js

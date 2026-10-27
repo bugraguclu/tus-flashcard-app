@@ -9,7 +9,7 @@ export interface BundledPastExamPack {
 /**
  * The past-exam pack built into this copy of the app, or null when it has none.
  *
- * The pack is not in git (the questions are ÖSYM's): `npm run build:past-exams` writes it with a
+ * The questions are ÖSYM's. `npm run build:past-exams` writes the pack with a
  * loader under `assets/catalog/`, and metro.config.js resolves `tus-past-exam-pack` to that loader
  * when it exists and to an empty module when it does not. Restart Metro with `--clear` after
  * building or deleting the pack.

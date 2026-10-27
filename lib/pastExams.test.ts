@@ -2,7 +2,7 @@
  * Installing the past TUS exams must only ever add: the learner's own rows stay as they were, an
  * interrupted install leaves nothing behind, and a second run brings back only what is missing.
  * These run the real installer on a small pack in the real format and the app's SQLite schema. The
- * full pack is not in git (the questions are ÖSYM's); when a local build has it, it is checked too.
+ * full pack (the questions are ÖSYM's) is checked too whenever it is present.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
