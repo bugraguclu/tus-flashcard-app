@@ -43,8 +43,7 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
 
 - Search with `rg` or `git grep`. A plain `grep -r` from the root also walks `node_modules`, `ios`
   and the worktrees (over 100,000 files). `.ignore` keeps `package-lock.json`, the catalog manifest
-  and `docs/archive/` out of `rg`.
-- `docs/archive/` holds dated session reports. Do not read it unless asked.
+  and the catalog correction patches out of `rg`.
 - Keep files under about 800 lines. Move a growing screen's pieces into `components/<feature>/`,
   never into `app/`, where every file is a route. Split a growing `lib/` module by concern; if other
   code imports it, keep it re-exporting its old API, and never let the new modules import the file
