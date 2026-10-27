@@ -97,6 +97,7 @@ import {
 } from '../components/deck-options/SettingControls';
 import { buildOptionHelp, deckOptionsWarningText } from '../components/deck-options/deckOptionsCopy';
 import { PresetActionsMenu, PresetPickerModal, RenamePresetModal } from '../components/deck-options/PresetModals';
+import { keepNonPresetEdits } from '../components/deck-options/nonPresetFields';
 import { usePresetStaging } from '../components/deck-options/usePresetStaging';
 import type { SelectOption } from '../components/deck-options/types';
 
@@ -271,20 +272,22 @@ export default function DeckOptionsScreen() {
         ),
     });
 
-    const applyPresetSelection = (nextId: number, markSaved = false, preset?: DeckConfig) => {
+    /** The form as it is on disk for `config`: the deck's stored limits, description and today-only limits. */
+    const storedFormFor = (config: DeckConfig) => {
         const currentDeck = getDeck(activeDeckId) ?? deck;
         const currentTodayLimits = currentDeck
             ? getDeckTodayLimits(currentDeck.id, settings.dayRolloverHour)
             : {};
-        const nextForm = formFromConfig(
-            preset ?? presetStaging.presetFor(nextId),
-            form.description,
-            currentDeck,
-            currentTodayLimits,
-        );
+        return formFromConfig(config, currentDeck?.description ?? '', currentDeck, currentTodayLimits);
+    };
+
+    const applyPresetSelection = (nextId: number, preset?: DeckConfig, keepDeckEdits = false) => {
+        const storedForm = storedFormFor(preset ?? presetStaging.presetFor(nextId));
+        const nextForm = keepDeckEdits
+            ? keepNonPresetEdits(storedForm, form)
+            : { ...storedForm, description: form.description };
         setConfigId(nextId);
         setForm(nextForm);
-        if (markSaved) setSavedSnapshot(snapshotForm(nextId, nextForm));
         setRescheduleOnSave(false);
         setOptimizedAtMs(null);
         setSaveState('idle');
@@ -857,9 +860,10 @@ export default function DeckOptionsScreen() {
             setConfigId(preset.id);
             return;
         }
-        // Add Preset starts from the built-in defaults, not from another preset.
+        // Add Preset starts from the built-in defaults, not from another preset. The deck's own
+        // limits, description and the collection switches are not the preset's, so their edits stay.
         const preset = presetStaging.stageAdd(name, null);
-        applyPresetSelection(preset.id, false, preset);
+        applyPresetSelection(preset.id, preset, true);
     };
 
     const handleAddPreset = () => {
@@ -891,16 +895,12 @@ export default function DeckOptionsScreen() {
             () => {
                 try {
                     const restored = restoreDeckConfigDefaults(configId);
-                    const nextForm = {
-                        ...formFromConfig(restored, form.description),
-                        deckNewLimit: form.deckNewLimit,
-                        deckReviewLimit: form.deckReviewLimit,
-                        todayNewLimit: form.todayNewLimit,
-                        todayReviewLimit: form.todayReviewLimit,
-                        description: form.description,
-                    };
-                    setForm(nextForm);
-                    setSavedSnapshot(snapshotForm(configId, nextForm));
+                    // Only the preset was written. The snapshot is what is now on disk, so unsaved
+                    // edits to the deck's limits, description and collection switches stay in the
+                    // form as unsaved changes for Save, instead of being marked saved and lost.
+                    const storedForm = storedFormFor(restored);
+                    setForm(keepNonPresetEdits(storedForm, form));
+                    setSavedSnapshot(snapshotForm(configId, storedForm));
                     setSaveState('saved');
                     setSaveMessage(l('Ayar grubu varsayılan değerlere döndürüldü.', 'The preset was restored to default values.'));
                     setPresetRevision((value) => value + 1);

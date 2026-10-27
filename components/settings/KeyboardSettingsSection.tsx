@@ -30,6 +30,8 @@ export default function KeyboardSettingsSection({ bindings, onChange }: Props) {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [recordingField, setRecordingField] = useState<keyof KeyBindings | null>(null);
+    // A key another action already uses is refused here: saving two actions on one key would be ambiguous.
+    const [conflict, setConflict] = useState<{ key: string; row: (typeof KEY_ROWS)[number] } | null>(null);
     const recordingRef = useRef<keyof KeyBindings | null>(null);
     const buttonPressRef = useRef<{ field: keyof KeyBindings; cancelling: boolean } | null>(null);
 
@@ -48,7 +50,15 @@ export default function KeyboardSettingsSection({ bindings, onChange }: Props) {
         if (result.kind === 'ignore') return false;
         // Native Enter can emit both key-press and submit. Only the first event records a key.
         cancelRecording();
-        if (result.kind === 'bind') onChange({ ...bindings, [field]: result.key });
+        if (result.kind !== 'bind') return true;
+        const taken = KEY_ROWS.find((row) => row.field !== field
+            && bindings[row.field].toLowerCase() === result.key.toLowerCase());
+        if (taken) {
+            setConflict({ key: result.key, row: taken });
+            return true;
+        }
+        setConflict(null);
+        onChange({ ...bindings, [field]: result.key });
         return true;
     }, [bindings, cancelRecording, onChange]);
 
@@ -79,6 +89,7 @@ export default function KeyboardSettingsSection({ bindings, onChange }: Props) {
             return;
         }
         Keyboard.dismiss();
+        setConflict(null);
         recordingRef.current = field;
         setRecordingField(field);
     };
@@ -138,10 +149,18 @@ export default function KeyboardSettingsSection({ bindings, onChange }: Props) {
                     </View>
                 );
             })}
+            {conflict ? (
+                <Text style={styles.conflict} accessibilityRole="alert" accessibilityLiveRegion="assertive">
+                    {l(
+                        `${formatKeyLabel(conflict.key)} zaten “${conflict.row.tr}” için kullanılıyor. Başka bir tuş seçin.`,
+                        `${formatKeyLabel(conflict.key)} is already used for “${conflict.row.en}”. Choose another key.`,
+                    )}
+                </Text>
+            ) : null}
             {JSON.stringify(bindings) !== JSON.stringify(DEFAULT_KEY_BINDINGS) ? (
                 <TouchableOpacity
                     style={styles.resetButton}
-                    onPress={() => { cancelRecording(); onChange({ ...DEFAULT_KEY_BINDINGS }); }}
+                    onPress={() => { cancelRecording(); setConflict(null); onChange({ ...DEFAULT_KEY_BINDINGS }); }}
                     accessibilityRole="button"
                     accessibilityLabel={l('Kısayolları sıfırla', 'Reset shortcuts')}
                 >
@@ -163,6 +182,7 @@ function createStyles(colors: ColorScheme) {
         keyChip: { minWidth: 54, minHeight: 32, paddingHorizontal: Spacing.sm, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, backgroundColor: colors.accentLight },
         keyText: { fontSize: FontSize.sm, color: colors.accent, fontWeight: '800' },
         capture: { position: 'absolute', width: 1, height: 1, opacity: 0 },
+        conflict: { fontSize: FontSize.sm, color: colors.btnAgain, lineHeight: 19, marginTop: Spacing.sm },
         button: { minHeight: 44, paddingHorizontal: Spacing.sm, justifyContent: 'center', borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border },
         buttonText: { fontSize: FontSize.xs, color: colors.textSecondary, fontWeight: '700' },
         resetButton: { minHeight: 48, marginTop: Spacing.sm, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md },

@@ -89,6 +89,20 @@ describe('keyboard settings on iPhone', () => {
         expect(changed).toHaveBeenLastCalledWith(defaults);
     });
 
+    it('refuses a key another action already uses and says which one', () => {
+        const changed = mount();
+        act(() => button('Kartı göm kısayolunu değiştir').props.onPress());
+        // Upper case is the same key: the reviewer matches shortcuts without case.
+        act(() => input().props.onKeyPress({ nativeEvent: { key: 'R' } }));
+        expect(changed).not.toHaveBeenCalled();
+        const message = renderer!.root.findByProps({ accessibilityRole: 'alert' });
+        expect(message.props.children).toBe('R zaten “Sesi yeniden oynat” için kullanılıyor. Başka bir tuş seçin.');
+        act(() => button('Kartı göm kısayolunu değiştir').props.onPress());
+        expect(renderer!.root.findAllByProps({ accessibilityRole: 'alert' })).toHaveLength(0);
+        act(() => input().props.onKeyPress({ nativeEvent: { key: 'g' } }));
+        expect(changed).toHaveBeenLastCalledWith({ ...defaults, buryCard: 'g' });
+    });
+
     it('keeps Cancel cancelled if native focus is lost before the press finishes', () => {
         const changed = mount();
         act(() => button('Cevabı göster kısayolunu değiştir').props.onPress());

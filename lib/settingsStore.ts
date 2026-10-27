@@ -373,6 +373,8 @@ function syncDefaultDeckConfig(settings: AppSettings): void {
     config.easyBonus = settings.easyBonus;
     config.ivlModifier = settings.intervalModifier;
     config.maxIvl = settings.maxInterval;
+    // Settings shows "Automatically play audio" from the default preset, so its Save writes it back.
+    config.autoPlayAudio = settings.autoPlayAudio;
     if (typeof settings.audioPlaybackRate === 'number') {
         config.audioPlaybackRate = settings.audioPlaybackRate;
     }
@@ -439,10 +441,13 @@ function normalizeKeyBindings(value: unknown): KeyBindings {
         markNote: clean(raw.markNote, DEFAULT_KEY_BINDINGS.markNote),
     };
 
-    // Reject configs with duplicate keys (ambiguous bindings) — fall back to defaults entirely.
-    const values = Object.values(bindings).map((v) => v.toLowerCase());
-    if (new Set(values).size !== values.length) {
-        return { ...DEFAULT_KEY_BINDINGS };
+    // An ambiguous key goes back to its default for the later action only, so one clash cannot
+    // wipe every other shortcut; if the default clashes too, only the full default set is safe.
+    const used = new Set<string>();
+    for (const field of Object.keys(bindings) as Array<keyof KeyBindings>) {
+        if (used.has(bindings[field].toLowerCase())) bindings[field] = DEFAULT_KEY_BINDINGS[field];
+        if (used.has(bindings[field].toLowerCase())) return { ...DEFAULT_KEY_BINDINGS };
+        used.add(bindings[field].toLowerCase());
     }
 
     return bindings;
@@ -621,9 +626,21 @@ export function loadSettings(): AppSettings {
     return { ...fromDeck, ...meta };
 }
 
+/**
+ * Default-preset fields that only Deck Options edits. Settings reads them through the preset and
+ * hands them back on every save, so they must survive validation and a settings reset unchanged.
+ */
+const DECK_OPTIONS_OWNED_FIELDS = [
+    'dailyNewLimit', 'dailyReviewLimit', 'learningSteps', 'lapseSteps', 'graduatingInterval',
+    'easyInterval', 'startingEase', 'lapseIntervalMultiplier', 'minLapseInterval', 'newCardOrder',
+    'hardIntervalMultiplier', 'easyBonus', 'intervalModifier', 'maxInterval',
+] as const satisfies ReadonlyArray<keyof AppSettings>;
+
 /** Resets only the app settings (not decks/cards/history) to factory defaults. */
 export function resetSettingsToDefaults(): SaveSettingsResult {
-    return saveSettings({ ...DEFAULT_SETTINGS });
+    const current = loadSettings();
+    const presetFields = Object.fromEntries(DECK_OPTIONS_OWNED_FIELDS.map((field) => [field, current[field]]));
+    return saveSettings({ ...DEFAULT_SETTINGS, ...presetFields } as AppSettings);
 }
 
 export type SaveSettingsResult =
@@ -691,14 +708,24 @@ export function saveSettings(settings: AppSettings): SaveSettingsResult {
     }
 }
 
+/** Anki's longest interval, 36,500 days, in minutes: no learning step can be longer. */
+const MAX_STEP_MINUTES = 36500 * 1440;
+
 function sanitizeStepArray(value: unknown, fallback: number[]): number[] {
     if (!Array.isArray(value)) return fallback;
+    // No steps is a real setting in Deck Options (graduate at once), not a gap to fill.
+    if (value.length === 0) return [];
     const clean = value
         .map((entry) => Number(entry))
-        .filter((entry) => Number.isFinite(entry) && entry > 0 && entry <= 10080)
-        .slice(0, 20);
+        .filter((entry) => Number.isFinite(entry) && entry > 0 && entry <= MAX_STEP_MINUTES);
 
     return clean.length > 0 ? clean : fallback;
+}
+
+/** A finite number inside the range; anything else falls back. A stored 0 survives, unlike `|| fallback`. */
+function boundedNumber(value: unknown, min: number, max: number, fallback: number): number {
+    const parsed = typeof value === 'number' ? value : typeof value === 'string' && value.trim() ? Number(value) : NaN;
+    return Number.isFinite(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
 }
 
 function normalizeReviewSwipeAction(value: unknown, fallback: 'tools' | 'decks' | 'off') {
@@ -707,20 +734,24 @@ function normalizeReviewSwipeAction(value: unknown, fallback: 'tools' | 'decks' 
 
 export function validateSettings(settings: Record<string, unknown>): AppSettings {
     const validated = { ...DEFAULT_SETTINGS, ...settings } as AppSettings;
-    validated.dailyNewLimit = Math.max(0, Math.min(9999, Number(validated.dailyNewLimit) || 20));
-    validated.dailyReviewLimit = Math.max(0, Math.min(9999, Number(validated.dailyReviewLimit) || 200));
-    validated.graduatingInterval = Math.max(1, Math.min(365, Number(validated.graduatingInterval) || 1));
-    validated.easyInterval = Math.max(1, Math.min(365, Number(validated.easyInterval) || 4));
+    // The preset fields accept every value Deck Options accepts (its widest, legacy ranges), so a
+    // settings save hands the default preset back exactly as it was read.
+    validated.dailyNewLimit = boundedNumber(validated.dailyNewLimit, 0, 9999, 20);
+    validated.dailyReviewLimit = boundedNumber(validated.dailyReviewLimit, 0, 9999, 200);
+    validated.graduatingInterval = Math.max(1, Math.min(36500, Number(validated.graduatingInterval) || 1));
+    validated.easyInterval = Math.max(1, Math.min(36500, Number(validated.easyInterval) || 4));
     validated.startingEase = Math.max(1.3, Math.min(5.0, Number(validated.startingEase) || 2.5));
     validated.lapseIntervalMultiplier = Math.max(0, Math.min(1.0, Number(validated.lapseIntervalMultiplier ?? 0)));
-    validated.minLapseInterval = Math.max(1, Math.min(365, Number(validated.minLapseInterval ?? 1)));
-    validated.hardIntervalMultiplier = Math.max(1.0, Math.min(2.0, Number(validated.hardIntervalMultiplier) || 1.2));
-    validated.easyBonus = Math.max(1.0, Math.min(2.0, Number(validated.easyBonus) || 1.3));
+    validated.minLapseInterval = Math.max(1, Math.min(36500, Number(validated.minLapseInterval ?? 1)));
+    validated.hardIntervalMultiplier = Math.max(0.5, Math.min(2.0, Number(validated.hardIntervalMultiplier) || 1.2));
+    validated.easyBonus = Math.max(1.0, Math.min(5.0, Number(validated.easyBonus) || 1.3));
     validated.intervalModifier = Math.max(0.1, Math.min(3.0, Number(validated.intervalModifier) || 1.0));
     validated.maxInterval = Math.max(1, Math.min(36500, Number(validated.maxInterval) || 36500));
-    validated.dayRolloverHour = Math.max(0, Math.min(23, Number(validated.dayRolloverHour) || 4));
+    // 00:00 is a valid start of day; only a missing or broken value falls back to 04:00.
+    validated.dayRolloverHour = Math.round(boundedNumber(validated.dayRolloverHour, 0, 23, 4));
     validated.learningSteps = sanitizeStepArray(validated.learningSteps, [1, 10]);
     validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);
+    validated.autoPlayAudio = validated.autoPlayAudio !== false;
     validated.queueOrder = normalizeQueueOrder(validated.queueOrder);
     // Settings saved before the app had all six of Anki's gather orders carry the old names.
     validated.newCardGatherOrder = normalizeNewCardGatherOrder(validated.newCardGatherOrder);
