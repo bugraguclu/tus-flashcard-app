@@ -1970,7 +1970,6 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
         loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-        loadingIcon: { fontSize: 48 },
         screenHeader: {
             minHeight: 56,
             flexDirection: 'row',
@@ -1995,7 +1994,6 @@ function createStyles(colors: ColorScheme) {
         categoryRow: { flexDirection: 'row', alignItems: 'stretch', paddingLeft: Spacing.lg },
         categoryBody: { flex: 1, minHeight: 62, flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.sm + 2, paddingRight: Spacing.md },
         categoryDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
-        categoryIcon: { width: 42, fontSize: 24, color: colors.textSecondary },
         categoryIconContainer: { width: 36, alignItems: 'flex-start', justifyContent: 'center' },
         categoryCopy: { flex: 1, gap: 2 },
         categoryTitle: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
@@ -2189,11 +2187,6 @@ function createStyles(colors: ColorScheme) {
         overlayPreviewFloatingBtnRight: {
             right: 10,
         },
-        overlayPreviewFloatingIcon: {
-            fontSize: 12,
-            color: colors.white,
-            lineHeight: 14,
-        },
         overlayPreviewCaption: {
             marginTop: Spacing.sm,
             fontSize: FontSize.xs,
@@ -2244,8 +2237,6 @@ function createStyles(colors: ColorScheme) {
         gesturePickerClose: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
         gesturePickerCloseText: { fontSize: 30, lineHeight: 32, color: colors.textMuted, fontWeight: '300' },
         dangerText: { color: colors.btnAgain },
-        smallButton: { minHeight: 36, paddingHorizontal: Spacing.sm, justifyContent: 'center', borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border },
-        smallButtonText: { fontSize: FontSize.xs, color: colors.textSecondary, fontWeight: '700' },
         linkRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
         linkText: { fontSize: FontSize.md, color: colors.accent, fontWeight: '700' },
         linkArrow: { fontSize: FontSize.lg, color: colors.textMuted },

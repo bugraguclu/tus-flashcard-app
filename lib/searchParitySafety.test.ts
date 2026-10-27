@@ -3,7 +3,7 @@ import initSqlJs from 'sql.js';
 import { beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import { createAppDb } from '../test/sqljsHarness';
 const h = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbDeleteFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {} }));
 import { BUILTIN_NOTE_TYPES } from './models';
 import { buildFilteredSearchClause } from './studySearchSql';
 import { getBrowserCardCount, getBrowserRowIdsMatchingText } from './browserRepository';

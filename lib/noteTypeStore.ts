@@ -4,23 +4,19 @@ import { mapNoteTypeFields, mapNoteTypeCardOrd, NoteTypeChangeConfirmationRequir
 import {
     checksumField,
     BUILTIN_NOTE_TYPES,
-    subjectToDeckId,
     type Note,
     type NoteType,
-    type AnkiCard,
 } from './models';
 import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { dbUpsertFtsCard, getDB } from './db';
 import { resolveSubjectDeckId } from './subjects';
 import { markSourcePackageDirty } from './ankiPackageArchive';
 import {
-    assertCatalogNoteNotDuplicable,
     assertCatalogNoteTypeNotChangeable,
     assertCatalogNoteTypeMutable,
 } from './catalogProtection';
 import {
     createCardForNote,
-    createNote,
     getCardsForNote,
     getNote,
     saveAnkiCard,
@@ -243,19 +239,4 @@ export function findEmptyCards(): EmptyCardEntry[] {
     }
 
     return results;
-}
-
-/** Duplicates a note (fields + tags) into a fresh note, generating cards in the same deck. */
-export function duplicateNote(noteId: number): { note: Note; cards: AnkiCard[] } | null {
-    assertCatalogNoteNotDuplicable(noteId);
-    const note = getNote(noteId);
-    if (!note) return null;
-
-    const noteType = getNoteType(note.noteTypeId);
-    if (!noteType) return null;
-
-    const existingCards = getCardsForNote(noteId);
-    const deckId = existingCards[0]?.deckId ?? subjectToDeckId('anatomy');
-
-    return createNote(noteType, [...note.fields], deckId, [...note.tags]);
 }

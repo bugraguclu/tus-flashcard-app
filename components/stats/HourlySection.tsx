@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useThemeColors } from '../../constants/theme';
 import type { HourBucket } from '../../lib/ankiStats';
 import { formatHour, formatHourRange } from '../../lib/statsPresentation';

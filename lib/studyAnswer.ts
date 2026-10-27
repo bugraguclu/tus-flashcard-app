@@ -4,7 +4,6 @@ import type { AnkiCard, DeckConfig } from './models';
 import {
     ankiCardToCardState,
     cardStateToAnkiCard,
-    makeDefaultCardState,
     localDayNumber,
     nextRolloverMs,
     restoreQueueFromType,
@@ -561,14 +560,4 @@ export function setCardBuried(cardId: number, buried: boolean, rolloverHour: num
         mod: Math.floor(Date.now() / 1000),
         usn: -1,
     });
-}
-
-export function getCardState(cardId: number, settings: AppSettings): CardState {
-    const card = getAnkiCard(cardId);
-    if (!card) {
-        return makeDefaultCardState(cardId, settings);
-    }
-
-    const cardSettings = resolveSettingsForDeck(card.deckId, settings);
-    return ankiCardToCardState(card, cardSettings, Date.now());
 }

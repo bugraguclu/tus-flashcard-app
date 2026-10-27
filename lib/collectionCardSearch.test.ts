@@ -7,7 +7,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 
 const h = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbDeleteFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {} }));
 
 import { cardAddedMs, matchingCollectionCardIds, noteEditedMs } from './collectionCardSearch';
 import { compileCardMatcher } from './cardSearchMatch';

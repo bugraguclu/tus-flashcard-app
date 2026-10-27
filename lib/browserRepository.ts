@@ -2,10 +2,8 @@ import { matchingCollectionCardIdsForAll } from './collectionCardSearch';
 import { escapeSearchValue } from './searchQuery';
 import { getDB } from './db';
 import { ankiCardRetrievability, compareSqlAscending } from './ankiSortKeys';
-import { memoryStateFromCardData, parseAnkiCardData } from './fsrsCardData';
 import type { AppSettings, StudyCard } from './types';
-import type { Note, NoteType } from './models';
-import { localDayNumber, nextRolloverMs } from './ankiState';
+import { localDayNumber } from './ankiState';
 import { getDeckByName } from './deckManager';
 import {
     FSRS_DIFFICULTY_SQL,

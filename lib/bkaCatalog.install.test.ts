@@ -16,7 +16,6 @@ vi.mock('./db', () => ({
     getDB: () => holder.db,
     dbIndexAllCards: () => {},
     dbUpsertFtsCard: () => {},
-    dbDeleteFtsCard: () => {},
 }));
 vi.mock('expo-asset', () => ({
     Asset: { fromModule: () => ({ downloadAsync: async () => {}, localUri: 'file://bka.apkg', uri: 'file://bka.apkg' }) },

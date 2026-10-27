@@ -13,7 +13,6 @@ import {
     type Note,
     type NoteType,
 } from './models';
-import type { NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from './types';
 import { ankiDueDayToLocal } from './importApkgProgress';
 import { ANKI_DEFAULT_DECK_ID, packageDecksToImport } from './importApkgDecks';
 import { getDB } from './db';
@@ -21,7 +20,6 @@ import { deckNameKey } from './deckNames';
 import { checksumFieldText } from './noteChecksum';
 import { CATALOG_LEARNER_DATA_KEY } from './backupCatalogLearnerData';
 import { QUEUE_BOOKKEEPING_PREFIXES } from './backupSnapshot';
-import { parsePreviewDelays } from './filteredDeckOptions';
 import {
     FIELD_SEPARATOR,
     MEDIA_RE,

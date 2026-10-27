@@ -37,10 +37,6 @@ export function addDaysLocalYMD(days: number, baseDate?: Date, rolloverHour: num
     return formatYMD(result);
 }
 
-export function getToday(rolloverHour: number = 4): string {
-    return todayLocalYMD(undefined, rolloverHour);
-}
-
 /**
  * Answer-button time spans, built the way Anki's reviewer builds them: the largest unit that
  * fits (minutes, hours, days, months of 365/12 days, years), the amount rounded to one decimal and

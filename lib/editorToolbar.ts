@@ -87,14 +87,6 @@ export function blockFormatValue(key: EditorBlockStyleKey): string {
     return style ? `<${style.tag}>` : '<p>';
 }
 
-/** Paragraph alignments, in the order Word and Anki's own desktop editor present them. */
-export const EDITOR_ALIGNMENTS = [
-    { key: 'justifyLeft', tr: 'Sola hizala', en: 'Align left' },
-    { key: 'justifyCenter', tr: 'Ortala', en: 'Center' },
-    { key: 'justifyRight', tr: 'Sağa hizala', en: 'Align right' },
-    { key: 'justifyFull', tr: 'İki yana yasla', en: 'Justify' },
-] as const;
-
 /** Callout tones. The colours are literals so a note keeps its look in any deck's stylesheet. */
 export const EDITOR_CALLOUTS = [
     { key: 'info', tr: 'Bilgi', en: 'Info', border: '#3b82f6', background: '#eff6ff' },

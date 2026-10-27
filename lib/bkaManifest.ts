@@ -48,7 +48,3 @@ export interface BkaManifest {
 }
 
 export const BKA_MANIFEST = manifest as BkaManifest;
-export const BKA_TOTAL_CARDS = BKA_MANIFEST.totals.cards;
-export const BKA_TOTAL_COURSES = BKA_MANIFEST.totals.courses;
-export const BKA_TOTAL_TOPICS = BKA_MANIFEST.totals.topics;
-export const BKA_NOTE_TYPE_IDS = BKA_MANIFEST.noteTypes.map((noteType) => noteType.id);

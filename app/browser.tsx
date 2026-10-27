@@ -19,7 +19,6 @@ import { SearchSyntaxError } from '../lib/searchQuery';
 import { isValidSearchQuery } from '../lib/searchValidation';
 import { setSearchCurrentDeckName } from '../lib/collectionCardSearch';
 import { flagForSelection } from '../lib/browserFlags';
-import { localDayNumber, nextRolloverMs } from '../lib/ankiState';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import type { StudyCard } from '../lib/types';
 import { isLegacyTusNoteType, type CardFlag, type Note } from '../lib/models';
@@ -156,7 +155,6 @@ export default function BrowserScreen() {
     const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
     const [loadingMore, setLoadingMore] = useState(false);
     const [loadingError, setLoadingError] = useState<string | null>(null);
-    const [totalCardCount, setTotalCardCount] = useState(0);
     const [hasMoreCards, setHasMoreCards] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const loadedCountRef = useRef(0);
@@ -359,7 +357,6 @@ export default function BrowserScreen() {
         totalCardCountRef.current = browserSnapshot.totalCardCount;
         setAllCards(browserSnapshot.cards);
         setCardsSnapshotKey(browserSnapshotKey);
-        setTotalCardCount(browserSnapshot.totalCardCount);
         setHasMoreCards(
             browserSnapshot.cards.length < browserSnapshot.totalCardCount
             && browserSnapshot.cards.length > 0,
@@ -370,7 +367,6 @@ export default function BrowserScreen() {
     useEffect(() => {
         if (!browserSnapshotError) return;
         setAllCards([]);
-        setTotalCardCount(0);
         setHasMoreCards(false);
         setSelectedCardIds(new Set());
         setLoadingError(browserSnapshotError instanceof SearchSyntaxError ? l('Geçersiz arama. Terimleri, tırnakları ve parantezleri kontrol edin.', 'Invalid search. Check the terms, quotes and parentheses.') : userFacingErrorMessage(

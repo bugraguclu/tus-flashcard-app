@@ -346,8 +346,6 @@ export interface DailyLimitUsage {
     reviewsAnswered: number;
 }
 
-export const EMPTY_DAILY_LIMIT_USAGE: DailyLimitUsage = { newIntroduced: 0, reviewsAnswered: 0 };
-
 /**
  * Today's spent allowance for every deck that has one, keyed by deck id. Cards answered in a deck
  * and moved elsewhere afterwards count where they live now, exactly as Anki's counters would after
@@ -547,14 +545,4 @@ export function deleteReviewById(reviewId: number): void {
     const db = getDB();
     db.runSync('DELETE FROM settings WHERE key = ?', `${INTERDAY_REVIEW_USAGE_PREFIX}${reviewId}`);
     db.runSync('DELETE FROM revlog WHERE id = ?', reviewId);
-}
-
-export function deleteLastReviewForCard(cardId: number): void {
-    const db = getDB();
-    const row = db.getFirstSync<{ id: number }>(
-        'SELECT id FROM revlog WHERE cardId = ? ORDER BY id DESC LIMIT 1',
-        cardId,
-    );
-    if (!row) return;
-    deleteReviewById(row.id);
 }

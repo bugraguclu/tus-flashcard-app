@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, Pressable, Linking } from 'react-native';
+import { useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, Pressable } from 'react-native';
 import {
     useAudioRecorder,
     useAudioRecorderState,
@@ -8,7 +8,7 @@ import {
     setAudioModeAsync,
 } from 'expo-audio';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
-import { alert, choose } from '../lib/confirm';
+import { alert } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';

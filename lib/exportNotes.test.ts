@@ -6,7 +6,6 @@ const holder = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({
     getDB: () => holder.db,
     dbUpsertFtsCard: () => {},
-    dbDeleteFtsCard: () => {},
 }));
 
 import { buildExportText } from './exportNotes';

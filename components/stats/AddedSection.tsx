@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useThemeColors } from '../../constants/theme';
 import type { AddedDay } from '../../lib/ankiStats';
 import { bucketHistory, historyPoints, historyUnit } from '../../lib/statsSeries';

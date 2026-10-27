@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, afterEach, describe, expect, it, vi } from 'vite
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const h = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => h.db, buildFtsPrefixQuery: () => '', dbUpsertFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {} }));
 import { DEFAULT_DECK_CONFIG, BUILTIN_NOTE_TYPES } from './models';
 import { createDeck } from './deckStore';
 import { createNote, saveAnkiCard, getAnkiCard } from './noteStore';

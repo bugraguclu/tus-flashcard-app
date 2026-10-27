@@ -378,25 +378,6 @@ export function cardStateToAnkiCard(
     return updated;
 }
 
-export function makeDefaultCardState(cardId: number, settings: AppSettings): CardState {
-    return {
-        cardId,
-        interval: 0,
-        repetition: 0,
-        dueDate: dayNumberToYmd(localDayNumber(Date.now(), settings.dayRolloverHour), settings.dayRolloverHour),
-        dueTime: 0,
-        status: 'new',
-        suspended: false,
-        buried: false,
-        easeFactor: settings.startingEase,
-        learningStep: 0,
-        relearningStep: -1,
-        lastReviewedAtMs: 0,
-        elapsedDays: 0,
-        lapses: 0,
-    };
-}
-
 /** Rebuild the active queue from a card's durable type (used when unsuspending/unburying). */
 export function restoreQueueFromType(
     card: AnkiCard,

@@ -29,7 +29,6 @@ vi.mock('./db', () => ({
         },
         execSync: (sql: string) => { dbCalls.push(sql); },
     }),
-    buildFtsPrefixQuery: (q: string) => q,
 }));
 
 import { deleteAnkiCardsOnly, isNoteMarked, MARKED_TAG, toggleNoteMark } from './noteManager';

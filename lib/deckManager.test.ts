@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Deck } from './models';
 
 const state = vi.hoisted(() => ({
     decks: [] as { id: number; name: string }[],

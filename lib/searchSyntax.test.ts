@@ -7,7 +7,7 @@ import { compileCardMatcher, type CardMatcherOptions, type CardSearchContext } f
 import { SearchSyntaxError } from './searchQuery';
 
 const h = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbDeleteFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {} }));
 import { matchingCollectionCardIds, setSearchCurrentDeckName } from './collectionCardSearch';
 
 const OPTIONS: CardMatcherOptions = {

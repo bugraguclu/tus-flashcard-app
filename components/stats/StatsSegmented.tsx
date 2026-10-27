@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BorderRadius, FontSize, dropShadow, useThemeColors, type ColorScheme } from '../../constants/theme';
 

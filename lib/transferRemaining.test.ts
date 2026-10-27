@@ -7,7 +7,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Platform } from 'react-native';
 import { createAppDb } from '../test/sqljsHarness';
 const h = vi.hoisted(() => ({ db: null as any, media: new Map<string, Uint8Array>() }));
-vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbIndexAllCards: () => {}, dbDeleteFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbIndexAllCards: () => {} }));
 vi.mock('./mediaStore', () => ({
     sanitizeMediaFilename: (name: string) => name,
     saveMediaBytes: async (name: string, bytes: Uint8Array) => { h.media.set(name, bytes); },

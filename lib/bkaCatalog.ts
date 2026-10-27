@@ -14,7 +14,7 @@ import { Platform } from 'react-native';
 import { Asset } from 'expo-asset';
 import type JSZipType from 'jszip';
 import { getDB } from './db';
-import { getLegacyFileSystem, readUriBytes } from './files';
+import { readUriBytes } from './files';
 import {
     extractCollectionFromZip,
     importMediaFromZip,
@@ -652,7 +652,7 @@ function writeCatalogSubjects(catalogSubjects: UserSubject[]): void {
     writeSetting('user_subjects_v1', JSON.stringify([...learnerSubjects, ...catalogSubjects]));
 }
 
-async function loadBundledPackage(): Promise<{ zip: JSZipType; cachedUri: string | null }> {
+async function loadBundledPackage(): Promise<JSZipType> {
     const asset = Asset.fromModule(requireBkaCatalogAsset());
     await asset.downloadAsync();
     const uri = asset.localUri ?? asset.uri;
@@ -660,25 +660,7 @@ async function loadBundledPackage(): Promise<{ zip: JSZipType; cachedUri: string
     // The shipped asset is a container, not a package: it becomes an .apkg only here, in memory,
     // and only for as long as the install runs. See lib/catalogPack.ts.
     const packageBytes = unpackCatalogBytes(catalogPackKey(), await readUriBytes(uri));
-    return { zip: await loadAnkiZip(packageBytes), cachedUri: uri };
-}
-
-/**
- * expo-asset stages the 9 MB package into the cache directory to read it. Once the cards are in
- * the collection that copy is dead weight, so it is dropped — but only if it really is the cache
- * copy: the same call can hand back a path inside the read-only app bundle.
- */
-async function dropCachedPackageCopy(uri: string | null): Promise<void> {
-    if (!uri || Platform.OS === 'web') return;
-    try {
-        const fs = getLegacyFileSystem();
-        const cacheDirectory = fs.cacheDirectory;
-        if (!cacheDirectory || !uri.startsWith(cacheDirectory)) return;
-        await fs.deleteAsync(uri, { idempotent: true });
-    } catch (error) {
-        // A leftover cache file costs disk, never correctness: iOS purges it under pressure.
-        console.warn('[BKA] Önbellek kopyası silinemedi:', error);
-    }
+    return loadAnkiZip(packageBytes);
 }
 
 /**
@@ -910,7 +892,7 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     const startedAt = Date.now();
     // The package is loaded and unpacked before the installed catalog is touched. The web build
     // downloads it, and a download that fails must leave the learner the catalog they had.
-    const { zip, cachedUri } = await loadBundledPackage();
+    const zip = await loadBundledPackage();
     const collectionBytes = await extractCollectionFromZip(zip);
 
     const editedNotes = currentTier === 'full' && tier === 'full'

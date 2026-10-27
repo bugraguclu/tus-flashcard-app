@@ -87,10 +87,6 @@ export function getAllSubjects(): Subject[] {
     return getCache().all;
 }
 
-export function getUserSubjects(): UserSubject[] {
-    return getCache().users;
-}
-
 /** Set of every known subject id — the canonical "is this tag a subject?" test. */
 export function getSubjectIdSet(): Set<string> {
     return getCache().idSet;
@@ -139,40 +135,4 @@ export function getSubjectsForDeck(deckName: string | null | undefined): Subject
         console.warn('[Subjects] getSubjectsForDeck failed:', e);
         return getAllSubjects();
     }
-}
-
-/** Transliterate a course name into a stable ASCII slug usable as a subject id / tag. */
-export function slugifySubjectId(name: string): string {
-    const map: Record<string, string> = {
-        ç: 'c', Ç: 'c', ğ: 'g', Ğ: 'g', ı: 'i', I: 'i', İ: 'i',
-        ö: 'o', Ö: 'o', ş: 's', Ş: 's', ü: 'u', Ü: 'u',
-    };
-
-    const slug = name
-        .trim()
-        .split('')
-        .map((ch) => map[ch] ?? ch)
-        .join('')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-
-    return slug || 'ders';
-}
-
-/** Persist a new user course record. The caller is responsible for creating its deck first. */
-export function registerUserSubject(record: Omit<UserSubject, 'isCustom' | 'topics'> & { topics?: string[] }): void {
-    const db = getDB();
-    const existing = readUserSubjects().filter((entry) => entry.id !== record.id);
-    const next = [
-        ...existing,
-        { ...record, topics: record.topics ?? [], isCustom: true as const },
-    ];
-
-    db.runSync(
-        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-        USER_SUBJECTS_KEY,
-        JSON.stringify(next),
-    );
-    invalidateSubjectsCache();
 }

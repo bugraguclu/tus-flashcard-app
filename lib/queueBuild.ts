@@ -96,15 +96,6 @@ export function mixInterdayLearning(
     return [...result, ...interdayLearningCards.slice(next)];
 }
 
-/** Stable 32-bit hash of a string, used for deterministic per-day ordering. */
-function hashString(value: string): number {
-    let hash = 0;
-    for (let i = 0; i < value.length; i++) {
-        hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
-    }
-    return hash;
-}
-
 /**
  * The tiebreaker Anki appends to every review order (`fnvhash(id, mod)`): a stable pseudo-random
  * value per card, so cards that compare equal on the chosen key still come out in a scrambled but

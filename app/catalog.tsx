@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Platform,
@@ -544,10 +544,6 @@ function createStyles(colors: ColorScheme) {
         legal: {
             color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 16,
             marginTop: Spacing.xl, marginHorizontal: Spacing.xs,
-        },
-        devNote: {
-            color: colors.btnHard, fontSize: FontSize.xs, lineHeight: 16,
-            marginTop: Spacing.sm, marginHorizontal: Spacing.xs, fontWeight: '600',
         },
 
         footer: {

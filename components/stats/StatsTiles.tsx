@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import {
     Modal,
     Pressable,
@@ -120,4 +120,3 @@ function createStyles(colors: ColorScheme) {
         check: { color: colors.accent, fontSize: 20, fontWeight: '800' },
     });
 }
-

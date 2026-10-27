@@ -2,7 +2,7 @@ import { getDB } from './db';
 import { getAllSubjects } from './subjects';
 import type { AppSettings, StudyCard } from './types';
 import { getDeckAncestors, type DeckConfig } from './models';
-import { ankiCardIdFromLegacyCardId, localDayNumber, nextRolloverMs } from './ankiState';
+import { localDayNumber } from './ankiState';
 import { todayLocalYMD } from './scheduler';
 import { decksInDisplayOrder, getAllDecks, getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import {
@@ -707,8 +707,4 @@ export function getStudyCardById(cardId: number, settings: AppSettings): StudyCa
     if (!row) return null;
 
     return toStudyCards([row], settings, Date.now(), { includeRawCard: true })[0] ?? null;
-}
-
-export function getStudyCardByLegacyCardId(legacyCardId: number, settings: AppSettings): StudyCard | null {
-    return getStudyCardById(ankiCardIdFromLegacyCardId(legacyCardId), settings);
 }

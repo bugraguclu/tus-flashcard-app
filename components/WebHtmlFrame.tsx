@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, type IframeHTMLAttributes, type RefObject } from 'react';
+import { useLayoutEffect, useRef, type IframeHTMLAttributes, type RefObject } from 'react';
 
 interface WebHtmlFrameProps extends Omit<IframeHTMLAttributes<HTMLIFrameElement>, 'src' | 'srcDoc'> {
     frameRef: RefObject<HTMLIFrameElement | null>;

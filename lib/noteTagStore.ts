@@ -170,14 +170,6 @@ export function addTagToNote(noteId: number, tag: string): void {
     }
 }
 
-export function removeTagFromNote(noteId: number, tag: string): void {
-    const note = getNote(noteId);
-    if (!note) return;
-    note.tags = note.tags.filter(t => t !== tag);
-    note.mod = Math.floor(Date.now() / 1000);
-    saveNote(note);
-}
-
 /** Reserved tag mirroring Anki's note "mark" (star) feature. */
 export const MARKED_TAG = 'marked';
 

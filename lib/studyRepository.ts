@@ -7,33 +7,22 @@ export {
     getStudyQueue,
     getWaitingLearningCardIds,
     getStudyCardById,
-    getStudyCardByLegacyCardId,
     studyScopeSettings,
 } from './studyQueue';
 export type {
     QueueStats,
-    StudyQueueResult,
-    StudyQueueParams,
 } from './studyQueue';
 export {
     undoAnswer,
     answerStudyCard,
     setCardSuspended,
     setCardBuried,
-    getCardState,
 } from './studyAnswer';
 export {
-    nextNewCardPosition,
     resetCardsToNew,
     getResetCardDefaults,
-    DEFAULT_RESET_CARD_OPTIONS,
 } from './resetCards';
-export type { ResetCardOptions, ResetCardContext } from './resetCards';
-export type {
-    BuriedSiblingSnapshot,
-    AnswerSideEffects,
-    ReviewResult,
-} from './studyAnswer';
+export type { ResetCardOptions } from './resetCards';
 export {
     resolveSettingsForDeck,
 } from './studyCardRows';
@@ -44,9 +33,6 @@ export {
     getFilteredDeckGatherCount,
     getFilteredDeckExcludedCount,
 } from './filteredDeckQueue';
-export type {
-    FilteredDeckCountCard,
-} from './filteredDeckQueue';
 export {
     getBrowserRowIdsMatchingText,
     getBrowserCardIdsMatchingText,
@@ -56,7 +42,6 @@ export {
 } from './browserRepository';
 export type {
     BrowserCardSortKey,
-    BrowserCardStateFilter,
     BrowserTableMode,
     BrowserCardQuery,
 } from './browserRepository';

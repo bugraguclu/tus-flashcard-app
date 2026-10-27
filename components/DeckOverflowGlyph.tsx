@@ -1,4 +1,3 @@
-import React from 'react';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 type Kind = 'emptyCards' | 'import' | 'export' | 'backup' | 'restore';

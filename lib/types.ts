@@ -210,9 +210,6 @@ export type ReviewGestureAction =
     | 'tools'
     | 'decks';
 
-/** Backwards-compatible name for settings/import code written before vertical gestures. */
-export type ReviewSwipeAction = ReviewGestureAction;
-
 export type ReviewTapZone =
     | 'topLeft'
     | 'topCenter'

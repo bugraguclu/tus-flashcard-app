@@ -2,11 +2,10 @@ import type { AppSettings, Grade } from './types';
 import type { AnkiCard, ReviewLog } from './models';
 import { localDayNumber, nextRolloverMs } from './ankiState';
 import { memoryStateFromCardData, parseAnkiCardData, updateAnkiCardData } from './fsrsCardData';
-import { parseDueRange, setDueDateInterval, type DueRange } from './schedulingIntervals';
+import { setDueDateInterval, type DueRange } from './schedulingIntervals';
 import { logManualEntry, revlogFactorForScheduling } from './reviewLogger';
 import { resolveSettingsForDeck } from './studyCardRows';
 import {
-    getAllAnkiCards,
     getAnkiCard,
     getCardsForNote,
     saveAnkiCard,
@@ -147,4 +146,4 @@ export function gradeSelectedNow(cardIds: number[], grade: Grade, settings: AppS
     return graded;
 }
 
-export { parseDueRange, setDueDateInterval, type DueRange } from './schedulingIntervals';
+export { parseDueRange, setDueDateInterval } from './schedulingIntervals';

@@ -69,9 +69,6 @@ export const DEFAULT_SECOND_SEARCH_LIMIT = 20;
  */
 export const DEFAULT_PREVIEW_DELAYS: readonly [number, number, number] = [60, 600, 0] as const;
 
-/** Ordinals into a preview delays array, matching Anki's answer buttons. */
-export const PREVIEW_DELAY_ORDINAL = { again: 0, hard: 1, good: 2 } as const;
-
 /**
  * Parses stored data or user input into the three preview delays in seconds.
  *

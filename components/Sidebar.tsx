@@ -514,7 +514,6 @@ function createStyles(colors: ColorScheme) {
         borderRadius: BorderRadius.sm,
         gap: 2,
     },
-    actionIcon: { fontSize: 16 },
     actionText: { fontSize: 9, fontWeight: '600', color: colors.textSecondary },
     settingsBtn: {
         flexDirection: 'row',

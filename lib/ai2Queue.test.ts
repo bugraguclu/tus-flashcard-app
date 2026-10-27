@@ -4,12 +4,11 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => holder.db, buildFtsPrefixQuery: () => '', dbIndexAllCards() {}, dbUpsertFtsCard() {}, dbDeleteFtsCard() {}, dbSearchCards: () => [] }));
+vi.mock('./db', () => ({ getDB: () => holder.db, dbIndexAllCards() {}, dbUpsertFtsCard() {} }));
 import { seedBase, settings, makeCard, makeNote, deckConfig } from '../test/studyQueueFixtures';
-import { getAnkiCard, getNote, saveAnkiCard, saveNote } from './noteManager';
+import { getAnkiCard, saveAnkiCard, saveNote } from './noteManager';
 import { answerStudyCard, undoAnswer } from './studyAnswer';
-import { applyReviewerOpState, captureReviewerOpState } from './reviewerUndo';
-import { localDayNumber, restoreQueueFromType } from './ankiState';
+import { localDayNumber } from './ankiState';
 import { getReviewsAnsweredToday } from './reviewLogger';
 import { getStudyQueue } from './studyQueue';
 import { saveDeck, saveDeckConfig } from './deckManager';
@@ -18,7 +17,6 @@ let db: SyncDb;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
 beforeEach(() => { db = createAppDb(SQL); holder.db = db; seedBase(db); });
 afterEach(() => db.close());
-const writers = { saveCard: saveAnkiCard, saveNote, insertReviewLog() {}, deleteReviewLog() {} };
 describe('AI-2 bounded unlimited study queue', () => {
     it('mix keeps a review at least every second card regardless of the new backlog', () => {
         for (let id = 200; id < 500; id++) {

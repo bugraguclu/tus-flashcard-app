@@ -81,11 +81,6 @@ export interface WhiteboardProviderProps {
     onDone?: () => void;
 }
 
-export interface WhiteboardOverlayProps extends WhiteboardProviderProps {
-    /** Height of reviewer chrome that sits above the drawable card area. */
-    toolbarTopOffset?: number;
-}
-
 export interface WhiteboardCanvasProps {
     style?: StyleProp<ViewStyle>;
 }
@@ -636,25 +631,6 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
         </View>
     );
 }
-
-export const WhiteboardOverlay = forwardRef<WhiteboardHandle, WhiteboardOverlayProps>(
-    function WhiteboardOverlay({ toolbarTopOffset = 0, ...providerProps }, ref) {
-        return (
-            <WhiteboardProvider ref={ref} {...providerProps}>
-                <View style={providerProps.active ? layerStyles.active : layerStyles.inactive}>
-                    <WhiteboardCanvas style={StyleSheet.absoluteFill} />
-                    <WhiteboardToolbar toolbarTopOffset={toolbarTopOffset} />
-                </View>
-            </WhiteboardProvider>
-        );
-    },
-);
-
-// Pointer-event modes live in compiled styles: react-native-web ignores 'box-none' in inline objects.
-const layerStyles = StyleSheet.create({
-    active: { ...StyleSheet.absoluteFill, pointerEvents: 'box-none' },
-    inactive: { ...StyleSheet.absoluteFill, pointerEvents: 'none' },
-});
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({

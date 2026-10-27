@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => holder.db, buildFtsPrefixQuery: () => '', dbUpsertFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => holder.db, dbUpsertFtsCard: () => {} }));
 import { createDeck, deleteDeck, getDeck, getDeckByName, renameDeck, getBuriedCountForDeck, unburyDeck } from './deckStore';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;

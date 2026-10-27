@@ -52,7 +52,7 @@ import {
 } from '../../lib/deckManager';
 import { getDeckDisplayName, getParentDeckName, type Deck } from '../../lib/models';
 import { alert, confirm, choose } from '../../lib/confirm';
-import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount } from '../../lib/studyRepository';
+import { getFilteredDeckMatchCount } from '../../lib/studyRepository';
 import { findInvalidFilteredSearch } from '../../lib/searchValidation';
 import {
     useAppSettings,
@@ -178,7 +178,7 @@ export default function DecksScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const insets = useSafeAreaInsets();
-    const { width, height } = useWindowDimensions();
+    const { width } = useWindowDimensions();
     const isCompact = width < 600;
     // Bottom-sheet modals fill most of the screen; a top inset keeps the tap-to-dismiss backdrop
     // reachable below the status bar/notch instead of hiding under it.
@@ -189,7 +189,7 @@ export default function DecksScreen() {
     const { settings } = useAppSettings();
     const { collectionVersion, invalidateCollection } = useCollectionInvalidation();
     const { activeDeckName } = useStudyScope();
-    const { catalogAccess, catalogInstalled, catalogInstalling } = useCatalogStatus();
+    const { catalogInstalled, catalogInstalling } = useCatalogStatus();
     const expandedDecksRef = useRef<Set<string>>(new Set());
     const expandedInitializedRef = useRef(false);
     const deckTreeRef = useRef<DeckTreeNode[]>([]);
@@ -203,7 +203,6 @@ export default function DecksScreen() {
     const [showAddMenu, setShowAddMenu] = useState(false);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const pendingOverflowRouteRef = useRef<string | null>(null);
-    const pendingOverflowActionRef = useRef<(() => void) | null>(null);
     const pendingDeckMenuRouteRef = useRef<string | null>(null);
     const [newDeckName, setNewDeckName] = useState('');
     const [newFilteredDeckName, setNewFilteredDeckName] = useState('');
@@ -226,9 +225,6 @@ export default function DecksScreen() {
     const [filterAllowEmpty, setFilterAllowEmpty] = useState(false);
     const [filterHelpVisible, setFilterHelpVisible] = useState(false);
     const [filterOrderPicker, setFilterOrderPicker] = useState<1 | 2 | null>(null);
-    const [filterOrderAnchor, setFilterOrderAnchor] = useState<{ x: number; y: number; width: number } | null>(null);
-    const firstFilterOrderRef = useRef<View>(null);
-    const secondFilterOrderRef = useRef<View>(null);
     const [showFilteredDeckPicker, setShowFilteredDeckPicker] = useState(false);
     const [filteredDeckPickerTarget, setFilteredDeckPickerTarget] = useState<1 | 2>(1);
     const catalogTier = useMemo(
@@ -417,22 +413,6 @@ export default function DecksScreen() {
         const path = pendingOverflowRouteRef.current;
         pendingOverflowRouteRef.current = null;
         if (path) router.push(path as any);
-        const action = pendingOverflowActionRef.current;
-        pendingOverflowActionRef.current = null;
-        action?.();
-    };
-
-    // Run an action after the overflow Modal has fully closed. iOS rejects presenting
-    // another modal (router screen, Alert) while the menu is still dismissing, so defer
-    // via onDismiss; other platforms have no such constraint and run immediately.
-    const runAfterOverflowClose = (action: () => void) => {
-        if (Platform.OS === 'ios') {
-            pendingOverflowActionRef.current = action;
-            setShowOverflowMenu(false);
-            return;
-        }
-        setShowOverflowMenu(false);
-        action();
     };
 
     const handleCreateBackup = () => {
@@ -1626,11 +1606,6 @@ export default function DecksScreen() {
             setFilterOrderPicker(null);
             setModal(null);
         };
-        const openFilterHelp = () => {
-            Keyboard.dismiss();
-            setFilterOrderPicker(null);
-            setFilterHelpVisible(true);
-        };
         const openFilterOrderPicker = (filter: 1 | 2) => {
             Keyboard.dismiss();
             setFilterHelpVisible(false);
@@ -2682,22 +2657,7 @@ function createStyles(colors: ColorScheme) {
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.borderLight,
     },
-    // Content that is not the learner's yet reads as an outline rather than a solid card: a
-    // dashed accent border and muted title, the same treatment the store screen uses.
-    deckRowLocked: {
-        borderWidth: 1,
-        // The shared row style ends in a hairline bottom border; a dashed outline only renders
-        // its dashes when all four edges share one width.
-        borderBottomWidth: 1,
-        borderColor: colors.accent,
-        borderBottomColor: colors.accent,
-        borderStyle: 'dashed',
-        borderRadius: BorderRadius.md,
-        backgroundColor: colors.accentLight,
-    },
     deckNameRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0 },
-    deckNameLock: { marginRight: 6, opacity: 0.75 },
-    deckNameLocked: { color: colors.textSecondary },
     lockedDeckCard: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -2726,35 +2686,6 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.accent,
     },
     lockedDeckPriceText: { color: '#ffffff', fontSize: FontSize.sm, fontWeight: '800' },
-    catalogBuyPill: {
-        marginHorizontal: 4,
-        paddingHorizontal: 12,
-        paddingVertical: 7,
-        borderRadius: BorderRadius.full,
-        backgroundColor: colors.accent,
-    },
-    catalogBuyPillText: { color: colors.white, fontSize: FontSize.sm, fontWeight: '800' },
-    deckNestedBranch: { position: 'relative' },
-    deckNestedBranchLast: {},
-    deckChildrenWell: {
-        marginLeft: 18,
-        marginRight: 0,
-        marginBottom: 4,
-        paddingLeft: 6,
-        backgroundColor: colors.bgCard,
-        borderLeftWidth: 0,
-        overflow: 'visible',
-    },
-    deckChildrenWellNested: {
-        marginLeft: 14,
-        marginRight: 0,
-        marginBottom: 3,
-    },
-    // After four visual levels, preserve usable title width while keeping the hierarchy guide.
-    deckChildrenWellDeep: {
-        marginLeft: 6,
-        marginRight: 0,
-    },
     deckRowDragging: { opacity: 0.22, transform: [{ scale: 0.99 }] },
     deckRowDropTarget: {
         backgroundColor: colors.accentLight,
@@ -2945,7 +2876,6 @@ function createStyles(colors: ColorScheme) {
         ...Shadows.md,
     },
     bottomBtn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 },
-    bottomBtnIcon: { fontSize: 20 },
     bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2 },
 
     emptyState: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 64 },
@@ -3534,10 +3464,6 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '700',
     },
     createDeckCreateTextDisabled: { color: colors.textMuted },
-    modalCardScrollable: { padding: 0, overflow: 'hidden' },
-    modalSheetScroll: { flexShrink: 1 },
-    modalCardScrollContent: { padding: Spacing.xl, paddingBottom: Spacing.xxl },
-    modalCardScrollContentCompact: { paddingTop: 48 },
     modalEyebrow: {
         fontSize: 11,
         fontWeight: '800',
@@ -3552,13 +3478,6 @@ function createStyles(colors: ColorScheme) {
         marginBottom: Spacing.md,
     },
     descriptionInput: { minHeight: 150, paddingTop: Spacing.md },
-    fieldLabel: {
-        fontSize: FontSize.sm,
-        fontWeight: '600',
-        color: colors.textSecondary,
-        marginTop: Spacing.sm,
-        marginBottom: 4,
-    },
     modalInput: {
         backgroundColor: colors.bgInput,
         borderWidth: 1,
@@ -3598,24 +3517,8 @@ function createStyles(colors: ColorScheme) {
         alignItems: 'center',
         justifyContent: 'center',
     },
-    buttonDisabled: { opacity: 0.45 },
     modalBtnSecondaryText: { color: colors.textSecondary, fontWeight: '600', fontSize: FontSize.sm },
-    modalCancel: { marginTop: Spacing.md, alignItems: 'center', paddingVertical: 6 },
-    modalCancelText: { color: colors.textMuted, fontWeight: '600' },
 
     menuItemDanger: { color: colors.btnAgain },
-    orderWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-    orderChip: {
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: BorderRadius.full,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.bgInput,
-    },
-    orderChipActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-    orderChipText: { fontSize: FontSize.xs, color: colors.textSecondary },
-    orderChipTextActive: { color: colors.accent, fontWeight: '700' },
-    rescheduleRow: { paddingVertical: 8 },
     });
 }

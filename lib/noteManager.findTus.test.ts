@@ -16,7 +16,6 @@ vi.mock('./db', () => ({
                 .map((r) => ({ cardId: r.cardId, noteId: r.noteId ?? r.cardId, deckName: r.deckName ?? null, noteData: r.noteData }));
         },
     }),
-    buildFtsPrefixQuery: (q: string) => q,
 }));
 
 import { findDuplicateNote, findTusCardIdByFirstField } from './noteManager';

@@ -20,7 +20,7 @@ import {
 } from './filteredDeckOptions';
 import { buildExportTextFromData } from './exportNotes';
 import { renderCardHtml } from './templates';
-import { readMediaBytes, sanitizeMediaFilename } from './mediaStore';
+import { readMediaBytes } from './mediaStore';
 import { extractMediaFilenames } from './mediaAttachment';
 import { pristineOriginalForExport } from './ankiPackageArchive';
 import { dayNumberToYmd, localDayNumber } from './ankiState';

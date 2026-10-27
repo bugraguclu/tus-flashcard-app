@@ -16,7 +16,6 @@ vi.mock('./db', () => ({
     initDB: () => {},
     dbIndexAllCards: () => {},
     dbUpsertFtsCard: () => {},
-    dbDeleteFtsCard: () => {},
     isPrimaryTab: () => true,
 }));
 vi.mock('@react-native-async-storage/async-storage', () => ({ default: { getItem: async () => null, setItem: async () => {}, removeItem: async () => {}, getAllKeys: async () => [], multiRemove: async () => {} } }));

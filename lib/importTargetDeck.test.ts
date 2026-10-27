@@ -6,7 +6,6 @@ const dbHolder = vi.hoisted(() => ({ db: null as any }));
 
 vi.mock('./db', () => ({
     getDB: () => dbHolder.db,
-    buildFtsPrefixQuery: () => '',
 }));
 
 import { createDeck, getAllDecks, getDeck, getDeckByName, saveDeck } from './deckManager';

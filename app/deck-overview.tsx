@@ -3,7 +3,7 @@
 // counts, the deck description, buried-card count with a manual Unbury, and the
 // Study Now button that actually enters the queue.
 
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
     View,
     Text,

@@ -114,16 +114,6 @@ export function isCatalogNoteType(typeOrId: NoteType | number): boolean {
     return typeof typeOrId === 'number' ? parseOwnedRow('note_types', typeOrId) : isCatalogOwned(typeOrId);
 }
 
-export function assertCatalogMutable(value: Note | AnkiCard | Deck | DeckConfig | NoteType, kind: 'note' | 'card' | 'deck' | 'config' | 'type'): void {
-    if (isPaidCatalogUnlocked()) return;
-    const owned = kind === 'note' ? isCatalogNote(value as Note)
-        : kind === 'card' ? isCatalogCard(value as AnkiCard)
-            : kind === 'deck' ? isCatalogDeck(value as Deck)
-                : kind === 'config' ? isCatalogDeckConfig(value as DeckConfig)
-                    : isCatalogNoteType(value as NoteType);
-    if (owned) throw new PaidCatalogProtectionError('Bu içerik satın alma tamamlanmadan değiştirilemez.');
-}
-
 function assertMutable(owned: boolean): void {
     if (owned && !isPaidCatalogUnlocked()) {
         throw new PaidCatalogProtectionError('Bu içerik satın alma tamamlanmadan değiştirilemez.');

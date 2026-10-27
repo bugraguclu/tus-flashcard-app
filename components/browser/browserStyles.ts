@@ -38,17 +38,6 @@ export function createBrowserStyles(colors: ColorScheme) {
         borderRadius: BorderRadius.sm,
     },
     addCardBtnText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.white },
-    searchButton: {
-        width: 38,
-        height: 38,
-        flexShrink: 0,
-        borderRadius: BorderRadius.full,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    searchButtonActive: {
-        backgroundColor: colors.accentLight,
-    },
     moreButton: {
         width: 40,
         height: 40,
@@ -127,12 +116,6 @@ export function createBrowserStyles(colors: ColorScheme) {
     filterChipActive: { backgroundColor: colors.accentLight, borderColor: colors.accent },
     filterChipText: { fontSize: FontSize.sm, color: colors.textSecondary },
     filterChipTextActive: { color: colors.accent, fontWeight: '600' },
-    filterFlagDot: { width: 10, height: 10, borderRadius: 5 },
-    filterFlagDotEmpty: {
-        borderWidth: 1.5,
-        borderColor: colors.accent,
-        backgroundColor: 'transparent',
-    },
 
     list: { flex: 1 },
     listContent: { flexGrow: 1, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: 3 },
@@ -376,19 +359,12 @@ export function createBrowserStyles(colors: ColorScheme) {
     },
     overflowChevron: { color: colors.textMuted, fontSize: 24, fontWeight: '400' },
     overflowSeparator: { height: StyleSheet.hairlineWidth, marginVertical: 3, backgroundColor: colors.borderLight },
-    menuFlagDot: { width: 13, height: 13, borderRadius: 7 },
-    menuFlagDotEmpty: {
-        borderWidth: 1.5,
-        borderColor: colors.textSecondary,
-        backgroundColor: 'transparent',
-    },
     flagIconContainer: {
         width: 18,
         height: 18,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    flagDotPlaceholder: { width: 18, height: 18 },
     overflowFlagPanel: {
         marginHorizontal: Spacing.sm,
         marginBottom: Spacing.xs,
@@ -489,7 +465,6 @@ export function createBrowserStyles(colors: ColorScheme) {
     pickerRowTextActive: { color: colors.accent, fontWeight: '800' },
     pickerCheck: { color: colors.accent, fontSize: 19, fontWeight: '900' },
     flagPickerCard: { maxWidth: 380 },
-    flagDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: colors.border },
     optionRow: {
         minHeight: 68,
         flexDirection: 'row',
@@ -534,15 +509,6 @@ export function createBrowserStyles(colors: ColorScheme) {
     previewNavigation: { minHeight: 64, flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.bgCard },
     previewNavButton: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     previewNavText: { color: colors.accent, fontSize: FontSize.md, fontWeight: '700' },
-    searchPreviewBox: {
-        minHeight: 48,
-        maxHeight: 92,
-        padding: Spacing.md,
-        justifyContent: 'center',
-        backgroundColor: colors.bgInput,
-        borderRadius: BorderRadius.sm,
-    },
-    searchPreviewText: { color: colors.textSecondary, fontSize: FontSize.sm, fontFamily: 'monospace' },
     dialogActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: Spacing.sm, marginTop: Spacing.lg },
     dialogButton: { minWidth: 96, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm },
     dialogButtonPrimary: { backgroundColor: colors.accent },

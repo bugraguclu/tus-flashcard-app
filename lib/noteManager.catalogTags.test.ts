@@ -40,7 +40,6 @@ vi.mock('./db', () => ({
         execSync: (sql: string) => { statements.push(sql); },
     }),
     dbUpsertFtsCard: (card: { id: number }) => { indexedCards.push(card.id); },
-    buildFtsPrefixQuery: (query: string) => query,
 }));
 
 vi.mock('./ankiPackageArchive', () => ({ markSourcePackageDirty: () => undefined }));

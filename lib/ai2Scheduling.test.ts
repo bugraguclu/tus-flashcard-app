@@ -4,19 +4,17 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => holder.db, buildFtsPrefixQuery: () => '', dbIndexAllCards() {}, dbUpsertFtsCard() {}, dbDeleteFtsCard() {}, dbSearchCards: () => [] }));
+vi.mock('./db', () => ({ getDB: () => holder.db, dbIndexAllCards() {}, dbUpsertFtsCard() {} }));
 import { seedBase, settings, makeCard } from '../test/studyQueueFixtures';
-import { getAnkiCard, getNote, saveAnkiCard, saveNote } from './noteManager';
-import { answerStudyCard, undoAnswer } from './studyAnswer';
-import { applyReviewerOpState, captureReviewerOpState } from './reviewerUndo';
-import { ankiCardToCardState, localDayNumber, restoreQueueFromType } from './ankiState';
+import { getAnkiCard, saveAnkiCard } from './noteManager';
+import { answerStudyCard } from './studyAnswer';
+import { ankiCardToCardState, localDayNumber } from './ankiState';
 import { getScheduler, formatDays } from './scheduler';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
 beforeEach(() => { db = createAppDb(SQL); holder.db = db; seedBase(db); });
 afterEach(() => db.close());
-const writers = { saveCard: saveAnkiCard, saveNote, insertReviewLog() {}, deleteReviewLog() {} };
 describe('AI-2 classic schedule context', () => {
     it('filtered review at zero elapsed days keeps a one-day Good interval', () => {
         const today = localDayNumber(Date.now(), settings.dayRolloverHour);

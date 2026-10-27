@@ -6,22 +6,17 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
-import type { AppSettings } from './types';
 import { deckConfig, settings, rolloverHour, makeNote, makeCard, seedBase } from '../test/studyQueueFixtures';
 
 const dbHolder = vi.hoisted(() => ({ db: null as any }));
 
 vi.mock('./db', () => ({
     getDB: () => dbHolder.db,
-    buildFtsPrefixQuery: () => '',
     dbIndexAllCards: () => {},
     dbUpsertFtsCard: () => {},
-    dbDeleteFtsCard: () => {},
-    dbSearchCards: () => [],
 }));
 
 import {
-    getDeckTotalCardCount,
     getFilteredDeckCardIds,
     getFilteredDeckCountCards,
     getStudyQueue,
@@ -631,4 +626,3 @@ describe('one-shot study ahead', () => {
         expect(afterAnswer.nextLearningDue).toBe(dueMs);
     });
 });
-

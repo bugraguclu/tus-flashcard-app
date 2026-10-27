@@ -9,19 +9,14 @@ export {
     deleteNote,
     deleteNotes,
     createNote,
-    generateCardsForNote,
     getAllAnkiCards,
     getAnkiCard,
     getCardsForNote,
-    getCardsForDeck,
     saveAnkiCard,
-    suspendCard,
-    unsuspendCard,
     buryCard,
     setCardFlag,
     moveCardsToDeck,
     undoCardsMovedToDeck,
-    burySiblings,
     unburyAllCards,
     isLeech,
     handleLeech,
@@ -31,13 +26,10 @@ export {
     findDuplicateNote,
     deleteAnkiCardOnly,
     deleteAnkiCardsOnly,
-    searchNotes,
 } from './noteStore';
 export type {
     CardDeckMoveSnapshot,
     SearchIndexCard,
-    NavigationCardCount,
-    DuplicateNoteResult,
 } from './noteStore';
 export {
     getAllNoteTypes,
@@ -45,7 +37,6 @@ export {
     saveNoteType,
     changeNotesType,
     findEmptyCards,
-    duplicateNote,
 } from './noteTypeStore';
 export type {
     EmptyCardEntry,
@@ -55,14 +46,9 @@ export {
     setNoteTagsByCardId,
     updateNotesTags,
     getAllTags,
-    addTagToNote,
-    removeTagFromNote,
     MARKED_TAG,
     isNoteMarked,
     toggleNoteMark,
-} from './noteTagStore';
-export type {
-    TagCollectionScope,
 } from './noteTagStore';
 export {
     migrateTusCardsToNotes,

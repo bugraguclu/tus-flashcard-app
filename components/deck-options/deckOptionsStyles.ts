@@ -299,41 +299,8 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
         },
         optimizeButtonBusy: { opacity: 0.6 },
         optimizeButtonText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '700' },
-        sectionTitle: {
-            fontSize: 11,
-            fontWeight: '700',
-            letterSpacing: 1.2,
-            color: colors.textMuted,
-            marginTop: Spacing.lg,
-        },
-
-        presetCard: {
-            backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            padding: Spacing.md,
-            gap: 6,
-            ...Shadows.sm,
-        },
-        presetName: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        presetMeta: { fontSize: FontSize.sm, color: colors.textMuted },
-        presetActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-        presetBtn: {
-            paddingHorizontal: Spacing.md,
-            paddingVertical: 6,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgInput,
-        },
-        presetBtnText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
-        presetBtnDanger: { color: colors.btnAgain },
-        subdeckBtn: { marginTop: 4, paddingVertical: 8, alignItems: 'center', borderRadius: BorderRadius.sm, backgroundColor: colors.accentLight },
-        subdeckBtnText: { color: colors.accent, fontWeight: '600', fontSize: FontSize.sm },
 
         field: { gap: 4 },
-        fieldLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary, marginTop: Spacing.xs },
         fieldHint: { fontSize: FontSize.xs, color: colors.textMuted },
         input: {
             minHeight: 44,
@@ -347,28 +314,6 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
             color: colors.textPrimary,
         },
         descriptionInput: { minHeight: 72, textAlignVertical: 'top' },
-
-        choiceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 2 },
-        choiceChip: {
-            paddingHorizontal: Spacing.md,
-            paddingVertical: 6,
-            borderRadius: BorderRadius.full,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        choiceChipActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-        choiceText: { fontSize: FontSize.sm, color: colors.textSecondary },
-        choiceTextActive: { color: colors.accent, fontWeight: '700' },
-
-        switchRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            minHeight: 48,
-            paddingVertical: 6,
-        },
-        switchLabel: { fontSize: FontSize.md, color: colors.textPrimary, flex: 1, marginRight: Spacing.md },
 
         easyDaysRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
         easyDay: {
@@ -386,13 +331,6 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
         easyDayLabel: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textPrimary },
         easyDayFactor: { fontSize: 10, color: colors.textMuted },
 
-        saveBtn: {
-            marginTop: Spacing.xl,
-            backgroundColor: colors.accent,
-            borderRadius: BorderRadius.sm,
-            paddingVertical: Spacing.md,
-            alignItems: 'center',
-        },
         saveBtnSmall: {
             backgroundColor: colors.accent,
             borderRadius: BorderRadius.sm,
@@ -420,7 +358,6 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
             ...Shadows.lg,
         },
         modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        modalDescription: { fontSize: FontSize.sm, lineHeight: 19, color: colors.textMuted },
         modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: Spacing.sm },
         actionMenu: {
             width: '100%',

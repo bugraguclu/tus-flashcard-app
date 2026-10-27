@@ -31,15 +31,11 @@ export {
     completeFilteredCard,
     restoreFilteredCard,
     setFilteredPreviewDue,
-    CUSTOM_STUDY_PREFIX,
     getCustomStudyDefaults,
     rememberCustomStudyExtend,
     rememberCustomStudyTags,
     createOrReplaceCustomStudySession,
     getCustomStudySessionToReplace,
-} from './filteredDecks';
-export type {
-    FilteredDeckOptions,
 } from './filteredDecks';
 export {
     getDirectDecksForScope,

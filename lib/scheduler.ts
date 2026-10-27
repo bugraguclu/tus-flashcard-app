@@ -16,7 +16,6 @@ import {
     formatDays,
     formatLearningDelay,
     formatMinutes,
-    getToday,
     hardDelayMinutes,
     reviewFuzzFor,
     todayLocalYMD,
@@ -522,18 +521,9 @@ export function getScheduler(type: AlgorithmType = 'ANKI_V3'): SchedulerEngine {
     return engines[type] || AnkiV3Engine;
 }
 
-export function getAvailableAlgorithms(): { type: AlgorithmType; name: string; description: string }[] {
-    return Object.entries(engines).map(([type, engine]) => ({
-        type: type as AlgorithmType,
-        name: engine.name,
-        description: engine.description,
-    }));
-}
-
 export {
     formatDays,
     formatMinutes,
-    getToday,
     todayLocalYMD,
     addDaysLocalYMD,
 };

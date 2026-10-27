@@ -331,7 +331,7 @@ function daysArgument(term: string, raw: string): number {
 }
 
 /** `deck:` — the deck itself, everything under it, and the filtered decks the card is in. */
-function deckPredicate(term: string, body: string, options: CardMatcherOptions, needs: CardSearchNeeds): TermTest {
+function deckPredicate(body: string, options: CardMatcherOptions, needs: CardSearchNeeds): TermTest {
     if (!body) throw new SearchSyntaxError('empty search value');
     if (body === '*') return () => true;
     needs.decks = true;
@@ -416,7 +416,7 @@ function predicateForTerm(rawTerm: string, options: CardMatcherOptions, needs: C
 
     switch (prefix) {
         case 'deck':
-            return deckPredicate(term, body, options, needs);
+            return deckPredicate(body, options, needs);
         case 'tag':
             return tagPredicate(term, body, needs);
         case 'preset': {

@@ -1,14 +1,13 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable, Platform, Linking } from 'react-native';
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, choose } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
-import { readUriBytes } from '../lib/files';
-import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
-import { attachmentMediaFilename, mediaFilenameForPickedAsset, sanitizeMediaFilename } from '../lib/mediaFilename';
+import { saveMediaFromUri } from '../lib/mediaStore';
+import { attachmentMediaFilename, mediaFilenameForPickedAsset } from '../lib/mediaFilename';
 import { mediaReferenceSnippet, soundSafeMediaFilename, type MediaReferenceKind } from '../lib/mediaAttachment';
 import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
@@ -36,18 +35,6 @@ interface MediaAttachButtonProps {
 
 export interface MediaAttachButtonHandle {
     open: () => void;
-}
-
-export { FIELD_MEDIA_RE } from '../lib/mediaAttachment';
-
-type MediaKind = 'image' | 'audio' | 'video' | 'file';
-
-function escapeHtml(value: string): string {
-    return value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
 }
 
 const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert }, ref) {

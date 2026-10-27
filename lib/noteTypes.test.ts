@@ -7,7 +7,6 @@ vi.mock('./db', () => ({
     getDB: () => ({
         getAllSync: (sql: string) => (sql.includes('note_types') ? [...dbState.noteTypeRows] : []),
     }),
-    buildFtsPrefixQuery: (q: string) => q,
 }));
 
 import { getAllNoteTypes } from './noteManager';

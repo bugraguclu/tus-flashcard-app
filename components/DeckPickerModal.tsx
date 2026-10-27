@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     FlatList,
     Keyboard,
@@ -24,7 +24,6 @@ import {
     flattenVisibleDeckPicker,
     initialExpandedDeckNames,
     prioritizeDeckTree,
-    type VisibleDeckPickerRow,
 } from '../lib/deckPickerExpansion';
 
 type Props = {

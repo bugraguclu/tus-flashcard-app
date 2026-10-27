@@ -5,7 +5,6 @@ import { localDayNumber } from './ankiState';
 import { todayLocalYMD } from './scheduler';
 import { getDeckByName } from './deckStore';
 import { filteredDeckMemberIds, gatherFilteredDeckMemberIds } from './filteredDeckMembership';
-import { gatherFilteredTermCardIds } from './filteredDeckGather';
 export { gatherFilteredTermCardIds } from './filteredDeckGather';
 import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
 import type { StudyQueueResult } from './studyQueue';

@@ -260,20 +260,3 @@ export function healBuiltinNoteTypeTemplates(): void {
         }
     }
 }
-
-/** Reset Anki data (for testing) — uses transaction for atomicity */
-export function resetAnkiData(): void {
-    const db = getDB();
-    db.execSync(`
-        BEGIN TRANSACTION;
-        DELETE FROM notes;
-        DELETE FROM anki_cards;
-        DELETE FROM decks;
-        DELETE FROM deck_configs;
-        DELETE FROM note_types;
-        DELETE FROM revlog;
-        DELETE FROM settings WHERE key = 'tus_anki_initialized';
-        COMMIT;
-    `);
-    console.log('[AnkiInit] All Anki data reset.');
-}

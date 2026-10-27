@@ -5,10 +5,7 @@ import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as SyncDb | null }));
 vi.mock('./db', () => ({
     getDB: () => holder.db,
-    buildFtsPrefixQuery: () => '',
     dbUpsertFtsCard: () => {},
-    dbDeleteFtsCard: () => {},
-    dbSearchCards: () => [],
 }));
 
 import { CATALOG_INSTALL_KEY, CATALOG_PACK_ID } from './catalogRows';

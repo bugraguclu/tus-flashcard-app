@@ -10,11 +10,8 @@ import type { AnkiCard, DeckConfig, NoteType } from './models';
 const h = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({
     getDB: () => h.db,
-    buildFtsPrefixQuery: () => '',
     dbIndexAllCards: () => {},
     dbUpsertFtsCard: () => {},
-    dbDeleteFtsCard: () => {},
-    dbSearchCards: () => [],
 }));
 
 import { buildFilteredSearchClause, clauseForSearchTerm } from './studySearchSql';

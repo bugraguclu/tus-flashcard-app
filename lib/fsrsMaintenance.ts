@@ -104,8 +104,6 @@ function deckScopeClause(deckIds: number[] | undefined): { sql: string; params: 
     };
 }
 
-export { revlogByCard } from './fsrsCardInputs';
-
 interface RebuildCandidate {
     card: AnkiCard;
     settings: AppSettings;

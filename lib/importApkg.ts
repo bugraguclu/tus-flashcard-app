@@ -415,9 +415,6 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
 
 export type {
     SqliteReader,
-    ApkgReader,
-    ApkgImportOptions,
-    ApkgImportResult,
 } from './apkgFormat';
 export {
     importAnkiReaderLossless,

@@ -168,23 +168,6 @@ export async function saveMediaBytes(filename: string, bytes: Uint8Array, mimeTy
     await fs.writeAsStringAsync(`${dir}${safe}`, bytesToBase64(bytes), { encoding: fs.EncodingType.Base64 });
 }
 
-/** Base64 variant of saveMediaBytes, for callers that already hold encoded data. */
-export async function saveMediaFile(filename: string, base64Data: string): Promise<void> {
-    const safe = sanitizeMediaFilename(filename);
-
-    if (Platform.OS === 'web') {
-        const raw = atob(base64Data);
-        const bytes = new Uint8Array(raw.length);
-        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-        await saveMediaBytes(safe, bytes);
-        return;
-    }
-
-    const dir = await ensureMediaDir();
-    const fs = getFileSystem();
-    await fs.writeAsStringAsync(`${dir}${safe}`, base64Data, { encoding: fs.EncodingType.Base64 });
-}
-
 /** Store a media file from a local URI (fast native copy when available, byte fallback). Returns the sanitized filename. */
 export async function saveMediaFromUri(filename: string, uri: string, mimeType?: string): Promise<string> {
     const safe = sanitizeMediaFilename(filename);

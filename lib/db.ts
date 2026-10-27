@@ -5,7 +5,6 @@
  */
 
 import { Platform } from 'react-native';
-import type { WebSQLiteDatabase } from './webDb';
 import { ankiFilteredOrderFromLegacy } from './filteredDeckOptions';
 import { translateActive } from './i18n';
 import { openFtsSafeDatabaseSync } from './sqliteOpenOptions';
@@ -454,34 +453,6 @@ export interface SearchableCard {
     subject: string;
 }
 
-const FTS_CONTROL_RE = /[\u0000-\u001F\u007F]/g;
-const FTS_SYNTAX_RE = /["*():]/g;
-const FTS_RESERVED_RE = /^(AND|OR|NOT|NEAR)$/i;
-
-export function sanitizeFtsToken(raw: string): string {
-    const cleaned = raw
-        .replace(FTS_CONTROL_RE, '')
-        .replace(FTS_SYNTAX_RE, '')
-        .trim();
-
-    if (!cleaned) return '';
-    if (FTS_RESERVED_RE.test(cleaned)) return '';
-    return cleaned;
-}
-
-export function buildFtsPrefixQuery(query: string): string {
-    const tokens = query
-        .normalize('NFC')
-        .trim()
-        .split(/\s+/)
-        .map((token) => sanitizeFtsToken(token))
-        .filter(Boolean);
-
-    return tokens
-        .map((token) => `"${token.replace(/"/g, '""')}"*`)
-        .join(' ');
-}
-
 export function dbIndexAllCards(cards: SearchableCard[]): void {
     if (Platform.OS === 'web') return; // FTS5 unavailable on web
     const db = getDB();
@@ -510,45 +481,6 @@ export function dbIndexAllCards(cards: SearchableCard[]): void {
     }
 }
 
-export function dbSearchCards(query: string): number[] {
-    if (!query.trim()) return [];
-    const db = getDB();
-
-    if (Platform.OS === 'web') {
-        // FTS5 unavailable on web; use LIKE-based fallback against notes table
-        try {
-            const likePattern = `%${query.trim()}%`;
-            const rows = db.getAllSync<{ id: number }>(
-                `SELECT DISTINCT ac.id FROM anki_cards ac
-                 JOIN notes n ON n.id = ac.noteId
-                 WHERE n.sfld LIKE ? OR n.data LIKE ? OR n.tags LIKE ?
-                 LIMIT 200`,
-                likePattern,
-                likePattern,
-                likePattern,
-            );
-            return rows.map((row) => row.id);
-        } catch (e) {
-            console.warn('[DB] Web LIKE search failed:', e);
-            return [];
-        }
-    }
-
-    const searchTerms = buildFtsPrefixQuery(query);
-    if (!searchTerms) return [];
-
-    try {
-        const rows = db.getAllSync<{ card_id: string }>(
-            'SELECT card_id FROM cards_fts WHERE cards_fts MATCH ? ORDER BY rank',
-            searchTerms,
-        );
-        return rows.map((row) => Number(row.card_id));
-    } catch (e) {
-        console.warn('[DB] FTS search failed, falling back:', e);
-        return [];
-    }
-}
-
 export function dbUpsertFtsCard(card: SearchableCard): void {
     if (Platform.OS === 'web') return;
     const db = getDB();
@@ -561,12 +493,6 @@ export function dbUpsertFtsCard(card: SearchableCard): void {
         card.topic,
         card.subject,
     );
-}
-
-export function dbDeleteFtsCard(cardId: number): void {
-    if (Platform.OS === 'web') return;
-    const db = getDB();
-    db.runSync('DELETE FROM cards_fts WHERE card_id = ?', String(cardId));
 }
 
 // ---------- Metadata ----------

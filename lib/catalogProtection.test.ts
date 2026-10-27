@@ -13,7 +13,6 @@ import {
     assertCatalogDeckNotDeletable,
     assertCatalogDeckNotRenamable,
     assertCatalogNoteContentMutable,
-    assertCatalogNoteNotDeletable,
     assertCatalogNoteNotDuplicable,
     assertCatalogNoteTypeNotChangeable,
     assertNoProtectedCatalogGuids,

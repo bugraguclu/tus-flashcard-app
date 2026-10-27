@@ -7,11 +7,8 @@ import type { AppSettings } from './types';
 const dbHolder = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({
     getDB: () => dbHolder.db,
-    buildFtsPrefixQuery: () => '',
     dbIndexAllCards: () => {},
     dbUpsertFtsCard: () => {},
-    dbDeleteFtsCard: () => {},
-    dbSearchCards: () => [],
 }));
 
 import { deckConfig, settings, rolloverHour, makeNote, makeCard, seedBase } from '../test/studyQueueFixtures';

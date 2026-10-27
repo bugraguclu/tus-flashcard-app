@@ -8,11 +8,8 @@ vi.mock('./db', () => ({
     getDB: () => holder.db,
     flushDatabaseWrites: () => holder.flush(),
     readOnlyTabMessage: () => null,
-    buildFtsPrefixQuery: () => '',
     dbIndexAllCards() {},
     dbUpsertFtsCard() {},
-    dbDeleteFtsCard() {},
-    dbSearchCards: () => [],
 }));
 import { seedBase, settings, makeCard } from '../test/studyQueueFixtures';
 import { getAnkiCard, saveAnkiCard } from './noteManager';

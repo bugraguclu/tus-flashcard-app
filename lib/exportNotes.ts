@@ -169,11 +169,3 @@ export function buildExportTextFromData(
 
     return lines.join('\n');
 }
-
-export function exportFileName(deckName?: string): string {
-    const stamp = new Date().toISOString().slice(0, 10);
-    const scope = deckName
-        ? `-${deckName.split('::').pop()!.toLowerCase().replace(/[^a-z0-9çğıöşü]+/gi, '-')}`
-        : '';
-    return `tusankim-disa-aktarim${scope}-${stamp}.txt`;
-}

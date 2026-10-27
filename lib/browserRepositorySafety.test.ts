@@ -5,7 +5,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppDb } from '../test/sqljsHarness';
 
 const h = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbDeleteFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {} }));
 import { getBrowserCardCount, getBrowserCards, getBrowserRowIdsMatchingText, getDeckTotalCardCount } from './browserRepository';
 import { DEFAULT_SETTINGS } from './settingsStore';
 

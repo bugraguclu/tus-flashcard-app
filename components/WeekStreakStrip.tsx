@@ -3,7 +3,7 @@
 // Day attribution follows the study-day rollover hour, so the strip, the streak chip and
 // the stats charts always agree on which day a review belongs to.
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, PanResponder, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { useThemeColors, type ColorScheme, Spacing, FontSize, BorderRadius } from '../constants/theme';
 import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';

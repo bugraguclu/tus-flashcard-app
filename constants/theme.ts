@@ -235,12 +235,6 @@ export function dropShadow({ x = 0, y, blur, opacity, elevation }: DropShadow) {
     });
 }
 
-/** Removes a shadow a base style gave, on every platform. */
-export const NO_SHADOW = Platform.select({
-    web: { boxShadow: 'none' },
-    default: { shadowOpacity: 0, elevation: 0 },
-});
-
 export const Shadows = {
     sm: dropShadow({ y: 1, blur: 3, opacity: 0.06, elevation: 1 }),
     md: dropShadow({ y: 2, blur: 8, opacity: 0.07, elevation: 3 }),

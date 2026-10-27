@@ -44,8 +44,6 @@ export interface NoteType {
     catalogPack?: string;
 }
 
-/** Stable local ids for the stock note types that this editor fully supports. */
-export const ANKI_STOCK_NOTE_TYPE_IDS = [1, 2, 7, 8, 3] as const;
 export const LEGACY_TUS_NOTE_TYPE_IDS = [4, 5, 6] as const;
 
 export function isLegacyTusNoteType(noteType: Pick<NoteType, 'id' | 'name'>): boolean {
@@ -447,11 +445,6 @@ export interface ReviewLog {
     type: 0 | 1 | 2 | 3 | 4 | 5; // 0=learn, 1=review, 2=relearn, 3=filtered, 4=manual, 5=rescheduled
 }
 
-export interface Tag {
-    name: string;        // hierarchical, e.g. "TUS::Anatomi"
-    usn: number;
-}
-
 export const FLAG_COLORS: Record<CardFlag, { name: string; color: string }> = {
     0: { name: 'Bayrak Yok', color: 'transparent' },
     1: { name: 'Kırmızı Bayrak', color: '#ff4444' },
@@ -469,13 +462,6 @@ export const FLAG_COLORS: Record<CardFlag, { name: string; color: string }> = {
 export const DEFAULT_DECKS: Deck[] = [
     { id: 1, name: 'Varsayılan', configId: 1, mod: 0, usn: 0, description: '', collapsed: false, isFiltered: false },
 ];
-
-// Sync deletion tombstones.
-export interface GraveEntry {
-    oid: number;         // deleted object id
-    type: 0 | 1 | 2;     // 0=card, 1=note, 2=deck
-    usn: number;
-}
 
 // Monotonic id counter so cards created in the same millisecond don't collide.
 let _lastId = 0;
@@ -510,16 +496,6 @@ export function getDeckAncestors(name: string): string[] {
         result.push(parts.slice(0, i).join('::'));
     }
     return result;
-}
-
-/** Direct children of a deck (one level down). */
-export function getDeckChildren(parentName: string, allDecks: Deck[]): Deck[] {
-    const prefix = parentName + '::';
-    return allDecks.filter(d => {
-        if (!d.name.startsWith(prefix)) return false;
-        const rest = d.name.slice(prefix.length);
-        return !rest.includes('::');
-    });
 }
 
 /** Deck display name (last segment). */

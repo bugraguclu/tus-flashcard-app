@@ -5,7 +5,7 @@ import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 
 const holder = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => holder.db, buildFtsPrefixQuery: () => '', dbUpsertFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => holder.db, dbUpsertFtsCard: () => {} }));
 
 import { changeNoteTypeWithConfirmation, noteTypeChangeRemovalPrompt } from './noteTypeChangeFlow';
 import { NoteTypeChangeConfirmationRequired } from './noteTypeChange';

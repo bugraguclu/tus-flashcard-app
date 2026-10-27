@@ -3,7 +3,6 @@ export { sanitizeUntrustedHtml } from './templateSecurity';
 import { escapeHtml } from './templateEscaping';
 import { typeAnswerPlainText, renderTypeAnswerDiff } from './templateTypedAnswer';
 export { getTypeAnswerField, typeAnswerPlainText, renderTypeAnswerDiff } from './templateTypedAnswer';
-export type { TypeAnswerDiffOptions } from './templateTypedAnswer';
 // ============================================================
 // TUS Flashcard - Template Engine (Mustache-like, Anki compatible)
 // Supports: {{Field}}, {{FrontSide}}, {{cloze:Field}}, {{type:Field}}
@@ -215,16 +214,6 @@ export function clozeFieldIndex(noteType: NoteType): number {
     }
     const named = noteType.fields.findIndex((f) => f.name === 'Text');
     return named === -1 ? 0 : named;
-}
-
-/** Render cloze deletion for a specific ordinal (question side) */
-export function renderClozeQuestion(text: string, targetOrd: number): string {
-    return renderClozeChildren(parseClozeNodes(text), targetOrd, 'question');
-}
-
-/** Render cloze deletion for a specific ordinal (answer side) */
-export function renderClozeAnswer(text: string, targetOrd: number): string {
-    return renderClozeChildren(parseClozeNodes(text), targetOrd, 'answer');
 }
 
 /**

@@ -12,7 +12,6 @@ vi.mock('./db', () => ({
     getDB: () => holder.db,
     dbUpsertFtsCard: () => {},
     dbIndexAllCards: () => {},
-    dbDeleteFtsCard: () => {},
 }));
 vi.mock('./mediaStore', () => ({
     sanitizeMediaFilename: (name: string) => name.replace(/^.*[\\/]/, '').replace(/^\.+/, '') || 'media',

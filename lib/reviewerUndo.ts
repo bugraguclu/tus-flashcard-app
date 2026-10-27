@@ -118,8 +118,6 @@ export function reviewerOpTargetsGone(change: Pick<ReviewerOpChange, 'before' | 
     return true;
 }
 
-export const EMPTY_REVIEWER_OP_STATE: ReviewerOpState = { cards: [], notes: [], reviewLogs: [] };
-
 /**
  * Read the rows an action is about to change, or has just changed.
  *

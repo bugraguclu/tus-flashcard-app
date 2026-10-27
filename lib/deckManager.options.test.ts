@@ -4,7 +4,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
-import { DEFAULT_DECK_CONFIG, type Deck } from './models';
+import { DEFAULT_DECK_CONFIG } from './models';
 import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 import { CUSTOM_STUDY_PREVIEW_DELAYS } from './customStudy';
 
@@ -12,11 +12,8 @@ const dbHolder = vi.hoisted(() => ({ db: null as any }));
 
 vi.mock('./db', () => ({
     getDB: () => dbHolder.db,
-    buildFtsPrefixQuery: () => '',
     dbIndexAllCards: () => {},
     dbUpsertFtsCard: () => {},
-    dbDeleteFtsCard: () => {},
-    dbSearchCards: () => [],
 }));
 
 import {

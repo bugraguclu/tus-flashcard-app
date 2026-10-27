@@ -6,7 +6,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Platform } from 'react-native';
 import { createAppDb } from '../test/sqljsHarness';
 const h = vi.hoisted(() => ({ db: null as any, media: new Map<string, Uint8Array>() }));
-vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbIndexAllCards: () => {}, dbDeleteFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {}, dbIndexAllCards: () => {} }));
 vi.mock('./mediaStore', () => ({
     sanitizeMediaFilename: (name: string) => name,
     saveMediaBytes: async (name: string, bytes: Uint8Array) => { h.media.set(name, bytes); },
@@ -16,7 +16,7 @@ import { buildAnkiExport, type ExportCollectionSource } from './exportAnkiPackag
 import { importApkg, importMediaFromZip } from './importApkg';
 import { openSqlJsReader } from './webDb';
 import { BUILTIN_NOTE_TYPES, DEFAULT_DECK_CONFIG, checksumField, type AnkiCard } from './models';
-import { getAllNotes, getAllAnkiCards, getAllNoteTypes } from './noteManager';
+import { getAllNotes, getAllAnkiCards } from './noteManager';
 import { importDelimitedNotes, previewDelimitedNotes } from './importNotes';
 import { parseDelimited } from './importDelimited';
 import { getAllDeckConfigs, getAllDecks, saveDeck, saveDeckConfig } from './deckManager';

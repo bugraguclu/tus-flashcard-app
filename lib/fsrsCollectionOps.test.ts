@@ -11,8 +11,8 @@ import { createAppDb } from '../test/sqljsHarness';
 
 const runtime = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({
-    getDB: () => runtime.db, buildFtsPrefixQuery: () => '', dbIndexAllCards: () => {},
-    dbUpsertFtsCard: () => {}, dbDeleteFtsCard: () => {}, dbSearchCards: () => [],
+    getDB: () => runtime.db, dbIndexAllCards: () => {},
+    dbUpsertFtsCard: () => {},
 }));
 
 import { dayNumberToYmd, localDayNumber } from './ankiState';

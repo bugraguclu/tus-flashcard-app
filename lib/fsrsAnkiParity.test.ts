@@ -17,11 +17,8 @@ const dbHolder = vi.hoisted(() => ({ db: null as any }));
 
 vi.mock('./db', () => ({
     getDB: () => dbHolder.db,
-    buildFtsPrefixQuery: () => '',
     dbIndexAllCards: () => {},
     dbUpsertFtsCard: () => {},
-    dbDeleteFtsCard: () => {},
-    dbSearchCards: () => [],
 }));
 
 import { ankiCardSeed, ankiFuzzFactor } from './ankiRandom';

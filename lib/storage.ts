@@ -13,16 +13,12 @@ export {
     migrateLegacySettingsIfNeeded,
     loadCustomCards,
     saveCustomCards,
-    loadSessionStats,
     saveSessionStats,
     saveCollectionDeckOptions,
     loadSettings,
     resetSettingsToDefaults,
     saveSettings,
     saveSettingsDurably,
-} from './settingsStore';
-export type {
-    SaveSettingsResult,
 } from './settingsStore';
 export {
     resetAllData,

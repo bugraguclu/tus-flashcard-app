@@ -3,11 +3,11 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => holder.db, buildFtsPrefixQuery: () => '', dbUpsertFtsCard: () => {} }));
+vi.mock('./db', () => ({ getDB: () => holder.db, dbUpsertFtsCard: () => {} }));
 import { BUILTIN_NOTE_TYPES } from './models';
 import { legacyFieldChecksum } from './noteChecksum';
-import { createNote, deleteNote, deleteAnkiCardOnly, deleteAnkiCardsOnly, getNote, getCardsForNote, saveNote, saveAnkiCard, findDuplicateNote } from './noteStore';
-import { createDeck, deleteDeck, getDeck } from './deckStore';
+import { createNote, deleteAnkiCardsOnly, getNote, getCardsForNote, saveNote, saveAnkiCard, findDuplicateNote } from './noteStore';
+import { createDeck } from './deckStore';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });

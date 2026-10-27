@@ -5,7 +5,6 @@ const rows: Array<{ cardId: number; noteData: string }> = [];
 
 vi.mock('./db', () => ({
     getDB: () => ({ getAllSync: () => rows }),
-    buildFtsPrefixQuery: (q: string) => q,
 }));
 
 import { getSearchIndexCards } from './noteManager';

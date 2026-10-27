@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Animated,
     Keyboard,
@@ -631,14 +631,6 @@ function createStyles(colors: ColorScheme) {
         rowLabel: { flex: 1, color: colors.textPrimary, fontSize: 15, lineHeight: 20 },
         rowLabelDisabled: { color: colors.textMuted },
         rowChevron: { color: colors.textPrimary, fontSize: 22, marginLeft: 5 },
-        flagSwatch: {
-            width: 20,
-            height: 20,
-            borderRadius: 3,
-            borderWidth: 1,
-            borderColor: colors.border,
-            marginRight: 14,
-        },
         formContent: { paddingTop: Spacing.md },
         switchRow: {
             minHeight: 48,

@@ -352,8 +352,6 @@ describe('collection operations survive an immediate reload', () => {
             getDB: () => db,
             flushDatabaseWrites: () => webDb.flushWebDatabase(),
             readOnlyTabMessage: () => webDb.isPrimaryTab() ? null : 'read-only',
-            buildFtsPrefixQuery: () => '',
-            dbDeleteFtsCard: () => {},
         }));
         const notes = await import('./noteManager');
         const { saveDeck, saveDeckConfig } = await import('./deckManager');

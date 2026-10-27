@@ -42,7 +42,6 @@ const fakeDb = {
 
 vi.mock('./db', () => ({
     getDB: () => fakeDb,
-    buildFtsPrefixQuery: (q: string) => q,
 }));
 
 import { buryCard, unburyAllCards, getAnkiCard } from './noteManager';

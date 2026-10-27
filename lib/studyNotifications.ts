@@ -15,7 +15,6 @@ import {
     studyReminderTime,
 } from './studyReminderSchedule';
 
-export { getDueReviewCountAt, isStudyReminderData };
 // iOS retains at most 64 pending local notifications. Twenty-eight daily reminders leave
 // headroom for future app-owned notifications.
 const STUDY_REMINDER_DAYS = 28;

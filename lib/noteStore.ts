@@ -13,7 +13,7 @@ import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
 import { updateAnkiCardData } from './fsrsCardData';
 import { learningLeftAfterDeckMove } from './deckPresetSteps';
-import { buildFtsPrefixQuery, getDB } from './db';
+import { getDB } from './db';
 import { getSubjectIdSet } from './subjects';
 import { humanizeCardText } from './displayText';
 import { markSourcePackageDirty } from './ankiPackageArchive';
@@ -261,15 +261,6 @@ export function getCardsForNote(noteId: number): AnkiCard[] {
     return rows.map(r => JSON.parse(r.data));
 }
 
-export function getCardsForDeck(deckId: number): AnkiCard[] {
-    const db = getDB();
-    const rows = db.getAllSync<{ data: string }>(
-        'SELECT data FROM anki_cards WHERE deckId = ?',
-        deckId
-    );
-    return rows.map(r => JSON.parse(r.data));
-}
-
 export function saveAnkiCard(card: AnkiCard, options: { replaceData?: boolean } = {}): void {
     assertCatalogCardMutable(card);
     const db = getDB();
@@ -381,14 +372,6 @@ export function suspendCard(cardId: number): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
     card.queue = -1;
-    card.mod = Math.floor(Date.now() / 1000);
-    saveAnkiCard(card);
-}
-
-export function unsuspendCard(cardId: number, rolloverHour: number = 4): void {
-    const card = getAnkiCard(cardId);
-    if (!card) return;
-    card.queue = restoreQueueFromType(card, rolloverHour);
     card.mod = Math.floor(Date.now() / 1000);
     saveAnkiCard(card);
 }
@@ -507,19 +490,6 @@ export function undoCardsMovedToDeck(moves: CardDeckMoveSnapshot[]): number {
     }
 
     return restored;
-}
-
-/** Bury all sibling cards of a given card (same note, different ord) */
-export function burySiblings(card: AnkiCard): number {
-    const siblings = getCardsForNote(card.noteId);
-    let buriedCount = 0;
-    for (const sibling of siblings) {
-        if (sibling.id !== card.id && sibling.queue >= 0) {
-            buryCard(sibling.id, true);
-            buriedCount++;
-        }
-    }
-    return buriedCount;
 }
 
 /** Unbury both sched-buried (-2) and user-buried (-3) cards at day rollover.
@@ -733,66 +703,5 @@ export function deleteAnkiCardsOnly(cardIds: number[], options: { preserveNotes?
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
-    }
-}
-
-/** Searches notes, using the FTS5 index when it is available. */
-export function searchNotes(query: string): Note[] {
-    const db = getDB();
-    const raw = query.trim();
-    const lower = raw.toLowerCase();
-
-    if (!raw) {
-        const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes ORDER BY id');
-        return rows.map((row) => JSON.parse(row.data) as Note);
-    }
-
-    if (lower.startsWith('tag:')) {
-        const tagQuery = lower.slice(4).trim();
-        if (!tagQuery) {
-            const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes ORDER BY id');
-            return rows.map((row) => JSON.parse(row.data) as Note);
-        }
-
-        // Whole-tag match: wrap the stored tags in spaces so the query can't partially match a
-        // longer tag (works whether or not the row already has Anki's surrounding spaces).
-        const rows = db.getAllSync<{ data: string }>(
-            "SELECT data FROM notes WHERE (' ' || LOWER(TRIM(tags)) || ' ') LIKE ? ORDER BY id",
-            `% ${tagQuery} %`,
-        );
-        return rows.map((row) => JSON.parse(row.data) as Note);
-    }
-
-    const searchTerms = buildFtsPrefixQuery(raw);
-    if (!searchTerms) {
-        const rows = db.getAllSync<{ data: string }>('SELECT data FROM notes ORDER BY id');
-        return rows.map((row) => JSON.parse(row.data) as Note);
-    }
-
-    try {
-        const rows = db.getAllSync<{ noteData: string }>(
-            `SELECT DISTINCT n.data AS noteData
-             FROM notes n
-             JOIN anki_cards c ON c.noteId = n.id
-             JOIN cards_fts f ON f.card_id = CAST(c.id AS TEXT)
-             WHERE cards_fts MATCH ?
-             ORDER BY bm25(cards_fts)`,
-            searchTerms,
-        );
-
-        return rows.map((row) => JSON.parse(row.noteData) as Note);
-    } catch (e) {
-        console.warn('[NoteManager] operation failed:', e);
-        const like = `%${lower}%`;
-        const rows = db.getAllSync<{ data: string }>(
-            `SELECT data FROM notes
-             WHERE LOWER(sfld) LIKE ? OR LOWER(data) LIKE ? OR LOWER(tags) LIKE ?
-             ORDER BY id`,
-            like,
-            like,
-            like,
-        );
-
-        return rows.map((row) => JSON.parse(row.data) as Note);
     }
 }

@@ -15,11 +15,6 @@
 /** Zero-width space that anchors a pending typing style. Stripped before the field is stored. */
 export const PENDING_STYLE_MARKER = String.fromCharCode(0x200b);
 
-/** Toolbar toggles whose effect at a collapsed caret is a pending typing style, not a DOM edit. */
-export const TYPING_STYLE_COMMANDS = [
-    'bold', 'italic', 'underline', 'strikeThrough', 'superscript', 'subscript',
-] as const;
-
 /** Inline toggles the toolbar reports state for. */
 export const INLINE_STATE_COMMANDS = [
     'bold', 'italic', 'underline', 'strikeThrough', 'superscript', 'subscript',

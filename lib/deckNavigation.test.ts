@@ -5,7 +5,6 @@ import {
     getRootDeckName,
     getScopedBrowserPath,
     hasExplicitStudyScope,
-    normalizeDeckLeafInput,
 } from './deckNavigation';
 
 describe('commonDeckAncestor', () => {

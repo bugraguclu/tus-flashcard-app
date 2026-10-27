@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,6 @@ import {
     TextInput,
     StyleSheet,
     Platform,
-    Modal,
     Pressable,
     PanResponder,
     useWindowDimensions,
@@ -19,7 +18,6 @@ import {
     type LayoutChangeEvent,
     type NativeScrollEvent,
     type NativeSyntheticEvent,
-    type ViewProps,
 } from 'react-native';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -53,7 +51,6 @@ import {
     deleteNote,
     isNoteMarked,
     saveNote,
-    saveAnkiCard,
     setCardFlag,
     toggleNoteMark,
 } from '../../lib/noteManager';
@@ -70,7 +67,7 @@ import {
     unburyDeck,
     createOrSelectDeck,
 } from '../../lib/deckManager';
-import { parsePreviewDelays, previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
+import { previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
 import ReviewerDeckScope from '../../components/reviewer/ReviewerDeckScope';
 import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
@@ -3596,21 +3593,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-    cardIndicator: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        overflow: 'hidden',
-        textAlign: 'center',
-        lineHeight: 32,
-        fontSize: 20,
-        color: colors.textSecondary,
-        backgroundColor: colors.bgSecondary,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
-    },
-    cardMarkIndicator: { color: colors.btnHard },
-    cardIndicatorHidden: { opacity: 0 },
     questionText: { fontSize: 22, fontWeight: '500', lineHeight: 32, color: colors.textPrimary },
 
     typeAnswerInput: {
@@ -3641,7 +3623,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     },
     toolsOverlayLeft: { left: Spacing.md },
     toolsOverlayRight: { right: Spacing.md },
-    toolsOverlayText: { fontSize: 23, color: colors.accent },
 
     answerSection: {
         marginTop: Spacing.lg,
@@ -3705,20 +3686,12 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderColor: colors.border,
         ...Shadows.sm,
     },
-    reviewerToolsInlineIcon: {
-        fontSize: 22,
-        color: colors.textSecondary,
-    },
     reviewerToolsGradeBtn: {
         flex: 0,
         flexGrow: 0,
         width: isCompact ? 48 : 56,
         backgroundColor: colors.bgSecondary,
         borderColor: colors.border,
-    },
-    reviewerToolsGradeIcon: {
-        fontSize: isCompact ? 18 : 20,
-        color: colors.textSecondary,
     },
     reviewerToolsGradeLabel: {
         fontSize: FontSize.xs,

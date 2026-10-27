@@ -30,7 +30,6 @@ import {
     constrainedFuzzBounds,
     formatDays,
     formatLearningDelay,
-    formatMinutes,
     hardDelaySecs,
     learningStepSecs,
     reviewFuzzFor,
