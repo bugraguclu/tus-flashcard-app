@@ -129,7 +129,7 @@ Shortcuts exist only on iPhone.
 | Storage | SQLite through `expo-sqlite` on iOS, and [sql.js](https://sql.js.org/) (WebAssembly) persisted to IndexedDB on the web |
 | Packages | JSZip and fzstd for Anki's zip and zstd-compressed collections |
 | Rendering | `react-native-webview` for sandboxed card and editor documents, and `react-native-svg` for vector graphics |
-| Native modules | Two local Expo modules in Swift: deck shortcuts and screen capture protection |
+| Native modules | A local Expo module in Swift for deck shortcuts |
 | Testing | Vitest (1,500+ tests), `tsc`, and a native iOS configuration verifier |
 | Delivery | GitHub Actions, CodeQL and Dependabot. Vercel hosts the web preview, and `eas.json` holds the iOS build profiles |
 
@@ -144,7 +144,7 @@ hooks/        Screen-level hooks: startup, localisation, route scope, notificati
 contexts/     App-wide state provider
 constants/    Theme tokens for the light and dark palettes
 locales/      Native app name and permission strings in Turkish and English
-modules/      Local Expo native modules: deck shortcuts and screen guard
+modules/      Local Expo native module: deck shortcuts
 public/       Web app manifest, icons and service worker
 scripts/      Release verification, card pack tooling and Expo Go sharing
 test/         Test stubs and the sql.js harness
