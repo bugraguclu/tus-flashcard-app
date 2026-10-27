@@ -14,11 +14,6 @@ import { spawnSync } from 'node:child_process';
  */
 const EXCEPTIONS = [
     {
-        advisory: 'GHSA-86w9-cpqp-85rv',
-        package: 'node-forge',
-        reason: 'build-time only (Expo CLI code-signing certificates); no patched node-forge release as of 2026-10-03',
-    },
-    {
         advisory: 'GHSA-mrhx-c7xc-m3w5',
         package: 'zod',
         reason: 'build-time only (Expo CLI 57 argument and config validation; the app never imports zod); patched only in zod 4.6.6, while @expo/cli 57.0.32 still requires zod ^3.25.76, as of 2026-10-24',
