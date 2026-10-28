@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import {
     View,
-    Text,
     ScrollView,
     TouchableOpacity,
     StyleSheet,
     Linking,
     Platform,
 } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Path } from 'react-native-svg';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../constants/theme';
 import type { Subject } from '../lib/types';

@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     View,
-    Text,
     TouchableOpacity,
-    TextInput,
     FlatList,
     Keyboard,
     Platform,
@@ -12,6 +10,7 @@ import {
     ActivityIndicator,
     useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '../constants/theme';

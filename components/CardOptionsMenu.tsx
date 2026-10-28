@@ -9,12 +9,11 @@ import {
     ScrollView,
     StyleSheet,
     Switch,
-    Text,
-    TextInput,
     TouchableOpacity,
     View,
     useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from './AppText';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

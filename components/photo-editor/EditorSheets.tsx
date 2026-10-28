@@ -5,12 +5,11 @@ import {
     Platform,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
     TouchableOpacity,
     View,
     Pressable,
 } from 'react-native';
+import { Text, TextInput } from '../AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { PhotoTextAlign, PhotoTextStyle } from '../../lib/photoEditor';
 import { BLANK_CANVAS_BACKGROUNDS, BLANK_CANVAS_PAPERS, type BlankCanvasPaper } from '../../lib/blankCanvas';

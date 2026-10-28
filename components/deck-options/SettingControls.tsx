@@ -6,12 +6,11 @@ import {
     ScrollView,
     StyleSheet,
     Switch,
-    Text,
-    TextInput,
     TouchableOpacity,
     useWindowDimensions,
     View,
 } from 'react-native';
+import { Text, TextInput } from '../AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ColorScheme } from '../../constants/theme';
 import { sanitizeNumericDraft } from '../../lib/deckOptionsForm';
@@ -285,7 +284,7 @@ export function SelectSetting({ label, value, options, onChange, styles, colors,
                 accessibilityRole="button"
                 accessibilityLabel={`${label}: ${selected?.label ?? ''}`}
             >
-                <Text style={styles.selectControlText} numberOfLines={1}>{selected?.label ?? ''}</Text>
+                <Text style={styles.selectControlText} numberOfLines={2}>{selected?.label ?? ''}</Text>
                 <Text style={styles.selectChevron}>⌄</Text>
             </TouchableOpacity>
             {open ? <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>

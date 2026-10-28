@@ -1,6 +1,8 @@
 import React from 'react';
 import type { DateTimePickerChangeEvent, DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useIsDarkTheme, useThemeColors } from '../constants/theme';
+import { scaleFontSize } from '../lib/textScale';
+import { useTextScale } from './AppText';
 
 /**
  * Browser implementation of `@react-native-community/datetimepicker`.
@@ -86,6 +88,7 @@ export default function WebDateTimePicker({
 }: Props) {
     const colors = useThemeColors();
     const isDark = useIsDarkTheme();
+    const textScale = useTextScale();
     const type = inputType(mode);
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,7 +113,7 @@ export default function WebDateTimePicker({
             onChange={handleChange}
             style={{
                 font: 'inherit',
-                fontSize: 15,
+                fontSize: scaleFontSize(15, textScale),
                 padding: '6px 10px',
                 borderRadius: 8,
                 border: `1px solid ${colors.border}`,

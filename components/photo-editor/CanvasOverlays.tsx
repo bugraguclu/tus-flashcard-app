@@ -1,4 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import {
     PHOTO_ROTATE_HANDLE_OFFSET,
     photoRotateHandleSide,

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
-import { Image, PanResponder, StyleSheet, Text, TouchableOpacity, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { Image, PanResponder, StyleSheet, TouchableOpacity, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { Text } from '../AppText';
 import { resizeOcclusionShape, type OcclusionShape } from '../../lib/imageOcclusion';
 import OcclusionShapesSvg, { type OcclusionDraft } from './OcclusionShapesSvg';
 import {

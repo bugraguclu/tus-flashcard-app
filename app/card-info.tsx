@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import {
     View,
-    Text,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
 } from 'react-native';
+import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';

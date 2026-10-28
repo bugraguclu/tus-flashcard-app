@@ -21,7 +21,7 @@ Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt 
 
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.settings.cat.general | Genel satırı, `settings.tsx:671` | alt satır | Dil • Tema • Düzenleme | Language • Theme • Editing | Mevcut — koru |
+| help.settings.cat.general | Genel satırı, `settings.tsx:671` | alt satır | Dil • Tema • Yazı boyutu • Düzenleme | Language • Theme • Text size • Editing | Mevcut — koru |
 | help.settings.cat.newStudy | Yeni çalışma ekranı, `:672` | alt satır | Ekran • Araç çubuğu • Yanıt düğmeleri | Screen • Toolbar • Answer buttons | Mevcut — koru |
 | help.settings.cat.reviewing | İnceleme, `:673` | alt satır | Zamanlama • Gelişmiş | Scheduling • Advanced | Mevcut — koru |
 | help.settings.cat.notifications | Bildirimler, `:674` | alt satır | Hatırlatma saati | Reminder time | Mevcut — koru |

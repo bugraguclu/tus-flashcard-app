@@ -3,7 +3,6 @@ import { getEditorNoteType, rememberEditorNoteType } from '../lib/editorNoteType
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
-    Text,
     TouchableOpacity,
     ScrollView,
     KeyboardAvoidingView,
@@ -13,6 +12,7 @@ import {
     useWindowDimensions,
     Linking,
 } from 'react-native';
+import { Text } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';

@@ -86,6 +86,20 @@ you open it. Study reminders use the same language.
 **System**, **Light** or **Dark** (default: **Light**). **System** follows your iPhone's light/dark
 appearance. The chosen theme also applies to the keyboard, system sheets and the status bar.
 
+<a id="text-size"></a>
+### Text size
+
+Drag the slider, or tap anywhere on its track: it settles on **Small**, **Default** (the default),
+**Large** or **Extra large**. While you drag, only the sample below it changes; when you lift your
+finger the whole app takes the new size, and **Save** keeps it. Menus, lists, buttons and text
+boxes use this size; headings and big numbers grow a little less than body text. Screens lay
+themselves out for it: on Decks, a long deck name that no longer fits on one line with its counts
+gets the counts below it, in the same columns, so a word is never broken in the middle. Text inside
+fixed-size drawings, such as the Stopwatch ring, stays at its designed size.
+
+Card content is not affected; use [Card zoom](#accessibility) under **Accessibility** for that.
+Your iPhone's own text size (Settings › Display & Brightness › Text Size) adds on top of this step.
+
 <a id="editing-preferences"></a>
 ### Editing and the card browser
 

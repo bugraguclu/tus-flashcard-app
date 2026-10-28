@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput } from '../AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Ellipse, Path, Polygon, Rect } from 'react-native-svg';
 import { useThemeColors } from '../../constants/theme';

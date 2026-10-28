@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Text } from '../AppText';
 import { BorderRadius, FontSize, Shadows, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
@@ -151,9 +152,11 @@ export default function StopwatchHero({
                         knobColor={colors.white}
                         knobDotColor={heroColor}
                     >
+                        {/* The ring is drawn at a fixed size around this copy, which already fills its
+                            centre at the designed size, so it never grows past it. */}
                         <View style={[styles.ringCenter, { maxWidth: ringSize * 0.66 }]}>
-                            <Text style={styles.ringLabel}>{l('Toplam\nÇalışma Süresi', 'Total\nStudy Time')}</Text>
-                            <Text style={[styles.ringValue, { fontSize: totalFontSize }]} numberOfLines={1}>{total}</Text>
+                            <Text style={styles.ringLabel} maxFontSizeMultiplier={1}>{l('Toplam\nÇalışma Süresi', 'Total\nStudy Time')}</Text>
+                            <Text style={[styles.ringValue, { fontSize: totalFontSize }]} numberOfLines={1} maxFontSizeMultiplier={1}>{total}</Text>
                         </View>
                     </ProgressRing>
                 </View>

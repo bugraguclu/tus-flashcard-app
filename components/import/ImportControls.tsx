@@ -1,4 +1,5 @@
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import Svg, { Path } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
 import type { ImportStyles } from './importStyles';

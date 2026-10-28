@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
     View,
-    Text,
     TouchableOpacity,
     ScrollView,
     StyleSheet,
     ActivityIndicator,
     Switch,
 } from 'react-native';
+import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';

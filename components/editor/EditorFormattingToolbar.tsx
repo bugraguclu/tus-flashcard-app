@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import { Spacing, type ColorScheme } from '../../constants/theme';
 import {
     calculateToolbarButtonWidth,

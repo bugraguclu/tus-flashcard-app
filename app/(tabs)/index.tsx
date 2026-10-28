@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     View,
-    Text,
     ActivityIndicator,
     ScrollView,
     TouchableOpacity,
-    TextInput,
     StyleSheet,
     Platform,
     Pressable,
@@ -19,6 +17,7 @@ import {
     type NativeScrollEvent,
     type NativeSyntheticEvent,
 } from 'react-native';
+import { Text, TextInput } from '../../components/AppText';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Redirect, useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
@@ -2912,7 +2911,8 @@ export default function StudyScreen() {
                 accessibilityLabel={l(`Deste seç. Geçerli kapsam: ${reviewerDeckTitle}`, `Select deck. Current scope: ${reviewerDeckTitle}`)}
                 {...webTitle(l('Çalışılacak desteyi seç', 'Choose which deck to study'))}
             >
-                <Text style={styles.classicToolbarTitle} numberOfLines={1}>
+                {/* Toolbar chrome between fixed icons: it grows less than content, as a navigation bar title does. */}
+                <Text style={styles.classicToolbarTitle} numberOfLines={1} maxFontSizeMultiplier={1.15}>
                     {settings.showDeckTitle !== false ? reviewerDeckTitle : l('Bugünün Kartları', 'Cards for Today')}
                 </Text>
                 <DownChevron color={colors.textMuted} />

@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput } from '../AppText';
 import { BorderRadius, type ColorScheme } from '../../constants/theme';
 import {
     calloutHtml,

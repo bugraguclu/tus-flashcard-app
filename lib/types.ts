@@ -1,6 +1,7 @@
 import type { AnkiCard, Note } from './models';
 import type { FsrsMemoryState } from './fsrs';
 import type { IntervalBalancer } from './schedulingIntervals';
+import type { TextSizeLevel } from './textScale';
 
 /**
  * Simple flashcard shape used for legacy data and seed content.
@@ -229,6 +230,8 @@ export type StudyNotificationThreshold = 0 | 10 | 25 | 50 | 75 | 100 | 150 | 200
 export interface AppSettings {
     language: AppLanguage;
     themeMode: ThemeMode;
+    /** App-wide text size: one of the four steps of the Settings slider. Cards keep `cardZoomPercent`. */
+    textSizeLevel?: TextSizeLevel;
     keyBindings: KeyBindings;
     /** Auto-reveal the answer a few seconds after a card appears, if the user hasn't already. */
     autoAdvance: boolean;

@@ -29,7 +29,12 @@ function mount(contentReadOnly: boolean) {
     return { clear, preferences };
 }
 const text = (label: string) => renderer!.root.findAll((node) => (node.type as string) === 'Text' && node.children.includes(label));
-const press = (label: string) => act(() => text(label)[0].parent!.props.onPress());
+/** Presses the control that carries this label: the nearest ancestor of its text with onPress. */
+const press = (label: string) => act(() => {
+    let node = text(label)[0].parent;
+    while (node && typeof node.props.onPress !== 'function') node = node.parent;
+    node!.props.onPress();
+});
 
 describe('catalog editor content actions', () => {
     it('exposes clear fields and working formatting preferences for purchased content', () => {

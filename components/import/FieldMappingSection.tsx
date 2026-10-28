@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import type { NoteTypeField } from '../../lib/models';
 import { ChevronDownIcon, ChoiceModal } from './ImportControls';
 import type { ImportStyles } from './importStyles';

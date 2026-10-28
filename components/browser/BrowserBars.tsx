@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { Text } from '../AppText';
 import { useThemeColors, type ColorScheme } from '../../constants/theme';
 import { FLAG_COLORS, type CardFlag } from '../../lib/models';
 import type { BrowserTableMode } from '../../lib/studyRepository';

@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput } from '../AppText';
 import type { useI18n } from '../../hooks/useI18n';
 import { getAllDeckConfigs, getDecksUsingConfig } from '../../lib/deckManager';
 import type { DeckOptionsStyles } from './deckOptionsStyles';

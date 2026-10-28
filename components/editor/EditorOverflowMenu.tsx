@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import { EDITOR_HEADER_HEIGHT } from './editorStyles';
 import type { EditorPreferences } from './types';
 import type { EditorI18n } from './types';

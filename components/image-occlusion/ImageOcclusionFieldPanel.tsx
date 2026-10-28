@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Platform, StyleSheet, Text, TouchableOpacity, View, type LayoutChangeEvent } from 'react-native';
+import { ActivityIndicator, Image, Platform, StyleSheet, TouchableOpacity, View, type LayoutChangeEvent } from 'react-native';
+import { Text } from '../AppText';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { alert, confirmAsync } from '../../lib/confirm';

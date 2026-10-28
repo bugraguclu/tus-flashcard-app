@@ -22,6 +22,7 @@ import { resolveSettingsFromConfig } from './settingsResolver';
 import { normalizeNewCardGatherOrder } from './queueBuild';
 import { normalizeReviewerToolbarPosition } from './reviewerPresentation';
 import { normalizeStudyNotificationThreshold } from './studyNotificationPolicy';
+import { DEFAULT_TEXT_SIZE_LEVEL, normalizeTextSizeLevel } from './textScale';
 import {
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
@@ -73,6 +74,7 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
 export const DEFAULT_SETTINGS: AppSettings = {
     language: 'tr',
     themeMode: 'light',
+    textSizeLevel: DEFAULT_TEXT_SIZE_LEVEL,
     keyBindings: DEFAULT_KEY_BINDINGS,
     autoAdvance: false,
     interruptAudioOnAnswer: true,
@@ -463,6 +465,7 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
         return {
             language: normalizeLanguage(parsed.language),
             themeMode: normalizeThemeMode(parsed.themeMode),
+            textSizeLevel: normalizeTextSizeLevel(parsed.textSizeLevel),
             keyBindings: normalizeKeyBindings(parsed.keyBindings),
             autoAdvance: Boolean(parsed.autoAdvance),
             // Default-on prefs (Anki parity): only an explicit false turns them off, so
@@ -537,6 +540,7 @@ function persistAppSettingsMeta(settings: AppSettings): void {
     const meta = {
         language: settings.language,
         themeMode: settings.themeMode,
+        textSizeLevel: settings.textSizeLevel,
         keyBindings: settings.keyBindings,
         autoAdvance: settings.autoAdvance,
         interruptAudioOnAnswer: settings.interruptAudioOnAnswer,
@@ -761,6 +765,7 @@ export function validateSettings(settings: Record<string, unknown>): AppSettings
     validated.algorithm = 'ANKI_V3';
     validated.language = normalizeLanguage(validated.language);
     validated.themeMode = normalizeThemeMode(validated.themeMode);
+    validated.textSizeLevel = normalizeTextSizeLevel(validated.textSizeLevel);
     validated.keyBindings = normalizeKeyBindings(validated.keyBindings);
     validated.autoAdvance = Boolean(validated.autoAdvance);
     validated.newCardDeckMode = validated.newCardDeckMode === 'default' ? 'default' : 'current';

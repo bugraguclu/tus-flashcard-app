@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     SectionList,
     StyleSheet,
-    Text,
     TouchableOpacity,
     useWindowDimensions,
     View,
 } from 'react-native';
+import { Text } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';

@@ -9,11 +9,11 @@ import {
     Linking,
     Platform,
     View,
-    Text,
     TouchableOpacity,
     StyleSheet,
     ScrollView,
 } from 'react-native';
+import { Text } from '../components/AppText';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -39,6 +39,8 @@ import { inferImportFileType } from '../lib/importFile';
 import { parseExternalAppUrl } from '../lib/externalLinking';
 import { externalActionRoute } from '../lib/externalActionRoute';
 import WebAppIntegrations from '../components/WebAppIntegrations';
+import { TextScaleProvider } from '../components/AppText';
+import { textSizeMultiplier } from '../lib/textScale';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 // Imported here, ahead of the router, so its `popstate` listener is added before the router's.
 import '../lib/webPopStateGuard';
@@ -533,10 +535,11 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     );
 }
 
-/** Applies the current system/light/dark preference to every theme-aware screen. */
+/** Applies the current system/light/dark preference and the text size to every screen. */
 function ThemeGate({ children }: { children: React.ReactNode }) {
     const { settings } = useAppSettings();
     const activeMode = DARK_MODE_UI_ENABLED ? settings.themeMode : 'light';
+    const textMultiplier = textSizeMultiplier(settings.textSizeLevel);
 
     // Our palette only covers what this app draws. Keyboards, native form sheets, scroll
     // indicators and the status bar follow the process-wide trait instead, so an explicit
@@ -548,7 +551,11 @@ function ThemeGate({ children }: { children: React.ReactNode }) {
         Appearance.setColorScheme(activeMode === 'system' ? 'unspecified' : activeMode);
     }, [activeMode]);
 
-    return <ThemeColorsProvider mode={activeMode}>{children}</ThemeColorsProvider>;
+    return (
+        <ThemeColorsProvider mode={activeMode}>
+            <TextScaleProvider multiplier={textMultiplier}>{children}</TextScaleProvider>
+        </ThemeColorsProvider>
+    );
 }
 
 /**

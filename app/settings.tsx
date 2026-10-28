@@ -8,15 +8,14 @@ import {
     ScrollView,
     StyleSheet,
     Switch,
-    Text,
-    TextInput,
     TouchableWithoutFeedback,
     TouchableOpacity,
     View,
     ActivityIndicator,
 } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import {
     BorderRadius,
@@ -33,6 +32,7 @@ import {
     saveSettingsDurably,
 } from '../lib/storage';
 import KeyboardSettingsSection from '../components/settings/KeyboardSettingsSection';
+import TextSizeSlider from '../components/settings/TextSizeSlider';
 import {
     checkDatabase,
     repairChangedRows,
@@ -553,6 +553,16 @@ export default function SettingsScreen() {
         sectionScrollRef.current?.scrollTo({ y: 0, animated: false });
     }, [activeSection]);
 
+    // iOS 26 makes a rightward drag anywhere on a screen a back swipe, and decides so as the
+    // finger lands, before a slider here can claim it. Pages with a slider (text size,
+    // swipe sensitivity) keep only the edge swipe; every other page gets the platform default.
+    const navigation = useNavigation();
+    const pageHasSlider = activeSection === 'general' || activeSection === 'controls';
+    useEffect(() => {
+        if (Platform.OS !== 'ios') return;
+        navigation.setOptions({ fullScreenGestureEnabled: pageHasSlider ? false : undefined });
+    }, [navigation, pageHasSlider]);
+
     const handleSaveSettings = useCallback(async () => {
         if (saving) return;
         Keyboard.dismiss();
@@ -671,7 +681,7 @@ export default function SettingsScreen() {
     // The secondary line lists only the headings found on each page, so it stays a plain table of
     // contents: no live values, no descriptive copy. Keep it in step with the page's Group titles.
     const categories = useMemo<Category[]>(() => [
-        { id: 'general', title: l('Genel', 'General'), summary: l('Dil • Tema • Düzenleme', 'Language • Theme • Editing') },
+        { id: 'general', title: l('Genel', 'General'), summary: l('Dil • Tema • Yazı boyutu • Düzenleme', 'Language • Theme • Text size • Editing') },
         { id: 'newStudy', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
         { id: 'reviewing', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Gelişmiş', 'Scheduling • Advanced') },
         { id: 'notifications', title: l('Bildirimler', 'Notifications'), summary: l('Hatırlatma saati', 'Reminder time') },
@@ -1062,6 +1072,9 @@ export default function SettingsScreen() {
                         );
                     })}
                 </View>
+            </Group>
+            <Group title={l('Yazı boyutu', 'Text size')} styles={styles}>
+                <TextSizeSlider value={settings.textSizeLevel} onChange={(level) => updateSetting('textSizeLevel', level)} />
             </Group>
             <Group title={l('Düzenleme', 'Editing')} styles={styles}>
                 <ChoiceRow
@@ -1713,7 +1726,9 @@ export default function SettingsScreen() {
                                     <View style={[styles.categoryBody, index > 0 && styles.categoryDivider]}>
                                         <View style={styles.categoryCopy}>
                                             <Text style={styles.categoryTitle} numberOfLines={1}>{category.title}</Text>
-                                            <Text style={styles.categorySummary} numberOfLines={1}>{category.summary}</Text>
+                                            {/* At a large text size the contents wrap; a no-break space keeps each
+                                                separator with the heading after it, so no line ends on a bullet. */}
+                                            <Text style={styles.categorySummary} numberOfLines={2}>{category.summary.replaceAll(' • ', ' •\u00A0')}</Text>
                                         </View>
                                         <Text style={styles.categoryArrow}>›</Text>
                                     </View>

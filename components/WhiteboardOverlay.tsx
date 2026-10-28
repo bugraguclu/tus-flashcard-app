@@ -15,7 +15,6 @@ import React, {
 import {
     ActivityIndicator,
     View,
-    Text,
     TouchableOpacity,
     StyleSheet,
     PanResponder,
@@ -24,6 +23,7 @@ import {
     type StyleProp,
     type ViewStyle,
 } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Path } from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 
 type Props = {

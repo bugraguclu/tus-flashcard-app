@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 
 export interface StatTile {

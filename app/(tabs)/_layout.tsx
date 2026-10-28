@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
-    Text,
     TouchableOpacity,
     StyleSheet,
     Dimensions,
@@ -12,6 +11,7 @@ import {
     Platform,
     ToastAndroid,
 } from 'react-native';
+import { Text } from '../../components/AppText';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';

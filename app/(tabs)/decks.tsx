@@ -8,12 +8,10 @@ import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import {
     View,
-    Text,
     ScrollView,
     FlatList,
     TouchableOpacity,
     StyleSheet,
-    TextInput,
     Modal,
     PanResponder,
     Animated,
@@ -27,6 +25,7 @@ import {
     InteractionManager,
     useWindowDimensions,
 } from 'react-native';
+import { Text, TextInput } from '../../components/AppText';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
@@ -132,6 +131,10 @@ function parseCount(text: string, fallback: number = 0): number {
 // A deliberate spring-open delay prevents a parent from expanding while the pointer merely
 // passes over it. 800 ms sits in the familiar 0.6–1.0 s range used by tree/list drag UIs.
 const DECK_HOVER_EXPAND_DELAY_MS = 800;
+
+// Four labels share the bottom bar, like a tab bar's: one line each, growing less than content,
+// and on iPhone shrinking to fit rather than breaking a word on the smallest phones.
+const BOTTOM_LABEL_FIT = { numberOfLines: 1, maxFontSizeMultiplier: 1.15, adjustsFontSizeToFit: true, minimumFontScale: 0.8 } as const;
 
 /** Keep disclosure state attached to the same decks after an Anki-style subtree rename. */
 function remapExpandedDeckPaths(
@@ -1266,31 +1269,33 @@ export default function DecksScreen() {
                     </View>
                 )}
 
-                <TouchableOpacity
-                    style={styles.deckNameTouchable}
-                    onPress={() => handleStudyDeck(deck.name)}
-                    accessibilityRole="button"
-                    accessibilityLabel={l(`${displayName} destesini çalış`, `Study ${displayName} deck`)}
-                    {...webTitle(l(`${displayName}: çalış`, `${displayName}: study`))}
-                >
-                    <View style={styles.deckNameRow}>
-                        <Text
-                            style={[
-                                styles.deckName,
-                                deck.isFiltered && styles.deckNameFiltered,
-                            ]}
-                            numberOfLines={isCompact ? 2 : 1}
-                        >
-                            {displayName}
-                        </Text>
-                    </View>
-                </TouchableOpacity>
+                <View style={styles.deckMain}>
+                    <TouchableOpacity
+                        style={styles.deckNameTouchable}
+                        onPress={() => handleStudyDeck(deck.name)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l(`${displayName} destesini çalış`, `Study ${displayName} deck`)}
+                        {...webTitle(l(`${displayName}: çalış`, `${displayName}: study`))}
+                    >
+                        <View style={styles.deckNameRow}>
+                            <Text
+                                style={[
+                                    styles.deckName,
+                                    deck.isFiltered && styles.deckNameFiltered,
+                                ]}
+                                numberOfLines={isCompact ? 2 : 1}
+                            >
+                                {displayName}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
 
-                <DeckListCounts
-                    newCount={node.newCount}
-                    learnCount={node.learnCount}
-                    reviewCount={node.reviewCount}
-                />
+                    <DeckListCounts
+                        newCount={node.newCount}
+                        learnCount={node.learnCount}
+                        reviewCount={node.reviewCount}
+                    />
+                </View>
 
                 {dragResponder && (
                     <View
@@ -2432,7 +2437,7 @@ export default function DecksScreen() {
                     accessibilityLabel={l('Kartlarımı aç', 'Open Browse')}
                 >
                     <CardsGlyph color={colors.textSecondary} size={20} />
-                    <Text style={styles.bottomBtnText}>{t('sidebar.myCards')}</Text>
+                    <Text style={styles.bottomBtnText} {...BOTTOM_LABEL_FIT}>{t('sidebar.myCards')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.bottomBtn}
@@ -2441,7 +2446,7 @@ export default function DecksScreen() {
                     accessibilityLabel={l('Kronometreyi aç', 'Open stopwatch')}
                 >
                     <StopwatchIcon color={colors.textSecondary} size={20} />
-                    <Text style={styles.bottomBtnText}>{l('Kronometre', 'Stopwatch')}</Text>
+                    <Text style={styles.bottomBtnText} {...BOTTOM_LABEL_FIT}>{l('Kronometre', 'Stopwatch')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.bottomBtn}
@@ -2450,7 +2455,7 @@ export default function DecksScreen() {
                     accessibilityLabel={l('İstatistikleri aç', 'Open statistics')}
                 >
                     <StatsGlyph color={colors.textSecondary} size={20} />
-                    <Text style={styles.bottomBtnText}>{t('tabs.statistics')}</Text>
+                    <Text style={styles.bottomBtnText} {...BOTTOM_LABEL_FIT}>{t('tabs.statistics')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.bottomBtn}
@@ -2459,7 +2464,7 @@ export default function DecksScreen() {
                     accessibilityLabel={l('Ayarları aç', 'Open settings')}
                 >
                     <GearGlyph color={colors.textSecondary} size={20} />
-                    <Text style={styles.bottomBtnText}>{t('tabs.settings')}</Text>
+                    <Text style={styles.bottomBtnText} {...BOTTOM_LABEL_FIT}>{t('tabs.settings')}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -2609,7 +2614,9 @@ function createStyles(colors: ColorScheme) {
     deckRow: {
         position: 'relative',
         flexDirection: 'row',
-        alignItems: 'center',
+        // Every control is 44 pt tall, so this is centring for a one-line row; when the counts
+        // wrap under a long name, the chevron and buttons stay level with the name.
+        alignItems: 'flex-start',
         paddingVertical: 10,
         paddingRight: Spacing.sm,
         borderBottomWidth: StyleSheet.hairlineWidth,
@@ -2690,7 +2697,13 @@ function createStyles(colors: ColorScheme) {
     },
     expandBtn: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
     expandDot: { fontSize: 10, color: colors.border },
-    deckNameTouchable: { flex: 1, minWidth: 0, marginLeft: 2, minHeight: 44, justifyContent: 'center' },
+    // The name and its counts share a wrapping line: a name that does not fit beside the
+    // counts gets the whole width (a word is never broken) and the counts move under it.
+    // The name must not shrink: Yoga would rather narrow it than wrap the counts, which breaks
+    // words on iPhone; maxWidth keeps a name longer than the row inside it instead.
+    deckMain: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
+    // Padding rather than margin: the browser adds a margin on top of maxWidth.
+    deckNameTouchable: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', maxWidth: '100%', paddingLeft: 2, minHeight: 44, justifyContent: 'center' },
     deckName: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
     deckNameFiltered: { color: colors.badgeNew, fontStyle: 'italic' },
     dragHandle: {
@@ -2767,7 +2780,7 @@ function createStyles(colors: ColorScheme) {
         ...Shadows.md,
     },
     bottomBtn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 },
-    bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2 },
+    bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2, textAlign: 'center' },
 
     emptyState: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 64 },
     emptyStateIcon: { fontSize: 36, color: colors.accent, marginBottom: Spacing.sm },

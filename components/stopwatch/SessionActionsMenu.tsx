@@ -1,4 +1,5 @@
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Modal, Pressable, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text } from '../AppText';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 

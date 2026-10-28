@@ -1,5 +1,6 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput } from '../AppText';
 import { alert } from '../../lib/confirm';
 import { canUndoLastReposition, getNewQueuePositionRange, repositionSelectedNewCards, undoLastReposition } from '../../lib/browserReposition';
 import { setDbSetting } from '../../lib/storage';

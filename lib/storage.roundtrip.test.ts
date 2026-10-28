@@ -418,6 +418,13 @@ describe('storage import/export canonical round-trip', () => {
         expect(loadSettings().swipeSensitivity).toBe(1);
     });
 
+    it('persists the text size step chosen on the Settings slider', () => {
+        saveSettings({ ...DEFAULT_SETTINGS, textSizeLevel: 'xlarge' });
+        expect(loadSettings().textSizeLevel).toBe('xlarge');
+        saveSettings({ ...DEFAULT_SETTINGS, textSizeLevel: 'small' });
+        expect(loadSettings().textSizeLevel).toBe('small');
+    });
+
     it('persists audio playback rate preference', () => {
         saveSettings({ ...DEFAULT_SETTINGS, audioPlaybackRate: 1.5 });
         expect(loadSettings().audioPlaybackRate).toBe(1.5);

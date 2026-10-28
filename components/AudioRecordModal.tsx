@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform, Pressable } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal, Platform, Pressable } from 'react-native';
+import { Text } from './AppText';
 import {
     useAudioRecorder,
     useAudioRecorderState,

@@ -9,11 +9,10 @@ import {
     Platform,
     Pressable,
     StyleSheet,
-    Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { Text, TextInput } from './AppText';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';

@@ -1,4 +1,5 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
 import type { ColorScheme } from '../../constants/theme';
 import { KeyboardDismissIcon } from './EditorIcons';

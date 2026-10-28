@@ -86,6 +86,22 @@ uygulama Türkçe, başka bir dil ise İngilizce görünür. Uygulama ilk açıl
 **Sistem**, **Açık** veya **Koyu** (varsayılan: **Açık**). **Sistem**, iPhone'un açık/koyu görünüm
 ayarını izler. Seçtiğiniz tema klavyeye, sistem sayfalarına ve üstteki durum çubuğuna da uygulanır.
 
+<a id="text-size"></a>
+### Yazı boyutu
+
+Kaydırıcıyı sürükleyin ya da çizgide bir yere dokunun: **Küçük**, **Normal** (varsayılan),
+**Büyük** veya **Çok büyük** kademesine oturur. Sürüklerken yalnızca alttaki örnek değişir;
+parmağınızı kaldırınca tüm uygulama yeni boyuta geçer ve **Kaydet** ile saklanır. Menüler,
+listeler, düğmeler ve yazı kutuları bu boyutu kullanır; başlıklar ve büyük sayılar gövde metninden
+biraz daha az büyür. Ekranlar bu boyuta göre yerleşir: Desteler'de uzun bir deste adı sayılarla
+aynı satıra sığmazsa sayılar adın altına, aynı sütunlara iner, böylece bir kelime asla ortadan
+bölünmez. Kronometre halkası gibi sabit boyutlu çizimlerin içindeki yazılar tasarlandıkları boyutta
+kalır.
+
+Kartların içeriği bu ayardan etkilenmez; onun için **Erişilebilirlik** bölümündeki
+[Kart yakınlaştırma](#accessibility) ayarını kullanın. iPhone'un kendi metin boyutu (Ayarlar ›
+Ekran ve Parlaklık › Metin Boyutu) bu kademenin üzerine eklenir.
+
 <a id="editing-preferences"></a>
 ### Düzenleme ve kart tarayıcısı
 

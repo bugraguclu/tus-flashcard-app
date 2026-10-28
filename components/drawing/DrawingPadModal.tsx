@@ -6,11 +6,11 @@ import {
     PixelRatio,
     Platform,
     StyleSheet,
-    Text,
     TouchableOpacity,
     View,
     type LayoutChangeEvent,
 } from 'react-native';
+import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';

@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable, Switch } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable, Switch } from 'react-native';
+import { Text } from '../AppText';
 import { useRouter } from 'expo-router';
 import type { ColorScheme } from '../../constants/theme';
 import type { StudyCard, AppSettings } from '../../lib/types';

@@ -6,12 +6,12 @@ import {
     PixelRatio,
     Platform,
     StyleSheet,
-    Text,
     TouchableOpacity,
     View,
     useWindowDimensions,
     type LayoutChangeEvent,
 } from 'react-native';
+import { Text } from './AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg from 'react-native-svg';
 import * as ImagePicker from 'expo-image-picker';

@@ -1,4 +1,5 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import type { ImportStyles } from './importStyles';
 
 /** What the import screen shows before a file is chosen: the files it takes and the picker. */

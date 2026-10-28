@@ -2,7 +2,8 @@
 // every day with this box, so a studied day looks the same wherever the learner sees it.
 
 import { useMemo } from 'react';
-import { StyleSheet, Text, View, type ViewProps } from 'react-native';
+import { StyleSheet, View, type ViewProps } from 'react-native';
+import { Text } from './AppText';
 import { BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 
 const DAY_MS = 86400000;

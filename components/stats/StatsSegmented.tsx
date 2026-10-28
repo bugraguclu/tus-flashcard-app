@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../AppText';
 import { BorderRadius, FontSize, dropShadow, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 
 export interface SegmentOption<T extends string> {

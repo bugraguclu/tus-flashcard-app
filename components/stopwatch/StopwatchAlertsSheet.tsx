@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Platform, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, Platform, StyleSheet, Switch, View } from 'react-native';
+import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {

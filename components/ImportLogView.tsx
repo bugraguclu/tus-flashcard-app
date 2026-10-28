@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text } from './AppText';
 import { BorderRadius, FontSize, Spacing, type ColorScheme } from '../constants/theme';
 import {
     IMPORT_LOG_STATUSES,

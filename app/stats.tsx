@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, Animated, View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, View, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { useThemeColors } from '../constants/theme';

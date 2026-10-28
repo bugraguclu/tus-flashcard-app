@@ -4,10 +4,10 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';

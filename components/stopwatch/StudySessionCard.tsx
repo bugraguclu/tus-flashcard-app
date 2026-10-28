@@ -1,5 +1,6 @@
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {

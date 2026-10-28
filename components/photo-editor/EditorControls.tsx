@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import type { ColorScheme } from '../../constants/theme';
 import type { PhotoAnnotation, PhotoCropRect, PhotoEraserMode } from '../../lib/photoEditor';
 import {

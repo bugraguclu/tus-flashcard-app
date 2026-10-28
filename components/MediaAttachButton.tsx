@@ -1,5 +1,6 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable, Platform } from 'react-native';
+import { Text } from './AppText';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';

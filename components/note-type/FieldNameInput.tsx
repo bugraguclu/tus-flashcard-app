@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { TextInput, type StyleProp, type TextStyle } from 'react-native';
+import { type StyleProp, type TextStyle } from 'react-native';
+import { TextInput } from '../AppText';
 
 interface FieldNameInputProps {
     name: string;

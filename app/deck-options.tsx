@@ -5,14 +5,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
-    Text,
-    TextInput,
     TouchableOpacity,
     ScrollView,
     Keyboard,
     useWindowDimensions,
     ActivityIndicator,
 } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useThemeColors } from '../constants/theme';

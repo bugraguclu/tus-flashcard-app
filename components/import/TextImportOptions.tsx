@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '../AppText';
 import { ChoiceModal } from './ImportControls';
 import type { ImportStyles } from './importStyles';
 import { importCopy } from './importCopy';

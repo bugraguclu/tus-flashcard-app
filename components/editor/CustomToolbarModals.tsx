@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput } from '../AppText';
 import type { ColorScheme } from '../../constants/theme';
 import { CUSTOM_TOOLBAR_PRESETS, type CustomToolbarPreset, type LocalizedPresetText } from '../../lib/customToolbar';
 import type { ToolbarButtonDraft } from './types';

@@ -6,13 +6,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
     View,
-    Text,
     TouchableOpacity,
     ScrollView,
     StyleSheet,
     Platform,
     Linking,
 } from 'react-native';
+import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';

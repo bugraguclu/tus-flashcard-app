@@ -4,10 +4,10 @@ import {
     Modal,
     Pressable,
     StyleSheet,
-    Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { Text } from './AppText';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../constants/theme';
 import { useCatalogStatus } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';

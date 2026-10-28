@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Text } from 'react-native';
+import { Text } from '../AppText';
 import { FontSize, useThemeColors } from '../../constants/theme';
 import type { AnkiStatsSnapshot } from '../../lib/ankiStats';
 import { formatIntervalDays } from '../../lib/statsPresentation';

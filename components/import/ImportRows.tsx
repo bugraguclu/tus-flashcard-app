@@ -1,4 +1,5 @@
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
+import { Text, TextInput } from '../AppText';
 import { ChevronDownIcon } from './ImportControls';
 import type { ImportStyles } from './importStyles';
 

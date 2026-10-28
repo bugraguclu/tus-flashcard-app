@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, TextInput, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { Text, TextInput } from './AppText';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../constants/theme';
 import {
     commitBoundedInteger,

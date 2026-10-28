@@ -6,11 +6,10 @@ import {
     ScrollView,
     StyleSheet,
     Switch,
-    Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { Text, TextInput } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';

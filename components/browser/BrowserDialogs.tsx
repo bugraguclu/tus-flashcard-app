@@ -1,16 +1,15 @@
 import type { Dispatch, SetStateAction } from 'react';
 import {
     View,
-    Text,
     ScrollView,
     TouchableOpacity,
-    TextInput,
     StyleSheet,
     KeyboardAvoidingView,
     Modal,
     Platform,
     Pressable,
 } from 'react-native';
+import { Text, TextInput } from '../AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { ColorScheme } from '../../constants/theme';
 import type { StudyCard, AppSettings } from '../../lib/types';

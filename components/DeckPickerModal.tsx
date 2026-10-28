@@ -7,11 +7,10 @@ import {
     Platform,
     Pressable,
     StyleSheet,
-    Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { Text, TextInput } from './AppText';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
 import { buildDeckTree } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';

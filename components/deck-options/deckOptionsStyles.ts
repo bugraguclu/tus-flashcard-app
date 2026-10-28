@@ -262,6 +262,7 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
             borderRadius: BorderRadius.sm,
             backgroundColor: colors.bgInput,
             paddingHorizontal: 10,
+            paddingVertical: 6,
         },
         selectControlText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.sm },
         selectChevron: { color: colors.textMuted, fontSize: 16 },
