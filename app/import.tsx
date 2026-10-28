@@ -310,7 +310,7 @@ export default function ImportScreen() {
 
         return {
             noteType: selectedNoteType,
-            deckId: targetDeckId ?? targetDeck?.id ?? 1,
+            deckId: targetDeck?.id ?? 1,
             ...(separator ? { delimiter: separator } : {}),
             ...(perRowNoteTypes ? {} : { fieldColumns }),
             tagsColumn,
