@@ -1,11 +1,11 @@
 import React from 'react';
+import { photoArrowGeometry } from '../../lib/photoArrow';
 import { Image as NativeImage, Platform } from 'react-native';
 import { Ellipse, G, Line, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import {
     calculatePhotoTextBounds,
     normalizePhotoRotation,
     normalizedRect,
-    photoArrowHead,
     photoImageBounds,
     photoTextAnchorPixels,
     photoTextColors,
@@ -147,16 +147,17 @@ export function renderAnnotation(
 
     if (!annotation.start || !annotation.end) return null;
     const start = { x: (annotation.start.x ?? 0) * width, y: (annotation.start.y ?? 0) * height };
-    const end = { x: (annotation.end.x ?? 0) * width, y: (annotation.end.y ?? 0) * height };
     if (annotation.type === 'arrow') {
-        const head = photoArrowHead(annotation.start, annotation.end, width, height, 12 * scale + (annotation.width || 3 * scale) * 1.5);
+        const { head, shaftEnd } = photoArrowGeometry(annotation.start, annotation.end, width, height, 12 * scale + (annotation.width || 3 * scale) * 1.5);
         return (
             <React.Fragment key={annotation.id}>
-                <Line
-                    x1={start.x} y1={start.y} x2={end.x} y2={end.y}
-                    stroke={annotation.color} strokeWidth={annotation.width || 3 * scale}
-                    strokeOpacity={annotation.opacity ?? 1} strokeLinecap="round"
-                />
+                {shaftEnd && (
+                    <Line
+                        x1={start.x} y1={start.y} x2={shaftEnd.x} y2={shaftEnd.y}
+                        stroke={annotation.color} strokeWidth={annotation.width || 3 * scale}
+                        strokeOpacity={annotation.opacity ?? 1} strokeLinecap="round"
+                    />
+                )}
                 <Polygon
                     points={head.map((point) => `${point.x},${point.y}`).join(' ')}
                     fill={annotation.color}

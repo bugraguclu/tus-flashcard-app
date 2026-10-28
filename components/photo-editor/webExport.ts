@@ -1,8 +1,8 @@
+import { photoArrowGeometry } from '../../lib/photoArrow';
 import {
     calculatePhotoTextBounds,
     normalizePhotoRotation,
     normalizedRect,
-    photoArrowHead,
     photoImageAnchorPixels,
     photoImageBounds,
     photoTextAnchorPixels,
@@ -113,13 +113,14 @@ function drawAnnotationOnCanvas(
 
     if (!annotation.start || !annotation.end) return ctx.restore();
     const start = { x: (annotation.start.x ?? 0) * width, y: (annotation.start.y ?? 0) * height };
-    const end = { x: (annotation.end.x ?? 0) * width, y: (annotation.end.y ?? 0) * height };
     if (annotation.type === 'arrow') {
-        ctx.beginPath();
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.stroke();
-        const head = photoArrowHead(annotation.start, annotation.end, width, height, 12 * scale + ctx.lineWidth * 1.5);
+        const { head, shaftEnd } = photoArrowGeometry(annotation.start, annotation.end, width, height, 12 * scale + ctx.lineWidth * 1.5);
+        if (shaftEnd) {
+            ctx.beginPath();
+            ctx.moveTo(start.x, start.y);
+            ctx.lineTo(shaftEnd.x, shaftEnd.y);
+            ctx.stroke();
+        }
         ctx.beginPath();
         ctx.moveTo(head[0].x, head[0].y);
         ctx.lineTo(head[1].x, head[1].y);
