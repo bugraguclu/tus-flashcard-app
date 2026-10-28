@@ -98,7 +98,7 @@ Shift+7 and Shift+8 lists, L/E/R/J alignment, Alt+1…3 headings. Shift+F3 chang
 
 > **Different from Anki:** The MathJax button inserts `\( … \)` markers, but TusAnkiM does not render
 > formulas yet; the card shows the source text (Anki renders it after export). For an Image Occlusion note,
-> choose the Image Occlusion type and draw masks over a picture; a mask cannot be rotated or recoloured. Scripts (JavaScript), SVG, MathML and form elements in fields and templates are
+> choose the Image Occlusion type and draw masks over a picture; colours come from a short palette rather than a colour picker. Scripts (JavaScript), SVG, MathML and form elements in fields and templates are
 > neither run nor shown on cards. Shortcuts follow word processors rather than Anki, and there is no
 > cloze shortcut.
 

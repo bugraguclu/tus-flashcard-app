@@ -1281,7 +1281,8 @@
         "the stock Image Occlusion note type (originalStockKind 6, field tags 0-4) a new collection holds",
         "the Occlusion field grammar: a name runs to the first =, a value to an unescaped colon, \\: and \\\\ are the only escapes; numbers to four decimals without outer zeros, angles in ten-thousandths of a turn, label size as a fraction of the image height, labels as c0",
         "a c0 occlusion rendered as an asked shape on both sides of every card; attribute characters as hex references of at least two digits",
-        "lib/imageOcclusion.oracle.test.ts: notes made in the app load the same shapes into Anki's Image Occlusion editor and render the same shape divs on every card"
+        "lib/imageOcclusion.oracle.test.ts: notes made in the app load the same shapes into Anki's Image Occlusion editor and render the same shape divs on every card",
+        "turned, coloured and reshaped shapes: an angle and fill Anki's editor loads as written, a polygon's left/top at its points' top-left corner"
       ]
     }
   ],

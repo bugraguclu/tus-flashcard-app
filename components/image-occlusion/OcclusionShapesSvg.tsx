@@ -1,7 +1,19 @@
 import { memo, type ReactNode } from 'react';
-import Svg, { Circle, Ellipse, G, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Ellipse, G, Line, Path, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg';
 import { OCCLUSION_DEFAULT_FILL, occlusionFill, occlusionGeometry, type OcclusionShape } from '../../lib/imageOcclusion';
-import { labelBox, labelFontSize, polygonPoints, resizeHandle, shapeBox, type Box, type Point, type Size } from './occlusionEditorModel';
+import {
+    labelBox,
+    labelFontSize,
+    polygonHandles,
+    polygonPoints,
+    resizeHandle,
+    rotateHandle,
+    shapeBox,
+    shapeCentre,
+    type Box,
+    type Point,
+    type Size,
+} from './occlusionEditorModel';
 
 const STROKE = '#212121';
 
@@ -21,14 +33,17 @@ interface Props {
     draft?: OcclusionDraft | null;
     /** The cloze number on each mask, so a group reads as one question. */
     showNumbers?: boolean;
+    /** The selected corner of a selected polygon. */
+    activeCorner?: number | null;
 }
 
 /**
  * The masks of an Image Occlusion note over its picture, as the editor and the Add screen show
  * them: each mask in its own fill (Anki's yellow by default), a selected one outlined, and its
- * cloze number in a badge. A text label sits on a white box as Anki draws it.
+ * cloze number in a badge. A text label sits on a white box as Anki draws it. A single selected
+ * shape shows its handles: resize (rect, ellipse), turn, and a polygon's corners and edge midpoints.
  */
-function OcclusionShapesSvg({ shapes, size, natural, accent, selected, offset, draft, showNumbers = true }: Props) {
+function OcclusionShapesSvg({ shapes, size, natural, accent, selected, offset, draft, showNumbers = true, activeCorner = null }: Props) {
     const shown: ReactNode[] = [];
     const badges: ReactNode[] = [];
     shapes.forEach((shape, index) => {
@@ -86,13 +101,31 @@ function OcclusionShapesSvg({ shapes, size, natural, accent, selected, offset, d
 
     const single = selected && selected.size === 1 && !offset ? shapes[[...selected][0]] : undefined;
     const handle = resizeHandle(single, size, natural);
+    const turnHandle = rotateHandle(single, size, natural);
+    const centre = single ? shapeCentre(single, size, natural) : null;
+    const corners = polygonHandles(single, size);
     const draftPaint = { fill: OCCLUSION_DEFAULT_FILL, fillOpacity: 0.6, stroke: accent, strokeWidth: 2, strokeDasharray: '6 4' };
 
     return (
         <Svg width={size.width} height={size.height} style={{ position: 'absolute', left: 0, top: 0 }}>
             {shown}
             {badges}
-            {handle && <Circle cx={handle.x} cy={handle.y} r={9} fill="#ffffff" stroke={accent} strokeWidth={2.5} />}
+            {turnHandle && centre && (
+                <G>
+                    <Line x1={centre.x} y1={centre.y} x2={turnHandle.x} y2={turnHandle.y} stroke={accent} strokeWidth={1.5} strokeDasharray="4 3" />
+                    <Circle cx={turnHandle.x} cy={turnHandle.y} r={11} fill="#ffffff" stroke={accent} strokeWidth={2.5} />
+                    <Path d={`M${turnHandle.x - 4.5} ${turnHandle.y - 1.5}a5 5 0 1 0 2 -3.2m-0.5 -2.6v2.8h2.8`}
+                        stroke={accent} strokeWidth={1.8} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </G>
+            )}
+            {corners?.midpoints.map((point, index) => (
+                <Circle key={`m${index}`} cx={point.x} cy={point.y} r={5} fill="rgba(255,255,255,0.55)" stroke={accent} strokeWidth={1.5} />
+            ))}
+            {corners?.corners.map((point, index) => (
+                <Circle key={`c${index}`} cx={point.x} cy={point.y} r={index === activeCorner ? 9 : 7}
+                    fill={index === activeCorner ? accent : '#ffffff'} stroke={accent} strokeWidth={2.5} />
+            ))}
+            {handle && <Rect x={handle.x - 8} y={handle.y - 8} width={16} height={16} rx={3} fill="#ffffff" stroke={accent} strokeWidth={2.5} />}
             {draft?.kind === 'rect' && (
                 <Rect x={draft.box.left * size.width} y={draft.box.top * size.height}
                     width={draft.box.width * size.width} height={draft.box.height * size.height} {...draftPaint} />

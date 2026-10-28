@@ -124,7 +124,7 @@ Aşağıdakiler bilinçli ürün kararı ya da henüz olmayan özelliktir. İlgi
 | FSRS araçları | Değerlendir, sağlık kontrolü ve simülatör yok | OPT-19, OPT-21 |
 | Yedek | Otomatik yedek haftada bir (Anki 30 dakikada bir); silinen not günlüğü yok | BACKUP-01, BACKUP-04 |
 | Eşitleme, profiller, eklentiler | Yok | MISSING-01…04 |
-| Image Occlusion | Maske döndürülemez, rengi değiştirilemez; çokgen noktaları tek tek taşınamaz | MISSING-05 |
+| Image Occlusion | Renkler kısa bir paletten seçilir; Anki'nin hizalama araçları yok | MISSING-05 |
 | Okuyucu | Sülük bildirimi yok; aralık etiketleri İngilizce arayüzde de Türkçe | WHY-05, PREFS-01 |
 | Katalog desteleri | "TUS Kartları" korumalı: yeniden adlandırılamaz, silinemez, dışa aktarılamaz | START-08, DECK-03, DECK-04 |
 
@@ -1467,9 +1467,11 @@ yolu söylemeli.
 - **TusAnkiM:** Not ekle → "Tür:" → "Görüntü Örtme" → "Galeriden görsel seç"; açılan maske
   düzenleyicide Dikdörtgen/Elips/Çokgen/Metin ile maske çizilir, "Çoklu" ile seçilenler "Grupla" ile
   tek soru olur, üstteki seçenek "Hepsini gizle, birini sor" ya da "Birini gizle, birini sor"dur;
+  seçili maske üstündeki tutamaçla ya da ↺/↻ ile döner, "Renk" ile boyanır, çokgenin köşeleri
+  sürüklenir, kenar ortasındaki noktayla köşe eklenir, "Köşeyi sil" ile çıkarılır;
   "Tamam" ve ✓ ile her maske (grup) bir kart olur.
 - **Geçer:** Ajan bu yolu anlatır ve kartları oluşturur.
-- **Bilinen fark:** Maske döndürülemez, rengi değiştirilemez.
+- **Bilinen fark:** Renkler kısa bir paletten seçilir; Anki'nin hizalama araçları yok.
 
 ---
 

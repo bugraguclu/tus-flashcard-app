@@ -8,6 +8,9 @@
 import {
     OCCLUSION_DEFAULT_TEXT_PIXELS,
     occlusionGeometry,
+    placedPolygonPoints,
+    rotateOcclusionShape,
+    setOcclusionPolygonPoints,
     type OcclusionGeometry,
     type OcclusionShape,
 } from '../../lib/imageOcclusion';
@@ -26,6 +29,33 @@ export const MIN_DRAG_POINTS = 8;
 /** How close (in points) a tap must land to a polygon's first point to close it. */
 export const CLOSE_POLYGON_POINTS = 22;
 export const HANDLE_POINTS = 26;
+/** How far (in points) the turn handle sits from the shape's edge. */
+export const ROTATE_HANDLE_POINTS = 30;
+/** A turn this close (in degrees) to a multiple of 15° lands on it. */
+export const SNAP_DEGREES = 4;
+
+/** A colour the editor offers, with its Turkish and English name; a null fill is Anki's default. */
+export interface OcclusionColour { fill: string | null; name: [string, string] }
+
+/** Mask fills; the default is Anki's yellow. The asked mask is always drawn red. */
+export const MASK_COLOURS: readonly OcclusionColour[] = [
+    { fill: null, name: ['Varsayılan sarı', 'Default yellow'] },
+    { fill: '#ffffff', name: ['Beyaz', 'White'] },
+    { fill: '#d1d5db', name: ['Gri', 'Grey'] },
+    { fill: '#8ecbff', name: ['Mavi', 'Blue'] },
+    { fill: '#a2f0b5', name: ['Yeşil', 'Green'] },
+    { fill: '#ffb3d9', name: ['Pembe', 'Pink'] },
+    { fill: '#c4b5fd', name: ['Mor', 'Purple'] },
+];
+/** Label text colours; the default is Anki's black. Labels sit on a white box, so white is left out. */
+export const LABEL_COLOURS: readonly OcclusionColour[] = [
+    { fill: null, name: ['Varsayılan siyah', 'Default black'] },
+    { fill: '#d32f2f', name: ['Kırmızı', 'Red'] },
+    { fill: '#1565c0', name: ['Mavi', 'Blue'] },
+    { fill: '#2e7d32', name: ['Yeşil', 'Green'] },
+    { fill: '#6a1b9a', name: ['Mor', 'Purple'] },
+    { fill: '#ef6c00', name: ['Turuncu', 'Orange'] },
+];
 
 /** The picture's largest size inside the stage, centred. */
 export function fitImage(stage: Size, natural: Size): Box {
@@ -98,11 +128,7 @@ export function labelBox(geometry: Extract<OcclusionGeometry, { kind: 'text' }>,
 }
 
 /** A polygon's points in image fractions where Anki draws them: moved so their corner is the shape's. */
-export function polygonPoints(geometry: Extract<OcclusionGeometry, { kind: 'polygon' }>): [number, number][] {
-    const dx = geometry.left - Math.min(...geometry.points.map(([x]) => x));
-    const dy = geometry.top - Math.min(...geometry.points.map(([, y]) => y));
-    return geometry.points.map(([x, y]) => [x + dx, y + dy]);
-}
+export const polygonPoints = placedPolygonPoints;
 
 /** A shape's unturned box on screen in points. */
 export function shapeBox(geometry: OcclusionGeometry, size: Size, natural: Size): Box {
@@ -122,15 +148,26 @@ export function shapeBox(geometry: OcclusionGeometry, size: Size, natural: Size)
     }
 }
 
+/** A vector turned clockwise by `degrees`. */
+function turn(x: number, y: number, degrees: number): Point {
+    const radians = (degrees * Math.PI) / 180;
+    return { x: x * Math.cos(radians) - y * Math.sin(radians), y: x * Math.sin(radians) + y * Math.cos(radians) };
+}
+
 /** A screen point turned back by a shape's angle about its corner, so it can be tested against the unturned shape. */
 function unturn(point: Point, geometry: OcclusionGeometry, size: Size): Point {
     if (!geometry.angle || geometry.kind === 'polygon') return point;
     const ox = geometry.left * size.width;
     const oy = geometry.top * size.height;
-    const radians = (-geometry.angle * Math.PI) / 180;
-    const dx = point.x - ox;
-    const dy = point.y - oy;
-    return { x: ox + dx * Math.cos(radians) - dy * Math.sin(radians), y: oy + dx * Math.sin(radians) + dy * Math.cos(radians) };
+    const back = turn(point.x - ox, point.y - oy, -geometry.angle);
+    return { x: ox + back.x, y: oy + back.y };
+}
+
+/** A point of a shape's unturned box, given from its corner, where it shows once turned. */
+function turnedBoxPoint(geometry: OcclusionGeometry, box: Box, x: number, y: number): Point {
+    if (geometry.kind === 'polygon' || !geometry.angle) return { x: box.left + x, y: box.top + y };
+    const turned = turn(x, y, geometry.angle);
+    return { x: box.left + turned.x, y: box.top + turned.y };
 }
 
 function insidePolygon(point: Point, points: Point[]): boolean {
@@ -173,17 +210,108 @@ export function hitTest(shapes: readonly OcclusionShape[], point: Point, size: S
     return -1;
 }
 
-/** The resize handle's centre for a single selected unturned rect or ellipse: its bottom-right corner. */
+/** The resize handle's centre for a single selected rect or ellipse: its bottom-right corner, turned with it. */
 export function resizeHandle(shape: OcclusionShape | undefined, size: Size, natural: Size): Point | null {
     const geometry = shape ? occlusionGeometry(shape) : null;
-    if (!geometry || geometry.angle || (geometry.kind !== 'rect' && geometry.kind !== 'ellipse')) return null;
+    if (!geometry || (geometry.kind !== 'rect' && geometry.kind !== 'ellipse')) return null;
     const box = shapeBox(geometry, size, natural);
-    return { x: box.left + box.width, y: box.top + box.height };
+    return turnedBoxPoint(geometry, box, box.width, box.height);
 }
 
-/** The box a resize drag leaves, the top-left corner held, in image fractions. */
-export function resizedBox(shape: OcclusionShape, to: Point): Box | null {
+/**
+ * The box a resize drag leaves, in image fractions: the top-left corner held (a turned shape turns
+ * about it, so it stays put) and the far corner under the finger, measured along the shape's turn.
+ */
+export function resizedBox(shape: OcclusionShape, to: Point, natural: Size): Box | null {
     const geometry = occlusionGeometry(shape);
     if (!geometry || (geometry.kind !== 'rect' && geometry.kind !== 'ellipse')) return null;
-    return boxBetween({ x: geometry.left, y: geometry.top }, to);
+    if (!geometry.angle) return boxBetween({ x: geometry.left, y: geometry.top }, to);
+    const back = turn((to.x - geometry.left) * natural.width, (to.y - geometry.top) * natural.height, -geometry.angle);
+    return {
+        left: geometry.left,
+        top: geometry.top,
+        width: Math.max(0, back.x / Math.max(1, natural.width)),
+        height: Math.max(0, back.y / Math.max(1, natural.height)),
+    };
+}
+
+/** A shape's centre on screen, as it is drawn (turned). */
+export function shapeCentre(shape: OcclusionShape, size: Size, natural: Size): Point | null {
+    const geometry = occlusionGeometry(shape);
+    if (!geometry) return null;
+    const box = shapeBox(geometry, size, natural);
+    return turnedBoxPoint(geometry, box, box.width / 2, box.height / 2);
+}
+
+/**
+ * The turn handle's centre: past the middle of the shape's top edge, turned with it, or past the
+ * bottom edge when the top one would put it off the picture (where it would not show).
+ */
+export function rotateHandle(shape: OcclusionShape | undefined, size: Size, natural: Size): Point | null {
+    const geometry = shape ? occlusionGeometry(shape) : null;
+    if (!geometry) return null;
+    const box = shapeBox(geometry, size, natural);
+    const onPicture = (point: Point) => point.x >= 0 && point.x <= size.width && point.y >= 0 && point.y <= size.height;
+    const above = turnedBoxPoint(geometry, box, box.width / 2, -ROTATE_HANDLE_POINTS);
+    if (onPicture(above)) return above;
+    const below = turnedBoxPoint(geometry, box, box.width / 2, box.height + ROTATE_HANDLE_POINTS);
+    if (onPicture(below)) return below;
+    // A shape filling the picture keeps the handle just inside its edge.
+    return { x: Math.min(size.width, Math.max(0, above.x)), y: Math.min(size.height, Math.max(0, above.y)) };
+}
+
+/** The direction (degrees, clockwise from +x) from a centre to a point. */
+export function bearing(centre: Point, point: Point): number {
+    return (Math.atan2(point.y - centre.y, point.x - centre.x) * 180) / Math.PI;
+}
+
+/**
+ * The turn a handle drag of `delta` degrees applies, landing a box on a multiple of 15° when it comes
+ * within SNAP_DEGREES of one (a polygon, which keeps no angle, snaps the turn itself).
+ */
+export function snappedTurn(shape: OcclusionShape, delta: number): number {
+    const geometry = occlusionGeometry(shape);
+    const base = geometry && geometry.kind !== 'polygon' ? geometry.angle : 0;
+    const wrapped = ((((delta + 180) % 360) + 360) % 360) - 180;
+    const target = base + wrapped;
+    const snapped = Math.round(target / 15) * 15;
+    return (Math.abs(snapped - target) <= SNAP_DEGREES ? snapped : target) - base;
+}
+
+/** The shape turned about its centre; a label is measured on the picture to find its centre. */
+export function turnShape(shape: OcclusionShape, degrees: number, natural: Size): OcclusionShape {
+    const geometry = occlusionGeometry(shape);
+    if (geometry?.kind !== 'text') return rotateOcclusionShape(shape, degrees, natural);
+    const box = labelBox(geometry, natural, natural);
+    const extent = { width: box.width / Math.max(1, natural.width), height: box.height / Math.max(1, natural.height) };
+    return rotateOcclusionShape(shape, degrees, natural, extent);
+}
+
+/** A polygon's corner handles and the handles halfway along each edge (which add a corner), on screen. */
+export function polygonHandles(shape: OcclusionShape | undefined, size: Size): { corners: Point[]; midpoints: Point[] } | null {
+    const geometry = shape ? occlusionGeometry(shape) : null;
+    if (geometry?.kind !== 'polygon') return null;
+    const corners = polygonPoints(geometry).map(([x, y]) => ({ x: x * size.width, y: y * size.height }));
+    const midpoints = corners.map((corner, index) => {
+        const next = corners[(index + 1) % corners.length];
+        return { x: (corner.x + next.x) / 2, y: (corner.y + next.y) / 2 };
+    });
+    return { corners, midpoints };
+}
+
+/** The polygon with one corner moved to an image point, or a new corner put in at `index` (`insert`). */
+export function movePolygonCorner(shape: OcclusionShape, index: number, to: Point, insert = false): OcclusionShape {
+    const geometry = occlusionGeometry(shape);
+    if (geometry?.kind !== 'polygon') return shape;
+    const points = polygonPoints(geometry);
+    if (insert) points.splice(index, 0, [to.x, to.y]);
+    else if (index >= 0 && index < points.length) points[index] = [to.x, to.y];
+    return setOcclusionPolygonPoints(shape, points);
+}
+
+/** The polygon without one corner; it keeps at least three. */
+export function removePolygonCorner(shape: OcclusionShape, index: number): OcclusionShape {
+    const geometry = occlusionGeometry(shape);
+    if (geometry?.kind !== 'polygon' || geometry.points.length <= 3) return shape;
+    return setOcclusionPolygonPoints(shape, polygonPoints(geometry).filter((_, at) => at !== index));
 }

@@ -6,25 +6,28 @@ import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { confirmAsync } from '../../lib/confirm';
 import {
+    OCCLUSION_DEFAULT_FILL,
     OCCLUSION_DEFAULT_TEXT_PIXELS,
+    OCCLUSION_TEXT_DEFAULT_FILL,
     createOcclusionShape,
     formatOcclusionNumber,
     groupOcclusionShapes,
     moveOcclusionShape,
     nextOcclusionOrdinal,
     occludesInactive,
+    occlusionFill,
     occlusionGeometry,
     parseOcclusionField,
-    resizeOcclusionShape,
     serializeOcclusionField,
     setOccludesInactive,
+    setOcclusionFill,
     ungroupOcclusionShapes,
     withOcclusionProperties,
     type OcclusionShape,
 } from '../../lib/imageOcclusion';
 import OcclusionCanvas from './OcclusionCanvas';
 import { createOcclusionEditorStyles } from './occlusionEditorStyles';
-import type { OcclusionTool, Point, Size } from './occlusionEditorModel';
+import { LABEL_COLOURS, MASK_COLOURS, removePolygonCorner, snappedTurn, turnShape, type OcclusionTool, type Point, type Size } from './occlusionEditorModel';
 
 interface Props {
     visible: boolean;
@@ -40,12 +43,15 @@ interface Props {
 interface History { past: OcclusionShape[][]; future: OcclusionShape[][] }
 
 const TOOLS: OcclusionTool[] = ['select', 'rect', 'ellipse', 'polygon', 'text'];
+/** The turn the ↺ and ↻ buttons give, in degrees. */
+const TURN_STEP = 15;
 
 /**
  * Anki's mask editor for an Image Occlusion note, offline: draw rectangles, ellipses, polygons and
- * text labels over the picture, group masks into one question, and choose whether the other masks
- * stay hidden while one is asked. Shapes keep Anki's text form (lib/imageOcclusion.ts); a shape
- * left alone is written back exactly as it was read.
+ * text labels over the picture, turn and colour them, reshape a polygon corner by corner, group
+ * masks into one question, and choose whether the other masks stay hidden while one is asked.
+ * Shapes keep Anki's text form (lib/imageOcclusion.ts); a shape left alone is written back exactly
+ * as it was read.
  */
 export default function ImageOcclusionEditorModal({ visible, uri, natural, occlusion, onCancel, onDone }: Props) {
     const { l } = useI18n();
@@ -59,7 +65,15 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
     const [multiSelect, setMultiSelect] = useState(false);
     const [polygon, setPolygon] = useState<Point[]>([]);
     const [textPrompt, setTextPrompt] = useState<{ at?: Point; index?: number; value: string } | null>(null);
+    const [activeCorner, setActiveCorner] = useState<number | null>(null);
+    const [showColours, setShowColours] = useState(false);
     const initialRef = useRef('');
+
+    // A corner and the colour row belong to the selection they were opened for.
+    useEffect(() => {
+        setActiveCorner(null);
+        if (!selected.size) setShowColours(false);
+    }, [selected]);
 
     useEffect(() => {
         if (!visible) return;
@@ -101,6 +115,18 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
     const canGroup = selectedOrdinals.size > 1;
     const canUngroup = selectedMasks.some((shape) => shapes.filter((other) => other.ordinal === shape.ordinal).length > 1);
     const singleText = selectedShapes.length === 1 && selectedShapes[0].kind === 'text' ? [...selected][0] : -1;
+    const singleIndex = selected.size === 1 ? [...selected][0] : -1;
+    const singleGeometry = singleIndex >= 0 && shapes[singleIndex] ? occlusionGeometry(shapes[singleIndex]) : null;
+    const canRemoveCorner = activeCorner !== null && singleGeometry?.kind === 'polygon' && singleGeometry.points.length > 3;
+    const turnedSelection = selectedShapes.some((shape) => {
+        const geometry = occlusionGeometry(shape);
+        return !!geometry && geometry.kind !== 'polygon' && geometry.angle !== 0;
+    });
+    // A colour goes to the selected masks, or to the labels when only labels are selected.
+    const colouring = selectedMasks.length ? 'mask' : 'label';
+    const colourTargets = (shape: OcclusionShape) => (colouring === 'mask' ? shape.kind !== 'text' : shape.kind === 'text');
+    const palette = colouring === 'mask' ? MASK_COLOURS : LABEL_COLOURS;
+    const currentFills = new Set(selectedShapes.filter(colourTargets).map((shape) => occlusionFill(shape)));
 
     const changeTool = (next: OcclusionTool) => {
         setTool(next);
@@ -152,6 +178,28 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
         commit(shapes.filter((_, index) => !selected.has(index)), new Set());
     };
 
+    /** Applies a change to every selected shape, recording one undo step when anything changed. */
+    const changeSelected = (change: (shape: OcclusionShape) => OcclusionShape) => {
+        const next = shapes.map((shape, index) => (selected.has(index) ? change(shape) : shape));
+        if (next.some((shape, index) => shape !== shapes[index])) commit(next);
+    };
+
+    // Snapped, so steps of 15° land on 30°, 45°… instead of adding up the rounding of each stored turn.
+    const turnSelection = (degrees: number) => changeSelected((shape) => turnShape(shape, snappedTurn(shape, degrees), natural));
+
+    const straighten = () => changeSelected((shape) => {
+        const geometry = occlusionGeometry(shape);
+        return geometry && geometry.kind !== 'polygon' && geometry.angle ? turnShape(shape, -geometry.angle, natural) : shape;
+    });
+
+    const colourSelection = (fill: string | null) => changeSelected((shape) => (colourTargets(shape) ? setOcclusionFill(shape, fill) : shape));
+
+    const removeCorner = () => {
+        if (activeCorner === null || singleIndex < 0) return;
+        commit(shapes.map((shape, index) => (index === singleIndex ? removePolygonCorner(shape, activeCorner) : shape)));
+        setActiveCorner(null);
+    };
+
     const changeMode = (next: boolean) => {
         setHideAll(next);
         const updated = setOccludesInactive(shapes, next);
@@ -187,7 +235,8 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
             ? l('Köşelere dokunun; ilk noktaya dokunarak kapatın.', 'Tap each corner; tap the first point to close.')
             : tool === 'text'
                 ? l('Etiketin yerine dokunun.', 'Tap where the label goes.')
-                : l('Bir maskeye dokunup sürükleyin; köşeden boyutlandırın.', 'Tap a mask and drag it; resize it from its corner.');
+                : l('Bir maskeye dokunup sürükleyin; köşedeki kareden boyutlandırın, üstteki tutamaçla döndürün.',
+                    'Tap a mask and drag it; resize it from the square at its corner, turn it with the handle above it.');
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={cancel}>
@@ -237,6 +286,8 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                     tool={tool}
                     multiSelect={multiSelect}
                     polygon={polygon}
+                    activeCorner={activeCorner}
+                    onActiveCornerChange={setActiveCorner}
                     accent={colors.accent}
                     surface="#030712"
                     onSelectionChange={setSelected}
@@ -246,10 +297,18 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                             : { kind, left: box.left, top: box.top, rx: box.width / 2, ry: box.height / 2, angle: 0 } as const;
                         commit([...shapes, createOcclusionShape(geometry, nextOcclusionOrdinal(shapes), hideAll)], new Set([shapes.length]));
                     }}
-                    onPolygonPoint={(point, closes) => (closes ? finishPolygon(polygon) : setPolygon([...polygon, point]))}
+                    onPolygonPoint={(point, closes) => {
+                        if (closes) {
+                            finishPolygon(polygon);
+                            return;
+                        }
+                        // A new polygon lets go of the last shape, so its handles do not catch the taps.
+                        if (!polygon.length) setSelected(new Set());
+                        setPolygon([...polygon, point]);
+                    }}
                     onTextAt={(at) => setTextPrompt({ at, value: '' })}
                     onMove={(indexes, dx, dy) => commit(shapes.map((shape, index) => (indexes.has(index) ? moveOcclusionShape(shape, dx, dy) : shape)), new Set(indexes))}
-                    onResize={(index, box) => commit(shapes.map((shape, at) => (at === index ? resizeOcclusionShape(shape, box) : shape)))}
+                    onChangeShape={(index, changed) => commit(shapes.map((shape, at) => (at === index ? changed : shape)))}
                     zoomLabels={{ zoomIn: l('Yakınlaştır', 'Zoom in'), zoomOut: l('Uzaklaştır', 'Zoom out'), fit: l('Sığdır', 'Fit') }}
                 />
 
@@ -261,26 +320,53 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                         {polygon.length >= 3 && <Chip label={l('Bitir', 'Finish')} active onPress={() => finishPolygon(polygon)} styles={styles} />}
                     </View>
                 ) : selected.size > 0 ? (
-                    <View style={styles.bar}>
-                        <Text style={styles.barLabel}>
-                            {selectedMasks.length === 0
-                                ? l('Etiket', 'Label')
-                                : selectedOrdinals.size === 1
-                                    ? l(`Soru ${[...selectedOrdinals][0]}`, `Question ${[...selectedOrdinals][0]}`)
-                                    : l(`${selected.size} şekil`, `${selected.size} shapes`)}
-                        </Text>
-                        {canGroup && <Chip label={l('Grupla', 'Group')} onPress={() => commit(groupOcclusionShapes(shapes, selected))} styles={styles} />}
-                        {canUngroup && <Chip label={l('Ayır', 'Ungroup')} onPress={() => commit(ungroupOcclusionShapes(shapes, selected))} styles={styles} />}
-                        {singleText >= 0 && (
-                            <>
-                                <Chip label="A−" accessibilityLabel={l('Metni küçült', 'Smaller text')} onPress={() => scaleText(1 / 1.25)} styles={styles} />
-                                <Chip label="A+" accessibilityLabel={l('Metni büyüt', 'Larger text')} onPress={() => scaleText(1.25)} styles={styles} />
-                                <Chip label={l('Düzenle', 'Edit')} styles={styles}
-                                    onPress={() => setTextPrompt({ index: singleText, value: labelText(shapes[singleText]) })} />
-                            </>
+                    <>
+                        <View style={styles.bar}>
+                            <Text style={styles.barLabel}>
+                                {selectedMasks.length === 0
+                                    ? l('Etiket', 'Label')
+                                    : selectedOrdinals.size === 1
+                                        ? l(`Soru ${[...selectedOrdinals][0]}`, `Question ${[...selectedOrdinals][0]}`)
+                                        : l(`${selected.size} şekil`, `${selected.size} shapes`)}
+                            </Text>
+                            {canGroup && <Chip label={l('Grupla', 'Group')} onPress={() => commit(groupOcclusionShapes(shapes, selected))} styles={styles} />}
+                            {canUngroup && <Chip label={l('Ayır', 'Ungroup')} onPress={() => commit(ungroupOcclusionShapes(shapes, selected))} styles={styles} />}
+                            <Chip label="↺" accessibilityLabel={l('Sola döndür', 'Turn left')} onPress={() => turnSelection(-TURN_STEP)} styles={styles} />
+                            <Chip label="↻" accessibilityLabel={l('Sağa döndür', 'Turn right')} onPress={() => turnSelection(TURN_STEP)} styles={styles} />
+                            {turnedSelection && <Chip label={l('Düzelt', 'Straighten')} onPress={straighten} styles={styles} />}
+                            <Chip label={l('Renk', 'Colour')} active={showColours} onPress={() => setShowColours(!showColours)} styles={styles} />
+                            {canRemoveCorner && <Chip label={l('Köşeyi sil', 'Remove corner')} onPress={removeCorner} styles={styles} />}
+                            {singleText >= 0 && (
+                                <>
+                                    <Chip label="A−" accessibilityLabel={l('Metni küçült', 'Smaller text')} onPress={() => scaleText(1 / 1.25)} styles={styles} />
+                                    <Chip label="A+" accessibilityLabel={l('Metni büyüt', 'Larger text')} onPress={() => scaleText(1.25)} styles={styles} />
+                                    <Chip label={l('Düzenle', 'Edit')} styles={styles}
+                                        onPress={() => setTextPrompt({ index: singleText, value: labelText(shapes[singleText]) })} />
+                                </>
+                            )}
+                            <Chip label={l('Sil', 'Delete')} danger onPress={deleteSelection} styles={styles} />
+                        </View>
+                        {showColours && (
+                            <View style={styles.swatches} accessibilityRole="radiogroup"
+                                accessibilityLabel={colouring === 'mask' ? l('Maske rengi', 'Mask colour') : l('Etiket rengi', 'Label colour')}>
+                                {palette.map(({ fill, name }) => {
+                                    const chosen = currentFills.size === 1 && currentFills.has(fill);
+                                    const shown = fill ?? (colouring === 'mask' ? OCCLUSION_DEFAULT_FILL : OCCLUSION_TEXT_DEFAULT_FILL);
+                                    return (
+                                        <TouchableOpacity key={fill ?? 'default'} onPress={() => colourSelection(fill)}
+                                            style={[styles.swatch, chosen && { borderColor: colors.accent }]}
+                                            accessibilityRole="radio" accessibilityState={{ selected: chosen }}
+                                            accessibilityLabel={l(...name)}>
+                                            <View style={[styles.swatchFill, { backgroundColor: shown }]} />
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                                {colouring === 'mask' && (
+                                    <Text style={styles.swatchNote}>{l('Sorulan maske kırmızı görünür.', 'The asked mask shows red.')}</Text>
+                                )}
+                            </View>
                         )}
-                        <Chip label={l('Sil', 'Delete')} danger onPress={deleteSelection} styles={styles} />
-                    </View>
+                    </>
                 ) : (
                     <Text style={styles.hint}>{hint}</Text>
                 )}

@@ -43,10 +43,13 @@ import {
     groupOcclusionShapes,
     occlusionImageField,
     parseOcclusionField,
+    rotateOcclusionShape,
     serializeOcclusionField,
     setOccludesInactive,
+    setOcclusionFill,
     type OcclusionShape,
 } from './imageOcclusion';
+import { movePolygonCorner, turnShape } from '../components/image-occlusion/occlusionEditorModel';
 import { IMAGE_OCCLUSION_NOTE_TYPE } from './imageOcclusionNoteType';
 import { renderClozeAnswer, renderClozeQuestion } from './templates';
 
@@ -99,7 +102,12 @@ function grouped(shapes: readonly OcclusionShape[]) {
     }));
 }
 
-/** Shapes a learner draws in the editor: every kind, a turn, a group, and labels that need escaping. */
+const PICTURE = { width: 40, height: 20 };
+
+/**
+ * Shapes a learner draws in the editor: every kind, turned, coloured and reshaped as the editor
+ * does it, a group, and labels that need escaping.
+ */
 function drawnShapes(hideAll: boolean): OcclusionShape[] {
     let shapes: OcclusionShape[] = [
         createOcclusionShape({ kind: 'rect', left: 0.05, top: 0.1, width: 0.3, height: 0.2, angle: 0 }, 1, hideAll),
@@ -108,6 +116,11 @@ function drawnShapes(hideAll: boolean): OcclusionShape[] {
         createOcclusionShape({ kind: 'rect', left: 0.7, top: 0.1, width: 0.2, height: 0.15, angle: 0 }, 4, hideAll),
         createOcclusionShape({ kind: 'text', left: 0.4, top: 0.05, text: 'Sol: ventrikül \\ sağ\nİkinci satır & <b>', scale: 1.25, fs: 0.05, angle: 0 }, 0, hideAll),
     ];
+    // Turned about their centres, coloured, and a polygon given a new corner and a moved one.
+    shapes[0] = rotateOcclusionShape(shapes[0], 20, PICTURE);
+    shapes[1] = setOcclusionFill(rotateOcclusionShape(shapes[1], -45, PICTURE), '#8ecbff');
+    shapes[2] = rotateOcclusionShape(movePolygonCorner(movePolygonCorner(shapes[2], 1, { x: 0.3, y: 0.45 }, true), 3, { x: 0.15, y: 0.95 }), 30, PICTURE);
+    shapes[4] = setOcclusionFill(turnShape(shapes[4], 15, PICTURE), '#d32f2f');
     // The last mask is grouped with the first: one question asks both.
     shapes = groupOcclusionShapes(shapes, new Set([0, 3]));
     return shapes;
@@ -125,7 +138,7 @@ describe.skipIf(!RUN)('Image Occlusion notes made here, read by Anki 26.09.3', (
         holder.media.clear();
         saveNoteType(IMAGE_OCCLUSION_NOTE_TYPE);
         const deck = createDeck('Anatomi');
-        holder.media.set('kalp.png', png(40, 20));
+        holder.media.set('kalp.png', png(PICTURE.width, PICTURE.height));
         const notes = [
             { occlusion: serializeOcclusionField(drawnShapes(true)), header: 'Kalp', backExtra: 'Ek <i>bilgi</i>' },
             { occlusion: serializeOcclusionField(setOccludesInactive(drawnShapes(true), false)), header: '', backExtra: '' },

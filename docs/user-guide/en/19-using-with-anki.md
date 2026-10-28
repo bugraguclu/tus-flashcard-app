@@ -125,7 +125,7 @@ not have every feature. The main differences you will notice:
 | Profiles | There is a single collection. |
 | Daily limit for new cards | None: you can study as many new cards as you like. Review cards have a daily limit. See [Deck options](06-deck-options.md#daily-limits). |
 | Math (MathJax/LaTeX) | Formulas are not shown rendered; the source text in the fields is kept. |
-| Image Occlusion | Notes are made and edited with the app's mask editor and open in Anki with the same masks; a mask cannot be rotated or recoloured here, but a rotation or colour made in Anki is kept. |
+| Image Occlusion | Notes are made and edited with the app's mask editor and open in Anki with the same masks, including their turn and colour; colours here come from a short palette, and any colour set in Anki is kept. |
 | Add-ons | Not supported. |
 | JavaScript in card templates | Not run, for safety. |
 | Merging note types | Not offered. A note type whose structure has changed is added as a separate copy, with `(Imported)` at the end of its name. |

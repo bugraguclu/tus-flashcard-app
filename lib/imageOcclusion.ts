@@ -121,7 +121,7 @@ export function formatOcclusionNumber(value: number): string {
 
 /** Degrees as Anki stores an angle (ten-thousandths of a turn), or null when there is none. */
 export function occlusionAngleUnits(degrees: number): string | null {
-    const units = Math.round(((degrees % 360) / 360) * ANGLE_UNITS);
+    const units = Math.round(((degrees % 360) / 360) * ANGLE_UNITS) % ANGLE_UNITS;
     return Number.isFinite(units) && units !== 0 ? String(units) : null;
 }
 
@@ -276,6 +276,80 @@ export function resizeOcclusionShape(shape: OcclusionShape, box: { left: number;
         return withOcclusionProperties(shape, { left: f(box.left), top: f(box.top), rx: f(box.width / 2), ry: f(box.height / 2) });
     }
     return shape;
+}
+
+/** A shape's fill set to a colour, or back to Anki's default (null). */
+export function setOcclusionFill(shape: OcclusionShape, fill: string | null): OcclusionShape {
+    return withOcclusionProperties(shape, { fill });
+}
+
+/** A polygon's points where Anki draws them: moved so their top-left corner is the shape's `left`/`top`. */
+export function placedPolygonPoints(geometry: Extract<OcclusionGeometry, { kind: 'polygon' }>): [number, number][] {
+    const dx = geometry.left - Math.min(...geometry.points.map(([x]) => x));
+    const dy = geometry.top - Math.min(...geometry.points.map(([, y]) => y));
+    return geometry.points.map(([x, y]) => [x + dx, y + dy]);
+}
+
+/** A polygon given new points (image fractions), its `left`/`top` their top-left corner. */
+export function setOcclusionPolygonPoints(shape: OcclusionShape, points: readonly [number, number][]): OcclusionShape {
+    if (shape.kind !== 'polygon' || points.length < 3) return shape;
+    const f = formatOcclusionNumber;
+    return withOcclusionProperties(shape, {
+        left: f(Math.min(...points.map(([x]) => x))),
+        top: f(Math.min(...points.map(([, y]) => y))),
+        points: points.map(([x, y]) => `${f(x)},${f(y)}`).join(' '),
+    });
+}
+
+const turnVector = (x: number, y: number, degrees: number): [number, number] => {
+    const radians = (degrees * Math.PI) / 180;
+    return [x * Math.cos(radians) - y * Math.sin(radians), x * Math.sin(radians) + y * Math.cos(radians)];
+};
+
+/**
+ * The shape turned by `degrees` (clockwise) about its centre. A box or label keeps its size and its
+ * centre: its `angle` changes and its top-left corner, which Anki turns it about, moves. A polygon's
+ * points are turned instead, so it needs no `angle`. `natural` is the image in pixels, so a turn
+ * stays square on a picture of any shape; `extent` is a label's unturned size in image fractions,
+ * which only the screen can measure (without it a label turns about its corner).
+ */
+export function rotateOcclusionShape(
+    shape: OcclusionShape,
+    degrees: number,
+    natural: { width: number; height: number },
+    extent?: { width: number; height: number },
+): OcclusionShape {
+    const geometry = occlusionGeometry(shape);
+    const width = Math.max(1, natural.width);
+    const height = Math.max(1, natural.height);
+    if (!geometry || !Number.isFinite(degrees) || degrees % 360 === 0) return shape;
+    if (geometry.kind === 'polygon') {
+        const placed = placedPolygonPoints(geometry).map(([x, y]) => [x * width, y * height]);
+        const xs = placed.map(([x]) => x);
+        const ys = placed.map(([, y]) => y);
+        const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+        const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+        return setOcclusionPolygonPoints(shape, placed.map(([x, y]) => {
+            const [tx, ty] = turnVector(x - cx, y - cy, degrees);
+            return [(cx + tx) / width, (cy + ty) / height];
+        }));
+    }
+    const size = geometry.kind === 'rect' ? { width: geometry.width, height: geometry.height }
+        : geometry.kind === 'ellipse' ? { width: geometry.rx * 2, height: geometry.ry * 2 }
+            : extent ?? { width: 0, height: 0 };
+    const halfX = (size.width * width) / 2;
+    const halfY = (size.height * height) / 2;
+    const [fromX, fromY] = turnVector(halfX, halfY, geometry.angle);
+    const centreX = geometry.left * width + fromX;
+    const centreY = geometry.top * height + fromY;
+    const angle = (((geometry.angle + degrees) % 360) + 360) % 360;
+    const [toX, toY] = turnVector(halfX, halfY, angle);
+    const f = formatOcclusionNumber;
+    return withOcclusionProperties(shape, {
+        left: f((centreX - toX) / width),
+        top: f((centreY - toY) / height),
+        angle: occlusionAngleUnits(angle),
+    });
 }
 
 /** The selected masks asked together under the lowest of their numbers. Text labels stay `c0`. */

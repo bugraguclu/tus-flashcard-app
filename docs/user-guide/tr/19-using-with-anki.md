@@ -125,7 +125,7 @@ geliştirilir, ama her özelliği yoktur. Fark edeceğiniz başlıca yerler:
 | Profiller | Tek koleksiyon vardır. |
 | Yeni kart günlük sınırı | Yok: istediğiniz kadar yeni kart çalışabilirsiniz. Tekrar kartlarının günlük sınırı vardır. Bkz. [Deste seçenekleri](06-deck-options.md#daily-limits). |
 | Matematik (MathJax/LaTeX) | Formüller işlenmiş hâlde gösterilmez; alanlardaki kaynak metin korunur. |
-| Görüntü örtme (Image Occlusion) | Notlar uygulamanın maske düzenleyicisiyle yapılır ve düzenlenir, Anki'de aynı maskelerle açılır; burada maske döndürülemez ve rengi değiştirilemez, ama Anki'de verilen dönüş ve renk korunur. |
+| Görüntü örtme (Image Occlusion) | Notlar uygulamanın maske düzenleyicisiyle yapılır ve düzenlenir, Anki'de dönüşleri ve renkleriyle aynı maskelerle açılır; burada renkler kısa bir paletten seçilir, Anki'de verilen her renk korunur. |
 | Eklentiler (add-on) | Desteklenmez. |
 | Kart şablonlarındaki JavaScript | Güvenlik için çalıştırılmaz. |
 | Not türlerini birleştirme | Sunulmaz. Yapısı değişmiş bir not türü ayrı bir kopya olarak eklenir; adının sonuna `(Imported)` gelir. |

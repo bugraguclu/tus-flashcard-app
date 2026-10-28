@@ -580,8 +580,12 @@ Trial scheduling writes are permitted only on an existing card with unchanged id
 CSS), and recognises an imported one or a clone by that kind and those tags. Choosing it on the
 Add screen replaces the Occlusion and Image fields with a picture panel; Header, Back Extra and
 Comments stay ordinary fields. The mask editor (`components/image-occlusion/`) draws rectangles,
-ellipses, polygons and text labels, moves and resizes them, groups masks into one question,
-zooms with two fingers or buttons, has undo and redo, and switches the note between Anki's
+ellipses, polygons and text labels, moves and resizes them, turns them (a handle past the shape's
+top edge, landing on multiples of 15°, or ↺/↻ in 15° steps, and Düzelt back to straight), colours
+masks and labels from a palette (Anki's default restored by removing `fill`), moves, adds and removes
+a polygon's corners (drag a corner, tap or drag the handle halfway along an edge, Köşeyi sil),
+groups masks into one question, zooms with two fingers or buttons, has undo and redo, and switches
+the note between Anki's
 "Hide All, Guess One" (the default for a new note, `oi=1` on every shape) and "Hide One, Guess
 One". It needs no network and runs no card script. The picture is stored unchanged in the media
 folder and the Image field is `<img src="…">`, as Anki writes it.
@@ -594,14 +598,19 @@ shape's properties, a piece without `=` is dropped, and no `::` hint is split of
 sizes as fractions of the image written to four decimals without outer zeros (`.1`, `1.`,
 `.0000`); an angle in ten-thousandths of a turn; a label's `fs` as a fraction of the image height
 (Anki's 40 image pixels for a new label), its number `c0`; new properties in the order Anki's
-editor writes them; a new mask numbered with the lowest free number. Editing keeps what it does
+editor writes them; a new mask numbered with the lowest free number. A turn keeps the shape's
+centre in image pixels: a box or label stores Anki's angle about its top-left corner and moves that
+corner (a label's centre is measured on screen), while a polygon has its points turned and never
+gets an `angle`; an edited polygon's `left`/`top` is its points' top-left corner, where Anki places
+it (`lib/imageOcclusionEditing.test.ts`). Editing keeps what it does
 not change: an untouched shape is written back as the exact text it was read from, a touched one
 keeps its property order and any property the app does not know, and an editor session that
 changes nothing leaves the field byte for byte.
 
 `lib/imageOcclusion.oracle.test.ts` (opt-in, `ANKI_ORACLE=1`) exports notes made in the app as a
 package, imports it into Anki 26.09.3 and checks that Anki's Image Occlusion editor
-(`get_image_occlusion_note`) loads exactly the app's shapes, groups, hide-all mode, image, header
+(`get_image_occlusion_note`) loads exactly the app's shapes (drawn, then turned, coloured and given
+moved and added polygon corners with the editor's own functions), groups, hide-all mode, image, header
 and back extra, and that every card's question and answer render the same shape `<div>`s as the
 app's renderer, so Anki's script and the app draw the same masks; it also checks the app reads six
 hand-written and malformed fields exactly as Anki does. A fresh Anki collection already holds its
@@ -618,17 +627,19 @@ active colour, then the others only when they hide all, then the answered outlin
 their angle about their top-left corner, a polygon moved so its corner is the shape's own, and a
 label sized as a fraction of the image height through container query units on its white box.
 
-Divergences: the editor keeps but cannot change a shape's rotation or colour, Anki's alignment
-tools and fill picker are not offered, and a mask is moved or resized whole (no per-point polygon
-editing).
+Divergences: Anki's alignment tools are not offered; colours come from a short palette instead of a
+free colour picker; a polygon's turn is written into its points; a label is resized with A−/A+, not a
+handle. The asked mask is always drawn in the active colour, so a colour shows on the other masks,
+as in Anki.
 
 **Named iPhone smoke — Image Occlusion:** In Not ekle choose Görüntü Örtme; pick a photo from the
 library and once from the camera. Draw a rectangle, an ellipse and a polygon, pinch to zoom and
-draw a small mask, add a label with the keyboard up, group two masks with Çoklu, undo and redo,
-switch to "Birini gizle, birini sor", save, then study: each card asks its own mask, the label
-stays readable at the image's scale, and Toggle Masks works on the answer. Reopen the note from
+draw a small mask, add a label with the keyboard up, group two masks with Çoklu, turn a mask with
+its handle and a label with ↻, colour a mask blue and the label red, drag a polygon corner and add
+one at an edge's midpoint, undo and redo, switch to "Birini gizle, birini sor", save, then study: each card asks its own mask, the label
+stays readable at the image's scale, turned shapes and colours look as they did in the editor, and
+Toggle Masks works on the answer. Reopen the note from
 the browser, open the mask editor and press Tamam without changes; the Occlusion field must be
 unchanged. Export the deck and import it into Anki: the masks match.
 
-**Next compatibility gate:** Rotation, colour and per-point polygon editing; run the Image
-Occlusion iPhone smoke on a device
+**Next compatibility gate:** Run the Image Occlusion iPhone smoke on a device

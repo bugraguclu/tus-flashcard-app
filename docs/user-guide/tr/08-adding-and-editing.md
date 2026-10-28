@@ -103,8 +103,8 @@ harfi değiştirir.
 
 > **Anki'den farkı:** MathJax düğmesi `\( … \)` işaretlerini ekler, ama TusAnkiM formülleri henüz
 > işlenmiş hâlde göstermez; kartta kaynak metin görünür (Anki'ye aktarınca işlenir). Görüntü örtme
-> (Image Occlusion) notu için Görüntü Örtme türünü seçip resmin üzerine maske çizin; maske döndürülemez,
-> rengi değiştirilemez. Alanlardaki ve şablonlardaki betikler (JavaScript), SVG,
+> (Image Occlusion) notu için Görüntü Örtme türünü seçip resmin üzerine maske çizin; renkler renk
+> seçici yerine kısa bir paletten seçilir. Alanlardaki ve şablonlardaki betikler (JavaScript), SVG,
 > MathML ve form öğeleri kartta çalıştırılmaz ve gösterilmez. Kısayollar Anki'nin değil, kelime
 > işlemcilerin düzenini izler; boşluk ekleme kısayolu yoktur.
 
