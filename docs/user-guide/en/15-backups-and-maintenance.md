@@ -149,7 +149,7 @@ compares the stored media files with your notes and note types:
 
 The lists show the first 20 file names. Files whose names start with `_` are never counted as
 unused, because templates may use them. `.apkg` files whose names start with `tusanki-source-` are
-copies the app keeps of packages you imported; if they are listed, they are no longer needed.
+copies of imported packages that earlier versions of the app kept; nothing uses them any more.
 
 **Move Unused to Trash (N)** first makes a collection backup and then moves the files to a trash
 folder. **Restore Trash** puts every file in the trash back; if a file with the same name exists by

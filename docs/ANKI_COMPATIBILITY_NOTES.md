@@ -376,9 +376,13 @@ Author updates match note types by stable id; stable field/template ids distingu
 
 Package update regressions (`lib/ankiTransferSafety.test.ts`) cover unchanged GUID matches with missing cards, schema conflicts, media repair on a duplicate import, and indexing before COMMIT. Scheduled exports and re-imports preserve negative/zero day offsets and active/inactive learning due units, including original day/timestamp due values. Progress-free imports retain source new-note order and shared sibling positions, strip remembered scheduling data while preserving opaque add-on keys, and disable pristine-original passthrough. Deck-tree package scope selects notes and retains every sibling card, including siblings in another deck (`lib/ankiTransferSafety.test.ts`).
 
-Deck names in a package resolve to existing decks ignoring case, part by part, so `medicine::Cardio` joins an existing "Medicine" instead of creating a second tree; a deck renamed because an incompatible deck of the same name exists ("X (Imported)") takes its subdecks along. A review whose id the collection already has is skipped, as Anki skips it, rather than rekeyed to the import time. A v1-scheduler relearning card (type 2 in a learning queue) arrives as type 3, as Anki's own upgrade makes it. A template's deck override (`did` on the template) is remapped to the local deck the package's deck became, dropped when that deck did not come along, and exported only when its deck is in the package (stored as `deckOverrideId`; the editor does not use it yet). A text-import update stores the sort field without formatting, as Anki's `sfld` is. When a package's deck/note-type metadata cannot be read, the simplified importer still runs and the import summary says the note types were simplified. The pristine copy of an imported package, used only for a byte-identical re-export, is stored only when that export is possible and the package is at most 64 MiB; Check Media (Backups screen) treats a copy that can no longer be used as unused. Packages are read from Files in 6 MiB chunks rather than through one base64 string, and the limits are 400 MiB per package, 200,000 entries, 2 GiB unpacked and 100 MiB per media file, media being inflated and written one file at a time (`lib/transferRemaining.test.ts`, `lib/filesChunkedRead.test.ts`, `lib/ankiPackageArchive.test.ts`). The whole package is still held in memory while it imports.
+Deck names in a package resolve to existing decks ignoring case, part by part, so `medicine::Cardio` joins an existing "Medicine" instead of creating a second tree; a deck renamed because an incompatible deck of the same name exists ("X (Imported)") takes its subdecks along. A review whose id the collection already has is skipped, as Anki skips it, rather than rekeyed to the import time. A v1-scheduler relearning card (type 2 in a learning queue) arrives as type 3, as Anki's own upgrade makes it. A template's deck override (`did` on the template) is remapped to the local deck the package's deck became (stored as `deckOverrideId`; the editor does not use it yet); an override whose deck did not come along is kept and exported as it came, as Anki keeps one it cannot resolve. A text-import update stores the sort field without formatting, as Anki's `sfld` is. When a package's deck/note-type metadata cannot be read, the simplified importer still runs and the import summary says the note types were simplified. Every export is rebuilt from the collection; no copy of an imported package is kept (earlier builds kept one for a byte-identical re-export, and Check Media lists those copies as unused). Packages are read from Files in 6 MiB chunks rather than through one base64 string, and the limits are 400 MiB per package, 200,000 entries, 2 GiB unpacked and 100 MiB per media file, media being inflated and written one file at a time (`lib/transferRemaining.test.ts`, `lib/filesChunkedRead.test.ts`, `lib/ankiPackageArchive.test.ts`). The whole package is still held in memory while it imports.
 
-**Package format (2026-10-25):** the export screen has Anki's "Support older Anki versions", off by default as in Anki. Off, a package stores `collection.anki21b`, every media file and the media list as zstd frames, lists the media as a `MediaEntries` protobuf with each file's size and SHA-1, and marks itself `VERSION_LATEST`; the frames are written in raw blocks, since the zip around them already deflates (`lib/ankiPackageLatest.ts`). On, it writes the legacy `collection.anki21` with a JSON media map, which is what every earlier export of this app was and what callers that do not choose still get. Both formats, as `.apkg` and `.colpkg`, were imported into Anki 26.09.3 through `scripts/anki-oracle` with the same decks, notes, cards, reviews and media (Turkish names with spaces included) in every import option, and a description's `md` flag arriving as Anki's own; the app's own importer reads both back. The small `collection.anki2` that Anki adds to tell Anki 2.0 to upgrade is not written. The export screen's defaults follow Anki's dialog (`qt/aqt/forms/exporting.ui`, `exporting.py`): scheduling on except when opened from one deck, deck presets off, media, tags and HTML on, and the deck, note type and GUID columns off.
+**Package format (2026-10-25):** the export screen has Anki's "Support older Anki versions", off by default as in Anki. Off, a package stores `collection.anki21b`, every media file and the media list as zstd frames, lists the media as a `MediaEntries` protobuf with each file's size and SHA-1, and marks itself `VERSION_LATEST`; the frames are written in raw blocks, since the zip around them already deflates (`lib/ankiPackageLatest.ts`). On, it writes the legacy `collection.anki21` with a JSON media map, which is what every earlier export of this app was and what callers that do not choose still get. Both formats, as `.apkg` and `.colpkg`, were imported into Anki 26.09.3 through `scripts/anki-oracle` with the same decks, notes, cards, reviews and media (Turkish names with spaces included) in every import option, and a description's `md` flag arriving as Anki's own; the app's own importer reads both back. Like Anki's, every package also carries the small `collection.anki2` whose one note asks an Anki too old for the package to update, and the collection has Anki's tables, columns and indexes (`ix_notes_csum` included); `lib/ankiPackageStability.test.ts` compares both with Anki's own packages. In the current format Anki stores a schema-18 collection, whose name columns use a `unicase` collation only Anki's backend registers, so SQLite outside Anki cannot create them; this app stores the same schema-11 collection there, which Anki upgrades on import (every round trip above goes through it). The export screen's defaults follow Anki's dialog (`qt/aqt/forms/exporting.ui`, `exporting.py`): scheduling on except when opened from one deck, deck presets off, media, tags and HTML on, and the deck, note type and GUID columns off.
+
+**Round trips (2026-10-27):** a package goes through the app unchanged. Something imported from Anki keeps its complete schema-11 JSON (`ankiRaw`), and an export writes it back with only what the app changed laid over it (`lib/ankiSchema11.ts`): untouched note types, decks and presets leave key for key as Anki wrote them, keys Anki keeps for other clients included, and the app adds none of its own. A schema-18 package's note types, decks and presets are read into exactly the JSON Anki's "Support older Anki versions" writes for the same collection (`lib/ankiSchema18.ts`, `lib/ankiSchema18.test.ts`), field and template config included, and 64-bit field and template ids beyond 2^53 are kept exact (`lib/ankiJson.ts`). `lib/ankiPackageStability.test.ts` imports Anki 26.09.3's export of a learner's collection (`test/fixtures/anki-26.09-roundtrip*.apkg`) and checks that the app writes back Anki's note types, decks, presets, notes, cards, review history and media, then exports and re-imports it 100 times in both formats and as a collection package with nothing changing, and that importing the same package again changes nothing. `lib/ankiRoundtrip.oracle.test.ts` (run with `ANKI_ORACLE_CYCLES=100`, needs Anki.app) does the same with Anki importing and exporting between every pass, for a deck package, a collection package and a collection made in the app, and also checks Anki's first-field checksums; all 100 passes compare equal to Anki's view of the first. Fixed on the way: a deck package carried an empty `col.conf`, so Anki read it as the v1 scheduler and renumbered every learning answer from Good to Easy; field options (description, plain text, collapsed, exclude from search, tag, prevent deletion), field and template ids, card requirements and the stock kind of a schema-18 note type were lost; stock note types were restamped as newer than Anki's; `browserCollapsed` was reset; `easyDays`, field `media` and `latexSvg` keys Anki does not have were added; and the app's label for preset 1 replaced Anki's "Default".
+
+As Anki's exporter does (measured through `scripts/anki-oracle`): a deck selection takes the cards that are in those decks; a filtered deck holding exported cards goes out with them, as a filtered deck with scheduling and as a regular deck without; a deck package carries the decks its cards are in or come from, with their parents, and only the media its notes and note types use; and Anki's preset 1 goes out as "Default".
 
 **Status:** Implemented subset with bounded archive and SQLite validation
 
@@ -414,7 +418,8 @@ Package round-trip, backup-source export, archive-security, SQLite-security and 
 tests cover the rest; a stored snapshot can be exported without consulting or replacing the live
 collection, known file size is checked before reading, and every package import creates a recovery
 backup. An exported preset carries its Easy Days under Anki's `easyDaysPercentages` key, over any
-values it was imported with, and also as `easyDays` for earlier builds of this app; its interday
+values it was imported with (packages from earlier builds of this app, which also wrote `easyDays`,
+still import, and the key is dropped on export); its interday
 learning burying goes under Anki's top-level `buryInterdayLearning` key the same way, whether the
 preset was made here or imported (`lib/ankiPackageRoundtrip.test.ts`), and Anki 26.05 imports
 both kinds with the app's value (checked through `scripts/anki-oracle`).
@@ -429,15 +434,16 @@ which its decks then name, as Anki's own exports carry their Default preset
 imported into Anki under all four combinations of its import options with every deck, card and
 review (`scripts/anki-oracle/import_app_export.py`)
 
-**Next compatibility gate:** Re-record the Anki export fixtures for each new Anki release and import
-an app export into it with `scripts/anki-oracle/import_app_export.py`, and run the physical-device
-large-package smoke
+**Next compatibility gate:** Re-record the Anki export fixtures for each new Anki release, run
+`ANKI_ORACLE_CYCLES=100 npx vitest run lib/ankiRoundtrip.oracle.test.ts` and
+`scripts/anki-oracle/import_app_export.py` against it, and run the physical-device large-package
+smoke
 
 ## `.colpkg` replacement
 
 **Status:** Implemented with explicit destructive confirmation and a restorable pre-operation safety backup
 
-A collection package carries what Anki's does beyond the tables: the `col.tags` registry of every tag in use, a legacy `col.conf` with `schedVer` 2 (without it Anki reads the collection as the retired v1 scheduler), the rollover hour, `nextPos` and the default current deck, every filtered deck with its terms, and the review history of deleted cards. Filtered membership is virtual here, so a filtered deck arrives empty in Anki until it is rebuilt; a card that is physically in a filtered deck stays in it. Notes created in this app still carry the app's field checksum (note/model code). Replacing the collection also clears a backup's pending catalog overlay and the queue's filtered-membership and review-allowance rows of the replaced collection (`lib/transferRemaining.test.ts`, `lib/ankiPackageRoundtrip.test.ts`).
+A collection package carries what Anki's does beyond the tables: the `col.tags` registry of every tag in use, every filtered deck with its terms, the review history of deleted cards and the whole media folder, unused files included (but not files only the paid catalog uses). Replacing the collection keeps the package's creation day (`crt`, which every review due date counts from) and its settings (`col.conf`, or schema 18's `config` table), and an export writes both back with `schedVer` 2 (without it Anki reads the collection as the retired v1 scheduler), so the collection returns to Anki with its own day numbering and options; a collection made here starts today, with Anki's settings for a new collection and a `nextPos` past every new card (`lib/ankiCollectionConfig.ts`). The options Anki keeps there that this app also has go both ways: replacing the collection sets the app's next day starts at, learn ahead limit, timebox, FSRS and its short-term-steps switch, limits start from top and new cards ignore review limit, and an export writes the app's values back (`rollover`, `collapseTime`, `timeLim`, `fsrs`, `fsrsShortTermWithStepsEnabled`, `applyAllParentLimits`, `newCardsIgnoreReviewLimit`). Filtered membership is virtual here, so a filtered deck arrives empty in Anki until it is rebuilt; a card that is physically in a filtered deck stays in it. Notes created in this app still carry the app's field checksum (note/model code). Replacing the collection also clears a backup's pending catalog overlay and the queue's filtered-membership and review-allowance rows of the replaced collection (`lib/transferRemaining.test.ts`, `lib/ankiPackageRoundtrip.test.ts`).
 
 **Evidence:** import confirmation and backup tests. Replacement is not a way out of a damaged collection, so it runs only after a backup that can itself be restored: when a damaged row would leave only a recovery copy, the import stops before reading the package, changes nothing and asks the learner to run Repair first (`lib/packageImportWorkflow.ts`, `lib/destructiveBackupSafety.test.ts`). A merge `.apkg` import may still proceed on a recovery copy.
 
@@ -453,7 +459,7 @@ Updates preserve unmapped fields and existing tags when no tag column was suppli
 
 **Status:** Implemented; Anki's own option set (separator with override, Allow HTML in fields, note type, deck, Existing notes, Match scope, Tag all notes, Tag updated notes, per-column field mapping) and its per-note outcome buckets. Fields are escaped exactly as Anki's importer does when HTML is off (minimal entity set plus newline → `<br>`), an unchanged match is reported as "already present" instead of being rewritten, a `#notetype column` naming an unknown type skips the row rather than filing it elsewhere, and a plain-text export with HTML excluded reduces fields to text so the `#html:false` header it writes is true. Update preview/confirmation and backup protect matching notes, and deck directives share the note-write transaction
 
-**Evidence:** `lib/importNotes.test.ts` (escaping, buckets, tag options, note-type resolution), `lib/importLog.test.ts`, `lib/importDelimited.test.ts`, `lib/exportNotes.test.ts`, delimited preview/import/export and rollback tests
+**Evidence:** `lib/importNotes.test.ts` (escaping, buckets, tag options, note-type resolution), `lib/importLog.test.ts`, `lib/importDelimited.test.ts`, `lib/exportNotes.test.ts`, delimited preview/import/export and rollback tests. `lib/textExport.ankiParity.test.ts` holds the collection of `test/fixtures/anki-26.09-roundtrip.colpkg` and writes Notes in Plain Text and Cards in Plain Text, with and without HTML, byte for byte as Anki 26.09.3 exports them (`test/fixtures/anki-26.09-*.txt`), and imports its notes file back without changing a note. Without HTML a field becomes Anki's text line (a `<br>`, bare `<div>` or newline is one space, sound tags and markup leave nothing — no placeholder is written for media — entities are decoded, inner spaces are kept); a card side is written without the card page or styles, the answer starting after `<hr id=answer>`, with the cloze answer in `data-cloze` encoded as Anki encodes it (`& < > "` as named entities, other characters below U+0100 that are not ASCII letters or digits as hex references), and an Image Occlusion deletion written as the shape `<div>` Anki writes for its occlusion script
 
 **Next compatibility gate:** Keep metadata-header fixtures; the mapping table draws at most 24 columns
 
@@ -567,8 +573,73 @@ Trial scheduling writes are permitted only on an existing card with unchanged id
 
 ## Image Occlusion note authoring
 
-**Status:** Not implemented
+**Status:** Implemented: an offline mask editor for Anki's stock Image Occlusion note type
 
-**Evidence:** —
+**Evidence:** The app carries Anki 26.09.3's stock "Image Occlusion" type as a built-in
+(`lib/imageOcclusionNoteType.ts`: `originalStockKind` 6, fields tagged 0–4, Anki's templates and
+CSS), and recognises an imported one or a clone by that kind and those tags. Choosing it on the
+Add screen replaces the Occlusion and Image fields with a picture panel; Header, Back Extra and
+Comments stay ordinary fields. The mask editor (`components/image-occlusion/`) draws rectangles,
+ellipses, polygons and text labels, moves and resizes them, turns them (a handle past the shape's
+top edge, landing on multiples of 15°, or ↺/↻ in 15° steps, and Düzelt back to straight), colours
+masks and labels from a palette (Anki's default restored by removing `fill`), moves, adds and removes
+a polygon's corners (drag a corner, tap or drag the handle halfway along an edge, Köşeyi sil),
+groups masks into one question, zooms with two fingers or buttons, has undo and redo, and switches
+the note between Anki's
+"Hide All, Guess One" (the default for a new note, `oi=1` on every shape) and "Hide One, Guess
+One". It needs no network and runs no card script. The picture is stored unchanged in the media
+folder and the Image field is `<img src="…">`, as Anki writes it.
 
-**Next compatibility gate:** Add a native/offline editor and package fixtures
+The Occlusion field is read and written with Anki's own grammar (`lib/imageOcclusion.ts`,
+`lib/imageOcclusion.test.ts`), measured through `scripts/anki-oracle/image_occlusion.py`: one
+`{{cN::image-occlusion:shape:name=value:…}}<br>` per shape, a name running to the first `=` and a
+value to the next unescaped `:`, with `\:` and `\\` the only escapes (any other backslash ends the
+shape's properties, a piece without `=` is dropped, and no `::` hint is split off); positions and
+sizes as fractions of the image written to four decimals without outer zeros (`.1`, `1.`,
+`.0000`); an angle in ten-thousandths of a turn; a label's `fs` as a fraction of the image height
+(Anki's 40 image pixels for a new label), its number `c0`; new properties in the order Anki's
+editor writes them; a new mask numbered with the lowest free number. A turn keeps the shape's
+centre in image pixels: a box or label stores Anki's angle about its top-left corner and moves that
+corner (a label's centre is measured on screen), while a polygon has its points turned and never
+gets an `angle`; an edited polygon's `left`/`top` is its points' top-left corner, where Anki places
+it (`lib/imageOcclusionEditing.test.ts`). Editing keeps what it does
+not change: an untouched shape is written back as the exact text it was read from, a touched one
+keeps its property order and any property the app does not know, and an editor session that
+changes nothing leaves the field byte for byte.
+
+`lib/imageOcclusion.oracle.test.ts` (opt-in, `ANKI_ORACLE=1`) exports notes made in the app as a
+package, imports it into Anki 26.09.3 and checks that Anki's Image Occlusion editor
+(`get_image_occlusion_note`) loads exactly the app's shapes (drawn, then turned, coloured and given
+moved and added polygon corners with the editor's own functions), groups, hide-all mode, image, header
+and back extra, and that every card's question and answer render the same shape `<div>`s as the
+app's renderer, so Anki's script and the app draw the same masks; it also checks the app reads six
+hand-written and malformed fields exactly as Anki does. A fresh Anki collection already holds its
+own Image Occlusion type, so Anki keeps the imported one beside it as `Image Occlusion+`, as it does
+for one from any other collection.
+
+The card renderer (`lib/templates.ts`, pinned by `lib/templates.test.ts`) writes the shape `<div>`
+Anki writes (`cloze` while asked, `cloze-highlight` on the answer, `cloze-inactive` otherwise;
+known properties only; `oi` as `occludeInactive`, `fs` as `font-size`), with two rules measured for
+this work: a `c0` occlusion (a label) is `cloze` on both sides of every card, and attribute
+characters are hex references of at least two digits (`&#x0A;`). Card scripts do not run here, so
+`lib/imageOcclusionMasks.ts` lays the masks out ahead of time with Anki's rules: asked shapes in the
+active colour, then the others only when they hide all, then the answered outline; boxes turned by
+their angle about their top-left corner, a polygon moved so its corner is the shape's own, and a
+label sized as a fraction of the image height through container query units on its white box.
+
+Divergences: Anki's alignment tools are not offered; colours come from a short palette instead of a
+free colour picker; a polygon's turn is written into its points; a label is resized with A−/A+, not a
+handle. The asked mask is always drawn in the active colour, so a colour shows on the other masks,
+as in Anki.
+
+**Named iPhone smoke — Image Occlusion:** In Not ekle choose Görüntü Örtme; pick a photo from the
+library and once from the camera. Draw a rectangle, an ellipse and a polygon, pinch to zoom and
+draw a small mask, add a label with the keyboard up, group two masks with Çoklu, turn a mask with
+its handle and a label with ↻, colour a mask blue and the label red, drag a polygon corner and add
+one at an edge's midpoint, undo and redo, switch to "Birini gizle, birini sor", save, then study: each card asks its own mask, the label
+stays readable at the image's scale, turned shapes and colours look as they did in the editor, and
+Toggle Masks works on the answer. Reopen the note from
+the browser, open the mask editor and press Tamam without changes; the Occlusion field must be
+unchanged. Export the deck and import it into Anki: the masks match.
+
+**Next compatibility gate:** Run the Image Occlusion iPhone smoke on a device

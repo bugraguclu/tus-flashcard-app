@@ -20,7 +20,7 @@ import { getNoteType } from './noteManager';
 import { BUILTIN_NOTE_TYPES, type NoteType } from './models';
 import { resolveSubjectDeckId } from './subjects';
 import { applyAnkiProgress, readAnkiProgress } from './importApkgProgress';
-import { preserveOriginalAnkiPackage, sourcePackageId } from './ankiPackageArchive';
+import { sourcePackageId } from './importApkgIdentity';
 import { assertSafeAnkiArchive, assertZipEntrySize, decompressZstdBounded } from './archiveSecurity';
 import { deserializeFtsSafeDatabaseSync } from './sqliteOpenOptions';
 import { FIELD_SEPARATOR, MEDIA_RE, type ApkgImportOptions, type ApkgImportResult, type ApkgReader, type JSZipType, type SqliteReader } from './apkgFormat';
@@ -41,9 +41,6 @@ const OLDEST_COLLECTION_NAME = 'collection.anki2';
 // The package is held in memory while it is imported (read in chunks, lib/files.ts), so this is
 // the size an iPhone can hold beside the app, not a format limit.
 export const MAX_APKG_BYTES = 400 * 1024 * 1024;
-
-/** Larger packages are not kept as a second, byte-identical copy (AKT-13). */
-const MAX_PRESERVED_PACKAGE_BYTES = 64 * 1024 * 1024;
 
 // Cap the decompressed collection before handing it to sql.js, which would copy the whole
 // database into its WASM heap. The SQLite itself (no media) is normally tiny.
@@ -350,7 +347,6 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
     const packageId = sourcePackageId(zipBytes);
 
     let result: ApkgImportResult;
-    let sourceCardCount = 0;
     try {
         // Also validate injected readers used by alternate import entry points and tests.
         hardenAndValidateAnkiReader(reader);
@@ -360,12 +356,10 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
         assertNoProtectedCatalogGuids(
             reader.getAllSync<{ guid: string }>('SELECT guid FROM notes').map((row) => row.guid),
         );
-        try {
-            sourceCardCount = Number(reader.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM cards')?.count) || 0;
-        } catch { /* note-only collections are tolerated by the fallback importer */ }
         const lossless = importAnkiReaderLossless(reader, options, packageId);
         if (!lossless && options.replaceCollection) {
-            throw new Error('Bu modern .colpkg sürümü tam koleksiyon değiştirme için henüz desteklenmiyor; eski Anki sürümleriyle uyumlu dışa aktarımı seçin.');
+            // Without its note types and decks a collection cannot replace this one faithfully.
+            throw new Error('Bu koleksiyon paketinin not türleri ve desteleri okunamadı; koleksiyonunuz değiştirilmedi.');
         }
         if (!lossless) console.warn('[ApkgImport] package metadata unreadable; importing with the simplified importer');
         // Said in the result, so the import summary can warn that note types were simplified.
@@ -387,26 +381,6 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
             // Media-reference rewriting is recoverable maintenance. The package notes were
             // imported transactionally and the pre-import backup remains available.
             console.warn('[ApkgImport] media reference rewrite failed:', error);
-        }
-        try {
-            await preserveOriginalAnkiPackage(zipBytes, {
-                fileName: options.fileName,
-                noteCount: result.added,
-                cardCount: result.cardsImported ?? 0,
-                exactEligible: zipBytes.length <= MAX_PRESERVED_PACKAGE_BYTES
-                    && options.withScheduling !== false && options.withDeckConfigs !== false
-                    && result.structurePreserved === true
-                    && result.added === result.totalNotes
-                    && (result.updated ?? 0) === 0
-                    && (result.cardsImported ?? -1) === sourceCardCount
-                    && result.mediaSkipped === 0
-                    && (result.mediaRenamed ?? 0) === 0
-                    && !options.fileName?.toLowerCase().endsWith('.colpkg'),
-            });
-        } catch (error) {
-            // Native import remains useful if the auxiliary pristine copy cannot be stored;
-            // reconstructed export still retains the full parsed Anki structure.
-            console.warn('[ApkgImport] original package preservation failed:', error);
         }
     }
 

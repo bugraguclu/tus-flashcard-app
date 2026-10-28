@@ -76,7 +76,7 @@ it('N1 creating a note must not replace an existing imported note with the same 
 
 it('N2 rename then APKG export retains the renamed deck instead of returning the stale original archive', async () => {
   const original = new Uint8Array(readFileSync('test/fixtures/anki-26.05-legacy.apkg'));
-  await importApkg(original, { subject: 'audit', fileName: 'original.apkg', openReader: async bytes => openReader(bytes) });
+  await importApkg(original, { subject: 'audit', openReader: async bytes => openReader(bytes) });
   const deckId = getAllAnkiCards()[0].deckId;
   renameDeck(deckId, 'New user deck name');
   const artifact = await buildAnkiExport('apkg', undefined, true);
@@ -236,7 +236,7 @@ it('N5 decodes named entities once and malformed numeric references cannot crash
 
 it('N2 parent rename invalidates child source packages for a subtree-scoped export', async () => {
   const original = new Uint8Array(readFileSync('test/fixtures/anki-26.05-legacy.apkg'));
-  await importApkg(original, { subject: 'audit', fileName: 'original.apkg', openReader: async bytes => openReader(bytes) });
+  await importApkg(original, { subject: 'audit', openReader: async bytes => openReader(bytes) });
   const parent = getAllDecks().find(deck => deck.name === 'TUS Örnek')!;
   renameDeck(parent.id, 'Renamed parent');
   const artifact = await buildAnkiExport('apkg', 'Renamed parent', true);
@@ -249,9 +249,9 @@ it('N2 parent rename invalidates child source packages for a subtree-scoped expo
   expect(names.some(name => name.startsWith('TUS Örnek'))).toBe(false);
 });
 
-it('N2 failed subtree rename rolls back names and original-package eligibility together', async () => {
+it('N2 failed subtree rename rolls back every name', async () => {
   const original = new Uint8Array(readFileSync('test/fixtures/anki-26.05-legacy.apkg'));
-  await importApkg(original, { subject: 'audit', fileName: 'original.apkg', openReader: async bytes => openReader(bytes) });
+  await importApkg(original, { subject: 'audit', openReader: async bytes => openReader(bytes) });
   const beforeDecks = getAllDecks();
   const parent = beforeDecks.find(deck => deck.name === 'TUS Örnek')!;
   const run = h.db.runSync.bind(h.db);
@@ -263,7 +263,12 @@ it('N2 failed subtree rename rolls back names and original-package eligibility t
   expect(() => renameDeck(parent.id, 'Renamed')).toThrow('rename failed');
   expect(getAllDecks()).toEqual(beforeDecks);
   const artifact = await buildAnkiExport('apkg', undefined, true);
-  expect(Buffer.from(artifact.bytes!).equals(Buffer.from(original))).toBe(true);
+  const zip = await JSZip.loadAsync(artifact.bytes!);
+  const reader = openReader(await zip.file('collection.anki21')!.async('uint8array'));
+  const names = Object.values(JSON.parse(reader.getFirstSync('SELECT decks FROM col').decks)).map((deck: any) => deck.name);
+  reader.close();
+  expect(names).toContain('TUS Örnek::Kardiyoloji');
+  expect(names.some(name => name.startsWith('Renamed'))).toBe(false);
 });
 
 it('N4 generated catalog siblings retain ownership and cannot be created by a locked import', () => {

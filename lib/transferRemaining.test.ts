@@ -134,12 +134,14 @@ describe('collection package (AKT-12, B14)', () => {
         ];
         const col = await packageCol(await pkg(data, 'colpkg'));
         expect(col.tags).toEqual({ important: 0, 'Ünite::Bir': 0 });
-        expect(col.conf).toMatchObject({ schedVer: 2, sched2021: true, rollover: 4, nextPos: 8, curDeck: 1 });
+        expect(col.conf).toMatchObject({ schedVer: 2, sched2021: true, nextPos: 8, curDeck: 1 });
+        // Rollover 4 is Anki's default, which a new Anki collection leaves out of its settings too.
+        expect(col.conf.rollover ?? 4).toBe(4);
         expect(col.decks.find((entry) => entry.name === 'Session')).toMatchObject({ dyn: 1, terms: [['deck:Transfer', 50, 1]] });
         expect(col.revlog.map((row) => row.cid).sort()).toEqual([702, 999]);
 
         // The package imports back as a collection replacement with the filtered deck's terms.
-        await importApkg(await pkg(data, 'colpkg'), { ...options, fileName: 'c.colpkg', replaceCollection: true, withScheduling: true, withDeckConfigs: true });
+        await importApkg(await pkg(data, 'colpkg'), { ...options, replaceCollection: true, withScheduling: true, withDeckConfigs: true });
         expect(getAllDecks().find((entry) => entry.name === 'Session')).toMatchObject({ isFiltered: true, searchQuery: 'deck:Transfer', searchLimit: 50 });
         expect(h.db.getFirstSync('SELECT COUNT(*) AS n FROM revlog').n).toBe(2);
 

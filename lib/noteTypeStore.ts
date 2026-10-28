@@ -10,7 +10,6 @@ import {
 import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { dbUpsertFtsCard, getDB } from './db';
 import { resolveSubjectDeckId } from './subjects';
-import { markSourcePackageDirty } from './ankiPackageArchive';
 import {
     assertCatalogNoteTypeNotChangeable,
     assertCatalogNoteTypeMutable,
@@ -58,12 +57,6 @@ export function getNoteType(id: number): NoteType | null {
 export function saveNoteType(nt: NoteType): void {
     assertCatalogNoteTypeMutable(nt);
     const db = getDB();
-    const existing = db.getFirstSync<{ data: string }>('SELECT data FROM note_types WHERE id = ?', nt.id);
-    if (existing?.data) {
-        try {
-            markSourcePackageDirty((JSON.parse(existing.data) as NoteType).sourcePackageId);
-        } catch { /* malformed legacy blobs are replaced below */ }
-    }
     db.runSync(
         `INSERT OR REPLACE INTO note_types (id, name, data, updated_at, usn, tombstone)
          VALUES (?, ?, ?, ?, ?, ?)`,

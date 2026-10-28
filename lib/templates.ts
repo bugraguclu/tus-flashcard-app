@@ -1,3 +1,5 @@
+import { parseOcclusionBody } from './imageOcclusion';
+import { withOcclusionMasks } from './imageOcclusionMasks';
 import { sanitizeUntrustedHtml as normalizeFieldHtml, scrubCss } from './templateSecurity';
 export { sanitizeUntrustedHtml } from './templateSecurity';
 import { escapeHtml } from './templateEscaping';
@@ -135,17 +137,42 @@ function parseClozeNodes(text: string): ClozeChild[] {
     return root;
 }
 
+const NAMED_ATTRIBUTE_ENTITIES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+
 /**
- * Anki escapes the answer it hides in `data-cloze` so the attribute cannot break out of its
- * quotes. Only the five characters that are significant inside a double-quoted attribute matter.
+ * Text in an attribute, encoded as Anki encodes it (measured in Anki 26.09.3): `& < > "` as named
+ * entities, and every other character below U+0100 that is not an ASCII letter or digit as a hex
+ * reference of at least two digits, so the attribute cannot break out of its quotes. A browser reads the same text back
+ * either way; a card text export is then the bytes Anki writes.
  */
 function encodeClozeAttribute(value: string): string {
-    return value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    return value.replace(/[^A-Za-z0-9\u0100-\uffff]/g, (char) => NAMED_ATTRIBUTE_ENTITIES[char]
+        ?? `&#x${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')};`);
+}
+
+/** The Image Occlusion shape properties Anki writes, under the attribute names it gives them. */
+const OCCLUSION_PROPERTIES: Record<string, string> = {
+    left: 'left', top: 'top', width: 'width', height: 'height', rx: 'rx', ry: 'ry', points: 'points',
+    angle: 'angle', text: 'text', scale: 'scale', fs: 'font-size', oi: 'occludeInactive', fill: 'fill',
+};
+
+/**
+ * An Image Occlusion deletion (`{{c1::image-occlusion:rect:left=.1:top=.2:…}}`) as Anki renders it:
+ * an empty `<div>` carrying the shape for Anki's occlusion script — `cloze` while it is asked,
+ * `cloze-highlight` on its answer and `cloze-inactive` otherwise. Properties Anki does not know
+ * are left out, and only the text of a text shape is encoded. The properties are read with Anki's
+ * grammar (lib/imageOcclusion.ts), so an escaped `\:` in a label stays part of it.
+ */
+function renderOcclusion(text: string, ordinals: string, className: string): string {
+    const { kind, properties } = parseOcclusionBody(text.slice('image-occlusion:'.length));
+    let out = `<div class="${className}" data-ordinal="${ordinals}" `;
+    if (kind) out += `data-shape="${kind}" `;
+    for (const property of properties) {
+        const name = OCCLUSION_PROPERTIES[property.name];
+        if (!name) continue;
+        out += `data-${name}="${name === 'text' ? encodeClozeAttribute(property.value) : property.value}" `;
+    }
+    return `${out}></div>`;
 }
 
 function renderClozeChildren(
@@ -159,8 +186,19 @@ function renderClozeChildren(
             out += child.value;
             continue;
         }
+        const active = child.ordinals.includes(activeOrd);
+        const ownText = child.children.map((part) => (part.kind === 'text' ? part.value : '')).join('');
+        if (ownText.startsWith('image-occlusion:')) {
+            // An occlusion has no hint: a `::` in it is part of its properties. A `c0` deletion (a
+            // text label) is asked on both sides of every card, so Anki's script always draws it.
+            const body = child.hint === null ? ownText : `${ownText}::${child.hint}`;
+            const className = child.ordinals.includes(0) ? 'cloze'
+                : !active ? 'cloze-inactive' : side === 'question' ? 'cloze' : 'cloze-highlight';
+            out += renderOcclusion(body, child.ordinalsText, className);
+            continue;
+        }
         const inner = renderClozeChildren(child.children, activeOrd, side);
-        if (!child.ordinals.includes(activeOrd)) {
+        if (!active) {
             // Anki keeps the other deletions visible on both sides, tagged so a note type can
             // dim or colour them (`.cloze-inactive`).
             out += `<span class="cloze-inactive" data-ordinal="${child.ordinalsText}">${inner}</span>`;
@@ -280,6 +318,8 @@ export interface RenderContext {
      *  that keep the question visible in its own panel, so the back shows only the answer.
      *  frontSide must still be set — cloze rendering uses it to detect the answer side. */
     omitFrontSide?: boolean;
+    /** Anki's card text export: a typed-answer prompt leaves nothing on either side. */
+    noTypedAnswer?: boolean;
 }
 
 type ConditionalNode =
@@ -485,6 +525,7 @@ function applyTemplateFilter(
             if (ctx.generating) {
                 return plain ? `[type:${escapeHtml(plain)}]` : '';
             }
+            if (ctx.noTypedAnswer) return '';
 
             if (isQuestionSide && !ctx.typeAnswerOnFrontSide) {
                 if (ctx.typeAnswerInput && !ctx.typeAnswerInputRendered) {
@@ -596,6 +637,11 @@ export function renderCardHtml(
         nightMode?: boolean;
         /** Anki's document classes: "mobile iphone", "mobile ipad", "mobile android", "mac"… */
         platformClasses?: string;
+        /**
+         * The side as Anki's card text export writes it: no card page or styles around it, and
+         * nothing where a typed answer goes.
+         */
+        forTextExport?: boolean;
     }
 ): string {
     const template = noteType.templates[templateOrd] ||
@@ -605,7 +651,7 @@ export function renderCardHtml(
     // Build field map
     const fields: Record<string, string> = {};
     noteType.fields.forEach((f, i) => {
-        fields[f.name] = normalizeFieldHtml(note.fields[i] || '');
+        fields[f.name] = options?.forTextExport ? note.fields[i] || '' : normalizeFieldHtml(note.fields[i] || '');
     });
 
     const clozeOrd = noteType.kind === 'cloze'
@@ -624,6 +670,7 @@ export function renderCardHtml(
         cardFlag: options?.cardFlag,
         cardId: options?.cardId,
         typeAnswerInput: options?.typeAnswerInput,
+        noTypedAnswer: options?.forTextExport,
     };
     const shell = {
         ordinal: templateOrd,
@@ -636,7 +683,9 @@ export function renderCardHtml(
     // them too. Everything else in the rendered side is sanitized: a template is imported content
     // and must not bypass the field-level sanitizer.
     const templateCss: string[] = [];
-    const renderSide = (source: string, ctx: RenderContext): string => normalizeFieldHtml(
+    // A text export writes the card as Anki renders it; only a card shown on screen is sanitized.
+    const normalize = options?.forTextExport ? (html: string) => html : normalizeFieldHtml;
+    const renderSide = (source: string, ctx: RenderContext): string => normalize(
         renderTemplate(source, ctx).replace(
             /<style\b[^>]*>([\s\S]*?)<\/style>/gi,
             (_match, block: string) => { templateCss.push(block); return ''; },
@@ -652,13 +701,15 @@ export function renderCardHtml(
             : null)
         : (shouldGenerateCard(noteType, note, templateOrd) ? null : translateActive('anki.emptyFront'));
     if (emptyNotice) {
-        return wrapInCardHtml(`<div>${escapeHtml(emptyNotice)}</div>`, noteType.css, side, shell, '');
+        const notice = `<div>${escapeHtml(emptyNotice)}</div>`;
+        return options?.forTextExport ? notice : wrapInCardHtml(notice, noteType.css, side, shell, '');
     }
 
     const questionHtml = renderSide(template.qfmt, questionCtx);
 
     if (side === 'question') {
-        return wrapInCardHtml(questionHtml, noteType.css, 'question', shell, templateCss.join('\n'));
+        if (options?.forTextExport) return questionHtml;
+        return wrapInCardHtml(withOcclusionMasks(questionHtml), noteType.css, 'question', shell, templateCss.join('\n'));
     }
 
     // Render answer
@@ -675,7 +726,8 @@ export function renderCardHtml(
         omitFrontSide: options?.omitFrontSide,
     };
     const answerHtml = renderSide(template.afmt, answerCtx);
-    return wrapInCardHtml(answerHtml, noteType.css, 'answer', shell, templateCss.join('\n'));
+    if (options?.forTextExport) return answerHtml;
+    return wrapInCardHtml(withOcclusionMasks(answerHtml), noteType.css, 'answer', shell, templateCss.join('\n'));
 }
 
 /** All cloze-bearing fields participate, including multi-field AnKing-style note types. */

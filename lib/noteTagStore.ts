@@ -1,6 +1,5 @@
 import type { Note } from './models';
 import { dbUpsertFtsCard, getDB } from './db';
-import { markSourcePackageDirty } from './ankiPackageArchive';
 import {
     getAnkiCard,
     getCardsForNote,
@@ -50,7 +49,6 @@ export function setNoteTags(noteId: number, tags: string[]): boolean {
     if (sameTagList(stored.tags, nextTags)) return false;
 
     const next: Note = { ...stored, tags: nextTags, mod: Math.floor(Date.now() / 1000), usn: -1 };
-    markSourcePackageDirty(stored.sourcePackageId);
     getDB().runSync(
         'UPDATE notes SET tags = ?, data = ?, updated_at = ?, usn = ? WHERE id = ?',
         serializeTags(next.tags),

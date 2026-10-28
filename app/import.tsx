@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
@@ -34,13 +34,13 @@ import { importPackageWithBackup } from '../lib/packageImportWorkflow';
 import { getAllNoteTypes, getNoteType, type SearchIndexCard } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { localizeNoteTypeName } from '../lib/i18n';
-import { defaultDelimitedMapping, delimitedContainsHtml, parseDelimited, SEPARATOR_CHOICES, separatorChoiceForDelimiter } from '../lib/importDelimited';
+import { defaultDelimitedMapping, delimitedContainsHtml, parseDelimited, SEPARATOR_CHOICES } from '../lib/importDelimited';
 import { dbUpsertFtsCard, readOnlyTabMessage } from '../lib/db';
 import { commitCollectionWrite } from '../lib/collectionWrite';
 import { useI18n } from '../hooks/useI18n';
 import DeckPickerModal from '../components/DeckPickerModal';
 import NoteTypePickerModal from '../components/NoteTypePickerModal';
-import ImportLogView, { type ImportLogExtraLine } from '../components/ImportLogView';
+import ImportLogView from '../components/ImportLogView';
 import { BackupNotRestorableError, createBackupNow } from '../lib/backup';
 import {
     ALL_IMPORT_MIME_TYPES,
@@ -54,7 +54,12 @@ import { importLogFromCounts, type ImportLog } from '../lib/importLog';
 import ScreenHeader from '../components/ScreenHeader';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import { createImportStyles } from '../components/import/importStyles';
-import { ChevronDownIcon, ChoiceModal } from '../components/import/ImportControls';
+import { ChoiceModal } from '../components/import/ImportControls';
+import { importCopy, type PackageSummary, type UpdateChoice } from '../components/import/importCopy';
+import { importRowRenderers } from '../components/import/ImportRows';
+import ImportFilePrompt from '../components/import/ImportFilePrompt';
+import PackageImportOptions from '../components/import/PackageImportOptions';
+import FieldMappingSection, { type ColumnMapping } from '../components/import/FieldMappingSection';
 
 const MAX_TEXT_CHARS = 50_000_000;
 const MAX_TEXT_BYTES = 50 * 1024 * 1024;
@@ -70,20 +75,6 @@ type PickedFile = {
     type: ImportFileType;
     text: string | null;
     bytes: Uint8Array | null;
-};
-
-/** What a text column is mapped to: a note field, the tags field, or nothing. */
-type ColumnMapping = `field:${number}` | 'tags' | 'none';
-
-type PackageSummary = {
-    cardsImported?: number;
-    progressCards?: number;
-    progressReviews?: number;
-    mediaImported?: number;
-    mediaSkipped?: number;
-    mediaRenamed?: number;
-    withMedia?: number;
-    structurePreserved?: boolean;
 };
 
 type ImportOutcome = {
@@ -104,7 +95,7 @@ export default function ImportScreen() {
     }>();
     const incomingUri = params.incomingUri;
     const incomingName = params.incomingName;
-    const { settings } = useAppSettings();
+    const { settings, refreshSettings } = useAppSettings();
     const { collectionVersion: dataVersion, invalidateCollection: bumpDataVersion } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
     const colors = useThemeColors();
@@ -132,14 +123,13 @@ export default function ImportScreen() {
     // keeps it unless the learner says otherwise.
     const [withScheduling, setWithScheduling] = useState(true);
     const [withDeckConfigs, setWithDeckConfigs] = useState(true);
-    const [updateNotes, setUpdateNotes] = useState<'ifNewer' | 'always' | 'never'>('ifNewer');
-    const [updateNoteTypes, setUpdateNoteTypes] = useState<'ifNewer' | 'always' | 'never'>('ifNewer');
+    const [updateNotes, setUpdateNotes] = useState<UpdateChoice>('ifNewer');
+    const [updateNoteTypes, setUpdateNoteTypes] = useState<UpdateChoice>('ifNewer');
 
     const [showDeckPicker, setShowDeckPicker] = useState(false);
     const [showNoteTypePicker, setShowNoteTypePicker] = useState(false);
     const [showSeparatorPicker, setShowSeparatorPicker] = useState(false);
-    const [mappingColumn, setMappingColumn] = useState<number | null>(null);
-    const [choicePicker, setChoicePicker] = useState<null | 'existing' | 'matchScope' | 'updateNotes' | 'updateNoteTypes'>(null);
+    const [choicePicker, setChoicePicker] = useState<null | 'existing' | 'matchScope'>(null);
 
     const targetDeck = useMemo(
         () => getDeck(targetDeckId) ?? getDeckByName('Varsayılan') ?? getDeck(1),
@@ -211,15 +201,6 @@ export default function ImportScreen() {
      */
     const perRowNoteTypes = Boolean(metadata?.notetypeColumn);
 
-    const mappingLabel = (mapping: ColumnMapping): string => {
-        if (mapping.startsWith('field:')) {
-            const index = Number(mapping.slice(6));
-            return selectedNoteType.fields[index]?.name ?? l('Geçersiz alan', 'Invalid field');
-        }
-        if (mapping === 'tags') return l('Etiketler', 'Tags');
-        return l('Yok sayıldı', 'Ignored');
-    };
-
     const handleBack = () => {
         if (router.canGoBack()) router.back();
         else router.replace('/decks' as any);
@@ -228,7 +209,6 @@ export default function ImportScreen() {
     const resetOptions = () => {
         setOutcome(null);
         setColumnMappings({});
-        setMappingColumn(null);
         setSeparator(null);
     };
 
@@ -378,7 +358,6 @@ export default function ImportScreen() {
                         subject: targetDeck?.name ?? 'genel',
                         topic: 'Genel',
                         rolloverHour: settings.dayRolloverHour,
-                        fileName: file.name,
                         withScheduling: file.type === 'colpkg' ? true : withScheduling,
                         withDeckConfigs: file.type === 'colpkg' ? true : withDeckConfigs,
                         updateNotes,
@@ -418,7 +397,11 @@ export default function ImportScreen() {
                 if (next) {
                     // Index only the imported cards, not the whole collection (native FTS; no-op on web).
                     for (const card of indexed) dbUpsertFtsCard(card);
-                    if (file.type === 'colpkg') await refreshCatalogAccess();
+                    if (file.type === 'colpkg') {
+                        // The replaced collection brought its own options (next day starts at, FSRS…).
+                        refreshSettings();
+                        await refreshCatalogAccess();
+                    }
                 }
                 return next;
             });
@@ -499,144 +482,9 @@ export default function ImportScreen() {
         }
     };
 
-    const existingNotesLabel = (value: DuplicateResolution) => ({
-        update: l('Güncelle', 'Update'),
-        preserve: l('Koru', 'Preserve'),
-        duplicate: l('Kopyala', 'Duplicate'),
-    }[value]);
+    const { existingNotesLabel, matchScopeLabel, separatorLabel, packageExtraLines } = importCopy(l);
 
-    const matchScopeLabel = (value: MatchScope) => ({
-        notetype: l('Not türü', 'Note type'),
-        notetypeAndDeck: l('Not türü ve deste', 'Note type and deck'),
-    }[value]);
-
-    const updateChoiceLabel = (value: 'ifNewer' | 'always' | 'never') => ({
-        ifNewer: l('Yeniyse', 'If newer'),
-        always: l('Her zaman', 'Always'),
-        never: l('Asla', 'Never'),
-    }[value]);
-
-    const separatorLabel = (delimiter: string) => {
-        const choice = separatorChoiceForDelimiter(delimiter);
-        if (!choice) return l('Özel', 'Custom');
-        return {
-            comma: l('Virgül', 'Comma'),
-            semicolon: l('Noktalı virgül', 'Semicolon'),
-            tab: l('Sekme', 'Tab'),
-            space: l('Boşluk', 'Space'),
-            pipe: l('Dikey çizgi', 'Pipe'),
-            colon: l('İki nokta', 'Colon'),
-        }[choice];
-    };
-
-    const packageExtraLines = (summary: PackageSummary): ImportLogExtraLine[] => {
-        const lines: ImportLogExtraLine[] = [];
-        if (summary.cardsImported) {
-            lines.push({ text: l(`${summary.cardsImported} kart eklendi.`, `${summary.cardsImported} cards added.`) });
-        }
-        if (summary.progressCards) {
-            lines.push({ text: l(
-                `${summary.progressCards} kart çalışma ilerlemesiyle geldi.`,
-                `${summary.progressCards} cards arrived with learning progress.`,
-            ) });
-        }
-        if (summary.progressReviews) {
-            lines.push({ text: l(
-                `${summary.progressReviews} tekrar kaydı geçmişe eklendi.`,
-                `${summary.progressReviews} review entries were added to the history.`,
-            ) });
-        }
-        if (summary.mediaImported) {
-            lines.push({ text: l(
-                `${summary.mediaImported} medya dosyası içe aktarıldı.`,
-                `Imported ${summary.mediaImported} media files.`,
-            ) });
-        }
-        if (summary.mediaRenamed) {
-            lines.push({ text: l(
-                `${summary.mediaRenamed} çakışan medya dosyası güvenli bir adla eklendi.`,
-                `${summary.mediaRenamed} conflicting media files were added under safe new names.`,
-            ) });
-        }
-        if (summary.mediaSkipped) {
-            lines.push({ tone: 'warning', text: l(
-                `${summary.mediaSkipped} medya dosyası atlandı (eksik veya çok büyük).`,
-                `${summary.mediaSkipped} media files were skipped (missing or too large).`,
-            ) });
-        }
-        if (summary.withMedia && !summary.mediaImported) {
-            lines.push({ tone: 'warning', text: l(
-                `${summary.withMedia} not medya kullanıyor; medya dosyaları içe aktarılamadı.`,
-                `${summary.withMedia} notes reference media; the media files could not be imported.`,
-            ) });
-        }
-        if (summary.structurePreserved === false) {
-            lines.push({ tone: 'warning', text: l(
-                'Paketin deste ve not türü bilgisi okunamadı; notlar basitleştirilmiş not türleriyle içe aktarıldı.',
-                'The package\'s deck and note type data could not be read; notes were imported with simplified note types.',
-            ) });
-        }
-        if (summary.structurePreserved) {
-            lines.push({ text: l(
-                'Deste yapısı, not türleri, alanlar, şablonlar ve CSS korundu.',
-                'Deck structure, note types, fields, templates and CSS were retained.',
-            ) });
-        }
-        return lines;
-    };
-
-    const renderOptionRow = (
-        label: string,
-        value: string,
-        onPress: () => void,
-        accessibilityLabel?: string,
-    ) => (
-        <TouchableOpacity
-            style={styles.optionRow}
-            onPress={onPress}
-            accessibilityRole="button"
-            accessibilityLabel={accessibilityLabel ?? `${label}: ${value}`}
-        >
-            <Text style={styles.optionLabel} numberOfLines={1}>{label}</Text>
-            <Text style={styles.optionValue} numberOfLines={1}>{value}</Text>
-            <ChevronDownIcon color={colors.textMuted} size={18} />
-        </TouchableOpacity>
-    );
-
-    const renderToggleRow = (label: string, hint: string | null, checked: boolean, onToggle: () => void) => (
-        <TouchableOpacity
-            style={styles.toggleRow}
-            onPress={onToggle}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked }}
-            aria-checked={checked}
-            accessibilityLabel={label}
-        >
-            <View style={styles.toggleCopy}>
-                <Text style={styles.optionLabel}>{label}</Text>
-                {hint ? <Text style={styles.optionHint}>{hint}</Text> : null}
-            </View>
-            <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                {checked ? <Text style={styles.checkmark}>✓</Text> : null}
-            </View>
-        </TouchableOpacity>
-    );
-
-    const renderTagRow = (label: string, hint: string, value: string, onChange: (next: string) => void) => (
-        <View style={styles.tagRow}>
-            <Text style={styles.optionLabel}>{label}</Text>
-            <TextInput
-                style={styles.tagInput}
-                value={value}
-                onChangeText={onChange}
-                placeholder={hint}
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                accessibilityLabel={label}
-            />
-        </View>
-    );
+    const { renderOptionRow, renderToggleRow, renderTagRow } = importRowRenderers(styles, colors.textMuted);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -647,35 +495,7 @@ export default function ImportScreen() {
             />
             <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
                 {!file ? (
-                    <View style={styles.emptyCard}>
-                        <Text style={styles.emptyTitle}>{l('İçe aktarılacak dosyayı seçin', 'Choose a file to import')}</Text>
-                        <Text style={styles.emptyBody}>
-                            {l(
-                                'Dosyanın türü uzantısından anlaşılır ve içe aktarma seçenekleri ona göre açılır.',
-                                'The file type is taken from the extension, and the import options open to match it.',
-                            )}
-                        </Text>
-                        <View style={styles.formatList}>
-                            {([
-                                ['.apkg', l('Anki deste paketi — deste ağacı, not türleri, medya ve isteğe bağlı çalışma geçmişi.', 'Anki deck package — deck tree, note types, media and optional review history.')],
-                                ['.colpkg', l('Anki koleksiyon paketi — mevcut koleksiyonun yerine geçer.', 'Anki collection package — replaces the current collection.')],
-                                ['.csv / .tsv / .txt', l('Metin dosyası — alan eşlemesi ve #başlık satırları desteklenir.', 'Text file — field mapping and #header lines are supported.')],
-                            ] as const).map(([name, description]) => (
-                                <View key={name} style={styles.formatItem}>
-                                    <Text style={styles.formatName}>{name}</Text>
-                                    <Text style={styles.formatDescription}>{description}</Text>
-                                </View>
-                            ))}
-                        </View>
-                        <TouchableOpacity
-                            style={styles.primaryButton}
-                            onPress={pickFile}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Dosya seç', 'Choose file')}
-                        >
-                            <Text style={styles.primaryButtonText}>{l('Dosya seç', 'Choose File')}</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <ImportFilePrompt styles={styles} l={l} onPick={pickFile} />
                 ) : null}
 
                 {file ? (
@@ -777,151 +597,40 @@ export default function ImportScreen() {
                             )}
                         </View>
 
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>{l('ALAN EŞLEMESİ', 'FIELD MAPPING')}</Text>
-                            {perRowNoteTypes ? (
-                                <Text style={styles.optionHint}>
-                                    {l(
-                                        `Dosya her satırın not türünü ${metadata?.notetypeColumn}. sütunda veriyor. Kalan sütunlar, o satırın kendi alanlarına sırayla eşlenir.`,
-                                        `The file gives each row's note type in column ${metadata?.notetypeColumn}. The remaining columns are mapped in order onto that row's own fields.`,
-                                    )}
-                                </Text>
-                            ) : null}
-                            {!perRowNoteTypes && columnCount === 0 ? (
-                                <Text style={styles.optionHint}>
-                                    {l('Dosyada okunabilir satır bulunamadı.', 'No readable rows were found in the file.')}
-                                </Text>
-                            ) : null}
-                            {(perRowNoteTypes ? [] : Array.from({ length: visibleColumnCount })).map((_, column) => {
-                                const meta = metaColumns.get(column);
-                                const sample = previewRows.map((row) => row[column] ?? '').find(Boolean) ?? '';
-                                return (
-                                    <View key={column} style={styles.mappingRow}>
-                                        <View style={styles.mappingInfo}>
-                                            <Text style={styles.mappingColumn}>
-                                                {l(`Sütun ${column + 1}`, `Column ${column + 1}`)}
-                                            </Text>
-                                            <Text style={styles.mappingSample} numberOfLines={1}>
-                                                {sample || l('(boş)', '(empty)')}
-                                            </Text>
-                                        </View>
-                                        {meta ? (
-                                            <View style={styles.mappingLockedBadge}>
-                                                <Text style={styles.mappingLockedText} numberOfLines={1}>{meta}</Text>
-                                            </View>
-                                        ) : (
-                                            <TouchableOpacity
-                                                style={styles.mappingBadge}
-                                                onPress={() => setMappingColumn(column)}
-                                                accessibilityRole="button"
-                                                accessibilityLabel={l(
-                                                    `Sütun ${column + 1} eşlemesi: ${mappingLabel(mappingFor(column))}`,
-                                                    `Column ${column + 1} mapping: ${mappingLabel(mappingFor(column))}`,
-                                                )}
-                                            >
-                                                <Text style={styles.mappingBadgeText} numberOfLines={1}>
-                                                    {mappingLabel(mappingFor(column))}
-                                                </Text>
-                                                <ChevronDownIcon color={colors.accent} size={15} />
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
-                                );
-                            })}
-                            {!perRowNoteTypes && columnCount > visibleColumnCount ? (
-                                <Text style={styles.optionHint}>
-                                    {l(
-                                        `Yalnızca ilk ${visibleColumnCount} sütun gösteriliyor; kalan sütunlar yok sayılır.`,
-                                        `Only the first ${visibleColumnCount} columns are shown; the rest are ignored.`,
-                                    )}
-                                </Text>
-                            ) : null}
-                        </View>
-
-                        {previewRows.length > 0 ? (
-                            <View style={styles.section}>
-                                <Text style={styles.sectionTitle}>
-                                    {l(`ÖNİZLEME (İLK ${previewRows.length} SATIR)`, `PREVIEW (FIRST ${previewRows.length} ROWS)`)}
-                                </Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.previewTable}>
-                                    <View>
-                                        <View style={styles.previewHeaderRow}>
-                                            {Array.from({ length: visibleColumnCount }).map((_, column) => (
-                                                <View key={column} style={styles.previewCell}>
-                                                    <Text style={styles.previewHeaderText} numberOfLines={1}>
-                                                        {metaColumns.get(column)
-                                                            ?? (perRowNoteTypes
-                                                                ? l(`Sütun ${column + 1}`, `Column ${column + 1}`)
-                                                                : mappingLabel(mappingFor(column)))}
-                                                    </Text>
-                                                </View>
-                                            ))}
-                                        </View>
-                                        {previewRows.map((row, rowIndex) => (
-                                            <View key={rowIndex} style={styles.previewRow}>
-                                                {Array.from({ length: visibleColumnCount }).map((_, column) => (
-                                                    <View key={column} style={styles.previewCell}>
-                                                        <Text style={styles.previewCellText} numberOfLines={2}>
-                                                            {row[column] ?? ''}
-                                                        </Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                        ))}
-                                    </View>
-                                </ScrollView>
-                            </View>
-                        ) : null}
+                        <FieldMappingSection
+                            fields={selectedNoteType.fields}
+                            notetypeColumn={metadata?.notetypeColumn}
+                            columnCount={columnCount}
+                            visibleColumnCount={visibleColumnCount}
+                            previewRows={previewRows}
+                            metaColumns={metaColumns}
+                            defaultMapping={defaultMapping}
+                            mappingFor={mappingFor}
+                            setColumnMappings={setColumnMappings}
+                            styles={styles}
+                            accentColor={colors.accent}
+                            cancelLabel={t('common.cancel')}
+                            l={l}
+                        />
                     </>
                 ) : null}
 
                 {file && packageImport && !outcome ? (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}</Text>
-                        {file.type === 'apkg' ? (
-                            <>
-                                {renderToggleRow(
-                                    l('Çalışma ilerlemesini içe aktar', 'Import any learning progress'),
-                                    l(
-                                        'Kapalıysa kartlar yeni başlar; “marked” ve “leech” etiketleri ile kaynak çalışma geçmişi alınmaz.',
-                                        'When off, cards start as new; the “marked” and “leech” tags and the source review history are not imported.',
-                                    ),
-                                    withScheduling,
-                                    () => setWithScheduling((value) => !value),
-                                )}
-                                {renderToggleRow(
-                                    l('Deste ayarlarını içe aktar', 'Import any deck presets'),
-                                    null,
-                                    withDeckConfigs,
-                                    () => setWithDeckConfigs((value) => !value),
-                                )}
-                                <Text style={styles.subsectionTitle}>{l('GÜNCELLEMELER', 'UPDATES')}</Text>
-                                {renderOptionRow(
-                                    l('Notları güncelle', 'Update notes'),
-                                    updateChoiceLabel(updateNotes),
-                                    () => setChoicePicker('updateNotes'),
-                                )}
-                                {renderOptionRow(
-                                    l('Not türlerini güncelle', 'Update note types'),
-                                    updateChoiceLabel(updateNoteTypes),
-                                    () => setChoicePicker('updateNoteTypes'),
-                                )}
-                                <Text style={styles.optionHint}>
-                                    {l(
-                                        'Şeması değişmiş bir not türü birleştirilmez: paketteki tür ayrı bir kopya olarak eklenir ve yerel notlarınız olduğu gibi kalır.',
-                                        'A note type whose schema has changed is not merged: the package’s type is added as a separate copy and your local notes are left as they are.',
-                                    )}
-                                </Text>
-                            </>
-                        ) : (
-                            <Text style={styles.destructiveNotice}>
-                                {l(
-                                    '⚠️ Bu işlem kartlarınızı, destelerinizi ve çalışma geçmişinizi paketteki koleksiyonla değiştirecek. Mevcut medya dosyaları silinmez.',
-                                    '⚠️ This will replace your cards, decks and review history with the collection in the package. Existing media files are not deleted.',
-                                )}
-                            </Text>
-                        )}
-                    </View>
+                    <PackageImportOptions
+                        fileType={file.type === 'colpkg' ? 'colpkg' : 'apkg'}
+                        withScheduling={withScheduling}
+                        setWithScheduling={setWithScheduling}
+                        withDeckConfigs={withDeckConfigs}
+                        setWithDeckConfigs={setWithDeckConfigs}
+                        updateNotes={updateNotes}
+                        setUpdateNotes={setUpdateNotes}
+                        updateNoteTypes={updateNoteTypes}
+                        setUpdateNoteTypes={setUpdateNoteTypes}
+                        styles={styles}
+                        mutedColor={colors.textMuted}
+                        cancelLabel={t('common.cancel')}
+                        l={l}
+                    />
                 ) : null}
 
                 {outcome ? (
@@ -1051,73 +760,6 @@ export default function ImportScreen() {
                     setChoicePicker(null);
                 }}
                 onClose={() => setChoicePicker(null)}
-            />
-
-            <ChoiceModal
-                visible={choicePicker === 'updateNotes' || choicePicker === 'updateNoteTypes'}
-                title={choicePicker === 'updateNoteTypes'
-                    ? l('Not türlerini güncelle', 'Update note types')
-                    : l('Notları güncelle', 'Update notes')}
-                styles={styles}
-                cancelLabel={t('common.cancel')}
-                options={(['ifNewer', 'always', 'never'] as const).map((value) => ({
-                    value,
-                    label: updateChoiceLabel(value),
-                    selected: (choicePicker === 'updateNoteTypes' ? updateNoteTypes : updateNotes) === value,
-                }))}
-                onSelect={(value) => {
-                    const next = value as 'ifNewer' | 'always' | 'never';
-                    if (choicePicker === 'updateNoteTypes') setUpdateNoteTypes(next);
-                    else setUpdateNotes(next);
-                    setChoicePicker(null);
-                }}
-                onClose={() => setChoicePicker(null)}
-            />
-
-            <ChoiceModal
-                visible={mappingColumn !== null}
-                title={mappingColumn === null
-                    ? ''
-                    : l(`Sütun ${mappingColumn + 1} eşlemesi`, `Column ${mappingColumn + 1} mapping`)}
-                styles={styles}
-                cancelLabel={t('common.cancel')}
-                options={[
-                    ...selectedNoteType.fields.map((field, index) => ({
-                        value: `field:${index}`,
-                        label: field.name,
-                        selected: mappingColumn !== null && mappingFor(mappingColumn) === `field:${index}`,
-                    })),
-                    {
-                        value: 'tags',
-                        label: l('Etiketler', 'Tags'),
-                        selected: mappingColumn !== null && mappingFor(mappingColumn) === 'tags',
-                    },
-                    {
-                        value: 'none',
-                        label: l('Yok sayıldı', 'Ignored'),
-                        selected: mappingColumn !== null && mappingFor(mappingColumn) === 'none',
-                    },
-                ]}
-                onSelect={(value) => {
-                    if (mappingColumn === null) return;
-                    const target = value as ColumnMapping;
-                    setColumnMappings((current) => {
-                        const next = { ...current };
-                        // A note field can only come from one column, so claiming it releases the
-                        // column that held it — otherwise two columns would silently fight over it.
-                        if (target.startsWith('field:')) {
-                            for (let column = 0; column < columnCount; column++) {
-                                if (column !== mappingColumn && (next[column] ?? defaultMapping.get(column)) === target) {
-                                    next[column] = 'none';
-                                }
-                            }
-                        }
-                        next[mappingColumn] = target;
-                        return next;
-                    });
-                    setMappingColumn(null);
-                }}
-                onClose={() => setMappingColumn(null)}
             />
         </SafeAreaView>
     );

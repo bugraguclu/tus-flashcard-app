@@ -123,7 +123,8 @@ Aşağıdakiler bilinçli ürün kararı ya da henüz olmayan özelliktir. İlgi
 | İstatistik | True Retention ve FSRS grafikleri yok; ısı haritası yerine ayrı "Çalışma Takvimi" | STATS-04, 06, 07 |
 | FSRS araçları | Değerlendir, sağlık kontrolü ve simülatör yok | OPT-19, OPT-21 |
 | Yedek | Otomatik yedek haftada bir (Anki 30 dakikada bir); silinen not günlüğü yok | BACKUP-01, BACKUP-04 |
-| Eşitleme, profiller, eklentiler, Image Occlusion | Yok | MISSING-01…05 |
+| Eşitleme, profiller, eklentiler | Yok | MISSING-01…04 |
+| Image Occlusion | Renkler kısa bir paletten seçilir; Anki'nin hizalama araçları yok | MISSING-05 |
 | Okuyucu | Sülük bildirimi yok; aralık etiketleri İngilizce arayüzde de Türkçe | WHY-05, PREFS-01 |
 | Katalog desteleri | "TUS Kartları" korumalı: yeniden adlandırılamaz, silinemez, dışa aktarılamaz | START-08, DECK-03, DECK-04 |
 
@@ -157,9 +158,9 @@ Aşağıdakiler bilinçli ürün kararı ya da henüz olmayan özelliktir. İlgi
   answer), Cloze ve Image Occlusion.
   [Kılavuz](https://docs.ankiweb.net/manual/getting-started#note-types)
 - **TusAnkiM:** Editörde "Tür:" → "Not türü" listesi: "Temel", "Temel (ve ters kart)", "Temel
-  (seçimli ters kart)", "Temel (yanıtı yazarak)", "Boşluklu".
-- **Geçer:** Cevap bu beş türü doğru adlarıyla sayar ve ne işe yaradıklarını söyler.
-- **Bilinen fark:** Image Occlusion yok.
+  (seçimli ters kart)", "Temel (yanıtı yazarak)", "Boşluklu", "Görüntü Örtme".
+- **Geçer:** Cevap bu altı türü doğru adlarıyla sayar ve ne işe yaradıklarını söyler.
+- **Bilinen fark:** Yok.
 
 #### START-04 · Soru · P1
 - **Kullanıcı:** "Yeni, öğrenme, tekrar kart ne demek? 'Olgun kart' ne?"
@@ -1463,10 +1464,14 @@ yolu söylemeli.
 #### MISSING-05 · İstek · P1
 - **Kullanıcı:** "Anatomi görselindeki yapıları kapatarak kart yap."
 - **Anki:** Image Occlusion not türü. [Kılavuz](https://docs.ankiweb.net/manual/editing#image-occlusion)
-- **TusAnkiM:** Yok. Fotoğraf düzenleyicide ("Kırp ve düzenle") görselin üstüne çizilebilir, ama
-  her alan için ayrı kart üretilmez.
-- **Geçer:** Ajan farkı söyler, çizimi Image Occlusion gibi sunmaz.
-- **Bilinen fark:** Image Occlusion yok.
+- **TusAnkiM:** Not ekle → "Tür:" → "Görüntü Örtme" → "Galeriden görsel seç"; açılan maske
+  düzenleyicide Dikdörtgen/Elips/Çokgen/Metin ile maske çizilir, "Çoklu" ile seçilenler "Grupla" ile
+  tek soru olur, üstteki seçenek "Hepsini gizle, birini sor" ya da "Birini gizle, birini sor"dur;
+  seçili maske üstündeki tutamaçla ya da ↺/↻ ile döner, "Renk" ile boyanır, çokgenin köşeleri
+  sürüklenir, kenar ortasındaki noktayla köşe eklenir, "Köşeyi sil" ile çıkarılır;
+  "Tamam" ve ✓ ile her maske (grup) bir kart olur.
+- **Geçer:** Ajan bu yolu anlatır ve kartları oluşturur.
+- **Bilinen fark:** Renkler kısa bir paletten seçilir; Anki'nin hizalama araçları yok.
 
 ---
 

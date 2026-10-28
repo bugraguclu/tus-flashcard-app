@@ -3,7 +3,6 @@
  * https://github.com/ankitects/anki/blob/main/rslib/src/card/mod.rs
  */
 import { getDB } from './db';
-import { markSourcePackageDirty } from './ankiPackageArchive';
 import { DEFAULT_DECK_CONFIG, type AnkiCard, type DeckConfig } from './models';
 export function remainingAfterStepChange(left: number, previous: number[], next: number[]): number {
     const remaining = Math.max(0, Math.floor(left)) % 1000;
@@ -33,7 +32,6 @@ export function remapDeckLearningSteps(deckIds: number[], before: DeckConfig, af
         card.left = left;
         card.mod = Math.floor(Date.now() / 1000);
         card.usn = -1;
-        markSourcePackageDirty(card.sourcePackageId);
         db.runSync('UPDATE anki_cards SET "left" = ?, data = ?, updated_at = ?, usn = -1 WHERE id = ?', left, JSON.stringify(card), Date.now(), card.id);
     }
 }

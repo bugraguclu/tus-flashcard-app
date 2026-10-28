@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-10-25",
+  "lastVerified": "2026-10-27",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -264,7 +264,15 @@
       "platform": "collection schema",
       "url": "https://github.com/ankitects/anki/blob/main/proto/anki/decks.proto",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["filtered deck search term ordinals", "filtered deck config fields"]
+      "useFor": ["filtered deck search term ordinals", "filtered deck config fields", "schema-18 Deck.Common (collapsed flags, the day and counts studied, other) and Deck.Normal (preset, extend limits, description, Markdown flag, deck limits and their today values, desired retention) read by lib/ankiSchema18.ts"]
+    },
+    {
+      "id": "anki-source-notetype-proto",
+      "priority": 2,
+      "platform": "collection schema",
+      "url": "https://github.com/ankitects/anki/blob/main/proto/anki/notetypes.proto",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["note type, field and template config field numbers in schema-18 collections", "the 64-bit field and template ids and original_id Anki matches note types by on import", "original_stock_kind, card requirements and the other bytes that carry keys Anki does not model"]
     },
     {
       "id": "anki-source-sqlite-collations",
@@ -280,7 +288,7 @@
       "platform": "package import and export",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/gather.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["the decks a package import or export takes: those holding its cards, their original decks only with scheduling, and every parent", "the Default deck left out without scheduling, so its cards join the importing collection's own"]
+      "useFor": ["the decks a package import or export takes: those holding its cards, their original decks only with scheduling, and every parent", "the Default deck left out without scheduling, so its cards join the importing collection's own", "a deck selection takes the cards that are in those decks, not cards gathered from them into a filtered deck", "without scheduling a filtered deck holding exported cards goes out as a regular deck with the cards still in it", "a deck package carries only the media its notes and note types use; a collection package carries the whole media folder"]
     },
     {
       "id": "anki-source-deck-schema11",
@@ -540,7 +548,7 @@
       "priority": 3,
       "platform": "cross-platform plain-text export",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/csv/export.rs",
-      "useFor": ["include HTML and media references", "style block and typing placeholder removal", "#separator and column header lines"]
+      "useFor": ["include HTML and media references", "style block and typing placeholder removal", "#separator and column header lines", "the text line a field becomes without HTML: <br>, a bare <div> and a newline each one space, AV tags and markup dropped, entities decoded, ends trimmed, inner spaces kept", "every row, the last included, ends with a newline", "Cards in Plain Text: each side rendered without the card page, the answer starting after <hr id=answer>, sound tags kept as [sound:] with HTML"]
     },
     {
       "id": "anki-source-stats-graphs",
@@ -573,6 +581,14 @@
       "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src",
       "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 (29bb700b) on 2026-10-23 by scripts/anki-oracle (FSRS-A scheduling fixture), gen_optimize.py (FSRS-B optimizer fixture) and gen_fsrs_ops.py (collection-operation fixture)",
       "useFor": ["FSRS-A oracle in test/fixtures/anki-26.09-fsrs.json: states, memory replay, answers, fuzz, load balancing, rescheduling, Reset Card, preview and sort keys; optimizer excluded", "minimum_review_fuzz_interval keeping the previous interval inside the bounded fuzz window (#4826), independently implemented for answers and rescheduling and verified by the 26.09 oracle", "collection-operation oracle in test/fixtures/anki-26.09-fsrs-ops.json, replayed by lib/fsrsCollectionOps.test.ts", "Set Due Date deciding by the collection FSRS switch and keeping new and ivl 0 cards at 0 (#4792); 80 recorded cases and the first answer after it", "Change Deck recomputing memory states of memory-less cards in the target deck only, without rescheduling (#5339, #5500)", "Check Database setting, correcting and removing lrt from the last scheduling-affecting answer since the last reset (#4648)", "future ignore-before dates clamped to the collection today on save (#5294)", "export without scheduling emptying only the FSRS parameter lists, keeping desired/historical retention and the cutoff (#4721); lib/ankiPackageRoundtrip.test.ts", "card info computing a missing memory state without saving it, hiding ease under FSRS and showing whole percentages (#5326, #5648, #5277); covered by lib/fsrsCardInfo.test.ts", "retrievability filtered-deck orders hidden without FSRS, a saved one shown as Random as qt/aqt/filtered_deck.py does (#5407); lib/filteredDeckOptions.test.ts", "compute_params training with card ids and 8 epochs; recorded in test/fixtures/anki-26.09-optimize.json; collectFsrsTrainingItems supplies non-persisted cardId metadata, covered by an interleaved-history test"]
+    },
+    {
+      "id": "anki-26.09.3-package-roundtrip-oracle",
+      "priority": 2,
+      "platform": "package and plain-text interchange, measured against Anki 26.09.3",
+      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/import_export",
+      "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 on 2026-10-27 by scripts/anki-oracle/roundtrip.py",
+      "useFor": ["test/fixtures/anki-26.09-roundtrip.apkg, -legacy.apkg and .colpkg: one learner's collection in each package format, read by lib/ankiSchema18.test.ts and lib/ankiPackageStability.test.ts", "the schema-11 JSON Anki writes for every schema-18 note type, deck and preset, key for key, including field and template ids beyond 2^53", "a legacy collection without col.conf schedVer 2 read as the v1 scheduler, which renumbers learning answers", "a collection package keeping its creation day, its settings and the shared options (rollover, collapseTime, timeLim, fsrs, fsrsShortTermWithStepsEnabled, applyAllParentLimits, newCardsIgnoreReviewLimit)", "Anki's own Default preset 1 and stock note types stamped mod 0", "test/fixtures/anki-26.09-{notes,cards}-{html,text}.txt: Anki's plain-text exports of the collection package, matched byte for byte by lib/textExport.ankiParity.test.ts", "lib/ankiRoundtrip.oracle.test.ts: 100 passes app → Anki → app for a deck package, a collection package and a collection made in the app, each compared with Anki's view of the first"]
     },
     {
       "id": "fsrs-rs-6.6.2",
@@ -1244,6 +1260,30 @@
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/template.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["empty-front and missing-cloze notice on both sides"]
+    },
+    {
+      "id": "anki-manual-image-occlusion",
+      "priority": 1,
+      "platform": "cross-platform note/card semantics",
+      "url": "https://docs.ankiweb.net/editing.html#image-occlusion",
+      "useFor": [
+        "Image Occlusion notes: masks, groups, Hide All, Guess One and Hide One, Guess One",
+        "the Header and Back Extra fields beside the masks"
+      ]
+    },
+    {
+      "id": "anki-26.09.3-image-occlusion-oracle",
+      "priority": 2,
+      "platform": "Image Occlusion note format, measured against Anki 26.09.3",
+      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/image_occlusion",
+      "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 on 2026-10-28 by scripts/anki-oracle/image_occlusion.py",
+      "useFor": [
+        "the stock Image Occlusion note type (originalStockKind 6, field tags 0-4) a new collection holds",
+        "the Occlusion field grammar: a name runs to the first =, a value to an unescaped colon, \\: and \\\\ are the only escapes; numbers to four decimals without outer zeros, angles in ten-thousandths of a turn, label size as a fraction of the image height, labels as c0",
+        "a c0 occlusion rendered as an asked shape on both sides of every card; attribute characters as hex references of at least two digits",
+        "lib/imageOcclusion.oracle.test.ts: notes made in the app load the same shapes into Anki's Image Occlusion editor and render the same shape divs on every card",
+        "turned, coloured and reshaped shapes: an angle and fill Anki's editor loads as written, a polygon's left/top at its points' top-left corner"
+      ]
     }
   ],
   "requiredDocs": [

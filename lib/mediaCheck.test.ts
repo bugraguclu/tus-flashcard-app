@@ -28,15 +28,13 @@ beforeEach(() => {
     for (const name of ['used.png', 'orphan.mp3', '_template.css', 'tusanki-source-a.apkg', 'tusanki-source-b.apkg', 'css.woff']) h.files.set(`file:///docs/tus-media/${name}`, 'x');
     h.db.runSync('INSERT INTO notes (id, data) VALUES (1, ?)', JSON.stringify({ fields: ['<img src="used.png">', '[sound:gone.mp3]'] }));
     h.db.runSync('INSERT INTO note_types (id, name, data) VALUES (1, ?, ?)', 'T', JSON.stringify({ css: '@font-face { src: url("css.woff"); }', templates: [{ qfmt: '{{Front}}', afmt: '' }] }));
-    h.db.runSync('INSERT INTO settings (key, value) VALUES (?, ?), (?, ?)',
-        'anki_source_package_v1:a', JSON.stringify({ archiveName: 'tusanki-source-a.apkg', exactEligible: true, dirty: false }),
-        'anki_source_package_v1:b', JSON.stringify({ archiveName: 'tusanki-source-b.apkg', exactEligible: true, dirty: true }));
 });
 
 describe('Check Media', () => {
-    it('reports unused and missing files, keeping _ files and usable package copies', async () => {
+    it('reports unused and missing files, keeping _ files', async () => {
         const result = await checkMedia();
-        expect(result.unused).toEqual(['orphan.mp3', 'tusanki-source-b.apkg']);
+        // Package copies kept by earlier versions of the app are no longer used.
+        expect(result.unused).toEqual(['orphan.mp3', 'tusanki-source-a.apkg', 'tusanki-source-b.apkg']);
         expect(result.missing).toEqual(['gone.mp3']);
         expect(result.storedCount).toBe(6);
     });
@@ -45,11 +43,11 @@ describe('Check Media', () => {
         const { unused } = await checkMedia();
         h.db.runSync('INSERT INTO notes (id, data) VALUES (2, ?)', JSON.stringify({ fields: ['<img src="orphan.mp3">'] }));
         const { moved } = await moveUnusedMediaToTrash(unused);
-        expect(moved).toBe(1);
+        expect(moved).toBe(2);
         expect(h.files.has('file:///docs/tus-media/orphan.mp3')).toBe(true);
         expect(h.files.has('file:///docs/tus-media/tusanki-source-b.apkg')).toBe(false);
         expect([...h.files.keys()].some((key) => key.startsWith('file:///docs/tus-media-trash/') && key.endsWith('tusanki-source-b.apkg'))).toBe(true);
-        expect(await restoreMediaTrash()).toEqual({ restored: 1, skipped: 0 });
+        expect(await restoreMediaTrash()).toEqual({ restored: 2, skipped: 0 });
         expect(h.files.has('file:///docs/tus-media/tusanki-source-b.apkg')).toBe(true);
     });
 });

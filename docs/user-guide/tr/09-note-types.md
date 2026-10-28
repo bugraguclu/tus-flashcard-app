@@ -214,7 +214,7 @@ Boşluk doldurma türüne geçerken bütün kartlar korunur. Bitince gelen pence
 
 > **Anki'den farkı:** Şablonlardaki betikler (JavaScript) güvenlik için çalıştırılmaz; bu tür
 > kartlar sade görünebilir. MathJax formülleri işlenmiş hâlde gösterilmez; kaynak metin görünür.
-> Görüntü örtme (Image Occlusion) notu oluşturulamaz. Eklentilere ait süzgeçler yok sayılır.
+> Görüntü örtme (Image Occlusion) maskelerinin renkleri kısa bir paletten seçilir. Eklentilere ait süzgeçler yok sayılır.
 
 ## İlgili konular
 

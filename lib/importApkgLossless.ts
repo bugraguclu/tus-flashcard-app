@@ -1,5 +1,6 @@
 import { withoutPackageSchedulingData } from './importApkgCardData';
 import { readLegacyCollectionMeta, numberValue, importedNoteType, importedDeckConfig, importedDeck } from './importApkgMetadata';
+import { rememberCollection } from './ankiCollectionConfig';
 import { sameImportedNoteShape, importedPresetKey } from './importApkgIdentity';
 import { searchIndexCardFromNote } from './noteManager';
 import {
@@ -134,6 +135,8 @@ export function importAnkiReaderLossless(
             for (const prefix of QUEUE_BOOKKEEPING_PREFIXES) {
                 db.runSync('DELETE FROM settings WHERE substr(key, 1, ?) = ?', prefix.length, prefix);
             }
+            // The replacing collection's creation day and settings, which an export writes back.
+            rememberCollection({ crt: meta.crt, conf: meta.conf });
         }
         const reservedTypeNames = new Set(existingNoteTypes.map((row) => row.name));
         const writtenNoteTypeIds = new Set<number>();

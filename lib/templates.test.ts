@@ -12,6 +12,8 @@ import {
     typeAnswerPlainText,
     shouldGenerateCard,
     sanitizeUntrustedHtml,
+    renderClozeAnswer,
+    renderClozeQuestion,
 } from './templates';
 
 describe('clozeFieldIndex', () => {
@@ -56,7 +58,7 @@ describe('clozeFieldIndex', () => {
             fields: ['Kalp {{c1::dört}} odacıklıdır', ''], sfld: '', csum: 0, flags: 0,
         }, 0, 'question');
         // Anki chains filters right-to-left, so `cloze` runs and the unknown `edit` is skipped.
-        expect(html).toContain('<span class="cloze" data-cloze="dört" data-ordinal="1">[...]</span>');
+        expect(html).toContain('<span class="cloze" data-cloze="d&#xF6;rt" data-ordinal="1">[...]</span>');
         expect(html).not.toContain('edit:cloze');
     });
 });
@@ -452,7 +454,7 @@ describe('Anki cloze parity (rslib/src/cloze.rs)', () => {
     it('nests deletions the way Anki does', () => {
         const html = render('{{c1::dış {{c2::iç}}}}', 2, 'question');
         expect(html).toContain('<span class="cloze-inactive" data-ordinal="1">');
-        expect(html).toContain('<span class="cloze" data-cloze="iç" data-ordinal="2">[...]</span>');
+        expect(html).toContain('<span class="cloze" data-cloze="i&#xE7;" data-ordinal="2">[...]</span>');
     });
 
     it('leaves an unclosed deletion as literal text', () => {
@@ -529,7 +531,7 @@ describe('Anki template parity (rslib/src/template.rs)', () => {
             fields: ['{{c1::<span style="color: var(--field-fg)">%70</span>}}'], sfld: '', csum: 0, flags: 0,
         }, 0, 'question', { clozeOrd: 1 });
 
-        expect(html).toContain('<span class="cloze" data-cloze="&lt;span style=&quot;color: var(--field-fg)&quot;&gt;%70&lt;/span&gt;" data-ordinal="1">[...]</span>');
+        expect(html).toContain('<span class="cloze" data-cloze="&lt;span&#x20;style&#x3D;&quot;color&#x3A;&#x20;var&#x28;&#x2D;&#x2D;field&#x2D;fg&#x29;&quot;&gt;&#x25;70&lt;&#x2F;span&gt;" data-ordinal="1">[...]</span>');
     });
 
     it('builds Anki document classes: platform on the outside, card cardN on the card', () => {
@@ -879,3 +881,48 @@ describe('typeAnswerPlainText', () => {
     });
 });
 
+
+describe('Image Occlusion deletions as Anki 26.09.3 renders them', () => {
+    // Recorded from Anki 26.09.3 through scripts/anki-oracle: the same field rendered for its
+    // first and second card, and one with properties Anki keeps, renames or leaves out.
+    const field = '{{c1::image-occlusion:rect:left=.1:top=.1:width=.3:height=.2:oi=1}}'
+        + '{{c2::image-occlusion:ellipse:left=.5:top=.5:rx=.1:ry=.2}} {{c2::image-occlusion:text:left=.2:top=.3:text=Kalp a&amp;b:scale=1.5:fs=0.04}}'
+        + ' {{c3::image-occlusion:polygon:points=1,2 3,4 5,6:oi=1::ipucu}} {{c1::düz metin}}';
+    const rect = (cls: string) => `<div class="${cls}" data-ordinal="1" data-shape="rect" data-left=".1" data-top=".1" data-width=".3" data-height=".2" data-occludeInactive="1" ></div>`;
+    const ellipse = (cls: string) => `<div class="${cls}" data-ordinal="2" data-shape="ellipse" data-left=".5" data-top=".5" data-rx=".1" data-ry=".2" ></div>`;
+    const text = (cls: string) => `<div class="${cls}" data-ordinal="2" data-shape="text" data-left=".2" data-top=".3" data-text="Kalp&#x20;a&amp;amp&#x3B;b" data-scale="1.5" data-font-size="0.04" ></div>`;
+    const polygon = (cls: string) => `<div class="${cls}" data-ordinal="3" data-shape="polygon" data-points="1,2 3,4 5,6" data-occludeInactive="1" ></div>`;
+
+    it('asks, highlights and leaves the other shapes inactive', () => {
+        expect(renderClozeQuestion(field, 1)).toBe(`${rect('cloze')}${ellipse('cloze-inactive')} ${text('cloze-inactive')} ${polygon('cloze-inactive')} <span class="cloze" data-cloze="d&#xFC;z&#x20;metin" data-ordinal="1">[...]</span>`);
+        expect(renderClozeAnswer(field, 1)).toBe(`${rect('cloze-highlight')}${ellipse('cloze-inactive')} ${text('cloze-inactive')} ${polygon('cloze-inactive')} <span class="cloze" data-ordinal="1">düz metin</span>`);
+        expect(renderClozeQuestion(field, 2)).toBe(`${rect('cloze-inactive')}${ellipse('cloze')} ${text('cloze')} ${polygon('cloze-inactive')} <span class="cloze-inactive" data-ordinal="1">düz metin</span>`);
+    });
+
+    it('keeps the properties Anki knows and only the exact prefix', () => {
+        expect(renderClozeQuestion('{{c1::image-occlusion:rect:left=.1:angle=30:foo=1:width=a b:text=x=y:oi=0:fs=2}}'
+            + '{{c1::image-occlusion:text:text=a\'b"c}}{{c1::image-occlusion:}}{{c1::IMAGE-OCCLUSION:rect:left=1}}'
+            + '{{c1::image-occlusion:rect:left=.1:fill=#00ff00:ordinal=3:id=x:stroke=1}}', 1)).toBe(
+            '<div class="cloze" data-ordinal="1" data-shape="rect" data-left=".1" data-angle="30" data-width="a b" data-text="x&#x3D;y" data-occludeInactive="0" data-font-size="2" ></div>'
+            + '<div class="cloze" data-ordinal="1" data-shape="text" data-text="a&#x27;b&quot;c" ></div><div class="cloze" data-ordinal="1" ></div>'
+            + '<span class="cloze" data-cloze="IMAGE&#x2D;OCCLUSION&#x3A;rect&#x3A;left&#x3D;1" data-ordinal="1">[...]</span>'
+            + '<div class="cloze" data-ordinal="1" data-shape="rect" data-left=".1" data-fill="#00ff00" ></div>');
+    });
+
+    it('asks a c0 label on both sides of every card, and keeps a :: inside an occlusion', () => {
+        const field = '{{c0::image-occlusion:text:left=.2}}{{c1::image-occlusion:rect:left=0::top=.1}} {{c0::plain}}';
+        expect(renderClozeQuestion(field, 1)).toBe('<div class="cloze" data-ordinal="0" data-shape="text" data-left=".2" ></div>'
+            + '<div class="cloze" data-ordinal="1" data-shape="rect" data-left="0" ></div> <span class="cloze-inactive" data-ordinal="0">plain</span>');
+        expect(renderClozeAnswer(field, 2)).toBe('<div class="cloze" data-ordinal="0" data-shape="text" data-left=".2" ></div>'
+            + '<div class="cloze-inactive" data-ordinal="1" data-shape="rect" data-left="0" ></div> <span class="cloze-inactive" data-ordinal="0">plain</span>');
+    });
+
+    it('reads escaped and malformed labels as Anki does', () => {
+        const label = (text: string) => renderClozeQuestion(`{{c1::image-occlusion:text:left=.1:top=.2:text=${text}:scale=1:fs=.04}}`, 1);
+        const start = '<div class="cloze" data-ordinal="1" data-shape="text" data-left=".1" data-top=".2" ';
+        expect(label('a\\:b')).toBe(`${start}data-text="a&#x3A;b" data-scale="1" data-font-size=".04" ></div>`);
+        expect(label('a\\\\c')).toBe(`${start}data-text="a&#x5C;c" data-scale="1" data-font-size=".04" ></div>`);
+        expect(label('a:b')).toBe(`${start}data-text="a" data-font-size=".04" ></div>`);
+        expect(label('a\\xb')).toBe(`${start}></div>`);
+    });
+});

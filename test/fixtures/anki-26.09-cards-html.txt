@@ -1,0 +1,118 @@
+#separator:tab
+#html:true
+Kalbin doğal pacemaker'ı?	"SA düğümü<img src=""kalp.png"">"
+Digoksin	Na⁺/K⁺-ATPaz inhibitörü
+Na⁺/K⁺-ATPaz inhibitörü	Digoksin
+"<span class=""cloze-inactive"" data-ordinal=""1"">Aspirin</span> COX'u <span class=""cloze"" data-cloze=""geri&#x20;d&#xF6;n&#xFC;ş&#xFC;ms&#xFC;z"" data-ordinal=""2"">[nasıl?]</span> inhibe eder. <span class=""cloze-inactive"" data-ordinal=""3"">TXA2</span>"	"<span class=""cloze-inactive"" data-ordinal=""1"">Aspirin</span> COX'u <span class=""cloze"" data-ordinal=""2"">geri dönüşümsüz</span> inhibe eder. <span class=""cloze-inactive"" data-ordinal=""3"">TXA2</span><br>
+Trombosit ömrü boyunca [sound:üfürüm.mp3]"
+"<span class=""cloze"" data-cloze=""Aspirin"" data-ordinal=""1"">[...]</span> COX'u <span class=""cloze-inactive"" data-ordinal=""2"">geri dönüşümsüz</span> inhibe eder. <span class=""cloze-inactive"" data-ordinal=""3"">TXA2</span>"	"<span class=""cloze"" data-ordinal=""1"">Aspirin</span> COX'u <span class=""cloze-inactive"" data-ordinal=""2"">geri dönüşümsüz</span> inhibe eder. <span class=""cloze-inactive"" data-ordinal=""3"">TXA2</span><br>
+Trombosit ömrü boyunca [sound:üfürüm.mp3]"
+"<span class=""cloze-inactive"" data-ordinal=""1"">Aspirin</span> COX'u <span class=""cloze-inactive"" data-ordinal=""2"">geri dönüşümsüz</span> inhibe eder. <span class=""cloze"" data-cloze=""TXA2"" data-ordinal=""3"">[...]</span>"	"<span class=""cloze-inactive"" data-ordinal=""1"">Aspirin</span> COX'u <span class=""cloze-inactive"" data-ordinal=""2"">geri dönüşümsüz</span> inhibe eder. <span class=""cloze"" data-ordinal=""3"">TXA2</span><br>
+Trombosit ömrü boyunca [sound:üfürüm.mp3]"
+"<div class=""tus"">Metoprolol</div>"	"β1 seçici bloker<br>Bradikardi<img src=""şema 2.png"">"
+β1 seçici bloker	Metoprolol
+Tip 2 diyabette ilk basamak?	Metformin
+"a &lt; b &amp;&amp; ""c""<br>ikinci satır &nbsp; 🫀"	"<div style=""color: red"">x</div><img src=""ekg.svg"">
+<ul><li>1</li></ul>"
+Yalnız ön	
+Lapse	Relearn
+Öğreniliyor	Adım
+"Yaz
+
+"	
+"<div>Kalp</div>
+<div style=""display: none""><div class=""cloze"" data-ordinal=""1"" data-shape=""rect"" data-left="".1"" data-top="".1"" data-width="".3"" data-height="".2"" data-occludeInactive=""1"" ></div><div class=""cloze-inactive"" data-ordinal=""2"" data-shape=""ellipse"" data-left="".5"" data-top="".5"" data-rx="".1"" data-ry="".2"" ></div><div class=""cloze-inactive"" data-ordinal=""2"" data-shape=""text"" data-left="".2"" data-top="".3"" data-text=""Sol&#x20;&amp;&#x20;sağ"" data-scale=""1.5"" data-font-size=""0.04"" ></div><div class=""cloze-inactive"" data-ordinal=""3"" data-shape=""polygon"" data-points=""1,2 3,4 5,6"" data-occludeInactive=""1"" ></div></div>
+<div id=""err""></div>
+<div id=""image-occlusion-container"">
+    <img src=""kalp.png"">
+    <canvas id=""image-occlusion-canvas""></canvas>
+</div>
+<script>
+try {
+    anki.imageOcclusion.setup();
+} catch (exc) {
+    document.getElementById(""err"").innerHTML = `Error loading image occlusion. Is your Anki version up to date?<br><br>${exc}`;
+}
+</script>
+"	"<div>Kalp</div>
+<div style=""display: none""><div class=""cloze-highlight"" data-ordinal=""1"" data-shape=""rect"" data-left="".1"" data-top="".1"" data-width="".3"" data-height="".2"" data-occludeInactive=""1"" ></div><div class=""cloze-inactive"" data-ordinal=""2"" data-shape=""ellipse"" data-left="".5"" data-top="".5"" data-rx="".1"" data-ry="".2"" ></div><div class=""cloze-inactive"" data-ordinal=""2"" data-shape=""text"" data-left="".2"" data-top="".3"" data-text=""Sol&#x20;&amp;&#x20;sağ"" data-scale=""1.5"" data-font-size=""0.04"" ></div><div class=""cloze-inactive"" data-ordinal=""3"" data-shape=""polygon"" data-points=""1,2 3,4 5,6"" data-occludeInactive=""1"" ></div></div>
+<div id=""err""></div>
+<div id=""image-occlusion-container"">
+    <img src=""kalp.png"">
+    <canvas id=""image-occlusion-canvas""></canvas>
+</div>
+<script>
+try {
+    anki.imageOcclusion.setup();
+} catch (exc) {
+    document.getElementById(""err"").innerHTML = `Error loading image occlusion. Is your Anki version up to date?<br><br>${exc}`;
+}
+</script>
+
+<div><button id=""toggle"">Toggle Masks</button></div>
+
+"
+"<div>Kalp</div>
+<div style=""display: none""><div class=""cloze-inactive"" data-ordinal=""1"" data-shape=""rect"" data-left="".1"" data-top="".1"" data-width="".3"" data-height="".2"" data-occludeInactive=""1"" ></div><div class=""cloze"" data-ordinal=""2"" data-shape=""ellipse"" data-left="".5"" data-top="".5"" data-rx="".1"" data-ry="".2"" ></div><div class=""cloze"" data-ordinal=""2"" data-shape=""text"" data-left="".2"" data-top="".3"" data-text=""Sol&#x20;&amp;&#x20;sağ"" data-scale=""1.5"" data-font-size=""0.04"" ></div><div class=""cloze-inactive"" data-ordinal=""3"" data-shape=""polygon"" data-points=""1,2 3,4 5,6"" data-occludeInactive=""1"" ></div></div>
+<div id=""err""></div>
+<div id=""image-occlusion-container"">
+    <img src=""kalp.png"">
+    <canvas id=""image-occlusion-canvas""></canvas>
+</div>
+<script>
+try {
+    anki.imageOcclusion.setup();
+} catch (exc) {
+    document.getElementById(""err"").innerHTML = `Error loading image occlusion. Is your Anki version up to date?<br><br>${exc}`;
+}
+</script>
+"	"<div>Kalp</div>
+<div style=""display: none""><div class=""cloze-inactive"" data-ordinal=""1"" data-shape=""rect"" data-left="".1"" data-top="".1"" data-width="".3"" data-height="".2"" data-occludeInactive=""1"" ></div><div class=""cloze-highlight"" data-ordinal=""2"" data-shape=""ellipse"" data-left="".5"" data-top="".5"" data-rx="".1"" data-ry="".2"" ></div><div class=""cloze-highlight"" data-ordinal=""2"" data-shape=""text"" data-left="".2"" data-top="".3"" data-text=""Sol&#x20;&amp;&#x20;sağ"" data-scale=""1.5"" data-font-size=""0.04"" ></div><div class=""cloze-inactive"" data-ordinal=""3"" data-shape=""polygon"" data-points=""1,2 3,4 5,6"" data-occludeInactive=""1"" ></div></div>
+<div id=""err""></div>
+<div id=""image-occlusion-container"">
+    <img src=""kalp.png"">
+    <canvas id=""image-occlusion-canvas""></canvas>
+</div>
+<script>
+try {
+    anki.imageOcclusion.setup();
+} catch (exc) {
+    document.getElementById(""err"").innerHTML = `Error loading image occlusion. Is your Anki version up to date?<br><br>${exc}`;
+}
+</script>
+
+<div><button id=""toggle"">Toggle Masks</button></div>
+
+"
+"<div>Kalp</div>
+<div style=""display: none""><div class=""cloze-inactive"" data-ordinal=""1"" data-shape=""rect"" data-left="".1"" data-top="".1"" data-width="".3"" data-height="".2"" data-occludeInactive=""1"" ></div><div class=""cloze-inactive"" data-ordinal=""2"" data-shape=""ellipse"" data-left="".5"" data-top="".5"" data-rx="".1"" data-ry="".2"" ></div><div class=""cloze-inactive"" data-ordinal=""2"" data-shape=""text"" data-left="".2"" data-top="".3"" data-text=""Sol&#x20;&amp;&#x20;sağ"" data-scale=""1.5"" data-font-size=""0.04"" ></div><div class=""cloze"" data-ordinal=""3"" data-shape=""polygon"" data-points=""1,2 3,4 5,6"" data-occludeInactive=""1"" ></div></div>
+<div id=""err""></div>
+<div id=""image-occlusion-container"">
+    <img src=""kalp.png"">
+    <canvas id=""image-occlusion-canvas""></canvas>
+</div>
+<script>
+try {
+    anki.imageOcclusion.setup();
+} catch (exc) {
+    document.getElementById(""err"").innerHTML = `Error loading image occlusion. Is your Anki version up to date?<br><br>${exc}`;
+}
+</script>
+"	"<div>Kalp</div>
+<div style=""display: none""><div class=""cloze-inactive"" data-ordinal=""1"" data-shape=""rect"" data-left="".1"" data-top="".1"" data-width="".3"" data-height="".2"" data-occludeInactive=""1"" ></div><div class=""cloze-inactive"" data-ordinal=""2"" data-shape=""ellipse"" data-left="".5"" data-top="".5"" data-rx="".1"" data-ry="".2"" ></div><div class=""cloze-inactive"" data-ordinal=""2"" data-shape=""text"" data-left="".2"" data-top="".3"" data-text=""Sol&#x20;&amp;&#x20;sağ"" data-scale=""1.5"" data-font-size=""0.04"" ></div><div class=""cloze-highlight"" data-ordinal=""3"" data-shape=""polygon"" data-points=""1,2 3,4 5,6"" data-occludeInactive=""1"" ></div></div>
+<div id=""err""></div>
+<div id=""image-occlusion-container"">
+    <img src=""kalp.png"">
+    <canvas id=""image-occlusion-canvas""></canvas>
+</div>
+<script>
+try {
+    anki.imageOcclusion.setup();
+} catch (exc) {
+    document.getElementById(""err"").innerHTML = `Error loading image occlusion. Is your Anki version up to date?<br><br>${exc}`;
+}
+</script>
+
+<div><button id=""toggle"">Toggle Masks</button></div>
+
+"
