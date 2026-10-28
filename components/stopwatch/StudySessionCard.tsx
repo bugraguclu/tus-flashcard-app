@@ -5,10 +5,10 @@ import { useI18n } from '../../hooks/useI18n';
 import {
     formatClockHhMm,
     formatSessionDuration,
-    studySubjectGlyph,
+    studySubjectInitial,
     type StudySession,
 } from '../../lib/studyCalendar';
-import { StopwatchIcon } from './StopwatchIcons';
+import { CheckIcon } from './StopwatchIcons';
 import { studyTypeLabel } from './StudyTypeChips';
 import { timelineStyles } from './timelineStyles';
 
@@ -18,11 +18,11 @@ interface StudySessionCardProps {
 }
 
 /**
- * One session on a study timeline, as the Kronometre and the study calendar both draw it: the
- * options button and a node on the line, then the subject, its type chip ("N. Tekrar", "Soru
- * Çözümü"...), the study and break time with the number of breaks, the learner's note and the
- * time of day it ran. A card session's node is a tick; a Kronometre session shows a stopwatch, or
- * a pencil when it was entered by hand.
+ * One session on a study timeline, as the Kronometre and the study calendar both draw it, after
+ * TUSBuddy: the options button and a tick on the line, then the subject, its type chip ("N.
+ * Tekrar", "Soru Çözümü"...), the study and break time with the number of breaks, the learner's
+ * note and the time of day it ran. Whether it was measured, entered by hand or answered on cards
+ * is in its details.
  */
 function StudySessionCard({ session, onOpenMenu }: StudySessionCardProps) {
     const { l, locale } = useI18n();
@@ -54,17 +54,15 @@ function StudySessionCard({ session, onOpenMenu }: StudySessionCardProps) {
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
-                    <View style={[styles.node, session.source === 'cards' ? styles.nodeDone : styles.nodeTimer]}>
-                        {session.source === 'timer'
-                            ? <StopwatchIcon color={colors.white} size={16} />
-                            : <Text style={styles.nodeText}>{session.source === 'manual' ? '✎' : '✓'}</Text>}
+                    <View style={[styles.node, styles.nodeDone]}>
+                        <CheckIcon color={colors.white} size={13} />
                     </View>
                 </View>
             </View>
             <View style={styles.column}>
                 <View style={styles.card}>
                     <View style={styles.tile}>
-                        <Text style={styles.tileText}>{studySubjectGlyph(session.subject)}</Text>
+                        <Text style={styles.tileText}>{studySubjectInitial(session.subject)}</Text>
                     </View>
                     <View style={styles.body}>
                         <View style={styles.titleRow}>

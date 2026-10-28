@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { MAX_SUBJECT_LENGTH, TUS_STUDY_SUBJECTS, normalizeSubjectName } from '../../lib/stopwatch';
-import { studySubjectGlyph } from '../../lib/studyCalendar';
+import { studySubjectInitial } from '../../lib/studyCalendar';
 
 interface SubjectListProps {
     /** Subjects of the latest sessions, newest first. */
@@ -53,7 +53,7 @@ export default function SubjectList({ recentSubjects, planned, onSelect }: Subje
             accessibilityLabel={caption ? `${subject}, ${caption}` : subject}
         >
             <View style={[styles.tile, { backgroundColor: colors.accentLight }]}>
-                <Text style={[styles.tileText, { color: colors.accent }]}>{studySubjectGlyph(subject)}</Text>
+                <Text style={[styles.tileText, { color: colors.accent }]}>{studySubjectInitial(subject)}</Text>
             </View>
             <View style={styles.rowCopy}>
                 <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>{subject}</Text>

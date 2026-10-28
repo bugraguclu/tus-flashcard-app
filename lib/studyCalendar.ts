@@ -7,7 +7,7 @@
 import { dayNumberToYmd, localDayNumber, ymdToLocalDayNumber } from './ankiState';
 import { getDB } from './db';
 import type { SupportedLocale } from './i18n';
-import type { StudyKind, StudySessionRecord, StudySessionSource } from './stopwatch';
+import { studySubjectKey, type StudyKind, type StudySessionRecord, type StudySessionSource } from './stopwatch';
 import { fetchStudySessionsBetween } from './stopwatchStore';
 
 const DAY_MS = 86_400_000;
@@ -389,8 +389,8 @@ function timerSession(record: StudySessionRecord, dayNumber: number): StudySessi
 
 /**
  * The Kronometre's "Son Çalışmalarınız": today and the days before it, newest day first, each
- * with its sessions in the order they happened. Days without study are kept, so the timeline can
- * say so instead of skipping them.
+ * with its latest session first, as TUSBuddy's stopwatch lists them. Days without study are kept,
+ * so the timeline can say so instead of skipping them.
  */
 export function recentStudyDays(
     aggregate: StudyCalendarAggregate,
@@ -401,8 +401,21 @@ export function recentStudyDays(
     return Array.from({ length: Math.max(0, dayCount) }, (_, index) => {
         const dayNumber = todayDayNumber - index;
         const day = byDay.get(dayNumber);
-        return { dayNumber, studyMs: day?.studyMs ?? 0, sessions: day?.sessions ?? [] };
+        return { dayNumber, studyMs: day?.studyMs ?? 0, sessions: [...(day?.sessions ?? [])].reverse() };
     });
+}
+
+/**
+ * Study time per subject in a list of sessions, keyed by `studySubjectKey`, so a day's planned
+ * blocks can count what has been studied of them.
+ */
+export function studyMsBySubject(sessions: readonly Pick<StudySession, 'subject' | 'studyMs'>[]): Map<string, number> {
+    const totals = new Map<string, number>();
+    for (const session of sessions) {
+        const key = studySubjectKey(session.subject);
+        totals.set(key, (totals.get(key) ?? 0) + Math.max(0, session.studyMs));
+    }
+    return totals;
 }
 
 // --- Formatting ---
@@ -618,6 +631,15 @@ export function studySubjectGlyph(subject: string): string {
             if (keywords.some((keyword) => folded.includes(keyword))) return glyph;
         }
     }
+    const first = (subject ?? '').trim().charAt(0);
+    return first ? first.toLocaleUpperCase('tr') : '?';
+}
+
+/**
+ * The letter on a subject's tile in the Kronometre and its study tools: the subject's own first
+ * letter, with no emoji, so every tile reads the same way.
+ */
+export function studySubjectInitial(subject: string): string {
     const first = (subject ?? '').trim().charAt(0);
     return first ? first.toLocaleUpperCase('tr') : '?';
 }

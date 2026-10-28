@@ -115,13 +115,13 @@ Bilgi sayfaları README'deki genel `HelpSheet` kalıbını kullanır (`SwipeDism
 **TR**
 - Başlık: Kronometre
 - Özet: Kartların dışındaki çalışmanızı da ölçer ve günlük hedefinize ekler.
-- Maddeler: (1) Halkadaki Toplam Çalışma Süresi, bugün kart cevaplarına harcadığınız süre ile Kronometre oturumlarının toplamıdır. İstatistikler'deki Çalışma süresi yalnızca kart cevaplarını sayar. (2) Mola ver ile çalışma süresi durur, mola süresi işler. Ders ve mola süreleri dolunca hatırlatılırsınız; kronometre kendiliğinden durmaz. (3) Uygulamayı kapatsanız da süre işlemeye devam eder. Bitirmeyi unuttuysanız oturumu bitirip ••• › Düzenle ile düzeltin. (4) "N. Tekrar", Kronometre oturumunda dersi kaçıncı kez çalıştığınızı, kart oturumunda o gün o dersteki kaçıncı oturum olduğunu gösterir.
+- Maddeler: (1) Halkadaki Toplam Çalışma Süresi, bugün kart cevaplarına harcadığınız süre ile Kronometre oturumlarının toplamıdır. İstatistikler'deki Çalışma süresi yalnızca kart cevaplarını sayar. (2) Mola Ver ile çalışma süresi durur, mola süresi işler. Ders ve mola süreleri dolunca hatırlatılırsınız; kronometre kendiliğinden durmaz. (3) Uygulamayı kapatsanız da süre işlemeye devam eder. Bitirmeyi unuttuysanız oturumu bitirip ••• › Düzenle ile düzeltin. (4) Tür etiketi Kronometre oturumunda seçtiğiniz türü (ör. "2. Tekrar", "Soru Çözümü"), kart oturumunda o gün o dersteki kaçıncı oturum olduğunu gösterir.
 - Not: Kaydedilen her oturum o günü Çalışma serisi'ne sayar. Bir dakikadan kısa çalışmalar kaydedilmez.
 
 **EN**
 - Title: Stopwatch
 - Summary: Times the study you do away from the cards and adds it to your daily goal.
-- Points: (1) Total Study Time on the ring adds today's time on card answers and your stopwatch sessions. Study time on Statistics counts card answers only. (2) Break stops study time and starts break time. You are reminded when a block or break is over; the stopwatch never stops by itself. (3) The time keeps running even if you close the app. If you forgot to finish, finish the session and fix it with ••• › Edit. (4) "Pass N" is your pass through the subject; on card sessions, "Session N" is the Nth session of that subject that day.
+- Points: (1) Total Study Time on the ring adds today's time on card answers and your stopwatch sessions. Study time on Statistics counts card answers only. (2) Break stops study time and starts break time. You are reminded when a block or break is over; the stopwatch never stops by itself. (3) The time keeps running even if you close the app. If you forgot to finish, finish the session and fix it with ••• › Edit. (4) The type label is the type you chose for a stopwatch session ("Pass 2", question practice...); on card sessions, "Session N" is the Nth session of that subject that day.
 - Note: Every saved session counts that day for your Study streak. Sessions shorter than a minute are not saved.
 
 ### Kronometre — kısa metinler
@@ -129,11 +129,11 @@ Bilgi sayfaları README'deki genel `HelpSheet` kalıbını kullanır (`SwipeDism
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
 | help.stopwatch.goalHint | Halkanın yanında, **Günlük Hedef** adımlayıcısının altı (`components/stopwatch/StopwatchHero.tsx:117-126`) | ipucu | Kart çalışmanız da bu hedefe sayılır. | Card study counts towards this goal too. | Yeni |
-| help.stopwatch.startSubtitle | **Hangi dersi çalışacaksınız?** sayfasının alt başlığı (`components/stopwatch/SubjectPickerSheet.tsx:48-50`, başlatma kipi) | alt başlık | Kronometre seçtiğiniz dersle başlar; tekrar sayısı o dersin son oturumundan devam eder. | The stopwatch starts on the subject you choose and continues its latest pass. | Mevcut — güncelle (eski metin: "Kronometre seçtiğiniz dersle başlar." / "The stopwatch starts on the subject you choose.") |
-| help.stopwatch.editorPassHint | **Çalışma ekle** / **Çalışmayı düzenle** sayfası, **Tekrar** satırı (`components/stopwatch/SessionEditorSheet.tsx:175`) | satır ipucu | Dersi kaçıncı kez bitiriyorsunuz | Which pass through the subject this is | Yeni (Bugünün planı'ndaki mevcut ipucuyla aynı: `SubjectPickerSheet.tsx:53`) |
+| help.stopwatch.startSubtitle | **Çalışmaya Başla** sayfası, **Başla** düğmesinin üstü (`components/stopwatch/StudyStartSheet.tsx`) | alt başlık | Kronometre seçtiğiniz dersle başlar; tekrar sayısı o dersin son oturumundan devam eder. | The stopwatch starts on the subject you choose and continues its latest pass. | Yeni (eski **Hangi dersi çalışacaksınız?** sayfasının alt başlığıydı; sayfa TUSBuddy düzenindeki **Çalışmaya Başla** ile değişti) |
+| help.stopwatch.editorPassHint | — | — | — | — | Kaldırıldı: tekrar sayısı artık **Tür Seçin** listesinde ("1. Tekrar"–"8. Tekrar") seçilir, ayrı bir **Tekrar** satırı yok |
 | help.stopwatch.alertsUndetermined | **Hatırlatmalar** sayfası, anahtarın altındaki durum satırı, iPhone'da izin henüz istenmemişken (`components/stopwatch/StopwatchAlertsSheet.tsx:55-63`) | durum satırı | Hatırlatmalar için bildirim izni gerekiyor. İzin vermek için anahtarı kapatıp yeniden açın. | Reminders need notification permission. Turn the switch off and on again to allow it. | Yeni (bkz. açık soru 2) |
 | help.stopwatch.sessionDuration | Oturum kartlarındaki **Çalışma** / **Mola** süreleri (`lib/studyCalendar.ts:413-424`) | biçim | 1 sa 39 dk, 36 dk | 1h 39m (koru) | Mevcut — güncelle (eski metin TR: "1s 39dk"; "s" saniye gibi okunuyor, uygulamanın geri kalanı "sa" kullanır) |
-| help.stopwatch.existing | Ayar ipuçları (`StopwatchSettingsSheet.tsx:43-45, 80, 93`), hatırlatma ipucu ve durumları (`StopwatchAlertsSheet.tsx:55-72`), plan kartı (`StopwatchTimeline.tsx:196-197`), boş günler (`StopwatchTimeline.tsx:223, 248`), blok satırı (`StopwatchHero.tsx:68-74`), form hataları (`SessionEditorSheet.tsx:98-104`), onaylar (`app/stopwatch.tsx:155, 173-189, 208-217, 298-310`), bildirimler (`app/stopwatch.tsx:82-90`) | çeşitli | (mevcut metinler) | (existing texts) | Mevcut — koru |
+| help.stopwatch.existing | Ayar ipuçları (`StopwatchSettingsSheet.tsx:43-45, 80, 93`), hatırlatma ipucu ve durumları (`StopwatchAlertsSheet.tsx:55-72`), plan kartları (`PlannedStudyCard.tsx`, `NoStudyPlanCard.tsx`), boş günler (`StopwatchTimeline.tsx`), blok ilerlemesi (`LiveSessionCard.tsx`), form bilgi kutusu ve hataları (`SessionEditorSheet.tsx`), onaylar ve bildirimler (`app/stopwatch.tsx`) | çeşitli | (mevcut metinler) | (existing texts) | Mevcut — koru |
 
 ---
 
@@ -152,13 +152,13 @@ Bilgi sayfaları README'deki genel `HelpSheet` kalıbını kullanır (`SwipeDism
 **TR**
 - Başlık: Çalışma Takvimi
 - Özet: Kart çalışmalarınızı ve Kronometre oturumlarınızı gün gün gösterir.
-- Maddeler: (1) Günün altındaki süre, o günkü kart ve Kronometre oturumlarının çalışma süresidir; molalar dahil değildir. (2) Kart oturumları cevaplarınızdan kendiliğinden oluşur: üst desteye ve güne göre gruplanır, iki cevap arasında 30 dakikadan fazla geçerse yeni oturum başlar. (3) Kart oturumunda Çalışma cevaplara harcanan süredir, Mola cevaplar arasındaki boş süredir. (4) Kronometre oturumlarını buradan silebilir, Kronometre ekranında son yedi gün için düzenleyebilirsiniz. Kart oturumları cevaplardan geldiği için silinmez.
+- Maddeler: (1) Günün altındaki süre, o günkü kart ve Kronometre oturumlarının çalışma süresidir; molalar dahil değildir. (2) Kart oturumları cevaplarınızdan kendiliğinden oluşur: üst desteye ve güne göre gruplanır, iki cevap arasında 30 dakikadan fazla geçerse yeni oturum başlar. (3) Kart oturumunda Çalışma cevaplara harcanan süredir, Mola cevaplar arasındaki boş süredir. (4) Kronometre oturumlarını buradan düzenleyebilir veya silebilirsiniz. Kart oturumları cevaplardan geldiği için silinmez.
 - Not: Çalışmakta olan kronometre, bitirdiğinizde takvime eklenir.
 
 **EN**
 - Title: Study Calendar
 - Summary: Shows your card study and stopwatch sessions day by day.
-- Points: (1) The time under each day is the study time of that day's card and stopwatch sessions; breaks are not included. (2) Card sessions are made from your answers: grouped by top-level deck and day, with a new session after more than 30 minutes between answers. (3) In a card session, Study is the time spent on answers and Break the idle time between them. (4) You can delete stopwatch sessions here and edit them on the Stopwatch screen for the last seven days. Card sessions come from your answers and cannot be deleted.
+- Points: (1) The time under each day is the study time of that day's card and stopwatch sessions; breaks are not included. (2) Card sessions are made from your answers: grouped by top-level deck and day, with a new session after more than 30 minutes between answers. (3) In a card session, Study is the time spent on answers and Break the idle time between them. (4) You can edit or delete stopwatch sessions here. Card sessions come from your answers and cannot be deleted.
 - Note: A stopwatch that is still running is added to the calendar once you finish it.
 
 ### Çalışma Takvimi — kısa metinler

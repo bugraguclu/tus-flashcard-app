@@ -6,6 +6,7 @@ import {
     finishStopwatch,
     pauseStopwatch,
     resumeStopwatch,
+    setStopwatchNote,
     startStopwatch,
     stopwatchElapsed,
     type RunningStopwatch,
@@ -87,13 +88,16 @@ export function useStopwatch(buildAlertCopy: (state: RunningStopwatch, prefs: St
 
     const start = useCallback((subject: string, pass: number, kind: StudyKind) => {
         const state = startStopwatch(subject, pass, Date.now(), kind);
-        // The first subject ever started becomes the plan, so the card below the hero has one to offer.
-        const nextPrefs = prefs.plan
-            ? prefs
-            : saveStopwatchPrefs({ ...prefs, plan: { subject: state.subject, kind: state.kind, pass: state.pass } });
+        // Remembered as the choice "Çalışmaya Başla" offers first next time.
+        const nextPrefs = saveStopwatchPrefs({ ...prefs, plan: { subject: state.subject, kind: state.kind, pass: state.pass } });
         setPrefs(nextPrefs);
         commitRunning(state, nextPrefs);
     }, [prefs, commitRunning]);
+
+    /** Write the running session's note ("Çalışma Notu"), saved with it when it stops. */
+    const setNote = useCallback((note: string) => {
+        if (running) commitRunning(setStopwatchNote(running, note), prefs);
+    }, [running, prefs, commitRunning]);
 
     const pause = useCallback(() => {
         if (running) commitRunning(pauseStopwatch(running, Date.now()), prefs);
@@ -130,6 +134,7 @@ export function useStopwatch(buildAlertCopy: (state: RunningStopwatch, prefs: St
         start,
         pause,
         resume,
+        setNote,
         finish,
         discard,
     };

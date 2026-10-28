@@ -1,28 +1,29 @@
-import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { BorderRadius, FontSize, Spacing, useIsDarkTheme, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
     MAX_BREAK_COUNT,
     MAX_STUDY_NOTE_LENGTH,
-    MAX_STUDY_PASS,
-    MIN_SESSION_MS,
     clampBreakCount,
-    clampPass,
-    splitHoursMinutes,
+    draftFromManualEntry,
+    formatGoalClock,
+    manualSessionProblem,
+    type ManualSessionProblem,
     type StudyKind,
     type StudySessionDraft,
 } from '../../lib/stopwatch';
-import { studySubjectGlyph, type StudySession } from '../../lib/studyCalendar';
+import type { StudySession } from '../../lib/studyCalendar';
+import { CountStepper, FormDivider, FormInfoBox, FormRow, FormSelector } from './FormControls';
 import StopwatchSheet from './StopwatchSheet';
-import StudyTypeChips, { studyTypeLabel } from './StudyTypeChips';
-import SubjectList from './SubjectList';
-import { SettingRow, SheetButton, Stepper } from './SheetControls';
+import type { StudyChoice } from './StudyStartSheet';
+import { StudyTypePicker, SubjectGridPicker } from './StudyPickers';
+import { studyTypeLabel } from './StudyTypeChips';
 
 const MINUTE_MS = 60_000;
-const MAX_STUDY_HOURS = 16;
-const MAX_BREAK_MINUTES = 180;
+/** Longest total break the form steps to: the longest a session may span. */
+const MAX_BREAK_MINUTES = 24 * 60;
 
 export interface SessionEditorInitial {
     recordId: number;
@@ -30,6 +31,7 @@ export interface SessionEditorInitial {
     kind: StudyKind;
     pass: number;
     startMs: number;
+    endMs: number;
     studyMs: number;
     breakMs: number;
     breakCount: number;
@@ -45,6 +47,7 @@ export function editorInitialFor(session: StudySession): SessionEditorInitial | 
         kind: session.kind ?? 'pass',
         pass: session.pass ?? 1,
         startMs: session.startMs,
+        endMs: session.endMs,
         studyMs: session.studyMs,
         breakMs: session.breakMs,
         breakCount: session.breakCount ?? 0,
@@ -56,33 +59,29 @@ interface SessionEditorSheetProps {
     visible: boolean;
     /** The session being edited, or null to add a new one. */
     initial: SessionEditorInitial | null;
-    defaultSubject: string | null;
-    defaultKind: StudyKind;
-    defaultPass: number;
+    /** The subject and type a new session starts with. */
+    defaultChoice: StudyChoice;
     recentSubjects: string[];
     passOf: (subject: string) => number;
     onClose: () => void;
     onSave: (draft: StudySessionDraft, recordId: number | null) => void;
 }
 
-function defaultStart(): Date {
-    const date = new Date(Date.now() - 60 * MINUTE_MS);
-    date.setMinutes(Math.floor(date.getMinutes() / 5) * 5, 0, 0);
-    return date;
-}
+type Field = 'start' | 'end';
+
+const startOfMinute = (ms: number) => Math.floor(ms / MINUTE_MS) * MINUTE_MS;
 
 /**
- * "Çalışma Ekle": a session studied without the stopwatch, entered by hand — or an existing
- * session corrected after the fact: its subject and type, when it ran, its study and break time,
- * how many breaks it had and a short note. Picking the subject replaces the form with the subject
- * list inside the same sheet rather than stacking a second modal on top of it.
+ * "Geçmiş Çalışmanızı Ekleyin": a session studied without the stopwatch, entered by hand as
+ * TUSBuddy takes it — the course and type, when it started and ended, how many breaks it had and
+ * how long they were in all, and a note — or an existing session corrected after the fact. The
+ * study time is the span less the breaks. Times the learner does not touch keep their exact
+ * stored value, so correcting only a note never rounds a measured session to the minute.
  */
 export default function SessionEditorSheet({
     visible,
     initial,
-    defaultSubject,
-    defaultKind,
-    defaultPass,
+    defaultChoice,
     recentSubjects,
     passOf,
     onClose,
@@ -90,248 +89,251 @@ export default function SessionEditorSheet({
 }: SessionEditorSheetProps) {
     const { l, localeTag } = useI18n();
     const colors = useThemeColors();
-    const [step, setStep] = useState<'form' | 'subject'>('form');
+    const isDark = useIsDarkTheme();
     const [subject, setSubject] = useState('');
     const [kind, setKind] = useState<StudyKind>('pass');
     const [pass, setPass] = useState(1);
-    const [start, setStart] = useState(defaultStart);
-    const [studyHours, setStudyHours] = useState(1);
-    const [studyMinutes, setStudyMinutes] = useState(0);
-    const [breakMinutes, setBreakMinutes] = useState(0);
+    const [startMs, setStartMs] = useState(0);
+    const [endMs, setEndMs] = useState(0);
+    const [breakMs, setBreakMs] = useState(0);
     const [breakCount, setBreakCount] = useState(0);
     const [note, setNote] = useState('');
+    const [picker, setPicker] = useState<'subject' | 'type' | null>(null);
+    const [openField, setOpenField] = useState<Field | null>(null);
     // Kept from when the sheet opened: the parent clears `initial` as it closes, and the sheet must
     // still read as the session it edited while it slides away.
-    const [recordId, setRecordId] = useState<number | null>(null);
+    const [original, setOriginal] = useState<SessionEditorInitial | null>(null);
+    const recordId = original?.recordId ?? null;
+    // Read when the sheet opens only: the screen under it re-renders as its clock ticks.
+    const openedWith = useRef({ initial, defaultChoice });
+    openedWith.current = { initial, defaultChoice };
 
     useEffect(() => {
         if (!visible) return;
-        setStep('form');
-        setRecordId(initial?.recordId ?? null);
-        if (initial) {
-            const study = splitHoursMinutes(initial.studyMs);
-            setSubject(initial.subject);
-            setKind(initial.kind);
-            setPass(initial.pass);
-            setStart(new Date(initial.startMs));
-            setStudyHours(study.hours);
-            setStudyMinutes(study.minutes);
-            setBreakMinutes(Math.round(initial.breakMs / MINUTE_MS));
-            setBreakCount(initial.breakCount);
-            setNote(initial.note);
+        const { initial: editing, defaultChoice: choice } = openedWith.current;
+        setPicker(null);
+        setOpenField(null);
+        setOriginal(editing);
+        if (editing) {
+            setSubject(editing.subject);
+            setKind(editing.kind);
+            setPass(editing.pass);
+            setStartMs(editing.startMs);
+            setEndMs(editing.endMs);
+            setBreakMs(editing.breakMs);
+            setBreakCount(editing.breakCount);
+            setNote(editing.note);
         } else {
-            setSubject(defaultSubject ?? '');
-            setKind(defaultKind);
-            setPass(defaultPass);
-            setStart(defaultStart());
-            setStudyHours(1);
-            setStudyMinutes(0);
-            setBreakMinutes(0);
+            const end = startOfMinute(Date.now());
+            setSubject(choice.subject);
+            setKind(choice.kind);
+            setPass(choice.pass);
+            setStartMs(end - 60 * MINUTE_MS);
+            setEndMs(end);
+            setBreakMs(0);
             setBreakCount(0);
             setNote('');
         }
-    }, [visible, initial, defaultSubject, defaultKind, defaultPass]);
+    }, [visible]);
 
-    const studyMs = (studyHours * 60 + studyMinutes) * MINUTE_MS;
-    const breakMs = breakMinutes * MINUTE_MS;
-    const endMs = start.getTime() + studyMs + breakMs;
-    const error = !subject
-        ? l('Bir ders seçin.', 'Choose a subject.')
-        : studyMs < MIN_SESSION_MS
-            ? l('Çalışma süresi en az 1 dakika olmalı.', 'Study time must be at least a minute.')
-            : endMs > Date.now() + MINUTE_MS
-                ? l('Çalışma gelecekte bitemez; başlangıcı veya süreyi azaltın.', 'A session cannot end in the future; move the start or shorten it.')
-                : null;
-
-    const changeDate = (value?: Date) => {
-        if (!value) return;
-        const next = new Date(start.getTime());
-        next.setFullYear(value.getFullYear(), value.getMonth(), value.getDate());
-        setStart(next);
+    const problem = manualSessionProblem({ startMs, endMs, breakMs }, Date.now());
+    const problemText = (value: ManualSessionProblem) => {
+        switch (value) {
+            case 'order': return l('Çalışma bitişi, başlangıcından sonra olmalı.', 'The session must end after it starts.');
+            case 'future': return l('Çalışma gelecekte bitemez.', 'A session cannot end in the future.');
+            case 'tooLong': return l('Bir çalışma 24 saatten uzun olamaz.', 'A session cannot be longer than 24 hours.');
+            case 'break': return l('Mola süresi, başlangıç ile bitiş arasındaki süreyi aşamaz.', 'The breaks cannot be longer than the session.');
+            default: return l('Molalar düşüldükten sonra en az 1 dakika çalışma kalmalı.', 'At least a minute of study must be left after the breaks.');
+        }
     };
-    const changeTime = (value?: Date) => {
+    const error = !subject ? l('Bir ders seçin.', 'Choose a subject.') : problem ? problemText(problem) : null;
+
+    const dateLabel = (ms: number) => {
+        const date = new Date(ms);
+        const today = new Date();
+        const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+        const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+        const time = date.toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit', hour12: false });
+        if (sameDay(date, today)) return l(`Bugün ${time}`, `Today ${time}`);
+        if (sameDay(date, yesterday)) return l(`Dün ${time}`, `Yesterday ${time}`);
+        return `${date.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' })} ${time}`;
+    };
+
+    const changeField = (field: Field, value?: Date) => {
         if (!value) return;
-        const next = new Date(start.getTime());
-        next.setHours(value.getHours(), value.getMinutes(), 0, 0);
-        setStart(next);
+        const ms = startOfMinute(value.getTime());
+        if (field === 'start') setStartMs(ms);
+        else setEndMs(ms);
     };
 
     const save = () => {
         // A sheet that is already closing has saved once; a second tap must not add the session again.
         if (error || !visible) return;
-        onSave({
-            subject,
-            kind,
-            pass,
-            startMs: start.getTime(),
-            endMs,
-            studyMs,
-            breakMs,
-            breakCount,
-            note,
-        }, recordId);
+        const draft = draftFromManualEntry({ subject, kind, pass, startMs, endMs, breakMs, breakCount, note });
+        // Untouched times keep the study time as stored, which an older session may hold as less
+        // than its span less its breaks; it is never reinterpreted by an edit of its note alone.
+        const timesUnchanged = original !== null
+            && startMs === original.startMs && endMs === original.endMs && breakMs === original.breakMs;
+        onSave(timesUnchanged ? { ...draft, studyMs: original.studyMs } : draft, recordId);
     };
 
-    const hourUnit = l('sa', 'h');
-    const minuteUnit = l('dk', 'min');
+    const breakMinutes = Math.floor(breakMs / MINUTE_MS);
+    const typeLabel = studyTypeLabel(l, kind, pass);
+    const overlay = picker === 'subject' ? (
+        <SubjectGridPicker
+            selected={subject}
+            recentSubjects={recentSubjects}
+            onSelect={(chosen) => {
+                setSubject(chosen);
+                // A new session continues the subject's pass; an edited one keeps its own.
+                if (recordId === null) setPass(passOf(chosen));
+            }}
+            onClose={() => setPicker(null)}
+        />
+    ) : picker === 'type' ? (
+        <StudyTypePicker
+            kind={kind}
+            pass={pass}
+            onSelect={(nextKind, nextPass) => {
+                setKind(nextKind);
+                if (nextPass !== null) setPass(nextPass);
+                setPicker(null);
+            }}
+            onClose={() => setPicker(null)}
+        />
+    ) : null;
+
+    const timeRow = (field: Field, label: string, ms: number) => (
+        <View>
+            <FormRow label={label}>
+                <FormSelector
+                    value={dateLabel(ms)}
+                    active={openField === field}
+                    onPress={() => setOpenField((current) => (current === field ? null : field))}
+                    accessibilityLabel={`${label}: ${dateLabel(ms)}`}
+                    accessibilityHint={l('Tarih ve saat seçiciyi açar veya kapatır', 'Opens or closes the date and time picker')}
+                />
+            </FormRow>
+            {openField === field ? (
+                <View style={styles.pickerWrap}>
+                    <DateTimePicker
+                        value={new Date(ms)}
+                        mode={Platform.OS === 'android' ? 'time' : 'datetime'}
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        maximumDate={new Date()}
+                        locale={localeTag}
+                        themeVariant={isDark ? 'dark' : 'light'}
+                        onChange={(_event, value) => changeField(field, value)}
+                    />
+                </View>
+            ) : null}
+        </View>
+    );
 
     return (
         <StopwatchSheet
             visible={visible}
             onClose={onClose}
-            title={step === 'subject'
-                ? l('Ders seçin', 'Choose a subject')
-                : recordId !== null ? l('Çalışmayı düzenle', 'Edit session') : l('Çalışma ekle', 'Add a session')}
+            formHeader
+            overlay={overlay}
+            title={recordId !== null ? l('Çalışmanızı Düzenleyin', 'Edit Your Session') : l('Geçmiş Çalışmanızı Ekleyin', 'Add a Past Session')}
         >
-            {step === 'subject' ? (
-                <>
-                    <SubjectList
-                        recentSubjects={recentSubjects}
-                        onSelect={(chosen) => {
-                            setSubject(chosen);
-                            if (recordId === null) setPass(passOf(chosen));
-                            setStep('form');
-                        }}
+            <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                <FormRow label={l('Ders seçin', 'Subject')}>
+                    <FormSelector
+                        value={subject || l('Seçin', 'Choose')}
+                        onPress={() => setPicker('subject')}
+                        accessibilityLabel={l(`Ders: ${subject || 'seçilmedi'}`, `Subject: ${subject || 'none'}`)}
+                        accessibilityHint={l('Ders listesini açar', 'Opens the subject list')}
                     />
-                    <View style={styles.footer}>
-                        <SheetButton label={l('Forma dön', 'Back to the form')} tone="plain" onPress={() => setStep('form')} />
-                    </View>
-                </>
-            ) : (
-                <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                    <TouchableOpacity
-                        style={[styles.subjectButton, { backgroundColor: colors.bgCard }]}
-                        onPress={() => setStep('subject')}
-                        accessibilityRole="button"
-                        accessibilityLabel={subject
-                            ? l(`Ders: ${subject}. Değiştirmek için dokunun.`, `Subject: ${subject}. Tap to change.`)
-                            : l('Ders seçin', 'Choose a subject')}
-                    >
-                        <View style={[styles.tile, { backgroundColor: colors.accentLight }]}>
-                            <Text style={[styles.tileText, { color: colors.accent }]}>{subject ? studySubjectGlyph(subject) : '＋'}</Text>
-                        </View>
-                        <Text style={[styles.subjectText, { color: subject ? colors.textPrimary : colors.textMuted }]} numberOfLines={1}>
-                            {subject || l('Ders seçin', 'Choose a subject')}
-                        </Text>
-                        <Text style={[styles.chevron, { color: colors.textMuted }]}>›</Text>
-                    </TouchableOpacity>
+                </FormRow>
+                <FormRow label={l('Tür Seçin', 'Type')}>
+                    <FormSelector
+                        value={typeLabel}
+                        onPress={() => setPicker('type')}
+                        accessibilityLabel={l(`Tür: ${typeLabel}`, `Type: ${typeLabel}`)}
+                        accessibilityHint={l('Tür listesini açar', 'Opens the type list')}
+                    />
+                </FormRow>
+                <FormDivider />
+                {timeRow('start', l('Çalışma Başlangıcı', 'Start'), startMs)}
+                {timeRow('end', l('Çalışma Bitişi', 'End'), endMs)}
+                <FormInfoBox
+                    lines={[
+                        l(
+                            'Çalışma süreniz, başlangıç ile bitiş arasındaki süreden toplam mola çıkarılarak hesaplanır.',
+                            'Your study time is the time from start to end less the total break.',
+                        ),
+                        l(
+                            'Elle eklediğiniz çalışmalar da günlük hedefinize, takviminize ve çalışma serinize sayılır.',
+                            'Sessions you add by hand count towards your daily goal, calendar and streak too.',
+                        ),
+                    ]}
+                />
+                <FormRow label={l('Mola Sayısı', 'Breaks')}>
+                    <CountStepper
+                        value={String(breakCount)}
+                        onStep={(direction) => setBreakCount((current) => clampBreakCount(current + direction))}
+                        decreaseLabel={l('Bir mola az', 'One break fewer')}
+                        increaseLabel={l('Bir mola fazla', 'One break more')}
+                        canDecrease={breakCount > 0}
+                        canIncrease={breakCount < MAX_BREAK_COUNT}
+                    />
+                </FormRow>
+                <FormRow label={l('Toplam Mola Süresi', 'Total Break')}>
+                    <CountStepper
+                        value={formatGoalClock(breakMinutes)}
+                        onStep={(direction) => setBreakMs(Math.max(0, Math.min(MAX_BREAK_MINUTES, breakMinutes + direction)) * MINUTE_MS)}
+                        decreaseLabel={l('Bir dakika az mola', 'One minute less break')}
+                        increaseLabel={l('Bir dakika fazla mola', 'One minute more break')}
+                        canDecrease={breakMs > 0}
+                        canIncrease={breakMinutes < MAX_BREAK_MINUTES}
+                    />
+                </FormRow>
+                <FormDivider />
 
-                    <StudyTypeChips value={kind} onChange={setKind} />
-                    {kind === 'pass' ? (
-                        <SettingRow label={l('Tekrar', 'Pass')}>
-                            <Stepper
-                                value={studyTypeLabel(l, 'pass', pass)}
-                                onStep={(direction) => setPass((current) => clampPass(current + direction))}
-                                decreaseLabel={l('Önceki tekrar', 'Previous pass')}
-                                increaseLabel={l('Sonraki tekrar', 'Next pass')}
-                                canDecrease={pass > 1}
-                                canIncrease={pass < MAX_STUDY_PASS}
-                            />
-                        </SettingRow>
-                    ) : null}
-                    <SettingRow label={l('Tarih', 'Date')}>
-                        <DateTimePicker
-                            value={start}
-                            mode="date"
-                            display="compact"
-                            maximumDate={new Date()}
-                            locale={localeTag}
-                            onChange={(_event, value) => changeDate(value)}
-                        />
-                    </SettingRow>
-                    <SettingRow label={l('Başlangıç saati', 'Start time')}>
-                        <DateTimePicker
-                            value={start}
-                            mode="time"
-                            display="compact"
-                            locale={localeTag}
-                            onChange={(_event, value) => changeTime(value)}
-                        />
-                    </SettingRow>
-                    <SettingRow label={l('Çalışma süresi', 'Study time')} hint={l('Saat ve dakika', 'Hours and minutes')}>
-                        <View style={styles.stack}>
-                            <Stepper
-                                value={`${studyHours} ${hourUnit}`}
-                                onStep={(direction) => setStudyHours((current) => Math.max(0, Math.min(MAX_STUDY_HOURS, current + direction)))}
-                                decreaseLabel={l('Bir saat az', 'One hour less')}
-                                increaseLabel={l('Bir saat fazla', 'One hour more')}
-                                canDecrease={studyHours > 0}
-                                canIncrease={studyHours < MAX_STUDY_HOURS}
-                            />
-                            <Stepper
-                                value={`${studyMinutes} ${minuteUnit}`}
-                                onStep={(direction) => setStudyMinutes((current) => (current + direction * 5 + 60) % 60)}
-                                decreaseLabel={l('Beş dakika az', 'Five minutes less')}
-                                increaseLabel={l('Beş dakika fazla', 'Five minutes more')}
-                            />
-                        </View>
-                    </SettingRow>
-                    <SettingRow label={l('Mola', 'Break')} hint={l('Oturum içindeki toplam mola', 'Total break within the session')}>
-                        <Stepper
-                            value={`${breakMinutes} ${minuteUnit}`}
-                            onStep={(direction) => setBreakMinutes((current) => Math.max(0, Math.min(MAX_BREAK_MINUTES, current + direction * 5)))}
-                            decreaseLabel={l('Beş dakika az mola', 'Five minutes less break')}
-                            increaseLabel={l('Beş dakika fazla mola', 'Five minutes more break')}
-                            canDecrease={breakMinutes > 0}
-                            canIncrease={breakMinutes < MAX_BREAK_MINUTES}
-                        />
-                    </SettingRow>
-                    <SettingRow label={l('Mola sayısı', 'Breaks')} hint={l('Kaç kez ara verdiniz', 'How many times you stopped')}>
-                        <Stepper
-                            value={String(breakCount)}
-                            onStep={(direction) => setBreakCount((current) => clampBreakCount(current + direction))}
-                            decreaseLabel={l('Bir mola az', 'One break fewer')}
-                            increaseLabel={l('Bir mola fazla', 'One break more')}
-                            canDecrease={breakCount > 0}
-                            canIncrease={breakCount < MAX_BREAK_COUNT}
-                        />
-                    </SettingRow>
+                <View style={styles.noteSection}>
+                    <Text style={[styles.noteLabel, { color: colors.textPrimary }]}>{l('Çalışma Notu', 'Study Note')}</Text>
+                    <TextInput
+                        style={[styles.noteInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
+                        value={note}
+                        onChangeText={setNote}
+                        placeholder={l('Sayfa 120-140 arasını çalıştım, 30 soru çözdüm.', 'Studied pages 120-140, solved 30 questions.')}
+                        placeholderTextColor={colors.textMuted}
+                        maxLength={MAX_STUDY_NOTE_LENGTH}
+                        multiline
+                        textAlignVertical="top"
+                        accessibilityLabel={l('Çalışma notu', 'Study note')}
+                        accessibilityHint={l(`En fazla ${MAX_STUDY_NOTE_LENGTH} karakter`, `Up to ${MAX_STUDY_NOTE_LENGTH} characters`)}
+                    />
+                    <Text style={[styles.noteCount, { color: colors.textMuted }]}>
+                        {l(`Kalan: ${MAX_STUDY_NOTE_LENGTH - note.length}`, `${MAX_STUDY_NOTE_LENGTH - note.length} left`)}
+                    </Text>
+                </View>
+                <FormDivider />
 
-                    <View style={styles.noteSection}>
-                        <Text style={[styles.noteLabel, { color: colors.textPrimary }]}>{l('Çalışma notu', 'Study note')}</Text>
-                        <TextInput
-                            style={[styles.noteInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
-                            value={note}
-                            onChangeText={setNote}
-                            placeholder={l('Sayfa 120-140 arasını çalıştım, 30 soru çözdüm.', 'Studied pages 120-140, solved 30 questions.')}
-                            placeholderTextColor={colors.textMuted}
-                            maxLength={MAX_STUDY_NOTE_LENGTH}
-                            multiline
-                            textAlignVertical="top"
-                            accessibilityLabel={l('Çalışma notu', 'Study note')}
-                            accessibilityHint={l(`En fazla ${MAX_STUDY_NOTE_LENGTH} karakter`, `Up to ${MAX_STUDY_NOTE_LENGTH} characters`)}
-                        />
-                        <Text style={[styles.noteCount, { color: colors.textMuted }]}>
-                            {l(`Kalan: ${MAX_STUDY_NOTE_LENGTH - note.length}`, `${MAX_STUDY_NOTE_LENGTH - note.length} left`)}
-                        </Text>
-                    </View>
-
-                    {error ? <Text style={[styles.error, { color: colors.btnAgain }]} accessibilityLiveRegion="polite">{error}</Text> : null}
-                    <View style={styles.footer}>
-                        <SheetButton label={l('Kaydet', 'Save')} onPress={save} disabled={Boolean(error)} />
-                    </View>
-                </ScrollView>
-            )}
+                <TouchableOpacity
+                    style={[styles.saveButton, { backgroundColor: colors.accent }, error ? styles.saveDisabled : null]}
+                    onPress={save}
+                    disabled={Boolean(error)}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: Boolean(error) }}
+                    accessibilityLabel={recordId !== null ? l('Değişiklikleri kaydet', 'Save changes') : l('Çalışma ekle', 'Add session')}
+                >
+                    <Text style={styles.saveText}>
+                        {recordId !== null ? l('Değişiklikleri Kaydet', 'Save Changes') : l('Çalışma Ekle', 'Add Session')}
+                    </Text>
+                </TouchableOpacity>
+                {error ? <Text style={[styles.error, { color: colors.btnAgain }]} accessibilityLiveRegion="polite">{error}</Text> : null}
+            </ScrollView>
         </StopwatchSheet>
     );
 }
 
 const styles = StyleSheet.create({
     form: { flexShrink: 1 },
-    subjectButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.md,
-        padding: Spacing.md,
-        borderRadius: BorderRadius.md,
-        marginBottom: Spacing.xs,
-    },
-    tile: { width: 40, height: 40, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center' },
-    tileText: { fontSize: FontSize.xl, fontWeight: '800' },
-    subjectText: { flex: 1, fontSize: FontSize.lg, fontWeight: '700' },
-    chevron: { fontSize: FontSize.xxl, fontWeight: '300' },
-    stack: { gap: Spacing.sm, alignItems: 'flex-end' },
-    noteSection: { gap: Spacing.xs, paddingTop: Spacing.md },
+    pickerWrap: { alignItems: 'center', paddingBottom: Spacing.sm },
+    noteSection: { gap: Spacing.xs, paddingTop: Spacing.xs },
     noteLabel: { fontSize: FontSize.lg, fontWeight: '600' },
     noteInput: {
         minHeight: 72,
@@ -343,6 +345,8 @@ const styles = StyleSheet.create({
         fontSize: FontSize.md,
     },
     noteCount: { alignSelf: 'flex-end', fontSize: FontSize.sm, fontVariant: ['tabular-nums'] },
-    error: { marginTop: Spacing.md, fontSize: FontSize.md, fontWeight: '600' },
-    footer: { paddingTop: Spacing.md, paddingBottom: Spacing.xs },
+    saveButton: { minHeight: 50, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.md },
+    saveDisabled: { opacity: 0.45 },
+    saveText: { color: '#ffffff', fontSize: FontSize.xl, fontWeight: '700' },
+    error: { marginTop: Spacing.sm, marginBottom: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', textAlign: 'center' },
 });

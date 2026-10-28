@@ -6,8 +6,8 @@ import {
     MAX_GOAL_MINUTES,
     MIN_GOAL_MINUTES,
     formatGoalClock,
+    formatHeroDuration,
     formatStopwatchClock,
-    formatStudyTotal,
     goalProgress,
     type RunningStopwatch,
     type StopwatchElapsed,
@@ -36,8 +36,6 @@ interface StopwatchHeroProps {
     goalMinutes: number;
     running: RunningStopwatch | null;
     elapsed: StopwatchElapsed | null;
-    focusMinutes: number;
-    breakMinutes: number;
     onStepGoal: (direction: 1 | -1) => void;
     onStart: () => void;
     onPause: () => void;
@@ -46,17 +44,16 @@ interface StopwatchHeroProps {
 }
 
 /**
- * The top of the Kronometre: today's study time on a ring that fills towards the daily goal, the
- * goal itself, and the stopwatch controls. While the stopwatch runs, the ring shows the session's
- * own time and a line underneath counts the current study block or break against its length.
+ * The top of the Kronometre, as TUSBuddy lays it out. Idle: today's study time on a ring that
+ * fills towards the daily goal, the goal's − / + and "Başla". Running: today against the goal on a
+ * bar, the subject, the session's study time as a large clock (and the break's while on one), and
+ * "Sonlandır" and "Mola Ver" / "Devam Et".
  */
 export default function StopwatchHero({
     todayStudyMs,
     goalMinutes,
     running,
     elapsed,
-    focusMinutes,
-    breakMinutes,
     onStepGoal,
     onStart,
     onPause,
@@ -69,60 +66,94 @@ export default function StopwatchHero({
     const { width } = useWindowDimensions();
     const ringSize = Math.round(Math.min(156, Math.max(116, width * 0.34)));
     const styles = useMemo(() => createStyles(colors, heroColor), [colors, heroColor]);
-    const onBreak = running?.phase === 'break';
-    const total = formatStudyTotal(todayStudyMs, locale);
-    // "2 sa 30 dk" at the size of "0 dk" would reach the ring and its knob. Sized by length rather
+    const total = formatHeroDuration(todayStudyMs, locale);
+    const goal = formatHeroDuration(goalMinutes * MINUTE_MS, locale);
+    const progress = goalProgress(todayStudyMs, goalMinutes);
+
+    if (running) {
+        const onBreak = running.phase === 'break';
+        const sessionClock = formatStopwatchClock(elapsed?.studyMs ?? 0);
+        const summary = l(
+            `${running.subject} çalışılıyor${onBreak ? ', molada' : ''}. Bu oturum ${sessionClock}. Bugün ${total}, hedef ${goal}.`,
+            `Studying ${running.subject}${onBreak ? ', on a break' : ''}. This session ${sessionClock}. Today ${total} of a ${goal} goal.`,
+        );
+        return (
+            <View style={[styles.hero, styles.heroRunning]}>
+                <View accessible accessibilityRole="summary" accessibilityLabel={summary} style={styles.runningTop}>
+                    <View style={styles.todayRow}>
+                        <Text style={styles.todayLabel}>
+                            {l('Bugün: ', 'Today: ')}
+                            <Text style={styles.todayValue}>{total}</Text>
+                        </Text>
+                        <Text style={styles.todayLabel}>
+                            {l('Hedef: ', 'Goal: ')}
+                            <Text style={styles.todayValue}>{goal}</Text>
+                        </Text>
+                    </View>
+                    <View style={styles.goalTrack}>
+                        <View style={[styles.goalFill, { width: `${progress * 100}%` }]} />
+                    </View>
+                    <Text style={styles.runningSubject} numberOfLines={1}>
+                        {running.subject.toLocaleUpperCase(locale === 'tr' ? 'tr' : 'en')}
+                    </Text>
+                    <Text style={styles.bigClock} numberOfLines={1}>{sessionClock}</Text>
+                    {onBreak ? (
+                        <Text style={styles.breakLine} accessibilityLiveRegion="polite">
+                            {l('Mola: ', 'Break: ')}{formatStopwatchClock(elapsed?.phaseMs ?? 0)}
+                        </Text>
+                    ) : null}
+                </View>
+                <View style={styles.runningButtons}>
+                    <TouchableOpacity
+                        style={styles.pill}
+                        onPress={onFinish}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Çalışmayı sonlandır ve kaydet', 'Finish and save the session')}
+                    >
+                        <View style={styles.pillIcon}>
+                            <StopIcon color={colors.white} size={12} />
+                        </View>
+                        <Text style={styles.pillText}>{l('Sonlandır', 'Finish')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.pill}
+                        onPress={onBreak ? onResume : onPause}
+                        accessibilityRole="button"
+                        accessibilityLabel={onBreak ? l('Moladan dön, devam et', 'End the break and resume') : l('Mola ver', 'Take a break')}
+                    >
+                        <View style={styles.pillIcon}>
+                            {onBreak ? <PlayIcon color={colors.white} size={14} /> : <PauseIcon color={colors.white} size={13} />}
+                        </View>
+                        <Text style={styles.pillText}>{onBreak ? l('Devam Et', 'Resume') : l('Mola Ver', 'Break')}</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
+
+    // "4s 55dk" at the size of "0 dk" would reach the ring and its knob. Sized by length rather
     // than with adjustsFontSizeToFit, which the web build does not support.
     const totalFontSize = total.length > 9 ? FontSize.md : total.length > 7 ? FontSize.lg : FontSize.xl;
-
-    const blockMinutes = onBreak ? breakMinutes : focusMinutes;
-    const phaseMs = elapsed?.phaseMs ?? 0;
-    const blockOver = blockMinutes > 0 && phaseMs >= blockMinutes * MINUTE_MS;
-    const blockText = !running
-        ? null
-        : blockOver
-            ? onBreak
-                ? l('Mola süresi doldu — derse dönebilirsiniz.', 'Break time is up — you can get back to it.')
-                : l('Ders süresi doldu — kısa bir mola verebilirsiniz.', 'Study block is up — you can take a short break.')
-            : `${onBreak ? l('Mola', 'Break') : l('Ders bloğu', 'Study block')} ${formatStopwatchClock(phaseMs)}${blockMinutes > 0 ? ` / ${formatStopwatchClock(blockMinutes * MINUTE_MS)}` : ''}`;
-
-    const summary = running
-        ? l(
-            `${running.subject} çalışılıyor${onBreak ? ', molada' : ''}. Bu oturum ${formatStopwatchClock(elapsed?.studyMs ?? 0)}. Bugün toplam ${total}, hedef ${formatGoalClock(goalMinutes)}.`,
-            `Studying ${running.subject}${onBreak ? ', on a break' : ''}. This session ${formatStopwatchClock(elapsed?.studyMs ?? 0)}. Today ${total} of a ${formatGoalClock(goalMinutes)} goal.`,
-        )
-        : l(`Bugün toplam çalışma ${total}, hedef ${formatGoalClock(goalMinutes)}.`, `Studied today: ${total} of a ${formatGoalClock(goalMinutes)} goal.`);
-
     return (
         <View style={styles.hero}>
             <View style={styles.row}>
-                <View accessible accessibilityRole="summary" accessibilityLabel={summary}>
+                <View
+                    accessible
+                    accessibilityRole="summary"
+                    accessibilityLabel={l(`Bugün toplam çalışma ${total}, hedef ${goal}.`, `Studied today: ${total} of a ${goal} goal.`)}
+                >
                     <ProgressRing
                         size={ringSize}
                         strokeWidth={10}
-                        progress={goalProgress(todayStudyMs, goalMinutes)}
+                        progress={progress}
                         trackColor={RING_TRACK}
                         progressColor={colors.white}
                         knobColor={colors.white}
                         knobDotColor={heroColor}
                     >
                         <View style={[styles.ringCenter, { maxWidth: ringSize * 0.66 }]}>
-                            {running ? (
-                                <>
-                                    <Text style={styles.ringCaption} numberOfLines={1}>
-                                        {onBreak ? l('Molada', 'On a break') : running.subject}
-                                    </Text>
-                                    <Text style={styles.ringClock} numberOfLines={1}>
-                                        {formatStopwatchClock(elapsed?.studyMs ?? 0)}
-                                    </Text>
-                                    <Text style={styles.ringFootnote} numberOfLines={1}>{l(`Bugün ${total}`, `Today ${total}`)}</Text>
-                                </>
-                            ) : (
-                                <>
-                                    <Text style={styles.ringLabel}>{l('Toplam\nÇalışma Süresi', 'Total\nStudy Time')}</Text>
-                                    <Text style={[styles.ringValue, { fontSize: totalFontSize }]} numberOfLines={1}>{total}</Text>
-                                </>
-                            )}
+                            <Text style={styles.ringLabel}>{l('Toplam\nÇalışma Süresi', 'Total\nStudy Time')}</Text>
+                            <Text style={[styles.ringValue, { fontSize: totalFontSize }]} numberOfLines={1}>{total}</Text>
                         </View>
                     </ProgressRing>
                 </View>
@@ -138,55 +169,19 @@ export default function StopwatchHero({
                         canDecrease={goalMinutes > MIN_GOAL_MINUTES}
                         canIncrease={goalMinutes < MAX_GOAL_MINUTES}
                     />
-                    {running ? null : (
-                        <TouchableOpacity
-                            style={styles.startButton}
-                            onPress={onStart}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Kronometreyi başlat', 'Start the stopwatch')}
-                        >
-                            <View style={styles.iconCircle}>
-                                <PlayIcon color={colors.white} size={20} />
-                            </View>
-                            <Text style={styles.startText}>{l('Başla', 'Start')}</Text>
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity
+                        style={styles.startButton}
+                        onPress={onStart}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Kronometreyi başlat', 'Start the stopwatch')}
+                    >
+                        <View style={styles.iconCircle}>
+                            <PlayIcon color={colors.white} size={20} />
+                        </View>
+                        <Text style={styles.startText}>{l('Başla', 'Start')}</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
-
-            {running ? (
-                <>
-                    <View style={styles.runningRow}>
-                        <TouchableOpacity
-                            style={styles.pill}
-                            onPress={onBreak ? onResume : onPause}
-                            accessibilityRole="button"
-                            accessibilityLabel={onBreak ? l('Moladan dön', 'End the break') : l('Mola ver', 'Take a break')}
-                        >
-                            <View style={styles.pillIcon}>
-                                {onBreak ? <PlayIcon color={colors.white} size={16} /> : <PauseIcon color={colors.white} size={16} />}
-                            </View>
-                            <Text style={styles.pillText}>{onBreak ? l('Devam et', 'Resume') : l('Mola ver', 'Break')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.pill}
-                            onPress={onFinish}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Çalışmayı bitir ve kaydet', 'Finish and save the session')}
-                        >
-                            <View style={[styles.pillIcon, styles.pillIconStop]}>
-                                <StopIcon color={colors.white} size={14} />
-                            </View>
-                            <Text style={styles.pillText}>{l('Bitir', 'Finish')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    {blockText ? (
-                        <Text style={[styles.blockText, blockOver && styles.blockTextOver]} accessibilityLiveRegion="polite">
-                            {blockText}
-                        </Text>
-                    ) : null}
-                </>
-            ) : null}
         </View>
     );
 }
@@ -203,13 +198,11 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             gap: Spacing.md,
             ...Shadows.sm,
         },
+        heroRunning: { paddingTop: Spacing.xs, gap: Spacing.sm, paddingBottom: Spacing.lg },
         row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md },
         ringCenter: { alignItems: 'center', gap: 2 },
         ringLabel: { fontSize: FontSize.sm, color: ON_HERO_SOFT, textAlign: 'center', lineHeight: 16 },
         ringValue: { fontWeight: '800', color: colors.white, marginTop: 2 },
-        ringCaption: { fontSize: FontSize.xs, fontWeight: '700', color: colors.white },
-        ringClock: { fontSize: FontSize.lg, fontWeight: '800', color: colors.white, fontVariant: ['tabular-nums'] },
-        ringFootnote: { fontSize: FontSize.xs, color: ON_HERO_SOFT },
         controls: { flex: 1, alignItems: 'center', gap: Spacing.sm },
         goalLabel: { fontSize: FontSize.md, fontWeight: '700', color: colors.white },
         startButton: {
@@ -233,28 +226,34 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             justifyContent: 'center',
         },
         startText: { flex: 1, textAlign: 'center', fontSize: FontSize.xl, fontWeight: '800', color: colors.accent },
-        runningRow: { flexDirection: 'row', gap: Spacing.sm },
+        runningTop: { alignItems: 'center', gap: 6 },
+        todayRow: { alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.xs },
+        todayLabel: { fontSize: FontSize.md, color: ON_HERO_SOFT },
+        todayValue: { color: colors.white, fontWeight: '700' },
+        goalTrack: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: RING_TRACK, overflow: 'hidden' },
+        goalFill: { height: 8, borderRadius: 4, backgroundColor: colors.white },
+        runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', letterSpacing: 0.6, color: colors.white },
+        bigClock: { fontSize: 44, lineHeight: 52, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
+        breakLine: { fontSize: FontSize.md, fontWeight: '600', color: ON_HERO_SOFT, fontVariant: ['tabular-nums'] },
+        runningButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.md },
         pill: {
-            flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
             gap: Spacing.sm,
+            minWidth: 132,
             backgroundColor: colors.bgCard,
             borderRadius: BorderRadius.full,
             padding: 4,
-            paddingRight: Spacing.md,
+            paddingRight: Spacing.lg,
         },
         pillIcon: {
-            width: 30,
-            height: 30,
-            borderRadius: 15,
+            width: 28,
+            height: 28,
+            borderRadius: 14,
             backgroundColor: colors.accent,
             alignItems: 'center',
             justifyContent: 'center',
         },
-        pillIconStop: { backgroundColor: colors.btnAgain },
-        pillText: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '800', color: colors.textPrimary },
-        blockText: { textAlign: 'center', fontSize: FontSize.sm, fontWeight: '600', color: ON_HERO_SOFT, fontVariant: ['tabular-nums'] },
-        blockTextOver: { color: colors.white, fontWeight: '800' },
+        pillText: { fontSize: FontSize.lg, fontWeight: '800', color: colors.accent },
     });
 }

@@ -9,7 +9,7 @@
  * here is pure; storing plans is `studyToolsStore.ts`.
  */
 
-import { clampPass, normalizeStudyKind, normalizeStudyNote, normalizeSubjectName, type StudyKind } from './stopwatch';
+import { clampPass, normalizeStudyKind, normalizeStudyNote, normalizeSubjectName, studySubjectKey, type StudyKind } from './stopwatch';
 
 const DAY_MS = 86_400_000;
 
@@ -201,6 +201,29 @@ export function plannedMinutes(plans: readonly StudyPlanBlock[], days: readonly 
         }
     }
     return total;
+}
+
+/**
+ * Time still to study in each of a day's planned blocks ("Kalan"), by block id. The day's study
+ * of a subject, keyed by `studySubjectKey`, fills that subject's blocks in the order they start,
+ * so a subject planned twice is done once both blocks are.
+ */
+export function plannedTimeLeftMs(
+    blocks: readonly StudyPlanBlock[],
+    studiedMsBySubject: ReadonlyMap<string, number>,
+): Map<string, number> {
+    const unspent = new Map(studiedMsBySubject);
+    const left = new Map<string, number>();
+    const ordered = [...blocks].sort((a, b) => a.startMinute - b.startMinute);
+    for (const block of ordered) {
+        const key = studySubjectKey(block.subject);
+        const plannedMs = block.durationMinutes * 60_000;
+        const studiedMs = Math.max(0, unspent.get(key) ?? 0);
+        const usedMs = Math.min(plannedMs, studiedMs);
+        unspent.set(key, studiedMs - usedMs);
+        left.set(block.id, plannedMs - usedMs);
+    }
+    return left;
 }
 
 /** Minutes after midnight as "09:30". */

@@ -14,7 +14,7 @@ import { alert, confirm } from '../lib/confirm';
 import { formatStudyTotal } from '../lib/stopwatch';
 import { recentStudySubjects } from '../lib/stopwatchStore';
 import { studyDayYmd } from '../lib/studyAnalysis';
-import { studySubjectGlyph } from '../lib/studyCalendar';
+import { studySubjectInitial } from '../lib/studyCalendar';
 import { loadStudyPlans, removeStudyPlans, saveStudyPlans } from '../lib/studyPlanStore';
 import { WEEKDAYS_MONDAY_FIRST, emptyStudyPlan, formatPlanClock, ymdToLocalDate, type StudyPlanBlock } from '../lib/studyPlans';
 
@@ -105,7 +105,7 @@ export default function StudyPlansScreen() {
 
     const planSummary = (plan: StudyPlanBlock) => (
         <View style={styles.planBody}>
-            <View style={styles.tile}><Text style={styles.tileText}>{studySubjectGlyph(plan.subject)}</Text></View>
+            <View style={styles.tile}><Text style={styles.tileText}>{studySubjectInitial(plan.subject)}</Text></View>
             <View style={styles.planCopy}>
                 <Text style={styles.subject} numberOfLines={1}>{plan.subject}</Text>
                 <Text style={styles.meta}>

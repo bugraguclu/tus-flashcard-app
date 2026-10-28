@@ -159,6 +159,54 @@ export function PlusCircleIcon({ color, size }: IconProps) {
     );
 }
 
+export function CheckIcon({ color, size }: IconProps) {
+    return (
+        <IconFrame size={size}>
+            <Path d="M5.5 12.6l4.2 4.2 8.8-9.6" fill="none" stroke={color} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
+        </IconFrame>
+    );
+}
+
+export function ChevronDownIcon({ color, size }: IconProps) {
+    return (
+        <IconFrame size={size}>
+            <Path d="M6 9.5l6 6 6-6" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+        </IconFrame>
+    );
+}
+
+export function CloseIcon({ color, size }: IconProps) {
+    return (
+        <IconFrame size={size}>
+            <Path d="M6 6l12 12M18 6L6 18" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
+        </IconFrame>
+    );
+}
+
+export function SearchIcon({ color, size }: IconProps) {
+    return (
+        <IconFrame size={size}>
+            <Circle cx={10.5} cy={10.5} r={6.2} fill="none" stroke={color} strokeWidth={2.2} />
+            <Path d="M15.2 15.2l4.6 4.6" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" />
+        </IconFrame>
+    );
+}
+
+/** An open book: the running session's note. */
+export function BookIcon({ color, size }: IconProps) {
+    return (
+        <IconFrame size={size}>
+            <Path
+                d="M12 6.6C10.2 5.2 7.6 4.6 4 4.8v13c3.6-.2 6.2.4 8 1.8 1.8-1.4 4.4-2 8-1.8v-13c-3.6-.2-6.2.4-8 1.8zM12 6.6v13"
+                fill="none"
+                stroke={color}
+                strokeWidth={1.8}
+                strokeLinejoin="round"
+            />
+        </IconFrame>
+    );
+}
+
 /** Three ascending bars: the study analytics button's glyph. */
 export function AnalyticsIcon({ color, size }: IconProps) {
     return (

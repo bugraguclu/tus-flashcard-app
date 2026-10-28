@@ -7,18 +7,18 @@ web_path: /yardim/kronometre
 app_help: help?article=stopwatch
 app_screens:
   - "Kronometre — app/stopwatch.tsx"
-  - "Kronometre sayfaları — components/stopwatch/ (SubjectPickerSheet, SessionEditorSheet, StopwatchSettingsSheet, StopwatchAlertsSheet, SessionActionsMenu)"
+  - "Kronometre sayfaları — components/stopwatch/ (StudyStartSheet, StudyPickers, SessionEditorSheet, RunningNoteSheet, StopwatchSettingsSheet, StopwatchAlertsSheet, SessionActionsMenu)"
   - "Çalışma Takvimi — app/study-calendar.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: kronometre-screen-functions (2026-10-28)
 ---
 
 # Kronometre ve çalışma takvimi
 
 **Kronometre**, kartların dışında yaptığınız çalışmayı (ders okuma, soru çözme, deneme sınavı) da
 ölçer ve günlük hedefinize ekler. **Çalışma Takvimi** kart çalışmalarınızı ve Kronometre
-oturumlarınızı gün gün listeler. Kronometre'yi açmak için **İstatistikler** ekranındaki
-**Çalışma serisi** kartına dokunun; Çalışma Takvimi'ni Kronometre'nin sağ alt köşesindeki takvim
-düğmesiyle açarsınız.
+oturumlarınızı gün gün listeler. Kronometre'yi **Desteler** ekranının alt çubuğundaki
+**Kronometre** düğmesiyle veya **İstatistikler** ekranındaki **Çalışma serisi** kartına dokunarak
+açarsınız; Çalışma Takvimi'ni Kronometre başlığındaki takvim düğmesi açar.
 
 > **Anki'den farkı:** Kronometre ve Çalışma Takvimi TusAnkiM'e özgüdür; Anki'de karşılıkları
 > yoktur. Kronometre oturumları `.apkg` paketlerine girmez, TusAnkiM yedeklerinde saklanır.
@@ -30,12 +30,15 @@ düğmesiyle açarsınız.
 ## Kronometre ekranı
 <!-- Uygulamada: Kronometre başlığındaki ⓘ (yeni, app/stopwatch.tsx:324-341) bilgi sayfasının "Daha fazla bilgi" bağlantısı → bu bölüm -->
 
-- **Halka:** Bugünkü toplam çalışma sürenizi gösterir ve günlük hedefe doğru dolar. Kronometre
-  çalışırken ortada ders adı ve bu oturumun süresi görünür.
-- **Günlük Hedef** ve **Başla** düğmesi halkanın yanındadır.
-- **Son Çalışmalarınız:** Bugün ve önceki altı gün; en yeni gün en üstte.
-- Başlıkta zil (hatırlatmalar) ve dişli (Kronometre ayarları) düğmeleri, sağ altta Çalışma
-  Takvimi düğmesi vardır.
+- **Halka:** Bugünkü toplam çalışma sürenizi gösterir ve günlük hedefe doğru dolar. Yanında
+  **Günlük Hedef** ve **Başla** düğmesi vardır.
+- **Kronometre çalışırken** üst bölüm değişir: **Bugün** ve **Hedef** süreleri ile günlük hedefe
+  doğru dolan bir çubuk, dersin adı, bu oturumun çalışma süresi büyük bir saat olarak ve
+  **Sonlandır** ile **Mola Ver** düğmeleri.
+- **Son Çalışmalarınız:** Bugün ve dün; her günün en yeni oturumu en üstte. Daha önceki günler
+  listenin altındaki **Çalışma Takvimi** kartından açılır.
+- Başlıkta zil (hatırlatmalar), takvim (Çalışma Takvimi) ve dişli (Kronometre ayarları)
+  düğmeleri, sağ altta turuncu çalışma araçları düğmesi vardır.
 
 Kronometre oturumları İstatistikler'deki grafiklere ve **Bugün** kartındaki **Çalışma süresi**'ne
 girmez; **Çalışma serisi**'ni ise etkiler. Bkz. [Çalışma serisi](12-statistics.md#streak).
@@ -44,25 +47,31 @@ girmez; **Çalışma serisi**'ni ise etkiler. Bkz. [Çalışma serisi](12-statis
 ## Başlatmak ve mola vermek
 
 1. **Başla**'ya dokunun.
-2. **Hangi dersi çalışacaksınız?** sayfasında bir ders seçin: **Planınız**, **Son çalışılanlar**
-   veya **TUS dersleri** (temel ve klinik bilimler, ayrıca **Soru Çözümü** ve **Deneme Sınavı**).
-   Listede olmayan bir ders için adını arama kutusuna yazıp **Yeni ders olarak kullan** satırına
-   dokunun.
-3. Kronometre hemen başlar.
+2. **Çalışmaya Başla** sayfasında **Ders seçin**'e dokunun, dersi ızgaradan seçip **Kapat**'a
+   dokunun. Izgarada **Karışık** ve TUS dersleri, ayrıca daha önce kullandığınız başka dersler
+   vardır. Listede olmayan bir ders için adını ızgaranın altındaki kutuya yazıp **Seç**'e dokunun.
+3. **Tür Seçin**'e dokunup türü seçin: **1. Tekrar**–**8. Tekrar**, **Çıkmış TUS Soruları**,
+   **Soru Çözümü**, **Dershane**, **Video Ders** veya **Deneme Sınavı**. Üstteki **Ara** kutusu
+   listeyi süzer.
+4. **Başla**'ya dokunun; kronometre hemen başlar.
 
-- **Mola ver:** Çalışma süresi durur, mola süresi işlemeye başlar; halkada **Molada** yazar.
-  **Devam et** ile çalışmaya dönersiniz.
-- Düğmelerin altındaki satır süreyi bloğun uzunluğuyla karşılaştırır, örneğin
-  `Ders bloğu 00:25:00 / 00:50:00`. Süre dolunca "Ders süresi doldu — kısa bir mola
-  verebilirsiniz." yazar. Kronometre kendiliğinden durmaz veya molaya geçmez.
-- **Tekrar sayısı:** **Başla** ile açtığınız bir ders, o dersin son oturumundaki tekrar
-  sayısıyla devam eder (ilk kez çalışıyorsanız 1). Değiştirmek için
-  [Bugünün planı](#plan)'nı veya oturumu düzenlemeyi kullanın.
+Sayfa en son başlattığınız ders ve türle açılır (ilk seferde **Karışık** ve **1. Tekrar**). Bir
+ders seçtiğinizde tekrar sayısı o dersin son "N. Tekrar" oturumundan devam eder.
+
+- **Mola Ver:** Çalışma süresi durur, mola süresi işlemeye başlar; büyük saatin altında
+  **Mola** süresi görünür. **Devam Et** ile çalışmaya dönersiniz.
+- Çalışan oturum **Bugün**'ün en üstünde kendi kartında görünür: **Çalışma** ve **Mola**
+  süreleri, **Oturum süreniz** ve ders bloğunun ilerleyişi, örneğin **%60 · 20 dk kaldı**. Blok
+  dolunca ne kadar aştığınızı yazar (**15 dk aşıldı**); moladayken aynı satır molanın süresini
+  sayar. Kronometre kendiliğinden durmaz veya molaya geçmez.
+- **Çalışma notu:** Çalışan oturum kartının solundaki kitap düğmesi oturuma not (en fazla 100
+  karakter) ekler. Not, kartta "İyi çalışmalar" yazısının yerinde görünür ve oturum bitince
+  onunla kaydedilir.
 
 <a id="finish"></a>
 ## Bitirmek
 
-**Bitir**'e dokunduğunuzda çalışma ve mola toplamını gösteren bir onay gelir; **Tamam** oturumu
+**Sonlandır**'a dokunduğunuzda çalışma ve mola toplamını gösteren bir onay gelir; **Tamam** oturumu
 kaydeder, **İptal** kronometreyi çalışır bırakır. Kaydedilen oturum **Bugün** altında ve Çalışma
 Takvimi'nde görünür, günlük hedefe ve **Çalışma serisi**'ne sayılır.
 
@@ -73,16 +82,17 @@ kaydetmeden sıfırlar. Daha uzun bir oturumu kaydetmek istemiyorsanız bitirdik
 <a id="sessions"></a>
 ## Son Çalışmalarınız ve oturumlar
 
-Zaman çizelgesinde iki tür oturum görünür:
+Zaman çizelgesinde iki tür oturum görünür; ikisi de çizgide ✓ ile işaretlenir:
 
-- **Kart oturumları (✓):** Kart yanıtladığınızda kendiliğinden oluşur; bkz.
+- **Kart oturumları:** Kart yanıtladığınızda kendiliğinden oluşur; bkz.
   [Kart oturumları nasıl oluşur?](#card-sessions).
-- **Kronometre oturumları:** Kronometre ile ölçtükleriniz (kronometre simgesi) ve elle
-  eklediğiniz (✎).
+- **Kronometre oturumları:** Kronometre ile ölçtükleriniz ve elle eklediğiniz. Hangisi olduğu
+  **Oturum ayrıntıları**'nda yazar.
 
-Her oturum kartında ders adı, **Çalışma** ve **Mola** süreleri, **Zaman aralığı** ve bir
-**N. Tekrar** etiketi bulunur. Bu etiket Kronometre oturumunda dersi kaçıncı kez çalıştığınızı,
-kart oturumunda ise o gün o dersteki kaçıncı oturum olduğunu gösterir.
+Her oturum kartında ders adı, tür etiketi, **Çalışma** ve **Mola** süreleri (mola sayısıyla),
+varsa not ve **Zaman aralığı** bulunur. Kronometre oturumunda etiket seçtiğiniz türdür (ör.
+**2. Tekrar**, **Soru Çözümü**); kart oturumunda **N. Tekrar** o gün o dersteki kaçıncı oturum
+olduğunu gösterir.
 
 Kartın solundaki **•••** düğmesi:
 
@@ -92,23 +102,30 @@ Kartın solundaki **•••** düğmesi:
   (kart ve yanıt sayısı, deste). Kart oturumları cevaplarınızdan geldiği için düzenlenmez ve
   silinmez.
 
-Hiç çalışmadığınız bir gün için "Hiç çalışmanız yok!" yazar; böylece seride boşluk olan günleri
-görürsünüz.
+Dün hiç çalışmadıysanız "Hiç çalışmanız yok!" yazar; böylece serideki boşluğu görürsünüz.
 
 <a id="add-session"></a>
 ## Elle çalışma eklemek
 
 Kronometre'yi açmayı unuttuğunuz bir çalışmayı sonradan ekleyebilirsiniz:
 
-1. **Son Çalışmalarınız** başlığının yanındaki **Çalışma Ekle**'ye dokunun.
-2. **Ders seçin**'e dokunup dersi seçin, gerekirse **Tekrar** sayısını değiştirin.
-3. **Tarih** ve **Başlangıç saati**'ni seçin. **Çalışma süresi**'ni saat ve 5 dakikalık adımlarla,
-   **Mola**'yı da oturum içindeki toplam mola olarak girin.
-4. **Kaydet**'e dokunun.
+1. **Son Çalışmalarınız** başlığının yanındaki **Çalışma Ekle**'ye dokunun; **Geçmiş Çalışmanızı
+   Ekleyin** sayfası açılır.
+2. **Ders seçin** ve **Tür Seçin** ile dersi ve türü seçin (başlatırken olduğu gibi).
+3. **Çalışma Başlangıcı** ve **Çalışma Bitişi**'ne dokunup tarihi ve saati seçin. Bitiş şimdiye,
+   başlangıç bir saat öncesine ayarlı açılır.
+4. **Mola Sayısı**'nı ve dakika dakika **Toplam Mola Süresi**'ni girin; isterseniz **Çalışma
+   Notu** yazın (en fazla 100 karakter, **Kalan** sayacı gösterir).
+5. **Çalışma Ekle**'ye dokunun.
 
-Oturum en az 1 dakika olmalı ve gelecekte bitmemelidir; tarih bugün veya daha önce olabilir. Elle
-eklenen oturum o günü **Çalışma serisi**'ne katar. Mevcut bir oturumu **•••** › **Düzenle** ile
-aynı sayfada (**Çalışmayı düzenle**) değiştirirsiniz.
+Çalışma süresi, başlangıç ile bitiş arasındaki süreden toplam mola çıkarılarak hesaplanır. Oturum
+gelecekte bitemez ve 24 saatten uzun olamaz; molalar bu aralığı aşamaz ve geriye en az 1 dakika
+çalışma kalmalıdır. Bir sorun varsa düğmenin altında yazar. Elle eklenen oturum o günü **Çalışma
+serisi**'ne katar.
+
+Mevcut bir oturumu **•••** › **Düzenle** ile aynı sayfada (**Çalışmanızı Düzenleyin**)
+değiştirirsiniz. Başlangıca, bitişe ve molaya dokunmazsanız ölçülen süreler saniyesine kadar
+korunur.
 
 <a id="daily-goal"></a>
 ## Günlük hedef ve toplam süre
@@ -125,21 +142,26 @@ genellikle daha yüksektir. Gün, **Sonraki günün başlangıcı** saatinde de�
 
 **Günlük Hedef**'i halkanın yanındaki **−** ve **+** ile yarımşar saat değiştirirsiniz (00:30 ile
 16:00 arası, varsayılan 08:00). Aynı ayar dişli düğmesindeki **Kronometre ayarları** sayfasında da
-vardır.
+vardır. Kronometre çalışırken bugünkü toplam ve hedef üstteki **Bugün** ve **Hedef** yazılarında,
+ilerleme de altlarındaki çubukta görünür.
 
 <a id="plan"></a>
-## Bugünün planı
+## Bugünün planları
 
-Bugünkü oturumların altındaki satır, bugün çalışmayı planladığınız dersi gösterir:
+**Çalışma Planlama** ile oluşturduğunuz planlardan bugüne düşenler, bugünkü oturumların altında
+birer kart olarak görünür:
 
-- **Kalan:** Günlük hedefe ulaşmak için kalan süre. Hedefe ulaştığınızda **Hedef tamamlandı ✓**
-  yazar.
-- **Başlat:** Planlanan dersi tek dokunuşla başlatır. Başka bir ders çalışıyorsa **Derse geç**
-  onayı çıkar; **Tamam** çalışan oturumu kaydedip planlanan dersi başlatır.
+- Kartta ders, tür ve **Kalan** süre yazar: planlanan süreden o ders için bugün çalıştığınız süre
+  (çalışan kronometre dahil) düşülür. Plan dolunca **Tamamlandı ✓** yazar. Kartın altında planın
+  saatleri bulunur.
+- **▶** düğmesi kronometreyi planın dersi ve türüyle başlatır. Başka bir ders çalışıyorsa **Derse
+  geç** onayı çıkar; **Tamam** çalışan oturumu kaydedip planlanan dersi başlatır. Aynı dersi
+  çalışırken düğme görünmez.
+- Kartın solundaki dişli ve kartın kendisi **Çalışma Planlama**'yı açar.
 
-Planı seçmek veya değiştirmek için satırdaki dişliye ya da "Bugün hangi dersi çalışacaksınız?"
-kartına dokunun. **Bugünün planı** sayfasında önce **Tekrar** sayısını (1–20), sonra dersi seçin.
-**Planı kaldır** planı siler; planınız yokken başlattığınız ilk ders otomatik olarak plan olur.
+Hiç planınız yoksa bugünün altında **Çalışma planınız yok!** kartı görünür; **Oluştur** plan
+sihirbazını açar. Planlarınız olup hiçbiri bugüne düşmüyorsa kart **Bugün için planınız yok!**
+der ve **Planlar** planlarınızı açar.
 
 <a id="exam-date"></a>
 ## Sınav tarihi
@@ -159,6 +181,9 @@ Bloğun uzunluklarını dişli düğmesindeki **Kronometre ayarları**'nda belir
 - **Ders süresi:** Varsayılan 50 dk (5–180 dk). En kısanın altına inince **Kapalı** olur.
 - **Mola süresi:** Varsayılan 10 dk (5–60 dk) veya **Kapalı**.
 
+Bu uzunluklar çalışan oturumun kartındaki ilerleme çubuğunu da belirler; **Kapalı** olan için
+çubuk görünmez.
+
 Zil düğmesindeki **Hatırlatmalar** sayfasında **Ders ve mola hatırlatmaları** anahtarı (varsayılan
 açık) bildirimleri yönetir. Açıkken iPhone, ders bloğu bitince "Ders süresi doldu", mola bitince
 "Mola bitti" bildirimini gösterir; bildirime dokunmak Kronometre'yi açar.
@@ -167,7 +192,7 @@ açık) bildirimleri yönetir. Açıkken iPhone, ders bloğu bitince "Ders süre
   sayılır. Bloğun sonunda çalışmayı sürdürürseniz ikinci bildirim gelmez.
 - Anahtarı açtığınızda iPhone bildirim izni ister. İzin kapalıysa sayfada bunu söyleyen bir satır
   ve **Ayarları Aç** düğmesi görünür.
-- Hatırlatmalar kapalıyken de düğmelerin altındaki satır bloğun bittiğini gösterir.
+- Hatırlatmalar kapalıyken de çalışan oturumun kartı bloğun bittiğini gösterir.
 
 > **Web sürümünde:** Hatırlatmalar yalnızca uygulama bir tarayıcı sekmesinde açıkken gelir; izni
 > tarayıcı ister.
@@ -190,8 +215,8 @@ işlemeye devam eder.
 ## Çalışma Takvimi
 <!-- Uygulamada: Çalışma Takvimi başlığındaki ⓘ (yeni, app/study-calendar.tsx:327-334) bilgi sayfasının "Daha fazla bilgi" bağlantısı → bu bölüm -->
 
-Kronometre'nin sağ altındaki takvim düğmesiyle veya zaman çizelgesinin altındaki
-"Tüm çalışmalarınız Çalışma Takvimi’nde ›" bağlantısıyla açılır.
+Kronometre başlığındaki takvim düğmesiyle veya zaman çizelgesinin altındaki **Çalışma Takvimi**
+kartıyla açılır.
 
 - Üstte **Haftalık** / **Aylık** görünüm ve önceki-sonraki oklar vardır. Bir güne dokunmak
   aşağıdaki listeyi o güne kaydırır; soluk görünen komşu ay günlerine dokunmak o aya geçer.
@@ -200,8 +225,7 @@ Kronometre'nin sağ altındaki takvim düğmesiyle veya zaman çizelgesinin alt�
 - Takvimin altında görünen ayın veya haftanın oturumları, eski günden yeniye sıralanır.
 - **•••** menüsü: kart oturumlarında **Bu oturuma git** (destenin genel bakışını açar); bütün
   oturumlarda **Oturum ayrıntıları** ve **Bu günü haftalık görünümde aç**; Kronometre
-  oturumlarında **Oturumu sil**. Düzenleme yalnızca Kronometre ekranında, son yedi gün için
-  yapılır.
+  oturumlarında **Düzenle** ve **Oturumu sil**.
 - Sağ üstteki grafik simgesi **İstatistikler**'i, sağ alttaki turuncu düğme Kronometre'yi açar.
 
 Çalışmakta olan kronometre, siz bitirince takvime eklenir.

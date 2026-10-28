@@ -10,7 +10,7 @@ import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const dbHolder = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => dbHolder.db }));
 
-import { type StudySessionDraft, type StudySessionRecord } from './stopwatch';
+import { studySubjectKey, type StudySessionDraft, type StudySessionRecord } from './stopwatch';
 import {
     clearStudySessions,
     fetchStudySessionsBetween,
@@ -27,6 +27,7 @@ import {
     emptyStudyPlan,
     generateDetailedPlan,
     normalizeStudyPlans,
+    plannedTimeLeftMs,
     plansOnDay,
     recommendedCourseHours,
     studyPlanProblem,
@@ -103,6 +104,23 @@ describe('study plans', () => {
         db.runSync('INSERT INTO settings (key, value) VALUES (?, ?)', 'tus_study_plans_v1', '{broken');
         expect(() => saveStudyPlans([emptyStudyPlan('2026-10-26', 'p1')])).toThrow();
         expect(db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', 'tus_study_plans_v1')!.value).toBe('{broken');
+    });
+
+    it('counts the day\'s study of a subject off its blocks in the order they start ("Kalan")', () => {
+        const base = emptyStudyPlan('2026-10-26', 'p1');
+        const blocks: StudyPlanBlock[] = [
+            { ...base, id: 'late', subject: 'Fizyoloji', startMinute: 14 * 60, durationMinutes: 120 },
+            { ...base, id: 'early', subject: 'Fizyoloji', startMinute: 9 * 60, durationMinutes: 60 },
+            { ...base, id: 'other', subject: 'Patoloji', startMinute: 10 * 60, durationMinutes: 90 },
+        ];
+        const studied = new Map([[studySubjectKey('FİZYOLOJİ'), 100 * MINUTE]]);
+        const left = plannedTimeLeftMs(blocks, studied);
+        expect(left.get('early')).toBe(0);
+        expect(left.get('late')).toBe(80 * MINUTE);
+        expect(left.get('other')).toBe(90 * MINUTE);
+        // More study than planned leaves every block done, never below zero.
+        const done = plannedTimeLeftMs(blocks, new Map([['fizyoloji', 10 * 60 * MINUTE]]));
+        expect([done.get('early'), done.get('late')]).toEqual([0, 0]);
     });
 });
 

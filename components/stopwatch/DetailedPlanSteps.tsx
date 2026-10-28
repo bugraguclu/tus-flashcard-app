@@ -3,7 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { formatStudyTotal } from '../../lib/stopwatch';
-import { studySubjectGlyph } from '../../lib/studyCalendar';
+import { studySubjectInitial } from '../../lib/studyCalendar';
 import {
     MAX_COURSE_HOURS,
     MAX_DAILY_CAPACITY_MINUTES,
@@ -56,7 +56,7 @@ export function CoursesStep({ courses, onChange }: { courses: StudyWorkload[]; o
                     <View key={course.subject} style={[styles.course, index < courses.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
                         <View style={styles.courseHeader}>
                             <View style={[styles.tile, { backgroundColor: colors.accentLight }]}>
-                                <Text style={[styles.tileText, { color: colors.accent }]}>{studySubjectGlyph(course.subject)}</Text>
+                                <Text style={[styles.tileText, { color: colors.accent }]}>{studySubjectInitial(course.subject)}</Text>
                             </View>
                             <Text style={[styles.courseName, { color: colors.accent }]} numberOfLines={1}>{`${index + 1}. ${course.subject}`}</Text>
                             <TouchableOpacity

@@ -20,7 +20,7 @@ import {
     studyDayYmd,
     type StudyAnalysisPeriod,
 } from '../lib/studyAnalysis';
-import { studySubjectGlyph } from '../lib/studyCalendar';
+import { studySubjectInitial } from '../lib/studyCalendar';
 import { readStudyPlansForDisplay } from '../lib/studyPlanStore';
 import { addDaysYmd, ymdToLocalDate, type StudyPlanBlock } from '../lib/studyPlans';
 
@@ -103,7 +103,7 @@ export default function StudyAnalysisScreen() {
                         accessible
                         accessibilityLabel={`${course.subject}: ${duration(course.studyMs)}, ${daysLabel(course.days)}, ${lastLabel(course.lastStartMs)}`}
                     >
-                        <View style={styles.tile}><Text style={styles.tileText}>{studySubjectGlyph(course.subject)}</Text></View>
+                        <View style={styles.tile}><Text style={styles.tileText}>{studySubjectInitial(course.subject)}</Text></View>
                         <View style={styles.courseCopy}>
                             <Text style={styles.courseName} numberOfLines={1}>{course.subject}</Text>
                             <Text style={styles.courseMeta}>{lastLabel(course.lastStartMs)}</Text>

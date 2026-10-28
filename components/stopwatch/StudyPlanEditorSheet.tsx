@@ -4,7 +4,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { MAX_STUDY_NOTE_LENGTH, MAX_STUDY_PASS, clampPass } from '../../lib/stopwatch';
-import { studySubjectGlyph } from '../../lib/studyCalendar';
+import { studySubjectInitial } from '../../lib/studyCalendar';
 import {
     MAX_PLAN_TITLE_LENGTH,
     WEEKDAYS_MONDAY_FIRST,
@@ -107,7 +107,7 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
                         accessibilityLabel={l(`Ders: ${draft.subject}. Değiştirmek için dokunun.`, `Subject: ${draft.subject}. Tap to change.`)}
                     >
                         <View style={[styles.tile, { backgroundColor: colors.accentLight }]}>
-                            <Text style={[styles.tileText, { color: colors.accent }]}>{studySubjectGlyph(draft.subject)}</Text>
+                            <Text style={[styles.tileText, { color: colors.accent }]}>{studySubjectInitial(draft.subject)}</Text>
                         </View>
                         <Text style={[styles.subjectText, { color: colors.textPrimary }]} numberOfLines={1}>{draft.subject}</Text>
                         <Text style={[styles.chevron, { color: colors.textMuted }]}>›</Text>

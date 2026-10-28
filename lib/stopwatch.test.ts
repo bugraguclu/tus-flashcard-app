@@ -7,14 +7,18 @@ import {
     MAX_STUDY_PASS,
     MIN_GOAL_MINUTES,
     TUS_STUDY_SUBJECTS,
+    blockProgress,
+    draftFromManualEntry,
     examDaysLeft,
     finishStopwatch,
     formatGoalClock,
     formatGoalRemaining,
+    formatHeroDuration,
     formatStopwatchClock,
     formatStudyTotal,
     goalProgress,
     isValidStudySessionRecord,
+    manualSessionProblem,
     nextStopwatchAlert,
     normalizeStopwatchPrefs,
     normalizeStudyNote,
@@ -22,11 +26,14 @@ import {
     parseRunningStopwatch,
     pauseStopwatch,
     resumeStopwatch,
+    setStopwatchNote,
     startStopwatch,
     stepBlockMinutes,
     stepDailyGoal,
     stopwatchElapsed,
+    studySubjectKey,
     withStudySessionDefaults,
+    type ManualSessionEntry,
 } from './stopwatch';
 
 const MINUTE = 60_000;
@@ -116,6 +123,68 @@ describe('stopwatch state machine', () => {
         expect(parseRunningStopwatch(JSON.stringify(older))).toMatchObject({ kind: 'pass', pass: 3, breakCount: 1 });
         expect(parseRunningStopwatch(JSON.stringify({ ...older, phase: 'study' }))?.breakCount).toBe(0);
         expect(parseRunningStopwatch(JSON.stringify({ ...older, kind: 'video', breakCount: 4 }))).toMatchObject({ kind: 'video', breakCount: 4 });
+    });
+
+    it('saves the note written while it ran with the session', () => {
+        let state = startStopwatch('Biyokimya', 1, T0);
+        expect(state.note).toBe('');
+        state = setStopwatchNote(state, `  ${'x'.repeat(MAX_STUDY_NOTE_LENGTH + 20)}  `);
+        expect(state.note).toBe('x'.repeat(MAX_STUDY_NOTE_LENGTH));
+        state = setStopwatchNote(pauseStopwatch(state, T0 + 10 * MINUTE), ' Sayfa 120-140 ');
+        expect(parseRunningStopwatch(JSON.stringify(state))?.note).toBe('Sayfa 120-140');
+        expect(finishStopwatch(state, T0 + 20 * MINUTE).note).toBe('Sayfa 120-140');
+    });
+
+    it('reads a stopwatch saved before notes as one without a note', () => {
+        const { note: _note, ...older } = startStopwatch('Patoloji', 3, T0);
+        expect(parseRunningStopwatch(JSON.stringify(older))?.note).toBe('');
+        expect(parseRunningStopwatch(JSON.stringify({ ...older, note: 42 }))?.note).toBe('');
+    });
+});
+
+describe('hand entry', () => {
+    const NOW = T0 + 3 * 60 * MINUTE;
+    const entry: ManualSessionEntry = {
+        subject: 'Dahiliye',
+        kind: 'pass',
+        pass: 2,
+        startMs: T0,
+        endMs: T0 + 90 * MINUTE,
+        breakMs: 15 * MINUTE,
+        breakCount: 2,
+        note: 'Sayfa 120-140',
+    };
+
+    it('saves the span less the breaks as the study time', () => {
+        expect(manualSessionProblem(entry, NOW)).toBeNull();
+        const draft = draftFromManualEntry(entry);
+        expect(draft).toEqual({
+            subject: 'Dahiliye', kind: 'pass', pass: 2, startMs: T0, endMs: T0 + 90 * MINUTE,
+            studyMs: 75 * MINUTE, breakMs: 15 * MINUTE, breakCount: 2, note: 'Sayfa 120-140',
+        });
+        expect(isValidStudySessionRecord({ ...draft, id: 1, source: 'manual' })).toBe(true);
+    });
+
+    it('refuses an end that is not after the start', () => {
+        expect(manualSessionProblem({ ...entry, endMs: entry.startMs }, NOW)).toBe('order');
+        expect(manualSessionProblem({ ...entry, endMs: entry.startMs - MINUTE }, NOW)).toBe('order');
+    });
+
+    it('refuses an end in the future, allowing the minute that has just begun', () => {
+        expect(manualSessionProblem({ ...entry, endMs: NOW + 30_000 }, NOW)).toBeNull();
+        expect(manualSessionProblem({ ...entry, endMs: NOW + 2 * MINUTE }, NOW)).toBe('future');
+    });
+
+    it('refuses a session longer than a day', () => {
+        expect(manualSessionProblem({ ...entry, startMs: NOW - 24 * 60 * MINUTE, endMs: NOW, breakMs: 0 }, NOW)).toBeNull();
+        expect(manualSessionProblem({ ...entry, startMs: NOW - 24 * 60 * MINUTE - MINUTE, endMs: NOW, breakMs: 0 }, NOW)).toBe('tooLong');
+    });
+
+    it('refuses breaks longer than the span and leaves at least a minute of study', () => {
+        expect(manualSessionProblem({ ...entry, breakMs: 91 * MINUTE }, NOW)).toBe('break');
+        expect(manualSessionProblem({ ...entry, breakMs: -MINUTE }, NOW)).toBe('break');
+        expect(manualSessionProblem({ ...entry, breakMs: 90 * MINUTE }, NOW)).toBe('tooShort');
+        expect(manualSessionProblem({ ...entry, breakMs: 89 * MINUTE }, NOW)).toBeNull();
     });
 });
 
@@ -231,6 +300,12 @@ describe('preferences', () => {
         expect(stepBlockMinutes(52, -1, 180)).toBe(50);
     });
 
+    it('folds subject names for comparison, Turkish capitals included', () => {
+        expect(studySubjectKey('  FİZYOLOJİ ')).toBe(studySubjectKey('Fizyoloji'));
+        expect(studySubjectKey('Kadın   Doğum')).toBe('kadın doğum');
+        expect(studySubjectKey(null)).toBe('');
+    });
+
     it('trims subject names', () => {
         expect(normalizeSubjectName('  Kadın   Hastalıkları  ')).toBe('Kadın Hastalıkları');
         expect(normalizeSubjectName(42)).toBe('');
@@ -264,6 +339,25 @@ describe('display', () => {
         expect(formatStopwatchClock(0)).toBe('00:00:00');
         expect(formatStopwatchClock(3_723_400)).toBe('01:02:03');
         expect(formatStopwatchClock(Number.NaN)).toBe('00:00:00');
+    });
+
+    it('writes the hero\'s times as TUSBuddy does', () => {
+        expect(formatHeroDuration(0, 'tr')).toBe('0 dk');
+        expect(formatHeroDuration(45 * MINUTE + 59_000, 'tr')).toBe('45 dk');
+        expect(formatHeroDuration(8 * 60 * MINUTE, 'tr')).toBe('8 saat');
+        expect(formatHeroDuration(295 * MINUTE, 'tr')).toBe('4s 55dk');
+        expect(formatHeroDuration(295 * MINUTE, 'en')).toBe('4h 55m');
+        expect(formatHeroDuration(120 * MINUTE, 'en')).toBe('2 h');
+        expect(formatHeroDuration(-5, 'en')).toBe('0 min');
+        expect(formatHeroDuration(Number.NaN, 'tr')).toBe('0 dk');
+    });
+
+    it('measures the current block against its length and says how far past it is', () => {
+        expect(blockProgress(20 * MINUTE, 50)).toEqual({ share: 0.4, remainingMs: 30 * MINUTE, overMs: 0 });
+        expect(blockProgress(50 * MINUTE, 50)).toEqual({ share: 1, remainingMs: 0, overMs: 0 });
+        expect(blockProgress(65 * MINUTE, 50)).toEqual({ share: 1, remainingMs: 0, overMs: 15 * MINUTE });
+        expect(blockProgress(-MINUTE, 10)).toEqual({ share: 0, remainingMs: 10 * MINUTE, overMs: 0 });
+        expect(blockProgress(10 * MINUTE, 0)).toBeNull();
     });
 
     it('writes totals in whole minutes', () => {

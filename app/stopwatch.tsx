@@ -7,8 +7,9 @@ import { setStatusBarStyle } from 'expo-status-bar';
 import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';
 import StopwatchHero, { useStopwatchHeroColor } from '../components/stopwatch/StopwatchHero';
 import StopwatchTimeline from '../components/stopwatch/StopwatchTimeline';
-import SubjectPickerSheet from '../components/stopwatch/SubjectPickerSheet';
+import StudyStartSheet, { type StudyChoice } from '../components/stopwatch/StudyStartSheet';
 import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
+import RunningNoteSheet from '../components/stopwatch/RunningNoteSheet';
 import StopwatchSettingsSheet from '../components/stopwatch/StopwatchSettingsSheet';
 import StopwatchAlertsSheet from '../components/stopwatch/StopwatchAlertsSheet';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
@@ -24,16 +25,16 @@ import { useStudySubjects } from '../hooks/useStudySubjects';
 import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';
 import { goBackOr, openOrReturnTo } from '../lib/backNavigation';
 import { readStudyPlansForDisplay } from '../lib/studyPlanStore';
-import { plansOnDay, type StudyPlanBlock } from '../lib/studyPlans';
+import { plannedTimeLeftMs, plansOnDay, type StudyPlanBlock } from '../lib/studyPlans';
 import { alert, confirm } from '../lib/confirm';
 import {
     MIN_SESSION_MS,
     examDaysLeft,
     finishStopwatch,
     stepDailyGoal,
+    studySubjectKey,
     type RunningStopwatch,
     type StopwatchPrefs,
-    type StudyKind,
     type StudySessionDraft,
 } from '../lib/stopwatch';
 import { deleteStudySession, insertStudySession, updateStudySession } from '../lib/stopwatchStore';
@@ -42,13 +43,16 @@ import {
     formatSessionDuration,
     getRecentStudySnapshot,
     recentStudyDays,
+    studyMsBySubject,
     type StudyCalendarAggregate,
     type StudySession,
 } from '../lib/studyCalendar';
 
-/** Days "Son Çalışmalarınız" covers: today and the six before it. */
-const RECENT_DAYS = 7;
+/** Days "Son Çalışmalarınız" covers, as TUSBuddy's stopwatch does: today and yesterday. */
+const RECENT_DAYS = 2;
 const EMPTY_AGGREGATE: StudyCalendarAggregate = { days: [], totalsByDay: new Map() };
+/** What "Çalışmaya Başla" offers before the stopwatch has ever run, as TUSBuddy does. */
+const FIRST_CHOICE: StudyChoice = { subject: 'Karışık', kind: 'pass', pass: 1 };
 
 function lightHaptic(): void {
     try {
@@ -59,10 +63,10 @@ function lightHaptic(): void {
 }
 
 /**
- * Kronometre: today's study time against the daily goal, a stopwatch with breaks, and the last
- * week of study — card sessions and Kronometre sessions on one timeline. It opens from the deck
- * list's bottom bar and from the Statistics screen's daily streak, which these sessions also keep
- * alive.
+ * Kronometre: today's study time against the daily goal, a stopwatch with breaks, and today and
+ * yesterday — card sessions and Kronometre sessions on one timeline, with today's plans — laid out
+ * after TUSBuddy's stopwatch. It opens from the deck list's bottom bar and from the Statistics
+ * screen's daily streak, which these sessions also keep alive.
  */
 export default function StopwatchScreen() {
     const { l, locale, localeTag } = useI18n();
@@ -124,8 +128,8 @@ export default function StopwatchScreen() {
 
     // A stopwatch started before the day rolled over belongs to that day, as its session will.
     const runningCountsToday = running !== null && localDayNumber(running.startedAtMs, rolloverHour) === todayDayNumber;
-    const todayStudyMs = (days[0]?.studyMs ?? 0) + (runningCountsToday ? elapsed?.studyMs ?? 0 : 0);
-    const goalRemainingMs = Math.max(0, prefs.dailyGoalMinutes * 60_000 - todayStudyMs);
+    const liveStudyMs = runningCountsToday ? elapsed?.studyMs ?? 0 : 0;
+    const todayStudyMs = (days[0]?.studyMs ?? 0) + liveStudyMs;
 
     // Plans are edited on their own screen, which this one stays under; read them on return.
     const [studyPlans, setStudyPlans] = useState<StudyPlanBlock[]>(() => readStudyPlansForDisplay());
@@ -136,17 +140,28 @@ export default function StopwatchScreen() {
         () => plansOnDay(studyPlans, dayNumberToYmd(todayDayNumber)),
         [studyPlans, todayDayNumber],
     );
+    // Today's study of each subject, the running session's included, counts off today's plans.
+    const todaySessions = days[0]?.sessions;
+    const liveSubjectKey = runningCountsToday && running ? studySubjectKey(running.subject) : null;
+    const liveMinute = Math.floor(liveStudyMs / 60_000);
+    const planLeftMs = useMemo(() => {
+        const studied = studyMsBySubject(todaySessions ?? []);
+        if (liveSubjectKey) studied.set(liveSubjectKey, (studied.get(liveSubjectKey) ?? 0) + liveMinute * 60_000);
+        return plannedTimeLeftMs(todayPlans, studied);
+    }, [todaySessions, todayPlans, liveSubjectKey, liveMinute]);
 
-    const [picker, setPicker] = useState<'start' | 'plan' | null>(null);
+    const [startOpen, setStartOpen] = useState(false);
     const [editor, setEditor] = useState<{ initial: SessionEditorInitial | null } | null>(null);
+    const [noteOpen, setNoteOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [alertsOpen, setAlertsOpen] = useState(false);
     const [menuSession, setMenuSession] = useState<StudySession | null>(null);
     const { recentSubjects, loadRecentSubjects, passOf } = useStudySubjects('Stopwatch');
+    const lastChoice = useMemo<StudyChoice>(() => prefs.plan ?? FIRST_CHOICE, [prefs.plan]);
 
-    const openPicker = (mode: 'start' | 'plan') => {
+    const openStart = () => {
         loadRecentSubjects();
-        setPicker(mode);
+        setStartOpen(true);
     };
 
     const openEditor = (initial: SessionEditorInitial | null) => {
@@ -182,7 +197,7 @@ export default function StopwatchScreen() {
             return;
         }
         confirm(
-            l('Çalışmayı bitir', 'Finish the session'),
+            l('Çalışmayı sonlandır', 'Finish the session'),
             l(
                 `${running.subject}: ${formatSessionDuration(draft.studyMs, locale)} çalışma ve ${formatSessionDuration(draft.breakMs, locale)} mola kaydedilecek.`,
                 `${running.subject}: ${formatSessionDuration(draft.studyMs, locale)} of study and ${formatSessionDuration(draft.breakMs, locale)} of break will be saved.`,
@@ -193,42 +208,20 @@ export default function StopwatchScreen() {
         );
     };
 
-    const startSession = (subject: string, pass: number, kind: StudyKind) => {
-        stopwatch.start(subject, pass, kind);
+    const startSession = (choice: StudyChoice) => {
+        stopwatch.start(choice.subject, choice.pass, choice.kind);
         lightHaptic();
     };
 
-    const handlePlanStart = () => {
-        const plan = prefs.plan;
-        if (!plan) {
-            openPicker('plan');
-            return;
-        }
-        if (!running) {
-            startSession(plan.subject, plan.pass, plan.kind);
-            return;
-        }
-        if (running.subject === plan.subject) return;
-        confirm(
-            l('Derse geç', 'Switch subject'),
-            l(
-                `${running.subject} çalışması kaydedilip ${plan.subject} başlatılsın mı?`,
-                `Save the ${running.subject} session and start ${plan.subject}?`,
-            ),
-            () => {
-                if (saveFinished()) startSession(plan.subject, plan.pass, plan.kind);
-            },
-        );
-    };
-
-    // A block from "Çalışma Planlama" starts like today's plan: a running session of another
-    // subject is saved first, after asking.
+    // A block from "Çalışma Planlama" starts the stopwatch on its subject and type; a running
+    // session of another subject is saved first, after asking.
     const handleStartPlanned = (planned: StudyPlanBlock) => {
+        const choice: StudyChoice = { subject: planned.subject, kind: planned.kind, pass: planned.pass };
         if (!running) {
-            startSession(planned.subject, planned.pass, planned.kind);
+            startSession(choice);
             return;
         }
-        if (running.subject === planned.subject) return;
+        if (studySubjectKey(running.subject) === studySubjectKey(planned.subject)) return;
         confirm(
             l('Derse geç', 'Switch subject'),
             l(
@@ -236,7 +229,7 @@ export default function StopwatchScreen() {
                 `Save the ${running.subject} session and start ${planned.subject}?`,
             ),
             () => {
-                if (saveFinished()) startSession(planned.subject, planned.pass, planned.kind);
+                if (saveFinished()) startSession(choice);
             },
         );
     };
@@ -380,10 +373,8 @@ export default function StopwatchScreen() {
                     goalMinutes={prefs.dailyGoalMinutes}
                     running={running}
                     elapsed={elapsed}
-                    focusMinutes={prefs.focusMinutes}
-                    breakMinutes={prefs.breakMinutes}
                     onStepGoal={(direction) => stopwatch.updatePrefs({ dailyGoalMinutes: stepDailyGoal(prefs.dailyGoalMinutes, direction) })}
-                    onStart={() => openPicker('start')}
+                    onStart={openStart}
                     onPause={() => { stopwatch.pause(); lightHaptic(); }}
                     onResume={() => { stopwatch.resume(); lightHaptic(); }}
                     onFinish={handleFinish}
@@ -396,9 +387,9 @@ export default function StopwatchScreen() {
                         onPress={() => openEditor(null)}
                         hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                         accessibilityRole="button"
-                        accessibilityLabel={l('Elle çalışma ekle', 'Add a session by hand')}
+                        accessibilityLabel={l('Geçmiş çalışma ekle', 'Add a past session')}
                     >
-                        <PlusCircleIcon color={colors.accent} size={20} />
+                        <PlusCircleIcon color={colors.badgeNew} size={20} />
                         <Text style={styles.addText}>{l('Çalışma Ekle', 'Add Session')}</Text>
                     </TouchableOpacity>
                 </View>
@@ -406,53 +397,65 @@ export default function StopwatchScreen() {
                 <StopwatchTimeline
                     days={days}
                     examDaysLeft={examDaysLeft(prefs.examDate, nowMs)}
-                    plan={prefs.plan}
-                    goalRemainingMs={goalRemainingMs}
-                    live={running && runningCountsToday
-                        ? { subject: running.subject, kind: running.kind, pass: running.pass, studyMs: elapsed?.studyMs ?? 0, onBreak: running.phase === 'break' }
+                    live={running && runningCountsToday && elapsed
+                        ? {
+                            subject: running.subject,
+                            kind: running.kind,
+                            pass: running.pass,
+                            startMs: running.startedAtMs,
+                            studyMs: elapsed.studyMs,
+                            breakMs: elapsed.breakMs,
+                            phaseMs: elapsed.phaseMs,
+                            onBreak: running.phase === 'break',
+                            note: running.note,
+                        }
                         : null}
+                    focusMinutes={prefs.focusMinutes}
+                    breakMinutes={prefs.breakMinutes}
                     onOpenExamSettings={() => setSettingsOpen(true)}
-                    onPlanStart={handlePlanStart}
-                    onPlanEdit={() => openPicker('plan')}
                     onSessionMenu={setMenuSession}
+                    onEditLiveNote={() => setNoteOpen(true)}
                     onOpenCalendar={openCalendar}
                     todayPlans={todayPlans}
+                    planLeftMs={planLeftMs}
                     hasStudyPlans={studyPlans.length > 0}
                     onOpenPlans={() => router.push('/study-plans' as any)}
                     onCreatePlan={() => router.push('/study-plan-wizard' as any)}
-                    onStartPlanned={(planned) => handleStartPlanned(planned)}
+                    onStartPlanned={handleStartPlanned}
                 />
             </ScrollView>
 
             <StudyToolsMenu bottom={insets.bottom + Spacing.lg} />
 
-            <SubjectPickerSheet
-                visible={picker !== null}
-                mode={picker ?? 'start'}
-                plan={prefs.plan}
+            <StudyStartSheet
+                visible={startOpen}
+                initial={lastChoice}
                 recentSubjects={recentSubjects}
                 passOf={passOf}
-                onClose={() => setPicker(null)}
-                onPick={(subject, pass, kind) => {
-                    if (picker === 'plan') stopwatch.updatePrefs({ plan: { subject, kind, pass } });
-                    else startSession(subject, pass, kind);
-                    setPicker(null);
-                }}
-                onClearPlan={() => {
-                    stopwatch.updatePrefs({ plan: null });
-                    setPicker(null);
+                onClose={() => setStartOpen(false)}
+                onStart={(choice) => {
+                    setStartOpen(false);
+                    startSession(choice);
                 }}
             />
             <SessionEditorSheet
                 visible={editor !== null}
                 initial={editor?.initial ?? null}
-                defaultSubject={prefs.plan?.subject ?? null}
-                defaultKind={prefs.plan?.kind ?? 'pass'}
-                defaultPass={prefs.plan?.pass ?? 1}
+                defaultChoice={lastChoice}
                 recentSubjects={recentSubjects}
                 passOf={passOf}
                 onClose={() => setEditor(null)}
                 onSave={handleSaveSession}
+            />
+            <RunningNoteSheet
+                visible={noteOpen && running !== null}
+                subject={running?.subject ?? ''}
+                note={running?.note ?? ''}
+                onClose={() => setNoteOpen(false)}
+                onSave={(note) => {
+                    stopwatch.setNote(note);
+                    setNoteOpen(false);
+                }}
             />
             <StopwatchSettingsSheet
                 visible={settingsOpen}
@@ -489,6 +492,6 @@ function createStyles(colors: ColorScheme) {
         },
         sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
         addButton: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-        addText: { fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
+        addText: { fontSize: FontSize.md, fontWeight: '700', color: colors.badgeNew },
     });
 }

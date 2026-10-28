@@ -19,6 +19,7 @@ import {
     formatSessionDuration,
     getRecentStudySnapshot,
     recentStudyDays,
+    studyMsBySubject,
     studySubjectGlyph,
     subjectOfDeck,
     type StudyReviewRow,
@@ -617,6 +618,29 @@ describe('Kronometre sessions', () => {
         expect(recent.map((day) => day.dayNumber)).toEqual([today, today - 1, today - 2]);
         expect(recent.map((day) => day.sessions.length)).toEqual([0, 1, 0]);
         expect(recent[1]!.studyMs).toBe(30 * MINUTE);
+    });
+
+    it('lists a day\'s latest session first, as TUSBuddy\'s stopwatch does', () => {
+        const today = localDayNumber(new Date('2026-10-03T12:00:00').getTime(), ROLLOVER);
+        const aggregateResult = aggregateWith([], [
+            timer(1, '2026-10-03T08:00:00', 30),
+            timer(2, '2026-10-03T11:00:00', 30),
+            timer(3, '2026-10-03T09:30:00', 30),
+        ]);
+        const recent = recentStudyDays(aggregateResult, today, 1);
+        expect(recent[0]!.sessions.map((session) => session.recordId)).toEqual([2, 3, 1]);
+        // The calendar keeps its own order.
+        expect(aggregateResult.days[0]!.sessions.map((session) => session.recordId)).toEqual([1, 3, 2]);
+    });
+
+    it('adds up a day\'s study by subject, whatever its capitals', () => {
+        const totals = studyMsBySubject([
+            { subject: 'Fizyoloji', studyMs: 30 * MINUTE },
+            { subject: 'FİZYOLOJİ', studyMs: 15 * MINUTE },
+            { subject: 'Anatomi', studyMs: 10 * MINUTE },
+        ]);
+        expect(totals.get('fizyoloji')).toBe(45 * MINUTE);
+        expect(totals.get('anatomi')).toBe(10 * MINUTE);
     });
 });
 

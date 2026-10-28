@@ -16,8 +16,12 @@ const DAY_MS = 86_400_000;
 export const MAX_SUBJECT_LENGTH = 80;
 /** Highest pass through a subject ("N. Tekrar") the plan and the session editor offer. */
 export const MAX_STUDY_PASS = 20;
+/** Passes the type pickers list ("1. Tekrar" to "8. Tekrar"), as TUSBuddy's do. */
+export const LISTED_STUDY_PASSES = 8;
 /** A stopwatch stopped sooner than this is discarded rather than saved as a session. */
 export const MIN_SESSION_MS = MINUTE_MS;
+/** Longest session one hand entry may hold, from its start to its end. */
+export const MAX_MANUAL_SESSION_MS = DAY_MS;
 /** Longest study note ("Çalışma Notu"), in UTF-16 units as the text field counts them. */
 export const MAX_STUDY_NOTE_LENGTH = 100;
 /** Most breaks ("Mola Sayısı") one session records. */
@@ -65,6 +69,8 @@ export interface RunningStopwatch {
     breakCount: number;
     phase: StopwatchPhase;
     phaseStartedAtMs: number;
+    /** The note written while it runs ("Çalışma Notu"), saved with the session; empty for none. */
+    note: string;
 }
 
 export interface StopwatchElapsed {
@@ -117,6 +123,14 @@ export function normalizeSubjectName(raw: unknown): string {
     return raw.replace(/\s+/g, ' ').trim().slice(0, MAX_SUBJECT_LENGTH).trim();
 }
 
+/**
+ * A subject folded for comparison, so `Fizyoloji`, `FİZYOLOJİ` and ` fizyoloji ` — a plan's
+ * course, a session's subject and a deck's name — count as the same subject.
+ */
+export function studySubjectKey(subject: unknown): string {
+    return normalizeSubjectName(subject).toLocaleLowerCase('tr');
+}
+
 export function clampPass(value: unknown): number {
     const number = Math.round(Number(value));
     if (!Number.isFinite(number)) return 1;
@@ -155,7 +169,13 @@ export function startStopwatch(subject: string, pass: number, nowMs: number, kin
         breakCount: 0,
         phase: 'study',
         phaseStartedAtMs: nowMs,
+        note: '',
     };
+}
+
+/** Write the running session's note; it is saved with the session when the stopwatch stops. */
+export function setStopwatchNote(state: RunningStopwatch, note: string): RunningStopwatch {
+    return { ...state, note: normalizeStudyNote(note) };
 }
 
 /** Time in the current phase. A clock set backwards counts as no time rather than negative time. */
@@ -208,7 +228,7 @@ export function finishStopwatch(state: RunningStopwatch, nowMs: number): StudySe
         studyMs,
         breakMs,
         breakCount: state.breakCount,
-        note: '',
+        note: state.note,
     };
 }
 
@@ -244,6 +264,8 @@ export function parseRunningStopwatch(raw: string | null): RunningStopwatch | nu
             : value.phase === 'break' ? 1 : 0,
         phase: value.phase,
         phaseStartedAtMs: value.phaseStartedAtMs as number,
+        // A stopwatch saved before notes could be written while it ran has none.
+        note: normalizeStudyNote(value.note),
     };
 }
 
@@ -285,6 +307,63 @@ export function withStudySessionDefaults(row: StudySessionRow): StudySessionReco
     };
 }
 
+// --- Hand entry ("Geçmiş Çalışmanızı Ekleyin") ---
+
+/**
+ * A session as the hand-entry form holds it: when it started and ended, and the total break
+ * ("Toplam Mola Süresi") inside that span. The study time is what the breaks leave of the span.
+ */
+export interface ManualSessionEntry {
+    subject: string;
+    kind: StudyKind;
+    pass: number;
+    startMs: number;
+    endMs: number;
+    breakMs: number;
+    breakCount: number;
+    note: string;
+}
+
+/**
+ * `order`: it does not end after it starts. `future`: it ends later than now. `tooLong`: it spans
+ * more than a day. `break`: the breaks are longer than the span. `tooShort`: less than a minute of
+ * study is left once the breaks are taken out.
+ */
+export type ManualSessionProblem = 'order' | 'future' | 'tooLong' | 'break' | 'tooShort';
+
+/**
+ * What stops a hand entry from being saved, or null. The end may lie up to a minute past `nowMs`,
+ * because the form's clocks show whole minutes and "now" is the minute that has just begun.
+ */
+export function manualSessionProblem(
+    entry: Pick<ManualSessionEntry, 'startMs' | 'endMs' | 'breakMs'>,
+    nowMs: number,
+): ManualSessionProblem | null {
+    const spanMs = entry.endMs - entry.startMs;
+    if (!(spanMs > 0)) return 'order';
+    if (entry.endMs > nowMs + MINUTE_MS) return 'future';
+    if (spanMs > MAX_MANUAL_SESSION_MS) return 'tooLong';
+    if (!(entry.breakMs >= 0) || entry.breakMs > spanMs) return 'break';
+    if (spanMs - entry.breakMs < MIN_SESSION_MS) return 'tooShort';
+    return null;
+}
+
+/** The session a valid hand entry saves: its span less its breaks is the study time. */
+export function draftFromManualEntry(entry: ManualSessionEntry): StudySessionDraft {
+    const breakMs = Math.max(0, entry.breakMs);
+    return {
+        subject: entry.subject,
+        kind: entry.kind,
+        pass: entry.pass,
+        startMs: entry.startMs,
+        endMs: entry.endMs,
+        studyMs: Math.max(0, entry.endMs - entry.startMs - breakMs),
+        breakMs,
+        breakCount: entry.breakCount,
+        note: entry.note,
+    };
+}
+
 // --- Preferences ---
 
 export interface StudyPlan {
@@ -304,7 +383,10 @@ export interface StopwatchPrefs {
     breakMinutes: number;
     /** Local notifications at the end of a study block or a break. */
     alertsEnabled: boolean;
-    /** The subject and pass the learner is working through, offered as today's plan. */
+    /**
+     * The subject, type and pass the stopwatch last started with, which "Çalışmaya Başla" and the
+     * hand-entry form offer first. Stored under its old name, from when it was today's plan.
+     */
     plan: StudyPlan | null;
 }
 
@@ -421,6 +503,44 @@ export function formatGoalClock(minutes: number): string {
 export function formatStopwatchClock(ms: number): string {
     const seconds = Math.floor(Math.max(0, Number.isFinite(ms) ? ms : 0) / 1000);
     return `${pad2(Math.floor(seconds / 3600))}:${pad2(Math.floor(seconds / 60) % 60)}:${pad2(seconds % 60)}`;
+}
+
+/**
+ * Time as the Kronometre's hero writes it, in whole minutes, as TUSBuddy does: `0 dk`, `45 dk`,
+ * `8 saat`, `4s 55dk` (`0 min`, `45 min`, `8 h`, `4h 55m`).
+ */
+export function formatHeroDuration(ms: number, locale: SupportedLocale): string {
+    const minutes = Math.floor(Math.max(0, Number.isFinite(ms) ? ms : 0) / MINUTE_MS);
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    if (locale === 'tr') {
+        if (hours === 0) return `${minutes} dk`;
+        return rest === 0 ? `${hours} saat` : `${hours}s ${rest}dk`;
+    }
+    if (hours === 0) return `${minutes} min`;
+    return rest === 0 ? `${hours} h` : `${hours}h ${rest}m`;
+}
+
+/** How far the current study block or break has gone against its set length. */
+export interface BlockProgress {
+    /** Share of the block done, from 0 to 1. */
+    share: number;
+    /** Time left in the block; 0 once it is over. */
+    remainingMs: number;
+    /** Time past the block's end; 0 until it is over. */
+    overMs: number;
+}
+
+/** The current phase against its length; null when that length is off (0). */
+export function blockProgress(phaseMs: number, blockMinutes: number): BlockProgress | null {
+    if (!(blockMinutes > 0)) return null;
+    const blockMs = blockMinutes * MINUTE_MS;
+    const elapsedMs = Math.max(0, Number.isFinite(phaseMs) ? phaseMs : 0);
+    return {
+        share: Math.min(1, elapsedMs / blockMs),
+        remainingMs: Math.max(0, blockMs - elapsedMs),
+        overMs: Math.max(0, elapsedMs - blockMs),
+    };
 }
 
 /** Whole-minute total: `0 dk`, `45 dk`, `1 sa 20 dk` (`0 min`, `45 min`, `1 h 20 min`). */

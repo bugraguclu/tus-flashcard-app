@@ -14,6 +14,7 @@ import { HeaderBackIcon, HeaderForwardIcon } from '../components/HeaderBackIcon'
 import StudyDayBox, { formatWeekRange, mondayIndex, studyWeekdayLabels } from '../components/StudyDayBox';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
 import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
+import type { StudyChoice } from '../components/stopwatch/StudyStartSheet';
 import { AnalyticsIcon, StopwatchIcon } from '../components/stopwatch/StopwatchIcons';
 import PlannedStudyCard from '../components/stopwatch/PlannedStudyCard';
 import StudySessionCard from '../components/stopwatch/StudySessionCard';
@@ -562,9 +563,7 @@ export default function StudyCalendarScreen() {
             <SessionEditorSheet
                 visible={editing !== null}
                 initial={editing}
-                defaultSubject={null}
-                defaultKind="pass"
-                defaultPass={1}
+                defaultChoice={NEW_SESSION_CHOICE}
                 recentSubjects={recentSubjects}
                 passOf={passOf}
                 onClose={() => setEditing(null)}
@@ -581,6 +580,8 @@ interface StudyDaySection {
     plans: StudyPlanBlock[];
 }
 
+/** The calendar only edits sessions; a new one would start as TUSBuddy's form does. */
+const NEW_SESSION_CHOICE: StudyChoice = { subject: 'Karışık', kind: 'pass', pass: 1 };
 const STOPWATCH_BUTTON_SIZE = 56;
 /** Tail padding that keeps the last card out from under the floating stopwatch and tools buttons. */
 const STOPWATCH_BUTTON_CLEARANCE = STOPWATCH_BUTTON_SIZE + STUDY_TOOLS_FAB_SIZE + Spacing.md + 2 * Spacing.lg;

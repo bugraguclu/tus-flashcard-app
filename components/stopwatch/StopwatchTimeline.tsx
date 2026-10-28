@@ -3,47 +3,40 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { dayNumberToYmd } from '../../lib/ankiState';
-import { formatGoalRemaining, formatStopwatchClock, type StudyKind, type StudyPlan } from '../../lib/stopwatch';
-import { studySubjectGlyph, type StudySession } from '../../lib/studyCalendar';
+import { studySubjectKey } from '../../lib/stopwatch';
+import type { StudySession } from '../../lib/studyCalendar';
 import type { StudyPlanBlock } from '../../lib/studyPlans';
+import LiveSessionCard, { type LiveSession } from './LiveSessionCard';
 import NoStudyPlanCard from './NoStudyPlanCard';
 import PlannedStudyCard from './PlannedStudyCard';
 import SleepingPanda from './SleepingPanda';
 import StudySessionCard from './StudySessionCard';
-import { studyTypeLabel } from './StudyTypeChips';
-import { CalendarIcon, ClockIcon, GearIcon, HourglassIcon, StopwatchIcon } from './StopwatchIcons';
+import { CalendarIcon, HourglassIcon, MinusIcon } from './StopwatchIcons';
 import { TIMELINE_LINE_X, timelineStyles } from './timelineStyles';
 
 export interface TimelineDay {
     dayNumber: number;
     studyMs: number;
+    /** Latest first. */
     sessions: StudySession[];
-}
-
-/** The stopwatch that is running now, shown as today's latest entry. */
-export interface LiveSession {
-    subject: string;
-    kind: StudyKind;
-    pass: number;
-    studyMs: number;
-    onBreak: boolean;
 }
 
 interface StopwatchTimelineProps {
     /** Today first, then the days before it. */
     days: TimelineDay[];
     examDaysLeft: number | null;
-    plan: StudyPlan | null;
-    /** Time still needed today to reach the daily goal. */
-    goalRemainingMs: number;
     live: LiveSession | null;
+    /** Length of a study block and of a break, which the running session's card counts against. */
+    focusMinutes: number;
+    breakMinutes: number;
     onOpenExamSettings: () => void;
-    onPlanStart: () => void;
-    onPlanEdit: () => void;
     onSessionMenu: (session: StudySession) => void;
+    onEditLiveNote: () => void;
     onOpenCalendar: () => void;
     /** Today's blocks from "Çalışma Planlama". */
     todayPlans: StudyPlanBlock[];
+    /** Time still to study in each of today's blocks, by block id. */
+    planLeftMs: ReadonlyMap<string, number>;
     /** Whether "Çalışma Planlama" holds any plan; without one, today offers to create it. */
     hasStudyPlans: boolean;
     onOpenPlans: () => void;
@@ -52,37 +45,39 @@ interface StopwatchTimelineProps {
 }
 
 /**
- * "Son Çalışmalarınız": the last days as a vertical timeline. Today lists its sessions and then
- * the plan with the time still needed for the daily goal; an earlier day without study says so
- * rather than disappearing, which is what makes a broken streak visible.
+ * "Son Çalışmalarınız": today and yesterday as a vertical timeline, as TUSBuddy's stopwatch shows
+ * them. Today lists the running session, the day's sessions latest first and its plans with the
+ * time still to study; yesterday says so when it had no study, which is what makes a broken streak
+ * visible. Every earlier day is in the Study Calendar, at the bottom.
  */
 export default function StopwatchTimeline({
     days,
     examDaysLeft,
-    plan,
-    goalRemainingMs,
     live,
+    focusMinutes,
+    breakMinutes,
     onOpenExamSettings,
-    onPlanStart,
-    onPlanEdit,
     onSessionMenu,
+    onEditLiveNote,
     onOpenCalendar,
     todayPlans,
+    planLeftMs,
     hasStudyPlans,
     onOpenPlans,
     onCreatePlan,
     onStartPlanned,
 }: StopwatchTimelineProps) {
-    const { l, locale, localeTag } = useI18n();
+    const { l, localeTag } = useI18n();
     const colors = useThemeColors();
     const shared = timelineStyles(colors);
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const liveKey = live ? studySubjectKey(live.subject) : null;
 
     const dayLabel = (dayNumber: number, index: number) => {
         if (index === 0) return l('Bugün', 'Today');
         if (index === 1) return l('Dün', 'Yesterday');
         return new Date(`${dayNumberToYmd(dayNumber)}T12:00:00`)
-            .toLocaleDateString(localeTag, { day: 'numeric', month: 'short' });
+            .toLocaleDateString(localeTag, { day: 'numeric', month: 'long' });
     };
 
     const examLabel = examDaysLeft === null || examDaysLeft < 0
@@ -100,122 +95,9 @@ export default function StopwatchTimeline({
                 ? l(`Sınava ${examLabel}. Sınav tarihini değiştirin.`, `${examLabel} until the exam. Change the exam date.`)
                 : examLabel}
         >
-            <HourglassIcon color={colors.streak} size={16} />
+            <HourglassIcon color={colors.streak} size={15} />
             <Text style={styles.examText}>{examLabel}</Text>
         </TouchableOpacity>
-    );
-
-    const goalMet = goalRemainingMs <= 0;
-    const planIsRunning = Boolean(plan && live?.subject === plan.subject);
-
-    const liveRow = live ? (
-        <View style={shared.row} accessible accessibilityLabel={l(
-            `Şu an ${live.subject} çalışılıyor${live.onBreak ? ', molada' : ''}, ${formatStopwatchClock(live.studyMs)}`,
-            `Studying ${live.subject} now${live.onBreak ? ', on a break' : ''}, ${formatStopwatchClock(live.studyMs)}`,
-        )}>
-            <View style={shared.gutter}>
-                <View style={shared.line} />
-                <View style={shared.nodeSlot}>
-                    <View style={[shared.node, live.onBreak ? styles.nodeBreak : shared.nodeTimer]}>
-                        <StopwatchIcon color={colors.white} size={16} />
-                    </View>
-                </View>
-            </View>
-            <View style={shared.column}>
-                <View style={[shared.card, styles.liveCard]}>
-                    <View style={shared.tile}>
-                        <Text style={shared.tileText}>{studySubjectGlyph(live.subject)}</Text>
-                    </View>
-                    <View style={shared.body}>
-                        <View style={shared.titleRow}>
-                            <Text style={shared.subject} numberOfLines={1}>{live.subject}</Text>
-                            <View style={shared.chip}>
-                                <Text style={shared.chipText}>{studyTypeLabel(l, live.kind, live.pass)}</Text>
-                            </View>
-                        </View>
-                        <Text style={[styles.liveStatus, live.onBreak && styles.liveStatusBreak]}>
-                            {live.onBreak ? l('Molada', 'On a break') : l('Şu an çalışılıyor', 'Studying now')}
-                            {' · '}
-                            <Text style={styles.liveClock}>{formatStopwatchClock(live.studyMs)}</Text>
-                        </Text>
-                    </View>
-                </View>
-            </View>
-        </View>
-    ) : null;
-
-    const planRow = (
-        <View style={shared.row}>
-            <View style={shared.gutter}>
-                <View style={shared.line} />
-                <View style={shared.sideButtonSlot}>
-                    <TouchableOpacity
-                        style={shared.sideButton}
-                        onPress={onPlanEdit}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Bugünün planını düzenle', "Edit today's plan")}
-                    >
-                        <GearIcon color={colors.textSecondary} size={16} />
-                    </TouchableOpacity>
-                </View>
-                <View style={[shared.nodeSlot, { pointerEvents: 'none' }]}>
-                    <View style={[shared.node, shared.nodePlanned]}>
-                        <ClockIcon color={colors.white} size={18} />
-                    </View>
-                </View>
-            </View>
-            <View style={shared.column}>
-                {plan ? (
-                    <View style={shared.card}>
-                        <View style={shared.tile}>
-                            <Text style={shared.tileText}>{studySubjectGlyph(plan.subject)}</Text>
-                        </View>
-                        <View style={shared.body}>
-                            <View style={shared.titleRow}>
-                                <Text style={shared.subject} numberOfLines={1}>{plan.subject}</Text>
-                                <View style={styles.planChip}>
-                                    <Text style={styles.planChipText}>{studyTypeLabel(l, plan.kind, plan.pass)}</Text>
-                                </View>
-                            </View>
-                            <View style={styles.planFooter}>
-                                {goalMet ? (
-                                    <Text style={[styles.remaining, styles.goalMet]}>
-                                        {l('Hedef tamamlandı ✓', 'Goal reached ✓')}
-                                    </Text>
-                                ) : (
-                                    <Text style={styles.remaining}>
-                                        {l('Kalan: ', 'Left: ')}
-                                        <Text style={styles.remainingValue}>{formatGoalRemaining(goalRemainingMs, locale)}</Text>
-                                    </Text>
-                                )}
-                                <TouchableOpacity
-                                    style={[styles.startButton, planIsRunning && styles.startButtonBusy]}
-                                    onPress={onPlanStart}
-                                    disabled={planIsRunning}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={planIsRunning
-                                        ? l(`${plan.subject} çalışılıyor`, `Studying ${plan.subject}`)
-                                        : l(`${plan.subject} için kronometreyi başlat`, `Start the stopwatch for ${plan.subject}`)}
-                                    accessibilityState={{ disabled: planIsRunning }}
-                                >
-                                    <Text style={styles.startText}>{planIsRunning ? l('Çalışılıyor', 'Running') : l('Başlat', 'Start')}</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                ) : (
-                    <TouchableOpacity
-                        style={[shared.card, styles.planPrompt]}
-                        onPress={onPlanEdit}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.planPromptTitle}>{l('Bugün hangi dersi çalışacaksınız?', 'What will you study today?')}</Text>
-                        <Text style={styles.planPromptHint}>{l('Bir ders ve tür seçin; buradan tek dokunuşla başlarsınız.', 'Choose a subject and type to start it from here in one tap.')}</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-        </View>
     );
 
     return (
@@ -236,27 +118,37 @@ export default function StopwatchTimeline({
                         <View style={shared.row}>
                             <View style={shared.gutter}><View style={shared.line} /></View>
                             <View style={[shared.column, styles.todayEmpty]}>
-                                <SleepingPanda width={92} snoreColor={colors.badgeNew} />
+                                <SleepingPanda width={84} snoreColor={colors.badgeNew} />
                                 <Text style={styles.todayEmptyText}>{l('Henüz çalışmanız yok', 'No study yet today')}</Text>
                             </View>
                         </View>
+                    ) : null}
+
+                    {index === 0 && live ? (
+                        <LiveSessionCard
+                            live={live}
+                            focusMinutes={focusMinutes}
+                            breakMinutes={breakMinutes}
+                            onEditNote={onEditLiveNote}
+                        />
                     ) : null}
 
                     {day.sessions.map((session) => (
                         <StudySessionCard key={session.key} session={session} onOpenMenu={onSessionMenu} />
                     ))}
 
-                    {index === 0 ? liveRow : null}
                     {index === 0 ? todayPlans.map((planned) => (
                         <PlannedStudyCard
                             key={planned.id}
                             plan={planned}
+                            remainingMs={planLeftMs.get(planned.id) ?? planned.durationMinutes * 60_000}
                             onOpen={onOpenPlans}
-                            onStart={live?.subject === planned.subject ? undefined : () => onStartPlanned(planned)}
+                            onStart={liveKey === studySubjectKey(planned.subject) ? undefined : () => onStartPlanned(planned)}
                         />
                     )) : null}
-                    {index === 0 && !hasStudyPlans ? <NoStudyPlanCard onCreate={onCreatePlan} /> : null}
-                    {index === 0 ? planRow : null}
+                    {index === 0 && todayPlans.length === 0 ? (
+                        <NoStudyPlanCard hasPlans={hasStudyPlans} onPress={hasStudyPlans ? onOpenPlans : onCreatePlan} />
+                    ) : null}
 
                     {index > 0 && day.sessions.length === 0 ? (
                         <View style={shared.row}>
@@ -264,13 +156,13 @@ export default function StopwatchTimeline({
                                 <View style={shared.line} />
                                 <View style={[shared.nodeSlot, { pointerEvents: 'none' }]}>
                                     <View style={[shared.node, shared.nodeMissed]}>
-                                        <Text style={styles.missedGlyph}>−</Text>
+                                        <MinusIcon color={colors.white} size={13} />
                                     </View>
                                 </View>
                             </View>
                             <View style={shared.column}>
                                 <View style={[shared.card, styles.missedCard]}>
-                                    <SleepingPanda width={52} snoreColor={colors.badgeNew} />
+                                    <SleepingPanda width={50} snoreColor={colors.badgeNew} />
                                     <Text style={styles.missedText}>{l('Hiç çalışmanız yok!', 'No study this day!')}</Text>
                                 </View>
                             </View>
@@ -322,37 +214,6 @@ function createStyles(colors: ColorScheme) {
         examText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
         todayEmpty: { alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.sm },
         todayEmptyText: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
-        planChip: {
-            borderWidth: 1,
-            borderColor: colors.badgeNew,
-            borderRadius: BorderRadius.full,
-            paddingHorizontal: Spacing.sm,
-            paddingVertical: 3,
-        },
-        planChipText: { fontSize: FontSize.xs, fontWeight: '700', color: colors.badgeNew },
-        // When "Kalan" and the button do not fit side by side, the button moves under it, right-aligned.
-        planFooter: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: Spacing.sm, rowGap: Spacing.xs },
-        remaining: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
-        remainingValue: { color: colors.accent, fontWeight: '800' },
-        goalMet: { color: colors.btnGood, fontWeight: '800' },
-        startButton: {
-            marginLeft: 'auto',
-            backgroundColor: colors.accent,
-            borderRadius: BorderRadius.md,
-            paddingHorizontal: Spacing.md,
-            paddingVertical: 5,
-        },
-        startButtonBusy: { backgroundColor: colors.textMuted },
-        startText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.white },
-        planPrompt: { flexDirection: 'column', gap: Spacing.xs },
-        planPromptTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
-        planPromptHint: { fontSize: FontSize.sm, color: colors.textSecondary },
-        nodeBreak: { backgroundColor: colors.streak },
-        liveCard: { borderWidth: 1.5, borderColor: colors.accent },
-        liveStatus: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
-        liveStatusBreak: { color: colors.streak },
-        liveClock: { fontWeight: '800', fontVariant: ['tabular-nums'] },
-        missedGlyph: { color: colors.white, fontSize: FontSize.xl, fontWeight: '900', lineHeight: 22 },
         missedCard: { alignItems: 'center' },
         missedText: { flex: 1, fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
         calendarCard: {
