@@ -5,9 +5,10 @@ Date: 2026-10-28.
 ## Change
 
 Desteler keeps one green ＋ button and its existing three actions: Create filtered
-deck, Create deck and Add note. The menu now uses the stopwatch tools' presentation:
-a transparent native Modal with a fade, a 60% black backdrop, three wide cards and
-the same button at the same position to close it. Tapping the backdrop also closes it.
+deck, Create deck and Add note. The menu now opens like the stopwatch tools: a
+transparent native Modal with a fade, a 60% black backdrop and the same button at the
+same position to close it. Tapping the backdrop also closes it. The actions keep their
+original look: a grey label beside a small green square icon, right-aligned above ＋.
 The orange study tools button stays on Kronometre and Çalışma Takvimi.
 
 The trigger clears the measured bottom bar and iPhone bottom safe area. Its list
@@ -34,6 +35,12 @@ scheduling, collection storage or action destination.
   opens its existing form, and Add Note opens the editor. Back returns to Desteler
   with the add menu closed. No browser runtime errors occurred.
 - The 390×844 open menu was visually inspected after its fade completed.
+- Follow-up the same day restored the original labelled buttons in place of the wide
+  cards. Web dev server at 375×812: the three rows sit right-aligned on ＋'s edge with
+  46 px icons 12 px above it; ＋ and the backdrop close the menu; Create Deck opens its
+  form after the menu closes. Under a load average of 50–90 the full test run timed out
+  in nine unrelated data test files; all nine passed when rerun on their own
+  (112 tests), and TypeScript and `npm run verify:ios` passed.
 - `git diff --check`.
 
 ## Native limitation

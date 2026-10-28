@@ -17,7 +17,7 @@ interface DeckAddMenuProps {
     onAddCard: () => void;
 }
 
-/** The deck list's add actions, using the stopwatch tools' fade and dimmed-card presentation. */
+/** The deck list's add actions as labelled buttons above ＋, fading in over the stopwatch tools' dimmed backdrop. */
 export default function DeckAddMenu({
     bottom, visible, onOpen, onClose, onCreateFilteredDeck, onCreateDeck, onAddCard,
 }: DeckAddMenuProps) {
@@ -83,24 +83,26 @@ export default function DeckAddMenu({
                         accessibilityLabel={l('Kapat', 'Close')}
                     />
                     <View
-                        style={[styles.cards, {
-                            paddingBottom: bottom + FAB_SIZE + Spacing.lg,
+                        style={[styles.actions, {
+                            paddingBottom: bottom + FAB_SIZE + Spacing.md,
                             paddingLeft: Spacing.lg + insets.left,
-                            paddingRight: Spacing.lg + insets.right,
                         }]}
                         pointerEvents="box-none"
                     >
                         {actions.map(({ label, glyph, onPress }) => (
                             <TouchableOpacity
                                 key={glyph}
-                                style={[styles.card, { backgroundColor: colors.accent }]}
+                                style={styles.actionRow}
                                 onPress={() => selectAction(onPress)}
-                                activeOpacity={0.85}
                                 accessibilityRole="button"
                                 accessibilityLabel={label}
                             >
-                                <Text style={[styles.glyph, { color: colors.white }]}>{glyph}</Text>
-                                <Text style={[styles.title, { color: colors.white }]}>{label}</Text>
+                                <View style={styles.actionLabel}>
+                                    <Text style={[styles.actionLabelText, { color: colors.white }]}>{label}</Text>
+                                </View>
+                                <View style={[styles.actionButton, { backgroundColor: colors.accent }]}>
+                                    <Text style={[styles.actionIcon, { color: colors.white }]}>{glyph}</Text>
+                                </View>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -125,17 +127,32 @@ const styles = StyleSheet.create({
     fabIcon: { fontSize: 30, fontWeight: '400', lineHeight: 32 },
     overlay: { flex: 1, justifyContent: 'flex-end' },
     backdrop: { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
-    cards: { gap: Spacing.md },
-    card: {
+    actions: {
+        gap: Spacing.md,
+        alignItems: 'flex-end',
+        paddingRight: Spacing.lg,
+    },
+    actionRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'flex-end',
         gap: Spacing.md,
-        minHeight: 76,
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-        borderRadius: 12,
+    },
+    actionLabel: {
+        maxWidth: 240,
+        borderRadius: 4,
+        backgroundColor: 'rgba(65, 65, 65, 0.82)',
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+    },
+    actionLabelText: { fontSize: FontSize.sm, fontWeight: '600' },
+    actionButton: {
+        width: 46,
+        height: 46,
+        borderRadius: BorderRadius.md,
+        alignItems: 'center',
+        justifyContent: 'center',
         ...Shadows.md,
     },
-    glyph: { width: 36, textAlign: 'center', fontSize: 30 },
-    title: { flex: 1, fontSize: FontSize.lg, fontWeight: '800' },
+    actionIcon: { fontSize: 21, fontWeight: '700' },
 });
