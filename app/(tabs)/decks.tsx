@@ -76,6 +76,7 @@ import GearGlyph from '../../components/GearGlyph';
 import { StopwatchIcon } from '../../components/stopwatch/StopwatchIcons';
 import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/DeckListTable';
+import DeckAddMenu, { DECK_ADD_MENU_LIST_INSET } from '../../components/decks/DeckAddMenu';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
@@ -193,6 +194,7 @@ export default function DecksScreen() {
     }, []);
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [showAddMenu, setShowAddMenu] = useState(false);
+    const [bottomBarHeight, setBottomBarHeight] = useState(66);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const pendingOverflowRouteRef = useRef<string | null>(null);
     const pendingOverflowActionRef = useRef<(() => void) | null>(null);
@@ -2337,7 +2339,7 @@ export default function DecksScreen() {
                     CellRendererComponent={DeckDragCell}
                     ListHeaderComponent={deckListHeader}
                     ListEmptyComponent={deckListEmpty}
-                    ListFooterComponent={<View style={{ height: 80 }} />}
+                    ListFooterComponent={<View style={{ height: DECK_ADD_MENU_LIST_INSET }} />}
                     showsVerticalScrollIndicator={false}
                     scrollEnabled={!draggingDeck}
                     onScroll={(e) => {
@@ -2412,71 +2414,17 @@ export default function DecksScreen() {
                 )}
             </View>
 
-            {showAddMenu && (
-                <TouchableOpacity
-                    style={styles.fabDismissLayer}
-                    activeOpacity={1}
-                    onPress={() => setShowAddMenu(false)}
-                    accessibilityLabel={l('Ekleme menüsünü kapat', 'Close add menu')}
-                />
-            )}
+            <DeckAddMenu
+                bottom={insets.bottom + bottomBarHeight + Spacing.md}
+                visible={showAddMenu}
+                onOpen={() => setShowAddMenu(true)}
+                onClose={() => setShowAddMenu(false)}
+                onCreateFilteredDeck={() => openCreateFilteredDeck()}
+                onCreateDeck={openCreateDeck}
+                onAddCard={openAddCard}
+            />
 
-            <View style={styles.fabWrap}>
-                {showAddMenu && (
-                    <View style={styles.fabActions}>
-                        <TouchableOpacity
-                            style={styles.fabActionRow}
-                            onPress={() => openCreateFilteredDeck()}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Filtrelenmiş deste oluştur', 'Create filtered deck')}
-                        >
-                            <View style={styles.fabActionLabel}>
-                                <Text style={styles.fabActionLabelText}>{l('Filtrelenmiş deste oluştur', 'Create filtered deck')}</Text>
-                            </View>
-                            <View style={styles.fabActionButton}>
-                                <Text style={styles.fabActionIcon}>⧉</Text>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.fabActionRow}
-                            onPress={openCreateDeck}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Deste oluştur', 'Create deck')}
-                        >
-                            <View style={styles.fabActionLabel}>
-                                <Text style={styles.fabActionLabelText}>{l('Deste oluştur', 'Create deck')}</Text>
-                            </View>
-                            <View style={styles.fabActionButton}>
-                                <Text style={styles.fabActionIcon}>▤</Text>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.fabActionRow}
-                            onPress={openAddCard}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Kart ekle', 'Add note')}
-                        >
-                            <View style={styles.fabActionLabel}>
-                                <Text style={styles.fabActionLabelText}>{l('Kart ekle', 'Add note')}</Text>
-                            </View>
-                            <View style={styles.fabActionButton}>
-                                <Text style={styles.fabActionIcon}>✎</Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                )}
-                <TouchableOpacity
-                    style={[styles.fabMain, showAddMenu && styles.fabMainOpen]}
-                    onPress={() => setShowAddMenu((open) => !open)}
-                    accessibilityRole="button"
-                    accessibilityLabel={showAddMenu ? l('Ekleme menüsünü kapat', 'Close add menu') : l('Ekle', 'Add')}
-                    accessibilityState={{ expanded: showAddMenu }}
-                >
-                    <Text style={styles.fabMainIcon}>＋</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.bottomBar}>
+            <View style={styles.bottomBar} onLayout={(event) => setBottomBarHeight(event.nativeEvent.layout.height)}>
                 <TouchableOpacity
                     style={styles.bottomBtn}
                     onPress={() => router.push('/browser' as any)}
@@ -2807,73 +2755,6 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '800',
     },
     mobileDragPreviewHintOrder: { color: colors.textSecondary },
-
-    fabDismissLayer: {
-        ...StyleSheet.absoluteFill,
-        zIndex: 20,
-    },
-    fabWrap: {
-        position: 'absolute',
-        right: Spacing.lg,
-        bottom: 112,
-        zIndex: 30,
-        alignItems: 'flex-end',
-        // Kept in the stylesheet: react-native-web applies 'box-none' only to compiled styles.
-        pointerEvents: 'box-none',
-    },
-    fabActions: {
-        gap: Spacing.md,
-        marginBottom: Spacing.md,
-        alignItems: 'flex-end',
-    },
-    fabActionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-        gap: Spacing.md,
-    },
-    fabActionLabel: {
-        maxWidth: 240,
-        borderRadius: 4,
-        backgroundColor: 'rgba(65, 65, 65, 0.82)',
-        paddingHorizontal: 10,
-        paddingVertical: 7,
-    },
-    fabActionLabelText: {
-        color: colors.white,
-        fontSize: FontSize.sm,
-        fontWeight: '600',
-    },
-    fabActionButton: {
-        width: 46,
-        height: 46,
-        borderRadius: BorderRadius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.accent,
-        ...Shadows.md,
-    },
-    fabActionIcon: {
-        color: colors.white,
-        fontSize: 21,
-        fontWeight: '700',
-    },
-    fabMain: {
-        width: 56,
-        height: 56,
-        borderRadius: BorderRadius.lg,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.accent,
-        ...Shadows.lg,
-    },
-    fabMainOpen: { backgroundColor: colors.accentHover },
-    fabMainIcon: {
-        color: colors.white,
-        fontSize: 30,
-        fontWeight: '400',
-        lineHeight: 32,
-    },
 
     bottomBar: {
         flexDirection: 'row',
