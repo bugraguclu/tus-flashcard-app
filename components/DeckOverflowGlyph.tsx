@@ -1,4 +1,5 @@
 import Svg, { Path, Rect } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 
 type Kind = 'emptyCards' | 'import' | 'export' | 'backup' | 'restore';
 
@@ -10,7 +11,7 @@ export default function DeckOverflowGlyph({ kind, color, size = 20 }: {
     const line = { stroke: color, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
 
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
             {kind === 'emptyCards' && (
                 <>
                     <Path d="M6 4h11a2 2 0 0 1 2 2v11" {...line} />
