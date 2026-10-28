@@ -34,7 +34,7 @@ import { importPackageWithBackup } from '../lib/packageImportWorkflow';
 import { getAllNoteTypes, getNoteType, type SearchIndexCard } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES } from '../lib/models';
 import { localizeNoteTypeName } from '../lib/i18n';
-import { defaultDelimitedMapping, delimitedContainsHtml, parseDelimited, SEPARATOR_CHOICES } from '../lib/importDelimited';
+import { defaultDelimitedMapping, delimitedContainsHtml, parseDelimited } from '../lib/importDelimited';
 import { dbUpsertFtsCard, readOnlyTabMessage } from '../lib/db';
 import { commitCollectionWrite } from '../lib/collectionWrite';
 import { useI18n } from '../hooks/useI18n';
@@ -53,11 +53,10 @@ import { importLogFromCounts, type ImportLog } from '../lib/importLog';
 import ScreenHeader from '../components/ScreenHeader';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import { createImportStyles } from '../components/import/importStyles';
-import { ChoiceModal } from '../components/import/ImportControls';
 import { importCopy, type PackageSummary, type UpdateChoice } from '../components/import/importCopy';
-import { importRowRenderers } from '../components/import/ImportRows';
 import ImportFilePrompt from '../components/import/ImportFilePrompt';
 import PackageImportOptions from '../components/import/PackageImportOptions';
+import TextImportOptions from '../components/import/TextImportOptions';
 import FieldMappingSection, { type ColumnMapping } from '../components/import/FieldMappingSection';
 
 const MAX_TEXT_CHARS = 50_000_000;
@@ -127,8 +126,6 @@ export default function ImportScreen() {
 
     const [showDeckPicker, setShowDeckPicker] = useState(false);
     const [showNoteTypePicker, setShowNoteTypePicker] = useState(false);
-    const [showSeparatorPicker, setShowSeparatorPicker] = useState(false);
-    const [choicePicker, setChoicePicker] = useState<null | 'existing' | 'matchScope'>(null);
 
     const targetDeck = useMemo(
         () => getDeck(targetDeckId) ?? getDeckByName('Varsayılan') ?? getDeck(1),
@@ -327,6 +324,7 @@ export default function ImportScreen() {
     };
 
     const importInFlightRef = useRef(false);
+    const importFailed = l('İçe aktarma tamamlanamadı. Dosyanızı kontrol edip tekrar deneyin.', 'Import could not be completed. Check your file and try again.');
 
     const runImport = async (textOptions: ImportOptions | null, backupFirst: boolean) => {
         if (!file || importInFlightRef.current) return;
@@ -350,10 +348,8 @@ export default function ImportScreen() {
                     // import is snapshotted first. A .colpkg replacement needs a restorable snapshot
                     // and stops before reading the package when a damaged row prevents one.
                     const result = await importPackageWithBackup(file.bytes, {
-                        // `subject`/`topic` are the built-in TUS catalog's own navigation taxonomy; the
-                        // screen dropped the chips that once set them because they mean nothing for a
-                        // learner's own file. The deck name is passed so an imported note still files
-                        // itself under the deck it landed in rather than under an empty bucket.
+                        // `subject`/`topic` are the TUS catalog's own grouping; a learner's file is
+                        // filed under the deck it lands in.
                         subject: targetDeck?.name ?? 'genel',
                         topic: 'Genel',
                         rolloverHour: settings.dayRolloverHour,
@@ -414,10 +410,7 @@ export default function ImportScreen() {
                 alert(t('backup.notRestorableTitle'), t('backup.notRestorableMessage'));
                 return;
             }
-            alert(t('common.error'), userFacingErrorMessage(
-                error,
-                l('İçe aktarma tamamlanamadı. Dosyanızı kontrol edip tekrar deneyin.', 'Import could not be completed. Check your file and try again.'),
-            ));
+            alert(t('common.error'), userFacingErrorMessage(error, importFailed));
         } finally {
             importInFlightRef.current = false;
             setImporting(false);
@@ -474,16 +467,11 @@ export default function ImportScreen() {
             await runImport(textOptions, backupFirst);
         } catch (error) {
             console.warn('[Import] import preview failed:', error);
-            alert(t('common.error'), userFacingErrorMessage(
-                error,
-                l('İçe aktarma tamamlanamadı. Dosyanızı kontrol edip tekrar deneyin.', 'Import could not be completed. Check your file and try again.'),
-            ));
+            alert(t('common.error'), userFacingErrorMessage(error, importFailed));
         }
     };
 
-    const { existingNotesLabel, matchScopeLabel, separatorLabel, packageExtraLines } = importCopy(l);
-
-    const { renderOptionRow, renderToggleRow, renderTagRow } = importRowRenderers(styles, colors.textMuted);
+    const { packageExtraLines } = importCopy(l);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -523,75 +511,34 @@ export default function ImportScreen() {
 
                 {file && !packageImport && !outcome ? (
                     <>
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>{l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}</Text>
-                            {renderOptionRow(
-                                separator
-                                    ? l('Alanları ayıran', 'Fields separated by')
-                                    : l('Alanları ayıran (tahmin)', 'Fields separated by (guessed)'),
-                                separatorLabel(separator ?? guessedSeparator),
-                                () => setShowSeparatorPicker(true),
-                            )}
-                            {renderToggleRow(
-                                l('Alanlarda HTML’e izin ver', 'Allow HTML in fields'),
-                                l(
-                                    'Kapalıyken metin kaçışlanır ve satır sonları <br> olur.',
-                                    'When off, text is escaped and line breaks become <br>.',
-                                ),
-                                allowHtml,
-                                () => setAllowHtml((value) => !value),
-                            )}
-                            {metadata?.notetypeColumn
-                                ? (
-                                    <View style={styles.optionRow}>
-                                        <Text style={styles.optionLabel}>{l('Not türü', 'Note type')}</Text>
-                                        <Text style={styles.optionValueMuted} numberOfLines={1}>
-                                            {l(`Dosyadan (sütun ${metadata.notetypeColumn})`, `From file (column ${metadata.notetypeColumn})`)}
-                                        </Text>
-                                    </View>
-                                )
-                                : renderOptionRow(
-                                    l('Not türü', 'Note type'),
-                                    localizeNoteTypeName(locale, selectedNoteType.name),
-                                    () => setShowNoteTypePicker(true),
-                                )}
-                            {metadata?.deckColumn
-                                ? (
-                                    <View style={styles.optionRow}>
-                                        <Text style={styles.optionLabel}>{l('Deste', 'Deck')}</Text>
-                                        <Text style={styles.optionValueMuted} numberOfLines={1}>
-                                            {l(`Dosyadan (sütun ${metadata.deckColumn})`, `From file (column ${metadata.deckColumn})`)}
-                                        </Text>
-                                    </View>
-                                )
-                                : renderOptionRow(
-                                    l('Deste', 'Deck'),
-                                    targetDeck?.name.replaceAll('::', ' › ') ?? '—',
-                                    () => setShowDeckPicker(true),
-                                )}
-                            {renderOptionRow(
-                                l('Mevcut notlar', 'Existing notes'),
-                                existingNotesLabel(duplicateResolution),
-                                () => setChoicePicker('existing'),
-                            )}
-                            {renderOptionRow(
-                                l('Eşleşme kapsamı', 'Match scope'),
-                                matchScopeLabel(matchScope),
-                                () => setChoicePicker('matchScope'),
-                            )}
-                            {renderTagRow(
-                                l('Tüm notları etiketle', 'Tag all notes'),
-                                l('boşlukla ayırın', 'space separated'),
-                                tagAllNotes,
-                                setTagAllNotes,
-                            )}
-                            {renderTagRow(
-                                l('Güncellenen notları etiketle', 'Tag updated notes'),
-                                l('boşlukla ayırın', 'space separated'),
-                                tagUpdatedNotes,
-                                setTagUpdatedNotes,
-                            )}
-                        </View>
+                        <TextImportOptions
+                            separator={separator}
+                            guessedSeparator={guessedSeparator}
+                            onSeparator={(value) => {
+                                setSeparator(value);
+                                setColumnMappings({});
+                            }}
+                            allowHtml={allowHtml}
+                            setAllowHtml={setAllowHtml}
+                            notetypeColumn={metadata?.notetypeColumn}
+                            deckColumn={metadata?.deckColumn}
+                            noteTypeName={localizeNoteTypeName(locale, selectedNoteType.name)}
+                            deckName={targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
+                            onPickNoteType={() => setShowNoteTypePicker(true)}
+                            onPickDeck={() => setShowDeckPicker(true)}
+                            duplicateResolution={duplicateResolution}
+                            setDuplicateResolution={setDuplicateResolution}
+                            matchScope={matchScope}
+                            setMatchScope={setMatchScope}
+                            tagAllNotes={tagAllNotes}
+                            setTagAllNotes={setTagAllNotes}
+                            tagUpdatedNotes={tagUpdatedNotes}
+                            setTagUpdatedNotes={setTagUpdatedNotes}
+                            styles={styles}
+                            mutedColor={colors.textMuted}
+                            cancelLabel={t('common.cancel')}
+                            l={l}
+                        />
 
                         <FieldMappingSection
                             fields={selectedNoteType.fields}
@@ -700,63 +647,6 @@ export default function ImportScreen() {
                     onClose={() => setShowNoteTypePicker(false)}
                 />
             )}
-
-            <ChoiceModal
-                visible={showSeparatorPicker}
-                title={l('Alanları ayıran', 'Fields separated by')}
-                styles={styles}
-                cancelLabel={t('common.cancel')}
-                options={SEPARATOR_CHOICES.map((choice) => ({
-                    value: choice.delimiter,
-                    label: separatorLabel(choice.delimiter),
-                    selected: (separator ?? guessedSeparator) === choice.delimiter,
-                }))}
-                onSelect={(value) => {
-                    setSeparator(value);
-                    setColumnMappings({});
-                    setShowSeparatorPicker(false);
-                }}
-                onClose={() => setShowSeparatorPicker(false)}
-            />
-
-            <ChoiceModal
-                visible={choicePicker === 'existing'}
-                title={l('Mevcut notlar', 'Existing notes')}
-                styles={styles}
-                cancelLabel={t('common.cancel')}
-                options={(['update', 'preserve', 'duplicate'] as const).map((value) => ({
-                    value,
-                    label: existingNotesLabel(value),
-                    hint: {
-                        update: l('İlk alanı eşleşen notu dosyadaki içerikle güncelle.', 'Update a note whose first field matches with the file’s content.'),
-                        preserve: l('Eşleşen notu olduğu gibi bırak, satırı atla.', 'Leave the matching note untouched and skip the row.'),
-                        duplicate: l('Eşleşme olsa bile yeni not olarak ekle.', 'Add as a new note even when there is a match.'),
-                    }[value],
-                    selected: duplicateResolution === value,
-                }))}
-                onSelect={(value) => {
-                    setDuplicateResolution(value as DuplicateResolution);
-                    setChoicePicker(null);
-                }}
-                onClose={() => setChoicePicker(null)}
-            />
-
-            <ChoiceModal
-                visible={choicePicker === 'matchScope'}
-                title={l('Eşleşme kapsamı', 'Match scope')}
-                styles={styles}
-                cancelLabel={t('common.cancel')}
-                options={(['notetype', 'notetypeAndDeck'] as const).map((value) => ({
-                    value,
-                    label: matchScopeLabel(value),
-                    selected: matchScope === value,
-                }))}
-                onSelect={(value) => {
-                    setMatchScope(value as MatchScope);
-                    setChoicePicker(null);
-                }}
-                onClose={() => setChoicePicker(null)}
-            />
         </SafeAreaView>
     );
 }
