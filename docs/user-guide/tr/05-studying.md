@@ -291,9 +291,10 @@ dönülür) ve ✓ **Çizimi bitir**.
   ekranından sonra) çizim de geri gelir.
 - Çizim modu açıkken dokunma bölgeleri, kaydırma hareketleri ve otomatik ilerleme çalışmaz.
 - Çizim modunda ⋮ menüsüne **Konturu geri al**, **Yazı tahtasını kaydet**, **Kalemle yazmayı aç** ve
-  **Yazı tahtasını devre dışı bırak** eklenir. **Yazı tahtasını kaydet** çizimi PNG resmi olarak
-  uygulamanın medya klasörüne kaydeder; resim nota eklenmez. **Yazı tahtasını devre dışı bırak**
-  bu karttaki çizimi siler.
+  **Yazı tahtasını devre dışı bırak** eklenir. **Yazı tahtasını kaydet** çizimi beyaz zeminli bir PNG
+  resmi olarak paylaşım sayfasında açar: **Görüntüyü Kaydet** Fotoğraflar'a, **Dosyalar'a Kaydet**
+  Dosyalar uygulamasına kaydeder. Tarayıcıda resim paylaşılır ya da indirilir. Resim nota eklenmez.
+  **Yazı tahtasını devre dışı bırak** bu karttaki çizimi siler.
 - Yazı tahtasının açık olup olmadığı ve kalem rengi (açık ve koyu tema için ayrı) her deste için bu
   cihazda hatırlanır.
 

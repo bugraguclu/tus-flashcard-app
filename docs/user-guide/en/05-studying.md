@@ -290,8 +290,10 @@ To sketch or take notes over a card, tap ⋮ › **Enable whiteboard**. A toolba
   unanswered (for example after the waiting screen), the drawing comes back too.
 - While drawing mode is on, tap zones, swipes and auto advance do not work.
 - In drawing mode the ⋮ menu adds **Undo stroke**, **Save whiteboard**, **Enable stylus** and
-  **Disable whiteboard**. **Save whiteboard** saves the drawing as a PNG image in the app's media
-  folder; the image is not added to the note. **Disable whiteboard** erases the drawing on this card.
+  **Disable whiteboard**. **Save whiteboard** opens the drawing, as a PNG on a white page, in the
+  share sheet: **Save Image** puts it in Photos, **Save to Files** in the Files app. In a browser the
+  image is shared or downloaded. The image is not added to the note. **Disable whiteboard** erases
+  the drawing on this card.
 - Whether the whiteboard is on, and the pen colour (separately for the light and dark theme), are
   remembered for each deck on this device.
 

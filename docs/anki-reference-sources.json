@@ -370,6 +370,24 @@
       "useFor": ["deck ••• menu actions and their order", "Unbury listed only while the deck holds buried cards", "filtered decks offer Rebuild and Empty and no Edit Description"]
     },
     {
+      "id": "ankidroid-source-whiteboard-save",
+      "priority": 3,
+      "platform": "Android reviewer whiteboard",
+      "url": "https://github.com/ankidroid/Anki-Android/blob/main/AnkiDroid/src/main/java/com/ichi2/anki/Whiteboard.kt",
+      "license": "GPL-3.0-family; inspect behavior, do not copy into MIT code",
+      "useFor": [
+        "Save whiteboard: the ink on an opaque page (white, or black for light ink) rather than a transparent image",
+        "the image goes to the device gallery (Pictures/AnkiDroid, via compat/src/main/java/com/ichi2/anki/compat/CompatV29.kt), named Whiteboard plus a timestamp, not into the collection's media"
+      ]
+    },
+    {
+      "id": "apple-photo-library-add-usage",
+      "priority": 1,
+      "platform": "iOS share sheet Save Image",
+      "url": "https://developer.apple.com/documentation/bundleresources/information-property-list/nsphotolibraryaddusagedescription",
+      "useFor": ["purpose string required before the share sheet's Save Image adds a picture to Photos"]
+    },
+    {
       "id": "ankidroid-manual-typed-answer",
       "priority": 3,
       "platform": "Android typed-answer presentation reference",

@@ -25,23 +25,33 @@ import {
 } from 'react-native';
 import { Text } from './AppText';
 import Svg, { Path } from 'react-native-svg';
-import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
-import { readUriBytes } from '../lib/files';
-import { saveMediaBytes } from '../lib/mediaStore';
-import { sanitizeMediaFilename } from '../lib/mediaFilename';
+import { shareOrDownloadFileWeb } from '../lib/files';
 import { useI18n } from '../hooks/useI18n';
 import {
     EMPTY_WHITEBOARD_HISTORY,
     strokeHitByEraser,
-    toSmoothWhiteboardPath,
     whiteboardHistoryReducer,
     type WhiteboardHistory,
     type WhiteboardPoint,
     type WhiteboardStroke,
 } from '../lib/whiteboardGeometry';
+import {
+    WHITEBOARD_IMAGE_MIME_TYPE,
+    whiteboardImageFileName,
+    whiteboardSaveNotice,
+    type WhiteboardHandOff,
+} from '../lib/whiteboardExport';
 import type { WhiteboardCardSnapshot } from '../lib/whiteboardSession';
+import {
+    rasterizeStrokesToPng,
+    renderStrokePaths,
+    shareWhiteboardImage,
+    useWhiteboardPageCapture,
+    whiteboardSaveSize,
+} from './whiteboardSave';
 
 export interface WhiteboardHandle {
     /** Reset ink and history immediately (used when advancing to another card). */
@@ -98,45 +108,6 @@ const MIN_POINT_DISTANCE_SQUARED = 2.25;
 const MAX_POINTS_PER_STROKE = 6000;
 
 type DrawingTool = 'pen' | 'eraser';
-
-/** Web save path: replay the strokes onto a high-resolution white PNG. */
-async function rasterizeStrokesToPng(strokes: WhiteboardStroke[], width: number, height: number): Promise<Uint8Array> {
-    const scale = 2;
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(width * scale));
-    canvas.height = Math.max(1, Math.round(height * scale));
-    const context = canvas.getContext('2d');
-    if (!context) throw new Error('canvas 2d context unavailable');
-    context.scale(scale, scale);
-    context.fillStyle = '#ffffff';
-    context.fillRect(0, 0, width, height);
-    context.lineCap = 'round';
-    context.lineJoin = 'round';
-    for (const stroke of strokes) {
-        const { points } = stroke;
-        if (points.length === 0) continue;
-        context.strokeStyle = stroke.color;
-        context.lineWidth = stroke.width;
-        context.beginPath();
-        context.moveTo(points[0].x, points[0].y);
-        if (points.length === 1) {
-            context.lineTo(points[0].x + 0.01, points[0].y);
-        } else {
-            for (let index = 1; index < points.length - 1; index++) {
-                const midpointX = (points[index].x + points[index + 1].x) / 2;
-                const midpointY = (points[index].y + points[index + 1].y) / 2;
-                context.quadraticCurveTo(points[index].x, points[index].y, midpointX, midpointY);
-            }
-            const last = points[points.length - 1];
-            context.lineTo(last.x, last.y);
-        }
-        context.stroke();
-    }
-    const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((result) => (result ? resolve(result) : reject(new Error('PNG encode failed'))), 'image/png');
-    });
-    return new Uint8Array(await blob.arrayBuffer());
-}
 
 function isStylusEvent(event: any): boolean {
     const pointerType = event?.nativeEvent?.pointerType;
@@ -268,6 +239,8 @@ export const WhiteboardProvider = forwardRef<WhiteboardHandle, WhiteboardProvide
             setLivePath('');
         }, [commitTrail]);
 
+        const savedPage = useWhiteboardPageCapture(canvasRef);
+
         const panResponder = useMemo(() => PanResponder.create({
             onStartShouldSetPanResponder: (event) => activeRef.current && canDrawRef.current
                 && (!stylusOnlyRef.current || isStylusEvent(event)),
@@ -330,22 +303,26 @@ export const WhiteboardProvider = forwardRef<WhiteboardHandle, WhiteboardProvide
             if (saving) return;
             setSaving(true);
             try {
-                const filename = sanitizeMediaFilename(`${Date.now()}_yazitahtasi.png`);
+                const fileName = whiteboardImageFileName(new Date());
+                const saveSize = whiteboardSaveSize(size);
+                let handOff: WhiteboardHandOff;
                 if (Platform.OS === 'web') {
-                    const bytes = await rasterizeStrokesToPng(strokes, size.width || 420, size.height || 480);
-                    await saveMediaBytes(filename, bytes, 'image/png');
+                    const bytes = await rasterizeStrokesToPng(strokes, saveSize);
+                    handOff = await shareOrDownloadFileWeb(fileName, bytes, WHITEBOARD_IMAGE_MIME_TYPE);
+                } else if (await Sharing.isAvailableAsync()) {
+                    handOff = await shareWhiteboardImage(await savedPage.capture(strokes, saveSize), fileName);
                 } else {
-                    const uri = await captureRef(canvasRef, { format: 'png', result: 'tmpfile' });
-                    await saveMediaBytes(filename, await readUriBytes(uri), 'image/png');
+                    handOff = 'unavailable';
                 }
-                alert(l('Çizim kaydedildi', 'Drawing saved'), l(`Medya klasörüne kaydedildi: ${filename}`, `Saved to media: ${filename}`));
+                const notice = whiteboardSaveNotice(handOff, fileName, l);
+                if (notice) alert(notice.title, notice.message);
             } catch (error) {
                 console.warn('[Whiteboard] save failed:', error);
                 alert(t('common.error'), l('Yazı tahtası kaydedilemedi.', 'Could not save the whiteboard.'));
             } finally {
                 setSaving(false);
             }
-        }, [saving, size.width, size.height, l, t]);
+        }, [saving, size, savedPage.capture, l, t]);
 
         const cycleStrokeWidth = useCallback(() => {
             setStrokeWidth((current) => {
@@ -431,6 +408,7 @@ export const WhiteboardProvider = forwardRef<WhiteboardHandle, WhiteboardProvide
         return (
             <WhiteboardContext.Provider value={contextValue}>
                 {children}
+                {savedPage.element}
             </WhiteboardContext.Provider>
         );
     },
@@ -466,17 +444,7 @@ export function WhiteboardCanvas({ style }: WhiteboardCanvasProps) {
             {...panResponder.panHandlers}
         >
             <Svg width={size.width || '100%'} height={size.height || '100%'} style={StyleSheet.absoluteFill}>
-                {board.strokes.map((stroke, index) => (
-                    <Path
-                        key={index}
-                        d={toSmoothWhiteboardPath(stroke.points)}
-                        stroke={stroke.color}
-                        strokeWidth={stroke.width}
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                ))}
+                {renderStrokePaths(board.strokes)}
                 {livePath !== '' && (
                     <Path
                         d={livePath}

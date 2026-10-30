@@ -48,6 +48,7 @@
           "NSAllowsLocalNetworking": false
         },
         "LSSupportsOpeningDocumentsInPlace": false,
+        "NSPhotoLibraryAddUsageDescription": "Yazı tahtası çizimlerini fotoğraf kitaplığına kaydetmek için erişim gereklidir.",
         "UTImportedTypeDeclarations": [
           {
             "UTTypeIdentifier": "com.tusankim.apkg",

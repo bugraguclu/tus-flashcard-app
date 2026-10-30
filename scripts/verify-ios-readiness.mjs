@@ -44,6 +44,10 @@ function verifyGeneratedNativeIos() {
     requireValue(plistHasBoolean(infoPlist, 'NSAllowsArbitraryLoads', false), 'Generated iOS Info.plist must disable arbitrary network loads');
     requireValue(plistHasBoolean(infoPlist, 'NSAllowsLocalNetworking', false), 'Generated iOS Info.plist must disable local-network access');
     requireValue(plistHasBoolean(infoPlist, 'LSSupportsOpeningDocumentsInPlace', false), 'Generated iOS Info.plist must declare copied import handling');
+    requireValue(
+        infoPlist.includes('<key>NSPhotoLibraryAddUsageDescription</key>'),
+        'Generated iOS Info.plist is missing NSPhotoLibraryAddUsageDescription; regenerate it with npx expo prebuild --platform ios',
+    );
     requireValue(infoPlist.includes('<string>com.tusankim.apkg</string>'), 'Generated iOS Info.plist is missing .apkg Files hand-off');
     requireValue(infoPlist.includes('<string>com.tusankim.colpkg</string>'), 'Generated iOS Info.plist is missing .colpkg Files hand-off');
 
@@ -70,6 +74,13 @@ requireValue(app.ios?.infoPlist?.NSAppTransportSecurity?.NSAllowsArbitraryLoads 
 requireValue(app.ios?.infoPlist?.NSAppTransportSecurity?.NSAllowsLocalNetworking === false, 'Local-network access must stay disabled');
 requireValue(app.ios?.infoPlist?.LSSupportsOpeningDocumentsInPlace === false, 'Imported files must be copied instead of edited in place');
 requireValue(app.ios?.infoPlist?.NSUserActivityTypes?.includes('com.tusankim.deck-shortcut'), 'Deck Shortcuts user activity is missing');
+// The whiteboard's Save hands a PNG to the share sheet, whose Save Image crashes the app when
+// this purpose string is absent.
+requireValue(
+    typeof app.ios?.infoPlist?.NSPhotoLibraryAddUsageDescription === 'string'
+        && app.ios.infoPlist.NSPhotoLibraryAddUsageDescription.trim().length > 0,
+    'Save Image in the share sheet needs NSPhotoLibraryAddUsageDescription',
+);
 
 // The app ships a Light/Dark/System preference, and ThemeGate pushes the explicit choices to
 // UIKit via Appearance.setColorScheme. That override is only honoured when the process itself
