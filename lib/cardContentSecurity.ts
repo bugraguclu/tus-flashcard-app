@@ -41,6 +41,15 @@ export function editorContentSecurityPolicy(nonce: string): string {
     ].join('; ');
 }
 
+/**
+ * `originWhitelist` for the reviewer's WebView. react-native-webview checks this list before the
+ * app's onShouldStartLoadWithRequest runs, and opens any URL that fails it through Linking itself:
+ * no confirmation, and any scheme iOS can open, so a card's HTTPS link went straight to Safari.
+ * Every URL passes here, which leaves the reviewer's own navigation handler as the one place a
+ * card navigation is decided: it refuses all of them and asks before an HTTPS link leaves the app.
+ */
+export const CARD_WEBVIEW_ORIGIN_WHITELIST: string[] = ['*'];
+
 /** Only deliberate HTTPS links may leave a card, and never with embedded credentials. */
 export function safeExternalCardUrl(raw: unknown): string | null {
     if (typeof raw !== 'string') return null;

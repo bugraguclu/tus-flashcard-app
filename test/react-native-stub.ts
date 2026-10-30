@@ -18,6 +18,13 @@ export const Linking = {
     canOpenURL: async (_url: string): Promise<boolean> => true,
 };
 
+// react-native-webview's shared module builds its loading styles while it is being imported.
+export const StyleSheet = {
+    create<T>(styles: T): T {
+        return styles;
+    },
+};
+
 export const Alert = {
     alert: (_title: string, _message?: string, _buttons?: any[], _options?: any): void => {},
 };

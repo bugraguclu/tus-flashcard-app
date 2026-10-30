@@ -7,7 +7,7 @@ import { reviewerMediaHtml, type ReviewerPlaybackScope } from '../lib/reviewerAu
 import { catalogCardCss, documentCss, legacyTusCardCss, reviewerCanvasCss } from '../lib/cardAppearance';
 import { getMediaBaseUrl, resolveWebMediaInHtml } from '../lib/mediaStore';
 import { useIsDarkTheme, useThemeColors } from '../constants/theme';
-import { CARD_CONTENT_CSP_META, safeExternalCardUrl } from '../lib/cardContentSecurity';
+import { CARD_CONTENT_CSP_META, CARD_WEBVIEW_ORIGIN_WHITELIST, safeExternalCardUrl } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl, localMediaFileFromUrl } from '../lib/localMediaDocument';
 import { localMediaFilename } from '../lib/mediaAttachment';
 import { confirm } from '../lib/confirm';
@@ -692,7 +692,8 @@ export default function CardWebView({
     // JavaScript runs only for the height reporter and the built-in <audio>/<video> controls.
     // Card content cannot contribute any: lib/templates.ts strips scripts, inline event handlers
     // and javascript: URLs from both note fields and the imported note-type templates, and
-    // onShouldStartLoadWithRequest below refuses every navigation the card tries to start.
+    // onShouldStartLoadWithRequest below refuses every navigation the card tries to start. The
+    // origin whitelist lets every URL through to it, so the WebView never opens one by itself.
     const shouldStartNavigation = useCallback((request: { url: string; isTopFrame?: boolean }) => {
         const url = request.url;
         if (isLocalMediaDocumentUrl(url, mediaBaseUrl)) return true;
@@ -712,7 +713,7 @@ export default function CardWebView({
         <>
             <WebView
                 ref={webViewRef}
-                originWhitelist={['about:blank', 'file://*']}
+                originWhitelist={CARD_WEBVIEW_ORIGIN_WHITELIST}
                 source={nativeSource}
                 dataDetectorTypes="none"
                 style={[styles.webView, { height: frameHeight }]}
