@@ -6,8 +6,7 @@ order: 11
 web_path: /en/help/filtered-decks
 app_help: help?article=filtered-decks
 app_screens:
-  - "Filtered deck form (create and Filtered deck options) — app/(tabs)/decks.tsx (renderFilterModal)"
-  - "Filtered Deck Options (from the Overview) — components/FilteredDeckOptionsModal.tsx"
+  - "Filtered deck form (Create Filtered Deck from the deck list or Browse, and Filtered Deck Options) — components/FilteredDeckOptionsModal.tsx"
   - "Overview of a filtered deck — app/deck-overview.tsx"
   - "Custom Study — components/CustomStudyModal.tsx"
 verified_against: master c6108e6 (2026-10-25)
@@ -21,7 +20,7 @@ deck as ready-made options. Neither deletes or moves your cards.
 
 <a id="what-are-filtered-decks"></a>
 ## What is a filtered deck?
-<!-- In the app: the ? button of the filtered deck form (app/(tabs)/decks.tsx:1720) and of Filtered Deck Options (components/FilteredDeckOptionsModal.tsx:220) → "Learn more" link of that help → this section -->
+<!-- In the app: the ? button of the filtered deck form (components/FilteredDeckOptionsModal.tsx, help in components/filtered-deck/FilteredDeckHelpSheet.tsx) → "Learn more" link of that help → this section -->
 
 - **Cards stay where they are.** Each card remains tied to its own deck. While it is in a
   filtered deck, it does not show up in its own deck's study session or numbers.
@@ -45,8 +44,9 @@ subdecks, cannot have subdecks and cannot be dragged.
 You can start from two places:
 
 - **Decks › ＋ › Create filtered deck**,
-- **Card Browser › ••• › Create filtered deck**: the search currently typed in Card Browser is
-  filled in for you. See [Card Browser and search](10-browser-and-search.md).
+- **Card Browser › ••• › Create filtered deck**: the form opens over Card Browser with its deck,
+  filters and search filled in; closing it with **×** leaves Card Browser as it was. See
+  [Card Browser and search](10-browser-and-search.md).
 
 In the form that opens:
 
@@ -54,15 +54,15 @@ In the form that opens:
    name cannot contain `::`.
 2. **Filter 1:** set the deck, search, card limit and order (next sections).
 3. Turn on **Filter 2** if you need it.
-4. Under **Study behavior**, choose whether to reschedule.
-5. Tap **Build** at the top right.
+4. Under **Options**, choose whether to reschedule.
+5. Tap **Build** at the bottom.
 
 The deck is gathered and its **Overview** opens; start with **Study Now**.
 
 In a new form the search is pre-filled with the due cards of the deck you studied last (for
 example `deck:"Pathology" is:due`). If no card matches, a **No matching cards** message appears;
-change the search or turn on **Create/update even if empty**. No deck is built while the search
-field is empty. If a deck with the same name exists, " (1)" is added to the new deck's name.
+change the search or turn on **Build even if empty**. No deck is built while the search
+field is empty. If a deck with the same name exists, "+" is added to the new deck's name.
 
 <a id="search-and-limit"></a>
 ## Search and card limit
@@ -106,7 +106,7 @@ new deck starts with **Random**.
 | **Relative overdueness** | Most overdue relative to their interval |
 
 The two **retrievability** orders are only meaningful with FSRS on; with FSRS off they give the
-cards in a fixed, shuffled order. **Overview › Filtered Deck Options** lists these two only while
+cards in a fixed, shuffled order. The order list shows these two only while
 FSRS is on; a deck you save there with FSRS off switches to **Random**. See [FSRS](07-fsrs.md).
 
 <a id="second-filter"></a>
@@ -163,8 +163,7 @@ fills it again. The Overview's **Empty** button works only while cards are ready
 **Decks › ••• › Empty deck** always works.
 
 **Changing the settings:** **Decks › ••• › Filtered deck options** or **Overview › Filtered Deck
-Options**. Saving rebuilds the deck with the new settings. The button is called **Rebuild** in the
-first and **Save and Rebuild** in the second. Preview delays are only in the Overview's form.
+Options**. Both open the same form; **Save and Rebuild** rebuilds the deck with the new settings.
 
 <a id="delete-filtered-deck"></a>
 ## Deleting a filtered deck

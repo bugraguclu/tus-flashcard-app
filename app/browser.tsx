@@ -43,6 +43,7 @@ import {
 import { setDbSetting } from '../lib/storage';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
+import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
 import HeaderBackIcon from '../components/HeaderBackIcon';
 import { alert } from '../lib/confirm';
 import { isCatalogCard, isCatalogDeck, isCatalogNote } from '../lib/catalogProtection';
@@ -131,6 +132,9 @@ export default function BrowserScreen() {
     const [flagPickerMode, setFlagPickerMode] = useState<'selection' | null>(null);
     const [showFlagFilterMenu, setShowFlagFilterMenu] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
+    // Create Filtered Deck opens over Browse with the search composed when it was chosen.
+    const [showFilteredDeckForm, setShowFilteredDeckForm] = useState(false);
+    const [filteredDeckFormSearch, setFilteredDeckFormSearch] = useState('');
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedCardIds, setSelectedCardIds] = useState<Set<number>>(() => new Set());
     const [currentSelectedCardId, setCurrentSelectedCardId] = useState<number | null>(null);
@@ -788,16 +792,9 @@ export default function BrowserScreen() {
 
     const openFilteredDeckDialog = useCallback(() => {
         setShowOverflowMenu(false);
-        InteractionManager.runAfterInteractions(() => {
-            router.push({
-                pathname: '/decks',
-                params: {
-                    createFilter: String(Date.now()),
-                    filterSearch: browserSearch,
-                },
-            } as any);
-        });
-    }, [browserSearch, router]);
+        setFilteredDeckFormSearch(browserSearch);
+        InteractionManager.runAfterInteractions(() => setShowFilteredDeckForm(true));
+    }, [browserSearch]);
 
     const subject = (id: string) => subjects.find((s) => s.id === id);
 
@@ -1117,6 +1114,19 @@ export default function BrowserScreen() {
                 toggleAllFlagFilters={toggleAllFlagFilters}
                 toggleFlagFilter={toggleFlagFilter}
                 undoDeckMove={undoDeckMove}
+            />
+
+            <FilteredDeckOptionsModal
+                visible={showFilteredDeckForm}
+                deck={null}
+                initialSearch={filteredDeckFormSearch}
+                settings={settings}
+                onClose={() => setShowFilteredDeckForm(false)}
+                // A built deck opens on its overview; back returns to Browse as it was.
+                onCreated={(deckName) => {
+                    bumpDataVersion();
+                    router.push(`/deck-overview?deck=${encodeURIComponent(deckName)}` as any);
+                }}
             />
 
             <SortPickerModal

@@ -281,7 +281,8 @@ everything back; once you close it with **Done**, there is no undo. The review h
 ## Creating a filtered deck from a search
 
 **⋮ › Create filtered deck** combines the deck selection, the filters and the search into one
-search, switches to the **Decks** tab and opens the filtered deck screen with that search. See
+search and opens the filtered deck form over Card Browser with that search. **Build** opens the
+new deck's **Overview**; closing the form with **×** leaves Card Browser as it was. See
 [Filtered decks and Custom Study](11-filtered-decks.md).
 
 <a id="search-basics"></a>

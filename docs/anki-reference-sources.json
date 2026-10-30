@@ -737,6 +737,22 @@
       "useFor": ["order_and_limit_for_search: each gather order's SQL", "fnvhash(c.id, c.mod) tiebreak", "retrievability orders empty while FSRS is off"]
     },
     {
+      "id": "anki-source-browser-create-filtered-deck",
+      "priority": 3,
+      "platform": "desktop Browse › Create Filtered Deck",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/browser/browser.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["createFilteredDeck opens the filtered deck dialog over the browser with the browser's current search as the first filter (with Alt, as the second)"]
+    },
+    {
+      "id": "anki-source-filtered-deck-dialog",
+      "priority": 3,
+      "platform": "desktop filtered deck dialog",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/filtered_deck.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["one dialog creates and edits a filtered deck: Build for a new deck, Rebuild for an existing one", "an initial search supplied by the caller fills the first filter", "retrievability orders offered only with FSRS on, a saved one shown as Random"]
+    },
+    {
       "id": "anki-source-browser-sort",
       "priority": 3,
       "platform": "cross-platform browser column sorting",

@@ -18,7 +18,6 @@ import {
     LayoutAnimation,
     UIManager,
     Platform,
-    Keyboard,
     KeyboardAvoidingView,
     Switch,
     ActivityIndicator,
@@ -26,21 +25,18 @@ import {
     useWindowDimensions,
 } from 'react-native';
 import { Text, TextInput } from '../../components/AppText';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
 import {
     getAllDecks,
     getDeckByName,
-    getAvailableDeckName,
     getAvailableDeckSubtreeName,
     getDeck,
     createDeck,
-    createFilteredDeck,
     deleteDeck,
     renameDeck,
     moveDeckUnder,
-    updateFilteredDeck,
     rebuildFilteredDeck,
     setDeckCollapsed,
     initializeDeckDisclosureDefaults,
@@ -48,7 +44,6 @@ import {
     emptyFilteredDeck,
     reorderDeckRelative,
     type DeckTreeNode,
-    createOrSelectDeck,
     getBuriedCountForDeck,
     getBuriedKindsForDeck,
     unburyDeck,
@@ -57,8 +52,6 @@ import { getDeckDisplayName, getParentDeckName, type Deck } from '../../lib/mode
 import { alert, confirm, choose } from '../../lib/confirm';
 import { chooseUnburyKind } from '../../lib/unburyChoice';
 import { deckRowMenuActions, type DeckRowMenuAction } from '../../lib/deckRowMenu';
-import { getFilteredDeckMatchCount } from '../../lib/studyRepository';
-import { findInvalidFilteredSearch } from '../../lib/searchValidation';
 import {
     useAppSettings,
     useCatalogStatus,
@@ -66,12 +59,12 @@ import {
     useStudyScope,
 } from '../../contexts/AppContext';
 import { useI18n } from '../../hooks/useI18n';
-import { filteredOrderLabel, formatCount } from '../../lib/i18n';
+import { formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
 import { normalizeDeckName } from '../../lib/deckNames';
 import { createBackupNow } from '../../lib/backup';
 import CustomStudyModal from '../../components/CustomStudyModal';
-import DeckPickerModal from '../../components/DeckPickerModal';
+import FilteredDeckOptionsModal from '../../components/FilteredDeckOptionsModal';
 import DisclosureChevron from '../../components/DisclosureChevron';
 import LockGlyph from '../../components/LockGlyph';
 import CardsGlyph from '../../components/CardsGlyph';
@@ -92,13 +85,6 @@ import {
     getBkaCatalogTier,
 } from '../../lib/bkaCatalog';
 import { requestDeckShortcut } from '../../modules/deck-shortcuts';
-import {
-    DEFAULT_SECOND_SEARCH_LIMIT,
-    FILTERED_DECK_ORDER_UI,
-    FILTERED_SEARCH_ORDER,
-    extractDeckNameFromSearch,
-    replaceDeckNameInSearch,
-} from '../../lib/filteredDeckOptions';
 import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../../lib/dataManagementRoutes';
 import { getDeckListSnapshot } from '../../lib/deckListSnapshot';
@@ -125,8 +111,6 @@ type ModalState =
     | { kind: 'create-subdeck'; deck: Deck }
     | { kind: 'description'; deck: Deck }
     | { kind: 'custom'; deck: Deck }
-    | { kind: 'filter'; deck: Deck }
-    | { kind: 'create-filter' }
     | null;
 
 function parseCount(text: string, fallback: number = 0): number {
@@ -178,7 +162,6 @@ const VirtualizedDeckRow = React.memo(function VirtualizedDeckRow({
 export default function DecksScreen() {
     const { t, l, locale } = useI18n();
     const router = useRouter();
-    const params = useLocalSearchParams();
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const isCompact = width < 600;
@@ -207,10 +190,8 @@ export default function DecksScreen() {
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const pendingOverflowRouteRef = useRef<string | null>(null);
     const pendingOverflowActionRef = useRef<(() => void) | null>(null);
-    const pendingDeckMenuRouteRef = useRef<string | null>(null);
+    const pendingDeckMenuActionRef = useRef<(() => void) | null>(null);
     const [newDeckName, setNewDeckName] = useState('');
-    const [newFilteredDeckName, setNewFilteredDeckName] = useState('');
-    const [filteredDeckScreenTitle, setFilteredDeckScreenTitle] = useState('');
     const [modal, setModal] = useState<ModalState>(null);
 
     // Modal form fields (filled when the corresponding modal opens).
@@ -218,20 +199,10 @@ export default function DecksScreen() {
     const [newSubdeckName, setNewSubdeckName] = useState('');
     const [descriptionText, setDescriptionText] = useState('');
     const [descriptionMarkdown, setDescriptionMarkdown] = useState(false);
-    // Filtered-deck options form.
-    const [filterSearch, setFilterSearch] = useState('');
-    const [filterLimit, setFilterLimit] = useState('100');
-    const [filterOrder, setFilterOrder] = useState(0);
-    const [filterSearch2, setFilterSearch2] = useState('');
-    const [filterLimit2, setFilterLimit2] = useState(String(DEFAULT_SECOND_SEARCH_LIMIT));
-    const [filterOrder2, setFilterOrder2] = useState(0);
-    const [filterSecondEnabled, setFilterSecondEnabled] = useState(false);
-    const [filterReschedule, setFilterReschedule] = useState(true);
-    const [filterAllowEmpty, setFilterAllowEmpty] = useState(false);
-    const [filterHelpVisible, setFilterHelpVisible] = useState(false);
-    const [filterOrderPicker, setFilterOrderPicker] = useState<1 | 2 | null>(null);
-    const [showFilteredDeckPicker, setShowFilteredDeckPicker] = useState(false);
-    const [filteredDeckPickerTarget, setFilteredDeckPickerTarget] = useState<1 | 2>(1);
+    // Filtered deck form: Create Filtered Deck (no deck) or a filtered deck's options. The deck
+    // stays while the form slides away, so closing never flips it to the other mode.
+    const [filteredDeckFormDeck, setFilteredDeckFormDeck] = useState<Deck | null>(null);
+    const [filteredDeckFormVisible, setFilteredDeckFormVisible] = useState(false);
     const catalogTier = useMemo(
         () => getBkaCatalogTier(),
         [catalogInstalled, collectionVersion],
@@ -461,22 +432,24 @@ export default function DecksScreen() {
         });
     };
 
-    const openDeckMenuRoute = (path: string) => {
-        // Dismiss the native menu before presenting another screen on iOS. Pushing while the
-        // menu Modal is still mounted can be rejected by UIKit.
+    // Run an action once the deck menu has closed. UIKit rejects pushing a screen or presenting
+    // another modal while the menu Modal is still mounted, so iOS waits for its onDismiss.
+    const runAfterDeckModalClose = (action: () => void) => {
         if (Platform.OS === 'ios') {
-            pendingDeckMenuRouteRef.current = path;
+            pendingDeckMenuActionRef.current = action;
             setModal(null);
             return;
         }
         setModal(null);
-        router.push(path as any);
+        action();
     };
 
+    const openDeckMenuRoute = (path: string) => runAfterDeckModalClose(() => router.push(path as any));
+
     const handleDeckModalDismiss = () => {
-        const path = pendingDeckMenuRouteRef.current;
-        pendingDeckMenuRouteRef.current = null;
-        if (path) router.push(path as any);
+        const action = pendingDeckMenuActionRef.current;
+        pendingDeckMenuActionRef.current = null;
+        action?.();
     };
 
     const openCreateDeck = () => {
@@ -493,130 +466,10 @@ export default function DecksScreen() {
         router.push('/editor' as any);
     };
 
-    const openCreateFilteredDeck = (initialSearch?: string) => {
-        const now = new Date();
-        const timestamp = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const baseName = `${l('Filtrelenmiş Deste', 'Filtered Deck')} ${timestamp}`;
-        let availableName = baseName;
-        let suffix = 2;
-        while (getDeckByName(availableName)) {
-            availableName = `${baseName} ${suffix}`;
-            suffix += 1;
-        }
-
+    const openCreateFilteredDeck = () => {
         setShowAddMenu(false);
-        setNewFilteredDeckName(availableName);
-        setFilteredDeckScreenTitle(availableName);
-        // Anki scopes a newly-created filtered deck to the current deck. The deck-list FAB
-        // has no row of its own, so prefer the last deck opened for study and fall back to
-        // the first regular deck in the collection.
-        const activeDeck = activeDeckName ? getDeckByName(activeDeckName) : null;
-        const sourceDeck = activeDeck && !activeDeck.isFiltered
-            ? activeDeck
-            : getAllDecks().find((candidate) => !candidate.isFiltered) ?? null;
-        const sourceDeckName = sourceDeck?.name.trim() ?? '';
-        const sourceDeckTerm = sourceDeckName
-            ? (/\s/.test(sourceDeckName)
-                ? `deck:"${sourceDeckName.replace(/"/g, '\\"')}"`
-                : `deck:${sourceDeckName}`)
-            : '';
-        const sourceDeckSearch = sourceDeckTerm ? `${sourceDeckTerm} is:due` : 'is:due';
-
-        setFilterSearch(initialSearch === undefined ? sourceDeckSearch : initialSearch.trim());
-        setFilterLimit('100');
-        setFilterOrder(1);
-        setFilterSearch2('');
-        // Anki's second filter starts at twenty cards in due order.
-        setFilterLimit2('20');
-        setFilterOrder2(FILTERED_SEARCH_ORDER.due);
-        setFilterSecondEnabled(false);
-        setFilterReschedule(true);
-        setFilterAllowEmpty(false);
-        setFilterHelpVisible(false);
-        setFilterOrderPicker(null);
-        setModal({ kind: 'create-filter' });
-    };
-
-    // The browser launches the same full options screen and supplies its composed search.
-    // A token prevents the modal from reopening when Expo preserves tab-route parameters.
-    const createFilterToken = typeof params.createFilter === 'string' ? params.createFilter : null;
-    const initialFilterSearch = typeof params.filterSearch === 'string' ? params.filterSearch : undefined;
-    const openedCreateFilterParam = useRef<string | null>(null);
-    useEffect(() => {
-        if (!createFilterToken || openedCreateFilterParam.current === createFilterToken) return;
-        openedCreateFilterParam.current = createFilterToken;
-        openCreateFilteredDeck(initialFilterSearch);
-        router.setParams({ createFilter: undefined, filterSearch: undefined } as any);
-    }, [createFilterToken, initialFilterSearch, router]);
-
-    // An edited deck releases its own cards when it is rebuilt, so they count as matches.
-    const getPendingFilteredDeckMatchCount = (rebuiltDeckId?: number) => getFilteredDeckMatchCount(settings, {
-        searchQuery: filterSearch.trim(),
-        searchLimit: parseCount(filterLimit, 100) || 100,
-        searchOrder: filterOrder,
-        searchQuery2: filterSecondEnabled ? (filterSearch2.trim() || undefined) : undefined,
-        searchLimit2: parseCount(filterLimit2, DEFAULT_SECOND_SEARCH_LIMIT) || DEFAULT_SECOND_SEARCH_LIMIT,
-        searchOrder2: filterOrder2,
-    }, rebuiltDeckId);
-
-    // Collection reads treat an unreadable search as matching nothing, so the learner is told here.
-    const rejectInvalidFilterSearch = (searches: Array<string | undefined>): boolean => {
-        const invalid = findInvalidFilteredSearch(searches);
-        if (invalid === null) return false;
-        Keyboard.dismiss();
-        alert(t('anki.invalidSearchTitle'), t('anki.invalidSearchMessage', { search: invalid.trim() }));
-        return true;
-    };
-
-    const canBuildPendingFilteredDeck = (rebuiltDeckId?: number) => {
-        if (rejectInvalidFilterSearch([filterSearch, filterSecondEnabled ? filterSearch2 : undefined])) return false;
-        if (filterAllowEmpty || getPendingFilteredDeckMatchCount(rebuiltDeckId) > 0) return true;
-        alert(
-            l('Eşleşen kart yok', 'No matching cards'),
-            l(
-                'Bu filtrelerle deste oluşturulamadı. Aramayı değiştirin veya “Boş olsa bile oluştur/güncelle” seçeneğini açın.',
-                'No deck could be built with these filters. Change the search or enable “Create/update this deck even if empty”.',
-            ),
-        );
-        return false;
-    };
-
-    const handleCreateFilteredDeck = () => {
-        if (modal?.kind !== 'create-filter') return;
-        const name = newFilteredDeckName.trim();
-        const search = filterSearch.trim();
-        if (!name || !search) return;
-
-        if (name.includes('::')) {
-            alert(
-                t('common.error'),
-                l('Filtrelenmiş deste başka bir destenin alt destesi olamaz.', 'A filtered deck cannot be a subdeck.'),
-            );
-            return;
-        }
-        if (!canBuildPendingFilteredDeck()) return;
-        try {
-            const availableName = getAvailableDeckName(name);
-            const deck = createFilteredDeck(availableName, search, parseCount(filterLimit, 100) || 100);
-            updateFilteredDeck(deck.id, {
-                searchQuery: search,
-                searchLimit: parseCount(filterLimit, 100) || 100,
-                searchOrder: filterOrder,
-                searchQuery2: filterSecondEnabled ? (filterSearch2.trim() || undefined) : undefined,
-                searchLimit2: parseCount(filterLimit2, DEFAULT_SECOND_SEARCH_LIMIT) || DEFAULT_SECOND_SEARCH_LIMIT,
-                searchOrder2: filterOrder2,
-                reschedule: filterReschedule,
-                allowEmpty: filterAllowEmpty,
-            });
-            const overviewPath = `/deck-overview?deck=${encodeURIComponent(availableName)}`;
-            if (Platform.OS === 'ios') pendingDeckMenuRouteRef.current = overviewPath;
-            setModal(null);
-            refresh();
-            if (Platform.OS !== 'ios') router.push(overviewPath as any);
-        } catch (e) {
-            console.warn('[Decks] create filtered deck failed:', e);
-            alert(t('common.error'), l('Filtrelenmiş deste oluşturulamadı.', 'Could not create the filtered deck.'));
-        }
+        setFilteredDeckFormDeck(null);
+        setFilteredDeckFormVisible(true);
     };
 
     // ---- Gear menu actions ----
@@ -783,54 +636,10 @@ export default function DecksScreen() {
 
     const openCustomStudy = (deck: Deck) => setModal({ kind: 'custom', deck });
 
-    const openFilterOptions = (deck: Deck) => {
-        setNewFilteredDeckName(deck.name);
-        setFilteredDeckScreenTitle(getDeckDisplayName(deck.name));
-        setFilterSearch(deck.searchQuery ?? '');
-        setFilterLimit(String(deck.searchLimit ?? 100));
-        setFilterOrder(deck.searchOrder ?? FILTERED_SEARCH_ORDER.due);
-        setFilterSearch2(deck.searchQuery2 ?? '');
-        setFilterLimit2(String(deck.searchLimit2 ?? DEFAULT_SECOND_SEARCH_LIMIT));
-        setFilterOrder2(deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due);
-        setFilterSecondEnabled(Boolean(deck.searchQuery2?.trim()));
-        setFilterReschedule(deck.reschedule ?? true);
-        setFilterAllowEmpty(deck.filteredAllowEmpty ?? false);
-        setFilterHelpVisible(false);
-        setFilterOrderPicker(null);
-        setModal({ kind: 'filter', deck });
-    };
-
-    const handleSaveFilterOptions = () => {
-        if (modal?.kind !== 'filter') return;
-        try {
-            const nextName = newFilteredDeckName.trim();
-            if (!nextName) return;
-            if (nextName.includes('::')) {
-                alert(
-                    t('common.error'),
-                    l('Filtrelenmiş deste başka bir destenin alt destesi olamaz.', 'A filtered deck cannot be a subdeck.'),
-                );
-                return;
-            }
-            if (!canBuildPendingFilteredDeck(modal.deck.id)) return;
-            if (nextName !== modal.deck.name) renameDeck(modal.deck.id, nextName);
-            updateFilteredDeck(modal.deck.id, {
-                searchQuery: filterSearch.trim(),
-                searchLimit: parseCount(filterLimit, 100) || 100,
-                searchOrder: filterOrder,
-                searchQuery2: filterSecondEnabled ? (filterSearch2.trim() || undefined) : undefined,
-                searchLimit2: parseCount(filterLimit2, DEFAULT_SECOND_SEARCH_LIMIT) || DEFAULT_SECOND_SEARCH_LIMIT,
-                searchOrder2: filterOrder2,
-                reschedule: filterReschedule,
-                allowEmpty: filterAllowEmpty,
-            });
-            setModal(null);
-            refresh();
-        } catch (e) {
-            console.warn('[Decks] filter options save failed:', e);
-            alert(t('common.error'), l('Filtre seçenekleri kaydedilemedi.', 'Could not save filtered deck options.'));
-        }
-    };
+    const openFilterOptions = (deck: Deck) => runAfterDeckModalClose(() => {
+        setFilteredDeckFormDeck(deck);
+        setFilteredDeckFormVisible(true);
+    });
 
     const handleRebuildFilter = (deck: Deck) => {
         rebuildFilteredDeck(deck.id);
@@ -1550,10 +1359,10 @@ export default function DecksScreen() {
                 textAlignVertical="top"
                 accessibilityLabel={l('Deste açıklaması', 'Deck description')}
             />
-            <View style={styles.filteredToggleRow}>
-                <View style={styles.filteredToggleCopy}>
-                    <Text style={styles.filteredToggleTitle}>{l('Markdown olarak yorumla', 'Interpret as Markdown')}</Text>
-                    <Text style={styles.filteredToggleSubtitle}>
+            <View style={styles.markdownToggleRow}>
+                <View style={styles.markdownToggleCopy}>
+                    <Text style={styles.markdownToggleTitle}>{l('Markdown olarak yorumla', 'Interpret as Markdown')}</Text>
+                    <Text style={styles.markdownToggleSubtitle}>
                         {l(
                             'Metni Markdown olarak işler: başlıklar, kalın ve italik yazı, listeler ve bağlantılar biçimli görünür.',
                             'Treats the text as Markdown: headings, bold and italic text, lists and links are shown formatted.',
@@ -1579,570 +1388,6 @@ export default function DecksScreen() {
         </SwipeDismissSheet>
     );
 
-    const renderFilterModal = (deck?: Deck) => {
-        const isCreating = !deck;
-        const buildDisabled = !newFilteredDeckName.trim()
-            || !/^\d{1,5}$/.test(filterLimit)
-            || (filterSecondEnabled && !/^\d{1,5}$/.test(filterLimit2));
-        const closeFilteredDeckModal = () => {
-            Keyboard.dismiss();
-            setFilterHelpVisible(false);
-            setFilterOrderPicker(null);
-            setModal(null);
-        };
-        const openFilterOrderPicker = (filter: 1 | 2) => {
-            Keyboard.dismiss();
-            setFilterHelpVisible(false);
-            setFilterOrderPicker(filter);
-        };
-        const showSearchInfo = (search: string) => {
-            Keyboard.dismiss();
-            if (rejectInvalidFilterSearch([search])) return;
-            const matchCount = getFilteredDeckMatchCount(settings, {
-                searchQuery: search.trim(),
-                searchLimit: 9999,
-                searchOrder: 0,
-            }, deck?.id);
-            alert(
-                l('Arama filtresi', 'Search filter'),
-                l(
-                    `Bu sorguyla ${matchCount} uygun kart bulundu.\n\n${search || '—'}\n\n`
-                    + 'Kullanılabilir terimler\n'
-                    + 'deck:"Deste"  ·  tag:etiket  ·  tag:none\n'
-                    + 'is:due  is:new  is:learn  is:review  is:relearn  is:suspended  is:buried\n'
-                    + 'flag:0–7  ·  rated:7  ·  rated:7:1\n'
-                    + 'prop:ivl>=21 (aralık)  ·  prop:reps<10 (tekrar)\n'
-                    + 'prop:lapses>=5 (unutma)  ·  prop:ease<2.0 (kolaylık)\n'
-                    + 'introduced:7 (yeni eklenen)  ·  rescheduled:7\n'
-                    + 'note:"Not Türü"  ·  added:7 (kart oluşturma)\n\n'
-                    + 'Örnek: is:due -is:buried tag:onemli\n'
-                    + 'Örnek: deck:"Farmakoloji" is:new',
-                    `Found ${matchCount} matching cards for this query.\n\n${search || '—'}\n\n`
-                    + 'Supported terms\n'
-                    + 'deck:"Deck Name"  ·  tag:tagname  ·  tag:none\n'
-                    + 'is:due  is:new  is:learn  is:review  is:relearn  is:suspended  is:buried\n'
-                    + 'flag:0–7  ·  rated:7  ·  rated:7:1\n'
-                    + 'prop:ivl>=21 (interval)  ·  prop:reps<10 (reviews)\n'
-                    + 'prop:lapses>=5 (lapses)  ·  prop:ease<2.0 (ease factor)\n'
-                    + 'introduced:7 (first studied)  ·  rescheduled:7\n'
-                    + 'note:"Note Type"  ·  added:7 (created)\n\n'
-                    + 'Example: is:due -is:buried tag:important\n'
-                    + 'Example: deck:"Pharmacology" is:new',
-                ),
-            );
-        };
-        const selectedOrder = filterOrderPicker === 2 ? filterOrder2 : filterOrder;
-        const selectOrder = (order: number) => {
-            if (filterOrderPicker === 2) setFilterOrder2(order);
-            else setFilterOrder(order);
-            setFilterOrderPicker(null);
-        };
-        const showExcludedCardsInfo = () => {
-            Keyboard.dismiss();
-            alert(
-                l('Dahil edilmeyen kartlar', 'Excluded cards'),
-                l(
-                    'Bu kartlar aramayla eşleşiyor ancak askıya alınmış veya gömülmüş oldukları için filtrelenmiş desteye alınamıyor.',
-                    'These cards match the search, but cannot enter the filtered deck because they are suspended or buried.',
-                ),
-            );
-        };
-        const selectedDeckName1 = extractDeckNameFromSearch(filterSearch);
-        const selectedDeckName2 = extractDeckNameFromSearch(filterSearch2);
-        const currentPickerSelectedDeckName = filteredDeckPickerTarget === 2 ? selectedDeckName2 : selectedDeckName1;
-        const availableRegularDecks = getAllDecks().filter((d) => !d.isFiltered);
-
-        return (
-            <View style={styles.filteredDeckScreen} accessibilityViewIsModal>
-                <View style={[styles.filteredDeckToolbar, { paddingTop: insets.top }]}>
-                    <TouchableOpacity
-                        style={styles.filteredToolbarIconButton}
-                        onPress={closeFilteredDeckModal}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('common.close')}
-                    >
-                        <Text style={styles.filteredCloseIcon}>×</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.filteredToolbarTitle} numberOfLines={1}>
-                        {filteredDeckScreenTitle}
-                    </Text>
-                    <TouchableOpacity
-                        style={[styles.filteredBuildButton, buildDisabled && styles.filteredBuildButtonDisabled]}
-                        onPress={isCreating ? handleCreateFilteredDeck : handleSaveFilterOptions}
-                        disabled={buildDisabled}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.filteredBuildButtonText}>
-                            {isCreating ? l('Oluştur', 'Build') : l('Yeniden oluştur', 'Rebuild')}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.filteredToolbarIconButton}
-                        onPress={() => setFilterHelpVisible(true)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Filtrelenmiş deste yardımı', 'Filtered deck help')}
-                    >
-                        <View style={styles.filteredHelpCircle}>
-                            <Text style={styles.filteredHelpIcon}>?</Text>
-                        </View>
-                    </TouchableOpacity>
-                </View>
-
-                <ScrollView
-                    style={styles.filteredDeckScroll}
-                    contentContainerStyle={styles.filteredDeckContent}
-                    keyboardShouldPersistTaps="handled"
-                    keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-                    automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
-                    showsVerticalScrollIndicator={false}
-                >
-                    <Text style={[styles.filteredSectionHeader, styles.filteredSectionHeaderFirst]}>
-                        {l('Deste adı', 'Deck name')}
-                    </Text>
-                    <View style={styles.filteredCard}>
-                        <View style={styles.filteredCardField}>
-                            <TextInput
-                                style={styles.filteredInput}
-                                value={newFilteredDeckName}
-                                onChangeText={setNewFilteredDeckName}
-                                placeholder={l('Deste adı girin', 'Enter deck name')}
-                                placeholderTextColor={colors.textMuted}
-                                autoFocus={isCreating}
-                                returnKeyType="next"
-                                accessibilityLabel={l('Deste adı', 'Deck name')}
-                            />
-                        </View>
-                    </View>
-
-                    <Text style={styles.filteredSectionHeader}>
-                        {l('1. Filtre', 'Filter 1')}
-                    </Text>
-                    <View style={styles.filteredCard}>
-                        <TouchableOpacity
-                            style={styles.filteredPickerButton}
-                            onPress={() => {
-                                Keyboard.dismiss();
-                                setFilteredDeckPickerTarget(1);
-                                setShowFilteredDeckPicker(true);
-                            }}
-                            accessibilityRole="button"
-                            accessibilityLabel={`${l('Deste', 'Deck')}: ${selectedDeckName1 ? selectedDeckName1.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}`}
-                        >
-                            <View style={styles.filteredPickerLabelWrap}>
-                                <Text style={styles.filteredPickerLabel}>{l('Deste', 'Deck')}</Text>
-                                <Text style={styles.filteredPickerValue} numberOfLines={1}>
-                                    {selectedDeckName1 ? selectedDeckName1.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}
-                                </Text>
-                            </View>
-                            <Text style={styles.filteredPickerChevron}>⌄</Text>
-                        </TouchableOpacity>
-
-                        <View style={styles.filteredDivider} />
-
-                        <View style={styles.filteredCardField}>
-                            <Text style={styles.filteredFieldLabel}>{t('common.search')}</Text>
-                            <View style={styles.filteredSearchInputWrap}>
-                                <TextInput
-                                    style={styles.filteredSearchInputField}
-                                    value={filterSearch}
-                                    onChangeText={setFilterSearch}
-                                    placeholder={l('Arama sorgusu', 'Search query')}
-                                    placeholderTextColor={colors.textMuted}
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    accessibilityLabel={l('Birinci filtre araması', 'First filter search')}
-                                />
-                                <TouchableOpacity
-                                    style={styles.filteredSearchButton}
-                                    onPress={() => showSearchInfo(filterSearch)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Arama sorgusunu kontrol et', 'Check search query')}
-                                >
-                                    <Text style={styles.filteredSearchIcon}>⌕</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        <View style={styles.filteredDivider} />
-
-                        <View style={styles.filteredNumberRow}>
-                            <View style={styles.filteredNumberLabelWrap}>
-                                <Text style={styles.filteredNumberLabel}>{l('Kart limiti', 'Card limit')}</Text>
-                                <Text style={styles.filteredNumberSublabel}>
-                                    {l('Desteye alınacak en fazla kart sayısı', 'Maximum cards to gather into this deck')}
-                                </Text>
-                            </View>
-                            <TextInput
-                                style={styles.filteredNumberInput}
-                                value={filterLimit}
-                                onChangeText={(value) => setFilterLimit(value.replace(/\D/g, '').slice(0, 5))}
-                                keyboardType="number-pad"
-                                inputMode="numeric"
-                                maxLength={5}
-                                accessibilityLabel={l('Birinci filtre kart limiti', 'First filter card limit')}
-                            />
-                        </View>
-
-                        <View style={styles.filteredDivider} />
-
-                        <TouchableOpacity
-                            style={styles.filteredPickerButton}
-                            onPress={() => openFilterOrderPicker(1)}
-                            accessibilityRole="button"
-                            accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, filterOrder)}`}
-                        >
-                            <View style={styles.filteredPickerLabelWrap}>
-                                <Text style={styles.filteredPickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                                <Text style={styles.filteredPickerValue}>{filteredOrderLabel(locale, filterOrder)}</Text>
-                            </View>
-                            <Text style={styles.filteredPickerChevron}>⌄</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <Text style={styles.filteredSectionHeader}>
-                        {l('2. Filtre', 'Filter 2')}
-                    </Text>
-                    <View style={styles.filteredCard}>
-                        <View style={styles.filteredToggleRow}>
-                            <View style={styles.filteredToggleCopy}>
-                                <Text style={styles.filteredToggleTitle}>
-                                    {l('İkinci filtreyi etkinleştir', 'Enable second filter')}
-                                </Text>
-                                <Text style={styles.filteredToggleSubtitle}>
-                                    {l('Farklı arama ve sıralama ile ikinci bir grup ekleyin', 'Combine a second group with separate query and order')}
-                                </Text>
-                            </View>
-                            <Switch
-                                value={filterSecondEnabled}
-                                onValueChange={setFilterSecondEnabled}
-                                trackColor={{ false: colors.border, true: colors.accent }}
-                                thumbColor={colors.white}
-                                accessibilityLabel={l('İkinci filtreyi etkinleştir', 'Enable second filter')}
-                            />
-                        </View>
-
-                        {filterSecondEnabled && (
-                            <>
-                                <View style={styles.filteredDivider} />
-
-                                <TouchableOpacity
-                                    style={styles.filteredPickerButton}
-                                    onPress={() => {
-                                        Keyboard.dismiss();
-                                        setFilteredDeckPickerTarget(2);
-                                        setShowFilteredDeckPicker(true);
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`${l('Deste', 'Deck')}: ${selectedDeckName2 ? selectedDeckName2.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}`}
-                                >
-                                    <View style={styles.filteredPickerLabelWrap}>
-                                        <Text style={styles.filteredPickerLabel}>{l('Deste', 'Deck')}</Text>
-                                        <Text style={styles.filteredPickerValue} numberOfLines={1}>
-                                            {selectedDeckName2 ? selectedDeckName2.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}
-                                        </Text>
-                                    </View>
-                                    <Text style={styles.filteredPickerChevron}>⌄</Text>
-                                </TouchableOpacity>
-
-                                <View style={styles.filteredDivider} />
-
-                                <View style={styles.filteredCardField}>
-                                    <Text style={styles.filteredFieldLabel}>{t('common.search')}</Text>
-                                    <View style={styles.filteredSearchInputWrap}>
-                                        <TextInput
-                                            style={styles.filteredSearchInputField}
-                                            value={filterSearch2}
-                                            onChangeText={setFilterSearch2}
-                                            placeholder={l('İkinci arama sorgusu', 'Second search query')}
-                                            placeholderTextColor={colors.textMuted}
-                                            autoCapitalize="none"
-                                            autoCorrect={false}
-                                            accessibilityLabel={l('İkinci filtre araması', 'Second filter search')}
-                                        />
-                                        <TouchableOpacity
-                                            style={styles.filteredSearchButton}
-                                            onPress={() => showSearchInfo(filterSearch2)}
-                                            accessibilityRole="button"
-                                            accessibilityLabel={l('İkinci arama sorgusunu kontrol et', 'Check second search query')}
-                                        >
-                                            <Text style={styles.filteredSearchIcon}>⌕</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-
-                                <View style={styles.filteredDivider} />
-
-                                <View style={styles.filteredNumberRow}>
-                                    <View style={styles.filteredNumberLabelWrap}>
-                                        <Text style={styles.filteredNumberLabel}>{l('Kart limiti', 'Card limit')}</Text>
-                                        <Text style={styles.filteredNumberSublabel}>
-                                            {l('İkinci gruptan alınacak en fazla kart sayısı', 'Maximum cards from the second group')}
-                                        </Text>
-                                    </View>
-                                    <TextInput
-                                        style={styles.filteredNumberInput}
-                                        value={filterLimit2}
-                                        onChangeText={(value) => setFilterLimit2(value.replace(/\D/g, '').slice(0, 5))}
-                                        keyboardType="number-pad"
-                                        inputMode="numeric"
-                                        maxLength={5}
-                                        accessibilityLabel={l('İkinci filtre kart limiti', 'Second filter card limit')}
-                                    />
-                                </View>
-
-                                <View style={styles.filteredDivider} />
-
-                                <TouchableOpacity
-                                    style={styles.filteredPickerButton}
-                                    onPress={() => openFilterOrderPicker(2)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, filterOrder2)}`}
-                                >
-                                    <View style={styles.filteredPickerLabelWrap}>
-                                        <Text style={styles.filteredPickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                                        <Text style={styles.filteredPickerValue}>{filteredOrderLabel(locale, filterOrder2)}</Text>
-                                    </View>
-                                    <Text style={styles.filteredPickerChevron}>⌄</Text>
-                                </TouchableOpacity>
-                            </>
-                        )}
-                    </View>
-
-                    <Text style={styles.filteredSectionHeader}>
-                        {l('Çalışma davranışı', 'Study behavior')}
-                    </Text>
-                    <View style={styles.filteredCard}>
-                        <View style={styles.filteredToggleRow}>
-                            <View style={styles.filteredToggleCopy}>
-                                <Text style={styles.filteredToggleTitle}>
-                                    {l('Kartları yeniden zamanla', 'Reschedule cards')}
-                                </Text>
-                                <Text style={styles.filteredToggleSubtitle}>
-                                    {filterReschedule
-                                        ? l('Yanıtlar kartların normal programını günceller.', 'Answers update the cards’ normal schedule.')
-                                        : l('Önizleme modu; mevcut zamanlama değişmez.', 'Preview mode; existing scheduling is unchanged.')}
-                                </Text>
-                            </View>
-                            <Switch
-                                value={filterReschedule}
-                                onValueChange={setFilterReschedule}
-                                trackColor={{ false: colors.border, true: colors.accent }}
-                                thumbColor={colors.white}
-                                accessibilityLabel={l('Kartları yeniden zamanla', 'Reschedule cards')}
-                            />
-                        </View>
-
-                        <View style={styles.filteredDivider} />
-
-                        <View style={styles.filteredToggleRow}>
-                            <View style={styles.filteredToggleCopy}>
-                                <Text style={styles.filteredToggleTitle}>
-                                    {l('Boş olsa bile oluştur/güncelle', 'Create/update even if empty')}
-                                </Text>
-                                <Text style={styles.filteredToggleSubtitle}>
-                                    {l('Hiçbir kart eşleşmese de deste ve kuralları korunur.', 'Keep the deck and its rules even when no cards match.')}
-                                </Text>
-                            </View>
-                            <Switch
-                                value={filterAllowEmpty}
-                                onValueChange={setFilterAllowEmpty}
-                                trackColor={{ false: colors.border, true: colors.accent }}
-                                thumbColor={colors.white}
-                                accessibilityLabel={l('Boş olsa bile oluştur/güncelle', 'Create/update even if empty')}
-                            />
-                        </View>
-                    </View>
-
-                    <TouchableOpacity
-                        style={[styles.filteredExcludedButton, { paddingBottom: Math.max(insets.bottom, Spacing.sm) }]}
-                        onPress={showExcludedCardsInfo}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.filteredExcludedIcon}>ℹ</Text>
-                        <Text style={styles.filteredExcludedText}>
-                            {l('Dahil edilemeyen kartları göster', 'Show any excluded cards')}
-                        </Text>
-                    </TouchableOpacity>
-                </ScrollView>
-
-                {filterHelpVisible && (
-                    <View style={styles.filteredOverlayLayer}>
-                        <TouchableOpacity
-                            style={styles.filteredOverlayBackdrop}
-                            activeOpacity={1}
-                            onPress={() => setFilterHelpVisible(false)}
-                            accessibilityRole="button"
-                            accessibilityLabel={t('common.close')}
-                        />
-                        <View style={styles.filteredHelpCard}>
-                            <View style={styles.filteredHelpHeader}>
-                                <Text style={styles.filteredHelpTitle}>{l('Filtrelenmiş desteler', 'Filtered decks')}</Text>
-                                <TouchableOpacity onPress={() => setFilterHelpVisible(false)} style={styles.filteredHelpCloseButton}>
-                                    <Text style={styles.filteredHelpCloseText}>×</Text>
-                                </TouchableOpacity>
-                            </View>
-                            <ScrollView
-                                style={styles.filteredHelpScroll}
-                                contentContainerStyle={styles.filteredHelpScrollContent}
-                                showsVerticalScrollIndicator={false}
-                                bounces={false}
-                            >
-                                <Text style={styles.filteredHelpIntro}>
-                                    {l(
-                                        'Filtrelenmiş deste, normal günlük sınırların dışında belirli kartlarla geçici bir çalışma oturumu oluşturur.',
-                                        'A filtered deck creates a temporary study session with specific cards outside the normal daily limits.',
-                                    )}
-                                </Text>
-
-                                <View style={styles.filteredHelpSection}>
-                                    <View style={styles.filteredHelpNumber}><Text style={styles.filteredHelpNumberText}>1</Text></View>
-                                    <View style={styles.filteredHelpSectionCopy}>
-                                        <Text style={styles.filteredHelpSectionTitle}>{l('Kartları belirleyin', 'Choose the cards')}</Text>
-                                        <Text style={styles.filteredHelpBody}>
-                                            {l(
-                                                'Arama alanı, Kart Tarayıcı ile aynı sorgu dilini kullanır. Deste, etiket ve kart durumunu birlikte yazabilirsiniz.',
-                                                'Search uses the same query language as Browse. You can combine deck, tag, and card-state terms.',
-                                            )}
-                                        </Text>
-                                        <View style={styles.filteredHelpCodeBox}>
-                                            <Text style={styles.filteredHelpCode}>deck:&quot;TUS Kartları&quot; is:due -is:suspended</Text>
-                                        </View>
-                                    </View>
-                                </View>
-
-                                <View style={styles.filteredHelpSection}>
-                                    <View style={styles.filteredHelpNumber}><Text style={styles.filteredHelpNumberText}>2</Text></View>
-                                    <View style={styles.filteredHelpSectionCopy}>
-                                        <Text style={styles.filteredHelpSectionTitle}>{l('Limit ve sırayı ayarlayın', 'Set the limit and order')}</Text>
-                                        <Text style={styles.filteredHelpBody}>
-                                            {l(
-                                                'Limit, desteye alınacak en yüksek kart sayısıdır. Seçim sırası hem hangi kartların limite gireceğini hem de çalışma sırasını belirler.',
-                                                'The limit is the maximum number of cards gathered. The selected order controls both which cards fit the limit and their study order.',
-                                            )}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.filteredHelpSection}>
-                                    <View style={styles.filteredHelpNumber}><Text style={styles.filteredHelpNumberText}>3</Text></View>
-                                    <View style={styles.filteredHelpSectionCopy}>
-                                        <Text style={styles.filteredHelpSectionTitle}>{l('İsterseniz ikinci filtre ekleyin', 'Optionally add a second filter')}</Text>
-                                        <Text style={styles.filteredHelpBody}>
-                                            {l(
-                                                'İki ayrı arama, limit ve sıralama grubunu tek destede birleştirir; örneğin vadesi gelmiş kartlarla az sayıda yeni kartı birlikte çalışabilirsiniz.',
-                                                'Combine two groups with separate searches, limits, and orders; for example, due cards plus a small number of new cards.',
-                                            )}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.filteredHelpSection}>
-                                    <View style={styles.filteredHelpNumber}><Text style={styles.filteredHelpNumberText}>4</Text></View>
-                                    <View style={styles.filteredHelpSectionCopy}>
-                                        <Text style={styles.filteredHelpSectionTitle}>{l('Zamanlamayı seçin', 'Choose scheduling behavior')}</Text>
-                                        <Text style={styles.filteredHelpBody}>
-                                            {l(
-                                                'Yeniden zamanlama açıksa verdiğiniz yanıtlar kartın programını günceller. Kapalıysa deste önizleme modunda çalışır ve kartlar önceki zamanlamalarıyla ana destelerine döner.',
-                                                'With rescheduling on, your answers update each card’s schedule. With it off, the deck acts as a preview and cards return home with their prior schedule.',
-                                            )}
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                <View style={styles.filteredHelpNotice}>
-                                    <Text style={styles.filteredHelpNoticeTitle}>{l('Bilmeniz gerekenler', 'Good to know')}</Text>
-                                    <Text style={styles.filteredHelpNoticeText}>
-                                        {l(
-                                            'Askıdaki, gömülü veya başka bir filtrelenmiş destede bulunan kartlar eklenemez. Kartlar silinmez; ana desteleriyle bağlantılarını korur. Aynı ayarlarla kartları yeniden toplamak için desteyi yeniden oluşturabilirsiniz.',
-                                            'Suspended, buried, or already-filtered cards cannot be gathered. Cards are never deleted and keep their home-deck link. Rebuild the deck to gather cards again with the same settings.',
-                                        )}
-                                    </Text>
-                                </View>
-                            </ScrollView>
-                            <View style={styles.filteredHelpFooter}>
-                                <TouchableOpacity style={styles.filteredHelpDoneButton} onPress={() => setFilterHelpVisible(false)}>
-                                    <Text style={styles.filteredHelpDoneText}>{l('Anladım', 'Got it')}</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                )}
-
-                {filterOrderPicker !== null && (
-                    <View style={styles.filteredOverlayLayerBottom}>
-                        <TouchableOpacity
-                            style={styles.filteredOverlayBackdrop}
-                            activeOpacity={1}
-                            onPress={() => setFilterOrderPicker(null)}
-                            accessibilityRole="button"
-                            accessibilityLabel={t('common.close')}
-                        />
-                        <SwipeDismissSheet
-                            style={[styles.filteredPickerCard, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}
-                            onDismiss={() => setFilterOrderPicker(null)}
-                        >
-                            <Text style={styles.filteredPickerSheetTitle}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                            <ScrollView showsVerticalScrollIndicator={false}>
-                                {FILTERED_DECK_ORDER_UI.map((order) => (
-                                    <TouchableOpacity
-                                        key={order}
-                                        style={[styles.filteredOrderOption, selectedOrder === order && styles.filteredOrderOptionSelected]}
-                                        onPress={() => selectOrder(order)}
-                                        accessibilityRole="button"
-                                    >
-                                        <Text style={[styles.filteredOrderOptionText, selectedOrder === order && styles.filteredOrderOptionTextSelected]}>
-                                            {filteredOrderLabel(locale, order)}
-                                        </Text>
-                                        {selectedOrder === order && <Text style={styles.filteredOrderCheck}>✓</Text>}
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </SwipeDismissSheet>
-                    </View>
-                )}
-
-                {showFilteredDeckPicker && (
-                    <DeckPickerModal
-                        visible={showFilteredDeckPicker}
-                        colors={colors}
-                        decks={availableRegularDecks}
-                        selectedDeckName={currentPickerSelectedDeckName}
-                        activeDeckName={currentPickerSelectedDeckName || activeDeckName || null}
-                        title={l('Hedef deste', 'Target Deck')}
-                        allDecksLabel={l('Tüm desteler', 'All decks')}
-                        searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                        emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
-                        cancelLabel={t('common.cancel')}
-                        closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
-                        searchAccessibilityLabel={l('Deste ara', 'Search decks')}
-                        createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
-                        onClose={() => setShowFilteredDeckPicker(false)}
-                        onSelect={(name) => {
-                            if (filteredDeckPickerTarget === 2) {
-                                setFilterSearch2((current) => replaceDeckNameInSearch(current, name));
-                            } else {
-                                setFilterSearch((current) => replaceDeckNameInSearch(current, name));
-                            }
-                            setShowFilteredDeckPicker(false);
-                        }}
-                        onCreateDeck={(name) => {
-                            try {
-                                const created = createOrSelectDeck(name);
-                                refresh();
-                                invalidateCollection();
-                                return created.name;
-                            } catch (error) {
-                                console.warn('[Decks] create deck from picker failed:', error);
-                                return null;
-                            }
-                        }}
-                    />
-                )}
-            </View>
-        );
-    };
-
-    const isFilteredDeckModal = modal?.kind === 'filter' || modal?.kind === 'create-filter';
     const isCenteredDeckDialog = modal?.kind === 'create-subdeck' || modal?.kind === 'rename';
     const renderVirtualizedRow = useCallback(({ item }: { item: DeckListRowModel }) => (
         <VirtualizedDeckRow
@@ -2457,33 +1702,21 @@ export default function DecksScreen() {
                 // Custom study brings its own sheet, so it stays out of this shared container.
                 visible={modal !== null && modal.kind !== 'custom'}
                 transparent
-                animationType={isFilteredDeckModal
-                    ? 'slide'
-                    : modal?.kind === 'menu' || isCenteredDeckDialog
-                        ? 'fade'
-                        : isCompact ? 'slide' : 'fade'}
-                onRequestClose={() => {
-                    setFilterHelpVisible(false);
-                    setFilterOrderPicker(null);
-                    setModal(null);
-                }}
+                animationType={modal?.kind === 'menu' || isCenteredDeckDialog
+                    ? 'fade'
+                    : isCompact ? 'slide' : 'fade'}
+                onRequestClose={() => setModal(null)}
                 onDismiss={handleDeckModalDismiss}
             >
                 <KeyboardAvoidingView
                     style={[
                         styles.modalOverlay,
-                        isFilteredDeckModal && styles.filteredModalOverlay,
-                        isCompact && modal?.kind !== 'menu' && !isFilteredDeckModal && !isCenteredDeckDialog && styles.modalOverlayCompact,
-                        isCompact && modal?.kind !== 'menu' && !isFilteredDeckModal && !isCenteredDeckDialog && compactSheetTopInset,
+                        isCompact && modal?.kind !== 'menu' && !isCenteredDeckDialog && styles.modalOverlayCompact,
+                        isCompact && modal?.kind !== 'menu' && !isCenteredDeckDialog && compactSheetTopInset,
                     ]}
-                    behavior={Platform.OS === 'ios'
-                        && !isFilteredDeckModal
-                        && !filterHelpVisible
-                        && filterOrderPicker === null
-                        ? 'padding'
-                        : undefined}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 >
-                    {modal !== null && !isFilteredDeckModal && (
+                    {modal !== null && (
                         <TouchableOpacity
                             style={styles.modalBackdropHit}
                             activeOpacity={1}
@@ -2502,10 +1735,21 @@ export default function DecksScreen() {
                     {modal?.kind === 'rename' && renderRenameModal(modal.deck)}
                     {modal?.kind === 'create-subdeck' && renderCreateSubdeckModal(modal.deck)}
                     {modal?.kind === 'description' && renderDescriptionModal(modal.deck)}
-                    {modal?.kind === 'filter' && renderFilterModal(modal.deck)}
-                    {modal?.kind === 'create-filter' && renderFilterModal()}
                 </KeyboardAvoidingView>
             </Modal>
+
+            <FilteredDeckOptionsModal
+                visible={filteredDeckFormVisible}
+                deck={filteredDeckFormDeck}
+                settings={settings}
+                onClose={() => setFilteredDeckFormVisible(false)}
+                onSaved={refresh}
+                // A built deck opens on its overview.
+                onCreated={(deckName) => {
+                    refresh();
+                    handleOpenOverview(deckName);
+                }}
+            />
 
             {modal?.kind === 'custom' && (
                 <CustomStudyModal
@@ -2790,218 +2034,7 @@ function createStyles(colors: ColorScheme) {
         justifyContent: 'center',
         padding: Spacing.xl,
     },
-    filteredModalOverlay: {
-        padding: 0,
-        alignItems: 'stretch',
-        justifyContent: 'flex-start',
-        backgroundColor: colors.bgPrimary,
-    },
-    filteredDeckScreen: {
-        flex: 1,
-        backgroundColor: colors.bgPrimary,
-    },
-    filteredDeckToolbar: {
-        minHeight: 56,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingBottom: 8,
-        paddingHorizontal: 8,
-        gap: 4,
-        backgroundColor: colors.bgCard,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    filteredToolbarIconButton: {
-        width: 44,
-        height: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.full,
-    },
-    filteredCloseIcon: {
-        color: colors.textSecondary,
-        fontSize: 34,
-        lineHeight: 36,
-        fontWeight: '300',
-    },
-    filteredToolbarTitle: {
-        flex: 1,
-        minWidth: 0,
-        color: colors.textPrimary,
-        fontSize: FontSize.lg,
-        fontWeight: '600',
-    },
-    filteredBuildButton: {
-        minWidth: 78,
-        minHeight: 44,
-        paddingHorizontal: Spacing.lg,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.full,
-        backgroundColor: colors.accent,
-    },
-    filteredBuildButtonDisabled: { opacity: 0.42 },
-    filteredBuildButtonText: {
-        color: colors.white,
-        fontSize: FontSize.sm,
-        fontWeight: '800',
-    },
-    filteredHelpCircle: {
-        width: 25,
-        height: 25,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: colors.textSecondary,
-        borderRadius: BorderRadius.full,
-    },
-    filteredHelpIcon: {
-        color: colors.textSecondary,
-        fontSize: 16,
-        lineHeight: 19,
-        fontWeight: '800',
-    },
-    filteredDeckScroll: { flex: 1 },
-    filteredDeckContent: {
-        width: '100%',
-        maxWidth: 620,
-        alignSelf: 'center',
-        paddingHorizontal: Spacing.lg,
-        paddingTop: Spacing.lg,
-        paddingBottom: 56,
-    },
-    filteredSectionHeader: {
-        fontSize: FontSize.xs,
-        fontWeight: '700',
-        letterSpacing: 0.6,
-        color: colors.textSecondary,
-        textTransform: 'uppercase',
-        marginBottom: Spacing.xs,
-        marginLeft: Spacing.xs,
-        marginTop: Spacing.lg,
-    },
-    filteredSectionHeaderFirst: {
-        marginTop: 0,
-    },
-    filteredCard: {
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.lg,
-        borderWidth: 1,
-        borderColor: colors.borderLight,
-        overflow: 'hidden',
-        ...Shadows.sm,
-    },
-    filteredCardField: {
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-    },
-    filteredFieldLabel: {
-        fontSize: FontSize.xs,
-        fontWeight: '600',
-        color: colors.textSecondary,
-        marginBottom: 4,
-    },
-    filteredInput: {
-        fontSize: FontSize.md,
-        color: colors.textPrimary,
-        minHeight: 40,
-        paddingVertical: 4,
-    },
-    filteredSearchInputWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-    },
-    filteredSearchInputField: {
-        flex: 1,
-        fontSize: FontSize.md,
-        color: colors.textPrimary,
-        minHeight: 40,
-        paddingVertical: 4,
-        // Same vertical centring contract as the browser's search field: without these the
-        // glyphs sit below the caret once the row is taller than the text's natural line box.
-        includeFontPadding: false,
-        textAlignVertical: 'center',
-    },
-    filteredSearchButton: {
-        width: 38,
-        height: 38,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.full,
-        backgroundColor: colors.accentLight,
-    },
-    filteredSearchIcon: {
-        color: colors.accent,
-        fontSize: 22,
-        fontWeight: '600',
-        lineHeight: 24,
-    },
-    filteredNumberRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-        minHeight: 52,
-    },
-    filteredNumberLabelWrap: {
-        flex: 1,
-        marginRight: Spacing.md,
-    },
-    filteredNumberLabel: {
-        fontSize: FontSize.md,
-        fontWeight: '500',
-        color: colors.textPrimary,
-    },
-    filteredNumberSublabel: {
-        fontSize: FontSize.xs,
-        color: colors.textMuted,
-        marginTop: 2,
-    },
-    filteredNumberInput: {
-        minWidth: 84,
-        height: 40,
-        backgroundColor: colors.bgInput,
-        borderRadius: BorderRadius.sm,
-        borderWidth: 1,
-        borderColor: colors.border,
-        paddingHorizontal: Spacing.sm,
-        textAlign: 'center',
-        fontSize: FontSize.md,
-        fontWeight: '600',
-        fontVariant: ['tabular-nums'] as any,
-        color: colors.textPrimary,
-    },
-    filteredPickerButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-        minHeight: 56,
-    },
-    filteredPickerLabelWrap: {
-        flex: 1,
-        marginRight: Spacing.md,
-    },
-    filteredPickerLabel: {
-        fontSize: FontSize.xs,
-        fontWeight: '600',
-        color: colors.textSecondary,
-        marginBottom: 2,
-    },
-    filteredPickerValue: {
-        fontSize: FontSize.md,
-        fontWeight: '600',
-        color: colors.textPrimary,
-    },
-    filteredPickerChevron: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.textSecondary,
-    },
-    filteredToggleRow: {
+    markdownToggleRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -3010,239 +2043,20 @@ function createStyles(colors: ColorScheme) {
         minHeight: 56,
         gap: Spacing.md,
     },
-    filteredToggleCopy: {
+    markdownToggleCopy: {
         flex: 1,
         justifyContent: 'center',
     },
-    filteredToggleTitle: {
+    markdownToggleTitle: {
         fontSize: FontSize.md,
         fontWeight: '600',
         color: colors.textPrimary,
     },
-    filteredToggleSubtitle: {
+    markdownToggleSubtitle: {
         fontSize: FontSize.xs,
         lineHeight: 16,
         color: colors.textMuted,
         marginTop: 2,
-    },
-    filteredDivider: {
-        height: StyleSheet.hairlineWidth,
-        backgroundColor: colors.borderLight,
-        marginLeft: Spacing.lg,
-    },
-    filteredExcludedButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 48,
-        paddingVertical: Spacing.md,
-        paddingHorizontal: Spacing.lg,
-        borderRadius: BorderRadius.lg,
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.borderLight,
-        marginTop: Spacing.lg,
-        marginBottom: Spacing.xl,
-        gap: Spacing.xs,
-        ...Shadows.sm,
-    },
-    filteredExcludedIcon: {
-        fontSize: FontSize.md,
-        color: colors.accent,
-    },
-    filteredExcludedText: {
-        color: colors.accent,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-    },
-    filteredOverlayLayer: {
-        ...StyleSheet.absoluteFill,
-        zIndex: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.xl,
-    },
-    filteredOverlayBackdrop: {
-        ...StyleSheet.absoluteFill,
-        backgroundColor: 'rgba(0, 0, 0, 0.42)',
-    },
-    filteredHelpCard: {
-        width: '100%',
-        maxWidth: 420,
-        maxHeight: '88%',
-        overflow: 'hidden',
-        borderRadius: 24,
-        backgroundColor: colors.bgCard,
-        ...Shadows.lg,
-    },
-    filteredHelpHeader: {
-        flexShrink: 0,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingTop: Spacing.lg,
-        paddingLeft: Spacing.xl,
-        paddingRight: Spacing.md,
-        paddingBottom: Spacing.md,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    filteredHelpTitle: {
-        flex: 1,
-        color: colors.textPrimary,
-        fontSize: FontSize.xxl,
-        fontWeight: '700',
-    },
-    filteredHelpCloseButton: {
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.full,
-    },
-    filteredHelpCloseText: {
-        color: colors.textSecondary,
-        fontSize: 30,
-        lineHeight: 32,
-    },
-    filteredHelpBody: {
-        color: colors.textSecondary,
-        fontSize: FontSize.md,
-        lineHeight: 21,
-    },
-    filteredHelpIntro: {
-        marginBottom: Spacing.lg,
-        color: colors.textPrimary,
-        fontSize: FontSize.md,
-        lineHeight: 22,
-        fontWeight: '600',
-    },
-    filteredHelpSection: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: Spacing.md,
-        marginBottom: Spacing.lg,
-    },
-    filteredHelpNumber: {
-        width: 28,
-        height: 28,
-        flexShrink: 0,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.full,
-        backgroundColor: colors.accentLight,
-    },
-    filteredHelpNumberText: {
-        color: colors.accent,
-        fontSize: FontSize.sm,
-        fontWeight: '900',
-    },
-    filteredHelpSectionCopy: { flex: 1 },
-    filteredHelpSectionTitle: {
-        marginBottom: 4,
-        color: colors.textPrimary,
-        fontSize: FontSize.md,
-        lineHeight: 21,
-        fontWeight: '800',
-    },
-    filteredHelpCodeBox: {
-        marginTop: Spacing.sm,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        borderRadius: BorderRadius.sm,
-        backgroundColor: colors.bgSecondary,
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors.border,
-    },
-    filteredHelpCode: {
-        color: colors.textPrimary,
-        fontSize: FontSize.xs,
-        lineHeight: 18,
-        fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
-    },
-    filteredHelpNotice: {
-        padding: Spacing.lg,
-        borderRadius: BorderRadius.md,
-        backgroundColor: colors.accentLight,
-    },
-    filteredHelpNoticeTitle: {
-        marginBottom: 5,
-        color: colors.accent,
-        fontSize: FontSize.sm,
-        fontWeight: '900',
-    },
-    filteredHelpNoticeText: {
-        color: colors.textPrimary,
-        fontSize: FontSize.sm,
-        lineHeight: 20,
-    },
-    filteredHelpScroll: {
-        flexShrink: 1,
-    },
-    filteredHelpScrollContent: {
-        paddingHorizontal: Spacing.xl,
-        paddingVertical: Spacing.lg,
-    },
-    filteredHelpFooter: {
-        flexShrink: 0,
-        minHeight: 56,
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        paddingHorizontal: Spacing.md,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.borderLight,
-    },
-    filteredHelpDoneButton: {
-        minHeight: 44,
-        justifyContent: 'center',
-        paddingHorizontal: Spacing.md,
-        borderRadius: BorderRadius.sm,
-    },
-    filteredHelpDoneText: {
-        color: colors.accent,
-        fontSize: FontSize.md,
-        fontWeight: '800',
-    },
-    filteredOverlayLayerBottom: {
-        ...StyleSheet.absoluteFill,
-        zIndex: 20,
-        justifyContent: 'flex-end',
-    },
-    filteredPickerCard: {
-        maxHeight: '70%',
-        backgroundColor: colors.bgPrimary,
-        borderTopLeftRadius: BorderRadius.xl,
-        borderTopRightRadius: BorderRadius.xl,
-        padding: Spacing.lg,
-        paddingTop: 48,
-        ...Shadows.lg,
-    },
-    filteredPickerSheetTitle: {
-        fontSize: FontSize.lg,
-        fontWeight: '800',
-        color: colors.textPrimary,
-        marginBottom: Spacing.md,
-    },
-    filteredOrderOption: {
-        minHeight: 50,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.md,
-        borderRadius: BorderRadius.sm,
-    },
-    filteredOrderOptionSelected: { backgroundColor: colors.accentLight },
-    filteredOrderOptionText: {
-        flex: 1,
-        color: colors.textPrimary,
-        fontSize: FontSize.md,
-    },
-    filteredOrderOptionTextSelected: {
-        color: colors.accent,
-        fontWeight: '800',
-    },
-    filteredOrderCheck: {
-        color: colors.accent,
-        fontSize: FontSize.lg,
-        fontWeight: '800',
     },
     modalOverlayCompact: { justifyContent: 'flex-end', padding: 0 },
     modalBackdropHit: { ...StyleSheet.absoluteFill },

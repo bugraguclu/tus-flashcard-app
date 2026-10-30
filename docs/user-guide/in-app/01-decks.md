@@ -3,8 +3,8 @@
 Kapsam: Desteler sekmesi (`app/(tabs)/decks.tsx`), satır ve sütunlar
 (`components/decks/DeckListTable.tsx`), **＋** ve **⋮** menüleri, deste **•••** menüsü ve
 iletişim kutuları, Genel bakış (`app/deck-overview.tsx`), deste seçici
-(`components/DeckPickerModal.tsx`), filtrelenmiş deste formları (`decks.tsx` `renderFilterModal`,
-`components/FilteredDeckOptionsModal.tsx`) ve Özel çalışma (`components/CustomStudyModal.tsx`).
+(`components/DeckPickerModal.tsx`), filtrelenmiş deste formu (`components/FilteredDeckOptionsModal.tsx`)
+ve Özel çalışma (`components/CustomStudyModal.tsx`).
 Satır numaraları master c6108e6'ya göredir. Platform belirtilmeyen her öğe iPhone ve web için
 geçerlidir.
 
@@ -239,6 +239,13 @@ yeterli ve korunur: `deck-overview.tsx:302, 313, 320, 330` (Mevcut — koru); bo
 ---
 
 ## 7. Filtrelenmiş deste formu (Desteler'den: oluşturma ve Filtre seçenekleri)
+
+> **2026-10-30:** İki form birleşti. Oluşturma (Desteler ＋, Kartlarım •••) ve Filtre seçenekleri
+> (Desteler •••, Genel bakış, çalışma ekranı) artık tek bileşen: `components/FilteredDeckOptionsModal.tsx`;
+> yardım sayfası `components/filtered-deck/FilteredDeckHelpSheet.tsx` (giriş, 4 adım ve "Bilmeniz
+> gerekenler" korundu). Bu bölümdeki `decks.tsx` satır numaraları kaldırılan forma aittir; ⌕ uyarısı
+> kısa metni, "Dahil edilemeyen kartlar" sayılı metni ve sıralama listesi FSRS'e göre süzülmüş
+> listeyi kullanır.
 
 ### help.filtered.sheet — "Filtrelenmiş desteler" yardımı (mevcut — genişlet)
 - **Yer:** Form araç çubuğunun **?** düğmesi (`decks.tsx:1720-1729`, etiket

@@ -6,8 +6,7 @@ order: 11
 web_path: /yardim/filtrelenmis-deste
 app_help: help?article=filtered-decks
 app_screens:
-  - "Filtrelenmiş deste formu (oluşturma ve Filtre seçenekleri) — app/(tabs)/decks.tsx (renderFilterModal)"
-  - "Filtre seçenekleri (Genel bakış'tan) — components/FilteredDeckOptionsModal.tsx"
+  - "Filtrelenmiş deste formu (Desteler'den veya Kartlarım'dan oluşturma ve Filtre seçenekleri) — components/FilteredDeckOptionsModal.tsx"
   - "Genel bakış, filtrelenmiş deste — app/deck-overview.tsx"
   - "Özel çalışma — components/CustomStudyModal.tsx"
 verified_against: master c6108e6 (2026-10-25)
@@ -21,7 +20,7 @@ kullanılan filtreleri hazır seçenekler olarak sunar. İkisi de kartlarınız�
 
 <a id="what-are-filtered-decks"></a>
 ## Filtrelenmiş deste nedir?
-<!-- Uygulamada: Filtrelenmiş deste formunun ? düğmesi (app/(tabs)/decks.tsx:1720) ve Filtre seçenekleri'nin ? düğmesi (components/FilteredDeckOptionsModal.tsx:220) → açılan yardımın "Daha fazla bilgi" bağlantısı → bu bölüm -->
+<!-- Uygulamada: Filtrelenmiş deste formunun ? düğmesi (components/FilteredDeckOptionsModal.tsx, yardım components/filtered-deck/FilteredDeckHelpSheet.tsx) → açılan yardımın "Daha fazla bilgi" bağlantısı → bu bölüm -->
 
 - **Kartlar yerinden oynamaz.** Her kart kendi destesine bağlı kalır. Filtrelenmiş destede
   durduğu sürece kendi destesinin çalışmasında ve sayılarında görünmez.
@@ -46,8 +45,9 @@ olamazlar, altlarına deste alamazlar ve sürüklenemezler.
 İki yerden başlayabilirsiniz:
 
 - **Desteler › ＋ › Filtrelenmiş deste oluştur**,
-- **Kartlarım › ••• › Filtrelenmiş deste oluştur**: Kartlarım'da o an yazılı olan arama forma
-  hazır gelir. Bkz. [Kartlarım ve arama](10-browser-and-search.md).
+- **Kartlarım › ••• › Filtrelenmiş deste oluştur**: Form Kartlarım'ın üzerinde, deste seçimi,
+  filtreler ve arama hazır olarak açılır; **×** ile kapatırsanız Kartlarım bıraktığınız gibi kalır.
+  Bkz. [Kartlarım ve arama](10-browser-and-search.md).
 
 Açılan formda:
 
@@ -55,15 +55,15 @@ Açılan formda:
    içinde `::` olamaz.
 2. **1. Filtre:** Deste, arama, kart limiti ve sıralamayı ayarlayın (sonraki bölümler).
 3. İsterseniz **2. Filtre**'yi açın.
-4. **Çalışma davranışı** altında yeniden zamanlamayı seçin.
-5. Sağ üstteki **Oluştur**'a dokunun.
+4. **Seçenekler** altında yeniden zamanlamayı seçin.
+5. Alttaki **Oluştur**'a dokunun.
 
 Deste toplanır ve **Genel bakış** açılır; **Şimdi çalış** ile başlarsınız.
 
 Yeni formda arama, en son çalıştığınız destenin vadesi gelmiş kartlarıyla hazır gelir
 (`deck:"Patoloji" is:due` gibi). Hiçbir kart eşleşmezse **Eşleşen kart yok** mesajı çıkar;
-aramayı değiştirin veya **Boş olsa bile oluştur/güncelle**'yi açın. Arama alanı boşken deste
-oluşturulmaz. Aynı adda bir deste varsa yeni destenin adına " (1)" eklenir.
+aramayı değiştirin veya **Boş olsa bile oluştur**'u açın. Arama alanı boşken deste
+oluşturulmaz. Aynı adda bir deste varsa yeni destenin adına "+" eklenir.
 
 <a id="search-and-limit"></a>
 ## Arama ve kart limiti
@@ -108,8 +108,8 @@ belirler. Yeni bir destede **Rastgele** seçilidir.
 | **Göreceli gecikme** | Aralığına oranla en çok gecikmiş kartlar |
 
 İki **Hatırlanabilirlik** sıralaması yalnızca FSRS açıkken anlamlıdır; FSRS kapalıyken kartları
-sabit, karışık bir sırayla verir. **Genel bakış › Filtre seçenekleri** bu ikisini yalnızca FSRS
-açıkken listeler; FSRS kapalıyken orada kaydettiğiniz bir deste **Rastgele**'ye geçer.
+sabit, karışık bir sırayla verir. Sıralama listesi bu ikisini yalnızca FSRS
+açıkken gösterir; FSRS kapalıyken orada kaydettiğiniz bir deste **Rastgele**'ye geçer.
 Bkz. [FSRS](07-fsrs.md).
 
 <a id="second-filter"></a>
@@ -167,9 +167,8 @@ yeniden doldurursunuz. Genel bakış'taki **Boşalt** yalnızca çalışmaya haz
 kullanılabilir; her durumda **Desteler › ••• › Desteyi boşalt** çalışır.
 
 **Ayarları değiştirmek:** **Desteler › ••• › Filtre seçenekleri** veya **Genel bakış › Filtre
-seçenekleri**. Kaydettiğinizde deste yeni ayarlarla yeniden oluşturulur. Düğmenin adı birincide
-**Yeniden oluştur**, ikincide **Kaydet ve yeniden oluştur**'dur. Önizleme gecikmeleri yalnızca
-Genel bakış'taki formda bulunur.
+seçenekleri**. İkisi de aynı formu açar; **Kaydet ve yeniden oluştur** desteyi yeni ayarlarla
+yeniden oluşturur.
 
 <a id="delete-filtered-deck"></a>
 ## Filtrelenmiş desteyi silmek

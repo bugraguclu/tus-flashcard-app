@@ -280,7 +280,8 @@ kapattıktan sonra geri alma yoktur. Tekrar geçmişi silinmez.
 ## Aramadan filtrelenmiş deste oluşturma
 
 **⋮ › Filtrelenmiş deste oluştur**, ekrandaki deste seçimini, filtreleri ve aramayı tek bir aramada
-birleştirir; **Desteler** sekmesine geçip filtrelenmiş deste ekranını bu aramayla açar.
+birleştirir ve filtrelenmiş deste formunu bu aramayla Kartlarım'ın üzerinde açar. **Oluştur** yeni
+destenin **Genel bakış**ını açar; formu **×** ile kapatırsanız Kartlarım bıraktığınız gibi kalır.
 Bkz. [Filtrelenmiş deste ve özel çalışma](11-filtered-decks.md).
 
 <a id="search-basics"></a>

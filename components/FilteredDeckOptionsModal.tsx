@@ -1,31 +1,42 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Keyboard,
     Modal,
     Platform,
     ScrollView,
-    StyleSheet,
     Switch,
     TouchableOpacity,
     View,
 } from 'react-native';
 import { Text, TextInput } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { Spacing, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
 import { alert } from '../lib/confirm';
 import { useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
-import { createDeck, getAllDecks, getAvailableDeckName, renameDeck, updateFilteredDeck } from '../lib/deckManager';
 import {
-    DEFAULT_SECOND_SEARCH_LIMIT,
-    FILTERED_SEARCH_ORDER,
+    createFilteredDeck,
+    createOrSelectDeck,
+    getAllDecks,
+    getAvailableDeckName,
+    getDeckByName,
+    renameDeck,
+    updateFilteredDeck,
+} from '../lib/deckManager';
+import {
     extractDeckNameFromSearch,
     filteredDeckOrderChoices,
-    filteredDeckOrderForDialog,
-    formatPreviewDelays,
-    parsePreviewDelays,
     replaceDeckNameInSearch,
 } from '../lib/filteredDeckOptions';
+import {
+    filteredDeckFormFromDeck,
+    filteredDeckFormLimitsValid,
+    filteredDeckOptionsFromForm,
+    newFilteredDeckForm,
+    newFilteredDeckName,
+    newFilteredDeckSearch,
+    type FilteredDeckFormValues,
+} from '../lib/filteredDeckForm';
 import { filteredOrderLabel } from '../lib/i18n';
 import { getDeckDisplayName, type Deck } from '../lib/models';
 import { getFilteredDeckExcludedCount, getFilteredDeckMatchCount } from '../lib/studyRepository';
@@ -34,73 +45,88 @@ import type { AppSettings } from '../lib/types';
 import DeckPickerModal from './DeckPickerModal';
 import InfoCircleGlyph from './InfoCircleGlyph';
 import SwipeDismissSheet from './SwipeDismissSheet';
+import FilteredDeckHelpSheet from './filtered-deck/FilteredDeckHelpSheet';
+import { createFilteredDeckOptionsStyles } from './filtered-deck/filteredDeckOptionsStyles';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 
 interface FilteredDeckOptionsModalProps {
     visible: boolean;
+    /** The filtered deck to edit, or null to create a new one. */
     deck: Deck | null;
+    /** Create only: the search the new deck starts with instead of the current deck's due cards. */
+    initialSearch?: string;
     settings: AppSettings;
     onClose: () => void;
-    onSaved: (deckName: string) => void;
+    /** Edit: called with the deck's saved name after Save and Rebuild. */
+    onSaved?: (deckName: string) => void;
+    /**
+     * Create: called with the new deck's name once the form has closed. On iOS that is the
+     * modal's onDismiss, so keep this component mounted (hidden) while it closes.
+     */
+    onCreated?: (deckName: string) => void;
 }
 
-function parseLimit(value: string): number {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 100;
-}
-
+/**
+ * Anki's filtered deck dialog, full screen: Create Filtered Deck when `deck` is null (the deck
+ * list's add menu, Browse), Filtered Deck Options for an existing filtered deck (the deck list,
+ * its overview, the study screen).
+ */
 export default function FilteredDeckOptionsModal({
     visible,
     deck,
+    initialSearch,
     settings,
     onClose,
     onSaved,
+    onCreated,
 }: FilteredDeckOptionsModalProps) {
     const { t, l, locale } = useI18n();
     const { collectionVersion, invalidateCollection } = useCollectionInvalidation();
     const { activeDeckName } = useStudyScope();
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const styles = useMemo(() => createFilteredDeckOptionsStyles(colors), [colors]);
     const insets = useSafeAreaInsets();
-    const [name, setName] = useState('');
-    const [search, setSearch] = useState('');
-    const [limit, setLimit] = useState('100');
-    const [order, setOrder] = useState(0);
-    const [secondEnabled, setSecondEnabled] = useState(false);
-    const [search2, setSearch2] = useState('');
-    const [limit2, setLimit2] = useState(String(DEFAULT_SECOND_SEARCH_LIMIT));
-    const [order2, setOrder2] = useState(0);
-    const [reschedule, setReschedule] = useState(true);
-    const [previewDelays, setPreviewDelays] = useState(formatPreviewDelays(undefined));
-    const [allowEmpty, setAllowEmpty] = useState(false);
+    const creating = deck === null;
+    const [form, setForm] = useState<FilteredDeckFormValues>(() => newFilteredDeckForm('', ''));
     const [orderPicker, setOrderPicker] = useState<1 | 2 | null>(null);
     const [helpVisible, setHelpVisible] = useState(false);
     const [showDeckPicker, setShowDeckPicker] = useState(false);
     const [deckPickerTarget, setDeckPickerTarget] = useState<1 | 2>(1);
+    // UIKit must finish dismissing this modal before the new deck's overview is pushed.
+    const createdDeckNameRef = useRef<string | null>(null);
 
-    const regularDecks = useMemo(() => getAllDecks().filter((d) => !d.isFiltered), [visible, collectionVersion]);
-    const selectedDeckName1 = useMemo(() => extractDeckNameFromSearch(search), [search]);
-    const selectedDeckName2 = useMemo(() => extractDeckNameFromSearch(search2), [search2]);
+    // Screens keep the form mounted while it is hidden, so the decks are read only while it shows.
+    const regularDecks = useMemo(
+        () => (visible ? getAllDecks().filter((d) => !d.isFiltered) : []),
+        [visible, collectionVersion],
+    );
+    const selectedDeckName1 = useMemo(() => extractDeckNameFromSearch(form.search), [form.search]);
+    const selectedDeckName2 = useMemo(() => extractDeckNameFromSearch(form.search2), [form.search2]);
     const currentPickerSelectedDeckName = deckPickerTarget === 2 ? selectedDeckName2 : selectedDeckName1;
 
     useEffect(() => {
-        if (!visible || !deck) return;
-        setName(deck.name);
-        setSearch(deck.searchQuery ?? '');
-        setLimit(String(deck.searchLimit ?? 100));
-        setOrder(filteredDeckOrderForDialog(deck.searchOrder ?? FILTERED_SEARCH_ORDER.due, settings.fsrsEnabled === true));
-        setSearch2(deck.searchQuery2 ?? '');
-        setLimit2(String(deck.searchLimit2 ?? DEFAULT_SECOND_SEARCH_LIMIT));
-        setOrder2(filteredDeckOrderForDialog(deck.searchOrder2 ?? FILTERED_SEARCH_ORDER.due, settings.fsrsEnabled === true));
-        setSecondEnabled(Boolean(deck.searchQuery2?.trim()));
-        setReschedule(deck.reschedule ?? true);
-        setPreviewDelays(formatPreviewDelays(deck.previewDelays));
-        setAllowEmpty(deck.filteredAllowEmpty ?? false);
+        if (!visible) return;
+        if (deck) {
+            setForm(filteredDeckFormFromDeck(deck, settings.fsrsEnabled === true));
+        } else {
+            // Anki scopes a new filtered deck to the current deck. Without a regular deck studied
+            // last, the first regular deck in the collection stands in for it.
+            const activeDeck = activeDeckName ? getDeckByName(activeDeckName) : null;
+            const sourceDeck = activeDeck && !activeDeck.isFiltered ? activeDeck : regularDecks[0] ?? null;
+            setForm(newFilteredDeckForm(
+                newFilteredDeckName(l('Filtrelenmiş Deste', 'Filtered Deck'), new Date(), (name) => Boolean(getDeckByName(name))),
+                initialSearch ?? newFilteredDeckSearch(sourceDeck?.name.trim() || null),
+            ));
+        }
         setOrderPicker(null);
         setHelpVisible(false);
     }, [deck?.id, visible]);
 
-    if (!deck?.isFiltered) return null;
+    if (deck && !deck.isFiltered) return null;
+
+    const update = <K extends keyof FilteredDeckFormValues>(key: K, value: FilteredDeckFormValues[K]) => {
+        setForm((current) => ({ ...current, [key]: value }));
+    };
 
     const close = () => {
         Keyboard.dismiss();
@@ -109,20 +135,14 @@ export default function FilteredDeckOptionsModal({
         onClose();
     };
 
-    const options = {
-        searchQuery: search.trim(),
-        searchLimit: parseLimit(limit),
-        searchOrder: order,
-        searchQuery2: secondEnabled ? (search2.trim() || undefined) : undefined,
-        searchLimit2: parseLimit(limit2),
-        searchOrder2: order2,
-        reschedule,
-        previewDelays: parsePreviewDelays(previewDelays),
-        allowEmpty,
+    const reportCreated = () => {
+        const name = createdDeckNameRef.current;
+        createdDeckNameRef.current = null;
+        if (name) onCreated?.(name);
     };
 
-    const validLimits = /^\d{1,5}$/.test(limit) && (!secondEnabled || /^\d{1,5}$/.test(limit2));
-    const saveDisabled = !name.trim() || !search.trim() || !validLimits;
+    const options = filteredDeckOptionsFromForm(form);
+    const saveDisabled = !form.name.trim() || !form.search.trim() || !filteredDeckFormLimitsValid(form);
 
     // Collection reads treat an unreadable search as matching nothing, so the learner is told here.
     const rejectInvalidSearch = (searches: Array<string | undefined>): boolean => {
@@ -133,8 +153,8 @@ export default function FilteredDeckOptionsModal({
         return true;
     };
 
-    const saveAndRebuild = () => {
-        const nextName = name.trim();
+    const saveAndBuild = () => {
+        const nextName = form.name.trim();
         if (nextName.includes('::')) {
             alert(t('common.error'), l('Filtrelenmiş deste başka bir destenin alt destesi olamaz.', 'A filtered deck cannot be a subdeck.'));
             return;
@@ -142,15 +162,42 @@ export default function FilteredDeckOptionsModal({
         if (rejectInvalidSearch([options.searchQuery, options.searchQuery2])) return;
 
         // Rebuilding first returns this deck's own cards home, so they count as matches.
-        const matchCount = getFilteredDeckMatchCount(settings, options, deck.id);
-        if (!allowEmpty && matchCount === 0) {
+        const matchCount = getFilteredDeckMatchCount(settings, options, deck?.id);
+        if (!form.allowEmpty && matchCount === 0) {
             alert(
                 l('Eşleşen kart yok', 'No matching cards'),
-                l(
-                    'Bu filtrelerle deste yeniden oluşturulamadı. Aramayı değiştirin veya “Boş olsa bile güncelle” seçeneğini açın.',
-                    'The deck could not be rebuilt with these filters. Change the search or enable “Update even if empty”.',
-                ),
+                creating
+                    ? l(
+                        'Bu filtrelerle deste oluşturulamadı. Aramayı değiştirin veya “Boş olsa bile oluştur” seçeneğini açın.',
+                        'No deck could be built with these filters. Change the search or enable “Build even if empty”.',
+                    )
+                    : l(
+                        'Bu filtrelerle deste yeniden oluşturulamadı. Aramayı değiştirin veya “Boş olsa bile güncelle” seçeneğini açın.',
+                        'The deck could not be rebuilt with these filters. Change the search or enable “Update even if empty”.',
+                    ),
             );
+            return;
+        }
+
+        if (!deck) {
+            try {
+                // A taken name gets `+` appended, as Anki's ensure_deck_name_unique does.
+                const created = createFilteredDeck(getAvailableDeckName(nextName), options.searchQuery, options.searchLimit);
+                updateFilteredDeck(created.id, options);
+                if (Platform.OS === 'ios') {
+                    createdDeckNameRef.current = created.name;
+                    close();
+                } else {
+                    close();
+                    onCreated?.(created.name);
+                }
+            } catch (error) {
+                console.warn('[FilteredDeckOptionsModal] create failed:', error);
+                alert(t('common.error'), userFacingErrorMessage(
+                    error,
+                    l('Filtrelenmiş deste oluşturulamadı.', 'Could not create the filtered deck.'),
+                ));
+            }
             return;
         }
 
@@ -160,7 +207,7 @@ export default function FilteredDeckOptionsModal({
             // options and resets the active filtered build in one mutation.
             updateFilteredDeck(deck.id, options);
             close();
-            onSaved(nextName);
+            onSaved?.(nextName);
         } catch (error) {
             console.warn('[FilteredDeckOptionsModal] save failed:', error);
             alert(t('common.error'), userFacingErrorMessage(
@@ -177,7 +224,7 @@ export default function FilteredDeckOptionsModal({
             searchQuery: query.trim(),
             searchLimit: 9999,
             searchOrder: 0,
-        }, deck.id);
+        }, deck?.id);
         alert(
             l('Arama filtresi', 'Search filter'),
             l(
@@ -188,8 +235,9 @@ export default function FilteredDeckOptionsModal({
     };
 
     const showExcluded = () => {
-        if (rejectInvalidSearch([search, ...(secondEnabled ? [search2] : [])])) return;
-        const count = getFilteredDeckExcludedCount([search, ...(secondEnabled ? [search2] : [])]);
+        const searches = [form.search, ...(form.secondEnabled ? [form.search2] : [])];
+        if (rejectInvalidSearch(searches)) return;
+        const count = getFilteredDeckExcludedCount(searches);
         alert(
             l(
                 count > 0 ? `${count} kart dahil edilemiyor` : 'Dahil edilmeyen kart yok',
@@ -206,23 +254,28 @@ export default function FilteredDeckOptionsModal({
         );
     };
 
-    const selectedOrder = orderPicker === 2 ? order2 : order;
+    const selectedOrder = orderPicker === 2 ? form.order2 : form.order;
     const chooseOrder = (value: number) => {
-        if (orderPicker === 2) setOrder2(value);
-        else setOrder(value);
+        update(orderPicker === 2 ? 'order2' : 'order', value);
         setOrderPicker(null);
     };
 
+    const allowEmptyLabel = creating
+        ? l('Boş olsa bile oluştur', 'Build even if empty')
+        : l('Boş olsa bile güncelle', 'Update even if empty');
+
     return (
-        <Modal visible={visible} animationType="slide" onRequestClose={close}>
+        <Modal visible={visible} animationType="slide" onRequestClose={close} onDismiss={reportCreated}>
             <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]} accessibilityViewIsModal>
                 <View style={styles.toolbar}>
                     <TouchableOpacity style={styles.iconButton} onPress={close} accessibilityRole="button" accessibilityLabel={t('common.close')}>
                         <Text style={styles.closeIcon}>×</Text>
                     </TouchableOpacity>
                     <View style={styles.toolbarCopy}>
-                        <Text style={styles.toolbarTitle}>{l('Filtre seçenekleri', 'Filtered Deck Options')}</Text>
-                        <Text style={styles.toolbarSubtitle} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
+                        <Text style={styles.toolbarTitle}>
+                            {creating ? l('Filtrelenmiş deste oluştur', 'Create Filtered Deck') : l('Filtre seçenekleri', 'Filtered Deck Options')}
+                        </Text>
+                        <Text style={styles.toolbarSubtitle} numberOfLines={1}>{getDeckDisplayName(creating ? form.name : deck.name)}</Text>
                     </View>
                     <TouchableOpacity
                         style={styles.iconButton}
@@ -250,8 +303,8 @@ export default function FilteredDeckOptionsModal({
                         <View style={styles.cardField}>
                             <TextInput
                                 style={styles.input}
-                                value={name}
-                                onChangeText={setName}
+                                value={form.name}
+                                onChangeText={(value) => update('name', value)}
                                 placeholder={l('Deste adı girin', 'Enter deck name')}
                                 placeholderTextColor={colors.textMuted}
                                 accessibilityLabel={l('Deste adı', 'Deck name')}
@@ -287,8 +340,8 @@ export default function FilteredDeckOptionsModal({
                             <View style={styles.searchRow}>
                                 <TextInput
                                     style={[styles.input, styles.searchInput]}
-                                    value={search}
-                                    onChangeText={setSearch}
+                                    value={form.search}
+                                    onChangeText={(value) => update('search', value)}
                                     autoCapitalize="none"
                                     autoCorrect={false}
                                     placeholder='deck:"Deste" is:due'
@@ -297,7 +350,7 @@ export default function FilteredDeckOptionsModal({
                                 />
                                 <TouchableOpacity
                                     style={styles.searchInfoButton}
-                                    onPress={() => showSearchInfo(search)}
+                                    onPress={() => showSearchInfo(form.search)}
                                     accessibilityRole="button"
                                     accessibilityLabel={l('Arama sorgusunu kontrol et', 'Check search query')}
                                 >
@@ -317,8 +370,8 @@ export default function FilteredDeckOptionsModal({
                             </View>
                             <TextInput
                                 style={styles.numberInput}
-                                value={limit}
-                                onChangeText={(value) => setLimit(value.replace(/\D/g, '').slice(0, 5))}
+                                value={form.limit}
+                                onChangeText={(value) => update('limit', value.replace(/\D/g, '').slice(0, 5))}
                                 keyboardType="number-pad"
                                 inputMode="numeric"
                                 maxLength={5}
@@ -332,11 +385,11 @@ export default function FilteredDeckOptionsModal({
                             style={styles.pickerButton}
                             onPress={() => setOrderPicker(1)}
                             accessibilityRole="button"
-                            accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, order)}`}
+                            accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, form.order)}`}
                         >
                             <View style={styles.pickerLabelWrap}>
                                 <Text style={styles.pickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                                <Text style={styles.pickerValue}>{filteredOrderLabel(locale, order)}</Text>
+                                <Text style={styles.pickerValue}>{filteredOrderLabel(locale, form.order)}</Text>
                             </View>
                             <Text style={styles.pickerChevron}>⌄</Text>
                         </TouchableOpacity>
@@ -352,15 +405,15 @@ export default function FilteredDeckOptionsModal({
                                 </Text>
                             </View>
                             <Switch
-                                value={secondEnabled}
-                                onValueChange={setSecondEnabled}
+                                value={form.secondEnabled}
+                                onValueChange={(value) => update('secondEnabled', value)}
                                 trackColor={{ false: colors.border, true: colors.accent }}
                                 thumbColor={colors.white}
                                 accessibilityLabel={l('İkinci filtreyi etkinleştir', 'Enable second filter')}
                             />
                         </View>
 
-                        {secondEnabled && (
+                        {form.secondEnabled && (
                             <>
                                 <View style={styles.divider} />
 
@@ -390,8 +443,8 @@ export default function FilteredDeckOptionsModal({
                                     <View style={styles.searchRow}>
                                         <TextInput
                                             style={[styles.input, styles.searchInput]}
-                                            value={search2}
-                                            onChangeText={setSearch2}
+                                            value={form.search2}
+                                            onChangeText={(value) => update('search2', value)}
                                             autoCapitalize="none"
                                             autoCorrect={false}
                                             placeholder='deck:"Deste" is:new'
@@ -400,7 +453,7 @@ export default function FilteredDeckOptionsModal({
                                         />
                                         <TouchableOpacity
                                             style={styles.searchInfoButton}
-                                            onPress={() => showSearchInfo(search2)}
+                                            onPress={() => showSearchInfo(form.search2)}
                                             accessibilityRole="button"
                                             accessibilityLabel={l('İkinci arama sorgusunu kontrol et', 'Check second search query')}
                                         >
@@ -420,8 +473,8 @@ export default function FilteredDeckOptionsModal({
                                     </View>
                                     <TextInput
                                         style={styles.numberInput}
-                                        value={limit2}
-                                        onChangeText={(value) => setLimit2(value.replace(/\D/g, '').slice(0, 5))}
+                                        value={form.limit2}
+                                        onChangeText={(value) => update('limit2', value.replace(/\D/g, '').slice(0, 5))}
                                         keyboardType="number-pad"
                                         inputMode="numeric"
                                         maxLength={5}
@@ -435,11 +488,11 @@ export default function FilteredDeckOptionsModal({
                                     style={styles.pickerButton}
                                     onPress={() => setOrderPicker(2)}
                                     accessibilityRole="button"
-                                    accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, order2)}`}
+                                    accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, form.order2)}`}
                                 >
                                     <View style={styles.pickerLabelWrap}>
                                         <Text style={styles.pickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                                        <Text style={styles.pickerValue}>{filteredOrderLabel(locale, order2)}</Text>
+                                        <Text style={styles.pickerValue}>{filteredOrderLabel(locale, form.order2)}</Text>
                                     </View>
                                     <Text style={styles.pickerChevron}>⌄</Text>
                                 </TouchableOpacity>
@@ -453,29 +506,29 @@ export default function FilteredDeckOptionsModal({
                             <View style={styles.toggleCopy}>
                                 <Text style={styles.toggleTitle}>{l('Kartları yeniden zamanla', 'Reschedule cards')}</Text>
                                 <Text style={styles.toggleSubtitle}>
-                                    {reschedule
+                                    {form.reschedule
                                         ? l('Yanıtlar kartların normal programını günceller.', 'Answers update the cards’ normal schedule.')
                                         : l('Önizleme modu; mevcut zamanlama değişmez.', 'Preview mode; existing scheduling is unchanged.')}
                                 </Text>
                             </View>
                             <Switch
-                                value={reschedule}
-                                onValueChange={setReschedule}
+                                value={form.reschedule}
+                                onValueChange={(value) => update('reschedule', value)}
                                 trackColor={{ false: colors.border, true: colors.accent }}
                                 thumbColor={colors.white}
                                 accessibilityLabel={l('Kartları yeniden zamanla', 'Reschedule cards')}
                             />
                         </View>
 
-                        {!reschedule && (
+                        {!form.reschedule && (
                             <>
                                 <View style={styles.divider} />
                                 <View style={styles.cardField}>
                                     <Text style={styles.fieldLabel}>{l('Önizleme gecikmeleri (saniye)', 'Preview delays (seconds)')}</Text>
                                     <TextInput
                                         style={[styles.input, { marginTop: 4 }]}
-                                        value={previewDelays}
-                                        onChangeText={setPreviewDelays}
+                                        value={form.previewDelays}
+                                        onChangeText={(value) => update('previewDelays', value)}
                                         placeholder="60 600 0"
                                         placeholderTextColor={colors.textMuted}
                                         autoCapitalize="none"
@@ -496,17 +549,17 @@ export default function FilteredDeckOptionsModal({
 
                         <View style={styles.toggleRow}>
                             <View style={styles.toggleCopy}>
-                                <Text style={styles.toggleTitle}>{l('Boş olsa bile güncelle', 'Update even if empty')}</Text>
+                                <Text style={styles.toggleTitle}>{allowEmptyLabel}</Text>
                                 <Text style={styles.toggleSubtitle}>
                                     {l('Hiçbir kart eşleşmese de deste ve kuralları korunur.', 'Keep the deck and its rules even when no cards match.')}
                                 </Text>
                             </View>
                             <Switch
-                                value={allowEmpty}
-                                onValueChange={setAllowEmpty}
+                                value={form.allowEmpty}
+                                onValueChange={(value) => update('allowEmpty', value)}
                                 trackColor={{ false: colors.border, true: colors.accent }}
                                 thumbColor={colors.white}
-                                accessibilityLabel={l('Boş olsa bile güncelle', 'Update even if empty')}
+                                accessibilityLabel={allowEmptyLabel}
                             />
                         </View>
                     </View>
@@ -525,11 +578,13 @@ export default function FilteredDeckOptionsModal({
                 <View style={styles.footer}>
                     <TouchableOpacity
                         style={[styles.saveButton, saveDisabled && styles.disabled]}
-                        onPress={saveAndRebuild}
+                        onPress={saveAndBuild}
                         disabled={saveDisabled}
                         accessibilityRole="button"
                     >
-                        <Text style={styles.saveText}>{l('Kaydet ve yeniden oluştur', 'Save and Rebuild')}</Text>
+                        <Text style={styles.saveText}>
+                            {creating ? l('Oluştur', 'Build') : l('Kaydet ve yeniden oluştur', 'Save and Rebuild')}
+                        </Text>
                     </TouchableOpacity>
                 </View>
 
@@ -554,28 +609,7 @@ export default function FilteredDeckOptionsModal({
                 )}
 
                 {helpVisible && (
-                    <View style={styles.overlayLayer}>
-                        <TouchableOpacity style={styles.overlayBackdrop} activeOpacity={1} onPress={() => setHelpVisible(false)} />
-                        <SwipeDismissSheet
-                            style={[styles.helpCard, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}
-                            onDismiss={() => setHelpVisible(false)}
-                        >
-                            <View style={styles.helpHeader}>
-                                <View style={styles.helpHeaderCopy}>
-                                    <Text style={styles.helpTitle}>{l('Filtrelenmiş deste nasıl çalışır?', 'How does a filtered deck work?')}</Text>
-                                    <Text style={styles.helpLead}>{l('Kartlar silinmez; bu deste yalnızca seçtiğiniz kartları geçici bir çalışma oturumunda toplar.', 'Cards are never deleted; this deck gathers selected cards into a temporary study session.')}</Text>
-                                </View>
-                                <TouchableOpacity style={styles.iconButton} onPress={() => setHelpVisible(false)}><Text style={styles.closeIcon}>×</Text></TouchableOpacity>
-                            </View>
-                            <ScrollView contentContainerStyle={styles.helpContent}>
-                                <HelpStep number="1" title={l('Kartları sorguyla seçin', 'Select cards with a query')} body={l('Deste, etiket ve kart durumlarını birlikte kullanabilirsiniz. Örnek: deck:"TUS Kartları" is:due -is:suspended', 'Combine deck, tag, and card-state terms. Example: deck:"TUS Kartları" is:due -is:suspended')} styles={styles} />
-                                <HelpStep number="2" title={l('Limit ve sırayı belirleyin', 'Set the limit and order')} body={l('Limit kaç kart alınacağını; sıralama ise limite hangi kartların önce gireceğini ve çalışma sırasını belirler.', 'The limit controls how many cards are gathered; order controls which cards enter first and their study order.')} styles={styles} />
-                                <HelpStep number="3" title={l('Zamanlama davranışını seçin', 'Choose scheduling behavior')} body={l('Yeniden zamanlama açıkken yanıtlar normal programa işler. Kapalıyken deste önizleme modundadır.', 'With rescheduling on, answers affect the normal schedule. With it off, the deck is a preview.')} styles={styles} />
-                                <HelpStep number="4" title={l('Kaydedip yeniden oluşturun', 'Save and rebuild')} body={l('Kurallar kaydedilir ve deste aynı anda güncel eşleşmelerle yeniden doldurulur.', 'Rules are saved and the deck is immediately repopulated with current matches.')} styles={styles} />
-                            </ScrollView>
-                            <TouchableOpacity style={styles.saveButton} onPress={() => setHelpVisible(false)}><Text style={styles.saveText}>{l('Anladım', 'Got it')}</Text></TouchableOpacity>
-                        </SwipeDismissSheet>
-                    </View>
+                    <FilteredDeckHelpSheet styles={styles} bottomInset={insets.bottom} onClose={() => setHelpVisible(false)} />
                 )}
 
                 {showDeckPicker && (
@@ -595,16 +629,14 @@ export default function FilteredDeckOptionsModal({
                         createAccessibilityLabel={l('Yeni deste oluştur', 'Create new deck')}
                         onClose={() => setShowDeckPicker(false)}
                         onSelect={(pickedName) => {
-                            if (deckPickerTarget === 2) {
-                                setSearch2((current) => replaceDeckNameInSearch(current, pickedName));
-                            } else {
-                                setSearch((current) => replaceDeckNameInSearch(current, pickedName));
-                            }
+                            const key = deckPickerTarget === 2 ? 'search2' : 'search';
+                            setForm((current) => ({ ...current, [key]: replaceDeckNameInSearch(current[key], pickedName) }));
                             setShowDeckPicker(false);
                         }}
                         onCreateDeck={(newDeckName) => {
                             try {
-                                const created = createDeck(getAvailableDeckName(newDeckName));
+                                // Typing an existing deck's name selects it, as in every deck picker.
+                                const created = createOrSelectDeck(newDeckName);
                                 invalidateCollection();
                                 return created.name;
                             } catch (error) {
@@ -617,295 +649,4 @@ export default function FilteredDeckOptionsModal({
             </View>
         </Modal>
     );
-}
-
-function HelpStep({ number, title, body, styles }: { number: string; title: string; body: string; styles: ReturnType<typeof createStyles> }) {
-    return (
-        <View style={styles.helpStep}>
-            <View style={styles.helpNumber}><Text style={styles.helpNumberText}>{number}</Text></View>
-            <View style={styles.helpStepCopy}>
-                <Text style={styles.helpStepTitle}>{title}</Text>
-                <Text style={styles.helpStepBody}>{body}</Text>
-            </View>
-        </View>
-    );
-}
-
-function createStyles(colors: ColorScheme) {
-    return StyleSheet.create({
-        screen: { flex: 1, backgroundColor: colors.bgPrimary },
-        toolbar: {
-            minHeight: 60,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: Spacing.sm,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.borderLight,
-            backgroundColor: colors.bgCard,
-        },
-        iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-        closeIcon: { fontSize: 32, lineHeight: 34, color: colors.textSecondary, fontWeight: '300' },
-        toolbarCopy: { flex: 1, paddingHorizontal: Spacing.xs },
-        toolbarTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
-        toolbarSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 1 },
-        helpCircle: {
-            width: 25,
-            height: 25,
-            borderRadius: 13,
-            borderWidth: 2,
-            borderColor: colors.textSecondary,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        helpIcon: { color: colors.textSecondary, fontWeight: '800', fontSize: FontSize.sm },
-        scroll: { flex: 1 },
-        content: {
-            width: '100%',
-            maxWidth: 640,
-            alignSelf: 'center',
-            padding: Spacing.lg,
-            paddingBottom: Spacing.xxl,
-        },
-        sectionHeader: {
-            fontSize: FontSize.xs,
-            fontWeight: '700',
-            letterSpacing: 0.6,
-            color: colors.textSecondary,
-            textTransform: 'uppercase',
-            marginBottom: Spacing.xs,
-            marginLeft: Spacing.xs,
-            marginTop: Spacing.lg,
-        },
-        sectionHeaderFirst: {
-            marginTop: 0,
-        },
-        card: {
-            backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
-            borderWidth: 1,
-            borderColor: colors.borderLight,
-            overflow: 'hidden',
-            ...Shadows.sm,
-        },
-        cardField: {
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.md,
-        },
-        fieldLabel: {
-            fontSize: FontSize.xs,
-            fontWeight: '600',
-            color: colors.textSecondary,
-            marginBottom: 4,
-        },
-        fieldDescription: {
-            fontSize: FontSize.xs,
-            lineHeight: 16,
-            color: colors.textMuted,
-            marginTop: 4,
-        },
-        input: {
-            fontSize: FontSize.md,
-            color: colors.textPrimary,
-            minHeight: 40,
-            paddingVertical: 4,
-        },
-        searchRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-        },
-        searchInput: {
-            flex: 1,
-            fontSize: FontSize.md,
-            color: colors.textPrimary,
-            minHeight: 40,
-            paddingVertical: 4,
-        },
-        searchInfoButton: {
-            width: 38,
-            height: 38,
-            borderRadius: BorderRadius.full,
-            backgroundColor: colors.accentLight,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        searchInfoText: {
-            color: colors.accent,
-            fontSize: 22,
-            fontWeight: '600',
-            lineHeight: 24,
-        },
-        numberRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.md,
-            minHeight: 52,
-        },
-        numberLabelWrap: {
-            flex: 1,
-            marginRight: Spacing.md,
-        },
-        numberLabel: {
-            fontSize: FontSize.md,
-            fontWeight: '500',
-            color: colors.textPrimary,
-        },
-        numberSublabel: {
-            fontSize: FontSize.xs,
-            color: colors.textMuted,
-            marginTop: 2,
-        },
-        numberInput: {
-            minWidth: 84,
-            height: 40,
-            backgroundColor: colors.bgInput,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            paddingHorizontal: Spacing.sm,
-            textAlign: 'center',
-            fontSize: FontSize.md,
-            fontWeight: '600',
-            fontVariant: ['tabular-nums'] as any,
-            color: colors.textPrimary,
-        },
-        pickerButton: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.md,
-            minHeight: 56,
-        },
-        pickerLabelWrap: {
-            flex: 1,
-            marginRight: Spacing.md,
-        },
-        pickerLabel: {
-            fontSize: FontSize.xs,
-            fontWeight: '600',
-            color: colors.textSecondary,
-            marginBottom: 2,
-        },
-        pickerValue: {
-            fontSize: FontSize.md,
-            fontWeight: '600',
-            color: colors.textPrimary,
-        },
-        pickerChevron: {
-            fontSize: 18,
-            fontWeight: '700',
-            color: colors.textSecondary,
-        },
-        toggleRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.md,
-            minHeight: 56,
-            gap: Spacing.md,
-        },
-        toggleCopy: {
-            flex: 1,
-            justifyContent: 'center',
-        },
-        toggleTitle: {
-            fontSize: FontSize.md,
-            fontWeight: '600',
-            color: colors.textPrimary,
-        },
-        toggleSubtitle: {
-            fontSize: FontSize.xs,
-            lineHeight: 16,
-            color: colors.textMuted,
-            marginTop: 2,
-        },
-        divider: {
-            height: StyleSheet.hairlineWidth,
-            backgroundColor: colors.borderLight,
-            marginLeft: Spacing.lg,
-        },
-        excludedButton: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            alignSelf: 'center',
-            minHeight: 40,
-            paddingVertical: Spacing.sm,
-            paddingHorizontal: Spacing.md,
-            borderRadius: BorderRadius.full,
-            backgroundColor: colors.transparent,
-            marginTop: Spacing.md,
-            marginBottom: Spacing.lg,
-            gap: 6,
-        },
-        excludedText: {
-            color: colors.textSecondary,
-            fontSize: 13,
-            fontWeight: '500',
-        },
-        footer: {
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-            backgroundColor: colors.bgCard,
-            padding: Spacing.md,
-        },
-        saveButton: {
-            minHeight: 50,
-            borderRadius: BorderRadius.sm,
-            backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.lg,
-        },
-        saveText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
-        disabled: { opacity: 0.45 },
-        overlayLayer: { ...StyleSheet.absoluteFill, zIndex: 20, justifyContent: 'flex-end' },
-        overlayBackdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.42)' },
-        pickerCard: {
-            maxHeight: '70%',
-            backgroundColor: colors.bgPrimary,
-            borderTopLeftRadius: BorderRadius.xl,
-            borderTopRightRadius: BorderRadius.xl,
-            padding: Spacing.lg,
-            paddingTop: 48,
-            ...Shadows.lg,
-        },
-        pickerTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary, marginBottom: Spacing.md },
-        pickerOption: { minHeight: 50, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, borderRadius: BorderRadius.sm },
-        pickerOptionSelected: { backgroundColor: colors.accentLight },
-        pickerOptionText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-        pickerOptionTextSelected: { color: colors.accent, fontWeight: '800' },
-        check: { color: colors.accent, fontSize: FontSize.lg, fontWeight: '800' },
-        helpCard: {
-            maxHeight: '88%',
-            backgroundColor: colors.bgPrimary,
-            borderTopLeftRadius: BorderRadius.xl,
-            borderTopRightRadius: BorderRadius.xl,
-            padding: Spacing.lg,
-            paddingTop: 48,
-            ...Shadows.lg,
-        },
-        helpHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: Spacing.md },
-        helpHeaderCopy: { flex: 1, paddingRight: Spacing.sm },
-        helpTitle: { fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
-        helpLead: { fontSize: FontSize.sm, lineHeight: 20, color: colors.textMuted, marginTop: 5 },
-        helpContent: { gap: Spacing.lg, paddingVertical: Spacing.md },
-        helpStep: { flexDirection: 'row', gap: Spacing.md },
-        helpNumber: {
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.accentLight,
-        },
-        helpNumberText: { color: colors.accent, fontWeight: '900' },
-        helpStepCopy: { flex: 1 },
-        helpStepTitle: { fontSize: FontSize.sm, fontWeight: '800', color: colors.textPrimary },
-        helpStepBody: { fontSize: FontSize.sm, lineHeight: 20, color: colors.textSecondary, marginTop: 3 },
-    });
 }
