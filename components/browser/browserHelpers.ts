@@ -56,11 +56,29 @@ export function formatLastReview(lastReviewedAtMs: number, locale: SupportedLoca
     return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
 }
 
-/** Compact "when is it due" label from the scheduling state. */
-export function formatNextDue(state: CardState, rolloverHour: number, locale: SupportedLocale): string {
+/** A new card's place in the new queue: its home position while a filtered deck holds it. */
+export function newQueuePosition(card: { due: number; odid?: number; odue?: number } | null | undefined): number | null {
+    if (!card) return null;
+    const position = card.odid ? card.odue : card.due;
+    return Number.isFinite(position) ? position as number : null;
+}
+
+/** Anki's Due column for a new card: "New #12". */
+export function formatNewPosition(position: number, locale: SupportedLocale): string {
+    return locale === 'tr' ? `Yeni #${position}` : `New #${position}`;
+}
+
+/**
+ * Compact "when is it due" label from the scheduling state. A new card shows its queue position,
+ * as Anki's Due column does, so Reposition and Reset have a visible result.
+ */
+export function formatNextDue(state: CardState, rolloverHour: number, locale: SupportedLocale, newPosition: number | null = null): string {
     if (state.suspended) return locale === 'tr' ? 'Askıda' : 'Suspended';
     if (state.buried) return locale === 'tr' ? 'Gömülü (yarına kadar)' : 'Buried (until tomorrow)';
-    if (state.status === 'new') return locale === 'tr' ? 'Sırada (yeni)' : 'Queued (new)';
+    if (state.status === 'new') {
+        if (newPosition !== null) return formatNewPosition(newPosition, locale);
+        return locale === 'tr' ? 'Sırada (yeni)' : 'Queued (new)';
+    }
 
     if (state.status === 'learning' && state.dueTime > 0) {
         const remainingMs = state.dueTime - Date.now();

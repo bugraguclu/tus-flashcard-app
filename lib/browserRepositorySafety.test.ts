@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {} }));
 import { getBrowserCardCount, getBrowserCards, getBrowserRowIdsMatchingText, getDeckTotalCardCount } from './browserRepository';
 import { DEFAULT_SETTINGS } from './settingsStore';
+import { getAllTags } from './noteTagStore';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
@@ -39,6 +40,22 @@ describe('browser listing', () => {
         const cardIds = Array.from({ length: 40_000 }, (_, index) => index + 1);
         expect(getBrowserCardCount({ cardIds })).toBe(3);
         expect(getBrowserCardCount({ deckIds: [...cardIds] })).toBe(3);
+        expect(() => getAllTags({ cardIds })).not.toThrow();
+    });
+
+    it('keeps a card gathered into an imported filtered deck in its home deck scope, as deck: does', () => {
+        h.db.runSync('INSERT INTO decks (id, name, data) VALUES (3, ?, ?), (4, ?, ?)', 'Filtre', JSON.stringify({ id: 3, name: 'Filtre', isFiltered: true }), 'Bozuk', '{broken deck json');
+        h.db.runSync('INSERT INTO notes (id, noteTypeId, sfld, tags, data) VALUES (4, 1, ?, ?, ?)', 'n4', ' evden ', JSON.stringify({ id: 4, noteTypeId: 1, fields: ['n4'], tags: ['evden'] }));
+        h.db.runSync('INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data) VALUES (4, 4, 3, 0, 0, 0, -100000, 0, 0, 0, 0, 0, ?)', JSON.stringify({ id: 4, odid: 2, odue: 7 }));
+        expect(getBrowserCardCount({ deckIds: [2] })).toBe(2);
+        // Card 2's blob is the malformed one, so only the gathered card hydrates into a row.
+        expect(getBrowserCards(DEFAULT_SETTINGS, { deckIds: [2] }).map((card) => card.cardId)).toEqual([4]);
+        expect(getBrowserRowIdsMatchingText({ deckIds: [2] }, 'n*').sort()).toEqual([2, 4]);
+        expect(getBrowserCardCount({ deckIds: [2], tableMode: 'notes' })).toBe(2);
+        expect(getBrowserCardCount({ deckIds: [3] })).toBe(1);
+        expect(getBrowserCardCount({ deckIds: [1] })).toBe(2);
+        expect(getAllTags({ deckIds: [2] })).toEqual(['evden']);
+        expect(getAllTags({ deckIds: [1] })).toEqual([]);
     });
 });
 

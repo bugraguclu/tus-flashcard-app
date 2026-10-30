@@ -5,6 +5,7 @@ import { ankiCardRetrievability, compareSqlAscending } from './ankiSortKeys';
 import type { AppSettings, StudyCard } from './types';
 import { localDayNumber } from './ankiState';
 import { getDeckByName } from './deckManager';
+import { deckScopeSql } from './deckScopeSql';
 import {
     FSRS_DIFFICULTY_SQL,
     FSRS_STABILITY_SQL,
@@ -73,7 +74,11 @@ function buildBrowserWhere(
         clauses.push(`${column} IN (SELECT CAST(value AS INTEGER) FROM json_each(?))`);
         params.push(JSON.stringify(ids));
     };
-    addIds('c.deckId', query.deckIds);
+    if (query.deckIds) {
+        const scope = deckScopeSql('c', query.deckIds);
+        clauses.push(scope.sql);
+        params.push(...scope.params);
+    }
     addIds('c.id', query.cardIds);
     addIds('n.id', query.noteIds);
     const searches = includeSearchFilters ? browserFilterSearches(query) : [];

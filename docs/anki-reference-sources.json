@@ -162,7 +162,7 @@
       "priority": 1,
       "platform": "cross-platform browser behavior",
       "url": "https://docs.ankiweb.net/browsing.html#table-modes",
-      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "Notes-mode row aggregation and first-card semantics", "flag filtering", "rows matching the active search"]
+      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "Notes-mode row aggregation and first-card semantics", "flag filtering", "rows matching the active search", "Change Deck out of a filtered deck", "Due column New #N for new cards", "Deck column naming the home deck of a filtered card"]
     },
     {
       "id": "w3c-aria-checkbox-state",
@@ -1337,6 +1337,17 @@
         "a c0 occlusion rendered as an asked shape on both sides of every card; attribute characters as hex references of at least two digits",
         "lib/imageOcclusion.oracle.test.ts: notes made in the app load the same shapes into Anki's Image Occlusion editor and render the same shape divs on every card",
         "turned, coloured and reshaped shapes: an angle and fill Anki's editor loads as written, a polygon's left/top at its points' top-left corner"
+      ]
+    },
+    {
+      "id": "anki-26.09.3-browser-order-oracle",
+      "priority": 2,
+      "platform": "browser Change Deck, Reposition and Reset, measured against Anki 26.09.3",
+      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/scheduler/new.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 on 2026-10-30 by scripts/anki-oracle/browser_order.py",
+      "useFor": [
+        "Card::set_deck returns a card held by a filtered deck home (odid/odue cleared, original due) before moving it; lib/changeDeckFiltered.test.ts",
+        "reposition_new_cards and schedule_cards_as_new number cards in the order their ids arrive; lib/browserSelection.test.ts"
       ]
     }
   ],

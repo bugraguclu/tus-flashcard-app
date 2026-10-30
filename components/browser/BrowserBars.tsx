@@ -65,6 +65,9 @@ export function FilterChips({
             <TouchableOpacity
                 style={[styles.filterChip, allFilterActive && styles.filterChipActive]}
                 onPress={clearBrowserFilters}
+                accessibilityRole="button"
+                accessibilityLabel={l('Tüm filtreleri kaldır', 'Clear all filters')}
+                accessibilityState={{ selected: allFilterActive }}
             >
                 <Text style={[styles.filterChipText, allFilterActive && styles.filterChipTextActive]}>{t('common.all')}</Text>
             </TouchableOpacity>
@@ -73,16 +76,27 @@ export function FilterChips({
                 onPress={() => setMarkedOnly((prev) => !prev)}
                 accessibilityRole="button"
                 accessibilityLabel={l('Yalnızca işaretli notları göster', 'Show marked notes only')}
+                accessibilityState={{ selected: markedOnly }}
             >
                 <Text style={[styles.filterChipText, markedOnly && styles.filterChipTextActive]}>⭐ {l('İşaretli', 'Marked')}</Text>
             </TouchableOpacity>
             {suspendedOnly && (
-                <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setSuspendedOnly(false)}>
+                <TouchableOpacity
+                    style={[styles.filterChip, styles.filterChipActive]}
+                    onPress={() => setSuspendedOnly(false)}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Askıda filtresini kaldır', 'Remove suspended filter')}
+                >
                     <Text style={[styles.filterChipText, styles.filterChipTextActive]}>⏸ {l('Askıda', 'Suspended')} ×</Text>
                 </TouchableOpacity>
             )}
             {tagFilters.length > 0 && (
-                <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]} onPress={() => setTagFilters([])}>
+                <TouchableOpacity
+                    style={[styles.filterChip, styles.filterChipActive]}
+                    onPress={() => setTagFilters([])}
+                    accessibilityRole="button"
+                    accessibilityLabel={l(`${tagFilters.length} etiketlik filtreyi kaldır`, `Remove the filter for ${tagFilters.length} tags`)}
+                >
                     <Text style={[styles.filterChipText, styles.filterChipTextActive]}>⌗ {l(`${tagFilters.length} etiket`, `${tagFilters.length} tags`)} ×</Text>
                 </TouchableOpacity>
             )}
@@ -177,6 +191,7 @@ export function SelectionBar({
             <TouchableOpacity
                 style={styles.selectionBarCount}
                 onPress={closeSelection}
+                accessibilityRole="button"
                 accessibilityLabel={l('Seçimi kapat', 'Close selection')}
             >
                 <View style={styles.selectionBarCloseBox}>
@@ -200,6 +215,9 @@ export function SelectionBar({
                         }
                         setShowDeckPicker(true);
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Desteyi değiştir', 'Change deck')}
+                    accessibilityState={{ disabled: selectedCardIds.size === 0 }}
                 >
                     <View style={styles.selectionActionIconBox}>
                         <SelectionDeckIcon color={selectedCardIds.size === 0 ? colors.textMuted : colors.accent} />
@@ -212,6 +230,9 @@ export function SelectionBar({
                     style={styles.selectionAction}
                     disabled={selectedCardIds.size === 0}
                     onPress={toggleSelectionSuspended}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Askıya al / askıdan çıkar', 'Toggle suspend')}
+                    accessibilityState={{ disabled: selectedCardIds.size === 0 }}
                 >
                     <View style={styles.selectionActionIconBox}>
                         <SelectionSuspendIcon color={selectedCardIds.size === 0 ? colors.textMuted : colors.accent} />
@@ -224,6 +245,9 @@ export function SelectionBar({
                     style={styles.selectionAction}
                     disabled={selectedCardIds.size === 0}
                     onPress={() => setFlagPickerMode('selection')}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Bayrak koy', 'Flag')}
+                    accessibilityState={{ disabled: selectedCardIds.size === 0 }}
                 >
                     <View style={styles.selectionActionIconBox}>
                         <SelectionFlagIcon color={selectedCardIds.size === 0 ? colors.textMuted : colors.accent} />
@@ -238,7 +262,7 @@ export function SelectionBar({
                     onPress={() => setShowSelectionMenu(true)}
                     accessibilityRole="button"
                     accessibilityLabel={l('Diğer kart işlemleri', 'More card actions')}
-                    accessibilityState={{ expanded: showSelectionMenu }}
+                    accessibilityState={{ expanded: showSelectionMenu, disabled: selectedCardIds.size === 0 }}
                 >
                     <View style={styles.selectionActionIconBox}>
                         <SelectionMoreIcon color={selectedCardIds.size === 0 ? colors.textMuted : colors.accent} />

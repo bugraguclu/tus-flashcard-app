@@ -99,19 +99,19 @@ export function SelectionMenuModal({
                         <Text style={styles.selectionMenuTitle}>
                             {selectedCardIds.size} {tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}
                         </Text>
-                        <TouchableOpacity style={styles.selectionMenuClose} onPress={() => setShowSelectionMenu(false)}>
+                        <TouchableOpacity style={styles.selectionMenuClose} onPress={() => setShowSelectionMenu(false)} accessibilityRole="button" accessibilityLabel={t('common.close')}>
                             <Text style={styles.selectionMenuCloseText}>×</Text>
                         </TouchableOpacity>
                     </View>
                     <ScrollView showsVerticalScrollIndicator={false}>
-                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => runSelectionAction(() => toggleSelectedSuspend(selectedActionCardIds, settings.dayRolloverHour))}>
+                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => runSelectionAction(() => toggleSelectedSuspend(selectedActionCardIds, settings.dayRolloverHour))}>
                             <Text style={styles.selectionMenuIcon}>⏸</Text><Text style={styles.selectionMenuText}>{l('Askıya al / askıdan çıkar', 'Toggle suspend')}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => runSelectionAction(() => toggleSelectedBury(selectedActionCardIds, settings.dayRolloverHour))}>
+                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => runSelectionAction(() => toggleSelectedBury(selectedActionCardIds, settings.dayRolloverHour))}>
                             <Text style={styles.selectionMenuIcon}>💤</Text><Text style={styles.selectionMenuText}>{l('Göm / gömmeden çıkar', 'Toggle bury')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={styles.selectionMenuItem}
+                            style={styles.selectionMenuItem} accessibilityRole="button"
                             onPress={() => {
                                 if (hasCatalogNotesSelected || hasCatalogCardsSelected) {
                                     alert(
@@ -127,7 +127,7 @@ export function SelectionMenuModal({
                             <Text style={styles.selectionMenuIcon}>🗂</Text><Text style={styles.selectionMenuText}>{l('Not türünü değiştir', 'Change note type')}</Text><Text style={styles.overflowChevron}>›</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={styles.selectionMenuItem}
+                            style={styles.selectionMenuItem} accessibilityRole="button"
                             onPress={() => {
                                 if (hasCatalogCardsSelected || hasCatalogNotesSelected) {
                                     alert(
@@ -142,20 +142,20 @@ export function SelectionMenuModal({
                         >
                             <Text style={styles.selectionMenuIcon}>▤</Text><Text style={styles.selectionMenuText}>{l('Desteyi değiştir', 'Change deck')}</Text><Text style={styles.overflowChevron}>›</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setRepositionStart('0'); setRepositionStep('1'); setShowRepositionDialog(true); }}>
+                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setRepositionStart('0'); setRepositionStep('1'); setShowRepositionDialog(true); }}>
                             <Text style={styles.selectionMenuIcon}>↕</Text><Text style={styles.selectionMenuText}>{l('Yeniden konumlandır', 'Reposition')}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setDueInput(getSetDueDateDefault('browser')); setShowDueDialog(true); }}>
+                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setDueInput(getSetDueDateDefault('browser')); setShowDueDialog(true); }}>
                             <Text style={styles.selectionMenuIcon}>📅</Text><Text style={styles.selectionMenuText}>{l('Vade tarihini ayarla', 'Set due date')}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} onPress={openSelectionTags}>
+                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={openSelectionTags}>
                             <Text style={styles.selectionMenuIcon}>🏷</Text><Text style={styles.selectionMenuText}>{l('Etiketleri düzenle', 'Edit tags')}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setShowGradePicker(true); }}>
+                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setShowGradePicker(true); }}>
                             <Text style={styles.selectionMenuIcon}>✓</Text><Text style={styles.selectionMenuText}>{l('Şimdi derecelendir', 'Grade now')}</Text><Text style={styles.overflowChevron}>›</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={styles.selectionMenuItem}
+                            style={styles.selectionMenuItem} accessibilityRole="button"
                             onPress={() => {
                                 setShowSelectionMenu(false);
                                 openResetDialog();
@@ -163,11 +163,11 @@ export function SelectionMenuModal({
                         >
                             <Text style={styles.selectionMenuIcon}>↺</Text><Text style={styles.selectionMenuText}>{l('Kartları sıfırla…', 'Reset cards…')}</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} onPress={() => { setShowSelectionMenu(false); setPreviewAnswerVisible(false); setPreviewIndex(0); }}>
+                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setPreviewAnswerVisible(false); setPreviewIndex(0); }}>
                             <Text style={styles.selectionMenuIcon}>👁</Text><Text style={styles.selectionMenuText}>{l('Önizle', 'Preview')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={styles.selectionMenuItem}
+                            style={styles.selectionMenuItem} accessibilityRole="button"
                             onPress={() => {
                                 if (hasCatalogCardsSelected || hasCatalogNotesSelected) {
                                     alert(
@@ -184,7 +184,7 @@ export function SelectionMenuModal({
                             <Text style={styles.selectionMenuIcon}>⇧</Text><Text style={styles.selectionMenuText}>{tableMode === 'notes' ? l('Notları dışa aktar', 'Export notes') : l('Kartları dışa aktar', 'Export cards')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={styles.selectionMenuItem}
+                            style={styles.selectionMenuItem} accessibilityRole="button"
                             onPress={() => {
                                 if (hasCatalogNotesSelected || hasCatalogCardsSelected) {
                                     alert(
@@ -296,26 +296,26 @@ export function OverflowMenuModal({
                 <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOverflowMenu(false)} />
                 <View style={styles.overflowMenu} accessibilityViewIsModal>
                     <ScrollView bounces={false} showsVerticalScrollIndicator={showFlagFilterMenu}>
-                    <TouchableOpacity style={styles.overflowItem} onPress={() => { setShowOverflowMenu(false); setShowSortPicker(true); }}>
+                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setShowOverflowMenu(false); setShowSortPicker(true); }}>
                         <Text style={styles.overflowItemIcon}>↕</Text>
                         <Text style={styles.overflowItemText}>{l('Görüntüleme sırasını değiştir', 'Change display order')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} onPress={() => { setMarkedOnly((value) => !value); setShowOverflowMenu(false); }}>
+                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setMarkedOnly((value) => !value); setShowOverflowMenu(false); }}>
                         <Text style={styles.overflowItemIcon}>★</Text>
                         <Text style={styles.overflowItemText}>{l('İşaretlileri filtrele', 'Filter marked')}</Text>
                         {markedOnly && <Text style={styles.overflowCheck}>✓</Text>}
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} onPress={() => { setSuspendedOnly((value) => !value); setShowOverflowMenu(false); }}>
+                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setSuspendedOnly((value) => !value); setShowOverflowMenu(false); }}>
                         <Text style={styles.overflowItemIcon}>⏸</Text>
                         <Text style={styles.overflowItemText}>{l('Askıdakileri filtrele', 'Filter suspended')}</Text>
                         {suspendedOnly && <Text style={styles.overflowCheck}>✓</Text>}
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} onPress={() => { setShowOverflowMenu(false); setShowTagFilter(true); }}>
+                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setShowOverflowMenu(false); setShowTagFilter(true); }}>
                         <Text style={styles.overflowItemIcon}>⌗</Text>
                         <Text style={styles.overflowItemText}>{l('Etikete göre filtrele', 'Filter by tag')}</Text>
                         {tagFilters.length > 0 && <Text style={styles.overflowBadge}>{tagFilters.length}</Text>}
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} onPress={openFlagFilter}>
+                    <TouchableOpacity style={styles.overflowItem} onPress={openFlagFilter} accessibilityRole="button" accessibilityState={{ expanded: showFlagFilterMenu }}>
                         <Text style={styles.overflowItemIcon}>⚑</Text>
                         <Text style={styles.overflowItemText}>{l('Bayrağa göre filtrele', 'Filter by flag')}</Text>
                         {/* Mirrors the chips under the search field: "no flag" is a filter of its
@@ -405,6 +405,8 @@ export function OverflowMenuModal({
                         style={[styles.overflowItem, lastDeckMove.length === 0 && styles.overflowItemDisabled]}
                         disabled={lastDeckMove.length === 0}
                         onPress={undoDeckMove}
+                        accessibilityRole="button"
+                        accessibilityState={{ disabled: lastDeckMove.length === 0 }}
                     >
                         <Text style={styles.overflowItemIcon}>↶</Text>
                         <Text style={styles.overflowItemText}>{l('Geri al: Deste güncelleme', 'Undo Update Deck')}</Text>
@@ -413,6 +415,8 @@ export function OverflowMenuModal({
                         style={[styles.overflowItem, filteredCards.length === 0 && styles.overflowItemDisabled]}
                         disabled={filteredCards.length === 0}
                         onPress={() => { setShowOverflowMenu(false); selectAllVisible(); }}
+                        accessibilityRole="button"
+                        accessibilityState={{ disabled: filteredCards.length === 0 }}
                     >
                         <Text style={styles.overflowItemIcon}>☑</Text>
                         <Text style={styles.overflowItemText}>
@@ -421,14 +425,14 @@ export function OverflowMenuModal({
                                 : l('Tümünü seç', 'Select all')}
                         </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} onPress={() => { setShowOverflowMenu(false); setShowOptions(true); }}>
+                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setShowOverflowMenu(false); setShowOptions(true); }}>
                         <View style={{ width: 25, alignItems: 'center', justifyContent: 'center' }}>
                             <GearGlyph color={styles.overflowItemIcon.color} size={18} />
                         </View>
                         <Text style={styles.overflowItemText}>{l('Seçenekler', 'Options')}</Text>
                     </TouchableOpacity>
                     <View style={styles.overflowSeparator} />
-                    <TouchableOpacity style={styles.overflowItem} onPress={openFilteredDeckDialog}>
+                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={openFilteredDeckDialog}>
                         <Text style={styles.overflowItemIcon}>⧉</Text>
                         <Text style={styles.overflowItemText}>{l('Filtrelenmiş deste oluştur', 'Create filtered deck')}</Text>
                     </TouchableOpacity>
@@ -475,19 +479,25 @@ export function SortPickerModal({
                         <TouchableOpacity
                             style={[styles.directionButton, !sortDescending && styles.directionButtonActive]}
                             onPress={() => updateSortDirection(false)}
+                            accessibilityRole="radio"
+                            accessibilityState={{ checked: !sortDescending }}
+                            aria-checked={!sortDescending}
                         >
                             <Text style={[styles.directionText, !sortDescending && styles.directionTextActive]}>↑ {l('Artan', 'Ascending')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.directionButton, sortDescending && styles.directionButtonActive]}
                             onPress={() => updateSortDirection(true)}
+                            accessibilityRole="radio"
+                            accessibilityState={{ checked: sortDescending }}
+                            aria-checked={sortDescending}
                         >
                             <Text style={[styles.directionText, sortDescending && styles.directionTextActive]}>↓ {l('Azalan', 'Descending')}</Text>
                         </TouchableOpacity>
                     </View>
                     <ScrollView style={styles.pickerList}>
                         {BROWSER_SORT_KEYS.map((key) => (
-                            <TouchableOpacity key={key} style={[styles.pickerRow, sortKey === key && styles.pickerRowActive]} onPress={() => updateSort(key)}>
+                            <TouchableOpacity key={key} style={[styles.pickerRow, sortKey === key && styles.pickerRowActive]} onPress={() => updateSort(key)} accessibilityRole="radio" accessibilityState={{ checked: sortKey === key }} aria-checked={sortKey === key}>
                                 <Text style={[styles.pickerRowText, sortKey === key && styles.pickerRowTextActive]}>{sortLabels[key]}</Text>
                                 {sortKey === key && <Text style={styles.pickerCheck}>✓</Text>}
                             </TouchableOpacity>
@@ -531,7 +541,7 @@ export function FlagPickerModal({
                 <View style={[styles.modalCard, styles.flagPickerCard]} accessibilityViewIsModal>
                     <Text style={styles.modalTitle}>{tableMode === 'notes' ? l('Seçili notların kartlarını bayrakla', 'Flag Cards of Selected Notes') : l('Seçili kartları bayrakla', 'Flag Selected Cards')}</Text>
                     {ALL_CARD_FLAGS.map((flag) => (
-                        <TouchableOpacity key={flag} style={styles.pickerRow} onPress={() => applyFlag(flag)}>
+                        <TouchableOpacity key={flag} style={styles.pickerRow} onPress={() => applyFlag(flag)} accessibilityRole="button" accessibilityLabel={cardFlagName(locale, flag)}>
                             <View style={styles.flagIconContainer}>
                                 <FlagGlyph
                                     color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
@@ -611,14 +621,14 @@ export function BrowserOptionsModal({
                             <Text style={styles.optionTitle}>{l('Yanıt önizlemesini göster', 'Show answer preview')}</Text>
                             <Text style={styles.optionCaption}>{l('Kart satırında cevabın kısa bir bölümünü gösterir.', 'Shows a short answer excerpt in each row.')}</Text>
                         </View>
-                        <Switch value={showAnswerSnippet} onValueChange={(value) => updateBrowserOption('answer', value)} trackColor={{ false: colors.border, true: colors.accentLight }} thumbColor={showAnswerSnippet ? colors.accent : colors.textMuted} />
+                        <Switch value={showAnswerSnippet} onValueChange={(value) => updateBrowserOption('answer', value)} trackColor={{ false: colors.border, true: colors.accentLight }} thumbColor={showAnswerSnippet ? colors.accent : colors.textMuted} accessibilityLabel={l('Yanıt önizlemesini göster', 'Show answer preview')} />
                     </View>
                     <View style={styles.optionRow}>
                         <View style={styles.optionCopy}>
                             <Text style={styles.optionTitle}>{l('Zamanlama ayrıntıları', 'Scheduling details')}</Text>
                             <Text style={styles.optionCaption}>{l('Son çalışma ve sonraki gösterim bilgisini gösterir.', 'Shows last review and next due information.')}</Text>
                         </View>
-                        <Switch value={showScheduleDetails} onValueChange={(value) => updateBrowserOption('schedule', value)} trackColor={{ false: colors.border, true: colors.accentLight }} thumbColor={showScheduleDetails ? colors.accent : colors.textMuted} />
+                        <Switch value={showScheduleDetails} onValueChange={(value) => updateBrowserOption('schedule', value)} trackColor={{ false: colors.border, true: colors.accentLight }} thumbColor={showScheduleDetails ? colors.accent : colors.textMuted} accessibilityLabel={l('Zamanlama ayrıntıları', 'Scheduling details')} />
                     </View>
                     <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowOptions(false)}>
                         <Text style={styles.modalCloseText}>{t('common.close')}</Text>

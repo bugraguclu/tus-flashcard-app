@@ -59,6 +59,10 @@ export function humanizeCardText(text: string, options: HumanizeCardTextOptions 
         result = result.replace(pattern, placeholder);
     }
 
+    // Image Occlusion keeps its masks as clozes ("{{c1::image-occlusion:rect:left=.1:…}}"). They
+    // are shapes drawn over the picture, not words, so a run of them reads as one label.
+    result = result.replace(/(?:\{\{c\d+::image-occlusion:[^}]*\}\}\s*)+/g, ' 🖼️ Görüntü örtme ');
+
     // Cloze notes store their prompt as "{{c1::answer::hint}}". A list row is not a review, so
     // show the text a human would read rather than the deletion syntax.
     result = result.replace(/\{\{c\d+::([\s\S]*?)(?:::[\s\S]*?)?\}\}/g, '$1');

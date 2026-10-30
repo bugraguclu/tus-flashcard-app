@@ -44,6 +44,16 @@ export function expandSelectedCardsToNotes(cardIds: number[]): number[] {
     return expanded;
 }
 
+/**
+ * The selected cards that are still listed, in the order they were selected (a Set keeps
+ * insertion order). Anki's browser passes its selection in that order, and Reposition and Reset
+ * number the cards by it (`sort_cards`, `reschedule_cards_as_new`).
+ */
+export function cardIdsInSelectionOrder(selected: Iterable<number>, listedIds: readonly number[]): number[] {
+    const listed = new Set(listedIds);
+    return [...selected].filter((cardId) => listed.has(cardId));
+}
+
 /** Anki toggles every selected card based on the current (first selected) card. */
 export function toggleSelectedSuspend(cardIds: number[], rolloverHour: number): number {
     const cards = selectedCards(cardIds);

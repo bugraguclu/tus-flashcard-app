@@ -11,7 +11,7 @@ import { cardFlagName, localizeNoteTypeName, localizeTopicName, type SupportedLo
 import { expandSelectedCardsToNotes, toggleSelectedSuspend } from '../../lib/browserSelection';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
-import { formatLastReview, formatNextDue } from './browserHelpers';
+import { formatLastReview, formatNewPosition, formatNextDue, newQueuePosition } from './browserHelpers';
 import PencilGlyph from '../PencilGlyph';
 
 interface BrowserCardRowProps {
@@ -79,6 +79,12 @@ export function BrowserCardRow({
         ? noteTypes.find((noteType) => noteType.id === item.rawNote?.noteTypeId)
         : undefined;
 
+    const isNewCard = item.state.status === 'new';
+    const newPosition = isNewCard ? newQueuePosition(item.rawCard) : null;
+    // Anki's Deck column names the home deck of a card a filtered deck holds: "Filter (Home)".
+    const deckName = deckById.get(item.deckId)?.name ?? sub?.name ?? item.subject;
+    const homeDeckName = item.rawCard?.odid ? deckById.get(item.rawCard.odid)?.name : undefined;
+    const cardDeckText = (homeDeckName ? `${deckName} (${homeDeckName})` : deckName).replaceAll('::', ' › ');
     const statusColor = item.state.status === 'learning' ? colors.badgeLearn : colors.badgeReview;
     const statusBg = item.state.status === 'learning' ? colors.badgeLearnBg : colors.badgeReviewBg;
     const noteDeckText = isNotesMode
@@ -148,7 +154,7 @@ export function BrowserCardRow({
                         <Text style={[styles.cardTopic]} numberOfLines={1}>
                             {isNotesMode
                                 ? `${rowNoteType ? localizeNoteTypeName(locale, rowNoteType.name) : l('Not', 'Note')} · ${noteDeckText}`
-                                : `${(deckById.get(item.deckId)?.name ?? sub?.name ?? item.subject).replaceAll('::', ' › ')}${item.topic ? ` · ${localizeTopicName(locale, item.topic)}` : ''}`}
+                                : `${cardDeckText}${item.topic ? ` · ${localizeTopicName(locale, item.topic)}` : ''}`}
                         </Text>
                         {!isNotesMode && item.state.status !== 'new' ? (
                             <View style={[styles.statusDot, { backgroundColor: statusBg }]}>
@@ -179,7 +185,7 @@ export function BrowserCardRow({
                         >
                             {isNotesMode
                                 ? `▤ ${noteScheduleText}`
-                                : `⏱ ${l('Son:', 'Last:')} ${formatLastReview(item.state.lastReviewedAtMs, locale)} · ${l('Sonraki:', 'Next:')} ${formatNextDue(item.state, settings.dayRolloverHour, locale)}`}
+                                : `⏱ ${l('Son:', 'Last:')} ${formatLastReview(item.state.lastReviewedAtMs, locale)} · ${l('Sonraki:', 'Next:')} ${formatNextDue(item.state, settings.dayRolloverHour, locale, newPosition)}`}
                         </Text>
                     )}
                 </View>
@@ -242,17 +248,23 @@ export function BrowserCardRow({
                             </>
                         ) : (
                             <>
+                                {/* A new card has no interval or ease yet, and its due is a queue
+                                    position, not a date: Anki shows "(new)" and "New #12". */}
                                 <View style={styles.detailRow}>
                                     <Text style={styles.detailLabel}>{l('Aralık', 'Interval')}</Text>
-                                    <Text style={styles.detailValue}>{item.state.interval} {l('gün', 'days')}</Text>
+                                    <Text style={styles.detailValue}>{isNewCard ? l('(yeni)', '(new)') : `${item.state.interval} ${l('gün', 'days')}`}</Text>
                                 </View>
                                 <View style={styles.detailRow}>
                                     <Text style={styles.detailLabel}>{l('Kolaylık', 'Ease')}</Text>
-                                    <Text style={styles.detailValue}>{item.state.easeFactor.toFixed(2)}</Text>
+                                    <Text style={styles.detailValue}>{isNewCard ? l('(yeni)', '(new)') : item.state.easeFactor.toFixed(2)}</Text>
                                 </View>
                                 <View style={styles.detailRow}>
                                     <Text style={styles.detailLabel}>{l('Sonraki gösterim', 'Due')}</Text>
-                                    <Text style={styles.detailValue}>{item.state.status === 'learning' ? l('Öğrenme sırasında', 'In learning') : item.state.dueDate}</Text>
+                                    <Text style={styles.detailValue}>
+                                        {isNewCard
+                                            ? newPosition !== null ? formatNewPosition(newPosition, locale) : l('Yeni', 'New')
+                                            : item.state.status === 'learning' ? l('Öğrenme sırasında', 'In learning') : item.state.dueDate}
+                                    </Text>
                                 </View>
                             </>
                         )}
@@ -260,6 +272,7 @@ export function BrowserCardRow({
 
                     <TouchableOpacity
                         style={[styles.suspendBtn, item.state.suspended && styles.suspendBtnActive]}
+                        accessibilityRole="button"
                         onPress={() => {
                             if (isNotesMode) {
                                 toggleSelectedSuspend(expandSelectedCardsToNotes([item.cardId]), settings.dayRolloverHour);
@@ -276,7 +289,7 @@ export function BrowserCardRow({
                                     ? l('▶️ Notun kartlarını askıdan çıkar', '▶️ Unsuspend Note Cards')
                                     : l('⏸️ Notun kartlarını askıya al', '⏸️ Suspend Note Cards')
                                 : item.state.suspended
-                                    ? l('▶️ Askıdan Çıkar', '▶️ Unsuspend')
+                                    ? l('▶️ Askıdan çıkar', '▶️ Unsuspend')
                                     : `⏸️ ${t('anki.suspend')}`}
                         </Text>
                     </TouchableOpacity>

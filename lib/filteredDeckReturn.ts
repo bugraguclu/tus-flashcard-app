@@ -10,17 +10,10 @@
 
 import { getDB } from './db';
 import type { AnkiCard } from './models';
-import { restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteStore';
+import { filteredCardAtHome } from './filteredCardHome';
 
-/** The card as it lands in its home deck. A card that lost its home goes to the Default deck. */
-export function filteredCardAtHome(card: AnkiCard): AnkiCard {
-    const due = card.odue || (card.type === 0 ? Math.max(1, card.due) : card.due);
-    const home: AnkiCard = { ...card, deckId: card.odid > 0 ? card.odid : 1, due, odid: 0, odue: 0 };
-    // Suspended and buried cards stay that way; only an active card gets its queue back.
-    if (card.queue >= 0) home.queue = restoreQueueFromType(home);
-    return home;
-}
+export { filteredCardAtHome } from './filteredCardHome';
 
 /** Return every card physically held by a filtered deck (or one of them) to its home deck. */
 export function returnFilteredDeckCardsHome(deckId: number, cardId?: number): void {

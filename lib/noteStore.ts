@@ -13,6 +13,7 @@ import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { restoreQueueFromType } from './ankiState';
 import { updateAnkiCardData } from './fsrsCardData';
 import { learningLeftAfterDeckMove } from './deckPresetSteps';
+import { filteredCardAtHome } from './filteredCardHome';
 import { getDB } from './db';
 import { getSubjectIdSet } from './subjects';
 import { humanizeCardText } from './displayText';
@@ -443,6 +444,10 @@ export interface CardDeckMoveSnapshot {
     /** Remaining-steps counter before/after the move remapped it to the new preset's steps. */
     previousLeft?: number;
     movedLeft?: number;
+    /** Set when the card sat physically in a filtered deck: where it was there, for undo. */
+    previousFilteredPlacement?: Pick<AnkiCard, 'deckId' | 'odid' | 'odue' | 'due' | 'queue'>;
+    /** The due and queue the card got at home, so undo can tell whether it has moved on since. */
+    movedPlacement?: Pick<AnkiCard, 'due' | 'queue'>;
 }
 
 /**
@@ -451,9 +456,11 @@ export interface CardDeckMoveSnapshot {
  * The caller owns the undo stack, while this function keeps the database write atomic and
  * returns the original deck of every card. Scheduling is kept as it was, but the FSRS memory
  * state, desired retention and decay are dropped, as Anki's `Card::set_deck` does: the card may
- * now follow another preset. `withinTransaction` runs after the move and before the commit, so a
- * caller can derive the states again under the new preset as part of the same write
- * (`moveCardsToDeckWithFsrs`); the snapshots then record the data it left on each moved card.
+ * now follow another preset. A card physically in a filtered deck (an imported one) first goes
+ * home on its original due, as `set_deck` takes it out of the filtered deck before moving it.
+ * `withinTransaction` runs after the move and before the commit, so a caller can derive the
+ * states again under the new preset as part of the same write (`moveCardsToDeckWithFsrs`); the
+ * snapshots then record the data it left on each moved card.
  */
 export function moveCardsToDeck(
     cardIds: number[],
@@ -487,9 +494,15 @@ export function moveCardsToDeck(
         for (const move of moves) {
             const card = getAnkiCard(move.cardId);
             if (!card) continue;
-            const left = learningLeftAfterDeckMove(card, card.deckId, targetDeckId);
-            if (left !== card.left) { move.previousLeft = card.left; move.movedLeft = left; }
-            saveAnkiCard({ ...card, deckId: targetDeckId, ankiData: move.movedAnkiData, left, mod: nowSec, usn: -1 });
+            // Moved as it stands, the card would keep the filtered deck's due and home deck.
+            const home = card.odid ? filteredCardAtHome(card) : card;
+            if (home !== card) {
+                move.previousFilteredPlacement = { deckId: card.deckId, odid: card.odid, odue: card.odue, due: card.due, queue: card.queue };
+                move.movedPlacement = { due: home.due, queue: home.queue };
+            }
+            const left = learningLeftAfterDeckMove(home, home.deckId, targetDeckId);
+            if (left !== home.left) { move.previousLeft = home.left; move.movedLeft = left; }
+            saveAnkiCard({ ...home, deckId: targetDeckId, ankiData: move.movedAnkiData, left, mod: nowSec, usn: -1 });
         }
         if (options.withinTransaction) {
             options.withinTransaction();
@@ -502,6 +515,21 @@ export function moveCardsToDeck(
     }
 
     return moves;
+}
+
+/**
+ * Where undo puts a moved card. One that came out of a filtered deck goes back into it only while
+ * it is still as the move left it; once studied, it returns to its home deck instead, since a
+ * normal deck's due and queue mean nothing inside a filtered deck.
+ */
+function placementBeforeMove(card: AnkiCard, move: CardDeckMoveSnapshot): Partial<AnkiCard> {
+    const filtered = move.previousFilteredPlacement;
+    if (!filtered) return { deckId: move.previousDeckId };
+    const untouched = card.deckId === move.targetDeckId
+        && !card.odid
+        && card.due === move.movedPlacement?.due
+        && card.queue === move.movedPlacement?.queue;
+    return untouched ? { ...filtered } : { deckId: filtered.odid > 0 ? filtered.odid : 1, odid: 0, odue: 0 };
 }
 
 /** Restore the cards captured by moveCardsToDeck(), without overwriting later scheduling data. */
@@ -519,7 +547,7 @@ export function undoCardsMovedToDeck(moves: CardDeckMoveSnapshot[]): number {
             // The FSRS values come back only if nothing (an answer, say) has rewritten them since.
             const ankiData = card.ankiData === move.movedAnkiData ? move.previousAnkiData : card.ankiData;
             const left = move.movedLeft !== undefined && card.left === move.movedLeft ? move.previousLeft ?? card.left : card.left;
-            saveAnkiCard({ ...card, deckId: move.previousDeckId, ankiData, left, mod: nowSec, usn: -1 });
+            saveAnkiCard({ ...card, ...placementBeforeMove(card, move), ankiData, left, mod: nowSec, usn: -1 });
             restored += 1;
         }
         db.execSync('COMMIT;');

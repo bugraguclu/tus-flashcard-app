@@ -50,6 +50,7 @@ vi.mock('./studyRepository', () => ({
 }));
 
 import {
+    cardIdsInSelectionOrder,
     expandSelectedCardsToNotes,
     gradeSelectedNow,
     parseDueRange,
@@ -283,4 +284,16 @@ it('repositions selected siblings together and shifts by step × selected cards,
     harness.cards.set(3, card(3, { noteId: 20, due: 10 }));
     expect(repositionSelectedNewCards([1, 2], 5, 2, true)).toBe(2);
     expect([...harness.cards.values()].map(card => card.due)).toEqual([5, 5, 14]);
+});
+
+// Anki numbers Reposition and Reset in the order the card ids arrive, which is the order the rows
+// were selected (probed against Anki 26.09.3: reposition [q4, q1, q3] from 10 gives q4=10, q1=11,
+// q3=12). The browser's toggles lead with the current card instead; these two must not.
+it('keeps the selection order for Reposition and Reset, dropping cards no longer listed', () => {
+    const selected = new Set([30, 10, 20]);
+    expect(cardIdsInSelectionOrder(selected, [10, 20, 30])).toEqual([30, 10, 20]);
+    expect(cardIdsInSelectionOrder(selected, [20, 30])).toEqual([30, 20]);
+    harness.cards.set(1, card(1, { noteId: 10 })); harness.cards.set(2, card(2, { noteId: 20 }));
+    expect(repositionSelectedNewCards(cardIdsInSelectionOrder(new Set([2, 1]), [1, 2]), 5, 1, false)).toBe(2);
+    expect([harness.cards.get(2)?.due, harness.cards.get(1)?.due]).toEqual([5, 6]);
 });

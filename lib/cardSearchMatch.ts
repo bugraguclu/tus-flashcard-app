@@ -6,6 +6,7 @@
 
 import { fsrsRetrievabilityAfterSeconds, fsrsSecondsSinceLastReview, type FsrsMemoryState } from './fsrs';
 import { foldSearchNode, parseSearchQuery, SearchSyntaxError } from './searchQuery';
+import { localizeNoteTypeName } from './i18n';
 import {
     firstUnescapedColon, globMatcher, hierarchicalGlobMatcher, searchRegex, stripHtmlForSearch,
     stripSearchQuotes, unescapeSearchText, withoutClozeMarkup, wordMatcher,
@@ -464,7 +465,11 @@ function predicateForTerm(rawTerm: string, options: CardMatcherOptions, needs: C
         case 'note': {
             if (!body) throw new SearchSyntaxError('empty search value');
             const matches = globMatcher(body, { anchored: true });
-            return (card) => (card.noteTypeName === undefined ? undefined : matches(card.noteTypeName));
+            // The stock note types are shown by their Turkish names ("Temel" for "Basic"), so the
+            // name on screen finds them too; the stored name keeps working as in Anki.
+            return (card) => (card.noteTypeName === undefined
+                ? undefined
+                : matches(card.noteTypeName) || matches(localizeNoteTypeName('tr', card.noteTypeName)));
         }
         case 'card': {
             if (!body) throw new SearchSyntaxError('empty search value');

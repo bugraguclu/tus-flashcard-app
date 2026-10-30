@@ -323,9 +323,9 @@ export function CardPreviewModal({
                     <View style={styles.previewGrabber} />
                 </View>
                 <View style={styles.previewHeader}>
-                    <TouchableOpacity style={styles.previewHeaderButton} onPress={() => setPreviewIndex(null)}><Text style={styles.previewHeaderButtonText}>×</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.previewHeaderButton} onPress={() => setPreviewIndex(null)} accessibilityRole="button" accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')}><Text style={styles.previewHeaderButtonText}>×</Text></TouchableOpacity>
                     <Text style={styles.previewTitle}>{l('Önizleme', 'Preview')} · {(previewIndex ?? 0) + 1}/{selectedCards.length}</Text>
-                    <TouchableOpacity style={styles.previewHeaderButton} onPress={() => setPreviewAnswerVisible((value) => !value)}><Text style={styles.previewFlipText}>{previewAnswerVisible ? l('Soru', 'Question') : l('Cevap', 'Answer')}</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.previewHeaderButton} onPress={() => setPreviewAnswerVisible((value) => !value)} accessibilityRole="button" accessibilityLabel={previewAnswerVisible ? l('Soruyu göster', 'Show question') : l('Cevabı göster', 'Show answer')}><Text style={styles.previewFlipText}>{previewAnswerVisible ? l('Soru', 'Question') : l('Cevap', 'Answer')}</Text></TouchableOpacity>
                 </View>
                 <View style={styles.previewBody}>
                     {previewNote && previewNoteType && previewRawCard ? (
@@ -341,8 +341,8 @@ export function CardPreviewModal({
                     ) : <Text style={styles.modalCaption}>{tableMode === 'notes' ? l('Notun ilk kartı önizlenemedi.', "The note's first card could not be previewed.") : l('Kart önizlenemedi.', 'The card could not be previewed.')}</Text>}
                 </View>
                 <View style={styles.previewNavigation}>
-                    <TouchableOpacity style={styles.previewNavButton} disabled={(previewIndex ?? 0) <= 0} onPress={() => { setPreviewAnswerVisible(false); setPreviewIndex((index) => Math.max(0, (index ?? 0) - 1)); }}><Text style={styles.previewNavText}>‹ {l('Önceki', 'Previous')}</Text></TouchableOpacity>
-                    <TouchableOpacity style={styles.previewNavButton} disabled={(previewIndex ?? 0) >= selectedCards.length - 1} onPress={() => { setPreviewAnswerVisible(false); setPreviewIndex((index) => Math.min(selectedCards.length - 1, (index ?? 0) + 1)); }}><Text style={styles.previewNavText}>{l('Sonraki', 'Next')} ›</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.previewNavButton} disabled={(previewIndex ?? 0) <= 0} onPress={() => { setPreviewAnswerVisible(false); setPreviewIndex((index) => Math.max(0, (index ?? 0) - 1)); }} accessibilityRole="button" accessibilityLabel={l('Önceki kart', 'Previous card')} accessibilityState={{ disabled: (previewIndex ?? 0) <= 0 }}><Text style={styles.previewNavText}>‹ {l('Önceki', 'Previous')}</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.previewNavButton} disabled={(previewIndex ?? 0) >= selectedCards.length - 1} onPress={() => { setPreviewAnswerVisible(false); setPreviewIndex((index) => Math.min(selectedCards.length - 1, (index ?? 0) + 1)); }} accessibilityRole="button" accessibilityLabel={l('Sonraki kart', 'Next card')} accessibilityState={{ disabled: (previewIndex ?? 0) >= selectedCards.length - 1 }}><Text style={styles.previewNavText}>{l('Sonraki', 'Next')} ›</Text></TouchableOpacity>
                 </View>
             </SafeAreaView>
         </Modal>

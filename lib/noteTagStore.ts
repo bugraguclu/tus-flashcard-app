@@ -1,5 +1,6 @@
 import type { Note } from './models';
 import { dbUpsertFtsCard, getDB } from './db';
+import { deckScopeSql } from './deckScopeSql';
 import {
     getAnkiCard,
     getCardsForNote,
@@ -116,18 +117,17 @@ export interface TagCollectionScope {
 export function getAllTags(scope: TagCollectionScope = {}): string[] {
     const db = getDB();
     const clauses: string[] = [];
-    const params: number[] = [];
-    const addIds = (column: string, ids: number[] | undefined) => {
-        if (!ids) return;
-        if (ids.length === 0) {
-            clauses.push('1 = 0');
-            return;
-        }
-        clauses.push(`${column} IN (${ids.map(() => '?').join(', ')})`);
-        params.push(...ids);
-    };
-    addIds('c.deckId', scope.deckIds);
-    addIds('c.id', scope.cardIds);
+    const params: string[] = [];
+    if (scope.deckIds) {
+        const decks = deckScopeSql('c', scope.deckIds);
+        clauses.push(decks.sql);
+        params.push(...decks.params);
+    }
+    if (scope.cardIds) {
+        // One JSON parameter: a filtered deck's cards can exceed SQLite's bound-variable limit.
+        clauses.push(scope.cardIds.length ? 'c.id IN (SELECT CAST(value AS INTEGER) FROM json_each(?))' : '1 = 0');
+        if (scope.cardIds.length) params.push(JSON.stringify(scope.cardIds));
+    }
     const cardScope = clauses.length
         ? ` AND EXISTS (SELECT 1 FROM anki_cards c WHERE c.noteId = n.id AND ${clauses.join(' AND ')})`
         : '';

@@ -42,6 +42,17 @@ describe('case folding', () => {
         expect(matches('note:basic', card({ noteTypeName: 'BASIC' }))).toBe(true);
     });
 
+    it('finds a stock note type by the Turkish name the app shows for it', () => {
+        expect(matches('note:Temel', card({ noteTypeName: 'Basic' }))).toBe(true);
+        expect(matches('note:temel', card({ noteTypeName: 'Basic' }))).toBe(true);
+        expect(matches('"note:Temel (ve ters kart)"', card({ noteTypeName: 'Basic (and reversed card)' }))).toBe(true);
+        expect(matches('note:Boşluklu', card({ noteTypeName: 'Cloze' }))).toBe(true);
+        expect(matches('note:Temel', card({ noteTypeName: 'Basic (and reversed card)' }))).toBe(false);
+        expect(matches('note:Temel*', card({ noteTypeName: 'Basic (optional reversed card)' }))).toBe(true);
+        expect(matches('note:Basic', card({ noteTypeName: 'Basic' }))).toBe(true);
+        expect(matches('note:Temel', card({ noteTypeName: 'Farmakoloji (TUS)' }))).toBe(false);
+    });
+
     it('keeps accents: only nc: ignores them, as in Anki', () => {
         expect(matches('deck:cografya', card({ deckName: 'Coğrafya' }))).toBe(false);
         expect(matches('cografya', card({ fieldList: ['Coğrafya'] }))).toBe(false);

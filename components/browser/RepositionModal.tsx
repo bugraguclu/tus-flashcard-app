@@ -1,4 +1,4 @@
-import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import { alert } from '../../lib/confirm';
@@ -46,11 +46,13 @@ export function RepositionModal({
 }: RepositionModalProps) {
     const [randomize, setRandomize] = useState(() => readBrowserBoolean(REPOSITION_RANDOM_KEY, false));
     const close = () => setShowRepositionDialog(false);
-    // Anki's dialog opens by showing where the new queue starts and ends.
-    const queueRange = useMemo(
-        () => (showRepositionDialog ? getNewQueuePositionRange() : { top: 0, bottom: 0 }),
-        [showRepositionDialog],
-    );
+    // Anki's dialog opens by showing where the new queue starts and ends. Read once on opening and
+    // kept while the dialog fades out, so closing it does not flash "0" or a new Undo button.
+    const openedStateRef = useRef({ queueRange: { top: 0, bottom: 0 }, canUndo: false });
+    const { queueRange, canUndo } = useMemo(() => {
+        if (showRepositionDialog) openedStateRef.current = { queueRange: getNewQueuePositionRange(), canUndo: canUndoLastReposition() };
+        return openedStateRef.current;
+    }, [showRepositionDialog]);
 
     const checkbox = (checked: boolean, label: string, onPress: () => void) => (
         <TouchableOpacity style={styles.checkboxRow} onPress={onPress} accessibilityRole="checkbox" accessibilityState={{ checked }} aria-checked={checked}>
@@ -103,7 +105,7 @@ export function RepositionModal({
                     {checkbox(randomize, l('Sırayı rastgele yap', 'Randomize order'), () => setRandomize((value) => !value))}
                     {checkbox(repositionShiftExisting, l('Mevcut kartların konumunu kaydır', 'Shift position of existing cards'), () => setRepositionShiftExisting((value) => !value))}
                     <View style={styles.dialogActions}>
-                        {canUndoLastReposition() && (
+                        {canUndo && (
                             <TouchableOpacity style={styles.dialogButton} onPress={undo} accessibilityLabel={l('Son yeniden konumlandırmayı geri al', 'Undo the last reposition')}>
                                 <Text style={styles.dialogButtonText}>{l('Geri al', 'Undo')}</Text>
                             </TouchableOpacity>

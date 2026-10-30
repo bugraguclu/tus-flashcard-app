@@ -15,6 +15,7 @@ import { isCatalogCard, isCatalogNote, PaidCatalogProtectionError } from './cata
 import { getNoteType } from './noteTypeStore';
 import { updateAnkiCardData } from './fsrsCardData';
 import { learningLeftAfterDeckMove } from './deckPresetSteps';
+import { filteredCardAtHome } from './filteredCardHome';
 import {
     createCardForNote,
     notePositionForPass,
@@ -271,14 +272,16 @@ export function updateTusCardByCardId(
 
     // Fields belong to the note; deck placement belongs to each generated card. An unchanged
     // picker value is not a request to gather siblings that may live in other decks.
-    // Moving the card is Change Deck: as moveCardsToDeck does, drop the FSRS memory state (the
-    // destination may use another preset) and remap the remaining learning steps.
+    // Moving the card is Change Deck: as moveCardsToDeck does, take it out of an imported filtered
+    // deck first, drop the FSRS memory state (the destination may use another preset) and remap
+    // the remaining learning steps.
     if (destinationDeckId !== card.deckId && getAnkiCard(cardId)) {
+        const home = card.odid ? filteredCardAtHome(card) : card;
         saveAnkiCard({
-            ...card,
+            ...home,
             deckId: destinationDeckId,
-            ankiData: updateAnkiCardData(card.ankiData, { stability: null, difficulty: null, desiredRetention: null, decay: null }),
-            left: learningLeftAfterDeckMove(card, card.deckId, destinationDeckId),
+            ankiData: updateAnkiCardData(home.ankiData, { stability: null, difficulty: null, desiredRetention: null, decay: null }),
+            left: learningLeftAfterDeckMove(home, home.deckId, destinationDeckId),
             mod: Math.floor(Date.now() / 1000),
             usn: -1,
         });
