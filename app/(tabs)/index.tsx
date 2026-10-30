@@ -50,8 +50,8 @@ import {
     getNoteType,
     deleteNote,
     isNoteMarked,
-    saveNote,
     setCardFlag,
+    setNoteTags,
     toggleNoteMark,
 } from '../../lib/noteManager';
 import {
@@ -195,7 +195,8 @@ import {
     replayAnswerOptions,
 } from '../../lib/reviewerUndoSteps';
 import { parseDueRange, setSelectedDueDate } from '../../lib/browserSelection';
-import { canonifyTags } from '../../lib/noteTags';
+import { canonifyTags, sameTagSet } from '../../lib/noteTags';
+import { parseNotePayload } from '../../lib/studyCardRows';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -1414,13 +1415,13 @@ export default function StudyScreen() {
         if (!currentCard) return;
         const note = getNote(currentCard.noteId);
         if (!note) return;
+        const tags = canonifyTags(raw);
+        // Saving the tags the note already has changes nothing, so it leaves no Undo entry either.
+        if (sameTagSet(note.tags, tags)) return;
+        // The editor's tag-only write: it never touches the fields, and it keeps the search index's
+        // subject and topic, which come from the tags, in step with the note.
         recordUndoableOp('updateTags', [], [currentCard.noteId], () => {
-            saveNote({
-                ...note,
-                tags: canonifyTags(raw),
-                mod: Math.floor(Date.now() / 1000),
-                usn: -1,
-            });
+            setNoteTags(currentCard.noteId, tags);
         });
         // A tag edit changes note text, not scheduling. Anki redraws the card in place for that,
         // so the queue is left alone here and a revealed answer stays revealed.
@@ -1619,6 +1620,12 @@ export default function StudyScreen() {
     );
     const hasSiblingCards = useMemo(
         () => (renderPayload ? getCardsForNote(renderPayload.note.id).length > 1 : false),
+        [renderPayload],
+    );
+    // The header's course and topic are read from the note as it stands now, so a tag edit made
+    // from the ••• menu shows at once instead of waiting for the queue to be rebuilt.
+    const cardContext = useMemo(
+        () => (renderPayload ? parseNotePayload(renderPayload.note, renderPayload.noteType) : null),
         [renderPayload],
     );
     // renderPayload re-reads the card on every dataVersion bump, so a flag set through the
@@ -2560,7 +2567,8 @@ export default function StudyScreen() {
     }
 
     const preview = getPreview();
-    const subject = currentCard ? findSubject(currentCard.subject) : null;
+    const subject = currentCard ? findSubject(cardContext?.subject ?? currentCard.subject) : null;
+    const topic = currentCard ? (cardContext?.topic ?? currentCard.topic) : '';
     const answerScale = (settings.answerButtonScalePercent ?? 100) / 100;
     const gradeButton = (grade: Grade, label: string, time: string, color: string) => (
         <TouchableOpacity
@@ -3053,9 +3061,9 @@ export default function StudyScreen() {
                                     <Text style={styles.cardSubject} numberOfLines={1}>
                                         {subject ? `${subject.icon} ${subject.name}` : '📝'}
                                     </Text>
-                                    {currentCard.topic ? <Text style={styles.contextSeparator}>›</Text> : null}
-                                    {currentCard.topic ? (
-                                        <Text style={styles.cardTopic} numberOfLines={1}>{localizeTopicName(locale, currentCard.topic)}</Text>
+                                    {topic ? <Text style={styles.contextSeparator}>›</Text> : null}
+                                    {topic ? (
+                                        <Text style={styles.cardTopic} numberOfLines={1}>{localizeTopicName(locale, topic)}</Text>
                                     ) : null}
                                     {previewMode ? (
                                         <View style={styles.previewBadge}>

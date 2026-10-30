@@ -5,6 +5,7 @@ import type { AnkiCard, Note, NoteType } from './models';
 import { ankiCardToCardState, legacyCardIdFromAnkiCardId } from './ankiState';
 import { withFsrsInputs } from './fsrsCardInputs';
 import { getAnkiCard, MARKED_TAG } from './noteManager';
+import { isStatusTag } from './noteTags';
 import { getDeck, getDeckByName, getDeckConfigForDeck } from './deckManager';
 import { resolveSettingsFromConfig } from './settingsResolver';
 import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
@@ -119,7 +120,7 @@ export function parseNotePayload(note: Note, noteType: NoteType | null): { subje
     if (!noteType) {
         const question = note.fields[0] ?? note.sfld ?? '';
         const answer = note.fields[1] ?? '';
-        const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::'));
+        const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::') && !isStatusTag(tag));
         const topic = note.catalogTopic || note.fields[2] || topicFromTag || 'General';
         return { subject, topic, question, answer };
     }
@@ -161,7 +162,7 @@ export function parseNotePayload(note: Note, noteType: NoteType | null): { subje
         fieldMap,
     );
     const topicFromField = topicFieldName != null ? (fieldMap.get(topicFieldName) ?? '') : '';
-    const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::'));
+    const topicFromTag = note.tags.find((tag) => tag !== subject && !tag.includes('::') && !isStatusTag(tag));
     const topic = note.catalogTopic || topicFromField || topicFromTag || 'General';
 
     return { subject, topic, question, answer };

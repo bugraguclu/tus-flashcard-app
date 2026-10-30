@@ -49,9 +49,14 @@ import {
     reorderDeckRelative,
     type DeckTreeNode,
     createOrSelectDeck,
+    getBuriedCountForDeck,
+    getBuriedKindsForDeck,
+    unburyDeck,
 } from '../../lib/deckManager';
 import { getDeckDisplayName, getParentDeckName, type Deck } from '../../lib/models';
 import { alert, confirm, choose } from '../../lib/confirm';
+import { chooseUnburyKind } from '../../lib/unburyChoice';
+import { deckRowMenuActions, type DeckRowMenuAction } from '../../lib/deckRowMenu';
 import { getFilteredDeckMatchCount } from '../../lib/studyRepository';
 import { findInvalidFilteredSearch } from '../../lib/searchValidation';
 import {
@@ -76,6 +81,7 @@ import { StopwatchIcon } from '../../components/stopwatch/StopwatchIcons';
 import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/DeckListTable';
 import DeckAddMenu, { DECK_ADD_MENU_LIST_INSET } from '../../components/decks/DeckAddMenu';
+import DeckRowMenu from '../../components/decks/DeckRowMenu';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
@@ -616,6 +622,17 @@ export default function DecksScreen() {
     // ---- Gear menu actions ----
 
     const openMenu = useCallback((deck: Deck) => setModal({ kind: 'menu', deck }), []);
+    const deckMenuActions = useMemo(() => {
+        if (modal?.kind !== 'menu') return [];
+        let buriedCount = 0;
+        try {
+            buriedCount = getBuriedCountForDeck(modal.deck.id);
+        } catch (e) {
+            // A failed count only leaves Unbury out; the overview still offers it.
+            console.warn('[Decks] buried count failed:', e);
+        }
+        return deckRowMenuActions({ isFiltered: Boolean(modal.deck.isFiltered), isCatalog: isCatalogDeck(modal.deck), buriedCount });
+    }, [modal]);
 
     const openRename = (deck: Deck) => {
         if (isCatalogDeck(deck)) {
@@ -897,6 +914,48 @@ export default function DecksScreen() {
                 refresh();
             },
         ), Platform.OS === 'ios' ? 250 : 0);
+    };
+
+    // AnkiDroid's deck menu offers Unbury while the deck holds buried cards and, like the overview,
+    // asks which kind to wake when both manually buried cards and buried siblings are waiting.
+    const requestUnburyDeck = (deck: Deck) => {
+        setModal(null);
+        setTimeout(() => {
+            void (async () => {
+                try {
+                    const kind = await chooseUnburyKind(getBuriedKindsForDeck(deck.id), l);
+                    const count = unburyDeck(deck.id, settings.dayRolloverHour, kind);
+                    refresh();
+                    alert(
+                        l('Gömülü kartlar açıldı', 'Cards Unburied'),
+                        l(`${count} kart yeniden çalışılabilir.`, `${count} ${count === 1 ? 'card is' : 'cards are'} available to study again.`),
+                    );
+                } catch (e) {
+                    console.warn('[Decks] unbury failed:', e);
+                    alert(t('common.error'), l('Gömülü kartlar açılamadı.', 'Could not unbury the cards.'));
+                }
+            })();
+        }, Platform.OS === 'ios' ? 250 : 0);
+    };
+
+    const handleDeckMenuAction = (deck: Deck, action: DeckRowMenuAction) => {
+        switch (action) {
+            case 'overview': openDeckMenuRoute(`/deck-overview?deck=${encodeURIComponent(deck.name)}`); return;
+            case 'add': openDeckMenuRoute(isCatalogDeck(deck) ? '/editor' : `/editor?deckId=${deck.id}`); return;
+            case 'browse': openDeckMenuRoute(`/browser?deck=${encodeURIComponent(deck.name)}`); return;
+            case 'rename': openRename(deck); return;
+            case 'createSubdeck': openCreateSubdeck(deck); return;
+            case 'options': openDeckMenuRoute(`/deck-options?deckId=${deck.id}`); return;
+            case 'customStudy': openCustomStudy(deck); return;
+            case 'export': openDeckMenuRoute(`/export?deck=${encodeURIComponent(deck.name)}`); return;
+            case 'filterOptions': openFilterOptions(deck); return;
+            case 'rebuild': handleRebuildFilter(deck); return;
+            case 'empty': requestEmptyFilteredDeck(deck); return;
+            case 'unbury': requestUnburyDeck(deck); return;
+            case 'shortcut': void handleCreateShortcut(deck); return;
+            case 'description': openDescription(deck); return;
+            case 'delete': requestDelete(deck); return;
+        }
     };
 
     // ---- Drag & drop ----
@@ -1383,89 +1442,6 @@ export default function DecksScreen() {
         </TouchableOpacity>
     ), [catalogInstalling, colors.accent, l, router, styles]);
 
-    const renderMenuModal = (deck: Deck) => {
-        const isCatalog = isCatalogDeck(deck);
-        const MenuAction = ({ label, onPress, danger = false }: {
-            label: string;
-            onPress: () => void;
-            danger?: boolean;
-        }) => (
-            <TouchableOpacity
-                style={styles.deckMenuItem}
-                onPress={onPress}
-                accessibilityRole="button"
-                accessibilityLabel={label}
-            >
-                <Text style={[styles.deckMenuItemText, danger && styles.menuItemDanger]}>{label}</Text>
-            </TouchableOpacity>
-        );
-
-        return (
-            <View style={styles.deckMenuCard} accessibilityViewIsModal>
-                <Text style={styles.deckMenuTitle}>{deck.name.replaceAll('::', ' › ')}</Text>
-                <ScrollView
-                    style={styles.deckMenuScroll}
-                    contentContainerStyle={styles.deckMenuContent}
-                    showsVerticalScrollIndicator={false}
-                >
-                    <MenuAction
-                        label={l('Genel bakış', 'Overview')}
-                        onPress={() => openDeckMenuRoute(`/deck-overview?deck=${encodeURIComponent(deck.name)}`)}
-                    />
-                    {!deck.isFiltered && (
-                        <MenuAction
-                            label={l('Ekle', 'Add')}
-                            onPress={() => openDeckMenuRoute(isCatalog ? '/editor' : `/editor?deckId=${deck.id}`)}
-                        />
-                    )}
-                    <MenuAction
-                        label={l('Kartlara göz at', 'Browse cards')}
-                        onPress={() => openDeckMenuRoute(`/browser?deck=${encodeURIComponent(deck.name)}`)}
-                    />
-                    {!isCatalog && (
-                        <MenuAction label={l('Desteyi yeniden adlandır', 'Rename deck')} onPress={() => openRename(deck)} />
-                    )}
-
-                    {!deck.isFiltered ? (
-                        <>
-                            {!isCatalog && (
-                                <MenuAction label={l('Alt deste oluştur', 'Create subdeck')} onPress={() => openCreateSubdeck(deck)} />
-                            )}
-                            <MenuAction
-                                label={l('Deste seçenekleri', 'Deck options')}
-                                onPress={() => openDeckMenuRoute(`/deck-options?deckId=${deck.id}`)}
-                            />
-                            <MenuAction label={l('Özel çalışma', 'Custom study')} onPress={() => openCustomStudy(deck)} />
-                            {!isCatalog && (
-                                <MenuAction
-                                    label={l('Desteyi dışa aktar', 'Export deck')}
-                                    onPress={() => openDeckMenuRoute(`/export?deck=${encodeURIComponent(deck.name)}`)}
-                                />
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            <MenuAction label={l('Filtre seçenekleri', 'Filtered deck options')} onPress={() => openFilterOptions(deck)} />
-                            <MenuAction label={l('Yeniden oluştur', 'Rebuild')} onPress={() => handleRebuildFilter(deck)} />
-                            <MenuAction label={l('Desteyi boşalt', 'Empty deck')} onPress={() => requestEmptyFilteredDeck(deck)} />
-                        </>
-                    )}
-
-                    <MenuAction
-                        label={l('Kısayol oluştur', 'Create shortcut')}
-                        onPress={() => { void handleCreateShortcut(deck); }}
-                    />
-                    {!isCatalog && (
-                        <>
-                            <MenuAction label={l('Açıklamayı düzenle', 'Edit description')} onPress={() => openDescription(deck)} />
-                            <MenuAction label={l('Desteyi sil', 'Delete deck')} onPress={() => requestDelete(deck)} />
-                        </>
-                    )}
-                </ScrollView>
-            </View>
-        );
-    };
-
     const renderRenameModal = (deck: Deck) => (
         <View
             style={[styles.modalCard, styles.createDeckDialog]}
@@ -1572,6 +1548,7 @@ export default function DecksScreen() {
                 multiline
                 autoFocus
                 textAlignVertical="top"
+                accessibilityLabel={l('Deste açıklaması', 'Deck description')}
             />
             <View style={styles.filteredToggleRow}>
                 <View style={styles.filteredToggleCopy}>
@@ -2515,7 +2492,13 @@ export default function DecksScreen() {
                             accessibilityLabel={l('Açık pencereyi kapat', 'Close open dialog')}
                         />
                     )}
-                    {modal?.kind === 'menu' && renderMenuModal(modal.deck)}
+                    {modal?.kind === 'menu' && (
+                        <DeckRowMenu
+                            deckName={modal.deck.name}
+                            actions={deckMenuActions}
+                            onSelect={(action) => handleDeckMenuAction(modal.deck, action)}
+                        />
+                    )}
                     {modal?.kind === 'rename' && renderRenameModal(modal.deck)}
                     {modal?.kind === 'create-subdeck' && renderCreateSubdeckModal(modal.deck)}
                     {modal?.kind === 'description' && renderDescriptionModal(modal.deck)}
@@ -3263,29 +3246,6 @@ function createStyles(colors: ColorScheme) {
     },
     modalOverlayCompact: { justifyContent: 'flex-end', padding: 0 },
     modalBackdropHit: { ...StyleSheet.absoluteFill },
-    deckMenuCard: {
-        width: '100%',
-        maxWidth: 520,
-        maxHeight: '88%',
-        zIndex: 1,
-        overflow: 'hidden',
-        backgroundColor: colors.badgeNewBg,
-        borderRadius: 28,
-        paddingTop: Spacing.xl,
-        ...Shadows.lg,
-    },
-    deckMenuTitle: {
-        paddingHorizontal: 30,
-        paddingBottom: Spacing.sm,
-        fontSize: 20,
-        lineHeight: 27,
-        fontWeight: '500',
-        color: colors.textPrimary,
-    },
-    deckMenuScroll: { flexGrow: 0 },
-    deckMenuContent: { paddingHorizontal: 30, paddingBottom: Spacing.xl },
-    deckMenuItem: { minHeight: 66, justifyContent: 'center' },
-    deckMenuItemText: { fontSize: 17, lineHeight: 23, fontWeight: '400', color: colors.textPrimary },
     modalCard: {
         width: '100%',
         maxWidth: 420,
@@ -3422,7 +3382,5 @@ function createStyles(colors: ColorScheme) {
         justifyContent: 'center',
     },
     modalBtnSecondaryText: { color: colors.textSecondary, fontWeight: '600', fontSize: FontSize.sm },
-
-    menuItemDanger: { color: colors.btnAgain },
     });
 }

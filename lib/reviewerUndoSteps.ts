@@ -11,11 +11,11 @@
  * elsewhere (Browser Grade Now, Forget, Set Due Date) is refused instead of overwriting that change.
  */
 
-import { getDB } from './db';
-import type { AnkiCard } from './models';
+import { dbUpsertFtsCard, getDB } from './db';
+import type { AnkiCard, Note } from './models';
 import type { Grade } from './types';
 import type { AnswerSideEffects } from './studyAnswer';
-import { getAnkiCard, saveAnkiCard, saveNote } from './noteManager';
+import { getAnkiCard, getCardsForNote, saveAnkiCard, saveNote, searchIndexCardFromNote } from './noteManager';
 import { deleteReviewById, restoreReviewLog } from './reviewLogger';
 import { commitCollectionWrite } from './collectionWrite';
 import {
@@ -81,11 +81,21 @@ export function runInReviewerSavepoint<T>(write: () => T): T {
     }
 }
 
+/**
+ * A note restored by an undo or redo step. The search index derives each card's topic from the
+ * note's tags, and the reviewer's tag edit keeps it in step (`setNoteTags`), so taking that edit back
+ * has to reach the index too.
+ */
+function saveNoteWithSearchIndex(note: Note): void {
+    saveNote(note);
+    for (const card of getCardsForNote(note.id)) dbUpsertFtsCard(searchIndexCardFromNote(note, card.id));
+}
+
 /** The collection writers an op step uses, all inside one savepoint. */
 export function reviewerOpDbWriters(): ReviewerOpWriters {
     return {
         saveCard: saveAnkiCard,
-        saveNote,
+        saveNote: saveNoteWithSearchIndex,
         insertReviewLog: restoreReviewLog,
         deleteReviewLog: deleteReviewById,
         atomic: (run) => runInReviewerSavepoint(run),

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-10-27",
+  "lastVerified": "2026-10-30",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -360,6 +360,14 @@
       "url": "https://github.com/ankidroid/Anki-Android",
       "license": "GPL-3.0-family; inspect behavior, do not copy into MIT code",
       "useFor": ["Android-specific UI", "filtered deck options layout", "whiteboard", "TTS", "Android file integration"]
+    },
+    {
+      "id": "ankidroid-deck-context-menu",
+      "priority": 3,
+      "platform": "Android deck list reference",
+      "url": "https://github.com/ankidroid/Anki-Android/blob/main/AnkiDroid/src/main/java/com/ichi2/anki/contextmenu/DeckPickerMenuContentProvider.kt",
+      "license": "GPL-3.0-family; inspect behavior, do not copy into MIT code",
+      "useFor": ["deck ••• menu actions and their order", "Unbury listed only while the deck holds buried cards", "filtered decks offer Rebuild and Empty and no Edit Description"]
     },
     {
       "id": "ankidroid-manual-typed-answer",

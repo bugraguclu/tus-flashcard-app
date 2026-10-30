@@ -16,6 +16,7 @@ import { learningLeftAfterDeckMove } from './deckPresetSteps';
 import { getDB } from './db';
 import { getSubjectIdSet } from './subjects';
 import { humanizeCardText } from './displayText';
+import { isStatusTag } from './noteTags';
 import {
     assertCatalogCardMutable,
     assertCatalogCardsMovable,
@@ -589,7 +590,7 @@ export interface SearchIndexCard {
 export function searchIndexCardFromNote(note: Note, cardId: number): SearchIndexCard {
     const subjectTags = getSubjectIdSet();
     const subject = note.catalogSubject ?? note.tags.find((tag) => subjectTags.has(tag)) ?? 'custom';
-    const topic = note.catalogTopic ?? (note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General');
+    const topic = note.catalogTopic ?? (note.fields[2] || note.tags.find((tag) => tag !== subject && !isStatusTag(tag)) || 'General');
     return {
         id: cardId,
         subject,
@@ -648,7 +649,7 @@ export function getNavigationCardCounts(): NavigationCardCount[] {
         try {
             const note = JSON.parse(row.noteData) as Note;
             const subject = note.catalogSubject ?? note.tags.find((tag) => subjectTags.has(tag)) ?? 'custom';
-            const topic = note.catalogTopic ?? (note.fields[2] || note.tags.find((tag) => tag !== subject) || 'General');
+            const topic = note.catalogTopic ?? (note.fields[2] || note.tags.find((tag) => tag !== subject && !isStatusTag(tag)) || 'General');
             const key = `${subject}\u001f${topic}`;
             const existing = counts.get(key);
             if (existing) existing.count += Number(row.count) || 0;

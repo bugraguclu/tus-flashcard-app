@@ -151,6 +151,12 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         setTimeout(action, Platform.OS === 'ios' ? 180 : 0);
     };
 
+    // The keyboard's return key submits these one-line forms, as Anki's own prompts do on Enter.
+    const saveTags = () => runAndClose(() => props.onSaveTags(tagsInput));
+    const saveDueDate = () => {
+        if (dueDateSpecValid) runAndClose(() => props.onSetDueDate(dueDateInput));
+    };
+
     const confirmAndClose = (title: string, message: string, action: () => void, destructive = false) => {
         close();
         setTimeout(() => confirm(title, message, action, { destructive }), Platform.OS === 'ios' ? 180 : 0);
@@ -410,8 +416,12 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     placeholderTextColor={colors.textMuted}
                                     autoCapitalize="none"
                                     autoCorrect={false}
+                                    autoFocus
+                                    returnKeyType="done"
+                                    onSubmitEditing={saveTags}
+                                    accessibilityLabel={l('Notun etiketleri', 'Note tags')}
                                 />
-                                <TouchableOpacity style={styles.confirmBtn} onPress={() => runAndClose(() => props.onSaveTags(tagsInput))}>
+                                <TouchableOpacity style={styles.confirmBtn} onPress={saveTags} accessibilityRole="button">
                                     <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
                                 </TouchableOpacity>
                             </View>
@@ -460,13 +470,21 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     maxLength={12}
                                     autoCapitalize="none"
                                     autoCorrect={false}
+                                    autoFocus
+                                    // Digits, "-" and "!" are all a due-date spec needs.
+                                    keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
+                                    returnKeyType="done"
+                                    onSubmitEditing={saveDueDate}
                                     placeholder={l('örn. 1 veya 3-7!', 'e.g. 1 or 3-7!')}
                                     placeholderTextColor={colors.textMuted}
+                                    accessibilityLabel={l('Kaç gün sonra', 'Due in days')}
                                 />
                                 <TouchableOpacity
                                     style={[styles.confirmBtn, !dueDateSpecValid && styles.confirmBtnDisabled]}
                                     disabled={!dueDateSpecValid}
-                                    onPress={() => runAndClose(() => props.onSetDueDate(dueDateInput))}
+                                    onPress={saveDueDate}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ disabled: !dueDateSpecValid }}
                                 >
                                     <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
                                 </TouchableOpacity>

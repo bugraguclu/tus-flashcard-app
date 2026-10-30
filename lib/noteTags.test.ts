@@ -1,5 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { canonifyTags } from './noteTags';
+import { canonifyTags, isStatusTag, sameTagSet } from './noteTags';
+
+describe('isStatusTag', () => {
+    it('knows Anki’s marked and leech tags in any case, and nothing else', () => {
+        expect(isStatusTag('marked')).toBe(true);
+        expect(isStatusTag('Marked')).toBe(true);
+        expect(isStatusTag('LEECH')).toBe(true);
+        expect(isStatusTag('kardiyoloji')).toBe(false);
+        expect(isStatusTag('marked::alt')).toBe(false);
+    });
+});
+
+describe('sameTagSet', () => {
+    it('treats a re-saved tag list as unchanged whatever its order or case', () => {
+        // The reviewer's Edit Tags field starts from the stored order, which Mark Note can leave
+        // unsorted; saving it untouched must not count as an edit.
+        expect(sameTagSet(['etiket', 'Yeni::Alt', 'marked'], canonifyTags('etiket Yeni::Alt marked'))).toBe(true);
+        expect(sameTagSet(['EKG'], ['ekg'])).toBe(true);
+        expect(sameTagSet(['böbrek'], ['böbrek'])).toBe(true);
+    });
+
+    it('sees an added or removed tag', () => {
+        expect(sameTagSet(['etiket'], ['etiket', 'yeni'])).toBe(false);
+        expect(sameTagSet(['etiket', 'yeni'], ['etiket'])).toBe(false);
+        expect(sameTagSet([], [])).toBe(true);
+    });
+});
 
 describe('canonifyTags', () => {
     it('splits on any run of whitespace', () => {
