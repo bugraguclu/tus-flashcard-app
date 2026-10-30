@@ -42,6 +42,7 @@ import {
     WHITEBOARD_IMAGE_MIME_TYPE,
     whiteboardImageFileName,
     whiteboardSaveNotice,
+    whiteboardSaveSize,
     type WhiteboardHandOff,
 } from '../lib/whiteboardExport';
 import type { WhiteboardCardSnapshot } from '../lib/whiteboardSession';
@@ -50,7 +51,6 @@ import {
     renderStrokePaths,
     shareWhiteboardImage,
     useWhiteboardPageCapture,
-    whiteboardSaveSize,
 } from './whiteboardSave';
 
 export interface WhiteboardHandle {

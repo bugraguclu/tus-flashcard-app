@@ -8,27 +8,13 @@ import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { getLegacyFileSystem, toFileUri } from '../lib/files';
 import { toSmoothWhiteboardPath, type WhiteboardStroke } from '../lib/whiteboardGeometry';
-import { WHITEBOARD_IMAGE_MIME_TYPE, type WhiteboardHandOff } from '../lib/whiteboardExport';
+import { WHITEBOARD_IMAGE_MIME_TYPE, type WhiteboardHandOff, type WhiteboardSaveSize } from '../lib/whiteboardExport';
 
 /**
  * The saved image is the ink on white paper, not on the transparent board: a transparent PNG
  * shows black on black in Photos' dark mode. Every palette colour reads on white.
  */
 const SAVED_PAGE_COLOR = '#ffffff';
-/** Board size used when the canvas has not been laid out yet. */
-const FALLBACK_SAVE_SIZE = { width: 420, height: 480 };
-
-export interface WhiteboardSaveSize {
-    width: number;
-    height: number;
-}
-
-export function whiteboardSaveSize(size: WhiteboardSaveSize): WhiteboardSaveSize {
-    return {
-        width: size.width || FALLBACK_SAVE_SIZE.width,
-        height: size.height || FALLBACK_SAVE_SIZE.height,
-    };
-}
 
 export function renderStrokePaths(strokes: WhiteboardStroke[]) {
     return strokes.map((stroke, index) => (

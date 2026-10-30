@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { whiteboardImageFileName, whiteboardSaveNotice } from './whiteboardExport';
+import { whiteboardImageFileName, whiteboardSaveNotice, whiteboardSaveSize } from './whiteboardExport';
 
 const turkish = (tr: string) => tr;
 const english = (_tr: string, en: string) => en;
@@ -19,6 +19,18 @@ describe('whiteboard image file name', () => {
     it('stays ASCII and free of path separators', () => {
         const name = whiteboardImageFileName(new Date(2026, 11, 31, 23, 59, 59));
         expect(name).toMatch(/^[a-z0-9-]+\.png$/);
+    });
+});
+
+describe('whiteboard save size', () => {
+    it('rounds the board to whole points, so the capture has no transparent edge', () => {
+        expect(whiteboardSaveSize({ width: 387.67, height: 199.33 })).toEqual({ width: 388, height: 199 });
+        expect(whiteboardSaveSize({ width: 402, height: 600 })).toEqual({ width: 402, height: 600 });
+    });
+
+    it('falls back to a default page before the board has been laid out', () => {
+        expect(whiteboardSaveSize({ width: 0, height: 0 })).toEqual({ width: 420, height: 480 });
+        expect(whiteboardSaveSize({ width: 0.2, height: 300 })).toEqual({ width: 420, height: 300 });
     });
 });
 

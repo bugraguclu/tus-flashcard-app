@@ -16,6 +16,25 @@ export type WhiteboardHandOff = 'shared' | 'downloaded' | 'cancelled' | 'unavail
 
 export const WHITEBOARD_IMAGE_MIME_TYPE = 'image/png';
 
+export interface WhiteboardSaveSize {
+    width: number;
+    height: number;
+}
+
+/** Board size used when the canvas has not been laid out yet. */
+const FALLBACK_SAVE_SIZE: WhiteboardSaveSize = { width: 420, height: 480 };
+
+/**
+ * The page the drawing is saved on, in whole points. The board's own width is usually fractional,
+ * and a capture of a page that size comes back with its last pixel column transparent.
+ */
+export function whiteboardSaveSize(size: WhiteboardSaveSize): WhiteboardSaveSize {
+    return {
+        width: Math.round(size.width) || FALLBACK_SAVE_SIZE.width,
+        height: Math.round(size.height) || FALLBACK_SAVE_SIZE.height,
+    };
+}
+
 const twoDigits = (value: number) => String(value).padStart(2, '0');
 
 /**
