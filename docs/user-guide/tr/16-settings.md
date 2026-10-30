@@ -63,8 +63,9 @@ değişir. Ama değişiklik **Kaydet**'e dokunana kadar saklanmaz.
 Kaydetmeden çıkmak isterseniz **Kaydedilmemiş değişiklikler** sorusu gelir. **Tamam** değişiklikleri
 atıp çıkar, **İptal** sayfada kalır.
 
-- iPhone'da ekranın sol kenarından geri kaydırmak Ayarlar'ı tamamen kapatır. Bir kategoriden
-  listeye dönmek için sol üstteki geri okunu kullanın.
+- iPhone'da ekranın sol kenarından geri kaydırmak Ayarlar'ı tamamen kapatır; kaydedilmemiş
+  değişiklik varsa ekran yerine döner ve önce sorar. Bir kategoriden listeye dönmek için sol
+  üstteki geri okunu kullanın.
 - **Varsayılan ayarlara dön** ve **Veri yönetimi** komutları **Kaydet** beklemez; onayladığınız
   anda çalışır.
 - **Bildirimler** anahtarını açtığınızda izin sorusu hemen gelir; seçiminiz yine **Kaydet** ile

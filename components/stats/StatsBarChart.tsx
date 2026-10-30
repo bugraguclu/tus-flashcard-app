@@ -13,6 +13,7 @@ import {
     stackSegments,
 } from '../../lib/chartAxis';
 import type { ChartPoint } from '../../lib/statsSeries';
+import SideDragArea from '../SideDragArea';
 import { useChartScrub } from './useChartScrub';
 
 export interface StatsChartSeries {
@@ -207,7 +208,8 @@ export default function StatsBarChart({
                 ) : null}
             </View>
 
-            <View
+            <SideDragArea
+                enabled={hasData}
                 style={{ height: svgHeight }}
                 onLayout={onLayout}
                 {...scrubHandlers}
@@ -348,7 +350,7 @@ export default function StatsBarChart({
                         <Text style={styles.emptyTitle}>{emptyTitle}</Text>
                     </View>
                 ) : null}
-            </View>
+            </SideDragArea>
 
             {series.length > 1 && hasData && (
                 <View style={styles.legend}>

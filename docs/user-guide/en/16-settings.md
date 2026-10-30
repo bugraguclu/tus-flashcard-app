@@ -62,8 +62,9 @@ immediately. But nothing is stored until you tap **Save**.
 If you try to leave without saving, **Unsaved changes** asks first. **OK** discards your changes
 and leaves; **Cancel** keeps you on the page.
 
-- On iPhone, swiping back from the left edge of the screen closes Settings entirely. To go from a
-  category back to the list, use the back arrow at the top left.
+- On iPhone, swiping back from the left edge of the screen closes Settings entirely; with unsaved
+  changes the screen comes back and asks first. To go from a category back to the list, use the
+  back arrow at the top left.
 - **Restore default settings** and the **Data Management** commands do not wait for **Save**; they
   run as soon as you confirm.
 - Turning on **Notifications** asks for permission right away; your choice is still stored with

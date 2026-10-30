@@ -10,6 +10,7 @@ import {
     normalizeReviewTapActions,
     normalizeSwipeSensitivity,
     resolveReviewSwipeAction,
+    reviewerAllowsFullScreenBackSwipe,
     reviewTapZoneAt,
     swipeThresholdForSensitivity,
     type ReviewSwipeBindings,
@@ -162,5 +163,20 @@ describe('reviewer answer availability', () => {
             gesturesEnabled: false,
             swipeUpAction: 'good',
         })).toBe(false);
+    });
+});
+
+describe('reviewer back swipe', () => {
+    it('leaves a right swipe bound to Decks or to nothing to the system back swipe', () => {
+        expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: true, whiteboardActive: false })).toBe(true);
+        expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: true, swipeRightAction: 'decks', whiteboardActive: false })).toBe(true);
+        expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: true, swipeRightAction: 'off', whiteboardActive: false })).toBe(true);
+        expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: false, swipeRightAction: 'good', whiteboardActive: false })).toBe(true);
+    });
+
+    it('keeps a right swipe bound to another action, and whiteboard ink, on the card', () => {
+        expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: true, swipeRightAction: 'good', whiteboardActive: false })).toBe(false);
+        expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: true, swipeRightAction: 'tools', whiteboardActive: false })).toBe(false);
+        expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: false, whiteboardActive: true })).toBe(false);
     });
 });

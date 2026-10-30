@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { PanResponder, type GestureResponderHandlers } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { SIDE_DRAG_IS_NATIVE, type SideDragHandlers } from '../SideDragArea';
 import { useChartScrollLock } from './ChartScrollLock';
 
 interface ChartScrubOptions {
@@ -19,38 +20,48 @@ interface ChartScrubOptions {
  * drag scrubs from bucket to bucket, with a light tick on each, while the page holds still. A
  * drag that starts out vertical is left to the page, so a chart never traps the scroll that
  * passes over it.
+ *
+ * The handlers go on a SideDragArea around the plot. On iOS that area reports the sideways drag
+ * (a responder would lose it to the back swipe), and the responder keeps only the taps.
  */
-export function useChartScrub(options: ChartScrubOptions): GestureResponderHandlers {
+export function useChartScrub(options: ChartScrubOptions): GestureResponderHandlers & SideDragHandlers {
     const latest = useRef(options);
     latest.current = options;
     const lockScroll = useChartScrollLock();
     const lockRef = useRef(lockScroll);
     lockRef.current = lockScroll;
-    const gesture = useRef({ scrubbing: false, startX: 0 });
+    const gesture = useRef({ scrubbing: false, startX: 0, sideDragged: false });
+
+    const selectAt = (x: number) => {
+        const index = latest.current.indexAt(x);
+        if (index !== null && index !== latest.current.selected) {
+            latest.current.onSelect(index);
+            void Haptics.selectionAsync().catch(() => undefined);
+        }
+    };
 
     const responder = useMemo(() => PanResponder.create({
         onStartShouldSetPanResponder: () => latest.current.enabled,
         onMoveShouldSetPanResponder: (_event, state) => latest.current.enabled
+            && !SIDE_DRAG_IS_NATIVE
             && Math.abs(state.dx) > 4
             && Math.abs(state.dx) > Math.abs(state.dy),
         onPanResponderGrant: (event) => {
-            gesture.current = { scrubbing: false, startX: event.nativeEvent.locationX };
+            gesture.current = { scrubbing: false, startX: event.nativeEvent.locationX, sideDragged: false };
         },
         onPanResponderMove: (_event, state) => {
             const current = gesture.current;
+            if (SIDE_DRAG_IS_NATIVE) return;
             if (!current.scrubbing) {
                 if (Math.abs(state.dx) < 6 || Math.abs(state.dx) < Math.abs(state.dy)) return;
                 current.scrubbing = true;
                 lockRef.current(true);
             }
-            const index = latest.current.indexAt(current.startX + state.dx);
-            if (index !== null && index !== latest.current.selected) {
-                latest.current.onSelect(index);
-                void Haptics.selectionAsync().catch(() => undefined);
-            }
+            selectAt(current.startX + state.dx);
         },
         onPanResponderRelease: () => {
             const current = gesture.current;
+            if (current.sideDragged) return;
             if (current.scrubbing) {
                 current.scrubbing = false;
                 lockRef.current(false);
@@ -71,5 +82,9 @@ export function useChartScrub(options: ChartScrubOptions): GestureResponderHandl
         onShouldBlockNativeResponder: () => false,
     }), []);
 
-    return responder.panHandlers;
+    return {
+        ...responder.panHandlers,
+        onDragStart: () => { gesture.current.sideDragged = true; },
+        onDragMove: ({ x0, dx }) => selectAt(x0 + dx),
+    };
 }

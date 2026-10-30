@@ -13,6 +13,7 @@ import { useI18n } from '../hooks/useI18n';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { HeaderBackIcon, HeaderForwardIcon } from './HeaderBackIcon';
 import StudyDayBox, { formatWeekRange, mondayIndex, studyWeekdayLabels } from './StudyDayBox';
+import SideDragArea, { SIDE_DRAG_IS_NATIVE } from './SideDragArea';
 
 const DAY_MS = 86400000;
 
@@ -89,26 +90,29 @@ export default function WeekStreakStrip({
 
     // Swipe between weeks (right = older, left = newer), matching the arrow buttons.
     // Created once; the handlers use functional setState so they never see stale state.
+    const pageBySwipe = useCallback((dx: number) => {
+        if (dx > 40) {
+            setWeeksBack((prev) => prev + 1);
+        } else if (dx < -40) {
+            setWeeksBack((prev) => Math.max(0, prev - 1));
+        }
+    }, []);
     const panResponder = useRef(
         PanResponder.create({
-            onMoveShouldSetPanResponder: (_evt, gesture) =>
-                Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
-            onPanResponderRelease: (_evt, gesture) => {
-                if (gesture.dx > 40) {
-                    setWeeksBack((prev) => prev + 1);
-                } else if (gesture.dx < -40) {
-                    setWeeksBack((prev) => Math.max(0, prev - 1));
-                }
-            },
+            // On iOS the swipe is read by SideDragArea instead.
+            onMoveShouldSetPanResponder: (_evt, gesture) => !SIDE_DRAG_IS_NATIVE
+                && Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+            onPanResponderRelease: (_evt, gesture) => pageBySwipe(gesture.dx),
         }),
     ).current;
 
     const atCurrentWeek = weeksBack === 0;
 
     return (
-        <View
+        <SideDragArea
             // A horizontal swipe on web must page between weeks, not select the labels.
             style={[styles.container, Platform.OS === 'web' && ({ userSelect: 'none' } as object)]}
+            onDragEnd={({ dx }) => pageBySwipe(dx)}
             {...panResponder.panHandlers}
         >
             <View style={styles.headerRow}>
@@ -177,7 +181,7 @@ export default function WeekStreakStrip({
                     );
                 })}
             </View>
-        </View>
+        </SideDragArea>
     );
 }
 

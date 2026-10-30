@@ -201,3 +201,21 @@ export function canGradeRevealedCard(input: ReviewerAnswerControlInput): boolean
     }
     return false;
 }
+
+/**
+ * Whether iOS may take a rightward swipe anywhere on the reviewer as Back (iOS 26 and later); the
+ * swipe from the screen's left edge stays available either way. Back from the reviewer is the deck
+ * list, so a right swipe bound to Decks (or to nothing) is left to iOS, which then slides the
+ * reviewer away under the finger. A right swipe bound to anything else, and ink drawn on the
+ * whiteboard, must reach the card instead of leaving the screen.
+ */
+export function reviewerAllowsFullScreenBackSwipe(input: {
+    gesturesEnabled?: boolean;
+    swipeRightAction?: ReviewGestureAction;
+    whiteboardActive: boolean;
+}): boolean {
+    if (input.whiteboardActive) return false;
+    if (!input.gesturesEnabled) return true;
+    const right = resolveSwipeActions({ swipeRightAction: input.swipeRightAction }).swipeRightAction;
+    return right === 'decks' || right === 'off';
+}

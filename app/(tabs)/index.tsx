@@ -20,7 +20,7 @@ import {
 import { Text, TextInput } from '../../components/AppText';
 import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Redirect, useFocusEffect, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
+import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Spacing, FontSize, Shadows, BorderRadius, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
@@ -147,6 +147,7 @@ import {
     DEFAULT_QUESTION_TAP_ACTIONS,
     reviewTapZoneAt,
     resolveReviewSwipeAction,
+    reviewerAllowsFullScreenBackSwipe,
     type ReviewSwipeGesture,
 } from '../../lib/reviewerTouchControls';
 import { extractAnkiTtsSegments } from '../../lib/ankiTts';
@@ -274,6 +275,7 @@ export default function StudyScreen() {
     const params = useLocalSearchParams();
     const pathname = usePathname();
     const router = useRouter();
+    const navigation = useNavigation();
     const insets = useSafeAreaInsets();
     const { width, height: windowHeight } = useWindowDimensions();
     const isCompact = width < 600;
@@ -2086,6 +2088,16 @@ export default function StudyScreen() {
         width,
         handleCardSwipe,
     ]);
+
+    const fullScreenBackSwipe = reviewerAllowsFullScreenBackSwipe({
+        gesturesEnabled: settings.gesturesEnabled,
+        swipeRightAction: settings.swipeRightAction,
+        whiteboardActive,
+    });
+    useEffect(() => {
+        // Unset keeps the system default: anywhere on screen from iOS 26, the left edge before it.
+        navigation.setOptions({ fullScreenGestureEnabled: fullScreenBackSwipe ? undefined : false });
+    }, [navigation, fullScreenBackSwipe]);
 
     // The whiteboard persists ink per card during the session: advancing to another card
     // saves any drawing made on the outgoing card, and returning to a card that was not answered

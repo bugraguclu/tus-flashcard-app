@@ -5,6 +5,7 @@ import Svg, { Circle, G, Line, Path, Text as SvgText } from 'react-native-svg';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { barGeometry, indexAtPosition } from '../../lib/chartAxis';
 import { CHART_AXIS_WIDTH, CHART_RIGHT_GUTTER } from './StatsBarChart';
+import SideDragArea from '../SideDragArea';
 import { useChartScrub } from './useChartScrub';
 
 interface StatsRateStripProps {
@@ -67,7 +68,7 @@ export default function StatsRateStrip({
     return (
         <View style={styles.wrap}>
             <Text style={styles.title} maxFontSizeMultiplier={1.3}>{title}</Text>
-            <View
+            <SideDragArea
                 style={{ height: HEIGHT }}
                 onLayout={(event: LayoutChangeEvent) => setWidth(Math.round(event.nativeEvent.layout.width))}
                 {...scrubHandlers}
@@ -121,7 +122,7 @@ export default function StatsRateStrip({
                         </Svg>
                     </View>
                 )}
-            </View>
+            </SideDragArea>
         </View>
     );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { useNavigation } from 'expo-router';
+import { usePreventRemove } from 'expo-router/react-navigation';
 import { confirmAsync } from '../lib/confirm';
 import { isWriterTakeoverReloading } from '../lib/db';
 import { addPopStateGuard } from '../lib/webPopStateGuard';
@@ -14,6 +15,11 @@ type UnsavedChangesGuardOptions = {
  * Protect a routed editor from every navigation action, including native back and swipe-back.
  * The caller owns the draft snapshot; this hook only turns a dirty result into one guarded
  * beforeRemove flow and allows the original navigation action after explicit confirmation.
+ *
+ * `usePreventRemove` rather than a bare `beforeRemove` listener: it also tells the native stack,
+ * which then puts the screen back after an iOS back swipe and asks over it. A bare
+ * listener only hears about the swipe once iOS has already taken the screen away, so the question
+ * appeared over the previous screen and Cancel had nothing left to return to.
  */
 export function useUnsavedChangesGuard(
     isDirty: boolean,
@@ -26,10 +32,11 @@ export function useUnsavedChangesGuard(
 
     dirtyRef.current = isDirty;
 
-    useEffect(() => navigation.addListener('beforeRemove', (event: any) => {
-        if (!dirtyRef.current || allowNavigationRef.current) return;
-
-        event.preventDefault();
+    usePreventRemove(isDirty, ({ data }) => {
+        if (allowNavigationRef.current) {
+            navigation.dispatch(data.action);
+            return;
+        }
         if (confirmationOpenRef.current) return;
         confirmationOpenRef.current = true;
 
@@ -37,12 +44,12 @@ export function useUnsavedChangesGuard(
             .then((confirmed) => {
                 if (!confirmed) return;
                 allowNavigationRef.current = true;
-                navigation.dispatch(event.data.action);
+                navigation.dispatch(data.action);
             })
             .finally(() => {
                 confirmationOpenRef.current = false;
             });
-    }), [message, navigation, title]);
+    });
 
     // The browser's own Back (a button, a trackpad swipe, Alt+Left) reaches Expo Router as a
     // `popstate`, which it follows without any `beforeRemove`. This guard hears it first (see
