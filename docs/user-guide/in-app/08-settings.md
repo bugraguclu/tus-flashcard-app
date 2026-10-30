@@ -242,7 +242,7 @@ Hepsi `lib/permissions.ts:20-41` üzerinden açılır: iPhone'da **Ayarları Aç
 | help.permissions.microphone | Ses kaydı başlatma, `components/AudioRecordModal.tsx:43-50` | uyarı | İzin gerekli — Ses kaydetmek için mikrofon izni vermeniz gerekiyor. Ayarlardan mikrofon iznini açabilirsiniz. | Permission Required — Allow microphone access to record audio. You can enable microphone access in Settings. | Mevcut — koru |
 | help.permissions.photos | Galeriden görsel/video, `components/MediaAttachButton.tsx:128-135`, `:237-244` | uyarı | (mevcut metin) | (existing) | Mevcut — koru |
 | help.permissions.camera | Kameradan fotoğraf, `components/MediaAttachButton.tsx:163-170` | uyarı | (mevcut metin) | (existing) | Mevcut — koru |
-| help.permissions.photoEditor | Çizim sayfasına görsel/fotoğraf, `components/PhotoEditorModal.tsx:507-514`, `:532-539` | uyarı | (mevcut metinler) | (existing) | Mevcut — koru |
+| help.permissions.photoEditor | Çizim sayfasına galeriden görsel, `components/drawing/pickDrawingPicture.ts` | uyarı | (mevcut metin) | (existing) | Mevcut — koru |
 | help.permissions.web | Web'de bütün izin uyarıları, `lib/i18n.ts:42` | uyarı | Tarayıcı bu izni vermedi. Adres çubuğunun yanındaki site ayarlarından bu siteye izin verip tekrar deneyin. | The browser did not grant this permission. Allow it for this site in the site settings next to the address bar, then try again. | Mevcut — koru |
 | help.permissions.iosSystem | iOS sistem penceresi metinleri, `locales/tr.json`, `locales/en.json` (fotoğraf, kamera, mikrofon) | sistem metni | (mevcut metinler) | (existing) | Mevcut — koru |
 

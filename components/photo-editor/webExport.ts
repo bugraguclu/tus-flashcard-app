@@ -17,6 +17,8 @@ import {
     scaleBlankCanvasRuling,
     type BlankCanvasPage,
 } from '../../lib/blankCanvas';
+import { applyPhotoColorMatrix } from '../../lib/photoAdjustments';
+import { PHOTO_JPEG_QUALITY } from '../../lib/photoCompression';
 
 /** The web export's counterpart to `renderAnnotation`, scaled the same way and by the same rule. */
 function drawAnnotationOnCanvas(
@@ -196,24 +198,37 @@ async function drawPlacedPicturesOnCanvas(
     }
 }
 
-export async function rasterizePhotoWeb(
-    uri: string,
+/**
+ * Web export for a photo from the photo editor. `baseUri` is the photo with its turn, mirror and
+ * crop already in its pixels, so it fills the canvas as it is; the light and colour are applied to
+ * the pixels the way the on-screen filter applies them, and the markup goes on top.
+ */
+export async function rasterizeEditedPhotoWeb(
+    baseUri: string,
+    colorMatrix: number[] | null,
     annotations: PhotoAnnotation[],
     surface: { width: number; height: number; scale: number },
+    format: 'jpeg' | 'png',
 ): Promise<Uint8Array> {
     const width = Math.max(1, Math.round(surface.width));
     const height = Math.max(1, Math.round(surface.height));
-    const image = await loadWebImage(uri);
+    const image = await loadWebImage(baseUri);
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas context unavailable');
     ctx.drawImage(image, 0, 0, width, height);
+    if (colorMatrix) {
+        const pixels = ctx.getImageData(0, 0, width, height);
+        applyPhotoColorMatrix(pixels.data, colorMatrix);
+        ctx.putImageData(pixels, 0, 0);
+    }
     await drawPlacedPicturesOnCanvas(ctx, annotations, width, height, surface.scale);
     annotations.forEach((annotation) => drawAnnotationOnCanvas(ctx, annotation, width, height, surface.scale));
+    const type = format === 'png' ? 'image/png' : 'image/jpeg';
     const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((value) => value ? resolve(value) : reject(new Error('PNG encode failed')), 'image/png');
+        canvas.toBlob((value) => value ? resolve(value) : reject(new Error('Photo encode failed')), type, PHOTO_JPEG_QUALITY);
     });
     return new Uint8Array(await blob.arrayBuffer());
 }

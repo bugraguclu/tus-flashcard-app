@@ -52,7 +52,7 @@ more) kullanır.
 - Note: **[…]** is on the **Home** tab while the toolbar is shown. If you hid the toolbar, type the deletion as `{{c1::…}}`.
 
 ### help.photoEditor.sheet — Fotoğraf ve çizim düzenleyici bilgi sayfası (yeni)
-- **Yer:** Fotoğrafı düzenle / Çizim tam ekran düzenleyicisi, başlığın (`headerCenter`) sağında küçük ⓘ (yeni), `components/PhotoEditorModal.tsx:1185-1188`. Erişilebilirlik etiketi: "Düzenleyici hakkında" / "About the editor"
+- **Yer:** Fotoğrafı düzenle tam ekran düzenleyicisi, başlığın (`headerCenter`) sağında küçük ⓘ (yeni), `components/photo-editor/PhotoEditorModal.tsx` (başlık). Erişilebilirlik etiketi: "Düzenleyici hakkında" / "About the editor"
 - **Tetikleyici:** ⓘ'ye dokunma
 - **Bileşen:** bilgi sayfası (düzenleyicinin tam ekran modalının içinde açılır)
 - **Daha fazla bilgi:** `tr/08-adding-and-editing.md#photo-editor`
@@ -160,15 +160,13 @@ more) kullanır.
 | help.audio.idle | Ses kaydet penceresinde durum satırı (kayıt başlamadan), `AudioRecordModal.tsx:125` | durum metni | Başlamak için dokunun. Bitirdiğinizde dinleyip ekleyebilirsiniz. | Tap to start. When you stop, you can listen back and add it. | Mevcut — güncelle (şimdiki metin: "Başlamak için dokunun" / "Tap to start") |
 | help.audio.cancelHint | **İptal** düğmesi erişilebilirlik ipucu, `AudioRecordModal.tsx:138` | erişilebilirlik ipucu | Kayıt varsa silmeden önce sorar | Asks before discarding a recording | Yeni |
 
-### Fotoğrafı düzenle / Çizim (`components/PhotoEditorModal.tsx`, `components/photo-editor/*`)
+### Fotoğrafı düzenle (`components/photo-editor/PhotoEditorModal.tsx`, `components/photo-editor/*`)
 
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.photoEditor.infoA11y | Başlık yanındaki ⓘ (yeni), `PhotoEditorModal.tsx:1185-1188` | erişilebilirlik etiketi | Düzenleyici hakkında | About the editor | Yeni |
-| help.photoEditor.coverSubtitle | **Ört** seçiliyken başlık altındaki ipucu, `PhotoEditorModal.tsx:1168` | durum ipucu | Kapatmak istediğiniz yerin üzerinden sürükleyin | Drag across the area you want to cover | Mevcut — güncelle (eski metin: "Ört seçili" / "Cover selected") |
-| help.photoEditor.subtitles | Diğer araçların başlık altı ipuçları, `PhotoEditorModal.tsx:1152-1167` | durum ipucu | — | — | Mevcut — koru |
-| help.photoEditor.trash | Sürüklerken çöp alanı, `CanvasOverlays.tsx:320` | ipucu | — | — | Mevcut — koru |
-| help.photoEditor.colorNames | Renk düğmelerinin erişilebilirlik etiketleri, `EditorControls.tsx:277`, `EditorSheets.tsx:374` | erişilebilirlik etiketi | Beyaz, Siyah, Kırmızı, Turuncu, Kehribar, Yeşil, Camgöbeği, Gök mavisi, Mor, Pembe (`DRAW_COLORS` sırasıyla) | White, Black, Red, Orange, Amber, Green, Cyan, Sky blue, Violet, Pink | Mevcut — güncelle (eski metin: "Renk #ef4444" gibi onaltılık kod) |
+| help.photoEditor.infoA11y | Başlık yanındaki ⓘ (yeni), `photo-editor/PhotoEditorModal.tsx` (başlık) | erişilebilirlik etiketi | Düzenleyici hakkında | About the editor | Yeni |
+| help.photoEditor.hints | Geri al satırının solundaki ipucu, Kırp ve Ayarla sekmelerinde, `photo-editor/PhotoEditorModal.tsx` | durum ipucu | Köşeleri sürükleyerek kırpın · Karşılaştırmak için basılı tutun | Drag the corners to crop · Press and hold to compare | Mevcut — koru (araç başına başlık altı ipuçları ve çöp alanı eski düzenleyiciyle kaldırıldı) |
+| help.photoEditor.colorNames | Renk düğmelerinin erişilebilirlik etiketleri, `drawing/drawingTools.ts` (`drawingInkName`) | erişilebilirlik etiketi | Kırmızı, Sarı, Beyaz, Siyah, Mavi (`PHOTO_PEN_INKS` sırasıyla) | Red, Yellow, White, Black, Blue | Mevcut — koru |
 
 ### Etiketler ve Not türü seçici (`components/TagPickerModal.tsx`, `components/NoteTypePickerModal.tsx`)
 

@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Image as NativeImage,
@@ -38,7 +38,7 @@ import {
 } from '../../lib/drawingPad';
 import PaperSwatch, { pageColorLabel, paperLabel } from '../PaperSwatch';
 import { EXPORT_MAX_DIMENSION, makeId, type ExportSurface } from '../photo-editor/editorModel';
-import { renderAnnotation, renderPlacedPictures } from '../photo-editor/annotationRendering';
+import { AnnotationLayer, renderAnnotation } from '../photo-editor/annotationRendering';
 import { rasterizeBlankCanvasWeb } from '../photo-editor/webExport';
 import { ExportSurfaceView } from '../photo-editor/ExportSurfaceView';
 import { DrawingToolbar } from './DrawingToolbar';
@@ -68,18 +68,6 @@ const DEFAULT_SIZES: Record<DrawingTool, DrawingSize> = {
 function pageSizeFor(setup: BlankCanvasSetup) {
     return BLANK_CANVAS_SHAPES.find((shape) => shape.id === setup.shape) ?? BLANK_CANVAS_SHAPES[0];
 }
-
-/** What is already on the page. Kept apart from the live mark so a stroke in progress redraws alone. */
-const AnnotationLayer = memo(function AnnotationLayer({ annotations, width, height }: { annotations: PhotoAnnotation[]; width: number; height: number }) {
-    return (
-        <>
-            <View style={StyleSheet.absoluteFill}>{renderPlacedPictures(annotations, width, height)}</View>
-            <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
-                {annotations.map((annotation) => renderAnnotation(annotation, width, height))}
-            </Svg>
-        </>
-    );
-});
 
 /**
  * A blank page to draw on for a card: pen, highlighter, eraser and text on the bar, arrows,

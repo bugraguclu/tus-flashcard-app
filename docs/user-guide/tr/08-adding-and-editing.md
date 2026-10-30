@@ -12,7 +12,8 @@ app_screens:
   - "Önizleme — components/editor/EditorPreviewModal.tsx"
   - "Ek ekle — components/MediaAttachButton.tsx"
   - "Ses kaydet — components/AudioRecordModal.tsx"
-  - "Fotoğrafı düzenle / Çizim — components/PhotoEditorModal.tsx"
+  - "Fotoğrafı düzenle — components/photo-editor/PhotoEditorModal.tsx"
+  - "Çizim — components/drawing/DrawingPadModal.tsx"
   - "Etiketler — components/TagPickerModal.tsx"
 verified_against: master c6108e6 (2026-10-25)
 ---
@@ -165,24 +166,33 @@ nasıl çaldığı: [Çalışma ekranı](05-studying.md#audio-and-tts).
 
 <a id="photo-editor"></a>
 ## Fotoğrafı düzenleme
-<!-- Uygulamada: Fotoğrafı düzenle / Çizim başlığının yanındaki ⓘ (yeni, components/PhotoEditorModal.tsx:1185-1188) bilgi sayfasının "Daha fazla bilgi" bağlantısı → bu bölüm -->
+<!-- Uygulamada: Fotoğrafı düzenle başlığının yanındaki ⓘ (yeni, components/photo-editor/PhotoEditorModal.tsx, başlık) bilgi sayfasının "Daha fazla bilgi" bağlantısı → bu bölüm -->
 
-**Kırp ve düzenle** tam ekran düzenleyiciyi açar. Başlığın altındaki satır, seçili aracın nasıl
-kullanılacağını söyler.
+**Kırp ve düzenle** fotoğrafı [çizim sayfası](#drawing-page) gibi düzenlenmiş bir ekranda açar: üstte
+**Vazgeç** ve **Ekle**, başlığın altında fotoğrafın ekleneceği boyut, her adımı geri alan ve
+yineleyen ↶ ↷, altta da üç sekme. Fotoğraf **Kırp** sekmesinde açılır.
 
-- **Kalem**, **Vurgula**, **Ok**, **Dikdörtgen**, **Elips:** Parmağınızla çizin.
-- **Ört:** Üzerinden sürüklediğiniz alanı kapatan dolu bir kutu çizer. Kutu resme kalıcı olarak
-  işlenir; çalışırken açılıp kapanmaz.
-- **Metin:** Sayfaya dokunun, yazın, **Tamamlandı**'ya dokunun. Metni sürükleyerek taşır, köşeden
-  büyütür, düğmeyle çevirir, çift dokunarak düzenlersiniz. İki parmakla büyütüp döndürebilirsiniz.
-- **Silgi:** **Kısmi** yalnızca kalem izlerini dokunduğunuz yerden siler; şekilleri ve metinleri
-  bütün olarak kaldırır. **Tümü** dokunduğunuz çizimi tümüyle siler.
-- **Kırp:** Köşeleri sürükleyin veya bir oran seçin, sonra **Kırp**'a dokunun. **Döndür** resmi
-  saat yönünde çeyrek tur çevirir.
+- **Kırp:** Çerçeveyi bir köşesinden veya kenarından sürükleyerek boyutlandırın, içinden
+  sürükleyerek taşıyın; kesilecek kısım karartılır. Çerçevenin biçimini sabitlemek için **Serbest**,
+  **Orijinal**, **Kare**, **4:3**, **3:4**, **16:9** veya **9:16**'yı seçin. **Sola döndür** ve
+  **Sağa döndür** fotoğrafı çeyrek tur çevirir, **Yansıt** soldan sağa aynalar, **Sıfırla**
+  fotoğrafın tamamını dik haliyle geri getirir.
+- **Ayarla:** **Filtreler**'de hazır görünümler vardır: **Orijinal**, **Canlı**, **Belge** (fotoğrafı
+  çekilmiş bir sayfanın zemini beyaza, yazısı siyaha döner), **Siyah-beyaz**, **Sıcak** ve **Soğuk**.
+  **Parlaklık**, **Kontrast**, **Doygunluk** ve **Sıcaklık**'ın her birinin bir kaydırıcısı vardır;
+  yanındaki sayıya dokunmak onu 0'a döndürür, oynatılan kaydırıcının üstünde bir nokta görünür.
+  Ayarsız halini görmek için fotoğrafa basılı tutun.
+- **Çiz:** Çizim sayfasının **Kalem**, **Fosforlu**, **Silgi** ve **Metin** araçları; **Diğer**'de
+  **Ok**, **Dikdörtgen**, **Elips** ve bir yeri dolu kutuyla kapatan **Ört**. Bir metin **Kenarlı**,
+  renkli plaka üzerinde **Etiket** ya da **Düz** olabilir. Metne dokunarak değiştirin, sürükleyerek
+  taşıyın, köşesindeki 🗑 ile silin.
 
-Taşıdığınız bir nesneyi alttaki **Silmek için buraya sürükleyin** alanına bırakırsanız silinir.
-↶ ve ↷ geri alır ve yineler; 🗑 tüm düzenlemeleri temizler (bu da geri alınabilir). **Tamamlandı**
-resmi alana ekler. **İptal** değişiklikleri atmadan önce sorar.
+Sekmeler istenen sırayla kullanılabilir ve yeniden açılabilir: kırpma sonradan genişletilebilir,
+çizimler fotoğrafla birlikte taşınır ve döner. Kırpmanın dışında kalan çizimler eklenen görsele
+girmez. Fotoğrafın üstündeki saat düğmesi orijinal fotoğrafa döner (bu da geri alınabilir). **Ekle**
+fotoğrafı alana ekler: hiç değiştirilmemiş bir fotoğraf seçildiği gibi, tam çözünürlükte eklenir,
+düzenlenmiş olansa uzun kenarı en çok 2000 piksel olacak şekilde. **Vazgeç** değişiklikleri atmadan
+önce sorar.
 
 <a id="drawing-page"></a>
 ## Boş tuvale çizim

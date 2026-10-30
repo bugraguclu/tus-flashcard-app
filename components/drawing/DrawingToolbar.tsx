@@ -15,7 +15,7 @@ import {
 } from '../../lib/drawingPad';
 import { blankCanvasLuminance } from '../../lib/blankCanvas';
 import { MoreGlyph } from './drawingGlyphs';
-import { DRAWING_TOOL_GLYPHS, drawingToolLabel } from './drawingTools';
+import { DRAWING_TOOL_GLYPHS, drawingInkName, drawingToolLabel } from './drawingTools';
 
 interface DrawingToolbarProps {
     tool: DrawingTool;
@@ -52,10 +52,6 @@ export function DrawingToolbar({
     const sizeLabels = tool === 'text' || tool === 'image'
         ? [l('Küçük', 'Small'), l('Orta', 'Medium'), l('Büyük', 'Large')]
         : [l('İnce', 'Thin'), l('Orta', 'Medium'), l('Kalın', 'Thick')];
-    // Both palettes run in the same order, so a colour is named by its place in the row.
-    const inkNames = tool === 'highlighter'
-        ? [l('Sarı', 'Yellow'), l('Yeşil', 'Green'), l('Pembe', 'Pink'), l('Mavi', 'Blue'), l('Turuncu', 'Orange')]
-        : [inks[0] === '#ffffff' ? l('Beyaz', 'White') : l('Siyah', 'Black'), l('Mavi', 'Blue'), l('Kırmızı', 'Red'), l('Yeşil', 'Green'), l('Turuncu', 'Orange')];
     // The size buttons preview the result in the ink in hand. White ink would vanish on the light
     // button, so a very light ink is previewed in grey.
     const previewColor = tool === 'eraser' || tool === 'image' || blankCanvasLuminance(color) > 0.85
@@ -128,7 +124,7 @@ export function DrawingToolbar({
 
             <View style={styles.row}>
                 <View style={styles.swatches}>
-                    {inks.map((ink, index) => {
+                    {inks.map((ink) => {
                         const selected = ink === color;
                         return (
                             <TouchableOpacity
@@ -136,7 +132,7 @@ export function DrawingToolbar({
                                 style={[styles.swatchRing, selected && { borderColor: colors.accent }]}
                                 onPress={() => onColorChange(ink)}
                                 accessibilityRole="button"
-                                accessibilityLabel={inkNames[index] ?? ink}
+                                accessibilityLabel={drawingInkName(ink, l)}
                                 accessibilityState={{ selected }}
                             >
                                 <View style={[styles.swatch, { backgroundColor: ink }]} />

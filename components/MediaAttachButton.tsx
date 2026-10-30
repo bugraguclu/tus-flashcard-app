@@ -12,7 +12,7 @@ import { attachmentMediaFilename, mediaFilenameForPickedAsset } from '../lib/med
 import { mediaReferenceSnippet, soundSafeMediaFilename, type MediaReferenceKind } from '../lib/mediaAttachment';
 import { attachmentKindFor } from '../lib/attachmentKind';
 import AudioRecordModal from './AudioRecordModal';
-import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
+import PhotoEditorModal, { type EditablePhoto } from './photo-editor/PhotoEditorModal';
 import DrawingPadModal from './drawing/DrawingPadModal';
 import { useI18n } from '../hooks/useI18n';
 import SwipeDismissSheet from './SwipeDismissSheet';
@@ -469,7 +469,10 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                             <View style={styles.optionCopy}>
                                 <Text style={styles.optionLabel}>{l('Kırp ve düzenle', 'Crop & edit')}</Text>
                                 <Text style={styles.optionCaption}>
-                                    {l('Kırpma, çizim, ok, metin ve örtme araçları.', 'Crop, draw, arrows, text and cover-ups.')}
+                                    {l(
+                                        'Kırpma, döndürme, ışık ve renk ayarı; kalem, metin, ok ve örtme.',
+                                        'Crop, rotate, light and colour; pen, text, arrows and cover-ups.',
+                                    )}
                                 </Text>
                             </View>
                         </TouchableOpacity>

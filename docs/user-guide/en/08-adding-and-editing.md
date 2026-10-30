@@ -12,7 +12,8 @@ app_screens:
   - "Preview — components/editor/EditorPreviewModal.tsx"
   - "Add Attachment — components/MediaAttachButton.tsx"
   - "Record Audio — components/AudioRecordModal.tsx"
-  - "Edit Photo / Drawing — components/PhotoEditorModal.tsx"
+  - "Edit Photo — components/photo-editor/PhotoEditorModal.tsx"
+  - "Drawing — components/drawing/DrawingPadModal.tsx"
   - "Tags — components/TagPickerModal.tsx"
 verified_against: master c6108e6 (2026-10-25)
 ---
@@ -154,24 +155,32 @@ the note. How audio plays while you study: [Studying](05-studying.md#audio-and-t
 
 <a id="photo-editor"></a>
 ## Editing a photo
-<!-- In the app: ⓘ next to the Edit Photo / Drawing title (new, components/PhotoEditorModal.tsx:1185-1188), the info sheet's "Learn more" link → this section -->
+<!-- In the app: ⓘ next to the Edit Photo title (new, components/photo-editor/PhotoEditorModal.tsx, header), the info sheet's "Learn more" link → this section -->
 
-**Crop & edit** opens a full-screen editor. The line under the title tells you how to use the tool in
-hand.
+**Crop & edit** opens the photo in an editor laid out like the [drawing page](#drawing-page):
+**Cancel** and **Add** at the top, the size the photo will be added at under the title, ↶ and ↷ to
+undo and redo any step, and three tabs at the bottom. The photo opens on **Crop**.
 
-- **Pen**, **Highlighter**, **Arrow**, **Rectangle**, **Ellipse:** draw with your finger.
-- **Cover:** draws a solid box over the area you drag across. The box is burned into the image; it
-  does not open or close while you study.
-- **Text:** tap the page, type, tap **Done**. Drag a label to move it, pull a corner to resize it,
-  turn it by the knob, double-tap to edit it. Two fingers resize and turn it too.
-- **Eraser:** **Partial** rubs out pen strokes only where you touch, and removes shapes and labels
-  whole. **Whole** removes everything you touch in one go.
-- **Crop:** drag the corners or pick a ratio, then tap **Crop**. **Rotate** turns the image a quarter
-  turn clockwise.
+- **Crop:** drag a corner or an edge of the frame to resize it, or drag inside it to move it; the
+  part that is cut away is dimmed. Pick **Free**, **Original**, **Square**, **4:3**, **3:4**,
+  **16:9** or **9:16** to lock the frame's shape. **Rotate Left** and **Rotate Right** turn the photo
+  a quarter turn, **Mirror** flips it left to right, and **Reset** brings back the whole photo,
+  upright.
+- **Adjust:** **Filters** holds ready-made looks: **Original**, **Vivid**, **Document** (a
+  photographed page turns white, its writing black), **Mono**, **Warm** and **Cool**.
+  **Brightness**, **Contrast**, **Saturation** and **Warmth** each have a slider; tap the number
+  beside it to set it back to 0, and a dot marks a slider that has been moved. Press and hold the
+  photo to see it without the adjustments.
+- **Draw:** the drawing page's **Pen**, **Highlighter**, **Eraser** and **Text**, with **Arrow**,
+  **Rectangle**, **Ellipse** and **Cover** (a solid box that hides an area) under **More**. A label
+  can be **Outlined**, a **Tag** on a coloured plate, or **Plain**. Tap a label to change it, drag it
+  to move it, and remove it with the 🗑 on its corner.
 
-Drop an object you are moving on **Drag here to delete** to delete it. ↶ and ↷ undo and redo; 🗑
-clears all edits (this can be undone too). **Done** adds the image to the field. **Cancel** asks
-before discarding changes.
+The tabs can be used in any order and revisited: a crop can be widened again, and drawings move and
+turn with the photo. Drawings outside the crop are left out of the added image. The clock button
+above the photo goes back to the original photo (this can be undone too). **Add** puts the photo in
+the field: an unchanged photo is added as picked, at full resolution, and an edited one at most 2000
+pixels on its long side. **Cancel** asks before discarding changes.
 
 <a id="drawing-page"></a>
 ## Drawing on a blank page

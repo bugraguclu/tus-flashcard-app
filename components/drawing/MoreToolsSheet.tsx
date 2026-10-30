@@ -11,12 +11,14 @@ interface MoreToolsSheetProps {
     visible: boolean;
     /** The tool in hand, marked in the list. */
     tool: DrawingTool;
+    /** The tools to list; the photo editor leaves the picture out, since the photo is the picture. */
+    tools?: (DrawingShapeTool | 'image')[];
     onPick: (tool: DrawingShapeTool | 'image') => void;
     onClose: () => void;
 }
 
 /** The tools that do not fit on the bar: arrow, boxes, cover-up and a picture from the library. */
-export function MoreToolsSheet({ visible, tool, onPick, onClose }: MoreToolsSheetProps) {
+export function MoreToolsSheet({ visible, tool, tools = DRAWING_MORE_TOOLS, onPick, onClose }: MoreToolsSheetProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -36,7 +38,7 @@ export function MoreToolsSheet({ visible, tool, onPick, onClose }: MoreToolsShee
                 />
                 <SwipeDismissSheet active={visible} style={styles.sheet} onDismiss={onClose}>
                     <Text style={styles.title}>{l('Diğer araçlar', 'More Tools')}</Text>
-                    {DRAWING_MORE_TOOLS.map((id) => {
+                    {tools.map((id) => {
                         const Glyph = DRAWING_TOOL_GLYPHS[id];
                         const label = id === 'image' ? l('Görsel ekle', 'Add Picture') : drawingToolLabel(id, l);
                         const selected = tool === id;

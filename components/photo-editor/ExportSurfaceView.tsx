@@ -6,6 +6,7 @@ import { scaleBlankCanvasRuling } from '../../lib/blankCanvas';
 import PaperSwatch from '../PaperSwatch';
 import type { EditorPage, ExportSurface } from './editorModel';
 import { renderAnnotation, renderPlacedPictures } from './annotationRendering';
+import { PhotoLayer } from './PhotoLayer';
 
 interface ExportSurfaceViewProps {
     exportSurface: ExportSurface;
@@ -17,7 +18,12 @@ interface ExportSurfaceViewProps {
     sourceUri: string;
     sourceSize: { width: number; height: number };
     annotations: PhotoAnnotation[];
+    /** The photo editor's light and colour, drawn through the same filter the screen showed. */
+    colorMatrix?: number[] | null;
 }
+
+const WHOLE_PHOTO = { x: 0, y: 0, width: 1, height: 1 };
+const UPRIGHT = { quarterTurns: 0 as const, flipped: false };
 
 /** The drawing again, at export size and off screen, for the native export to photograph. */
 export function ExportSurfaceView({
@@ -30,6 +36,7 @@ export function ExportSurfaceView({
     sourceUri,
     sourceSize,
     annotations,
+    colorMatrix,
 }: ExportSurfaceViewProps) {
     return (
         <View
@@ -53,6 +60,16 @@ export function ExportSurfaceView({
                         exportSurface.width / Math.max(1, sourceSize.width),
                     )}
                     style={StyleSheet.absoluteFill}
+                />
+            ) : sourceUri && colorMatrix ? (
+                <PhotoLayer
+                    uri={sourceUri}
+                    source={sourceSize}
+                    orientation={UPRIGHT}
+                    window={WHOLE_PHOTO}
+                    canvas={exportSurface}
+                    matrix={colorMatrix}
+                    onLoad={() => { exportPhotoLoadedRef.current = true; }}
                 />
             ) : sourceUri ? (
                 <NativeImage

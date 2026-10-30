@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { photoArrowGeometry } from '../../lib/photoArrow';
-import { Image as NativeImage, Platform } from 'react-native';
-import { Ellipse, G, Line, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
+import { Image as NativeImage, Platform, StyleSheet, View } from 'react-native';
+import Svg, { Ellipse, G, Line, Path, Polygon, Rect, Text as SvgText } from 'react-native-svg';
 import {
     calculatePhotoTextBounds,
     normalizePhotoRotation,
@@ -198,6 +198,25 @@ export function renderAnnotation(
         />
     );
 }
+
+/**
+ * What is already on the page: placed pictures, then the ink over them. Kept apart from the mark
+ * a finger is still making, so a stroke in progress redraws alone.
+ */
+export const AnnotationLayer = memo(function AnnotationLayer({ annotations, width, height }: {
+    annotations: PhotoAnnotation[];
+    width: number;
+    height: number;
+}) {
+    return (
+        <>
+            <View style={StyleSheet.absoluteFill}>{renderPlacedPictures(annotations, width, height)}</View>
+            <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+                {annotations.map((annotation) => renderAnnotation(annotation, width, height))}
+            </Svg>
+        </>
+    );
+});
 
 /**
  * The pictures a page carries, laid out as real views under the ink.

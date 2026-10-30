@@ -105,7 +105,7 @@ sayfasının altındaki **Daha fazla bilgi** bağlantısı **Makale** sütununda
 | Çalışma ekranı — `app/(tabs)/index.tsx` | ⋮ menüsünün son satırı (yeni) → `help.reviewer.sheet`; **Şimdilik hepsi bu kadar!** yanında ⓘ → `help.reviewer.waitingSheet`; **Tebrikler!** yanında ⓘ → `help.reviewer.finishedSheet` | `in-app/02-studying.md` | 05 |
 | Deste seçenekleri — `app/deck-options.tsx` | Her bölümün **?** düğmesi (mevcut **AYAR REHBERİ**, 11 sayfa) → `help.deckOptions.*`; **Ayar grubu** satırındaki **?** (yeni) → `help.deckOptions.presets` | `in-app/03-deck-options.md` | 06, 07 |
 | Not ekle / Kartı düzenle — `app/editor.tsx` | ••• › **Yardım** (yeni) → `help.editor.sheet`; boşluk alanı başlığında ⓘ (yeni) → `help.editor.clozeSheet` | `in-app/04-editing.md` | 08 |
-| Fotoğrafı düzenle / Çizim — `components/PhotoEditorModal.tsx` | Başlığın sağında ⓘ (yeni) → `help.photoEditor.sheet` | `in-app/04-editing.md` | 08 |
+| Fotoğrafı düzenle — `components/photo-editor/PhotoEditorModal.tsx` | Başlığın sağında ⓘ (yeni) → `help.photoEditor.sheet` | `in-app/04-editing.md` | 08 |
 | Not türleri, Not türünü düzenle — `app/note-types.tsx`, `app/note-type.tsx` | Başlık çubuğunda ⓘ (yeni) → `help.noteTypes.sheet`, `help.noteType.sheet` | `in-app/04-editing.md` | 09 |
 | Kartlarım — `app/browser.tsx` | Başlığın sağında ⓘ (yeni) → `help.browser.sheet`; arama kutusundaki **?** (mevcut, metni düzeltilecek) → `help.browser.searchHelp` | `in-app/05-browser.md` | 10 |
 | Kart bilgisi — `app/card-info.tsx` | Başlığın sağında ⓘ (yeni) → `help.cardInfo.sheet` | `in-app/05-browser.md` | 10 |
