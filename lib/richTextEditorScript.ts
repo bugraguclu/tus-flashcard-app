@@ -55,10 +55,15 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
   // Numbers each reported edit, so the host can tell a late message from a newer reading.
   let changeSeq = 0;
   editor.innerHTML = typeof config.html === 'string' ? config.html : '';
+  // The copy a field is saved from is parsed into a document with no window, which loads
+  // nothing. Made in the field's own document, every picture in the copy was fetched on each
+  // edit: on web, once its src is set back to the bare filename below, from the page's origin,
+  // which answers 404.
+  const exportDocument = document.implementation.createHTMLDocument('');
 
   function cleanForExport(html) {
     if (!html) return '';
-    const temp = document.createElement('div');
+    const temp = exportDocument.createElement('div');
     temp.innerHTML = html;
     const wraps = temp.querySelectorAll('.tus-audio-wrap');
     for (let i = 0; i < wraps.length; i++) {

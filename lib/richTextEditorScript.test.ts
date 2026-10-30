@@ -30,6 +30,17 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         blur: () => undefined,
     };
     const configElement = { textContent: richTextEditorConfigJson(config) };
+    // Elements made in the field's own document, and in a document made apart from it.
+    const elementsMade = { field: 0, detached: 0 };
+    const createElement = () => {
+        let inner = '';
+        return {
+            get innerHTML() { return inner; },
+            set innerHTML(value: string) { inner = value; },
+            querySelectorAll: () => [],
+            appendChild: (fragment: { html?: string }) => { inner += fragment.html ?? ''; },
+        };
+    };
     const document = {
         activeElement: null,
         getElementById: (id: string) => (
@@ -41,13 +52,16 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         hasFocus: () => false,
         addEventListener: on,
         createElement: () => {
-            let inner = '';
-            return {
-                get innerHTML() { return inner; },
-                set innerHTML(value: string) { inner = value; },
-                querySelectorAll: () => [],
-                appendChild: (fragment: { html?: string }) => { inner += fragment.html ?? ''; },
-            };
+            elementsMade.field += 1;
+            return createElement();
+        },
+        implementation: {
+            createHTMLDocument: () => ({
+                createElement: () => {
+                    elementsMade.detached += 1;
+                    return createElement();
+                },
+            }),
         },
     };
     const window: Record<string, unknown> = { addEventListener: () => undefined, getSelection: () => extras.selection ?? null };
@@ -74,6 +88,7 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
     return {
         posted,
         dispatch,
+        elementsMade,
         editorHtml: () => html,
         setEditorHtml: (value: string) => { html = value; },
         readHtml: () => (window.__tusEditorReadHtml as () => unknown)(),
@@ -147,6 +162,19 @@ describe('rich text field script', () => {
         run.setEditorHtml('son kelime');
         run.dispatch('input');
         expect(run.readHtml()).toEqual({ html: 'son kelime', seq: 1 });
+    });
+
+    it('copies a field for saving in a document apart from the field, where pictures load nothing', () => {
+        // Saving sets each picture's src back to its bare filename on the copy. Made in the
+        // field's own document, the browser fetched every picture again on each edit: on web from
+        // the page's origin, which answered 404.
+        const run = runEditorScript({ ...baseConfig, hostOrigin: 'https://app.example' }, 'web');
+        run.setEditorHtml('<img src="blob:https://app.example/1" data-tus-src="kalp.jpg">');
+        const before = { ...run.elementsMade };
+        run.dispatch('input');
+        run.readHtml();
+        expect(run.elementsMade.field).toBe(before.field);
+        expect(run.elementsMade.detached).toBeGreaterThan(before.detached);
     });
 
     it('stays silent on web without a host origin to address', () => {

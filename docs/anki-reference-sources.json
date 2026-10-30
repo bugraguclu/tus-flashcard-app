@@ -850,6 +850,13 @@
       "useFor": ["an Effect not caused by an interaction may run after the browser paints", "layout effects run within the commit, before any later task"]
     },
     {
+      "id": "html-standard-update-image-data",
+      "priority": 3,
+      "platform": "web rich-text field surface",
+      "url": "https://html.spec.whatwg.org/multipage/images.html#update-the-image-data",
+      "useFor": ["an img fetches its src when the attribute is set, even off the page, while its document is fully active", "a document made by createHTMLDocument has no browsing context, so its images never load"]
+    },
+    {
       "id": "anki-source-webview-css",
       "priority": 3,
       "platform": "desktop card page defaults",
