@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import {
     BorderRadius,
@@ -27,12 +27,17 @@ import {
 } from '../constants/theme';
 import {
     DEFAULT_SETTINGS,
+    defaultSettingsKeepingDeckOptions,
     loadSettings,
-    resetSettingsToDefaults,
     saveSettingsDurably,
 } from '../lib/storage';
+import { normalizeBackupPolicy } from '../lib/backupPolicy';
+import { rebaseSettingsDraft } from '../lib/settingsDraft';
+import { searchSettingsCategories } from '../lib/settingsSearch';
+import { turkishAblative } from '../lib/turkishSuffix';
 import KeyboardSettingsSection from '../components/settings/KeyboardSettingsSection';
 import TextSizeSlider from '../components/settings/TextSizeSlider';
+import { settingsCategories, type SettingsSectionId } from '../components/settings/settingsCategories';
 import {
     checkDatabase,
     repairChangedRows,
@@ -91,21 +96,7 @@ import {
     SWIPE_PRESETS,
 } from '../lib/reviewerTouchControls';
 
-type SectionId =
-    | 'general'
-    | 'newStudy'
-    | 'reviewing'
-    | 'notifications'
-    | 'controls'
-    | 'accessibility'
-    | 'data'
-    | 'about';
-
-type Category = {
-    id: SectionId;
-    title: string;
-    summary: string;
-};
+type SectionId = SettingsSectionId;
 
 function CategoryGlyph({ id, color }: { id: SectionId; color: string }) {
     switch (id) {
@@ -445,6 +436,13 @@ export default function SettingsScreen() {
     const sectionScrollRef = useRef<ScrollView>(null);
     const settingsRef = useRef(settings);
     settingsRef.current = settings;
+    // The stored settings the draft started from; savedSnapshot is the same value serialized.
+    const baselineRef = useRef<AppSettings | null>(null);
+
+    const markSaved = useCallback((persisted: AppSettings) => {
+        baselineRef.current = persisted;
+        setSavedSnapshot(stableSnapshot(persisted));
+    }, []);
 
     const isDirty = hasSnapshotChanged(savedSnapshot, settings);
     // The confirmation lingers briefly after a save, but an edit made meanwhile is not saved.
@@ -489,11 +487,12 @@ export default function SettingsScreen() {
         { value: 0, label: l('Bekleyen tekrar varsa', 'When reviews are waiting') },
         ...STUDY_NOTIFICATION_THRESHOLDS
             .filter((threshold) => threshold > 0)
+            // Only review cards are counted, so the wording says reviews, not cards.
             .map((threshold) => ({
                 value: threshold,
                 label: l(
-                    `${threshold}’den fazla kartın zamanı geldiyse`,
-                    `More than ${threshold} cards are due`,
+                    `${threshold}${turkishAblative(threshold)} fazla tekrar kartının zamanı geldiyse`,
+                    `More than ${threshold} reviews are due`,
                 ),
             })),
     ], [l]);
@@ -510,12 +509,24 @@ export default function SettingsScreen() {
     useEffect(() => {
         const loaded = loadSettings();
         setSettings(loaded);
-        setSavedSnapshot(stableSnapshot(loaded));
+        markSaved(loaded);
         setLoading(false);
         return () => {
             if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
         };
-    }, []);
+    }, [markSaved]);
+
+    // Backups (restore) and Import (a collection package) open over Settings and rewrite the
+    // settings rows. When Settings is shown again its draft moves onto them, keeping only the
+    // learner's own edits, so a later Save cannot write the old values back.
+    useFocusEffect(useCallback(() => {
+        const baseline = baselineRef.current;
+        if (!baseline) return;
+        const latest = loadSettings();
+        if (settingsMatch(latest, baseline)) return;
+        setSettings((draft) => rebaseSettingsDraft(baseline, draft, latest));
+        markSaved(latest);
+    }, [markSaved]));
 
     // Keep the whole app in sync with the draft, while device storage remains untouched until Save.
     useEffect(() => {
@@ -566,9 +577,29 @@ export default function SettingsScreen() {
     const handleSaveSettings = useCallback(async () => {
         if (saving) return;
         Keyboard.dismiss();
-        const current = settingsRef.current;
+        let current = settingsRef.current;
         setSaving(true);
-        const result = await saveSettingsDurably(current);
+        // A tap zone or swipe direction set to another action can leave a hidden answer bar with
+        // nothing that grades; Controls warns about it, and Save never stores it.
+        if (!canGradeRevealedCard(current)) {
+            const showButtons = await confirmAsync(
+                l('Kartları yanıtlamanın bir yolu kalmadı', 'No way left to answer cards'),
+                l(
+                    'Yanıt düğmeleri gizli ve etkin hiçbir dokunma bölgesi veya kaydırma yönü Tekrar, Zor, İyi ya da Kolay uygulamıyor. Yanıt düğmeleri geri açılarak kaydedilsin mi?',
+                    'The answer buttons are hidden and no enabled tap zone or swipe direction answers Again, Hard, Good, or Easy. Save with the answer buttons shown again?',
+                ),
+                { confirmLabel: l('Düğmeleri aç ve kaydet', 'Show buttons and save') },
+            );
+            if (!showButtons) {
+                setSaving(false);
+                return;
+            }
+            current = { ...current, showAnswerButtons: true };
+            setSettings((draft) => ({ ...draft, showAnswerButtons: true }));
+        }
+        const baseline = baselineRef.current ?? current;
+        // Fields this draft did not touch are taken as stored now, not as they were when it opened.
+        const result = await saveSettingsDurably(rebaseSettingsDraft(baseline, current, loadSettings()));
         setSaving(false);
         const persisted = loadSettings();
         if (!result.ok || !settingsMatch(persisted, result.settings)) {
@@ -581,24 +612,20 @@ export default function SettingsScreen() {
             return;
         }
         // Preserve edits made while the durable write was pending.
-        setSettings((draft) => settingsMatch(draft, current) ? persisted : draft);
-        setSavedSnapshot(stableSnapshot(persisted));
+        setSettings((draft) => rebaseSettingsDraft(current, draft, persisted));
+        markSaved(persisted);
         refreshData();
         lastSaveFailedRef.current = false;
 
-        try {
-            const initialParsed = savedSnapshot ? JSON.parse(savedSnapshot) : null;
-            if (
-                initialParsed &&
-                (initialParsed.dayRolloverHour !== persisted.dayRolloverHour ||
-                 initialParsed.learnAheadMinutes !== persisted.learnAheadMinutes)
-            ) {
-                markSchedulingStale();
-            }
-        } catch { /* ignore parse error */ }
+        if (
+            baseline.dayRolloverHour !== persisted.dayRolloverHour
+            || baseline.learnAheadMinutes !== persisted.learnAheadMinutes
+        ) {
+            markSchedulingStale();
+        }
 
         showSavedState();
-    }, [l, markSchedulingStale, refreshData, savedSnapshot, saving, showSavedState]);
+    }, [l, markSaved, markSchedulingStale, refreshData, saving, showSavedState]);
 
     const handleStudyNotificationsToggle = async (
         enabled: boolean,
@@ -678,21 +705,10 @@ export default function SettingsScreen() {
         await handleStudyNotificationsToggle(true, value);
     };
 
-    // The secondary line lists only the headings found on each page, so it stays a plain table of
-    // contents: no live values, no descriptive copy. Keep it in step with the page's Group titles.
-    const categories = useMemo<Category[]>(() => [
-        { id: 'general', title: l('Genel', 'General'), summary: l('Dil • Tema • Yazı boyutu • Düzenleme', 'Language • Theme • Text size • Editing') },
-        { id: 'newStudy', title: l('Yeni çalışma ekranı', 'New study screen'), summary: l('Ekran • Araç çubuğu • Yanıt düğmeleri', 'Screen • Toolbar • Answer buttons') },
-        { id: 'reviewing', title: l('İnceleme', 'Reviewing'), summary: l('Zamanlama • Gelişmiş', 'Scheduling • Advanced') },
-        { id: 'notifications', title: l('Bildirimler', 'Notifications'), summary: l('Hatırlatma saati', 'Reminder time') },
-        { id: 'controls', title: l('Kontroller', 'Controls'), summary: l('Dokunma ve kaydırma • Ekran kontrolü • Klavye', 'Taps and swipes • On-screen control • Keyboard') },
-        { id: 'accessibility', title: l('Erişilebilirlik', 'Accessibility'), summary: l('Kart • Yanıt düğmeleri • Kart tarayıcısı', 'Card • Answer buttons • Card browser') },
-        { id: 'data', title: l('Veri yönetimi', 'Data Management'), summary: l('Yedekleme • İçe ve dışa aktar • Bakım', 'Backup • Import and export • Maintenance') },
-        { id: 'about', title: l('Hakkında', 'About'), summary: l('Gizlilik politikası • Destek', 'Privacy Policy • Support') },
-    ], [l]);
+    const categories = useMemo(() => settingsCategories(l), [l]);
 
     const activeCategory = categories.find((item) => item.id === activeSection) ?? null;
-    const filteredCategories = categories.filter((item) => `${item.title} ${item.summary}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+    const searchResults = useMemo(() => searchSettingsCategories(categories, search), [categories, search]);
 
     const handleBack = () => {
         if (activeSection) {
@@ -973,30 +989,45 @@ export default function SettingsScreen() {
     }, [describeFindings, describeOptimizeResult, invalidateCollection, l, maintenanceAction]);
 
     const handleResetSettings = useCallback(() => {
-        confirm(l('Varsayılan ayarlar', 'Default Settings'), l('Tüm uygulama ayarları varsayılana döndürülsün mü?', 'Restore all app settings to defaults?'), () => {
-            const result = resetSettingsToDefaults();
-            if (!result.ok) {
-                alert(l('Ayarlar sıfırlanamadı', 'Settings Not Reset'), l('Varsayılan ayarlar cihaz depolamasına yazılamadı.', 'Default settings could not be written to device storage.'));
-                return;
-            }
-            const persisted = loadSettings();
-            setSettings(persisted);
-            setSavedSnapshot(stableSnapshot(persisted));
-            refreshData();
-            markSchedulingStale();
-        });
-    }, [l, markSchedulingStale, refreshData]);
+        confirm(
+            l('Varsayılan ayarlar', 'Default Settings'),
+            l(
+                'Bütün sayfalardaki ayarlar ilk değerlerine döner: dil Türkçe, tema Açık, yazı boyutu Normal, klavye kısayolları varsayılan tuşlar. Deste seçenekleri, kartlarınız ve çalışma geçmişiniz değişmez.',
+                'Settings on every page return to their starting values: language Türkçe, theme Light, text size Default, keyboard shortcuts on their default keys. Deck options, your cards and your study history are kept.',
+            ),
+            () => {
+                void (async () => {
+                    // Saved like any other change, so the web build has committed it before success shows.
+                    const result = await saveSettingsDurably(defaultSettingsKeepingDeckOptions(loadSettings()));
+                    if (!result.ok) {
+                        alert(l('Ayarlar sıfırlanamadı', 'Settings Not Reset'), l('Varsayılan ayarlar cihaz depolamasına yazılamadı.', 'Default settings could not be written to device storage.'));
+                        return;
+                    }
+                    const persisted = loadSettings();
+                    setSettings(persisted);
+                    markSaved(persisted);
+                    refreshData();
+                    markSchedulingStale();
+                    showSavedState();
+                })();
+            },
+            { confirmLabel: l('Varsayılana dön', 'Restore defaults'), destructive: true },
+        );
+    }, [l, markSaved, markSchedulingStale, refreshData, showSavedState]);
 
     const handleResetProgress = useCallback(() => {
         if (maintenanceAction) return;
-        confirm(l('İlerlemeyi sıfırla', 'Reset Progress'), l('Kartlar, çalışma geçmişi ve ilerleme silinecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulacak.', 'Cards, review history, and progress will be deleted after a restorable safety backup is created.'), () => {
+        confirm(l('İlerlemeyi sıfırla', 'Reset Progress'), l(
+            'Bütün desteler, notlar, kartlar, not türleri, çalışma geçmişi ve Kronometre oturumları silinecek; uygulama ayarları da ilk değerlerine dönecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulur.',
+            'All decks, notes, cards, note types, study history and Stopwatch sessions will be deleted, and app settings will return to their starting values. A restorable safety backup is created first.',
+        ), () => {
             void (async () => {
                 setMaintenanceAction('reset');
                 try {
                     const { backupFileName } = await resetAllDataWithBackup();
                     const persisted = loadSettings();
                     setSettings(persisted);
-                    setSavedSnapshot(stableSnapshot(persisted));
+                    markSaved(persisted);
                     refreshData();
                     invalidateCollection();
                     // Reset removes both the installed catalog rows and its local access marker.
@@ -1023,7 +1054,7 @@ export default function SettingsScreen() {
                 }
             })();
         }, { destructive: true });
-    }, [invalidateCollection, l, maintenanceAction, refreshCatalogAccess, refreshData, t]);
+    }, [invalidateCollection, l, maintenanceAction, markSaved, refreshCatalogAccess, refreshData, t]);
 
     const renderGeneral = useCallback(() => (
         <>
@@ -1079,7 +1110,7 @@ export default function SettingsScreen() {
             <Group title={l('Düzenleme', 'Editing')} styles={styles}>
                 <ChoiceRow
                     label={l('Yeni kartların destesi', 'Deck for new cards')}
-                    summary={l('Kart ekleme ekranının başlangıç destesini belirler.', 'Sets the initial deck in the add-card screen.')}
+                    summary={l('Kart ekleme ekranı bir desteden açılmadığında başlangıç destesini seçer. Geçerli deste en son çalıştığınız destedir.', 'Picks the starting deck when the add-card screen is not opened from a deck. Current deck is the deck you studied last.')}
                     value={settings.newCardDeckMode ?? 'current'}
                     options={[
                         { value: 'current', label: l('Geçerli deste', 'Current deck') },
@@ -1137,7 +1168,7 @@ export default function SettingsScreen() {
                     <ToggleRow label={l('Geri/çıkış için iki kez geri bas', 'Press back twice to go back/exit')} value={Boolean(settings.doubleBackToExit)} onChange={(value) => updateSetting('doubleBackToExit', value)} styles={styles} />
                 </Group>
             ) : null}
-            <TouchableOpacity style={styles.outlineButton} onPress={handleResetSettings}>
+            <TouchableOpacity style={styles.outlineButton} onPress={handleResetSettings} accessibilityRole="button">
                 <Text style={styles.outlineButtonText}>↺ {l('Varsayılan ayarlara dön', 'Restore default settings')}</Text>
             </TouchableOpacity>
         </>
@@ -1214,7 +1245,7 @@ export default function SettingsScreen() {
                 />
                 <ToggleRow label={l('Sonraki inceleme süresini göster', 'Show next review time above answer buttons')} value={settings.showNextReviewTimes} onChange={(value) => updateSetting('showNextReviewTimes', value)} styles={styles} />
                 <ToggleRow label={l('Zor ve Kolay düğmelerini gizle', 'Hide Hard and Easy buttons')} summary={l('Yalnızca Tekrar ve İyi gösterilir.', 'Only Again and Good are shown.')} value={Boolean(settings.hideHardAndEasy)} onChange={(value) => updateSetting('hideHardAndEasy', value)} styles={styles} />
-                <ToggleRow label={l('Otomatik ilerleme', 'Auto advance')} summary={l('Kart açıldıktan sekiz saniye sonra cevabı gösterir.', 'Reveals the answer eight seconds after a card opens.')} value={settings.autoAdvance} onChange={(value) => updateSetting('autoAdvance', value)} styles={styles} />
+                <ToggleRow label={l('Otomatik ilerleme', 'Auto advance')} summary={l('Deste seçeneklerindeki Otomatik ilerleme sürelerini çalıştırır. Süreleri her deste için Deste seçenekleri › Otomatik ilerleme bölümünde verin; 0 saniye kapalı demektir.', 'Runs the Auto Advance times set in deck options. Set them per deck in Deck Options › Auto Advance; 0 seconds means off.')} value={settings.autoAdvance} onChange={(value) => updateSetting('autoAdvance', value)} styles={styles} />
             </Group>
         </>
     );
@@ -1231,7 +1262,7 @@ export default function SettingsScreen() {
                 <ToggleRow label={l('Sesi otomatik oynat', 'Automatically play audio')} value={settings.autoPlayAudio} onChange={(value) => updateSetting('autoPlayAudio', value)} styles={styles} />
                 <ChoiceRow
                     label={l('Ses oynatma hızı', 'Audio playback speed')}
-                    summary={l('Kartlardaki seslerin varsayılan çalma hızı.', 'Default playback speed for audio in cards.')}
+                    summary={l('Varsayılan ayar grubunu ve kendi hızı olmayan desteleri etkiler. Bir ayar grubuna özel hız Deste seçenekleri › Ses bölümünden verilir.', 'Affects the Default preset and decks without a speed of their own. A preset’s own speed is set in Deck Options › Audio.')}
                     value={String(settings.audioPlaybackRate ?? 1.0)}
                     options={[
                         { label: '0.75x', value: '0.75' },
@@ -1568,7 +1599,7 @@ export default function SettingsScreen() {
             <Group title={l('Yanıt düğmeleri', 'Answer buttons')} styles={styles}>
                 <StepperRow label={l('Yanıt düğmesi boyutu', 'Answer button size')} value={settings.answerButtonScalePercent ?? 100} suffix="%" step={10} min={100} max={175} onChange={(value) => updateSetting('answerButtonScalePercent', value)} styles={styles} />
                 <ToggleRow label={l('Büyük yanıt düğmelerini iki satırda göster', 'Show large answer buttons in two rows')} value={Boolean(settings.twoRowAnswerButtons)} onChange={(value) => updateSetting('twoRowAnswerButtons', value)} styles={styles} />
-                <StepperRow label={l('Cevabı göster basılı tutma süresi', 'Show answer long-press time')} summary={l('0 ms normal dokunmadır.', '0 ms uses a normal tap.')} value={settings.showAnswerLongPressMs ?? 0} suffix="ms" step={100} min={0} max={2000} onChange={(value) => updateSetting('showAnswerLongPressMs', value)} styles={styles} />
+                <StepperRow label={l('Cevabı göster basılı tutma süresi', 'Show answer long-press time')} summary={l('0 ms normal dokunmadır. Yalnızca Cevabı göster düğmesine uygulanır.', '0 ms uses a normal tap. Applies only to the Show Answer button.')} value={settings.showAnswerLongPressMs ?? 0} suffix="ms" step={100} min={0} max={2000} onChange={(value) => updateSetting('showAnswerLongPressMs', value)} styles={styles} />
                 <StepperRow label={l('Çift dokunma aralığı', 'Double tap time interval')} summary={l('Yanlışlıkla iki kez yanıtlamayı önler.', 'Prevents accidental double answers.')} value={settings.answerDoubleTapMs ?? 200} suffix="ms" step={50} min={0} max={1000} onChange={(value) => updateSetting('answerDoubleTapMs', value)} styles={styles} />
             </Group>
             <Group title={l('Kart tarayıcısı', 'Card browser')} styles={styles}>
@@ -1577,12 +1608,18 @@ export default function SettingsScreen() {
         </>
     );
 
+    // Read from the stored policy, which a restored backup can bring with it, not from the defaults.
+    const backupPolicy = normalizeBackupPolicy(settings);
+    const autoBackupSummary = l(
+        `Değişiklik varsa yaklaşık ${backupPolicy.backupIntervalMinutes} dakikada bir; ${backupPolicy.backupDailyCopies} günlük, ${backupPolicy.backupWeeklyCopies} haftalık, ${backupPolicy.backupMonthlyCopies} aylık kopya`,
+        `About every ${backupPolicy.backupIntervalMinutes} minutes when there are changes; ${backupPolicy.backupDailyCopies} daily, ${backupPolicy.backupWeeklyCopies} weekly, ${backupPolicy.backupMonthlyCopies} monthly copies`,
+    );
     const renderData = useCallback(() => (
         <>
             <Group title={l('Yedekleme', 'Backup')} styles={styles}>
                 <ToggleRow
                     label={l('Otomatik yedekleme', 'Automatic backup')}
-                    summary={l('30 dakikada bir; 12 günlük, 10 haftalık, 9 aylık kopya', 'Every 30 minutes; 12 daily, 10 weekly, 9 monthly copies')}
+                    summary={autoBackupSummary}
                     value={settings.autoBackupEnabled !== false}
                     onChange={(value) => updateSetting('autoBackupEnabled', value)}
                     divider={false}
@@ -1630,12 +1667,22 @@ export default function SettingsScreen() {
                 />
             </Group>
         </>
-    ), [handleCheckDatabase, handleExport, handleImport, handleOptimizeDatabase, handleResetProgress, l, maintenanceAction, settings.autoBackupEnabled, styles, updateSetting]);
+    ), [autoBackupSummary, handleCheckDatabase, handleExport, handleImport, handleOptimizeDatabase, handleResetProgress, l, maintenanceAction, settings.autoBackupEnabled, styles, updateSetting]);
+
+    const openExternalPage = (url: string) => {
+        Linking.openURL(url).catch((error) => {
+            console.warn('[Settings] could not open link:', error);
+            alert(
+                l('Sayfa açılamadı', 'Could Not Open Page'),
+                l(`Bağlantı açılamadı. Tarayıcıda şu adresi açın: ${url}`, `The link could not be opened. Open this address in a browser: ${url}`),
+            );
+        });
+    };
 
     const renderAbout = () => (
-        <Group title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki paket desteğine sahip yerel öncelikli kart uygulaması`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • Local-first flashcard app with Anki package support`)} styles={styles}>
-            <TouchableOpacity style={styles.linkRow} onPress={() => Linking.openURL(PRIVACY_URL)}><Text style={styles.linkText}>{l('Gizlilik politikası', 'Privacy Policy')}</Text><Text style={styles.linkArrow}>↗</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.linkRow} onPress={() => Linking.openURL(SUPPORT_URL)}><Text style={styles.linkText}>{l('Destek', 'Support')}</Text><Text style={styles.linkArrow}>↗</Text></TouchableOpacity>
+        <Group title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki paketleriyle çalışan, verilerini cihazınızda tutan bağımsız bir kart uygulaması. Anki veya Ankitects ile bağlantılı değildir.`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • An independent flashcard app that works with Anki packages and keeps its data on your device. Not affiliated with Anki or Ankitects.`)} styles={styles}>
+            <TouchableOpacity style={styles.linkRow} onPress={() => openExternalPage(PRIVACY_URL)} accessibilityRole="link"><Text style={styles.linkText}>{l('Gizlilik politikası', 'Privacy Policy')}</Text><Text style={styles.linkArrow}>↗</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.linkRow} onPress={() => openExternalPage(SUPPORT_URL)} accessibilityRole="link"><Text style={styles.linkText}>{l('Destek', 'Support')}</Text><Text style={styles.linkArrow}>↗</Text></TouchableOpacity>
         </Group>
     );
 
@@ -1708,33 +1755,55 @@ export default function SettingsScreen() {
                     <>
                         <View style={styles.searchBox}>
                             <Text style={styles.searchIcon}>⌕</Text>
-                            <TextInput value={search} onChangeText={setSearch} placeholder={l('Ara…', 'Search…')} placeholderTextColor={colors.textMuted} style={styles.searchInput} />
+                            <TextInput
+                                value={search}
+                                onChangeText={setSearch}
+                                placeholder={l('Ara…', 'Search…')}
+                                placeholderTextColor={colors.textMuted}
+                                style={styles.searchInput}
+                                accessibilityLabel={l('Ayarlarda ara', 'Search settings')}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                returnKeyType="search"
+                                clearButtonMode="while-editing"
+                            />
                         </View>
                         <View style={styles.categoryList}>
-                            {filteredCategories.map((category, index) => (
-                                <TouchableOpacity
-                                    key={category.id}
-                                    style={styles.categoryRow}
-                                    onPress={() => openSection(category.id)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={category.title}
-                                    accessibilityHint={category.summary}
-                                >
-                                    <View style={styles.categoryIconContainer}>
-                                        <CategoryGlyph id={category.id} color={colors.accent} />
-                                    </View>
-                                    <View style={[styles.categoryBody, index > 0 && styles.categoryDivider]}>
-                                        <View style={styles.categoryCopy}>
-                                            <Text style={styles.categoryTitle} numberOfLines={1}>{category.title}</Text>
-                                            {/* At a large text size the contents wrap; a no-break space keeps each
-                                                separator with the heading after it, so no line ends on a bullet. */}
-                                            <Text style={styles.categorySummary} numberOfLines={2}>{category.summary.replaceAll(' • ', ' •\u00A0')}</Text>
+                            {searchResults.map(({ category, matchedSettings }, index) => {
+                                // A match on a single setting names it, so the row says where the setting is.
+                                const detail = matchedSettings.length > 0 ? matchedSettings.join(' • ') : category.summary;
+                                return (
+                                    <TouchableOpacity
+                                        key={category.id}
+                                        style={styles.categoryRow}
+                                        onPress={() => openSection(category.id)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={category.title}
+                                        accessibilityHint={detail}
+                                    >
+                                        <View style={styles.categoryIconContainer}>
+                                            <CategoryGlyph id={category.id} color={colors.accent} />
                                         </View>
-                                        <Text style={styles.categoryArrow}>›</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            ))}
-                            {filteredCategories.length === 0 ? <Text style={styles.emptySearch}>{l('Eşleşen ayar bulunamadı.', 'No matching settings found.')}</Text> : null}
+                                        <View style={[styles.categoryBody, index > 0 && styles.categoryDivider]}>
+                                            <View style={styles.categoryCopy}>
+                                                <Text style={styles.categoryTitle} numberOfLines={1}>{category.title}</Text>
+                                                {/* At a large text size the contents wrap; a no-break space keeps each
+                                                    separator with the heading after it, so no line ends on a bullet. */}
+                                                <Text style={styles.categorySummary} numberOfLines={2}>{detail.replaceAll(' • ', ' •\u00A0')}</Text>
+                                            </View>
+                                            <Text style={styles.categoryArrow}>›</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                            {searchResults.length === 0 ? (
+                                <Text style={styles.emptySearch}>
+                                    {l(
+                                        'Eşleşen ayar bulunamadı. Bir ayarın veya kategorinin adıyla arayın; örneğin “bildirim” veya “zaman kutusu”.',
+                                        'No matching settings found. Search by the name of a setting or a category, for example “notification” or “timebox”.',
+                                    )}
+                                </Text>
+                            ) : null}
                         </View>
                     </>
                 )}

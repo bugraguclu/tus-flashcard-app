@@ -51,7 +51,7 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
         reviewSortOrder: config.reviewSortOrder ?? base.reviewSortOrder,
         newCardSortOrder: config.newCardSortOrder ?? base.newCardSortOrder,
         autoPlayAudio: config.autoPlayAudio ?? base.autoPlayAudio,
-        audioPlaybackRate: config.audioPlaybackRate ?? base.audioPlaybackRate ?? 1.0,
+        audioPlaybackRate: normalizeAudioPlaybackRate(config.audioPlaybackRate ?? base.audioPlaybackRate),
         skipQuestionWhenReplayingAnswer: config.skipQuestionWhenReplayingAnswer
             ?? base.skipQuestionWhenReplayingAnswer,
         // Timers and Auto Advance live on the preset in Anki, so the reviewer has to read them
@@ -77,6 +77,12 @@ export function resolveSettingsFromConfig(config: DeckConfig, base: AppSettings)
             ? parseFsrsCutoffDate(formatFsrsCutoffDate(config.ignoreRevlogsBeforeMs))
             : base.ignoreRevlogsBeforeMs,
     };
+}
+
+/** A stored audio speed (Settings and Deck Options offer 0.75x–2x); anything unusable plays at 1x. */
+export function normalizeAudioPlaybackRate(value: unknown): number {
+    const parsed = typeof value === 'number' ? value : Number.NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? Math.max(0.5, Math.min(2, parsed)) : 1.0;
 }
 
 /**

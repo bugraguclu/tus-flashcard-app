@@ -16,7 +16,7 @@ export {
     saveSessionStats,
     saveCollectionDeckOptions,
     loadSettings,
-    resetSettingsToDefaults,
+    defaultSettingsKeepingDeckOptions,
     saveSettings,
     saveSettingsDurably,
 } from './settingsStore';

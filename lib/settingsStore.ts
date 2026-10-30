@@ -18,7 +18,7 @@ import { todayLocalYMD } from './scheduler';
 import { flushDatabaseWrites, getDB } from './db';
 import { getDbSetting, setDbSetting } from './dbSettings';
 import { getDeckConfig, saveDeckConfig } from './deckPresets';
-import { resolveSettingsFromConfig } from './settingsResolver';
+import { normalizeAudioPlaybackRate, resolveSettingsFromConfig } from './settingsResolver';
 import { normalizeNewCardGatherOrder } from './queueBuild';
 import { normalizeReviewerToolbarPosition } from './reviewerPresentation';
 import { normalizeStudyNotificationThreshold } from './studyNotificationPolicy';
@@ -474,6 +474,10 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             showRemainingCount: parsed.showRemainingCount !== false,
             showNextReviewTimes: parsed.showNextReviewTimes !== false,
             newCardDeckMode: parsed.newCardDeckMode === 'default' ? 'default' : 'current',
+            editorFontSize: Math.max(12, Math.min(32, Number(parsed.editorFontSize ?? 16) || 16)),
+            editorCapitalizeSentences: parsed.editorCapitalizeSentences !== false,
+            editorToolbarVisible: parsed.editorToolbarVisible !== false,
+            editorToolbarScrollable: parsed.editorToolbarScrollable !== false,
             pasteClipboardImagesAsPng: Boolean(parsed.pasteClipboardImagesAsPng),
             newStudyScreenEnabled: Boolean(parsed.newStudyScreenEnabled),
             studyFrameStyle: parsed.studyFrameStyle === 'plain' ? 'plain' : 'card',
@@ -521,10 +525,13 @@ function loadAppSettingsMeta(): Partial<AppSettings> {
             queueOrder: normalizeQueueOrder(parsed.queueOrder),
             newCardsIgnoreReviewLimit: parsed.newCardsIgnoreReviewLimit !== false,
             limitsStartFromTop: parsed.limitsStartFromTop === true,
-            dayRolloverHour: Math.max(0, Math.min(23, Number(parsed.dayRolloverHour ?? DEFAULT_SETTINGS.dayRolloverHour))),
+            dayRolloverHour: Math.round(boundedNumber(parsed.dayRolloverHour, 0, 23, DEFAULT_SETTINGS.dayRolloverHour)),
             learnAheadMinutes: Math.max(0, Number(parsed.learnAheadMinutes ?? DEFAULT_SETTINGS.learnAheadMinutes) || 0),
             algorithm: 'ANKI_V3',
-            audioPlaybackRate: typeof parsed.audioPlaybackRate === 'number' ? parsed.audioPlaybackRate : 1.0,
+            // Only a stand-in: loadSettings() reads the speed from the default preset when it has one.
+            audioPlaybackRate: parsed.audioPlaybackRate === undefined
+                ? undefined
+                : normalizeAudioPlaybackRate(parsed.audioPlaybackRate),
             // Collection-wide FSRS switches. Parameters and retention live on the preset and are
             // resolved per deck, so they are deliberately not stored here.
             fsrsEnabled: parsed.fsrsEnabled === true,
@@ -547,6 +554,10 @@ function persistAppSettingsMeta(settings: AppSettings): void {
         showRemainingCount: settings.showRemainingCount,
         showNextReviewTimes: settings.showNextReviewTimes,
         newCardDeckMode: settings.newCardDeckMode,
+        editorFontSize: settings.editorFontSize,
+        editorCapitalizeSentences: settings.editorCapitalizeSentences,
+        editorToolbarVisible: settings.editorToolbarVisible,
+        editorToolbarScrollable: settings.editorToolbarScrollable,
         pasteClipboardImagesAsPng: settings.pasteClipboardImagesAsPng,
         newStudyScreenEnabled: settings.newStudyScreenEnabled,
         studyFrameStyle: settings.studyFrameStyle,
@@ -624,8 +635,14 @@ export function saveCollectionDeckOptions(options: Pick<AppSettings,
 
 // --- Settings (source of truth: SQLite deck config + SQLite settings metadata) ---
 export function loadSettings(): AppSettings {
-    const fromDeck = hydrateSettingsFromDeckConfig({ ...DEFAULT_SETTINGS });
-    const meta = loadAppSettingsMeta();
+    // The default preset owns the audio speed, as it owns autoplay: Deck Options edits both there.
+    // The copy saved with the app settings only fills in for a preset written before the speed
+    // existed; letting it win showed a stale speed here and wrote it back over the preset on Save.
+    const { audioPlaybackRate: storedRate, ...meta } = loadAppSettingsMeta();
+    const fromDeck = hydrateSettingsFromDeckConfig({
+        ...DEFAULT_SETTINGS,
+        audioPlaybackRate: storedRate ?? DEFAULT_SETTINGS.audioPlaybackRate,
+    });
 
     return { ...fromDeck, ...meta };
 }
@@ -640,11 +657,26 @@ const DECK_OPTIONS_OWNED_FIELDS = [
     'hardIntervalMultiplier', 'easyBonus', 'intervalModifier', 'maxInterval',
 ] as const satisfies ReadonlyArray<keyof AppSettings>;
 
+/**
+ * Collection-wide switches that Deck Options saves through saveCollectionDeckOptions(). Settings
+ * never shows them, so restoring its defaults must not quietly turn FSRS off or change how the
+ * daily limits are counted.
+ */
+const COLLECTION_DECK_OPTIONS_FIELDS = [
+    'newCardsIgnoreReviewLimit', 'limitsStartFromTop', 'fsrsEnabled', 'fsrsShortTermWithSteps',
+] as const satisfies ReadonlyArray<keyof AppSettings>;
+
+/** What "Restore default settings" saves: factory app settings, with Deck Options' own values kept. */
+export function defaultSettingsKeepingDeckOptions(current: AppSettings): AppSettings {
+    const kept = Object.fromEntries(
+        [...DECK_OPTIONS_OWNED_FIELDS, ...COLLECTION_DECK_OPTIONS_FIELDS].map((field) => [field, current[field]]),
+    );
+    return { ...DEFAULT_SETTINGS, ...kept } as AppSettings;
+}
+
 /** Resets only the app settings (not decks/cards/history) to factory defaults. */
 export function resetSettingsToDefaults(): SaveSettingsResult {
-    const current = loadSettings();
-    const presetFields = Object.fromEntries(DECK_OPTIONS_OWNED_FIELDS.map((field) => [field, current[field]]));
-    return saveSettings({ ...DEFAULT_SETTINGS, ...presetFields } as AppSettings);
+    return saveSettings(defaultSettingsKeepingDeckOptions(loadSettings()));
 }
 
 export type SaveSettingsResult =
@@ -756,6 +788,7 @@ export function validateSettings(settings: Record<string, unknown>): AppSettings
     validated.learningSteps = sanitizeStepArray(validated.learningSteps, [1, 10]);
     validated.lapseSteps = sanitizeStepArray(validated.lapseSteps, [10]);
     validated.autoPlayAudio = validated.autoPlayAudio !== false;
+    validated.audioPlaybackRate = normalizeAudioPlaybackRate(validated.audioPlaybackRate);
     validated.queueOrder = normalizeQueueOrder(validated.queueOrder);
     // Settings saved before the app had all six of Anki's gather orders carry the old names.
     validated.newCardGatherOrder = normalizeNewCardGatherOrder(validated.newCardGatherOrder);

@@ -99,8 +99,8 @@ export default function KeyboardSettingsSection({ bindings, onChange }: Props) {
         <View style={styles.group}>
             <Text style={styles.title}>{l('Klavye', 'Keyboard')}</Text>
             <Text style={styles.description}>{l(
-                'Bir satırda Değiştir’e dokunun, ardından bağlı fiziksel klavyede bir tuşa basın. Değişiklikleri Kaydet ile saklayın.',
-                'Choose Change on a row, then press a key on a connected physical keyboard. Use Save to keep your changes.',
+                'Bir satırda Değiştir’e dokunun, ardından bağlı fiziksel klavyede bir tuşa basın. Her tuşu yalnızca bir işleme atayın. Esc çalışmadan çıkar, Z veya U son işlemi geri alır. Değişiklikleri Kaydet ile saklayın.',
+                'Choose Change on a row, then press a key on a connected physical keyboard. Give each key to only one action. Esc leaves study, and Z or U undoes the last action. Use Save to keep your changes.',
             )}</Text>
             {KEY_ROWS.map((row) => {
                 const recording = recordingField === row.field;

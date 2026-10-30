@@ -1,4 +1,5 @@
 import Svg, { Circle, Path } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 
 type Props = {
     color: string;
@@ -8,7 +9,7 @@ type Props = {
 /** A clean Apple SF-style accessibility glyph. */
 export default function AccessibilityGlyph({ color, size = 20 }: Props) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
             <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.8} />
             <Circle cx="12" cy="8" r="1.5" fill={color} />
             <Path

@@ -8,7 +8,7 @@ app_help: help?article=settings
 app_screens:
   - "Ayarlar — app/settings.tsx"
   - "Ayarlar › Kontroller › Klavye — components/settings/KeyboardSettingsSection.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: settings-page-full-functionality (2026-10-30)
 ---
 
 # Ayarlar
@@ -44,10 +44,12 @@ oku sizi kategori listesine döndürür.
 <a id="search-settings"></a>
 ## Ayar arama
 
-Kategori listesinin üstündeki **Ara…** kutusu, kategori adlarında ve altlarındaki kısa açıklamada
-arar. "tema", "klavye" veya "hatırlatma" yazmak ilgili kategoriyi bulur. Tek bir satırın adı
-(örneğin "zaman kutusu") sonuç vermezse, ayarın bulunduğu kategorinin adıyla arayın; bu sayfadaki
-başlıklar hangi ayarın nerede olduğunu gösterir.
+Kategori listesinin üstündeki **Ara…** kutusu kategori adlarında, altlarındaki başlıklarda ve
+sayfalardaki ayarların adlarında arar. "tema" veya "klavye" ilgili kategoriyi bulur. Bir ayarın
+adını yazdığınızda (örneğin "zaman kutusu" veya "ses hızı") ayarın bulunduğu kategori listelenir
+ve altında eşleşen ayarın adı yazar. Büyük/küçük harf ve Türkçe harfler fark etmez: "inceleme"
+**İnceleme**'yi, "ice aktar" **İçe ve dışa aktar**'ı bulur. Yazdığınız her kelime bir kelimenin
+başıyla eşleşmelidir; "art" yazmak "kart"ı bulmaz.
 
 <a id="saving"></a>
 ## Değişiklikleri kaydetme
@@ -68,7 +70,10 @@ atıp çıkar, **İptal** sayfada kalır.
 - **Bildirimler** anahtarını açtığınızda izin sorusu hemen gelir; seçiminiz yine **Kaydet** ile
   saklanır.
 - Ayarlar cihazdaki koleksiyonla birlikte saklanır ve yedeklere girer. Bir yedeği geri yüklerseniz
-  ayarlar da o yedekteki hâline döner.
+  ayarlar da o yedekteki hâline döner. Yedeği Ayarlar'dan açtığınız **Yedekler** ekranında geri
+  yüklediyseniz (ya da bir koleksiyon paketi içe aktardıysanız), Ayarlar'a döndüğünüzde sayfa geri
+  gelen ayarları gösterir; yalnızca henüz kaydetmediğiniz kendi değişiklikleriniz korunur.
+  **Kaydet** geri yüklenen ayarların üzerine eski değerleri yazmaz.
 
 <a id="general"></a>
 ## Genel
@@ -265,7 +270,11 @@ bir işlem seçin.
   düşük değer daha uzun ve belirgin bir kaydırma ister.
 
 **Yanıt düğmelerini göster** kapalıyken dokunma bölgeleri ile kaydırmanın ikisini birden kapatırsanız
-cevap düğmeleri kendiliğinden geri gelir; kartları cevaplamanın her zaman bir yolu kalır.
+cevap düğmeleri kendiliğinden geri gelir; kartları cevaplamanın her zaman bir yolu kalır. Bölgelerin
+ve yönlerin işlemlerini değiştirip cevap veren hiçbir bölge veya yön bırakmazsanız sayfada
+**Kartları yanıtlamanın bir yolu kalmadı** uyarısı çıkar; o durumda **Kaydet**, cevap düğmelerini
+geri açarak kaydetmeyi önerir. Böyle bir ayar bir yedekten veya eski bir sürümden gelmişse çalışma
+ekranı cevap düğmelerini yine de gösterir.
 
 **Ekran kontrolü › Yüzen Araçlar düğmesini göster**, tek elle kullanım için çalışma ekranına sabit
 bir **Araçlar** düğmesi ekler. **Düğme konumu** ile sol veya sağ tarafı seçin.
@@ -349,11 +358,12 @@ değildir.
 **Genel** sayfasının en altındaki **↺ Varsayılan ayarlara dön** düğmesi, onayınızdan sonra hemen
 çalışır (**Kaydet** gerekmez):
 
-- Bütün sayfalardaki ayarlar ilk değerlerine döner: dil **Türkçe**, tema **Açık**, hatırlatma
-  09:00, klavye kısayolları varsayılan tuşlar.
-- **Varsayılan** ayar grubunu kullanan destelerin günlük limitleri, öğrenme adımları ve aralık
-  ayarları da ilk değerlerine döner. Bu ayar grubunu özelleştirdiyseniz sonra
-  [Deste seçenekleri](06-deck-options.md#presets) ekranında kontrol edin.
+- Bütün sayfalardaki ayarlar ilk değerlerine döner: dil **Türkçe**, tema **Açık**, yazı boyutu
+  **Normal**, hatırlatma 09:00, klavye kısayolları varsayılan tuşlar.
+- [Deste seçenekleri](06-deck-options.md#presets) değişmez: **Varsayılan** ayar grubunun günlük
+  limitleri, öğrenme adımları ve aralık ayarları, FSRS ve günlük limitlerin nasıl sayılacağı gibi
+  koleksiyon geneli seçenekler olduğu gibi kalır. Yalnızca bu sayfada da görünen **Sesi otomatik
+  oynat** ve **Ses oynatma hızı** ilk değerlerine (açık, 1.0x) döner.
 - Kartlarınız, desteleriniz ve çalışma geçmişiniz değişmez.
 
 ## İlgili konular

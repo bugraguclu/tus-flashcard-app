@@ -16,8 +16,9 @@ ortalanmış bir iletişim kutusudur, tutamaç eklenmez.
 
 ### Kategori alt satırları
 
-Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt satırda arar). Bu yüzden
-"Yardım" kelimesinin Hakkında satırında geçmesi gerekir.
+Arama başlıkta, alt satırda ve sayfadaki ayar adlarında arar; üçü de
+`components/settings/settingsCategories.ts` içindedir. Yardım merkezi eklendiğinde "Yardım" kelimesi
+Hakkında satırının alt satırına veya ayar listesine girmelidir.
 
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
@@ -30,7 +31,7 @@ Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt 
 | help.settings.cat.data | Veri yönetimi, `:677` | alt satır | Yedekleme • İçe ve dışa aktar • Bakım | Backup • Import and export • Maintenance | Mevcut — koru |
 | help.settings.cat.about | Hakkında, `:678` | alt satır | Yardım • Gizlilik politikası • Koşullar • Destek | Help • Privacy Policy • Terms • Support | Mevcut — güncelle (eski metin: Gizlilik politikası • Destek / Privacy Policy • Support) |
 | help.settings.search | Arama kutusu, `:1673` | yer tutucu | Ara… | Search… | Mevcut — koru |
-| help.settings.noResults | Arama sonucu boşken, `:1697` | boş durum | Eşleşen ayar bulunamadı. Kategori adıyla arayın; örneğin “bildirim” veya “klavye”. | No matching settings found. Search by category name, for example “notification” or “keyboard”. | Mevcut — güncelle (eski metin: Eşleşen ayar bulunamadı. / No matching settings found.) |
+| help.settings.noResults | Arama sonucu boşken | boş durum | Eşleşen ayar bulunamadı. Bir ayarın veya kategorinin adıyla arayın; örneğin “bildirim” veya “zaman kutusu”. | No matching settings found. Search by the name of a setting or a category, for example “notification” or “timebox”. | Mevcut — koru (arama ayar adlarını da bulur, `lib/settingsSearch.ts`) |
 
 ### Kaydetme
 
@@ -48,7 +49,7 @@ Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt 
 | --- | --- | --- | --- | --- | --- |
 | help.settings.language.hint | **Dil** grubu, düğmelerin altı, `:1017-1039` (Group `description`) | ipucu | Sistem seçiliyken uygulama iPhone'unuzun dilini izler: Türkçe ise Türkçe, değilse İngilizce. | With System, the app follows your iPhone's language: Turkish if it is Turkish, otherwise English. | Yeni (kullanılmayan `settings.languageDescription` anahtarının yerine) |
 | help.settings.theme.hint | **Tema** grubu, `:1040-1062` (Group `description`) | ipucu | Sistem, iPhone'un açık/koyu görünümünü izler. | System follows your iPhone's light/dark appearance. | Yeni |
-| help.settings.newCardDeck | **Yeni kartların destesi** alt satırı, `:1066` | alt satır | Kart ekleme ekranı bir desteden açılmadığında başlangıç destesini seçer. Geçerli deste en son çalıştığınız destedir. | Picks the starting deck when the add-card screen is not opened from a deck. Current deck is the deck you studied last. | Mevcut — güncelle (eski metin: Kart ekleme ekranının başlangıç destesini belirler. / Sets the initial deck in the add-card screen.) |
+| help.settings.newCardDeck | **Yeni kartların destesi** alt satırı, `:1066` | alt satır | Kart ekleme ekranı bir desteden açılmadığında başlangıç destesini seçer. Geçerli deste en son çalıştığınız destedir. | Picks the starting deck when the add-card screen is not opened from a deck. Current deck is the deck you studied last. | Mevcut — koru |
 | help.settings.pastePng | **Pano görsellerini PNG olarak yapıştır**, `:1077` | alt satır | (mevcut metin) | (existing) | Mevcut — koru |
 | help.settings.typeAnswer.* | Yazarak cevap üç satırı, `:1084`, `:1093`, `:1100` | alt satır | (mevcut metinler) | (existing) | Mevcut — koru |
 | help.settings.browserGroupTitle | **Dosya adlarını göster** satırının başlıksız kartı, `:1108` (`View` → `Group title`) | grup başlığı | Kart tarayıcısı | Card browser | Yeni |
@@ -59,15 +60,15 @@ Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt 
 - **Tetikleyici:** düğmeye dokunma
 - **Bileşen:** onay penceresi (`confirm`, Tamam yıkıcı stil önerilir)
 - **Daha fazla bilgi:** `tr/16-settings.md#restore-defaults`
-- **Durum:** Mevcut — güncelle (eski metin: Tüm uygulama ayarları varsayılana döndürülsün mü? / Restore all app settings to defaults?)
+- **Durum:** Mevcut — koru (sıfırlama artık Deste seçeneklerine dokunmaz: varsayılan ayar grubunun limitleri, adımları ve FSRS korunur; onay düğmesi **Varsayılana dön**, yıkıcı stil)
 
 **TR**
 - Başlık: Varsayılan ayarlar
-- Metin: Bütün sayfalardaki ayarlar ilk değerlerine döner: dil Türkçe, tema Açık, klavye kısayolları varsayılan tuşlar. Varsayılan ayar grubunu kullanan destelerin günlük limitleri ve adımları da sıfırlanır. Kartlarınız ve çalışma geçmişiniz korunur.
+- Metin: Bütün sayfalardaki ayarlar ilk değerlerine döner: dil Türkçe, tema Açık, yazı boyutu Normal, klavye kısayolları varsayılan tuşlar. Deste seçenekleri, kartlarınız ve çalışma geçmişiniz değişmez.
 
 **EN**
 - Title: Default Settings
-- Text: Settings on every page return to their starting values: language Türkçe, theme Light, keyboard shortcuts on their default keys. Decks using the Default preset also get their daily limits and steps reset. Your cards and study history are kept.
+- Text: Settings on every page return to their starting values: language Türkçe, theme Light, text size Default, keyboard shortcuts on their default keys. Deck options, your cards and your study history are kept.
 
 ---
 
@@ -81,7 +82,7 @@ Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt 
 | help.settings.toolbar | **Araç çubuğunu göster**, `:1165` | alt satır | (mevcut metin) | (existing) | Mevcut — koru |
 | help.settings.answerButtons.* | **Yanıt düğmelerini göster** alt satırı ve engelleme uyarısı, `:1182`, `:1187-1191` | alt satır, uyarı | (mevcut metinler) | (existing) | Mevcut — koru |
 | help.settings.hideHardEasy | `:1200` | alt satır | (mevcut metin) | (existing) | Mevcut — koru |
-| help.settings.autoAdvance | **Otomatik ilerleme** alt satırı, `:1201` | alt satır | Deste seçeneklerindeki Otomatik ilerleme sürelerini çalıştırır. Süreleri her deste için Deste seçenekleri › Otomatik ilerleme bölümünde verin; 0 saniye kapalı demektir. | Runs the Auto Advance times set in deck options. Set them per deck in Deck Options › Auto Advance; 0 seconds means off. | Mevcut — güncelle (eski metin: Kart açıldıktan sekiz saniye sonra cevabı gösterir. / Reveals the answer eight seconds after a card opens.) |
+| help.settings.autoAdvance | **Otomatik ilerleme** alt satırı, `:1201` | alt satır | Deste seçeneklerindeki Otomatik ilerleme sürelerini çalıştırır. Süreleri her deste için Deste seçenekleri › Otomatik ilerleme bölümünde verin; 0 saniye kapalı demektir. | Runs the Auto Advance times set in deck options. Set them per deck in Deck Options › Auto Advance; 0 seconds means off. | Mevcut — koru |
 
 ---
 
@@ -116,7 +117,7 @@ Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt 
 | help.settings.timebox | **Zaman kutusu sınırı**, `:1211` | alt satır | (mevcut metin) | (existing) | Mevcut — koru |
 | help.settings.keepScreenOn | **Ekranı açık tut**, `:1214` | alt satır | (mevcut metin) | (existing) | Mevcut — koru |
 | help.settings.autoplay | **Sesi otomatik oynat**, `:1215` (şu an alt satırsız) | alt satır | Bütün destelere uygulanır. Tek bir destede kapatmak için Deste seçenekleri › Ses bölümünü kullanın. | Applies to all decks. To turn it off for one deck, use Deck Options › Audio. | Yeni |
-| help.settings.playbackRate | **Ses oynatma hızı** alt satırı, `:1218` | alt satır | Varsayılan ayar grubunu ve kendi hızı olmayan desteleri etkiler. Bir ayar grubuna özel hız Deste seçenekleri › Ses bölümünden verilir. | Affects the Default preset and decks without a speed of their own. A preset's own speed is set in Deck Options › Audio. | Mevcut — güncelle (eski metin: Kartlardaki seslerin varsayılan çalma hızı. / Default playback speed for audio in cards.) |
+| help.settings.playbackRate | **Ses oynatma hızı** alt satırı, `:1218` | alt satır | Varsayılan ayar grubunu ve kendi hızı olmayan desteleri etkiler. Bir ayar grubuna özel hız Deste seçenekleri › Ses bölümünden verilir. | Affects the Default preset and decks without a speed of their own. A preset's own speed is set in Deck Options › Audio. | Mevcut — koru |
 | help.settings.interruptAudio | **Yanıtlarken sesi kes**, `:1230` (şu an alt satırsız) | alt satır | Açıkken bir kartı cevapladığınızda çalan ses veya sesli okuma durur. | When on, answering a card stops any audio or speech that is playing. | Yeni |
 | help.reviewer.learnAheadButton | Çalışma ekranı, **Şimdilik hepsi bu kadar!** durumu, **Bekleme ayarları** düğmesi, `app/(tabs)/index.tsx:3186-3194` | düğme | (mevcut etiket) | (existing) | Mevcut — koru. Davranış önerisi: Ayarlar'ı doğrudan İnceleme sayfasında açsın (ör. `/settings?section=reviewing`). |
 
@@ -148,7 +149,7 @@ Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt 
 
 | ID | Yer | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.settings.notify.threshold.N | **Şu durumda bildir** seçici satırları, `:487-495` (`${threshold}’den fazla…`) | seçenek | 10’dan / 25’ten / 50’den / 75’ten / 100’den / 150’den / 200’den / 500’den fazla tekrar kartının zamanı geldiyse | More than 10 / 25 / 50 / 75 / 100 / 150 / 200 / 500 reviews are due | Mevcut — güncelle (eski metin: `N’den fazla kartın zamanı geldiyse` / `More than N cards are due`: ek her sayı için doğru değil ve yeni kartlar sayılmadığı için "tekrar" denmeli) |
+| help.settings.notify.threshold.N | **Şu durumda bildir** seçici satırları, `:487-495` (`${threshold}’den fazla…`) | seçenek | 10’dan / 25’ten / 50’den / 75’ten / 100’den / 150’den / 200’den / 500’den fazla tekrar kartının zamanı geldiyse | More than 10 / 25 / 50 / 75 / 100 / 150 / 200 / 500 reviews are due | Mevcut — koru |
 | help.settings.notify.never / waiting | Aynı seçicinin ilk iki satırı, `:485-486` | seçenek | Asla bildirme / Bekleyen tekrar varsa | Never notify / When reviews are waiting | Mevcut — koru |
 | help.settings.notify.time | **Hatırlatma saati** alt satırı, `:1262` | alt satır | (mevcut metin) | (existing) | Mevcut — koru |
 | help.settings.notify.permissionOff | **Bildirimler** anahtarının altı, anahtar açık ama iOS/tarayıcı izni yokken (yeni; `getStudyNotificationPermission()` ile), `:1237-1242` | durum satırı + düğme | Bildirim izni kapalı, hatırlatma gelmeyecek. [Ayarları Aç] | Notification permission is off, so no reminder will arrive. [Open Settings] | Yeni. Web: "Tarayıcı izni yok. Anahtarı kapatıp açarak izin isteyin." / "No browser permission. Turn the switch off and on to ask for it." |
@@ -183,7 +184,7 @@ Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt 
 | help.settings.ninePoint / swipesToggle / presets / sensitivity | Alt satırlar, `:1306`, `:1360`, `:1372`, `:1415` | alt satır | (mevcut metinler) | (existing) | Mevcut — koru |
 | help.settings.swipes.verticalHint | Dört yön satırının altı, hassasiyetin üstü, `:1398-1413` arası | ipucu | Yukarı ve aşağı kaydırmayı ekranın sol veya sağ kenarından başlatın. | Start up and down swipes at the left or right edge of the screen. | Yeni (Hızlı yanıt düzeni yukarı/aşağı kullandığı için gerekli) |
 | help.settings.toolsButton.* | Ekran kontrolü alt satırları ve önizleme yazısı, `:1426`, `:1437`, `:1513-1514` | alt satır | (mevcut metinler) | (existing) | Mevcut — koru |
-| help.settings.keyboard.description | **Klavye** grubu açıklaması, `KeyboardSettingsSection.tsx:89-92` | ipucu | Bir satırda Değiştir’e dokunun, ardından bağlı fiziksel klavyede bir tuşa basın. Her tuşu yalnızca bir işleme atayın. Esc çalışmadan çıkar, Z veya U son işlemi geri alır. Değişiklikleri Kaydet ile saklayın. | Choose Change on a row, then press a key on a connected physical keyboard. Give each key to only one action. Esc leaves study, and Z or U undoes the last action. Use Save to keep your changes. | Mevcut — güncelle (eski metin: Bir satırda Değiştir’e dokunun, ardından bağlı fiziksel klavyede bir tuşa basın. Değişiklikleri Kaydet ile saklayın. / Choose Change on a row, … Use Save to keep your changes.) |
+| help.settings.keyboard.description | **Klavye** grubu açıklaması, `KeyboardSettingsSection.tsx:89-92` | ipucu | Bir satırda Değiştir’e dokunun, ardından bağlı fiziksel klavyede bir tuşa basın. Her tuşu yalnızca bir işleme atayın. Esc çalışmadan çıkar, Z veya U son işlemi geri alır. Değişiklikleri Kaydet ile saklayın. | Choose Change on a row, then press a key on a connected physical keyboard. Give each key to only one action. Esc leaves study, and Z or U undoes the last action. Use Save to keep your changes. | Mevcut — koru |
 | help.settings.keyboard.duplicate | Bir tuş ikinci bir işleme atanınca, `KeyboardSettingsSection.tsx:44-53` | uyarı (satır içi) | “{key}” tuşu zaten “{action}” için kullanılıyor. Başka bir tuş seçin. | “{key}” is already used for “{action}”. Choose another key. | Yeni (şu an tekrar eden tuşlar kaydedilirken bütün kısayollar sessizce varsayılana dönüyor) |
 
 ---
@@ -192,7 +193,7 @@ Alt satırlar aramanın da tek kaynağıdır (`settings.tsx:682` başlık + alt 
 
 | ID | Yer | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.settings.longPress | **Cevabı göster basılı tutma süresi** alt satırı, `:1533` | alt satır | 0 ms normal dokunmadır. Yalnızca Cevabı göster düğmesine uygulanır. | 0 ms uses a normal tap. Applies only to the Show Answer button. | Mevcut — güncelle (eski metin: 0 ms normal dokunmadır. / 0 ms uses a normal tap.) |
+| help.settings.longPress | **Cevabı göster basılı tutma süresi** alt satırı, `:1533` | alt satır | 0 ms normal dokunmadır. Yalnızca Cevabı göster düğmesine uygulanır. | 0 ms uses a normal tap. Applies only to the Show Answer button. | Mevcut — koru |
 | help.settings.doubleTap | **Çift dokunma aralığı**, `:1534` | alt satır | (mevcut metin) | (existing) | Mevcut — koru |
 | help.settings.cardZoom | **Kart yakınlaştırma**, `:1527` (şu an alt satırsız) | alt satır | Kartın tamamını büyütür; görselleri ayrıca aşağıdaki ayarla ölçekleyin. | Scales the whole card; scale images separately with the setting below. | Yeni |
 
@@ -204,11 +205,11 @@ Bakım pencerelerinin (kontrol raporu, onarım onayı ve sonucu, sıfırlama) me
 
 | ID | Yer | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.settings.autoBackup | **Otomatik yedekleme** alt satırı, `:1547` | alt satır | Değişiklik varsa yaklaşık 30 dakikada bir | About every 30 minutes when there are changes | Mevcut — güncelle (eski metin: Haftada bir / Weekly; kod varsayılanı 30 dk, `lib/backupPolicy.ts:2`) |
+| help.settings.autoBackup | **Otomatik yedekleme** alt satırı | alt satır | Değişiklik varsa yaklaşık {aralık} dakikada bir; {günlük} günlük, {haftalık} haftalık, {aylık} aylık kopya | About every {interval} minutes when there are changes; {daily} daily, {weekly} weekly, {monthly} monthly copies | Mevcut — koru (sayılar kayıtlı yedekleme politikasından okunur) |
 | help.settings.manageBackups | **Yedekleri yönet**, `:1556` | ayrıntı | (mevcut metin) | (existing) | Mevcut — koru |
 | help.settings.checkDb / repair | `:1571`, `:1580` | ayrıntı | (mevcut metinler) | (existing) | Mevcut — koru |
 | help.settings.resetProgress.detail | **İlerlemeyi sıfırla** satırı (şu an ayrıntısız), `:1585-1592` (`detail`) | ayrıntı | Bütün desteleri, kartları ve geçmişi siler; önce yedek alır | Deletes all decks, cards and history; backs up first | Yeni |
-| help.settings.resetProgress.confirm | Sıfırlama onayı, `:979` | onay | Bütün desteler, notlar, kartlar, not türleri, çalışma geçmişi ve Kronometre oturumları silinecek; uygulama ayarları da ilk değerlerine dönecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulur. | All decks, notes, cards, note types, study history and Stopwatch sessions will be deleted, and app settings will return to their starting values. A restorable safety backup is created first. | Mevcut — güncelle (eski metin: Kartlar, çalışma geçmişi ve ilerleme silinecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulacak.) — 15 alanıyla eşgüdümlü |
+| help.settings.resetProgress.confirm | Sıfırlama onayı, `:979` | onay | Bütün desteler, notlar, kartlar, not türleri, çalışma geçmişi ve Kronometre oturumları silinecek; uygulama ayarları da ilk değerlerine dönecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulur. | All decks, notes, cards, note types, study history and Stopwatch sessions will be deleted, and app settings will return to their starting values. A restorable safety backup is created first. | Mevcut — koru |
 
 ---
 
@@ -224,7 +225,7 @@ giriş budur; kenar çubuğundaki **Yardım** düğmesi (`components/Sidebar.tsx
 
 | ID | Yer | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.settings.about.description | Grup açıklaması, `:1598` | açıklama | Sürüm {version} • Anki paketleriyle çalışan, verilerini cihazınızda tutan bağımsız bir kart uygulaması. Anki veya Ankitects ile bağlantılı değildir. | Version {version} • An independent flashcard app that works with Anki packages and keeps its data on your device. Not affiliated with Anki or Ankitects. | Mevcut — güncelle (eski metin: Sürüm {v} • Anki paket desteğine sahip yerel öncelikli kart uygulaması / Version {v} • Local-first flashcard app with Anki package support) |
+| help.settings.about.description | Grup açıklaması, `:1598` | açıklama | Sürüm {version} • Anki paketleriyle çalışan, verilerini cihazınızda tutan bağımsız bir kart uygulaması. Anki veya Ankitects ile bağlantılı değildir. | Version {version} • An independent flashcard app that works with Anki packages and keeps its data on your device. Not affiliated with Anki or Ankitects. | Mevcut — koru |
 | help.settings.about.help | Yeni ilk satır, `:1599` üstü | bağlantı satırı → `/help` | Yardım ve kullanım kılavuzu | Help and user guide | Yeni |
 | help.settings.about.privacy | `:1599` | bağlantı satırı ↗ | Gizlilik politikası | Privacy Policy | Mevcut — koru |
 | help.settings.about.terms | Gizlilik satırının altı (yeni) → `https://bugraguclu.github.io/tus-flashcard-app/terms.html` | bağlantı satırı ↗ | Kullanım koşulları | Terms of Use | Yeni (`docs/terms.html` var ama uygulamadan bağlantısı yok) |

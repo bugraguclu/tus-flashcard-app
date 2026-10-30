@@ -9,8 +9,16 @@ vi.mock('./db', () => ({ getDB: () => h.db, flushDatabaseWrites: async () => {},
 vi.mock('@react-native-async-storage/async-storage', () => ({
     default: { getItem: async () => null, setItem: async () => {}, removeItem: async () => {}, getAllKeys: async () => [] },
 }));
-import { DEFAULT_KEY_BINDINGS, DEFAULT_SETTINGS, loadSettings, resetSettingsToDefaults, saveSettings } from './settingsStore';
+import {
+    DEFAULT_KEY_BINDINGS,
+    DEFAULT_SETTINGS,
+    loadSettings,
+    resetSettingsToDefaults,
+    saveCollectionDeckOptions,
+    saveSettings,
+} from './settingsStore';
 import { getDeckConfig, saveDeckConfig } from './deckPresets';
+import { getDbSetting, setDbSetting } from './dbSettings';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
@@ -66,6 +74,99 @@ describe('saving settings with the default preset', () => {
 
         expect(loadSettings()).toMatchObject({ language: DEFAULT_SETTINGS.language, autoPlayAudio: true });
         expect(getDeckConfig(1)).toMatchObject(deckOptionsEdits);
+    });
+
+    it('restores default settings without turning FSRS or the collection-wide limit switches off', () => {
+        const deckOptionsSwitches = {
+            newCardsIgnoreReviewLimit: false,
+            limitsStartFromTop: true,
+            fsrsEnabled: true,
+            fsrsShortTermWithSteps: true,
+        };
+        saveCollectionDeckOptions(deckOptionsSwitches);
+        saveSettings({ ...loadSettings(), language: 'en', themeMode: 'dark' });
+
+        expect(resetSettingsToDefaults().ok).toBe(true);
+
+        expect(loadSettings()).toMatchObject({
+            ...deckOptionsSwitches,
+            language: DEFAULT_SETTINGS.language,
+            themeMode: DEFAULT_SETTINGS.themeMode,
+        });
+    });
+});
+
+describe('the audio speed of the default preset', () => {
+    /** What Deck Options does when it saves the default preset (app/deck-options.tsx). */
+    function saveFromDeckOptions(audioPlaybackRate: number) {
+        saveDeckConfig({ ...getDeckConfig(1), audioPlaybackRate });
+        saveCollectionDeckOptions({ newCardsIgnoreReviewLimit: true, limitsStartFromTop: false });
+    }
+
+    it('shows the speed Deck Options set, not the copy saved with the app settings', () => {
+        saveSettings({ ...loadSettings(), audioPlaybackRate: 1 });
+
+        saveFromDeckOptions(1.5);
+
+        expect(loadSettings().audioPlaybackRate).toBe(1.5);
+    });
+
+    it('is not written back over by a save of an unrelated setting', () => {
+        saveSettings({ ...loadSettings(), audioPlaybackRate: 1 });
+        saveFromDeckOptions(1.5);
+
+        expect(saveSettings({ ...loadSettings(), language: 'en' }).ok).toBe(true);
+
+        expect(getDeckConfig(1).audioPlaybackRate).toBe(1.5);
+        expect(loadSettings().audioPlaybackRate).toBe(1.5);
+    });
+
+    it('is saved to the default preset when Settings changes it', () => {
+        saveSettings({ ...loadSettings(), audioPlaybackRate: 1.25 });
+
+        expect(getDeckConfig(1).audioPlaybackRate).toBe(1.25);
+        expect(loadSettings().audioPlaybackRate).toBe(1.25);
+    });
+
+    it('falls back to the saved copy for a preset written before the speed existed', () => {
+        saveSettings({ ...loadSettings(), audioPlaybackRate: 0.75 });
+        const { audioPlaybackRate: _omitted, ...legacyPreset } = getDeckConfig(1);
+        saveDeckConfig(legacyPreset);
+
+        expect(loadSettings().audioPlaybackRate).toBe(0.75);
+    });
+
+    it('plays an unusable stored speed at 1x and keeps a stray one inside 0.5x–2x', () => {
+        saveDeckConfig({ ...getDeckConfig(1), audioPlaybackRate: 0 });
+        expect(loadSettings().audioPlaybackRate).toBe(1);
+
+        saveDeckConfig({ ...getDeckConfig(1), audioPlaybackRate: 8 });
+        expect(loadSettings().audioPlaybackRate).toBe(2);
+    });
+});
+
+describe('preferences the note editor saves', () => {
+    it('keeps font size, sentence capitals and the toolbar choices after the settings are read again', () => {
+        const editorPreferences = {
+            editorFontSize: 22,
+            editorCapitalizeSentences: false,
+            editorToolbarVisible: false,
+            editorToolbarScrollable: false,
+        };
+
+        expect(saveSettings({ ...loadSettings(), ...editorPreferences }).ok).toBe(true);
+
+        expect(loadSettings()).toMatchObject(editorPreferences);
+    });
+});
+
+describe('a damaged settings row', () => {
+    it('starts the day at 04:00 when the stored start of day is not a number', () => {
+        saveSettings({ ...loadSettings(), dayRolloverHour: 6 });
+        const meta = JSON.parse(getDbSetting('tus_app_settings_meta_v1') ?? '{}');
+        setDbSetting('tus_app_settings_meta_v1', JSON.stringify({ ...meta, dayRolloverHour: 'late' }));
+
+        expect(loadSettings().dayRolloverHour).toBe(4);
     });
 });
 

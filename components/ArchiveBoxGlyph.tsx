@@ -1,4 +1,5 @@
 import Svg, { Path, Rect } from 'react-native-svg';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 
 type Props = {
     color: string;
@@ -8,7 +9,7 @@ type Props = {
 /** A clean Apple SF-style archivebox glyph for data management. */
 export default function ArchiveBoxGlyph({ color, size = 20 }: Props) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" accessibilityElementsHidden>
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
             <Rect
                 x="3"
                 y="3"

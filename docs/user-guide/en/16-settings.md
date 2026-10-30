@@ -8,7 +8,7 @@ app_help: help?article=settings
 app_screens:
   - "Settings — app/settings.tsx"
   - "Settings › Controls › Keyboard — components/settings/KeyboardSettingsSection.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: settings-page-full-functionality (2026-10-30)
 ---
 
 # Settings
@@ -44,10 +44,11 @@ you to the category list.
 <a id="search-settings"></a>
 ## Searching settings
 
-The **Search…** box above the category list searches category names and the short line under
-them. Typing "theme", "keyboard" or "reminder" finds the right category. If the name of a single
-row (for example "timebox") finds nothing, search for the name of its category instead; the
-headings on this page show where each setting lives.
+The **Search…** box above the category list searches category names, the headings listed under
+them and the names of the settings on each page. Typing "theme" or "keyboard" finds the right
+category. Type the name of a setting (for example "timebox" or "playback speed") and its category
+is listed with the matching setting named under it. Case and accents do not matter, and each word
+you type has to match the start of a word: "card" finds "Card zoom", "ard" finds nothing.
 
 <a id="saving"></a>
 ## Saving your changes
@@ -68,7 +69,10 @@ and leaves; **Cancel** keeps you on the page.
 - Turning on **Notifications** asks for permission right away; your choice is still stored with
   **Save**.
 - Settings are stored with the collection on your device and are part of backups. Restoring a
-  backup also restores the settings it contains.
+  backup also restores the settings it contains. If you restore one on the **Backups** screen you
+  opened from Settings (or import a collection package), Settings shows the restored settings when
+  you come back, keeping only the changes of your own that you had not saved yet. **Save** never
+  writes the old values back over the restored ones.
 
 <a id="general"></a>
 ## General
@@ -258,7 +262,10 @@ set the **Question** and **Answer** sides separately; tap a zone and pick an act
   lower value needs a longer, deliberate swipe.
 
 If **Show answer buttons** is off and you turn off both tap zones and swipes, the answer buttons
-come back by themselves, so there is always a way to answer.
+come back by themselves, so there is always a way to answer. If you change the zones' and
+directions' actions until none of them answers, the page warns **No way left to answer cards**, and
+**Save** then offers to save with the answer buttons shown again. Should such a setting arrive from
+a backup or an older version, the study screen shows the answer buttons anyway.
 
 **On-screen control › Show the floating Tools button** adds a fixed **Tools** button to the study
 screen for one-handed use. Pick the left or right side with **Button position**.
@@ -345,10 +352,11 @@ The **↺ Restore default settings** button at the bottom of the **General** pag
 you confirm (no **Save** needed):
 
 - The settings on every page return to their starting values: language **Türkçe**, theme
-  **Light**, reminder at 09:00, keyboard shortcuts on their default keys.
-- Decks using the **Default** preset also get their daily limits, learning steps and interval
-  settings back to the starting values. If you customised that preset, check it afterwards in
-  [Deck options](06-deck-options.md#presets).
+  **Light**, text size **Default**, reminder at 09:00, keyboard shortcuts on their default keys.
+- [Deck options](06-deck-options.md#presets) do not change: the **Default** preset's daily
+  limits, learning steps and interval settings, FSRS and the collection-wide choices such as how
+  daily limits are counted all stay as they are. Only **Automatically play audio** and **Audio
+  playback speed**, which this screen shows as well, go back to their starting values (on, 1.0x).
 - Your cards, decks and study history do not change.
 
 ## Related topics

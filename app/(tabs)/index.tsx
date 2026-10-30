@@ -142,6 +142,7 @@ import { useReviewerDwellTimer } from '../../lib/reviewerDwellTimer';
 import { beginStudyActivity } from '../../lib/backupWindow';
 import { TimeboxTracker } from '../../lib/timebox';
 import {
+    canGradeRevealedCard,
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
     reviewTapZoneAt,
@@ -2677,7 +2678,10 @@ export default function StudyScreen() {
         3: { label: t('anki.good'), time: preview.good, color: colors.btnGood },
         4: { label: t('anki.easy'), time: preview.easy, color: colors.btnEasy },
     } : null;
-    const answerButtons = showingAnswer && gradePresentation && settings.showAnswerButtons !== false ? (
+    // Hidden answer buttons need a tap zone or swipe that grades; settings stored without one (an
+    // older build, a restored backup) still get the buttons, so a revealed card can be answered.
+    const answerButtonsShown = settings.showAnswerButtons !== false || !canGradeRevealedCard(settings);
+    const answerButtons = showingAnswer && gradePresentation && answerButtonsShown ? (
         <View style={[styles.answerButtons, settings.twoRowAnswerButtons && styles.answerButtonsTwoRows]}>
             {settings.showToolsOverlayButton && settings.toolsOverlayPosition === 'left' ? (
                 <TouchableOpacity
