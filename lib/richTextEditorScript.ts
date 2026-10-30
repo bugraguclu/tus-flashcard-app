@@ -54,12 +54,34 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
   let lastState = '';
   // Numbers each reported edit, so the host can tell a late message from a newer reading.
   let changeSeq = 0;
-  editor.innerHTML = typeof config.html === 'string' ? config.html : '';
   // The copy a field is saved from is parsed into a document with no window, which loads
   // nothing. Made in the field's own document, every picture in the copy was fetched on each
   // edit: on web, once its src is set back to the bare filename below, from the page's origin,
   // which answers 404.
   const exportDocument = document.implementation.createHTMLDocument('');
+  editor.innerHTML = showableHtml(typeof config.html === 'string' ? config.html : '');
+
+  // On web the field's media lives in IndexedDB, and the host shows each file through an object
+  // URL. A bare filename that reached this document as a src would first be fetched from the
+  // page's origin, a 404 per picture or sound, so web HTML is parsed apart from the field before
+  // it goes in: the filename moves to data-tus-src, where the host finds it and cleanForExport
+  // puts it back, and src is left empty, which loads nothing. The native WebView reads the
+  // document from the media folder, where the bare name is the file, so its HTML is left alone.
+  function showableHtml(html) {
+    if (!config.hostOrigin || !html) return html;
+    const temp = exportDocument.createElement('div');
+    temp.innerHTML = html;
+    const media = temp.querySelectorAll('img[src], audio[src], video[src], source[src]');
+    let changed = false;
+    for (let i = 0; i < media.length; i++) {
+      const src = media[i].getAttribute('src') || '';
+      if (!src || /^(?:[a-z][a-z0-9+.-]*:|\\/\\/|\\/|#)/i.test(src)) continue;
+      if (!media[i].hasAttribute('data-tus-src')) media[i].setAttribute('data-tus-src', src);
+      media[i].setAttribute('src', '');
+      changed = true;
+    }
+    return changed ? temp.innerHTML : html;
+  }
 
   function cleanForExport(html) {
     if (!html) return '';
@@ -244,6 +266,7 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
         return '<audio controls src="' + fn + '" disableRemotePlayback controlsList="nodownload"></audio>';
       });
     }
+    processedHtml = showableHtml(processedHtml);
     bridge.editDocument(function () { return document.execCommand('insertHTML', false, processedHtml); });
     initAudioControls();
     emitChange();
@@ -308,10 +331,10 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
     if (html && typeof html === 'object') {
       if (cleanForExport(editor.innerHTML) === html.original) return;
       preserved = html.preserved || {};
-      editor.innerHTML = html.html;
+      editor.innerHTML = showableHtml(html.html);
     } else {
       if (cleanForExport(editor.innerHTML) === html) return;
-      editor.innerHTML = html;
+      editor.innerHTML = showableHtml(html);
     }
     initAudioControls();
     bridge.clearSavedRange();

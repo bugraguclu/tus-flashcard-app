@@ -4,7 +4,8 @@ import { TextInput } from './AppText';
 import { WebView } from 'react-native-webview';
 import type { ColorScheme } from '../constants/theme';
 import { base64ToBytes } from '../lib/files';
-import { getMediaBaseUrl, getWebMediaUrl, isBareMediaReference, saveMediaBytes } from '../lib/mediaStore';
+import { getMediaBaseUrl, saveMediaBytes } from '../lib/mediaStore';
+import { resolveWebFieldMedia } from '../lib/webFieldMedia';
 import { mediaReferenceSnippet } from '../lib/mediaAttachment';
 import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl, localMediaWebViewSource } from '../lib/localMediaDocument';
@@ -200,28 +201,6 @@ function injectableEditorCall({ fn, args }: EditorCall): string {
         .replace(/</g, '\\u003c')
         .replace(/>/g, '\\u003e'));
     return `window.${fn} && window.${fn}(${literals.join(', ')}); true;`;
-}
-
-/**
- * Web fields keep Anki's bare media filenames, which the field iframe cannot load: the files live
- * in IndexedDB. Each such reference is pointed at the file's object URL for display, and the real
- * filename is kept in data-tus-src, which the document script restores before a field is saved.
- */
-async function resolveWebFieldMedia(doc: Document): Promise<void> {
-    const elements = Array.from(doc.querySelectorAll('img[src], audio[src], video[src], source[src]'));
-    for (const element of elements) {
-        if (element.hasAttribute('data-tus-src')) continue;
-        const src = element.getAttribute('src') ?? '';
-        if (!isBareMediaReference(src)) continue;
-        const url = await getWebMediaUrl(src);
-        if (!url || element.getAttribute('src') !== src) continue;
-        element.setAttribute('data-tus-src', src);
-        element.setAttribute('src', url);
-        // A <source> is only read when its media element loads, so the element has to reload.
-        if (element.tagName.toLowerCase() === 'source') {
-            (element.parentElement as HTMLMediaElement | null)?.load?.();
-        }
-    }
 }
 
 /** How long the web field may take to start before the plain-text fallback is offered. */

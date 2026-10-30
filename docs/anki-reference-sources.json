@@ -854,7 +854,14 @@
       "priority": 3,
       "platform": "web rich-text field surface",
       "url": "https://html.spec.whatwg.org/multipage/images.html#update-the-image-data",
-      "useFor": ["an img fetches its src when the attribute is set, even off the page, while its document is fully active", "a document made by createHTMLDocument has no browsing context, so its images never load"]
+      "useFor": ["an img fetches its src when the attribute is set, even off the page, while its document is fully active", "a document made by createHTMLDocument has no browsing context, so its images never load", "an img whose src is the empty string is marked broken without a fetch"]
+    },
+    {
+      "id": "html-standard-media-resource-selection",
+      "priority": 3,
+      "platform": "web rich-text field surface",
+      "url": "https://html.spec.whatwg.org/multipage/media.html#concept-media-load-algorithm",
+      "useFor": ["an audio, video or source whose src is the empty string fails without a fetch"]
     },
     {
       "id": "anki-source-webview-css",

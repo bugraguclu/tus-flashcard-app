@@ -6,9 +6,48 @@ import {
     richTextEditorConfigJson,
     type RichTextEditorDocumentConfig,
 } from './richTextEditorScript';
+import { isBareMediaReference } from './mediaStore';
 import { cspHashSource } from './sha256';
 
 type Listener = (event: any) => void;
+
+/**
+ * A container for the field script's detached document that parses just the media tags, enough
+ * to read and change their attributes and write them back out as a browser does (`controls=""`).
+ */
+function parsedMediaContainer() {
+    type Tag = { name: string; attributes: Map<string, string> };
+    let parts: (string | Tag)[] = [];
+    const tags = () => parts.filter((part): part is Tag => typeof part !== 'string');
+    const element = (tag: Tag) => ({
+        getAttribute: (name: string) => tag.attributes.get(name) ?? null,
+        hasAttribute: (name: string) => tag.attributes.has(name),
+        setAttribute: (name: string, value: string) => { tag.attributes.set(name, value); },
+        removeAttribute: (name: string) => { tag.attributes.delete(name); },
+    });
+    return {
+        get innerHTML() {
+            return parts.map((part) => (typeof part === 'string' ? part : `<${part.name}${
+                [...part.attributes].map(([name, value]) => ` ${name}="${value}"`).join('')}>`)).join('');
+        },
+        set innerHTML(value: string) {
+            parts = value.split(/(<(?:img|audio|video|source)\b[^>]*>)/i).map((part) => {
+                const head = part.match(/^<(img|audio|video|source)\b/i);
+                if (!head) return part;
+                const attributes = new Map<string, string>();
+                for (const match of part.slice(head[0].length).matchAll(/\s([^\s=/>]+)(?:="([^"]*)")?/g)) {
+                    attributes.set(match[1].toLowerCase(), match[2] ?? '');
+                }
+                return { name: head[1].toLowerCase(), attributes };
+            });
+        },
+        querySelectorAll: (selector: string) => {
+            if (selector === '[data-tus-src]') return tags().filter((tag) => tag.attributes.has('data-tus-src')).map(element);
+            if (selector.includes('[src]')) return tags().filter((tag) => tag.attributes.has('src')).map(element);
+            return [];
+        },
+    };
+}
 
 /** Just enough of a document for the field script to start, take input and report back. */
 function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 'web', extras: { selection?: unknown; execCommand?: (command: string, ui: boolean, value: string) => boolean } = {}) {
@@ -59,7 +98,7 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
             createHTMLDocument: () => ({
                 createElement: () => {
                     elementsMade.detached += 1;
-                    return createElement();
+                    return parsedMediaContainer();
                 },
             }),
         },
@@ -92,6 +131,8 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         editorHtml: () => html,
         setEditorHtml: (value: string) => { html = value; },
         readHtml: () => (window.__tusEditorReadHtml as () => unknown)(),
+        insertHtml: (html: unknown) => (window.__tusEditorInsertHtml as (h: unknown) => void)(html),
+        setHtml: (html: unknown) => (window.__tusEditorSetHtml as (h: unknown) => void)(html),
         command: (payload: { command: string; value?: string }) => (window.__tusEditorCommand as (p: unknown) => void)(payload),
     };
 }
@@ -180,6 +221,74 @@ describe('rich text field script', () => {
     it('stays silent on web without a host origin to address', () => {
         const run = runEditorScript(baseConfig, 'web');
         expect(run.posted).toEqual([]);
+    });
+});
+
+describe('media entering a web field', () => {
+    const web = { ...baseConfig, hostOrigin: 'https://app.example' };
+    const inserting = (config: RichTextEditorDocumentConfig, host: 'native' | 'web') => {
+        const inserted: string[] = [];
+        const run = runEditorScript(config, host, {
+            execCommand: (command, _ui, value) => { if (command === 'insertHTML') inserted.push(value); return true; },
+        });
+        return { run, inserted };
+    };
+
+    it('gives the first document its media with no bare src, and saves it byte for byte', () => {
+        // The browser fetches a src as soon as the element is in the field document; a bare
+        // filename went to the page's origin, which answered 404, before the host showed the file.
+        const html = '<p><img src="kalp.jpg" alt="Kalp"> <video controls><source src="atim.mp4"></video></p>';
+        const run = runEditorScript({ ...web, html }, 'web');
+        expect(run.editorHtml()).toBe(
+            '<p><img src="" alt="Kalp" data-tus-src="kalp.jpg"> <video controls=""><source src="" data-tus-src="atim.mp4"></video></p>',
+        );
+        expect(run.readHtml()).toEqual({ html: '<p><img src="kalp.jpg" alt="Kalp"> <video controls=""><source src="atim.mp4"></video></p>', seq: 0 });
+        // Once the host has pointed the picture at its object URL, the saved field is the same.
+        run.setEditorHtml(run.editorHtml().replace('src="" alt', 'src="blob:https://app.example/1" alt'));
+        expect(run.readHtml()).toMatchObject({ html: '<p><img src="kalp.jpg" alt="Kalp"> <video controls=""><source src="atim.mp4"></video></p>' });
+    });
+
+    it('leaves every src that is no bare filename, and HTML without one, exactly as written', () => {
+        const html = '<img src="blob:https://app.example/1" data-tus-src="a.jpg"><img src="data:image/png;base64,AA"><img src="https://x.test/b.png"><img src="/c.png"><img src="//x.test/d.png"><img src="#e"><img src="">';
+        expect(runEditorScript({ ...web, html }, 'web').editorHtml()).toBe(html);
+        const odd = '<b>kalp</b><IMG SRC=x.png class=y>';
+        expect(runEditorScript({ ...web, html: '<b>kalp</b>' }, 'web').editorHtml()).toBe('<b>kalp</b>');
+        expect(runEditorScript({ ...baseConfig, html: odd }, 'native').editorHtml()).toBe(odd);
+    });
+
+    it('treats as bare exactly what the web host resolves', () => {
+        for (const src of ['kalp.jpg', 'ses kaydı.mp3', 'a&amp;b.png', 'blob:x', 'data:,', 'https://x.test/a.png', 'C:x.png', '/a.png', '//x/a.png', '#a']) {
+            const run = runEditorScript({ ...web, html: `<img src="${src}">` }, 'web');
+            expect(run.editorHtml() !== `<img src="${src}">`, src).toBe(isBareMediaReference(src));
+        }
+    });
+
+    it('inserts pictures and sounds with no bare src, in the order they were asked for', () => {
+        const { run, inserted } = inserting(web, 'web');
+        run.insertHtml('[sound:ses.mp3]');
+        run.insertHtml({ html: '<img src="kalp.jpg">', original: '<img src="kalp.jpg">', preserved: {} });
+        expect(inserted).toEqual([
+            '<audio controls="" src="" disableremoteplayback="" controlslist="nodownload" data-tus-src="ses.mp3"></audio>',
+            '<img src="" data-tus-src="kalp.jpg">',
+        ]);
+    });
+
+    it('replaces a web field\'s HTML with no bare src', () => {
+        const run = runEditorScript(web, 'web');
+        run.setHtml({ html: '<img src="a.jpg">', original: '<img src="a.jpg">', preserved: {} });
+        expect(run.editorHtml()).toBe('<img src="" data-tus-src="a.jpg">');
+        run.setHtml('<img src="b.jpg">');
+        expect(run.editorHtml()).toBe('<img src="" data-tus-src="b.jpg">');
+    });
+
+    it('hands the native WebView bare filenames, which it reads from the media folder', () => {
+        const html = '<img src="kalp.jpg">';
+        expect(runEditorScript({ ...baseConfig, html }, 'native').editorHtml()).toBe(html);
+        const { run, inserted } = inserting(baseConfig, 'native');
+        run.insertHtml('[sound:ses.mp3]');
+        run.setHtml('<img src="b.jpg">');
+        expect(inserted).toEqual(['<audio controls src="ses.mp3" disableRemotePlayback controlsList="nodownload"></audio>']);
+        expect(run.editorHtml()).toBe('<img src="b.jpg">');
     });
 });
 
