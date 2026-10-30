@@ -111,7 +111,10 @@ web-facing changes there:
   names the note just added, and "Bitti" leaves without asking to discard changes.
 - With an unsaved draft in the editor, press the browser's Back: the same "Değişiklikler atılsın
   mı?" question appears, İptal keeps the draft, and Tamam leaves.
-- Reload the page on `/editor` or `/card-info`: the back arrow opens the deck list.
+- Reload the page on `/editor` or `/card-info`: the back arrow opens the deck list. After the
+  `/editor` reload both fields stay rich fields (no plain-text stand-in after a few seconds), and
+  a photo added through 📎 › Olduğu gibi ekle appears in the field
+  (`lib/richTextEditorWebReady.test.ts`).
 - Study with the mouse: click the card, then press Space and 1–4; click the undo button, then press
   Space. The keys answer the reviewer every time rather than the control that was clicked.
 - Safari reviewer history: open TUS Kartları, reveal and grade at least six cards, then return

@@ -836,6 +836,20 @@
       "useFor": ["replace a same-origin blank frame's HTML without a frame navigation", "reset document listeners when replacing a card side", "preserve sandbox and inherited CSP"]
     },
     {
+      "id": "html-standard-window-postmessage",
+      "priority": 3,
+      "platform": "web rich-text field surface",
+      "url": "https://html.spec.whatwg.org/multipage/web-messaging.html#window-post-message-steps",
+      "useFor": ["a message posted while the field document is written arrives in a later task", "the host's listener must exist before that task runs"]
+    },
+    {
+      "id": "react-effect-timing",
+      "priority": 3,
+      "platform": "web rich-text field surface",
+      "url": "https://react.dev/reference/react/useEffect#caveats",
+      "useFor": ["an Effect not caused by an interaction may run after the browser paints", "layout effects run within the commit, before any later task"]
+    },
+    {
       "id": "anki-source-webview-css",
       "priority": 3,
       "platform": "desktop card page defaults",

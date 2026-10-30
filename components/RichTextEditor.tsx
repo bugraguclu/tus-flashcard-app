@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager, Platform, StyleSheet, View } from 'react-native';
 import { TextInput } from './AppText';
 import { WebView } from 'react-native-webview';
@@ -332,7 +332,11 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     );
     const [webFallbackDue, setWebFallbackDue] = useState(false);
 
-    useEffect(() => {
+    // On web WebHtmlFrame writes the new document during this commit's layout phase, and its
+    // script queues `ready` while it is written. Passive effects are only sure to run before that
+    // message after a synchronous commit, so a passive reset could land after it and leave the new
+    // document marked unready for good: every insert and command would wait in pendingCallsRef.
+    useLayoutEffect(() => {
         editorReadyRef.current = false;
         if (!handedOffRef.current) setIsReady(false);
         if (Platform.OS !== 'web') return undefined;
@@ -510,7 +514,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     const handleMessageRef = useRef(handleMessage);
     handleMessageRef.current = handleMessage;
 
-    useEffect(() => {
+    // Listening starts in the commit that first writes the field document, for the reason given
+    // at the reset above. Added by a passive effect, the listener missed `ready` when the editor
+    // was the page loaded directly (/editor), and the field fell back to its plain-text stand-in.
+    useLayoutEffect(() => {
         if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
         const onMessage = (event: MessageEvent) => {
             if (event.source !== iframeRef.current?.contentWindow || event.origin !== window.location.origin) return;
