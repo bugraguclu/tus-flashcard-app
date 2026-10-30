@@ -31,3 +31,27 @@ export function isLocalMediaDocumentUrl(url: unknown, mediaBaseUrl: unknown): bo
     if (!base) return false;
     return url.replace(/\/+$/, '') === base;
 }
+
+/**
+ * The stored file a tapped link points at, when the WebView resolved it inside the media folder.
+ *
+ * An attached file is linked by its bare name (`<a href="notlar.pdf">`), which the WebView
+ * resolves against the media base before asking whether it may navigate there. Only a direct
+ * child of the base counts: a deeper path, a query, a fragment or an escape that decodes to a
+ * separator is not a file of this collection, and the navigation stays refused like any other.
+ */
+export function localMediaFileFromUrl(url: unknown, mediaBaseUrl: unknown): string | null {
+    if (typeof url !== 'string' || typeof mediaBaseUrl !== 'string') return null;
+    const base = mediaBaseUrl.trim().replace(/\/+$/, '');
+    if (!base || !url.startsWith(`${base}/`)) return null;
+    const encoded = url.slice(base.length + 1);
+    if (!encoded || /[/?#\\]/.test(encoded)) return null;
+    let name: string;
+    try {
+        name = decodeURIComponent(encoded);
+    } catch {
+        return null;
+    }
+    if (!name.trim() || name === '.' || name === '..' || /[\\/]|\p{Cc}/u.test(name)) return null;
+    return name.normalize('NFC');
+}

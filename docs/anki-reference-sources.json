@@ -43,7 +43,7 @@
       "priority": 1,
       "platform": "cross-platform note/card semantics",
       "url": "https://docs.ankiweb.net/editing.html",
-      "useFor": ["adding notes", "generated cards", "note fields", "editing notes", "field formatting and media attachments", "shared note fields versus independent sibling card deck placement"]
+      "useFor": ["adding notes", "generated cards", "note fields", "editing notes", "field formatting and media attachments", "paper-clip attachment of audio, images and video, and recording from the microphone (Editing Features); lib/attachmentKind.test.ts", "shared note fields versus independent sibling card deck placement"]
     },
     {
       "id": "anki-manual-collection-packages",

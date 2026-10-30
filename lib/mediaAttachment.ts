@@ -43,7 +43,9 @@ export function mediaReferenceSnippet(
     const src = escapeHtml(filename);
     if (kind === 'image') return `<img src="${src}">`;
     if (kind === 'audio') return `[sound:${soundSafeMediaFilename(filename)}]`;
-    if (kind === 'video') return `<video controls src="${src}" disableRemotePlayback></video>`;
+    // `playsinline` keeps an iPhone from taking the whole screen the moment a clip starts; the
+    // player's own full-screen button is still there for a closer look.
+    if (kind === 'video') return `<video controls playsinline src="${src}" disableRemotePlayback></video>`;
     return `<a href="${src}">${escapeHtml(label)}</a>`;
 }
 

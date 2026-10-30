@@ -135,9 +135,15 @@ Alan adının yanındaki 📎 **Ek ekle** sayfasını açar. Ek, o alanda imleci
 - **Galeriden fotoğraf seç** / **Fotoğraf çek:** Ardından **Olduğu gibi ekle** (tam çözünürlük) veya
   **Kırp ve düzenle** ([Fotoğrafı düzenleme](#photo-editor)) seçilir.
 - **Boş tuvale çiz:** [Çizim sayfası](#drawing-page) açılır.
-- **Ses kaydet** ve **Ses klibi ekle:** Bkz. [Ses kaydı](#audio-recording).
-- **Video klibi ekle:** iPhone'da **Galeri** veya **Dosyalar**'dan seçilir.
-- **Dosya ekle:** Dosya notla saklanır ve dışa aktarılır, ama kartın içinden açılamaz.
+- **Ses kaydet:** Bkz. [Ses kaydı](#audio-recording).
+- **Ses klibi ekle:** Dosyalar'dan bir veya birden çok ses dosyası seçilir; her biri alanda bir
+  oynatıcı olur.
+- **Video klibi ekle:** iPhone'da Fotoğraflar açılır (izin istenmez). Dosyalar'daki bir videoyu
+  **Dosya ekle** ile ekleyin. Video kartın içinde oynar; tam ekran için oynatıcının düğmesini kullanın.
+- **Dosya ekle:** Bir veya birden çok dosya seçilir. Resim, ses ve video dosyaları kartta resim,
+  oynatıcı ve video olarak görünür; PDF, Word, Excel gibi diğer dosyalar bağlantı olarak eklenir.
+  Kartta bağlantıya dokununca dosya açılır; **Paylaş** ile başka bir uygulamada açabilir veya
+  Dosyalar'a kaydedebilirsiniz.
 
 Uygulama izin isterse **Ayarları Aç** ile iPhone ayarlarından galeri, kamera veya mikrofon iznini
 verin. Panodaki bir resmi alana yapıştırabilirsiniz; resim koleksiyona JPEG olarak, **Ayarlar ›
@@ -147,12 +153,13 @@ sayfasından metinle birlikte kopyalanan resimler indirilmez ve boş görünür;
 <a id="audio-recording"></a>
 ## Ses kaydı
 
-1. 📎 › **Ses kaydet**'e dokunun ve mikrofon simgesine basın.
-2. Konuşun; süre ekranda görünür.
-3. Durdur düğmesine dokunun. Kayıt hemen alana eklenir.
+1. 📎 › **Ses kaydet**'e dokunun ve kırmızı düğmeye basın.
+2. Konuşun; süre ve ses düzeyi ekranda görünür. **Duraklat** ile ara verip **Devam** ile sürdürün.
+3. Kırmızı kareye dokunarak kaydı bitirin. ▶ ile dinleyin; beğenmezseniz **Yeniden**'e dokunun.
+4. **Ekle** kaydı alana ekler. Kayıt sürerken **Ekle**'ye dokunmak kaydı bitirip hemen ekler.
 
-Kaydı eklemeden önce dinleme veya yeniden kaydetme adımı yoktur. Beğenmezseniz alandaki oynatıcıyı
-silip yeniden kaydedin. **İptal** veya pencerenin dışına dokunmak kaydı eklemeden kapatır. Alandaki
+Kayıt varken **Vazgeç**'e veya pencerenin dışına dokunursanız kaydın silinip silinmeyeceği sorulur.
+Uygulamadan çıkarsanız kayıt duraklatılır; döndüğünüzde **Devam** ile sürdürebilirsiniz. Alandaki
 oynatıcının yanındaki hız düğmesi yalnızca dinlerken kullanılır, notla kaydedilmez. Çalışırken sesin
 nasıl çaldığı: [Çalışma ekranı](05-studying.md#audio-and-tts).
 

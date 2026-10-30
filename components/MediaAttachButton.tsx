@@ -1,20 +1,30 @@
-import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable, Platform } from 'react-native';
 import { Text } from './AppText';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
-import { alert, choose } from '../lib/confirm';
+import { alert } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { saveMediaFromUri } from '../lib/mediaStore';
 import { attachmentMediaFilename, mediaFilenameForPickedAsset } from '../lib/mediaFilename';
 import { mediaReferenceSnippet, soundSafeMediaFilename, type MediaReferenceKind } from '../lib/mediaAttachment';
+import { attachmentKindFor } from '../lib/attachmentKind';
 import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './PhotoEditorModal';
 import DrawingPadModal from './drawing/DrawingPadModal';
 import { useI18n } from '../hooks/useI18n';
 import SwipeDismissSheet from './SwipeDismissSheet';
+import {
+    CameraIcon,
+    DocumentIcon,
+    DrawIcon,
+    MicIcon,
+    MusicIcon,
+    PhotoIcon,
+    VideoIcon,
+} from './editor/AttachmentIcons';
 import {
     compressPhotoForAttachment,
     formatByteSize,
@@ -37,6 +47,14 @@ export interface MediaAttachButtonHandle {
 type PickedPhoto = EditablePhoto & {
     byteLength: number | null;
     plan: PhotoCompressionPlan;
+};
+
+/** A picked file on its way into the field, with the reference it will be written as. */
+type PickedFile = {
+    uri: string;
+    name: string;
+    mimeType?: string | null;
+    kind: MediaReferenceKind;
 };
 
 const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert }, ref) {
@@ -219,46 +237,74 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         setPhotoToEdit(photo);
     };
 
+    /**
+     * Store every picked file and write all of their references into the field at once. A file
+     * that cannot be copied is reported without losing the ones that could.
+     */
+    const attachFiles = async (files: PickedFile[]) => {
+        if (files.length === 0) return;
+        setBusy(true);
+        const snippets: string[] = [];
+        let lastKind: MediaReferenceKind | null = null;
+        let failed = 0;
+        const stamp = Date.now();
+        for (let index = 0; index < files.length; index += 1) {
+            const file = files[index];
+            try {
+                // Each file gets its own timestamp, so two picked files of the same name never
+                // overwrite one another.
+                const filename = soundSafeMediaFilename(attachmentMediaFilename(`${stamp + index}_${file.name}`));
+                await saveMediaFromUri(filename, file.uri, file.mimeType ?? undefined);
+                snippets.push(mediaReferenceSnippet(file.kind, filename, file.name));
+                lastKind = file.kind;
+            } catch (e) {
+                console.warn('[MediaAttach] save failed:', e);
+                failed += 1;
+            }
+        }
+        setBusy(false);
+        // A file link is text, so the next link or word would run straight into it
+        // ("notlar.pdfvaka.zip"). A non-breaking space keeps them apart; the editor drops a
+        // plain trailing space as unrendered.
+        if (snippets.length > 0) onInsert(snippets.join(' ') + (lastKind === 'file' ? '&nbsp;' : ''));
+        if (failed > 0) {
+            alert(t('common.error'), failed === files.length
+                ? l('Dosya eklenemedi.', 'Could not attach the file.')
+                : l(`${failed} dosya eklenemedi; diğerleri eklendi.`, `${failed} of the files could not be attached; the others were added.`));
+        }
+    };
+
     const pickAudioClip = async () => {
         try {
-            const picked = await DocumentPicker.getDocumentAsync({
-                type: [
-                    'audio/*',
-                    'audio/mpeg',
-                    'audio/mp4',
-                    'audio/x-m4a',
-                    'audio/wav',
-                    'audio/aac',
-                    'audio/ogg',
-                    'audio/webm',
-                ],
-                copyToCacheDirectory: true,
-            });
+            const picked = await DocumentPicker.getDocumentAsync({ type: ['audio/*'], multiple: true, copyToCacheDirectory: true });
             if (picked.canceled || !picked.assets?.length) return;
-            const asset = picked.assets[0];
-            const name = mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.name || 'ses', fallbackExtension: 'm4a' });
-            await saveAndInsert(asset.uri, name, 'audio');
+            await attachFiles(picked.assets.map((asset) => {
+                const name = mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.name || 'ses', fallbackExtension: 'm4a' });
+                // A sound in a video container is still a sound clip here; anything else a browser
+                // lets past the audio filter goes in as what it is.
+                const kind = attachmentKindFor(name, asset.mimeType);
+                return { uri: asset.uri, name, mimeType: asset.mimeType, kind: kind === 'video' ? 'audio' : kind };
+            }));
         } catch (e) {
             console.warn('[MediaAttach] audio clip pick failed:', e);
             alert(t('common.error'), l('Ses klibi eklenemedi.', 'Could not attach the audio clip.'));
         }
     };
 
-    const pickVideoFromGallery = async () => {
+    const pickVideoClip = async () => {
         try {
-            const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (!perm.granted) {
-                await promptPermissionSettings({
-                    title: l('İzin gerekli', 'Permission Required'),
-                    message: l(
-                        'Galeriye erişmek için izin vermeniz gerekiyor. Ayarlardan erişim iznini açabilirsiniz.',
-                        'Allow photo library access to choose a video. You can enable access in Settings.',
-                    ),
-                    settingsLabel: l('Ayarları Aç', 'Open Settings'),
-                    cancelLabel: t('common.cancel'),
-                });
+            if (Platform.OS === 'web') {
+                const picked = await DocumentPicker.getDocumentAsync({ type: ['video/*'], copyToCacheDirectory: true });
+                if (picked.canceled || !picked.assets?.length) return;
+                const asset = picked.assets[0];
+                const name = mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.name || 'video', fallbackExtension: 'mp4' });
+                await attachFiles([{ uri: asset.uri, name, mimeType: asset.mimeType, kind: 'video' }]);
                 return;
             }
+            // The system photo picker runs outside the app, so it needs no library permission.
+            // Copying a long or iCloud-only clip takes a moment after it closes; the button
+            // shows that wait. A clip kept in Files goes in through "Dosya ekle".
+            setBusy(true);
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ['videos'],
                 allowsEditing: false,
@@ -267,73 +313,39 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             if (result.canceled || !result.assets?.length) return;
             const asset = result.assets[0];
             const name = mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.fileName || 'video', fallbackExtension: 'mp4' });
-            await saveAndInsert(asset.uri, name, 'video');
+            await attachFiles([{ uri: asset.uri, name, mimeType: asset.mimeType, kind: 'video' }]);
         } catch (e) {
-            console.warn('[MediaAttach] gallery video pick failed:', e);
+            console.warn('[MediaAttach] video pick failed:', e);
             alert(t('common.error'), l('Video klibi eklenemedi.', 'Could not attach the video clip.'));
-        }
-    };
-
-    const pickVideoFromFiles = async () => {
-        try {
-            const picked = await DocumentPicker.getDocumentAsync({
-                type: [
-                    'video/*',
-                    'video/mp4',
-                    'video/quicktime',
-                    'video/x-m4v',
-                    'video/webm',
-                ],
-                copyToCacheDirectory: true,
-            });
-            if (picked.canceled || !picked.assets?.length) return;
-            const asset = picked.assets[0];
-            const name = mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.name || 'video', fallbackExtension: 'mp4' });
-            await saveAndInsert(asset.uri, name, 'video');
-        } catch (e) {
-            console.warn('[MediaAttach] file video pick failed:', e);
-            alert(t('common.error'), l('Video klibi eklenemedi.', 'Could not attach the video clip.'));
-        }
-    };
-
-    const pickVideoClip = async () => {
-        if (Platform.OS === 'web') {
-            await pickVideoFromFiles();
-            return;
-        }
-        const pickFromGaleri = await choose(
-            l('Video klibi ekle', 'Attach Video Clip'),
-            l('Videoyu nereden seçmek istersiniz?', 'Where would you like to choose the video from?'),
-            l('Galeri', 'Gallery'),
-            l('Dosyalar', 'Files'),
-        );
-        if (pickFromGaleri) {
-            await pickVideoFromGallery();
-        } else {
-            await pickVideoFromFiles();
+        } finally {
+            setBusy(false);
         }
     };
 
     const pickFile = async () => {
         try {
-            const picked = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
+            const picked = await DocumentPicker.getDocumentAsync({ type: '*/*', multiple: true, copyToCacheDirectory: true });
             if (picked.canceled || !picked.assets?.length) return;
-            const asset = picked.assets[0];
-            await saveAndInsert(asset.uri, mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.name || 'dosya' }), 'file');
+            await attachFiles(picked.assets.map((asset) => {
+                const name = mediaFilenameForPickedAsset({ uri: asset.uri, name: asset.name || 'dosya' });
+                // A picture, sound or video chosen here goes into the card as one, not as a link.
+                return { uri: asset.uri, name, mimeType: asset.mimeType, kind: attachmentKindFor(name, asset.mimeType) };
+            }));
         } catch (e) {
             console.warn('[MediaAttach] file pick failed:', e);
             alert(t('common.error'), l('Dosya eklenemedi.', 'Could not attach the file.'));
         }
     };
 
-    const options: { icon: string; label: string; onPress: () => void }[] = [
-        { icon: '🖼️', label: l('Galeriden fotoğraf seç', 'Choose Photo'), onPress: () => runAfterMenuClose(pickFromGallery) },
-        { icon: '📷', label: l('Fotoğraf çek', 'Take Photo'), onPress: () => runAfterMenuClose(captureFromCamera) },
-        { icon: '✏️', label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => runAfterMenuClose(() => setDrawing(true)) },
-        { icon: '🎙️', label: l('Ses kaydet', 'Record Audio'), onPress: () => runAfterMenuClose(() => setShowRecorder(true)) },
-        { icon: '🎵', label: l('Ses klibi ekle', 'Attach Audio Clip'), onPress: () => runAfterMenuClose(pickAudioClip) },
-        { icon: '🎬', label: l('Video klibi ekle', 'Attach Video Clip'), onPress: () => runAfterMenuClose(pickVideoClip) },
-        { icon: '📄', label: l('Dosya ekle', 'Attach File'), onPress: () => runAfterMenuClose(pickFile) },
+    const icon = colors.accent;
+    const options: { icon: ReactNode; label: string; onPress: () => void }[] = [
+        { icon: <PhotoIcon color={icon} />, label: l('Galeriden fotoğraf seç', 'Choose Photo'), onPress: () => runAfterMenuClose(pickFromGallery) },
+        { icon: <CameraIcon color={icon} />, label: l('Fotoğraf çek', 'Take Photo'), onPress: () => runAfterMenuClose(captureFromCamera) },
+        { icon: <DrawIcon color={icon} />, label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => runAfterMenuClose(() => setDrawing(true)) },
+        { icon: <MicIcon color={icon} />, label: l('Ses kaydet', 'Record Audio'), onPress: () => runAfterMenuClose(() => setShowRecorder(true)) },
+        { icon: <MusicIcon color={icon} />, label: l('Ses klibi ekle', 'Attach Audio Clip'), onPress: () => runAfterMenuClose(pickAudioClip) },
+        { icon: <VideoIcon color={icon} />, label: l('Video klibi ekle', 'Attach Video Clip'), onPress: () => runAfterMenuClose(pickVideoClip) },
+        { icon: <DocumentIcon color={icon} />, label: l('Dosya ekle', 'Attach File'), onPress: () => runAfterMenuClose(pickFile) },
     ];
 
     return (
@@ -380,7 +392,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                                 accessibilityRole="button"
                                 accessibilityLabel={opt.label}
                             >
-                                <Text style={styles.optionIcon}>{opt.icon}</Text>
+                                <View style={styles.menuIcon}>{opt.icon}</View>
                                 <Text style={styles.optionLabel}>{opt.label}</Text>
                             </TouchableOpacity>
                         ))}
@@ -527,6 +539,7 @@ function createStyles(colors: ColorScheme) {
             borderBottomColor: colors.borderLight,
         },
         optionIcon: { fontSize: 20, width: 28, textAlign: 'center' },
+        menuIcon: { width: 28, alignItems: 'center' },
         optionCopy: { flex: 1, gap: 2 },
         optionLabel: { fontSize: FontSize.md, color: colors.textPrimary },
         optionCaption: { fontSize: FontSize.xs, color: colors.textMuted },

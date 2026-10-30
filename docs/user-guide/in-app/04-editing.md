@@ -154,11 +154,11 @@ more) kullanır.
 
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.media.fileCaption | **Ek ekle** sayfasında **Dosya ekle** satırının altı (fotoğraf seçimindeki `optionCaption` kalıbı), `MediaAttachButton.tsx:355` | satır altı açıklama | Dosya notla saklanır ve dışa aktarılır; kartın içinden açılamaz. | The file is stored with the note and exported; it cannot be opened from the card. | Yeni |
+| help.media.fileCaption | **Ek ekle** sayfasında **Dosya ekle** satırının altı (fotoğraf seçimindeki `optionCaption` kalıbı), `MediaAttachButton.tsx:355` | satır altı açıklama | Resim, ses ve video kartta görünür; diğer dosyalar karttan açılır. | Pictures, sounds and videos show in the card; other files open from it. | Yeni |
 | help.media.photoChoice | **Fotoğrafı nasıl ekleyelim?** seçenek açıklamaları, `MediaAttachButton.tsx:437`, `:451` | satır altı açıklama | — | — | Mevcut — koru |
 | help.media.permissions | Galeri, kamera, mikrofon izin pencereleri, `MediaAttachButton.tsx:129-170`, `AudioRecordModal.tsx:44-51` | izin uyarısı | — | — | Mevcut — koru |
-| help.audio.idle | Ses kaydet penceresinde durum satırı (kayıt başlamadan), `AudioRecordModal.tsx:125` | durum metni | Başlamak için mikrofona dokunun. Durdurduğunuzda kayıt alana eklenir. | Tap the microphone to start. When you stop, the recording is added to the field. | Mevcut — güncelle (eski metin: "Başlamak için mikrofona dokunun" / "Tap the microphone to start") |
-| help.audio.cancelHint | **İptal** düğmesi erişilebilirlik ipucu, `AudioRecordModal.tsx:138` | erişilebilirlik ipucu | Kaydı alana eklemeden kapatır | Closes without adding the recording | Yeni |
+| help.audio.idle | Ses kaydet penceresinde durum satırı (kayıt başlamadan), `AudioRecordModal.tsx:125` | durum metni | Başlamak için dokunun. Bitirdiğinizde dinleyip ekleyebilirsiniz. | Tap to start. When you stop, you can listen back and add it. | Mevcut — güncelle (şimdiki metin: "Başlamak için dokunun" / "Tap to start") |
+| help.audio.cancelHint | **İptal** düğmesi erişilebilirlik ipucu, `AudioRecordModal.tsx:138` | erişilebilirlik ipucu | Kayıt varsa silmeden önce sorar | Asks before discarding a recording | Yeni |
 
 ### Fotoğrafı düzenle / Çizim (`components/PhotoEditorModal.tsx`, `components/photo-editor/*`)
 

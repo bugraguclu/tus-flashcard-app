@@ -8,7 +8,8 @@ import { catalogCardCss, documentCss, legacyTusCardCss, reviewerCanvasCss } from
 import { getMediaBaseUrl, resolveWebMediaInHtml } from '../lib/mediaStore';
 import { useIsDarkTheme, useThemeColors } from '../constants/theme';
 import { CARD_CONTENT_CSP_META, safeExternalCardUrl } from '../lib/cardContentSecurity';
-import { isLocalMediaDocumentUrl } from '../lib/localMediaDocument';
+import { isLocalMediaDocumentUrl, localMediaFileFromUrl } from '../lib/localMediaDocument';
+import { localMediaFilename } from '../lib/mediaAttachment';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 import {
@@ -23,6 +24,7 @@ import {
 } from '../lib/embeddedWebViewScroll';
 import { defaultCardTextCss, nightModeCardCss } from '../lib/cardPageDefaults';
 import WebHtmlFrame from './WebHtmlFrame';
+import { useAttachmentViewer } from './AttachmentViewer';
 
 /**
  * Anki's document classes. AnkiDroid ships `<html class="mobile android linux js">` and the
@@ -416,6 +418,7 @@ export default function CardWebView({
             () => { void Linking.openURL(url).catch(() => undefined); },
         );
     }, [l]);
+    const { open: openAttachment, viewer: attachmentViewer } = useAttachmentViewer();
 
     // A new card starts unmeasured so the previous card's height is never reused.
     useLayoutEffect(() => { setContentHeight(null); }, [card.id, card.ord]);
@@ -620,6 +623,14 @@ export default function CardWebView({
                             cardSwipeRef.current?.({ dx, dy, x0 });
                         }, true);
                     }
+                    // An attached file's link opens the file; the frame itself never navigates.
+                    doc.addEventListener('click', (event) => {
+                        const link = (event.target as Element | null)?.closest?.('a[href]');
+                        const filename = link ? localMediaFilename(link.getAttribute('href') ?? '') : null;
+                        if (!filename) return;
+                        event.preventDefault();
+                        openAttachment(filename);
+                    }, true);
                     if (onCardTap) {
                         doc.addEventListener('click', (event) => {
                             if (Date.now() - swipeEndedAt < 400) return;
@@ -686,90 +697,98 @@ export default function CardWebView({
         const url = request.url;
         if (isLocalMediaDocumentUrl(url, mediaBaseUrl)) return true;
 
-        // Card links never replace the review WebView. HTTPS requires explicit confirmation;
-        // HTTP, file, data, custom schemes and local media navigation remain blocked.
-        if (request.isTopFrame !== false) openExternalLink(url);
+        // Card links never replace the review WebView. A file attached to the note opens in the
+        // attachment viewer; HTTPS requires explicit confirmation; HTTP, other files, data and
+        // custom schemes remain blocked.
+        const attachment = localMediaFileFromUrl(url, mediaBaseUrl);
+        if (request.isTopFrame !== false) {
+            if (attachment) openAttachment(attachment);
+            else openExternalLink(url);
+        }
         return false;
-    }, [mediaBaseUrl, openExternalLink]);
+    }, [mediaBaseUrl, openAttachment, openExternalLink]);
 
     return (
-        <WebView
-            ref={webViewRef}
-            originWhitelist={['about:blank', 'file://*']}
-            source={nativeSource}
-            dataDetectorTypes="none"
-            style={[styles.webView, { height: frameHeight }]}
-            injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}true;`}
-            onMessage={(event) => {
-                const data = String(event.nativeEvent.data);
-                if (data.startsWith('AUDIO:')) {
-                    audioActiveRef.current?.(data.slice(6) === '1');
-                    return;
-                }
-                if (data.startsWith('ANSWER:')) {
-                    const offset = Number(data.slice(7));
-                    if (Number.isFinite(offset)) answerAnchorRef.current?.(offset);
-                    return;
-                }
-                if (data.startsWith('TAP:')) {
-                    const [, rawX, rawY] = data.split(':');
-                    const xRatio = Number(rawX);
-                    const yRatio = Number(rawY);
-                    if (onCardTap && Number.isFinite(xRatio) && Number.isFinite(yRatio)) {
-                        onCardTap(xRatio, yRatio);
+        <>
+            <WebView
+                ref={webViewRef}
+                originWhitelist={['about:blank', 'file://*']}
+                source={nativeSource}
+                dataDetectorTypes="none"
+                style={[styles.webView, { height: frameHeight }]}
+                injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}true;`}
+                onMessage={(event) => {
+                    const data = String(event.nativeEvent.data);
+                    if (data.startsWith('AUDIO:')) {
+                        audioActiveRef.current?.(data.slice(6) === '1');
+                        return;
                     }
-                    return;
-                }
-                const typeAnswerMessage = parseTypeAnswerBridgeMessage(data, typeAnswerToken);
-                if (typeAnswerMessage) {
-                    if (typeAnswerMessage.type === 'change') {
-                        typedAnswerChangeRef.current?.(typeAnswerMessage.value);
-                    } else {
-                        typeAnswerSubmitRef.current?.(typeAnswerMessage.value);
+                    if (data.startsWith('ANSWER:')) {
+                        const offset = Number(data.slice(7));
+                        if (Number.isFinite(offset)) answerAnchorRef.current?.(offset);
+                        return;
                     }
-                    return;
-                }
-                if (scrollMode !== 'intrinsic') return;
-                const reported = Number(data);
-                setContentHeight((current) => stableMeasuredHeight(current, reported, minHeight));
-            }}
-            scrollEnabled={scrollsInside}
-            nestedScrollEnabled={scrollsInside}
-            javaScriptEnabled
-            keyboardDisplayRequiresUserAction={!(typeAnswerInCard && autoFocusTypeAnswer)}
-            domStorageEnabled={false}
-            cacheEnabled={false}
-            incognito
-            mixedContentMode="never"
-            setSupportMultipleWindows={false}
-            allowsLinkPreview={false}
-            javaScriptCanOpenWindowsAutomatically={false}
-            sharedCookiesEnabled={false}
-            thirdPartyCookiesEnabled={false}
-            saveFormDataDisabled
-            webviewDebuggingEnabled={__DEV__}
-            allowUniversalAccessFromFileURLs={false}
-            allowFileAccessFromFileURLs={Platform.OS === 'ios' || Platform.OS === 'android'}
-            allowingReadAccessToURL={mediaBaseUrl || undefined}
-            onShouldStartLoadWithRequest={shouldStartNavigation}
-            automaticallyAdjustContentInsets={false}
-            contentInsetAdjustmentBehavior="never"
-            allowsPictureInPictureMediaPlayback={false}
-            allowsAirPlayForMediaPlayback={false}
-            useSharedProcessPool={false}
-            // Audio attached to a card should play inline, not hijack iOS fullscreen.
-            allowsInlineMediaPlayback
-            // The app owns the status bar (app/_layout.tsx). Left on, every WebView writes back
-            // the style it saw when it was created whenever any window shows or hides — the
-            // keyboard, the light/dark crossfade — so the clock kept the old theme's colour for
-            // as long as the reviewer stayed mounted.
-            autoManageStatusBarEnabled={false}
-            // Android blocks file:// reads by default; media lives in the app's own
-            // documentDirectory (getMediaBaseUrl), so images need this to render.
-            // CSP limits file access to passive local card media. The imported card itself
-            // cannot execute script, navigate to local files, or make network requests.
-            allowFileAccess={Platform.OS === 'android'}
-        />
+                    if (data.startsWith('TAP:')) {
+                        const [, rawX, rawY] = data.split(':');
+                        const xRatio = Number(rawX);
+                        const yRatio = Number(rawY);
+                        if (onCardTap && Number.isFinite(xRatio) && Number.isFinite(yRatio)) {
+                            onCardTap(xRatio, yRatio);
+                        }
+                        return;
+                    }
+                    const typeAnswerMessage = parseTypeAnswerBridgeMessage(data, typeAnswerToken);
+                    if (typeAnswerMessage) {
+                        if (typeAnswerMessage.type === 'change') {
+                            typedAnswerChangeRef.current?.(typeAnswerMessage.value);
+                        } else {
+                            typeAnswerSubmitRef.current?.(typeAnswerMessage.value);
+                        }
+                        return;
+                    }
+                    if (scrollMode !== 'intrinsic') return;
+                    const reported = Number(data);
+                    setContentHeight((current) => stableMeasuredHeight(current, reported, minHeight));
+                }}
+                scrollEnabled={scrollsInside}
+                nestedScrollEnabled={scrollsInside}
+                javaScriptEnabled
+                keyboardDisplayRequiresUserAction={!(typeAnswerInCard && autoFocusTypeAnswer)}
+                domStorageEnabled={false}
+                cacheEnabled={false}
+                incognito
+                mixedContentMode="never"
+                setSupportMultipleWindows={false}
+                allowsLinkPreview={false}
+                javaScriptCanOpenWindowsAutomatically={false}
+                sharedCookiesEnabled={false}
+                thirdPartyCookiesEnabled={false}
+                saveFormDataDisabled
+                webviewDebuggingEnabled={__DEV__}
+                allowUniversalAccessFromFileURLs={false}
+                allowFileAccessFromFileURLs={Platform.OS === 'ios' || Platform.OS === 'android'}
+                allowingReadAccessToURL={mediaBaseUrl || undefined}
+                onShouldStartLoadWithRequest={shouldStartNavigation}
+                automaticallyAdjustContentInsets={false}
+                contentInsetAdjustmentBehavior="never"
+                allowsPictureInPictureMediaPlayback={false}
+                allowsAirPlayForMediaPlayback={false}
+                useSharedProcessPool={false}
+                // Audio attached to a card should play inline, not hijack iOS fullscreen.
+                allowsInlineMediaPlayback
+                // The app owns the status bar (app/_layout.tsx). Left on, every WebView writes back
+                // the style it saw when it was created whenever any window shows or hides — the
+                // keyboard, the light/dark crossfade — so the clock kept the old theme's colour for
+                // as long as the reviewer stayed mounted.
+                autoManageStatusBarEnabled={false}
+                // Android blocks file:// reads by default; media lives in the app's own
+                // documentDirectory (getMediaBaseUrl), so images need this to render.
+                // CSP limits file access to passive local card media. The imported card itself
+                // cannot execute script, navigate to local files, or make network requests.
+                allowFileAccess={Platform.OS === 'android'}
+            />
+            {attachmentViewer}
+        </>
     );
 }
 

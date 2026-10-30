@@ -44,7 +44,7 @@ describe('mediaReferenceSnippet', () => {
         expect(mediaReferenceSnippet('image', '1_kalp.jpg')).toBe('<img src="1_kalp.jpg">');
         expect(mediaReferenceSnippet('audio', '1_kayit.m4a')).toBe('[sound:1_kayit.m4a]');
         expect(mediaReferenceSnippet('video', '1_ders.mp4'))
-            .toBe('<video controls src="1_ders.mp4" disableRemotePlayback></video>');
+            .toBe('<video controls playsinline src="1_ders.mp4" disableRemotePlayback></video>');
         expect(mediaReferenceSnippet('file', '1_notlar.pdf', 'notlar.pdf'))
             .toBe('<a href="1_notlar.pdf">notlar.pdf</a>');
     });
@@ -87,22 +87,40 @@ describe('media references against the field sanitizer', () => {
             mediaReferenceSnippet('video', '1_ders.mp4'),
             mediaReferenceSnippet('image', 'a" onerror="x.png'),
             mediaReferenceSnippet('image', 'kalp&akciger.png'),
+            mediaReferenceSnippet('file', '1_notlar.pdf', 'notlar.pdf'),
+            mediaReferenceSnippet('file', '1_Kardiyoloji notları.pdf', 'Kardiyoloji notları.pdf'),
+            mediaReferenceSnippet('file', 'a&b.pdf', 'a&b.pdf'),
         ];
         snippets.forEach((snippet) => {
             expect(sanitizeUntrustedHtml(snippet)).toBe(snippet);
         });
     });
 
-    it('records that a file link is stripped of its target by the link policy', () => {
-        // `href` is allowed only for a fragment or an absolute https URL, so a bare media
-        // filename is replaced with `#`: the file is stored, referenced and exported, but the
-        // link the reviewer renders does not open it. Pinned so the gap is visible rather than
-        // discovered on a card; widening the policy is a change to the untrusted-content
-        // boundary and needs the reviewer's navigation rules changed with it.
+    it('keeps a file link pointing at its stored file, so the reviewer can open it', () => {
+        // The reviewer turns a tap on this link into the attachment viewer; it never navigates.
         expect(sanitizeUntrustedHtml(mediaReferenceSnippet('file', '1_notlar.pdf', 'notlar.pdf')))
-            .toBe('<a href="#">notlar.pdf</a>');
+            .toBe('<a href="1_notlar.pdf">notlar.pdf</a>');
         // The reference still reads as media, so a media check cannot mistake the file for junk.
         expect(FIELD_MEDIA_RE.test(mediaReferenceSnippet('file', '1_notlar.pdf'))).toBe(true);
+    });
+
+    it('still neuters a link that leaves the media folder or names no plain file', () => {
+        [
+            '<a href="../collection.anki2">x</a>',
+            '<a href="alt/notlar.pdf">x</a>',
+            '<a href="/etc/passwd">x</a>',
+            '<a href="file:///etc/passwd">x</a>',
+            '<a href="notlar.pdf?x=1">x</a>',
+            '<a href="notlar.pdf#page=2">x</a>',
+            '<a href="%2e%2e%2fcollection.anki2">x</a>',
+            '<a href="data:image/png;base64,AAAA">x</a>',
+            '<a href="data:text/html,<b>x</b>">x</a>',
+            '<a href="javascript:alert(1)">x</a>',
+            '<a href="http://example.com/x.pdf">x</a>',
+            '<a href=".hidden">x</a>',
+        ].forEach((link) => {
+            expect(sanitizeUntrustedHtml(link)).toBe('<a href="#">x</a>');
+        });
     });
 
     it('leaves the sound marker as the player the reviewer builds from it', () => {

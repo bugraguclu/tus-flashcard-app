@@ -43,9 +43,20 @@ function isSafeLocalMediaUrl(value: string): boolean {
     return !/[\\/:?#]/.test(decoded) && decoded !== '.' && decoded !== '..';
 }
 
+/**
+ * A link to a file stored with the collection, written as its bare name the way an attachment
+ * is (`<a href="notlar.pdf">`). The reviewer never navigates to it: its navigation handler opens
+ * the file in the attachment viewer instead, so the link reaches no further than a media `src`.
+ */
+function isLocalAttachmentLink(value: string): boolean {
+    const normalized = normalizedSecurityUrl(value);
+    return !isSafeDataMediaUrl(normalized) && isSafeLocalMediaUrl(normalized);
+}
+
 function isSafeLinkUrl(value: string): boolean {
     const normalized = normalizedSecurityUrl(value);
     if (normalized.startsWith('#')) return true;
+    if (isLocalAttachmentLink(normalized)) return true;
     try {
         const parsed = new URL(normalized);
         return parsed.protocol === 'https:' && !parsed.username && !parsed.password;
