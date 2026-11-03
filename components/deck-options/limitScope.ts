@@ -23,3 +23,19 @@ export function limitsForScope<T>(scope: LimitScope, deckLimit: T | undefined, t
 export function scopeDropsOverride(scope: LimitScope, deckLimit: string, todayLimit: string): boolean {
     return (scope === 'preset' && Boolean(deckLimit.trim() || todayLimit.trim())) || (scope === 'deck' && Boolean(todayLimit.trim()));
 }
+
+/**
+ * The value a tab shows once chosen (Anki's `ValueTab.enable`): its own, or, when it has none, the
+ * value on screen when it was chosen. Choosing "This deck" alone is then a change Save can store.
+ */
+export function chosenTabValue(own: string, shown: string): string {
+    return own.trim() ? own : shown;
+}
+
+/**
+ * The deck's own desired retention to store. Its tabs decide as the limit tabs do, so saving on
+ * "Preset" drops it; while FSRS is off the tabs are hidden and the deck keeps its value.
+ */
+export function deckRetentionForScope<T>(scope: 'preset' | 'deck', deckValue: T | undefined, tabsShown: boolean): T | undefined {
+    return !tabsShown || scope === 'deck' ? deckValue : undefined;
+}

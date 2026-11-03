@@ -16,9 +16,9 @@ export interface PresetAction {
 }
 
 /**
- * The actions on the current preset: save, clone, restore, add, rename, apply, delete. iOS drops
- * an alert or a second modal presented while this menu is still dismissing, so there the chosen
- * action runs from `onDismiss`, once the menu has gone.
+ * The actions on the current preset: add, clone, rename, restore defaults, save to all subdecks,
+ * remove. iOS drops an alert or a second modal presented while this menu is still dismissing, so
+ * there the chosen action runs from `onDismiss`, once the menu has gone.
  */
 export function PresetActionsMenu({ visible, actions, onClose, styles }: {
     visible: boolean;
@@ -45,12 +45,13 @@ export function PresetActionsMenu({ visible, actions, onClose, styles }: {
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onDismiss={runPending}>
             <View style={styles.modalOverlay}>
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.actionMenu}>
+                <View style={styles.actionMenu} accessibilityViewIsModal>
                     {actions.map((item) => (
                         <TouchableOpacity
                             key={item.label}
                             style={styles.actionMenuRow}
                             onPress={() => choose(item.action)}
+                            accessibilityRole="button"
                         >
                             <Text style={[styles.actionMenuText, item.destructive && styles.actionMenuDanger]}>{item.label}</Text>
                         </TouchableOpacity>
@@ -62,10 +63,12 @@ export function PresetActionsMenu({ visible, actions, onClose, styles }: {
 }
 
 /** Every preset in the collection, with how many decks use it and one of them by name. */
-export function PresetPickerModal({ presets, activePresetId, hiddenPresetIds = [], onPick, onClose, styles, l, t }: I18n & {
+export function PresetPickerModal({ presets, activePresetId, currentDeckId, hiddenPresetIds = [], onPick, onClose, styles, l, t }: I18n & {
     /** The presets as the screen shows them, staged additions and renames included. */
     presets?: DeckConfig[];
     activePresetId: number;
+    /** The deck being edited: it counts for the active preset, which Save assigns it to. */
+    currentDeckId?: number;
     /** Presets removed in this unsaved session. */
     hiddenPresetIds?: number[];
     onPick: (presetId: number) => void;
@@ -84,12 +87,19 @@ export function PresetPickerModal({ presets, activePresetId, hiddenPresetIds = [
                     <Text style={styles.modalTitle}>{l('Ayar grubu seç', 'Choose Preset')}</Text>
                     <ScrollView style={{ maxHeight: 320 }}>
                         {(presets ?? getAllDeckConfigs()).filter((preset) => !hiddenPresetIds.includes(preset.id)).map((preset) => {
-                            const presetDecks = getDecksUsingConfig(preset.id);
+                            const presetDecks = getDecksUsingConfig(preset.id).filter((deck) => deck.id !== currentDeckId);
+                            const used = presetDecks.length + (currentDeckId !== undefined && preset.id === activePresetId ? 1 : 0);
                             const representative = presetDecks[0];
                             return (
-                                <TouchableOpacity key={preset.id} style={styles.presetOption} onPress={() => onPick(preset.id)}>
+                                <TouchableOpacity
+                                    key={preset.id}
+                                    style={styles.presetOption}
+                                    onPress={() => onPick(preset.id)}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ checked: preset.id === activePresetId }}
+                                >
                                     <Text style={[styles.presetOptionText, preset.id === activePresetId && styles.presetOptionActive]}>
-                                        {preset.name} · {l(`${presetDecks.length} deste`, `${presetDecks.length} decks`)}
+                                        {preset.name} · {l(`${used} deste`, `${used} decks`)}
                                     </Text>
                                     {representative ? (
                                         <Text style={styles.presetOptionMeta} numberOfLines={1}>
@@ -128,14 +138,24 @@ export function RenamePresetModal({ title, value, onChangeValue, onSave, onClose
                 />
                 <View style={styles.modalCard}>
                     <Text style={styles.modalTitle}>{title ?? l('Ayar grubunu yeniden adlandır', 'Rename Preset')}</Text>
-                    <TextInput style={styles.input} value={value} onChangeText={onChangeValue} autoFocus />
+                    {/* Return saves, as Anki's name prompt does on Enter. */}
+                    <TextInput
+                        style={styles.input}
+                        value={value}
+                        onChangeText={onChangeValue}
+                        autoFocus
+                        returnKeyType="done"
+                        onSubmitEditing={onSave}
+                        accessibilityLabel={l('Ayar grubu adı', 'Preset name')}
+                    />
                     <View style={styles.modalActions}>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+                        <TouchableOpacity style={styles.cancelBtn} onPress={onClose} accessibilityRole="button">
                             <Text style={styles.cancelText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.saveBtnSmall}
                             onPress={onSave}
+                            accessibilityRole="button"
                         >
                             <Text style={styles.saveBtnText}>{t('common.save')}</Text>
                         </TouchableOpacity>

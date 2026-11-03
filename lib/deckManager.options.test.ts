@@ -43,7 +43,7 @@ import {
     setDeckLimitOverrides,
     setDeckTodayLimits,
     createPreset,
-    restoreDeckConfigDefaults,
+    presetWithDefaults,
     deletePreset,
     assignDeckConfig,
     applyConfigToSubdecks,
@@ -655,22 +655,24 @@ describe('presets', () => {
         expect(getDeckConfig(DEFAULT_DECK_CONFIG.id).id).toBe(DEFAULT_DECK_CONFIG.id);
     });
 
-    it('restores preset scheduling defaults without changing its identity or deck limits', () => {
+    it('gives Restore Defaults every default without changing the preset identity or writing anything', () => {
         const deck = createDeck('A');
         const preset = createPreset('Sınav modu');
         assignDeckConfig(deck.id, preset.id);
-        saveDeckConfig({
+        const customized = {
             ...preset,
             newPerDay: 77,
             maxReviewsPerDay: 888,
             learningSteps: [2, 20],
             autoPlayAudio: false,
+            audioPlaybackRate: 1.5,
+            ignoreRevlogsBeforeMs: Date.UTC(2026, 0, 15),
+            fsrsParamsOptimizedAtMs: Date.UTC(2026, 5, 1),
             ankiRaw: { opaque: 'preserved' },
-        });
-        setDeckLimitOverrides(deck.id, 31, 310);
-        setDeckTodayLimits(deck.id, 12, 120, rolloverHour);
+        };
+        saveDeckConfig(customized);
 
-        const restored = restoreDeckConfigDefaults(preset.id);
+        const restored = presetWithDefaults(customized);
 
         expect(restored.id).toBe(preset.id);
         expect(restored.name).toBe('Sınav modu');
@@ -678,11 +680,27 @@ describe('presets', () => {
         expect(restored.maxReviewsPerDay).toBe(DEFAULT_DECK_CONFIG.maxReviewsPerDay);
         expect(restored.learningSteps).toEqual(DEFAULT_DECK_CONFIG.learningSteps);
         expect(restored.autoPlayAudio).toBe(DEFAULT_DECK_CONFIG.autoPlayAudio);
+        // Options the defaults leave unset go back to unset rather than surviving the restore.
+        expect(restored.audioPlaybackRate).toBeUndefined();
+        expect(restored.ignoreRevlogsBeforeMs).toBeUndefined();
+        expect(restored.fsrsParamsOptimizedAtMs).toBeUndefined();
         expect(restored.ankiRaw).toEqual({ opaque: 'preserved' });
         expect(restored.usn).toBe(-1);
+        // The screen shows the values and Save stores them: nothing is written here.
+        expect(getDeckConfig(preset.id).maxReviewsPerDay).toBe(888);
         expect(getDeckByName('A')!.configId).toBe(preset.id);
-        expect(getDeckConfigForDeck(deck.id, rolloverHour).newPerDay).toBe(12);
-        expect(getDeckConfigForDeck(deck.id, rolloverHour).maxReviewsPerDay).toBe(120);
+    });
+
+    it('restores a preset added on screen without touching the Default preset', () => {
+        // Before, restoring a preset that was added but not yet saved found no stored row, fell
+        // back to the Default preset (id 1) and reset Default for every deck using it.
+        saveDeckConfig({ ...DEFAULT_DECK_CONFIG, maxReviewsPerDay: 333, learningSteps: [2, 20] });
+        const staged = { ...DEFAULT_DECK_CONFIG, id: 987654321, name: 'Yeni grup', maxReviewsPerDay: 50 };
+
+        const restored = presetWithDefaults(staged);
+
+        expect(restored).toMatchObject({ id: 987654321, name: 'Yeni grup', maxReviewsPerDay: DEFAULT_DECK_CONFIG.maxReviewsPerDay });
+        expect(getDeckConfig(DEFAULT_DECK_CONFIG.id)).toMatchObject({ maxReviewsPerDay: 333, learningSteps: [2, 20] });
     });
 
     it('applyConfigToSubdecks pushes the preset down the subtree only', () => {

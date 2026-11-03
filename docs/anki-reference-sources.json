@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-10-30",
+  "lastVerified": "2026-11-03",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -660,7 +660,7 @@
       "platform": "cross-platform deck options screen",
       "url": "https://github.com/ankitects/anki/tree/main/ts/routes/deck-options",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["desired retention preset and deck-only tabs", "empty learning and relearning steps", "retention input bounds", "Add, Clone, Rename and Remove Preset held until Save"]
+      "useFor": ["desired retention preset and deck-only tabs", "empty learning and relearning steps", "retention input bounds", "Add, Clone, Rename and Remove Preset held until Save", "Save menu order (SaveButton.svelte)", "a chosen tab starts from the value on screen (TabbedValue.svelte, ValueTab)"]
     },
     {
       "id": "anki-source-stats-graphs-ui",

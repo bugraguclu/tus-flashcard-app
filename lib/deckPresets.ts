@@ -78,20 +78,24 @@ export function renamePreset(configId: number, name: string): void {
     saveDeckConfig(config);
 }
 
-/** Restore a preset's scheduling values while keeping its identity and import metadata. */
-export function restoreDeckConfigDefaults(configId: number): DeckConfig {
-    const current = getDeckConfig(configId);
-    assertCatalogDeckConfigMutable(current);
-    const restored: DeckConfig = {
-        ...current,
+/**
+ * A preset with every option at its default, for Deck Options' Restore Defaults. It keeps the
+ * preset's identity and import metadata and writes nothing: the screen shows the values and Save
+ * stores them, as Anki's revert buttons only change the form. Options the defaults leave unset (the
+ * audio speed, "Ignore reviews before" and the optimizer's stamp) go back to unset.
+ */
+export function presetWithDefaults(config: DeckConfig): DeckConfig {
+    const { ankiRaw, sourcePackageId, catalogPack } = config;
+    return {
         ...DEFAULT_DECK_CONFIG,
-        id: current.id,
-        name: current.name,
+        id: config.id,
+        name: config.name,
         mod: Math.floor(Date.now() / 1000),
         usn: -1,
+        ...(ankiRaw === undefined ? {} : { ankiRaw }),
+        ...(sourcePackageId === undefined ? {} : { sourcePackageId }),
+        ...(catalogPack === undefined ? {} : { catalogPack }),
     };
-    saveDeckConfig(restored);
-    return restored;
 }
 
 /** Delete a preset; decks using it fall back to the shared default. The default itself stays. */

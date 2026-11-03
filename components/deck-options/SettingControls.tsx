@@ -336,6 +336,7 @@ export function LimitTabs<Key extends 'preset' | 'deck' | 'today'>({ value, onCh
                     onPress={() => onChange(key)}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: value === key }}
+                    aria-selected={value === key}
                 >
                     <Text style={[styles.limitTabText, value === key && styles.limitTabTextActive]}>{labels[key]}</Text>
                 </TouchableOpacity>

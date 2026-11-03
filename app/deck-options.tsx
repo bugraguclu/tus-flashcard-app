@@ -8,6 +8,7 @@ import {
     TouchableOpacity,
     ScrollView,
     Keyboard,
+    Platform,
     useWindowDimensions,
     ActivityIndicator,
 } from 'react-native';
@@ -25,7 +26,7 @@ import {
     getDeckConfig,
     getDecksUsingConfig,
     saveDeckConfig,
-    restoreDeckConfigDefaults,
+    presetWithDefaults,
     assignDeckConfig,
     setDeckDescription,
     getDeckTodayLimits,
@@ -84,7 +85,13 @@ import { createDeckOptionsStyles } from '../components/deck-options/deckOptionsS
 import { DeckOptionsContext } from '../components/deck-options/DeckOptionsContext';
 import { MULTIPLIER_BOUNDS, untouchedLegacyMultiplier } from '../components/deck-options/multiplierBounds';
 import { applyDeckOptionsToSubdecks } from '../lib/deckSubdeckOptions';
-import { effectiveLimitScope, limitsForScope, scopeDropsOverride } from '../components/deck-options/limitScope';
+import {
+    chosenTabValue,
+    deckRetentionForScope,
+    effectiveLimitScope,
+    limitsForScope,
+    scopeDropsOverride,
+} from '../components/deck-options/limitScope';
 import {
     Field,
     FieldAdvice,
@@ -162,6 +169,8 @@ export default function DeckOptionsScreen() {
      * once cannot quietly rewrite them all again on the next unrelated save.
      */
     const [rescheduleOnSave, setRescheduleOnSave] = useState(false);
+    /** Restore Defaults fills the form and waits for Save, like every other preset action. */
+    const [restoreDefaultsPending, setRestoreDefaultsPending] = useState(false);
     /** Set by the optimizer so the save can record when these parameters were fitted. */
     const [optimizedAtMs, setOptimizedAtMs] = useState<number | null>(null);
     const [optimizing, setOptimizing] = useState(false);
@@ -185,6 +194,8 @@ export default function DeckOptionsScreen() {
     const [retentionScope, setRetentionScope] = useState<'preset' | 'deck'>(
         deck?.desiredRetention === undefined ? 'preset' : 'deck',
     );
+    /** Values a tab took from the screen when it was chosen (`chooseReviewLimitScope`). */
+    const borrowedTabValues = useRef(new Map<string, string>());
 
     useEffect(() => {
         if (params.scope === 'deck' || params.scope === 'today') {
@@ -262,7 +273,9 @@ export default function DeckOptionsScreen() {
     // A reschedule request is an unsaved change like any other: it starts off, so it can only
     // be on because the learner turned it on, and Save is what carries it out.
     const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form }) || rescheduleOnSave || presetStaging.hasChanges
-        || scopeDropsOverride(reviewLimitScope, form.deckReviewLimit, form.todayReviewLimit);
+        || restoreDefaultsPending
+        || scopeDropsOverride(reviewLimitScope, form.deckReviewLimit, form.todayReviewLimit)
+        || (form.fsrsEnabled && scopeDropsOverride(retentionScope, form.deckDesiredRetention, ''));
     useUnsavedChangesGuard(isDirty, {
         title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
         message: l(
@@ -288,6 +301,7 @@ export default function DeckOptionsScreen() {
         setConfigId(nextId);
         setForm(nextForm);
         setRescheduleOnSave(false);
+        setRestoreDefaultsPending(false);
         setOptimizedAtMs(null);
         setSaveState('idle');
         setSaveMessage('');
@@ -308,10 +322,13 @@ export default function DeckOptionsScreen() {
         setActiveDeckId(nextDeck.id);
         presetStaging.reset();
         setReviewLimitScope(effectiveLimitScope(nextForm.deckReviewLimit, nextForm.todayReviewLimit));
+        setRetentionScope(nextDeck.desiredRetention === undefined ? 'preset' : 'deck');
+        borrowedTabValues.current.clear();
         setConfigId(nextConfigId);
         setForm(nextForm);
         setSavedSnapshot(snapshotForm(nextConfigId, nextForm));
         setRescheduleOnSave(false);
+        setRestoreDefaultsPending(false);
         setOptimizedAtMs(null);
         setSaveState('idle');
         setSaveMessage('');
@@ -361,12 +378,13 @@ export default function DeckOptionsScreen() {
     // The visible toolbar summary is stable while the form is edited. Avoid repeating deck
     // ownership queries for every keystroke or toggle change.
     const currentPresetSummary = useMemo(() => {
-        const presetDecks = getDecksUsingConfig(configId);
+        // This deck counts for the preset on screen, as in Anki: Save assigns it there.
+        const otherDecks = getDecksUsingConfig(configId).filter((presetDeck) => presetDeck.id !== deck?.id);
         return {
-            usedBy: presetDecks.length,
+            usedBy: otherDecks.length + (deck ? 1 : 0),
             name: presetStaging.presetFor(configId).name,
         };
-    }, [configId, presetRevision, presetStaging.presetFor]);
+    }, [configId, deck?.id, presetRevision, presetStaging.presetFor]);
     const usedBy = currentPresetSummary.usedBy;
     const presetName = currentPresetSummary.name;
     const regularDecks = useMemo(
@@ -448,8 +466,9 @@ export default function DeckOptionsScreen() {
         // every keystroke, and a stable object is also what keeps the advice below memoized.
         const stored = initialConfig;
 
-        // New-card limits are interchange metadata, not editable study restrictions.
-        integers.newPerDay = stored.newPerDay;
+        // New-card limits are interchange metadata, not editable study restrictions; Restore
+        // Defaults resets this one with the rest of the preset.
+        integers.newPerDay = restoreDefaultsPending ? DEFAULT_DECK_CONFIG.newPerDay : stored.newPerDay;
         integer('maxReviewsPerDay', 0, 9999);
         integers.deckNewLimit = deck?.newLimit;
         integer('deckReviewLimit', 0, 9999, true);
@@ -622,7 +641,8 @@ export default function DeckOptionsScreen() {
      * these are the warnings its own screen prints while happily storing the value.
      */
     const warningsByField = useMemo(() => {
-        const daysSinceOptimization = validation.stored.fsrsParamsOptimizedAtMs
+        // Restored defaults are not a fit, so the age of the old one says nothing about them.
+        const daysSinceOptimization = validation.stored.fsrsParamsOptimizedAtMs && !restoreDefaultsPending
             ? (Date.now() - validation.stored.fsrsParamsOptimizedAtMs) / 86400000
             : undefined;
         const storedEasyDays = Array.isArray(validation.stored.easyDays) && validation.stored.easyDays.length === 7
@@ -639,8 +659,10 @@ export default function DeckOptionsScreen() {
             minIvl: validation.integers.minIvl,
             maxIvl: validation.integers.maxIvl,
             maxAnswerSecs: validation.integers.maxAnswerSecs,
-            // Anki warns about the retention the deck will actually use: its own, else the preset's.
-            desiredRetention: validation.decimals.deckDesiredRetention ?? validation.decimals.desiredRetention,
+            // Anki warns about the retention the deck will actually use: on "This deck" its own,
+            // else the preset's.
+            desiredRetention: (retentionScope === 'deck' ? validation.decimals.deckDesiredRetention : undefined)
+                ?? validation.decimals.desiredRetention,
             easyDays: form.easyDays,
             easyDaysChanged: form.easyDays.some((factor, index) => factor !== storedEasyDays[index]),
             rescheduleOnChange: rescheduleOnSave,
@@ -652,24 +674,26 @@ export default function DeckOptionsScreen() {
         }
         return grouped;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [form, validation.stored, rescheduleOnSave]);
+    }, [form, validation.stored, rescheduleOnSave, retentionScope, restoreDefaultsPending]);
 
-    const persistForm = (includeSubdecks = false): { saved: boolean; subdecksChanged: number } => {
+    /** Write the screen in one transaction; false when nothing was saved. */
+    const persistForm = (includeSubdecks = false): boolean => {
         if (hasValidationErrors || validation.learningSteps === null || validation.relearningSteps === null) {
             const firstError = Object.values(validation.errors)[0];
             alert(
                 l('Ayarları kontrol edin', 'Check the settings'),
                 firstError ?? l('Bazı alanlar geçerli değil.', 'Some fields are invalid.'),
             );
-            return { saved: false, subdecksChanged: 0 };
+            return false;
         }
 
         let db: ReturnType<typeof getDB> | null = null;
         let transactionOpen = false;
-        let subdecksChanged = 0;
         try {
             db = getDB();
-            const base = presetStaging.presetFor(configId);
+            const stagedPreset = presetStaging.presetFor(configId);
+            // Restore Defaults also resets the options the form does not show.
+            const base = restoreDefaultsPending ? presetWithDefaults(stagedPreset) : stagedPreset;
             const integer = (key: keyof typeof form) => validation.integers[key] as number;
             const decimal = (key: keyof typeof form) => validation.decimals[key] as number;
             const updated: DeckConfig = {
@@ -739,7 +763,10 @@ export default function DeckOptionsScreen() {
             // The selected tab decides which review limit applies (DST-7).
             const reviewLimits = limitsForScope(reviewLimitScope, validation.integers.deckReviewLimit, validation.integers.todayReviewLimit);
             setDeckLimitOverrides(deck.id, validation.integers.deckNewLimit, reviewLimits.deck);
-            setDeckDesiredRetention(deck.id, validation.decimals.deckDesiredRetention);
+            setDeckDesiredRetention(
+                deck.id,
+                deckRetentionForScope(retentionScope, validation.decimals.deckDesiredRetention, form.fsrsEnabled),
+            );
             setDeckTodayLimits(
                 deck.id,
                 validation.integers.todayNewLimit,
@@ -756,7 +783,7 @@ export default function DeckOptionsScreen() {
                 fsrsEnabled: form.fsrsEnabled,
             });
             if (includeSubdecks) {
-                subdecksChanged = applyDeckOptionsToSubdecks(deck.id, {
+                applyDeckOptionsToSubdecks(deck.id, {
                     deckNewLimit: validation.integers.deckNewLimit,
                     deckReviewLimit: reviewLimits.deck,
                     todayNewLimit: validation.integers.todayNewLimit,
@@ -766,6 +793,8 @@ export default function DeckOptionsScreen() {
             db.execSync('COMMIT;');
             transactionOpen = false;
             presetStaging.reset();
+            // What the tabs borrowed is stored now, or was dropped with its tab.
+            borrowedTabValues.current.clear();
 
             // Anki recomputes memory states only for the decks whose FSRS inputs this save
             // changed — every deck when FSRS was just switched on — and rewrites those decks' due
@@ -800,6 +829,7 @@ export default function DeckOptionsScreen() {
                 setForm(normalizedForm);
                 setSavedSnapshot(snapshotForm(configId, normalizedForm));
                 setRescheduleOnSave(false);
+                setRestoreDefaultsPending(false);
                 setOptimizedAtMs(null);
                 setPresetRevision((value) => value + 1);
                 setDeckRevision((value) => value + 1);
@@ -808,9 +838,10 @@ export default function DeckOptionsScreen() {
             } catch (refreshError) {
                 console.warn('[DeckOptions] saved but refresh failed:', refreshError);
                 setSavedSnapshot(snapshotForm(configId, form));
+                setRestoreDefaultsPending(false);
                 markSchedulingStale();
             }
-            return { saved: true, subdecksChanged };
+            return true;
         } catch (e) {
             if (transactionOpen && db) {
                 try { db.execSync('ROLLBACK;'); } catch { /* keep the original write error */ }
@@ -819,7 +850,7 @@ export default function DeckOptionsScreen() {
             setSaveState('error');
             setSaveMessage(l('Kayıt tamamlanamadı. Hiçbir değişiklik uygulanmadı.', 'Save failed. No changes were applied.'));
             alert(t('common.error'), l('Ayarlar kaydedilemedi.', 'Could not save the settings.'));
-            return { saved: false, subdecksChanged: 0 };
+            return false;
         }
     };
 
@@ -831,8 +862,7 @@ export default function DeckOptionsScreen() {
             return;
         }
         setSaveState('saving');
-        const result = persistForm();
-        if (!result.saved) {
+        if (!persistForm()) {
             if (hasValidationErrors) setSaveState('error');
             return;
         }
@@ -888,32 +918,23 @@ export default function DeckOptionsScreen() {
         confirm(
             l('Varsayılana dön', 'Restore Defaults'),
             l(
-                `“${presetName}” ayar grubunun zamanlama seçenekleri varsayılanlara dönecek. Bu grubu kullanan ${usedBy} deste etkilenecek. Ayar grubu adı, deste özel limitleri, yalnızca bugünkü limitler ve deste açıklaması korunacak.`,
-                `Scheduling options in “${presetName}” will be restored to defaults. ${usedBy} decks using this preset will be affected. The preset name, deck-specific limits, today-only limits, and deck description will be preserved.`,
+                `“${presetName}” ayar grubunun seçenekleri varsayılan değerlere dönecek ve Kaydet’e bastığınızda bu grubu kullanan ${usedBy} desteye uygulanacak. Ayar grubu adı, deste özel limitleri, yalnızca bugünkü limitler ve deste açıklaması korunur.`,
+                `The options in “${presetName}” will return to their defaults and apply to the ${usedBy} decks using this preset when you save. The preset name, deck-specific limits, today-only limits, and deck description are kept.`,
             ),
             () => {
-                try {
-                    const restored = restoreDeckConfigDefaults(configId);
-                    // Only the preset was written. The snapshot is what is now on disk, so unsaved
-                    // edits to the deck's limits, description and collection switches stay in the
-                    // form as unsaved changes for Save, instead of being marked saved and lost.
-                    const storedForm = storedFormFor(restored);
-                    setForm(keepNonPresetEdits(storedForm, form));
-                    setSavedSnapshot(snapshotForm(configId, storedForm));
-                    setSaveState('saved');
-                    setSaveMessage(l('Ayar grubu varsayılan değerlere döndürüldü.', 'The preset was restored to default values.'));
-                    setPresetRevision((value) => value + 1);
-                    markSchedulingStale();
-                    alert(
-                        l('Varsayılanlara dönüldü', 'Defaults Restored'),
-                        l('Ayar grubunun zamanlama seçenekleri varsayılanlara döndürüldü.', 'The preset scheduling options were restored to defaults.'),
-                    );
-                } catch (error) {
-                    console.warn('[DeckOptions] restore defaults failed:', error);
-                    alert(t('common.error'), l('Ayar grubu varsayılanlara döndürülemedi.', 'The preset could not be restored to defaults.'));
-                }
+                // Only the form changes, as with Anki's revert buttons; Save writes the preset.
+                // Built from the preset as staged, so one added here keeps its own id and name.
+                const defaults = presetWithDefaults(presetStaging.presetFor(configId));
+                setForm((current) => keepNonPresetEdits(storedFormFor(defaults), current));
+                setRestoreDefaultsPending(true);
+                setOptimizedAtMs(null);
+                setSaveState('idle');
+                setSaveMessage(l(
+                    'Varsayılan değerler gösteriliyor; uygulamak için Kaydet’e basın.',
+                    'The defaults are shown; press Save to apply them.',
+                ));
             },
-            { destructive: true },
+            { destructive: true, confirmLabel: l('Varsayılana dön', 'Restore Defaults') },
         );
     };
 
@@ -939,20 +960,27 @@ export default function DeckOptionsScreen() {
 
     const handleApplyToSubdecks = () => {
         Keyboard.dismiss();
+        const subdecks = regularDecks.filter((candidate) => candidate.name.startsWith(`${deck.name}::`)).length;
         setSaveState('saving');
-        const result = persistForm(true);
-        if (!result.saved) {
+        if (!persistForm(true)) {
             setSaveState('error');
             return;
         }
-        const changed = result.subdecksChanged;
         setSaveState('saved');
-        setSaveMessage(changed > 0
-            ? l(`Kaydedildi; ${changed} alt deste bu ayar grubuna geçirildi.`, `Saved; ${changed} subdecks were assigned to this preset.`)
-            : l('Kaydedildi. Tüm alt desteler zaten bu ayar grubunu kullanıyor.', 'Saved. All subdecks already use this preset.'));
-        alert(l('Kaydedildi ve Uygulandı', 'Saved and Applied'), changed > 0
-            ? l(`Ayarlar kaydedildi; ${changed} alt deste bu ayar grubuna geçirildi.`, `Settings were saved, and ${changed} subdecks were assigned to this preset.`)
-            : l('Ayarlar kaydedildi. Tüm alt desteler zaten bu ayar grubunda.', 'Settings were saved. All subdecks already use this preset.'));
+        if (subdecks === 0) {
+            setSaveMessage(l('Kaydedildi. Bu destenin alt destesi yok.', 'Saved. This deck has no subdecks.'));
+            alert(
+                l('Kaydedildi', 'Saved'),
+                l('Ayarlar kaydedildi. Bu destenin alt destesi olmadığı için başka deste değişmedi.', 'Settings were saved. This deck has no subdecks, so no other deck changed.'),
+            );
+            return;
+        }
+        // Every subdeck now has this preset and this deck's own limits, whatever it had before.
+        setSaveMessage(l(`Kaydedildi; ${subdecks} alt deste de bu ayarları kullanıyor.`, `Saved; ${subdecks} subdecks now use these settings too.`));
+        alert(
+            l('Kaydedildi ve Uygulandı', 'Saved and Applied'),
+            l(`Ayarlar kaydedildi ve ${subdecks} alt desteye uygulandı.`, `Settings were saved and applied to ${subdecks} subdecks.`),
+        );
     };
 
     /** The review orders Anki offers for the scheduler in use, with its labels. */
@@ -983,7 +1011,7 @@ export default function DeckOptionsScreen() {
      */
     const optimizedAtHint = (() => {
         const base = l('17, 19 veya 21 sayı. Boş bırakmak varsayılanlara döner.', '17, 19 or 21 numbers. Leaving it empty restores the defaults.');
-        const stampedAt = optimizedAtMs ?? validation.stored.fsrsParamsOptimizedAtMs;
+        const stampedAt = optimizedAtMs ?? (restoreDefaultsPending ? undefined : validation.stored.fsrsParamsOptimizedAtMs);
         if (!stampedAt) return base;
         const date = new Date(stampedAt).toISOString().slice(0, 10);
         return `${base} ${l(`Son optimizasyon: ${date}.`, `Last optimized: ${date}.`)}`;
@@ -1008,6 +1036,39 @@ export default function DeckOptionsScreen() {
             : (form.deckReviewLimit.trim() || form.maxReviewsPerDay.trim() || '200');
 
     const setScopedReviewValue = (value: string) => set(reviewLimitScope === 'preset' ? 'maxReviewsPerDay' : reviewLimitScope === 'deck' ? 'deckReviewLimit' : 'todayReviewLimit', value);
+    /**
+     * Anki's tabs (TabbedValue.svelte): a tab chosen without a value of its own starts from the
+     * value on screen, so choosing "This deck" shows what will apply and Save can store it. Only
+     * the chosen tab keeps what it borrowed: the others give an untouched borrowed value back, so
+     * looking at a tab and leaving it leaves nothing to save, as in Anki.
+     */
+    type TabField = 'deckReviewLimit' | 'todayReviewLimit' | 'deckDesiredRetention';
+    const fillChosenTab = (key: TabField, shown: string) => {
+        const value = chosenTabValue(form[key], shown);
+        if (value === form[key]) return;
+        borrowedTabValues.current.set(key, value);
+        set(key, value);
+    };
+    const returnBorrowedValue = (key: TabField) => {
+        if (borrowedTabValues.current.get(key) !== form[key]) return;
+        borrowedTabValues.current.delete(key);
+        set(key, '');
+    };
+    const chooseReviewLimitScope = (next: typeof reviewLimitScope) => {
+        if (next === reviewLimitScope) return;
+        const shown = scopedReviewValue.trim() || scopedReviewPlaceholder;
+        if (next !== 'deck') returnBorrowedValue('deckReviewLimit');
+        if (next !== 'today') returnBorrowedValue('todayReviewLimit');
+        if (next === 'deck') fillChosenTab('deckReviewLimit', shown);
+        if (next === 'today') fillChosenTab('todayReviewLimit', shown);
+        setReviewLimitScope(next);
+    };
+    const chooseRetentionScope = (next: typeof retentionScope) => {
+        if (next === retentionScope) return;
+        if (next === 'deck') fillChosenTab('deckDesiredRetention', form.desiredRetention);
+        else returnBorrowedValue('deckDesiredRetention');
+        setRetentionScope(next);
+    };
     const saveDisabled = saveState === 'saving' || !isDirty;
     const saveLabel = saveState === 'saving'
         ? l('Kaydediliyor…', 'Saving…')
@@ -1037,7 +1098,8 @@ export default function DeckOptionsScreen() {
                     style={styles.headerButton}
                     onPress={() => goBackOr(router)}
                     accessibilityRole="button"
-                    accessibilityLabel={l('Deste genel bakışına dön', 'Back to deck overview')}
+                    // The deck list, the overview and the study screen all open this screen.
+                    accessibilityLabel={l('Geri', 'Back')}
                 >
                     <HeaderBackIcon color={colors.accent} />
                 </TouchableOpacity>
@@ -1051,7 +1113,11 @@ export default function DeckOptionsScreen() {
                 contentContainerStyle={styles.content}
                 contentInsetAdjustmentBehavior="never"
                 automaticallyAdjustContentInsets={false}
-                automaticallyAdjustKeyboardInsets={false}
+                // Without the keyboard's inset the last fields (Advanced, the description) sit
+                // under the keyboard and cannot be scrolled above it; a number pad has no return
+                // key, so dragging the form down is how it goes away.
+                automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
@@ -1132,7 +1198,7 @@ export default function DeckOptionsScreen() {
                     <Text style={styles.settingHint}>
                         {l('Yeni kartlar için günlük sınır yoktur.', 'New cards have no daily limit.')}
                     </Text>
-                    <LimitTabs value={reviewLimitScope} onChange={setReviewLimitScope} styles={styles} labels={limitLabels} />
+                    <LimitTabs value={reviewLimitScope} onChange={chooseReviewLimitScope} styles={styles} labels={limitLabels} />
                     <Field
                         field={reviewLimitScope === 'preset' ? 'maxReviewsPerDay' : reviewLimitScope === 'deck' ? 'deckReviewLimit' : 'todayReviewLimit'}
                         label={l('Günlük en fazla tekrar', 'Maximum reviews/day')}
@@ -1238,7 +1304,7 @@ export default function DeckOptionsScreen() {
                     />
                     <Text style={styles.fieldHint}>
                         {l(
-                            'FSRS her kart için hafıza gücünü (stability) ve zorluğunu izler; aralıkları kolaylık çarpanı yerine bu iki sayıdan hesaplar. Anahtar tüm koleksiyon için, aşağıdaki değerler bu ön ayar içindir.',
+                            'FSRS her kart için hafıza gücünü (stability) ve zorluğunu izler; aralıkları kolaylık çarpanı yerine bu iki sayıdan hesaplar. Anahtar tüm koleksiyon için geçerlidir; aşağıdaki değerler bu ayar grubuna aittir.',
                             'FSRS tracks each card’s memory strength and difficulty, and derives intervals from those instead of an ease multiplier. The switch is collection-wide; the values below belong to this preset.',
                         )}
                     </Text>
@@ -1247,7 +1313,7 @@ export default function DeckOptionsScreen() {
                         <>
                             <LimitTabs
                                 value={retentionScope}
-                                onChange={setRetentionScope}
+                                onChange={chooseRetentionScope}
                                 styles={styles}
                                 labels={limitLabels}
                                 keys={RETENTION_SCOPES}
@@ -1562,6 +1628,7 @@ export default function DeckOptionsScreen() {
                     placeholder={l('Bu deste hakkında not (çalışma ekranında görünür)', 'Notes about this deck (shown on the study screen)')}
                     placeholderTextColor={colors.textMuted}
                     multiline
+                    accessibilityLabel={l('Deste açıklaması', 'Deck description')}
                 />
                 </OptionCard>
 
@@ -1569,15 +1636,16 @@ export default function DeckOptionsScreen() {
 
             <PresetActionsMenu
                     visible={presetActionsOpen}
+                    // Anki's Save menu, in its order (SaveButton.svelte): the Save button beside it
+                    // saves, and changing the preset has its own row at the top of the screen.
+                    // Restore Defaults stands in for Anki's per-option revert buttons; Remove is
+                    // last, where iOS puts a destructive action.
                     actions={[
-                        { label: l('Kaydet', 'Save'), action: handleSave },
-                        // Changing the preset has its own row at the top of the screen now,
-                        // where Anki keeps it, so the menu is the actions on that preset.
-                        { label: l('Ayar grubunu kopyala', 'Clone Preset'), action: handleClonePreset },
-                        { label: l('Varsayılana dön', 'Restore Defaults'), action: handleRestoreDefaults },
                         { label: l('Ayar grubu ekle', 'Add Preset'), action: handleAddPreset },
-                        { label: l('Ayar grubunu yeniden adlandır', 'Rename preset'), action: () => { setRenameText(presetName); setRenameOpen(true); } },
-                        { label: l('Kaydet ve tüm alt destelere uygula', 'Save and Apply to All Subdecks'), action: handleApplyToSubdecks },
+                        { label: l('Ayar grubunu kopyala', 'Clone Preset'), action: handleClonePreset },
+                        { label: l('Ayar grubunu yeniden adlandır', 'Rename Preset'), action: () => { setRenameText(presetName); setRenameOpen(true); } },
+                        { label: l('Varsayılana dön', 'Restore Defaults'), action: handleRestoreDefaults },
+                        { label: l('Kaydet ve tüm alt destelere uygula', 'Save to All Subdecks'), action: handleApplyToSubdecks },
                         { label: l('Ayar grubunu kaldır', 'Remove Preset'), action: handleDeletePreset, destructive: true },
                     ]}
                     onClose={() => setPresetActionsOpen(false)}
@@ -1625,6 +1693,7 @@ export default function DeckOptionsScreen() {
                 <PresetPickerModal
                     presets={presetStaging.presets}
                     activePresetId={configId}
+                    currentDeckId={deck.id}
                     onPick={switchPreset}
                     onClose={() => setPresetPickerOpen(false)}
                     styles={styles}

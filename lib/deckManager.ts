@@ -55,7 +55,7 @@ export {
     createPreset,
     createDefaultPreset,
     renamePreset,
-    restoreDeckConfigDefaults,
+    presetWithDefaults,
     deletePreset,
     assignDeckConfig,
     applyConfigToSubdecks,
