@@ -20,9 +20,9 @@ import { spawnSync } from 'node:child_process';
  */
 const EXCEPTIONS = [
     {
-        advisory: 'GHSA-mrhx-c7xc-m3w5',
-        package: 'zod',
-        reason: 'build-time only (Expo CLI 57 argument and config validation; the app never imports zod); patched only in zod 4.6.6, while @expo/cli 57.0.32 still requires zod ^3.25.76, as of 2026-10-24',
+        advisory: 'GHSA-qr28-fpjm-wq7f',
+        package: 'decode-uri-component',
+        reason: 'patched only in decode-uri-component 0.5.1, which is ESM-only, so the CommonJS query-string 7 that expo-router 57 parses URL queries with cannot require it; expo-router 58.0.13 drops query-string, so this ends with the SDK 58 upgrade, as of 2026-11-03',
     },
 ];
 
