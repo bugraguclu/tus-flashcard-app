@@ -62,7 +62,7 @@ import DeckOptionsScreen from '../app/deck-options';
 import { DEFAULT_DECK_CONFIG } from './models';
 import { createDeck, getDeck } from './deckStore';
 import { getAllDeckConfigs, getDeckConfig, saveDeckConfig } from './deckPresets';
-import { getDeckTodayLimits, setDeckDesiredRetention } from './deckLimits';
+import { getDeckTodayLimits, setDeckDesiredRetention, setDeckLimitOverrides } from './deckLimits';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -94,6 +94,7 @@ const field = (label: string) => root().find((node) => isHost(node, 'TextInput')
 const tabs = (text: string) => root().findAll((node) => isHost(node, 'TouchableOpacity') && node.props.accessibilityRole === 'tab' && textOf(node) === text);
 /** The toolbar's Save button: the one control that reports whether it is disabled. */
 const saveButton = () => root().find((node) => isHost(node, 'TouchableOpacity') && node.props.accessibilityState?.disabled !== undefined);
+const typeLimit = (value: string) => act(() => { field('Günlük en fazla tekrar').props.onChangeText(value); });
 
 function mount() {
     act(() => { renderer = TestRenderer.create(React.createElement(DeckOptionsScreen)); });
@@ -193,6 +194,64 @@ describe('Deck Options tabs', () => {
         expect(textOf(saveButton())).toBe('Kaydedildi');
     });
 
+    it('stores only today’s limit once a limit typed on “This deck” is left for “Today only”', () => {
+        mount();
+        press(tabs('Bu deste')[0]);
+        typeLimit('50');
+        press(tabs('Yalnızca bugün')[0]);
+        expect(field('Günlük en fazla tekrar').props.value).toBe('50');
+
+        press(saveButton());
+        // As in Anki, the tab passed over keeps the value it was loaded with; before, the typed 50
+        // became this deck's own limit as well.
+        expect(getDeck(h.deckId)?.reviewLimit).toBeUndefined();
+        expect(getDeckTodayLimits(h.deckId, 4).reviewLimit).toBe(50);
+    });
+
+    it('shows a limit typed on a tab again when that tab is chosen again', () => {
+        mount();
+        press(tabs('Bu deste')[0]);
+        typeLimit('50');
+        press(tabs('Yalnızca bugün')[0]);
+        press(tabs('Bu deste')[0]);
+        expect(field('Günlük en fazla tekrar').props.value).toBe('50');
+
+        press(saveButton());
+        expect(getDeck(h.deckId)?.reviewLimit).toBe(50);
+        expect(getDeckTodayLimits(h.deckId, 4).reviewLimit).toBeUndefined();
+    });
+
+    it('keeps the preset’s limit when a value typed on “Preset” is taken to “This deck”', () => {
+        mount();
+        typeLimit('120');
+        press(tabs('Bu deste')[0]);
+        expect(field('Günlük en fazla tekrar').props.value).toBe('120');
+
+        press(saveButton());
+        // Before, the shared preset took 120 too, for every deck using it.
+        expect(getDeckConfig(DEFAULT_DECK_CONFIG.id).maxReviewsPerDay).toBe(333);
+        expect(getDeck(h.deckId)?.reviewLimit).toBe(120);
+    });
+
+    it('leaves nothing to save once a limit typed on “This deck” is left for “Preset”', () => {
+        mount();
+        press(tabs('Bu deste')[0]);
+        typeLimit('50');
+        press(tabs('Ayar grubu')[0]);
+        expect(textOf(saveButton())).toBe('Kaydedildi');
+    });
+
+    it('drops the deck’s own limit when saved on “Preset”', () => {
+        setDeckLimitOverrides(h.deckId, undefined, 50);
+        mount();
+        expect(field('Günlük en fazla tekrar').props.value).toBe('50');
+        press(tabs('Ayar grubu')[0]);
+        expect(textOf(saveButton())).toBe('Kaydet');
+
+        press(saveButton());
+        expect(getDeck(h.deckId)?.reviewLimit).toBeUndefined();
+    });
+
     it('drops the deck’s own desired retention when saved on the preset tab', () => {
         h.settings = { dayRolloverHour: 4, fsrsEnabled: true };
         setDeckDesiredRetention(h.deckId, 0.85);
@@ -203,5 +262,17 @@ describe('Deck Options tabs', () => {
 
         press(saveButton());
         expect(getDeck(h.deckId)?.desiredRetention).toBeUndefined();
+    });
+
+    it('keeps the preset’s desired retention when a value typed on “Preset” is taken to “This deck”', () => {
+        h.settings = { dayRolloverHour: 4, fsrsEnabled: true };
+        mount();
+        act(() => { field('Hedeflenen hatırlama oranı').props.onChangeText('0.85'); });
+        press(tabs('Bu deste')[1]);
+        expect(field('Hedeflenen hatırlama oranı').props.value).toBe('0.85');
+
+        press(saveButton());
+        expect(getDeckConfig(DEFAULT_DECK_CONFIG.id).desiredRetention).toBe(DEFAULT_DECK_CONFIG.desiredRetention);
+        expect(getDeck(h.deckId)?.desiredRetention).toBe(0.85);
     });
 });

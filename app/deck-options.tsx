@@ -87,10 +87,8 @@ import { MULTIPLIER_BOUNDS, untouchedLegacyMultiplier } from '../components/deck
 import { applyDeckOptionsToSubdecks } from '../lib/deckSubdeckOptions';
 import {
     chosenTabValue,
-    deckRetentionForScope,
     effectiveLimitScope,
-    limitsForScope,
-    scopeDropsOverride,
+    formForSave,
 } from '../components/deck-options/limitScope';
 import {
     Field,
@@ -270,12 +268,20 @@ export default function DeckOptionsScreen() {
         configId: nextConfigId,
         form: nextForm,
     });
+    // What Save stores, which the tabs settle (`formForSave`): a broader tab passed over goes back
+    // to the value it was loaded with, the preset's (its defaults once Restore Defaults is pending)
+    // or the deck's own. It is also what is checked and compared, so a value typed on a tab the
+    // learner then left neither blocks Save nor counts as a change.
+    const formToSave = formForSave(
+        form,
+        formFromConfig(restoreDefaultsPending ? presetWithDefaults(initialConfig) : initialConfig, ''),
+        reviewLimitScope,
+        retentionScope,
+    );
     // A reschedule request is an unsaved change like any other: it starts off, so it can only
     // be on because the learner turned it on, and Save is what carries it out.
-    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form }) || rescheduleOnSave || presetStaging.hasChanges
-        || restoreDefaultsPending
-        || scopeDropsOverride(reviewLimitScope, form.deckReviewLimit, form.todayReviewLimit)
-        || (form.fsrsEnabled && scopeDropsOverride(retentionScope, form.deckDesiredRetention, ''));
+    const isDirty = hasSnapshotChanged(savedSnapshot, { configId, form: formToSave }) || rescheduleOnSave || presetStaging.hasChanges
+        || restoreDefaultsPending;
     useUnsavedChangesGuard(isDirty, {
         title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
         message: l(
@@ -428,7 +434,7 @@ export default function DeckOptionsScreen() {
     };
 
     /**
-     * Read the form.
+     * Read the form as Save would store it (`formToSave`).
      *
      * Two rules follow Anki. A field the running scheduler hides is still carried through — its
      * stored value belongs to the preset and must survive a save made while FSRS is on — but it
@@ -436,32 +442,32 @@ export default function DeckOptionsScreen() {
      * fix. And a value that is merely unwise (a short maximum interval, Easy below Good) is
      * advice, printed under the field by `deckOptionsWarnings`, never a refusal to save.
      */
-    const validateFormDraft = () => {
+    const validateFormDraft = (draft: typeof form) => {
         type FormKey = keyof typeof form;
         const errors: Partial<Record<FormKey, string>> = {};
         const integers = {} as Partial<Record<FormKey, number | undefined>>;
         const decimals = {} as Partial<Record<FormKey, number | undefined>>;
         const integer = (key: FormKey, min: number, max: number, allowEmpty = false) => {
-            const result = parseBoundedIntegerDraft(String(form[key]), min, max, allowEmpty);
+            const result = parseBoundedIntegerDraft(String(draft[key]), min, max, allowEmpty);
             integers[key] = result.value;
             const message = issueMessage(result.issue, min, max);
             if (message) errors[key] = message;
         };
         const decimal = (key: FormKey, min: number, max: number, allowEmpty = false) => {
-            const result = parseBoundedDecimalDraft(String(form[key]), min, max, allowEmpty);
+            const result = parseBoundedDecimalDraft(String(draft[key]), min, max, allowEmpty);
             decimals[key] = result.value;
             const message = issueMessage(result.issue, min, max);
             if (message) errors[key] = message;
         };
         /** A field the scheduler hides: keep a usable draft, fall back to what is stored. */
         const hiddenInteger = (key: FormKey, min: number, max: number, stored: number) => {
-            integers[key] = parseBoundedIntegerDraft(String(form[key]), min, max).value ?? stored;
+            integers[key] = parseBoundedIntegerDraft(String(draft[key]), min, max).value ?? stored;
         };
         const hiddenDecimal = (key: FormKey, min: number, max: number, stored: number) => {
-            decimals[key] = parseBoundedDecimalDraft(String(form[key]), min, max).value ?? stored;
+            decimals[key] = parseBoundedDecimalDraft(String(draft[key]), min, max).value ?? stored;
         };
         const shows = (field: Parameters<typeof isDeckOptionFieldVisible>[0]) =>
-            isDeckOptionFieldVisible(field, form.fsrsEnabled);
+            isDeckOptionFieldVisible(field, draft.fsrsEnabled);
         // The preset as it is on disk. Read from the memo rather than the database: this runs on
         // every keystroke, and a stable object is also what keeps the advice below memoized.
         const stored = initialConfig;
@@ -494,7 +500,7 @@ export default function DeckOptionsScreen() {
         // Anki. A stored value from the older, wider ranges is kept when left untouched rather
         // than silently changed; editing it asks for a value inside Anki's range.
         const ankiDecimal = (key: keyof typeof MULTIPLIER_BOUNDS, storedValue: number) => {
-            const kept = untouchedLegacyMultiplier(key, String(form[key]), storedValue);
+            const kept = untouchedLegacyMultiplier(key, String(draft[key]), storedValue);
             if (kept !== undefined) decimals[key] = kept;
             else decimal(key, MULTIPLIER_BOUNDS[key].min, MULTIPLIER_BOUNDS[key].max);
         };
@@ -519,7 +525,7 @@ export default function DeckOptionsScreen() {
             );
             // Hidden with FSRS off, the deck's own target is kept rather than cleared.
             decimals.deckDesiredRetention = parseBoundedDecimalDraft(
-                String(form.deckDesiredRetention),
+                String(draft.deckDesiredRetention),
                 FSRS_DESIRED_RETENTION_MIN,
                 FSRS_DESIRED_RETENTION_MAX,
                 true,
@@ -536,28 +542,28 @@ export default function DeckOptionsScreen() {
             );
         }
 
-        if (shows('fsrsParams') && parseFsrsParameterText(form.fsrsParams) === null) {
+        if (shows('fsrsParams') && parseFsrsParameterText(draft.fsrsParams) === null) {
             errors.fsrsParams = l(
                 'FSRS parametreleri 17, 19 veya 21 sayıdan oluşmalıdır.',
                 'FSRS parameters must be a list of 17, 19 or 21 numbers.',
             );
         }
         if (shows('ignoreRevlogsBefore')
-            && form.ignoreRevlogsBefore.trim() !== ''
-            && !/^\d{4}-\d{2}-\d{2}$/.test(form.ignoreRevlogsBefore.trim())) {
+            && draft.ignoreRevlogsBefore.trim() !== ''
+            && !/^\d{4}-\d{2}-\d{2}$/.test(draft.ignoreRevlogsBefore.trim())) {
             errors.ignoreRevlogsBefore = l('Tarihi YYYY-AA-GG olarak yazın.', 'Enter the date as YYYY-MM-DD.');
         }
 
         // Anki accepts an empty list here: new cards then graduate straight away, or under FSRS
         // stay in short-term learning while their interval is under half a day.
-        const learningSteps = parseAnkiStepText(form.learningSteps, true);
+        const learningSteps = parseAnkiStepText(draft.learningSteps, true);
         if (learningSteps === null) {
             errors.learningSteps = l(
                 'Adımları boşlukla ayırın: 30s, 10m, 2h veya 1d.',
                 'Separate steps with spaces: 30s, 10m, 2h, or 1d.',
             );
         }
-        const relearningSteps = parseAnkiStepText(form.relearningSteps, true);
+        const relearningSteps = parseAnkiStepText(draft.relearningSteps, true);
         if (relearningSteps === null) {
             errors.relearningSteps = l(
                 'Adımları boşlukla ayırın: 30s, 10m, 2h veya 1d.',
@@ -631,7 +637,7 @@ export default function DeckOptionsScreen() {
         }
     };
 
-    const validation = validateFormDraft();
+    const validation = validateFormDraft(formToSave);
     const hasValidationErrors = Object.keys(validation.errors).length > 0;
 
     const warningText = (id: DeckOptionsWarningId): string => deckOptionsWarningText(id, l);
@@ -760,17 +766,14 @@ export default function DeckOptionsScreen() {
             presetStaging.commit();
             saveDeckConfig(updated);
             if ((getDeck(deck.id) ?? deck).configId !== configId) assignDeckConfig(deck.id, configId);
-            // The selected tab decides which review limit applies (DST-7).
-            const reviewLimits = limitsForScope(reviewLimitScope, validation.integers.deckReviewLimit, validation.integers.todayReviewLimit);
-            setDeckLimitOverrides(deck.id, validation.integers.deckNewLimit, reviewLimits.deck);
-            setDeckDesiredRetention(
-                deck.id,
-                deckRetentionForScope(retentionScope, validation.decimals.deckDesiredRetention, form.fsrsEnabled),
-            );
+            // The selected tabs decide which review limit and desired retention apply (DST-7);
+            // `validation` reads `formToSave`, where the overrides they drop are already empty.
+            setDeckLimitOverrides(deck.id, validation.integers.deckNewLimit, validation.integers.deckReviewLimit);
+            setDeckDesiredRetention(deck.id, validation.decimals.deckDesiredRetention);
             setDeckTodayLimits(
                 deck.id,
                 validation.integers.todayNewLimit,
-                reviewLimits.today,
+                validation.integers.todayReviewLimit,
                 settings.dayRolloverHour,
             );
             setDeckDescription(deck.id, form.description);
@@ -785,9 +788,9 @@ export default function DeckOptionsScreen() {
             if (includeSubdecks) {
                 applyDeckOptionsToSubdecks(deck.id, {
                     deckNewLimit: validation.integers.deckNewLimit,
-                    deckReviewLimit: reviewLimits.deck,
+                    deckReviewLimit: validation.integers.deckReviewLimit,
                     todayNewLimit: validation.integers.todayNewLimit,
-                    todayReviewLimit: reviewLimits.today,
+                    todayReviewLimit: validation.integers.todayReviewLimit,
                 }, settings.dayRolloverHour);
             }
             db.execSync('COMMIT;');
@@ -837,7 +840,7 @@ export default function DeckOptionsScreen() {
                 markSchedulingStale();
             } catch (refreshError) {
                 console.warn('[DeckOptions] saved but refresh failed:', refreshError);
-                setSavedSnapshot(snapshotForm(configId, form));
+                setSavedSnapshot(snapshotForm(configId, formToSave));
                 setRestoreDefaultsPending(false);
                 markSchedulingStale();
             }
@@ -900,7 +903,7 @@ export default function DeckOptionsScreen() {
             setNewPresetName(getDeckDisplayName(deck.name));
             setNewPresetOpen('add');
         };
-        if (!hasSnapshotChanged(savedSnapshot, { configId, form })) ask();
+        if (!hasSnapshotChanged(savedSnapshot, { configId, form: formToSave })) ask();
         else confirm(
             l('Yeni ayar grubu ekle', 'Add a new preset'),
             l('Bu ayar grubundaki kaydedilmemiş değişiklikler bırakılacak.', 'Unsaved changes to this preset will be discarded.'),
@@ -1029,18 +1032,19 @@ export default function DeckOptionsScreen() {
         : reviewLimitScope === 'deck'
             ? form.deckReviewLimit
             : form.todayReviewLimit;
+    // An empty override leaves the broader tab's value in force, as Save will store it.
     const scopedReviewPlaceholder = reviewLimitScope === 'preset'
         ? '200'
         : reviewLimitScope === 'deck'
-            ? (form.maxReviewsPerDay.trim() || '200')
-            : (form.deckReviewLimit.trim() || form.maxReviewsPerDay.trim() || '200');
+            ? (formToSave.maxReviewsPerDay.trim() || '200')
+            : (formToSave.deckReviewLimit.trim() || formToSave.maxReviewsPerDay.trim() || '200');
 
     const setScopedReviewValue = (value: string) => set(reviewLimitScope === 'preset' ? 'maxReviewsPerDay' : reviewLimitScope === 'deck' ? 'deckReviewLimit' : 'todayReviewLimit', value);
     /**
      * Anki's tabs (TabbedValue.svelte): a tab chosen without a value of its own starts from the
-     * value on screen, so choosing "This deck" shows what will apply and Save can store it. Only
-     * the chosen tab keeps what it borrowed: the others give an untouched borrowed value back, so
-     * looking at a tab and leaving it leaves nothing to save, as in Anki.
+     * value on screen, so choosing "This deck" shows what will apply and Save can store it. Which
+     * tab values Save keeps is `formToSave`'s rule; leaving a tab only gives an untouched borrowed
+     * value back, so choosing that tab again starts from the value on screen then.
      */
     type TabField = 'deckReviewLimit' | 'todayReviewLimit' | 'deckDesiredRetention';
     const fillChosenTab = (key: TabField, shown: string) => {
@@ -1324,7 +1328,7 @@ export default function DeckOptionsScreen() {
                                 label={l('Hedeflenen hatırlama oranı', 'Desired retention')}
                                 value={retentionScope === 'preset' ? form.desiredRetention : form.deckDesiredRetention}
                                 onChange={(value) => set(retentionScope === 'preset' ? 'desiredRetention' : 'deckDesiredRetention', value)}
-                                placeholder={retentionScope === 'deck' ? form.desiredRetention : undefined}
+                                placeholder={retentionScope === 'deck' ? formToSave.desiredRetention : undefined}
                                 hint={retentionScope === 'preset'
                                     ? l(
                                         '0,70–0,99. Yüksek değer daha sık tekrar demektir; Anki 0,90 önerir.',
