@@ -55,10 +55,19 @@ const WEB_MODULE_OVERRIDES = {
   '@react-native-community/datetimepicker': path.resolve(__dirname, 'components/WebDateTimePicker.tsx'),
 };
 
+// react-native-gesture-handler loads Reanimated whenever it can resolve it, and it can: Reanimated
+// is installed as a peer of expo-router's react-native-drawer-layout. The app has no Reanimated
+// code, and on web its import-time setup calls requestAnimationFrame, which crashed the dev
+// server's Node-side render. Gesture-handler gets an empty module and runs without Reanimated.
+const GESTURE_HANDLER_DIR = `${path.sep}node_modules${path.sep}react-native-gesture-handler${path.sep}`;
+
 const upstreamResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform === 'web' && Object.prototype.hasOwnProperty.call(WEB_MODULE_OVERRIDES, moduleName)) {
     return { type: 'sourceFile', filePath: WEB_MODULE_OVERRIDES[moduleName] };
+  }
+  if (moduleName === 'react-native-reanimated' && context.originModulePath.includes(GESTURE_HANDLER_DIR)) {
+    return { type: 'sourceFile', filePath: emptyModule };
   }
   return upstreamResolveRequest
     ? upstreamResolveRequest(context, moduleName, platform)

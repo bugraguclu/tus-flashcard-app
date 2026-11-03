@@ -10,6 +10,7 @@ import {
     View,
     type LayoutChangeEvent,
 } from 'react-native';
+import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg from 'react-native-svg';
@@ -175,6 +176,7 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
             history.apply({ ...editRef.current, annotations: next });
         },
         remember: (before) => history.remember({ ...editRef.current, annotations: before }),
+        enabled: mode === 'draw',
     });
 
     const cropResponder = useCropGestures({
@@ -471,53 +473,62 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
 
     const pageStage = working && (
         <View style={[styles.pageShadow, { width: drawCanvas.width, height: drawCanvas.height }]}>
-            <View
-                style={[styles.page, { width: drawCanvas.width, height: drawCanvas.height }]}
-                accessible
-                accessibilityLabel={mode === 'draw' ? l('Fotoğraf, çizim alanı', 'Photo, drawing area') : l('Fotoğraf', 'Photo')}
-                accessibilityHint={mode === 'draw'
-                    ? l('Çizmek için parmağınızı sürükleyin', 'Drag a finger to draw')
-                    : l('Orijinalini görmek için basılı tutun', 'Press and hold to see the original')}
-                {...(mode === 'draw' ? drawing.panResponder.panHandlers : compareResponder.panHandlers)}
-            >
-                <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
-                    <PhotoLayer uri={working.preview.uri} source={photoSize} orientation={geometry} window={geometry.crop} canvas={drawCanvas} matrix={matrix} />
-                    <AnnotationLayer annotations={edit.annotations} width={drawCanvas.width} height={drawCanvas.height} />
-                    {drawing.liveAnnotation && (
-                        <Svg width={drawCanvas.width} height={drawCanvas.height} style={StyleSheet.absoluteFill}>
-                            {renderAnnotation(drawing.liveAnnotation, drawCanvas.width, drawCanvas.height)}
-                        </Svg>
-                    )}
-                    {drawing.eraserRing && (
-                        <View
-                            style={[
-                                styles.eraserRing,
-                                {
-                                    left: drawing.eraserRing.x - drawing.eraserRing.radius,
-                                    top: drawing.eraserRing.y - drawing.eraserRing.radius,
-                                    width: drawing.eraserRing.radius * 2,
-                                    height: drawing.eraserRing.radius * 2,
-                                    borderRadius: drawing.eraserRing.radius,
-                                },
-                            ]}
-                        />
-                    )}
-                    {comparing && (
-                        <View style={styles.compareBadge}>
-                            <Text style={styles.compareText}>{l('Orijinal', 'Original')}</Text>
-                        </View>
-                    )}
+            {/* Drawing is a native gesture, switched on only on the draw screen; the adjust
+                screen's press-and-hold compare stays a JS responder. */}
+            <GestureDetector gesture={drawing.gesture}>
+                <View
+                    style={[styles.page, { width: drawCanvas.width, height: drawCanvas.height }]}
+                    accessible
+                    accessibilityLabel={mode === 'draw' ? l('Fotoğraf, çizim alanı', 'Photo, drawing area') : l('Fotoğraf', 'Photo')}
+                    accessibilityHint={mode === 'draw'
+                        ? l('Çizmek için parmağınızı sürükleyin', 'Drag a finger to draw')
+                        : l('Orijinalini görmek için basılı tutun', 'Press and hold to see the original')}
+                    {...(mode === 'draw' ? null : compareResponder.panHandlers)}
+                >
+                    <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
+                        <PhotoLayer uri={working.preview.uri} source={photoSize} orientation={geometry} window={geometry.crop} canvas={drawCanvas} matrix={matrix} />
+                        <AnnotationLayer annotations={edit.annotations} width={drawCanvas.width} height={drawCanvas.height} />
+                        {drawing.liveAnnotation && (
+                            <Svg width={drawCanvas.width} height={drawCanvas.height} style={StyleSheet.absoluteFill}>
+                                {renderAnnotation(drawing.liveAnnotation, drawCanvas.width, drawCanvas.height)}
+                            </Svg>
+                        )}
+                        {drawing.eraserRing && (
+                            <View
+                                style={[
+                                    styles.eraserRing,
+                                    {
+                                        left: drawing.eraserRing.x - drawing.eraserRing.radius,
+                                        top: drawing.eraserRing.y - drawing.eraserRing.radius,
+                                        width: drawing.eraserRing.radius * 2,
+                                        height: drawing.eraserRing.radius * 2,
+                                        borderRadius: drawing.eraserRing.radius,
+                                    },
+                                ]}
+                            />
+                        )}
+                        {comparing && (
+                            <View style={styles.compareBadge}>
+                                <Text style={styles.compareText}>{l('Orijinal', 'Original')}</Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
-                {mode === 'draw' && drawing.tool === 'text' && drawing.selectedLabel && (
+            </GestureDetector>
+            {/* Over the photo rather than in it: a touch on the delete button must not also reach
+                the drawing gesture, which would take it for a stroke. */}
+            {mode === 'draw' && drawing.tool === 'text' && drawing.selectedLabel && (
+                <View style={[StyleSheet.absoluteFill, { pointerEvents: 'box-none' }]}>
                     <SelectionFrame object={drawing.selectedLabel} canvas={drawCanvas} onDelete={drawing.deleteSelected} />
-                )}
-            </View>
+                </View>
+            )}
         </View>
     );
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={close}>
-            <View style={[styles.container, { paddingTop: insets.top }]}>
+            {/* A modal is a root of its own, so the drawing gesture needs its own gesture root. */}
+            <GestureHandlerRootView style={[styles.container, { paddingTop: insets.top }]}>
                 <View style={styles.header}>
                     <TouchableOpacity
                         style={styles.headerSide}
@@ -648,7 +659,7 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                         colorMatrix={exportJob.matrix}
                     />
                 )}
-            </View>
+            </GestureHandlerRootView>
         </Modal>
     );
 }

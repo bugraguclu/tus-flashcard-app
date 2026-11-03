@@ -10,6 +10,7 @@ import {
     View,
     type LayoutChangeEvent,
 } from 'react-native';
+import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg from 'react-native-svg';
@@ -163,7 +164,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
         applyAnnotations(next);
     };
 
-    const panResponder = useDrawingGestures({
+    const pageGesture = useDrawingGestures({
         annotationsRef,
         canvasSizeRef,
         brushRef,
@@ -470,7 +471,8 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={close}>
-            <View style={[styles.container, { paddingTop: insets.top }]}>
+            {/* A modal is a root of its own, so the page's gesture needs its own gesture root. */}
+            <GestureHandlerRootView style={[styles.container, { paddingTop: insets.top }]}>
                 <View style={styles.header}>
                     <TouchableOpacity
                         style={styles.headerSide}
@@ -518,46 +520,51 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                 <View style={styles.stage} onLayout={onStageLayout}>
                     {stage && (
                         <View style={[styles.pageShadow, { width: canvasSize.width, height: canvasSize.height }]}>
-                            <View
-                                style={[styles.page, { width: canvasSize.width, height: canvasSize.height }]}
-                                accessible
-                                accessibilityLabel={l('Çizim sayfası', 'Drawing page')}
-                                accessibilityHint={l('Çizmek için parmağınızı sürükleyin', 'Drag a finger to draw')}
-                                {...panResponder.panHandlers}
-                            >
-                                <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
-                                    <PaperSwatch
-                                        paper={setup.paper}
-                                        background={setup.background}
-                                        width={canvasSize.width}
-                                        height={canvasSize.height}
-                                        style={StyleSheet.absoluteFill}
-                                    />
-                                    <AnnotationLayer annotations={annotations} width={canvasSize.width} height={canvasSize.height} />
-                                    {liveAnnotation && (
-                                        <Svg width={canvasSize.width} height={canvasSize.height} style={StyleSheet.absoluteFill}>
-                                            {renderAnnotation(liveAnnotation, canvasSize.width, canvasSize.height)}
-                                        </Svg>
-                                    )}
-                                    {eraserRing && (
-                                        <View
-                                            style={[
-                                                styles.eraserRing,
-                                                {
-                                                    left: eraserRing.x - eraserRing.radius,
-                                                    top: eraserRing.y - eraserRing.radius,
-                                                    width: eraserRing.radius * 2,
-                                                    height: eraserRing.radius * 2,
-                                                    borderRadius: eraserRing.radius,
-                                                },
-                                            ]}
+                            <GestureDetector gesture={pageGesture}>
+                                <View
+                                    style={[styles.page, { width: canvasSize.width, height: canvasSize.height }]}
+                                    accessible
+                                    accessibilityLabel={l('Çizim sayfası', 'Drawing page')}
+                                    accessibilityHint={l('Çizmek için parmağınızı sürükleyin', 'Drag a finger to draw')}
+                                >
+                                    <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
+                                        <PaperSwatch
+                                            paper={setup.paper}
+                                            background={setup.background}
+                                            width={canvasSize.width}
+                                            height={canvasSize.height}
+                                            style={StyleSheet.absoluteFill}
                                         />
-                                    )}
+                                        <AnnotationLayer annotations={annotations} width={canvasSize.width} height={canvasSize.height} />
+                                        {liveAnnotation && (
+                                            <Svg width={canvasSize.width} height={canvasSize.height} style={StyleSheet.absoluteFill}>
+                                                {renderAnnotation(liveAnnotation, canvasSize.width, canvasSize.height)}
+                                            </Svg>
+                                        )}
+                                        {eraserRing && (
+                                            <View
+                                                style={[
+                                                    styles.eraserRing,
+                                                    {
+                                                        left: eraserRing.x - eraserRing.radius,
+                                                        top: eraserRing.y - eraserRing.radius,
+                                                        width: eraserRing.radius * 2,
+                                                        height: eraserRing.radius * 2,
+                                                        borderRadius: eraserRing.radius,
+                                                    },
+                                                ]}
+                                            />
+                                        )}
+                                    </View>
                                 </View>
-                                {showSelection && (
+                            </GestureDetector>
+                            {/* Over the page rather than in it: a touch on the delete button must
+                                not also reach the page's gesture, which would take it for a stroke. */}
+                            {showSelection && (
+                                <View style={[StyleSheet.absoluteFill, { pointerEvents: 'box-none' }]}>
                                     <SelectionFrame object={selectedObject} canvas={canvasSize} onDelete={deleteSelected} />
-                                )}
-                            </View>
+                                </View>
+                            )}
                         </View>
                     )}
                 </View>
@@ -612,7 +619,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                         annotations={annotations}
                     />
                 )}
-            </View>
+            </GestureHandlerRootView>
         </Modal>
     );
 }

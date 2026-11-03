@@ -1,5 +1,5 @@
-import { useRef, type RefObject } from 'react';
-import { PanResponder, type GestureResponderEvent } from 'react-native';
+import { useMemo, useRef, type RefObject } from 'react';
+import { Gesture as Gestures, type GestureTouchEvent } from 'react-native-gesture-handler';
 import {
     applyPhotoEraserSweep,
     isPhotoShapeDragCommittable,
@@ -14,14 +14,17 @@ import {
     HIGHLIGHTER_OPACITY,
     drawingObjectAt,
     drawingPointFromPage,
-    followedTouch,
     drawingToolWidth,
+    drawingTouchEvent,
+    followedTouch,
     isDrawingShapeTool,
     keepDrawingObjectOnPage,
     moveDrawingObject,
+    pageFinger,
     shouldAddDrawingPoint,
     type DrawingSize,
     type DrawingTool,
+    type PageFinger,
 } from '../../lib/drawingPad';
 import { makeId } from '../photo-editor/editorModel';
 
@@ -61,11 +64,16 @@ const TAP_SLOP = 6;
  * Every touch on the page: drawing, erasing, dragging out a shape, and picking up, moving or
  * opening a label or a picture.
  *
+ * The page is a native gesture rather than a JS responder. React Native gives the whole screen a
+ * single responder, so a finger resting on the toolbar held it and a stroke begun beside it was
+ * lost; the page's own recognizer sees only the fingers on the page, whatever else is on the glass.
+ *
  * Everything on the page ignores touches, so `location` is measured from the page itself and the
- * page's origin falls out of the very touch that starts a gesture. The responder is built once;
- * the handlers read the screen's current state through `deps`, which is refreshed every render.
+ * page's origin falls out of the very touch that starts a gesture. The gesture is rebuilt only when
+ * `enabled` changes (the photo editor turns it off outside its Draw screen); the handlers read the
+ * screen's current state through `deps`, which is refreshed every render.
  */
-export function useDrawingGestures(deps: DrawingGestureDeps) {
+export function useDrawingGestures(deps: DrawingGestureDeps, enabled = true) {
     const depsRef = useRef(deps);
     depsRef.current = deps;
     const gestureRef = useRef<Gesture | null>(null);
@@ -83,9 +91,8 @@ export function useDrawingGestures(deps: DrawingGestureDeps) {
         applyAnnotations(result.annotations);
     };
 
-    const begin = (event: GestureResponderEvent) => {
+    const begin = (native: PageFinger) => {
         const { annotationsRef, canvasSizeRef, brushRef, setLiveAnnotation, select } = depsRef.current;
-        const native = event.nativeEvent;
         fingerRef.current = native.identifier;
         const origin = { x: native.pageX - native.locationX, y: native.pageY - native.locationY };
         const point = drawingPointFromPage({ x: native.pageX, y: native.pageY }, origin, canvasSizeRef.current);
@@ -138,12 +145,12 @@ export function useDrawingGestures(deps: DrawingGestureDeps) {
         setLiveAnnotation(stroke);
     };
 
-    const extend = (event: GestureResponderEvent) => {
+    const extend = (event: GestureTouchEvent) => {
         const gesture = gestureRef.current;
         if (!gesture) return;
         const { canvasSizeRef, annotationsRef, applyAnnotations, setLiveAnnotation } = depsRef.current;
         const canvas = canvasSizeRef.current;
-        const finger = followedTouch(event.nativeEvent, fingerRef.current);
+        const finger = followedTouch(drawingTouchEvent(event), fingerRef.current);
         if (!finger) return;
         const point = drawingPointFromPage({ x: finger.pageX, y: finger.pageY }, gesture.origin, canvas);
 
@@ -176,6 +183,7 @@ export function useDrawingGestures(deps: DrawingGestureDeps) {
     const finish = () => {
         const gesture = gestureRef.current;
         gestureRef.current = null;
+        fingerRef.current = undefined;
         const { annotationsRef, canvasSizeRef, applyAnnotations, remember, setLiveAnnotation, setEraserRing, openText } = depsRef.current;
         setEraserRing(null);
         setLiveAnnotation(null);
@@ -213,19 +221,30 @@ export function useDrawingGestures(deps: DrawingGestureDeps) {
         }
     };
 
-    return useRef(PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        // A stroke belongs to the page until the finger lifts.
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: begin,
-        onPanResponderMove: extend,
-        // The lift can arrive with a position no move reported, so the gesture is taken that far
-        // before it is finished; otherwise a quick flick ends short of where the finger left.
-        onPanResponderRelease: (event) => {
-            extend(event);
-            finish();
-        },
-        onPanResponderTerminate: finish,
-    })).current;
+    return useMemo(() => Gestures.Manual()
+        .runOnJS(true)
+        .enabled(enabled)
+        // The page takes hold at once, so a stroke starts under the finger rather than after a
+        // slop, and the toolbar button a resting finger was pressing lets go instead of firing.
+        .onTouchesDown((event, manager) => {
+            manager.activate();
+            // A palm or second finger set down mid-stroke is not a new stroke.
+            if (gestureRef.current || fingerRef.current !== undefined || !event.changedTouches.length) return;
+            begin(pageFinger(event.changedTouches[0]));
+        })
+        .onTouchesMove(extend)
+        .onTouchesUp((event, manager) => {
+            // The lift can arrive with a position no move reported, so the gesture is taken that
+            // far before it is finished; otherwise a quick flick ends short of where it left.
+            if (event.changedTouches.some((touch) => touch.id === fingerRef.current)) {
+                extend(event);
+                finish();
+            }
+            if (event.numberOfTouches === 0) manager.end();
+        })
+        .onFinalize(() => {
+            // Cancelled by the system, or the page going away mid-stroke: keep what was drawn.
+            if (gestureRef.current) finish();
+            fingerRef.current = undefined;
+        }), [enabled]);
 }

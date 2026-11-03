@@ -147,6 +147,49 @@ export function followedTouch(event: DrawingTouchEvent, identifier: DrawingTouch
     return fingers.find((finger) => finger.identifier === identifier) ?? null;
 }
 
+/**
+ * One finger as a native gesture reports it (react-native-gesture-handler's touch data): `x`/`y`
+ * on the view the gesture is attached to, `absoluteX`/`absoluteY` on the window.
+ */
+export interface GestureFinger {
+    id: number;
+    x: number;
+    y: number;
+    absoluteX: number;
+    absoluteY: number;
+}
+
+/** A finger in a responder's terms: where it is on the window and where it is on the page. */
+export interface PageFinger extends DrawingTouch {
+    identifier: number;
+    locationX: number;
+    locationY: number;
+}
+
+export function pageFinger(finger: GestureFinger): PageFinger {
+    return {
+        identifier: finger.id,
+        pageX: finger.absoluteX,
+        pageY: finger.absoluteY,
+        locationX: finger.x,
+        locationY: finger.y,
+    };
+}
+
+/**
+ * A native gesture's touch event as `followedTouch` reads a responder's: the first finger that
+ * changed, every finger down and every finger that changed, so a finger that has just lifted is
+ * still found among the changed ones.
+ */
+export function drawingTouchEvent(event: { changedTouches: GestureFinger[]; allTouches: GestureFinger[] }): DrawingTouchEvent {
+    const changed = event.changedTouches.map(pageFinger);
+    return {
+        ...(changed[0] ?? { pageX: 0, pageY: 0 }),
+        touches: event.allTouches.map(pageFinger),
+        changedTouches: changed,
+    };
+}
+
 /** The largest page of this aspect that fits the stage, leaving `margin` on every side. */
 export function fitDrawingPage(
     stage: { width: number; height: number },

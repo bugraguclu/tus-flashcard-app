@@ -24,6 +24,8 @@ interface PhotoDrawingDeps {
     applyAnnotations: (next: PhotoAnnotation[]) => void;
     /** Records the markup as it was before an edit, so the edit can be undone. */
     remember: (before: PhotoAnnotation[]) => void;
+    /** Whether the photo takes drawing touches: only on the draw screen. */
+    enabled: boolean;
 }
 
 type TextTarget = { point: PhotoPoint } | { id: string };
@@ -33,7 +35,7 @@ type TextTarget = { point: PhotoPoint } | { id: string };
  * label card with a choice of how a label stands off the photo, on the canvas showing the
  * cropped photo.
  */
-export function usePhotoDrawing({ annotations, annotationsRef, canvasSizeRef, applyAnnotations, remember }: PhotoDrawingDeps) {
+export function usePhotoDrawing({ annotations, annotationsRef, canvasSizeRef, applyAnnotations, remember, enabled }: PhotoDrawingDeps) {
     const [tool, setTool] = useState<DrawingTool>('pen');
     const [penColor, setPenColor] = useState<string>(PHOTO_PEN_INKS[0]);
     const [highlighterColor, setHighlighterColor] = useState<string>(HIGHLIGHTER_INKS[0]);
@@ -71,7 +73,7 @@ export function usePhotoDrawing({ annotations, annotationsRef, canvasSizeRef, ap
         setTextEntry(target);
     };
 
-    const panResponder = useDrawingGestures({
+    const gesture = useDrawingGestures({
         annotationsRef,
         canvasSizeRef,
         brushRef,
@@ -81,7 +83,7 @@ export function usePhotoDrawing({ annotations, annotationsRef, canvasSizeRef, ap
         setEraserRing,
         select: setSelectedId,
         openText,
-    });
+    }, enabled);
 
     const selectedLabel = useMemo(() => {
         const found = selectedId ? annotations.find((annotation) => annotation.id === selectedId) : undefined;
@@ -191,7 +193,7 @@ export function usePhotoDrawing({ annotations, annotationsRef, canvasSizeRef, ap
         keepSelectionIn,
         liveAnnotation,
         eraserRing,
-        panResponder,
+        gesture,
         textEntry,
         closeText: () => setTextEntry(null),
         editingText,

@@ -7,7 +7,9 @@ import {
     drawingInkForPage,
     drawingInks,
     drawingPointFromPage,
+    drawingTouchEvent,
     followedTouch,
+    pageFinger,
     drawingToolWidth,
     fitDrawingPage,
     refitDrawingAnnotations,
@@ -162,6 +164,29 @@ describe('drawing pad objects', () => {
         expect(text.point.y).toBeCloseTo(350 / 1600);
         expect(image.point.y).toBeCloseTo(1250 / 1600);
         expect(rect.end.y).toBeCloseTo(1250 / 1600);
+    });
+});
+
+describe('native gesture touches', () => {
+    // As react-native-gesture-handler reports them: x/y on the page, absoluteX/Y on the window.
+    const pen = { id: 1, x: 40, y: 60, absoluteX: 140, absoluteY: 260 };
+    const palm = { id: 2, x: 300, y: 500, absoluteX: 400, absoluteY: 700 };
+
+    it("reads a finger in the responder's terms, so the page origin falls out of the first touch", () => {
+        const finger = pageFinger(pen);
+        expect(finger).toEqual({ identifier: 1, pageX: 140, pageY: 260, locationX: 40, locationY: 60 });
+        expect({ x: finger.pageX - finger.locationX, y: finger.pageY - finger.locationY }).toEqual({ x: 100, y: 200 });
+    });
+
+    it('keeps to the pen finger while a palm moves on the page', () => {
+        const event = drawingTouchEvent({ changedTouches: [palm], allTouches: [pen, palm] });
+        expect(followedTouch(event, 1)).toMatchObject({ identifier: 1, pageX: 140, pageY: 260 });
+    });
+
+    it('finds the pen finger as it lifts and ignores a palm lifting', () => {
+        expect(followedTouch(drawingTouchEvent({ changedTouches: [pen], allTouches: [palm] }), 1))
+            .toMatchObject({ identifier: 1, pageX: 140 });
+        expect(followedTouch(drawingTouchEvent({ changedTouches: [palm], allTouches: [] }), 1)).toBeNull();
     });
 });
 
