@@ -26,6 +26,7 @@ import {
 import {
     extractDeckNameFromSearch,
     filteredDeckOrderChoices,
+    newFilteredDeckSearches,
     replaceDeckNameInSearch,
 } from '../lib/filteredDeckOptions';
 import {
@@ -34,7 +35,6 @@ import {
     filteredDeckOptionsFromForm,
     newFilteredDeckForm,
     newFilteredDeckName,
-    newFilteredDeckSearch,
     type FilteredDeckFormValues,
 } from '../lib/filteredDeckForm';
 import { filteredOrderLabel } from '../lib/i18n';
@@ -109,13 +109,16 @@ export default function FilteredDeckOptionsModal({
         if (deck) {
             setForm(filteredDeckFormFromDeck(deck, settings.fsrsEnabled === true));
         } else {
-            // Anki scopes a new filtered deck to the current deck. Without a regular deck studied
-            // last, the first regular deck in the collection stands in for it.
+            // Anki scopes a new filtered deck to the current deck: its due cards, and its new cards in
+            // the second filter. Without a deck studied last, the first regular deck stands in for
+            // it; with a filtered deck current, Anki leaves both searches empty.
             const activeDeck = activeDeckName ? getDeckByName(activeDeckName) : null;
-            const sourceDeck = activeDeck && !activeDeck.isFiltered ? activeDeck : regularDecks[0] ?? null;
+            const sourceDeck = activeDeck ?? regularDecks[0] ?? null;
+            const searches = newFilteredDeckSearches(sourceDeck && !sourceDeck.isFiltered ? sourceDeck.name.trim() || null : null);
             setForm(newFilteredDeckForm(
                 newFilteredDeckName(l('Filtrelenmiş Deste', 'Filtered Deck'), new Date(), (name) => Boolean(getDeckByName(name))),
-                initialSearch ?? newFilteredDeckSearch(sourceDeck?.name.trim() || null),
+                initialSearch ?? searches.search,
+                searches.search2,
             ));
         }
         setOrderPicker(null);
@@ -142,7 +145,8 @@ export default function FilteredDeckOptionsModal({
     };
 
     const options = filteredDeckOptionsFromForm(form);
-    const saveDisabled = !form.name.trim() || !form.search.trim() || !filteredDeckFormLimitsValid(form);
+    // An empty search builds from the whole collection, as in Anki.
+    const saveDisabled = !form.name.trim() || !filteredDeckFormLimitsValid(form);
 
     // Collection reads treat an unreadable search as matching nothing, so the learner is told here.
     const rejectInvalidSearch = (searches: Array<string | undefined>): boolean => {

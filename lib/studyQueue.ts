@@ -63,6 +63,22 @@ export interface StudyQueueResult {
     heldBackReviewCount: number;
     /** How many cards will become available when the waiting timer or next rollover expires. */
     upcomingCardsCount: number;
+    /**
+     * Where Anki's main queue (new, review and day learning cards) sits in `cards`: intraday
+     * learning due now comes before it, and learning inside the learn-ahead limit after it.
+     */
+    mainQueue: MainQueueRange;
+    /**
+     * The earliest due time among intraday learning cards that are not due yet, those after the
+     * main queue included. Once it passes, Anki shows that card before the main queue.
+     */
+    learningComesDueAt: number | null;
+}
+
+/** A slice of `cards`, from `start` up to but not including `end`. */
+export interface MainQueueRange {
+    start: number;
+    end: number;
 }
 
 export interface StudyQueueParams {
@@ -628,8 +644,15 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
         upcomingCardsCount = tomorrowServableReviews;
     }
 
+    const aheadDues = learningAhead.map((card) => card.state.dueTime).filter((due) => due > nowMs);
+    const learningComesDueAt = aheadDues.length > 0 || nextLearningDue !== null
+        ? Math.min(...aheadDues, ...(nextLearningDue === null ? [] : [nextLearningDue]))
+        : null;
+
     return {
         cards,
+        mainQueue: { start: learningDueNow.length, end: cards.length - learningAhead.length },
+        learningComesDueAt,
         stats: {
             newCount: servableNewCount,
             learningCount: learningCards.length,

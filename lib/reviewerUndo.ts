@@ -204,8 +204,11 @@ function mergeOperationDelta<T extends object>(current: T, target: T, previous: 
  *
  * Anki splits its reviewer refresh the same way: an operation that changed scheduling re-reads
  * the queue and moves to the next card, while one that only changed note text redraws the card
- * on screen. A tag edit or a mark must not swap the card out or hide a revealed answer.
+ * on screen. A tag edit or a mark must not swap the card out or hide a revealed answer. A flag
+ * is written to the card row, but Anki leaves the queue alone for it too, and so for undoing it
+ * (`requires_study_queue_rebuild` in rslib/src/ops.rs; an undo carries the undone op's kind).
  */
-export function reviewerOpChangesScheduling(change: Pick<ReviewerOpChange, 'before' | 'after'>): boolean {
+export function reviewerOpChangesScheduling(change: Pick<ReviewerOpChange, 'op' | 'before' | 'after'>): boolean {
+    if (change.op === 'setFlag') return false;
     return change.before.cards.length > 0 || change.after.cards.length > 0;
 }

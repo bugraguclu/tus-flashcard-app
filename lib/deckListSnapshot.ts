@@ -7,6 +7,7 @@ import {
     type DeckTreeNode,
 } from './deckManager';
 import { getFilteredDeckCountCards } from './studyRepository';
+import { capFilteredDeckCounts } from './filteredDeckServing';
 
 export interface DeckListCount {
     new: number;
@@ -35,6 +36,7 @@ export function getDeckListSnapshot(
     for (const deck of filteredDecks) {
         const cards = filteredCards.get(deck.id) ?? [];
         const filteredCount: DeckListCount = { new: 0, learn: 0, review: 0, total: cards.length };
+        let interday = 0;
         for (const card of cards) {
             const home = counts.get(card.homeDeckId);
             if (home) {
@@ -48,11 +50,14 @@ export function getDeckListSnapshot(
                     else home.review = Math.max(0, home.review - 1);
                 }
             }
+            if (!card.counted) continue;
             if (card.status === 'new') filteredCount.new += 1;
-            else if (card.status === 'learning') filteredCount.learn += 1;
-            else filteredCount.review += 1;
+            else if (card.status === 'learning') {
+                filteredCount.learn += 1;
+                if (card.interday) interday += 1;
+            } else filteredCount.review += 1;
         }
-        counts.set(deck.id, filteredCount);
+        counts.set(deck.id, capFilteredDeckCounts(filteredCount, interday));
     }
 
     return {

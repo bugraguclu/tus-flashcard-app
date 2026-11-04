@@ -22,7 +22,8 @@ export default function NoteTypesScreen() {
         const base = getNoteType(1) ?? BUILTIN_NOTE_TYPES.find((nt) => nt.id === 1)!;
         const id = uniqueId();
         saveNoteType({ ...base, id, name: l('Yeni not türü', 'New Note Type'), mod: Math.floor(Date.now() / 1000) });
-        bumpDataVersion();
+        // A note type without notes has no cards, so a study session keeps its queue.
+        bumpDataVersion({ keepsStudyQueue: true });
         router.push(`/note-type?id=${id}`);
     };
 

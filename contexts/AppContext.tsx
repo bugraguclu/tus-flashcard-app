@@ -29,7 +29,7 @@ import { dbIndexAllCards } from '../lib/db';
 import { getSearchIndexCards } from '../lib/noteManager';
 import { invalidateSubjectsCache } from '../lib/subjects';
 import { reconcileCatalogAccessWithInstall } from '../lib/catalogReconciliation';
-import { DeferredSchedulingInvalidation } from '../lib/deferredInvalidation';
+import { changesStudyQueue, DeferredSchedulingInvalidation, type CollectionChange } from '../lib/deferredInvalidation';
 
 /** Course + topic of the card currently on screen; drives the live sidebar highlight. */
 export type StudyPosition = { subject: string; topic: string } | null;
@@ -43,7 +43,12 @@ type SettingsContextValue = {
 type CollectionContextValue = {
     /** Structural/content changes that mounted data views must observe immediately. */
     collectionVersion: number;
-    invalidateCollection: () => void;
+    invalidateCollection: (change?: CollectionChange) => void;
+    /**
+     * Counts the changes that rebuild the study queue; one marked `keepsStudyQueue` leaves it as
+     * it is. The reviewer compares it to tell whether a new `collectionVersion` keeps its order.
+     */
+    getStudyQueueRevision: () => number;
     /**
      * Scheduler-only changes are deliberately passive. A card answer marks the revision without
      * publishing a React update; count-heavy screens consume it when they regain focus.
@@ -91,6 +96,7 @@ const LanguagePreferenceContext = createContext<AppSettings['language']>(DEFAULT
 const CollectionContext = createContext<CollectionContextValue>({
     collectionVersion: 0,
     invalidateCollection: () => { },
+    getStudyQueueRevision: () => 0,
     markSchedulingStale: () => { },
     getSchedulingRevision: () => 0,
 });
@@ -136,6 +142,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [collectionVersion, setCollectionVersion] = useState(0);
     const schedulingInvalidationRef = useRef(new DeferredSchedulingInvalidation());
+    const studyQueueRevisionRef = useRef(0);
     const [catalogAccess, setCatalogAccess] = useState<CatalogAccessState>(INITIAL_CATALOG_ACCESS);
     const [catalogInstalled, setCatalogInstalled] = useState(false);
     const [catalogInstalling, setCatalogInstalling] = useState(false);
@@ -154,10 +161,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const getSchedulingRevision = useCallback(() => schedulingInvalidationRef.current.current(), []);
 
-    const invalidateCollection = useCallback(() => {
+    const invalidateCollection = useCallback((change?: CollectionChange) => {
         schedulingInvalidationRef.current.markStale();
+        if (changesStudyQueue(change)) studyQueueRevisionRef.current += 1;
         setCollectionVersion((previous) => previous + 1);
     }, []);
+
+    const getStudyQueueRevision = useCallback(() => studyQueueRevisionRef.current, []);
 
     const {
         startupError,
@@ -236,9 +246,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const collectionValue = useMemo<CollectionContextValue>(() => ({
         collectionVersion,
         invalidateCollection,
+        getStudyQueueRevision,
         markSchedulingStale,
         getSchedulingRevision,
-    }), [collectionVersion, invalidateCollection, markSchedulingStale, getSchedulingRevision]);
+    }), [collectionVersion, invalidateCollection, getStudyQueueRevision, markSchedulingStale, getSchedulingRevision]);
 
     const studyScopeValue = useMemo<StudyScopeContextValue>(() => ({
         selectedSubject,

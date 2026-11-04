@@ -85,3 +85,29 @@ describe('editor deck change', () => {
         expect(memory(card.id)).toBeNull();
     });
 });
+
+// Anki keeps a study session's queue across an edit that changed only the note, and builds it
+// again when cards changed: https://github.com/ankitects/anki/blob/main/rslib/src/ops.rs
+// (`requires_study_queue_rebuild`).
+describe('what an editor save touched', () => {
+    it('reports no card change for a text or tag edit', () => {
+        const deck = createDeck('Deck');
+        const card = reviewedCard(deck.id);
+        const saved = updateTusCardByCardId(card.id, { question: 'Front, fixed', answer: 'Back', tags: ['t'], deckId: deck.id });
+        expect(saved?.cardsChanged).toBe(false);
+        expect(getAnkiCard(card.id)).toEqual(card);
+    });
+
+    it('reports a card change for a deck move and for a new cloze card', () => {
+        const from = createDeck('From');
+        const to = createDeck('To');
+        const card = reviewedCard(from.id);
+        expect(updateTusCardByCardId(card.id, { question: 'Front', answer: 'Back', deckId: to.id })?.cardsChanged).toBe(true);
+
+        const cloze = BUILTIN_NOTE_TYPES.find((type) => type.kind === 'cloze')!;
+        const { cards } = createNote(cloze, ['{{c1::one}}', ''], from.id);
+        const fields = ['{{c1::one}} {{c2::two}}', ''];
+        const saved = updateTusCardByCardId(cards[0].id, { question: fields[0], answer: '', fieldValues: fields, deckId: from.id });
+        expect(saved?.cardsChanged).toBe(true);
+    });
+});

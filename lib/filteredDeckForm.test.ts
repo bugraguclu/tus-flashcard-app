@@ -5,9 +5,8 @@ import {
     filteredDeckOptionsFromForm,
     newFilteredDeckForm,
     newFilteredDeckName,
-    newFilteredDeckSearch,
 } from './filteredDeckForm';
-import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
+import { FILTERED_SEARCH_ORDER, newFilteredDeckSearches } from './filteredDeckOptions';
 import type { Deck } from './models';
 
 function filteredDeck(overrides: Partial<Deck>): Deck {
@@ -49,12 +48,14 @@ describe('new filtered deck form', () => {
         expect(newFilteredDeckName('Filtered Deck', now, (name) => taken.has(name))).toBe('Filtered Deck 09:05 3');
     });
 
-    it('starts from the source deck’s due cards, or the collection’s without one', () => {
-        expect(newFilteredDeckSearch('Farmakoloji')).toBe('deck:Farmakoloji is:due');
-        expect(newFilteredDeckSearch('TUS Kartları::Anatomi')).toBe('deck:"TUS Kartları::Anatomi" is:due');
+    it('starts from the current deck’s due cards, with its new cards in the second filter', () => {
+        const searches = newFilteredDeckSearches('TUS Kartları::Anatomi');
+        const form = newFilteredDeckForm('Session', searches.search, searches.search2);
+        expect(form.search).toBe('deck:"TUS Kartları::Anatomi" is:due');
+        expect(form.search2).toBe('deck:"TUS Kartları::Anatomi" is:new');
+        expect(form.secondEnabled).toBe(false);
         // A wildcard character in a deck name stays literal, as the deck picker writes it.
-        expect(newFilteredDeckSearch('TUS_2026')).toBe('deck:TUS\\_2026 is:due');
-        expect(newFilteredDeckSearch(null)).toBe('is:due');
+        expect(newFilteredDeckSearches('TUS_2026').search).toBe('deck:TUS\\_2026 is:due');
     });
 });
 
@@ -91,6 +92,12 @@ describe('existing filtered deck form', () => {
         expect(filteredDeckFormFromDeck(deck, false).order).toBe(FILTERED_SEARCH_ORDER.random);
         expect(filteredDeckFormFromDeck(deck, true).order).toBe(FILTERED_SEARCH_ORDER.retrievabilityAscending);
     });
+
+    it('offers a deck saved with one filter a second one in Random order, as Anki does', () => {
+        const form = filteredDeckFormFromDeck(filteredDeck({ searchQuery: 'is:due' }), false);
+        expect(form.secondEnabled).toBe(false);
+        expect(form.order2).toBe(FILTERED_SEARCH_ORDER.random);
+    });
 });
 
 describe('saving the filtered deck form', () => {
@@ -98,7 +105,9 @@ describe('saving the filtered deck form', () => {
         const form = { ...newFilteredDeckForm('Session', 'is:due'), search2: 'is:new' };
         expect(filteredDeckOptionsFromForm(form).searchQuery2).toBeUndefined();
         expect(filteredDeckOptionsFromForm({ ...form, secondEnabled: true }).searchQuery2).toBe('is:new');
-        expect(filteredDeckOptionsFromForm({ ...form, secondEnabled: true, search2: '   ' }).searchQuery2).toBeUndefined();
+        // An enabled but empty second search gathers from the whole collection, as Anki builds it.
+        expect(filteredDeckOptionsFromForm({ ...form, secondEnabled: true, search2: '   ' }).searchQuery2).toBe('deck:*');
+        expect(filteredDeckOptionsFromForm({ ...form, search: '' }).searchQuery).toBe('deck:*');
     });
 
     it('saves the trimmed searches, the limits, orders, preview delays and empty-build choice', () => {

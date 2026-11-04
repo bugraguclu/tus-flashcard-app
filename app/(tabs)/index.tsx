@@ -171,10 +171,16 @@ import {
     visibleReviewerGrades,
 } from '../../lib/reviewerPresentation';
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
-import { advanceQueueAfterAnswer, coordinatePostAnswerQueueRefresh } from '../../lib/reviewerQueueRefresh';
+import {
+    advanceQueueAfterAnswer,
+    avoidImmediateRepeat,
+    coordinatePostAnswerQueueRefresh,
+    keepSessionOrder,
+    queueWithFocusedCard,
+    shouldRebuildAfterAnswer,
+} from '../../lib/reviewerQueueRefresh';
 import { reviewerAddNoteDeckId } from '../../lib/reviewerAddNote';
 import { KeyRepeatGuard, RevealGradeGuard, isAutoRepeatKey } from '../../lib/reviewerInputGuards';
-import { queueWithFocusedCard } from '../../lib/reviewerQueueRefresh';
 import { StudyDayWatcher, startNewStudyDay } from '../../lib/studyDayRollover';
 import { formatPreviewDelay, localizeButtonTimes } from '../../lib/reviewerIntervalLabels';
 import { closeReviewerSurface, openReviewerSurface, type ReviewerSurface } from '../../lib/reviewerSurface';
@@ -245,6 +251,23 @@ function KeepAwakeGuard() {
 
 type QueueStats = { newCount: number; learningCount: number; reviewCount: number };
 
+type QueueBuildOptions = {
+    /** New cards introduced today, when the caller has just re-read the day's numbers. */
+    newCardsStudiedToday?: number;
+    /** Start counting answers towards the next rebuild again. Defaults to true. */
+    resetCounter?: boolean;
+    /** Keep the card on screen, and an answer being read, in front of the rebuilt queue. */
+    preserveCurrent?: boolean;
+    /**
+     * Keep dealing the main queue in the order this session has been dealing it, as Anki does
+     * between answers (`keepSessionOrder`). Off for anything that changed cards, decks or options,
+     * after which Anki builds its queue afresh.
+     */
+    keepOrder?: boolean;
+    /** The card just answered, when this build follows the answer straight away. */
+    answeredCardId?: number;
+};
+
 /**
  * Today's session numbers, always derived from the review log. The revlog is the durable
  * source of truth, so these survive restarts, OS sleep and multiple tabs — a cached blob
@@ -268,6 +291,7 @@ export default function StudyScreen() {
     const {
         collectionVersion,
         invalidateCollection,
+        getStudyQueueRevision,
         markSchedulingStale,
     } = useCollectionInvalidation();
     const { selectedSubject, setSelectedSubject, selectedTopic, setSelectedTopic, setActiveDeckName } = useStudyScope();
@@ -418,13 +442,14 @@ export default function StudyScreen() {
     // regardless of their step timer (Anki's learn-ahead, but user-triggered). Each id is
     // dropped the moment that card is answered, so it can resurface at most once per press.
     // Backed by a module-level copy so leaving the reviewer and returning does not lose the pass.
-    const [studyAheadCardIds, setStudyAheadCardIdsState] = useState<number[]>(persistedStudyAheadIds);
+    // Queue builds read the ids from a ref, so the rebuild straight after an answer already leaves
+    // that card's id out; a press of the button (a new pass) builds the queue afresh.
+    const studyAheadIdsRef = useRef<number[]>(persistedStudyAheadIds);
+    const [studyAheadPass, setStudyAheadPass] = useState(0);
     const setStudyAheadCardIds = useCallback((updater: (prev: number[]) => number[]) => {
-        setStudyAheadCardIdsState((prev) => {
-            const next = updater(prev);
-            persistedStudyAheadIds = next;
-            return next;
-        });
+        const next = updater(studyAheadIdsRef.current);
+        studyAheadIdsRef.current = next;
+        persistedStudyAheadIds = next;
     }, []);
     const sessionStatsRef = useRef(sessionStats);
     const currentCardRef = useRef<StudyCard | null>(null);
@@ -581,11 +606,12 @@ export default function StudyScreen() {
 
     /** The card the next queue build must put on screen: the one an undo just took back. */
     const focusCardIdRef = useRef<number | null>(null);
-    const buildQueue = useCallback((
-        newCardsStudiedToday?: number,
-        resetCounter: boolean = true,
-        preserveCurrent: boolean = false,
-    ) => {
+    /** When the first learning card not yet in front comes due; Anki shows it next from then on. */
+    const learningComesDueAtRef = useRef<number | null>(null);
+    /** The learning cards the last build dealt after its main queue, inside the learn-ahead limit. */
+    const learningAheadIdsRef = useRef<ReadonlySet<number>>(new Set());
+    const buildQueue = useCallback((options: QueueBuildOptions = {}) => {
+        const { newCardsStudiedToday, resetCounter = true, preserveCurrent = false, keepOrder = false, answeredCardId } = options;
         if (scheduledRefreshRef.current) {
             clearTimeout(scheduledRefreshRef.current);
             scheduledRefreshRef.current = null;
@@ -603,12 +629,17 @@ export default function StudyScreen() {
             selectedTopic,
             selectedDeckName,
             newCardsStudiedToday: studiedToday,
-            extraLearningCardIds: studyAheadCardIds,
+            extraLearningCardIds: studyAheadIdsRef.current,
         });
 
         // A preview deck keeps its finished cards and their waiting delays on the deck itself,
         // so the queue it builds already leaves them out.
-        const sessionCards = result.cards;
+        const ordered = keepOrder
+            ? keepSessionOrder(queueRef.current, result.cards, result.mainQueue)
+            : result.cards;
+        const sessionCards = answeredCardId === undefined
+            ? ordered
+            : avoidImmediateRepeat(ordered, result.mainQueue, answeredCardId);
 
         // Background refreshes must not yank the card the user is looking at (or hide the
         // answer they are reading) — keep it in front and merge the fresh queue behind it.
@@ -633,19 +664,25 @@ export default function StudyScreen() {
             () => getStudyCardById(focusId, scopeSettings),
         );
 
+        let nextQueue: StudyCard[];
         if (focused) {
-            setQueue(focused);
+            nextQueue = focused;
             setCurrentCard(focused[0]);
             setShowingAnswer(false);
         } else if (activeStillQueued || holdForDrawing) {
-            setQueue([active!, ...sessionCards.filter((card) => card.cardId !== active!.cardId)]);
+            nextQueue = [active!, ...sessionCards.filter((card) => card.cardId !== active!.cardId)];
         } else {
-            setQueue(sessionCards);
+            nextQueue = sessionCards;
             setCurrentCard(sessionCards.length > 0 ? sessionCards[0] : null);
             setShowingAnswer(false);
         }
+        setQueue(nextQueue);
+        // A second build before the next render must start from this one.
+        queueRef.current = nextQueue;
 
         setNextLearningDue(result.nextLearningDue);
+        learningComesDueAtRef.current = result.learningComesDueAt;
+        learningAheadIdsRef.current = new Set(result.cards.slice(result.mainQueue.end).map((card) => card.cardId));
         setQueueStats(result.stats);
         setHeldBackReviewCount(result.heldBackReviewCount);
         setUpcomingCardsCount(result.upcomingCardsCount);
@@ -653,7 +690,7 @@ export default function StudyScreen() {
         if (resetCounter) {
             answersSinceRefreshRef.current = 0;
         }
-    }, [settings, scopeSettings, previewMode, selectedSubject, selectedTopic, selectedDeckName, studyAheadCardIds]);
+    }, [settings, scopeSettings, previewMode, selectedSubject, selectedTopic, selectedDeckName]);
 
     const scheduleFullRefresh = useCallback((delayMs: number, newCardsStudiedToday?: number) => {
         if (scheduledRefreshRef.current) {
@@ -661,7 +698,7 @@ export default function StudyScreen() {
         }
 
         scheduledRefreshRef.current = setTimeout(() => {
-            buildQueue(newCardsStudiedToday, true, true);
+            buildQueue({ newCardsStudiedToday, preserveCurrent: true, keepOrder: true });
             scheduledRefreshRef.current = null;
         }, delayMs);
     }, [buildQueue]);
@@ -686,26 +723,36 @@ export default function StudyScreen() {
         setLoading(false);
     }, [hasStudyScope, refreshSessionStats]);
 
+    // A new study session: a different deck or scope, changed preferences, or a study-ahead pass.
+    // It follows those inputs rather than `buildQueue` itself, whose identity also changes with
+    // every collection change; the effect below decides what such a change does to the queue.
+    const buildQueueRef = useRef(buildQueue);
+    buildQueueRef.current = buildQueue;
     useEffect(() => {
         if (!hasStudyScope || loading) return;
-        buildQueue();
-    }, [hasStudyScope, loading, buildQueue]);
+        buildQueueRef.current();
+    }, [hasStudyScope, loading, settings, selectedSubject, selectedTopic, selectedDeckName, studyAheadPass]);
 
     // Rebuild when data changes elsewhere (card created/edited, import, restore) so a
     // just-created card appears immediately instead of waiting for the fallback timer.
-    // preserveCurrent keeps the card being studied in place; answers from this screen
-    // bump dataVersion too, which makes this a cheap merge behind the current card.
+    // preserveCurrent keeps the card being studied in place. A change that left cards, decks and
+    // options alone (a note's text or tags, a flag) keeps the session's order, as Anki keeps its
+    // queue then; any other change builds the queue afresh, as Anki does.
     const lastCollectionVersionRef = useRef(collectionVersion);
+    const lastStudyQueueRevisionRef = useRef(getStudyQueueRevision());
     useEffect(() => {
         if (!hasStudyScope || loading || collectionVersion === lastCollectionVersionRef.current) return;
         lastCollectionVersionRef.current = collectionVersion;
+        const studyQueueRevision = getStudyQueueRevision();
+        const keepOrder = studyQueueRevision === lastStudyQueueRevisionRef.current;
+        lastStudyQueueRevisionRef.current = studyQueueRevision;
         // Steps whose rows were deleted elsewhere (Browser, editor, deck delete) can never be
         // applied again; drop them, and what lies behind them, before the learner reaches them.
         const isGone = (entry: UndoEntry) => (entry.kind === 'op' ? reviewerOpTargetsGone(entry) : !getAnkiCard(entry.cardId));
         setUndoStack((prev) => pruneStaleReviewerSteps(prev, isGone));
         setRedoStack((prev) => pruneStaleReviewerSteps(prev, isGone));
-        buildQueue(undefined, false, true);
-    }, [hasStudyScope, collectionVersion, loading, buildQueue]);
+        buildQueue({ resetCounter: false, preserveCurrent: true, keepOrder });
+    }, [hasStudyScope, collectionVersion, loading, buildQueue, getStudyQueueRevision]);
 
     useEffect(() => () => {
         if (scheduledRefreshRef.current) {
@@ -722,7 +769,7 @@ export default function StudyScreen() {
         const timer = setInterval(() => {
             if (isMutatingRef.current) return;
             refreshSessionStats();
-            buildQueue(undefined, false, true);
+            buildQueue({ resetCounter: false, preserveCurrent: true, keepOrder: true });
         }, 45000);
 
         return () => clearInterval(timer);
@@ -826,12 +873,10 @@ export default function StudyScreen() {
         nextLearningDue,
         upcomingCardsCount,
         nowMs: Date.now(),
-        // A filtered deck deals learning cards on their due time, without learn-ahead.
-        learnAheadMinutes: previewMode || (selectedDeckName && getDeckByName(selectedDeckName)?.isFiltered)
-            ? 0
-            : scopeSettings.learnAheadMinutes,
+        // Anki applies the learn ahead limit in filtered decks too, preview repeats included.
+        learnAheadMinutes: scopeSettings.learnAheadMinutes,
         rolloverHour: settings.dayRolloverHour,
-    }), [currentCard, nextLearningDue, upcomingCardsCount, settings.dayRolloverHour, scopeSettings.learnAheadMinutes, previewMode, selectedDeckName]);
+    }), [currentCard, nextLearningDue, upcomingCardsCount, settings.dayRolloverHour, scopeSettings.learnAheadMinutes]);
 
     // Rebuild queue when the next learning card becomes due or day rolls over. The newly due card joins the
     // queue behind the card currently being studied, never replacing it mid-answer.
@@ -839,7 +884,7 @@ export default function StudyScreen() {
         if (!waitingTargetMs) return;
         const delay = Math.max(500, waitingTargetMs - Date.now() + 300);
         if (delay <= 86_400_000) {
-            const timer = setTimeout(() => buildQueue(undefined, true, true), delay);
+            const timer = setTimeout(() => buildQueue({ preserveCurrent: true, keepOrder: true }), delay);
             return () => clearTimeout(timer);
         }
     }, [waitingTargetMs, buildQueue]);
@@ -1080,13 +1125,11 @@ export default function StudyScreen() {
                 updatedCard: result.updatedCard,
                 nowMs,
                 today: todayLocalYMD(new Date(nowMs), settings.dayRolloverHour),
-                // A filtered deck deals learning cards on their due time, without learn-ahead.
-                learnAheadMs: selectedDeckName && getDeckByName(selectedDeckName)?.isFiltered
-                    ? 0
-                    : Math.max(0, scopeSettings.learnAheadMinutes || 0) * 60_000,
+                learnAheadMs: Math.max(0, scopeSettings.learnAheadMinutes || 0) * 60_000,
                 preview: previewMode,
             });
             setQueue(step.queue);
+            queueRef.current = step.queue;
             setCurrentCard(step.currentCard);
 
             // Preview answers leave the card's schedule alone, so the waiting card would be
@@ -1099,7 +1142,9 @@ export default function StudyScreen() {
             if (futureLearningDue.length > 0) {
                 setNextLearningDue(Math.min(...futureLearningDue));
             }
-            const queueBecameEmpty = step.queue.length === 0;
+            const knownLearningDues = [learningComesDueAtRef.current, ...futureLearningDue]
+                .filter((value): value is number => value !== null);
+            learningComesDueAtRef.current = knownLearningDues.length > 0 ? Math.min(...knownLearningDues) : null;
 
             setQueueStats((prev) => {
                 const next = { ...prev };
@@ -1132,9 +1177,21 @@ export default function StudyScreen() {
             // Always do a full DB rebuild when the queue empties — the in-memory queue
             // may not contain learning cards from earlier answers that are still waiting.
             coordinatePostAnswerQueueRefresh(
-                queueBecameEmpty || answersSinceRefreshRef.current >= 8 || queue.length <= 1,
+                shouldRebuildAfterAnswer({
+                    queueLengthBefore: queue.length,
+                    queueLengthAfter: step.queue.length,
+                    answersSinceRebuild: answersSinceRefreshRef.current,
+                    learningComesDueAt: learningComesDueAtRef.current,
+                    nextCardIsLearningAhead: step.currentCard !== null
+                        && learningAheadIdsRef.current.has(step.currentCard.cardId),
+                    nowMs,
+                }),
                 {
-                    refreshImmediately: () => buildQueue(nextStats.newCardsToday),
+                    refreshImmediately: () => buildQueue({
+                        newCardsStudiedToday: nextStats.newCardsToday,
+                        keepOrder: true,
+                        answeredCardId: currentCard.cardId,
+                    }),
                     scheduleDeferredRefresh: () => scheduleFullRefresh(15000, nextStats.newCardsToday),
                 },
             );
@@ -1185,18 +1242,18 @@ export default function StudyScreen() {
                         'This card was rescheduled elsewhere afterwards. The undo history was cleared.'),
                 );
             }
-            buildQueue(undefined, false, true);
+            buildQueue({ resetCounter: false, preserveCurrent: true });
             return false;
         }
         // One savepoint holds every row of the step, and only a flushed write moves it between
         // the stacks; a failure leaves the step where it was so it can be tried again.
         await commitReviewerOpStep(change, direction);
-        invalidateCollection();
+        invalidateCollection({ keepsStudyQueue: !reviewerOpChangesScheduling(change) });
         if (reviewerOpChangesScheduling(change)) {
             // Undoing a bury or suspend shows that card again.
             if (direction === 'undo' && change.before.cards.length > 0) focusCardIdRef.current = change.before.cards[0].id;
             markSchedulingStale();
-            buildQueue(undefined, false, true);
+            buildQueue({ resetCounter: false, preserveCurrent: true });
         }
         return true;
     }, [invalidateCollection, markSchedulingStale, buildQueue, l]);
@@ -1255,7 +1312,8 @@ export default function StudyScreen() {
             focusCardIdRef.current = undo.cardId;
             const restoredStats = refreshSessionStats();
             markSchedulingStale();
-            buildQueue(restoredStats.newCardsToday);
+            // Anki puts the card back on top of the queue it had, without building it again.
+            buildQueue({ newCardsStudiedToday: restoredStats.newCardsToday, keepOrder: true });
         } catch (error) {
             alert(l('Kayıt başarısız', 'Save failed'), userFacingErrorMessage(error,
                 l('Geri alma kaydedilemedi. Lütfen tekrar deneyin.', 'Could not save undo. Please try again.')));
@@ -1324,7 +1382,7 @@ export default function StudyScreen() {
 
             const restoredStats = refreshSessionStats();
             markSchedulingStale();
-            buildQueue(restoredStats.newCardsToday);
+            buildQueue({ newCardsStudiedToday: restoredStats.newCardsToday, keepOrder: true });
         } catch (error) {
             alert(l('Kayıt başarısız', 'Save failed'), userFacingErrorMessage(error,
                 l('Yineleme kaydedilemedi. Lütfen tekrar deneyin.', 'Could not save redo. Please try again.')));
@@ -1391,7 +1449,8 @@ export default function StudyScreen() {
         recordUndoableOp('setFlag', [currentCard.cardId], [], () => {
             setCardFlag(currentCard.cardId, flag);
         });
-        invalidateCollection();
+        // Anki leaves its study queue alone for a flag and only redraws the card.
+        invalidateCollection({ keepsStudyQueue: true });
     }, [currentCard, invalidateCollection, recordUndoableOp]);
 
     const handleResetCard = useCallback((options: ResetCardOptions) => {
@@ -1428,7 +1487,7 @@ export default function StudyScreen() {
         });
         // A tag edit changes note text, not scheduling. Anki redraws the card in place for that,
         // so the queue is left alone here and a revealed answer stays revealed.
-        invalidateCollection();
+        invalidateCollection({ keepsStudyQueue: true });
     }, [currentCard, invalidateCollection, recordUndoableOp]);
 
     const handleDeckOptions = useCallback(() => {
@@ -1456,7 +1515,7 @@ export default function StudyScreen() {
         recordUndoableOp(isNoteMarked(note) ? 'unmarkNote' : 'markNote', [], [currentCard.noteId], () => {
             toggleNoteMark(currentCard.noteId);
         });
-        invalidateCollection();
+        invalidateCollection({ keepsStudyQueue: true });
     }, [currentCard, invalidateCollection, recordUndoableOp]);
 
     const handleBuryNote = useCallback(() => {
@@ -1570,7 +1629,8 @@ export default function StudyScreen() {
     const handleStudyAhead = useCallback(() => {
         const waitingIds = getWaitingLearningCardIds({ selectedSubject, selectedTopic, selectedDeckName });
         setStudyAheadCardIds((prev) => Array.from(new Set([...prev, ...waitingIds])));
-    }, [selectedSubject, selectedTopic, selectedDeckName]);
+        setStudyAheadPass((pass) => pass + 1);
+    }, [selectedSubject, selectedTopic, selectedDeckName, setStudyAheadCardIds]);
 
     const getPreview = useCallback(() => {
         if (!currentCard) return null;

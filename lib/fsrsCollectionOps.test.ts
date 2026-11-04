@@ -231,7 +231,10 @@ describe('Ignore reviews before (Anki 26.09.3 oracle)', () => {
 });
 
 describe('Retrievability filtered-deck orders with FSRS off', () => {
-    it('keeps building a deck already set to one, ordering by the tiebreak alone, as Anki does', () => {
+    // Anki 26.09.3 could not build such a deck (its order was an empty SQL term); upstream now
+    // gathers it at random, the order its dialog shows for it. lib/filteredDeckServing.test.ts
+    // checks that the random draw decides the order.
+    it('keeps building a deck already set to one, at random, as upstream now does', () => {
         const nowMs = Date.UTC(2026, 9, 23, 12);
         vi.setSystemTime(nowMs);
         const today = localDayNumber(nowMs, 4);
@@ -245,9 +248,9 @@ describe('Retrievability filtered-deck orders with FSRS off', () => {
         });
         const term = { search: 'deck:Default', order: FILTERED_SEARCH_ORDER.retrievabilityAscending, limit: 100 };
         expect(gatherFilteredTermCardIds(term, { dayRolloverHour: 4, fsrsEnabled: true }, nowMs)).toEqual([5000, 5001, 5002]);
-        const withoutFsrs = gatherFilteredTermCardIds(term, { dayRolloverHour: 4, fsrsEnabled: false }, nowMs);
-        expect([...withoutFsrs].sort()).toEqual([5000, 5001, 5002]);
-        expect(withoutFsrs).toEqual(gatherFilteredTermCardIds({ ...term, order: FILTERED_SEARCH_ORDER.retrievabilityDescending },
-            { dayRolloverHour: 4, fsrsEnabled: false }, nowMs));
+        for (const order of [FILTERED_SEARCH_ORDER.retrievabilityAscending, FILTERED_SEARCH_ORDER.retrievabilityDescending]) {
+            const withoutFsrs = gatherFilteredTermCardIds({ ...term, order }, { dayRolloverHour: 4, fsrsEnabled: false }, nowMs);
+            expect([...withoutFsrs].sort()).toEqual([5000, 5001, 5002]);
+        }
     });
 });

@@ -1,4 +1,5 @@
 import { getDB } from './db';
+import { rememberedCollection } from './ankiCollectionConfig';
 import { ankiCardRelativeRetrievability, ankiCardRetrievability, ankiFnvHash, compareSqlAscending } from './ankiSortKeys';
 import { CUSTOM_STUDY_MAX_VALUE } from './customStudy';
 import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
@@ -10,6 +11,7 @@ interface GatherRow {
     cardId: number;
     noteId: number;
     ord: number;
+    type: number;
     due: number;
     ivl: number;
     lapses: number;
@@ -26,8 +28,10 @@ const DUE_IN_MILLISECONDS_ABOVE = 100_000_000_000;
 
 /**
  * The sort keys of one gather order, keyed by Anki's `SearchTerm.Order` ordinal, as
- * `order_and_limit_for_search` (rslib/src/storage/card/filtered.rs) defines them. Anki's two
- * retrievability orders are empty while FSRS is off, which leaves only the tiebreak.
+ * `order_and_limit_for_search` (rslib/src/storage/card/filtered.rs) defines them. A saved
+ * retrievability order gathers randomly while FSRS is off: Anki 26.09.3 failed to build such a
+ * deck (its order was an empty SQL term), and upstream now falls back to `random()`, the order
+ * its dialog shows for it.
  */
 function gatherOrderKeys(order: number | undefined, fsrs: boolean, nowMs: number, today: number): (row: GatherRow) => GatherKey[] {
     switch (order) {
@@ -40,9 +44,11 @@ function gatherOrderKeys(order: number | undefined, fsrs: boolean, nowMs: number
         case FILTERED_SEARCH_ORDER.added: return (row) => [{ value: row.noteId }, { value: row.ord }];
         case FILTERED_SEARCH_ORDER.reverseAdded: return (row) => [{ value: row.noteId, descending: true }, { value: row.ord }];
         case FILTERED_SEARCH_ORDER.retrievabilityAscending:
-            return fsrs ? (row) => [{ value: ankiCardRetrievability(row, nowMs, today) }] : () => [];
+            return fsrs ? (row) => [{ value: ankiCardRetrievability(row, nowMs, today) }] : () => [{ value: Math.random() }];
         case FILTERED_SEARCH_ORDER.retrievabilityDescending:
-            return fsrs ? (row) => [{ value: ankiCardRetrievability(row, nowMs, today), descending: true }] : () => [];
+            return fsrs
+                ? (row) => [{ value: ankiCardRetrievability(row, nowMs, today), descending: true }]
+                : () => [{ value: Math.random() }];
         case FILTERED_SEARCH_ORDER.relativeOverdueness:
             return (row) => [{ value: ankiCardRelativeRetrievability(row, nowMs, today) }];
         // Due order puts a review card's day number on the clock an intraday card is timed on.
@@ -54,6 +60,27 @@ function gatherOrderKeys(order: number | undefined, fsrs: boolean, nowMs: number
             };
         }
     }
+}
+
+/**
+ * Today as Anki numbers it: days since the collection was created. A collection that replaced
+ * this one from an Anki `.colpkg` brought its creation day, and its review days were converted
+ * against it (`ankiDueDayToLocal`); one made here has none, so its days keep counting from 1970.
+ */
+function ankiCollectionToday(nowMs: number, appToday: number): number {
+    const crt = rememberedCollection()?.crt;
+    return crt ? Math.max(0, Math.floor((nowMs / 1000 - crt) / 86_400)) : appToday;
+}
+
+/**
+ * The row with its review and day-learning days counted from the collection's creation. The due
+ * and relative-overdueness orders read a new card's queue position as such a day, so only with
+ * the days Anki has do new cards fall between the reviews where Anki puts them.
+ */
+function inAnkiDays(row: GatherRow, dayOffset: number): GatherRow {
+    if (dayOffset === 0 || row.type === 0) return row;
+    const shift = (value: number | null) => (value && Math.abs(value) < 1_000_000_000 ? value - dayOffset : value);
+    return { ...row, due: shift(row.due) ?? row.due, odue: shift(row.odue) };
 }
 
 /**
@@ -76,7 +103,7 @@ export function gatherFilteredTermCardIds(
         ? '(SELECT MAX(r.id) FROM revlog r WHERE r.cardId = c.id)'
         : 'NULL';
     const rows = getDB().getAllSync<GatherRow>(
-        `SELECT c.id AS cardId, c.noteId AS noteId, c.ord AS ord, c.due AS due, c.ivl AS ivl,
+        `SELECT c.id AS cardId, c.noteId AS noteId, c.ord AS ord, c.type AS type, c.due AS due, c.ivl AS ivl,
             c.lapses AS lapses, json_extract(c.data, '$.mod') AS mod, json_extract(c.data, '$.odue') AS odue,
             json_extract(c.data, '$.ankiData') AS ankiData, ${lastReview} AS lastReviewId
          FROM anki_cards c
@@ -86,10 +113,12 @@ export function gatherFilteredTermCardIds(
          WHERE c.queue >= 0 AND COALESCE(json_extract(d.data, '$.isFiltered'), 0) = 0 AND ${where}${exclusion}`,
         ...filtered.params, ...(excludedIds.length ? [JSON.stringify(excludedIds)] : []),
     );
-    const keysOf = gatherOrderKeys(term.order, Boolean(settings.fsrsEnabled), nowMs, localDayNumber(nowMs, settings.dayRolloverHour));
+    const appToday = localDayNumber(nowMs, settings.dayRolloverHour);
+    const dayOffset = appToday - ankiCollectionToday(nowMs, appToday);
+    const keysOf = gatherOrderKeys(term.order, Boolean(settings.fsrsEnabled), nowMs, appToday - dayOffset);
     const keyed = rows.map((row) => ({
         id: row.cardId,
-        keys: [...keysOf(row), { value: ankiFnvHash([row.cardId, Number(row.mod) || 0]) }],
+        keys: [...keysOf(inAnkiDays(row, dayOffset)), { value: ankiFnvHash([row.cardId, Number(row.mod) || 0]) }],
     }));
     keyed.sort((a, b) => {
         for (let index = 0; index < a.keys.length; index++) {

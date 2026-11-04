@@ -11,7 +11,9 @@ import {
     FILTERED_SEARCH_ORDER,
     filteredDeckOrderChoices,
     filteredDeckOrderForDialog,
+    filteredSearchToSave,
     formatPreviewDelays,
+    newFilteredDeckSearches,
     parsePreviewDelays,
     previewDelaySecondsForGrade,
     replaceDeckNameInSearch,
@@ -266,5 +268,25 @@ describe('replaceDeckNameInSearch', () => {
         expect(replaceDeckNameInSearch('deck:"TUS Kartları" is:due', null)).toBe('is:due');
         expect(replaceDeckNameInSearch('deck:Anatomi', null)).toBe('');
         expect(replaceDeckNameInSearch('is:due tag:zor', null)).toBe('is:due tag:zor');
+    });
+});
+
+describe('a new filtered deck\'s searches (new_filtered_deck_for_adding)', () => {
+    it('scopes the first filter to the current deck\'s due cards and the second to its new cards', () => {
+        expect(newFilteredDeckSearches('Anatomi')).toEqual({ search: 'deck:Anatomi is:due', search2: 'deck:Anatomi is:new' });
+        // A deck name's wildcards are escaped, so the search cannot reach a deck with a similar name.
+        expect(newFilteredDeckSearches('TUS_2024 Kart*')).toEqual({
+            search: 'deck:"TUS\\_2024 Kart\\*" is:due',
+            search2: 'deck:"TUS\\_2024 Kart\\*" is:new',
+        });
+    });
+
+    it('leaves both empty with a filtered deck current', () => {
+        expect(newFilteredDeckSearches(null)).toEqual({ search: '', search2: '' });
+    });
+
+    it('saves an empty search as the whole collection, as Anki\'s parser and writer turn it', () => {
+        expect(filteredSearchToSave('  ')).toBe('deck:*');
+        expect(filteredSearchToSave(' is:due ')).toBe('is:due');
     });
 });

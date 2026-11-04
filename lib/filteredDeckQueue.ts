@@ -1,15 +1,17 @@
 import { getDB } from './db';
 import type { CardState, AppSettings } from './types';
-import type { Deck, Note } from './models';
-import { localDayNumber } from './ankiState';
-import { todayLocalYMD } from './scheduler';
+import type { Deck, DeckConfig, Note } from './models';
+import { localDayNumber, nextRolloverMs } from './ankiState';
 import { getDeckByName } from './deckStore';
+import { getDeckConfigForDeck } from './deckLimits';
+import { answeredSinceBuild, serveFilteredDeckCards } from './filteredDeckServing';
+import { parseAnkiCardData } from './fsrsCardData';
 import { filteredDeckMemberIds, gatherFilteredDeckMemberIds } from './filteredDeckMembership';
 export { gatherFilteredTermCardIds } from './filteredDeckGather';
 import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
 import type { StudyQueueResult } from './studyQueue';
 import { loadRowsByQueue, toStudyCards, type QueueCardRow } from './studyCardRows';
-import { buildFilteredSearchClause } from './studySearchSql';
+import { buildFilteredSearchClause, cardJsonSql } from './studySearchSql';
 
 /**
  * Filtered-deck build membership, serving order and counters. Searches run only for a new build.
@@ -30,8 +32,9 @@ function queueRowsInOrder(cardIds: readonly number[]): QueueCardRow[] {
 /**
  * Anki-style filtered deck session: gather EVERY card matching the deck's search(es) —
  * regardless of dueness, so "review ahead" and "preview new" can pull in future cards —
- * ordered and capped per filter group. Suspended/buried cards stay out. Daily limits do
- * not apply (Anki: filtered decks are exempt).
+ * ordered and capped per filter group. Suspended/buried cards stay out. The home decks'
+ * daily limits do not apply; the deck is dealt in Anki's order with its fixed 9,999 limits
+ * (lib/filteredDeckServing.ts).
  */
 type FilteredDeckQueueDefinition = { id?: number } & Pick<Deck,
     | 'searchQuery'
@@ -60,6 +63,8 @@ function queueForMembers(
     if (deck.filteredDeckEmpty) {
         return {
             cards: [],
+            mainQueue: { start: 0, end: 0 },
+            learningComesDueAt: null,
             stats: { newCount: 0, learningCount: 0, reviewCount: 0 },
             nextLearningDue: null,
             dailyNewLimitReached: false,
@@ -73,56 +78,41 @@ function queueForMembers(
     const rows = queueRowsInOrder(memberIds)
         .filter((row) => row.queue >= 0 && !completedIds.has(row.cardId));
 
-    const gatheredCards = toStudyCards(rows, settings, nowMs, { settingsCache: new Map() });
-    const todayYmd = todayLocalYMD(new Date(nowMs), settings.dayRolloverHour);
-    // A previewed card waiting out its delay is Anki's preview repeat: an intraday learning card
-    // that is held back until its time and then shown ahead of the rest, earliest first.
-    const previewDue = (card: { cardId: number }): number | undefined => deck.filteredPreviewDue?.[String(card.cardId)];
-    const returningPreviews = gatheredCards
-        .filter((card) => (previewDue(card) ?? Number.POSITIVE_INFINITY) <= nowMs)
-        .sort((a, b) => previewDue(a)! - previewDue(b)!);
-    // New and review cards are intentionally gathered regardless of dueness (preview/review
-    // ahead). A learning card the build gathered is dealt straight away too, as Anki does when it
-    // moves one into a filtered deck (FLT-7); once it has been answered in this build it obeys its
-    // step timer, or a failed card would loop after every queue refresh. A preview deck ignores
-    // the timer altogether: Anki moves every card it gathers there into the review queue.
-    const previewDeck = deck.reschedule === false;
-    // Answer times are kept in whole seconds (Anki's `lrt`), so compare at that precision.
-    const buildAt = Math.floor((deck.filteredBuildAt ?? 0) / 1000) * 1000;
-    const waitsForStep = (card: typeof gatheredCards[number]) => (
-        !previewDeck && card.state.status === 'learning' && !(buildAt > 0 && (card.state.lastReviewedAtMs || 0) < buildAt)
-    );
-    const cards = [...returningPreviews, ...gatheredCards.filter((card) => {
-        if (previewDue(card) !== undefined) return false;
-        if (!waitsForStep(card)) return true;
-        if (card.state.dueTime > 0) return card.state.dueTime <= nowMs;
-        return card.state.dueDate <= todayYmd;
-    })];
-    // A preview deck counts everything it holds as review, as Anki's preview queue does; a card
-    // waiting out a preview delay counts as learning.
-    const statusOf = (card: typeof gatheredCards[number]) => (previewDue(card) !== undefined
-        ? 'learning'
-        : previewDeck ? 'review' : card.state.status);
-    const stats = {
-        newCount: gatheredCards.filter((card) => statusOf(card) === 'new').length,
-        learningCount: gatheredCards.filter((card) => statusOf(card) === 'learning').length,
-        reviewCount: gatheredCards.filter((card) => statusOf(card) === 'review').length,
-    };
-
-    const futureLearningTimes = gatheredCards
-        .map((card) => previewDue(card) ?? (waitsForStep(card) ? card.state.dueTime : 0))
-        .filter((dueTime) => dueTime > nowMs);
+    const gatheredCards = toStudyCards(rows, settings, nowMs, { settingsCache: new Map(), includeRawCard: true });
+    const buryOptions = new Map<number, DeckConfig>();
+    // Anki deals the deck in its own order, with the collection's learn ahead limit (FLT-7: a
+    // learning card the build gathered is dealt at once; once answered it waits for its step).
+    const serving = serveFilteredDeckCards(gatheredCards, {
+        preview: deck.reschedule === false,
+        buildAtMs: deck.filteredBuildAt ?? 0,
+        previewDueOf: (card) => deck.filteredPreviewDue?.[String(card.cardId)],
+        nowMs,
+        learnAheadMs: Math.max(0, settings.learnAheadMinutes || 0) * 60_000,
+        today: localDayNumber(nowMs, settings.dayRolloverHour),
+        nextDayAtMs: nextRolloverMs(nowMs, settings.dayRolloverHour),
+        buryOptionsOf: (card) => {
+            let config = buryOptions.get(card.deckId);
+            if (!config) {
+                config = getDeckConfigForDeck(card.deckId, settings.dayRolloverHour);
+                buryOptions.set(card.deckId, config);
+            }
+            return config;
+        },
+        modOf: (card) => Number(card.rawCard?.mod) || 0,
+    });
 
     return {
-        cards,
+        cards: serving.cards,
+        mainQueue: serving.mainQueue,
+        learningComesDueAt: serving.learningComesDueAt,
         allSessionCards: gatheredCards,
-        stats,
-        nextLearningDue: futureLearningTimes.length > 0 ? Math.min(...futureLearningTimes) : null,
+        stats: serving.stats,
+        nextLearningDue: serving.nextLearningDue,
         dailyNewLimitReached: false,
-        // A filtered deck's saved search is the session: daily limits never apply to it.
+        // Anki's fixed limits for a deck without a preset are applied by the serving order above.
         heldBackNewCount: 0,
         heldBackReviewCount: 0,
-        upcomingCardsCount: futureLearningTimes.length,
+        upcomingCardsCount: serving.waitingCount,
     };
 }
 
@@ -131,6 +121,13 @@ export interface FilteredDeckCountCard {
     homeDeckId: number;
     /** How the filtered deck counts the card. */
     status: CardState['status'];
+    /**
+     * Whether the deck list counts it now: a learning card answered in this build only once it is
+     * due within the learn ahead limit (day learning: today), a waiting preview only inside it.
+     */
+    counted: boolean;
+    /** Counted as day learning, which spends the deck's review limit. */
+    interday: boolean;
     /** How the home deck counted the card before the filtered deck took it. */
     homeStatus: CardState['status'];
     homeCounted: boolean;
@@ -189,6 +186,8 @@ function countCardsForMembers(
         type: number;
         queue: number;
         due: number;
+        lastReview: number | null;
+        ankiData: string | null;
         noteData: string;
         noteTypeData: string;
     };
@@ -204,6 +203,7 @@ function countCardsForMembers(
         const chunk = uniqueIds.slice(index, index + 400);
         for (const row of getDB().getAllSync<Omit<BatchRow, 'filteredDeckId'>>(
             `SELECT c.id AS cardId, c.deckId AS homeDeckId, c.type AS type, c.queue AS queue, c.due AS due,
+                ${cardJsonSql('$.lastReview')} AS lastReview, ${cardJsonSql('$.ankiData')} AS ankiData,
                 n.data AS noteData, nt.data AS noteTypeData
              FROM anki_cards c
              JOIN notes n ON n.id = c.noteId
@@ -220,6 +220,8 @@ function countCardsForMembers(
     const seenByFilteredDeck = new Map<number, Set<number>>();
     const claimedCardIds = new Set<number>();
     const catalogUnlocked = isCatalogStudyAvailable();
+    const today = localDayNumber(nowMs, settings.dayRolloverHour);
+    const learnCutoff = nowMs + Math.max(0, settings.learnAheadMinutes || 0) * 60_000;
 
     for (const row of rows) {
         const deck = deckById.get(row.filteredDeckId);
@@ -250,14 +252,36 @@ function countCardsForMembers(
         // Answering in preview leaves the card itself untouched, so its home deck still counts it
         // as `homeStatus`.
         // A preview deck (rescheduling off) counts its other cards as review, like its queue.
-        const status = deck.filteredPreviewDue?.[String(row.cardId)] !== undefined
+        const previewDue = deck.filteredPreviewDue?.[String(row.cardId)];
+        const status = previewDue !== undefined
             ? 'learning'
             : deck.reschedule === false ? 'review' : homeStatus;
-        const today = localDayNumber(nowMs, settings.dayRolloverHour);
         const homeCounted = row.queue === 0 || (row.queue === 1
-            ? row.due <= nowMs + Math.max(0, settings.learnAheadMinutes || 0) * 60000
+            ? row.due <= learnCutoff
             : (row.queue === 2 || row.queue === 3) && row.due <= today);
-        result.get(deck.id)!.push({ cardId: row.cardId, homeDeckId: row.homeDeckId, status, homeStatus, homeCounted, homeInterday: row.queue === 3 });
+        // Anki's deck list counts a learning card only once it is due within the learn ahead limit
+        // (day learning: due today). One the build gathered is due at once, on its gather position;
+        // one answered since then waits for its step like any other.
+        let counted = true;
+        if (previewDue !== undefined) {
+            counted = previewDue <= learnCutoff;
+        } else if (deck.reschedule !== false && (row.queue === 1 || row.queue === 3)) {
+            const lrt = row.ankiData ? parseAnkiCardData(row.ankiData).lastReviewTimeSecs : undefined;
+            const lastReviewedAtMs = lrt !== undefined && lrt > 0 ? lrt * 1000 : Number(row.lastReview) || 0;
+            if (answeredSinceBuild(lastReviewedAtMs, deck.filteredBuildAt ?? 0)) {
+                counted = row.queue === 1 ? row.due < learnCutoff : row.due <= today;
+            }
+        }
+        result.get(deck.id)!.push({
+            cardId: row.cardId,
+            homeDeckId: row.homeDeckId,
+            status,
+            counted,
+            interday: status === 'learning' && previewDue === undefined && row.queue === 3,
+            homeStatus,
+            homeCounted,
+            homeInterday: row.queue === 3,
+        });
     }
 
     return result;

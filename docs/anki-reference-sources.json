@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-11-03",
+  "lastVerified": "2026-11-04",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -748,7 +748,55 @@
       "platform": "cross-platform filtered deck gathering",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/storage/card/filtered.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["order_and_limit_for_search: each gather order's SQL", "fnvhash(c.id, c.mod) tiebreak", "retrievability orders empty while FSRS is off"]
+      "useFor": [
+        "order_and_limit_for_search: each gather order's SQL",
+        "fnvhash(c.id, c.mod) tiebreak",
+        "retrievability orders gather at random while FSRS is off (upstream since 81b44437f9; 26.09.3 failed to build with an empty order term)",
+        "the due and relative-overdueness orders read a new card's position against today counted from col.crt; lib/filteredDeckServing.test.ts"
+      ]
+    },
+    {
+      "id": "anki-source-filtered-queue",
+      "priority": 3,
+      "platform": "cross-platform filtered deck study queue",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/queue/builder/mod.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": [
+        "a deck without a preset studied with the default queue options: reviews by due (a filtered deck's gather position), day learning and new cards mixed with reviews, new cards unsorted",
+        "Intersperser's even mix of two runs in 32-bit floats, longer run first; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/queue/builder/intersperser.rs",
+        "intraday learning (preview repeats included) before the main queue, sorted by never-answered then due, learn-ahead cards after it; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/queue/learning.rs",
+        "gather order intraday, day learning, reviews, new, with build-time sibling burying by the home deck's options; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/queue/builder/gathering.rs",
+        "9,999 review and new limits for a deck without a preset; https://github.com/ankitects/anki/blob/main/rslib/src/decks/limits.rs",
+        "deck-list counts of learning due within the learn-ahead cutoff, day learning due today, the same caps; https://github.com/ankitects/anki/blob/main/rslib/src/storage/deck/due_counts.sql",
+        "oracle test/fixtures/anki-26.09-filtered-queue.json from scripts/anki-oracle/gen_filtered_queue.py; lib/filteredDeckServing.test.ts"
+      ]
+    },
+    {
+      "id": "anki-source-study-session-queue",
+      "priority": 3,
+      "platform": "cross-platform reviewer session queue",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/queue/mod.rs",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": [
+        "a session's queue is built once; answering pops the card and requeues it as learning (update_queues_after_answering_card), and only an operation changing cards, decks or options, or a new day, builds it again (maybe_clear_study_queues_after_op; https://github.com/ankitects/anki/blob/main/rslib/src/ops.rs requires_study_queue_rebuild)",
+        "undoing an answer pushes the card back on top of the same queue; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/queue/undo.rs",
+        "a change to notes or note types only (text, tags, a mark, fields, templates) or a flag keeps the queue, and undoing one too (an undo carries the undone op's kind); the reviewer only redraws the card (op_executed in https://github.com/ankitects/anki/blob/main/qt/aqt/reviewer.py); keepsStudyQueue in lib/deferredInvalidation.ts",
+        "the learning cutoff moves to the present after every answer, so a learning card whose step ended is shown next; with the main queue empty, learning inside the learn-ahead limit in due order, and a card that would come straight back goes after the next one; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/queue/learning.rs",
+        "oracle sessions `session` and `comesDue` in test/fixtures/anki-26.09-filtered-queue.json from scripts/anki-oracle/gen_filtered_queue.py; lib/filteredDeckServing.test.ts, lib/reviewerQueueRefresh.test.ts"
+      ]
+    },
+    {
+      "id": "anki-source-filtered-deck-dialog",
+      "priority": 3,
+      "platform": "desktop filtered deck dialog",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/filtered_deck.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": [
+        "a new deck's searches scoped to the current deck (is:due, second filter is:new, unchecked); empty with a filtered deck current; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/filtered/mod.rs",
+        "a deck saved with one filter offers the second at Random and 20 cards",
+        "retrievability orders listed only while FSRS is on",
+        "an empty search builds from the whole collection and is saved as deck:*; https://github.com/ankitects/anki/blob/main/rslib/src/search/parser.rs"
+      ]
     },
     {
       "id": "anki-source-browser-create-filtered-deck",

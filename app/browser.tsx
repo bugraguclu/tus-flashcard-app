@@ -19,6 +19,7 @@ import { isValidSearchQuery } from '../lib/searchValidation';
 import { setSearchCurrentDeckName } from '../lib/collectionCardSearch';
 import { flagForSelection } from '../lib/browserFlags';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
+import type { CollectionChange } from '../lib/deferredInvalidation';
 import type { StudyCard } from '../lib/types';
 import { isLegacyTusNoteType, type CardFlag, type Note } from '../lib/models';
 import {
@@ -612,16 +613,16 @@ export default function BrowserScreen() {
     const previewRawCard = previewCard?.rawCard ?? null;
     const previewDeck = previewCard ? deckById.get(previewCard.deckId) ?? null : null;
 
-    const refreshSelection = useCallback(() => {
-        bumpDataVersion();
+    const refreshSelection = useCallback((change?: CollectionChange) => {
+        bumpDataVersion(change);
         reload();
     }, [bumpDataVersion, reload]);
 
-    const runSelectionAction = useCallback((action: () => void) => {
+    const runSelectionAction = useCallback((action: () => void, change?: CollectionChange) => {
         setShowSelectionMenu(false);
         try {
             action();
-            refreshSelection();
+            refreshSelection(change);
         } catch (error) {
             console.warn('[Browser] selection action failed:', error);
             alert(t('common.error'), userFacingErrorMessage(
@@ -674,7 +675,7 @@ export default function BrowserScreen() {
         if (flagPickerMode === 'selection') {
             const applied = flagForSelection(selectedActionCardIds, flag);
             for (const cardId of selectedActionCardIds) setCardFlag(cardId, applied);
-            bumpDataVersion();
+            bumpDataVersion({ keepsStudyQueue: true });
             reload();
         }
         setFlagPickerMode(null);
@@ -1167,7 +1168,8 @@ export default function BrowserScreen() {
                     const addTags = tags.filter((tag) => !baselineKeys.has(tag.normalize('NFC').toLocaleLowerCase()));
                     const removeTags = selectionTagBaseline.filter((tag) => !nextKeys.has(tag.normalize('NFC').toLocaleLowerCase()));
                     setShowSelectionTags(false);
-                    runSelectionAction(() => updateNotesTags(selectedNoteIds, addTags, removeTags));
+                    // Tags belong to notes, so a study session keeps its queue (as in Anki).
+                    runSelectionAction(() => updateNotesTags(selectedNoteIds, addTags, removeTags), { keepsStudyQueue: true });
                 }}
             />}
 

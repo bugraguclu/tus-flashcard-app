@@ -849,7 +849,7 @@ export default function EditorScreen() {
         try {
             await commitCollectionWrite(() => setNoteTagsByCardId(routeCardId, noteTags));
             resetDraftBaseline(currentDraft);
-            bumpDataVersion();
+            bumpDataVersion({ keepsStudyQueue: true });
             alert(t('common.completed'), l('Etiketler kaydedildi.', 'Tags saved.'), () => goBackOr(router));
         } catch (e) {
             console.warn('[Editor] catalog tag save failed:', e);
@@ -966,7 +966,9 @@ export default function EditorScreen() {
                 }
 
                 resetDraftBaseline(savedDraft);
-                bumpDataVersion();
+                // An edit that left the cards as they were keeps a study session's order, as
+                // Anki's does; a new card or a deck move builds the queue again.
+                bumpDataVersion({ keepsStudyQueue: !updated.cardsChanged });
                 alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => goBackOr(router));
             } else {
                 let rollbackNoteTypeMemory: (() => void) | undefined;

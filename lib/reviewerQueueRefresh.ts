@@ -20,6 +20,76 @@ export function coordinatePostAnswerQueueRefresh(
     actions.scheduleDeferredRefresh();
 }
 
+/** How many answers the reviewer advances in memory before it reads the queue again. */
+export const ANSWERS_BETWEEN_REBUILDS = 8;
+
+/**
+ * Whether the reviewer reads the queue again straight after an answer, rather than after a pause.
+ *
+ * It does when the in-memory queue has run out or is about to, and after a batch of answers. It
+ * also does in two cases where Anki would deal a card the in-memory queue does not hold, or holds
+ * in the wrong place (rslib scheduler/queue/learning.rs):
+ * - A learning card has come due. Anki moves its learning cutoff to the present after every answer
+ *   (`update_learning_cutoff_and_count`), so a card whose step has ended is shown next.
+ * - The main queue has run out and the next card is learning dealt ahead of its due time. Anki
+ *   then deals every learning card inside the learn-ahead limit in due order
+ *   (`intraday_ahead_iter`), the ones answered since the last build included.
+ */
+export function shouldRebuildAfterAnswer(input: {
+    /** Cards in the in-memory queue before the answer, the answered one included. */
+    queueLengthBefore: number;
+    /** Cards left in it after the answer. */
+    queueLengthAfter: number;
+    answersSinceRebuild: number;
+    /** The earliest due time among learning cards not yet in front, if any. */
+    learningComesDueAt: number | null;
+    /** The next card was dealt after the last build's main queue, inside the learn-ahead limit. */
+    nextCardIsLearningAhead: boolean;
+    nowMs: number;
+}): boolean {
+    return input.queueLengthAfter === 0
+        || input.queueLengthBefore <= 1
+        || input.answersSinceRebuild >= ANSWERS_BETWEEN_REBUILDS
+        || (input.learningComesDueAt !== null && input.learningComesDueAt <= input.nowMs)
+        || input.nextCardIsLearningAhead;
+}
+
+/**
+ * A rebuilt queue whose main queue keeps the order this study session has been dealing it in.
+ *
+ * Anki builds a session's queue once. Answering a card takes it off and requeues it as learning,
+ * undoing the answer puts it back on top, and the queue is built again only after an operation
+ * that changes cards, decks or options, or on a new day (`update_queues_after_answering_card` and
+ * `maybe_clear_study_queues_after_op` in rslib scheduler/queue/mod.rs). The reviewer here reads
+ * the queue again every few answers as well, to pick up learning cards that have come due and fresh
+ * counts. A fresh build spreads the remaining new and day learning cards through the reviews anew,
+ * which would deal them in a different order from the one the session started with.
+ *
+ * So the cards both builds hold in their main queue are dealt in the previous order, in the places
+ * the fresh build gives its main queue, and a card only the fresh build holds (the next card of a
+ * new-card window, or one an undo brought back) keeps its own place. Intraday learning stays where
+ * the fresh build put it, since its due times decide its order.
+ */
+export function keepSessionOrder<T extends { cardId: number }>(
+    previous: readonly T[],
+    fresh: readonly T[],
+    mainQueue: { start: number; end: number },
+): T[] {
+    const main = fresh.slice(mainQueue.start, mainQueue.end);
+    const freshById = new Map(main.map((card) => [card.cardId, card]));
+    const kept: T[] = [];
+    const keptIds = new Set<number>();
+    for (const card of previous) {
+        const current = freshById.get(card.cardId);
+        if (!current || keptIds.has(card.cardId)) continue;
+        kept.push(current);
+        keptIds.add(card.cardId);
+    }
+    let next = 0;
+    const ordered = main.map((card) => (keptIds.has(card.cardId) ? kept[next++] : card));
+    return [...fresh.slice(0, mainQueue.start), ...ordered, ...fresh.slice(mainQueue.end)];
+}
+
 /**
  * The queue with one card moved to the front, or null when that card cannot be studied now.
  *
@@ -100,4 +170,23 @@ export function advanceQueueAfterAnswer(input: PostAnswerQueueInput): PostAnswer
         currentCard: queue[0] ?? null,
         nextLearningDue: futureLearningDue.length > 0 ? Math.min(...futureLearningDue) : null,
     };
+}
+
+/**
+ * A queue built straight after an answer, without the answered card in front when the main queue
+ * has run out and another learning card is waiting inside the learn-ahead limit.
+ *
+ * Anki requeues a learning card answered while its main queue is empty behind the next learning
+ * card, one second after that card's due, if it would otherwise be shown again at once
+ * (`requeue_learning_entry` in rslib scheduler/queue/learning.rs), so the same card does not come
+ * twice in a row. Once that next card is answered, the earlier step of the requeued card puts it
+ * in front by its own due time, so moving it one place back is all that rule changes.
+ */
+export function avoidImmediateRepeat<T extends { cardId: number }>(
+    cards: readonly T[],
+    mainQueue: { start: number; end: number },
+    answeredCardId: number,
+): T[] {
+    if (mainQueue.start !== mainQueue.end || cards.length < 2 || cards[0].cardId !== answeredCardId) return [...cards];
+    return [cards[1], cards[0], ...cards.slice(2)];
 }

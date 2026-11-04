@@ -352,11 +352,16 @@ describe('filtered deck sessions (Anki gather semantics)', () => {
         const waiting = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
         // Due order: a new card's position sorts ahead of any learning card's clock time.
         expect(waiting.cards.map((card) => card.cardId)).toEqual([1030, 1010]);
-        // Only the card waiting out its preview delay counts as learning; a preview deck counts
-        // the rest of what it holds as review, like Anki's preview queue.
-        expect(waiting.stats.learningCount).toBe(1);
+        // A preview deck counts what it holds as review, like Anki's preview queue. The card
+        // waiting out its delay is learning, counted (and dealt, after the rest) only once it is
+        // due within the learn ahead limit, which is 0 here.
+        expect(waiting.stats.learningCount).toBe(0);
         expect(waiting.stats.reviewCount).toBe(2);
         expect(waiting.nextLearningDue).toBe(nowMs + 60_000);
+        const learningAhead = getStudyQueue({ settings: { ...settings, learnAheadMinutes: 20 }, selectedDeckName: 'Oturum' });
+        expect(learningAhead.cards.map((card) => card.cardId)).toEqual([1030, 1010, 1020]);
+        expect(learningAhead.stats).toEqual({ newCount: 0, learningCount: 1, reviewCount: 2 });
+        expect(learningAhead.nextLearningDue).toBeNull();
 
         previewDeck({ 1030: nowMs - 1000, 1020: nowMs - 5000 });
         const returning = getStudyQueue({ settings, selectedDeckName: 'Oturum' });
@@ -440,8 +445,11 @@ describe('deck-list filtered count snapshot', () => {
         const { counts } = getDeckListSnapshot(settings, nowMs);
         // Both of deck 7's new cards belong to the session, so neither is left at home.
         expect(counts.get(7)).toMatchObject({ new: 0, learn: 0, total: 0 });
-        // In a preview deck the waiting card counts as learning and the rest as review.
-        expect(counts.get(98)).toMatchObject({ new: 0, learn: 1, review: 2, total: 3 });
+        // In a preview deck the rest count as review. The waiting card counts as learning once
+        // it is due within the learn ahead limit, as Anki's deck list counts a preview repeat.
+        expect(counts.get(98)).toMatchObject({ new: 0, learn: 0, review: 2, total: 3 });
+        expect(getDeckListSnapshot({ ...settings, learnAheadMinutes: 20 }, nowMs).counts.get(98))
+            .toMatchObject({ new: 0, learn: 1, review: 2, total: 3 });
     });
 
     it('keeps all new cards in subdeck totals despite legacy parent limits', () => {
@@ -624,5 +632,25 @@ describe('one-shot study ahead', () => {
         const afterAnswer = getStudyQueue({ settings, selectedSubject: 'araclar', selectedTopic: 'random' });
         expect(afterAnswer.cards).toHaveLength(0);
         expect(afterAnswer.nextLearningDue).toBe(dueMs);
+    });
+});
+
+describe('main queue range (a normal deck)', () => {
+    it('sits between learning due now and learning ahead, and reports when the next learning card comes due', () => {
+        const now = Date.now();
+        const today = localDayNumber(now, rolloverHour);
+        saveNote(makeNote(104, ['temeller', 'Veri-Tipleri'], ['soru 104', 'cevap', 'Veri Tipleri']));
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 1, queue: 1, due: now - 60_000, left: 1001 }));
+        saveAnkiCard(makeCard(1020, 102, 7, { type: 1, queue: 1, due: now + 5 * 60_000, left: 1001 }));
+        saveAnkiCard(makeCard(1030, 103, 2, { type: 2, queue: 2, due: today, ivl: 5, factor: 2500 }));
+        saveAnkiCard(makeCard(1040, 104, 2, { type: 1, queue: 1, due: now + 30 * 60_000, left: 1001 }));
+
+        const queue = getStudyQueue({ settings: { ...settings, learnAheadMinutes: 20 }, selectedDeckName: 'Python' });
+
+        expect(queue.cards.map((card) => card.cardId)).toEqual([1010, 1030, 1020]);
+        expect(queue.mainQueue).toEqual({ start: 1, end: 2 });
+        // The card inside the learn-ahead limit comes due first; the one past it is the waiting one.
+        expect(queue.learningComesDueAt).toBe(queue.cards[2].state.dueTime);
+        expect(queue.nextLearningDue).toBe(now + 30 * 60_000);
     });
 });

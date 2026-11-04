@@ -195,7 +195,15 @@ export function updateTusCardByCardId(
         deckId?: number;
         fieldValues?: string[];
     },
-): { note: Note; card: AnkiCard } | null {
+): {
+    note: Note;
+    card: AnkiCard;
+    /**
+     * The save added a card (a new cloze number or template) or moved this one to another deck.
+     * Otherwise only the note changed, and a study session keeps its queue (as Anki's does).
+     */
+    cardsChanged: boolean;
+} | null {
     const card = getAnkiCard(cardId);
     if (!card) return null;
 
@@ -253,6 +261,7 @@ export function updateTusCardByCardId(
 
     const destinationDeckId = input.deckId
         ?? (input.subject ? resolveSubjectDeckId(input.subject) : card.deckId);
+    let cardsChanged = false;
 
     // Edits add missing ordinals and preserve every existing card and its scheduling.
     if (noteType) {
@@ -265,7 +274,9 @@ export function updateTusCardByCardId(
 
         const position = notePositionForPass([...existingByOrd.values()]);
         for (const ord of requiredOrds) {
-            if (!existingByOrd.has(ord)) createCardForNote(note, destinationDeckId, ord, position());
+            if (existingByOrd.has(ord)) continue;
+            createCardForNote(note, destinationDeckId, ord, position());
+            cardsChanged = true;
         }
         // Empty siblings remain until the learner explicitly runs Empty Cards.
     }
@@ -276,6 +287,7 @@ export function updateTusCardByCardId(
     // deck first, drop the FSRS memory state (the destination may use another preset) and remap
     // the remaining learning steps.
     if (destinationDeckId !== card.deckId && getAnkiCard(cardId)) {
+        cardsChanged = true;
         const home = card.odid ? filteredCardAtHome(card) : card;
         saveAnkiCard({
             ...home,
@@ -288,7 +300,7 @@ export function updateTusCardByCardId(
     }
     const updatedCard = getAnkiCard(cardId) ?? getCardsForNote(note.id)[0] ?? card;
 
-    return { note, card: updatedCard };
+    return { note, card: updatedCard, cardsChanged };
 }
 
 export function deleteTusCardByCardId(cardId: number) {

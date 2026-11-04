@@ -111,7 +111,8 @@ export default function NoteTypeScreen() {
             applyFieldEdit(nt.id, edit);
             setNt(edit.noteType);
             setSavedSnapshot(stableSnapshot(edit.noteType));
-            bumpDataVersion();
+            // Fields and notes change, no card does: a study session keeps its queue, as in Anki.
+            bumpDataVersion({ keepsStudyQueue: true });
         } catch (e) {
             console.warn('[NoteType] field edit failed:', e);
             alert(t('common.error'), l('Alan güncellenemedi.', 'Could not update the field.'));
@@ -163,7 +164,8 @@ export default function NoteTypeScreen() {
         try {
             saveNoteType(nt);
             setSavedSnapshot(stableSnapshot(nt));
-            bumpDataVersion();
+            // Templates and styling only: the card on screen is redrawn, the queue keeps its order.
+            bumpDataVersion({ keepsStudyQueue: true });
             alert(t('common.saved'), l('Not türü güncellendi.', 'Note type updated.'), () => goBackOr(router, '/note-types'));
         } catch (e) {
             console.warn('[NoteType] save failed:', e);

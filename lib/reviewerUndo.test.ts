@@ -150,6 +150,7 @@ describe('applyReviewerOpState', () => {
 describe('reviewerOpChangesScheduling', () => {
     it('is true for an action that rewrote a card row', () => {
         expect(reviewerOpChangesScheduling({
+            op: 'buryCard',
             before: { cards: [card()], notes: [], reviewLogs: [] },
             after: { cards: [card({ queue: -3 })], notes: [], reviewLogs: [] },
         })).toBe(true);
@@ -157,8 +158,17 @@ describe('reviewerOpChangesScheduling', () => {
 
     it('is false for a note-only action, which must not swap the card on screen', () => {
         expect(reviewerOpChangesScheduling({
+            op: 'markNote',
             before: { cards: [], notes: [note()], reviewLogs: [] },
             after: { cards: [], notes: [note({ tags: ['marked'] })], reviewLogs: [] },
+        })).toBe(false);
+    });
+
+    it('is false for a flag, which Anki keeps its queue across though it rewrites the card row', () => {
+        expect(reviewerOpChangesScheduling({
+            op: 'setFlag',
+            before: { cards: [card()], notes: [], reviewLogs: [] },
+            after: { cards: [card({ flags: 2 })], notes: [], reviewLogs: [] },
         })).toBe(false);
     });
 });

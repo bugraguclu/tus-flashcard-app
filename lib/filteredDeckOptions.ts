@@ -27,7 +27,7 @@ export const FILTERED_DECK_ORDER_UI = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as cons
 /**
  * Orders that need FSRS memory states. Anki 26.09.3's filtered deck dialog offers them only while
  * FSRS is on (ankitects/anki#5407); a deck already set to one keeps it until the dialog is saved,
- * and building it with FSRS off orders by the tiebreak alone (lib/filteredDeckGather.ts).
+ * and building it with FSRS off gathers randomly, as upstream now does (lib/filteredDeckGather.ts).
  */
 const FSRS_ONLY_FILTERED_ORDERS: readonly number[] = [
     FILTERED_SEARCH_ORDER.retrievabilityAscending,
@@ -45,6 +45,28 @@ export function filteredDeckOrderChoices(fsrsEnabled: boolean): readonly number[
  */
 export function filteredDeckOrderForDialog(order: number, fsrsEnabled: boolean): number {
     return filteredDeckOrderChoices(fsrsEnabled).includes(order) ? order : FILTERED_SEARCH_ORDER.random;
+}
+
+/**
+ * The search a filtered deck saves for what was typed. Anki builds from an empty search too: its
+ * parser reads it as the whole collection, which its search writer spells `deck:*`, and that is
+ * the text the dialog shows when the deck is opened again.
+ */
+export const WHOLE_COLLECTION_SEARCH = 'deck:*';
+
+export function filteredSearchToSave(search: string): string {
+    return search.trim() || WHOLE_COLLECTION_SEARCH;
+}
+
+/**
+ * The searches a new filtered deck starts with: Anki scopes them to the current deck, the first
+ * to its due cards and the (initially disabled) second to its new cards
+ * (`new_filtered_deck_for_adding`). With a filtered deck current, both stay empty.
+ */
+export function newFilteredDeckSearches(currentDeckName: string | null): { search: string; search2: string } {
+    if (!currentDeckName) return { search: '', search2: '' };
+    const deckTerm = replaceDeckNameInSearch('', currentDeckName);
+    return { search: `${deckTerm} is:due`, search2: `${deckTerm} is:new` };
 }
 
 /**

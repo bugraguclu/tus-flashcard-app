@@ -20,6 +20,25 @@ export function interleaveNewWithReviews(reviewCards: StudyCard[], newCards: Stu
 }
 
 /**
+ * Anki's even mix of two runs of cards ("mix with reviews", rslib's `Intersperser`): the second
+ * run's cards are spread through the first as evenly as their lengths allow, the longer run
+ * starting. Upstream works in 32-bit floats; `Math.fround` keeps the same rounding, so a card
+ * that lands exactly on a boundary goes to the same side.
+ */
+export function intersperseEvenly<T>(one: readonly T[], two: readonly T[]): T[] {
+    const ratio = Math.fround(Math.fround(one.length + 1) / Math.fround(two.length + 1));
+    const result: T[] = [];
+    let first = 0;
+    let second = 0;
+    while (first < one.length || second < two.length) {
+        const takeSecond = second < two.length && (first >= one.length
+            || Math.fround(Math.fround(second + 1) * ratio) < first + 1);
+        result.push(takeSecond ? two[second++] : one[first++]);
+    }
+    return result;
+}
+
+/**
  * Cap cards by a global limit and by each deck's limit applied hierarchically: a card counts
  * against its own deck and every ancestor (Anki "limits start from the top"), so a parent deck
  * caps the combined intake of all its subdecks. `deckKeysForCard` returns the deck name chain.
