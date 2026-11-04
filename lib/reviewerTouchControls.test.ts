@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     canGradeRevealedCard,
+    cardFrameTapRatios,
     DEFAULT_SWIPE_ACTIONS,
     matchingSwipePreset,
     resolveSwipeActions,
@@ -17,6 +18,28 @@ import {
 } from './reviewerTouchControls';
 
 const BINDINGS: ReviewSwipeBindings = { left: 'tools', right: 'decks', up: 'easy', down: 'off' };
+
+describe('taps on the card frame outside the card document', () => {
+    // iPhone: a 200 pt frame (minimum height + padding) around a one-line, 32 pt document.
+    const frame = { x: 16, y: 150, width: 370, height: 200 };
+    const cardDocument = { x: 40, y: 234, width: 322, height: 32 };
+
+    it('maps the empty part of the frame onto the grid over the whole frame', () => {
+        const below = cardFrameTapRatios({ pageX: 30, pageY: 330 }, frame, cardDocument);
+        expect(below).not.toBeNull();
+        expect(reviewTapZoneAt(below!.xRatio, below!.yRatio)).toBe('bottomLeft');
+        const above = cardFrameTapRatios({ pageX: 370, pageY: 160 }, frame, cardDocument);
+        expect(reviewTapZoneAt(above!.xRatio, above!.yRatio)).toBe('topRight');
+    });
+
+    it('leaves a tap on the document to the document, which reports it itself', () => {
+        expect(cardFrameTapRatios({ pageX: 200, pageY: 250 }, frame, cardDocument)).toBeNull();
+    });
+
+    it('ignores a frame that has not been laid out yet', () => {
+        expect(cardFrameTapRatios({ pageX: 30, pageY: 330 }, { x: 0, y: 0, width: 0, height: 0 }, null)).toBeNull();
+    });
+});
 
 describe('reviewer touch controls', () => {
     it('maps normalized card points into all nine zones', () => {

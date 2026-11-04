@@ -77,6 +77,7 @@ import { useI18n } from '../hooks/useI18n';
 import { localizeCardTemplateName, localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
 import { clozeFieldIndex, countCardsForNote, nextClozeNumber } from '../lib/templates';
 import { loadSettings, saveSettings } from '../lib/storage';
+import { rememberedCurrentDeck } from '../lib/currentDeck';
 import { recomputeMemoryAfterDeckMove } from '../lib/fsrsMaintenance';
 import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
 import { editorFieldFontSize } from '../lib/editorFieldStyle';
@@ -194,7 +195,8 @@ export default function EditorScreen() {
             const defDeck = getDeckByName('Varsayılan') ?? getDeck(1);
             if (defDeck && !isCatalogDeck(defDeck)) return defDeck.id;
         }
-        const activeDeck = activeDeckName ? getDeckByName(activeDeckName) : null;
+        const currentDeckName = activeDeckName ?? rememberedCurrentDeck();
+        const activeDeck = currentDeckName ? getDeckByName(currentDeckName) : null;
         if (activeDeck && !activeDeck.isFiltered && !isCatalogDeck(activeDeck)) return activeDeck.id;
         return getDeck(1)?.id ?? getAllDecks().find((deck) => !deck.isFiltered && !isCatalogDeck(deck))?.id ?? null;
     });
@@ -462,7 +464,8 @@ export default function EditorScreen() {
             setTargetDeckId(defDeck && !isCatalogDeck(defDeck) ? defDeck.id : (getDeck(1)?.id ?? null));
             return;
         }
-        const activeDeck = activeDeckName ? getDeckByName(activeDeckName) : null;
+        const currentDeckName = activeDeckName ?? rememberedCurrentDeck();
+        const activeDeck = currentDeckName ? getDeckByName(currentDeckName) : null;
         setTargetDeckId(activeDeck && !activeDeck.isFiltered && !isCatalogDeck(activeDeck) ? activeDeck.id : (getDeck(1)?.id ?? null));
     }, [routeCardId, targetDeckId, activeDeckName]);
 

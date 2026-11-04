@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type ComponentProps } from 'react';
 import {
     View,
     ActivityIndicator,
@@ -12,6 +12,7 @@ import {
     AppState,
     Keyboard,
     LayoutAnimation,
+    type GestureResponderEvent,
     type KeyboardEvent as NativeKeyboardEvent,
     type LayoutChangeEvent,
     type NativeScrollEvent,
@@ -75,6 +76,8 @@ import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
 import { DownChevron, ReviewerBackIcon, ReviewerSettingsIcon, UndoReviewIcon } from '../../components/reviewer/ReviewerIcons';
 import { reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
 import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
+import { CarriedSoundGate } from '../../lib/reviewerCarriedSound';
+import { useCarriedCardSound } from '../../components/reviewer/useCarriedCardSound';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
 import {
@@ -146,6 +149,8 @@ import {
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
     reviewTapZoneAt,
+    cardFrameTapRatios,
+    type WindowRect,
     resolveReviewSwipeAction,
     reviewerAllowsFullScreenBackSwipe,
     type ReviewSwipeGesture,
@@ -1749,6 +1754,13 @@ export default function StudyScreen() {
     const answerAudioActiveRef = useRef(false);
     const ttsActiveRef = useRef(false);
     const avSequencerRef = useRef(new AvSequencer());
+    // "Interrupt audio when answering" off: a sound file still playing when the side changes plays
+    // on in the view that was showing it, and the new side's audio waits (useCarriedCardSound).
+    const carriedSoundGateRef = useRef(new CarriedSoundGate());
+    const liveSoundPlayingRef = useRef(false);
+    const handleLiveMediaPlaying = useCallback((playing: boolean) => {
+        liveSoundPlayingRef.current = playing;
+    }, []);
     const speechQueueRef = useRef<AnkiSpeechQueue | null>(null);
     if (!speechQueueRef.current) {
         speechQueueRef.current = new AnkiSpeechQueue({
@@ -1769,7 +1781,8 @@ export default function StudyScreen() {
     }
     const anyAudioActive = () => questionAudioActiveRef.current
         || answerAudioActiveRef.current
-        || ttsActiveRef.current;
+        || ttsActiveRef.current
+        || carriedSoundGateRef.current.active;
 
     const [audioPlaybackScope, setAudioPlaybackScope] = useState<ReviewerPlaybackScope>('question');
     const handleQuestionAudioActive = useCallback((active: boolean) => {
@@ -1977,6 +1990,8 @@ export default function StudyScreen() {
         // when whole-card text reading is off. Whole-card fallback is replayed only when enabled.
         const sideHasExplicitTts = showingAnswer ? explicitTtsSides.answer : explicitTtsSides.question;
         const speaks = sideHasExplicitTts || (voicePlaybackEnabled && !cardHasAttachedMedia);
+        // Replay is asked for now: a sound carried over from the previous side gives way.
+        carriedSoundGateRef.current.stop();
         avSequencerRef.current.cancel();
         if (!speaks) {
             playSounds();
@@ -2084,6 +2099,26 @@ export default function StudyScreen() {
         showingAnswer,
         runReviewGestureAction,
     ]);
+
+    // The frame is taller than a short card's document (minimum height and padding); the document
+    // reports taps on itself, and a tap on the rest of the frame lands on the same grid.
+    const cardFrameRef = useRef<View>(null);
+    const cardDocumentRef = useRef<View>(null);
+    const handleCardFramePress = useCallback((event: GestureResponderEvent) => {
+        const { pageX, pageY } = event.nativeEvent;
+        const frameView = cardFrameRef.current;
+        const documentView = cardDocumentRef.current;
+        if (!frameView) return;
+        frameView.measureInWindow((x, y, frameWidth, frameHeight) => {
+            const frame = { x, y, width: frameWidth, height: frameHeight };
+            const report = (cardDocument: WindowRect | null) => {
+                const ratios = cardFrameTapRatios({ pageX, pageY }, frame, cardDocument);
+                if (ratios) handleCardTap(ratios.xRatio, ratios.yRatio);
+            };
+            if (!documentView) { report(null); return; }
+            documentView.measureInWindow((dx, dy, docWidth, docHeight) => report({ x: dx, y: dy, width: docWidth, height: docHeight }));
+        });
+    }, [handleCardTap]);
 
     // A finished swipe, from the pan responder or — on web, where the card is an iframe the responder
     // never sees — from the card document itself.
@@ -2219,17 +2254,24 @@ export default function StudyScreen() {
         // "Interrupt current audio when answering" off lets speech run on into the next side.
         const cleanup = () => { if (settings.interruptAudioOnAnswer) stopSpeech(); };
         const order = avOrderFor(showingAnswer);
+        const gate = carriedSoundGateRef.current;
         if (cardDeckOptions.autoPlayAudio && order[0] === 'sound' && order.includes('tts')) {
             // The side's sound files come first; speech starts once they have played.
             const sequencer = avSequencerRef.current;
-            sequencer.after('sound', () => speakSide(showingAnswer));
+            const release = gate.whenClear(() => sequencer.after('sound', () => speakSide(showingAnswer)));
             return () => {
+                release();
                 sequencer.cancel();
                 cleanup();
             };
         }
-        const timer = setTimeout(() => speakSide(showingAnswer), shouldReadWholeCard ? 120 : 450);
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        // Speech follows a sound carried over from the side before, as Anki's audio queue does.
+        const release = gate.whenClear(() => {
+            timer = setTimeout(() => speakSide(showingAnswer), shouldReadWholeCard ? 120 : 450);
+        });
         return () => {
+            release();
             clearTimeout(timer);
             cleanup();
         };
@@ -2249,7 +2291,9 @@ export default function StudyScreen() {
 
     useEffect(() => stopSpeech, [stopSpeech]);
     useEffect(() => {
-        if (!reviewerFocused || !appForegrounded) setPauseSignal((value) => value + 1);
+        if (reviewerFocused && appForegrounded) return;
+        carriedSoundGateRef.current.stop();
+        setPauseSignal((value) => value + 1);
     }, [reviewerFocused, appForegrounded]);
 
 
@@ -2262,7 +2306,9 @@ export default function StudyScreen() {
         setAudioPlaybackScope(showingAnswer ? 'answer' : 'question');
         questionAudioActiveRef.current = false;
         answerAudioActiveRef.current = false;
+        liveSoundPlayingRef.current = false;
         if (settings.interruptAudioOnAnswer) {
+            carriedSoundGateRef.current.stop();
             setPauseSignal((value) => value + 1);
             stopSpeech();
         }
@@ -2277,15 +2323,24 @@ export default function StudyScreen() {
             setAudioSignal((value) => value + 1);
         };
         const order = avOrderFor(showingAnswer);
+        const gate = carriedSoundGateRef.current;
         if (order[0] === 'tts' && order.includes('sound')) {
             // Speech leads on this side; the sound files wait until it has finished.
             const sequencer = avSequencerRef.current;
-            sequencer.after('tts', playSounds);
-            return () => sequencer.cancel();
+            const release = gate.whenClear(() => sequencer.after('tts', playSounds));
+            return () => {
+                release();
+                sequencer.cancel();
+            };
         }
-        // Give the side's media a moment to resolve (web swaps blob URLs in asynchronously).
-        const timer = setTimeout(playSounds, 450);
-        return () => clearTimeout(timer);
+        // Give the side's media a moment to resolve (web swaps blob URLs in asynchronously). A
+        // sound carried over from the side before finishes first.
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const release = gate.whenClear(() => { timer = setTimeout(playSounds, 450); });
+        return () => {
+            release();
+            clearTimeout(timer);
+        };
     }, [currentCard?.cardId, showingAnswer, reviewerFocused, appForegrounded, cardDeckOptions.autoPlayAudio, cardHasAudio, answerSideHasAudio, avOrderFor]);
 
     // Deck description (Anki shows it on the deck's study screen).
@@ -2624,6 +2679,43 @@ export default function StudyScreen() {
     }, [keyboardLiftActive]);
     const [answerBarHeight, setAnswerBarHeight] = useState(0);
 
+    // Built before the early returns below: useCarriedCardSound is a hook.
+    const liveCardViewProps: ComponentProps<typeof CardWebView> | null = renderPayload ? {
+        noteType: renderPayload.noteType,
+        note: renderPayload.note,
+        card: renderPayload.card,
+        deck: renderPayload.deck,
+        side: showingAnswer ? 'answer' : 'question',
+        typedAnswer: showingAnswer && typeAnswerField ? typedAnswer : undefined,
+        playAudioSignal: audioSignal,
+        audioPlaybackScope,
+        pauseAudioSignal: pauseSignal,
+        onAudioActiveChange: showingAnswer ? handleAnswerAudioActive : handleQuestionAudioActive,
+        cardZoomPercent: settings.cardZoomPercent,
+        imageZoomPercent: settings.imageZoomPercent,
+        showAudioPlayButtons: settings.showAudioPlayButtons,
+        centerContent: settings.centerCardContent,
+        scrollMode: 'intrinsic',
+        minHeight: CARD_DOCUMENT_MIN_HEIGHT,
+        typeAnswerInCard: !showingAnswer && typeAnswerInCard,
+        autoFocusTypeAnswer: !showingAnswer && typeAnswerInCard && settings.focusTypeAnswer !== false,
+        onTypedAnswerChange: !showingAnswer && typeAnswerInCard ? setTypedAnswer : undefined,
+        onTypeAnswerSubmit: !showingAnswer && typeAnswerInCard ? submitTypedAnswer : undefined,
+        onCardTap: settings.ninePointTouchEnabled ? handleCardTap : undefined,
+        onCardSwipe: Platform.OS === 'web' ? handleCardSwipe : undefined,
+        audioPlaybackRate: cardDeckOptions.audioPlaybackRate,
+        onAnswerAnchor: showingAnswer ? handleAnswerAnchor : undefined,
+        onMediaPlayingChange: handleLiveMediaPlaying,
+    } : null;
+    const { liveKey: liveCardViewKey, carriedView: carriedCardView } = useCarriedCardSound({
+        sideId: currentCard ? `${currentCard.cardId}:${showingAnswer ? 'answer' : 'question'}` : null,
+        cardId: currentCard?.cardId ?? null,
+        interruptAudioOnAnswer: settings.interruptAudioOnAnswer,
+        liveProps: liveCardViewProps,
+        liveSoundPlayingRef,
+        gate: carriedSoundGateRef.current,
+    });
+
     if (!hasStudyScope) {
         return <Redirect href="/decks" />;
     }
@@ -2753,34 +2845,29 @@ export default function StudyScreen() {
     // Hidden answer buttons need a tap zone or swipe that grades; settings stored without one (an
     // older build, a restored backup) still get the buttons, so a revealed card can be answered.
     const answerButtonsShown = settings.showAnswerButtons !== false || !canGradeRevealedCard(settings);
+    // The Tools button is a fixed-width column beside the grades, never a grade cell: in two-row
+    // mode a cell of its own pushed Easy onto a third row.
+    const toolsGradeButton = settings.showToolsOverlayButton ? (
+        <TouchableOpacity
+            style={styles.reviewerToolsGradeBtn}
+            onPress={openMoreMenu}
+            accessibilityRole="button"
+            accessibilityLabel={l('Araçlar', 'Tools')}
+        >
+            <GearGlyph color={colors.textSecondary} size={16} />
+            <Text numberOfLines={1} style={styles.reviewerToolsGradeLabel}>{l('Araçlar', 'Tools')}</Text>
+        </TouchableOpacity>
+    ) : null;
+    const toolsOnLeft = settings.toolsOverlayPosition === 'left';
+    const gradeButtons = gradePresentation ? visibleReviewerGrades(Boolean(settings.hideHardAndEasy)).map((grade) => {
+        const presentation = gradePresentation[grade];
+        return gradeButton(grade, presentation.label, presentation.time, presentation.color);
+    }) : null;
     const answerButtons = showingAnswer && gradePresentation && answerButtonsShown ? (
-        <View style={[styles.answerButtons, settings.twoRowAnswerButtons && styles.answerButtonsTwoRows]}>
-            {settings.showToolsOverlayButton && settings.toolsOverlayPosition === 'left' ? (
-                <TouchableOpacity
-                    style={[styles.answerBtn, styles.reviewerToolsGradeBtn, settings.twoRowAnswerButtons && styles.answerBtnTwoRow]}
-                    onPress={openMoreMenu}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Araçlar', 'Tools')}
-                >
-                    <GearGlyph color={colors.textSecondary} size={16} />
-                    <Text numberOfLines={1} style={styles.reviewerToolsGradeLabel}>{l('Araçlar', 'Tools')}</Text>
-                </TouchableOpacity>
-            ) : null}
-            {visibleReviewerGrades(Boolean(settings.hideHardAndEasy)).map((grade) => {
-                const presentation = gradePresentation[grade];
-                return gradeButton(grade, presentation.label, presentation.time, presentation.color);
-            })}
-            {settings.showToolsOverlayButton && settings.toolsOverlayPosition !== 'left' ? (
-                <TouchableOpacity
-                    style={[styles.answerBtn, styles.reviewerToolsGradeBtn, settings.twoRowAnswerButtons && styles.answerBtnTwoRow]}
-                    onPress={openMoreMenu}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Araçlar', 'Tools')}
-                >
-                    <GearGlyph color={colors.textSecondary} size={16} />
-                    <Text numberOfLines={1} style={styles.reviewerToolsGradeLabel}>{l('Araçlar', 'Tools')}</Text>
-                </TouchableOpacity>
-            ) : null}
+        <View style={styles.answerButtons}>
+            {toolsOnLeft ? toolsGradeButton : null}
+            {settings.twoRowAnswerButtons ? <View style={styles.answerButtonsTwoRows}>{gradeButtons}</View> : gradeButtons}
+            {toolsOnLeft ? null : toolsGradeButton}
         </View>
     ) : null;
 
@@ -3105,7 +3192,10 @@ export default function StudyScreen() {
                 onToolbarHeightChange={setWhiteboardToolbarHeight}
                 onDone={handleFinishWhiteboard}
             >
-                <View style={styles.cardStage}>
+                {/* The swipe responder sits above the ScrollView, not inside it: React Native's iOS
+                    ScrollView yields only to a JS responder that is its ancestor, so from inside it
+                    every vertical drag became a scroll and the up/down swipes never fired. */}
+                <View style={styles.cardStage} {...gesturePanResponder.panHandlers}>
                 {whiteboardTopInset > 0 ? (
                     // This participates in layout, so the scroll viewport itself begins below the
                     // floating toolbar. The question therefore stays unobscured even while scrolling.
@@ -3130,7 +3220,6 @@ export default function StudyScreen() {
                         <View
                             style={styles.cardContainer}
                             onLayout={(event) => { cardContainerYRef.current = event.nativeEvent.layout.y; }}
-                            {...gesturePanResponder.panHandlers}
                         >
                             <View style={styles.cardMetaRow}>
                                 <View style={styles.cardContext}>
@@ -3157,13 +3246,17 @@ export default function StudyScreen() {
                                     </View>
                                 ) : null}
                             </View>
-                            <View
+                            <Pressable
+                                ref={cardFrameRef}
                                 style={[
                                     styles.cardBody,
                                     plainFrame && styles.cardBodyPlain,
                                     settings.centerCardContent && styles.cardBodyCentered,
                                 ]}
                                 onLayout={(event) => { cardBodyYRef.current = event.nativeEvent.layout.y; }}
+                                onPress={handleCardFramePress}
+                                disabled={!settings.ninePointTouchEnabled || !renderPayload}
+                                accessible={false}
                             >
                                 {currentNoteMarked || currentFlag > 0 ? (
                                     <View
@@ -3183,40 +3276,17 @@ export default function StudyScreen() {
                                     </View>
                                 ) : null}
                                 <View
+                                    ref={cardDocumentRef}
                                     onLayout={(event) => {
                                         cardFrameYRef.current = event.nativeEvent.layout.y;
                                         scrollToPendingAnswer();
                                     }}
                                 >
-                                {renderPayload ? (
-                                    <CardWebView
-                                        key={`card-webview-${currentCard.cardId}`}
-                                        noteType={renderPayload.noteType}
-                                        note={renderPayload.note}
-                                        card={renderPayload.card}
-                                        deck={renderPayload.deck}
-                                        side={showingAnswer ? 'answer' : 'question'}
-                                        typedAnswer={showingAnswer && typeAnswerField ? typedAnswer : undefined}
-                                        playAudioSignal={audioSignal}
-                                        audioPlaybackScope={audioPlaybackScope}
-                                        pauseAudioSignal={pauseSignal}
-                                        onAudioActiveChange={showingAnswer ? handleAnswerAudioActive : handleQuestionAudioActive}
-                                        cardZoomPercent={settings.cardZoomPercent}
-                                        imageZoomPercent={settings.imageZoomPercent}
-                                        showAudioPlayButtons={settings.showAudioPlayButtons}
-                                        centerContent={settings.centerCardContent}
-                                        scrollMode="intrinsic"
-                                        minHeight={CARD_DOCUMENT_MIN_HEIGHT}
-                                        typeAnswerInCard={!showingAnswer && typeAnswerInCard}
-                                        autoFocusTypeAnswer={!showingAnswer && typeAnswerInCard && settings.focusTypeAnswer !== false}
-                                        onTypedAnswerChange={!showingAnswer && typeAnswerInCard ? setTypedAnswer : undefined}
-                                        onTypeAnswerSubmit={!showingAnswer && typeAnswerInCard ? submitTypedAnswer : undefined}
-                                        onCardTap={settings.ninePointTouchEnabled ? handleCardTap : undefined}
-                                        onCardSwipe={Platform.OS === 'web' ? handleCardSwipe : undefined}
-                                        audioPlaybackRate={cardDeckOptions.audioPlaybackRate}
-                                        onAnswerAnchor={showingAnswer ? handleAnswerAnchor : undefined}
-                                    />
-                                ) : !showingAnswer ? (
+                                {carriedCardView}
+                                {liveCardViewProps ? (
+                                    <View key={liveCardViewKey}>
+                                        <CardWebView {...liveCardViewProps} />
+                                    </View>                                ) : !showingAnswer ? (
                                     settings.ninePointTouchEnabled ? (
                                         <Pressable
                                             onLayout={(event) => setFallbackTapSurface(event.nativeEvent.layout)}
@@ -3258,7 +3328,7 @@ export default function StudyScreen() {
                                         },
                                     ]}
                                 />
-                            </View>
+                            </Pressable>
                         </View>
                     ) : nextLearningDue ? (
                         <View style={styles.emptyState}>
@@ -3803,12 +3873,21 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderColor: colors.border,
         ...Shadows.sm,
     },
+    // Not built on answerBtn: its `flex: 1` overridden by `flex: 0` becomes CSS `flex: 0` (a 0%
+    // basis) on web, which squeezed the button to its padding. The row stretches it to the grades' height.
     reviewerToolsGradeBtn: {
-        flex: 0,
-        flexGrow: 0,
         width: isCompact ? 48 : 56,
+        flexShrink: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: 4,
+        borderRadius: 14,
+        borderWidth: 1,
+        gap: 1,
         backgroundColor: colors.bgSecondary,
         borderColor: colors.border,
+        ...Shadows.sm,
     },
     reviewerToolsGradeLabel: {
         fontSize: FontSize.xs,
@@ -3816,7 +3895,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         color: colors.textMuted,
     },
     answerButtons: { width: '100%', flexDirection: 'row', gap: isCompact ? 8 : 10 },
-    answerButtonsTwoRows: { flexWrap: 'wrap' },
+    answerButtonsTwoRows: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: isCompact ? 8 : 10 },
     answerBtn: {
         flex: 1,
         minWidth: 0,

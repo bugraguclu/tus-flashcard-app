@@ -173,6 +173,18 @@ describe('runAutoBackupIfDue', () => {
         expect(h.getGuard()).toBeNull();
     });
 
+    it('writes nothing while Settings › Data management › Automatic backup is off, however overdue', async () => {
+        const h = makeHarness();
+
+        const result = await runAutoBackupIfDue({ ...h.deps, autoBackupEnabled: () => false });
+
+        expect(result.didRun).toBe(false);
+        expect(h.files.size).toBe(0);
+        expect(h.getGuard()).toBeNull();
+        // Switching it back on takes the overdue snapshot at the next startup or foreground.
+        expect((await runAutoBackupIfDue(h.deps)).didRun).toBe(true);
+    });
+
     it('does not set the guard when the write fails, so the next run retries', async () => {
         const h = makeHarness();
         const failingDeps: BackupDeps = {

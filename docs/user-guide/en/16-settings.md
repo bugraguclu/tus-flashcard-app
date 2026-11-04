@@ -191,7 +191,7 @@ measured by the clock from the start of the block; switching to another deck sta
 | **Keep screen on** | Off | The iPhone screen does not dim while the study screen is open. |
 | **Automatically play audio** | On | Sound in a card plays by itself when the card opens. To turn autoplay off for one deck, use that deck's **Deck Options › Audio**. |
 | **Audio playback speed** | 1.0x | 0.75x–2.0x. Applies to decks using the **Default** preset and to decks without a speed of their own. A preset's own speed is set in **Deck Options › Audio**. |
-| **Interrupt audio when answering** | On | Answering a card stops any sound or speech that is playing. When off, it may run on into the next card. |
+| **Interrupt audio when answering** | On | Showing the answer or moving to the next card stops the sound file or text-to-speech still playing. When off, the sound file plays to its end and the new side’s sounds and speech wait for it. Replaying audio or leaving study stops it. |
 
 <a id="notifications"></a>
 ## Notifications

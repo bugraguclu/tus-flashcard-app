@@ -197,7 +197,7 @@ Süre, bloğun başından itibaren saatle ölçülür; başka bir desteye geçme
 | **Ekranı açık tut** | Kapalı | Çalışma ekranı açıkken iPhone ekranı kararmaz. |
 | **Sesi otomatik oynat** | Açık | Kart açılınca içindeki ses kendiliğinden çalar. Bir destede otomatik sesi kapatmak için o destenin **Deste seçenekleri › Ses** bölümünü kullanın. |
 | **Ses oynatma hızı** | 1.0x | 0.75x–2.0x. **Varsayılan** ayar grubunu kullanan destelerde ve kendi hızı olmayan destelerde geçerlidir. Bir ayar grubuna özel hız **Deste seçenekleri › Ses** bölümünden verilir. |
-| **Yanıtlarken sesi kes** | Açık | Kartı cevapladığınızda çalan ses veya sesli okuma durur. Kapalıyken bir sonraki karta kadar sürebilir. |
+| **Yanıtlarken sesi kes** | Açık | Cevap açılınca veya sonraki karta geçince çalan ses dosyası ve sesli okuma durur. Kapalıyken ses dosyası sonuna kadar çalar; yeni yüzün sesleri ve okuması onun bitmesini bekler. Tekrar çal ya da çalışmadan çıkmak onu durdurur. |
 
 <a id="notifications"></a>
 ## Bildirimler

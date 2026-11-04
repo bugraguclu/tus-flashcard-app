@@ -69,6 +69,33 @@ export function reviewTapZoneAt(xRatio: number, yRatio: number): ReviewTapZone {
     return REVIEW_TAP_ZONES[row * 3 + column];
 }
 
+/** A view's box in window coordinates, as `measureInWindow` reports it. */
+export interface WindowRect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/**
+ * Where a tap on the card frame falls on the 3×3 grid, as ratios of the frame. The frame keeps a
+ * minimum height and padding, so a short card's document covers only a strip of it; the document
+ * reports taps on itself, and this covers the rest of the frame the learner sees as the card.
+ * Returns null for a tap inside the document (it is already reported) or an unmeasured frame.
+ */
+export function cardFrameTapRatios(
+    tap: { pageX: number; pageY: number },
+    frame: WindowRect,
+    cardDocument: WindowRect | null,
+): { xRatio: number; yRatio: number } | null {
+    if (!(frame.width > 0 && frame.height > 0)) return null;
+    const insideDocument = cardDocument !== null
+        && tap.pageX >= cardDocument.x && tap.pageX <= cardDocument.x + cardDocument.width
+        && tap.pageY >= cardDocument.y && tap.pageY <= cardDocument.y + cardDocument.height;
+    if (insideDocument) return null;
+    return { xRatio: (tap.pageX - frame.x) / frame.width, yRatio: (tap.pageY - frame.y) / frame.height };
+}
+
 export function normalizeSwipeSensitivity(value: unknown): number {
     return Math.max(1, Math.min(200, Math.round(Number(value ?? 100) || 100)));
 }

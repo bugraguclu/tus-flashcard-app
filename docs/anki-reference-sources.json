@@ -545,6 +545,7 @@
         "learning cards moved into a filtered deck take the gather position as due; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/filtered/card.rs; lib/filteredSessionRemaining.test.ts",
         "collection-wide undo cleared behind a change it cannot undo; https://docs.ankiweb.net/studying.html#editing-and-more; lib/reviewerUndoSafety.test.ts",
         "audio tags of one side played in sequence; https://docs.ankiweb.net/templates/fields.html#text-to-speech; lib/reviewerAvSequence.test.ts",
+        "Interrupt current audio when answering, off: the playing sound file finishes and the new side's audio follows it (clear_queue_and_maybe_interrupt); https://github.com/ankitects/anki/blob/main/qt/aqt/sound.py; lib/reviewerCarriedSound.test.ts",
         "answer button time spans, seconds under a minute and the learn-ahead '<' prefix; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/timespan.rs; lib/schedulerLapse.test.ts, lib/sm2AnkiParity.test.ts"
       ]
     },

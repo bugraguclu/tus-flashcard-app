@@ -28,6 +28,7 @@ import {
 import { dbIndexAllCards } from '../lib/db';
 import { getSearchIndexCards } from '../lib/noteManager';
 import { invalidateSubjectsCache } from '../lib/subjects';
+import { rememberCurrentDeck } from '../lib/currentDeck';
 import { reconcileCatalogAccessWithInstall } from '../lib/catalogReconciliation';
 import { changesStudyQueue, DeferredSchedulingInvalidation, type CollectionChange } from '../lib/deferredInvalidation';
 
@@ -138,7 +139,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
     const [studyPosition, setStudyPosition] = useState<StudyPosition>(null);
-    const [activeDeckName, setActiveDeckName] = useState<string | null>(null);
+    const [activeDeckName, setActiveDeckNameState] = useState<string | null>(null);
+    // The chosen deck is also written to the collection, as Anki's current deck is, so "add to
+    // current deck" still targets it after a relaunch (lib/currentDeck.ts).
+    const setActiveDeckName = useCallback((name: string | null) => {
+        setActiveDeckNameState(name);
+        rememberCurrentDeck(name);
+    }, []);
     const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
     const [collectionVersion, setCollectionVersion] = useState(0);
     const schedulingInvalidationRef = useRef(new DeferredSchedulingInvalidation());
@@ -258,7 +265,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setSelectedTopic,
         activeDeckName,
         setActiveDeckName,
-    }), [selectedSubject, selectedTopic, activeDeckName]);
+    }), [selectedSubject, selectedTopic, activeDeckName, setActiveDeckName]);
 
     const startupValue = useMemo<StartupContextValue>(() => ({
         startupError,

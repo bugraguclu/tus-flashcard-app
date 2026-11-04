@@ -4,6 +4,7 @@ import { WebView } from 'react-native-webview';
 import { isLegacyTusNoteType, type NoteType, type Note, type AnkiCard, type Deck } from '../lib/models';
 import { renderCardHtml } from '../lib/templates';
 import { reviewerMediaHtml, type ReviewerPlaybackScope } from '../lib/reviewerAudio';
+import { MEDIA_PLAYBACK_REPORTER, reportMediaPlayback } from '../lib/reviewerCarriedSound';
 import { catalogCardCss, documentCss, legacyTusCardCss, reviewerCanvasCss } from '../lib/cardAppearance';
 import { getMediaBaseUrl, resolveWebMediaInHtml } from '../lib/mediaStore';
 import { useIsDarkTheme, useThemeColors } from '../constants/theme';
@@ -23,6 +24,7 @@ import {
     type EmbeddedWebViewScrollMode,
 } from '../lib/embeddedWebViewScroll';
 import { defaultCardTextCss, nightModeCardCss } from '../lib/cardPageDefaults';
+import { hiddenAudioChromeCss } from '../lib/cardAudioChrome';
 import WebHtmlFrame from './WebHtmlFrame';
 import { useAttachmentViewer } from './AttachmentViewer';
 
@@ -166,6 +168,10 @@ interface CardWebViewProps {
     pauseAudioSignal?: number;
     /** Reports whether this side still has sound playing — drives Anki's "wait for audio". */
     onAudioActiveChange?: (active: boolean) => void;
+    /** Reports whether any audio/video element of the document is playing, however it started. */
+    onMediaPlayingChange?: (playing: boolean) => void;
+    /** A playlist that is playing stops after its current file instead of moving on. */
+    finishCurrentSoundOnly?: boolean;
     /** Render the answer without {{FrontSide}} — for stacked layouts that keep the question
      *  visible in its own panel above. */
     omitFrontSide?: boolean;
@@ -214,6 +220,8 @@ export default function CardWebView({
     audioPlaybackScope,
     pauseAudioSignal,
     onAudioActiveChange,
+    onMediaPlayingChange,
+    finishCurrentSoundOnly = false,
     omitFrontSide,
     cardZoomPercent = 100,
     imageZoomPercent = 100,
@@ -261,6 +269,10 @@ export default function CardWebView({
     // a new function identity from the parent must not re-trigger playback.
     const audioActiveRef = useRef(onAudioActiveChange);
     audioActiveRef.current = onAudioActiveChange;
+    const mediaPlayingRef = useRef(onMediaPlayingChange);
+    mediaPlayingRef.current = onMediaPlayingChange;
+    const finishCurrentOnlyRef = useRef(finishCurrentSoundOnly);
+    finishCurrentOnlyRef.current = finishCurrentSoundOnly;
     const mediaBaseUrl = getMediaBaseUrl();
     const renderedHtml = renderCardHtml(noteType, note, card.ord, side, {
         deckName: deck?.name,
@@ -296,7 +308,7 @@ export default function CardWebView({
         .card{zoom:${Math.max(50, Math.min(200, cardZoomPercent)) / 100};}
         .card img{zoom:${Math.max(50, Math.min(200, imageZoomPercent)) / 100};}
         .card img,.card video{max-height:${mediaCap}px;}
-        ${showAudioPlayButtons ? '' : '.card audio{display:none!important;}'}
+        ${hiddenAudioChromeCss(showAudioPlayButtons)}
         .tus-audio-wrap{display:inline-flex;align-items:center;gap:8px;max-width:100%;margin:4px 0;vertical-align:middle;}
         .tus-audio-wrap audio{max-width:calc(100% - 68px);}
         .tus-audio-speed-btn{display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;font-size:12px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${colors.accent};background:${isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)'};border:1px solid ${colors.border};border-radius:12px;cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap;line-height:1.3;}
@@ -471,7 +483,7 @@ export default function CardWebView({
                 doc.body.appendChild(holder);
                 const playAt = (index: number) => {
                     if (cancelled) return;
-                    if (index >= media.length) { audioActiveRef.current?.(false); return; }
+                    if (index >= media.length || (index > 0 && finishCurrentOnlyRef.current)) { audioActiveRef.current?.(false); return; }
                     const element = media[index];
                     element.currentTime = 0;
                     element.playbackRate = audioPlaybackRate || 1;
@@ -494,7 +506,7 @@ export default function CardWebView({
                 'var h=document.createElement("div");h.id="tus-replay-media";h.hidden=true;h.innerHTML=' + JSON.stringify(playlistHtml) + ';' +
                 'var used=[];var a=Array.from(h.querySelectorAll("audio,video")).map(function(m){var v=l.find(function(x){return used.indexOf(x)<0&&x.tagName===m.tagName&&x.getAttribute("src")===m.getAttribute("src");});v=v||m;used.push(v);return v;});document.body.appendChild(h);' +
                 'function s(v){if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage("AUDIO:"+v);}' +
-                'function p(i){if(gen!==window.__tusAudioGeneration)return;if(i>=a.length){s(0);return;}var m=a[i];m.currentTime=0;m.playbackRate=' + JSON.stringify(audioPlaybackRate || 1) + ';' +
+                'function p(i){if(gen!==window.__tusAudioGeneration)return;if(i>=a.length||(i>0&&window.__tusFinishCurrentOnly)){s(0);return;}var m=a[i];m.currentTime=0;m.playbackRate=' + JSON.stringify(audioPlaybackRate || 1) + ';' +
                 'm.onended=function(){p(i+1);};m.onerror=function(){p(i+1);};var pr=m.play();if(pr&&pr.catch)pr.catch(function(){p(i+1);});}' +
                 's(a.length>0?1:0);p(0);})();true;',
             );
@@ -503,6 +515,11 @@ export default function CardWebView({
         // Playback begins only on a fresh signal; rerenders never restart a playlist.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [playAudioSignal, audioPlaybackRate]);
+
+    useEffect(() => {
+        if (!finishCurrentSoundOnly || Platform.OS === 'web') return;
+        webViewRef.current?.injectJavaScript('window.__tusFinishCurrentOnly=true;true;');
+    }, [finishCurrentSoundOnly]);
 
     useEffect(() => {
         if (!pauseAudioSignal) return;
@@ -561,6 +578,7 @@ export default function CardWebView({
                     };
                     doc.addEventListener('keydown', forwardKey);
                     doc.addEventListener('keyup', forwardKey);
+                    reportMediaPlayback(doc, (playing) => mediaPlayingRef.current?.(playing));
                     // The iframe is sandboxed without allow-scripts, so the hint reveal is bound
                     // from here — the document is same-origin, which is all the binding needs.
                     doc.querySelectorAll('a.hint[data-hint-target]').forEach((link) => {
@@ -717,11 +735,15 @@ export default function CardWebView({
                 source={nativeSource}
                 dataDetectorTypes="none"
                 style={[styles.webView, { height: frameHeight }]}
-                injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}true;`}
+                injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}${MEDIA_PLAYBACK_REPORTER}true;`}
                 onMessage={(event) => {
                     const data = String(event.nativeEvent.data);
                     if (data.startsWith('AUDIO:')) {
                         audioActiveRef.current?.(data.slice(6) === '1');
+                        return;
+                    }
+                    if (data.startsWith('MEDIA:')) {
+                        mediaPlayingRef.current?.(data.slice(6) === '1');
                         return;
                     }
                     if (data.startsWith('ANSWER:')) {

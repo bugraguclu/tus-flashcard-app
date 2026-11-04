@@ -1274,7 +1274,7 @@ export default function SettingsScreen() {
                     onChange={(value) => updateSetting('audioPlaybackRate', parseFloat(value))}
                     styles={styles}
                 />
-                <ToggleRow label={l('Yanıtlarken sesi kes', 'Interrupt audio when answering')} value={settings.interruptAudioOnAnswer} onChange={(value) => updateSetting('interruptAudioOnAnswer', value)} styles={styles} />
+                <ToggleRow label={l('Yanıtlarken sesi kes', 'Interrupt audio when answering')} summary={l('Cevap açılınca ya da sonraki karta geçilince çalan ses dosyasını ve metin okumayı keser. Kapalıyken ses dosyası sonuna kadar çalar, yeni yüzün sesleri onu bekler.', 'Stops the sound file or text-to-speech still playing when the answer is shown or the next card appears. When off, the sound file plays to its end and the new side’s audio follows it.')} value={settings.interruptAudioOnAnswer} onChange={(value) => updateSetting('interruptAudioOnAnswer', value)} styles={styles} />
             </Group>
         </>
     ), [l, settings, styles, updateSetting]);
