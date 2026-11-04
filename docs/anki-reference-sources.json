@@ -518,7 +518,21 @@
       "priority": 3,
       "platform": "cross-platform review answering",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/states/review.rs",
-      "useFor": ["FSRS passing interval chaining", "deck options skipped under FSRS", "failing review interval", "leech threshold"]
+      "useFor": ["FSRS passing interval chaining", "deck options skipped under FSRS", "failing review interval", "leech threshold", "SM-2 passing, early and failing intervals worked out in f32, with days late and the Hard/Good minimums counted from the stored interval (0 after Set Due Date under FSRS); lib/sm2AnkiParity.test.ts, lib/scheduler.anki.test.ts", "revlog kind: filtered only when days late is below 0"]
+    },
+    {
+      "id": "anki-source-scheduler-learning-state",
+      "priority": 3,
+      "platform": "cross-platform learning-step answering",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/states/learning.rs",
+      "useFor": ["graduation builds a fresh review state: the starting ease and no lapses, so a forgotten card that kept its counts loses its old lapses on graduating, under SM-2 and FSRS; lib/answerStoredState.test.ts", "with no learning steps, Again and Hard graduate on the graduating interval"]
+    },
+    {
+      "id": "anki-source-deck-config-validity",
+      "priority": 3,
+      "platform": "cross-platform deck option ranges",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/deckconfig/mod.rs",
+      "useFor": ["ensure_deck_config_values_valid: a preset value outside Anki's range is replaced by the default when read; TusAnkiM keeps a legacy stored value until it is edited (documented difference)", "the ranges the SM-2 oracle presets stay inside"]
     },
     {
       "id": "anki-remaining-queue-reviewer",
@@ -531,7 +545,7 @@
         "learning cards moved into a filtered deck take the gather position as due; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/filtered/card.rs; lib/filteredSessionRemaining.test.ts",
         "collection-wide undo cleared behind a change it cannot undo; https://docs.ankiweb.net/studying.html#editing-and-more; lib/reviewerUndoSafety.test.ts",
         "audio tags of one side played in sequence; https://docs.ankiweb.net/templates/fields.html#text-to-speech; lib/reviewerAvSequence.test.ts",
-        "answer button time spans and the learn-ahead '<' prefix; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/timespan.rs; lib/schedulerLapse.test.ts"
+        "answer button time spans, seconds under a minute and the learn-ahead '<' prefix; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/timespan.rs; lib/schedulerLapse.test.ts, lib/sm2AnkiParity.test.ts"
       ]
     },
     {
@@ -539,7 +553,7 @@
       "priority": 3,
       "platform": "cross-platform FSRS memory state and rescheduling",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/fsrs/memory_state.rs",
-      "useFor": ["memory state from review log", "SM-2 fallback", "reschedule cards on change", "previous interval for the fuzz floor"]
+      "useFor": ["memory state from review log", "SM-2 fallback", "reschedule cards on change", "previous interval for the fuzz floor", "a truncated log seeded from its first surviving review, the 1.1 ease boundary compared in f32; test/fixtures/anki-26.09-fsrs-seed.json"]
     },
     {
       "id": "anki-source-fsrs-params",
@@ -605,8 +619,8 @@
       "priority": 2,
       "platform": "desktop and shared core, the current release (2026-09-23) the fifth FSRS audit pass compares against",
       "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src",
-      "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 (29bb700b) on 2026-10-23 by scripts/anki-oracle (FSRS-A scheduling fixture), gen_optimize.py (FSRS-B optimizer fixture) and gen_fsrs_ops.py (collection-operation fixture)",
-      "useFor": ["FSRS-A oracle in test/fixtures/anki-26.09-fsrs.json: states, memory replay, answers, fuzz, load balancing, rescheduling, Reset Card, preview and sort keys; optimizer excluded", "minimum_review_fuzz_interval keeping the previous interval inside the bounded fuzz window (#4826), independently implemented for answers and rescheduling and verified by the 26.09 oracle", "collection-operation oracle in test/fixtures/anki-26.09-fsrs-ops.json, replayed by lib/fsrsCollectionOps.test.ts", "Set Due Date deciding by the collection FSRS switch and keeping new and ivl 0 cards at 0 (#4792); 80 recorded cases and the first answer after it", "Change Deck recomputing memory states of memory-less cards in the target deck only, without rescheduling (#5339, #5500)", "Check Database setting, correcting and removing lrt from the last scheduling-affecting answer since the last reset (#4648)", "future ignore-before dates clamped to the collection today on save (#5294)", "export without scheduling emptying only the FSRS parameter lists, keeping desired/historical retention and the cutoff (#4721); lib/ankiPackageRoundtrip.test.ts", "card info computing a missing memory state without saving it, hiding ease under FSRS and showing whole percentages (#5326, #5648, #5277); covered by lib/fsrsCardInfo.test.ts", "retrievability filtered-deck orders hidden without FSRS, a saved one shown as Random as qt/aqt/filtered_deck.py does (#5407); lib/filteredDeckOptions.test.ts", "compute_params training with card ids and 8 epochs; recorded in test/fixtures/anki-26.09-optimize.json; collectFsrsTrainingItems supplies non-persisted cardId metadata, covered by an interleaved-history test"]
+      "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 (29bb700b) on 2026-10-23 by scripts/anki-oracle (FSRS-A scheduling fixture), gen_optimize.py (FSRS-B optimizer fixture) and gen_fsrs_ops.py (collection-operation fixture); the SM-2 and seed-boundary fixtures on 2026-11-03 by gen_sm2_states.py, gen_sm2_answers.py and gen_memory_seed.py",
+      "useFor": ["FSRS-A oracle in test/fixtures/anki-26.09-fsrs.json: states, memory replay, answers, fuzz, load balancing, rescheduling, Reset Card, preview and sort keys; optimizer excluded", "minimum_review_fuzz_interval keeping the previous interval inside the bounded fuzz window (#4826), independently implemented for answers and rescheduling and verified by the 26.09 oracle", "collection-operation oracle in test/fixtures/anki-26.09-fsrs-ops.json, replayed by lib/fsrsCollectionOps.test.ts", "Set Due Date deciding by the collection FSRS switch and keeping new and ivl 0 cards at 0 (#4792); 80 recorded cases and the first answer after it", "Change Deck recomputing memory states of memory-less cards in the target deck only, without rescheduling (#5339, #5500)", "Check Database setting, correcting and removing lrt from the last scheduling-affecting answer since the last reset (#4648)", "future ignore-before dates clamped to the collection today on save (#5294)", "export without scheduling emptying only the FSRS parameter lists, keeping desired/historical retention and the cutoff (#4721); lib/ankiPackageRoundtrip.test.ts", "card info computing a missing memory state without saving it, hiding ease under FSRS and showing whole percentages (#5326, #5648, #5277); covered by lib/fsrsCardInfo.test.ts", "retrievability filtered-deck orders hidden without FSRS, a saved one shown as Random as qt/aqt/filtered_deck.py does (#5407); lib/filteredDeckOptions.test.ts", "compute_params training with card ids and 8 epochs; recorded in test/fixtures/anki-26.09-optimize.json; collectFsrsTrainingItems supplies non-persisted cardId metadata, covered by an interleaved-history test", "SM-2 oracle in test/fixtures/anki-26.09-sm2.json (build_sm2_fixture.py): next states, English button labels and whole answers with FSRS off, replayed by lib/sm2AnkiParity.test.ts", "the SM-2 seed of a truncated FSRS log in test/fixtures/anki-26.09-fsrs-seed.json, replayed by lib/fsrsAnkiParity.test.ts"]
     },
     {
       "id": "anki-26.09.3-package-roundtrip-oracle",

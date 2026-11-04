@@ -375,6 +375,11 @@ describe('answerStudyCard', () => {
         shared.cards.set(24, { ...baseCard(24, 1, 2, 2), due: today, ivl: 10 });
         answerStudyCard(24, 3, settings, 800);
         expect(shared.lastRevlogType).toBe(1);
+
+        // With interval 0 (Set Due Date under FSRS) nothing is early: days late is never below 0.
+        shared.cards.set(25, { ...baseCard(25, 1, 2, 2), due: today + 4, ivl: 0 });
+        answerStudyCard(25, 3, settings, 800, { filtered: true });
+        expect(shared.lastRevlogType).toBe(1);
     });
 
     it('logs an interday-learning step in days, as Anki does', () => {

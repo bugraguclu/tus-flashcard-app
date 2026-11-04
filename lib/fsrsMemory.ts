@@ -280,8 +280,9 @@ export function fsrsMemoryStateForCard(
         if (!starting) return null;
 
         // An ease factor at or below 1.1 marks an entry FSRS itself wrote, where the "ease"
-        // column carries the difficulty rather than an SM-2 factor.
-        if (seedEase <= 1.1) {
+        // column carries the difficulty rather than an SM-2 factor. Anki compares in f32, so
+        // factor 1100 (difficulty 10) is inside: the f32 seed 1.1000000238 exceeds the f64 1.1.
+        if (seedEase <= Math.fround(1.1)) {
             starting.difficulty = Math.fround(Math.fround(Math.fround(seedEase - Math.fround(0.1)) * 9) + 1);
         }
 

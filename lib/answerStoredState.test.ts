@@ -34,6 +34,35 @@ describe('ease of cards that have not graduated', () => {
     });
 });
 
+// Anki builds a graduating card's review state afresh (rslib states/learning.rs, `ReviewState::
+// default`), so a card forgotten with its counts kept loses its old lapses when it graduates
+// again: Anki 26.09.3 writes lapses 0 under SM-2 and FSRS alike. Relearning keeps them.
+describe('lapse count of a card that graduates again', () => {
+    const forgotten = { type: 1 as const, queue: 1 as const, due: Date.now() - 60_000, left: 1, reps: 12, lapses: 3 };
+
+    it.each([false, true])('drops the old lapses on graduation (FSRS %s)', (fsrsEnabled) => {
+        const studySettings = { ...settings, fsrsEnabled };
+        saveAnkiCard(makeCard(1010, 101, 7, forgotten));
+        const stillLearning = answerStudyCard(1010, 1, studySettings, 100);
+        expect(getAnkiCard(1010)).toMatchObject({ type: 1, lapses: 3 });
+        undoAnswer(stillLearning.previousAnkiCard, stillLearning.reviewLogId, stillLearning.sideEffects);
+
+        const graduated = answerStudyCard(1010, 3, studySettings, 100);
+        expect(getAnkiCard(1010)).toMatchObject({ type: 2, lapses: 0 });
+        undoAnswer(graduated.previousAnkiCard, graduated.reviewLogId, graduated.sideEffects);
+        expect(getAnkiCard(1010)).toMatchObject({ type: 1, lapses: 3 });
+
+        answerStudyCard(1010, 4, studySettings, 100);
+        expect(getAnkiCard(1010)).toMatchObject({ type: 2, lapses: 0 });
+    });
+
+    it.each([false, true])('keeps the lapses of a relearning card (FSRS %s)', (fsrsEnabled) => {
+        saveAnkiCard(makeCard(1010, 101, 7, { ...forgotten, type: 3, ivl: 4, factor: 2300 }));
+        answerStudyCard(1010, 3, { ...settings, fsrsEnabled }, 100);
+        expect(getAnkiCard(1010)).toMatchObject({ type: 2, lapses: 3 });
+    });
+});
+
 describe('leech tag case', () => {
     it('does not add a second "leech" tag to a note tagged "Leech", and still suspends', () => {
         saveDeckConfig({ ...deckConfig, leechThreshold: 1, leechAction: 'suspend' });

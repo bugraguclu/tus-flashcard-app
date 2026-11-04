@@ -160,6 +160,25 @@ describe('memory states from the review log', () => {
             expectClose(memory?.difficulty, entry.state[1], 'difficulty');
         }
     });
+
+    it('seeds a truncated history the way Anki does on both sides of the 1.1 ease boundary', () => {
+        // Recorded by scripts/anki-oracle/gen_memory_seed.py. A first surviving review with factor
+        // 1100 holds FSRS's shifted difficulty 10: Anki compares the ease in f32, where 1.1 <= 1.1.
+        const seeds = JSON.parse(readFileSync(path.resolve(__dirname, '../test/fixtures/anki-26.09-fsrs-seed.json'), 'utf8'));
+        expect(seeds.cases.some((entry: any) => entry.entries[0].factor === 1100)).toBe(true);
+        for (const entry of seeds.cases) {
+            const label = `seed factor ${entry.entries[0].factor}, ivl ${entry.entries[0].ivl}, ${entry.params.length} params`;
+            const history = fsrsReviewHistory(entry.entries, entry.nextDayAtMs, 0);
+            expect(history?.complete, label).toBe(false);
+            const memory = fsrsMemoryStateForCard(normalizeFsrsParameters(entry.params), history, {
+                interval: entry.card.ivl,
+                easeFactor: entry.card.factor / 1000,
+                isNew: false,
+            }, clampHistoricalRetention(entry.historicalRetention));
+            expectClose(memory?.stability, entry.state[0], `${label} stability`);
+            expectClose(memory?.difficulty, entry.state[1], `${label} difficulty`);
+        }
+    });
 });
 
 const basicNoteType = {

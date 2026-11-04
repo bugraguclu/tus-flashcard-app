@@ -39,10 +39,11 @@ export function addDaysLocalYMD(days: number, baseDate?: Date, rolloverHour: num
 
 /**
  * Answer-button time spans, built the way Anki's reviewer builds them: the largest unit that
- * fits (minutes, hours, days, months of 365/12 days, years), the amount rounded to one decimal and
- * shown without a trailing ".0". So 90 minutes is "1.5sa" (Anki "1.5h"), 30 days stay "30 gün"
- * ("30d") and 45 days are "1.5 ay" ("1.5mo"). The labels are produced in Turkish units;
- * `localizeIntervalLabel` turns them into the English ones.
+ * fits (seconds, minutes, hours, days, months of 365/12 days, years), seconds and minutes in whole
+ * numbers and the rest rounded to one decimal, shown without a trailing ".0". So a 30-second step
+ * is "30sn" (Anki "30s"), 90 minutes is "1.5sa" ("1.5h"), 30 days stay "30 gün" ("30d") and 45
+ * days are "1.5 ay" ("1.5mo"). The labels are produced in Turkish units; `localizeIntervalLabel`
+ * turns them into the English ones.
  */
 const DAYS_PER_MONTH = 365 / 12;
 
@@ -60,6 +61,7 @@ export function formatDays(days: number): string {
 }
 
 export function formatMinutes(minutes: number): string {
+    if (minutes < 1) return `${Math.round(minutes * 60)}sn`;
     if (minutes < 60) return `${Math.round(minutes)}dk`;
     if (minutes < MINUTES_PER_DAY) return `${spanAmount(minutes / 60)}sa`;
     return formatDays(minutes / MINUTES_PER_DAY);

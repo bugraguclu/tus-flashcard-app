@@ -190,11 +190,13 @@ function learningOutcomes(cs: CardState, settings: AppSettings, branching: Branc
     const step = cs.status === 'new' ? 0 : currentStepIndex(cs.learningStep, steps);
     const { states } = branching;
     const unchanged = { intervalDays: cs.interval || 0, easeFactor: cs.easeFactor, lapses: cs.lapses || 0 };
+    // Graduating builds the review state afresh (`ReviewState::default`): the starting ease, and
+    // no lapses, so a forgotten card's old lapse count ends here as it does in Anki.
     const graduate = (days: number, memory: FsrsMemoryState): FsrsOutcome => ({
         kind: 'review',
         intervalDays: days,
         easeFactor: settings.startingEase,
-        lapses: cs.lapses || 0,
+        lapses: 0,
         memory,
     });
     const stepOutcome = (secs: number, stepIndex: number, memory: FsrsMemoryState): FsrsOutcome => ({

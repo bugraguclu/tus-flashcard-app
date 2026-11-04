@@ -245,7 +245,8 @@ function answerRevlogFields(
 ): { type: 0 | 1 | 2 | 3; ivl: number; lastIvl: number; factor: number } {
     let type: 0 | 1 | 2 | 3 = 0;
     if (before.type === 3) type = 2;
-    else if (before.type === 2) type = filtered && (before.odid ? before.odue : before.due) > today ? 3 : 1;
+    // Early means days late below 0, which a card stored at interval 0 never is.
+    else if (before.type === 2) type = filtered && before.ivl > 0 && (before.odid ? before.odue : before.due) > today ? 3 : 1;
 
     let lastIvl = 0;
     if (before.type === 2) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getScheduler, formatMinutes, formatDays, withClassicReviewContext } from './scheduler';
+import { getScheduler, formatMinutes, formatDays, withClassicReviewContext, addDaysLocalYMD } from './scheduler';
 import type { AppSettings, CardState, Grade } from './types';
 
 const defaultSettings: AppSettings = {
@@ -312,6 +312,27 @@ describe('ANKI_V3 scheduler', () => {
         // Anki applies intervalModifier to all grades equally (verified against Rust source)
         expect(hardWithLowModifier).toBeLessThan(hardWithNeutralModifier);
         expect(goodWithLowModifier).toBeLessThan(goodWithNeutralModifier);
+    });
+
+    it('rounds intervals the way Anki does in 32-bit floats', () => {
+        // Recorded from Anki 26.09.3: a filtered-deck review 933 days early with Hard 1.3 and an
+        // interval modifier of 2. 1535 × 1.3 / 2 × 2 is 1995.5 in f64 but 1995.4999 in f32.
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+        const settings = { ...defaultSettings, hardIntervalMultiplier: 1.3, intervalModifier: 2.0, easyBonus: 2.0 };
+        const card = withClassicReviewContext(makeReviewCard({
+            interval: 1535, easeFactor: 4.0, dueDate: addDaysLocalYMD(933, new Date(now), 4),
+        }), true);
+        const intervals = ([2, 3, 4] as const).map((grade) => engine.schedule(card, grade, settings, now).interval);
+        expect(intervals).toEqual([1995, 4816, 7224]);
+    });
+
+    it('counts days late and the minimums from a stored interval of 0, as Anki does', () => {
+        // Set Due Date under FSRS leaves a review card at ivl 0; with FSRS off, Anki takes a day as
+        // the base but measures lateness and the Hard minimum from the 0 it stores.
+        const now = new Date(2026, 2, 12, 12, 0, 0, 0).getTime();
+        const card = makeReviewCard({ interval: 0, easeFactor: 2.5, dueDate: '2026-03-12' });
+        expect(engine.schedule(card, 2 as Grade, defaultSettings, now).interval).toBe(1);
+        expect(engine.schedule({ ...card, dueDate: '2026-03-08' }, 2 as Grade, defaultSettings, now).interval).toBe(1);
     });
 
     // Anki seeds review fuzz with `card id + reps` (`get_fuzz_seed`), so the pick depends on the

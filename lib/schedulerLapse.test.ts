@@ -109,6 +109,18 @@ describe('answer-button labels', () => {
             .toEqual({ again: '10m', hard: '1d', good: '3d', easy: '1.5mo' });
     });
 
+    it('counts a span under a minute in seconds, as Anki does', () => {
+        // Anki 26.09.3 labels a 30-second step "<30s" and its Hard delay "<45s", not "<1m".
+        const now = nextRolloverMs(Date.now(), settings.dayRolloverHour) - 6 * 3_600_000;
+        expect(formatMinutes(0.5)).toBe('30sn');
+        expect(formatMinutes(1)).toBe('1dk');
+        expect(formatLearningDelay(0.75, now, settings.dayRolloverHour, 20)).toBe('<45sn');
+        expect(localizeIntervalLabel('<45sn', 'en')).toBe('<45s');
+        const learning: CardState = { ...reviewCard(3), status: 'learning', learningStep: 0, interval: 0, repetition: 1 };
+        const preview = engine.previewIntervals(learning, { ...settings, learningSteps: [0.5], learnAheadMinutes: 20 }, now);
+        expect([preview.again, preview.hard].map((label) => localizeIntervalLabel(label, 'en'))).toEqual(['<30s', '<45s']);
+    });
+
     it('labels a preview deck\'s finishing button "(end)"', () => {
         expect(formatPreviewDelay(0, 'en')).toBe('(end)');
         expect(formatPreviewDelay(0, 'tr')).toBe('(bitiş)');

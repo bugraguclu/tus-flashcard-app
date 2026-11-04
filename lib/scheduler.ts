@@ -29,6 +29,14 @@ const EASE_FACTOR_HARD_DELTA = -0.15;
 const EASE_FACTOR_EASY_DELTA = 0.15;
 
 /**
+ * Anki works out SM-2 intervals in 32-bit floats: the ease is the stored permille over 1000 and
+ * the preset's multipliers are f32 values (1.3 is 1.2999999523). Each step below rounds to f32
+ * as Anki's does, so a product that is an exact half in f64 rounds the way Anki rounds it
+ * (1535 × 1.3 / 2 × 2 is 1995.4999 in f32: 1995 days, not 1996).
+ */
+const f32 = Math.fround;
+
+/**
  * Post-lapse review interval: the old interval scaled by the lapse multiplier ("New interval"),
  * kept between the minimum lapse interval and the maximum interval, and fuzzed like any review
  * interval (Anki's SM-2 `failing_review_interval` goes through `with_review_fuzz`). Fuzz only
@@ -37,14 +45,15 @@ const EASE_FACTOR_EASY_DELTA = 0.15;
  */
 function lapsedReviewInterval(currentInterval: number, settings: AppSettings, fuzz?: ReviewFuzz): number {
     const cur = Math.max(1, currentInterval || 1);
-    return constrainInterval(cur * settings.lapseIntervalMultiplier, settings.minLapseInterval, settings.maxInterval, fuzz);
+    return constrainInterval(f32(cur * f32(settings.lapseIntervalMultiplier)), settings.minLapseInterval, settings.maxInterval, fuzz);
 }
 
 /**
  * Review intervals for Hard/Good/Easy, covering both paths from Anki's review.rs:
  *  - Early (days_late < 0): elapsed days as base, no fuzz, no chained minimums, reduced easy bonus.
  *  - Non-early (days_late >= 0): current interval + overdue bonus, fuzzed, chained minimums.
- * intervalModifier applies to all grades in both paths.
+ * intervalModifier applies to all grades in both paths. Days late and the minimums count from the
+ * stored interval, which may be 0 (Set Due Date under FSRS leaves one); the base is at least a day.
  */
 function computeReviewIntervals(
     cs: CardState,
@@ -52,28 +61,29 @@ function computeReviewIntervals(
     elapsedDays: number = 0,
     fuzz?: ReviewFuzz,
 ): { hard: number; good: number; easy: number } {
-    const cur = Math.max(1, cs.interval || 1);
-    const ef = cs.easeFactor || settings.startingEase;
-    const hf = settings.hardIntervalMultiplier;
-    const im = settings.intervalModifier;
+    const scheduled = Math.max(0, Math.round(cs.interval || 0));
+    const cur = Math.max(1, scheduled);
+    const ef = f32(cs.easeFactor || settings.startingEase);
+    const hf = f32(settings.hardIntervalMultiplier);
+    const im = f32(settings.intervalModifier);
+    const easyBonus = f32(settings.easyBonus);
     const max = settings.maxInterval;
-    const daysLate = elapsedDays - cur;
+    const daysLate = elapsedDays - scheduled;
 
     // Only filtered review contexts may carry negative days-late, even at zero elapsed days.
     if (daysLate < 0) {
         const elapsed = Math.max(0, elapsedDays);
-        const scheduled = cur;
 
         const hard = constrainInterval(
-            Math.max(elapsed * hf, scheduled * hf / 2) * im, 0, max,
+            f32(Math.max(f32(elapsed * hf), f32(cur * f32(hf / 2))) * im), 0, max,
         );
         const good = constrainInterval(
-            Math.max(elapsed * ef, scheduled) * im, 0, max,
+            f32(Math.max(f32(elapsed * ef), cur) * im), 0, max,
         );
         // Anki halves the easy bonus distance from 1.0 for early reviews.
-        const reducedBonus = settings.easyBonus - (settings.easyBonus - 1.0) / 2.0;
+        const reducedBonus = f32(easyBonus - f32(f32(easyBonus - 1) / 2));
         const easy = constrainInterval(
-            Math.max(elapsed * ef, scheduled) * reducedBonus * im, 0, max,
+            f32(f32(Math.max(f32(elapsed * ef), cur) * reducedBonus) * im), 0, max,
         );
         return { hard, good, easy };
     }
@@ -82,15 +92,13 @@ function computeReviewIntervals(
     // so that hard <= good <= easy; hard minimum is 0 when hardFactor <= 1.0 (may shrink).
     const delay = Math.max(0, daysLate);
 
-    const fp = fuzz;
+    const hardMin = hf <= 1.0 ? 0 : scheduled + 1;
+    const hard = constrainInterval(f32(f32(cur * hf) * im), hardMin, max, fuzz);
 
-    const hardMin = hf <= 1.0 ? 0 : cur + 1;
-    const hard = constrainInterval(cur * hf * im, hardMin, max, fp);
+    const goodMin = hf <= 1.0 ? scheduled + 1 : hard + 1;
+    const good = constrainInterval(f32(f32(f32(cur + f32(delay / 2)) * ef) * im), goodMin, max, fuzz);
 
-    const goodMin = hf <= 1.0 ? cur + 1 : hard + 1;
-    const good = constrainInterval((cur + delay / 2) * ef * im, goodMin, max, fp);
-
-    const easy = constrainInterval((cur + delay) * ef * settings.easyBonus * im, good + 1, max, fp);
+    const easy = constrainInterval(f32(f32(f32(f32(cur + delay) * ef) * easyBonus) * im), good + 1, max, fuzz);
 
     return { hard, good, easy };
 }
@@ -193,6 +201,7 @@ function ankiV3Learning(
                 status: 'review',
                 interval: gradInterval,
                 easeFactor: settings.startingEase,
+                lapses: 0,
                 lastReviewedAtMs: now,
                 elapsedDays,
             },
@@ -246,7 +255,8 @@ function ankiV3Learning(
             };
         }
 
-        // Graduate: fuzzed graduating interval + initial ease factor.
+        // Graduate: fuzzed graduating interval + initial ease factor. Anki builds the review state
+        // afresh (`ReviewState::default`), so a forgotten card's old lapse count ends here too.
         const gradInterval = constrainInterval(settings.graduatingInterval, 1, settings.maxInterval, fuzz);
         return {
             interval: gradInterval,
@@ -257,6 +267,7 @@ function ankiV3Learning(
                 status: 'review',
                 interval: gradInterval,
                 easeFactor: settings.startingEase,
+                lapses: 0,
                 repetition: (cs.repetition || 0) + 1,
                 lastReviewedAtMs: now,
                 elapsedDays,
@@ -275,6 +286,7 @@ function ankiV3Learning(
             status: 'review',
             interval: easyInt,
             easeFactor: settings.startingEase,
+            lapses: 0,
             repetition: (cs.repetition || 0) + 1,
             lastReviewedAtMs: now,
             elapsedDays,

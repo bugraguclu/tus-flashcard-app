@@ -940,3 +940,51 @@ bir koleksiyon kopyasında Veritabanını kontrol et ve Onar ve optimize et öze
 yok sayma tarihini yazıp kaydetme; FSRS kapalı/açık filtreli deste seçenekleri. Tam Anki
 paritesi iddia edilmiyor.
 
+
+## Altıncı geçiş: SM-2 ve FSRS yeni Anki vektörleriyle — 3 Kasım 2026
+
+Dal: `claude/anki-sm2-fsrs-comparison-d56b89`, taban: `master` / `0aaa42e`. Beklenen değerler Anki
+26.09.3'ün (29bb700b) kendi arka ucundan kaydedildi (Europe/Istanbul, geçiş saati 4). Anki kodu
+kopyalanmadı; yalnızca çıktılar kaydedildi. Her düzeltmenin testi önce eski kodda kaldı,
+düzeltmeden sonra geçti.
+
+Ölçüm: SM-2'nin daha önce hiç Anki referansı yoktu (bütün üreticiler FSRS açık çalışıyordu).
+Yeni `gen_sm2_states.py` 8.000 kartın dört cevabını ve İngilizce buton etiketlerini,
+`gen_sm2_answers.py` 4.000 uçtan uca cevabı FSRS kapalı kaydetti. FSRS için mevcut üreticiler yeni
+tohumlarla çalıştırıldı (3.000 durum, 2.000 hafıza geçmişi, 2.000 cevap) ve depodaki örneklem
+yerine tamamı karşılaştırıldı.
+
+| Fark | Etki | Düzeltme ve kanıt |
+| --- | --- | --- |
+| FSRS: kesik geçmişin tohum ease değeri 1.1 sınırında f64 ile karşılaştırılıyordu; factor 1100 (zorluk 10) tohumu 10 yerine SM-2 formülünden hesaplanıyordu | 2.000 geçmişin birinde stabilite %0,03 sapıyordu | `lib/fsrsMemory.ts` f32 karşılaştırma; `gen_memory_seed.py` → `anki-26.09-fsrs-seed.json` (96 durum), `lib/fsrsAnkiParity.test.ts` |
+| SM-2 aralıkları f64 ile hesaplanıyordu, Anki f32 ile | 10.917 geçen review cevabının 3'ünde bir gün fark | `lib/scheduler.ts`; `anki-26.09-sm2.json` içindeki üç probe, `lib/scheduler.anki.test.ts` |
+| Öğrenmeden mezun olan kart lapse sayısını koruyordu; Anki sıfırlıyor (`ReviewState::default`) | Sayaçları korunarak unutulmuş kartların hepsi; sülük eşiği erken doluyordu | `lib/scheduler.ts`, `lib/fsrsScheduler.ts`; `lib/answerStoredState.test.ts`, `lib/sm2AnkiParity.test.ts` |
+| Bir dakikadan kısa buton süreleri dakika olarak yazılıyordu ("1m"); Anki saniye yazıyor ("30s") | Yalnız etiket; zamanlama doğruydu | `lib/schedulingIntervals.ts`; `lib/schedulerLapse.test.ts`, `lib/sm2AnkiParity.test.ts` |
+| Aralığı 0 olan review kartında gecikme ve Zor/İyi alt sınırları 1 günden sayılıyor, filtreli destede kart erken tekrar diye loglanıyordu | FSRS açıkken Son tarihi ayarla, sonra FSRS kapalı | `lib/scheduler.ts`, `lib/studyAnswer.ts`; `lib/scheduler.anki.test.ts`, `lib/studyRepository.answer.test.ts` |
+
+Düzeltmelerden sonra Anki'nin ulaşabildiği SM-2 durumlarında 151.288 alan, 29.780 etiket ve
+63.036 uçtan uca kontrolün hepsi birebir. FSRS'te aralık, adım, ease ve lapse birebir;
+stabilite ve zorlukta yalnız son-bit gürültüsü kaldı (≤1e-5 göreli; bir geçmişte 1,5e-5, `e^x - 1`
+iptaliyle büyüyen tek bitlik exp farkı).
+
+Bilinen farklar, hepsi Anki'nin kendisinin üretmediği durumlar: 1.3 altındaki ease 1.3 olarak geri
+yazılıyor, review kartında 0 ease başlangıç ease'i sayılıyor, aralığı 0 olan relearning kartı 0
+yerine 1. günde dönüyor, eski bir istemciden ease taşıyan öğrenme kartı 0 ile yazılıyor, ön ayarın
+adım sayısını aşan kayıtlı adım sayısı Zor ile yeniden yazılıyor (zamanlama aynı); adımı kalmamış ön
+ayarda kısa vadede kalan FSRS kartı kayıtlı adım sayısı yerine 0 yazıyor. Anki aralığının dışındaki
+eski bir ön ayar değeri (ör. Zor 1.5) uygulamada kullanılmaya devam ediyor; Anki okurken varsayılana
+çeviriyor (`ensure_deck_config_values_valid`).
+
+Yeniden üretme (depo kökünde):
+
+```sh
+./scripts/anki-oracle/build-host.sh
+(cd scripts/anki-oracle && ./run.sh gen_sm2_states.py 301 8000 sm2_states.json && ./run.sh gen_sm2_answers.py 302 4000 sm2_answers.json && python3 build_sm2_fixture.py ../../test/fixtures/anki-26.09-sm2.json)
+(cd scripts/anki-oracle && ./run.sh gen_memory_seed.py ../../test/fixtures/anki-26.09-fsrs-seed.json)
+```
+
+**Koşulmayan hedefli iPhone smoke:** 30 saniyelik öğrenme adımı olan bir destede yeni bir kartın
+buton sürelerini (`<30sn`, `<45sn`) görmek; sayaçları korunarak sıfırlanmış bir kartı mezun edip Kart
+bilgisinde hata sayısının 0 olduğunu ve geri almanın eski sayıyı geri getirdiğini görmek; yeni,
+öğrenme ve review kartında göster, cevapla, arka plan/ön plan ve bir kez geri al. Tam Anki paritesi
+iddia edilmiyor.

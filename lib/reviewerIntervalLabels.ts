@@ -25,6 +25,5 @@ export function localizeButtonTimes(times: ButtonTimes, locale: string): ButtonT
  */
 export function formatPreviewDelay(seconds: number, locale: string): string {
     if (seconds <= 0) return locale === 'tr' ? '(bitiş)' : '(end)';
-    const label = seconds < 60 ? `${Math.round(seconds)}sn` : formatMinutes(seconds / 60);
-    return localizeIntervalLabel(label, locale);
+    return localizeIntervalLabel(formatMinutes(seconds / 60), locale);
 }

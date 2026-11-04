@@ -6,9 +6,9 @@ one for the area you are changing.
 
 ## New/learning/relearning/review lifecycle
 
-**Status:** Implemented, legacy scheduler
+**Status:** Implemented (SM-2); measured against Anki 26.09.3 with FSRS off
 
-**Evidence:** `lib/scheduler.ts`, scheduler and repository tests
+**Evidence:** `lib/scheduler.ts`, `lib/sm2AnkiParity.test.ts` (Anki 26.09.3 oracle), scheduler and repository tests
 
 Grade Now clears suspend/bury flags before encoding every scheduling column. Unsuspend/unbury preserves day-number due values in queue 3, including overdue learning cards (`lib/ai2Safety.test.ts`).
 
@@ -16,7 +16,11 @@ Classic review elapsed days come from interval minus days until due, independent
 
 Lapses with "New interval" above 0% are fuzzed like any review interval, and a failed relearning step lapses the pending interval once more (no extra lapse, no ease change); the default 0% stays on the minimum lapse interval. Relearning graduation keeps the interval the lapse settled instead of applying the minimum lapse interval a second time, and relearning Easy adds one day without clipping at the maximum interval. A card that has never graduated is written with factor 0, Anki's value; an ease already stored on a learning card is read as before. A note tagged "Leech" by another client is the leech tag and is not tagged a second time (`lib/schedulerLapse.test.ts`, `lib/answerStoredState.test.ts`).
 
-**Next compatibility gate:** Keep golden interval/rollover tests
+**Anki 26.09.3 oracle (2026-11-03):** `scripts/anki-oracle/gen_sm2_states.py` and `gen_sm2_answers.py` run Anki's own backend with FSRS off on an aged collection, with presets inside the ranges Anki accepts and cards in every state Anki can reach (new, learning, relearning, review, filtered early and overdue reviews, forgotten cards that kept their counts, review cards left at interval 0 by Set Due Date under FSRS); `build_sm2_fixture.py` writes `test/fixtures/anki-26.09-sm2.json`. `lib/sm2AnkiParity.test.ts` replays 300 states (all four outcomes and Anki's English button labels), three probes and 200 whole answers through SQLite (card columns, card data, review-log row, leech tag and suspension), all exactly. A run of 8,000 states and 4,000 answers matched in full before the sample was taken. Four differences it found are fixed: review intervals are worked out in f32 as Anki does, so a product that is an exact half in f64 no longer lands a day later (3 of 10,917 passing reviews; `lib/scheduler.anki.test.ts`); days late and the Hard and Good minimums count from a stored interval of 0, and such a card in a filtered deck is logged as a review, not a filtered one; a card that graduates from learning starts with no lapses, because Anki builds its review state afresh, so a card forgotten with its counts kept loses its old lapse count when it graduates again, under SM-2 and FSRS alike (relearning keeps it; `lib/answerStoredState.test.ts`); a span under a minute is labelled in seconds.
+
+Known differences, all for states Anki itself does not produce, so they stay out of the fixture: an ease below 1.3 is written back as 1.3 and an ease of 0 on a review card is read as the starting ease (Anki keeps both and computes with them); a relearning card at interval 0 graduates to day 1 (Easy day 2) instead of 0 (Easy 1); a learning card carrying an ease from an older client is written with 0, where Anki leaves the ease; a stored step count outside the preset's steps is rewritten by Hard, where Anki keeps it (scheduling is the same either way). A legacy preset value outside Anki's range (Hard above 1.3, say) is kept and used, while Anki falls back to its default when it reads the preset (`ensure_deck_config_values_valid`); Deck Options keeps such a value only until it is edited.
+
+**Next compatibility gate:** Re-record `anki-26.09-sm2.json` against each new Anki release; keep golden interval/rollover tests
 
 ## Answer buttons, next times, counts, undo
 
@@ -35,7 +39,7 @@ Undo applies only the operation delta to existing rows, preserving later note fi
 
 A card's scheduling columns (type, queue, due, ivl, factor, reps, lapses, left, odue, odid, last review, the data blob, and the deck when a filtered home moves) are restored as one unit: once anything else rescheduled the card (an answer, the Browser's Grade Now, Forget or Set Due Date), the step is refused and the undo history is cleared, as Anki clears it behind a change it cannot undo, instead of writing a mixed card. Every row of a step is written inside one SQLite savepoint and the stacks move only after the durable write; a failed step stays on its stack. Steps whose rows were deleted elsewhere are dropped together with everything older. Undo puts the card it took back on screen. Redo replays an answer in its original filtered context (`lib/reviewerUndoSafety.test.ts`, `lib/reviewerQueueRefresh.test.ts`).
 
-Answer-button spans use Anki's units (the largest unit that fits, one decimal: 90 minutes is 1.5h, 30 days stay 30d, 45 days are 1.5mo with 365/12-day months), a learning step reaching past the rollover is labelled in the days it is stored as, a step shorter than the learn-ahead limit gets Anki's `<` prefix, and the English interface shows English units; a preview deck's finishing button reads "(end)". A grade inside the double-tap window after the answer appears is ignored, and a held key acts once: browser auto-repeat never acts, and native hardware-key repeats are dropped by a per-key gap (the platform's first repeat after its initial delay still counts as a press) (`lib/schedulerLapse.test.ts`, `lib/reviewerInputGuards.test.ts`). Set Due Date accepts only Anki's grammar (`5`, `3-7`, `0!`); negative or spaced forms are rejected (`lib/browserSelection.test.ts`). The classic "next position" counter of Reset is not adopted: Reset still places a card after the highest new position in use, because a counter honoured by Reset alone would disagree with every other path that assigns positions.
+Answer-button spans use Anki's units (the largest unit that fits, one decimal: a 30-second step is 30s, 90 minutes is 1.5h, 30 days stay 30d, 45 days are 1.5mo with 365/12-day months), a learning step reaching past the rollover is labelled in the days it is stored as, a step shorter than the learn-ahead limit gets Anki's `<` prefix, and the English interface shows English units; a preview deck's finishing button reads "(end)". A grade inside the double-tap window after the answer appears is ignored, and a held key acts once: browser auto-repeat never acts, and native hardware-key repeats are dropped by a per-key gap (the platform's first repeat after its initial delay still counts as a press) (`lib/schedulerLapse.test.ts`, `lib/reviewerInputGuards.test.ts`). Set Due Date accepts only Anki's grammar (`5`, `3-7`, `0!`); negative or spaced forms are rejected (`lib/browserSelection.test.ts`). The classic "next position" counter of Reset is not adopted: Reset still places a card after the highest new position in use, because a counter honoured by Reset alone would disagree with every other path that assigns positions.
 
 Edit Tags in the study screen's ••• menu uses the editor's tag-only write (`setNoteTags`): saving the tags a note already has, in any order or case, leaves no Undo entry, and the edit, its undo and its redo keep the search index's topic in step, which the sidebar groups cards by. Anki's status tags `marked` and `leech` never name a card's topic, so Mark Note leaves the study header's course and topic alone; the header reads them from the note as it stands, so a tag edit shows at once (`lib/reviewerTagEdit.test.ts`, `lib/noteTags.test.ts`). Its tag and Set Due Date fields open focused and save on the keyboard's return key, as Anki's prompts do on Enter.
 
@@ -107,6 +111,10 @@ What the current scheduling reference pins:
 - memory replay from complete, truncated, reset, cramming and manual histories, plus the
   ignore-before cutoff and SM-2 fallback;
 - same-day Hard/Good/Easy never lower stability (`rating >= 2`), unlike the old 26.05 Hard rule;
+- a truncated log seeded from its first surviving review on both sides of the 1.1 ease boundary,
+  compared in f32 as Anki does, so factor 1100 (difficulty 10) seeds difficulty 10
+  (`gen_memory_seed.py`, `test/fixtures/anki-26.09-fsrs-seed.json`);
+- a learning card graduating with no lapses, as under SM-2 (`lib/answerStoredState.test.ts`);
 - `minimumReviewFuzzInterval` shared by answering and rescheduling: a rounded increase grows,
   an overlapping bounded window holds the old interval, and a genuinely smaller window can
   shrink. Anki's three upstream assertions and a capped-window case are in
@@ -176,6 +184,12 @@ through SQLite.
   with one shows Random, as Anki's dialog does, and is stored as Random only if the dialog is
   saved. Until then it keeps the order, round-trips it, and builds with the tiebreak alone
   (`lib/filteredDeckOptions.test.ts`).
+
+**Fresh vectors (2026-11-03):** 3,000 new states, 2,000 memory histories and 2,000 whole answers
+from the existing generators, compared in full rather than as the committed sample, matched apart
+from last-bit noise and two differences now fixed (the 1.1 seed boundary and the lapses kept at
+graduation). With no steps left in the preset, a learning or relearning card that stays short-term
+on Hard keeps its stored step count in Anki and is written with 0 here; scheduling is unaffected.
 
 **Next compatibility gate:** All eleven fifth-pass items now have code and automated coverage.
 Older known differences remain: last-bit memory noise from platform exp/pow; filtered-deck
