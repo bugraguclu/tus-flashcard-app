@@ -8,6 +8,7 @@ import React, {
     useState,
 } from 'react';
 import type { AppSettings } from '../lib/types';
+import { stableSnapshot } from '../lib/dirtyState';
 import { DEFAULT_SETTINGS, loadSettings } from '../lib/storage';
 import { useAppStartup, type StartupIssue } from '../hooks/useAppStartup';
 import { useStudyNotifications } from '../hooks/useStudyNotifications';
@@ -92,6 +93,11 @@ const SettingsContext = createContext<SettingsContextValue>({
     refreshSettings: () => { },
     previewSettings: () => { },
 });
+// Editors of a settings draft only need these stable actions, not their own preview broadcast.
+const SettingsActionsContext = createContext<Pick<SettingsContextValue, 'refreshSettings' | 'previewSettings'>>({
+    refreshSettings: () => { },
+    previewSettings: () => { },
+});
 const LanguagePreferenceContext = createContext<AppSettings['language']>(DEFAULT_SETTINGS.language);
 
 const CollectionContext = createContext<CollectionContextValue>({
@@ -155,11 +161,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const [catalogInstalling, setCatalogInstalling] = useState(false);
 
     const refreshSettings = useCallback(() => {
-        setSettings(loadSettings());
+        const loaded = loadSettings();
+        setSettings((current) => stableSnapshot(current) === stableSnapshot(loaded) ? current : loaded);
     }, []);
 
     const previewSettings = useCallback((draft: AppSettings) => {
-        setSettings(draft);
+        setSettings((current) => stableSnapshot(current) === stableSnapshot(draft) ? current : draft);
     }, []);
 
     const markSchedulingStale = useCallback(() => {
@@ -250,6 +257,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         previewSettings,
     }), [settings, refreshSettings, previewSettings]);
 
+    const settingsActions = useMemo(() => ({ refreshSettings, previewSettings }), [refreshSettings, previewSettings]);
+
     const collectionValue = useMemo<CollectionContextValue>(() => ({
         collectionVersion,
         invalidateCollection,
@@ -300,25 +309,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return (
         <LanguagePreferenceContext.Provider value={settings.language}>
             <SettingsContext.Provider value={settingsValue}>
-                <CollectionContext.Provider value={collectionValue}>
-                    <StudyScopeContext.Provider value={studyScopeValue}>
-                        <StudyPositionContext.Provider value={studyPosition}>
-                            <SetStudyPositionContext.Provider value={setStudyPosition}>
-                                <StartupContext.Provider value={startupValue}>
-                                    <CatalogContext.Provider value={catalogValue}>
-                                        {children}
-                                    </CatalogContext.Provider>
-                                </StartupContext.Provider>
-                            </SetStudyPositionContext.Provider>
-                        </StudyPositionContext.Provider>
-                    </StudyScopeContext.Provider>
-                </CollectionContext.Provider>
+                <SettingsActionsContext.Provider value={settingsActions}>
+                    <CollectionContext.Provider value={collectionValue}>
+                        <StudyScopeContext.Provider value={studyScopeValue}>
+                            <StudyPositionContext.Provider value={studyPosition}>
+                                <SetStudyPositionContext.Provider value={setStudyPosition}>
+                                    <StartupContext.Provider value={startupValue}>
+                                        <CatalogContext.Provider value={catalogValue}>
+                                            {children}
+                                        </CatalogContext.Provider>
+                                    </StartupContext.Provider>
+                                </SetStudyPositionContext.Provider>
+                            </StudyPositionContext.Provider>
+                        </StudyScopeContext.Provider>
+                    </CollectionContext.Provider>
+                </SettingsActionsContext.Provider>
             </SettingsContext.Provider>
         </LanguagePreferenceContext.Provider>
     );
 }
 
 export const useAppSettings = () => useContext(SettingsContext);
+export const useAppSettingsActions = () => useContext(SettingsActionsContext);
 export const useLanguagePreference = () => useContext(LanguagePreferenceContext);
 export const useCollectionInvalidation = () => useContext(CollectionContext);
 export const useStudyScope = () => useContext(StudyScopeContext);

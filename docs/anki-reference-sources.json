@@ -151,7 +151,7 @@
       "priority": 1,
       "platform": "iOS and iPadOS preferences",
       "url": "https://docs.ankimobile.net/preferences.html",
-      "useFor": ["review feedback", "tools overlay", "typed answers", "nine-zone question and answer taps", "interactive tap pass-through", "swipes", "general settings", "study notifications", "media maintenance"]
+      "useFor": ["review feedback", "tools overlay", "typed answers", "nine-zone question and answer taps", "interactive tap pass-through", "swipes", "general settings", "TusAnkiM-specific settings responsiveness: display/control/audio/notification changes retain the live queue; lib/studyDataSettings.test.ts, lib/appContextIsolation.test.ts, lib/settingsScreen.test.ts", "study notifications", "media maintenance"]
     },
     {
       "id": "ankimobile-tts",

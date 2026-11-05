@@ -185,6 +185,7 @@ import {
     shouldRebuildAfterAnswer,
 } from '../../lib/reviewerQueueRefresh';
 import { reviewerAddNoteDeckId } from '../../lib/reviewerAddNote';
+import { studyDataSettingsKey } from '../../lib/studyDataSettings';
 import { KeyRepeatGuard, RevealGradeGuard, isAutoRepeatKey } from '../../lib/reviewerInputGuards';
 import { StudyDayWatcher, startNewStudyDay } from '../../lib/studyDayRollover';
 import { formatPreviewDelay, localizeButtonTimes } from '../../lib/reviewerIntervalLabels';
@@ -728,7 +729,9 @@ export default function StudyScreen() {
         setLoading(false);
     }, [hasStudyScope, refreshSessionStats]);
 
-    // A new study session: a different deck or scope, changed preferences, or a study-ahead pass.
+    const queueSettingsKey = studyDataSettingsKey(settings);
+
+    // A new study session: a different deck/scope, scheduling preferences, or a study-ahead pass.
     // It follows those inputs rather than `buildQueue` itself, whose identity also changes with
     // every collection change; the effect below decides what such a change does to the queue.
     const buildQueueRef = useRef(buildQueue);
@@ -736,7 +739,7 @@ export default function StudyScreen() {
     useEffect(() => {
         if (!hasStudyScope || loading) return;
         buildQueueRef.current();
-    }, [hasStudyScope, loading, settings, selectedSubject, selectedTopic, selectedDeckName, studyAheadPass]);
+    }, [hasStudyScope, loading, queueSettingsKey, selectedSubject, selectedTopic, selectedDeckName, studyAheadPass]);
 
     // Rebuild when data changes elsewhere (card created/edited, import, restore) so a
     // just-created card appears immediately instead of waiting for the fallback timer.

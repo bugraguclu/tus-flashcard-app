@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { ActivityIndicator, Animated, View, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Text } from '../components/AppText';
+import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
@@ -41,6 +42,7 @@ export default function StatsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { settings } = useAppSettings();
+    const dataSettingsKey = studyDataSettingsKey(settings);
     const { activeDeckName } = useStudyScope();
     const {
         collectionVersion: dataVersion,
@@ -93,8 +95,8 @@ export default function StatsScreen() {
         statsRange.endMs,
         statsRange.spanDays,
         localeTag,
-        settings,
-    ]), [dataVersion, schedulingRevision, deckScope, statsRange, localeTag, settings]);
+        dataSettingsKey,
+    ]), [dataVersion, schedulingRevision, deckScope, statsRange, localeTag, dataSettingsKey]);
     const loadStatsSnapshot = useCallback(() => getStatsScreenSnapshot({
         deckName: deckScope,
         range: statsRange,

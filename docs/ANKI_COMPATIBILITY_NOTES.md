@@ -568,6 +568,8 @@ Readable cardless notes are rescued by creating card 1 in the recovery deck; the
 
 **Next compatibility gate:** Add a native Share extension before broader parity claims
 
+**Settings responsiveness (2026-11-05):** App text-size changes retain native Text/TextInput instances and nested state rather than remounting them at the Normal boundary (`lib/appText.test.ts`). Equal preview/saved settings do not republish the context (`lib/appContextIsolation.test.ts`); an unrelated app preference does not rewrite an unchanged Default preset or enumerate its decks (`lib/settingsDefaultPreset.test.ts`). Only queue/scheduling settings start a new reviewer queue, so appearance, controls, audio, Timebox and notification changes keep the shown question/answer and session order (`lib/studyDataSettings.test.ts`); content/preset invalidations still use the existing collection revision path. Browser, Statistics and Deck Overview snapshots use the same scheduling key, so display-only changes reuse their data. The settings scroll surface survives text-size preview and Save (`lib/settingsScreen.test.ts`). On large-text phones, Settings gives numeric controls their own row and lets choice buttons wrap with usable widths; shared iOS text uses the native push-out strategy to reduce orphaned final words. These are TusAnkiM presentation/performance choices, not claims about Anki's rendering. [Verification record](SETTINGS_RESPONSIVENESS_VERIFICATION.md) covers the production-web checks and the pending native release gate.
+
 ## Reviewer keyboard shortcuts
 
 **Status:** Implemented subset

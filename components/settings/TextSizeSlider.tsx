@@ -67,6 +67,7 @@ export default function TextSizeSlider({ value, onChange }: Props) {
         Animated.spring(position, {
             toValue: stopX(level),
             useNativeDriver: USE_NATIVE_DRIVER,
+            isInteraction: false,
             speed: 24,
             bounciness: 4,
         }).start();

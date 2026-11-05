@@ -1,4 +1,5 @@
 import { DEFAULT_BACKUP_POLICY, normalizeBackupPolicy } from './backupPolicy';
+import { stableSnapshot } from './dirtyState';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     DEFAULT_FSRS_PARAMETERS,
@@ -361,6 +362,7 @@ export async function saveSessionStats(stats: SessionStats): Promise<void> {
 
 function syncDefaultDeckConfig(settings: AppSettings): void {
     const config = getDeckConfig(1);
+    const previous = stableSnapshot(config);
     config.newPerDay = settings.dailyNewLimit;
     config.maxReviewsPerDay = settings.dailyReviewLimit;
     config.learningSteps = [...settings.learningSteps];
@@ -380,6 +382,8 @@ function syncDefaultDeckConfig(settings: AppSettings): void {
     if (typeof settings.audioPlaybackRate === 'number') {
         config.audioPlaybackRate = settings.audioPlaybackRate;
     }
+    // A display/control/notification preference must not rewrite a preset or enumerate decks.
+    if (stableSnapshot(config) === previous) return;
     config.mod = Math.floor(Date.now() / 1000);
     config.usn = -1;
     saveDeckConfig(config);

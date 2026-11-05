@@ -11,6 +11,7 @@ import {
     useWindowDimensions,
 } from 'react-native';
 import { Text, TextInput } from '../components/AppText';
+import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
@@ -92,6 +93,7 @@ export default function BrowserScreen() {
     const { height: windowHeight } = useWindowDimensions();
     const { t, l, locale, localeTag } = useI18n();
     const { settings } = useAppSettings();
+    const dataSettingsKey = studyDataSettingsKey(settings);
     const {
         collectionVersion: dataVersion,
         invalidateCollection: bumpDataVersion,
@@ -239,8 +241,8 @@ export default function BrowserScreen() {
         dataVersion,
         schedulingRevision,
         reloadToken,
-        settings,
-    ]), [deckName, dataVersion, schedulingRevision, reloadToken, settings]);
+        dataSettingsKey,
+    ]), [deckName, dataVersion, schedulingRevision, reloadToken, dataSettingsKey]);
     const browserSnapshotKey = useMemo(() => JSON.stringify([
         'browser',
         browserScopeKey,

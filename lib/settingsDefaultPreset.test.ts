@@ -38,6 +38,20 @@ const deckOptionsEdits = {
 };
 
 describe('saving settings with the default preset', () => {
+    it('does not rewrite a preset or scan decks when only an app preference changes', () => {
+        saveSettings(loadSettings()); // Hydrate optional legacy preset values once.
+        const before = getDeckConfig(1);
+        const reads = vi.spyOn(h.db, 'getAllSync');
+        const writes = vi.spyOn(h.db, 'runSync');
+
+        expect(saveSettings({ ...loadSettings(), textSizeLevel: 'xlarge' }).ok).toBe(true);
+
+        expect(getDeckConfig(1)).toEqual(before);
+        expect(reads.mock.calls.some(([sql]) => /FROM (decks|anki_cards)\b/i.test(String(sql)))).toBe(false);
+        expect(writes.mock.calls.some(([sql]) => /INTO deck_configs\b/i.test(String(sql)))).toBe(false);
+        expect(loadSettings().textSizeLevel).toBe('xlarge');
+    });
+
     it('leaves values Deck Options set on the default preset untouched', () => {
         saveDeckConfig({ ...getDeckConfig(1), ...deckOptionsEdits });
 

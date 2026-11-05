@@ -13,6 +13,7 @@ import {
     Linking,
 } from 'react-native';
 import { Text } from '../components/AppText';
+import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -44,6 +45,7 @@ export default function DeckOverviewScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { settings } = useAppSettings();
+    const dataSettingsKey = studyDataSettingsKey(settings);
     const {
         collectionVersion: dataVersion,
         invalidateCollection: bumpDataVersion,
@@ -65,8 +67,8 @@ export default function DeckOverviewScreen() {
         dataVersion,
         schedulingRevision,
         refreshToken,
-        settings,
-    ]), [deckName, dataVersion, schedulingRevision, refreshToken, settings]);
+        dataSettingsKey,
+    ]), [deckName, dataVersion, schedulingRevision, refreshToken, dataSettingsKey]);
     const loadOverviewSnapshot = useCallback(
         () => getDeckOverviewSnapshot(deckName, settings),
         [deckName, settings],

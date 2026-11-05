@@ -59,6 +59,39 @@ describe('AppText at the designed size', () => {
 });
 
 describe('AppText at a larger step', () => {
+    it('uses the iOS orphan-avoidance strategy while preserving explicit line-breaking choices', () => {
+        render(1.3, React.createElement(React.Fragment, null,
+            React.createElement(Text, null, 'Uzun bir etiket'),
+            React.createElement(Text, { lineBreakStrategyIOS: 'standard' }, 'Özel etiket'),
+        ));
+        expect(hosts('Text').map((text) => text.props.lineBreakStrategyIOS)).toEqual(['push-out', 'standard']);
+    });
+
+    it('keeps native text, nested state and input focus when crossing the default step', () => {
+        let mounts = 0;
+        let unmounts = 0;
+        function Inline() {
+            React.useEffect(() => { mounts += 1; return () => { unmounts += 1; }; }, []);
+            return React.createElement(Text, null, 'aynı metin');
+        }
+        const inputRef = React.createRef<TextInput>();
+        const content = React.createElement(React.Fragment, null,
+            React.createElement(Text, { style: { fontSize: 14 } }, React.createElement(Inline)),
+            React.createElement(TextInput, { ref: inputRef, defaultValue: 'taslak' }),
+        );
+        render(1, content);
+        const initialText = hosts('Text')[0];
+        const initialInput = hosts('TextInput')[0];
+        for (const multiplier of [1.3, 0.9, 1, 1.15, 1]) {
+            act(() => renderer!.update(React.createElement(TextScaleProvider, { multiplier }, content)));
+            expect(hosts('Text')[0] === initialText).toBe(true);
+            expect(hosts('TextInput')[0] === initialInput).toBe(true);
+            expect(inputRef.current).toBe(nativeInput);
+        }
+        expect(mounts).toBe(1);
+        expect(unmounts).toBe(0);
+    });
+
     it('scales the size and line height of a Text and keeps its other styles', () => {
         render(1.3, React.createElement(Text, { style: [{ fontSize: 14, lineHeight: 20 }, { color: 'red' }] }, 'Desteler'));
         expect(drawnStyle(hosts('Text')[0])).toMatchObject({ fontSize: 18, lineHeight: 25.5, color: 'red' });

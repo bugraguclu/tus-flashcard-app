@@ -32,6 +32,7 @@ vi.mock('./storage', async () => {
 vi.mock('react-native', () => ({
     Platform: { OS: 'ios', select: (spec: Record<string, unknown>) => spec.ios ?? spec.default },
     Keyboard: { dismiss: () => {} },
+    useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
     Linking: { openURL: async () => true },
     StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1, absoluteFill: {} },
     ActivityIndicator: 'ActivityIndicator', Modal: 'Modal', Pressable: 'Pressable', ScrollView: 'ScrollView',
@@ -65,7 +66,7 @@ vi.mock('../contexts/AppContext', () => {
     const settings = { refreshSettings: () => {}, previewSettings: () => {} };
     const collection = { invalidateCollection: () => {}, markSchedulingStale: () => {} };
     const catalog = { refreshCatalogAccess: async () => ({}) };
-    return { useAppSettings: () => settings, useCollectionInvalidation: () => collection, useCatalogStatus: () => catalog };
+    return { useAppSettingsActions: () => settings, useCollectionInvalidation: () => collection, useCatalogStatus: () => catalog };
 });
 vi.mock('./confirm', () => ({
     alert: (title: string, message: string) => { h.alerts.push([title, message]); },
@@ -87,7 +88,10 @@ vi.mock('../components/BoundedIntegerInput', async () => {
     return { default: forwardRef(() => null) };
 });
 vi.mock('../components/settings/KeyboardSettingsSection', () => ({ default: () => null }));
-vi.mock('../components/settings/TextSizeSlider', () => ({ default: () => null }));
+vi.mock('../components/settings/TextSizeSlider', async () => {
+    const { createElement } = await import('react');
+    return { default: (props: object) => createElement('TextSizeSlider', props) };
+});
 // The glyphs draw with react-native-svg, which ships syntax vite cannot parse.
 vi.mock('../components/GearGlyph', () => ({ default: () => null }));
 vi.mock('../components/CardsGlyph', () => ({ default: () => null }));
@@ -150,6 +154,22 @@ async function save() {
 }
 
 describe('saving Settings', () => {
+    it('keeps the same scroll surface and section through text-size preview and Save', async () => {
+        mount();
+        openCategory('Genel');
+        const surface = renderer!.root.find((node) => isHost(node, 'ScrollView'));
+        const slider = renderer!.root.find((node) => isHost(node, 'TextSizeSlider'));
+        act(() => slider.props.onChange('xlarge'));
+        expect(renderer!.root.find((node) => isHost(node, 'ScrollView')) === surface).toBe(true);
+
+        await save();
+
+        expect(loadSettings().textSizeLevel).toBe('xlarge');
+        expect(renderer!.root.find((node) => isHost(node, 'ScrollView')) === surface).toBe(true);
+        expect(byLabel('Ayarlara dön')).toBeDefined();
+        expect(surface.props.scrollEnabled).not.toBe(false);
+    });
+
     it('keeps what a restore wrote while Settings stayed open, along with the learner’s own edit', async () => {
         mount();
         openCategory('Genel');

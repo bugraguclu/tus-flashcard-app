@@ -50,12 +50,13 @@ export function Text(props: TextProps) {
     const scale = useContext(TextScaleContext);
     const own = effectiveTextMultiplier(scale.multiplier, props.allowFontScaling, props.maxFontSizeMultiplier);
     const inner = useMemo<TextScale>(() => ({ multiplier: own, nested: true }), [own]);
-    // The designed size is React Native's own Text, with no extra work per row.
-    if (scale.multiplier === 1) return <NativeText {...props} />;
+    // Keep this tree stable at every step: inserting a provider only above/below 1 remounts
+    // native text and everything nested in it, losing selection and doing a second layout pass.
     const patch = own === 1 ? null : scaleTextStyle(StyleSheet.flatten(props.style), own, scale.nested);
     return (
         <TextScaleContext.Provider value={inner}>
             <NativeText
+                lineBreakStrategyIOS="push-out"
                 {...props}
                 style={patch ? [props.style, patch] : props.style}
                 maxFontSizeMultiplier={remainingSystemMultiplier(props.maxFontSizeMultiplier, own)}

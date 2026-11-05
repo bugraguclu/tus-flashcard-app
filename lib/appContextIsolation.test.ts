@@ -1,6 +1,6 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const settingsState = vi.hoisted(() => ({
     value: { language: 'tr', themeMode: 'light' },
@@ -46,6 +46,7 @@ import {
     AppProvider,
     type StudyPosition,
     useAppSettings,
+    useAppSettingsActions,
     useCatalogStatus,
     useSetStudyPosition,
     useStudyPosition,
@@ -56,7 +57,33 @@ beforeAll(() => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 });
 
+beforeEach(() => { settingsState.value = { language: 'tr', themeMode: 'light' }; });
+
 describe('AppProvider context isolation', () => {
+    it('does not republish a preview when Save or discard reads the same settings back', () => {
+        let renders = 0;
+        let actionRenders = 0;
+        function DraftEditor() { useAppSettingsActions(); actionRenders += 1; return null; }
+        let api: ReturnType<typeof useAppSettings>;
+        function Consumer() {
+            api = useAppSettings();
+            renders += 1;
+            return null;
+        }
+        let renderer: TestRenderer.ReactTestRenderer;
+        act(() => { renderer = TestRenderer.create(React.createElement(AppProvider, null, React.createElement(Consumer), React.createElement(DraftEditor))); });
+        act(() => api.previewSettings({ ...settingsState.value, themeMode: 'dark' } as any));
+        const afterPreview = renders;
+        expect(afterPreview).toBe(2);
+        expect(actionRenders).toBe(1);
+        settingsState.value = { language: 'tr', themeMode: 'dark' };
+        act(() => api.refreshSettings());
+        act(() => api.previewSettings({ ...settingsState.value } as any));
+        act(() => api.refreshSettings());
+        expect(renders).toBe(afterPreview);
+        act(() => renderer.unmount());
+    });
+
     it('does not recompute settings, i18n, or catalog consumers when studyPosition changes', () => {
         let settingsRenders = 0;
         let i18nRenders = 0;
