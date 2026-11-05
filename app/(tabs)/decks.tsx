@@ -1,6 +1,6 @@
 // Anki-style deck list: the app's landing screen. Deck tree with per-deck counts,
 // tap-to-study (parents include their subdecks), a gear menu per deck (rename,
-// options/limits, custom study, delete) and drag-and-drop nesting via the row handle.
+// options/limits, custom study, delete) and drag-and-drop nesting via the row handle or a held deck name.
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import * as Haptics from 'expo-haptics';
@@ -75,6 +75,7 @@ import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/DeckListTable';
 import DeckAddMenu, { DECK_ADD_MENU_LIST_INSET } from '../../components/decks/DeckAddMenu';
 import DeckRowMenu from '../../components/decks/DeckRowMenu';
+import DeckNameButton from '../../components/decks/DeckNameButton';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
 import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
@@ -1138,11 +1139,17 @@ export default function DecksScreen() {
                 )}
 
                 <View style={styles.deckMain}>
-                    <TouchableOpacity
+                    <DeckNameButton
                         style={styles.deckNameTouchable}
                         onPress={() => handleStudyDeck(deck.name)}
-                        accessibilityRole="button"
+                        drag={dragResponder ? {
+                            begin: (pageY) => dragHandlersRef.current?.begin(node, pageY),
+                            move: (pageY) => dragHandlersRef.current?.move(pageY),
+                            complete: () => dragHandlersRef.current?.complete(),
+                            cancel: () => dragHandlersRef.current?.cancel(),
+                        } : undefined}
                         accessibilityLabel={l(`${displayName} destesini çalış`, `Study ${displayName} deck`)}
+                        accessibilityHint={dragResponder ? l('Taşımak için basılı tutup sürükleyin', 'Touch and hold, then drag to move') : undefined}
                         {...webTitle(l(`${displayName}: çalış`, `${displayName}: study`))}
                     >
                         <View style={styles.deckNameRow}>
@@ -1156,7 +1163,7 @@ export default function DecksScreen() {
                                 {displayName}
                             </Text>
                         </View>
-                    </TouchableOpacity>
+                    </DeckNameButton>
 
                     <DeckListCounts
                         newCount={node.newCount}

@@ -137,7 +137,7 @@
       "priority": 1,
       "platform": "iOS and iPadOS deck list",
       "url": "https://docs.ankimobile.net/deck-list.html",
-      "useFor": ["tapping a deck switches to study mode", "deck actions kept off the tap target", "deck count categories; TusAnkiM column layout is product-specific"]
+      "useFor": ["tapping a deck switches to study mode", "deck actions kept off the tap target", "deck count categories; TusAnkiM column layout is product-specific", "short tap remains study; a 450 ms deck-name hold reuses TusAnkiM drag/reorder, a product-specific gesture; lib/deckNameButton.test.ts and lib/deckDropTarget.test.ts"]
     },
     {
       "id": "ankimobile-study-screen",

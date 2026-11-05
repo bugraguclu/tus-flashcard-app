@@ -215,6 +215,8 @@ Full item-by-item status and before/after evidence are in `docs/AUDIT_FSRS_ANKI_
 
 ## Hierarchical decks and presets
 
+**Deck-name hold (2026-11-05):** A short tap still opens study, as the [AnkiMobile deck list](https://docs.ankiweb.net/ankimobile/deck-list) specifies. Holding a movable deck name for 450 ms starts the same drag as its handle: row edges reorder, the middle makes a subdeck, and the existing preview names the proposed destination. Moving before the hold gives the touch to normal list scrolling; cancellation never drops, and lifting after a hold never opens study. Filtered and protected catalog decks retain their existing tap-only names. The hold gesture is TusAnkiM presentation, independently implemented; hierarchy and persistence continue through the existing move/reorder path. `lib/deckNameButton.test.ts` covers tap/hold/scroll, final pointer position, cancellation, re-render/unmount and accessibility; `lib/deckDropTarget.test.ts` covers drop placement. The focused native smoke is recorded in `DECK_NAME_DRAG_VERIFICATION.md`.
+
 Normalized ancestor paths are resolved against one deck-name snapshot, keeping the existing 100-level hierarchy regression below the normal test timeout without weakening name normalization or exact legacy subtree rules.
 
 Deletion undo also restores persistent per-deck whiteboard preferences/ink. Injected write failures roll back note/card/grave changes. The default deck ID 1 remains available after its contents are removed, with its name reset to Default (a free suffix is used on a legacy name collision); undo restores its previous name and subtree. Exact-prefix buried-card count/unbury queries have real SQLite regression coverage.
