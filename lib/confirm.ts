@@ -17,6 +17,8 @@ export interface DialogRequest {
     destructive: boolean;
     acceptLabel?: string;
     cancelLabel?: string;
+    /** Display a choice's actions one per row, with the alternate action first. */
+    stacked?: boolean;
     /** Runs when the user confirms (confirm) or dismisses (alert). */
     onAccept?: () => void;
     /** Runs when the user selects the alternate action in a choice dialog. */
@@ -138,6 +140,7 @@ export function choose(
     message: string,
     primaryLabel: string,
     alternateLabel: string,
+    options: { stacked?: boolean } = {},
 ): Promise<boolean> {
     const safeMessage = userFacingErrorMessage(message);
 
@@ -150,6 +153,7 @@ export function choose(
                 destructive: false,
                 acceptLabel: primaryLabel,
                 cancelLabel: alternateLabel,
+                stacked: options.stacked,
                 onAccept: () => resolve(true),
                 onCancel: () => resolve(false),
             });
@@ -161,14 +165,10 @@ export function choose(
             return;
         }
 
-        Alert.alert(
-            title,
-            safeMessage,
-            [
-                { text: primaryLabel, onPress: () => resolve(true) },
-                { text: alternateLabel, onPress: () => resolve(false) },
-            ],
-            { cancelable: false },
-        );
+        const buttons = [
+            { text: primaryLabel, onPress: () => resolve(true) },
+            { text: alternateLabel, onPress: () => resolve(false) },
+        ];
+        Alert.alert(title, safeMessage, options.stacked ? buttons.reverse() : buttons, { cancelable: false });
     });
 }

@@ -424,7 +424,14 @@ export default function DecksScreen() {
             void (async () => {
                 try {
                     await createBackupNow();
-                    alert(l('Yedek oluşturuldu', 'Backup created'), l('Güncel veriler yerel bir yedek olarak kaydedildi.', 'Current data was saved as a local backup.'));
+                    const manageBackups = await choose(
+                        l('Yedek oluşturuldu', 'Backup created'),
+                        l('Güncel veriler yerel bir yedek olarak kaydedildi.', 'Current data was saved as a local backup.'),
+                        l('Yedeklerimi yönet', 'Manage my backups'),
+                        t('common.close'),
+                        { stacked: true },
+                    );
+                    if (manageBackups) router.push('/backups');
                 } catch (e) {
                     console.warn('[Decks] create backup failed:', e);
                     alert(t('common.error'), l('Yedek oluşturulamadı.', 'Could not create a backup.'));

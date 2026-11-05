@@ -113,11 +113,11 @@ export function DialogHost() {
                     >
                         <Text style={styles.message}>{request.message}</Text>
                     </ScrollView>
-                    <View style={styles.actions}>
+                    <View style={[styles.actions, request.stacked && styles.stackedActions]}>
                         {(isConfirm || isChoice) && (
                             <Pressable
                                 ref={cancelButtonRef}
-                                style={({ pressed }) => [styles.button, styles.cancel, pressed && styles.buttonPressed]}
+                                style={({ pressed }) => [styles.button, request.stacked && styles.stackedButton, styles.cancel, pressed && styles.buttonPressed]}
                                 onPress={cancel}
                                 accessibilityRole="button"
                             >
@@ -128,6 +128,7 @@ export function DialogHost() {
                             ref={acceptButtonRef}
                             style={({ pressed }) => [
                                 styles.button,
+                                request.stacked && styles.stackedButton,
                                 request.destructive ? styles.destructive : styles.accept,
                                 pressed && styles.buttonPressed,
                             ]}
@@ -186,6 +187,8 @@ function createStyles(colors: ColorScheme) {
         messageContent: { paddingBottom: Spacing.xl },
         message: { fontSize: FontSize.md, color: colors.textSecondary, textAlign: 'center', lineHeight: 21 },
         actions: { flexDirection: 'row', alignSelf: 'stretch', gap: Spacing.md },
+        stackedActions: { flexDirection: 'column' },
+        stackedButton: { flex: 0 },
         button: {
             flex: 1,
             minHeight: 48,
