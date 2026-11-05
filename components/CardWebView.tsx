@@ -10,6 +10,7 @@ import { getMediaBaseUrl, resolveWebMediaInHtml } from '../lib/mediaStore';
 import { useIsDarkTheme, useThemeColors } from '../constants/theme';
 import { CARD_CONTENT_CSP_META, CARD_WEBVIEW_ORIGIN_WHITELIST, safeExternalCardUrl } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl, localMediaFileFromUrl } from '../lib/localMediaDocument';
+import { useLocalMediaWebViewSource } from '../hooks/useLocalMediaWebViewSource';
 import { localMediaFilename } from '../lib/mediaAttachment';
 import { confirm } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
@@ -352,10 +353,10 @@ export default function CardWebView({
     const themeTextCss = `<style>${defaultCardTextCss(colors.textPrimary)}${nightModeCardCss(colors.textPrimary)}</style>`;
     const html = `${viewportMeta}${themeTextCss}${renderedHtml}${preferenceCss}`;
     const nativeHtml = `${CARD_CONTENT_CSP_META}${html}`;
-    const nativeSource = useMemo(
-        () => ({ html: nativeHtml, baseUrl: mediaBaseUrl }),
-        [mediaBaseUrl, nativeHtml],
-    );
+    // Card media is named by bare filename, so the card is a document in the media folder: on
+    // iPhone a file loaded with read access to the folder, which a device needs to show the
+    // pictures and play the sounds at all (lib/localMediaDocument.ts).
+    const { source: nativeSource, documentUri } = useLocalMediaWebViewSource(nativeHtml, mediaBaseUrl);
     const tapReporter = onCardTap ? `(function(){
         document.addEventListener('click', function(event){
             var target = event.target && event.target.closest ? event.target : null;
@@ -714,7 +715,7 @@ export default function CardWebView({
     // origin whitelist lets every URL through to it, so the WebView never opens one by itself.
     const shouldStartNavigation = useCallback((request: { url: string; isTopFrame?: boolean }) => {
         const url = request.url;
-        if (isLocalMediaDocumentUrl(url, mediaBaseUrl)) return true;
+        if (isLocalMediaDocumentUrl(url, mediaBaseUrl, documentUri)) return true;
 
         // Card links never replace the review WebView. A file attached to the note opens in the
         // attachment viewer; HTTPS requires explicit confirmation; HTTP, other files, data and
@@ -725,7 +726,7 @@ export default function CardWebView({
             else openExternalLink(url);
         }
         return false;
-    }, [mediaBaseUrl, openAttachment, openExternalLink]);
+    }, [documentUri, mediaBaseUrl, openAttachment, openExternalLink]);
 
     return (
         <>

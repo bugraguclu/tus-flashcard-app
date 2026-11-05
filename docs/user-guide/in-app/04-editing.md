@@ -165,7 +165,7 @@ more) kullanır.
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
 | help.photoEditor.infoA11y | Başlık yanındaki ⓘ (yeni), `photo-editor/PhotoEditorModal.tsx` (başlık) | erişilebilirlik etiketi | Düzenleyici hakkında | About the editor | Yeni |
-| help.photoEditor.hints | Geri al satırının solundaki ipucu, Kırp ve Ayarla sekmelerinde, `photo-editor/PhotoEditorModal.tsx` | durum ipucu | Köşeleri sürükleyerek kırpın · Karşılaştırmak için basılı tutun | Drag the corners to crop · Press and hold to compare | Mevcut — koru (araç başına başlık altı ipuçları ve çöp alanı eski düzenleyiciyle kaldırıldı) |
+| help.photoEditor.hints | — (ipucu satırı 2026-11-05'te kaldırıldı; ↶ ↷ ve orijinale dön üst çubukta) | erişilebilirlik ipucu | Kırpma çerçevesi ve fotoğrafın kendi erişilebilirlik ipuçları kalır | The crop frame's and the photo's own accessibility hints stay | Kaldırıldı |
 | help.photoEditor.colorNames | Renk düğmelerinin erişilebilirlik etiketleri, `drawing/drawingTools.ts` (`drawingInkName`) | erişilebilirlik etiketi | Kırmızı, Sarı, Beyaz, Siyah, Mavi (`PHOTO_PEN_INKS` sırasıyla) | Red, Yellow, White, Black, Blue | Mevcut — koru |
 
 ### Etiketler ve Not türü seçici (`components/TagPickerModal.tsx`, `components/NoteTypePickerModal.tsx`)

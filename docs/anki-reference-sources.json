@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-11-04",
+  "lastVerified": "2026-11-05",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -959,6 +959,20 @@
       "platform": "web rich-text field surface",
       "url": "https://html.spec.whatwg.org/multipage/media.html#concept-media-load-algorithm",
       "useFor": ["an audio, video or source whose src is the empty string fails without a fetch"]
+    },
+    {
+      "id": "webkit-load-html-string-base-url-sandbox",
+      "priority": 3,
+      "platform": "iPhone card and rich-text field WebViews",
+      "url": "https://bugs.webkit.org/show_bug.cgi?id=318626",
+      "useFor": ["an HTML string loaded with a file base URL gets no sandbox access to that folder, so its pictures and sounds fail on a device", "the simulator has no such sandbox and shows them, so only a physical iPhone reproduces it", "fixed in WebKit 317113@main (July 2026), after the iOS versions the app supports"]
+    },
+    {
+      "id": "apple-wkwebview-load-file-url",
+      "priority": 3,
+      "platform": "iPhone card and rich-text field WebViews",
+      "url": "https://developer.apple.com/documentation/webkit/wkwebview/loadfileurl(_:allowingreadaccessto:)",
+      "useFor": ["a document file loaded with read access to a folder may load the files inside it", "the media folder is that folder, so bare media filenames resolve to the collection's media"]
     },
     {
       "id": "anki-source-webview-css",

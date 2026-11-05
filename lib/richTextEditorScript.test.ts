@@ -50,7 +50,14 @@ function parsedMediaContainer() {
 }
 
 /** Just enough of a document for the field script to start, take input and report back. */
-function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 'web', extras: { selection?: unknown; execCommand?: (command: string, ui: boolean, value: string) => boolean } = {}) {
+function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 'web', extras: {
+    selection?: unknown;
+    execCommand?: (command: string, ui: boolean, value: string) => boolean;
+    /** The field is being typed in when the host calls. */
+    focused?: boolean;
+    /** Records what happens to the field element itself. */
+    trace?: string[];
+} = {}) {
     const posted: { message: unknown; targetOrigin?: string }[] = [];
     const listeners = new Map<string, Listener[]>();
     const on = (type: string, listener: Listener) => {
@@ -65,8 +72,10 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         addEventListener: on,
         querySelectorAll: () => [],
         contains: () => false,
-        focus: () => undefined,
-        blur: () => undefined,
+        focus: () => { extras.trace?.push('focus'); },
+        blur: () => { extras.trace?.push('blur'); },
+        setAttribute: (name: string, value: string) => { extras.trace?.push(`set ${name}=${value}`); },
+        removeAttribute: (name: string) => { extras.trace?.push(`remove ${name}`); },
     };
     const configElement = { textContent: richTextEditorConfigJson(config) };
     // Elements made in the field's own document, and in a document made apart from it.
@@ -81,7 +90,7 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         };
     };
     const document = {
-        activeElement: null,
+        get activeElement() { return extras.focused ? editor : null; },
         getElementById: (id: string) => (
             id === RICH_TEXT_EDITOR_CONFIG_ID ? configElement : id === 'editor' ? editor : null
         ),
@@ -131,7 +140,7 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         editorHtml: () => html,
         setEditorHtml: (value: string) => { html = value; },
         readHtml: () => (window.__tusEditorReadHtml as () => unknown)(),
-        insertHtml: (html: unknown) => (window.__tusEditorInsertHtml as (h: unknown) => void)(html),
+        insertHtml: (html: unknown, options?: unknown) => (window.__tusEditorInsertHtml as (h: unknown, o?: unknown) => void)(html, options),
         setHtml: (html: unknown) => (window.__tusEditorSetHtml as (h: unknown) => void)(html),
         command: (payload: { command: string; value?: string }) => (window.__tusEditorCommand as (p: unknown) => void)(payload),
     };
@@ -356,5 +365,50 @@ describe('pasted pictures (EDT-7)', () => {
         });
         delete (globalThis as any).FileReader;
         expect(prevented).toEqual(['paste']);
+    });
+});
+
+describe('attachments from the paper-clip', () => {
+    const recording = (focused: boolean) => {
+        const trace: string[] = [];
+        const run = runEditorScript(baseConfig, 'native', {
+            focused,
+            trace,
+            execCommand: (command) => { trace.push(command); return true; },
+        });
+        return { run, trace };
+    };
+
+    it('go in at the caret with no on-screen keyboard, and leave the field unfocused', () => {
+        // On iPhone a focus this script gives the document opens the keyboard; inputmode none
+        // keeps it down for the insertion, and the field is let go once the picture is in.
+        const { run, trace } = recording(false);
+        run.insertHtml({ html: '<img src="kalp.jpg">', original: '<img src="kalp.jpg">', preserved: {} }, { focus: false });
+        expect(trace).toEqual(['set inputmode=none', 'focus', 'insertHTML', 'blur', 'remove inputmode']);
+        expect(run.posted.some(({ message }) => (message as { type?: string }).type === 'change')).toBe(true);
+    });
+
+    it('leave a field that is being typed in focused, keyboard and all', () => {
+        const { run, trace } = recording(true);
+        run.insertHtml({ html: '<img src="kalp.jpg">', original: '<img src="kalp.jpg">', preserved: {} }, { focus: false });
+        expect(trace).toContain('insertHTML');
+        expect(trace).not.toContain('blur');
+        expect(trace.some((step) => step.includes('inputmode'))).toBe(false);
+    });
+
+    it('focus the field as before when the host does not ask otherwise', () => {
+        const { run, trace } = recording(false);
+        run.insertHtml({ html: '<b>x</b>', original: '<b>x</b>', preserved: {} });
+        expect(trace).toEqual(['focus', 'insertHTML']);
+    });
+
+    it('let the field go even when the insertion fails', () => {
+        const trace: string[] = [];
+        const run = runEditorScript(baseConfig, 'native', {
+            trace,
+            execCommand: () => { throw new Error('no selection'); },
+        });
+        expect(() => run.insertHtml('<img src="a.png">', { focus: false })).toThrow('no selection');
+        expect(trace.slice(-2)).toEqual(['blur', 'remove inputmode']);
     });
 });

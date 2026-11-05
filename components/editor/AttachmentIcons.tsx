@@ -121,3 +121,20 @@ export function PlayIcon({ color, size }: IconProps) {
         </OutlineIcon>
     );
 }
+
+export function CropIcon({ color, size }: IconProps) {
+    return (
+        <OutlineIcon size={size}>
+            <Path d="M6.5 2.8v13.2a1.5 1.5 0 0 0 1.5 1.5h13.2" {...line(color)} />
+            <Path d="M2.8 6.5H16a1.5 1.5 0 0 1 1.5 1.5v13.2" {...line(color)} />
+        </OutlineIcon>
+    );
+}
+
+export function ShrinkIcon({ color, size }: IconProps) {
+    return (
+        <OutlineIcon size={size}>
+            <Path d="M4.5 14.2h5.3v5.3M19.5 9.8h-5.3V4.5M14.2 9.8l6.3-6.3M3.5 20.5l6.3-6.3" {...line(color)} />
+        </OutlineIcon>
+    );
+}

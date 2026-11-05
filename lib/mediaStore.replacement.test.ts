@@ -32,7 +32,7 @@ vi.mock('./files', () => ({
     readUriBytes: vi.fn(async () => new Uint8Array([1, 2, 3])),
 }));
 
-import { removeMediaExcept, saveMediaFromUri } from './mediaStore';
+import { listStoredMediaFilenames, removeMediaExcept, saveMediaFromUri } from './mediaStore';
 
 describe('full collection media replacement', () => {
     beforeEach(() => {
@@ -47,6 +47,18 @@ describe('full collection media replacement', () => {
         expect(result).toEqual({ deleted: 2, remaining: 2 });
         expect([...fixture.files].sort()).toEqual(['bka-audio.mp3', 'bka.png']);
         expect(fixture.deleted.sort()).toEqual(['old-note.wav', 'old-photo.jpg']);
+    });
+
+    it('neither lists, counts nor deletes the WebView documents and hidden files beside the media', async () => {
+        fixture.files.add('.tus-view-0a1b2c.html');
+        fixture.files.add('.DS_Store');
+
+        expect((await listStoredMediaFilenames()).sort()).toEqual(['bka-audio.mp3', 'bka.png', 'old-note.wav', 'old-photo.jpg']);
+        const result = await removeMediaExcept(['bka.png', 'bka-audio.mp3']);
+
+        expect(result).toEqual({ deleted: 2, remaining: 2 });
+        expect(fixture.files.has('.tus-view-0a1b2c.html')).toBe(true);
+        expect(fixture.files.has('.DS_Store')).toBe(true);
     });
 
     it('saves media from local uri using native copy without corruption', async () => {

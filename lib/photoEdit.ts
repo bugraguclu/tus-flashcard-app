@@ -13,6 +13,7 @@ import {
     IDENTITY_PHOTO_GEOMETRY,
     isIdentityPhotoGeometry,
     mirrorPhotoGeometry,
+    orientedPhotoSize,
     photoCropSize,
     samePhotoCrop,
     turnPhotoGeometry,
@@ -70,9 +71,21 @@ export function photoEditExportSurface(
     return { width, height, scale: width / Math.max(1, canvas.width) };
 }
 
+/**
+ * Room left around the photo on every screen of the editor. The crop screen needs it so a grip on
+ * the photo's edge is not cut off, and the adjust and draw screens use the same, so a photo that is
+ * not cropped stays exactly where it was, at the same size, when the screen changes.
+ */
+export const PHOTO_STAGE_MARGIN = 24;
+
 /** The canvas the cropped photo is drawn on, as large as the stage allows. */
 export function photoEditCanvas(photo: PhotoSize, geometry: PhotoGeometry, stage: PhotoSize): PhotoSize {
-    return fitDrawingPage(stage, photoCropSize(photo, geometry));
+    return fitDrawingPage(stage, photoCropSize(photo, geometry), PHOTO_STAGE_MARGIN);
+}
+
+/** The canvas the crop screen shows the whole photo on, turned as it is, with its crop frame. */
+export function photoCropScreenCanvas(photo: PhotoSize, geometry: PhotoGeometry, stage: PhotoSize): PhotoSize {
+    return fitDrawingPage(stage, orientedPhotoSize(photo, geometry.quarterTurns), PHOTO_STAGE_MARGIN);
 }
 
 /** Canvas points per photo pixel while `geometry` is on show. */

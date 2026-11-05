@@ -12,6 +12,7 @@
 import { Platform } from 'react-native';
 import { getLegacyFileSystem as getFileSystem, toFileUri, readUriBytes } from './files';
 import { sanitizeMediaFilename } from './mediaFilename';
+import { isReservedMediaDirectoryEntry } from './localMediaDocument';
 
 export { sanitizeMediaFilename };
 
@@ -212,7 +213,8 @@ export async function removeMediaExcept(filenames: Iterable<string>): Promise<{ 
 
     const dir = await ensureMediaDir();
     const fs = getFileSystem();
-    const existing = await fs.readDirectoryAsync(dir);
+    // The WebViews' own documents and hidden files are not media; they are neither kept nor counted.
+    const existing = (await fs.readDirectoryAsync(dir)).filter((name) => !isReservedMediaDirectoryEntry(name));
     const stale = existing.filter((name) => !keep.has(name));
     for (const name of stale) {
         await fs.deleteAsync(`${dir}${name}`, { idempotent: true });
@@ -220,11 +222,16 @@ export async function removeMediaExcept(filenames: Iterable<string>): Promise<{ 
     return { deleted: stale.length, remaining: existing.length - stale.length };
 }
 
-/** List stored attachment names without reading their contents. */
+/**
+ * List stored attachment names without reading their contents. A name with a leading dot is never
+ * media — `sanitizeMediaFilename` strips that dot from every stored name — but the folder also
+ * holds the documents the iPhone WebViews load (lib/localMediaDocument.ts) and whatever hidden
+ * files the system leaves, so those are left out of the media check and of exports.
+ */
 export async function listStoredMediaFilenames(): Promise<string[]> {
     if (Platform.OS === 'web') return idbKeys();
     const dir = await ensureMediaDir();
-    return getFileSystem().readDirectoryAsync(dir);
+    return (await getFileSystem().readDirectoryAsync(dir)).filter((name) => !isReservedMediaDirectoryEntry(name));
 }
 
 /** Read a stored media file for Anki package export. Missing files return null. */

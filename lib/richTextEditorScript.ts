@@ -254,22 +254,36 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
     emitChange();
   };
 
-  window.__tusEditorInsertHtml = function (html) {
-    restoreSelection();
-    let processedHtml = html;
-    if (html && typeof html === 'object') {
-      Object.assign(preserved, html.preserved || {});
-      processedHtml = html.html;
+  // An attachment from the field's paper-clip goes in where the caret was, without bringing the
+  // keyboard up: the app sheet it came from has just closed, and on iPhone any focus a script
+  // gives this document opens the keyboard. When the field is not already being typed in, it is
+  // focused only for the insertion, with inputmode none (no on-screen keyboard), and let go again;
+  // the caret stays saved for the next insertion.
+  window.__tusEditorInsertHtml = function (html, options) {
+    const quiet = !!(options && options.focus === false) && document.activeElement !== editor;
+    if (quiet) editor.setAttribute('inputmode', 'none');
+    try {
+      restoreSelection();
+      let processedHtml = html;
+      if (html && typeof html === 'object') {
+        Object.assign(preserved, html.preserved || {});
+        processedHtml = html.html;
+      }
+      if (typeof html === 'string') {
+        processedHtml = html.replace(/\\[sound:([^\\]]+)\\]/gi, function (_, fn) {
+          return '<audio controls src="' + fn + '" disableRemotePlayback controlsList="nodownload"></audio>';
+        });
+      }
+      processedHtml = showableHtml(processedHtml);
+      bridge.editDocument(function () { return document.execCommand('insertHTML', false, processedHtml); });
+      initAudioControls();
+      emitChange();
+    } finally {
+      if (quiet) {
+        editor.blur();
+        editor.removeAttribute('inputmode');
+      }
     }
-    if (typeof html === 'string') {
-      processedHtml = html.replace(/\\[sound:([^\\]]+)\\]/gi, function (_, fn) {
-        return '<audio controls src="' + fn + '" disableRemotePlayback controlsList="nodownload"></audio>';
-      });
-    }
-    processedHtml = showableHtml(processedHtml);
-    bridge.editDocument(function () { return document.execCommand('insertHTML', false, processedHtml); });
-    initAudioControls();
-    emitChange();
   };
 
   window.__tusEditorWrapSelection = function (prefix, suffix) {

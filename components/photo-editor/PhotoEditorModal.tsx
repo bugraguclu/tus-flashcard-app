@@ -20,7 +20,7 @@ import { useI18n } from '../../hooks/useI18n';
 import { alert, confirm } from '../../lib/confirm';
 import { attachmentMediaFilename } from '../../lib/mediaFilename';
 import { guessMimeFromFilename, saveMediaBytes, saveMediaFromUri } from '../../lib/mediaStore';
-import { HIGHLIGHTER_INKS, fitDrawingPage, type DrawingShapeTool } from '../../lib/drawingPad';
+import { HIGHLIGHTER_INKS, type DrawingShapeTool } from '../../lib/drawingPad';
 import type { PhotoAnnotation, PhotoCropRect } from '../../lib/photoEditor';
 import {
     FULL_PHOTO_CROP,
@@ -46,6 +46,7 @@ import {
     cropPhotoEdit,
     isPhotoEditUntouched,
     mirrorPhotoEdit,
+    photoCropScreenCanvas,
     photoEditCanvas,
     photoEditExportSurface,
     resetPhotoEditGeometry,
@@ -98,8 +99,8 @@ type ExportJob = {
     annotations: PhotoAnnotation[];
 };
 
-/** Room around the whole photo on the crop screen, so a grip on its edge is not cut off. */
-const CROP_MARGIN = 24;
+/** The panels under the photo, one per screen, all laid out so the tallest sets the room they take. */
+const PANEL_MODES: PhotoEditMode[] = ['crop', 'adjust', 'draw'];
 /** The photo is the picture, so "More" offers no second one. */
 const PHOTO_MORE_TOOLS: DrawingShapeTool[] = ['arrow', 'rect', 'ellipse', 'cover'];
 const UNIT: PhotoSize = { width: 1, height: 1 };
@@ -129,6 +130,9 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
     const [comparing, setComparing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [exportJob, setExportJob] = useState<ExportJob | null>(null);
+    // Each screen's panel height as laid out, kept at its tallest. The panels share one area as tall
+    // as the tallest of them, so the photo above keeps its place and size from screen to screen.
+    const [panelHeights, setPanelHeights] = useState<Record<PhotoEditMode, number>>({ crop: 0, adjust: 0, draw: 0 });
 
     const photoSize = useMemo<PhotoSize>(
         () => (working ? { width: working.preview.width, height: working.preview.height } : { width: 4, height: 3 }),
@@ -136,7 +140,7 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
     );
     const oriented = useMemo(() => orientedPhotoSize(photoSize, geometry.quarterTurns), [photoSize, geometry.quarterTurns]);
     const drawCanvas = useMemo(() => (stage ? photoEditCanvas(photoSize, geometry, stage) : UNIT), [stage, photoSize, geometry]);
-    const cropCanvas = useMemo(() => (stage ? fitDrawingPage(stage, oriented, CROP_MARGIN) : UNIT), [stage, oriented]);
+    const cropCanvas = useMemo(() => (stage ? photoCropScreenCanvas(photoSize, geometry, stage) : UNIT), [stage, photoSize, geometry]);
     const cropOffset = stage
         ? { x: (stage.width - cropCanvas.width) / 2, y: (stage.height - cropCanvas.height) / 2 }
         : { x: 0, y: 0 };
@@ -436,11 +440,6 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
         const surface = photoEditExportSurface(base, drawCanvas, ratio);
         return { width: surface.width * ratio, height: surface.height * ratio };
     }, [working, geometry, draftCrop, edit, drawCanvas]);
-    const hint = mode === 'crop'
-        ? l('Köşeleri sürükleyerek kırpın', 'Drag the corners to crop')
-        : mode === 'adjust'
-            ? l('Karşılaştırmak için basılı tutun', 'Press and hold to compare')
-            : '';
     const inks = drawing.tool === 'highlighter' ? HIGHLIGHTER_INKS : drawing.tool === 'eraser' ? [] : PHOTO_PEN_INKS;
     const untouched = isPhotoEditUntouched(edit);
 
@@ -453,9 +452,57 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
             accessibilityLabel={label}
             accessibilityState={{ disabled: !enabled }}
         >
-            <Glyph color={colors.textPrimary} size={20} />
+            <Glyph color={colors.textPrimary} size={22} />
         </TouchableOpacity>
     );
+
+    const measurePanel = (panel: PhotoEditMode) => (event: LayoutChangeEvent) => {
+        const height = Math.ceil(event.nativeEvent.layout.height);
+        setPanelHeights((current) => (current[panel] >= height ? current : { ...current, [panel]: height }));
+    };
+    const panelAreaHeight = Math.max(panelHeights.crop, panelHeights.adjust, panelHeights.draw);
+
+    const panelFor = (panel: PhotoEditMode) => {
+        if (panel === 'crop') {
+            return (
+                <CropPanel
+                    aspect={cropAspect}
+                    onAspectChange={chooseAspect}
+                    onTurn={turn}
+                    onMirror={mirror}
+                    onReset={resetGeometry}
+                    canReset={!isIdentityPhotoGeometry(geometry)}
+                    disabled={!working}
+                />
+            );
+        }
+        if (panel === 'adjust') {
+            return (
+                <AdjustPanel
+                    tab={adjustTab}
+                    onTabChange={setAdjustTab}
+                    adjustments={shownAdjustments}
+                    onFilter={applyFilter}
+                    onSlide={slide}
+                    onSlideEnd={slideEnd}
+                    disabled={!working}
+                />
+            );
+        }
+        return (
+            <DrawingToolbar
+                tool={drawing.tool}
+                onToolChange={drawing.chooseTool}
+                onMorePress={drawing.openMore}
+                inks={inks}
+                color={drawing.color}
+                onColorChange={drawing.changeColor}
+                size={drawing.sizes[drawing.tool]}
+                onSizeChange={drawing.changeSize}
+                bottomInset={0}
+            />
+        );
+    };
 
     const cropStage = working && (
         <View
@@ -539,17 +586,11 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                     >
                         <Text style={styles.cancelText}>{l('Vazgeç', 'Cancel')}</Text>
                     </TouchableOpacity>
-                    <View style={styles.headerCenter}>
-                        <Text style={styles.title}>{l('Fotoğrafı düzenle', 'Edit Photo')}</Text>
-                        <Text
-                            style={styles.subtitle}
-                            numberOfLines={1}
-                            accessibilityLabel={outputSize
-                                ? l(`Eklenecek boyut: ${outputSize.width} × ${outputSize.height} piksel`, `Size added: ${outputSize.width} × ${outputSize.height} pixels`)
-                                : undefined}
-                        >
-                            {outputSize ? `${outputSize.width} × ${outputSize.height}` : ' '}
-                        </Text>
+                    {/* Undo, redo and back to the original sit in the top bar, between Cancel and Add. */}
+                    <View style={styles.headerTools}>
+                        {historyButton(l('Geri al', 'Undo'), history.canUndo, undo, UndoGlyph)}
+                        {historyButton(l('Yinele', 'Redo'), history.canRedo, redo, RedoGlyph)}
+                        {historyButton(l('Orijinale dön', 'Revert to original'), !untouched, revertAll, RevertGlyph)}
                     </View>
                     <View style={[styles.headerSide, styles.headerRight]}>
                         <TouchableOpacity
@@ -557,7 +598,12 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                             onPress={save}
                             disabled={!working || saving}
                             accessibilityRole="button"
-                            accessibilityLabel={l('Fotoğrafı karta ekle', 'Add the photo to the card')}
+                            accessibilityLabel={outputSize
+                                ? l(
+                                    `Fotoğrafı karta ekle, ${outputSize.width} × ${outputSize.height} piksel`,
+                                    `Add the photo to the card, ${outputSize.width} × ${outputSize.height} pixels`,
+                                )
+                                : l('Fotoğrafı karta ekle', 'Add the photo to the card')}
                             accessibilityState={{ disabled: !working || saving }}
                         >
                             {saving
@@ -565,13 +611,6 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                                 : <Text style={styles.addText}>{l('Ekle', 'Add')}</Text>}
                         </TouchableOpacity>
                     </View>
-                </View>
-
-                <View style={styles.historyBar}>
-                    <Text style={styles.hint} numberOfLines={2}>{hint}</Text>
-                    {historyButton(l('Geri al', 'Undo'), history.canUndo, undo, UndoGlyph)}
-                    {historyButton(l('Yinele', 'Redo'), history.canRedo, redo, RedoGlyph)}
-                    {historyButton(l('Orijinale dön', 'Revert to original'), !untouched, revertAll, RevertGlyph)}
                 </View>
 
                 <View
@@ -589,41 +628,24 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                         : mode === 'crop' ? cropStage : pageStage}
                 </View>
 
-                {mode === 'crop' && (
-                    <CropPanel
-                        aspect={cropAspect}
-                        onAspectChange={chooseAspect}
-                        onTurn={turn}
-                        onMirror={mirror}
-                        onReset={resetGeometry}
-                        canReset={!isIdentityPhotoGeometry(geometry)}
-                        disabled={!working}
-                    />
-                )}
-                {mode === 'adjust' && (
-                    <AdjustPanel
-                        tab={adjustTab}
-                        onTabChange={setAdjustTab}
-                        adjustments={shownAdjustments}
-                        onFilter={applyFilter}
-                        onSlide={slide}
-                        onSlideEnd={slideEnd}
-                        disabled={!working}
-                    />
-                )}
-                {mode === 'draw' && (
-                    <DrawingToolbar
-                        tool={drawing.tool}
-                        onToolChange={drawing.chooseTool}
-                        onMorePress={drawing.openMore}
-                        inks={inks}
-                        color={drawing.color}
-                        onColorChange={drawing.changeColor}
-                        size={drawing.sizes[drawing.tool]}
-                        onSizeChange={drawing.changeSize}
-                        bottomInset={0}
-                    />
-                )}
+                {/* All three panels are laid out, the others hidden, in one area as tall as the
+                    tallest: the stage above, and the photo on it, never change size with the screen. */}
+                <View style={[styles.panelArea, panelAreaHeight > 0 && { height: panelAreaHeight }]}>
+                    {PANEL_MODES.map((panel) => {
+                        const active = panel === mode;
+                        return (
+                            <View
+                                key={panel}
+                                onLayout={measurePanel(panel)}
+                                style={[styles.panelSlot, !active && styles.panelHidden, { pointerEvents: active ? 'auto' : 'none' }]}
+                                accessibilityElementsHidden={!active}
+                                importantForAccessibility={active ? 'auto' : 'no-hide-descendants'}
+                            >
+                                {panelFor(panel)}
+                            </View>
+                        );
+                    })}
+                </View>
                 <EditModeTabs mode={mode} onChange={changeMode} bottomInset={insets.bottom} />
 
                 <MoreToolsSheet
@@ -678,10 +700,8 @@ function createStyles(colors: ColorScheme) {
         },
         headerSide: { minWidth: 76, minHeight: 44, justifyContent: 'center' },
         headerRight: { alignItems: 'flex-end' },
-        headerCenter: { flex: 1, alignItems: 'center', gap: 1 },
+        headerTools: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.xs },
         cancelText: { fontSize: FontSize.lg, color: colors.accent, fontWeight: '600' },
-        title: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        subtitle: { fontSize: FontSize.sm, color: colors.textMuted, fontVariant: ['tabular-nums'] },
         addButton: {
             minWidth: 64,
             height: 36,
@@ -693,25 +713,18 @@ function createStyles(colors: ColorScheme) {
         },
         addButtonDisabled: { opacity: 0.4 },
         addText: { color: colors.white, fontWeight: '700', fontSize: FontSize.md },
-        historyBar: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            paddingHorizontal: Spacing.md,
-            paddingTop: Spacing.sm,
-        },
-        hint: { flex: 1, fontSize: FontSize.sm, color: colors.textMuted },
         historyButton: {
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: colors.bgCard,
+            width: 44,
+            height: 44,
+            borderRadius: 22,
             alignItems: 'center',
             justifyContent: 'center',
-            ...Shadows.sm,
         },
         disabled: { opacity: 0.35 },
         stage: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+        panelArea: { backgroundColor: colors.bgCard },
+        panelSlot: { position: 'absolute', left: 0, right: 0, top: 0 },
+        panelHidden: { opacity: 0 },
         cropCanvas: { position: 'absolute' },
         // The shadow sits on a wrapper: iOS clips a shadow drawn by a view that clips its content.
         pageShadow: { borderRadius: BorderRadius.sm, backgroundColor: colors.bgCard, ...Shadows.md },

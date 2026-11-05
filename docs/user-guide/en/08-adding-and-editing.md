@@ -125,18 +125,18 @@ confirm, the note is saved with one card.
 ## Images, video and files
 
 The 📎 next to a field name opens **Add Attachment**. The attachment goes where the cursor is in that
-field.
+field; the keyboard stays down, so tap the field to carry on typing.
 
-- **Choose Photo** / **Take Photo:** then choose **Insert as is** (full resolution) or **Crop & edit**
-  ([Editing a photo](#photo-editor)).
+- **Choose Photo** / **Take Photo:** Choose Photo opens Photos without asking for permission. Then
+  choose **Insert as is** (full resolution) or **Crop & edit** ([Editing a photo](#photo-editor)).
 - **Draw on Blank Canvas:** opens a [drawing page](#drawing-page).
 - **Record Audio** and **Attach Audio Clip:** see [Recording audio](#audio-recording).
 - **Attach Video Clip:** on iPhone, choose from **Gallery** or **Files**.
 - **Attach File:** the file is stored with the note and exported, but it cannot be opened from the
   card.
 
-If the app asks for permission, use **Open Settings** to allow photo library, camera or microphone
-access in iPhone Settings. You can paste an image from the clipboard into a field; it is saved as a
+If the app asks for permission, use **Open Settings** to allow camera or microphone access in iPhone
+Settings. You can paste an image from the clipboard into a field; it is saved as a
 JPEG, or as a PNG when **Settings › General › Editing › Paste clipboard images as PNG** is on. Images
 copied from a web page together with text are not downloaded and appear blank; save the image and
 attach it instead.
@@ -157,9 +157,10 @@ the note. How audio plays while you study: [Studying](05-studying.md#audio-and-t
 ## Editing a photo
 <!-- In the app: ⓘ next to the Edit Photo title (new, components/photo-editor/PhotoEditorModal.tsx, header), the info sheet's "Learn more" link → this section -->
 
-**Crop & edit** opens the photo in an editor laid out like the [drawing page](#drawing-page):
-**Cancel** and **Add** at the top, the size the photo will be added at under the title, ↶ and ↷ to
-undo and redo any step, and three tabs at the bottom. The photo opens on **Crop**.
+**Crop & edit** opens the photo in an editor laid out like the [drawing page](#drawing-page): the
+top bar holds **Cancel**, ↶ and ↷ to undo and redo any step, the clock button that goes back to the
+original photo, and **Add**; three tabs sit at the bottom. The photo opens on **Crop** and, while it
+is not cropped, keeps its place and size from tab to tab.
 
 - **Crop:** drag a corner or an edge of the frame to resize it, or drag inside it to move it; the
   part that is cut away is dimmed. Pick **Free**, **Original**, **Square**, **4:3**, **3:4**,
@@ -177,8 +178,8 @@ undo and redo any step, and three tabs at the bottom. The photo opens on **Crop*
   to move it, and remove it with the 🗑 on its corner.
 
 The tabs can be used in any order and revisited: a crop can be widened again, and drawings move and
-turn with the photo. Drawings outside the crop are left out of the added image. The clock button
-above the photo goes back to the original photo (this can be undone too). **Add** puts the photo in
+turn with the photo. Drawings outside the crop are left out of the added image. The clock button in
+the top bar goes back to the original photo (this can be undone too). **Add** puts the photo in
 the field: an unchanged photo is added as picked, at full resolution, and an edited one at most 2000
 pixels on its long side. **Cancel** asks before discarding changes.
 

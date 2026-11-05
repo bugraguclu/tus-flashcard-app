@@ -5,6 +5,7 @@ import {
     cropPhotoEdit,
     isPhotoEditUntouched,
     mirrorPhotoEdit,
+    photoCropScreenCanvas,
     photoEditCanvas,
     photoEditExportSurface,
     resetPhotoEditGeometry,
@@ -114,5 +115,24 @@ describe('exporting an edited photo', () => {
         const surface = photoEditExportSurface({ width: 300, height: 390 }, { width: 351, height: 456 }, 3);
         expect(surface.width * 3).toBe(300);
         expect(surface.height * 3).toBe(390);
+    });
+});
+
+describe('the photo between the editor screens', () => {
+    it('stays at the same size on the crop, adjust and draw screens while it is not cropped', () => {
+        for (const size of [photo, { width: 3024, height: 4032 }, { width: 4000, height: 1000 }]) {
+            for (const turns of [0, 1, 2, 3] as const) {
+                const geometry = { ...INITIAL_PHOTO_EDIT.geometry, quarterTurns: turns };
+                expect(photoEditCanvas(size, geometry, stage)).toEqual(photoCropScreenCanvas(size, geometry, stage));
+            }
+        }
+    });
+
+    it('fills the stage up to the same margin on every screen', () => {
+        const canvas = photoCropScreenCanvas({ width: 3024, height: 4032 }, INITIAL_PHOTO_EDIT.geometry, stage);
+        expect(canvas.width).toBeLessThanOrEqual(stage.width - 48);
+        expect(canvas.height).toBeLessThanOrEqual(stage.height - 48);
+        expect(Math.max(stage.width - 48 - canvas.width, stage.height - 48 - canvas.height)).toBeGreaterThan(0);
+        expect(Math.min(stage.width - 48 - canvas.width, stage.height - 48 - canvas.height)).toBeLessThanOrEqual(1);
     });
 });

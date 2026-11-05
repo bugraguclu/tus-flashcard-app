@@ -18,11 +18,13 @@ import { useI18n } from '../hooks/useI18n';
 import SwipeDismissSheet from './SwipeDismissSheet';
 import {
     CameraIcon,
+    CropIcon,
     DocumentIcon,
     DrawIcon,
     MicIcon,
     MusicIcon,
     PhotoIcon,
+    ShrinkIcon,
     VideoIcon,
 } from './editor/AttachmentIcons';
 import {
@@ -37,6 +39,12 @@ import {
 interface MediaAttachButtonProps {
     /** Appends an Anki-style media reference (`<img src="…">`, `[sound:…]`, …) to the field. */
     onInsert: (snippet: string) => void;
+    /**
+     * Runs before the menu opens. The editor lets its fields go here: a WebView field keeps its
+     * keyboard through `Keyboard.dismiss()`, which reaches only native text inputs, and that
+     * keyboard would otherwise sit over the menu and the sheets that follow it.
+     */
+    onBeforeOpen?: () => void;
 }
 
 export interface MediaAttachButtonHandle {
@@ -57,7 +65,7 @@ type PickedFile = {
     kind: MediaReferenceKind;
 };
 
-const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert }, ref) {
+const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert, onBeforeOpen }, ref) {
     const { t, l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -103,6 +111,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
 
     const openMenu = () => {
         Keyboard.dismiss();
+        onBeforeOpen?.();
         setMenuVisible(true);
     };
 
@@ -126,19 +135,9 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
 
     const pickFromGallery = async () => {
         try {
-            const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (!perm.granted) {
-                await promptPermissionSettings({
-                    title: l('İzin gerekli', 'Permission Required'),
-                    message: l(
-                        'Galeriye erişmek için izin vermeniz gerekiyor. Ayarlardan erişim iznini açabilirsiniz.',
-                        'Allow photo library access to choose a photo. You can enable access in Settings.',
-                    ),
-                    settingsLabel: l('Ayarları Aç', 'Open Settings'),
-                    cancelLabel: t('common.cancel'),
-                });
-                return;
-            }
+            // The system photo picker runs outside the app and hands over only what is chosen, so
+            // it needs no photo library permission; asking for one only put a prompt in the way,
+            // and a "Don't Allow" there used to shut the gallery for good.
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ['images'],
                 allowsEditing: false,
@@ -194,9 +193,15 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     };
 
     const offerPickedPhoto = async (photo: EditablePhoto) => {
-        const byteLength = await readUriByteLength(photo.uri);
-        const plan = await planPhotoCompressionForUri(photo, byteLength);
-        setPickedPhoto({ ...photo, byteLength, plan });
+        // Sizing up a large photo takes a moment after the picker closes; the button shows it.
+        setBusy(true);
+        try {
+            const byteLength = await readUriByteLength(photo.uri);
+            const plan = await planPhotoCompressionForUri(photo, byteLength);
+            setPickedPhoto({ ...photo, byteLength, plan });
+        } finally {
+            setBusy(false);
+        }
     };
 
     /**
@@ -423,7 +428,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                             accessibilityRole="button"
                             accessibilityLabel={l('Fotoğrafı olduğu gibi ekle', 'Insert the photo unchanged')}
                         >
-                            <Text style={styles.optionIcon}>🖼️</Text>
+                            <View style={styles.menuIcon}><PhotoIcon color={icon} /></View>
                             <View style={styles.optionCopy}>
                                 <Text style={styles.optionLabel}>{l('Olduğu gibi ekle', 'Insert as is')}</Text>
                                 <Text style={styles.optionCaption}>
@@ -440,7 +445,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                                 accessibilityRole="button"
                                 accessibilityLabel={l('Fotoğrafı küçülterek ekle', 'Add a smaller copy of the photo')}
                             >
-                                <Text style={styles.optionIcon}>🪶</Text>
+                                <View style={styles.menuIcon}><ShrinkIcon color={icon} /></View>
                                 <View style={styles.optionCopy}>
                                     <Text style={styles.optionLabel}>{l('Küçültüp ekle', 'Add optimised')}</Text>
                                     <Text style={styles.optionCaption}>
@@ -465,7 +470,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                             accessibilityRole="button"
                             accessibilityLabel={l('Fotoğrafı kırp ve düzenle', 'Crop and edit the photo')}
                         >
-                            <Text style={styles.optionIcon}>✂️</Text>
+                            <View style={styles.menuIcon}><CropIcon color={icon} /></View>
                             <View style={styles.optionCopy}>
                                 <Text style={styles.optionLabel}>{l('Kırp ve düzenle', 'Crop & edit')}</Text>
                                 <Text style={styles.optionCaption}>
@@ -541,7 +546,6 @@ function createStyles(colors: ColorScheme) {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
-        optionIcon: { fontSize: 20, width: 28, textAlign: 'center' },
         menuIcon: { width: 28, alignItems: 'center' },
         optionCopy: { flex: 1, gap: 2 },
         optionLabel: { fontSize: FontSize.md, color: colors.textPrimary },

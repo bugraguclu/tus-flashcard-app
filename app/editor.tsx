@@ -1263,7 +1263,9 @@ export default function EditorScreen() {
                                             <PinIcon color={isPinned ? colors.accent : colors.textMuted} />
                                         </TouchableOpacity>
                                         <MediaAttachButton
-                                            onInsert={(snippet) => fieldEditorRefs.current[index]?.insertHtml(snippet)}
+                                            onBeforeOpen={dismissEditorKeyboard}
+                                            // The attachment goes in at the caret with the keyboard left down.
+                                            onInsert={(snippet) => fieldEditorRefs.current[index]?.insertHtml(snippet, { focus: false })}
                                         />
                                     </View>
                                 )}

@@ -8,7 +8,8 @@ import { getMediaBaseUrl, saveMediaBytes } from '../lib/mediaStore';
 import { resolveWebFieldMedia } from '../lib/webFieldMedia';
 import { mediaReferenceSnippet } from '../lib/mediaAttachment';
 import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
-import { isLocalMediaDocumentUrl, localMediaWebViewSource } from '../lib/localMediaDocument';
+import { isLocalMediaDocumentUrl } from '../lib/localMediaDocument';
+import { useLocalMediaWebViewSource } from '../hooks/useLocalMediaWebViewSource';
 import { sanitizeToolbarSnippet } from '../lib/customToolbar';
 import { stripPendingStyleMarkers } from '../lib/richTextCommands';
 import {
@@ -54,7 +55,11 @@ export interface RichTextEditorHandle {
     focus: () => void;
     blur: () => void;
     runCommand: (command: RichTextCommand, value?: string) => void;
-    insertHtml: (html: string) => void;
+    /**
+     * Insert HTML at the caret. `focus: false` keeps the keyboard down: a field that is not being
+     * typed in takes the insertion and stays unfocused, as for an attachment.
+     */
+    insertHtml: (html: string, options?: { focus?: boolean }) => void;
     wrapSelection: (prefix: string, suffix: string) => void;
     /** Set a CSS property on every block the selection touches; an empty value removes it. */
     applyBlockStyle: (property: 'lineHeight', value: string) => void;
@@ -295,7 +300,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     }, [mountDelayMs, webViewMounted]);
     // Fields store media the way Anki does — a bare filename — so the document is loaded from the
     // media directory and the WebView resolves those names itself. The field HTML is never
-    // rewritten, which is what keeps an absolute path out of the saved note.
+    // rewritten, which is what keeps an absolute path out of the saved note. On iPhone the
+    // document is a file in that directory: an HTML string with the directory as its base shows
+    // every picture as a broken "?" and every sound as an error on a device (see
+    // lib/localMediaDocument.ts).
     const mediaBaseUrl = getMediaBaseUrl();
     const hostOrigin = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : undefined;
     const documentHtml = useMemo(
@@ -305,10 +313,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [colors, placeholder, fontSize, capitalizeSentences, minHeight, pasteClipboardImagesAsPng, scrollMode, editable, fontFamily, rtl, hostOrigin],
     );
-    const source = useMemo(
-        () => localMediaWebViewSource(documentHtml, mediaBaseUrl),
-        [documentHtml, mediaBaseUrl],
-    );
+    const { source, documentUri } = useLocalMediaWebViewSource(documentHtml, mediaBaseUrl);
     const [webFallbackDue, setWebFallbackDue] = useState(false);
 
     // On web WebHtmlFrame writes the new document during this commit's layout phase, and its
@@ -381,9 +386,11 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
             if (!editable) return;
             runWhenReady({ fn: '__tusEditorCommand', args: [{ command, value: commandValue }] });
         },
-        insertHtml: (html) => {
+        insertHtml: (html, options) => {
             if (!editable) return;
-            runWhenReady({ fn: '__tusEditorInsertHtml', args: [prepareEditorContent(html)] });
+            const args: unknown[] = [prepareEditorContent(html)];
+            if (options?.focus === false) args.push({ focus: false });
+            runWhenReady({ fn: '__tusEditorInsertHtml', args });
         },
         wrapSelection: (prefix, suffix) => {
             if (!editable) return;
@@ -525,7 +532,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                     source={source}
                     originWhitelist={['about:blank', 'file://*']}
                     onMessage={(event) => { void handleMessage(event.nativeEvent.data); }}
-                    onShouldStartLoadWithRequest={(request) => isLocalMediaDocumentUrl(request.url, mediaBaseUrl)}
+                    onShouldStartLoadWithRequest={(request) => isLocalMediaDocumentUrl(request.url, mediaBaseUrl, documentUri)}
                     style={{ backgroundColor: colors.bgCard }}
                     containerStyle={{ backgroundColor: colors.bgCard }}
                     scrollEnabled={scrollsInside}

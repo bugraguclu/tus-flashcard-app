@@ -11,16 +11,20 @@ import {
     useAudioRecorder,
     useAudioRecorderState,
     type RecordingOptions,
+    type RecordingStatus,
 } from 'expo-audio';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirmAsync } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
 import { sanitizeMediaFilename } from '../lib/mediaFilename';
+import { getLegacyFileSystem } from '../lib/files';
 import {
     MIN_RECORDING_MS,
     emptyLevels,
     formatRecordingTime,
+    isEmptyLoadedTake,
+    isUsableTake,
     levelFromMetering,
     pushLevel,
     recordingFileType,
@@ -52,6 +56,12 @@ const VOICE_RECORDING: RecordingOptions = {
 
 type Take = { uri: string; durationMillis: number };
 
+/**
+ * What the player is given to let go of a take's file. iOS refuses `null` here ("cannot be cast to
+ * AudioSource") although the types allow it; a source with no address unloads the player.
+ */
+const NO_TAKE = {};
+
 /** Copy a finished take into the collection's media and return the name it is stored under. */
 async function storeTake(uri: string): Promise<string> {
     if (Platform.OS === 'web') {
@@ -77,6 +87,24 @@ async function releaseAudioSession(): Promise<void> {
         await setIsAudioActiveAsync(false);
     } catch (error) {
         console.warn('[AudioRecordModal] could not release the audio session:', error);
+    }
+}
+
+/** Delete a take from the recorder's cache folder once it is added or thrown away. A web take is a blob URL. */
+function discardTakeFile(uri: string | null | undefined): void {
+    if (!uri || Platform.OS === 'web' || !uri.startsWith('file://')) return;
+    getLegacyFileSystem().deleteAsync(uri, { idempotent: true }).catch(() => undefined);
+}
+
+/** Whether the take on disk has sound in it. A browser's take cannot be looked at this way and is trusted. */
+async function takeHasSound(uri: string): Promise<boolean> {
+    if (Platform.OS === 'web' || !uri.startsWith('file://')) return true;
+    try {
+        const info = await getLegacyFileSystem().getInfoAsync(uri);
+        return isUsableTake({ exists: info.exists, size: info.exists && !info.isDirectory ? info.size : 0 });
+    } catch (error) {
+        console.warn('[AudioRecordModal] could not look at the take:', error);
+        return false;
     }
 }
 
@@ -107,29 +135,67 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
     const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const recorder = useAudioRecorder(VOICE_RECORDING);
+    const systemEndRef = useRef<(status: RecordingStatus) => void>(() => undefined);
+    const recorder = useAudioRecorder(VOICE_RECORDING, (status) => systemEndRef.current(status));
     const recorderState = useAudioRecorderState(recorder, 100);
-    const player = useAudioPlayer(null, { updateInterval: 100 });
+    // expo-audio hands the audio session back 100 ms after any player pauses unless the player
+    // keeps it, and it does not count a recorder as a reason to keep it. The pause before every
+    // take therefore switched the session off just as the microphone started: on an iPhone the
+    // take never began ("Kayıt başlatılamadı") or came back silent and would not play. This sheet
+    // releases the session itself when it closes.
+    const player = useAudioPlayer(null, { updateInterval: 100, keepAudioSessionActive: true });
     const playback = useAudioPlayerStatus(player);
     const [phase, setPhase] = useState<RecorderPhase>('idle');
     const [take, setTake] = useState<Take | null>(null);
     const [levels, setLevels] = useState(emptyLevels);
     const [busy, setBusy] = useState(false);
     const phaseRef = useRef<RecorderPhase>('idle');
+    const takeRef = useRef<Take | null>(null);
     const elapsedRef = useRef(0);
     const sessionClaimedRef = useRef(false);
+    // Polls in a row that found the microphone stopped while the sheet said it was recording.
+    const silentPollsRef = useRef(0);
     phaseRef.current = phase;
+    takeRef.current = take;
 
-    // Leaving the editor with the sheet open still gives the microphone's audio session back.
+    /** The phase, for the next render and at once for the recorder's own events. */
+    const changePhase = (next: RecorderPhase) => {
+        phaseRef.current = next;
+        setPhase(next);
+    };
+
+    const keepTake = (next: Take | null) => {
+        takeRef.current = next;
+        setTake(next);
+    };
+
+    // Leaving the editor with the sheet open still gives the microphone's audio session back and
+    // drops the take nobody added.
     useEffect(() => () => {
         if (sessionClaimedRef.current) void releaseAudioSession();
+        discardTakeFile(takeRef.current?.uri);
     }, []);
 
     useEffect(() => {
-        if (phase !== 'recording') return;
+        if (phase !== 'recording') {
+            silentPollsRef.current = 0;
+            return;
+        }
         elapsedRef.current = Math.max(elapsedRef.current, recorderState.durationMillis);
         setLevels((current) => pushLevel(current, levelFromMetering(recorderState.metering)));
-    }, [phase, recorderState.durationMillis, recorderState.metering]);
+        // A call, Siri or another app can take the microphone away mid-take. The recorder only
+        // pauses then, so the sheet says so and Resume carries on from where it stopped.
+        if (Platform.OS !== 'ios') return;
+        silentPollsRef.current = recorder.isRecording ? 0 : silentPollsRef.current + 1;
+        if (silentPollsRef.current < 3) return;
+        silentPollsRef.current = 0;
+        try {
+            recorder.pause();
+        } catch (error) {
+            console.warn('[AudioRecordModal] could not settle an interrupted take:', error);
+        }
+        changePhase('paused');
+    }, [phase, recorder, recorderState.durationMillis, recorderState.metering]);
 
     // iOS stops the microphone when the app leaves the screen; pausing first keeps the take whole
     // and leaves the sheet saying what actually happened.
@@ -138,7 +204,7 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
             if (state !== 'background' || phaseRef.current !== 'recording') return;
             try {
                 recorder.pause();
-                setPhase('paused');
+                changePhase('paused');
             } catch (error) {
                 console.warn('[AudioRecordModal] pause on background failed:', error);
             }
@@ -146,8 +212,31 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
         return () => subscription.remove();
     }, [recorder]);
 
+    // A take that loads as nothing (the microphone never fed it) is not offered for adding.
+    useEffect(() => {
+        if (phase !== 'recorded' || !take) return;
+        if (!isEmptyLoadedTake(playback)) return;
+        rejectEmptyTake();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [phase, take, playback.isLoaded, playback.duration, playback.playbackState]);
+
+    const rejectEmptyTake = () => {
+        discardTakeFile(takeRef.current?.uri);
+        keepTake(null);
+        player.replace(NO_TAKE);
+        changePhase('idle');
+        alert(
+            t('common.error'),
+            l(
+                'Kayıtta ses yok; mikrofon ses almamış olabilir. Lütfen yeniden kaydedin.',
+                'The recording has no sound in it; the microphone may not have picked anything up. Please record again.',
+            ),
+        );
+    };
+
     const startRecording = async () => {
         setBusy(true);
+        const previous = takeRef.current;
         try {
             const permission = await requestRecordingPermissionsAsync();
             if (!permission.granted) {
@@ -162,18 +251,40 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
                 });
                 return;
             }
-            player.pause();
+            // The take being listened to stops, and the player lets go of its file.
+            if (player.playing) player.pause();
+            if (previous) player.replace(NO_TAKE);
             sessionClaimedRef.current = true;
             await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
-            await recorder.prepareToRecordAsync();
+            // Every take is a new file, so a retake never writes over the one it replaces.
+            await recorder.prepareToRecordAsync(VOICE_RECORDING);
             recorder.record();
-            setTake(null);
+            // iOS can refuse the microphone without an error, to a call or another app holding it.
+            if (Platform.OS === 'ios' && !recorder.isRecording) throw new Error('The recorder did not start.');
+            keepTake(null);
+            discardTakeFile(previous?.uri);
             setLevels(emptyLevels());
             elapsedRef.current = 0;
-            setPhase('recording');
+            changePhase('recording');
         } catch (error) {
             console.warn('[AudioRecordModal] start failed:', error);
-            alert(t('common.error'), l('Kayıt başlatılamadı.', 'Could not start recording.'));
+            try {
+                if (recorder.isRecording) await recorder.stop();
+            } catch {
+                // Nothing was recording.
+            }
+            // A failed retake leaves the earlier take to listen to and add.
+            if (previous) {
+                player.replace({ uri: previous.uri });
+                await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch(() => undefined);
+            }
+            alert(
+                t('common.error'),
+                l(
+                    'Kayıt başlatılamadı. Mikrofonu kullanan bir arama ya da başka bir uygulama varsa kapatıp yeniden deneyin.',
+                    'Could not start recording. If a call or another app is using the microphone, end it and try again.',
+                ),
+            );
         } finally {
             setBusy(false);
         }
@@ -183,38 +294,69 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
         try {
             if (phase === 'recording') {
                 recorder.pause();
-                setPhase('paused');
+                changePhase('paused');
             } else if (phase === 'paused') {
                 recorder.record();
-                setPhase('recording');
+                if (Platform.OS === 'ios' && !recorder.isRecording) {
+                    alert(t('common.error'), l('Kayda devam edilemedi; mikrofon şu anda kullanılamıyor.', 'Could not resume; the microphone is not available right now.'));
+                    return;
+                }
+                changePhase('recording');
             }
         } catch (error) {
             console.warn('[AudioRecordModal] pause/resume failed:', error);
         }
     };
 
-    /** Stop the microphone and keep what it recorded, ready to be heard or added. */
+    /**
+     * Stop the microphone and keep what it recorded, ready to be heard or added. Listening back
+     * uses the ordinary playback route — the loudspeaker, or headphones in their full-quality
+     * profile rather than the call profile a microphone needs.
+     */
     const finishTake = async (): Promise<Take | null> => {
         const durationMillis = Math.max(elapsedRef.current, recorder.getStatus().durationMillis);
+        changePhase('recorded');
         await recorder.stop();
+        await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true }).catch((error) => {
+            console.warn('[AudioRecordModal] could not switch to playback:', error);
+        });
         const uri = recorder.uri;
-        if (!uri) {
-            setPhase('idle');
+        if (!uri || !(await takeHasSound(uri))) {
+            discardTakeFile(uri);
+            keepTake(null);
+            changePhase('idle');
             return null;
         }
         const finished = { uri, durationMillis };
-        setTake(finished);
-        setPhase('recorded');
+        keepTake(finished);
         player.replace({ uri });
         return finished;
+    };
+
+    // The recorder's own report that a take ended. One this sheet stopped is already past
+    // recording by then; one the system ended (its media services reset, the take cut short) is
+    // kept up to where it stopped when it holds sound, and otherwise reported.
+    systemEndRef.current = (status) => {
+        if (!status.isFinished) return;
+        if (phaseRef.current !== 'recording' && phaseRef.current !== 'paused') return;
+        if (status.hasError || status.mediaServicesDidReset) {
+            changePhase('idle');
+            keepTake(null);
+            alert(t('common.error'), l('Kayıt yarıda kesildi. Lütfen yeniden kaydedin.', 'The recording was cut off. Please record again.'));
+            return;
+        }
+        void finishTake().then((kept) => {
+            if (!kept) rejectEmptyTake();
+        }).catch((error) => console.warn('[AudioRecordModal] could not keep an interrupted take:', error));
     };
 
     const stopRecording = async () => {
         setBusy(true);
         try {
-            await finishTake();
+            if (!(await finishTake())) rejectEmptyTake();
         } catch (error) {
             console.warn('[AudioRecordModal] stop failed:', error);
+            changePhase('idle');
             alert(t('common.error'), l('Kayıt durdurulamadı.', 'Could not stop the recording.'));
         } finally {
             setBusy(false);
@@ -231,7 +373,7 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
     };
 
     const close = async () => {
-        player.pause();
+        if (player.playing) player.pause();
         if (sessionClaimedRef.current) {
             sessionClaimedRef.current = false;
             await releaseAudioSession();
@@ -243,9 +385,14 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
         setBusy(true);
         try {
             const kept = phase === 'recording' || phase === 'paused' ? await finishTake() : take;
-            if (!kept) return;
-            player.pause();
+            if (!kept) {
+                rejectEmptyTake();
+                return;
+            }
+            if (player.playing) player.pause();
             const filename = await storeTake(kept.uri);
+            keepTake(null);
+            discardTakeFile(kept.uri);
             onSaved(filename);
             await close();
         } catch (error) {
@@ -266,10 +413,16 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
             );
             if (!discard) return;
             try {
-                if (phaseRef.current === 'recording' || phaseRef.current === 'paused') await recorder.stop();
+                if (phaseRef.current === 'recording' || phaseRef.current === 'paused') {
+                    changePhase('idle');
+                    await recorder.stop();
+                    discardTakeFile(recorder.uri);
+                }
             } catch (error) {
                 console.warn('[AudioRecordModal] discard failed:', error);
             }
+            discardTakeFile(takeRef.current?.uri);
+            keepTake(null);
         }
         await close();
     };
@@ -282,7 +435,7 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
     const listening = phase === 'recorded' && (playback.playing || playback.currentTime > 0);
     const clockMs = listening ? playback.currentTime * 1000 : recordedMs;
     const progress = listening && playback.duration > 0 ? Math.min(1, playback.currentTime / playback.duration) : 0;
-    const canAdd = !busy && (phase === 'recorded' || ((phase === 'recording' || phase === 'paused') && recordedMs >= MIN_RECORDING_MS));
+    const canAdd = !busy && ((phase === 'recorded' && take !== null) || ((phase === 'recording' || phase === 'paused') && recordedMs >= MIN_RECORDING_MS));
 
     const status = phase === 'idle'
         ? l('Başlamak için dokunun', 'Tap to start')

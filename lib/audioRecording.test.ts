@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
     LEVEL_BAR_COUNT,
+    MIN_TAKE_BYTES,
     emptyLevels,
+    isEmptyLoadedTake,
+    isUsableTake,
     formatRecordingTime,
     levelFromMetering,
     pushLevel,
@@ -63,5 +66,26 @@ describe('recordingFileType', () => {
         expect(recordingFileType('audio/ogg')).toEqual({ extension: 'ogg', mimeType: 'audio/ogg' });
         expect(recordingFileType('audio/wav')).toEqual({ extension: 'wav', mimeType: 'audio/wav' });
         expect(recordingFileType('audio/mp4')).toEqual({ extension: 'm4a', mimeType: 'audio/mp4' });
+    });
+});
+
+describe('takes with nothing in them', () => {
+    it('keeps a file with sound in it and refuses a missing or header-only one', () => {
+        expect(isUsableTake({ exists: true, size: 6_000 })).toBe(true);
+        expect(isUsableTake({ exists: true, size: MIN_TAKE_BYTES })).toBe(true);
+        expect(isUsableTake({ exists: true, size: 600 })).toBe(false);
+        expect(isUsableTake({ exists: true, size: 0 })).toBe(false);
+        expect(isUsableTake({ exists: true })).toBe(false);
+        expect(isUsableTake({ exists: false, size: 6_000 })).toBe(false);
+    });
+
+    it('judges a loaded take only once the player has finished loading it', () => {
+        expect(isEmptyLoadedTake({ isLoaded: false, duration: 0, playbackState: 'unknown' })).toBe(false);
+        expect(isEmptyLoadedTake({ isLoaded: true, duration: 2.4, playbackState: 'readyToPlay' })).toBe(false);
+        expect(isEmptyLoadedTake({ isLoaded: true, duration: 0, playbackState: 'readyToPlay' })).toBe(true);
+        expect(isEmptyLoadedTake({ isLoaded: false, duration: 0, playbackState: 'failed' })).toBe(true);
+        // A browser's take can report no length until it has been played through.
+        expect(isEmptyLoadedTake({ isLoaded: true, duration: Number.POSITIVE_INFINITY })).toBe(false);
+        expect(isEmptyLoadedTake({ isLoaded: true, duration: Number.NaN })).toBe(false);
     });
 });

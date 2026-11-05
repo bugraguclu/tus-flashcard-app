@@ -131,10 +131,12 @@ not tek kartla kaydedilir.
 <a id="images"></a>
 ## Resim, video ve dosya ekleme
 
-Alan adının yanındaki 📎 **Ek ekle** sayfasını açar. Ek, o alanda imlecin bulunduğu yere girer.
+Alan adının yanındaki 📎 **Ek ekle** sayfasını açar. Ek, o alanda imlecin bulunduğu yere girer;
+klavye açılmaz, yazmaya devam etmek için alana dokunun.
 
-- **Galeriden fotoğraf seç** / **Fotoğraf çek:** Ardından **Olduğu gibi ekle** (tam çözünürlük) veya
-  **Kırp ve düzenle** ([Fotoğrafı düzenleme](#photo-editor)) seçilir.
+- **Galeriden fotoğraf seç** / **Fotoğraf çek:** Galeri, Fotoğraflar'ı izin istemeden açar. Ardından
+  **Olduğu gibi ekle** (tam çözünürlük) veya **Kırp ve düzenle** ([Fotoğrafı düzenleme](#photo-editor))
+  seçilir.
 - **Boş tuvale çiz:** [Çizim sayfası](#drawing-page) açılır.
 - **Ses kaydet:** Bkz. [Ses kaydı](#audio-recording).
 - **Ses klibi ekle:** Dosyalar'dan bir veya birden çok ses dosyası seçilir; her biri alanda bir
@@ -146,8 +148,7 @@ Alan adının yanındaki 📎 **Ek ekle** sayfasını açar. Ek, o alanda imleci
   Kartta bağlantıya dokununca dosya açılır; **Paylaş** ile başka bir uygulamada açabilir veya
   Dosyalar'a kaydedebilirsiniz.
 
-Uygulama izin isterse **Ayarları Aç** ile iPhone ayarlarından galeri, kamera veya mikrofon iznini
-verin. Panodaki bir resmi alana yapıştırabilirsiniz; resim koleksiyona JPEG olarak, **Ayarlar ›
+Uygulama izin isterse **Ayarları Aç** ile iPhone ayarlarından kamera veya mikrofon iznini verin. Panodaki bir resmi alana yapıştırabilirsiniz; resim koleksiyona JPEG olarak, **Ayarlar ›
 Genel › Düzenleme › Pano görsellerini PNG olarak yapıştır** açıksa PNG olarak kaydedilir. Bir web
 sayfasından metinle birlikte kopyalanan resimler indirilmez ve boş görünür; resmi kaydedip ekleyin.
 
@@ -168,9 +169,10 @@ nasıl çaldığı: [Çalışma ekranı](05-studying.md#audio-and-tts).
 ## Fotoğrafı düzenleme
 <!-- Uygulamada: Fotoğrafı düzenle başlığının yanındaki ⓘ (yeni, components/photo-editor/PhotoEditorModal.tsx, başlık) bilgi sayfasının "Daha fazla bilgi" bağlantısı → bu bölüm -->
 
-**Kırp ve düzenle** fotoğrafı [çizim sayfası](#drawing-page) gibi düzenlenmiş bir ekranda açar: üstte
-**Vazgeç** ve **Ekle**, başlığın altında fotoğrafın ekleneceği boyut, her adımı geri alan ve
-yineleyen ↶ ↷, altta da üç sekme. Fotoğraf **Kırp** sekmesinde açılır.
+**Kırp ve düzenle** fotoğrafı [çizim sayfası](#drawing-page) gibi düzenlenmiş bir ekranda açar: üst
+çubukta **Vazgeç**, her adımı geri alan ve yineleyen ↶ ↷, orijinal fotoğrafa dönen saat düğmesi ve
+**Ekle**; altta da üç sekme. Fotoğraf **Kırp** sekmesinde açılır ve kırpılmadığı sürece sekmeden
+sekmeye aynı yerde, aynı boyutta kalır.
 
 - **Kırp:** Çerçeveyi bir köşesinden veya kenarından sürükleyerek boyutlandırın, içinden
   sürükleyerek taşıyın; kesilecek kısım karartılır. Çerçevenin biçimini sabitlemek için **Serbest**,
@@ -189,7 +191,7 @@ yineleyen ↶ ↷, altta da üç sekme. Fotoğraf **Kırp** sekmesinde açılır
 
 Sekmeler istenen sırayla kullanılabilir ve yeniden açılabilir: kırpma sonradan genişletilebilir,
 çizimler fotoğrafla birlikte taşınır ve döner. Kırpmanın dışında kalan çizimler eklenen görsele
-girmez. Fotoğrafın üstündeki saat düğmesi orijinal fotoğrafa döner (bu da geri alınabilir). **Ekle**
+girmez. Üst çubuktaki saat düğmesi orijinal fotoğrafa döner (bu da geri alınabilir). **Ekle**
 fotoğrafı alana ekler: hiç değiştirilmemiş bir fotoğraf seçildiği gibi, tam çözünürlükte eklenir,
 düzenlenmiş olansa uzun kenarı en çok 2000 piksel olacak şekilde. **Vazgeç** değişiklikleri atmadan
 önce sorar.
