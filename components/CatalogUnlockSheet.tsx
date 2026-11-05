@@ -79,50 +79,51 @@ export default function CatalogUnlockSheet({ visible, onClose, onUnlocked }: Pro
             presentationStyle="overFullScreen"
             onRequestClose={busy ? undefined : onClose}
         >
-            <Pressable style={styles.overlay} onPress={busy ? undefined : onClose}>
-                <Pressable style={styles.sheetHitTarget} onPress={() => {}}>
-                    <SwipeDismissSheet
-                        active={visible}
-                        enabled={!busy}
-                        onDismiss={onClose}
-                        accessibilityViewIsModal
-                        style={styles.sheet}
+            <View style={styles.overlay}>
+                {/* A sibling, not a parent: a parent would hold every touch on the sheet, and the
+                    sheet could not be pulled down from its text. */}
+                <Pressable style={StyleSheet.absoluteFill} onPress={busy ? undefined : onClose} accessible={false} />
+                <SwipeDismissSheet
+                    active={visible}
+                    enabled={!busy}
+                    onDismiss={onClose}
+                    accessibilityViewIsModal
+                    style={styles.sheet}
+                >
+                    <View style={styles.iconWrap}>
+                        <Text style={styles.icon}>🔓</Text>
+                    </View>
+                    <Text style={styles.title}>{BKA_CATALOG_DEFAULT_ROOT_DECK}</Text>
+                    <Text style={styles.description}>
+                        {l(
+                            `${formatCount(BKA_MANIFEST.totals.cards, 'tr')} kartın tamamını ücretsiz açın. Çalışma ekranından ayrılmadan paket kurulacak ve bu deste seçilecek.`,
+                            `Unlock all ${formatCount(BKA_MANIFEST.totals.cards, locale)} cards for free. The pack will be installed and selected without leaving the study screen.`,
+                        )}
+                    </Text>
+                    {error ? <Text style={styles.error}>{error}</Text> : null}
+                    <TouchableOpacity
+                        style={[styles.primaryButton, busy && styles.primaryButtonDisabled]}
+                        onPress={() => { void unlock(); }}
+                        disabled={busy}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('TUS Kartlarını ücretsiz aç', 'Unlock TUS Cards for free')}
                     >
-                        <View style={styles.iconWrap}>
-                            <Text style={styles.icon}>🔓</Text>
-                        </View>
-                        <Text style={styles.title}>{BKA_CATALOG_DEFAULT_ROOT_DECK}</Text>
-                        <Text style={styles.description}>
-                            {l(
-                                `${formatCount(BKA_MANIFEST.totals.cards, 'tr')} kartın tamamını ücretsiz açın. Çalışma ekranından ayrılmadan paket kurulacak ve bu deste seçilecek.`,
-                                `Unlock all ${formatCount(BKA_MANIFEST.totals.cards, locale)} cards for free. The pack will be installed and selected without leaving the study screen.`,
-                            )}
-                        </Text>
-                        {error ? <Text style={styles.error}>{error}</Text> : null}
-                        <TouchableOpacity
-                            style={[styles.primaryButton, busy && styles.primaryButtonDisabled]}
-                            onPress={() => { void unlock(); }}
-                            disabled={busy}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('TUS Kartlarını ücretsiz aç', 'Unlock TUS Cards for free')}
-                        >
-                            {busy ? (
-                                <ActivityIndicator color={colors.white} />
-                            ) : (
-                                <Text style={styles.primaryButtonText}>{l('Ücretsiz aç', 'Unlock free')}</Text>
-                            )}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.cancelButton}
-                            onPress={onClose}
-                            disabled={busy}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.cancelButtonText}>{l('Vazgeç', 'Cancel')}</Text>
-                        </TouchableOpacity>
-                    </SwipeDismissSheet>
-                </Pressable>
-            </Pressable>
+                        {busy ? (
+                            <ActivityIndicator color={colors.white} />
+                        ) : (
+                            <Text style={styles.primaryButtonText}>{l('Ücretsiz aç', 'Unlock free')}</Text>
+                        )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.cancelButton}
+                        onPress={onClose}
+                        disabled={busy}
+                        accessibilityRole="button"
+                    >
+                        <Text style={styles.cancelButtonText}>{l('Vazgeç', 'Cancel')}</Text>
+                    </TouchableOpacity>
+                </SwipeDismissSheet>
+            </View>
         </Modal>
     );
 }
@@ -134,9 +135,8 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
             justifyContent: 'flex-end',
             backgroundColor: 'rgba(0,0,0,0.46)',
         },
-        sheetHitTarget: { width: '100%' },
         sheet: {
-            paddingTop: 48,
+            width: '100%',
             paddingHorizontal: Spacing.xl,
             paddingBottom: Spacing.xxl,
             borderTopLeftRadius: BorderRadius.xl,
@@ -152,6 +152,7 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.accentLight,
+            marginTop: Spacing.md,
             marginBottom: Spacing.md,
         },
         icon: { fontSize: 26 },

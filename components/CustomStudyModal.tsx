@@ -12,7 +12,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Platform,
-    ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -54,6 +53,7 @@ import { getFilteredDeckGatherCount } from '../lib/studyRepository';
 import { isValidSearchQuery } from '../lib/searchValidation';
 import type { AppSettings } from '../lib/types';
 import BottomSheetModal from './BottomSheetModal';
+import { SheetScrollView } from './SwipeDismissSheet';
 
 interface CustomStudyModalProps {
     visible: boolean;
@@ -409,7 +409,7 @@ export default function CustomStudyModal({
         accessibilityPrefix: string,
         disabled: boolean = false,
     ) => (
-        <ScrollView
+        <SheetScrollView
             style={[styles.panel, styles.tagScroll, disabled && styles.panelDisabled]}
             nestedScrollEnabled
             keyboardShouldPersistTaps="handled"
@@ -441,7 +441,7 @@ export default function CustomStudyModal({
                     </TouchableOpacity>
                 );
             })}
-        </ScrollView>
+        </SheetScrollView>
     );
 
     const renderTagSection = (
@@ -482,31 +482,20 @@ export default function CustomStudyModal({
             avoidKeyboard
             backdropLabel={t('common.close')}
             sheetStyle={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}
-        >
-            <View style={styles.header}>
-                {choosingTags && (
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => setChoosingTags(false)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Geri', 'Back')}
-                    >
-                        <HeaderBackIcon color={colors.accent} size={22} />
-                    </TouchableOpacity>
-                )}
-                <View style={styles.headerCopy}>
-                    <Text style={styles.eyebrow}>{l('ÇALIŞMA KAPSAMI', 'STUDY SCOPE')}</Text>
-                    <Text style={styles.title}>
-                        {choosingTags ? l('Seçmeli çalışma', 'Selective Study') : t('anki.customStudy')}
-                    </Text>
-                    <Text style={styles.subtitle} numberOfLines={2}>{getDeckDisplayName(deck.name)}</Text>
-                </View>
-                <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close')}>
-                    <Text style={styles.closeText}>×</Text>
+            title={choosingTags ? l('Seçmeli çalışma', 'Selective Study') : t('anki.customStudy')}
+            subtitle={getDeckDisplayName(deck.name)}
+            headerLeft={choosingTags ? (
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => setChoosingTags(false)}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Geri', 'Back')}
+                >
+                    <HeaderBackIcon color={colors.accent} size={22} />
                 </TouchableOpacity>
-            </View>
-
-            <ScrollView
+            ) : undefined}
+        >
+            <SheetScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
@@ -638,7 +627,7 @@ export default function CustomStudyModal({
                         </Text>
                     </>
                 )}
-            </ScrollView>
+            </SheetScrollView>
 
             <View style={styles.buttonBox}>
                 <TouchableOpacity
@@ -677,33 +666,11 @@ function createStyles(colors: ColorScheme) {
             overflow: 'hidden',
             ...Shadows.lg,
         },
-        header: {
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            padding: Spacing.xl,
-            paddingTop: 48,
-            paddingBottom: Spacing.md,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-        },
-        backButton: { width: 34, height: 44, alignItems: 'center', justifyContent: 'center' },
-        headerCopy: { flex: 1, paddingRight: Spacing.md },
-        eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: colors.accent, marginBottom: 4 },
-        title: { fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
-        subtitle: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 3 },
-        closeButton: {
-            width: 44,
-            height: 44,
-            borderRadius: BorderRadius.full,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.bgSecondary,
-        },
-        closeText: { fontSize: 28, lineHeight: 30, color: colors.textSecondary },
+        backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
         // The sheet is sized by its content up to `maxHeight`; shrinking the scroller rather
         // than letting it grow keeps the button box on screen once the options run long.
         scroll: { flexShrink: 1 },
-        content: { padding: Spacing.lg, paddingBottom: Spacing.lg },
+        content: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xs, paddingBottom: Spacing.lg },
         panel: {
             backgroundColor: colors.bgCard,
             borderWidth: 1,

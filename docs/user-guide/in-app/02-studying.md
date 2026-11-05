@@ -29,19 +29,17 @@ durumu. Kaynak: master c6108e6. Makale: `tr/05-studying.md`, `en/05-studying.md`
   **Çalışma ekranı hakkında** (yeni), `components/CardOptionsMenu.tsx:362` sonrası. iPhone ve web,
   klasik ve yeni düzen.
 - **Tetikleyici:** Satıra dokunma
-- **Bileşen:** bilgi sayfası (`HelpSheet`, `SwipeDismissSheet` üzerinde; eyebrow, title, summary, points[], note, more)
+- **Bileşen:** bilgi sayfası (`HelpSheet`, `SwipeDismissSheet` üzerinde; title, summary, points[], note, more)
 - **Daha fazla bilgi:** `tr/05-studying.md#show-answer` (`help?article=studying&section=show-answer`)
 - **Durum:** Yeni
 
 **TR**
-- Eyebrow: ÇALIŞMA EKRANI
 - Başlık: Çalışma ekranı nasıl kullanılır?
 - Özet: Soruyu düşünün, cevabı açın ve ne kadar iyi hatırladığınızı bir düğmeyle bildirin. Uygulama kartın ne zaman yeniden geleceğini buna göre seçer.
 - Maddeler: (1) Düğmelerin üstündeki süre, o seçimle kartın ne zaman yeniden geleceğidir. Unuttuysanız **Tekrar**'a basın. (2) Üç renkli sayı kalan **yeni**, **öğrenme** ve **tekrar** kartlarıdır; altı çizili olan ekrandaki kartın grubudur. (3) Cevap açıkken kartın soluna dokunmak **Tekrar**, sağına dokunmak **İyi** olarak cevaplar. Bunu **Ayarlar › Kontroller**'den değiştirebilirsiniz. (4) Yanlış düğmeye bastıysanız **↶** ile geri alın; gömme, askıya alma, düzenleme ve sıfırlama bu menüdedir, bayrak **⚑** düğmesindedir.
 - Not: Klasik düzen varsayılandır. Yeni düzeni **Ayarlar › Yeni çalışma ekranı** bölümünden açabilirsiniz.
 
 **EN**
-- Eyebrow: STUDY SCREEN
 - Title: How the study screen works
 - Summary: Think of the answer, reveal it and say how well you remembered it with a button. The app picks when the card comes back from that.
 - Points: (1) The time above each button is when the card comes back with that choice. If you forgot it, press **Again**. (2) The three coloured numbers are the **new**, **learning** and **review** cards left; the underlined one is the group of the card on screen. (3) With the answer showing, tapping the left side of the card answers **Again** and tapping the right side answers **Good**. Change this under **Settings › Controls**. (4) Pressed the wrong button? Undo it with **↶**. Bury, suspend, edit and reset are in this menu; flags are on the **⚑** button.

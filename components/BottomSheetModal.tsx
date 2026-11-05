@@ -43,6 +43,11 @@ interface BottomSheetModalProps {
     backdropHidden?: boolean;
     /** Drawn over the sheet inside the same modal (a picker on its own dimmed layer). */
     overlay?: React.ReactNode;
+    /** The sheet's title, centred under the grabber (`SwipeDismissSheet`). */
+    title?: string;
+    subtitle?: string;
+    headerLeft?: React.ReactNode;
+    headerRight?: React.ReactNode;
 }
 
 /**
@@ -66,6 +71,10 @@ export default function BottomSheetModal({
     backdropLabel,
     backdropHidden = false,
     overlay,
+    title,
+    subtitle,
+    headerLeft,
+    headerRight,
 }: BottomSheetModalProps) {
     const { l } = useI18n();
     const { height: windowHeight } = useWindowDimensions();
@@ -173,6 +182,10 @@ export default function BottomSheetModal({
                     onDismiss={handlePulledAway}
                     accessibilityViewIsModal={accessibilityViewIsModal}
                     style={sheetStyle}
+                    title={title}
+                    subtitle={subtitle}
+                    headerLeft={headerLeft}
+                    headerRight={headerRight}
                 >
                     {children}
                 </SwipeDismissSheet>

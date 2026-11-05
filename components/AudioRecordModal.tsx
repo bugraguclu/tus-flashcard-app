@@ -500,12 +500,18 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
                     onPress={requestClose}
                     accessibilityLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
                 />
-                <SwipeDismissSheet active={visible} enabled={phase === 'idle' && !busy} style={styles.sheet} onDismiss={close}>
-                    <View style={styles.header}>
+                <SwipeDismissSheet
+                    active={visible}
+                    enabled={phase === 'idle' && !busy}
+                    style={styles.sheet}
+                    onDismiss={close}
+                    title={l('Ses kaydet', 'Record Audio')}
+                    headerLeft={(
                         <TouchableOpacity style={styles.headerButton} onPress={requestClose} disabled={busy} accessibilityRole="button">
                             <Text style={styles.cancelText}>{l('Vazgeç', 'Cancel')}</Text>
                         </TouchableOpacity>
-                        <Text style={styles.title}>{l('Ses kaydet', 'Record Audio')}</Text>
+                    )}
+                    headerRight={(
                         <TouchableOpacity
                             style={[styles.headerButton, styles.headerButtonEnd]}
                             onPress={add}
@@ -517,8 +523,8 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
                                 ? <ActivityIndicator size="small" color={colors.accent} />
                                 : <Text style={[styles.addText, !canAdd && styles.addTextDisabled]}>{l('Ekle', 'Add')}</Text>}
                         </TouchableOpacity>
-                    </View>
-
+                    )}
+                >
                     <Text style={styles.clock} accessibilityRole="timer">{formatRecordingTime(clockMs)}</Text>
                     <View style={styles.statusRow}>
                         {phase === 'recording' ? <View style={styles.liveDot} /> : null}
@@ -568,24 +574,16 @@ function createStyles(colors: ColorScheme) {
             borderTopLeftRadius: BorderRadius.lg,
             borderTopRightRadius: BorderRadius.lg,
             paddingHorizontal: Spacing.lg,
-            paddingTop: 40,
             paddingBottom: 40,
             alignItems: 'center',
         },
-        header: {
-            alignSelf: 'stretch',
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: 44,
-        },
-        headerButton: { minWidth: 72, minHeight: 44, justifyContent: 'center' },
+        headerButton: { minWidth: 64, minHeight: 44, justifyContent: 'center' },
         headerButtonEnd: { alignItems: 'flex-end' },
-        title: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
         cancelText: { fontSize: FontSize.md, color: colors.textMuted, fontWeight: '600' },
         addText: { fontSize: FontSize.md, color: colors.accent, fontWeight: '700' },
         addTextDisabled: { color: colors.border },
         clock: {
-            marginTop: Spacing.lg,
+            marginTop: Spacing.sm,
             fontSize: 44,
             fontWeight: '300',
             color: colors.textPrimary,

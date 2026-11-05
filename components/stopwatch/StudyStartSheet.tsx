@@ -72,7 +72,7 @@ export default function StudyStartSheet({ visible, initial, recentSubjects, pass
     ) : null;
 
     return (
-        <StopwatchSheet visible={visible} onClose={onClose} title={l('Çalışmaya Başla', 'Start Studying')} formHeader overlay={overlay}>
+        <StopwatchSheet visible={visible} onClose={onClose} title={l('Çalışmaya Başla', 'Start Studying')} overlay={overlay}>
             <View style={styles.body}>
                 <FormRow label={l('Ders seçin', 'Subject')}>
                     <FormSelector

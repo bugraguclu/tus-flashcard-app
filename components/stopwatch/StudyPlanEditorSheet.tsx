@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
@@ -18,6 +18,7 @@ import {
 } from '../../lib/studyPlans';
 import StopwatchSheet from './StopwatchSheet';
 import StudyTypeChips, { studyTypeLabel } from './StudyTypeChips';
+import { SheetNoDrag, SheetScrollView } from '../SwipeDismissSheet';
 import SubjectList from './SubjectList';
 import { SettingRow, SheetButton, Stepper } from './SheetControls';
 
@@ -93,7 +94,7 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
                     </View>
                 </>
             ) : (
-                <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                <SheetScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                     <TextInput
                         style={[styles.input, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                         value={draft.title}
@@ -199,17 +200,19 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
 
                     <View style={styles.noteSection}>
                         <Text style={[styles.label, { color: colors.textPrimary }]}>{l('Çalışma notu', 'Study note')}</Text>
-                        <TextInput
-                            style={[styles.input, styles.note, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
-                            value={draft.note}
-                            onChangeText={(note) => update({ note })}
-                            placeholder={l('Örn. Kardiyoloji bölümü, 40 soru', 'E.g. cardiology chapter, 40 questions')}
-                            placeholderTextColor={colors.textMuted}
-                            maxLength={MAX_STUDY_NOTE_LENGTH}
-                            multiline
-                            textAlignVertical="top"
-                            accessibilityLabel={l('Çalışma notu', 'Study note')}
-                        />
+                        <SheetNoDrag>
+                            <TextInput
+                                style={[styles.input, styles.note, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
+                                value={draft.note}
+                                onChangeText={(note) => update({ note })}
+                                placeholder={l('Örn. Kardiyoloji bölümü, 40 soru', 'E.g. cardiology chapter, 40 questions')}
+                                placeholderTextColor={colors.textMuted}
+                                maxLength={MAX_STUDY_NOTE_LENGTH}
+                                multiline
+                                textAlignVertical="top"
+                                accessibilityLabel={l('Çalışma notu', 'Study note')}
+                            />
+                        </SheetNoDrag>
                         <Text style={[styles.count, { color: colors.textMuted }]}>{`${draft.note.length} / ${MAX_STUDY_NOTE_LENGTH}`}</Text>
                     </View>
 
@@ -220,7 +223,7 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
                             <SheetButton label={l('Planı Sil', 'Delete Plan')} tone="danger" onPress={() => onDelete(draft)} />
                         ) : null}
                     </View>
-                </ScrollView>
+                </SheetScrollView>
             )}
         </StopwatchSheet>
     );

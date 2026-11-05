@@ -44,7 +44,7 @@ import { findInvalidFilteredSearch } from '../lib/searchValidation';
 import type { AppSettings } from '../lib/types';
 import DeckPickerModal from './DeckPickerModal';
 import InfoCircleGlyph from './InfoCircleGlyph';
-import SwipeDismissSheet from './SwipeDismissSheet';
+import SwipeDismissSheet, { SheetScrollView } from './SwipeDismissSheet';
 import FilteredDeckHelpSheet from './filtered-deck/FilteredDeckHelpSheet';
 import { createFilteredDeckOptionsStyles } from './filtered-deck/filteredDeckOptionsStyles';
 import { userFacingErrorMessage } from '../lib/userFacingError';
@@ -598,16 +598,16 @@ export default function FilteredDeckOptionsModal({
                         <SwipeDismissSheet
                             style={[styles.pickerCard, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}
                             onDismiss={() => setOrderPicker(null)}
+                            title={l('Kartların seçilme sırası', 'Cards selected by')}
                         >
-                            <Text style={styles.pickerTitle}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                            <ScrollView showsVerticalScrollIndicator={false}>
+                            <SheetScrollView showsVerticalScrollIndicator={false}>
                                 {filteredDeckOrderChoices(settings.fsrsEnabled === true).map((value) => (
                                     <TouchableOpacity key={value} style={[styles.pickerOption, selectedOrder === value && styles.pickerOptionSelected]} onPress={() => chooseOrder(value)}>
                                         <Text style={[styles.pickerOptionText, selectedOrder === value && styles.pickerOptionTextSelected]}>{filteredOrderLabel(locale, value)}</Text>
                                         {selectedOrder === value && <Text style={styles.check}>✓</Text>}
                                     </TouchableOpacity>
                                 ))}
-                            </ScrollView>
+                            </SheetScrollView>
                         </SwipeDismissSheet>
                     </View>
                 )}

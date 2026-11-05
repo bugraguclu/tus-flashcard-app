@@ -4,7 +4,7 @@ Kapsam: Not ekle / Kartı düzenle ekranı, ••• menüsü, biçimlendirme a
 sayfaları, Ses kaydet, Fotoğrafı düzenle / Çizim, Etiketler, Not türü seçici, Not türleri ve Not
 türünü düzenle. Satır numaraları master c6108e6'ya göredir. Bütün ekranlar iPhone ve web'de aynıdır;
 fark varsa belirtilmiştir. Bilgi sayfaları `SwipeDismissSheet` üzerindeki genel `HelpSheet` kalıbını
-(eyebrow, title, summary, points[], note, noteLabel "NOT"/"NOTE", dismissLabel "Anladım"/"Got it",
+(title, summary, points[], note, noteLabel "NOT"/"NOTE", dismissLabel "Anladım"/"Got it",
 more) kullanır.
 
 ## Bilgi sayfaları
@@ -17,14 +17,12 @@ more) kullanır.
 - **Durum:** Yeni
 
 **TR**
-- Eyebrow: EKRAN REHBERİ
 - Başlık: Not nasıl eklenir?
 - Özet: Bir not yazarsınız; uygulama seçtiğiniz türe göre ondan bir veya daha fazla kart üretir.
 - Maddeler: (1) **Tür:** kartların nasıl üretileceğini, **Deste:** nereye gideceklerini belirler. (2) 📌 bir alanın içeriğini bir sonraki not için korur; 📎 resim, ses, çizim veya dosya ekler. (3) Göz düğmesi notun ilk kartını önizler; onay işareti kaydeder. (4) Kaydettikten sonra **Yeni not ekle** ile aynı deste, tür ve etiketlerle devam edebilirsiniz.
 - Not: Düzenlerken desteyi değiştirirseniz yalnızca açtığınız kart taşınır.
 
 **EN**
-- Eyebrow: SCREEN GUIDE
 - Title: How to add a note
 - Summary: You write a note, and the app makes one or more cards from it depending on the type you choose.
 - Points: (1) **Type:** decides how cards are made, **Deck:** where they go. (2) 📌 keeps a field's content for the next note; 📎 adds an image, audio, a drawing or a file. (3) The eye button previews the note's first card; the check mark saves. (4) After saving, **Add another** continues with the same deck, type and tags.
@@ -38,14 +36,12 @@ more) kullanır.
 - **Durum:** Yeni
 
 **TR**
-- Eyebrow: BOŞLUK DOLDURMA
 - Başlık: Boşluk nasıl eklenir?
 - Özet: Metnin bir kısmını seçip **[…]** düğmesine dokunduğunuzda o kısım çalışırken gizlenir.
 - Maddeler: (1) Her dokunuş yeni bir numara verir (`c1`, `c2`…); her numara ayrı bir kart olur. (2) Aynı numarayı kullanmak için **[…]** düğmesine basılı tutun; aynı numaralı boşluklar aynı kartta birlikte gizlenir. (3) İpucu eklemek için elle yazın: `{{c1::cevap::ipucu}}`. (4) **Arka Ek** alanı cevap yüzünde gösterilir.
 - Not: **[…]** düğmesi araç çubuğu açıkken **Giriş** sekmesindedir. Araç çubuğunu gizlediyseniz boşluğu `{{c1::…}}` biçiminde yazabilirsiniz.
 
 **EN**
-- Eyebrow: CLOZE
 - Title: How to add a cloze deletion
 - Summary: Select part of the text and tap **[…]**; that part is hidden while you study.
 - Points: (1) Each tap gives a new number (`c1`, `c2`…); each number becomes its own card. (2) Press and hold **[…]** to reuse the same number; deletions with the same number are hidden together on one card. (3) To add a hint, type it yourself: `{{c1::answer::hint}}`. (4) The **Back Extra** field is shown on the answer side.
@@ -59,14 +55,12 @@ more) kullanır.
 - **Durum:** Yeni
 
 **TR**
-- Eyebrow: DÜZENLEYİCİ REHBERİ
 - Başlık: Resmi düzenlemek
 - Özet: Çizdiğiniz, yazdığınız ve kırptığınız her şey **Tamamlandı**'ya dokununca tek bir resim olarak alana eklenir.
 - Maddeler: (1) Metin veya resmi seçip sürükleyerek taşıyın, köşeden büyütün, düğmeyle çevirin; iki parmakla da büyütüp döndürebilirsiniz. (2) Taşıdığınız bir nesneyi alttaki çöp alanına bırakırsanız silinir. (3) **Ört** dolu bir kutu çizer; kutu resme kalıcı olarak işlenir, çalışırken açılmaz. (4) **Kısmi** silgi yalnızca kalem izlerini dokunduğunuz yerden siler; şekilleri ve metinleri bütün olarak kaldırır.
 - Not: ↶ ↷ son 30 adımı geri alır ve yineler. **İptal** değişiklikleri atmadan önce sorar.
 
 **EN**
-- Eyebrow: EDITOR GUIDE
 - Title: Editing the image
 - Summary: Everything you draw, write and crop is added to the field as one image when you tap **Done**.
 - Points: (1) Select a label or picture and drag it to move it, pull a corner to resize it, turn it by the knob; two fingers resize and turn it too. (2) Drop an object you are moving on the bin at the bottom to delete it. (3) **Cover** draws a solid box; the box is burned into the image and does not open while you study. (4) The **Partial** eraser rubs out pen strokes only where you touch, and removes shapes and labels whole.
@@ -80,14 +74,12 @@ more) kullanır.
 - **Durum:** Yeni
 
 **TR**
-- Eyebrow: EKRAN REHBERİ
 - Başlık: Not türü nedir?
 - Özet: Not türü, bir notun hangi alanlardan oluştuğunu ve bu alanlardan hangi kartların, nasıl bir görünümle üretileceğini belirler.
 - Maddeler: (1) **Temel** tek kart, **Temel (ve ters kart)** iki kart, **Boşluklu** her boşluk numarası için bir kart üretir. (2) Bir türü değiştirmek, o türü kullanan bütün notları etkiler. (3) **+ Yeni not türü**, **Temel**'in bir kopyasıyla başlar.
 - Not: Bir notun türünü değiştirmek için **Kartlarım**'da notu seçip **Diğer › Not türünü değiştir**'i kullanın.
 
 **EN**
-- Eyebrow: SCREEN GUIDE
 - Title: What is a note type?
 - Summary: A note type decides which fields a note has and which cards are made from those fields, and how they look.
 - Points: (1) **Basic** makes one card, **Basic (and reversed card)** two cards, **Cloze** one card per cloze number. (2) Changing a type affects every note that uses it. (3) **+ New Note Type** starts as a copy of **Basic**.
@@ -101,14 +93,12 @@ more) kullanır.
 - **Durum:** Yeni
 
 **TR**
-- Eyebrow: EKRAN REHBERİ
 - Başlık: Şablonlar ve alanlar
 - Özet: Şablonlar kartın soru ve cevap yüzünü, alanlar notun içeriğini tanımlar.
 - Maddeler: (1) `{{Front}}` gibi bir yer tutucu alanın içeriğini karta yerleştirir; şablonlarda alanın bu ekranda görünen gerçek adı kullanılır. (2) `{{FrontSide}}` soruyu cevabın üstünde gösterir, `{{#Alan}}…{{/Alan}}` yalnızca alan doluysa görünür. (3) Ad, şablon ve stil değişiklikleri **Kaydet** ile saklanır; sorun varsa kaydetmeden önce gösterilir.
 - Not: Alan ekleme, taşıma ve silme hemen bütün notlara uygulanır ve geri alınamaz.
 
 **EN**
-- Eyebrow: SCREEN GUIDE
 - Title: Templates and fields
 - Summary: Templates define a card's question and answer sides; fields hold the note's content.
 - Points: (1) A placeholder such as `{{Front}}` puts the field's content on the card; templates use the field's real name as shown on this screen. (2) `{{FrontSide}}` shows the question above the answer, and `{{#Field}}…{{/Field}}` appears only when the field is filled in. (3) Name, template and styling changes are stored with **Save**; problems are shown before saving.

@@ -387,8 +387,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             >
                 <View style={styles.overlay}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={closeMenu} accessibilityLabel={l('Ek menüsünü kapat', 'Close attachment menu')} />
-                    <SwipeDismissSheet active={menuVisible} style={styles.sheet} onDismiss={closeMenu}>
-                        <Text style={styles.sheetTitle}>{l('Ek ekle', 'Add Attachment')}</Text>
+                    <SwipeDismissSheet active={menuVisible} style={styles.sheet} onDismiss={closeMenu} title={l('Ek ekle', 'Add Attachment')}>
                         {options.map((opt) => (
                             <TouchableOpacity
                                 key={opt.label}
@@ -420,8 +419,12 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                         onPress={() => setPickedPhoto(null)}
                         accessibilityLabel={l('Fotoğraf seçimini kapat', 'Close photo options')}
                     />
-                    <SwipeDismissSheet active={pickedPhoto !== null} style={styles.sheet} onDismiss={() => setPickedPhoto(null)}>
-                        <Text style={styles.sheetTitle}>{l('Fotoğrafı nasıl ekleyelim?', 'How should the photo be added?')}</Text>
+                    <SwipeDismissSheet
+                        active={pickedPhoto !== null}
+                        style={styles.sheet}
+                        onDismiss={() => setPickedPhoto(null)}
+                        title={l('Fotoğrafı nasıl ekleyelim?', 'How should the photo be added?')}
+                    >
                         <TouchableOpacity
                             style={styles.optionRow}
                             onPress={insertPickedPhotoUnchanged}
@@ -527,15 +530,8 @@ function createStyles(colors: ColorScheme) {
             borderTopLeftRadius: BorderRadius.lg,
             borderTopRightRadius: BorderRadius.lg,
             paddingHorizontal: Spacing.lg,
-            paddingTop: 44,
             paddingBottom: 32,
             ...Shadows.lg,
-        },
-        sheetTitle: {
-            fontSize: FontSize.md,
-            fontWeight: '700',
-            color: colors.textPrimary,
-            marginBottom: Spacing.sm,
         },
         optionRow: {
             flexDirection: 'row',

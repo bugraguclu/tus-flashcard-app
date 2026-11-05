@@ -12,7 +12,7 @@ Bu sürümde ödeme kapalıdır; aşağıdaki metinlerin hiçbiri fiyat, satın 
 ### help.tusCards.sheet — TUS Kartları bilgi sayfası (yeni)
 - **Yer:** TUS Kartları ekranı, üst çubuk, **Kilitli/Açık** çipinin solunda yeni ⓘ düğmesi, `app/catalog.tsx:130` (statusChip'ten önce). Yalnızca iPhone ve web; ekran tam ekran modal.
 - **Tetikleyici:** ⓘ'ye dokunma. Erişilebilirlik etiketi: "TUS Kartları hakkında" / "About TUS Kartları".
-- **Bileşen:** bilgi sayfası (`HelpSheet`, `SwipeDismissSheet` üzerinde; eyebrow, title, summary, points[], note, more)
+- **Bileşen:** bilgi sayfası (`HelpSheet`, `SwipeDismissSheet` üzerinde; title, summary, points[], note, more)
 - **Daha fazla bilgi:** `tr/17-tus-card-pack.md#what-is-included` (`help?article=tus-cards&section=what-is-included`)
 - **Durum:** Yeni
 
@@ -24,7 +24,6 @@ Bu sürümde ödeme kapalıdır; aşağıdaki metinlerin hiçbiri fiyat, satın 
 - Not: Paket tek başına kaldırılamaz; yalnızca Ayarlar › Veri yönetimi › İlerlemeyi sıfırla bütün koleksiyonla birlikte kaldırır.
 
 **EN**
-- Eyebrow: READY-MADE CARD PACK
 - Title: How TUS Kartları works
 - Summary: The pack is free, installs on your device and sits as a separate deck next to your own decks.
 - Points: (1) Every card arrives as a new card; you choose how many new cards to open each day. (2) You can change the cards' text, tags and flags; renaming, deleting, moving and exporting the pack decks is turned off. (3) Backups keep your study state and tags, not the card text; a `.colpkg` file does not contain the pack at all. (4) Corrections arrive with app updates; your study state is kept.

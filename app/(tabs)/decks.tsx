@@ -79,6 +79,7 @@ import DeckRowMenu from '../../components/decks/DeckRowMenu';
 import DeckNameButton from '../../components/decks/DeckNameButton';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
 import BottomSheetModal from '../../components/BottomSheetModal';
+import { SheetNoDrag } from '../../components/SwipeDismissSheet';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import {
@@ -1374,26 +1375,31 @@ export default function DecksScreen() {
         </View>
     );
 
-    // A centred dialog on wide layouts; on iPhone the same fields sit in a bottom sheet.
+    // A centred dialog on wide layouts; on iPhone the same fields sit in a bottom sheet, whose
+    // title sits under its grabber.
     const renderDescriptionModal = (deck: Deck) => (
-        <View style={styles.modalCard}>{renderDescriptionFields(deck)}</View>
+        <View style={styles.modalCard}>
+            <Text style={styles.modalTitle} accessibilityRole="header">{l('Deste açıklaması', 'Deck description')}</Text>
+            <Text style={styles.modalSubtitle} numberOfLines={2}>{deck.name.replaceAll('::', ' › ')}</Text>
+            {renderDescriptionFields()}
+        </View>
     );
 
-    const renderDescriptionFields = (deck: Deck) => (
+    const renderDescriptionFields = () => (
         <>
-            <Text style={styles.modalEyebrow}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
-            <Text style={styles.modalTitle} numberOfLines={2}>{deck.name.replaceAll('::', ' › ')}</Text>
-            <TextInput
-                style={[styles.modalInput, styles.descriptionInput]}
-                value={descriptionText}
-                onChangeText={setDescriptionText}
-                placeholder={l('Deste genel bakışında gösterilecek açıklama…', 'Description shown on the deck overview…')}
-                placeholderTextColor={colors.textMuted}
-                multiline
-                autoFocus
-                textAlignVertical="top"
-                accessibilityLabel={l('Deste açıklaması', 'Deck description')}
-            />
+            <SheetNoDrag>
+                <TextInput
+                    style={[styles.modalInput, styles.descriptionInput]}
+                    value={descriptionText}
+                    onChangeText={setDescriptionText}
+                    placeholder={l('Deste genel bakışında gösterilecek açıklama…', 'Description shown on the deck overview…')}
+                    placeholderTextColor={colors.textMuted}
+                    multiline
+                    autoFocus
+                    textAlignVertical="top"
+                    accessibilityLabel={l('Deste açıklaması', 'Deck description')}
+                />
+            </SheetNoDrag>
             <View style={styles.markdownToggleRow}>
                 <View style={styles.markdownToggleCopy}>
                     <Text style={styles.markdownToggleTitle}>{l('Markdown olarak yorumla', 'Interpret as Markdown')}</Text>
@@ -1775,8 +1781,10 @@ export default function DecksScreen() {
                     backdropLabel={l('Açık pencereyi kapat', 'Close open dialog')}
                     containerStyle={compactSheetTopInset}
                     sheetStyle={[styles.modalCard, styles.modalCardCompact]}
+                    title={l('Deste açıklaması', 'Deck description')}
+                    subtitle={descriptionDeck.name.replaceAll('::', ' › ')}
                 >
-                    {renderDescriptionFields(descriptionDeck)}
+                    {renderDescriptionFields()}
                 </BottomSheetModal>
             ) : null}
 
@@ -2116,7 +2124,7 @@ function createStyles(colors: ColorScheme) {
         borderBottomLeftRadius: 0,
         borderBottomRightRadius: 0,
         paddingHorizontal: Spacing.xl,
-        paddingTop: 44,
+        paddingTop: 0,
         paddingBottom: Spacing.xl,
     },
     createDeckDialog: {
@@ -2183,19 +2191,8 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '700',
     },
     createDeckCreateTextDisabled: { color: colors.textMuted },
-    modalEyebrow: {
-        fontSize: 11,
-        fontWeight: '800',
-        letterSpacing: 1.2,
-        color: colors.accent,
-        marginBottom: Spacing.xs,
-    },
-    modalTitle: {
-        fontSize: FontSize.lg,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        marginBottom: Spacing.md,
-    },
+    modalTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+    modalSubtitle: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2, marginBottom: Spacing.md },
     descriptionInput: { minHeight: 150, paddingTop: Spacing.md },
     modalInput: {
         backgroundColor: colors.bgInput,

@@ -29,6 +29,9 @@ import {
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
 
+/** UIKit pulls a page sheet down to dismiss it on iPhone; other platforms show it full screen. */
+const PAGE_SHEET_PULLS_DOWN = Platform.OS === 'ios';
+
 interface ChangeNoteTypeModalProps {
     l: BrowserI18n['l'];
     locale: SupportedLocale;
@@ -319,12 +322,24 @@ export function CardPreviewModal({
             onRequestClose={() => setPreviewIndex(null)}
         >
             <SafeAreaView style={styles.previewContainer}>
-                <View style={[styles.previewGrabberArea, { pointerEvents: 'none' }]}>
-                    <View style={styles.previewGrabber} />
-                </View>
+                {/* On iPhone the page sheet is pulled down from anywhere, so the grabber is all the
+                    chrome it needs; elsewhere the modal fills the screen and keeps a close button. */}
+                {PAGE_SHEET_PULLS_DOWN ? (
+                    <TouchableOpacity
+                        style={styles.previewGrabberArea}
+                        onPress={() => setPreviewIndex(null)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')}
+                        accessibilityHint={l('Dokunun veya aşağı sürükleyin', 'Tap or swipe down')}
+                    >
+                        <View style={styles.previewGrabber} />
+                    </TouchableOpacity>
+                ) : null}
                 <View style={styles.previewHeader}>
-                    <TouchableOpacity style={styles.previewHeaderButton} onPress={() => setPreviewIndex(null)} accessibilityRole="button" accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')}><Text style={styles.previewHeaderButtonText}>×</Text></TouchableOpacity>
-                    <Text style={styles.previewTitle}>{l('Önizleme', 'Preview')} · {(previewIndex ?? 0) + 1}/{selectedCards.length}</Text>
+                    {PAGE_SHEET_PULLS_DOWN
+                        ? <View style={styles.previewHeaderButton} />
+                        : <TouchableOpacity style={styles.previewHeaderButton} onPress={() => setPreviewIndex(null)} accessibilityRole="button" accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')}><Text style={styles.previewHeaderButtonText}>×</Text></TouchableOpacity>}
+                    <Text style={styles.previewTitle} accessibilityRole="header">{l('Önizleme', 'Preview')} · {(previewIndex ?? 0) + 1}/{selectedCards.length}</Text>
                     <TouchableOpacity style={styles.previewHeaderButton} onPress={() => setPreviewAnswerVisible((value) => !value)} accessibilityRole="button" accessibilityLabel={previewAnswerVisible ? l('Soruyu göster', 'Show question') : l('Cevabı göster', 'Show answer')}><Text style={styles.previewFlipText}>{previewAnswerVisible ? l('Soru', 'Question') : l('Cevap', 'Answer')}</Text></TouchableOpacity>
                 </View>
                 <View style={styles.previewBody}>

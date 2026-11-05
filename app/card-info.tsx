@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import {
+    Platform,
     View,
     ScrollView,
     StyleSheet,
@@ -26,6 +27,9 @@ import { useAppSettings } from '../contexts/AppContext';
 import LeechExplainer from '../components/LeechExplainer';
 import { answeredEntries, lastAnsweredAt, revlogFactorText, revlogKind, scheduleShownFor } from '../lib/cardInfo';
 
+/** On iPhone this screen is a sheet pulled down to close, so it needs no back control there. */
+const SHEET_PULLS_DOWN = Platform.OS === 'ios';
+
 function parseCardId(raw: string | string[] | undefined): number {
     const value = Array.isArray(raw) ? raw[0] : raw;
     const parsed = Number(value || 0);
@@ -39,6 +43,17 @@ export default function CardInfoScreen() {
     const params = useLocalSearchParams();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const header = (
+        <View style={[styles.header, SHEET_PULLS_DOWN && styles.headerUnderGrabber]}>
+            {SHEET_PULLS_DOWN ? <View style={styles.headerSide} /> : (
+                <TouchableOpacity style={styles.headerSide} onPress={() => goBackOr(router)} accessibilityRole="button">
+                    <Text style={styles.backBtn}>← {l('Geri', 'Back')}</Text>
+                </TouchableOpacity>
+            )}
+            <Text style={styles.title} accessibilityRole="header">{t('root.cardInfo')}</Text>
+            <View style={styles.headerSide} />
+        </View>
+    );
     const cardId = parseCardId(params.cardId);
 
     const payload = useMemo(() => {
@@ -71,13 +86,7 @@ export default function CardInfoScreen() {
     if (!payload) {
         return (
             <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => goBackOr(router)} accessibilityRole="button">
-                        <Text style={styles.backBtn}>← {l('Geri', 'Back')}</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.title}>{t('root.cardInfo')}</Text>
-                    <View style={{ width: 60 }} />
-                </View>
+                {header}
                 <View style={styles.emptyState}>
                     <Text style={styles.emptyTitle}>{l('Kart bulunamadı.', 'Card not found.')}</Text>
                 </View>
@@ -216,13 +225,7 @@ export default function CardInfoScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => goBackOr(router)} accessibilityRole="button">
-                    <Text style={styles.backBtn}>← {l('Geri', 'Back')}</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>{t('root.cardInfo')}</Text>
-                <View style={{ width: 60 }} />
-            </View>
+            {header}
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {note?.tags.includes('leech') ? <LeechExplainer context="card" /> : null}
@@ -397,8 +400,11 @@ function createStyles(colors: ColorScheme) {
         borderBottomWidth: 1,
         borderBottomColor: colors.borderLight,
     },
+    // Clear of the sheet's grabber, the same gap the app's own sheets leave under theirs.
+    headerUnderGrabber: { paddingTop: Spacing.xl },
+    headerSide: { width: 72, justifyContent: 'center' },
     backBtn: { fontSize: FontSize.md, color: colors.accent, fontWeight: '600' },
-    title: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+    title: { flex: 1, textAlign: 'center', fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
     content: { flex: 1, width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg },
 
     section: {

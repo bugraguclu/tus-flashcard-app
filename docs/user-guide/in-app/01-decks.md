@@ -117,12 +117,11 @@ bir metin bugün yoktur.
 - **Tetikleyici:** ⓘ'ye dokunma. Erişilebilirlik etiketi: "Sayılar ve satır düğmeleri hakkında" /
   "About the numbers and row controls".
 - **Bileşen:** bilgi sayfası (`HelpSheet`, `SwipeDismissSheet` üzerinde; StatsHelpSheet /
-  `OptionHelp` kalıbı: eyebrow, title, summary, points[], note, more)
+  `OptionHelp` kalıbı: title, summary, points[], note, more)
 - **Daha fazla bilgi:** `tr/04-decks.md#deck-counts`
 - **Durum:** Yeni
 
 **TR**
-- Eyebrow: DESTELER
 - Başlık: Desteler nasıl okunur?
 - Özet: Her satır bir destedir; üç sayı bugün o destede neyin beklediğini gösterir. Üst destenin
   sayıları alt destelerini de kapsar.
@@ -136,7 +135,6 @@ bir metin bugün yoktur.
   dokunun.
 
 **EN**
-- Eyebrow: DECKS
 - Title: How to read your decks
 - Summary: Each row is a deck; the three numbers show what is waiting in it today. A parent
   deck's numbers include its subdecks.

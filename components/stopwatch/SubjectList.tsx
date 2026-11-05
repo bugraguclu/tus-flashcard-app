@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import { MAX_SUBJECT_LENGTH, TUS_STUDY_SUBJECTS, normalizeSubjectName } from '../../lib/stopwatch';
 import { studySubjectInitial } from '../../lib/studyCalendar';
 
@@ -82,7 +83,7 @@ export default function SubjectList({ recentSubjects, planned, onSelect }: Subje
                 onSubmitEditing={() => typed && onSelect(typed)}
                 accessibilityLabel={l('Ders adı', 'Subject name')}
             />
-            <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <SheetScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                 {typed && !exactMatch ? (
                     <View style={styles.section}>
                         {row(typed, l('Yeni ders olarak kullan', 'Use as a new subject'))}
@@ -106,7 +107,7 @@ export default function SubjectList({ recentSubjects, planned, onSelect }: Subje
                         {sections.courses.map((subject) => row(subject))}
                     </View>
                 ) : null}
-            </ScrollView>
+            </SheetScrollView>
         </View>
     );
 }

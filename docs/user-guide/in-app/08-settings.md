@@ -92,7 +92,7 @@ Hakkında satırının alt satırına veya ayar listesine girmelidir.
 - **Yer:** İnceleme sayfası, **Zamanlama** grubunun başlığının sağında **?** düğmesi (yeni), `app/settings.tsx:1208` (`Group onHelpPress`)
 - **Erişilebilirlik etiketi:** Zamanlama yardımını aç / Open scheduling help
 - **Tetikleyici:** ?'ye dokunma
-- **Bileşen:** bilgi sayfası (`HelpSheet`: eyebrow, title, summary, points[], note, more)
+- **Bileşen:** bilgi sayfası (`HelpSheet`: title, summary, points[], note, more)
 - **Daha fazla bilgi:** `tr/16-settings.md#reviewing`
 - **Durum:** Yeni
 
@@ -104,7 +104,6 @@ Hakkında satırının alt satırına veya ayar listesine girmelidir.
 - Not: Değişiklikler Kaydet'e dokununca geçerli olur.
 
 **EN**
-- Eyebrow: REVIEWING
 - Title: The day, learn ahead and timebox
 - Summary: These three settings apply to all decks. Rules for single decks are in Deck Options.
 - Points: (1) **Start of next day:** The day changes at this hour. What you study before it counts towards the previous day; daily limits, buried cards and "today" in the statistics follow it. (2) **Learn ahead limit:** When nothing else is left, learning cards whose step ends within this many minutes come without waiting. 0 turns this off. (3) **Timebox time limit:** On the first answer after the time is up, shows how many cards you studied; Continue starts a new block, Finish returns to the decks. 0 is off.
@@ -141,7 +140,6 @@ Hakkında satırının alt satırına veya ayar listesine girmelidir.
 - Not (web): Web sürümünde hatırlatma yalnızca uygulama bir tarayıcı sekmesinde açıkken gelir.
 
 **EN**
-- Eyebrow: NOTIFICATIONS
 - Title: Daily study reminder
 - Summary: Every day at the time you choose, a reminder arrives if the reviews due exceed the limit you picked. Tapping it opens Decks.
 - Points: (1) Only review cards count; new cards and cards in a learning step do not. (2) Sound, vibration, banners and Focus modes are managed in iPhone Settings › Notifications › TusAnkiM. The first reminders may arrive quietly in Notification Center. (3) Reminders are recalculated every time you open or leave the app; the app icon shows no badge.

@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
@@ -14,6 +14,7 @@ import {
     stepDailyGoal,
     type StopwatchPrefs,
 } from '../../lib/stopwatch';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import StopwatchSheet from './StopwatchSheet';
 import { SettingRow, SheetButton, Stepper } from './SheetControls';
 
@@ -38,7 +39,7 @@ export default function StopwatchSettingsSheet({ visible, prefs, onChange, onClo
 
     return (
         <StopwatchSheet visible={visible} onClose={onClose} title={l('Kronometre ayarları', 'Stopwatch settings')}>
-            <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
+            <SheetScrollView style={styles.body} showsVerticalScrollIndicator={false}>
                 <SettingRow
                     label={l('Sınav tarihi', 'Exam date')}
                     hint={prefs.examDate
@@ -105,7 +106,7 @@ export default function StopwatchSettingsSheet({ visible, prefs, onChange, onClo
                 <View style={styles.footer}>
                     <SheetButton label={l('Tamam', 'Done')} onPress={onClose} />
                 </View>
-            </ScrollView>
+            </SheetScrollView>
         </StopwatchSheet>
     );
 }

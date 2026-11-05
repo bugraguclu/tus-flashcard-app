@@ -23,7 +23,7 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 ### help.import.sheet — İçe aktar bilgi sayfası (yeni)
 - **Yer:** **İçe aktar** ekranı başlığı, sağda ⓘ düğmesi (yeni), `app/import.tsx:643-647` (`ScreenHeader` `actions`)
 - **Tetikleyici:** ⓘ'ye dokunma. Erişilebilirlik etiketi: "İçe aktarma hakkında" / "About importing"
-- **Bileşen:** bilgi sayfası (eyebrow, title, summary, points[], note, more)
+- **Bileşen:** bilgi sayfası (title, summary, points[], note, more)
 - **Daha fazla bilgi:** `tr/14-import-export.md#import` (`help?article=import-export&section=import`)
 - **Durum:** Yeni
 
@@ -35,7 +35,6 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 - Not: Dosyaları Dosyalar, Mail veya AirDrop'tan **Paylaş › TusAnkiM** ile de gönderebilirsiniz.
 
 **EN**
-- Eyebrow: IMPORTING
 - Title: Bringing cards in from a file
 - Summary: Choose a file; the app recognises its type from the extension and shows the matching options.
 - Points: (1) **.apkg** adds decks to your collection; the study state of the cards you already have does not change. (2) **.colpkg** replaces your whole collection. (3) In **CSV, TSV, TXT** files every line becomes a note and you map the columns to fields. Save the file as UTF-8. (4) A safety backup is made automatically before package imports and before text imports that update existing notes.
@@ -56,7 +55,6 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 - Not: Dosya şifrelenmez. TUS Kartları paketi ve filtrelenmiş desteler dışa aktarılmaz.
 
 **EN**
-- Eyebrow: EXPORTING
 - Title: Which format should I choose?
 - Summary: Save decks or your whole collection to a file and share it.
 - Points: (1) Moving to a new device: **Anki Collection Package (.colpkg)**, with progress, history and every media file. (2) Sharing a deck: **Anki Deck Package (.apkg)** with **Include scheduling information** off. (3) The plain-text formats are for editing in a spreadsheet or for reading. (4) In the share sheet, **Save to Files** keeps the file.
@@ -77,7 +75,6 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 - Not: Yedekler uygulamanın içinde durur. Uygulamayı silerseniz onlar da silinir; önce koleksiyonu .colpkg olarak dışa aktarın.
 
 **EN**
-- Eyebrow: BACKUPS
 - Title: How backups work
 - Summary: The app backs up your collection on this device by itself.
 - Points: (1) A backup is made every 30 minutes when something changed. Backups you rename are kept until you delete them; the others are replaced by newer ones over time. (2) A backup holds your cards, progress, review history and settings; it does not hold images or sounds. (3) **Restore** returns the whole collection and the settings to the backup; a copy of the current state is made first. (4) **Share** turns a backup into a package so you can take it off the device.
@@ -98,7 +95,6 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 - Not: Bu işlemlerden önce alınan yedekler **Yedekler** ekranında görünür.
 
 **EN**
-- Eyebrow: MAINTENANCE
 - Title: Maintenance tools
 - Summary: Find and repair inconsistencies in your collection.
 - Points: (1) **Check database** only reports; it changes nothing. (2) **Repair and optimize** shows what it found first; after you confirm it makes a safety backup and fixes broken rows. No note text is deleted. (3) **Reset progress** deletes the whole collection; make a backup and export the collection before you use it.

@@ -175,14 +175,6 @@ export function ChevronDownIcon({ color, size }: IconProps) {
     );
 }
 
-export function CloseIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M6 6l12 12M18 6L6 18" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
 export function SearchIcon({ color, size }: IconProps) {
     return (
         <IconFrame size={size}>

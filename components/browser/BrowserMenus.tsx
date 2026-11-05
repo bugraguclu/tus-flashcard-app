@@ -10,7 +10,7 @@ import type { BrowserCardSortKey, BrowserTableMode } from '../../lib/studyReposi
 import { cardFlagName, type SupportedLocale } from '../../lib/i18n';
 import { deleteNotes, type CardDeckMoveSnapshot } from '../../lib/noteManager';
 import { setDbSetting } from '../../lib/storage';
-import SwipeDismissSheet from '../../components/SwipeDismissSheet';
+import SwipeDismissSheet, { SheetScrollView } from '../../components/SwipeDismissSheet';
 import GearGlyph from '../../components/GearGlyph';
 import FlagGlyph from '../../components/FlagGlyph';
 import { alert, choose, confirm } from '../../lib/confirm';
@@ -98,16 +98,9 @@ export function SelectionMenuModal({
                     style={styles.selectionMenuCard}
                     onDismiss={() => setShowSelectionMenu(false)}
                     accessibilityViewIsModal
+                    title={`${selectedCardIds.size} ${tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}`}
                 >
-                    <View style={styles.selectionMenuHeader}>
-                        <Text style={styles.selectionMenuTitle}>
-                            {selectedCardIds.size} {tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}
-                        </Text>
-                        <TouchableOpacity style={styles.selectionMenuClose} onPress={() => setShowSelectionMenu(false)} accessibilityRole="button" accessibilityLabel={t('common.close')}>
-                            <Text style={styles.selectionMenuCloseText}>×</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView showsVerticalScrollIndicator={false}>
+                    <SheetScrollView showsVerticalScrollIndicator={false}>
                         <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => runSelectionAction(() => toggleSelectedSuspend(selectedActionCardIds, settings.dayRolloverHour))}>
                             <Text style={styles.selectionMenuIcon}>⏸</Text><Text style={styles.selectionMenuText}>{l('Askıya al / askıdan çıkar', 'Toggle suspend')}</Text>
                         </TouchableOpacity>
@@ -255,7 +248,7 @@ export function SelectionMenuModal({
                         >
                             <Text style={[styles.selectionMenuIcon, styles.selectionMenuDanger]}>⌫</Text><Text style={[styles.selectionMenuText, styles.selectionMenuDanger]}>{l('Notları sil', 'Delete notes')}</Text>
                         </TouchableOpacity>
-                    </ScrollView>
+                    </SheetScrollView>
                 </SwipeDismissSheet>
             </View>
         </Modal>

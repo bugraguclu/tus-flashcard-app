@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BorderRadius, FontSize, Spacing, useIsDarkTheme, useThemeColors } from '../../constants/theme';
@@ -17,6 +17,7 @@ import {
 } from '../../lib/stopwatch';
 import type { StudySession } from '../../lib/studyCalendar';
 import { CountStepper, FormDivider, FormInfoBox, FormRow, FormSelector } from './FormControls';
+import { SheetNoDrag, SheetScrollView } from '../SwipeDismissSheet';
 import StopwatchSheet from './StopwatchSheet';
 import type { StudyChoice } from './StudyStartSheet';
 import { StudyTypePicker, SubjectGridPicker } from './StudyPickers';
@@ -235,11 +236,10 @@ export default function SessionEditorSheet({
         <StopwatchSheet
             visible={visible}
             onClose={onClose}
-            formHeader
             overlay={overlay}
             title={recordId !== null ? l('Çalışmanızı Düzenleyin', 'Edit Your Session') : l('Geçmiş Çalışmanızı Ekleyin', 'Add a Past Session')}
         >
-            <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <SheetScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                 <FormRow label={l('Ders seçin', 'Subject')}>
                     <FormSelector
                         value={subject || l('Seçin', 'Choose')}
@@ -295,18 +295,20 @@ export default function SessionEditorSheet({
 
                 <View style={styles.noteSection}>
                     <Text style={[styles.noteLabel, { color: colors.textPrimary }]}>{l('Çalışma Notu', 'Study Note')}</Text>
-                    <TextInput
-                        style={[styles.noteInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
-                        value={note}
-                        onChangeText={setNote}
-                        placeholder={l('Sayfa 120-140 arasını çalıştım, 30 soru çözdüm.', 'Studied pages 120-140, solved 30 questions.')}
-                        placeholderTextColor={colors.textMuted}
-                        maxLength={MAX_STUDY_NOTE_LENGTH}
-                        multiline
-                        textAlignVertical="top"
-                        accessibilityLabel={l('Çalışma notu', 'Study note')}
-                        accessibilityHint={l(`En fazla ${MAX_STUDY_NOTE_LENGTH} karakter`, `Up to ${MAX_STUDY_NOTE_LENGTH} characters`)}
-                    />
+                    <SheetNoDrag>
+                        <TextInput
+                            style={[styles.noteInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
+                            value={note}
+                            onChangeText={setNote}
+                            placeholder={l('Sayfa 120-140 arasını çalıştım, 30 soru çözdüm.', 'Studied pages 120-140, solved 30 questions.')}
+                            placeholderTextColor={colors.textMuted}
+                            maxLength={MAX_STUDY_NOTE_LENGTH}
+                            multiline
+                            textAlignVertical="top"
+                            accessibilityLabel={l('Çalışma notu', 'Study note')}
+                            accessibilityHint={l(`En fazla ${MAX_STUDY_NOTE_LENGTH} karakter`, `Up to ${MAX_STUDY_NOTE_LENGTH} characters`)}
+                        />
+                    </SheetNoDrag>
                     <Text style={[styles.noteCount, { color: colors.textMuted }]}>
                         {l(`Kalan: ${MAX_STUDY_NOTE_LENGTH - note.length}`, `${MAX_STUDY_NOTE_LENGTH - note.length} left`)}
                     </Text>
@@ -326,7 +328,7 @@ export default function SessionEditorSheet({
                     </Text>
                 </TouchableOpacity>
                 {error ? <Text style={[styles.error, { color: colors.btnAgain }]} accessibilityLiveRegion="polite">{error}</Text> : null}
-            </ScrollView>
+            </SheetScrollView>
         </StopwatchSheet>
     );
 }

@@ -11,7 +11,7 @@ pencere genişliği ≥768 px olduğunda (web, geniş pencere) vardır; iPhone'd
   (`<View style={styles.headerSpacer} />`, `app/browser.tsx:893`); yerine ⓘ düğmesi gelir.
   Erişilebilirlik etiketi: "Kartlarım hakkında" / "About the Card Browser".
 - **Tetikleyici:** ⓘ'ye dokunma
-- **Bileşen:** bilgi sayfası (`HelpSheet`, `SwipeDismissSheet` üzerinde: eyebrow, title, summary, points[], note, more)
+- **Bileşen:** bilgi sayfası (`HelpSheet`, `SwipeDismissSheet` üzerinde: title, summary, points[], note, more)
 - **Daha fazla bilgi:** `tr/10-browser-and-search.md#browser-layout`
 - **Durum:** Yeni
 
@@ -23,7 +23,6 @@ pencere genişliği ≥768 px olduğunda (web, geniş pencere) vardır; iPhone'd
 - Not: Notlar görünümünde yaptığınız işlemler notun bütün kartlarına uygulanır.
 
 **EN**
-- Eyebrow: CARD BROWSER
 - Title: Find cards and change them in bulk
 - Summary: The list shows the cards the search box finds in the deck and filters above. The count is how many there are.
 - Points: (1) Tap a row to see its answer and scheduling. Touch and hold to start selecting, then move, suspend, flag and more from the bar at the bottom. (2) Filters, sorting and the Cards/Notes view are in the ⋮ menu. (3) Plain words search the card's fields; type `tag:` and `deck:` for tags and decks. Tap ? in the search box for the terms.
@@ -121,7 +120,6 @@ sayfadır (`app/_layout.tsx:714-722`).
 - Not: **Kart ID** ve **Not ID**'yi Kartlarım'da `cid:` ve `nid:` ile arayabilirsiniz.
 
 **EN**
-- Eyebrow: CARD INFO
 - Title: This card's history and state
 - Summary: The card's deck, scheduling, FSRS values and every review entry. Opening this screen does not change the card.
 - Points: (1) **Card state** is the card's stage; **Queue** shows where it waits now (suspended, buried). (2) **Stability** is about how many days until your recall drops to 90%; **Retrievability** is your chance of recalling it right now. (3) **Manual** rows in the history record due-date changes or resets; they are not answers.

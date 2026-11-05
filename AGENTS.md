@@ -118,6 +118,11 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   actions open alerts or sheets at once keeps a natively fading `Modal` and only grows its card in
   (`usePopoverItemStyle`). Do not animate what a learner repeats all day beyond press feedback:
   the study screen's grades and Show Answer change instantly.
+- A sheet with a grabber has no close ×, Done or Close button: the grabber, a pull-down and the
+  backdrop close it. Its title sits centred under the grabber (the `title` and `subtitle` of
+  `SwipeDismissSheet` or `BottomSheetModal`; no eyebrow). The whole sheet pulls down except what
+  scrolls or edits text: a sheet's scrolling body is a `SheetScrollView` and a multi-line field
+  sits in `SheetNoDrag`.
 - Import and export are canonical full-screen workflows. Every entry point, including Settings
   and the Decks overflow menu, must open `/import` or `/export`; do not implement a second
   import/export path inside the calling screen.

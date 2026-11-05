@@ -1,8 +1,8 @@
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { Spacing } from '../../constants/theme';
 import { Text } from '../AppText';
 import { useI18n } from '../../hooks/useI18n';
-import SwipeDismissSheet from '../SwipeDismissSheet';
+import SwipeDismissSheet, { SheetScrollView } from '../SwipeDismissSheet';
 import type { FilteredDeckOptionsStyles } from './filteredDeckOptionsStyles';
 
 /** The filtered deck form's ? help, a bottom sheet over the form whose steps scroll. */
@@ -18,20 +18,15 @@ export default function FilteredDeckHelpSheet({ styles, bottomInset, onClose }: 
             <SwipeDismissSheet
                 style={[styles.helpCard, { paddingBottom: Math.max(bottomInset, Spacing.md) }]}
                 onDismiss={onClose}
+                title={l('Filtrelenmiş deste nasıl çalışır?', 'How does a filtered deck work?')}
             >
-                <View style={styles.helpHeader}>
-                    <View style={styles.helpHeaderCopy}>
-                        <Text style={styles.helpTitle}>{l('Filtrelenmiş deste nasıl çalışır?', 'How does a filtered deck work?')}</Text>
-                        <Text style={styles.helpLead}>
-                            {l(
-                                'Filtrelenmiş deste, normal günlük sınırların dışında belirli kartlarla geçici bir çalışma oturumu oluşturur.',
-                                'A filtered deck creates a temporary study session with specific cards outside the normal daily limits.',
-                            )}
-                        </Text>
-                    </View>
-                    <TouchableOpacity style={styles.iconButton} onPress={onClose}><Text style={styles.closeIcon}>×</Text></TouchableOpacity>
-                </View>
-                <ScrollView contentContainerStyle={styles.helpContent}>
+                <SheetScrollView contentContainerStyle={styles.helpContent}>
+                    <Text style={styles.helpLead}>
+                        {l(
+                            'Filtrelenmiş deste, normal günlük sınırların dışında belirli kartlarla geçici bir çalışma oturumu oluşturur.',
+                            'A filtered deck creates a temporary study session with specific cards outside the normal daily limits.',
+                        )}
+                    </Text>
                     <HelpStep
                         number="1"
                         title={l('Kartları belirleyin', 'Choose the cards')}
@@ -77,7 +72,7 @@ export default function FilteredDeckHelpSheet({ styles, bottomInset, onClose }: 
                             )}
                         </Text>
                     </View>
-                </ScrollView>
+                </SheetScrollView>
                 <TouchableOpacity style={styles.saveButton} onPress={onClose}><Text style={styles.saveText}>{l('Anladım', 'Got it')}</Text></TouchableOpacity>
             </SwipeDismissSheet>
         </View>

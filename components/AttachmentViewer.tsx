@@ -11,6 +11,9 @@ import { getLegacyFileSystem, shareOrDownloadFileWeb } from '../lib/files';
 import { getMediaBaseUrl, guessMimeFromFilename, readMediaBytes } from '../lib/mediaStore';
 import { DocumentIcon, ShareIcon } from './editor/AttachmentIcons';
 
+/** UIKit pulls a page sheet down to dismiss it on iPhone; other platforms show it full screen. */
+const PAGE_SHEET_PULLS_DOWN = Platform.OS === 'ios';
+
 /** Where a stored attachment is read from on native, as a URL a WebView can load. */
 function attachmentFileUri(filename: string): string {
     return `${getMediaBaseUrl()}${encodeURIComponent(filename)}`;
@@ -148,14 +151,26 @@ function AttachmentViewer({ filename, onClose }: AttachmentViewerProps) {
             onRequestClose={onClose}
         >
             <View style={styles.container}>
-                <View style={[styles.grabberArea, { pointerEvents: 'none' }]}>
-                    <View style={styles.grabber} />
-                </View>
-                <View style={styles.header}>
-                    <TouchableOpacity style={styles.headerButton} onPress={onClose} accessibilityRole="button">
-                        <Text style={styles.headerAction}>{l('Kapat', 'Close')}</Text>
+                {/* On iPhone the page sheet is pulled down from anywhere, so the grabber is all the
+                    chrome it needs; elsewhere the modal fills the screen and keeps a close button. */}
+                {PAGE_SHEET_PULLS_DOWN ? (
+                    <TouchableOpacity
+                        style={styles.grabberArea}
+                        onPress={onClose}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Kapat', 'Close')}
+                        accessibilityHint={l('Dokunun veya aşağı sürükleyin', 'Tap or swipe down')}
+                    >
+                        <View style={styles.grabber} />
                     </TouchableOpacity>
-                    <Text style={styles.title} numberOfLines={1}>{name}</Text>
+                ) : null}
+                <View style={styles.header}>
+                    {PAGE_SHEET_PULLS_DOWN ? <View style={styles.headerButton} /> : (
+                        <TouchableOpacity style={styles.headerButton} onPress={onClose} accessibilityRole="button">
+                            <Text style={styles.headerAction}>{l('Kapat', 'Close')}</Text>
+                        </TouchableOpacity>
+                    )}
+                    <Text style={styles.title} numberOfLines={1} accessibilityRole="header">{name}</Text>
                     <TouchableOpacity
                         style={[styles.headerButton, styles.headerButtonEnd]}
                         onPress={share}
@@ -200,12 +215,12 @@ export function useAttachmentViewer(): { open: (filename: string) => void; viewe
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgCard },
-        grabberArea: { alignItems: 'center', paddingTop: 8 },
-        grabber: { width: 36, height: 5, borderRadius: 3, backgroundColor: colors.border },
+        grabberArea: { height: 22, alignItems: 'center', paddingTop: 8 },
+        grabber: { width: 36, height: 5, borderRadius: 2.5, backgroundColor: colors.border },
         header: {
             flexDirection: 'row',
             alignItems: 'center',
-            minHeight: 48,
+            minHeight: 44,
             paddingHorizontal: Spacing.sm,
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
@@ -213,7 +228,7 @@ function createStyles(colors: ColorScheme) {
         headerButton: { minWidth: 72, minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.sm },
         headerButtonEnd: { alignItems: 'flex-end' },
         headerAction: { color: colors.accent, fontSize: FontSize.md, fontWeight: '600' },
-        title: { flex: 1, textAlign: 'center', color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
+        title: { flex: 1, textAlign: 'center', color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '600' },
         preview: { flex: 1, backgroundColor: colors.bgCard },
         notice: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, padding: Spacing.xl },
         noticeTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700', textAlign: 'center' },

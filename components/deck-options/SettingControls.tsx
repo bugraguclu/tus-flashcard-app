@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Spacing, type ColorScheme } from '../../constants/theme';
 import { sanitizeNumericDraft } from '../../lib/deckOptionsForm';
 import BottomSheetModal from '../BottomSheetModal';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import { DeckOptionsContext } from './DeckOptionsContext';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
 import type { OptionHelp, SelectOption } from './types';
@@ -63,22 +64,9 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
                         paddingRight: Spacing.sm + insets.right,
                     }]}
                     sheetStyle={[styles.helpSheet, { maxHeight: Math.max(280, windowHeight - 120) }]}
+                    title={help.title}
                 >
-                    <View style={styles.helpSheetHeader}>
-                        <View style={styles.helpSheetTitleWrap}>
-                            <Text style={styles.helpSheetEyebrow}>{help.eyebrow}</Text>
-                            <Text style={styles.helpSheetTitle}>{help.title}</Text>
-                        </View>
-                        <TouchableOpacity
-                            style={styles.helpCloseButton}
-                            onPress={closeHelp}
-                            accessibilityRole="button"
-                            accessibilityLabel={help.dismissLabel}
-                        >
-                            <Text style={styles.helpCloseText}>×</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView
+                    <SheetScrollView
                         style={styles.helpSheetScroll}
                         contentContainerStyle={styles.helpSheetContent}
                         showsVerticalScrollIndicator={false}
@@ -98,7 +86,7 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
                                 <Text style={styles.helpNoteText}>{help.note}</Text>
                             </View>
                         ) : null}
-                    </ScrollView>
+                    </SheetScrollView>
                     <TouchableOpacity
                         style={styles.helpDismissButton}
                         onPress={closeHelp}

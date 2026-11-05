@@ -32,7 +32,7 @@ için kaynak olarak okundu. Metinlerin hepsi özgündür; Anki kılavuzundan kop
 | `in-app/00-help-center.md` | Yeni Yardım merkezi ekranının tarifi, giriş noktaları, liste düzeni | Uygulama |
 | `in-app/01-decks.md` | İlk açılış, Desteler (⋮ › **Yardım** girişi dahil), Genel bakış, Filtrelenmiş deste / Özel çalışma | Uygulama |
 | `in-app/02-studying.md` | Çalışma ekranı, bekleme ve **Tebrikler!** ekranları | Uygulama |
-| `in-app/03-deck-options.md` | Deste seçenekleri (mevcut **AYAR REHBERİ** sayfaları dahil), FSRS kartı | Uygulama |
+| `in-app/03-deck-options.md` | Deste seçenekleri (mevcut ayar rehberi sayfaları dahil), FSRS kartı | Uygulama |
 | `in-app/04-editing.md` | Kart ekleme/düzenleme, boşluk doldurma, fotoğraf/çizim düzenleyici, Not türleri | Uygulama |
 | `in-app/05-browser.md` | Kartlarım, arama yardımı, Kart bilgisi | Uygulama |
 | `in-app/06-progress.md` | İstatistikler, Kronometre, Çalışma Takvimi | Uygulama |
@@ -176,9 +176,10 @@ ulaşılır. Web uygulaması (`tusankim.vercel.app`) yardım sayfalarını ayrı
    noktaları: Ayarlar › Hakkında ilk satırı, kenar çubuğu, bilgi sayfalarının **Daha fazla bilgi**
    bağlantısı, ilk açılış kartı.
 3. **Bilgi sayfası bileşeni:** `components/StatsHelpSheet.tsx` kalıbından genel bir
-   `components/HelpSheet.tsx` çıkarılır (`SwipeDismissSheet` üzerinde; tutamaç görünür ve
-   çalışır). Deste seçenekleri'nin `OptionHelp` biçimiyle aynı alanları alır: `eyebrow`, `title`,
-   `summary`, `points[]`, `note`, ve yeni `more: { article, section }`.
+   `components/HelpSheet.tsx` çıkarılır (`SwipeDismissSheet` üzerinde: başlık tutamacın hemen
+   altında ortalanır; üst etiket ve kapatma düğmesi yoktur, sayfa kaydırma alanı dışında her yerden
+   aşağı çekilerek kapanır). Deste seçenekleri'nin `OptionHelp` biçimiyle aynı alanları alır:
+   `title`, `summary`, `points[]`, `note`, ve yeni `more: { article, section }`.
 4. **ⓘ düğmeleri:** Tam ekran yardımcı ekranlarda `ScreenHeader` bileşeninin `actions` yuvasına,
    sekme ekranlarında başlığın sağına, Ayarlar gruplarında mevcut `Group` bileşeninin
    `onHelpPress` / `helpLabel` özelliğine konur. Her düğmenin erişilebilirlik etiketi

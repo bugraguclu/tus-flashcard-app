@@ -42,10 +42,8 @@ export function PageOptionsSheet({ visible, setup, onChange, onClose }: PageOpti
                     onPress={onClose}
                     accessibilityLabel={l('Sayfa seçeneklerini kapat', 'Close page options')}
                 />
-                <SwipeDismissSheet active={visible} style={styles.sheet} onDismiss={onClose}>
-                    <Text style={styles.title}>{l('Sayfa', 'Page')}</Text>
-
-                    <Text style={styles.groupLabel}>{l('Kağıt', 'Paper')}</Text>
+                <SwipeDismissSheet active={visible} style={styles.sheet} onDismiss={onClose} title={l('Sayfa', 'Page')}>
+                    <Text style={[styles.groupLabel, styles.groupLabelFirst]}>{l('Kağıt', 'Paper')}</Text>
                     <View style={styles.chipRow}>
                         {BLANK_CANVAS_PAPERS.map((paper) => {
                             const selected = setup.paper === paper;
@@ -153,15 +151,8 @@ function createStyles(colors: ColorScheme) {
             borderTopLeftRadius: BorderRadius.lg,
             borderTopRightRadius: BorderRadius.lg,
             paddingHorizontal: Spacing.lg,
-            paddingTop: 44,
             paddingBottom: 32,
             ...Shadows.lg,
-        },
-        title: {
-            fontSize: FontSize.lg,
-            fontWeight: '700',
-            color: colors.textPrimary,
-            marginBottom: Spacing.xs,
         },
         groupLabel: {
             fontSize: FontSize.sm,
@@ -170,6 +161,7 @@ function createStyles(colors: ColorScheme) {
             marginTop: Spacing.md,
             marginBottom: Spacing.sm,
         },
+        groupLabelFirst: { marginTop: 0 },
         chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
         chip: {
             minWidth: 72,

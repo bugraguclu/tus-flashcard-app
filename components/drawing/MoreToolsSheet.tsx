@@ -36,8 +36,7 @@ export function MoreToolsSheet({ visible, tool, tools = DRAWING_MORE_TOOLS, onPi
                     onPress={onClose}
                     accessibilityLabel={l('Diğer araçları kapat', 'Close more tools')}
                 />
-                <SwipeDismissSheet active={visible} style={styles.sheet} onDismiss={onClose}>
-                    <Text style={styles.title}>{l('Diğer araçlar', 'More Tools')}</Text>
+                <SwipeDismissSheet active={visible} style={styles.sheet} onDismiss={onClose} title={l('Diğer araçlar', 'More Tools')}>
                     {tools.map((id) => {
                         const Glyph = DRAWING_TOOL_GLYPHS[id];
                         const label = id === 'image' ? l('Görsel ekle', 'Add Picture') : drawingToolLabel(id, l);
@@ -79,11 +78,9 @@ function createStyles(colors: ColorScheme) {
             borderTopLeftRadius: BorderRadius.lg,
             borderTopRightRadius: BorderRadius.lg,
             paddingHorizontal: Spacing.lg,
-            paddingTop: 44,
             paddingBottom: 32,
             ...Shadows.lg,
         },
-        title: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
         row: {
             flexDirection: 'row',
             alignItems: 'center',

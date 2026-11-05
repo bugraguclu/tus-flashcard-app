@@ -57,7 +57,7 @@ her kart rehberini aşağıdaki satırdaki `help={optionHelp.…}` ile alır.
   düğmesi (satırın kendi dokunma alanının dışında), `app/deck-options.tsx:1103-1120`. Erişilebilirlik
   etiketi: "Ayar grubu nedir?" / "What is a preset?". iPhone ve web.
 - **Tetikleyici:** ?'ye dokunma
-- **Bileşen:** bilgi sayfası (`OptionCard` rehberiyle aynı kalıp: eyebrow **AYAR REHBERİ**, title, summary, points[], note, more)
+- **Bileşen:** bilgi sayfası (`OptionCard` rehberiyle aynı kalıp: title, summary, points[], note, more)
 - **Daha fazla bilgi:** `tr/06-deck-options.md#presets` (`help?article=deck-options&section=presets`)
 - **Durum:** Yeni
 

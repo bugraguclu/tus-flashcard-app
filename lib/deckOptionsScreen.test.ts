@@ -60,6 +60,7 @@ vi.mock('./fsrsOptimizer', () => ({ optimizeFsrsPreset: async () => null }));
 vi.mock('../components/DeckPickerModal', () => ({ default: () => null }));
 vi.mock('../components/HeaderBackIcon', () => ({ default: () => null }));
 vi.mock('../components/BottomSheetModal', () => ({ default: () => null }));
+vi.mock('../components/SwipeDismissSheet', () => ({ default: () => null, SheetScrollView: () => null, SheetNoDrag: () => null }));
 
 import DeckOptionsScreen from '../app/deck-options';
 import { DEFAULT_DECK_CONFIG } from './models';
