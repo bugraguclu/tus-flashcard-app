@@ -235,9 +235,8 @@ export default function BackupsScreen() {
     };
 
     const handleShare = (name: string) => {
-        // Backups is an iOS form sheet. Replacing that route keeps the canonical
-        // full-screen export workflow visible instead of pushing it behind the sheet.
-        router.replace({ pathname: '/export', params: { backup: name } } as any);
+        // Export opens over Backups, so its back button and the back swipe both return here.
+        router.push({ pathname: '/export', params: { backup: name } } as any);
     };
 
     return (

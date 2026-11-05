@@ -10,6 +10,15 @@ export type SettingsSectionId =
     | 'data'
     | 'about';
 
+const SECTION_IDS: readonly SettingsSectionId[] = [
+    'general', 'newStudy', 'reviewing', 'notifications', 'controls', 'accessibility', 'data', 'about',
+];
+
+/** Whether a route parameter names a Settings category. */
+export function isSettingsSectionId(value: unknown): value is SettingsSectionId {
+    return SECTION_IDS.includes(value as SettingsSectionId);
+}
+
 /**
  * The Settings categories in list order. `summary` lists only the headings found on each page, so
  * it stays a plain table of contents: no live values, no descriptive copy. Keep it in step with the

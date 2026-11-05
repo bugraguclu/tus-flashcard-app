@@ -15,7 +15,8 @@ interface DeckProgressSectionProps {
 
 /**
  * How far each deck one level down has come: a bar split into the same card states as Card
- * Counts, so a deck that is mostly mature looks it. Tapping a deck scopes the whole screen to it.
+ * Counts, so a deck that is mostly mature looks it. Tapping a deck opens its statistics as a page
+ * of their own, so going back returns to this list rather than leaving Statistics.
  */
 export default function DeckProgressSection({ title, decks, onSelectDeck }: DeckProgressSectionProps) {
     const colors = useThemeColors();

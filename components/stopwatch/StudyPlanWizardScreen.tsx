@@ -1,26 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Text } from '../components/AppText';
+import { Text } from '../AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import ScreenHeader from '../components/ScreenHeader';
-import { CapacityStep, CoursesStep } from '../components/stopwatch/DetailedPlanSteps';
-import { weekdayShortName } from '../components/stopwatch/StudyPlanEditorSheet';
-import { DateField } from '../components/stopwatch/StudyToolControls';
-import { Button } from '../components/ui/Button';
-import { Section } from '../components/ui/Card';
-import { Notice, ProgressBar } from '../components/ui/Feedback';
-import { TextField } from '../components/ui/Fields';
-import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
-import { useAppSettings } from '../contexts/AppContext';
-import { useI18n } from '../hooks/useI18n';
-import { goBackOr } from '../lib/backNavigation';
-import { alert, confirm } from '../lib/confirm';
-import { studyDayYmd } from '../lib/studyAnalysis';
-import { saveStudyPlans } from '../lib/studyPlanStore';
-import { defaultDetailedPlanDraft, generateDetailedPlan, type DetailedPlanDraft } from '../lib/studyPlans';
+import { useFocusEffect, useRouter } from 'expo-router';
+import ScreenHeader from '../ScreenHeader';
+import { CapacityStep, CoursesStep } from './DetailedPlanSteps';
+import { weekdayShortName } from './StudyPlanEditorSheet';
+import { DateField } from './StudyToolControls';
+import { STUDY_PLAN_WIZARD_STEPS, useStudyPlanWizardDraft } from './StudyPlanWizardDraft';
+import { Button } from '../ui/Button';
+import { Section } from '../ui/Card';
+import { Notice, ProgressBar } from '../ui/Feedback';
+import { TextField } from '../ui/Fields';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { useI18n } from '../../hooks/useI18n';
 
-const STEPS = 3;
+const STEPS = STUDY_PLAN_WIZARD_STEPS.length;
 const WEEKDAY_LONG_TR = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 const WEEKDAY_LONG_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -29,19 +24,19 @@ const WEEKDAY_LONG_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
  * study order with their pass, proficiency and hours; then the weekly capacity, any day's own
  * capacity and the calendar it produces. Creating saves every day's block in one write; the plan
  * is generated again from the controls at that moment, never from a stale preview.
+ *
+ * Each step is a page of the wizard's own stack (app/study-plan-wizard/), pushed by Next, so the
+ * back swipe and Back return to the step before; Cancel leaves the whole wizard.
  */
-export default function StudyPlanWizardScreen() {
+export default function StudyPlanWizardScreen({ step }: { step: number }) {
     const { l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { settings } = useAppSettings();
-    const [draft, setDraft] = useState<DetailedPlanDraft>(() => defaultDetailedPlanDraft(studyDayYmd(Date.now(), settings.dayRolloverHour)));
-    const [step, setStep] = useState(0);
-    const update = (patch: Partial<DetailedPlanDraft>) => setDraft((current) => ({ ...current, ...patch }));
-
-    const result = useMemo(() => generateDetailedPlan(draft), [draft]);
+    const { draft, update, result, leave, create, showingStep } = useStudyPlanWizardDraft();
+    useFocusEffect(useCallback(() => { showingStep(step); }, [showingStep, step]));
+    const nextStep = () => router.push(`/study-plan-wizard/${STUDY_PLAN_WIZARD_STEPS[step + 1]}` as any);
     const problemText = result.ok ? null : {
         range: l('En fazla iki yıllık geçerli bir tarih aralığı seçin.', 'Choose a valid date range of up to two years.'),
         workload: l('Ders süreleri ve günlük kapasite geçerli olmalı; en az bir derse süre ayırın.', 'Course hours and daily capacity must be valid, with time for at least one course.'),
@@ -50,25 +45,6 @@ export default function StudyPlanWizardScreen() {
             'There is not enough study time before the target date. Move it later, raise the daily capacity or lower the course hours.',
         ),
     }[result.problem];
-
-    const leave = () => confirm(
-        l('Plan kaydedilmeden çıkılsın mı?', 'Leave without saving the plan?'),
-        l('Girdiğiniz bilgiler silinir.', 'What you entered will be discarded.'),
-        () => goBackOr(router),
-        { destructive: true },
-    );
-
-    const create = () => {
-        const fresh = generateDetailedPlan(draft);
-        if (!fresh.ok) return;
-        try {
-            saveStudyPlans(fresh.blocks);
-            goBackOr(router);
-        } catch (error) {
-            console.warn('[StudyPlanWizard] save failed:', error);
-            alert(l('Plan kaydedilemedi', 'The plan could not be saved'), l('Planlarınız değiştirilmedi.', 'Your plans were not changed.'));
-        }
-    };
 
     const weekdayName = (weekday: number) => (locale === 'tr' ? WEEKDAY_LONG_TR : WEEKDAY_LONG_EN)[weekday] ?? weekdayShortName(weekday, locale);
 
@@ -108,9 +84,9 @@ export default function StudyPlanWizardScreen() {
                 {step > 0 && problemText ? <Notice tone="danger">{problemText}</Notice> : null}
             </ScrollView>
             <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.md }]}>
-                {step > 0 ? <Button label={l('Geri', 'Back')} variant="secondary" onPress={() => setStep(step - 1)} style={styles.footerButton} /> : null}
+                {step > 0 ? <Button label={l('Geri', 'Back')} variant="secondary" onPress={() => router.back()} style={styles.footerButton} /> : null}
                 {step < STEPS - 1 ? (
-                    <Button label={l('İleri', 'Next')} onPress={() => setStep(step + 1)} style={styles.footerButton} />
+                    <Button label={l('İleri', 'Next')} onPress={nextStep} style={styles.footerButton} />
                 ) : (
                     <Button label={l('Oluştur', 'Create')} onPress={create} disabled={!result.ok} style={styles.footerButton} />
                 )}

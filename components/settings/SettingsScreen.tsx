@@ -11,25 +11,24 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native';
-import { Text, useLayoutTextScale } from '../components/AppText';
-import { createSettingsStyles as createStyles } from '../components/settings/settingsStyles';
+import { Text, useLayoutTextScale } from '../AppText';
+import { createSettingsStyles as createStyles } from './settingsStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-import { useThemeColors } from '../constants/theme';
+import { useThemeColors } from '../../constants/theme';
 import {
-    DEFAULT_SETTINGS,
     defaultSettingsKeepingDeckOptions,
     loadSettings,
     saveSettingsDurably,
-} from '../lib/storage';
-import { normalizeBackupPolicy } from '../lib/backupPolicy';
-import { rebaseSettingsDraft } from '../lib/settingsDraft';
-import { searchSettingsCategories } from '../lib/settingsSearch';
-import { turkishAblative } from '../lib/turkishSuffix';
-import KeyboardSettingsSection from '../components/settings/KeyboardSettingsSection';
-import TextSizeSlider from '../components/settings/TextSizeSlider';
-import { settingsCategories, type SettingsSectionId } from '../components/settings/settingsCategories';
+} from '../../lib/storage';
+import { normalizeBackupPolicy } from '../../lib/backupPolicy';
+import { searchSettingsCategories } from '../../lib/settingsSearch';
+import { turkishAblative } from '../../lib/turkishSuffix';
+import KeyboardSettingsSection from './KeyboardSettingsSection';
+import TextSizeSlider from './TextSizeSlider';
+import { settingsCategories, type SettingsSectionId } from './settingsCategories';
+import { useSettingsDraft } from './SettingsDraft';
 import {
     checkDatabase,
     repairChangedRows,
@@ -38,12 +37,12 @@ import {
     type DatabaseCheckResult,
     type DatabaseOptimizeResult,
     type MaintenanceStep,
-} from '../lib/maintenance';
-import { MaintenanceWorkflowError, optimizeDatabaseWithBackup } from '../lib/maintenanceWorkflow';
-import { alert, confirm, confirmAsync } from '../lib/confirm';
-import { promptPermissionSettings } from '../lib/permissions';
-import { useAppSettingsActions, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
-import { useI18n } from '../hooks/useI18n';
+} from '../../lib/maintenance';
+import { MaintenanceWorkflowError, optimizeDatabaseWithBackup } from '../../lib/maintenanceWorkflow';
+import { alert, confirm, confirmAsync } from '../../lib/confirm';
+import { promptPermissionSettings } from '../../lib/permissions';
+import { useAppSettingsActions, useCatalogStatus, useCollectionInvalidation } from '../../contexts/AppContext';
+import { useI18n } from '../../hooks/useI18n';
 import type {
     AppLanguage,
     AppSettings,
@@ -51,41 +50,39 @@ import type {
     ReviewGestureAction,
     ReviewTapZone,
     StudyNotificationThreshold,
-} from '../lib/types';
-import BoundedIntegerInput, { type BoundedIntegerInputHandle } from '../components/BoundedIntegerInput';
-import GearGlyph from '../components/GearGlyph';
-import CardsGlyph from '../components/CardsGlyph';
-import BrainGlyph from '../components/BrainGlyph';
-import BellGlyph from '../components/BellGlyph';
-import HandTapGlyph from '../components/HandTapGlyph';
-import AccessibilityGlyph from '../components/AccessibilityGlyph';
-import ArchiveBoxGlyph from '../components/ArchiveBoxGlyph';
-import InfoCircleGlyph from '../components/InfoCircleGlyph';
-import ScreenHeader from '../components/ScreenHeader';
-import { Button, HelpButton } from '../components/ui/Button';
-import { Card, Divider, SectionLabel } from '../components/ui/Card';
-import { SegmentedControl } from '../components/ui/Choice';
-import { AppDialog } from '../components/ui/Dialog';
-import { EmptyState, LoadingState, Notice } from '../components/ui/Feedback';
-import { SearchField } from '../components/ui/Fields';
-import { ListRow, SelectRow, SwitchRow, ValueRow } from '../components/ui/Rows';
-import { Stepper } from '../components/ui/Stepper';
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, CheckIcon, ExternalLinkIcon, RefreshIcon } from '../components/ui/icons';
+} from '../../lib/types';
+import BoundedIntegerInput, { type BoundedIntegerInputHandle } from '../BoundedIntegerInput';
+import GearGlyph from '../GearGlyph';
+import CardsGlyph from '../CardsGlyph';
+import BrainGlyph from '../BrainGlyph';
+import BellGlyph from '../BellGlyph';
+import HandTapGlyph from '../HandTapGlyph';
+import AccessibilityGlyph from '../AccessibilityGlyph';
+import ArchiveBoxGlyph from '../ArchiveBoxGlyph';
+import InfoCircleGlyph from '../InfoCircleGlyph';
+import ScreenHeader from '../ScreenHeader';
+import { Button, HelpButton } from '../ui/Button';
+import { Card, Divider, SectionLabel } from '../ui/Card';
+import { SegmentedControl } from '../ui/Choice';
+import { AppDialog } from '../ui/Dialog';
+import { EmptyState, LoadingState, Notice } from '../ui/Feedback';
+import { SearchField } from '../ui/Fields';
+import { ListRow, SelectRow, SwitchRow, ValueRow } from '../ui/Rows';
+import { Stepper } from '../ui/Stepper';
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, CheckIcon, ExternalLinkIcon, RefreshIcon } from '../ui/icons';
 import {
     disableStudyNotifications,
     requestStudyNotificationPermission,
     studyNotificationsSupported,
-} from '../lib/studyNotifications';
+} from '../../lib/studyNotifications';
 import {
     normalizeStudyNotificationThreshold,
     STUDY_NOTIFICATION_THRESHOLDS,
-} from '../lib/studyNotificationPolicy';
-import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../lib/dataManagementRoutes';
-import { resetAllDataWithBackup, ResetWorkflowError } from '../lib/resetWorkflow';
-import { BackupNotRestorableError } from '../lib/backup';
-import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
-import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
-import { useSuccessPulse } from '../hooks/useSuccessPulse';
+} from '../../lib/studyNotificationPolicy';
+import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../../lib/dataManagementRoutes';
+import { resetAllDataWithBackup, ResetWorkflowError } from '../../lib/resetWorkflow';
+import { BackupNotRestorableError } from '../../lib/backup';
+import { useSuccessPulse } from '../../hooks/useSuccessPulse';
 
 import {
     canGradeRevealedCard,
@@ -96,7 +93,7 @@ import {
     REVIEW_TAP_ZONES,
     SWIPE_PRESETS,
     type SwipePresetId,
-} from '../lib/reviewerTouchControls';
+} from '../../lib/reviewerTouchControls';
 
 type SectionId = SettingsSectionId;
 
@@ -152,10 +149,6 @@ const ControlsSettingsSection = React.memo(function ControlsSettingsSection({ re
 const DataManagementSettingsSection = React.memo(function DataManagementSettingsSection({ render }: MemoizedSectionProps) {
     return <>{render()}</>;
 });
-
-function settingsMatch(actual: AppSettings, expected: AppSettings): boolean {
-    return stableSnapshot(actual) === stableSnapshot(expected);
-}
 
 type SettingsStyles = ReturnType<typeof createStyles>;
 
@@ -307,9 +300,14 @@ function SwipeSensitivitySlider({ value, onChange, label, summary, styles }: {
     );
 }
 
-export default function SettingsScreen() {
+/**
+ * One page of Settings: the category list (`section` null) or a category. Each is a screen of its
+ * own in the Settings stack, so the back swipe on a category returns to the list; the draft they
+ * edit is shared through `SettingsDraftProvider`.
+ */
+export default function SettingsScreen({ section: activeSection }: { section: SectionId | null }) {
     const router = useRouter();
-    const { refreshSettings: refreshData, previewSettings } = useAppSettingsActions();
+    const { refreshSettings: refreshData } = useAppSettingsActions();
     const { invalidateCollection, markSchedulingStale } = useCollectionInvalidation();
     const { refreshCatalogAccess } = useCatalogStatus();
     const { t, l } = useI18n();
@@ -317,43 +315,29 @@ export default function SettingsScreen() {
     const textScale = useLayoutTextScale();
     const { width } = useWindowDimensions();
     const styles = useMemo(() => createStyles(colors, textScale, width), [colors, textScale, width]);
-    const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-    const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [saved, setSaved] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [activeSection, setActiveSection] = useState<SectionId | null>(null);
+    const {
+        settings,
+        setSettings,
+        updateSettings,
+        updateSetting,
+        markSaved,
+        loading,
+        saving,
+        isDirty,
+        showSaved,
+        showSavedState,
+        save: handleSaveSettings,
+        showingPage,
+    } = useSettingsDraft();
+    useFocusEffect(useCallback(() => { showingPage(activeSection); }, [activeSection, showingPage]));
     const [search, setSearch] = useState('');
     const [controlsHelpVisible, setControlsHelpVisible] = useState(false);
     const [gesturePickerTarget, setGesturePickerTarget] = useState<GesturePickerTarget | null>(null);
     const [tapSide, setTapSide] = useState<TapSide>('question');
     const [notificationThresholdPickerVisible, setNotificationThresholdPickerVisible] = useState(false);
     const [maintenanceAction, setMaintenanceAction] = useState<'check' | 'audit' | 'optimize' | 'reset' | null>(null);
-    const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastSaveFailedRef = useRef(false);
-    const sectionScrollRef = useRef<ScrollView>(null);
-    const settingsRef = useRef(settings);
-    settingsRef.current = settings;
-    // The stored settings the draft started from; savedSnapshot is the same value serialized.
-    const baselineRef = useRef<AppSettings | null>(null);
-
-    const markSaved = useCallback((persisted: AppSettings) => {
-        baselineRef.current = persisted;
-        setSavedSnapshot(stableSnapshot(persisted));
-    }, []);
-
-    const isDirty = hasSnapshotChanged(savedSnapshot, settings);
-    // The confirmation lingers briefly after a save, but an edit made meanwhile is not saved.
-    const showSaved = saved && !isDirty;
     // "✓ Kaydedildi" confirms the save with a single beat as it appears.
     const savedPulse = useSuccessPulse(showSaved);
-    useUnsavedChangesGuard(isDirty, {
-        title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
-        message: l(
-            'Ayarlarınız kaydedilmedi. Çıkarsanız değişiklikler kaybolacak.',
-            'Your settings have not been saved. They will be lost if you leave.',
-        ),
-    });
 
     const gestureActionOptions = useMemo<Array<{ value: ReviewGestureAction; label: string }>>(() => [
         { value: 'off', label: l('Eylem yok', 'No action') },
@@ -406,63 +390,15 @@ export default function SettingsScreen() {
             ?? notificationThresholdOptions[1].label;
     };
 
-    useEffect(() => {
-        const loaded = loadSettings();
-        setSettings(loaded);
-        markSaved(loaded);
-        setLoading(false);
-        return () => {
-            if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-        };
-    }, [markSaved]);
-
-    // Backups (restore) and Import (a collection package) open over Settings and rewrite the
-    // settings rows. When Settings is shown again its draft moves onto them, keeping only the
-    // learner's own edits, so a later Save cannot write the old values back.
-    useFocusEffect(useCallback(() => {
-        const baseline = baselineRef.current;
-        if (!baseline) return;
-        const latest = loadSettings();
-        if (settingsMatch(latest, baseline)) return;
-        setSettings((draft) => rebaseSettingsDraft(baseline, draft, latest));
-        markSaved(latest);
-    }, [markSaved]));
-
-    // Keep the whole app in sync with the draft, while device storage remains untouched until Save.
-    useEffect(() => {
-        if (!loading) previewSettings(settings);
-    }, [loading, previewSettings, settings]);
-
-    // A discarded draft must not remain active in screens that stay mounted behind Settings.
-    useEffect(() => () => refreshData(), [refreshData]);
-
-    const showSavedState = useCallback(() => {
-        setSaved(true);
-        if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-        savedTimerRef.current = setTimeout(() => setSaved(false), 1400);
-    }, []);
-
-    const updateSettings = useCallback((patch: Partial<AppSettings>) => {
-        setSettings((prev) => ({ ...prev, ...patch }));
-    }, []);
-
-    const updateSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-        setSettings((prev) => ({ ...prev, [key]: value }));
-    }, []);
-
     const handleKeyBindingsChange = useCallback((bindings: KeyBindings) => {
         updateSetting('keyBindings', bindings);
     }, [updateSetting]);
 
+    // A category is a page of its own, so the back swipe returns to this list where it was.
     const openSection = useCallback((section: SectionId) => {
         Keyboard.dismiss();
-        setActiveSection(section);
-    }, []);
-
-    useEffect(() => {
-        if (!activeSection) return;
-        sectionScrollRef.current?.scrollTo({ y: 0, animated: false });
-    }, [activeSection]);
+        router.push(`/settings/${section}` as any);
+    }, [router]);
 
     // iOS 26 makes a rightward drag anywhere on a screen a back swipe, and decides so as the
     // finger lands, before a slider here can claim it. Pages with a slider (text size,
@@ -473,62 +409,6 @@ export default function SettingsScreen() {
         if (Platform.OS !== 'ios') return;
         navigation.setOptions({ fullScreenGestureEnabled: pageHasSlider ? false : undefined });
     }, [navigation, pageHasSlider]);
-
-    const handleSaveSettings = useCallback(async () => {
-        if (saving) return;
-        Keyboard.dismiss();
-        let current = settingsRef.current;
-        setSaving(true);
-        // A tap zone or swipe direction set to another action can leave a hidden answer bar with
-        // nothing that grades; Controls warns about it, and Save never stores it.
-        if (!canGradeRevealedCard(current)) {
-            const showButtons = await confirmAsync(
-                l('Kartları yanıtlamanın bir yolu kalmadı', 'No way left to answer cards'),
-                l(
-                    'Yanıt düğmeleri gizli ve etkin hiçbir dokunma bölgesi veya kaydırma yönü Tekrar, Zor, İyi ya da Kolay uygulamıyor. Yanıt düğmeleri geri açılarak kaydedilsin mi?',
-                    'The answer buttons are hidden and no enabled tap zone or swipe direction answers Again, Hard, Good, or Easy. Save with the answer buttons shown again?',
-                ),
-                { confirmLabel: l('Düğmeleri aç ve kaydet', 'Show buttons and save') },
-            );
-            if (!showButtons) {
-                setSaving(false);
-                return;
-            }
-            current = { ...current, showAnswerButtons: true };
-            setSettings((draft) => ({ ...draft, showAnswerButtons: true }));
-        }
-        const baseline = baselineRef.current ?? current;
-        // Fields this draft did not touch are taken as stored now, not as they were when it opened.
-        const result = await saveSettingsDurably(rebaseSettingsDraft(baseline, current, loadSettings()));
-        setSaving(false);
-        const persisted = loadSettings();
-        if (!result.ok || !settingsMatch(persisted, result.settings)) {
-            lastSaveFailedRef.current = true;
-            setSaved(false);
-            alert(
-                l('Ayarlar kaydedilemedi', 'Settings Not Saved'),
-                l('Değişiklik cihaz depolamasına kaydedilemedi. Lütfen yeniden deneyin.', 'The change could not be saved to device storage. Please try again.'),
-            );
-            return;
-        }
-        // Preserve edits made while the durable write was pending.
-        setSettings((draft) => {
-            const next = rebaseSettingsDraft(current, draft, persisted);
-            return settingsMatch(draft, next) ? draft : next;
-        });
-        markSaved(persisted);
-        refreshData();
-        lastSaveFailedRef.current = false;
-
-        if (
-            baseline.dayRolloverHour !== persisted.dayRolloverHour
-            || baseline.learnAheadMinutes !== persisted.learnAheadMinutes
-        ) {
-            markSchedulingStale();
-        }
-
-        showSavedState();
-    }, [l, markSaved, markSchedulingStale, refreshData, saving, showSavedState]);
 
     const handleStudyNotificationsToggle = async (
         enabled: boolean,
@@ -614,10 +494,6 @@ export default function SettingsScreen() {
     const searchResults = useMemo(() => searchSettingsCategories(categories, search), [categories, search]);
 
     const handleBack = () => {
-        if (activeSection) {
-            setActiveSection(null);
-            return;
-        }
         if (router.canGoBack()) {
             router.back();
             return;
@@ -1591,8 +1467,6 @@ export default function SettingsScreen() {
                 ) : undefined}
             />
             <ScrollView
-                key={activeSection ?? 'settings-root'}
-                ref={sectionScrollRef}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
                 contentInsetAdjustmentBehavior="never"

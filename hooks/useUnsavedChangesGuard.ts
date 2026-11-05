@@ -9,6 +9,11 @@ import { addPopStateGuard } from '../lib/webPopStateGuard';
 type UnsavedChangesGuardOptions = {
     title: string;
     message: string;
+    /**
+     * For a guard in a layout whose own stack holds several pages: whether browser Back would leave
+     * the layout (its first page is shown) rather than return to an earlier page inside it.
+     */
+    browserBackLeaves?: () => boolean;
 };
 
 /**
@@ -23,14 +28,16 @@ type UnsavedChangesGuardOptions = {
  */
 export function useUnsavedChangesGuard(
     isDirty: boolean,
-    { title, message }: UnsavedChangesGuardOptions,
+    { title, message, browserBackLeaves }: UnsavedChangesGuardOptions,
 ): void {
     const navigation = useNavigation();
     const dirtyRef = useRef(isDirty);
     const allowNavigationRef = useRef(false);
     const confirmationOpenRef = useRef(false);
+    const browserBackLeavesRef = useRef(browserBackLeaves);
 
     dirtyRef.current = isDirty;
+    browserBackLeavesRef.current = browserBackLeaves;
 
     usePreventRemove(isDirty, ({ data }) => {
         if (allowNavigationRef.current) {
@@ -65,6 +72,7 @@ export function useUnsavedChangesGuard(
                 return true;
             }
             if (!dirtyRef.current || allowNavigationRef.current || !navigation.isFocused()) return false;
+            if (browserBackLeavesRef.current && !browserBackLeavesRef.current()) return false;
 
             restoringEntry = true;
             window.history.go(1);

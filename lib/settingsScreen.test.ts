@@ -9,6 +9,7 @@ import { createAppDb } from '../test/sqljsHarness';
 const h = vi.hoisted(() => ({
     db: null as any,
     focus: null as null | (() => void),
+    focusEffects: new Set<() => void>(),
     english: false,
     confirmAsyncAnswer: true as boolean | Promise<boolean>,
     alerts: [] as Array<[string, string]>,
@@ -19,7 +20,24 @@ const h = vi.hoisted(() => ({
     optimizeOutcome: {} as Record<string, unknown>,
     optimize: null as any,
     invalidated: 0,
+    // The Settings stack: the list at the bottom, the category page (if any) over it.
+    pages: [] as Array<string | null>,
+    showPages: null as null | ((pages: Array<string | null>) => void),
 }));
+
+/** What the router does to the Settings stack in this harness. */
+const stack = {
+    push(href: string) {
+        const match = /^\/settings\/(\w+)$/.exec(href);
+        if (!match) return;
+        h.pages = [...h.pages, match[1]];
+        h.showPages?.(h.pages);
+    },
+    back() {
+        h.pages = h.pages.slice(0, -1);
+        h.showPages?.(h.pages);
+    },
+};
 
 vi.mock('./db', () => ({ getDB: () => h.db, flushDatabaseWrites: async () => {}, dbIndexAllCards: () => {}, dbUpsertFtsCard: () => {} }));
 vi.mock('@react-native-async-storage/async-storage', () => ({
@@ -54,12 +72,20 @@ vi.mock('expo-router', async () => {
     const { useEffect } = await import('react');
     const navigation = { setOptions: () => {} };
     return {
-        useRouter: () => ({ push: () => {}, back: () => {}, replace: () => {}, canGoBack: () => true }),
+        useRouter: () => ({
+            push: (href: string) => stack.push(href),
+            back: () => stack.back(),
+            replace: () => {},
+            canGoBack: () => true,
+        }),
         useNavigation: () => navigation,
         // Runs on mount like the real hook; a test calls h.focus() for "shown again".
         useFocusEffect: (effect: () => void) => {
-            h.focus = effect;
-            useEffect(() => effect(), [effect]);
+            useEffect(() => {
+                h.focusEffects.add(effect);
+                effect();
+                return () => { h.focusEffects.delete(effect); };
+            }, [effect]);
         },
     };
 });
@@ -130,7 +156,9 @@ vi.mock('../components/AccessibilityGlyph', () => ({ default: () => null }));
 vi.mock('../components/ArchiveBoxGlyph', () => ({ default: () => null }));
 vi.mock('../components/InfoCircleGlyph', () => ({ default: () => null }));
 
-import SettingsScreen from '../app/settings';
+import SettingsScreen from '../components/settings/SettingsScreen';
+import { SettingsDraftProvider } from '../components/settings/SettingsDraft';
+import { settingsCategories, isSettingsSectionId, type SettingsSectionId } from '../components/settings/settingsCategories';
 import { DEFAULT_SETTINGS, loadSettings, saveCollectionDeckOptions, saveSettings } from './settingsStore';
 import { getDeckConfig } from './deckPresets';
 import { emptyRepairResult } from './maintenance';
@@ -143,7 +171,8 @@ beforeAll(async () => {
 });
 beforeEach(() => {
     h.db = createAppDb(SQL);
-    h.focus = null;
+    h.focusEffects.clear();
+    h.focus = () => h.focusEffects.forEach((effect) => effect());
     h.english = false;
     h.confirmAsyncAnswer = true;
     h.alerts = [];
@@ -154,6 +183,8 @@ beforeEach(() => {
     h.checkDatabase = vi.fn(() => h.findings);
     h.optimizeOutcome = { backupFileName: 'tus-backup-2026-11-08-120000000.json', backupRestorable: true, result: { repair: emptyRepairResult(), ftsReindexed: 0, freedBytes: 0, failedSteps: [] } };
     h.optimize = vi.fn(async () => h.optimizeOutcome);
+    h.pages = [null];
+    h.showPages = null;
 });
 
 /** An audit that found nothing. */
@@ -177,8 +208,23 @@ function textOf(node: ReactTestInstance | string): string {
 /** The react-native mock renders host components by name. */
 const isHost = (node: ReactTestInstance, name: string) => (node.type as unknown) === name;
 
+/**
+ * The page on top of the Settings stack, under the provider that holds the draft for all of them,
+ * as the routes in app/settings/ lay it out. A new page is a new screen, so it is keyed.
+ */
+function SettingsStack() {
+    const [pages, setPages] = React.useState(h.pages);
+    h.showPages = setPages;
+    const section = (pages[pages.length - 1] ?? null) as SettingsSectionId | null;
+    return React.createElement(SettingsScreen, { key: `${pages.length}:${section ?? 'list'}`, section });
+}
+
 function mount() {
-    act(() => { renderer = TestRenderer.create(React.createElement(SettingsScreen)); });
+    act(() => {
+        renderer = TestRenderer.create(React.createElement(SettingsDraftProvider, {
+            children: React.createElement(SettingsStack),
+        }));
+    });
 }
 
 // Buttons and rows are TouchableOpacity; the segments of a segmented control are Pressable.
@@ -192,6 +238,10 @@ const byText = (text: string) => {
 
 function openCategory(title: string) {
     act(() => byLabel(title)!.props.onPress());
+}
+
+function goBack() {
+    act(() => byLabel('Ayarlara dön')!.props.onPress());
 }
 
 async function save() {
@@ -282,6 +332,41 @@ describe('restoring default settings', () => {
             newCardsIgnoreReviewLimit: false,
         });
         expect(h.alerts).toEqual([]);
+    });
+});
+
+describe('moving between Settings pages', () => {
+    it('opens a category as a page of its own over the list, so going back returns to the list', () => {
+        mount();
+        openCategory('Genel');
+
+        expect(h.pages).toEqual([null, 'general']);
+        expect(byText('Koyu')).toBeDefined();
+
+        goBack();
+
+        expect(h.pages).toEqual([null]);
+        expect(byLabel('Genel')).toBeDefined();
+    });
+
+    it('keeps edits made on one category page while the learner goes back and opens another', async () => {
+        mount();
+        openCategory('Genel');
+        act(() => byText('Koyu').props.onPress());
+        goBack();
+
+        // The list offers Save for the edit made on the page just left.
+        expect(byLabel('Ayarları kaydet')).toBeDefined();
+        openCategory('Erişilebilirlik');
+        await save();
+
+        expect(loadSettings()).toMatchObject({ themeMode: 'dark' });
+    });
+
+    it('has a page for every category in the list, and no other', () => {
+        const ids = settingsCategories((tr) => tr).map((category) => category.id);
+        expect(ids.every(isSettingsSectionId)).toBe(true);
+        expect(['general', 'unknown', undefined, ''].map(isSettingsSectionId)).toEqual([true, false, false, false]);
     });
 });
 

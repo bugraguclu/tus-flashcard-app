@@ -10,7 +10,7 @@ app_screens:
   - "İçe aktarma günlüğü — components/ImportLogView.tsx"
   - "Dışa aktar — app/export.tsx, components/DeckExportSelector.tsx"
   - "Dosya devri (Paylaş › TusAnkiM) — app/_layout.tsx; web: components/WebAppIntegrations.tsx"
-  - "Ayarlar › Veri yönetimi › İçe ve dışa aktar — app/settings.tsx"
+  - "Ayarlar › Veri yönetimi › İçe ve dışa aktar — components/settings/SettingsScreen.tsx"
 verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 

@@ -3,6 +3,7 @@ import { Animated, View, ScrollView, useWindowDimensions } from 'react-native';
 import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
+import { useNavigationState } from 'expo-router/react-navigation';
 import { Spacing, useThemeColors } from '../constants/theme';
 import { MotionDuration, MotionEasing, NATIVE_DRIVER } from '../constants/motion';
 import { createOrSelectDeck } from '../lib/deckManager';
@@ -38,6 +39,7 @@ import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { getStatsScreenSnapshot } from '../lib/screenSnapshots';
 
 type RangeKey = Exclude<StatsRangeKey, 'custom'>;
+const RANGE_KEYS: readonly RangeKey[] = ['week', 'month', 'threeMonths', 'year', 'all'];
 
 export default function StatsScreen() {
     const { t, l, localeTag } = useI18n();
@@ -59,8 +61,11 @@ export default function StatsScreen() {
     const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
     const [deckPickerVisible, setDeckPickerVisible] = useState(false);
     const [helpVisible, setHelpVisible] = useState(false);
-    // Anki's statistics open on a year of history.
-    const [rangeKey, setRangeKey] = useState<RangeKey>('year');
+    // Anki's statistics open on a year of history; a deck opened from the Decks list below keeps
+    // the period the learner was looking at.
+    const [rangeKey, setRangeKey] = useState<RangeKey>(() => (
+        RANGE_KEYS.find((key) => key === params.range) ?? 'year'
+    ));
     // Scrolling pauses while a finger slides sideways across one of the charts.
     const [scrollLocked, setScrollLocked] = useState(false);
     const scrollRef = useRef<ScrollView>(null);
@@ -158,6 +163,13 @@ export default function StatsScreen() {
         setDeckScope(name);
     };
 
+    // A deck tapped in the Decks list below opens as a page of its own, so the back swipe returns
+    // here, to the same place on this page, instead of leaving Statistics.
+    const openDeckStats = (name: string) => {
+        router.push({ pathname: '/stats', params: { deck: name, range: rangeKey } } as any);
+    };
+    const backToStats = useNavigationState((state) => state?.routes[state.index - 1]?.name === 'stats');
+
     const handleBack = () => {
         if (router.canGoBack()) {
             router.back();
@@ -193,7 +205,9 @@ export default function StatsScreen() {
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <ScreenHeader
                 title={t('common.statistics')}
-                backAccessibilityLabel={deckScope ? l('Deste genel bakışına dön', 'Back to deck overview') : l('Destelere dön', 'Back to decks')}
+                backAccessibilityLabel={backToStats
+                    ? l('İstatistiklere dön', 'Back to statistics')
+                    : deckScope ? l('Deste genel bakışına dön', 'Back to deck overview') : l('Destelere dön', 'Back to decks')}
                 onBack={handleBack}
                 actions={(
                     <HelpButton
@@ -267,11 +281,7 @@ export default function StatsScreen() {
                         <DeckProgressSection
                             title={deckScope ? l('Alt desteler', 'Subdecks') : l('Desteler', 'Decks')}
                             decks={snapshot.deckStats}
-                            onSelectDeck={(name) => {
-                                // The deck was picked from the foot of the page; its figures start at the top.
-                                setDeckScope(name);
-                                scrollRef.current?.scrollTo({ y: 0, animated: true });
-                            }}
+                            onSelectDeck={openDeckStats}
                         />
                     </Animated.View>
                 )}

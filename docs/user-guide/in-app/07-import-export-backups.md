@@ -4,13 +4,13 @@ Kapsam: **İçe aktar** (`app/import.tsx`), **İçe aktarma günlüğü**
 (`components/ImportLogView.tsx`), **Dışa aktar** / **Yedeği dışa aktar** (`app/export.tsx`,
 `components/DeckExportSelector.tsx`), **Yedekler** ve **Medyayı denetle** (`app/backups.tsx`,
 `components/backups/MediaCheckSection.tsx`), **Boş kartlar** (`app/empty-cards.tsx`), **Ayarlar ›
-Veri yönetimi** (`app/settings.tsx`). Bütün yerler iPhone ve web için aynıdır; farklı olanlar
+Veri yönetimi** (`components/settings/SettingsScreen.tsx`). Bütün yerler iPhone ve web için aynıdır; farklı olanlar
 belirtilmiştir. Satır numaraları master c6108e6'ya göredir.
 
 Bileşen kalıpları: bilgi sayfaları `components/HelpSheet.tsx` (README › Uygulamaya ekleme, madde 3);
 tam ekran ekranlarda ⓘ düğmesi `ScreenHeader` `actions` yuvasına `HeaderIconButton` ile
 (`components/ScreenHeader.tsx:11,47-60`); Ayarlar gruplarında mevcut `Group`
-`onHelpPress`/`helpLabel` özelliği (`app/settings.tsx:161-188`, `?` düğmesi). Satır altı ipuçları
+`onHelpPress`/`helpLabel` özelliği (`components/settings/SettingsScreen.tsx:161-188`, `?` düğmesi). Satır altı ipuçları
 ekranın mevcut ipucu stillerini kullanır: içe aktarmada `renderToggleRow` ipucu ve `ChoiceModal`
 seçenek `hint` alanı (`app/import.tsx:606-623`, `components/import/ImportControls.tsx:18,46`),
 dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataActionRow` `detail` ve
@@ -63,7 +63,7 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 - Note: The file is not encrypted. The TUS Cards pack and filtered decks are not exported.
 
 ### help.backups.sheet — Yedekler bilgi sayfası (yeni)
-- **Yer:** (a) **Yedekler** ekranı başlığı, sağda ⓘ (yeni), `app/backups.tsx:208-212`; (b) **Ayarlar › Veri yönetimi › Yedekleme** grup başlığındaki `?` (yeni), `app/settings.tsx:1544` (`Group onHelpPress`, `helpLabel`: "Yedekler hakkında" / "About backups")
+- **Yer:** (a) **Yedekler** ekranı başlığı, sağda ⓘ (yeni), `app/backups.tsx:208-212`; (b) **Ayarlar › Veri yönetimi › Yedekleme** grup başlığındaki `?` (yeni), `components/settings/SettingsScreen.tsx:1544` (`Group onHelpPress`, `helpLabel`: "Yedekler hakkında" / "About backups")
 - **Tetikleyici:** ⓘ veya `?` düğmesine dokunma
 - **Bileşen:** bilgi sayfası (iki giriş aynı sayfayı açar)
 - **Daha fazla bilgi:** `tr/15-backups-and-maintenance.md#automatic-backups`
@@ -84,7 +84,7 @@ dışa aktarmada `styles.optionHint` (`app/export.tsx:393`), Ayarlar'da `DataAct
 - Note: Backups live inside the app. Deleting the app deletes them too; export your collection as .colpkg first.
 
 ### help.settings.maintenanceSheet — Bakım araçları bilgi sayfası (yeni)
-- **Yer:** **Ayarlar › Veri yönetimi › Bakım** grup başlığındaki `?` (yeni), `app/settings.tsx:1567` (`Group onHelpPress`, `helpLabel`: "Bakım araçları hakkında" / "About maintenance tools")
+- **Yer:** **Ayarlar › Veri yönetimi › Bakım** grup başlığındaki `?` (yeni), `components/settings/SettingsScreen.tsx:1567` (`Group onHelpPress`, `helpLabel`: "Bakım araçları hakkında" / "About maintenance tools")
 - **Tetikleyici:** `?` düğmesine dokunma
 - **Bileşen:** bilgi sayfası
 - **Daha fazla bilgi:** `tr/15-backups-and-maintenance.md#check-database`
@@ -200,20 +200,20 @@ beri `lib/i18n.ts` anahtarlarıdır (`translateActive`), İngilizce arayüzde İ
 | help.emptyCards.intro | Ekranın üst açıklaması, `app/empty-cards.tsx` | açıklama | Mevcut metne ek: "Silmeden önce geri yüklenebilir bir güvenlik yedeği alınır; geri almak için o yedeği **Yedekler**'den geri yükleyin." | Add: "A restorable safety backup is taken before deleting; to undo, restore it from **Backups**." | Mevcut — genişlet |
 | help.emptyCards.keepNotesHint | **Geçerli kartı olmayan notları koru** anahtarının altı, `app/empty-cards.tsx` | ipucu | Kapalıyken, Anki'deki gibi, bütün kartları boş olan not da kartlarıyla birlikte silinir. Katalog notları silinmez. | When off, as in Anki, a note whose cards are all empty is deleted with them. Catalog notes are never deleted. | Yeni |
 
-## Ayarlar › Veri yönetimi (`app/settings.tsx`)
+## Ayarlar › Veri yönetimi (`components/settings/SettingsScreen.tsx`)
 
 | ID | Yer | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.settings.autoBackupSummary | **Otomatik yedekleme** satırının özeti, `app/settings.tsx` `autoBackupSummary` | satır özeti | Değişiklik varsa yaklaşık {aralık} dakikada bir; {günlük} günlük, {haftalık} haftalık, {aylık} aylık kopya | About every {interval} minutes when there are changes; {daily} daily, {weekly} weekly, {monthly} monthly copies | Mevcut — koru (2026-11-08; daha ayrıntılı metin zaten yayında, `08-settings.md` › `help.settings.autoBackup`; sayılar kayıtlı politikadan okunur, `lib/backupPolicy.ts` `normalizeBackupPolicy`, varsayılan 30 dakika. Eski metin: Haftada bir / Weekly) |
-| help.settings.exportDetail | **Verileri dışa aktar** satırı, `detail` (yok), `app/settings.tsx:1563` | satır açıklaması | Koleksiyon, deste veya metin dosyası | Collection, deck or text file | Yeni |
-| help.settings.importDetail | **Deste ve verileri içe aktar** satırı, `detail` (yok), `app/settings.tsx:1564` | satır açıklaması | .apkg, .colpkg, CSV, TSV veya TXT | .apkg, .colpkg, CSV, TSV or TXT | Yeni |
-| help.settings.checkDbDetail | **Veritabanını kontrol et** açıklaması, `app/settings.tsx:1571` | satır açıklaması | (mevcut metin) | (existing text) | Mevcut — koru |
-| help.settings.integrityHint | **Veritabanını kontrol et** sonuç penceresi, bütünlük sorunu olduğunda ipuçlarına eklenecek satır, `app/settings.tsx:716-738` | açıklama | Önce **Onar ve optimize et**'i deneyin; sorun sürerse yakın tarihli bir yedeği geri yükleyin. | Try **Repair and optimize** first; if the problem stays, restore a recent backup. | Mevcut — genişlet |
-| help.settings.repairDetail | **Onar ve optimize et** açıklaması, `app/settings.tsx:1580` | satır açıklaması | (mevcut metin) | (existing text) | Mevcut — koru |
-| help.settings.resetLabel | **Koleksiyonu sıfırla** satır etiketi ve onay başlığı, `app/settings.tsx` (`handleResetProgress`, Bakım grubu) | etiket | Koleksiyonu sıfırla | Reset collection | Mevcut — koru (2026-11-08; satır etiketi, onay başlığı, Ayarlar araması (`components/settings/settingsCategories.ts`) ve sonuç başlığı **Koleksiyon sıfırlandı** / **Collection Reset**. Makale 15'in `reset-progress` bölümü (çapa aynı kaldı) ve 16, 17, 19, 20, 21 güncellendi. Eski metin: İlerlemeyi sıfırla / Reset progress) |
-| help.settings.resetDetail | **Koleksiyonu sıfırla** satırı, `detail` (yok), `app/settings.tsx:1585-1591` | satır açıklaması | Bütün koleksiyonu siler; önce yedek alın | Erases the whole collection; back up first | Yeni |
-| help.settings.resetConfirm | Sıfırlama onay metni, `app/settings.tsx` `handleResetProgress` | onay | Bütün desteler, notlar, kartlar, not türleri, ayar grupları, tekrar geçmişi, istatistikler ve Kronometre kayıtları silinecek; uygulama ayarları da ilk değerlerine dönecek. TUS Kartları paketi de kaldırılır; Desteler’deki TUS Kartları satırından yeniden kurabilirsiniz. Medya dosyaları ve yedekler kalır. Başlamadan önce geri yüklenebilir bir güvenlik yedeği alınır. Devam etmeden önce koleksiyonunuzu .colpkg olarak dışa aktarmanızı öneririz. | All decks, notes, cards, note types, presets, review history, statistics and Stopwatch records will be deleted, and app settings will return to their starting values. The TUS Kartları pack is removed too; you can install it again from the TUS Kartları row in Decks. Media files and backups are kept. A restorable safety backup is made before it starts. We recommend exporting your collection as .colpkg before you continue. | Mevcut — koru (2026-11-08; uygulama ayarları silinmez, ilk değerlerine döner, metin bunu söyler. TUS Kartları paketinin de kaldırıldığını söyleyen cümle `09-tus-cards.md` › `help.tusCards.resetConfirm` için eklendi. Eski metin: Kartlar, çalışma geçmişi ve ilerleme silinecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulacak. / Cards, review history, and progress will be deleted after a restorable safety backup is created.) |
-| help.settings.resetDone | **Koleksiyon sıfırlandı** mesajı, `app/settings.tsx:991-994` | sonuç | `Geri dönüş için ${backupFileName} yedeği saklandı. Yedekler ekranından geri yükleyebilirsiniz.` | `The backup ${backupFileName} was kept for recovery. You can restore it from Backups.` | Mevcut — genişlet |
+| help.settings.autoBackupSummary | **Otomatik yedekleme** satırının özeti, `components/settings/SettingsScreen.tsx` `autoBackupSummary` | satır özeti | Değişiklik varsa yaklaşık {aralık} dakikada bir; {günlük} günlük, {haftalık} haftalık, {aylık} aylık kopya | About every {interval} minutes when there are changes; {daily} daily, {weekly} weekly, {monthly} monthly copies | Mevcut — koru (2026-11-08; daha ayrıntılı metin zaten yayında, `08-settings.md` › `help.settings.autoBackup`; sayılar kayıtlı politikadan okunur, `lib/backupPolicy.ts` `normalizeBackupPolicy`, varsayılan 30 dakika. Eski metin: Haftada bir / Weekly) |
+| help.settings.exportDetail | **Verileri dışa aktar** satırı, `detail` (yok), `components/settings/SettingsScreen.tsx:1563` | satır açıklaması | Koleksiyon, deste veya metin dosyası | Collection, deck or text file | Yeni |
+| help.settings.importDetail | **Deste ve verileri içe aktar** satırı, `detail` (yok), `components/settings/SettingsScreen.tsx:1564` | satır açıklaması | .apkg, .colpkg, CSV, TSV veya TXT | .apkg, .colpkg, CSV, TSV or TXT | Yeni |
+| help.settings.checkDbDetail | **Veritabanını kontrol et** açıklaması, `components/settings/SettingsScreen.tsx:1571` | satır açıklaması | (mevcut metin) | (existing text) | Mevcut — koru |
+| help.settings.integrityHint | **Veritabanını kontrol et** sonuç penceresi, bütünlük sorunu olduğunda ipuçlarına eklenecek satır, `components/settings/SettingsScreen.tsx:716-738` | açıklama | Önce **Onar ve optimize et**'i deneyin; sorun sürerse yakın tarihli bir yedeği geri yükleyin. | Try **Repair and optimize** first; if the problem stays, restore a recent backup. | Mevcut — genişlet |
+| help.settings.repairDetail | **Onar ve optimize et** açıklaması, `components/settings/SettingsScreen.tsx:1580` | satır açıklaması | (mevcut metin) | (existing text) | Mevcut — koru |
+| help.settings.resetLabel | **Koleksiyonu sıfırla** satır etiketi ve onay başlığı, `components/settings/SettingsScreen.tsx` (`handleResetProgress`, Bakım grubu) | etiket | Koleksiyonu sıfırla | Reset collection | Mevcut — koru (2026-11-08; satır etiketi, onay başlığı, Ayarlar araması (`components/settings/settingsCategories.ts`) ve sonuç başlığı **Koleksiyon sıfırlandı** / **Collection Reset**. Makale 15'in `reset-progress` bölümü (çapa aynı kaldı) ve 16, 17, 19, 20, 21 güncellendi. Eski metin: İlerlemeyi sıfırla / Reset progress) |
+| help.settings.resetDetail | **Koleksiyonu sıfırla** satırı, `detail` (yok), `components/settings/SettingsScreen.tsx:1585-1591` | satır açıklaması | Bütün koleksiyonu siler; önce yedek alın | Erases the whole collection; back up first | Yeni |
+| help.settings.resetConfirm | Sıfırlama onay metni, `components/settings/SettingsScreen.tsx` `handleResetProgress` | onay | Bütün desteler, notlar, kartlar, not türleri, ayar grupları, tekrar geçmişi, istatistikler ve Kronometre kayıtları silinecek; uygulama ayarları da ilk değerlerine dönecek. TUS Kartları paketi de kaldırılır; Desteler’deki TUS Kartları satırından yeniden kurabilirsiniz. Medya dosyaları ve yedekler kalır. Başlamadan önce geri yüklenebilir bir güvenlik yedeği alınır. Devam etmeden önce koleksiyonunuzu .colpkg olarak dışa aktarmanızı öneririz. | All decks, notes, cards, note types, presets, review history, statistics and Stopwatch records will be deleted, and app settings will return to their starting values. The TUS Kartları pack is removed too; you can install it again from the TUS Kartları row in Decks. Media files and backups are kept. A restorable safety backup is made before it starts. We recommend exporting your collection as .colpkg before you continue. | Mevcut — koru (2026-11-08; uygulama ayarları silinmez, ilk değerlerine döner, metin bunu söyler. TUS Kartları paketinin de kaldırıldığını söyleyen cümle `09-tus-cards.md` › `help.tusCards.resetConfirm` için eklendi. Eski metin: Kartlar, çalışma geçmişi ve ilerleme silinecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulacak. / Cards, review history, and progress will be deleted after a restorable safety backup is created.) |
+| help.settings.resetDone | **Koleksiyon sıfırlandı** mesajı, `components/settings/SettingsScreen.tsx:991-994` | sonuç | `Geri dönüş için ${backupFileName} yedeği saklandı. Yedekler ekranından geri yükleyebilirsiniz.` | `The backup ${backupFileName} was kept for recovery. You can restore it from Backups.` | Mevcut — genişlet |
 
 ## Desteler ••• menüsü (`app/(tabs)/decks.tsx`)
 

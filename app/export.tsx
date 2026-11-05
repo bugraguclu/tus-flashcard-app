@@ -96,12 +96,9 @@ export default function ExportScreen() {
     const nothingSelected = !recoveryArtifact && choosesDecks && selectedDeckIds.size === 0;
 
     const handleBack = () => {
-        if (backupExport) {
-            router.replace('/backups' as any);
-            return;
-        }
+        // Back goes where the back swipe goes: to the screen this export was opened from.
         if (router.canGoBack()) router.back();
-        else router.replace('/decks' as any);
+        else router.replace((backupExport ? '/backups' : '/decks') as any);
     };
 
     useEffect(() => {

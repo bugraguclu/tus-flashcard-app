@@ -1,12 +1,12 @@
 # Ayarlar, izinler ve uygulama kabuğu — uygulama içi metinler
 
-Kapsam: `app/settings.tsx`, `components/settings/KeyboardSettingsSection.tsx`, izin uyarıları,
+Kapsam: `components/settings/SettingsScreen.tsx`, `components/settings/KeyboardSettingsSection.tsx`, izin uyarıları,
 başlangıç hatası, bulunamayan sayfa, web sekme/başlatma metinleri, otomasyon bağlantıları.
 Makaleler: `tr/16-settings.md`, `tr/18-shortcuts-and-automation.md` (İngilizceleri `en/` altında).
 Bütün satır numaraları master c6108e6'ya göredir.
 
 Ayarlar gruplarında **?** düğmesi için yeni bileşen gerekmez: `Group` zaten `onHelpPress` ve
-`helpLabel` alır (`app/settings.tsx:161-188`). Yeni bilgi sayfaları `SwipeDismissSheet` üstünde
+`helpLabel` alır (`components/settings/SettingsScreen.tsx:161-188`). Yeni bilgi sayfaları `SwipeDismissSheet` üstünde
 `HelpSheet` kalıbıyla açılır (README › Uygulamaya ekleme, 3. madde); mevcut Kontroller yardımı
 ortalanmış bir iletişim kutusudur, tutamaç eklenmez.
 
@@ -56,7 +56,7 @@ Hakkında satırının alt satırına veya ayar listesine girmelidir.
 | help.settings.showFilenames | **Dosya adlarını göster**, `:1111` | alt satır | (mevcut metin) | (existing) | Mevcut — koru |
 
 ### help.settings.restoreDefaults — Varsayılan ayarlar onayı
-- **Yer:** Genel sayfasının altı, **↺ Varsayılan ayarlara dön** düğmesi, `app/settings.tsx:1124-1126`; onay `:963`
+- **Yer:** Genel sayfasının altı, **↺ Varsayılan ayarlara dön** düğmesi, `components/settings/SettingsScreen.tsx:1124-1126`; onay `:963`
 - **Tetikleyici:** düğmeye dokunma
 - **Bileşen:** onay penceresi (`confirm`, Tamam yıkıcı stil önerilir)
 - **Daha fazla bilgi:** `tr/16-settings.md#restore-defaults`
@@ -89,7 +89,7 @@ Hakkında satırının alt satırına veya ayar listesine girmelidir.
 ## 4. İnceleme (`renderReviewing`, `settings.tsx:1206-1233`)
 
 ### help.settings.scheduling.sheet — Zamanlama bilgi sayfası (yeni)
-- **Yer:** İnceleme sayfası, **Zamanlama** grubunun başlığının sağında **?** düğmesi (yeni), `app/settings.tsx:1208` (`Group onHelpPress`)
+- **Yer:** İnceleme sayfası, **Zamanlama** grubunun başlığının sağında **?** düğmesi (yeni), `components/settings/SettingsScreen.tsx:1208` (`Group onHelpPress`)
 - **Erişilebilirlik etiketi:** Zamanlama yardımını aç / Open scheduling help
 - **Tetikleyici:** ?'ye dokunma
 - **Bileşen:** bilgi sayfası (`HelpSheet`: eyebrow, title, summary, points[], note, more)
@@ -126,7 +126,7 @@ Hakkında satırının alt satırına veya ayar listesine girmelidir.
 ## 5. Bildirimler (`renderNotifications`, `settings.tsx:1235-1290`)
 
 ### help.settings.notifications.sheet — Bildirimler bilgi sayfası (yeni)
-- **Yer:** Bildirimler sayfası, **Bildirimler** grubunun başlığının sağında **?** düğmesi (yeni), `app/settings.tsx:1236` (`Group onHelpPress`)
+- **Yer:** Bildirimler sayfası, **Bildirimler** grubunun başlığının sağında **?** düğmesi (yeni), `components/settings/SettingsScreen.tsx:1236` (`Group onHelpPress`)
 - **Erişilebilirlik etiketi:** Bildirim yardımını aç / Open notifications help
 - **Tetikleyici:** ?'ye dokunma
 - **Bileşen:** bilgi sayfası (`HelpSheet`)
@@ -164,7 +164,7 @@ Hakkında satırının alt satırına veya ayar listesine girmelidir.
 ## 6. Kontroller (`renderControls`, `settings.tsx:1292-1522`; Klavye: `KeyboardSettingsSection.tsx`)
 
 ### help.settings.controls.sheet — Kontroller yardımı
-- **Yer:** **Dokunma ve kaydırma** grubunun **?** düğmesi, `app/settings.tsx:1300`; pencere `:1702-1837`
+- **Yer:** **Dokunma ve kaydırma** grubunun **?** düğmesi, `components/settings/SettingsScreen.tsx:1300`; pencere `:1702-1837`
 - **Tetikleyici:** ?'ye dokunma
 - **Bileşen:** mevcut ortalanmış iletişim kutusu (tutamaçsız)
 - **Daha fazla bilgi:** `tr/16-settings.md#controls` (alttaki **Anladım** düğmesinin üstüne bağlantı, `:1826-1834`)

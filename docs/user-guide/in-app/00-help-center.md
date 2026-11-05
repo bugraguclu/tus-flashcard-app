@@ -23,7 +23,7 @@ henüz yok; aşağıdaki yerleşim ve metinler onu kuracak geliştirme için haz
 
 | Giriş | Tam yer | Etiket TR / EN | Açılan |
 | --- | --- | --- | --- |
-| Ayarlar › Hakkında | `app/settings.tsx` `renderAbout()` (≈1597), **Gizlilik politikası** satırının üstüne, ilk satır | **Yardım ve kullanım kılavuzu** / **Help and user guide** | `/help` (liste) |
+| Ayarlar › Hakkında | `components/settings/SettingsScreen.tsx` `renderAbout()` (≈1597), **Gizlilik politikası** satırının üstüne, ilk satır | **Yardım ve kullanım kılavuzu** / **Help and user guide** | `/help` (liste) |
 | Desteler ⋮ menüsü (iPhone'da ana giriş) | `app/(tabs)/decks.tsx` (≈2287–2295), **Yedekten geri yükle** satırından sonra son satır; `openOverflowRoute` ile açılır, simge `InfoCircleGlyph` (bkz. `in-app/01-decks.md`) | **Yardım** / **Help** | `/help` (liste) |
 | Kenar çubuğu (yalnızca ≥768 px: web/iPad; iPhone'da yok) | `components/Sidebar.tsx` (≈324), **Ayarlar** düğmesinin altı, "Powered by" satırının üstü | **Yardım** / **Help** | `/help` (liste) |
 | Ekran bilgi sayfaları | Her ⓘ / ? sayfasının en altı (bkz. `in-app/01…09`) | **Daha fazla bilgi** / **Learn more** | `/help?article=…&section=…` |
@@ -61,7 +61,7 @@ Her satırda makalenin `title` ve `summary` değeri gösterilir.
 | help.center.missing | `article` veya `section` bulunamazsa | uyarı (satır içi) | Bu bölüm bulunamadı; yardım listesi açıldı. | That section could not be found, so the help topics are shown. | Yeni |
 | help.sheet.more | Her bilgi sayfasının alt bağlantısı | bağlantı | Daha fazla bilgi | Learn more | Yeni |
 
-**Destek** bağlantısı `app/settings.tsx` içindeki `SUPPORT_URL` adresini sistem tarayıcısında açar.
+**Destek** bağlantısı `components/settings/SettingsScreen.tsx` içindeki `SUPPORT_URL` adresini sistem tarayıcısında açar.
 
 ## Makale görüntüleme kuralları
 

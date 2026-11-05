@@ -12,7 +12,10 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   `app/(tabs)/decks.tsx`, the root layout (startup, error screen) `app/_layout.tsx`; every other
   screen is `app/<name>.tsx` (`editor`, `browser`, `deck-options`, `deck-overview`, `import`,
   `export`, `stats`, `settings`, `backups`, `catalog`, `note-types`, `empty-cards`, `stopwatch`,
-  `study-calendar`, ...).
+  `study-calendar`, ...). Settings and the Detailed Plan wizard are stacks of their own
+  (`app/settings/`, `app/study-plan-wizard/`): each `_layout.tsx` holds the draft its pages share,
+  and the pages render `components/settings/SettingsScreen.tsx` and
+  `components/stopwatch/StudyPlanWizardScreen.tsx`.
 - A screen's pieces (dialogs, rows, toolbars, styles) live in `components/<feature>/`: `editor`,
   `deck-options`, `browser`, `photo-editor`, `import`, `stats`, `stopwatch`. Shared components sit in
   `components/`.
@@ -103,6 +106,12 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
 - Treat changes to deck, tag, flag, time range, sort order, and search inside an existing data
   view as local filter/scope state. They must update the query in place and preserve the other
   active controls; do not implement them with `router.push()` or `router.replace()`.
+- A row that drills into a deeper level of the same screen (a subdeck in Statistics' Decks list,
+  a Settings category, a wizard's next step) is navigation, not a filter: push it, so the iOS back
+  swipe and browser Back return to the level it was opened from, with its scroll position and
+  filters. The header back control must go where the back swipe goes. Keep a draft that such
+  pages share in a layout above them (as `app/settings/_layout.tsx` does), never in one page's
+  state, and never `router.replace()` the screen a back control should return to.
 - Route parameters may establish an entry/deep-link scope. After the screen is open, use
   `useRouteDeckScope` (or the same route-initial/local-afterward model) for scope changes.
 - Use navigation only when the user's task actually changes screens: opening an editor, deck
