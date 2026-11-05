@@ -50,6 +50,12 @@ function verifyGeneratedNativeIos() {
     );
     requireValue(infoPlist.includes('<string>com.tusankim.apkg</string>'), 'Generated iOS Info.plist is missing .apkg Files hand-off');
     requireValue(infoPlist.includes('<string>com.tusankim.colpkg</string>'), 'Generated iOS Info.plist is missing .colpkg Files hand-off');
+    for (const extension of ['apkg', 'colpkg']) {
+        requireValue(
+            infoPlist.includes(`<string>application/vnd.tusankim.${extension}</string>`),
+            `Generated iOS Info.plist is missing the .${extension} picker MIME type; regenerate it with npx expo prebuild --platform ios`,
+        );
+    }
 
     const entitlementFile = fs.readdirSync(nativeAppDirectory)
         .find((fileName) => fileName.endsWith('.entitlements'));

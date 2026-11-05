@@ -4,6 +4,16 @@
   "product": "TusAnkiM",
   "sources": [
     {
+      "id": "ios-import-file-picker-types",
+      "priority": 3,
+      "platform": "iPhone document picker",
+      "url": "https://developer.apple.com/documentation/uniformtypeidentifiers/defining-file-and-data-types-for-your-app",
+      "useFor": [
+        "imported package UTIs declare both filename-extension and MIME tags so the native import picker needs no all-files wildcard; lib/importFile.test.ts",
+        "Expo DocumentPicker takes explicit MIME types: https://docs.expo.dev/versions/v57.0.0/sdk/document-picker/"
+      ]
+    },
+    {
       "id": "react-native-textinput-key-recording",
       "priority": 3,
       "platform": "iPhone hardware keyboard input",

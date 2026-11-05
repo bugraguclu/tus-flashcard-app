@@ -503,6 +503,23 @@ Updates preserve unmapped fields and existing tags when no tag column was suppli
 
 **Evidence:** `/import` is file-first like Anki's: the extension chooses the importer and the option list that follows, and every import ends on an Import Log that files each note into Anki's own buckets (added, updated, already present, first field matched, note type changed, note type missing, deck missing, empty first field) with an expandable sample per bucket. Package imports add Anki's learning-progress, deck-preset and update-notes/update-note-types choices. `lib/importLog.test.ts`, `lib/importFile.test.ts`
 
+The file picker offers `.apkg`, `.colpkg`, `.zip`, `.csv`, `.tsv` and `.txt` together.
+Native filtering uses explicit MIME types, with the two package MIME tags registered on their
+imported iOS UTIs; no all-files or generic binary fallback enables unrelated documents. iOS
+controls which unsupported files appear grey. Web uses filename extensions so packages remain
+selectable when the browser has no MIME type for them. The selected filename is still validated
+before reading. `lib/importFile.test.ts` covers the filters and package declarations, and
+`verify:ios` checks the generated plist has those MIME tags. A new native build is required;
+Expo Go and an older installed binary do not contain the app's new type declarations. Run the
+Import file picker smoke in `IOS_RELEASE_CHECKLIST.md` on that build.
+
+2026-11-05 native type check: a temporary app carrying these exact UTI declarations ran on an
+iPhone 17 Pro simulator, iOS 26.4, probe build 1. Using the same MIME filter and iOS's UTType
+conformance rules, `.apkg`, `.colpkg`, `.zip`, `.csv`, `.tsv` and `.txt` passed; PDF, JPEG,
+PNG, DOCX, EPUB and JSON were excluded (12/12 checks). This verifies type resolution only.
+The physical-iPhone picker appearance, selection/cancel flow and iCloud-provider smoke remain
+pending; computer UI control could not start because this workspace root is a symlink.
+
 The Import Log is displayed only after all package/text import steps, indexing and any collection
 replacement reconciliation have reached durable storage. Storage errors remain recoverable errors
 on the import screen; read-only tabs cannot start the operation. `lib/webDb.test.ts` verifies that

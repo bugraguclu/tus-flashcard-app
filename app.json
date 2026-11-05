@@ -59,6 +59,9 @@
             "UTTypeTagSpecification": {
               "public.filename-extension": [
                 "apkg"
+              ],
+              "public.mime-type": [
+                "application/vnd.tusankim.apkg"
               ]
             }
           },
@@ -71,6 +74,9 @@
             "UTTypeTagSpecification": {
               "public.filename-extension": [
                 "colpkg"
+              ],
+              "public.mime-type": [
+                "application/vnd.tusankim.colpkg"
               ]
             }
           }

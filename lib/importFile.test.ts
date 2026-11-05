@@ -1,8 +1,10 @@
+import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
     ALL_IMPORT_EXTENSIONS,
     ALL_IMPORT_MIME_TYPES,
     getImportFileExtension,
+    getImportPickerTypes,
     importFileNameFromUri,
     inferImportFileType,
     isPackageImport,
@@ -36,6 +38,37 @@ describe('incoming import files', () => {
         expect(new Set(ALL_IMPORT_MIME_TYPES).size).toBe(ALL_IMPORT_MIME_TYPES.length);
         expect(ALL_IMPORT_MIME_TYPES).toContain('text/csv');
     });
+
+    it('never enables all files in the native import picker', () => {
+        const types = getImportPickerTypes('ios');
+        expect(types).toEqual(ALL_IMPORT_MIME_TYPES);
+        expect(types.length).toBeGreaterThan(0);
+        expect(types.every((type) => !type.includes('*'))).toBe(true);
+        expect(types).not.toContain('application/octet-stream');
+        expect(types).toEqual(expect.arrayContaining(['text/plain', 'text/csv', 'text/tab-separated-values', 'application/zip']));
+    });
+
+    it('keeps Anki packages selectable without enabling unrelated files on iOS', () => {
+        const app = JSON.parse(fs.readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo;
+        for (const extension of ['apkg', 'colpkg']) {
+            const declaration = app.ios.infoPlist.UTImportedTypeDeclarations.find(
+                (entry: { UTTypeIdentifier: string }) => entry.UTTypeIdentifier === `com.tusankim.${extension}`,
+            );
+            expect(declaration.UTTypeTagSpecification['public.filename-extension']).toContain(extension);
+            const mimeTypes = declaration.UTTypeTagSpecification['public.mime-type'];
+            expect(mimeTypes).toEqual([`application/vnd.tusankim.${extension}`]);
+            expect(ALL_IMPORT_MIME_TYPES).toEqual(expect.arrayContaining(mimeTypes));
+        }
+    });
+
+    it('uses filename extensions on web so packages with no MIME type stay selectable', () => {
+        expect(getImportPickerTypes('web')).toEqual(['.csv', '.tsv', '.txt', '.apkg', '.zip', '.colpkg']);
+    });
+
+    it.each(['pdf', 'png', 'jpg', 'docx', 'json', 'epub'])(
+        'rejects an unrelated .%s file even when handed over outside the picker',
+        (extension) => expect(inferImportFileType(`file:///Inbox/document.${extension}`)).toBeUndefined(),
+    );
 
     it('separates package importers from text importers', () => {
         expect(isPackageImport('apkg')).toBe(true);

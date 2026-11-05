@@ -26,12 +26,12 @@ export const IMPORT_FORMATS: ImportFormat[] = [
         // Anki's own file dialog accepts ".zip" for packages, because browsers and mail clients
         // routinely rename a downloaded ".apkg". The archive content decides what it really is.
         id: 'apkg',
-        mimeTypes: ['application/zip', 'application/x-zip-compressed', '*/*'],
+        mimeTypes: ['application/vnd.tusankim.apkg', 'application/zip', 'application/x-zip-compressed'],
         extensions: ['apkg', 'zip'],
     },
     {
         id: 'colpkg',
-        mimeTypes: ['application/zip', 'application/x-zip-compressed', '*/*'],
+        mimeTypes: ['application/vnd.tusankim.colpkg'],
         extensions: ['colpkg'],
     },
 ];
@@ -62,7 +62,8 @@ export function importFileNameFromUri(uri: string): string {
 /**
  * Anki's import dialog has one "All supported formats" filter and decides what a file is from its
  * extension, so the app opens a single picker instead of asking the learner to pick a format
- * before the file. iOS document pickers need the union of the declared types to allow that.
+ * before the file. Native pickers use explicit MIME types; iOS resolves the package MIME types
+ * through the imported UTI declarations in app.json. A wildcard would enable unrelated files.
  */
 export const ALL_IMPORT_MIME_TYPES: string[] = Array.from(
     new Set(IMPORT_FORMATS.flatMap((format) => format.mimeTypes)),
@@ -71,6 +72,13 @@ export const ALL_IMPORT_MIME_TYPES: string[] = Array.from(
 export const ALL_IMPORT_EXTENSIONS: string[] = Array.from(
     new Set(IMPORT_FORMATS.flatMap((format) => format.extensions)),
 );
+
+/** Browsers need extensions for packages whose MIME type is missing or reported as ZIP. */
+export function getImportPickerTypes(platform: string): string[] {
+    return platform === 'web'
+        ? ALL_IMPORT_EXTENSIONS.map((extension) => `.${extension}`)
+        : ALL_IMPORT_MIME_TYPES;
+}
 
 /** `.apkg`/`.colpkg` carry a whole collection; the text formats carry rows of fields. */
 export function isPackageImport(type: ImportFileType): boolean {

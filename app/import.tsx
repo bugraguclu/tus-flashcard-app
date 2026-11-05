@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -44,7 +44,7 @@ import NoteTypePickerModal from '../components/NoteTypePickerModal';
 import ImportLogView from '../components/ImportLogView';
 import { BackupNotRestorableError, createBackupNow } from '../lib/backup';
 import {
-    ALL_IMPORT_MIME_TYPES,
+    getImportPickerTypes,
     importFileNameFromUri,
     inferImportFileType,
     isPackageImport,
@@ -269,7 +269,7 @@ export default function ImportScreen() {
     const pickFile = async () => {
         try {
             const picked = await DocumentPicker.getDocumentAsync({
-                type: ALL_IMPORT_MIME_TYPES,
+                type: getImportPickerTypes(Platform.OS),
                 copyToCacheDirectory: true,
             });
             if (picked.canceled || !picked.assets?.length) return;
