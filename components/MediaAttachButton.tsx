@@ -13,6 +13,7 @@ import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './photo-editor/PhotoEditorModal';
 import DrawingPadModal from './drawing/DrawingPadModal';
 import { useI18n } from '../hooks/useI18n';
+import { useModalHandoff } from '../hooks/useModalHandoff';
 import { Button, IconButton } from './ui/Button';
 import { PaperclipGlyph } from './UiGlyphs';
 import { Card } from './ui/Card';
@@ -92,6 +93,10 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
 
     const pendingActionRef = useRef<(() => void) | null>(null);
     const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // A chosen action takes its sheet down at once, so the picker, recorder or editor it opens is
+    // not held back until the sheet has slid away (useModalHandoff).
+    const menuHandoff = useModalHandoff(menuVisible);
+    const pickedPhotoHandoff = useModalHandoff(pickedPhoto !== null);
 
     /** Both sheets' onDismiss: whatever was chosen in the sheet that has just gone. */
     const runPendingAction = () => {
@@ -112,7 +117,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const runAfterMenuClose = (action: () => void) => {
         if (Platform.OS === 'ios') {
             pendingActionRef.current = action;
-            setMenuVisible(false);
+            menuHandoff.handOff(() => setMenuVisible(false));
             dismissTimerRef.current = setTimeout(runPendingAction, MENU_GONE_FALLBACK_MS);
             return;
         }
@@ -249,12 +254,14 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const editPickedPhoto = () => {
         const photo = pickedPhoto;
         if (!photo) return;
-        setPickedPhoto(null);
-        // The editor is a modal of its own: on iOS it opens once the photo sheet has gone.
+        // The editor is a modal of its own: on iOS it opens once the photo sheet has gone, which
+        // the hand-off makes the next frame.
         if (Platform.OS === 'ios') {
             pendingActionRef.current = () => setPhotoToEdit(photo);
+            pickedPhotoHandoff.handOff(() => setPickedPhoto(null));
             return;
         }
+        setPickedPhoto(null);
         setPhotoToEdit(photo);
     };
 
@@ -385,6 +392,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 title={l('Ek ekle', 'Add Attachment')}
                 backdropLabel={l('Ek menüsünü kapat', 'Close attachment menu')}
                 onDismiss={runPendingAction}
+                closeAtOnce={menuHandoff.closeAtOnce}
             >
                 <Card divided>
                     {options.map((opt) => (
@@ -400,6 +408,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 title={l('Fotoğrafı nasıl ekleyelim?', 'How should the photo be added?')}
                 backdropLabel={l('Fotoğraf seçimini kapat', 'Close photo options')}
                 onDismiss={runPendingAction}
+                closeAtOnce={pickedPhotoHandoff.closeAtOnce}
             >
                 <Card divided>
                     <MenuItem

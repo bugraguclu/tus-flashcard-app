@@ -4,6 +4,7 @@ import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { useModalHandoff } from '../../hooks/useModalHandoff';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 import PressableScale from '../PressableScale';
 import { PopoverBackdrop, PopoverItem, PopoverModal, usePopoverProgress } from '../Popover';
@@ -70,6 +71,7 @@ export default function DeckAddMenu({
     const colors = useThemeColors();
     const insets = useSafeAreaInsets();
     const pendingAction = useRef<(() => void) | null>(null);
+    const handoff = useModalHandoff(visible);
     const actions = [
         {
             key: 'filtered-deck',
@@ -93,10 +95,11 @@ export default function DeckAddMenu({
 
     const selectAction = (action: () => void) => {
         if (pendingAction.current) return;
-        // UIKit must finish dismissing this menu before another modal or editor can open.
+        // UIKit must finish dismissing this menu before another modal or editor can open. The
+        // menu hands off (useModalHandoff), so it goes at once instead of sinking back into ＋.
         if (Platform.OS === 'ios') {
             pendingAction.current = action;
-            onClose();
+            handoff.handOff(onClose);
         } else {
             onClose();
             action();
@@ -125,6 +128,7 @@ export default function DeckAddMenu({
                 visible={visible}
                 onRequestClose={onClose}
                 onDismiss={handleDismiss}
+                closeAtOnce={handoff.closeAtOnce}
                 itemCount={actions.length}
             >
                 <View style={styles.overlay}>

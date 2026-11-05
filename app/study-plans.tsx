@@ -21,6 +21,7 @@ import { alert, confirm } from '../lib/confirm';
 import { formatStudyTotal } from '../lib/stopwatch';
 import { recentStudySubjects } from '../lib/stopwatchStore';
 import { studyDayYmd } from '../lib/studyAnalysis';
+import { longPressHaptic } from '../lib/haptics';
 import { studySubjectInitial } from '../lib/studyCalendar';
 import { loadStudyPlans, removeStudyPlans, saveStudyPlans } from '../lib/studyPlanStore';
 import { WEEKDAYS_MONDAY_FIRST, emptyStudyPlan, formatPlanClock, ymdToLocalDate, type StudyPlanBlock } from '../lib/studyPlans';
@@ -150,7 +151,7 @@ export default function StudyPlansScreen() {
                     <TouchableOpacity
                         style={styles.cardBody}
                         onPress={() => setEditing({ plan, isNew: false })}
-                        onLongPress={() => remove([plan.id], l('Bu çalışma planı silinsin mi?', 'Delete this study plan?'))}
+                        onLongPress={() => { longPressHaptic(); remove([plan.id], l('Bu çalışma planı silinsin mi?', 'Delete this study plan?')); }}
                         accessibilityRole="button"
                         accessibilityHint={l('Düzenlemek için dokunun, silmek için basılı tutun.', 'Tap to edit, hold to delete.')}
                     >

@@ -70,6 +70,12 @@ interface PopoverModalProps extends PresenceProps {
     onRequestClose: () => void;
     /** After the menu has gone, on iOS: the time to open another modal or form. */
     onDismiss?: () => void;
+    /**
+     * Leaves at once, without its exit animation, when `visible` turns false: set by
+     * `useModalHandoff` while it hands the screen to another modal, which UIKit would
+     * otherwise hold back until this one has gone.
+     */
+    closeAtOnce?: boolean;
 }
 
 /**
@@ -77,13 +83,16 @@ interface PopoverModalProps extends PresenceProps {
  * `PopoverItem` grows from 95% at the control that opened it, and both leave a fifth faster than
  * they came. The Modal itself appears and goes without a native animation, whose cross-fade
  * would take twice as long. Keep it mounted and drive it with `visible`; an action that opens
- * another modal must wait for `onDismiss`, since UIKit presents one modal at a time.
+ * another modal must wait for `onDismiss`, since UIKit presents one modal at a time, or hand off
+ * with `useModalHandoff` and `closeAtOnce` so that it need not wait for the exit.
  */
-export function PopoverModal({ visible, children, onRequestClose, onDismiss, ...options }: PopoverModalProps) {
+export function PopoverModal({ visible, children, onRequestClose, onDismiss, closeAtOnce = false, ...options }: PopoverModalProps) {
     const { motion, shown } = usePopoverMotion(visible, options);
+    // A hand-off takes the Modal down now; the content's exit then plays out unseen.
+    const leavingAtOnce = closeAtOnce && !visible;
     return (
         <Modal
-            visible={motion.mounted}
+            visible={motion.mounted && !leavingAtOnce}
             transparent
             animationType="none"
             presentationStyle="overFullScreen"

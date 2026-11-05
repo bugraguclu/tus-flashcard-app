@@ -37,6 +37,12 @@ interface AppSheetProps {
      * an editor) without racing the sheet's exit.
      */
     onDismiss?: () => void;
+    /**
+     * Leaves at once, without its exit animation, when `visible` turns false: set by
+     * `useModalHandoff` while it hands the screen to another modal, which UIKit would
+     * otherwise hold back until this one has gone.
+     */
+    closeAtOnce?: boolean;
     children: React.ReactNode;
 }
 
@@ -60,6 +66,7 @@ export function AppSheet({
     sheetStyle,
     backdropLabel,
     onDismiss,
+    closeAtOnce,
     children,
 }: AppSheetProps) {
     const colors = useThemeColors();
@@ -79,6 +86,7 @@ export function AppSheet({
             subtitle={subtitle}
             headerLeft={headerLeft}
             headerRight={headerRight}
+            closeAtOnce={closeAtOnce}
             sheetStyle={[
                 styles.sheet,
                 { maxHeight, backgroundColor: colors.bgPrimary, paddingBottom: Math.max(insets.bottom, Spacing.md) },

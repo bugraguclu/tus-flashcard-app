@@ -8,7 +8,7 @@ import initSqlJs from 'sql.js';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 
-const h = vi.hoisted(() => ({ db: null as any, backups: [] as string[] }));
+const h = vi.hoisted(() => ({ db: null as any, backups: [] as string[], haptic: vi.fn(async (_style: string) => {}) }));
 vi.mock('./db', () => ({
     getDB: () => h.db,
     dbUpsertFtsCard: () => {},
@@ -40,6 +40,8 @@ vi.mock('react-native', async () => {
     };
 });
 vi.mock('react-native-svg', () => ({ default: 'Svg', Circle: 'Circle', Path: 'Path' }));
+// A held tag gives the tap every long press gives (lib/haptics).
+vi.mock('expo-haptics', () => ({ impactAsync: h.haptic, ImpactFeedbackStyle: { Medium: 'medium' } }));
 vi.mock('../components/AppText', () => ({ Text: 'Text', TextInput: 'TextInput' }));
 vi.mock('../constants/theme', () => ({
     BorderRadius: {}, FontSize: {}, Shadows: {}, Spacing: {}, useThemeColors: () => ({}),
@@ -99,6 +101,7 @@ describe('the tag filter list', () => {
         expect(shownText()).toContain('Hold a tag to rename it.');
         act(() => byLabel('kardiyo').props.onLongPress());
         expect(onRenameTag).toHaveBeenLastCalledWith('kardiyo');
+        expect(h.haptic).toHaveBeenLastCalledWith('medium');
         const child = byLabel('kardiyo › ekg');
         expect(child.props.accessibilityActions).toEqual([{ name: 'rename', label: 'Rename' }]);
         act(() => child.props.onAccessibilityAction({ nativeEvent: { actionName: 'rename' } }));

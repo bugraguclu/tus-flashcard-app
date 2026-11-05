@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Text } from './AppText';
 import { FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { longPressHaptic } from '../lib/haptics';
 import { getAllTags } from '../lib/noteManager';
 import { filterTagsForSearch, searchNamesKnownTag } from '../lib/tagPickerFilter';
 import { useI18n } from '../hooks/useI18n';
@@ -321,7 +322,7 @@ export default function TagPickerModal({
                                             { paddingLeft: Spacing.lg + Math.min(depth, 8) * 18 },
                                         ]}
                                         onPress={() => toggleTag(tag)}
-                                        onLongPress={onRenameTag ? () => onRenameTag(tag) : undefined}
+                                        onLongPress={onRenameTag ? () => { longPressHaptic(); onRenameTag(tag); } : undefined}
                                         accessibilityRole="checkbox"
                                         accessibilityState={{ checked: selected }}
                                         aria-checked={selected}

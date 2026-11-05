@@ -19,6 +19,7 @@ import { MotionSpring, NATIVE_DRIVER } from '../constants/motion';
 import { confirm } from '../lib/confirm';
 import { getSetDueDateDefault } from '../lib/setDueDateDefaults';
 import { useI18n } from '../hooks/useI18n';
+import { useModalHandoff } from '../hooks/useModalHandoff';
 import PencilGlyph from './PencilGlyph';
 import CalendarGlyph from './CalendarGlyph';
 import InfoCircleGlyph from './InfoCircleGlyph';
@@ -130,6 +131,9 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     const dueDateSpecValid = parseDueRange(dueDateInput) !== null;
     const [tagsInput, setTagsInput] = useState('');
     const [resetOptions, setResetOptions] = useState<ResetCardOptions>({ restorePosition: true, resetCounts: false });
+    const handoff = useModalHandoff(props.visible);
+    const pendingAction = useRef<(() => void) | null>(null);
+    const pendingFallback = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (!props.visible) return;
@@ -163,11 +167,30 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         props.onClose();
     };
 
+    const runPendingAction = () => {
+        if (pendingFallback.current) {
+            clearTimeout(pendingFallback.current);
+            pendingFallback.current = null;
+        }
+        const action = pendingAction.current;
+        pendingAction.current = null;
+        action?.();
+    };
+
     const runAndClose = (action: () => void) => {
-        close();
+        if (Platform.OS !== 'ios') {
+            close();
+            setTimeout(action, 0);
+            return;
+        }
         // iOS does not accept a navigation/alert transition while the native modal layer is
-        // dismissing. The action runs immediately after that layer has gone away.
-        setTimeout(action, Platform.OS === 'ios' ? 180 : 0);
+        // dismissing. The hand-off removes that layer without its fade, and the action runs from
+        // onDismiss as soon as it has gone; the timer only covers a dismissal that never reports.
+        // A second tap while the menu is still on its way out is ignored.
+        if (pendingAction.current) return;
+        pendingAction.current = action;
+        handoff.handOff(close);
+        pendingFallback.current = setTimeout(runPendingAction, 450);
     };
 
     // The keyboard's return key submits these one-line forms, as Anki's own prompts do on Enter.
@@ -177,8 +200,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     };
 
     const confirmAndClose = (title: string, message: string, action: () => void, destructive = false) => {
-        close();
-        setTimeout(() => confirm(title, message, action, { destructive }), Platform.OS === 'ios' ? 180 : 0);
+        runAndClose(() => confirm(title, message, action, { destructive }));
     };
 
     const goToParent = () => {
@@ -212,9 +234,10 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         <Modal
             visible={props.visible}
             transparent
-            animationType="fade"
+            animationType={handoff.animationType}
             presentationStyle="overFullScreen"
             onRequestClose={close}
+            onDismiss={runPendingAction}
         >
             <KeyboardAvoidingView
                 style={[styles.overlay, { paddingTop: insets.top + 8, paddingBottom: Math.max(insets.bottom, 8) }]}

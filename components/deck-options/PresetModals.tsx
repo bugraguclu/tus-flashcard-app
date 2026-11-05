@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import type { useI18n } from '../../hooks/useI18n';
+import { useModalHandoff } from '../../hooks/useModalHandoff';
 import { getAllDeckConfigs, getDecksUsingConfig } from '../../lib/deckManager';
 import { MenuItem, PopoverMenu } from '../ui/Menu';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
@@ -19,7 +20,8 @@ export interface PresetAction {
 /**
  * The actions on the current preset: add, clone, rename, restore defaults, save to all subdecks,
  * remove. iOS drops an alert or a second modal presented while this menu is still dismissing, so
- * there the chosen action runs from `onDismiss`, once the menu has gone.
+ * there the chosen action runs from `onDismiss`, once the menu has gone. The menu hands off
+ * (`useModalHandoff`), so that is the next frame rather than after its shrink.
  */
 export function PresetActionsMenu({ visible, actions, onClose, anchor, accessibilityLabel }: {
     visible: boolean;
@@ -30,6 +32,7 @@ export function PresetActionsMenu({ visible, actions, onClose, anchor, accessibi
     accessibilityLabel?: string;
 }) {
     const pending = useRef<(() => void) | null>(null);
+    const handoff = useModalHandoff(visible);
     const runPending = () => {
         const action = pending.current;
         pending.current = null;
@@ -38,7 +41,7 @@ export function PresetActionsMenu({ visible, actions, onClose, anchor, accessibi
     const choose = (action: () => void) => {
         if (Platform.OS === 'ios') {
             pending.current = action;
-            onClose();
+            handoff.handOff(onClose);
             return;
         }
         onClose();
@@ -49,6 +52,7 @@ export function PresetActionsMenu({ visible, actions, onClose, anchor, accessibi
             visible={visible}
             onClose={onClose}
             onDismiss={runPending}
+            closeAtOnce={handoff.closeAtOnce}
             anchor={anchor}
             accessibilityLabel={accessibilityLabel}
         >

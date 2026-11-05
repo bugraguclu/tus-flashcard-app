@@ -18,10 +18,12 @@ interface MoreToolsSheetProps {
     onClose: () => void;
     /** Runs once the sheet has gone, e.g. to open the photo library for the picture tool. */
     onDismiss?: () => void;
+    /** Leaves without sliding away: set by `useModalHandoff` while it hands off to the library. */
+    closeAtOnce?: boolean;
 }
 
 /** The tools that do not fit on the bar: arrow, boxes, cover-up and a picture from the library. */
-export function MoreToolsSheet({ visible, tool, tools = DRAWING_MORE_TOOLS, onPick, onClose, onDismiss }: MoreToolsSheetProps) {
+export function MoreToolsSheet({ visible, tool, tools = DRAWING_MORE_TOOLS, onPick, onClose, onDismiss, closeAtOnce }: MoreToolsSheetProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
 
@@ -37,6 +39,7 @@ export function MoreToolsSheet({ visible, tool, tools = DRAWING_MORE_TOOLS, onPi
             title={l('Diğer araçlar', 'More Tools')}
             backdropLabel={l('Diğer araçları kapat', 'Close more tools')}
             onDismiss={onDismiss}
+            closeAtOnce={closeAtOnce}
         >
             {/* One tool is in hand at a time: each row is an option of a single choice. */}
             <Card divided>

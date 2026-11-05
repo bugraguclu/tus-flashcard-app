@@ -12,6 +12,7 @@ import type { ToolbarButtonDraft } from './types';
 import type { EditorI18n } from './types';
 import type { EditorStyles } from './editorStyles';
 import LockGlyph from '../LockGlyph';
+import { useModalHandoff } from '../../hooks/useModalHandoff';
 
 interface CustomToolbarEditorModalProps extends EditorI18n {
     visible: boolean;
@@ -42,11 +43,14 @@ export function CustomToolbarEditorModal({
     t,
 }: CustomToolbarEditorModalProps) {
     const presetText = (text: LocalizedPresetText) => l(text.tr, text.en);
+    // Help closes this dialog and opens its own, which appears at once (useModalHandoff).
+    const handoff = useModalHandoff(visible);
 
     return (
         <AppDialog
             visible={visible}
             onClose={onClose}
+            closeAtOnce={handoff.closeAtOnce}
             title={isEditingButton
                 ? l('Araç çubuğu öğesini düzenle', 'Edit Toolbar Item')
                 : l('Araç çubuğu öğesi oluştur', 'Create Toolbar Item')}
@@ -56,7 +60,7 @@ export function CustomToolbarEditorModal({
             )}
             actions={(
                 <>
-                    <Button variant="plain" label={l('Yardım', 'Help')} onPress={onShowHelp} />
+                    <Button variant="plain" label={l('Yardım', 'Help')} onPress={() => handoff.handOff(onShowHelp)} />
                     {isEditingButton
                         ? <Button variant="plain" tone="danger" label={l('Sil', 'Delete')} onPress={onDelete} />
                         : <View style={local.actionSpacer} />}
@@ -140,11 +144,14 @@ interface CustomToolbarHelpModalProps extends EditorI18n {
 /** Explains custom buttons and offers the presets as ready-made templates. */
 export function CustomToolbarHelpModal({ visible, onUseTemplate, onClose, styles, l, t }: CustomToolbarHelpModalProps) {
     const presetText = (text: LocalizedPresetText) => l(text.tr, text.en);
+    // A template closes this dialog and opens the button editor, which appears at once.
+    const handoff = useModalHandoff(visible);
 
     return (
         <AppDialog
             visible={visible}
             onClose={onClose}
+            closeAtOnce={handoff.closeAtOnce}
             title={l('Özel araç düğmeleri', 'Custom Toolbar Buttons')}
             message={l(
                 'Düğmeye dokunulduğunda, seçili metin “önce” ve “sonra” alanlarındaki HTML ile sarılır. Metin seçili değilse imleç iki değer arasına yerleşir.',
@@ -161,7 +168,7 @@ export function CustomToolbarHelpModal({ visible, onUseTemplate, onClose, styles
                                 variant="plain"
                                 size="compact"
                                 label={l('Kullan', 'Use')}
-                                onPress={() => onUseTemplate(preset)}
+                                onPress={() => handoff.handOff(() => onUseTemplate(preset))}
                                 style={local.useButton}
                             />
                         </View>

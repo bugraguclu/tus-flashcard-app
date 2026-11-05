@@ -18,6 +18,8 @@ interface DeckRowMenuProps {
      * in it until then, so the deck list holds the chosen action back until this is called.
      */
     onDismissed: () => void;
+    /** Leaves without its fade: set by `useModalHandoff` while it hands the screen to what was chosen. */
+    closeAtOnce?: boolean;
     backdropLabel?: string;
 }
 
@@ -25,11 +27,17 @@ interface DeckRowMenuProps {
  * A deck's ••• menu: a card centred over the dimmed deck list, with the deck path as its title and
  * one row per action. Its text follows the app's type roles.
  */
-export default function DeckRowMenu({ visible, deckName, actions, onSelect, onClose, onDismissed, backdropLabel }: DeckRowMenuProps) {
+export default function DeckRowMenu({ visible, deckName, actions, onSelect, onClose, onDismissed, closeAtOnce = false, backdropLabel }: DeckRowMenuProps) {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+        <Modal
+            visible={visible}
+            transparent
+            animationType={closeAtOnce && !visible ? 'none' : 'fade'}
+            onRequestClose={onClose}
+            statusBarTranslucent
+        >
             <View style={styles.overlay}>
                 <Pressable
                     style={StyleSheet.absoluteFill}

@@ -14,6 +14,7 @@ import Svg from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
 import { BorderRadius, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { useModalHandoff } from '../../hooks/useModalHandoff';
 import { alert, confirm } from '../../lib/confirm';
 import { sanitizeMediaFilename } from '../../lib/mediaFilename';
 import { saveMediaBytes, saveMediaFromUri } from '../../lib/mediaStore';
@@ -63,8 +64,8 @@ type PadSnapshot = { annotations: PhotoAnnotation[]; setup: BlankCanvasSetup };
 const HISTORY_LIMIT = 50;
 /**
  * iOS presents no picker while the More sheet's modal is still on screen, so the photo library
- * opens from the sheet's onDismiss. The timer covers a dismissal that is not reported; the sheet's
- * own exit gives up at 550 ms.
+ * opens from the sheet's onDismiss, which the hand-off (useModalHandoff) brings to the next frame.
+ * The timer covers a dismissal that is not reported; the sheet's own exit gives up at 550 ms.
  */
 const SHEET_GONE_FALLBACK_MS = 700;
 const DEFAULT_SIZES: Record<DrawingTool, DrawingSize> = {
@@ -100,6 +101,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
     const [stage, setStage] = useState<{ width: number; height: number } | null>(null);
     const [pageSheet, setPageSheet] = useState(false);
     const [moreSheet, setMoreSheet] = useState(false);
+    const moreSheetHandoff = useModalHandoff(moreSheet);
     const [textEntry, setTextEntry] = useState<{ point: PhotoPoint } | { id: string } | null>(null);
     const [saving, setSaving] = useState(false);
     const [exportSurface, setExportSurface] = useState<ExportSurface | null>(null);
@@ -331,17 +333,19 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
     };
 
     const pickMoreTool = (next: DrawingShapeTool | 'image') => {
-        setMoreSheet(false);
         if (next !== 'image') {
+            setMoreSheet(false);
             chooseTool(next);
             return;
         }
         // The picker cannot be presented while the sheet is still leaving the screen.
         if (Platform.OS !== 'ios') {
+            setMoreSheet(false);
             setTimeout(() => { void addPicture(); }, 0);
             return;
         }
         picturePendingRef.current = true;
+        moreSheetHandoff.handOff(() => setMoreSheet(false));
         pictureTimerRef.current = setTimeout(addPendingPicture, SHEET_GONE_FALLBACK_MS);
     };
 
@@ -604,6 +608,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                     onPick={pickMoreTool}
                     onClose={() => setMoreSheet(false)}
                     onDismiss={addPendingPicture}
+                    closeAtOnce={moreSheetHandoff.closeAtOnce}
                 />
                 <TextEntrySheet
                     visible={textEntry !== null}

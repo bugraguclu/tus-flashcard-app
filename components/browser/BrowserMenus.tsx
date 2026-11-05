@@ -29,6 +29,7 @@ import { MenuItem, MenuSeparator, PopoverMenu } from '../ui/Menu';
 import { SwitchRow } from '../ui/Rows';
 import { ArrowDownIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, MinusIcon } from '../ui/icons';
 import { EyeIcon } from '../editor/EditorIcons';
+import { useModalHandoff } from '../../hooks/useModalHandoff';
 import InfoCircleGlyph from '../InfoCircleGlyph';
 import { CopyGlyph, SearchGlyph } from '../UiGlyphs';
 import type { BrowserI18n } from './types';
@@ -50,8 +51,9 @@ import {
 
 // The ⋮ sits in the scope bar under the 56-point header; the menu hangs from the button's top.
 const OVERFLOW_MENU_TOP = 68;
-// The selection sheet slides out for 300 ms before its modal goes. iOS presents no second modal,
-// and pushes no screen, while one is still up, so what the sheet opens waits until it has gone.
+// iOS presents no second modal, and pushes no screen, while one is still up, so what the selection
+// sheet opens waits for its onDismiss. The sheet hands off (useModalHandoff), so that comes on the
+// next frame; this is only the latest it waits if onDismiss never arrives.
 const SHEET_GONE_MS = 450;
 
 interface SelectionMenuModalProps {
@@ -122,22 +124,30 @@ export function SelectionMenuModal({
     const colors = useThemeColors();
     const iconColor = colors.textMuted;
     const close = () => setShowSelectionMenu(false);
-    const nextStepRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const sheet = useModalHandoff(showSelectionMenu);
+    const nextStepRef = useRef<(() => void) | null>(null);
+    const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => () => {
-        if (nextStepRef.current) clearTimeout(nextStepRef.current);
+        if (fallbackRef.current) clearTimeout(fallbackRef.current);
     }, []);
-    /** Closes the sheet, then opens what was chosen once the sheet's modal has gone. */
+    const runNextStep = () => {
+        if (fallbackRef.current) clearTimeout(fallbackRef.current);
+        fallbackRef.current = null;
+        const next = nextStepRef.current;
+        nextStepRef.current = null;
+        next?.();
+    };
+    /** Closes the sheet at once, then opens what was chosen as soon as the sheet's modal has gone. */
     const closeThen = (next: () => void) => {
-        close();
         if (Platform.OS !== 'ios') {
+            close();
             next();
             return;
         }
-        if (nextStepRef.current) clearTimeout(nextStepRef.current);
-        nextStepRef.current = setTimeout(() => {
-            nextStepRef.current = null;
-            next();
-        }, SHEET_GONE_MS);
+        nextStepRef.current = next;
+        sheet.handOff(close);
+        if (fallbackRef.current) clearTimeout(fallbackRef.current);
+        fallbackRef.current = setTimeout(runNextStep, SHEET_GONE_MS);
     };
     const catalogProtected = hasCatalogCardsSelected || hasCatalogNotesSelected;
     const deleteSelectedNotes = () => {
@@ -179,6 +189,8 @@ export function SelectionMenuModal({
         <AppSheet
             visible={showSelectionMenu}
             onClose={close}
+            closeAtOnce={sheet.closeAtOnce}
+            onDismiss={runNextStep}
             title={`${selectedCardIds.size} ${tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}`}
         >
             <SheetScrollView showsVerticalScrollIndicator={false}>
@@ -388,6 +400,10 @@ export function OverflowMenuModal({
 }: OverflowMenuModalProps) {
     const iconColor = colors.textMuted;
     const close = () => setShowOverflowMenu(false);
+    // Items that open a dialog, sheet or form hand the screen to it, so it opens in the same tap
+    // instead of after the menu has shrunk away (useModalHandoff).
+    const menu = useModalHandoff(showOverflowMenu);
+    const closeInto = (next: () => void) => menu.handOff(() => { close(); next(); });
     const allFlags = flagFilters.length === ALL_CARD_FLAGS.length;
     const someFlags = flagFilters.length > 0;
     const allFlagsState = allFlags ? true : someFlags ? 'mixed' as const : false;
@@ -395,13 +411,14 @@ export function OverflowMenuModal({
         <PopoverMenu
             visible={showOverflowMenu}
             onClose={close}
+            closeAtOnce={menu.closeAtOnce}
             anchor={{ top: OVERFLOW_MENU_TOP }}
             accessibilityLabel={l('Diğer seçenekler', 'More options')}
         >
             <MenuItem
                 icon={<SortIcon color={iconColor} />}
                 label={l('Görüntüleme sırasını değiştir', 'Change display order')}
-                onPress={() => { close(); setShowSortPicker(true); }}
+                onPress={() => closeInto(() => setShowSortPicker(true))}
             />
             <MenuItem
                 icon={<StarGlyph color={iconColor} size={20} filled={false} />}
@@ -420,7 +437,7 @@ export function OverflowMenuModal({
                 icon={<TagIcon color={iconColor} />}
                 label={l('Etikete göre filtrele', 'Filter by tag')}
                 accessory={tagFilters.length > 0 ? <Badge label={String(tagFilters.length)} tone="accent" style={styles.menuBadge} /> : null}
-                onPress={() => { close(); setShowTagFilter(true); }}
+                onPress={() => closeInto(() => setShowTagFilter(true))}
             />
             <AccessoryMenuItem
                 styles={styles}
@@ -508,26 +525,26 @@ export function OverflowMenuModal({
             <MenuItem
                 icon={<GearGlyph color={iconColor} size={20} />}
                 label={l('Seçenekler', 'Options')}
-                onPress={() => { close(); setShowOptions(true); }}
+                onPress={() => closeInto(() => setShowOptions(true))}
             />
             <MenuSeparator />
             <MenuItem
                 icon={<SearchGlyph color={iconColor} size={20} />}
                 label={l('Bul ve değiştir…', 'Find and replace…')}
                 accessibilityLabel={l('Notlarda bul ve değiştir', 'Find and replace in notes')}
-                onPress={() => { close(); openNoteTool({ kind: 'find-replace' }); }}
+                onPress={() => closeInto(() => openNoteTool({ kind: 'find-replace' }))}
             />
             <MenuItem
                 icon={<CopyGlyph color={iconColor} size={20} />}
                 label={l('Yinelenenleri bul…', 'Find duplicates…')}
                 accessibilityLabel={l('Yinelenen notları bul', 'Find duplicate notes')}
-                onPress={() => { close(); openNoteTool({ kind: 'find-duplicates' }); }}
+                onPress={() => closeInto(() => openNoteTool({ kind: 'find-duplicates' }))}
             />
             <MenuSeparator />
             <MenuItem
                 icon={<FilteredDeckIcon color={iconColor} />}
                 label={l('Filtrelenmiş deste oluştur', 'Create filtered deck')}
-                onPress={openFilteredDeckDialog}
+                onPress={() => menu.handOff(openFilteredDeckDialog)}
             />
         </PopoverMenu>
     );

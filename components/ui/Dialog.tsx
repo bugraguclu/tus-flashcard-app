@@ -23,6 +23,12 @@ interface AppDialogProps {
     closeLabel?: string;
     /** Extra style for the card, e.g. a wider limit for a table. */
     cardStyle?: StyleProp<ViewStyle>;
+    /**
+     * Leaves at once, without its exit animation, when `visible` turns false: set by
+     * `useModalHandoff` while it hands the screen to another modal, which UIKit would
+     * otherwise hold back until this one has gone.
+     */
+    closeAtOnce?: boolean;
     children?: React.ReactNode;
 }
 
@@ -40,13 +46,20 @@ export function AppDialog({
     actions,
     closeLabel,
     cardStyle,
+    closeAtOnce = false,
     children,
 }: AppDialogProps) {
     const colors = useThemeColors();
     const { l } = useI18n();
     const spokenClose = closeLabel ?? l('Kapat', 'Close');
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+        <Modal
+            visible={visible}
+            transparent
+            animationType={closeAtOnce && !visible ? 'none' : 'fade'}
+            onRequestClose={onClose}
+            statusBarTranslucent
+        >
             <KeyboardAvoidingView
                 style={[styles.layer, { backgroundColor: colors.scrim }]}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}

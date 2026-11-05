@@ -11,6 +11,7 @@ import {
 } from '../../lib/editorToolbar';
 import { isEditorToolActive, isEditorToolDisabled, type EditorFormatState } from '../../lib/editorFormatState';
 import type { CustomToolbarButton } from '../../lib/customToolbar';
+import { longPressHaptic } from '../../lib/haptics';
 import { AnkiToolbarIcon } from './EditorIcons';
 import { ToolbarKeyboardDoneButton } from './KeyboardDoneButton';
 import type { FormattingTool } from './editorTools';
@@ -84,7 +85,7 @@ export function EditorFormattingToolbar({
                 <TouchableOpacity
                     style={[styles.formatButton, buttonWidthStyle]}
                     onPress={() => onCloze(false)}
-                    onLongPress={() => onCloze(true)}
+                    onLongPress={() => { longPressHaptic(); onCloze(true); }}
                     accessibilityRole="button"
                     accessibilityLabel={l('Boşluk ekle', 'Add cloze deletion')}
                     accessibilityHint={l('Seçimi bir sonraki boşluk numarasıyla kapatır; basılı tutunca aynı numarayı kullanır', 'Wraps the selection in the next cloze number; press and hold to reuse the same number')}
@@ -109,7 +110,7 @@ export function EditorFormattingToolbar({
                             isDisabled && styles.formatButtonDisabled,
                         ]}
                         onPress={tool.onPress}
-                        onLongPress={tool.onLongPress}
+                        onLongPress={tool.onLongPress ? () => { longPressHaptic(); tool.onLongPress?.(); } : undefined}
                         delayLongPress={450}
                         disabled={isDisabled}
                         accessibilityRole="button"
@@ -136,7 +137,7 @@ export function EditorFormattingToolbar({
                     key={button.id}
                     style={[styles.formatButton, buttonWidthStyle]}
                     onPress={() => onCustomButtonPress(button)}
-                    onLongPress={() => onCustomButtonLongPress(button)}
+                    onLongPress={() => { longPressHaptic(); onCustomButtonLongPress(button); }}
                     delayLongPress={450}
                     accessibilityRole="button"
                     accessibilityLabel={button.buttonText || String(index + 1)}

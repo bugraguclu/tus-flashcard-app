@@ -53,6 +53,12 @@ interface BottomSheetModalProps {
     subtitle?: string;
     headerLeft?: React.ReactNode;
     headerRight?: React.ReactNode;
+    /**
+     * Leaves at once, without its exit animation, when `visible` turns false: set by
+     * `useModalHandoff` while it hands the screen to another modal, which UIKit would
+     * otherwise hold back until this one has gone.
+     */
+    closeAtOnce?: boolean;
 }
 
 /**
@@ -81,6 +87,7 @@ export default function BottomSheetModal({
     subtitle,
     headerLeft,
     headerRight,
+    closeAtOnce = false,
 }: BottomSheetModalProps) {
     const colors = useThemeColors();
     const { l } = useI18n();
@@ -90,8 +97,8 @@ export default function BottomSheetModal({
     // How far the sheet travels to leave the screen; the backdrop is clear at that distance.
     const [travel, setTravel] = useState(windowHeight);
     const position = useRef(new Animated.Value(windowHeight)).current;
-    const latest = useRef({ mounted, travel, windowHeight, reduceMotion });
-    latest.current = { mounted, travel, windowHeight, reduceMotion };
+    const latest = useRef({ mounted, travel, windowHeight, reduceMotion, closeAtOnce });
+    latest.current = { mounted, travel, windowHeight, reduceMotion, closeAtOnce };
     const generation = useRef(0);
     // Set when a pull-down has already carried the sheet off screen.
     const pulledAway = useRef(false);
@@ -121,7 +128,7 @@ export default function BottomSheetModal({
             setMounted(false);
             position.setValue(latest.current.windowHeight);
         };
-        if (pulledAway.current || latest.current.reduceMotion) {
+        if (pulledAway.current || latest.current.reduceMotion || latest.current.closeAtOnce) {
             finish();
             return undefined;
         }
@@ -152,6 +159,8 @@ export default function BottomSheetModal({
         if (next > 0 && Math.abs(next - travel) > 1) setTravel(next);
     };
 
+    const leavingAtOnce = closeAtOnce && !visible;
+
     const backdropOpacity = useMemo(() => position.interpolate({
         inputRange: [0, Math.max(travel, 1)],
         outputRange: [1, 0],
@@ -160,9 +169,10 @@ export default function BottomSheetModal({
 
     return (
         <Modal
-            visible={mounted}
+            // A hand-off takes the sheet down in this commit, not after the next render.
+            visible={mounted && !leavingAtOnce}
             transparent
-            animationType={reduceMotion ? 'fade' : 'none'}
+            animationType={reduceMotion && !leavingAtOnce ? 'fade' : 'none'}
             onRequestClose={onClose}
             onDismiss={onDismiss}
         >

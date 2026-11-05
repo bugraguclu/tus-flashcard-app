@@ -14,6 +14,12 @@ interface PopoverMenuProps {
     /** Runs once the menu has gone, e.g. to open what was chosen without two modals at once. */
     onDismiss?: () => void;
     /**
+     * Leaves at once, without its exit animation, when `visible` turns false: set by
+     * `useModalHandoff` while it hands the screen to another modal, which UIKit would
+     * otherwise hold back until this one has gone.
+     */
+    closeAtOnce?: boolean;
+    /**
      * Where the menu hangs: its top edge below the screen's top (safe area included) and its
      * distance from the right edge. By default it hangs under a 56-point header's right corner.
      */
@@ -31,14 +37,14 @@ interface PopoverMenuProps {
  * that closes it. Rows are `MenuItem`s. Keep it mounted and drive it with `visible`, so it can
  * shrink back into its button.
  */
-export function PopoverMenu({ visible, onClose, onDismiss, anchor, accessibilityLabel, closeLabel, children, style }: PopoverMenuProps) {
+export function PopoverMenu({ visible, onClose, onDismiss, closeAtOnce, anchor, accessibilityLabel, closeLabel, children, style }: PopoverMenuProps) {
     const colors = useThemeColors();
     const insets = useSafeAreaInsets();
     const { l } = useI18n();
     return (
         // It grows out of the button that opened it, from its top right corner, while the dimming
         // fades in, and shrinks back into it a fifth faster (components/Popover.tsx).
-        <PopoverModal visible={visible} onRequestClose={onClose} onDismiss={onDismiss}>
+        <PopoverModal visible={visible} onRequestClose={onClose} onDismiss={onDismiss} closeAtOnce={closeAtOnce}>
             <View style={styles.layer} pointerEvents="box-none">
                 <PopoverBackdrop
                     style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrimLight }]}

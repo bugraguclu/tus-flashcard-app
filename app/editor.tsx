@@ -836,9 +836,10 @@ export default function EditorScreen() {
         );
     };
 
+    // The two dialogs hand off to each other (useModalHandoff), so the next opens in the same tap.
     const showToolbarHelp = () => {
         setShowCustomToolbarEditor(false);
-        setTimeout(() => setShowCustomToolbarHelp(true), Platform.OS === 'ios' ? 180 : 0);
+        setShowCustomToolbarHelp(true);
     };
 
     const useToolbarButtonTemplate = (preset?: CustomToolbarPreset) => {
@@ -850,7 +851,7 @@ export default function EditorScreen() {
             prefix: target.prefix,
             suffix: target.suffix,
         });
-        setTimeout(() => setShowCustomToolbarEditor(true), Platform.OS === 'ios' ? 180 : 0);
+        setShowCustomToolbarEditor(true);
     };
 
     const openPreview = () => {

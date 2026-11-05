@@ -20,6 +20,8 @@ vi.mock('react-native', async () => ({
 vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }), SafeAreaView: 'SafeAreaView' }));
 vi.mock('react-native-svg', () => ({ default: 'Svg', Path: 'Path', Circle: 'Circle', Rect: 'Rect', Line: 'Line', Polyline: 'Polyline', Polygon: 'Polygon', G: 'G' }));
 vi.mock('expo-router', () => ({ useRouter: () => ({}) }));
+// A held row buzzes (lib/haptics); the native module has no place in this test.
+vi.mock('expo-haptics', () => ({ impactAsync: async () => {}, ImpactFeedbackStyle: { Medium: 'medium' } }));
 // The kit's dialog reads the app language for its close label.
 vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ l: (_tr: string, en: string) => en, t: (key: string) => key }) }));
 vi.mock('../components/AppText', () => ({ Text: 'Text', TextInput: 'TextInput' }));

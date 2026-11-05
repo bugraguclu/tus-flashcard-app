@@ -224,6 +224,7 @@ import {
 } from '../../lib/reviewerUndoSteps';
 import { parseDueRange, setSelectedDueDate } from '../../lib/browserSelection';
 import { canonifyTags, sameTagSet } from '../../lib/noteTags';
+import { longPressHaptic } from '../../lib/haptics';
 import { parseNotePayload, studyCardHomeDeckId } from '../../lib/studyCardRows';
 
 /** Web-only tooltip via HTML title attribute */
@@ -3032,7 +3033,7 @@ export default function StudyScreen() {
                         <PressableScale
                             style={[styles.showAnswerBtn, settings.showToolsOverlayButton && styles.showAnswerBtnWithTools]}
                             onPress={showAnswerLongPressMs === 0 ? () => setShowingAnswer(true) : undefined}
-                            onLongPress={showAnswerLongPressMs > 0 ? () => setShowingAnswer(true) : undefined}
+                            onLongPress={showAnswerLongPressMs > 0 ? () => { longPressHaptic(); setShowingAnswer(true); } : undefined}
                             delayLongPress={showAnswerLongPressMs}
                             activeOpacity={0.82}
                             accessibilityRole="button"

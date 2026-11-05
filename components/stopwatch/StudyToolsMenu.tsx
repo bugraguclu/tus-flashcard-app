@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { Path, Rect } from 'react-native-svg';
 import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { useModalHandoff } from '../../hooks/useModalHandoff';
 import PressableScale from '../PressableScale';
 import StatsGlyph from '../StatsGlyph';
 import { IconFrame, iconStroke, outline } from '../icons/IconFrame';
@@ -65,6 +66,8 @@ export default function StudyToolsMenu({ bottom, onOpenCalendar }: StudyToolsMen
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const [open, setOpen] = useState(false);
+    // A chosen tool's screen shows at once instead of after the cards sink back (useModalHandoff).
+    const handoff = useModalHandoff(open);
     const tint = colors.studyTool;
 
     const tools: { tool: StudyTool; title: string; subtitle: string }[] = [
@@ -115,7 +118,7 @@ export default function StudyToolsMenu({ bottom, onOpenCalendar }: StudyToolsMen
         <>
             {button(() => setOpen(true), l('Çalışma araçları', 'Study tools'))}
             {/* The cards rise out of the button one after another and sink back into it. */}
-            <PopoverModal visible={open} onRequestClose={() => setOpen(false)} itemCount={tools.length}>
+            <PopoverModal visible={open} onRequestClose={() => setOpen(false)} closeAtOnce={handoff.closeAtOnce} itemCount={tools.length}>
                 <View style={styles.overlay}>
                     <PopoverBackdrop
                         style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrimStrong }]}
@@ -136,11 +139,11 @@ export default function StudyToolsMenu({ bottom, onOpenCalendar }: StudyToolsMen
                             <PopoverItem key={tool} index={tools.length - 1 - index} origin="bottom right">
                                 <TouchableOpacity
                                     style={[styles.card, { backgroundColor: tint }]}
-                                    onPress={() => {
+                                    onPress={() => handoff.handOff(() => {
                                         setOpen(false);
                                         if (tool === 'calendar') onOpenCalendar?.();
                                         else router.push(ROUTES[tool] as any);
-                                    }}
+                                    })}
                                     activeOpacity={0.85}
                                     accessibilityRole="button"
                                     accessibilityLabel={`${title}. ${subtitle}`}

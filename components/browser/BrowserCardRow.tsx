@@ -9,6 +9,7 @@ import type { BrowserTableMode } from '../../lib/studyRepository';
 import { humanizeCardText } from '../../lib/displayText';
 import { cardFlagName, localizeNoteTypeName, localizeTopicName, type SupportedLocale } from '../../lib/i18n';
 import { expandSelectedCardsToNotes, toggleSelectedSuspend } from '../../lib/browserSelection';
+import { longPressHaptic } from '../../lib/haptics';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
 import { formatLastReview, formatNewPosition, formatNextDue, newQueuePosition } from './browserHelpers';
@@ -125,6 +126,7 @@ export function BrowserCardRow({
                 ? toggleCardSelection(item.cardId)
                 : setExpandedCard(isExpanded ? null : item.cardId)}
             onLongPress={() => {
+                longPressHaptic();
                 if (!selectionMode) setSelectionMode(true);
                 toggleCardSelection(item.cardId);
             }}
@@ -138,7 +140,7 @@ export function BrowserCardRow({
             aria-checked={selectionMode ? isSelected : undefined}
         >
             <View style={styles.cardItemHeader}>
-                {selectionMode && <Checkbox checked={isSelected} />}
+                {selectionMode && <View style={styles.selectionMark}><Checkbox checked={isSelected} /></View>}
                 <View style={local.cardIcon}>
                     {isNotesMode
                         ? <NoteGlyph color={colors.textSecondary} size={17} />

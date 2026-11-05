@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import { useModalHandoff } from '../../hooks/useModalHandoff';
 import { MenuItem, MenuSeparator, PopoverMenu } from '../ui/Menu';
 import type { EditorPreferences } from './types';
 import type { EditorI18n } from './types';
@@ -36,7 +37,9 @@ export function EditorOverflowMenu({
     l,
 }: EditorOverflowMenuProps) {
     // iOS presents one modal at a time: a dialog opened while this menu is still fading out would
-    // not appear, so it waits for the menu's dismissal.
+    // not appear, so it waits for the menu's dismissal. The menu hands off (useModalHandoff), so
+    // that comes on the next frame instead of after its shrink.
+    const handoff = useModalHandoff(visible);
     const pendingRef = useRef<(() => void) | null>(null);
     const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const runPending = () => {
@@ -52,12 +55,13 @@ export function EditorOverflowMenu({
         if (fallbackRef.current) clearTimeout(fallbackRef.current);
     }, []);
     const openAfterClose = (action: () => void) => {
-        onClose();
         if (Platform.OS !== 'ios') {
+            onClose();
             action();
             return;
         }
         pendingRef.current = action;
+        handoff.handOff(onClose);
         fallbackRef.current = setTimeout(runPending, DISMISS_FALLBACK_MS);
     };
 
@@ -66,6 +70,7 @@ export function EditorOverflowMenu({
             visible={visible}
             onClose={onClose}
             onDismiss={runPending}
+            closeAtOnce={handoff.closeAtOnce}
             accessibilityLabel={l('Diğer seçenekler', 'More options')}
         >
             {!contentReadOnly && (

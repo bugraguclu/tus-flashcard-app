@@ -2,6 +2,7 @@ import { Modal, Pressable, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '../AppText';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { useModalHandoff } from '../../hooks/useModalHandoff';
 import { AnimatedPressable, usePopoverItemStyle } from '../Popover';
 
 export interface SessionMenuItem {
@@ -25,9 +26,12 @@ export default function SessionActionsMenu({ visible, title, items, onClose }: S
     const colors = useThemeColors();
     // The card grows in from 95% while the Modal fades it in.
     const growIn = usePopoverItemStyle();
+    // Every item closes the menu and opens something else (the editor sheet, an alert, a
+    // screen), which then appears at once instead of after the menu's fade (see useModalHandoff).
+    const handoff = useModalHandoff(visible);
 
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <Modal visible={visible} transparent animationType={handoff.animationType} onRequestClose={onClose}>
             <Pressable style={[styles.backdrop, { backgroundColor: colors.scrim }]} onPress={onClose}>
                 <AnimatedPressable style={[styles.card, { backgroundColor: colors.bgCard }, growIn]} onPress={() => undefined} accessibilityViewIsModal>
                     <Text style={[styles.title, { color: colors.textMuted }]} numberOfLines={1}>{title}</Text>
@@ -35,7 +39,7 @@ export default function SessionActionsMenu({ visible, title, items, onClose }: S
                         <TouchableOpacity
                             key={item.key}
                             style={[styles.item, { borderTopColor: colors.borderLight }]}
-                            onPress={item.onPress}
+                            onPress={() => handoff.handOff(item.onPress)}
                             accessibilityRole="button"
                         >
                             <Text style={[styles.itemText, { color: item.destructive ? colors.btnAgain : colors.textPrimary }]}>

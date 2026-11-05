@@ -58,6 +58,7 @@ import {
     useStudyScope,
 } from '../../contexts/AppContext';
 import { useI18n } from '../../hooks/useI18n';
+import { useModalHandoff } from '../../hooks/useModalHandoff';
 import { formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
 import { normalizeDeckName } from '../../lib/deckNames';
@@ -215,6 +216,10 @@ export default function DecksScreen() {
     const pendingDeckMenuActionRef = useRef<(() => void) | null>(null);
     const [newDeckName, setNewDeckName] = useState('');
     const [modal, setModal] = useState<ModalState>(null);
+    // The ⋮ menu and a deck's ••• menu go at once when an item opens a screen, dialog, sheet or
+    // alert, so that one is not held back until the menu has left (useModalHandoff).
+    const overflowHandoff = useModalHandoff(showOverflowMenu);
+    const deckMenuHandoff = useModalHandoff(modal?.kind === 'menu');
     // The deck a bottom sheet was opened for, kept after `modal` clears so the sheet can slide
     // away with its content still on it.
     const [deckMenu, setDeckMenu] = useState<{ deck: Deck; actions: DeckRowMenuAction[] } | null>(null);
@@ -435,7 +440,7 @@ export default function DecksScreen() {
         // another modal screen, otherwise UIKit rejects the second presentation.
         if (Platform.OS === 'ios') {
             pendingOverflowRouteRef.current = path;
-            setShowOverflowMenu(false);
+            overflowHandoff.handOff(() => setShowOverflowMenu(false));
             return;
         }
         setShowOverflowMenu(false);
@@ -457,7 +462,7 @@ export default function DecksScreen() {
     const runAfterOverflowClose = (action: () => void) => {
         if (Platform.OS === 'ios') {
             pendingOverflowActionRef.current = action;
-            setShowOverflowMenu(false);
+            overflowHandoff.handOff(() => setShowOverflowMenu(false));
             return;
         }
         setShowOverflowMenu(false);
@@ -488,11 +493,12 @@ export default function DecksScreen() {
     };
 
     // Run an action once the deck menu has closed. UIKit rejects pushing a screen or presenting
-    // another modal while the menu sheet is still mounted, so iOS waits until it reports dismissal.
+    // another modal while the menu sheet is still mounted, so iOS waits until it reports dismissal,
+    // which the hand-off brings to the next frame. With no menu up there is nothing to wait for.
     const runAfterDeckModalClose = (action: () => void) => {
-        if (Platform.OS === 'ios') {
+        if (Platform.OS === 'ios' && modal?.kind === 'menu') {
             pendingDeckMenuActionRef.current = action;
-            setModal(null);
+            deckMenuHandoff.handOff(() => setModal(null));
             return;
         }
         setModal(null);
@@ -715,12 +721,11 @@ export default function DecksScreen() {
     const handleRebuildFilter = (deck: Deck) => {
         rebuildFilteredDeck(deck.id);
         const gathered = filteredDeckBuiltCount(deck.id);
-        setModal(null);
         refresh();
-        alert(l('Deste yeniden oluşturuldu', 'Deck rebuilt'), l(
+        runAfterDeckModalClose(() => alert(l('Deste yeniden oluşturuldu', 'Deck rebuilt'), l(
             `Kartlar kayıtlı arama ve sıralama kurallarıyla yeniden toplandı (${formatCount(gathered, locale)} kart).`,
             `Cards were gathered again using the saved search and sort rules (${formatCount(gathered, locale)} ${gathered === 1 ? 'card' : 'cards'}).`,
-        ));
+        )));
     };
 
     /** Custom study variants (forgotten / ahead / preview): build the session and offer to study. */
@@ -786,27 +791,22 @@ export default function DecksScreen() {
             alert(l('Korumalı Deste', 'Protected Deck'), l('Dahili TUS desteleri silinemez.', 'Built-in TUS decks cannot be deleted.'));
             return;
         }
-        setModal(null);
-        setTimeout(() => handleDelete(deck), Platform.OS === 'ios' ? 250 : 0);
+        runAfterDeckModalClose(() => handleDelete(deck));
     };
 
-    const requestEmptyFilteredDeck = (deck: Deck) => {
-        setModal(null);
-        setTimeout(() => confirm(
-            l('Filtrelenmiş desteyi boşalt', 'Empty Filtered Deck'),
-            l('Kartlar silinmez; ait oldukları destelere döner.', 'Cards are not deleted; they return to their home decks.'),
-            () => {
-                emptyFilteredDeck(deck.id);
-                refresh();
-            },
-        ), Platform.OS === 'ios' ? 250 : 0);
-    };
+    const requestEmptyFilteredDeck = (deck: Deck) => runAfterDeckModalClose(() => confirm(
+        l('Filtrelenmiş desteyi boşalt', 'Empty Filtered Deck'),
+        l('Kartlar silinmez; ait oldukları destelere döner.', 'Cards are not deleted; they return to their home decks.'),
+        () => {
+            emptyFilteredDeck(deck.id);
+            refresh();
+        },
+    ));
 
     // AnkiDroid's deck menu offers Unbury while the deck holds buried cards and, like the overview,
     // asks which kind to wake when both manually buried cards and buried siblings are waiting.
     const requestUnburyDeck = (deck: Deck) => {
-        setModal(null);
-        setTimeout(() => {
+        runAfterDeckModalClose(() => {
             void (async () => {
                 try {
                     const kind = await chooseUnburyKind(getBuriedKindsForDeck(deck.id), l);
@@ -822,7 +822,7 @@ export default function DecksScreen() {
                     alert(t('common.error'), l('Gömülü kartlar açılamadı.', 'Could not unbury the cards.'));
                 }
             })();
-        }, Platform.OS === 'ios' ? 250 : 0);
+        });
     };
 
     // The menu is a sheet of its own: a dialog or sheet chosen in it opens once it has gone.
@@ -1545,6 +1545,7 @@ export default function DecksScreen() {
                 visible={showOverflowMenu}
                 onClose={() => setShowOverflowMenu(false)}
                 onDismiss={handleOverflowDismiss}
+                closeAtOnce={overflowHandoff.closeAtOnce}
                 // Hangs from the bottom of the ⋮ button, flush with the header's right padding.
                 anchor={{ top: Spacing.md + HIT_TARGET, right: Spacing.lg }}
                 accessibilityLabel={l('Diğer seçenekler', 'More options')}
@@ -1774,6 +1775,7 @@ export default function DecksScreen() {
                 }}
                 onClose={() => setModal(null)}
                 onDismissed={handleDeckModalDismiss}
+                closeAtOnce={deckMenuHandoff.closeAtOnce}
                 backdropLabel={l('Açık pencereyi kapat', 'Close open dialog')}
             />
             {renameDialog}

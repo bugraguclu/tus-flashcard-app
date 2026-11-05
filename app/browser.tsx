@@ -841,9 +841,10 @@ export default function BrowserScreen() {
     }, []);
 
     const openFilteredDeckDialog = useCallback(() => {
+        // The ••• menu hands off to the form (useModalHandoff), so the form opens in the same tap.
         setShowOverflowMenu(false);
         setFilteredDeckFormSearch(browserSearch);
-        InteractionManager.runAfterInteractions(() => setShowFilteredDeckForm(true));
+        setShowFilteredDeckForm(true);
     }, [browserSearch]);
 
     const subject = (id: string) => subjects.find((s) => s.id === id);
