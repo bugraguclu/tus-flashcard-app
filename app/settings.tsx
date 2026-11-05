@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View,
     ActivityIndicator,
+    useWindowDimensions,
 } from 'react-native';
 import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -295,7 +296,7 @@ function ChoiceRow<T extends string>({ label, summary, value, options, onChange,
     );
 }
 
-function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, max, wrap = false, onChange, styles }: {
+function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, max, wrap = false, inline = false, onChange, styles }: {
     label: string;
     summary?: string;
     value: number;
@@ -305,49 +306,57 @@ function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, m
     min: number;
     max: number;
     wrap?: boolean;
+    inline?: boolean;
     onChange: (value: number) => void;
     styles: ReturnType<typeof createStyles>;
 }) {
     const { l } = useI18n();
+    const { width } = useWindowDimensions();
+    const summaryBelow = inline && width < 480;
     const inputRef = useRef<BoundedIntegerInputHandle>(null);
 
     const decrementRepeat = useRepeatPress(() => inputRef.current?.stepBy(-step));
     const incrementRepeat = useRepeatPress(() => inputRef.current?.stepBy(step));
 
     return (
-        <View style={styles.preferenceBlock}>
-            <Text style={styles.preferenceLabel}>{label}</Text>
-            {summary ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
-            <View style={styles.stepperRow}>
-                <TouchableOpacity
-                    style={styles.stepButton}
-                    {...decrementRepeat}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${label} ${l('azalt', 'decrease')}`}
-                >
-                    <Text style={styles.stepButtonText}>−</Text>
-                </TouchableOpacity>
-                <BoundedIntegerInput
-                    ref={inputRef}
-                    value={value}
-                    min={min}
-                    max={max}
-                    wrap={wrap}
-                    suffix={suffix}
-                    minimumDigits={minimumDigits}
-                    onChange={onChange}
-                    accessibilityLabel={label}
-                    style={styles.stepValueInput}
-                />
-                <TouchableOpacity
-                    style={styles.stepButton}
-                    {...incrementRepeat}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${label} ${l('artır', 'increase')}`}
-                >
-                    <Text style={styles.stepButtonText}>+</Text>
-                </TouchableOpacity>
+        <View style={inline ? styles.inlineStepperBlock : styles.preferenceBlock}>
+            <View style={inline && styles.inlineStepperLayout}>
+                <View style={inline && styles.preferenceCopy}>
+                    <Text style={styles.preferenceLabel}>{label}</Text>
+                    {summary && !summaryBelow ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
+                </View>
+                <View style={[styles.stepperRow, inline && styles.inlineStepperRow]}>
+                    <TouchableOpacity
+                        style={[styles.stepButton, inline && styles.inlineStepButton]}
+                        {...decrementRepeat}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${label} ${l('azalt', 'decrease')}`}
+                    >
+                        <Text style={styles.stepButtonText}>−</Text>
+                    </TouchableOpacity>
+                    <BoundedIntegerInput
+                        ref={inputRef}
+                        value={value}
+                        min={min}
+                        max={max}
+                        wrap={wrap}
+                        suffix={suffix}
+                        minimumDigits={minimumDigits}
+                        onChange={onChange}
+                        accessibilityLabel={label}
+                        style={inline ? styles.inlineStepValueInput : styles.stepValueInput}
+                    />
+                    <TouchableOpacity
+                        style={[styles.stepButton, inline && styles.inlineStepButton]}
+                        {...incrementRepeat}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${label} ${l('artır', 'increase')}`}
+                    >
+                        <Text style={styles.stepButtonText}>+</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
+            {summary && summaryBelow ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
         </View>
     );
 }
@@ -1593,17 +1602,17 @@ export default function SettingsScreen() {
     const renderAccessibility = () => (
         <>
             <Group title={l('Kart', 'Card')} styles={styles}>
-                <StepperRow label={l('Kart yakınlaştırma', 'Card zoom')} value={settings.cardZoomPercent ?? 100} suffix="%" step={10} min={50} max={200} onChange={(value) => updateSetting('cardZoomPercent', value)} styles={styles} />
-                <StepperRow label={l('Görsel yakınlaştırma', 'Image zoom')} value={settings.imageZoomPercent ?? 100} suffix="%" step={10} min={50} max={200} onChange={(value) => updateSetting('imageZoomPercent', value)} styles={styles} />
+                <StepperRow inline label={l('Kart yakınlaştırma', 'Card zoom')} value={settings.cardZoomPercent ?? 100} suffix="%" step={10} min={50} max={200} onChange={(value) => updateSetting('cardZoomPercent', value)} styles={styles} />
+                <StepperRow inline label={l('Görsel yakınlaştırma', 'Image zoom')} value={settings.imageZoomPercent ?? 100} suffix="%" step={10} min={50} max={200} onChange={(value) => updateSetting('imageZoomPercent', value)} styles={styles} />
             </Group>
             <Group title={l('Yanıt düğmeleri', 'Answer buttons')} styles={styles}>
-                <StepperRow label={l('Yanıt düğmesi boyutu', 'Answer button size')} value={settings.answerButtonScalePercent ?? 100} suffix="%" step={10} min={100} max={175} onChange={(value) => updateSetting('answerButtonScalePercent', value)} styles={styles} />
+                <StepperRow inline label={l('Yanıt düğmesi boyutu', 'Answer button size')} value={settings.answerButtonScalePercent ?? 100} suffix="%" step={10} min={100} max={175} onChange={(value) => updateSetting('answerButtonScalePercent', value)} styles={styles} />
                 <ToggleRow label={l('Büyük yanıt düğmelerini iki satırda göster', 'Show large answer buttons in two rows')} value={Boolean(settings.twoRowAnswerButtons)} onChange={(value) => updateSetting('twoRowAnswerButtons', value)} styles={styles} />
-                <StepperRow label={l('Cevabı göster basılı tutma süresi', 'Show answer long-press time')} summary={l('0 ms normal dokunmadır. Yalnızca Cevabı göster düğmesine uygulanır.', '0 ms uses a normal tap. Applies only to the Show Answer button.')} value={settings.showAnswerLongPressMs ?? 0} suffix="ms" step={100} min={0} max={2000} onChange={(value) => updateSetting('showAnswerLongPressMs', value)} styles={styles} />
-                <StepperRow label={l('Çift dokunma aralığı', 'Double tap time interval')} summary={l('Yanlışlıkla iki kez yanıtlamayı önler.', 'Prevents accidental double answers.')} value={settings.answerDoubleTapMs ?? 200} suffix="ms" step={50} min={0} max={1000} onChange={(value) => updateSetting('answerDoubleTapMs', value)} styles={styles} />
+                <StepperRow inline label={l('Cevabı göster basılı tutma süresi', 'Show answer long-press time')} summary={l('0 ms normal dokunmadır. Yalnızca Cevabı göster düğmesine uygulanır.', '0 ms uses a normal tap. Applies only to the Show Answer button.')} value={settings.showAnswerLongPressMs ?? 0} suffix="ms" step={100} min={0} max={2000} onChange={(value) => updateSetting('showAnswerLongPressMs', value)} styles={styles} />
+                <StepperRow inline label={l('Çift dokunma aralığı', 'Double tap time interval')} summary={l('Yanlışlıkla iki kez yanıtlamayı önler.', 'Prevents accidental double answers.')} value={settings.answerDoubleTapMs ?? 200} suffix="ms" step={50} min={0} max={1000} onChange={(value) => updateSetting('answerDoubleTapMs', value)} styles={styles} />
             </Group>
             <Group title={l('Kart tarayıcısı', 'Card browser')} styles={styles}>
-                <StepperRow label={l('Yazı ölçeği', 'Font scaling')} value={settings.browserFontScalePercent ?? 100} suffix="%" step={10} min={75} max={175} onChange={(value) => updateSetting('browserFontScalePercent', value)} styles={styles} />
+                <StepperRow inline label={l('Yazı ölçeği', 'Font scaling')} value={settings.browserFontScalePercent ?? 100} suffix="%" step={10} min={75} max={175} onChange={(value) => updateSetting('browserFontScalePercent', value)} styles={styles} />
             </Group>
         </>
     );
@@ -2326,6 +2335,11 @@ function createStyles(colors: ColorScheme) {
         stepButton: { width: 48, height: 44, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgSecondary },
         stepButtonText: { fontSize: FontSize.xl, color: colors.textPrimary, fontWeight: '700' },
         stepValueInput: { flex: 1, maxWidth: 148 },
+        inlineStepperBlock: { minHeight: 66, justifyContent: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingVertical: Spacing.sm },
+        inlineStepperLayout: { flexDirection: 'row', alignItems: 'center' },
+        inlineStepperRow: { flexShrink: 0, gap: Spacing.xs, marginTop: 0 },
+        inlineStepButton: { width: 44 },
+        inlineStepValueInput: { minWidth: 92, paddingHorizontal: Spacing.xs },
         swipeSensitivityBlock: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, paddingTop: Spacing.md, paddingBottom: Spacing.xs },
         swipeSensitivityHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
         swipeSensitivityValue: { fontSize: FontSize.sm, fontWeight: '800', fontVariant: ['tabular-nums'] as any, color: colors.accent },

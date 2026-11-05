@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import { Text, TextInput } from './AppText';
+import { Text, TextInput, useLayoutTextScale } from './AppText';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../constants/theme';
 import {
     commitBoundedInteger,
@@ -102,8 +102,9 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
         },
     }), [format, max, min, onChange, value, wrap]);
 
+    const textScale = useLayoutTextScale();
     const charCount = Math.max(draft.length, minimumDigits, 1);
-    const inputWidth = Math.max(20, charCount * 13 + 6);
+    const inputWidth = Math.ceil(Math.max(20, charCount * 13 + 6) * textScale);
     const textInputRef = useRef<TextInput>(null);
 
     return (
