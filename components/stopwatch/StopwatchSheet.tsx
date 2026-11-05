@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     KeyboardAvoidingView,
-    Modal,
     Platform,
     StyleSheet,
     TouchableOpacity,
@@ -9,7 +8,7 @@ import {
 } from 'react-native';
 import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import SwipeDismissSheet from '../SwipeDismissSheet';
+import BottomSheetModal from '../BottomSheetModal';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { CloseIcon } from './StopwatchIcons';
@@ -33,8 +32,8 @@ interface StopwatchSheetProps {
 }
 
 /**
- * The Kronometre's bottom sheet: a dimmed backdrop that closes it, and a sheet whose grabber can
- * be tapped or pulled down (`SwipeDismissSheet`), lifted above the keyboard when a field has focus.
+ * The Kronometre's bottom sheet (`BottomSheetModal`): a dimmed backdrop that closes it, and a sheet
+ * whose grabber can be tapped or pulled down, lifted above the keyboard when a field has focus.
  * While it slides away it takes no more touches, so a second tap cannot repeat what closed it.
  */
 export default function StopwatchSheet({
@@ -52,78 +51,62 @@ export default function StopwatchSheet({
     const covered = Boolean(overlay);
 
     return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <KeyboardAvoidingView
-                style={[styles.overlay, { pointerEvents: visible ? 'auto' : 'none' }]}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            >
-                <TouchableOpacity
-                    style={[StyleSheet.absoluteFill, styles.backdrop]}
-                    activeOpacity={1}
-                    onPress={onClose}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Paneli kapat', 'Close sheet')}
-                    importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
-                    accessibilityElementsHidden={covered}
-                />
-                <SwipeDismissSheet
-                    active={visible}
-                    enabled={!covered}
-                    accessibilityViewIsModal={!covered}
-                    onDismiss={onClose}
-                    style={[
-                        styles.sheet,
-                        formHeader && styles.sheetForm,
-                        { backgroundColor: colors.bgPrimary, paddingBottom: Math.max(insets.bottom, Spacing.md) },
-                    ]}
+        <BottomSheetModal
+            visible={visible}
+            onClose={onClose}
+            avoidKeyboard
+            swipeEnabled={!covered}
+            accessibilityViewIsModal={!covered}
+            backdropHidden={covered}
+            sheetStyle={[
+                styles.sheet,
+                formHeader && styles.sheetForm,
+                { backgroundColor: colors.bgPrimary, paddingBottom: Math.max(insets.bottom, Spacing.md) },
+            ]}
+            overlay={overlay ? (
+                // Its own keyboard avoidance: an absolutely placed layer ignores the padding the
+                // sheet's container takes for the keyboard, so a picker's field would sit under it.
+                <KeyboardAvoidingView
+                    style={[StyleSheet.absoluteFill, styles.pickerLayer]}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    accessibilityViewIsModal
                 >
-                    <View
-                        style={styles.content}
-                        importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
-                        accessibilityElementsHidden={covered}
-                    >
-                        {formHeader ? (
-                            <View style={[styles.formHeader, { borderBottomColor: colors.border }]}>
-                                <Text style={[styles.formTitle, { color: colors.accent }]} accessibilityRole="header" numberOfLines={2}>
-                                    {title}
-                                </Text>
-                                <TouchableOpacity
-                                    onPress={onClose}
-                                    hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Kapat', 'Close')}
-                                >
-                                    <CloseIcon color={colors.accent} size={24} />
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            <View style={styles.header}>
-                                <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text>
-                                {subtitle ? <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
-                            </View>
-                        )}
-                        {children}
+                    {overlay}
+                </KeyboardAvoidingView>
+            ) : null}
+        >
+            <View
+                style={styles.content}
+                importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
+                accessibilityElementsHidden={covered}
+            >
+                {formHeader ? (
+                    <View style={[styles.formHeader, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.formTitle, { color: colors.accent }]} accessibilityRole="header" numberOfLines={2}>
+                            {title}
+                        </Text>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Kapat', 'Close')}
+                        >
+                            <CloseIcon color={colors.accent} size={24} />
+                        </TouchableOpacity>
                     </View>
-                </SwipeDismissSheet>
-                {overlay ? (
-                    // Its own keyboard avoidance: an absolutely placed layer ignores the padding the
-                    // sheet's container takes for the keyboard, so a picker's field would sit under it.
-                    <KeyboardAvoidingView
-                        style={[StyleSheet.absoluteFill, styles.pickerLayer]}
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                        accessibilityViewIsModal
-                    >
-                        {overlay}
-                    </KeyboardAvoidingView>
-                ) : null}
-            </KeyboardAvoidingView>
-        </Modal>
+                ) : (
+                    <View style={styles.header}>
+                        <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text>
+                        {subtitle ? <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text> : null}
+                    </View>
+                )}
+                {children}
+            </View>
+        </BottomSheetModal>
     );
 }
 
 const styles = StyleSheet.create({
-    overlay: { flex: 1, justifyContent: 'flex-end' },
-    backdrop: { backgroundColor: 'rgba(0,0,0,0.42)' },
     sheet: {
         maxHeight: '88%',
         borderTopLeftRadius: BorderRadius.xl,

@@ -3623,16 +3623,15 @@ export default function StudyScreen() {
                     setSelectedDeckName(rootDeckName);
                 }}
             />
-            {customStudyOpen ? (
-                <CustomStudyModal
-                    visible={customStudyOpen}
-                    deck={emptyStateDeck}
-                    settings={settings}
-                    onClose={() => setCustomStudyOpen(false)}
-                    onChanged={invalidateCollection}
-                    onSessionCreated={handleCustomStudySession}
-                />
-            ) : null}
+            {/* Kept mounted so the sheet can slide away after it closes. */}
+            <CustomStudyModal
+                visible={customStudyOpen}
+                deck={emptyStateDeck}
+                settings={settings}
+                onClose={() => setCustomStudyOpen(false)}
+                onChanged={invalidateCollection}
+                onSessionCreated={handleCustomStudySession}
+            />
             {filteredOptionsDeck ? (
                 <FilteredDeckOptionsModal
                     visible

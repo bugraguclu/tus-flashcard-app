@@ -11,10 +11,10 @@ import {
     View,
 } from 'react-native';
 import { Text, TextInput } from '../AppText';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import type { ColorScheme } from '../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Spacing, type ColorScheme } from '../../constants/theme';
 import { sanitizeNumericDraft } from '../../lib/deckOptionsForm';
-import SwipeDismissSheet from '../SwipeDismissSheet';
+import BottomSheetModal from '../BottomSheetModal';
 import { DeckOptionsContext } from './DeckOptionsContext';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
 import type { OptionHelp, SelectOption } from './types';
@@ -27,6 +27,7 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
     help?: OptionHelp;
 }) {
     const { height: windowHeight } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
     const [helpOpen, setHelpOpen] = useState(false);
     const closeHelp = () => setHelpOpen(false);
 
@@ -50,71 +51,62 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
                 ) : null}
             </View>
             <View style={styles.optionCardBody}>{children}</View>
-            {help && helpOpen ? (
-                <Modal
+            {help ? (
+                <BottomSheetModal
                     visible={helpOpen}
-                    transparent
-                    animationType="slide"
-                    onRequestClose={closeHelp}
-                    statusBarTranslucent
+                    onClose={closeHelp}
+                    backdropLabel={help.dismissLabel}
+                    containerStyle={[styles.helpOverlay, {
+                        paddingTop: insets.top,
+                        paddingBottom: insets.bottom,
+                        paddingLeft: Spacing.sm + insets.left,
+                        paddingRight: Spacing.sm + insets.right,
+                    }]}
+                    sheetStyle={[styles.helpSheet, { maxHeight: Math.max(280, windowHeight - 120) }]}
                 >
-                    <SafeAreaView style={styles.helpOverlay}>
-                        <Pressable
-                            style={StyleSheet.absoluteFill}
+                    <View style={styles.helpSheetHeader}>
+                        <View style={styles.helpSheetTitleWrap}>
+                            <Text style={styles.helpSheetEyebrow}>{help.eyebrow}</Text>
+                            <Text style={styles.helpSheetTitle}>{help.title}</Text>
+                        </View>
+                        <TouchableOpacity
+                            style={styles.helpCloseButton}
                             onPress={closeHelp}
+                            accessibilityRole="button"
                             accessibilityLabel={help.dismissLabel}
-                        />
-                        <SwipeDismissSheet
-                            active={helpOpen}
-                            style={[styles.helpSheet, { maxHeight: Math.max(280, windowHeight - 120) }]}
-                            onDismiss={closeHelp}
-                            accessibilityViewIsModal
                         >
-                            <View style={styles.helpSheetHeader}>
-                                <View style={styles.helpSheetTitleWrap}>
-                                    <Text style={styles.helpSheetEyebrow}>{help.eyebrow}</Text>
-                                    <Text style={styles.helpSheetTitle}>{help.title}</Text>
+                            <Text style={styles.helpCloseText}>×</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <ScrollView
+                        style={styles.helpSheetScroll}
+                        contentContainerStyle={styles.helpSheetContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <Text style={styles.helpSummary}>{help.summary}</Text>
+                        <View style={styles.helpPoints}>
+                            {help.points.map((point, index) => (
+                                <View key={`${index}-${point}`} style={styles.helpPointRow}>
+                                    <View style={styles.helpPointDot} />
+                                    <Text style={styles.helpPointText}>{point}</Text>
                                 </View>
-                                <TouchableOpacity
-                                    style={styles.helpCloseButton}
-                                    onPress={closeHelp}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={help.dismissLabel}
-                                >
-                                    <Text style={styles.helpCloseText}>×</Text>
-                                </TouchableOpacity>
+                            ))}
+                        </View>
+                        {help.note ? (
+                            <View style={styles.helpNote}>
+                                <Text style={styles.helpNoteLabel}>{help.noteLabel}</Text>
+                                <Text style={styles.helpNoteText}>{help.note}</Text>
                             </View>
-                            <ScrollView
-                                style={styles.helpSheetScroll}
-                                contentContainerStyle={styles.helpSheetContent}
-                                showsVerticalScrollIndicator={false}
-                            >
-                                <Text style={styles.helpSummary}>{help.summary}</Text>
-                                <View style={styles.helpPoints}>
-                                    {help.points.map((point, index) => (
-                                        <View key={`${index}-${point}`} style={styles.helpPointRow}>
-                                            <View style={styles.helpPointDot} />
-                                            <Text style={styles.helpPointText}>{point}</Text>
-                                        </View>
-                                    ))}
-                                </View>
-                                {help.note ? (
-                                    <View style={styles.helpNote}>
-                                        <Text style={styles.helpNoteLabel}>{help.noteLabel}</Text>
-                                        <Text style={styles.helpNoteText}>{help.note}</Text>
-                                    </View>
-                                ) : null}
-                            </ScrollView>
-                            <TouchableOpacity
-                                style={styles.helpDismissButton}
-                                onPress={closeHelp}
-                                accessibilityRole="button"
-                            >
-                                <Text style={styles.helpDismissText}>{help.dismissLabel}</Text>
-                            </TouchableOpacity>
-                        </SwipeDismissSheet>
-                    </SafeAreaView>
-                </Modal>
+                        ) : null}
+                    </ScrollView>
+                    <TouchableOpacity
+                        style={styles.helpDismissButton}
+                        onPress={closeHelp}
+                        accessibilityRole="button"
+                    >
+                        <Text style={styles.helpDismissText}>{help.dismissLabel}</Text>
+                    </TouchableOpacity>
+                </BottomSheetModal>
             ) : null}
         </View>
     );

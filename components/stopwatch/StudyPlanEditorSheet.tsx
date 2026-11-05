@@ -50,12 +50,14 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
     const [step, setStep] = useState<'form' | 'subject'>('form');
     const [draft, setDraft] = useState<StudyPlanBlock | null>(plan);
 
+    // The last draft stays on the sheet after the parent clears `plan`, so it slides away whole.
     useEffect(() => {
+        if (!plan) return;
         setDraft(plan);
         setStep('form');
     }, [plan]);
 
-    if (!draft) return <StopwatchSheet visible={false} title="" onClose={onClose}>{null}</StopwatchSheet>;
+    if (!draft) return null;
 
     const update = (patch: Partial<StudyPlanBlock>) => setDraft((current) => (current ? { ...current, ...patch } : current));
     const problem = studyPlanProblem(draft);
@@ -73,7 +75,7 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
 
     return (
         <StopwatchSheet
-            visible
+            visible={plan !== null}
             onClose={onClose}
             title={step === 'subject' ? l('Ders seçin', 'Choose a subject') : isNew ? l('Sade Plan', 'Simple Plan') : l('Çalışma Planı', 'Study Plan')}
         >

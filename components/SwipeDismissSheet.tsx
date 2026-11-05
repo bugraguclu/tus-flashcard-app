@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
     Animated,
     Keyboard,
+    type LayoutChangeEvent,
     PanResponder,
     Platform,
     StyleProp,
@@ -20,6 +21,13 @@ interface SwipeDismissSheetProps {
     children: React.ReactNode;
     enabled?: boolean;
     onDismiss: () => void;
+    onLayout?: (event: LayoutChangeEvent) => void;
+    /**
+     * The sheet's vertical offset, owned by whoever presents it (`BottomSheetModal`), so its
+     * backdrop can dim with the drag and the owner can slide the sheet in and out. Without it the
+     * sheet keeps its own offset and rests at 0 whenever it becomes active.
+     */
+    position?: Animated.Value;
     style?: StyleProp<ViewStyle>;
 }
 
@@ -35,22 +43,27 @@ export default function SwipeDismissSheet({
     children,
     enabled = true,
     onDismiss,
+    onLayout,
+    position,
     style,
 }: SwipeDismissSheetProps) {
     const { height } = useWindowDimensions();
     const { l } = useI18n();
     const colors = useThemeColors();
-    const translateY = useRef(new Animated.Value(0)).current;
+    const ownTranslateY = useRef(new Animated.Value(0)).current;
+    const translateY = position ?? ownTranslateY;
     const dismissing = useRef(false);
 
     // React Native keeps a Modal's children mounted while `visible` is false. Reset the
     // gesture state whenever that modal opens so the same sheet can be dismissed repeatedly.
+    // An owned position is left alone: the owner is sliding the sheet in from below.
     useEffect(() => {
         if (!active) return;
         dismissing.current = false;
+        if (position) return;
         translateY.stopAnimation();
         translateY.setValue(0);
-    }, [active, translateY]);
+    }, [active, position, translateY]);
 
     const dismiss = useCallback(() => {
         if (dismissing.current) return;
@@ -105,6 +118,7 @@ export default function SwipeDismissSheet({
         <Animated.View
             style={[style, { transform: [{ translateY }] }]}
             accessibilityViewIsModal={accessibilityViewIsModal}
+            onLayout={onLayout}
         >
             {children}
             {enabled && (

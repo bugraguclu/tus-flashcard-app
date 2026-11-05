@@ -30,7 +30,10 @@ vi.mock('react-native', () => ({
     ActivityIndicator: 'ActivityIndicator', KeyboardAvoidingView: 'KeyboardAvoidingView', Modal: 'Modal', Pressable: 'Pressable',
     ScrollView: 'ScrollView', Switch: 'Switch', Text: 'Text', TextInput: 'TextInput', TouchableOpacity: 'TouchableOpacity', View: 'View',
 }));
-vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
+vi.mock('react-native-safe-area-context', () => ({
+    SafeAreaView: 'SafeAreaView',
+    useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
 vi.mock('expo-router', () => ({
     useRouter: () => ({ push: () => {}, back: () => {}, replace: () => {}, canGoBack: () => true }),
     useLocalSearchParams: () => ({ deckId: String(h.deckId) }),
@@ -56,7 +59,7 @@ vi.mock('./exportAnkiPackage', () => ({ withoutPreservedReviewOrder: (raw: unkno
 vi.mock('./fsrsOptimizer', () => ({ optimizeFsrsPreset: async () => null }));
 vi.mock('../components/DeckPickerModal', () => ({ default: () => null }));
 vi.mock('../components/HeaderBackIcon', () => ({ default: () => null }));
-vi.mock('../components/SwipeDismissSheet', () => ({ default: () => null }));
+vi.mock('../components/BottomSheetModal', () => ({ default: () => null }));
 
 import DeckOptionsScreen from '../app/deck-options';
 import { DEFAULT_DECK_CONFIG } from './models';

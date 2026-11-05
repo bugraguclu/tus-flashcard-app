@@ -11,8 +11,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Modal,
     Platform,
     ScrollView,
     StyleSheet,
@@ -55,7 +53,7 @@ import { getAllTags } from '../lib/noteManager';
 import { getFilteredDeckGatherCount } from '../lib/studyRepository';
 import { isValidSearchQuery } from '../lib/searchValidation';
 import type { AppSettings } from '../lib/types';
-import SwipeDismissSheet from './SwipeDismissSheet';
+import BottomSheetModal from './BottomSheetModal';
 
 interface CustomStudyModalProps {
     visible: boolean;
@@ -478,211 +476,196 @@ export default function CustomStudyModal({
         : t('common.ok');
 
     return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <KeyboardAvoidingView
-                style={styles.overlay}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            >
-                <TouchableOpacity
-                    style={styles.backdrop}
-                    activeOpacity={1}
-                    onPress={onClose}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('common.close')}
-                />
-                <SwipeDismissSheet
-                    active={visible}
-                    style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}
-                    onDismiss={onClose}
-                    accessibilityViewIsModal
-                >
-                    <View style={styles.header}>
-                        {choosingTags && (
-                            <TouchableOpacity
-                                style={styles.backButton}
-                                onPress={() => setChoosingTags(false)}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Geri', 'Back')}
-                            >
-                                <HeaderBackIcon color={colors.accent} size={22} />
-                            </TouchableOpacity>
-                        )}
-                        <View style={styles.headerCopy}>
-                            <Text style={styles.eyebrow}>{l('ÇALIŞMA KAPSAMI', 'STUDY SCOPE')}</Text>
-                            <Text style={styles.title}>
-                                {choosingTags ? l('Seçmeli çalışma', 'Selective Study') : t('anki.customStudy')}
-                            </Text>
-                            <Text style={styles.subtitle} numberOfLines={2}>{getDeckDisplayName(deck.name)}</Text>
-                        </View>
-                        <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close')}>
-                            <Text style={styles.closeText}>×</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <ScrollView
-                        style={styles.scroll}
-                        contentContainerStyle={styles.content}
-                        keyboardShouldPersistTaps="handled"
-                        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-                        showsVerticalScrollIndicator={false}
+        <BottomSheetModal
+            visible={visible}
+            onClose={onClose}
+            avoidKeyboard
+            backdropLabel={t('common.close')}
+            sheetStyle={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}
+        >
+            <View style={styles.header}>
+                {choosingTags && (
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => setChoosingTags(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Geri', 'Back')}
                     >
-                        {choosingTags ? (
-                            <>
-                                {renderTagSection(
-                                    l('Şu etiketlerden en az biri gerekli:', 'Require one or more of these tags:'),
-                                    includeTags,
-                                    setIncludeTags,
-                                    l('Gerekli etiket', 'Required tag'),
-                                    {
-                                        disabled: !requireTags,
-                                        leading: (
-                                            <TouchableOpacity
-                                                style={[styles.checkbox, requireTags && styles.checkboxActive]}
-                                                onPress={() => setRequireTags((previous) => !previous)}
-                                                accessibilityRole="checkbox"
-                                                accessibilityState={{ checked: requireTags }}
-                                                aria-checked={requireTags}
-                                                accessibilityLabel={l('Etiket zorunlu kıl', 'Require tags')}
-                                            >
-                                                {requireTags && <Text style={styles.checkboxMark}>✓</Text>}
-                                            </TouchableOpacity>
-                                        ),
-                                    },
-                                )}
-                                <View style={styles.sectionSpacer} />
-                                {renderTagSection(
-                                    l('Hariç tutulacak etiketleri seçin:', 'Select tags to exclude:'),
-                                    excludeTags,
-                                    setExcludeTags,
-                                    l('Hariç tutulan etiket', 'Excluded tag'),
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                <View style={styles.panel}>
-                                    {OPTIONS.map((candidate, index) => (
+                        <HeaderBackIcon color={colors.accent} size={22} />
+                    </TouchableOpacity>
+                )}
+                <View style={styles.headerCopy}>
+                    <Text style={styles.eyebrow}>{l('ÇALIŞMA KAPSAMI', 'STUDY SCOPE')}</Text>
+                    <Text style={styles.title}>
+                        {choosingTags ? l('Seçmeli çalışma', 'Selective Study') : t('anki.customStudy')}
+                    </Text>
+                    <Text style={styles.subtitle} numberOfLines={2}>{getDeckDisplayName(deck.name)}</Text>
+                </View>
+                <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close')}>
+                    <Text style={styles.closeText}>×</Text>
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+                showsVerticalScrollIndicator={false}
+            >
+                {choosingTags ? (
+                    <>
+                        {renderTagSection(
+                            l('Şu etiketlerden en az biri gerekli:', 'Require one or more of these tags:'),
+                            includeTags,
+                            setIncludeTags,
+                            l('Gerekli etiket', 'Required tag'),
+                            {
+                                disabled: !requireTags,
+                                leading: (
+                                    <TouchableOpacity
+                                        style={[styles.checkbox, requireTags && styles.checkboxActive]}
+                                        onPress={() => setRequireTags((previous) => !previous)}
+                                        accessibilityRole="checkbox"
+                                        accessibilityState={{ checked: requireTags }}
+                                        aria-checked={requireTags}
+                                        accessibilityLabel={l('Etiket zorunlu kıl', 'Require tags')}
+                                    >
+                                        {requireTags && <Text style={styles.checkboxMark}>✓</Text>}
+                                    </TouchableOpacity>
+                                ),
+                            },
+                        )}
+                        <View style={styles.sectionSpacer} />
+                        {renderTagSection(
+                            l('Hariç tutulacak etiketleri seçin:', 'Select tags to exclude:'),
+                            excludeTags,
+                            setExcludeTags,
+                            l('Hariç tutulan etiket', 'Excluded tag'),
+                        )}
+                    </>
+                ) : (
+                    <>
+                        <View style={styles.panel}>
+                            {OPTIONS.map((candidate, index) => (
+                                <TouchableOpacity
+                                    key={candidate}
+                                    style={[
+                                        styles.listRow,
+                                        index === OPTIONS.length - 1 && styles.listRowLast,
+                                        option === candidate && styles.listRowActive,
+                                    ]}
+                                    onPress={() => chooseOption(candidate)}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ selected: option === candidate }}
+                                    aria-checked={option === candidate}
+                                >
+                                    <View style={[styles.radio, option === candidate && styles.radioActive]}>
+                                        {option === candidate && <View style={styles.radioDot} />}
+                                    </View>
+                                    <Text style={[styles.listText, option === candidate && styles.listTextActive]}>
+                                        {optionLabel(candidate)}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <View style={styles.group}>
+                            {availabilityLabel && <Text style={styles.availability}>{availabilityLabel}</Text>}
+
+                            <Text style={styles.fieldLabel}>{preSpinLabel()}</Text>
+                            <View style={styles.spinnerRow}>
+                                <TouchableOpacity
+                                    style={styles.stepButton}
+                                    {...decrementRepeat}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Azalt', 'Decrease')}
+                                >
+                                    <Text style={styles.stepText}>−</Text>
+                                </TouchableOpacity>
+                                <TextInput
+                                    style={styles.spinnerInput}
+                                    value={valueDraft}
+                                    onChangeText={(next) => setValueDraft(sanitizeSignedIntegerDraft(next, 5))}
+                                    onBlur={() => setValueDraft(String(value))}
+                                    onSubmitEditing={() => setValueDraft(String(value))}
+                                    keyboardType={bounds.min < 0 ? 'numbers-and-punctuation' : 'number-pad'}
+                                    inputMode={bounds.min < 0 ? 'text' : 'numeric'}
+                                    maxLength={6}
+                                    accessibilityLabel={preSpinLabel()}
+                                />
+                                <TouchableOpacity
+                                    style={styles.stepButton}
+                                    {...incrementRepeat}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={l('Artır', 'Increase')}
+                                >
+                                    <Text style={styles.stepText}>+</Text>
+                                </TouchableOpacity>
+                                <Text style={styles.spinnerSuffix}>{postSpinLabel()}</Text>
+                            </View>
+
+                            {option === 'cram' && (
+                                <View style={[styles.panel, styles.cramList]}>
+                                    {CUSTOM_STUDY_CRAM_KINDS.map((kind, index) => (
                                         <TouchableOpacity
-                                            key={candidate}
+                                            key={kind}
                                             style={[
                                                 styles.listRow,
-                                                index === OPTIONS.length - 1 && styles.listRowLast,
-                                                option === candidate && styles.listRowActive,
+                                                index === CUSTOM_STUDY_CRAM_KINDS.length - 1 && styles.listRowLast,
+                                                cramKind === kind && styles.listRowActive,
                                             ]}
-                                            onPress={() => chooseOption(candidate)}
+                                            onPress={() => setCramKind(kind)}
                                             accessibilityRole="radio"
-                                            accessibilityState={{ selected: option === candidate }}
-                                            aria-checked={option === candidate}
+                                            accessibilityState={{ selected: cramKind === kind }}
+                                            aria-checked={cramKind === kind}
                                         >
-                                            <View style={[styles.radio, option === candidate && styles.radioActive]}>
-                                                {option === candidate && <View style={styles.radioDot} />}
-                                            </View>
-                                            <Text style={[styles.listText, option === candidate && styles.listTextActive]}>
-                                                {optionLabel(candidate)}
+                                            <Text style={[styles.listText, cramKind === kind && styles.listTextActive]}>
+                                                {cramKindLabel(kind)}
                                             </Text>
+                                            {cramKind === kind && <Text style={styles.check}>✓</Text>}
                                         </TouchableOpacity>
                                     ))}
                                 </View>
+                            )}
+                        </View>
 
-                                <View style={styles.group}>
-                                    {availabilityLabel && <Text style={styles.availability}>{availabilityLabel}</Text>}
+                        <Text style={styles.note}>
+                            {l(
+                                'Yeni bir işlem, mevcut “Özel Çalışma Oturumu” destesini yeniden oluşturur. Mevcut oturumu korumak istiyorsanız önce adını değiştirin.',
+                                'A new action rebuilds the existing Custom Study Session deck. Rename the current session first if you want to keep it.',
+                            )}
+                        </Text>
+                    </>
+                )}
+            </ScrollView>
 
-                                    <Text style={styles.fieldLabel}>{preSpinLabel()}</Text>
-                                    <View style={styles.spinnerRow}>
-                                        <TouchableOpacity
-                                            style={styles.stepButton}
-                                            {...decrementRepeat}
-                                            accessibilityRole="button"
-                                            accessibilityLabel={l('Azalt', 'Decrease')}
-                                        >
-                                            <Text style={styles.stepText}>−</Text>
-                                        </TouchableOpacity>
-                                        <TextInput
-                                            style={styles.spinnerInput}
-                                            value={valueDraft}
-                                            onChangeText={(next) => setValueDraft(sanitizeSignedIntegerDraft(next, 5))}
-                                            onBlur={() => setValueDraft(String(value))}
-                                            onSubmitEditing={() => setValueDraft(String(value))}
-                                            keyboardType={bounds.min < 0 ? 'numbers-and-punctuation' : 'number-pad'}
-                                            inputMode={bounds.min < 0 ? 'text' : 'numeric'}
-                                            maxLength={6}
-                                            accessibilityLabel={preSpinLabel()}
-                                        />
-                                        <TouchableOpacity
-                                            style={styles.stepButton}
-                                            {...incrementRepeat}
-                                            accessibilityRole="button"
-                                            accessibilityLabel={l('Artır', 'Increase')}
-                                        >
-                                            <Text style={styles.stepText}>+</Text>
-                                        </TouchableOpacity>
-                                        <Text style={styles.spinnerSuffix}>{postSpinLabel()}</Text>
-                                    </View>
-
-                                    {option === 'cram' && (
-                                        <View style={[styles.panel, styles.cramList]}>
-                                            {CUSTOM_STUDY_CRAM_KINDS.map((kind, index) => (
-                                                <TouchableOpacity
-                                                    key={kind}
-                                                    style={[
-                                                        styles.listRow,
-                                                        index === CUSTOM_STUDY_CRAM_KINDS.length - 1 && styles.listRowLast,
-                                                        cramKind === kind && styles.listRowActive,
-                                                    ]}
-                                                    onPress={() => setCramKind(kind)}
-                                                    accessibilityRole="radio"
-                                                    accessibilityState={{ selected: cramKind === kind }}
-                                                    aria-checked={cramKind === kind}
-                                                >
-                                                    <Text style={[styles.listText, cramKind === kind && styles.listTextActive]}>
-                                                        {cramKindLabel(kind)}
-                                                    </Text>
-                                                    {cramKind === kind && <Text style={styles.check}>✓</Text>}
-                                                </TouchableOpacity>
-                                            ))}
-                                        </View>
-                                    )}
-                                </View>
-
-                                <Text style={styles.note}>
-                                    {l(
-                                        'Yeni bir işlem, mevcut “Özel Çalışma Oturumu” destesini yeniden oluşturur. Mevcut oturumu korumak istiyorsanız önce adını değiştirin.',
-                                        'A new action rebuilds the existing Custom Study Session deck. Rename the current session first if you want to keep it.',
-                                    )}
-                                </Text>
-                            </>
-                        )}
-                    </ScrollView>
-
-                    <View style={styles.buttonBox}>
-                        <TouchableOpacity
-                            style={styles.secondaryButton}
-                            onPress={choosingTags ? () => setChoosingTags(false) : onClose}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.secondaryButtonText}>
-                                {choosingTags ? l('Geri', 'Back') : t('common.cancel')}
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.primaryButton, !choosingTags && submitDisabled && styles.primaryButtonDisabled]}
-                            onPress={choosingTags ? submitTags : submit}
-                            disabled={!choosingTags && submitDisabled}
-                            accessibilityRole="button"
-                            accessibilityState={{ disabled: !choosingTags && submitDisabled }}
-                        >
-                            <Text style={styles.primaryButtonText}>{okLabel}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </SwipeDismissSheet>
-            </KeyboardAvoidingView>
-        </Modal>
+            <View style={styles.buttonBox}>
+                <TouchableOpacity
+                    style={styles.secondaryButton}
+                    onPress={choosingTags ? () => setChoosingTags(false) : onClose}
+                    accessibilityRole="button"
+                >
+                    <Text style={styles.secondaryButtonText}>
+                        {choosingTags ? l('Geri', 'Back') : t('common.cancel')}
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.primaryButton, !choosingTags && submitDisabled && styles.primaryButtonDisabled]}
+                    onPress={choosingTags ? submitTags : submit}
+                    disabled={!choosingTags && submitDisabled}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: !choosingTags && submitDisabled }}
+                >
+                    <Text style={styles.primaryButtonText}>{okLabel}</Text>
+                </TouchableOpacity>
+            </View>
+        </BottomSheetModal>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        overlay: { flex: 1, justifyContent: 'flex-end' },
-        backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.42)' },
         sheet: {
             width: '100%',
             maxWidth: 680,

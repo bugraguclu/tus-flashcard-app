@@ -151,12 +151,8 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
             backgroundColor: colors.accentLight,
         },
         helpBadgeText: { fontSize: 13, lineHeight: 16, fontWeight: '800', color: colors.accent },
-        helpOverlay: {
-            flex: 1,
-            justifyContent: 'flex-end',
-            paddingHorizontal: Spacing.sm,
-            backgroundColor: 'rgba(15, 23, 20, 0.44)',
-        },
+        // The safe-area and side padding are added where the sheet is presented.
+        helpOverlay: { flex: 1, justifyContent: 'flex-end' },
         helpSheet: {
             width: '100%',
             maxWidth: 560,

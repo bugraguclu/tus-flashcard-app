@@ -86,8 +86,9 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   overview, preserve its context, and return there when dismissed.
 - On iPhone, routed utility screens that are presented as dismissible sheets must use the native
   form-sheet grabber and pull-down gesture. Custom bottom sheets must use `SwipeDismissSheet` so
-  the grabber is both visible and functional. Do not add grabbers to centered dialogs, popovers,
-  side panels, or full-screen work surfaces.
+  the grabber is both visible and functional; present one over a dimmed backdrop with
+  `BottomSheetModal`, never `Modal animationType="slide"`, which carries the dimming up with the
+  sheet. Do not add grabbers to centered dialogs, popovers, side panels, or full-screen work surfaces.
 - Import and export are canonical full-screen workflows. Every entry point, including Settings
   and the Decks overflow menu, must open `/import` or `/export`; do not implement a second
   import/export path inside the calling screen.

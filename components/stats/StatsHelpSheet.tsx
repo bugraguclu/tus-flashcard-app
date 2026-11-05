@@ -1,9 +1,9 @@
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
-import SwipeDismissSheet from '../SwipeDismissSheet';
+import BottomSheetModal from '../BottomSheetModal';
 
 /** Keep chart definitions available without repeating paragraphs throughout the page. */
 export default function StatsHelpSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -36,34 +36,28 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
         )],
     ];
     return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <View style={styles.overlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} />
-                <SwipeDismissSheet active={visible} onDismiss={onClose} accessibilityViewIsModal style={[styles.sheet, { backgroundColor: colors.bgCard }]}>
-                    <SafeAreaView edges={['bottom']} style={styles.sheetContent}>
-                        <View style={styles.header}>
-                            <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">{l('İstatistikler hakkında', 'About statistics')}</Text>
-                            <Pressable onPress={onClose} style={styles.close} accessibilityRole="button" accessibilityLabel={l('Bilgiyi kapat', 'Close information')}>
-                                <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{l('Bitti', 'Done')}</Text>
-                            </Pressable>
+        <BottomSheetModal visible={visible} onClose={onClose} sheetStyle={[styles.sheet, { backgroundColor: colors.bgCard }]}>
+            <SafeAreaView edges={['bottom']} style={styles.sheetContent}>
+                <View style={styles.header}>
+                    <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">{l('İstatistikler hakkında', 'About statistics')}</Text>
+                    <Pressable onPress={onClose} style={styles.close} accessibilityRole="button" accessibilityLabel={l('Bilgiyi kapat', 'Close information')}>
+                        <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{l('Bitti', 'Done')}</Text>
+                    </Pressable>
+                </View>
+                <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+                    {sections.map(([title, body]) => (
+                        <View key={title} style={styles.section}>
+                            <Text style={[styles.heading, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text>
+                            <Text style={[styles.body, { color: colors.textPrimary }]}>{body}</Text>
                         </View>
-                        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-                            {sections.map(([title, body]) => (
-                                <View key={title} style={styles.section}>
-                                    <Text style={[styles.heading, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text>
-                                    <Text style={[styles.body, { color: colors.textPrimary }]}>{body}</Text>
-                                </View>
-                            ))}
-                        </ScrollView>
-                    </SafeAreaView>
-                </SwipeDismissSheet>
-            </View>
-        </Modal>
+                    ))}
+                </ScrollView>
+            </SafeAreaView>
+        </BottomSheetModal>
     );
 }
 
 const styles = StyleSheet.create({
-    overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' },
     sheet: { width: '100%', maxWidth: 680, height: '88%', alignSelf: 'center', paddingTop: 40, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
     sheetContent: { flex: 1 },
     scroll: { flex: 1 },

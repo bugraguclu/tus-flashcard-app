@@ -340,7 +340,8 @@ export default function DeckOverviewScreen() {
                 </TouchableOpacity>
             </ScrollView>
 
-            {customStudyOpen && <CustomStudyModal
+            {/* Kept mounted so the sheet can slide away after it closes. */}
+            <CustomStudyModal
                 visible={customStudyOpen}
                 deck={deck}
                 settings={settings}
@@ -353,7 +354,7 @@ export default function DeckOverviewScreen() {
                 onSessionCreated={(sessionDeckName) => router.replace(
                     `/deck-overview?deck=${encodeURIComponent(sessionDeckName)}` as any,
                 )}
-            />}
+            />
             {filterOptionsOpen && <FilteredDeckOptionsModal
                 visible={filterOptionsOpen}
                 deck={deck}

@@ -77,7 +77,7 @@ import DeckAddMenu, { DECK_ADD_MENU_LIST_INSET } from '../../components/decks/De
 import DeckRowMenu from '../../components/decks/DeckRowMenu';
 import DeckNameButton from '../../components/decks/DeckNameButton';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
-import SwipeDismissSheet from '../../components/SwipeDismissSheet';
+import BottomSheetModal from '../../components/BottomSheetModal';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import {
@@ -194,6 +194,10 @@ export default function DecksScreen() {
     const pendingDeckMenuActionRef = useRef<(() => void) | null>(null);
     const [newDeckName, setNewDeckName] = useState('');
     const [modal, setModal] = useState<ModalState>(null);
+    // The deck a bottom sheet was opened for, kept after `modal` clears so the sheet can slide
+    // away with its content still on it.
+    const [customStudyDeck, setCustomStudyDeck] = useState<Deck | null>(null);
+    const [descriptionDeck, setDescriptionDeck] = useState<Deck | null>(null);
 
     // Modal form fields (filled when the corresponding modal opens).
     const [renameText, setRenameText] = useState('');
@@ -552,6 +556,7 @@ export default function DecksScreen() {
         }
         setDescriptionText(deck.description ?? '');
         setDescriptionMarkdown(deck.descriptionMarkdown === true);
+        setDescriptionDeck(deck);
         setModal({ kind: 'description', deck });
     };
 
@@ -642,7 +647,10 @@ export default function DecksScreen() {
         }
     };
 
-    const openCustomStudy = (deck: Deck) => setModal({ kind: 'custom', deck });
+    const openCustomStudy = (deck: Deck) => {
+        setCustomStudyDeck(deck);
+        setModal({ kind: 'custom', deck });
+    };
 
     const openFilterOptions = (deck: Deck) => runAfterDeckModalClose(() => {
         setFilteredDeckFormDeck(deck);
@@ -1354,12 +1362,13 @@ export default function DecksScreen() {
         </View>
     );
 
+    // A centred dialog on wide layouts; on iPhone the same fields sit in a bottom sheet.
     const renderDescriptionModal = (deck: Deck) => (
-        <SwipeDismissSheet
-            style={[styles.modalCard, isCompact && styles.modalCardCompact]}
-            enabled={isCompact}
-            onDismiss={() => setModal(null)}
-        >
+        <View style={styles.modalCard}>{renderDescriptionFields(deck)}</View>
+    );
+
+    const renderDescriptionFields = (deck: Deck) => (
+        <>
             <Text style={styles.modalEyebrow}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
             <Text style={styles.modalTitle} numberOfLines={2}>{deck.name.replaceAll('::', ' › ')}</Text>
             <TextInput
@@ -1399,10 +1408,9 @@ export default function DecksScreen() {
                     <Text style={styles.modalBtnPrimaryText}>{t('common.save')}</Text>
                 </TouchableOpacity>
             </View>
-        </SwipeDismissSheet>
+        </>
     );
 
-    const isCenteredDeckDialog = modal?.kind === 'create-subdeck' || modal?.kind === 'rename';
     const renderVirtualizedRow = useCallback(({ item }: { item: DeckListRowModel }) => (
         <VirtualizedDeckRow
             row={item}
@@ -1713,21 +1721,16 @@ export default function DecksScreen() {
             )}
 
             <Modal
-                // Custom study brings its own sheet, so it stays out of this shared container.
-                visible={modal !== null && modal.kind !== 'custom'}
+                // Custom study, and the description on iPhone, bring their own bottom sheets, so
+                // they stay out of this shared container.
+                visible={modal !== null && modal.kind !== 'custom' && !(isCompact && modal.kind === 'description')}
                 transparent
-                animationType={modal?.kind === 'menu' || isCenteredDeckDialog
-                    ? 'fade'
-                    : isCompact ? 'slide' : 'fade'}
+                animationType="fade"
                 onRequestClose={() => setModal(null)}
                 onDismiss={handleDeckModalDismiss}
             >
                 <KeyboardAvoidingView
-                    style={[
-                        styles.modalOverlay,
-                        isCompact && modal?.kind !== 'menu' && !isCenteredDeckDialog && styles.modalOverlayCompact,
-                        isCompact && modal?.kind !== 'menu' && !isCenteredDeckDialog && compactSheetTopInset,
-                    ]}
+                    style={styles.modalOverlay}
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 >
                     {modal !== null && (
@@ -1748,9 +1751,22 @@ export default function DecksScreen() {
                     )}
                     {modal?.kind === 'rename' && renderRenameModal(modal.deck)}
                     {modal?.kind === 'create-subdeck' && renderCreateSubdeckModal(modal.deck)}
-                    {modal?.kind === 'description' && renderDescriptionModal(modal.deck)}
+                    {!isCompact && modal?.kind === 'description' && renderDescriptionModal(modal.deck)}
                 </KeyboardAvoidingView>
             </Modal>
+
+            {isCompact && descriptionDeck ? (
+                <BottomSheetModal
+                    visible={modal?.kind === 'description'}
+                    onClose={() => setModal(null)}
+                    avoidKeyboard
+                    backdropLabel={l('Açık pencereyi kapat', 'Close open dialog')}
+                    containerStyle={compactSheetTopInset}
+                    sheetStyle={[styles.modalCard, styles.modalCardCompact]}
+                >
+                    {renderDescriptionFields(descriptionDeck)}
+                </BottomSheetModal>
+            ) : null}
 
             <FilteredDeckOptionsModal
                 visible={filteredDeckFormVisible}
@@ -1765,17 +1781,17 @@ export default function DecksScreen() {
                 }}
             />
 
-            {modal?.kind === 'custom' && (
+            {customStudyDeck ? (
                 <CustomStudyModal
-                    visible
-                    deck={modal.deck}
+                    visible={modal?.kind === 'custom'}
+                    deck={customStudyDeck}
                     settings={settings}
                     onClose={() => setModal(null)}
                     onChanged={refresh}
                     // Anki makes the new session the current deck and shows its overview.
                     onSessionCreated={handleOpenOverview}
                 />
-            )}
+            ) : null}
         </SafeAreaView>
     );
 }
@@ -2072,7 +2088,6 @@ function createStyles(colors: ColorScheme) {
         color: colors.textMuted,
         marginTop: 2,
     },
-    modalOverlayCompact: { justifyContent: 'flex-end', padding: 0 },
     modalBackdropHit: { ...StyleSheet.absoluteFill },
     modalCard: {
         width: '100%',
