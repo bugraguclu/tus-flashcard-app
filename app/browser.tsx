@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
+    Animated,
     View,
     TouchableOpacity,
     FlatList,
@@ -11,6 +12,7 @@ import {
 import { Text } from '../components/AppText';
 import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
 import { SearchSyntaxError } from '../lib/searchQuery';
@@ -388,6 +390,18 @@ export default function BrowserScreen() {
     }, [browserSnapshotError, l]);
 
     const reload = useCallback(() => setReloadToken((value) => value + 1), []);
+    const listRef = useRef<FlatList<StudyCard>>(null);
+    const pull = usePullToRefresh({
+        scrollRef: listRef,
+        busy: loading,
+        labels: tableMode === 'notes'
+            ? { refreshing: l('Notlarınız yenileniyor…', 'Refreshing your notes…'), done: l('Notlarınız yenilendi!', 'Your notes are up to date!') }
+            : { refreshing: l('Kartlarınız yenileniyor…', 'Refreshing your cards…'), done: l('Kartlarınız yenilendi!', 'Your cards are up to date!') },
+        onRefresh: () => {
+            setSchedulingRevision(getSchedulingRevision());
+            reload();
+        },
+    });
     const loadNextPage = useCallback(() => {
         if (!browserSnapshot || !hasMoreCards || loading || loadingMore || pageLoadInProgressRef.current) return;
         pageLoadInProgressRef.current = true;
@@ -966,15 +980,16 @@ export default function BrowserScreen() {
             />
             )}
 
-            <FlatList
+            <View style={styles.list}>
+            <Animated.FlatList
+                ref={listRef}
+                {...pull.scrollProps}
                 data={filteredCards}
                 renderItem={renderCard}
                 keyExtractor={(item) => String(item.cardId)}
                 style={styles.list}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
-                refreshing={loading}
-                onRefresh={reload}
                 onEndReached={loadNextPage}
                 onEndReachedThreshold={0.55}
                 initialNumToRender={12}
@@ -1011,6 +1026,8 @@ export default function BrowserScreen() {
                     />
                 ) : null}
             />
+            <PullToRefreshIndicator binding={pull} />
+            </View>
 
             {selectionMode && (
                 <SelectionBar

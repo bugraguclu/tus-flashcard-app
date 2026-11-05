@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
+import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
 import StudyPlanEditorSheet, { weekdayShortName } from '../components/stopwatch/StudyPlanEditorSheet';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { Button } from '../components/ui/Button';
@@ -64,6 +65,15 @@ export default function StudyPlansScreen() {
         }
     }, []);
     useFocusEffect(reload);
+    const scrollRef = useRef<ScrollView>(null);
+    const pull = usePullToRefresh({
+        scrollRef,
+        labels: {
+            refreshing: l('Çalışma planlarınız yenileniyor…', 'Refreshing your study plans…'),
+            done: l('Çalışma planlarınız yenilendi!', 'Your study plans are up to date!'),
+        },
+        onRefresh: reload,
+    });
 
     const entries = useMemo<PlanEntry[]>(() => {
         const groups = new Map<string, StudyPlanBlock[]>();
@@ -219,7 +229,13 @@ export default function StudyPlansScreen() {
                 backAccessibilityLabel={l('Geri dön', 'Go back')}
                 onBack={() => goBackOr(router)}
             />
-            <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxl }]}>
+            <View style={styles.scroll}>
+            <Animated.ScrollView
+                ref={scrollRef}
+                style={styles.scroll}
+                contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxl }]}
+                {...pull.scrollProps}
+            >
                 <Section
                     footnote={l(
                         'Ders, çalışma türü, tarih aralığı, haftanın günleri ve süreyi belirleyin. Planlarınız Kronometre’de ve çalışma takviminizde görünür.',
@@ -270,7 +286,9 @@ export default function StudyPlansScreen() {
                         {entries.map(renderEntry)}
                     </View>
                 )}
-            </ScrollView>
+            </Animated.ScrollView>
+            <PullToRefreshIndicator binding={pull} />
+            </View>
 
             <StudyPlanEditorSheet
                 plan={editing?.plan ?? null}

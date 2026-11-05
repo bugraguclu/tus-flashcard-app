@@ -3,8 +3,9 @@
 // counts, the deck description, buried-card count with a manual Unbury, and the
 // Study Now button that actually enters the queue.
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+    Animated,
     View,
     ScrollView,
     StyleSheet,
@@ -37,6 +38,7 @@ import CustomStudyModal from '../components/CustomStudyModal';
 import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
 import DeckOverflowGlyph from '../components/DeckOverflowGlyph';
 import ScreenHeader from '../components/ScreenHeader';
+import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
 import { Button, IconButton } from '../components/ui/Button';
 import { Card, Section } from '../components/ui/Card';
 import { Badge } from '../components/ui/Choice';
@@ -91,6 +93,19 @@ export default function DeckOverviewScreen() {
     const deck = overviewSnapshot?.deck ?? null;
     const queue = overviewSnapshot?.queue ?? null;
     const buriedCount = overviewSnapshot?.buriedCount ?? 0;
+    const scrollRef = useRef<ScrollView>(null);
+    const pull = usePullToRefresh({
+        scrollRef,
+        busy: loading,
+        labels: {
+            refreshing: l('Deste yenileniyor…', 'Refreshing the deck…'),
+            done: l('Deste yenilendi!', 'The deck is up to date!'),
+        },
+        onRefresh: () => {
+            setSchedulingRevision(getSchedulingRevision());
+            setRefreshToken((value) => value + 1);
+        },
+    });
 
     if (!deck) {
         return (
@@ -211,7 +226,8 @@ export default function DeckOverviewScreen() {
                 ) : undefined}
             />
 
-            <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxxl }]}>
+            <View style={styles.scrollFrame}>
+            <Animated.ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxxl }]} {...pull.scrollProps}>
                 <View style={styles.hero}>
                     <View style={[styles.deckIcon, deck.isFiltered && styles.deckIconFiltered]}>
                         <DeckOverflowGlyph
@@ -375,7 +391,9 @@ export default function DeckOverviewScreen() {
                         onPress={() => router.push(`/stats?deck=${encodeURIComponent(deck.name)}` as any)}
                     />
                 </Card>
-            </ScrollView>
+            </Animated.ScrollView>
+            <PullToRefreshIndicator binding={pull} />
+            </View>
 
             {/* Kept mounted so the sheet can slide away after it closes. */}
             <CustomStudyModal
@@ -412,6 +430,7 @@ function createStyles(colors: ColorScheme) {
         // The safe area above the header takes the header's colour; the page scrolls below it.
         container: { flex: 1, backgroundColor: colors.bgCard },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
+        scrollFrame: { flex: 1 },
         content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.xl, gap: Spacing.md, alignItems: 'stretch' },
         hero: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
         deckIcon: {

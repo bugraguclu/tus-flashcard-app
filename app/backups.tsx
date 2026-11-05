@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Animated,
     View,
     ScrollView,
     StyleSheet,
@@ -31,6 +32,7 @@ import {
 } from '../lib/backup';
 import { useI18n } from '../hooks/useI18n';
 import ScreenHeader from '../components/ScreenHeader';
+import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
 import MediaCheckSection from '../components/backups/MediaCheckSection';
 
 /** A size in the language's own separators: 12,3 MB in Turkish, 12.3 MB in English. */
@@ -83,6 +85,25 @@ export default function BackupsScreen() {
     useEffect(() => {
         void reload();
     }, [reload]);
+
+    // Pull-to-refresh lists the backup folder again without blanking the rows already shown.
+    const scrollRef = useRef<ScrollView>(null);
+    const pull = usePullToRefresh({
+        scrollRef,
+        labels: {
+            refreshing: l('Yedekleriniz yenileniyor…', 'Refreshing your backups…'),
+            done: l('Yedekleriniz yenilendi!', 'Your backups are up to date!'),
+        },
+        onRefresh: async () => {
+            try {
+                setBackups(await listBackups());
+                setLoadError(false);
+            } catch (error) {
+                setLoadError(true);
+                throw error;
+            }
+        },
+    });
 
     const withBusy = async (work: () => Promise<void>) => {
         if (busy) return;
@@ -226,7 +247,8 @@ export default function BackupsScreen() {
                 onBack={() => router.canGoBack() ? router.back() : router.replace('/decks' as any)}
                 backAccessibilityLabel={l('Destelere dön', 'Back to decks')}
             />
-            <ScrollView contentContainerStyle={styles.content}>
+            <View style={styles.scrollFrame}>
+            <Animated.ScrollView ref={scrollRef} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" {...pull.scrollProps}>
                 <Section label={l('Yedek adı', 'Backup name')} padded>
                     <TextField
                         value={backupName}
@@ -315,7 +337,9 @@ export default function BackupsScreen() {
                 ) : null}
 
                 <MediaCheckSection disabled={busy} />
-            </ScrollView>
+            </Animated.ScrollView>
+            <PullToRefreshIndicator binding={pull} />
+            </View>
         </SafeAreaView>
     );
 }
@@ -323,6 +347,7 @@ export default function BackupsScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
+        scrollFrame: { flex: 1 },
         content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.lg },
         row: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, gap: Spacing.sm },
         rowTitle: { ...Type.rowTitle, color: colors.textPrimary },

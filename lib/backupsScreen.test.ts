@@ -26,6 +26,11 @@ vi.mock('expo-router', () => ({ useRouter: () => ({ back: () => {}, replace: () 
 vi.mock('../components/AppText', () => ({ Text: 'Text', TextInput: 'TextInput' }));
 vi.mock('../components/ScreenHeader', () => ({ default: () => null }));
 vi.mock('../components/backups/MediaCheckSection', () => ({ default: () => null }));
+// Pull-to-refresh has its own tests (lib/pullToRefresh.test.ts); its haptics need a native module.
+vi.mock('../components/PullToRefresh', () => ({
+    usePullToRefresh: () => ({ scrollProps: {}, indicator: null }),
+    PullToRefreshIndicator: () => null,
+}));
 vi.mock('../constants/theme', () => {
     const colors = new Proxy({}, { get: () => '#000' });
     const sizes = new Proxy({}, { get: () => 8 });

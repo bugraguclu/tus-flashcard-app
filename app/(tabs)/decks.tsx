@@ -20,6 +20,7 @@ import {
     InteractionManager,
     useWindowDimensions,
 } from 'react-native';
+import { PullToRefreshIndicator, usePullToRefresh } from '../../components/PullToRefresh';
 import { Text } from '../../components/AppText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -195,6 +196,8 @@ export default function DecksScreen() {
     const deckTreeRef = useRef<DeckTreeNode[]>([]);
     const [visibleRows, setVisibleRows] = useState<DeckListRowModel[]>([]);
     const [snapshotLoading, setSnapshotLoading] = useState(true);
+    // Bumped by pull-to-refresh: the deck list is read from the collection again.
+    const [refreshNonce, setRefreshNonce] = useState(0);
     // Unknown until the first snapshot, so the welcome card never flashes at a learner who has cards.
     const [ownCardCount, setOwnCardCount] = useState<number | null>(null);
     const [firstRunDismissed, setFirstRunDismissed] = useState(isFirstRunCardDismissed);
@@ -265,7 +268,7 @@ export default function DecksScreen() {
             active = false;
             task.cancel();
         };
-    }, [collectionVersion, countSettings]));
+    }, [collectionVersion, countSettings, refreshNonce]));
 
     // Drag-and-drop state: cells report their content-space layout under the deck id, which
     // survives a rename; the active drag tracks the pointer against those rows to pick a target.
@@ -280,6 +283,19 @@ export default function DecksScreen() {
     const deckScrollRef = useRef<FlatList<DeckListRowModel>>(null);
     const hoverExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [draggingDeck, setDraggingDeck] = useState<string | null>(null);
+    const deckPull = usePullToRefresh({
+        scrollRef: deckScrollRef,
+        busy: snapshotLoading,
+        enabled: !draggingDeck,
+        labels: {
+            refreshing: l('Desteleriniz yenileniyor…', 'Refreshing your decks…'),
+            done: l('Desteleriniz yenilendi!', 'Your decks are up to date!'),
+        },
+        onScroll: (event) => {
+            scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+        },
+        onRefresh: () => setRefreshNonce((value) => value + 1),
+    });
     const draggingRef = useRef<string | null>(null);
     const dropTargetRef = useRef<string | null>(null);
     const [dropTarget, setDropTarget] = useState<string | null>(null);
@@ -1592,8 +1608,9 @@ export default function DecksScreen() {
                     });
                 }}
             >
-                <FlatList
+                <Animated.FlatList
                     ref={deckScrollRef}
+                    {...deckPull.scrollProps}
                     style={styles.deckList}
                     data={visibleRows}
                     renderItem={renderVirtualizedRow}
@@ -1604,10 +1621,6 @@ export default function DecksScreen() {
                     ListFooterComponent={<View style={{ height: DECK_ADD_MENU_LIST_INSET }} />}
                     showsVerticalScrollIndicator={false}
                     scrollEnabled={!draggingDeck}
-                    onScroll={(e) => {
-                        scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
-                    }}
-                    scrollEventThrottle={16}
                     onContentSizeChange={(_width, height) => {
                         listContentHeightRef.current = height;
                     }}
@@ -1616,6 +1629,7 @@ export default function DecksScreen() {
                     windowSize={7}
                     removeClippedSubviews={!draggingDeck}
                 />
+                <PullToRefreshIndicator binding={deckPull} />
 
                 {draggingDeck && getParentDeckName(draggingDeck) && (
                     <View

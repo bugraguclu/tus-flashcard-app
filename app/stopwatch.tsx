@@ -1,11 +1,12 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { setStatusBarStyle } from 'expo-status-bar';
 import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';
+import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
 import StopwatchHero, { useStopwatchHeroColor } from '../components/stopwatch/StopwatchHero';
 import StopwatchTimeline from '../components/stopwatch/StopwatchTimeline';
 import StudyStartSheet, { type StudyChoice } from '../components/stopwatch/StudyStartSheet';
@@ -82,6 +83,8 @@ export default function StopwatchScreen() {
     const rolloverHour = settings.dayRolloverHour;
     const { collectionVersion, invalidateCollection, getSchedulingRevision } = useCollectionInvalidation();
     const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
+    // Bumped by pull-to-refresh: a new snapshot key reads the sessions from the collection again.
+    const [refreshNonce, setRefreshNonce] = useState(0);
 
     useFocusEffect(useCallback(() => {
         setSchedulingRevision(getSchedulingRevision());
@@ -122,12 +125,13 @@ export default function StopwatchScreen() {
         rolloverHour,
         todayDayNumber,
         runningSinceMs,
+        refreshNonce,
     ]);
     const loadSnapshot = useCallback(
         () => getRecentStudySnapshot(todayDayNumber, RECENT_DAYS, rolloverHour, runningSinceMs),
         [todayDayNumber, rolloverHour, runningSinceMs],
     );
-    const { snapshot } = useDeferredScreenSnapshot(snapshotKey, loadSnapshot);
+    const { snapshot, loading: snapshotLoading } = useDeferredScreenSnapshot(snapshotKey, loadSnapshot);
     const days = useMemo(
         () => recentStudyDays(snapshot ?? EMPTY_AGGREGATE, todayDayNumber, RECENT_DAYS),
         [snapshot, todayDayNumber],
@@ -341,6 +345,22 @@ export default function StopwatchScreen() {
         ];
     };
 
+    const scrollRef = useRef<ScrollView>(null);
+    const pull = usePullToRefresh({
+        scrollRef,
+        busy: snapshotLoading,
+        labels: {
+            refreshing: l('Çalışmalarınız yenileniyor…', 'Refreshing your sessions…'),
+            done: l('Çalışmalarınız yenilendi!', 'Your sessions are up to date!'),
+        },
+        onRefresh: () => {
+            stopwatch.reload();
+            setSchedulingRevision(getSchedulingRevision());
+            setStudyPlans(readStudyPlansForDisplay());
+            setRefreshNonce((value) => value + 1);
+        },
+    });
+
     const openCalendar = () => openOrReturnTo(router, navigation, 'study-calendar', '/study-calendar');
 
     return (
@@ -405,8 +425,12 @@ export default function StopwatchScreen() {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView
+                {/* Pulling the timeline opens the refresh gap under the pinned title. */}
+                <View style={styles.scroll}>
+                <Animated.ScrollView
+                    ref={scrollRef}
                     style={styles.scroll}
+                    {...pull.scrollProps}
                     contentContainerStyle={{ paddingBottom: insets.bottom + STUDY_TOOLS_FAB_SIZE + Spacing.xxl }}
                     showsVerticalScrollIndicator={false}
                 >
@@ -439,7 +463,9 @@ export default function StopwatchScreen() {
                         onCreatePlan={() => router.push('/study-plan-wizard' as any)}
                         onStartPlanned={handleStartPlanned}
                     />
-                </ScrollView>
+                </Animated.ScrollView>
+                <PullToRefreshIndicator binding={pull} />
+                </View>
             </View>
 
             <StudyToolsMenu bottom={insets.bottom + Spacing.lg} onOpenCalendar={openCalendar} />

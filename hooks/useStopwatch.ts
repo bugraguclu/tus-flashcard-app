@@ -137,5 +137,7 @@ export function useStopwatch(buildAlertCopy: (state: RunningStopwatch, prefs: St
         setNote,
         finish,
         discard,
+        /** Read the preferences and the running stopwatch from storage again (pull-to-refresh). */
+        reload,
     };
 }

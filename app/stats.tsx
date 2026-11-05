@@ -9,6 +9,7 @@ import { createOrSelectDeck } from '../lib/deckManager';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import DeckPickerModal from '../components/DeckPickerModal';
 import ScreenHeader from '../components/ScreenHeader';
+import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
 import { HelpButton } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { SegmentedControl } from '../components/ui/Choice';
@@ -63,6 +64,8 @@ export default function StatsScreen() {
     // Scrolling pauses while a finger slides sideways across one of the charts.
     const [scrollLocked, setScrollLocked] = useState(false);
     const scrollRef = useRef<ScrollView>(null);
+    // Bumped by pull-to-refresh: a new snapshot key reads the statistics from the collection again.
+    const [refreshNonce, setRefreshNonce] = useState(0);
 
     useFocusEffect(useCallback(() => {
         setSchedulingRevision(getSchedulingRevision());
@@ -89,7 +92,7 @@ export default function StatsScreen() {
     // screen has been left open across a study session or a rollover.
     const statsRange = useMemo(
         () => resolveStatsDateRange(rangeKey, new Date(), new Date(), settings.dayRolloverHour),
-        [rangeKey, settings.dayRolloverHour, dataVersion, schedulingRevision],
+        [rangeKey, settings.dayRolloverHour, dataVersion, schedulingRevision, refreshNonce],
     );
 
     const statsSnapshotKey = useMemo(() => JSON.stringify([
@@ -102,7 +105,8 @@ export default function StatsScreen() {
         statsRange.spanDays,
         localeTag,
         dataSettingsKey,
-    ]), [dataVersion, schedulingRevision, deckScope, statsRange, localeTag, dataSettingsKey]);
+        refreshNonce,
+    ]), [dataVersion, schedulingRevision, deckScope, statsRange, localeTag, dataSettingsKey, refreshNonce]);
     const loadStatsSnapshot = useCallback(() => getStatsScreenSnapshot({
         deckName: deckScope,
         range: statsRange,
@@ -110,6 +114,19 @@ export default function StatsScreen() {
         localeTag,
     }), [deckScope, statsRange, settings, localeTag]);
     const { snapshot, loading, error } = useDeferredScreenSnapshot(statsSnapshotKey, loadStatsSnapshot);
+    const pull = usePullToRefresh({
+        scrollRef,
+        busy: loading,
+        enabled: !scrollLocked,
+        labels: {
+            refreshing: l('İstatistikleriniz yenileniyor…', 'Refreshing your statistics…'),
+            done: l('İstatistikleriniz yenilendi!', 'Your statistics are up to date!'),
+        },
+        onRefresh: () => {
+            setSchedulingRevision(getSchedulingRevision());
+            setRefreshNonce((value) => value + 1);
+        },
+    });
     const reviewDays = snapshot?.reviewDays ?? [];
     const addedDays = snapshot?.addedDays ?? [];
     const reviewSpan = rangeStudyDays(statsRange, settings.dayRolloverHour, reviewDays[0]?.day ?? null);
@@ -187,8 +204,10 @@ export default function StatsScreen() {
                 )}
             />
             <ChartScrollLockProvider value={setScrollLocked}>
-            <ScrollView
+            <View style={styles.scrollFrame}>
+            <Animated.ScrollView
                 ref={scrollRef}
+                {...pull.scrollProps}
                 style={styles.scroll}
                 scrollEnabled={!scrollLocked}
                 showsVerticalScrollIndicator={false}
@@ -256,7 +275,9 @@ export default function StatsScreen() {
                         />
                     </Animated.View>
                 )}
-            </ScrollView>
+            </Animated.ScrollView>
+            <PullToRefreshIndicator binding={pull} />
+            </View>
             </ChartScrollLockProvider>
 
             {deckPickerVisible && <DeckPickerModal

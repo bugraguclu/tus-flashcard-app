@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Animated,
     SectionList,
     StyleSheet,
     TouchableOpacity,
@@ -10,6 +11,7 @@ import { Text } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';
+import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
 import StudyDayBox, { formatWeekRange, mondayIndex, studyWeekdayLabels } from '../components/StudyDayBox';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
 import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
@@ -105,6 +107,8 @@ export default function StudyCalendarScreen() {
     const { collectionVersion, invalidateCollection, getSchedulingRevision } = useCollectionInvalidation();
     const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
     const listRef = useRef<SectionList<StudySession, StudyDaySection>>(null);
+    // Bumped by pull-to-refresh: a new snapshot key reads the range from the collection again.
+    const [refreshNonce, setRefreshNonce] = useState(0);
 
     const todayDayNumber = localDayNumber(Date.now(), rolloverHour);
     const requestedDayNumber = typeof dayParam === 'string' ? ymdToLocalDayNumber(dayParam, -1) : -1;
@@ -152,7 +156,8 @@ export default function StudyCalendarScreen() {
         rolloverHour,
         cells[0]?.dayNumber ?? 0,
         cells[cells.length - 1]?.dayNumber ?? 0,
-    ]), [collectionVersion, schedulingRevision, rolloverHour, cells]);
+        refreshNonce,
+    ]), [collectionVersion, schedulingRevision, rolloverHour, cells, refreshNonce]);
     const loadSnapshot = useCallback(() => ({
         aggregate: getStudyCalendarSnapshot(cells, rolloverHour),
         // The Statistics week strip's own query, so both calendars mark exactly the same days.
@@ -163,6 +168,19 @@ export default function StudyCalendarScreen() {
         ),
     }), [cells, rolloverHour]);
     const { snapshot, loading, error } = useDeferredScreenSnapshot(snapshotKey, loadSnapshot);
+    const pull = usePullToRefresh({
+        scrollRef: listRef,
+        busy: loading,
+        labels: {
+            refreshing: l('Çalışmalarınız yenileniyor…', 'Refreshing your sessions…'),
+            done: l('Çalışmalarınız yenilendi!', 'Your sessions are up to date!'),
+        },
+        onRefresh: () => {
+            setSchedulingRevision(getSchedulingRevision());
+            setPlans(readStudyPlansForDisplay());
+            setRefreshNonce((value) => value + 1);
+        },
+    });
     const aggregate = snapshot?.aggregate ?? EMPTY_AGGREGATE;
     const studiedDays: ReadonlySet<string> = snapshot?.studiedDays ?? EMPTY_STUDIED_DAYS;
 
@@ -503,8 +521,10 @@ export default function StudyCalendarScreen() {
                 })}
             </View>
 
-            <SectionList
+            <View style={styles.timelineFrame}>
+            <Animated.SectionList
                 ref={listRef}
+                {...pull.scrollProps}
                 style={styles.timeline}
                 contentContainerStyle={[
                     styles.timelineContent,
@@ -533,6 +553,8 @@ export default function StudyCalendarScreen() {
                     />
                 )}
             />
+            <PullToRefreshIndicator binding={pull} />
+            </View>
 
             <TouchableOpacity
                 style={[styles.stopwatchButton, { bottom: insets.bottom + Spacing.lg }]}
@@ -614,7 +636,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         },
         dayTotal: { marginTop: 2, fontSize: FontSize.xs, fontWeight: '500', color: colors.textSecondary, minHeight: 13 },
 
-        timeline: { flex: 1, marginTop: Spacing.sm, backgroundColor: colors.bgPrimary },
+        timelineFrame: { flex: 1, marginTop: Spacing.sm },
+        timeline: { flex: 1, backgroundColor: colors.bgPrimary },
         timelineContent: {},
 
         stopwatchButton: {

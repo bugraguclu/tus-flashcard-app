@@ -7,6 +7,7 @@ export function createStatsScreenStyles(colors: ColorScheme, isCompact: boolean)
         // The header's white runs up under the status bar; the cards sit on the page colour.
         container: { flex: 1, backgroundColor: colors.bgCard },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
+        scrollFrame: { flex: 1 },
         scrollContent: {
             width: '100%',
             maxWidth: 720,
