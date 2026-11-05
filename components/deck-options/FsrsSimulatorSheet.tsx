@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Keyboard, ScrollView, TouchableOpacity, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Keyboard, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import { AppSheet } from '../ui/Sheet';
 import { ChevronDownIcon, ChevronUpIcon } from '../ui/icons';
 import type { ColorScheme } from '../../constants/theme';
@@ -234,13 +235,11 @@ export default function FsrsSimulatorSheet({ presetId, settings, preset, storedP
                 onClose={close}
                 title={l('Simülatör', 'Simulator')}
                 subtitle="FSRS"
-                closeButton
-                closeLabel={l('Simülatörü kapat', 'Close the simulator')}
                 backdropLabel={l('Simülatörü kapat', 'Close the simulator')}
                 avoidKeyboard
                 maxHeight="92%"
             >
-                <ScrollView
+                <SheetScrollView
                     style={styles.helpScroll}
                     contentContainerStyle={styles.helpContent}
                     keyboardShouldPersistTaps="handled"
@@ -336,7 +335,7 @@ export default function FsrsSimulatorSheet({ presetId, settings, preset, storedP
                             'The estimate assumes you study every day, with this preset\'s parameters and the answer habits in your history. The same inputs always give the same result; no card or setting changes.',
                         )}
                     </Text>
-                </ScrollView>
+                </SheetScrollView>
             </AppSheet>
         </View>
     );

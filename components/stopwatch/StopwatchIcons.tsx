@@ -8,7 +8,6 @@ import {
     CheckGlyph,
     ChevronDownGlyph,
     ClockGlyph,
-    CloseGlyph,
     HourglassGlyph,
     MinusGlyph,
     PauseGlyph,
@@ -110,10 +109,6 @@ export function CheckIcon({ color, size = SIZE }: IconProps) {
 
 export function ChevronDownIcon({ color, size = SIZE }: IconProps) {
     return <ChevronDownGlyph color={color} size={size} />;
-}
-
-export function CloseIcon({ color, size = SIZE }: IconProps) {
-    return <CloseGlyph color={color} size={size} />;
 }
 
 export function SearchIcon({ color, size = SIZE }: IconProps) {

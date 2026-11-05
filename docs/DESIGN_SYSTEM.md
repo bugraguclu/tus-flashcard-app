@@ -53,7 +53,7 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | Chips, badges, segmented control, checkboxes, chosen-row tick | `Chip` (`role` button, radio or checkbox), `Badge`, `SegmentedControl`, `Checkbox` / `CheckRow` (`mixed` for a partly ticked group), `SelectedMark` | `components/ui/Choice.tsx` |
 | Text entry | `TextField` (`label` for a caption above it, `monospace` for code), `SearchField` | `components/ui/Fields.tsx` |
 | Empty, loading, notices, progress | `EmptyState`, `LoadingState`, `Notice` (`info`, `warning`, `danger`, `success`), `ProgressBar` | `components/ui/Feedback.tsx` |
-| Bottom sheet | `AppSheet` (title, subtitle, optional close button, keyboard lift, overlay picker) | `components/ui/Sheet.tsx` |
+| Bottom sheet | `AppSheet` (title and subtitle centred under the grabber, keyboard lift, overlay picker), `SheetScrollView` for its scrolling body, `SheetNoDrag` around a multi-line field | `components/ui/Sheet.tsx` |
 | Centred form, picker or explanation | `AppDialog` | `components/ui/Dialog.tsx` |
 | ••• menu | `PopoverMenu` + `MenuItem` | `components/ui/Menu.tsx` |
 | Confirmation | `lib/confirm` (system alert on iPhone, `DialogHost` on web) | `lib/confirm.ts` |
@@ -68,7 +68,7 @@ The screens used to carry their own small kits. They map onto the parts like thi
 | Before | Now |
 |---|---|
 | Kronometre tools `ToolSection` / `ToolRow` / `Segmented` / `ToolButton` | `Section` / `ValueRow` / `SegmentedControl` / `Button` (`danger` → `destructive`, `plain` → `secondary`); `DateField` is a `ValueRow` |
-| Kronometre sheets `StopwatchSheet`, `SettingRow`, `SheetButton`, `Stepper` | `AppSheet` (form header → `closeButton` + `dividedHeader`), rows in a `divided` `Card`, `Button`, `ui/Stepper` |
+| Kronometre sheets `StopwatchSheet`, `SettingRow`, `SheetButton`, `Stepper` | `AppSheet` (form header → its centred `title`), rows in a `divided` `Card`, `Button`, `ui/Stepper` |
 | Statistics `StatsSegmented`, `StatsCard` | `SegmentedControl`, `Card padded` + `CardHeader` |
 | Settings groups, `ToggleRow`, `ChoiceRow`, `StepperRow`, data rows | `Card padded`/`divided` + `CardHeader` (+ `HelpButton`), `SwitchRow`, `SegmentedControl`, `Stepper`, `ListRow` |
 | Deck options `OptionCard`, toggles, selects, `FieldAdvice` | `Card` + `CardHeader` + `HelpButton`, `SwitchRow`, `SelectRow`, `Notice` |
@@ -88,7 +88,8 @@ The screens used to carry their own small kits. They map onto the parts like thi
 - A group of rows is a `Section` or a `divided` `Card`: the card draws the hairlines between its
   direct children, so pass rows directly (a fragment counts as one child).
 - Sheets are `AppSheet` over `BottomSheetModal`; dialogs are `AppDialog`; neither draws its own
-  backdrop colour.
+  backdrop colour. A sheet has no close button: its grabber, a pull-down from anywhere outside
+  what scrolls or edits text, and the backdrop close it. Dialogs keep their `CloseButton`.
 - Disabled controls fade with `DISABLED_OPACITY`. Every state a control has (disabled, checked,
   selected, expanded, busy) is passed both as `accessibilityState` and as the matching `aria-*`
   prop: react-native-web reads only the `aria-*` props, iOS reads both.

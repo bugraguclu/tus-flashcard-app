@@ -33,7 +33,7 @@ The deck's full name appears under the title. Use the **Deck** box at the top to
 deck without leaving the screen. Filtered decks do not have this screen; they have **Filtered Deck
 Options** instead. See [Filtered decks and Custom Study](11-filtered-decks.md).
 
-The **?** button in each settings card's title opens a short **SETTING GUIDE**. Close it with
+The **?** button in each settings card's title opens a short guide to that setting. Close it with
 **Got it** or by pulling the sheet down. On wide screens (iPad, web) the cards are laid out in two
 columns.
 

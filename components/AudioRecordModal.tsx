@@ -501,12 +501,14 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
 
     return (
         // A stray swipe never throws a take away: the sheet is pulled down only while it is empty,
-        // and × and the backdrop ask first when there is something recorded.
+        // and Cancel and the backdrop ask first when there is something recorded.
         <AppSheet
             visible={visible}
             onClose={requestClose}
             title={l('Ses kaydet', 'Record Audio')}
-            closeButton
+            headerLeft={(
+                <Button label={l('Vazgeç', 'Cancel')} variant="plain" size="compact" tone="muted" onPress={requestClose} disabled={busy} />
+            )}
             swipeEnabled={phase === 'idle' && !busy}
             backdropLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
             onDismiss={onDismissed}
@@ -560,7 +562,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         body: { alignItems: 'center' },
         clock: {
-            marginTop: Spacing.lg,
+            marginTop: Spacing.sm,
             fontSize: 44,
             fontWeight: '300',
             color: colors.textPrimary,

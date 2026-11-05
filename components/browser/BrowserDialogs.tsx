@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { Modal, View, ScrollView, TouchableOpacity } from 'react-native';
+import { Modal, Platform, View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
 import { useThemeColors, type ColorScheme } from '../../constants/theme';
@@ -25,6 +25,9 @@ import { TextField } from '../ui/Fields';
 import { BackIcon, ChevronRightIcon, ForwardIcon } from '../ui/icons';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
+
+/** UIKit pulls a page sheet down to dismiss it on iPhone; other platforms show it full screen. */
+const PAGE_SHEET_PULLS_DOWN = Platform.OS === 'ios';
 
 interface ChangeNoteTypeModalProps {
     l: BrowserI18n['l'];
@@ -318,11 +321,23 @@ export function CardPreviewModal({
             onRequestClose={() => setPreviewIndex(null)}
         >
             <SafeAreaView style={styles.previewContainer}>
-                <View style={[styles.previewGrabberArea, { pointerEvents: 'none' }]}>
-                    <View style={styles.previewGrabber} />
-                </View>
+                {/* On iPhone the page sheet is pulled down from anywhere, so the grabber is all the
+                    chrome it needs; elsewhere the modal fills the screen and keeps a close button. */}
+                {PAGE_SHEET_PULLS_DOWN ? (
+                    <TouchableOpacity
+                        style={styles.previewGrabberArea}
+                        onPress={() => setPreviewIndex(null)}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')}
+                        accessibilityHint={l('Dokunun veya aşağı sürükleyin', 'Tap or swipe down')}
+                    >
+                        <View style={styles.previewGrabber} />
+                    </TouchableOpacity>
+                ) : null}
                 <View style={styles.previewHeader}>
-                    <CloseButton accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')} onPress={() => setPreviewIndex(null)} />
+                    {PAGE_SHEET_PULLS_DOWN
+                        ? <View style={styles.previewHeaderSide} />
+                        : <CloseButton accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')} onPress={() => setPreviewIndex(null)} />}
                     <Text style={styles.previewTitle} accessibilityRole="header">{l('Önizleme', 'Preview')} · {index + 1}/{selectedCards.length}</Text>
                     <Button
                         variant="plain"

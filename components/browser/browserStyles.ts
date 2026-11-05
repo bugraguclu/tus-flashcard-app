@@ -234,9 +234,11 @@ export function createBrowserStyles(colors: ColorScheme) {
     // The card preview is a native page sheet: grabber, a header with × and the side switch, the
     // card, and Previous / Next along the bottom.
     previewContainer: { flex: 1, backgroundColor: colors.bgPrimary },
-    previewGrabberArea: { height: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgCard },
+    previewGrabberArea: { height: 22, alignItems: 'center', paddingTop: 8, backgroundColor: colors.bgCard },
     previewGrabber: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border },
     previewHeader: { minHeight: 58, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, backgroundColor: colors.bgCard },
+    // Holds the close button's place on iPhone, where the page sheet is pulled down instead.
+    previewHeaderSide: { width: 44, height: 44 },
     previewTitle: { flex: 1, textAlign: 'center', ...Type.title, color: colors.textPrimary },
     previewBody: { flex: 1, justifyContent: 'center', padding: Spacing.lg },
     previewNavigation: { minHeight: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.bgCard },

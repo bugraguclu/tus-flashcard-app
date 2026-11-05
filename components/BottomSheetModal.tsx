@@ -48,6 +48,11 @@ interface BottomSheetModalProps {
      * another modal: iOS will not show one while this one is still on screen.
      */
     onDismiss?: () => void;
+    /** The sheet's title, centred under the grabber (`SwipeDismissSheet`). */
+    title?: string;
+    subtitle?: string;
+    headerLeft?: React.ReactNode;
+    headerRight?: React.ReactNode;
 }
 
 /**
@@ -72,6 +77,10 @@ export default function BottomSheetModal({
     backdropHidden = false,
     overlay,
     onDismiss,
+    title,
+    subtitle,
+    headerLeft,
+    headerRight,
 }: BottomSheetModalProps) {
     const colors = useThemeColors();
     const { l } = useI18n();
@@ -181,6 +190,10 @@ export default function BottomSheetModal({
                     onDismiss={handlePulledAway}
                     accessibilityViewIsModal={accessibilityViewIsModal}
                     style={sheetStyle}
+                    title={title}
+                    subtitle={subtitle}
+                    headerLeft={headerLeft}
+                    headerRight={headerRight}
                 >
                     {children}
                 </SwipeDismissSheet>

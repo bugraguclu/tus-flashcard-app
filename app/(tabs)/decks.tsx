@@ -85,6 +85,7 @@ import { ArrowUpIcon, DragHandleIcon, MoreIcon, MoreVerticalIcon, PlusIcon, Refr
 import { MenuItem, PopoverMenu } from '../../components/ui/Menu';
 import { SwitchRow } from '../../components/ui/Rows';
 import { AppSheet } from '../../components/ui/Sheet';
+import { SheetNoDrag } from '../../components/SwipeDismissSheet';
 import { DISABLED_OPACITY, HIT_TARGET, Type } from '../../components/ui/tokens';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -1433,16 +1434,19 @@ export default function DecksScreen() {
         <>
             <View style={styles.dialogField}>
                 <SectionLabel>{l('Deste açıklaması', 'Deck description')}</SectionLabel>
-                <TextField
-                    style={styles.descriptionInput}
-                    value={descriptionText}
-                    onChangeText={setDescriptionText}
-                    placeholder={l('Deste genel bakışında gösterilecek açıklama…', 'Description shown on the deck overview…')}
-                    multiline
-                    autoFocus
-                    textAlignVertical="top"
-                    accessibilityLabel={l('Deste açıklaması', 'Deck description')}
-                />
+                {/* In the iPhone sheet a drag in the text moves the caret, not the sheet. */}
+                <SheetNoDrag>
+                    <TextField
+                        style={styles.descriptionInput}
+                        value={descriptionText}
+                        onChangeText={setDescriptionText}
+                        placeholder={l('Deste genel bakışında gösterilecek açıklama…', 'Description shown on the deck overview…')}
+                        multiline
+                        autoFocus
+                        textAlignVertical="top"
+                        accessibilityLabel={l('Deste açıklaması', 'Deck description')}
+                    />
+                </SheetNoDrag>
             </View>
             <SwitchRow
                 title={l('Markdown olarak yorumla', 'Interpret as Markdown')}

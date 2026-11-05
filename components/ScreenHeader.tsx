@@ -14,9 +14,10 @@ interface ScreenHeaderProps {
     subtitle?: string;
     /**
      * `back` (the arrow) for a screen pushed onto the stack; `close` (×) for a full-screen form or
-     * workflow presented over another screen.
+     * workflow presented over another screen; `none` for a native sheet that is pulled down to
+     * close, whose title is then centred.
      */
-    leading?: 'back' | 'close';
+    leading?: 'back' | 'close' | 'none';
     /** Icon buttons or a compact button on the right; without them a spacer keeps the title placed. */
     actions?: React.ReactNode;
     /** A coloured header (the Kronometre's): its background, and the arrow and title on it. */
@@ -45,12 +46,14 @@ export default function ScreenHeader({
                     : { backgroundColor: colors.bgCard, borderBottomColor: colors.border },
             ]}
         >
-            <IconButton accessibilityLabel={backAccessibilityLabel} onPress={onBack} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-                {leading === 'close'
-                    ? <CloseIcon color={tint?.foreground ?? colors.textSecondary} />
-                    : <BackIcon color={tint?.foreground ?? colors.accent} />}
-            </IconButton>
-            <View style={styles.titleBlock}>
+            {leading === 'none' ? <View style={styles.spacer} /> : (
+                <IconButton accessibilityLabel={backAccessibilityLabel} onPress={onBack} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+                    {leading === 'close'
+                        ? <CloseIcon color={tint?.foreground ?? colors.textSecondary} />
+                        : <BackIcon color={tint?.foreground ?? colors.accent} />}
+                </IconButton>
+            )}
+            <View style={[styles.titleBlock, leading === 'none' && styles.titleBlockCentred]}>
                 <Text style={[Type.title, { color: foreground }]} numberOfLines={1} accessibilityRole="header">
                     {title}
                 </Text>
@@ -85,6 +88,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     titleBlock: { flex: 1, minWidth: 0, paddingVertical: Spacing.xs },
+    titleBlockCentred: { alignItems: 'center' },
     subtitle: { fontSize: FontSize.sm },
     spacer: { width: 44 },
     actions: { flexDirection: 'row', alignItems: 'center' },

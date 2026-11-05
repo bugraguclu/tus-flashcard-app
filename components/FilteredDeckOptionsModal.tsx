@@ -43,6 +43,7 @@ import type { AppSettings } from '../lib/types';
 import DeckPickerModal from './DeckPickerModal';
 import InfoCircleGlyph from './InfoCircleGlyph';
 import ScreenHeader from './ScreenHeader';
+import { SheetScrollView } from './SwipeDismissSheet';
 import FilteredDeckHelpSheet from './filtered-deck/FilteredDeckHelpSheet';
 import { createFilteredDeckOptionsStyles } from './filtered-deck/filteredDeckOptionsStyles';
 import { Button, HelpButton, IconButton } from './ui/Button';
@@ -466,7 +467,7 @@ export default function FilteredDeckOptionsModal({
                     title={l('Kartların seçilme sırası', 'Cards selected by')}
                     maxHeight="70%"
                 >
-                    <ScrollView style={styles.sheetList} showsVerticalScrollIndicator={false}>
+                    <SheetScrollView style={styles.sheetList} showsVerticalScrollIndicator={false}>
                         <Card divided>
                             {filteredDeckOrderChoices(settings.fsrsEnabled === true).map((value) => (
                                 <MenuItem
@@ -477,7 +478,7 @@ export default function FilteredDeckOptionsModal({
                                 />
                             ))}
                         </Card>
-                    </ScrollView>
+                    </SheetScrollView>
                 </AppSheet>
 
                 <FilteredDeckHelpSheet visible={helpVisible} onClose={() => setHelpVisible(false)} />

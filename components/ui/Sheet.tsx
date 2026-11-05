@@ -1,51 +1,23 @@
 import React from 'react';
 import { KeyboardAvoidingView, Platform, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '../AppText';
 import BottomSheetModal from '../BottomSheetModal';
 import { Shadows, Spacing, useThemeColors } from '../../constants/theme';
-import { useI18n } from '../../hooks/useI18n';
-import { CloseButton } from './Button';
-import { Radius, Type } from './tokens';
-
-interface SheetHeaderProps {
-    title: string;
-    subtitle?: string;
-    /** Shows a close button; leave it out for a sheet the grabber and backdrop close. */
-    onClose?: () => void;
-    /** A rule under the header, for a form whose fields scroll under it. */
-    divided?: boolean;
-    /** Spoken for the close button; "Kapat" by default. */
-    closeLabel?: string;
-}
-
-/** The title block at the top of every bottom sheet. */
-export function SheetHeader({ title, subtitle, onClose, divided = false, closeLabel }: SheetHeaderProps) {
-    const colors = useThemeColors();
-    const { l } = useI18n();
-    return (
-        <View style={[styles.header, divided && [styles.headerDivided, { borderBottomColor: colors.border }]]}>
-            <View style={styles.headerCopy}>
-                <Text style={[Type.title, { color: colors.textPrimary }]} accessibilityRole="header" numberOfLines={2}>{title}</Text>
-                {subtitle ? <Text style={[Type.caption, { color: colors.textMuted }]}>{subtitle}</Text> : null}
-            </View>
-            {onClose ? <View style={styles.close}><CloseButton accessibilityLabel={closeLabel ?? l('Kapat', 'Close')} onPress={onClose} /></View> : null}
-        </View>
-    );
-}
+import { Radius } from './tokens';
 
 interface AppSheetProps {
     visible: boolean;
     onClose: () => void;
-    /** Drawn as a `SheetHeader`; leave it out when the content draws its own heading. */
+    /**
+     * Centred under the grabber; leave it out when the content draws its own heading. A sheet has
+     * no close button: the grabber, a pull-down and the backdrop close it.
+     */
     title?: string;
     subtitle?: string;
-    /** Puts a close button in the header (forms with a Save action). */
-    closeButton?: boolean;
-    /** Spoken for the close button, e.g. "Yardımı kapat"; "Kapat" by default. */
-    closeLabel?: string;
-    /** A rule under the header, for a form whose fields scroll under it. */
-    dividedHeader?: boolean;
+    /** A control at the header's start, e.g. Back in a sheet with a second step. */
+    headerLeft?: React.ReactNode;
+    /** A control at the header's end, e.g. the action that saves a recording. */
+    headerRight?: React.ReactNode;
     /** Lift the sheet above the keyboard while one of its fields has focus. */
     avoidKeyboard?: boolean;
     /** Whether the grabber and pull-down close it (off while work runs that must not be left). */
@@ -70,17 +42,17 @@ interface AppSheetProps {
 
 /**
  * The one bottom sheet: a page-coloured panel with rounded top corners and a grabber, sliding up
- * over a dimmed backdrop (`BottomSheetModal`). Its header, padding and height limit are the same
- * on every screen.
+ * over a dimmed backdrop (`BottomSheetModal`). Its title sits centred under the grabber, and the
+ * whole sheet pulls down except its `SheetScrollView` and `SheetNoDrag` parts. Its header, padding
+ * and height limit are the same on every screen.
  */
 export function AppSheet({
     visible,
     onClose,
     title,
     subtitle,
-    closeButton = false,
-    closeLabel,
-    dividedHeader = false,
+    headerLeft,
+    headerRight,
     avoidKeyboard = false,
     swipeEnabled = true,
     overlay,
@@ -103,6 +75,10 @@ export function AppSheet({
             backdropHidden={covered}
             backdropLabel={backdropLabel}
             onDismiss={onDismiss}
+            title={title}
+            subtitle={subtitle}
+            headerLeft={headerLeft}
+            headerRight={headerRight}
             sheetStyle={[
                 styles.sheet,
                 { maxHeight, backgroundColor: colors.bgPrimary, paddingBottom: Math.max(insets.bottom, Spacing.md) },
@@ -125,15 +101,6 @@ export function AppSheet({
                 importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
                 accessibilityElementsHidden={covered}
             >
-                {title ? (
-                    <SheetHeader
-                        title={title}
-                        subtitle={subtitle}
-                        onClose={closeButton ? onClose : undefined}
-                        divided={dividedHeader}
-                        closeLabel={closeLabel}
-                    />
-                ) : null}
                 {children}
             </View>
         </BottomSheetModal>
@@ -148,14 +115,8 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: Radius.sheet,
         borderTopRightRadius: Radius.sheet,
         paddingHorizontal: Spacing.lg,
-        // The grabber's 40-point strip at the top takes every touch in it; content starts below.
-        paddingTop: 44,
         ...Shadows.lg,
     },
     content: { flexShrink: 1 },
-    header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
-    headerDivided: { paddingBottom: Spacing.md, marginBottom: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth },
-    headerCopy: { flex: 1, minWidth: 0, gap: 2 },
-    close: { marginRight: -10 },
     overlay: { justifyContent: 'center', paddingHorizontal: Spacing.lg },
 });

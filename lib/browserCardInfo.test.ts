@@ -25,7 +25,12 @@ vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ l: (_tr: string, en: stri
 vi.mock('../components/AppText', () => ({ Text: 'Text', TextInput: 'TextInput' }));
 vi.mock('../components/SwipeDismissSheet', async () => {
     const { createElement } = await import('react');
-    return { default: ({ children }: { children: React.ReactNode }) => createElement('SwipeDismissSheet', null, children) };
+    const passThrough = (name: string) => ({ children }: { children: React.ReactNode }) => createElement(name, null, children);
+    return {
+        default: passThrough('SwipeDismissSheet'),
+        SheetScrollView: passThrough('SheetScrollView'),
+        SheetNoDrag: passThrough('SheetNoDrag'),
+    };
 });
 // The menus and rows are the kit's (components/ui), which read the whole theme.
 vi.mock('../constants/theme', () => {

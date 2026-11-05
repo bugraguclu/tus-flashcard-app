@@ -12,7 +12,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Platform,
-    ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -25,6 +24,7 @@ import { alert } from '../lib/confirm';
 import { Button } from './ui/Button';
 import { Card, Divider, SectionLabel } from './ui/Card';
 import { Checkbox, SelectedMark } from './ui/Choice';
+import { SheetScrollView } from './SwipeDismissSheet';
 import { AppSheet } from './ui/Sheet';
 import { Stepper } from './ui/Stepper';
 import { DISABLED_OPACITY, HIT_TARGET, Radius, Type } from './ui/tokens';
@@ -426,7 +426,7 @@ export default function CustomStudyModal({
         disabled: boolean = false,
     ) => (
         <Card style={disabled && styles.disabled}>
-            <ScrollView style={styles.tagScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            <SheetScrollView style={styles.tagScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
                 {deckTags.map((tag, index) => {
                     const active = selected.includes(tag);
                     return (
@@ -449,7 +449,7 @@ export default function CustomStudyModal({
                         </React.Fragment>
                     );
                 })}
-            </ScrollView>
+            </SheetScrollView>
         </Card>
     );
 
@@ -490,13 +490,11 @@ export default function CustomStudyModal({
             onClose={onClose}
             title={choosingTags ? l('Seçmeli çalışma', 'Selective Study') : t('anki.customStudy')}
             subtitle={getDeckDisplayName(deck.name)}
-            closeButton
-            dividedHeader
             avoidKeyboard
             maxHeight="92%"
             backdropLabel={t('common.close')}
         >
-            <ScrollView
+            <SheetScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
@@ -597,7 +595,7 @@ export default function CustomStudyModal({
                         )}
                     </>
                 )}
-            </ScrollView>
+            </SheetScrollView>
 
             <View style={styles.buttonBox}>
                 <Button

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
@@ -16,6 +16,7 @@ import { Button } from '../ui/Button';
 import { Card, SectionLabel } from '../ui/Card';
 import { TextField } from '../ui/Fields';
 import { ListRow } from '../ui/Rows';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import { AppSheet } from '../ui/Sheet';
 
 interface AddNoteTypeSheetProps {
@@ -131,12 +132,12 @@ export default function AddNoteTypeSheet({ visible, onClose, onCreated }: AddNot
                     </View>
                 </View>
             ) : (
-                <ScrollView style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
+                <SheetScrollView style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
                     <SectionLabel>{l('Hazır türler', 'Stock types')}</SectionLabel>
                     <Card divided>{lists.stock.map((source) => row(source, false))}</Card>
                     <SectionLabel style={styles.sectionGap}>{l('Kopyala', 'Clone')}</SectionLabel>
                     <Card divided>{lists.clones.map((source) => row(source, true))}</Card>
-                </ScrollView>
+                </SheetScrollView>
             )}
         </AppSheet>
     );

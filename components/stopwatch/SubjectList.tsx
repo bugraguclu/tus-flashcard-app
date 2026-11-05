@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Spacing } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import { MAX_SUBJECT_LENGTH, TUS_STUDY_SUBJECTS, normalizeSubjectName } from '../../lib/stopwatch';
 import { Card, Section } from '../ui/Card';
 import { SearchField } from '../ui/Fields';
@@ -67,7 +68,7 @@ export default function SubjectList({ recentSubjects, planned, onSelect }: Subje
                 clearLabel={l('Aramayı temizle', 'Clear search')}
                 accessibilityLabel={l('Ders adı', 'Subject name')}
             />
-            <ScrollView
+            <SheetScrollView
                 style={styles.list}
                 contentContainerStyle={styles.listContent}
                 keyboardShouldPersistTaps="handled"
@@ -85,7 +86,7 @@ export default function SubjectList({ recentSubjects, planned, onSelect }: Subje
                 {sections.courses.length > 0 ? (
                     <Section label={l('TUS dersleri', 'TUS subjects')}>{sections.courses.map((subject) => row(subject))}</Section>
                 ) : null}
-            </ScrollView>
+            </SheetScrollView>
         </View>
     );
 }

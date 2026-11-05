@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { Text } from '../AppText';
 import { useI18n } from '../../hooks/useI18n';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import { Button } from '../ui/Button';
 import { Notice } from '../ui/Feedback';
 import { AppSheet } from '../ui/Sheet';
@@ -21,13 +22,14 @@ export default function FilteredDeckHelpSheet({ visible, onClose }: {
             visible={visible}
             onClose={onClose}
             title={l('Filtrelenmiş deste nasıl çalışır?', 'How does a filtered deck work?')}
-            subtitle={l(
-                'Filtrelenmiş deste, normal günlük sınırların dışında belirli kartlarla geçici bir çalışma oturumu oluşturur.',
-                'A filtered deck creates a temporary study session with specific cards outside the normal daily limits.',
-            )}
-            closeButton
         >
-            <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+            <SheetScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+                <Text style={styles.lead}>
+                    {l(
+                        'Filtrelenmiş deste, normal günlük sınırların dışında belirli kartlarla geçici bir çalışma oturumu oluşturur.',
+                        'A filtered deck creates a temporary study session with specific cards outside the normal daily limits.',
+                    )}
+                </Text>
                 <HelpStep
                     number="1"
                     title={l('Kartları belirleyin', 'Choose the cards')}
@@ -70,7 +72,7 @@ export default function FilteredDeckHelpSheet({ visible, onClose }: {
                         'Suspended, buried, or already-filtered cards cannot be gathered. Cards are never deleted and keep their home-deck link. Rebuild the deck to gather cards again with the same settings.',
                     )}
                 </Notice>
-            </ScrollView>
+            </SheetScrollView>
             <Button label={l('Anladım', 'Got it')} onPress={onClose} />
         </AppSheet>
     );
@@ -94,6 +96,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         scroll: { flexShrink: 1 },
         content: { gap: Spacing.lg, paddingBottom: Spacing.lg },
+        lead: { ...Type.caption, lineHeight: 20, color: colors.textSecondary },
         step: { flexDirection: 'row', gap: Spacing.md },
         number: {
             width: 28,

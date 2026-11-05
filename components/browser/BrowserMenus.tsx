@@ -21,6 +21,7 @@ import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { toggleSelectedBury, toggleSelectedSuspend } from '../../lib/browserSelection';
 import { AppDialog } from '../ui/Dialog';
 import { AppSheet } from '../ui/Sheet';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import { Button } from '../ui/Button';
 import { Card, Divider } from '../ui/Card';
 import { Badge, Chip, SegmentedControl, SelectedMark } from '../ui/Choice';
@@ -179,9 +180,8 @@ export function SelectionMenuModal({
             visible={showSelectionMenu}
             onClose={close}
             title={`${selectedCardIds.size} ${tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}`}
-            closeButton
         >
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <SheetScrollView showsVerticalScrollIndicator={false}>
                 <Card divided>
                     <MenuItem
                         icon={<SelectionSuspendIcon color={iconColor} />}
@@ -288,7 +288,7 @@ export function SelectionMenuModal({
                         onPress={deleteSelectedNotes}
                     />
                 </Card>
-            </ScrollView>
+            </SheetScrollView>
         </AppSheet>
     );
 }

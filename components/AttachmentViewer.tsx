@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Modal, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from './AppText';
 import { WebView } from 'react-native-webview';
 import * as Sharing from 'expo-sharing';
@@ -13,6 +13,9 @@ import { DocumentIcon, ShareIcon } from './editor/AttachmentIcons';
 import { Button, IconButton } from './ui/Button';
 import { EmptyState } from './ui/Feedback';
 import { Radius, Type } from './ui/tokens';
+
+/** UIKit pulls a page sheet down to dismiss it on iPhone; other platforms show it full screen. */
+const PAGE_SHEET_PULLS_DOWN = Platform.OS === 'ios';
 
 /** Where a stored attachment is read from on native, as a URL a WebView can load. */
 function attachmentFileUri(filename: string): string {
@@ -147,13 +150,22 @@ function AttachmentViewer({ filename, onClose }: AttachmentViewerProps) {
             onRequestClose={onClose}
         >
             <View style={styles.container}>
-                {/* React Native's page sheet draws no grabber of its own; this one shows the pull-down. */}
-                <View style={[styles.grabberArea, { pointerEvents: 'none' }]}>
-                    <View style={styles.grabber} />
-                </View>
+                {/* On iPhone the page sheet is pulled down from anywhere, so the grabber is all the
+                    chrome it needs; elsewhere the modal fills the screen and keeps a close button. */}
+                {PAGE_SHEET_PULLS_DOWN ? (
+                    <TouchableOpacity
+                        style={styles.grabberArea}
+                        onPress={onClose}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Kapat', 'Close')}
+                        accessibilityHint={l('Dokunun veya aşağı sürükleyin', 'Tap or swipe down')}
+                    >
+                        <View style={styles.grabber} />
+                    </TouchableOpacity>
+                ) : null}
                 <View style={styles.header}>
                     <View style={styles.headerSide}>
-                        <Button label={l('Kapat', 'Close')} variant="plain" onPress={onClose} />
+                        {PAGE_SHEET_PULLS_DOWN ? null : <Button label={l('Kapat', 'Close')} variant="plain" onPress={onClose} />}
                     </View>
                     <Text style={styles.title} numberOfLines={1} accessibilityRole="header">{name}</Text>
                     <View style={[styles.headerSide, styles.headerSideEnd]}>
@@ -196,12 +208,12 @@ export function useAttachmentViewer(): { open: (filename: string) => void; viewe
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgCard },
-        grabberArea: { alignItems: 'center', paddingTop: 8 },
+        grabberArea: { height: 22, alignItems: 'center', paddingTop: 8 },
         grabber: { width: 36, height: 5, borderRadius: Radius.pill, backgroundColor: colors.border },
         header: {
             flexDirection: 'row',
             alignItems: 'center',
-            minHeight: 48,
+            minHeight: 44,
             paddingHorizontal: Spacing.sm,
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,

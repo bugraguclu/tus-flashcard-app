@@ -36,7 +36,7 @@ Başlığın altında destenin tam adı yazar. Üstteki **Deste** kutusundan ekr
 desteye geçebilirsiniz. Filtrelenmiş destelerde bu ekran yoktur; onların **Filtre seçenekleri**
 vardır. Bkz. [Filtrelenmiş deste ve özel çalışma](11-filtered-decks.md).
 
-Her ayar kartının başlığındaki **?** düğmesi kısa bir **AYAR REHBERİ** açar. **Anladım**'a dokunarak
+Her ayar kartının başlığındaki **?** düğmesi o ayar için kısa bir rehber açar. **Anladım**'a dokunarak
 veya sayfayı aşağı çekerek kapatırsınız. Geniş ekranlarda (iPad, web) kartlar iki sütunda dizilir.
 
 <a id="presets"></a>

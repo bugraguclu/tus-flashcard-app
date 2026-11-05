@@ -1,7 +1,8 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import { AppSheet } from '../ui/Sheet';
 
 /** Keep chart definitions available without repeating paragraphs throughout the page. */
@@ -43,17 +44,15 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
             visible={visible}
             onClose={onClose}
             title={l('İstatistikler hakkında', 'About statistics')}
-            closeButton
-            closeLabel={l('Bilgiyi kapat', 'Close information')}
         >
-            <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+            <SheetScrollView style={styles.scroll} contentContainerStyle={styles.content}>
                 {sections.map(([title, body]) => (
                     <View key={title} style={styles.section}>
                         <Text style={[styles.heading, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text>
                         <Text style={[styles.body, { color: colors.textPrimary }]}>{body}</Text>
                     </View>
                 ))}
-            </ScrollView>
+            </SheetScrollView>
         </AppSheet>
     );
 }

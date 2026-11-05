@@ -7,7 +7,6 @@ export type OptionHelp = {
     summary: string;
     points: string[];
     note?: string;
-    eyebrow: string;
     noteLabel: string;
     dismissLabel: string;
 };

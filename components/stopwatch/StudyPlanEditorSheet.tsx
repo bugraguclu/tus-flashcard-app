@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
@@ -24,6 +24,7 @@ import { Stepper } from '../ui/Stepper';
 import { Type } from '../ui/tokens';
 import { DateField } from './StudyToolControls';
 import StudyTypeChips, { studyTypeLabel } from './StudyTypeChips';
+import { SheetNoDrag, SheetScrollView } from '../SwipeDismissSheet';
 import SubjectList from './SubjectList';
 
 interface StudyPlanEditorSheetProps {
@@ -99,7 +100,7 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
                     </View>
                 </>
             ) : (
-                <ScrollView
+                <SheetScrollView
                     style={styles.form}
                     contentContainerStyle={styles.formContent}
                     keyboardShouldPersistTaps="handled"
@@ -192,14 +193,16 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
                     </Card>
 
                     <Section label={l('Çalışma notu', 'Study note')} padded>
-                        <TextField
-                            value={draft.note}
-                            onChangeText={(note) => update({ note })}
-                            placeholder={l('Örn. Kardiyoloji bölümü, 40 soru', 'E.g. cardiology chapter, 40 questions')}
-                            maxLength={MAX_STUDY_NOTE_LENGTH}
-                            multiline
-                            accessibilityLabel={l('Çalışma notu', 'Study note')}
-                        />
+                        <SheetNoDrag>
+                            <TextField
+                                value={draft.note}
+                                onChangeText={(note) => update({ note })}
+                                placeholder={l('Örn. Kardiyoloji bölümü, 40 soru', 'E.g. cardiology chapter, 40 questions')}
+                                maxLength={MAX_STUDY_NOTE_LENGTH}
+                                multiline
+                                accessibilityLabel={l('Çalışma notu', 'Study note')}
+                            />
+                        </SheetNoDrag>
                         <Text style={[styles.count, { color: colors.textMuted }]}>{`${draft.note.length} / ${MAX_STUDY_NOTE_LENGTH}`}</Text>
                     </Section>
 
@@ -210,7 +213,7 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
                             <Button label={l('Planı Sil', 'Delete Plan')} variant="destructive" onPress={() => onDelete(draft)} />
                         ) : null}
                     </View>
-                </ScrollView>
+                </SheetScrollView>
             )}
         </AppSheet>
     );

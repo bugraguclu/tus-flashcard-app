@@ -6,6 +6,7 @@ import { useI18n } from '../../hooks/useI18n';
 import { photoTextColors, type PhotoTextStyle } from '../../lib/photoEditor';
 import { Button } from '../ui/Button';
 import { TextField } from '../ui/Fields';
+import { SheetNoDrag } from '../SwipeDismissSheet';
 import { AppSheet } from '../ui/Sheet';
 import { Radius } from '../ui/tokens';
 
@@ -92,15 +93,17 @@ export function TextEntrySheet({
             backdropLabel={l('Metin yazmayı kapat', 'Close text entry')}
         >
             <View style={styles.body}>
-                <TextField
-                    value={draft}
-                    onChangeText={setDraft}
-                    autoFocus
-                    multiline
-                    placeholder={l('Yazın…', 'Type…')}
-                    style={[styles.input, inkStyle]}
-                    accessibilityLabel={l('Sayfaya eklenecek metin', 'Text to add to the page')}
-                />
+                <SheetNoDrag>
+                    <TextField
+                        value={draft}
+                        onChangeText={setDraft}
+                        autoFocus
+                        multiline
+                        placeholder={l('Yazın…', 'Type…')}
+                        style={[styles.input, inkStyle]}
+                        accessibilityLabel={l('Sayfaya eklenecek metin', 'Text to add to the page')}
+                    />
+                </SheetNoDrag>
                 {/* Samples of the result, which a segmented control cannot draw: the tiles stay. */}
                 {labelStyles && labelStyles.length > 1 ? (
                     <View style={styles.styleRow} accessibilityRole="radiogroup" accessibilityLabel={l('Metin stili', 'Text style')}>

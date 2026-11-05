@@ -120,6 +120,7 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.accentLight,
+            marginTop: Spacing.md,
             marginBottom: Spacing.md,
         },
         title: { color: colors.textPrimary, textAlign: 'center' },

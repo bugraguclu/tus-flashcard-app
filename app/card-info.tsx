@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import {
+    Platform,
     View,
     ScrollView,
     StyleSheet,
@@ -28,6 +29,9 @@ import { ankiCardToCardState, dayNumberToYmd, localDayNumber } from '../lib/anki
 import { useAppSettings } from '../contexts/AppContext';
 import LeechExplainer from '../components/LeechExplainer';
 import { answeredEntries, lastAnsweredAt, revlogFactorText, revlogKind, scheduleShownFor } from '../lib/cardInfo';
+
+/** On iPhone this screen is a sheet pulled down to close, so it needs no back control there. */
+const SHEET_PULLS_DOWN = Platform.OS === 'ios';
 
 function parseCardId(raw: string | string[] | undefined): number {
     const value = Array.isArray(raw) ? raw[0] : raw;
@@ -71,14 +75,17 @@ export default function CardInfoScreen() {
         };
     }, [cardId]);
 
-    // Card Info is presented as a sheet over the reviewer or the browser, so it closes (×).
+    // Card Info is presented as a sheet over the reviewer or the browser. On iPhone that sheet is
+    // pulled down to close and the title sits clear of its grabber; elsewhere it closes (×).
     const header = (
-        <ScreenHeader
-            leading="close"
-            title={t('root.cardInfo')}
-            backAccessibilityLabel={t('common.close')}
-            onBack={() => goBackOr(router)}
-        />
+        <View style={SHEET_PULLS_DOWN && [styles.headerUnderGrabber, { backgroundColor: colors.bgCard }]}>
+            <ScreenHeader
+                leading={SHEET_PULLS_DOWN ? 'none' : 'close'}
+                title={t('root.cardInfo')}
+                backAccessibilityLabel={t('common.close')}
+                onBack={() => goBackOr(router)}
+            />
+        </View>
     );
 
     if (!payload) {
@@ -413,6 +420,8 @@ function createStyles(colors: ColorScheme) {
     tableRowEven: { backgroundColor: colors.bgSecondary },
     td: { fontSize: FontSize.xs, color: colors.textSecondary },
 
+    // Clear of the native sheet's grabber.
+    headerUnderGrabber: { paddingTop: Spacing.md },
     emptyState: { flex: 1 },
     });
 }

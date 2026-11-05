@@ -16,6 +16,7 @@ import { Button } from '../ui/Button';
 import { Notice } from '../ui/Feedback';
 import { CheckIcon, ChevronDownIcon } from '../ui/icons';
 import { AppSheet } from '../ui/Sheet';
+import { SheetScrollView } from '../SwipeDismissSheet';
 import { DeckOptionsContext } from './DeckOptionsContext';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
 import type { OptionHelp, SelectOption } from './types';
@@ -55,12 +56,9 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
                     visible={helpOpen}
                     onClose={closeHelp}
                     title={help.title}
-                    subtitle={help.eyebrow}
-                    closeButton
-                    closeLabel={help.dismissLabel}
                     backdropLabel={help.dismissLabel}
                 >
-                    <ScrollView
+                    <SheetScrollView
                         style={styles.helpScroll}
                         contentContainerStyle={styles.helpContent}
                         showsVerticalScrollIndicator={false}
@@ -75,7 +73,7 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
                             ))}
                         </View>
                         {help.note ? <Notice title={help.noteLabel}>{help.note}</Notice> : null}
-                    </ScrollView>
+                    </SheetScrollView>
                     <Button label={help.dismissLabel} onPress={closeHelp} style={styles.helpDismiss} />
                 </AppSheet>
             ) : null}
