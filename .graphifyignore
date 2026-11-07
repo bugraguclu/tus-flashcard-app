@@ -1,0 +1,10 @@
+# Paths Graphify leaves out of the code graph (gitignore syntax; .gitignore is honoured too).
+# These are data, binaries or generated files, not code: they only add noise nodes.
+package-lock.json
+assets/
+docs/catalog-corrections/
+outputs/
+artifacts/
+public/
+test/fixtures/
+.github/screenshots/

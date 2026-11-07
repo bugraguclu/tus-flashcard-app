@@ -55,6 +55,23 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   that re-exports them (an import cycle can hand a module an undefined constant at load time).
 - Start agent sessions from the repository root, not from `ios/TusAnkiM`.
 
+## Code graph (Graphify)
+
+- Each checkout keeps a code graph in `graphify-out/` (gitignored), built from the AST with no
+  LLM. A SessionStart hook builds or refreshes it in the background (about 10 s);
+  `docs/CODE_GRAPH.md` covers setup and troubleshooting.
+- For a codebase question, orient with the graph before the first `rg` or whole-file read, then
+  read only the lines it points to: `graphify query "<question>"`, `graphify explain "<file or
+  symbol>"` (imports, dependents, line numbers), `graphify path "<A>" "<B>"`, and
+  `graphify affected "<symbol>"` (what a change reaches). Give subagents that explore code the
+  same rule.
+- `graphify-out/GRAPH_REPORT.md` is about 19,000 tokens: open it only for a broad architecture
+  review.
+- The graph shows the code as it was when it was built. After adding, moving or renaming code,
+  run `graphify update .` (a few seconds) before querying that area again. If `graphify` is not on
+  `PATH`, use `~/.local/bin/graphify`; if neither exists, search with `rg` as before.
+- The graph is a map, not the source of truth: confirm behaviour in the code before changing it.
+
 ## Product direction
 
 - TusAnkiM is an independent, local-first alternative to Anki, not an Anki-branded product.

@@ -26,10 +26,14 @@ if (!config.resolver.assetExts.includes('tuspack')) {
 // its own files while skipping any worktree nested inside it.
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const WORKTREES = new RegExp(`^${escapeRegExp(__dirname)}[\\\\/](?:.*[\\\\/])?\\.claude[\\\\/]worktrees[\\\\/].*`);
+// The local code graph (docs/CODE_GRAPH.md) is not app code, and every refresh rewrites a 9 MB
+// graph.json under graphify-out/, so the watcher skips it too.
+const CODE_GRAPH = new RegExp(`^${escapeRegExp(__dirname)}[\\\\/]graphify-out[\\\\/].*`);
 const defaultBlockList = config.resolver.blockList;
 config.resolver.blockList = [
     ...(Array.isArray(defaultBlockList) ? defaultBlockList : defaultBlockList ? [defaultBlockList] : []),
     WORKTREES,
+    CODE_GRAPH,
 ];
 
 const emptyModule = require.resolve('metro-runtime/src/modules/empty-module.js');
