@@ -79,7 +79,8 @@ import { clozeFieldIndex, countCardsForNote, nextClozeNumber } from '../lib/temp
 import { loadSettings, saveSettings } from '../lib/storage';
 import { rememberedCurrentDeck } from '../lib/currentDeck';
 import { recomputeMemoryAfterDeckMove } from '../lib/fsrsMaintenance';
-import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
+import { editorDraftKey, hasEditorDraftChanged, isAddScreenFinished, type EditorDraftState } from '../lib/editorDraft';
+import TransientNotice, { type TransientNoticeMessage } from '../components/TransientNotice';
 import { editorFieldFontSize } from '../lib/editorFieldStyle';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import {
@@ -510,6 +511,14 @@ export default function EditorScreen() {
             ? l('Kaydetmeden kart düzenleme ekranından çıkılsın mı?', 'Leave the card editor without saving?')
             : l('Kaydetmeden not ekleme ekranından çıkılsın mı?', 'Leave the add note screen without saving?'),
     });
+    // A save that ends the visit leaves only once the saved draft has become the baseline. Leaving
+    // in the same tick would meet the guard above while it still sees the old, unsaved draft.
+    const [leaveAfterSave, setLeaveAfterSave] = useState(false);
+    useEffect(() => {
+        if (!leaveAfterSave) return;
+        setLeaveAfterSave(false);
+        goBackOr(router);
+    }, [leaveAfterSave, router]);
 
     const cardTypeLabel = selectedNoteType
         ? localizeNoteTypeName(locale, selectedNoteType.name)
@@ -527,6 +536,9 @@ export default function EditorScreen() {
     // still hold its text while the save is acknowledged, and it must not be reported as a
     // duplicate of itself.
     const [savedNoteId, setSavedNoteId] = useState<number | null>(null);
+    // Notes added during this visit, and the passing "added" notice for the latest one.
+    const notesAddedRef = useRef(0);
+    const [addedNotice, setAddedNotice] = useState<TransientNoticeMessage | null>(null);
 
     const duplicateNote = useMemo(() => {
         const firstField = fieldValues[0];
@@ -853,7 +865,7 @@ export default function EditorScreen() {
             await commitCollectionWrite(() => setNoteTagsByCardId(routeCardId, noteTags));
             resetDraftBaseline(currentDraft);
             bumpDataVersion({ keepsStudyQueue: true });
-            alert(t('common.completed'), l('Etiketler kaydedildi.', 'Tags saved.'), () => goBackOr(router));
+            setLeaveAfterSave(true);
         } catch (e) {
             console.warn('[Editor] catalog tag save failed:', e);
             alert(t('common.error'), userFacingErrorMessage(e, l('Etiketler kaydedilemedi.', 'Could not save the tags.')));
@@ -890,6 +902,14 @@ export default function EditorScreen() {
         dismissEditorKeyboard();
         setShowOverflowMenu(false);
         const latestFields = fieldValuesRef.current;
+        if (!isEditing && isAddScreenFinished(
+            fieldsToRender.map((_, index) => latestFields[index] || ''),
+            fieldsToRender.map((field) => pinnedFields.has(field.ord)),
+            notesAddedRef.current,
+        )) {
+            goBackOr(router);
+            return;
+        }
         const savedDraft = draftFromFields(latestFields);
         const currentFields = selectedNoteType
             ? selectedNoteType.fields.map((_, i) => latestFields[i] || '')
@@ -972,7 +992,9 @@ export default function EditorScreen() {
                 // An edit that left the cards as they were keeps a study session's order, as
                 // Anki's does; a new card or a deck move builds the queue again.
                 bumpDataVersion({ keepsStudyQueue: !updated.cardsChanged });
-                alert(t('common.completed'), l('Kart güncellendi.', 'Card updated.'), () => goBackOr(router));
+                // The edited card itself is the confirmation, as when Anki's editor closes: the
+                // screen goes straight back to it instead of asking for one more tap.
+                setLeaveAfterSave(true);
             } else {
                 let rollbackNoteTypeMemory: (() => void) | undefined;
                 const created = await commitCollectionWrite(() => {
@@ -1013,17 +1035,17 @@ export default function EditorScreen() {
                     return;
                 }
 
-                // Anki's Add dialog stays open so a run of notes is one visit rather than one
-                // round trip through the deck list each. Leaving is still the other button, and
-                // it is what the acknowledgement offered before this choice existed.
-                void choose(
-                    t('common.completed'),
-                    savedMessage,
-                    l('Yeni not ekle', 'Add another'),
-                    l('Bitti', 'Done'),
-                ).then((addAnother) => {
-                    if (addAnother) startNextNote();
-                    else goBackOr(router);
+                // Anki's Add window stays open, clears the fields and says "Added" in passing, so
+                // a run of notes is one visit with nothing to dismiss between them. Back leaves,
+                // and so does ✓ on the cleared form (isAddScreenFinished).
+                notesAddedRef.current += 1;
+                startNextNote();
+                setAddedNotice({
+                    id: notesAddedRef.current,
+                    text: l(
+                        `Not eklendi · ${created.cards.length} kart`,
+                        `Note added · ${created.cards.length} card${created.cards.length === 1 ? '' : 's'}`,
+                    ),
                 });
             }
         } catch (e) {
@@ -1146,6 +1168,10 @@ export default function EditorScreen() {
                 >
                     <MoreIcon color={colors.white} />
                 </TouchableOpacity>
+            </View>
+            {/* Hangs under the header over the form, whatever the keyboard covers below. */}
+            <View style={{ height: 0, zIndex: 20 }}>
+                <TransientNotice message={addedNotice} />
             </View>
             <KeyboardAvoidingView
                 style={styles.keyboardArea}

@@ -46,7 +46,13 @@ of the list: **TUS Kartları**, "9,575 cards · 12 courses · 106 subdecks" and 
 Tapping it opens the pack screen. See [TUS card pack](17-tus-card-pack.md).
 
 On first launch the list also contains a deck named **Varsayılan** (Turkish for "Default"). Cards
-you add without choosing a deck go there.
+you add without choosing a deck go there. As in Anki, it is hidden from the list while it is empty
+and you have other decks, and it comes back once a card goes into it. The deck picker always offers
+it when you add a card.
+
+While your collection has no cards outside the TUS pack, a **Welcome** card sits at the top of the
+list: **Unlock the TUS pack**, **Add note** and **Import**. It goes away by itself once you add your
+first own card; if you close it with **×**, it does not come back on this device.
 
 <a id="deck-counts"></a>
 ## What the numbers mean

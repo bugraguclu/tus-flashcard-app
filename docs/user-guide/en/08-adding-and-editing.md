@@ -213,7 +213,7 @@ Tap the **Tags:** row. Tick tags in the list, filter them with the search box, o
 new ones; separate several tags with spaces. Use `::` for a sub-tag: `pharmacology::antibiotics`
 appears as **pharmacology › antibiotics**. The tag `marked` stars (marks) the note. **Confirm**
 applies your choice to the note; tags are stored when the note is saved and carry over to the next
-note with **Add another**.
+note you write after saving.
 
 <a id="sticky-fields"></a>
 ## Pinned fields
@@ -241,15 +241,14 @@ and has no type-in box.
 <a id="save-and-undo"></a>
 ## Saving and undo
 
-Tap the check mark at the top right. For a new note, the message **Note saved; N cards created.**
-offers two choices:
+Tap the check mark at the top right. Once a new note is saved, the screen stays open for the next
+one, as in Anki: pinned fields, deck, type and tags are kept, the other fields are cleared and the
+cursor goes back to the first field. **Note added · N cards** shows briefly at the top; there is no
+window to dismiss. When you are done, leave with **‹** at the top left. After you have added at
+least one note, tapping the check mark on the empty form closes the screen as well.
 
-- **Add another:** the screen stays open. Pinned fields, deck, type and tags are kept; the other
-  fields are cleared.
-- **Done:** the screen closes.
-
-When you edit a note, the change applies to all of its cards and you see **Card updated.**. If a
-field you filled in now needs a new card, the card is added; cards whose fields became empty are not
+When you edit a note and save it, the change applies to all of its cards and the screen goes back to
+where you opened it, without a further message. If a field you filled in now needs a new card, the card is added; cards whose fields became empty are not
 deleted. Remove them with **Decks › ••• › Empty Cards**
 (see [Backups and maintenance](15-backups-and-maintenance.md#empty-cards)).
 

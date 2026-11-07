@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     editorDraftKey,
     hasEditorDraftChanged,
+    isAddScreenFinished,
     isDraftContentBlank,
     isFieldContentBlank,
     type EditorDraftState,
@@ -146,5 +147,25 @@ describe('editor draft changes', () => {
         };
         expect(isDraftContentBlank(blankMulti)).toBe(true);
         expect(hasEditorDraftChanged(editorDraftKey(blankMulti, false), blankMulti, false)).toBe(false);
+    });
+});
+
+// The Add screen stays open after a note is added (Anki's Add window does too), so its ✓ on the
+// cleared form is how the learner says they are done.
+describe('✓ on the cleared Add screen', () => {
+    it('closes once a note was added and nothing new is typed', () => {
+        expect(isAddScreenFinished(['', '<p><br></p>'], [false, false], 1)).toBe(true);
+    });
+
+    it('saves as usual before the first note and whenever an unpinned field has content', () => {
+        expect(isAddScreenFinished(['', ''], [false, false], 0)).toBe(false);
+        expect(isAddScreenFinished(['Soru', ''], [false, false], 2)).toBe(false);
+        expect(isAddScreenFinished(['', '<img src="a.png">'], [false, false], 1)).toBe(false);
+    });
+
+    it('does not count a pinned field\'s kept text as new content', () => {
+        expect(isAddScreenFinished(['Farmakoloji', ''], [true, false], 1)).toBe(true);
+        // With every field pinned there is nothing to tell a new note from the last one: save.
+        expect(isAddScreenFinished(['Farmakoloji', 'Kaynak'], [true, true], 1)).toBe(false);
     });
 });

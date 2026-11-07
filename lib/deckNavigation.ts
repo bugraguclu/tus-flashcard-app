@@ -23,6 +23,20 @@ export function normalizeDeckLeafInput(value: string): string {
         .trim();
 }
 
+/**
+ * The part of a card's deck path below the deck being studied, one entry per level: what the
+ * study screen names above a card that belongs to no course. Empty when the card sits in the
+ * studied deck itself, which the screen's title already names; the whole path when the card
+ * comes from outside it (a filtered deck, a whole-collection session).
+ */
+export function deckPathBelowScope(deckName: string, scopeDeckName: string | null | undefined): string[] {
+    if (scopeDeckName && deckName === scopeDeckName) return [];
+    const below = scopeDeckName && deckName.startsWith(`${scopeDeckName}::`)
+        ? deckName.slice(scopeDeckName.length + 2)
+        : deckName;
+    return below.split('::').filter(Boolean);
+}
+
 /** Browser inherits the exact deck/subdeck the learner is currently studying. */
 export function getScopedBrowserPath(deckName: string | null | undefined): string {
     return deckName ? `/browser?deck=${encodeURIComponent(deckName)}` : '/browser';

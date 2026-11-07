@@ -46,7 +46,12 @@ görürsünüz: **TUS Kartları**, altında "9.575 kart · 12 ders · 106 alt de
 Satıra dokunduğunuzda paket ekranı açılır. Bkz. [TUS Kartları paketi](17-tus-card-pack.md).
 
 İlk açılışta listede bir de **Varsayılan** destesi bulunur. Kart eklerken deste seçmezseniz kartlar
-buraya gider.
+buraya gider. Anki'deki gibi, boşken ve başka desteleriniz varken listede gizlenir; içine bir kart
+eklendiğinde yeniden görünür. Kart eklerken deste seçicide her zaman yer alır.
+
+Koleksiyonunuzda TUS paketi dışında hiç kart yokken listenin başında **Hoş geldiniz** kartı durur:
+**TUS paketini aç**, **Kart ekle** ve **İçe aktar**. İlk kendi kartınızı eklediğinizde kendiliğinden
+kaybolur; **×** ile kapatırsanız bu cihazda bir daha görünmez.
 
 <a id="deck-counts"></a>
 ## Sayılar ne anlama gelir?

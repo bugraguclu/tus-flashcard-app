@@ -224,7 +224,7 @@ ile ekleyip **Kırp ve düzenle**'yi seçin.
 yeni etiket yazın; birden fazla etiketi boşlukla ayırın. Alt etiket için `::` kullanın:
 `farmakoloji::antibiyotik`, listede **farmakoloji › antibiyotik** olarak görünür. `marked` etiketi
 notu yıldızlı (işaretli) yapar. **Onayla** seçiminizi nota uygular; etiketler not kaydedilince
-saklanır ve **Yeni not ekle** ile bir sonraki nota da geçer.
+saklanır ve kayıttan sonra yazdığınız bir sonraki nota da geçer.
 
 <a id="sticky-fields"></a>
 ## Sabitlenen alanlar
@@ -252,15 +252,14 @@ göstermez) ve yazarak cevap kutusunu içermez.
 <a id="save-and-undo"></a>
 ## Kaydetme ve geri alma
 
-Sağ üstteki onay işaretine dokunun. Yeni bir notta **Not kaydedildi; N kart oluşturuldu.** mesajı
-iki seçenek sunar:
+Sağ üstteki onay işaretine dokunun. Yeni bir not kaydedilince ekran, Anki'deki gibi bir sonraki not
+için açık kalır: sabitlenen alanlar, deste, tür ve etiketler korunur, diğer alanlar temizlenir ve
+imleç ilk alana döner. Üstte kısa süre **Not eklendi · N kart** yazar; kapatmanız gereken bir
+pencere çıkmaz. İşiniz bitince sol üstteki **‹** ile çıkın. En az bir not ekledikten sonra boş
+formda onay işaretine dokunmak da ekranı kapatır.
 
-- **Yeni not ekle:** Ekran açık kalır. Sabitlenen alanlar, deste, tür ve etiketler korunur, diğer
-  alanlar temizlenir.
-- **Bitti:** Ekran kapanır.
-
-Bir notu düzenlediğinizde değişiklik notun bütün kartlarına uygulanır ve **Kart güncellendi.**
-denir. Yeni doldurduğunuz bir alan yeni bir kart gerektiriyorsa kart eklenir; boşalan alanların
+Bir notu düzenleyip kaydettiğinizde değişiklik notun bütün kartlarına uygulanır ve ekran, ek bir
+mesaj göstermeden açtığınız yere döner. Yeni doldurduğunuz bir alan yeni bir kart gerektiriyorsa kart eklenir; boşalan alanların
 kartları ise silinmez. Onları **Desteler › ••• › Boş kartlar** ile temizlersiniz
 (bkz. [Yedekler ve bakım](15-backups-and-maintenance.md#empty-cards)).
 

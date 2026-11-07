@@ -167,7 +167,8 @@ import {
     shouldRunAutoAdvance,
 } from '../../lib/reviewerTimers';
 import { useRouteDeckScope } from '../../hooks/useRouteDeckScope';
-import { deckDescriptionText, hasExplicitStudyScope } from '../../lib/deckNavigation';
+import { deckDescriptionText, deckPathBelowScope, hasExplicitStudyScope } from '../../lib/deckNavigation';
+import { isCatalogPurchaseSimulationEnabled } from '../../lib/catalogPurchases';
 import {
     answerScrollTarget,
     canUndoReview,
@@ -1685,7 +1686,9 @@ export default function StudyScreen() {
         const noteType = getNoteType(note.noteTypeId);
         if (!noteType) return null;
         const deck = getDeck(card.deckId);
-        return { card, note, noteType, deck };
+        // The deck a card belongs to: its home deck while it visits a filtered deck.
+        const homeDeck = card.odid ? getDeck(card.odid) : deck;
+        return { card, note, noteType, deck, homeDeck };
     }, [currentCard?.cardId, collectionVersion]);
 
     const currentNoteMarked = renderPayload ? isNoteMarked(renderPayload.note) : false;
@@ -2741,6 +2744,9 @@ export default function StudyScreen() {
     const preview = getPreview();
     const subject = currentCard ? findSubject(cardContext?.subject ?? currentCard.subject) : null;
     const topic = currentCard ? (cardContext?.topic ?? currentCard.topic) : '';
+    const contextDeckPath = !subject && renderPayload?.homeDeck
+        ? deckPathBelowScope(renderPayload.homeDeck.name, selectedDeckName)
+        : [];
     const answerScale = (settings.answerButtonScalePercent ?? 100) / 100;
     // The grade buttons sink under the finger, so a grade is felt the moment it lands.
     const gradeButton = (grade: Grade, label: string, time: string, color: string) => (
@@ -2765,8 +2771,29 @@ export default function StudyScreen() {
     const whiteboardTopInset = whiteboardActive
         ? Math.max(whiteboardToolbarHeight, 52) + Spacing.md
         : 0;
-    const isTrialCatalogScope = getBkaCatalogTier() === 'trial'
+    const catalogTier = getBkaCatalogTier();
+    const isTrialCatalogScope = catalogTier === 'trial'
         && Boolean(selectedDeckName && getDeckByName(selectedDeckName)?.catalogPack === BKA_CATALOG_PACK);
+    // A new learner's first deck is empty, and the free pack is the quickest way to cards: it
+    // installs over this screen and opens on the pack (CatalogUnlockSheet's onUnlocked).
+    const emptyDeckCatalogOffer = isCatalogPurchaseSimulationEnabled() && catalogTier !== 'full' ? (
+        <TouchableOpacity
+            style={styles.secondaryActionBtn}
+            onPress={() => setCatalogUnlockVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={l(
+                `Hazır ${formatCount(BKA_MANIFEST.totals.cards, 'tr')} TUS kartını ücretsiz ekleyin`,
+                `Add ${formatCount(BKA_MANIFEST.totals.cards, 'en')} ready-made TUS cards for free`,
+            )}
+        >
+            <Text style={styles.secondaryActionText}>
+                {l(
+                    `Hazır ${formatCount(BKA_MANIFEST.totals.cards, 'tr')} TUS kartını ücretsiz ekleyin`,
+                    `Add ${formatCount(BKA_MANIFEST.totals.cards, 'en')} ready-made TUS cards for free`,
+                )}
+            </Text>
+        </TouchableOpacity>
+    ) : null;
     const trialPurchaseAction = isTrialCatalogScope ? (
         <TouchableOpacity
             style={styles.catalogPurchaseBtn}
@@ -3232,12 +3259,25 @@ export default function StudyScreen() {
                         >
                             <View style={styles.cardMetaRow}>
                                 <View style={styles.cardContext}>
-                                    <Text style={styles.cardSubject} numberOfLines={1}>
-                                        {subject ? `${subject.icon} ${subject.name}` : '📝'}
-                                    </Text>
-                                    {topic ? <Text style={styles.contextSeparator}>›</Text> : null}
-                                    {topic ? (
-                                        <Text style={styles.cardTopic} numberOfLines={1}>{localizeTopicName(locale, topic)}</Text>
+                                    {subject ? (
+                                        <>
+                                            <Text style={styles.cardSubject} numberOfLines={1}>
+                                                {`${subject.icon} ${subject.name}`}
+                                            </Text>
+                                            {topic ? <Text style={styles.contextSeparator}>›</Text> : null}
+                                            {topic ? (
+                                                <Text style={styles.cardTopic} numberOfLines={1}>{localizeTopicName(locale, topic)}</Text>
+                                            ) : null}
+                                        </>
+                                    ) : contextDeckPath.length > 0 ? (
+                                        // A card of no course names its subdeck rather than a stray "📝 › General".
+                                        <>
+                                            <Text style={styles.cardSubject} numberOfLines={1}>{contextDeckPath[0]}</Text>
+                                            {contextDeckPath.length > 1 ? <Text style={styles.contextSeparator}>›</Text> : null}
+                                            {contextDeckPath.length > 1 ? (
+                                                <Text style={styles.cardTopic} numberOfLines={1}>{contextDeckPath.slice(1).join(' › ')}</Text>
+                                            ) : null}
+                                        </>
                                     ) : null}
                                     {previewMode ? (
                                         <View style={styles.previewBadge}>
@@ -3421,6 +3461,7 @@ export default function StudyScreen() {
                             >
                                 <Text style={styles.primaryActionText}>{l('Kart Ekle', 'Add Card')}</Text>
                             </TouchableOpacity>
+                            {emptyDeckCatalogOffer}
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
                                 onPress={handleReturnToDecks}
