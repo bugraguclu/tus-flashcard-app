@@ -90,3 +90,19 @@ export function hasEditorDraftChanged(
 
     return initialKey !== editorDraftKey(current, isEditing);
 }
+
+/**
+ * Once a note has been added, ✓ on the cleared Add screen means "done": with nothing typed into
+ * an unpinned field it closes the screen rather than refusing an empty note. Pinned fields keep
+ * the last note's text on purpose, so they are not new content; when every field is pinned the
+ * save goes ahead as usual.
+ */
+export function isAddScreenFinished(
+    fields: readonly string[],
+    pinned: readonly boolean[],
+    notesAdded: number,
+): boolean {
+    if (notesAdded <= 0) return false;
+    const unpinned = fields.filter((_, index) => !pinned[index]);
+    return unpinned.length > 0 && unpinned.every((value) => isFieldContentBlank(value));
+}

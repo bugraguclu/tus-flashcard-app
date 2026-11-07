@@ -1,11 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import {
     commonDeckAncestor,
+    deckPathBelowScope,
     getDeckPathNames,
     getRootDeckName,
     getScopedBrowserPath,
     hasExplicitStudyScope,
 } from './deckNavigation';
+
+describe('deckPathBelowScope', () => {
+    it('names nothing for a card in the studied deck itself', () => {
+        expect(deckPathBelowScope('Varsayılan', 'Varsayılan')).toEqual([]);
+    });
+
+    it('names the subdecks below the studied deck', () => {
+        expect(deckPathBelowScope('TUS Örnek::Farmakoloji::Otonom', 'TUS Örnek')).toEqual(['Farmakoloji', 'Otonom']);
+    });
+
+    it('names the whole path without a deck scope or from outside it', () => {
+        expect(deckPathBelowScope('TUS Örnek::Kardiyoloji', null)).toEqual(['TUS Örnek', 'Kardiyoloji']);
+        expect(deckPathBelowScope('TUS Örnek::Kardiyoloji', 'Tekrar Oturumu')).toEqual(['TUS Örnek', 'Kardiyoloji']);
+        // A deck whose name only starts like the scope is not below it.
+        expect(deckPathBelowScope('Farmakoloji 2', 'Farmakoloji')).toEqual(['Farmakoloji 2']);
+    });
+});
 
 describe('commonDeckAncestor', () => {
     it('is the deck itself when every card went into one deck', () => {

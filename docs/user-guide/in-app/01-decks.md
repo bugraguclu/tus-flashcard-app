@@ -53,7 +53,8 @@ deste, **Varsayılan**, 0/0/0 sayılarla (`lib/models.ts:469-471`). Sağ altta *
 **Kartlarım / İstatistik / Ayarlar**. Paket erişimi yoksa hiçbir şey kendiliğinden kurulmaz
 (`contexts/AppContext.tsx:172-186`). **Varsayılan** her zaman var olduğu için mevcut boş durum
 (`decks.tsx:2199-2211`) yeni kurulumda **hiç görünmez**. Yeni kullanıcıya ne yapacağını söyleyen
-bir metin bugün yoktur.
+bir metin yoktu; 2026-11-07'den beri aşağıdaki ilk açılış kartı ve **Varsayılan** ipucu bunu söyler.
+Boş **Varsayılan**, başka desteler olunca Anki'deki gibi listede gizlenir (`lib/deckListFirstRun.ts`).
 
 ### help.decks.firstRun.card — İlk açılış kartı (yeni)
 - **Yer:** Desteler listesinin başlığı (`FlatList` `ListHeaderComponent`, `decks.tsx:2195-2198`,
@@ -74,7 +75,10 @@ bir metin bugün yoktur.
   - Bağlantı **Kılavuzu aç** → `/help?article=quick-start`
   - **×** → kartı kalıcı olarak gizler
 - **Daha fazla bilgi:** `tr/03-quick-start.md#first-screen`
-- **Durum:** Yeni
+- **Durum:** Mevcut — koru (2026-11-07, `components/decks/DeckListWelcome.tsx`; kapatma
+  `help_first_run_dismissed_v1`). **Kılavuzu aç** bağlantısı Yardım merkezi (`/help`) yapılınca
+  eklenir; o güne kadar boşa giden bir bağlantı gösterilmez. Paket kuruluyken metin ikinci
+  cümleyle değişir (aşağıda).
 
 **TR**
 - Başlık: Hoş geldiniz
@@ -84,6 +88,8 @@ bir metin bugün yoktur.
   yazın · **İçe aktar** — .apkg, .colpkg veya metin dosyası
 - Bağlantı: Kılavuzu aç
 - × erişilebilirlik etiketi: Hoş geldiniz kartını kapat
+- Paket kuruluyken metin: TUS Kartları çalışmaya hazır: bir desteye dokunmanız yeterli. Kendi
+  kartınızı da yazabilir veya Anki’den bir deste getirebilirsiniz.
 
 **EN**
 - Title: Welcome
@@ -93,16 +99,18 @@ bir metin bugün yoktur.
   card · **Import** — .apkg, .colpkg or text file
 - Link: Open the guide
 - × accessibility label: Close the welcome card
+- Text while the pack is installed: TUS Kartları is ready to study: just tap a deck. You can also
+  write your own card or bring in a deck from Anki.
 
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
 | help.decks.empty.title | Liste boş durumu, `decks.tsx:2206` | boş durum başlığı | İlk destenizi oluşturun | Create your first deck | Mevcut — koru |
-| help.decks.empty.text | aynı, `decks.tsx:2207` | boş durum metni | Sağ alttaki ＋ ile bir deste oluşturun veya ⋮ › Deste içe aktar ile Anki'den bir deste getirin. | Create a deck with ＋ at the bottom right, or bring one in from Anki with ⋮ › Import deck. | Mevcut — güncelle (eski metin: "Kartlarınızı ders ve konuya göre düzenlemeye buradan başlayın." / "Start organizing your cards by subject and topic.") |
+| help.decks.empty.text | aynı, `decks.tsx:2207` | boş durum metni | Sağ alttaki ＋ ile bir deste oluşturun veya ⋮ › İçe aktar ile Anki’den bir deste getirin. | Create a deck with ＋ at the bottom right, or bring one in from Anki with ⋮ › Import. | Mevcut — koru (2026-11-07; menü satırının adı **İçe aktar**) |
 | help.decks.loadError | Aynı yer; deste listesi yüklenemezse (bugün `decks.tsx:262-266` yalnızca konsola yazar ve boş durumu gösterir) | hata durumu | Desteler yüklenemedi. ↻ ile yeniden deneyin. | Your decks could not be loaded. Tap ↻ to try again. | Yeni |
-| help.decks.locked.a11y | Kilitli TUS satırı, `decks.tsx:1388-1391` | erişilebilirlik etiketi | TUS Kartları kart paketi, 9575 kart, ücretsiz açmak için dokun | TUS Kartları card pack, 9575 cards, tap to unlock for free | Mevcut — koru |
+| help.decks.locked.a11y | Kilitli TUS satırı, `decks.tsx:1388-1391` | erişilebilirlik etiketi | TUS Kartları hazır kart paketi, 9.575 kart. Ücretsiz kurmak için dokunun. | TUS Kartları ready-made card pack, 9,575 cards. Tap to install it for free. | Mevcut — koru (2026-11-07, `help.tusCards.lockedRowA11y` ile aynı) |
 | help.decks.locked.meta | Kilitli TUS satırı alt satırı, `decks.tsx:1403-1406` | satır içi | {kart} kart · {ders} ders · {konu} alt deste | {cards} cards · {courses} courses · {topics} subdecks | Mevcut — koru |
 | help.decks.locked.installing | aynı, kurulum sırasında, `decks.tsx:1402` | durum | Kartlar kuruluyor… | Installing cards… | Mevcut — koru |
-| help.decks.varsayilanHint | **Varsayılan** satırında, yalnızca ilk açılış kartı görünürken; satırın altında küçük metin (`renderDeckRow`, `decks.tsx:1312-1322`, deste kimliği 1) | ipucu | Deste seçmeden eklediğiniz kartlar buraya gelir. | Cards you add without choosing a deck go here. | Yeni |
+| help.decks.varsayilanHint | **Varsayılan** satırında, yalnızca ilk açılış kartı görünürken; satırın altında küçük metin (`renderDeckRow`, `decks.tsx:1312-1322`, deste kimliği 1) | ipucu | Deste seçmeden eklediğiniz kartlar buraya gelir. | Cards you add without choosing a deck go here. | Mevcut — koru (2026-11-07) |
 
 ---
 
@@ -152,9 +160,9 @@ bir metin bugün yoktur.
 | help.decks.refresh.a11y | Başlık **↻**, `decks.tsx:2222` | erişilebilirlik etiketi | Desteleri yenile | Refresh decks | Mevcut — koru |
 | help.decks.refresh.hint | aynı | erişilebilirlik ipucu | Bugünkü sayıları yeniden hesaplar. | Recalculates today's numbers. | Yeni |
 | help.decks.name.a11y | Deste adı, `decks.tsx:1309` | erişilebilirlik etiketi | {deste} destesini çalış | Study {deck} deck | Mevcut — koru |
-| help.decks.menuButton.a11y | Satır **•••**, `decks.tsx:1358` | erişilebilirlik etiketi | {deste} deste menüsü | {deck} deck menu | Mevcut — güncelle (eski metin: "{deste} deste seçenekleri" / "{deck} deck options"; düğme Deste seçenekleri'ni değil menüyü açar) |
+| help.decks.menuButton.a11y | Satır **•••**, `decks.tsx:1358` | erişilebilirlik etiketi | {deste} deste menüsü | {deck} deck menu | Mevcut — koru (2026-11-07) |
 | help.decks.dragHandle.a11y | **⠿**, `decks.tsx:1337-1338` | erişilebilirlik etiketi + ipucu | {deste} destesini taşı · Satırın üstüne veya altına bırakarak sıralayın; ortasına bırakarak alt deste yapın | Move {deck} deck · Drop at a row edge to reorder, or at its center to make a subdeck | Mevcut — koru |
-| help.decks.dragHandle.catalogA11y | Soluk **⠿**, TUS Kartları destelerinde, `decks.tsx:1344-1352` | erişilebilirlik etiketi | TUS Kartları desteleri taşınamaz | TUS Kartları decks cannot be moved | Mevcut — güncelle (eski metin: "Filtrelenmiş desteler alt deste olarak taşınamaz"; katalog destesinde de bu okunuyor). Filtrelenmiş destede eski metin kalır. |
+| help.decks.dragHandle.catalogA11y | Soluk **⠿**, TUS Kartları destelerinde, `decks.tsx:1344-1352` | erişilebilirlik etiketi | Hazır paket desteleri taşınamaz | Ready-made pack decks cannot be moved | Mevcut — koru (2026-11-07, `help.tusCards.dragHandleA11y` metniyle). Filtrelenmiş destede eski metin kalır. |
 | help.decks.drag.* | Sürükleme geri bildirimleri, `decks.tsx:338-357, 2392-2394, 2536` | satır içi | (mevcut dört cümle, ↑ Ana seviyeye bırak, "… taşınıyor") | (same) | Mevcut — koru |
 | help.decks.overflow.import | **⋮** › 2. satır, `decks.tsx:2269` (`t('root.import')`) | menü etiketi | İçe aktar | Import | Mevcut — güncelle (eski metin: "Deste içe aktar" / "Import deck"; ekran .colpkg ve metin dosyalarını da alır, "Dışa aktar" ile uyumlu). `root.import` başka yerlerde de kullanılıyorsa yeni anahtar: `decks.overflowImport`. |
 | help.decks.overflow.backupHint | **⋮** › **Yedek oluştur**, `decks.tsx:2282` | erişilebilirlik ipucu | Yedekler ekranını açar; yedeği orada adlandırıp alırsınız. | Opens Backups, where you name and create the backup. | Yeni |

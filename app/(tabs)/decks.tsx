@@ -92,6 +92,13 @@ import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../../lib/dataManagementRoutes';
 import { getDeckListSnapshot } from '../../lib/deckListSnapshot';
 import {
+    DEFAULT_DECK_ID,
+    dismissFirstRunCard,
+    isFirstRunCardDismissed,
+    shouldShowFirstRunCard,
+} from '../../lib/deckListFirstRun';
+import DeckListWelcome from '../../components/decks/DeckListWelcome';
+import {
     buildVisibleDeckRows,
     toggleDeckBranchRows,
     type DeckListRowModel,
@@ -186,6 +193,9 @@ export default function DecksScreen() {
     const deckTreeRef = useRef<DeckTreeNode[]>([]);
     const [visibleRows, setVisibleRows] = useState<DeckListRowModel[]>([]);
     const [snapshotLoading, setSnapshotLoading] = useState(true);
+    // Unknown until the first snapshot, so the welcome card never flashes at a learner who has cards.
+    const [ownCardCount, setOwnCardCount] = useState<number | null>(null);
+    const [firstRunDismissed, setFirstRunDismissed] = useState(isFirstRunCardDismissed);
     const snapshotGenerationRef = useRef(0);
     const updateExpandedDecks = useCallback((update: (current: Set<string>) => Set<string>) => {
         expandedDecksRef.current = update(expandedDecksRef.current);
@@ -241,6 +251,7 @@ export default function DecksScreen() {
                 expandedDecksRef.current = nextExpanded;
                 deckTreeRef.current = snapshot.tree;
                 setVisibleRows(buildVisibleDeckRows(snapshot.tree, nextExpanded));
+                setOwnCardCount(snapshot.ownCardCount);
             } catch (error) {
                 console.warn('[Decks] deck-list snapshot failed:', error);
             } finally {
@@ -315,6 +326,7 @@ export default function DecksScreen() {
     // flash the locked row at a learner who already owns the pack; the collection itself is the
     // authority on the first frame.
     const fullCatalogPresent = catalogTier === 'full';
+    const showWelcome = ownCardCount !== null && shouldShowFirstRunCard(ownCardCount, firstRunDismissed);
 
     const visibleRowsRef = useRef<DeckTreeNode[]>([]);
     visibleRowsRef.current = visibleRows.map((row) => row.node);
@@ -484,16 +496,22 @@ export default function DecksScreen() {
     // Anki's "Add" toolbar action: open the note editor targeting the current deck. Passing no
     // deckId lets the editor resolve the last-opened deck (activeDeckName), matching Anki's habit
     // of adding to the deck you last studied.
-    const openAddCard = () => {
+    const openAddCard = useCallback(() => {
         setShowAddMenu(false);
         router.push('/editor' as any);
-    };
+    }, [router]);
 
     const openCreateFilteredDeck = () => {
         setShowAddMenu(false);
         setFilteredDeckFormDeck(null);
         setFilteredDeckFormVisible(true);
     };
+
+    const dismissWelcome = useCallback(() => {
+        animateDeckTreeLayout();
+        dismissFirstRunCard();
+        setFirstRunDismissed(true);
+    }, [animateDeckTreeLayout]);
 
     // ---- Gear menu actions ----
 
@@ -1198,6 +1216,11 @@ export default function DecksScreen() {
                         learnCount={node.learnCount}
                         reviewCount={node.reviewCount}
                     />
+                    {showWelcome && deck.id === DEFAULT_DECK_ID ? (
+                        <Text style={styles.deckHint}>
+                            {l('Deste seçmeden eklediğiniz kartlar buraya gelir.', 'Cards you add without choosing a deck go here.')}
+                        </Text>
+                    ) : null}
                 </View>
 
                 {dragResponder && (
@@ -1217,7 +1240,9 @@ export default function DecksScreen() {
                     <View
                         style={[styles.dragHandle, styles.dragHandleDisabled]}
                         accessible
-                        accessibilityLabel={l('Filtrelenmiş desteler alt deste olarak taşınamaz', 'Filtered decks cannot be moved into the deck tree')}
+                        accessibilityLabel={deck.isFiltered
+                            ? l('Filtrelenmiş desteler alt deste olarak taşınamaz', 'Filtered decks cannot be moved into the deck tree')
+                            : l('Hazır paket desteleri taşınamaz', 'Ready-made pack decks cannot be moved')}
                     >
                         <Text style={styles.dragHandleText}>⠿</Text>
                     </View>
@@ -1227,7 +1252,7 @@ export default function DecksScreen() {
                     style={styles.gearBtn}
                     onPress={() => openMenu(deck)}
                     accessibilityRole="button"
-                    accessibilityLabel={l(`${displayName} deste seçenekleri`, `${displayName} deck options`)}
+                    accessibilityLabel={l(`${displayName} deste menüsü`, `${displayName} deck menu`)}
                 >
                     <Text style={styles.gearText}>•••</Text>
                 </TouchableOpacity>
@@ -1243,6 +1268,7 @@ export default function DecksScreen() {
         isCompact,
         l,
         openMenu,
+        showWelcome,
         styles,
         toggleExpand,
         width,
@@ -1258,8 +1284,8 @@ export default function DecksScreen() {
             onPress={() => router.push('/catalog' as any)}
             accessibilityRole="button"
             accessibilityLabel={l(
-                `${BKA_CATALOG_DEFAULT_ROOT_DECK} kart paketi, ${BKA_MANIFEST.totals.cards} kart, ücretsiz açmak için dokun`,
-                `${BKA_CATALOG_DEFAULT_ROOT_DECK} card pack, ${BKA_MANIFEST.totals.cards} cards, tap to unlock for free`,
+                `${BKA_CATALOG_DEFAULT_ROOT_DECK} hazır kart paketi, ${formatCount(BKA_MANIFEST.totals.cards, 'tr')} kart. Ücretsiz kurmak için dokunun.`,
+                `${BKA_CATALOG_DEFAULT_ROOT_DECK} ready-made card pack, ${formatCount(BKA_MANIFEST.totals.cards, 'en')} cards. Tap to install it for free.`,
             )}
         >
             <View style={styles.lockedDeckIcon}>
@@ -1436,10 +1462,21 @@ export default function DecksScreen() {
         />
     ), [renderDeckRow]);
     const deckRowKey = useCallback((item: DeckListRowModel) => item.key, []);
-    const deckListHeader = useMemo(
-        () => fullCatalogPresent ? null : renderLockedCatalogCard(),
-        [fullCatalogPresent, renderLockedCatalogCard],
-    );
+    const deckListHeader = useMemo(() => (
+        <>
+            {fullCatalogPresent ? null : renderLockedCatalogCard()}
+            {showWelcome ? (
+                <DeckListWelcome
+                    showCatalog={!fullCatalogPresent}
+                    catalogCardCount={BKA_MANIFEST.totals.cards}
+                    onOpenCatalog={() => router.push('/catalog' as any)}
+                    onAddCard={openAddCard}
+                    onImport={() => router.push(DATA_IMPORT_ROUTE as any)}
+                    onDismiss={dismissWelcome}
+                />
+            ) : null}
+        </>
+    ), [dismissWelcome, fullCatalogPresent, openAddCard, renderLockedCatalogCard, router, showWelcome]);
     const deckListEmpty = useMemo(() => (
         <View style={styles.emptyState}>
             {snapshotLoading ? (
@@ -1448,7 +1485,7 @@ export default function DecksScreen() {
                 <>
                     <Text style={styles.emptyStateIcon}>＋</Text>
                     <Text style={styles.emptyStateTitle}>{l('İlk destenizi oluşturun', 'Create your first deck')}</Text>
-                    <Text style={styles.emptyStateText}>{l('Kartlarınızı ders ve konuya göre düzenlemeye buradan başlayın.', 'Start organizing your cards by subject and topic.')}</Text>
+                    <Text style={styles.emptyStateText}>{l('Sağ alttaki ＋ ile bir deste oluşturun veya ⋮ › İçe aktar ile Anki’den bir deste getirin.', 'Create a deck with ＋ at the bottom right, or bring one in from Anki with ⋮ › Import.')}</Text>
                 </>
             )}
         </View>
@@ -1983,6 +2020,8 @@ function createStyles(colors: ColorScheme) {
     deckNameTouchable: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', maxWidth: '100%', paddingLeft: 2, minHeight: 44, justifyContent: 'center' },
     deckName: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
     deckNameFiltered: { color: colors.badgeNew, fontStyle: 'italic' },
+    // A line of its own under the name and counts: the wrapping row puts a full-width child below.
+    deckHint: { width: '100%', paddingLeft: 2, paddingBottom: 2, fontSize: FontSize.sm, color: colors.textMuted },
     dragHandle: {
         width: 44,
         height: 44,

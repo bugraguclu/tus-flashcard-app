@@ -8,7 +8,7 @@ app_help: help?article=quick-start
 app_screens:
   - "Desteler sekmesi (ilk açılış) — app/(tabs)/decks.tsx"
   - "İlk açılış kartı — help.firstRun.* (bkz. in-app/01-decks.md)"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/user-flow-core-functions-31d44c (2026-11-07)
 ---
 
 # Hızlı başlangıç
@@ -19,13 +19,17 @@ bağlantıya bakın.
 <a id="first-screen"></a>
 ## 1. İlk ekran: Desteler
 
-Uygulama **Desteler** ekranıyla açılır. İlk açılışta orada iki satır görürsünüz:
+Uygulama **Desteler** ekranıyla açılır. İlk açılışta orada şunları görürsünüz:
 
 - **TUS Kartları** — kilit simgeli, "9.575 kart · 12 ders · 106 alt deste" yazan hazır paket.
   Henüz cihazınızda değildir; dokunduğunuzda tanıtım ekranı açılır.
-- **Varsayılan** — boş bir deste. Başka deste seçmediğiniz kartlar buraya gider.
+- **Hoş geldiniz** kartı — kart edinmenin üç yolu: **TUS paketini aç**, **Kart ekle** ve
+  **İçe aktar**. Kendi ilk kartınızı eklediğinizde kendiliğinden kaybolur; daha önce kapatmak için
+  sağ üstteki **×**'e dokunun.
+- **Varsayılan** — boş bir deste. Başka deste seçmediğiniz kartlar buraya gider. Başka desteleriniz
+  olduğunda boşken listede gizlenir (Anki'deki gibi) ve içine bir kart eklenince yeniden görünür.
 
-Ekranın altında **Kartlarım**, **İstatistik** ve **Ayarlar** düğmeleri, sağ altta yeni deste veya
+Ekranın altında **Kartlarım**, **Kronometre**, **İstatistik** ve **Ayarlar** düğmeleri, sağ altta yeni deste veya
 kart eklemek için **＋** düğmesi, sağ üstte de **⋮** (Diğer seçenekler) menüsü bulunur.
 
 <a id="get-cards"></a>
@@ -38,8 +42,12 @@ kart eklemek için **＋** düğmesi, sağ üstte de **⋮** (Diğer seçenekler
 
 1. Deste listesinde **TUS Kartları** satırına dokunun.
 2. Paketin içeriğine göz atın ve **Kartları ücretsiz aç** düğmesine dokunun.
-3. Kurulum birkaç saniye sürer. **Paket açıldı** mesajından sonra **Destelerime git** ile listeye
-   dönün; 12 ders destesi ve alt desteleri orada olur.
+3. Kurulum birkaç saniye sürer. **Paket açıldı** mesajında **Tamam**'a dokunun; deste listesine
+   dönersiniz ve 12 ders destesi ile alt desteleri orada olur.
+
+Boş bir desteyi açtığınızda çıkan **Bu Deste Henüz Boş** ekranındaki **Hazır 9.575 TUS kartını
+ücretsiz ekleyin** düğmesi de paketi kurar; kurulum bitince çalışma ekranı doğrudan **TUS Kartları**
+ile açılır.
 
 Paket internet gerektirmez, ödeme veya hesap istemez. Bkz. [TUS Kartları paketi](17-tus-card-pack.md).
 
@@ -51,8 +59,9 @@ Paket internet gerektirmez, ödeme veya hesap istemez. Bkz. [TUS Kartları paket
 2. **＋ › Kart ekle** ile düzenleyiciyi açın. Üstteki **Tür** satırından not türünü (örneğin
    **Temel**), **Deste** satırından desteyi seçin.
 3. **Ön** alanına soruyu, **Arka** alanına cevabı yazın.
-4. Sağ üstteki **✓** düğmesiyle kaydedin. Açılan pencerede **Yeni not ekle** ile bir sonraki karta
-   geçin veya **Bitti** ile çıkın.
+4. Sağ üstteki **✓** düğmesiyle kaydedin. Alanlar boşalır, üstte kısa süre **Not eklendi · 1 kart**
+   yazar ve sıradaki kartı hemen yazabilirsiniz. İşiniz bitince sol üstteki **‹** ile çıkın; boş
+   formda **✓**'e dokunmak da ekranı kapatır.
 
 Bkz. [Kart ekleme ve düzenleme](08-adding-and-editing.md).
 

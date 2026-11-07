@@ -65,12 +65,15 @@ export default function CatalogScreen() {
             'Your purchase went through, but the cards could not be installed. Retrying the installation is free.',
         );
 
+    // The cards are the point of the purchase, so acknowledging it is also the way to them: OK
+    // closes this screen onto the deck list that now holds the pack.
     const announceUnlocked = () => alert(
         l('Paket açıldı', 'Package unlocked'),
         l(
             `${number(BKA_MANIFEST.totals.cards)} kartın tamamı deste listenize eklendi.`,
             `All ${number(BKA_MANIFEST.totals.cards)} cards were added to your deck list.`,
         ),
+        () => goBackOr(router),
     );
 
     const buy = async () => {
@@ -236,7 +239,10 @@ export default function CatalogScreen() {
 
                     <View style={styles.heroBadge}>
                         <Text style={styles.heroBadgeText}>
-                            {owned ? l('SATIN ALINDI', 'PURCHASED') : l('PREMIUM KART PAKETİ', 'PREMIUM CARD PACK')}
+                            {/* Nothing is bought while the pack is free, so neither badge may say so. */}
+                            {purchaseSimulationEnabled
+                                ? (owned ? l('AÇIK', 'UNLOCKED') : l('HAZIR KART PAKETİ', 'READY-MADE CARD PACK'))
+                                : (owned ? l('SATIN ALINDI', 'PURCHASED') : l('PREMIUM KART PAKETİ', 'PREMIUM CARD PACK'))}
                         </Text>
                     </View>
                     <Text style={styles.heroTitle}>
@@ -373,7 +379,7 @@ export default function CatalogScreen() {
                             text: l('Telefonunuzu değiştirseniz de satın alma işlemini geri yükleyebilirsiniz.', 'You can restore the purchase even if you change your phone.'),
                         }]),
                         {
-                            title: l('Kendi kartların ayrı kalır', 'Your own cards stay separate'),
+                            title: l('Kendi kartlarınız ayrı kalır', 'Your own cards stay separate'),
                             text: l('Kendi desteleriniz, notlarınız ve çalışma geçmişiniz aynen korunur.', 'Your own decks, notes, and review history are left untouched.'),
                         },
                         {

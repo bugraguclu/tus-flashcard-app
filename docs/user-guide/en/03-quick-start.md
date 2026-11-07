@@ -8,7 +8,7 @@ app_help: help?article=quick-start
 app_screens:
   - "Decks tab (first launch) — app/(tabs)/decks.tsx"
   - "First-run card — help.firstRun.* (see in-app/01-decks.md)"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/user-flow-core-functions-31d44c (2026-11-07)
 ---
 
 # Quick start
@@ -19,14 +19,18 @@ the end of each step.
 <a id="first-screen"></a>
 ## 1. The first screen: Decks
 
-The app opens on the **Decks** screen. On first launch you see two rows there:
+The app opens on the **Decks** screen. On first launch you see:
 
 - **TUS Kartları** — the ready-made pack, with a lock icon and the line "9,575 cards · 12 courses ·
   106 subdecks". It is not on your device yet; tapping it opens its introduction screen.
+- The **Welcome** card — the three ways to get cards: **Unlock the TUS pack**, **Add note** and
+  **Import**. It goes away by itself once you add your first own card; to close it sooner, tap the
+  **×** at its top right.
 - **Varsayılan** — an empty deck (its name means "Default"). Cards you add without choosing another
-  deck go here.
+  deck go here. Once you have other decks it is hidden while empty (as in Anki) and comes back as
+  soon as a card goes into it.
 
-At the bottom of the screen are the **Card Browser**, **Stats** and **Settings** buttons. At the
+At the bottom of the screen are the **Card Browser**, **Stopwatch**, **Stats** and **Settings** buttons. At the
 bottom right is the **＋** button for adding a new deck or card, and at the top right is the **⋮**
 (More options) menu.
 
@@ -40,8 +44,12 @@ You can use any or all of these three ways.
 
 1. In the deck list, tap the **TUS Kartları** row.
 2. Look through what the pack contains and tap **Unlock cards for free**.
-3. Installing takes a few seconds. After the **Package unlocked** message, go back to the list
-   with **Go to my decks**; the 12 subject decks and their subdecks are there.
+3. Installing takes a few seconds. Tap **OK** on the **Package unlocked** message; you are back
+   on the deck list, where the 12 subject decks and their subdecks are.
+
+The **Add 9,575 ready-made TUS cards for free** button on the **This Deck is Empty** screen, which
+appears when you open an empty deck, installs the pack too; once it is done the study screen opens
+straight on **TUS Kartları**.
 
 The pack needs no internet connection, payment or account. See [TUS card pack](17-tus-card-pack.md).
 
@@ -53,8 +61,9 @@ The pack needs no internet connection, payment or account. See [TUS card pack](1
 2. Open the editor with **＋ › Add note**. Choose the note type (for example **Basic**) in the
    **Type:** row at the top and the deck in the **Deck:** row.
 3. Type the question in the **Front** field and the answer in the **Back** field.
-4. Save with the **✓** button at the top right. In the window that opens, tap **Add another** to
-   move on to the next card, or **Done** to leave.
+4. Save with the **✓** button at the top right. The fields clear, **Note added · 1 card** shows
+   briefly at the top, and you can type the next card straight away. When you are done, leave with
+   **‹** at the top left; tapping **✓** on the empty form closes the screen as well.
 
 See [Adding and editing cards](08-adding-and-editing.md).
 

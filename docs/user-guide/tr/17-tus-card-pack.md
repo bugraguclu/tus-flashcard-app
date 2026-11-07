@@ -68,8 +68,12 @@ Paket 12 ders destesinden ve bunların altındaki 106 alt desteden oluşur. Büt
 3. Alttaki **Kartları ücretsiz aç** düğmesine dokunun. Ödeme, hesap veya internet bağlantısı
    gerekmez; paket uygulamanın içinden kurulur.
 4. **Kartlar kuruluyor** penceresi birkaç saniye görünür. Bitince **Paket açıldı** mesajı gelir.
-5. **Destelerime git** ile deste listesine dönün. **TUS Kartları** artık normal bir deste olarak
+5. **Tamam**'a dokunun; deste listesine dönersiniz. **TUS Kartları** artık normal bir deste olarak
    listededir.
+
+Boş bir desteyi açtığınızda **Bu Deste Henüz Boş** ekranındaki **Hazır 9.575 TUS kartını ücretsiz
+ekleyin** düğmesi de paketi kurar; kurulum bitince çalışma ekranı doğrudan **TUS Kartları** ile
+açılır. İlk açılıştaki **Hoş geldiniz** kartının **TUS paketini aç** satırı bu ekranı açar.
 
 Kurulum kendi destelerinize, notlarınıza ve tekrar geçmişinize dokunmaz. Kurulum yarıda kalırsa
 koleksiyonunuz olduğu gibi kalır; uygulamayı kapatıp yeniden açtığınızda kurulum kendiliğinden

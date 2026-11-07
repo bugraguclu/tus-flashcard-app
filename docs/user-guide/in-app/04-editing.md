@@ -19,13 +19,13 @@ more) kullanır.
 **TR**
 - Başlık: Not nasıl eklenir?
 - Özet: Bir not yazarsınız; uygulama seçtiğiniz türe göre ondan bir veya daha fazla kart üretir.
-- Maddeler: (1) **Tür:** kartların nasıl üretileceğini, **Deste:** nereye gideceklerini belirler. (2) 📌 bir alanın içeriğini bir sonraki not için korur; 📎 resim, ses, çizim veya dosya ekler. (3) Göz düğmesi notun ilk kartını önizler; onay işareti kaydeder. (4) Kaydettikten sonra **Yeni not ekle** ile aynı deste, tür ve etiketlerle devam edebilirsiniz.
+- Maddeler: (1) **Tür:** kartların nasıl üretileceğini, **Deste:** nereye gideceklerini belirler. (2) 📌 bir alanın içeriğini bir sonraki not için korur; 📎 resim, ses, çizim veya dosya ekler. (3) Göz düğmesi notun ilk kartını önizler; onay işareti kaydeder. (4) Kaydettikten sonra ekran açık kalır: alanlar boşalır, **Not eklendi · N kart** kısa süre görünür ve aynı deste, tür ve etiketlerle devam edersiniz. Bitince **‹** ile çıkın.
 - Not: Düzenlerken desteyi değiştirirseniz yalnızca açtığınız kart taşınır.
 
 **EN**
 - Title: How to add a note
 - Summary: You write a note, and the app makes one or more cards from it depending on the type you choose.
-- Points: (1) **Type:** decides how cards are made, **Deck:** where they go. (2) 📌 keeps a field's content for the next note; 📎 adds an image, audio, a drawing or a file. (3) The eye button previews the note's first card; the check mark saves. (4) After saving, **Add another** continues with the same deck, type and tags.
+- Points: (1) **Type:** decides how cards are made, **Deck:** where they go. (2) 📌 keeps a field's content for the next note; 📎 adds an image, audio, a drawing or a file. (3) The eye button previews the note's first card; the check mark saves. (4) After saving, the screen stays open: the fields clear, **Note added · N cards** shows briefly and you carry on with the same deck, type and tags. Leave with **‹** when you are done.
 - Note: While editing, changing the deck moves only the card you opened.
 
 ### help.editor.clozeSheet — Boşluk doldurma bilgi sayfası (yeni)
@@ -125,7 +125,7 @@ more) kullanır.
 | help.editor.deleted | **Notu sil** sonrasındaki pencere, `app/editor.tsx:1050` | sonuç penceresi | {n} kart silindi. Geri almak için şimdi Geri al'a dokunun; bu pencere kapanınca geri alınamaz. | {n} cards deleted. Tap Undo now to restore them; once this window closes, it cannot be undone. | Mevcut — güncelle (eski metin: "{n} kart silindi." / "{n} cards deleted.") |
 | help.editor.cardsRowHint | **Kartlar:** satırı erişilebilirlik ipucu, `app/editor.tsx:1335` | erişilebilirlik ipucu | Seçili not türünün şablonlarını açar. Değişiklikler bu türdeki bütün notları etkiler. | Opens the templates of the selected note type. Changes affect every note of this type. | Mevcut — güncelle (eski metin: "Seçili not türünün kart ve alan şablonlarını açar" / "Opens the card and field templates for the selected note type") |
 | help.editor.unsaved | Çıkarken onay, `app/editor.tsx:500-503` | onay | — | — | Mevcut — koru |
-| help.editor.saved | Kaydetme sonucu, `app/editor.tsx:983-1005` | sonuç penceresi | — | — | Mevcut — koru |
+| help.editor.saved | Kaydetme sonucu, `app/editor.tsx` `handleSave` | geçici bildirim (`components/TransientNotice.tsx`) | Not eklendi · {n} kart | Note added · {n} cards | Mevcut — güncelle (2026-11-07; eski: "Not kaydedildi; N kart oluşturuldu." penceresi, **Yeni not ekle** / **Bitti**. Düzenleme kaydı artık "Kart güncellendi." göstermeden geri döner; boş formda ✓ ekranı kapatır) |
 
 ### ••• menüsü ve biçimlendirme (`components/editor/*`)
 

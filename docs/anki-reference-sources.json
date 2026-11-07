@@ -109,7 +109,7 @@
       "priority": 1,
       "platform": "cross-platform note/card semantics",
       "url": "https://docs.ankiweb.net/editing.html",
-      "useFor": ["adding notes", "generated cards", "note fields", "editing notes", "field formatting and media attachments", "paper-clip attachment of audio, images and video, and recording from the microphone (Editing Features); lib/attachmentKind.test.ts", "shared note fields versus independent sibling card deck placement"]
+      "useFor": ["adding notes", "generated cards", "note fields", "editing notes", "field formatting and media attachments", "paper-clip attachment of audio, images and video, and recording from the microphone (Editing Features); lib/attachmentKind.test.ts", "shared note fields versus independent sibling card deck placement", "the Add screen clears every field but the sticky ones after a note is added and stays open for the next (Adding Cards, sticky fields); lib/editorDraft.test.ts"]
     },
     {
       "id": "anki-manual-collection-packages",
@@ -1211,6 +1211,15 @@
       "url": "https://docs.ankiweb.net/getting-started.html#decks",
       "useFor": [
         "normalize deep deck paths without repeated per-ancestor database reads"
+      ]
+    },
+    {
+      "id": "anki-manual-default-deck-hidden",
+      "priority": 1,
+      "platform": "cross-platform deck list",
+      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "useFor": [
+        "the deck list hides the Default deck while it holds no cards and other decks exist; one with subdecks stays; lib/deckListFirstRun.test.ts"
       ]
     },
     {

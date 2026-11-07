@@ -69,7 +69,12 @@ called **TUS Kartları**. Course and subdeck names are in Turkish.
 3. Tap **Unlock cards for free** at the bottom. No payment, account or internet connection is
    needed; the pack is installed from inside the app.
 4. An **Installing cards** window shows for a few seconds, then **Package unlocked** appears.
-5. Tap **Go to my decks**. **TUS Kartları** is now an ordinary deck in your list.
+5. Tap **OK**; you are back on the deck list. **TUS Kartları** is now an ordinary deck in your list.
+
+The **Add 9,575 ready-made TUS cards for free** button on the **This Deck is Empty** screen, which
+appears when you open an empty deck, installs the pack too; once it is done the study screen opens
+straight on **TUS Kartları**. The **Unlock the TUS pack** row of the first-launch **Welcome** card
+opens this screen.
 
 Installing does not touch your own decks, notes or review history. If the installation is
 interrupted, your collection stays as it was; the next time you open the app it tries again on

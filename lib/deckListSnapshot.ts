@@ -8,6 +8,7 @@ import {
 } from './deckManager';
 import { getFilteredDeckCountCards } from './studyRepository';
 import { capFilteredDeckCounts } from './filteredDeckServing';
+import { countOwnCards, withoutEmptyDefaultDeck } from './deckListFirstRun';
 
 export interface DeckListCount {
     new: number;
@@ -21,6 +22,8 @@ export interface DeckListSnapshot {
     decks: Deck[];
     counts: Map<number, DeckListCount>;
     tree: DeckTreeNode[];
+    /** Cards outside the TUS pack; 0 means the learner has none of their own yet. */
+    ownCardCount: number;
 }
 
 /** One focus-scoped repository snapshot for every deck row and filtered-deck membership. */
@@ -63,6 +66,9 @@ export function getDeckListSnapshot(
     return {
         decks,
         counts,
-        tree: buildDeckTree(decks, counts, settings.dayRolloverHour, { limitsStartFromTop: settings.limitsStartFromTop === true }),
+        tree: withoutEmptyDefaultDeck(
+            buildDeckTree(decks, counts, settings.dayRolloverHour, { limitsStartFromTop: settings.limitsStartFromTop === true }),
+        ),
+        ownCardCount: countOwnCards(decks, counts),
     };
 }

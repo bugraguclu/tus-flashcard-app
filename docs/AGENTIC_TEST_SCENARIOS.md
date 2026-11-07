@@ -319,7 +319,7 @@ Aşağıdakiler bilinçli ürün kararı ya da henüz olmayan özelliktir. İlgi
 - **Anki:** Edit notu düzenleyicide açar. Düzeltme notun bütün kartlarına yansır.
   [Kılavuz](https://docs.ankiweb.net/manual/studying#editing-and-more)
 - **TusAnkiM:** ⋮ → "Notu düzenle" → "Kartı düzenle" ekranı → ✓ (aria "Değişiklikleri kaydet").
-- **Geçer:** "Kart güncellendi." görünür, okuyucuya dönülür. Kart düzeltilmiş metni gösterir.
+- **Geçer:** Ayrı bir onay penceresi olmadan okuyucuya dönülür. Kart düzeltilmiş metni gösterir.
   "böbrek / kidney" notunda iki kart da düzelir.
 
 #### STUDY-13 · İstek · P2 · S1
@@ -469,7 +469,7 @@ Aşağıdakiler bilinçli ürün kararı ya da henüz olmayan özelliktir. İlgi
 - **Anki:** Alanın iğne simgesi alanı yapışkan yapar.
   [FAQ](https://docs.ankiweb.net/faqs/sticky-fields)
 - **TusAnkiM:** Alanın yanındaki iğne (aria "<Alan> alanını sabitle").
-- **Geçer:** Kaydedip "Yeni not ekle" deyince sabitlenmiş alanın içeriği kalır, diğeri boşalır.
+- **Geçer:** Kaydedince ekran açık kalır ("Not eklendi · 1 kart" kısa süre görünür); sabitlenmiş alanın içeriği kalır, diğeri boşalır.
 
 #### ADD-10 · Soru · P2 · S2
 - **Kullanıcı:** "Aynı kartı iki kez eklersem uyarır mı?"
