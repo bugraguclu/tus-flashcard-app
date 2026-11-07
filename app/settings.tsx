@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Animated,
     Keyboard,
     Linking,
     Modal,
@@ -79,6 +80,7 @@ import { resetAllDataWithBackup, ResetWorkflowError } from '../lib/resetWorkflow
 import { BackupNotRestorableError } from '../lib/backup';
 import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { useSuccessPulse } from '../hooks/useSuccessPulse';
 import { useRepeatPress } from '../hooks/useRepeatPress';
 
 import {
@@ -452,6 +454,8 @@ export default function SettingsScreen() {
     const isDirty = hasSnapshotChanged(savedSnapshot, settings);
     // The confirmation lingers briefly after a save, but an edit made meanwhile is not saved.
     const showSaved = saved && !isDirty;
+    // "✓ Kaydedildi" confirms the save with a single beat as it appears.
+    const savedPulse = useSuccessPulse(showSaved);
     useUnsavedChangesGuard(isDirty, {
         title: l('Kaydedilmemiş değişiklikler', 'Unsaved changes'),
         message: l(
@@ -1728,22 +1732,25 @@ export default function SettingsScreen() {
                     {activeCategory?.title ?? l('Ayarlar', 'Settings')}
                 </Text>
                 {activeSection || isDirty ? (
-                    <TouchableOpacity
-                        style={[
-                            styles.headerSaveButton,
-                            showSaved && styles.headerSaveButtonSaved,
-                            !isDirty && !showSaved && styles.headerSaveButtonDisabled,
-                        ]}
-                        onPress={handleSaveSettings}
-                        disabled={saving || (!isDirty && !showSaved)}
-                        aria-busy={saving}
-                        accessibilityRole="button"
-                        accessibilityLabel={showSaved ? l('Ayarlar kaydedildi', 'Settings saved') : l('Ayarları kaydet', 'Save settings')}
-                    >
-                        <Text style={[styles.headerSaveText, showSaved && styles.headerSaveTextSaved]} numberOfLines={1}>
-                            {showSaved ? `✓ ${l('Kaydedildi', 'Saved')}` : l('Kaydet', 'Save')}
-                        </Text>
-                    </TouchableOpacity>
+                    // The pulse sits on a wrapper: the browser's TouchableOpacity is not animated.
+                    <Animated.View style={{ transform: [{ scale: savedPulse }] }}>
+                        <TouchableOpacity
+                            style={[
+                                styles.headerSaveButton,
+                                showSaved && styles.headerSaveButtonSaved,
+                                !isDirty && !showSaved && styles.headerSaveButtonDisabled,
+                            ]}
+                            onPress={handleSaveSettings}
+                            disabled={saving || (!isDirty && !showSaved)}
+                            aria-busy={saving}
+                            accessibilityRole="button"
+                            accessibilityLabel={showSaved ? l('Ayarlar kaydedildi', 'Settings saved') : l('Ayarları kaydet', 'Save settings')}
+                        >
+                            <Text style={[styles.headerSaveText, showSaved && styles.headerSaveTextSaved]} numberOfLines={1}>
+                                {showSaved ? `✓ ${l('Kaydedildi', 'Saved')}` : l('Kaydet', 'Save')}
+                            </Text>
+                        </TouchableOpacity>
+                    </Animated.View>
                 ) : <View style={styles.headerSpacer} />}
             </View>
             <ScrollView

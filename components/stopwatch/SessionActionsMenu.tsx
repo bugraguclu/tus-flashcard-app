@@ -2,6 +2,7 @@ import { Modal, Pressable, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '../AppText';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { AnimatedPressable, usePopoverItemStyle } from '../Popover';
 
 export interface SessionMenuItem {
     key: string;
@@ -22,11 +23,13 @@ interface SessionActionsMenuProps {
 export default function SessionActionsMenu({ visible, title, items, onClose }: SessionActionsMenuProps) {
     const { l } = useI18n();
     const colors = useThemeColors();
+    // The card grows in from 95% while the Modal fades it in.
+    const growIn = usePopoverItemStyle();
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <Pressable style={styles.backdrop} onPress={onClose}>
-                <Pressable style={[styles.card, { backgroundColor: colors.bgCard }]} onPress={() => undefined} accessibilityViewIsModal>
+                <AnimatedPressable style={[styles.card, { backgroundColor: colors.bgCard }, growIn]} onPress={() => undefined} accessibilityViewIsModal>
                     <Text style={[styles.title, { color: colors.textMuted }]} numberOfLines={1}>{title}</Text>
                     {items.map((item) => (
                         <TouchableOpacity
@@ -50,7 +53,7 @@ export default function SessionActionsMenu({ visible, title, items, onClose }: S
                     >
                         <Text style={[styles.cancelText, { color: colors.accent }]}>{l('Kapat', 'Close')}</Text>
                     </TouchableOpacity>
-                </Pressable>
+                </AnimatedPressable>
             </Pressable>
         </Modal>
     );

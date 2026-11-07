@@ -28,6 +28,7 @@ import { Text, TextInput } from '../../components/AppText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
+import { exitDuration, MotionSpring, NATIVE_DRIVER } from '../../constants/motion';
 import {
     getAllDecks,
     getDeckByName,
@@ -122,6 +123,9 @@ function parseCount(text: string, fallback: number = 0): number {
 // A deliberate spring-open delay prevents a parent from expanding while the pointer merely
 // passes over it. 800 ms sits in the familiar 0.6–1.0 s range used by tree/list drag UIs.
 const DECK_HOVER_EXPAND_DELAY_MS = 800;
+
+// Expanding or collapsing a deck moves the rows under it this long.
+const DECK_TREE_LAYOUT_MS = 190;
 
 // Four labels share the bottom bar, like a tab bar's: one line each, growing less than content,
 // and on iPhone shrinking to fit rather than breaking a word on the smallest phones.
@@ -291,12 +295,18 @@ export default function DecksScreen() {
         };
     }, []);
 
+    // Rows already on screen slide to their new places (ease in and out); subdecks that appear fade
+    // in easing out, and those that go leave a fifth faster, so a collapse never holds the list up.
     const animateDeckTreeLayout = useCallback(() => {
         LayoutAnimation.configureNext({
-            duration: 190,
+            duration: DECK_TREE_LAYOUT_MS,
             update: { type: LayoutAnimation.Types.easeInEaseOut },
-            create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-            delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+            create: { type: LayoutAnimation.Types.easeOut, property: LayoutAnimation.Properties.opacity },
+            delete: {
+                type: LayoutAnimation.Types.easeOut,
+                property: LayoutAnimation.Properties.opacity,
+                duration: exitDuration(DECK_TREE_LAYOUT_MS),
+            },
         });
     }, []);
 
@@ -953,11 +963,12 @@ export default function DecksScreen() {
         updateDragPreviewPosition(pageY);
         dragPreviewLift.stopAnimation();
         dragPreviewLift.setValue(0);
+        // The picked-up deck rises to full size without overshooting it.
         Animated.spring(dragPreviewLift, {
             toValue: 1,
-            speed: 28,
-            bounciness: 4,
-            useNativeDriver: Platform.OS !== 'web',
+            ...MotionSpring.lift,
+            useNativeDriver: NATIVE_DRIVER,
+            isInteraction: false,
         }).start();
         setShowAddMenu(false);
 

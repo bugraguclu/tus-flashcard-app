@@ -1,9 +1,10 @@
 import { useMemo, useRef } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '../AppText';
 import { Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { deckRowMenuLabel, type DeckRowMenuAction } from '../../lib/deckRowMenu';
+import { usePopoverItemStyle } from '../Popover';
 
 /** A deck's ••• menu card: the deck path as its title and one row per action. */
 export default function DeckRowMenu({ deckName, actions, onSelect }: {
@@ -16,6 +17,8 @@ export default function DeckRowMenu({ deckName, actions, onSelect }: {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const scrollRef = useRef<ScrollView>(null);
     const heights = useRef({ viewport: 0, content: 0, flashed: false });
+    // The card grows in from 95% while the deck list's Modal fades it in.
+    const growIn = usePopoverItemStyle();
 
     // On a short phone the last rows sit below the fold. Flashing the indicator once says the list
     // goes on; a row cut off at the card's edge alone left "Delete deck" looking absent.
@@ -27,7 +30,7 @@ export default function DeckRowMenu({ deckName, actions, onSelect }: {
     };
 
     return (
-        <View style={styles.card} accessibilityViewIsModal>
+        <Animated.View style={[styles.card, growIn]} accessibilityViewIsModal>
             <Text style={styles.title}>{deckName.replaceAll('::', ' › ')}</Text>
             <ScrollView
                 ref={scrollRef}
@@ -57,7 +60,7 @@ export default function DeckRowMenu({ deckName, actions, onSelect }: {
                     );
                 })}
             </ScrollView>
-        </View>
+        </Animated.View>
     );
 }
 

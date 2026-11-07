@@ -1427,22 +1427,21 @@ export default function EditorScreen() {
             </KeyboardAvoidingView>
             <View style={[{ height: insets.bottom, backgroundColor: colors.bgCard }, { pointerEvents: 'none' }]} />
 
-            {showOverflowMenu && (
-                <EditorOverflowMenu
-                    topInset={insets.top}
-                    isCatalog={isCatalog}
-                    contentReadOnly={isContentReadOnly}
-                    isEditing={isEditing}
-                    preferences={editorPreferences}
-                    onUpdatePreferences={updateEditorPreferences}
-                    onClearFields={requestClearFields}
-                    onDeleteNote={handleDelete}
-                    onOpenFontSize={() => runAfterOverflowClose(() => setShowFontSizePicker(true))}
-                    onClose={() => setShowOverflowMenu(false)}
-                    styles={styles}
-                    l={l}
-                />
-            )}
+            <EditorOverflowMenu
+                visible={showOverflowMenu}
+                topInset={insets.top}
+                isCatalog={isCatalog}
+                contentReadOnly={isContentReadOnly}
+                isEditing={isEditing}
+                preferences={editorPreferences}
+                onUpdatePreferences={updateEditorPreferences}
+                onClearFields={requestClearFields}
+                onDeleteNote={handleDelete}
+                onOpenFontSize={() => runAfterOverflowClose(() => setShowFontSizePicker(true))}
+                onClose={() => setShowOverflowMenu(false)}
+                styles={styles}
+                l={l}
+            />
 
             <EditorFontSizeModal
                 visible={showFontSizePicker}

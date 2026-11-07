@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import {
+    Animated,
     Modal,
     Pressable,
     ScrollView,
@@ -13,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS, type CardFlag } from '../lib/models';
 import FlagGlyph from './FlagGlyph';
+import { usePopoverItemStyle } from './Popover';
 import { useI18n } from '../hooks/useI18n';
 import { cardFlagName } from '../lib/i18n';
 
@@ -33,6 +35,8 @@ export default function ReviewerFlagMenu({
     const { width } = useWindowDimensions();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const panelWidth = Math.min(300, Math.max(232, width * 0.55));
+    // The panel comes in from the screen's right edge, where it rests, as the card options do.
+    const slideIn = usePopoverItemStyle({ slide: { axis: 'x', distance: panelWidth + 16 } });
 
     return (
         <Modal
@@ -49,7 +53,7 @@ export default function ReviewerFlagMenu({
                     accessibilityRole="button"
                     accessibilityLabel={l('Bayrak seçiciyi kapat', 'Close flag picker')}
                 />
-                <View style={[styles.panel, { width: panelWidth }]} accessibilityViewIsModal>
+                <Animated.View style={[styles.panel, { width: panelWidth }, slideIn]} accessibilityViewIsModal>
                     <View style={styles.header}>
                         <Text style={styles.title}>{l('Bayrak rengi', 'Flag color')}</Text>
                     </View>
@@ -80,7 +84,7 @@ export default function ReviewerFlagMenu({
                             );
                         })}
                     </ScrollView>
-                </View>
+                </Animated.View>
             </View>
         </Modal>
     );

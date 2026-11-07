@@ -43,6 +43,29 @@ scheduling, collection storage or action destination.
   (112 tests), and TypeScript and `npm run verify:ios` passed.
 - `git diff --check`.
 
+## Update 2026-11-07: motion
+
+The menu now animates itself on `PopoverModal` instead of the native Modal fade: the backdrop
+fades in 200 ms, ＋ turns into ×, and the three actions grow from 95% at the button's corner 30 ms
+apart, nearest first; closing reverses it in 160 ms. The Modal still dismisses before the chosen
+form opens: iOS runs the action from `onDismiss`, as before. Reduce Motion cross-fades without
+growth or rotation. Covered by `lib/motionComponents.test.ts`; the native hand-off is the Motion
+and Deck add menu rows of `IOS_RELEASE_CHECKLIST.md`.
+
+Checked on an iPhone 17 Pro simulator (iOS 26, Debug build of the branch, load average 25–50)
+with `simctl io recordVideo` and per-frame colour probes:
+
+- UIKit put the Modal on screen 85 ms after it was asked to. An entrance started together with
+  the request was 93% done on the first visible frame, so the entrance now starts from the
+  Modal's `onShow`; after that change the dimming eased in over about 150 ms and the rows filled
+  nearest first, each about 30 ms after the one before, all driven natively from one clock.
+- ＋ took the darker green and turned into × while opening, and back while closing.
+- Deste oluştur and Kart ekle: the menu faded out (end callback 186 ms after the close, against
+  160 ms planned), the Modal reported `onDismiss` at 212 ms, and the create-deck form or the
+  editor opened after it.
+- The editor's ••• menu grew from its top right corner and shrank back into it; Show Answer sank
+  to 0.97 of its width while held and revealed the answer on release.
+
 ## Native limitation
 
 The computer-use runtime cannot initialize because this workspace's writable root

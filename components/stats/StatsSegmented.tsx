@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, View, type LayoutRectangle } from 'react-native';
 import { Text } from '../AppText';
 import { BorderRadius, FontSize, dropShadow, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { MotionDuration, MotionEasing } from '../../constants/motion';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
 
 export interface SegmentOption<T extends string> {
     value: T;
@@ -20,7 +22,10 @@ interface StatsSegmentedProps<T extends string> {
     fill?: boolean;
 }
 
-/** An iOS-style segmented control for switching what a chart shows. */
+/**
+ * An iOS-style segmented control for switching what a chart shows. The chosen segment's pill slides
+ * to a new choice, easing in and out, instead of jumping there; Reduce Motion moves it at once.
+ */
 export default function StatsSegmented<T extends string>({
     options,
     value,
@@ -31,17 +36,58 @@ export default function StatsSegmented<T extends string>({
     const colors = useThemeColors();
     const isDark = useIsDarkTheme();
     const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+    const reduceMotion = useReduceMotion();
+    const [layouts, setLayouts] = useState<Partial<Record<T, LayoutRectangle>>>({});
+    const pillX = useRef(new Animated.Value(0)).current;
+    const pillWidth = useRef(new Animated.Value(0)).current;
+    const placedFor = useRef<T | null>(null);
+    const chosen = layouts[value];
+
+    useEffect(() => {
+        if (!chosen) return undefined;
+        // The first placement, a new text size or a narrower screen moves the pill without a slide.
+        const slide = placedFor.current !== null && placedFor.current !== value && !reduceMotion;
+        placedFor.current = value;
+        if (!slide) {
+            pillX.setValue(chosen.x);
+            pillWidth.setValue(chosen.width);
+            return undefined;
+        }
+        // Left and width are layout, which the native driver cannot animate; the control is small.
+        const animation = Animated.parallel([pillX, pillWidth].map((position, index) => Animated.timing(position, {
+            toValue: index === 0 ? chosen.x : chosen.width,
+            duration: MotionDuration.move,
+            easing: MotionEasing.inOut,
+            useNativeDriver: false,
+            isInteraction: false,
+        })));
+        animation.start();
+        return () => animation.stop();
+    }, [chosen?.x, chosen?.width, value, reduceMotion, pillX, pillWidth]); // eslint-disable-line react-hooks/exhaustive-deps
+
     return (
         <View style={[styles.track, fill && styles.trackFill]} accessibilityRole="tablist" accessibilityLabel={accessibilityLabel}>
+            {chosen ? (
+                <Animated.View style={[styles.pill, { left: pillX, width: pillWidth, pointerEvents: 'none' }]} />
+            ) : null}
             {options.map((option) => {
                 const selected = option.value === value;
                 return (
                     <Pressable
                         key={option.value}
+                        onLayout={(event) => {
+                            const layout = event.nativeEvent.layout;
+                            setLayouts((current) => {
+                                const known = current[option.value];
+                                if (known && known.x === layout.x && known.width === layout.width) return current;
+                                return { ...current, [option.value]: layout };
+                            });
+                        }}
                         style={({ pressed }) => [
                             styles.segment,
                             fill && styles.segmentFill,
-                            selected && styles.segmentSelected,
+                            // Until the segments are measured the chosen one carries its own pill.
+                            selected && !chosen && styles.segmentSelected,
                             pressed && !selected && styles.segmentPressed,
                         ]}
                         onPress={() => {
@@ -87,6 +133,15 @@ function createStyles(colors: ColorScheme, isDark: boolean) {
         segmentSelected: {
             // On a dark track the card colour is darker than the track itself; the border tone
             // lifts the chosen segment instead of sinking it.
+            backgroundColor: isDark ? colors.border : colors.bgCard,
+            ...dropShadow({ y: 1, blur: 3, opacity: 0.08, elevation: 1 }),
+        },
+        // The chosen segment's pill, drawn under the labels once the segments are measured.
+        pill: {
+            position: 'absolute',
+            top: 2,
+            bottom: 2,
+            borderRadius: BorderRadius.md - 2,
             backgroundColor: isDark ? colors.border : colors.bgCard,
             ...dropShadow({ y: 1, blur: 3, opacity: 0.08, elevation: 1 }),
         },

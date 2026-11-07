@@ -5,6 +5,7 @@ import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
+import { MotionDuration, MotionEasing, NATIVE_DRIVER } from '../constants/motion';
 import { createOrSelectDeck } from '../lib/deckManager';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import DeckPickerModal from '../components/DeckPickerModal';
@@ -116,14 +117,17 @@ export default function StatsScreen() {
     );
 
     // The cards fade in once, then dim softly while a new deck or period loads in place of
-    // jumping to a spinner, so the page never reflows under the finger.
+    // jumping to a spinner, so the page never reflows under the finger. Both ease out: the
+    // change shows at once and settles gently.
     const opacity = useRef(new Animated.Value(0)).current;
     const hasSnapshot = snapshot !== null;
     useEffect(() => {
         Animated.timing(opacity, {
             toValue: !hasSnapshot ? 0 : loading ? 0.55 : 1,
-            duration: loading ? 120 : 220,
-            useNativeDriver: true,
+            duration: loading ? 120 : MotionDuration.fade,
+            easing: MotionEasing.out,
+            useNativeDriver: NATIVE_DRIVER,
+            isInteraction: false,
         }).start();
     }, [opacity, hasSnapshot, loading]);
 

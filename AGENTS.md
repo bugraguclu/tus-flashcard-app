@@ -43,6 +43,10 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
 - Catalog and purchases: `lib/bkaCatalog.ts`, `lib/catalog*.ts`, `lib/catalogProtection.ts`,
   `lib/purchasesSdk.ts`. App-wide state: `contexts/AppContext.tsx`. Theme: `constants/theme.ts`.
   Copy: `lib/i18n.ts` keys and inline `l('Türkçe', 'English')`. Web-only code is in `*.web.ts`.
+- Motion: the rules and numbers in `lib/motion.ts`, as easings and springs in
+  `constants/motion.ts`; `hooks/useReduceMotion.ts`, `hooks/usePresence.ts` (keep a surface
+  mounted while it leaves), `components/Popover.tsx` (menus that grow from their button) and
+  `components/PressableScale.tsx` (buttons that sink under the finger).
 
 ## Working in this repository
 
@@ -106,6 +110,14 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   the grabber is both visible and functional; present one over a dimmed backdrop with
   `BottomSheetModal`, never `Modal animationType="slide"`, which carries the dimming up with the
   sheet. Do not add grabbers to centered dialogs, popovers, side panels, or full-screen work surfaces.
+- Motion follows `lib/motion.ts`: entrances ease out, on-screen moves ease in and out, exits take
+  80% of their entrance, menus open in 150–250 ms from 95% at the button that opened them, and
+  everyday springs never overshoot. Respect Reduce Motion (`useReduceMotion`): cross-fade or jump
+  instead of moving, growing or stretching. A menu on `PopoverModal` stays presented while it
+  animates out, so an action that opens another modal must wait for its `onDismiss`; a menu whose
+  actions open alerts or sheets at once keeps a natively fading `Modal` and only grows its card in
+  (`usePopoverItemStyle`). Do not animate what a learner repeats all day beyond press feedback:
+  the study screen's grades and Show Answer change instantly.
 - Import and export are canonical full-screen workflows. Every entry point, including Settings
   and the Decks overflow menu, must open `/import` or `/export`; do not implement a second
   import/export path inside the calling screen.
