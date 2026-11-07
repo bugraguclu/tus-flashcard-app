@@ -2,11 +2,31 @@ import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-vi.mock('react-native', () => ({
-    Platform: { OS: 'ios', select: (spec: { ios?: unknown; default?: unknown }) => spec.ios ?? spec.default },
-    StyleSheet: { create: (styles: unknown) => styles, absoluteFill: {} },
-    Text: 'Text', View: 'View', Pressable: 'Pressable', TouchableOpacity: 'TouchableOpacity',
-}));
+vi.mock('react-native', () => {
+    // The menu grows out of •••; the animation finishes at once here.
+    class Value {
+        constructor(public value: number) {}
+        setValue(value: number) { this.value = value; }
+        stopAnimation() {}
+        interpolate() { return {}; }
+    }
+    const run = (value: Value, config: { toValue: number }) => ({ start: () => value.setValue(config.toValue) });
+    return {
+        Platform: { OS: 'ios', select: (spec: { ios?: unknown; default?: unknown }) => spec.ios ?? spec.default },
+        StyleSheet: { create: (styles: unknown) => styles, absoluteFill: {} },
+        Text: 'Text', View: 'View', Pressable: 'Pressable', TouchableOpacity: 'TouchableOpacity', Modal: 'Modal',
+        Easing: { bezier: () => (t: number) => t },
+        Animated: {
+            Value,
+            View: 'AnimatedView',
+            createAnimatedComponent: (component: unknown) => component,
+            timing: run,
+            parallel: (animations: { start: () => void }[]) => ({
+                start: (done?: () => void) => { animations.forEach((animation) => animation.start()); done?.(); },
+            }),
+        },
+    };
+});
 import { EditorOverflowMenu } from '../components/editor/EditorOverflowMenu';
 import type { EditorStyles } from '../components/editor/editorStyles';
 

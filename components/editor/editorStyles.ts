@@ -181,11 +181,12 @@ export function createEditorStyles(colors: ColorScheme) {
     overflowOverlay: {
         ...StyleSheet.absoluteFill,
         alignItems: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.18)',
         paddingRight: 4,
         zIndex: 100,
         elevation: 100,
     },
+    // The dimming fades with the menu instead of appearing at once.
+    overflowBackdrop: { backgroundColor: 'rgba(0,0,0,0.18)' },
     overflowMenu: {
         width: 282,
         paddingVertical: 4,

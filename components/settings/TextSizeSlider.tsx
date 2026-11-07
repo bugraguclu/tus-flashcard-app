@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Animated,
+    Easing,
     Platform,
     StyleSheet,
     View,
@@ -10,7 +11,10 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Text, TextScaleProvider } from '../AppText';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { KNOB_STRETCH, MotionSpring } from '../../constants/motion';
 import { useI18n } from '../../hooks/useI18n';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
+import { areaPreservingStretch, keyframes, MotionCurve, rubberBandClamp } from '../../lib/motion';
 import {
     normalizeTextSizeLevel,
     TEXT_SIZE_LEVELS,
@@ -23,6 +27,17 @@ import {
 const THUMB_SIZE = 26;
 const LAST_STEP = TEXT_SIZE_LEVELS.length - 1;
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
+// Past either end the thumb gives a little and no more than half its width, then springs back.
+const OVERDRAG_LIMIT = THUMB_SIZE / 2;
+// While it travels to a step the thumb stretches along the track and narrows across it: quickly
+// as it sets off, easing back to round as it lands. One native clock plays both halves, so the
+// app redrawing at the new text size cannot leave the thumb stretched.
+const KNOB = areaPreservingStretch(KNOB_STRETCH);
+const STRETCH_MS = 260;
+const STRETCH = keyframes(0, [
+    { at: 70 / STRETCH_MS, value: 1 },
+    { at: 1, value: 0, curve: MotionCurve.easeInOut },
+]);
 
 type Props = {
     value: TextSizeLevel | undefined;
@@ -41,7 +56,12 @@ export default function TextSizeSlider({ value, onChange }: Props) {
     const committed = normalizeTextSizeLevel(value);
     const [draft, setDraft] = useState<TextSizeLevel>(committed);
     const [trackWidth, setTrackWidth] = useState(0);
+    const reduceMotion = useReduceMotion();
     const position = useRef(new Animated.Value(0)).current;
+    // The stretch's clock; at rest it sits at the end, where the thumb is round.
+    const stretchClock = useRef(new Animated.Value(1)).current;
+    // Where the thumb was last put, so a snap knows how far it travels.
+    const thumbXRef = useRef(0);
     const draggingRef = useRef(false);
     const draftRef = useRef(draft);
     // The last step handed to onChange. Two quick key presses can land before the parent
@@ -60,18 +80,33 @@ export default function TextSizeSlider({ value, onChange }: Props) {
 
     const settle = useCallback((level: TextSizeLevel, animated: boolean) => {
         position.stopAnimation();
+        stretchClock.stopAnimation();
+        stretchClock.setValue(1);
+        const target = stopX(level);
+        const travel = Math.abs(target - thumbXRef.current);
+        thumbXRef.current = target;
         if (!animated) {
-            position.setValue(stopX(level));
+            position.setValue(target);
             return;
         }
+        // The thumb lands on its step without overshooting it.
         Animated.spring(position, {
-            toValue: stopX(level),
+            toValue: target,
             useNativeDriver: USE_NATIVE_DRIVER,
             isInteraction: false,
-            speed: 24,
-            bounciness: 4,
+            ...MotionSpring.snap,
         }).start();
-    }, [position, stopX]);
+        // A thumb that hardly moves (a release next to its step) keeps its shape.
+        if (reduceMotion || travel < THUMB_SIZE / 4) return;
+        stretchClock.setValue(0);
+        Animated.timing(stretchClock, {
+            toValue: 1,
+            duration: STRETCH_MS,
+            easing: Easing.linear,
+            useNativeDriver: USE_NATIVE_DRIVER,
+            isInteraction: false,
+        }).start();
+    }, [position, reduceMotion, stopX, stretchClock]);
 
     // A reset or discarded draft moves the thumb, unless the finger is holding it. The slider's
     // own commit arrives here too, and leaves the snap animation running.
@@ -119,18 +154,22 @@ export default function TextSizeSlider({ value, onChange }: Props) {
     const follow = useCallback((event: GestureResponderEvent) => {
         const gesture = gestureRef.current;
         if (!gesture || trackWidth <= 0) return;
-        const x = Math.max(0, Math.min(trackWidth, event.nativeEvent.pageX - gesture.originPageX));
-        position.setValue(x);
-        showDraft(textSizeLevelAt(x / trackWidth));
+        const x = event.nativeEvent.pageX - gesture.originPageX;
+        // Past either end the thumb meets growing resistance instead of a wall.
+        thumbXRef.current = rubberBandClamp(x, 0, trackWidth, OVERDRAG_LIMIT);
+        position.setValue(thumbXRef.current);
+        showDraft(textSizeLevelAt(Math.max(0, Math.min(trackWidth, x)) / trackWidth));
     }, [position, showDraft, trackWidth]);
 
     const begin = useCallback((event: GestureResponderEvent) => {
         position.stopAnimation();
+        stretchClock.stopAnimation();
+        stretchClock.setValue(1);
         draggingRef.current = true;
         // The touch area is padded by half a thumb on each side, so the track starts there.
         gestureRef.current = { originPageX: event.nativeEvent.pageX - event.nativeEvent.locationX + THUMB_SIZE / 2 };
         follow(event);
-    }, [follow, position]);
+    }, [follow, position, stretchClock]);
 
     const end = useCallback(() => {
         draggingRef.current = false;
@@ -151,7 +190,19 @@ export default function TextSizeSlider({ value, onChange }: Props) {
     // react-native-web forwards keyboard handlers to the DOM; React Native's View has none.
     const keyboardProps = Platform.OS === 'web' ? ({ onKeyDown: handleKeyDown } as object) : {};
 
-    const fillOffset = useMemo(() => Animated.add(position, -trackWidth), [position, trackWidth]);
+    // The fill ends under the thumb and stays whole while the thumb gives past either end.
+    const fillOffset = useMemo(() => position.interpolate({
+        inputRange: [0, Math.max(trackWidth, 1)],
+        outputRange: [-trackWidth, 0],
+        extrapolate: 'clamp',
+    }), [position, trackWidth]);
+    const thumbStretch = useMemo(() => {
+        const stretch = stretchClock.interpolate({ ...STRETCH, extrapolate: 'clamp' });
+        return [
+            { scaleX: stretch.interpolate({ inputRange: [0, 1], outputRange: [1, KNOB.scaleX] }) },
+            { scaleY: stretch.interpolate({ inputRange: [0, 1], outputRange: [1, KNOB.scaleY] }) },
+        ];
+    }, [stretchClock]);
     const draftIndex = textSizeLevelIndex(draft);
 
     return (
@@ -218,7 +269,7 @@ export default function TextSizeSlider({ value, onChange }: Props) {
                         />
                     ))}
                     <Animated.View
-                        style={[styles.thumb, { opacity: trackWidth > 0 ? 1 : 0, pointerEvents: 'none', transform: [{ translateX: position }] }]}
+                        style={[styles.thumb, { opacity: trackWidth > 0 ? 1 : 0, pointerEvents: 'none', transform: [{ translateX: position }, ...thumbStretch] }]}
                     />
                 </View>
                 <Text style={styles.glyphLarge} allowFontScaling={false} accessible={false}>A</Text>

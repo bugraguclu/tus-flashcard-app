@@ -18,6 +18,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
+import { MotionSpring, NATIVE_DRIVER } from '../constants/motion';
 import { confirm } from '../lib/confirm';
 import { getSetDueDateDefault } from '../lib/setDueDateDefaults';
 import { useI18n } from '../hooks/useI18n';
@@ -120,12 +121,12 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
         Keyboard.dismiss();
         setView('menu');
         translateX.setValue(panelWidth + 16);
+        // Critically damped: the panel lands on the screen's edge without bouncing off it.
         const animation = Animated.spring(translateX, {
             toValue: 0,
-            damping: 24,
-            stiffness: 260,
-            mass: 0.8,
-            useNativeDriver: Platform.OS !== 'web',
+            ...MotionSpring.panel,
+            useNativeDriver: NATIVE_DRIVER,
+            isInteraction: false,
         });
         animation.start();
         return () => animation.stop();

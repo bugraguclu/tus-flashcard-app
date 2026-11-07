@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    AccessibilityInfo,
     Animated,
     Easing,
     KeyboardAvoidingView,
@@ -14,6 +13,7 @@ import {
     type ViewStyle,
 } from 'react-native';
 import { useI18n } from '../hooks/useI18n';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 import SwipeDismissSheet from './SwipeDismissSheet';
 
 // The browser has no native animation driver; asking for it only logs a fallback warning.
@@ -44,29 +44,6 @@ interface BottomSheetModalProps {
     /** Drawn over the sheet inside the same modal (a picker on its own dimmed layer). */
     overlay?: React.ReactNode;
 }
-
-// One shared Reduce Motion subscription: every option card on Deck Options keeps a sheet mounted.
-let reduceMotionEnabled = false;
-let watchingReduceMotion = false;
-const reduceMotionListeners = new Set<() => void>();
-
-function setReduceMotion(enabled: boolean) {
-    if (enabled === reduceMotionEnabled) return;
-    reduceMotionEnabled = enabled;
-    reduceMotionListeners.forEach((listener) => listener());
-}
-
-function subscribeReduceMotion(listener: () => void) {
-    if (!watchingReduceMotion) {
-        watchingReduceMotion = true;
-        AccessibilityInfo.isReduceMotionEnabled?.().then(setReduceMotion).catch(() => undefined);
-        AccessibilityInfo.addEventListener?.('reduceMotionChanged', setReduceMotion);
-    }
-    reduceMotionListeners.add(listener);
-    return () => { reduceMotionListeners.delete(listener); };
-}
-
-const useReduceMotion = () => useSyncExternalStore(subscribeReduceMotion, () => reduceMotionEnabled, () => false);
 
 /**
  * A bottom sheet over a dimmed backdrop, presented the way iOS presents one: the backdrop fades in

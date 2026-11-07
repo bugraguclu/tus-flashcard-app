@@ -4,26 +4,39 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import TextSizeSlider from '../components/settings/TextSizeSlider';
 import type { TextSizeLevel } from './textScale';
 
-const { haptics } = vi.hoisted(() => ({ haptics: vi.fn(() => Promise.resolve()) }));
+const { haptics, motion } = vi.hoisted(() => ({
+    haptics: vi.fn(() => Promise.resolve()),
+    // Each animation the slider starts: a spring settles the thumb, a timed clock stretches it.
+    motion: { springs: 0, timings: [] as number[] },
+}));
 
 vi.mock('react-native', () => {
     class Value {
         value = 0;
         setValue(next: number) { this.value = next; }
         stopAnimation() { }
+        interpolate() { return this; }
     }
+    const instant = (value: Value, config: { toValue: number }) => ({ start: () => value.setValue(config.toValue) });
     return {
         Platform: { OS: 'ios' },
         StyleSheet: { create: (styles: unknown) => styles, flatten: (style: unknown) => style ?? {} },
         View: 'View',
         Text: 'Text',
         TextInput: 'TextInput',
+        Easing: { bezier: () => (t: number) => t, linear: (t: number) => t },
         useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
         Animated: {
             Value,
             View: 'AnimatedView',
-            add: () => ({}),
-            spring: (value: Value, config: { toValue: number }) => ({ start: () => value.setValue(config.toValue) }),
+            spring: (value: Value, config: { toValue: number }) => {
+                motion.springs += 1;
+                return instant(value, config);
+            },
+            timing: (value: Value, config: { toValue: number; duration: number }) => {
+                motion.timings.push(config.duration);
+                return instant(value, config);
+            },
         },
     };
 });
@@ -43,6 +56,8 @@ afterEach(() => {
     if (renderer) act(() => renderer?.unmount());
     renderer = undefined;
     haptics.mockClear();
+    motion.springs = 0;
+    motion.timings = [];
 });
 
 // The touch area starts at x = 50; it is padded by half the 26 pt thumb, so the track starts at 63.
@@ -60,6 +75,12 @@ function mount(value: TextSizeLevel | undefined) {
 const slider = () => renderer!.root.find((node) => (node.type as string) === 'View' && node.props.accessibilityRole === 'adjustable');
 const touch = (x: number) => ({ nativeEvent: { pageX: TRACK_LEFT + x, locationX: TRACK_LEFT + x - 50 } });
 const shownStep = () => slider().props['aria-valuetext'];
+/** Where the thumb sits along the track: its translateX. */
+const thumbX = () => {
+    const thumb = renderer!.root.findAll((node) => (node.type as string) === 'AnimatedView').at(-1)!;
+    const style = (thumb.props.style as Array<{ transform?: Array<Record<string, { value: number }>> }>)[1];
+    return style.transform![0].translateX.value;
+};
 const accessibilityAction = (actionName: string) => act(() => slider().props.onAccessibilityAction({ nativeEvent: { actionName } }));
 
 describe('Settings text size slider', () => {
@@ -118,6 +139,45 @@ describe('Settings text size slider', () => {
         expect(onChange).not.toHaveBeenCalled();
         accessibilityAction('decrement');
         expect(onChange).toHaveBeenLastCalledWith('large');
+    });
+
+    it('gives a little past either end, never more than half the thumb, and springs back', () => {
+        const onChange = mount('large');
+        act(() => slider().props.onResponderGrant(touch(200)));
+        act(() => slider().props.onResponderMove(touch(TRACK_WIDTH + 40)));
+        const near = thumbX();
+        act(() => slider().props.onResponderMove(touch(TRACK_WIDTH + 400)));
+        const far = thumbX();
+        // Past the end the thumb follows less and less: 40 pt over gives some, 400 pt little more.
+        expect(near).toBeGreaterThan(TRACK_WIDTH);
+        expect(far).toBeGreaterThan(near);
+        expect(far - TRACK_WIDTH).toBeLessThan(13);
+        expect(far - near).toBeLessThan(near - TRACK_WIDTH);
+        expect(shownStep()).toBe('Çok büyük');
+        act(() => slider().props.onResponderRelease());
+        expect(thumbX()).toBe(TRACK_WIDTH);
+        expect(onChange).toHaveBeenCalledWith('xlarge');
+
+        act(() => slider().props.onResponderGrant(touch(10)));
+        act(() => slider().props.onResponderMove(touch(-400)));
+        expect(thumbX()).toBeLessThan(0);
+        expect(thumbX()).toBeGreaterThan(-13);
+        expect(shownStep()).toBe('Küçük');
+        act(() => slider().props.onResponderRelease());
+        expect(thumbX()).toBe(0);
+    });
+
+    it('stretches the thumb while it travels to a step, not when it is let go beside one', () => {
+        mount('default');
+        accessibilityAction('increment');
+        expect(motion.springs).toBe(1);
+        // One 260 ms clock plays the whole stretch: out quickly, back to round as it lands.
+        expect(motion.timings).toEqual([260]);
+        // A release 4 pt from the Büyük step settles there without changing shape.
+        act(() => slider().props.onResponderGrant(touch(204)));
+        act(() => slider().props.onResponderRelease());
+        expect(motion.springs).toBe(2);
+        expect(motion.timings).toEqual([260]);
     });
 
     it('reports every quick step even before the screen has re-rendered with the last one', () => {

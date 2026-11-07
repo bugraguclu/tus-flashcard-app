@@ -73,6 +73,8 @@ import { previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
 import ReviewerDeckScope from '../../components/reviewer/ReviewerDeckScope';
 import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
+import AnswerFeedbackBadge from '../../components/reviewer/AnswerFeedbackBadge';
+import PressableScale from '../../components/PressableScale';
 import { DownChevron, ReviewerBackIcon, ReviewerSettingsIcon, UndoReviewIcon } from '../../components/reviewer/ReviewerIcons';
 import { canReplayCardAudio, reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
 import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
@@ -253,6 +255,8 @@ const ANSWER_ANCHOR_MARGIN = 12;
 
 /** How long a reported answer anchor may still move the scroll view once it has arrived. */
 const ANSWER_ANCHOR_TTL_MS = 1500;
+// How long the × after an Again answer stays, its entrance and exit included.
+const ANSWER_FEEDBACK_MS = 550;
 
 // Study-ahead passes survive the study screen unmounting (hopping to another deck via the
 // deck list and back). A pass is consumed by answering its card — never by navigation.
@@ -1211,7 +1215,7 @@ export default function StudyScreen() {
 
     useEffect(() => {
         if (!answerFeedback) return;
-        const timer = setTimeout(() => setAnswerFeedback(null), 550);
+        const timer = setTimeout(() => setAnswerFeedback(null), ANSWER_FEEDBACK_MS);
         return () => clearTimeout(timer);
     }, [answerFeedback]);
 
@@ -2706,8 +2710,9 @@ export default function StudyScreen() {
     const subject = currentCard ? findSubject(cardContext?.subject ?? currentCard.subject) : null;
     const topic = currentCard ? (cardContext?.topic ?? currentCard.topic) : '';
     const answerScale = (settings.answerButtonScalePercent ?? 100) / 100;
+    // The grade buttons sink under the finger, so a grade is felt the moment it lands.
     const gradeButton = (grade: Grade, label: string, time: string, color: string) => (
-        <TouchableOpacity
+        <PressableScale
             key={grade}
             style={[
                 styles.answerBtn,
@@ -2721,7 +2726,7 @@ export default function StudyScreen() {
         >
             {settings.showNextReviewTimes && <Text numberOfLines={1} style={[styles.btnTime, { fontSize: FontSize.sm * answerScale }]}>{time}</Text>}
             <Text numberOfLines={1} style={[styles.btnLabel, { fontSize: (isCompact ? 15 : 16) * answerScale }]}>{label}</Text>
-        </TouchableOpacity>
+        </PressableScale>
     );
     // Reserve the measured compact toolbar (and its optional palette) above the question. The
     // fallback protects the first frame before native layout measurement arrives.
@@ -3015,7 +3020,7 @@ export default function StudyScreen() {
                 {!showingAnswer ? (
                     <View style={styles.reviewerAnswerRow}>
                         {settings.showToolsOverlayButton && settings.toolsOverlayPosition === 'left' ? toolsInlineButton : null}
-                        <TouchableOpacity
+                        <PressableScale
                             style={[styles.showAnswerBtn, settings.showToolsOverlayButton && styles.showAnswerBtnWithTools]}
                             onPress={showAnswerLongPressMs === 0 ? () => setShowingAnswer(true) : undefined}
                             onLongPress={showAnswerLongPressMs > 0 ? () => setShowingAnswer(true) : undefined}
@@ -3025,7 +3030,7 @@ export default function StudyScreen() {
                             accessibilityLabel={t('anki.showAnswer')}
                         >
                             <Text style={styles.showAnswerText}>{t('anki.showAnswer')}</Text>
-                        </TouchableOpacity>
+                        </PressableScale>
                         {settings.showToolsOverlayButton && settings.toolsOverlayPosition !== 'left' ? toolsInlineButton : null}
                     </View>
                 ) : answerButtons}
@@ -3134,8 +3139,9 @@ export default function StudyScreen() {
         <View style={styles.container}>
             {settings.keepScreenOn ? <KeepAwakeGuard /> : null}
             {newStudyScreenEnabled && answerFeedback ? (
-                <View
+                <AnswerFeedbackBadge
                     key={answerFeedback.nonce}
+                    lifetimeMs={ANSWER_FEEDBACK_MS}
                     style={[
                         styles.answerFeedback,
                         styles.answerFeedbackLeft,
@@ -3146,7 +3152,7 @@ export default function StudyScreen() {
                     accessibilityLiveRegion="polite"
                 >
                     <Text style={styles.answerFeedbackText}>×</Text>
-                </View>
+                </AnswerFeedbackBadge>
             ) : null}
             {/* Above the redesigned reviewer's "×" feedback, which an Again that makes a leech also shows. */}
             <ReviewerLeechNotice notice={leechNotice} bottom={feedbackBottom + (newStudyScreenEnabled ? 50 : 0)} />

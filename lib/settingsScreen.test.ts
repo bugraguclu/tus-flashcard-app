@@ -45,6 +45,7 @@ vi.mock('react-native', () => ({
     ActivityIndicator: 'ActivityIndicator', Modal: 'Modal', Pressable: 'Pressable', ScrollView: 'ScrollView',
     Switch: 'Switch', Text: 'Text', TextInput: 'TextInput', TouchableOpacity: 'TouchableOpacity',
     TouchableWithoutFeedback: 'TouchableWithoutFeedback', View: 'View',
+    Animated: { View: 'View' },
 }));
 vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
 vi.mock('expo-constants', () => ({ default: { expoConfig: { version: '1.0.0' } } }));
@@ -69,6 +70,8 @@ vi.mock('../constants/theme', () => {
 vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ t: (key: string) => key, l: (tr: string, en: string) => (h.english ? en : tr) }) }));
 vi.mock('../hooks/useUnsavedChangesGuard', () => ({ useUnsavedChangesGuard: () => {} }));
 vi.mock('../hooks/useRepeatPress', () => ({ useRepeatPress: (step: () => void) => ({ onPress: step }) }));
+// The saved pulse is motion only; its behaviour is covered in lib/motionComponents.test.ts.
+vi.mock('../hooks/useSuccessPulse', () => ({ useSuccessPulse: () => 1 }));
 vi.mock('../contexts/AppContext', () => {
     const settings = { refreshSettings: () => {}, previewSettings: () => {} };
     const collection = { invalidateCollection: () => { h.invalidated += 1; }, markSchedulingStale: () => {} };

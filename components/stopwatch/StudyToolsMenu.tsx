@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -7,6 +7,8 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
+import PressableScale from '../PressableScale';
+import { PopoverBackdrop, PopoverItem, PopoverModal } from '../Popover';
 import { AnalyticsIcon } from './StopwatchIcons';
 
 export const STUDY_TOOLS_FAB_SIZE = 56;
@@ -96,7 +98,7 @@ export default function StudyToolsMenu({ bottom }: StudyToolsMenuProps) {
     ];
 
     const button = (onPress: () => void, label: string) => (
-        <TouchableOpacity
+        <PressableScale
             style={[styles.fab, { bottom, backgroundColor: tint }]}
             onPress={onPress}
             activeOpacity={0.85}
@@ -104,47 +106,54 @@ export default function StudyToolsMenu({ bottom }: StudyToolsMenuProps) {
             accessibilityLabel={label}
         >
             <AnalyticsIcon color={colors.white} size={26} />
-        </TouchableOpacity>
+        </PressableScale>
     );
 
     return (
         <>
             {button(() => setOpen(true), l('Çalışma araçları', 'Study tools'))}
-            <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+            {/* The cards rise out of the button one after another and sink back into it. */}
+            <PopoverModal visible={open} onRequestClose={() => setOpen(false)} itemCount={tools.length}>
                 <View style={styles.overlay}>
-                    <Pressable
+                    <PopoverBackdrop
                         style={[StyleSheet.absoluteFill, styles.backdrop]}
                         onPress={() => setOpen(false)}
                         accessibilityRole="button"
                         accessibilityLabel={l('Kapat', 'Close')}
                     />
+                    {/* The prop, not the style: react-native-web drops a 'box-none' style. */}
                     <View
-                        style={[styles.cards, { paddingBottom: bottom + STUDY_TOOLS_FAB_SIZE + Spacing.lg, paddingLeft: Spacing.lg + insets.left, paddingRight: Spacing.lg + insets.right }]}
+                        style={[styles.cards, {
+                            paddingBottom: bottom + STUDY_TOOLS_FAB_SIZE + Spacing.lg,
+                            paddingLeft: Spacing.lg + insets.left,
+                            paddingRight: Spacing.lg + insets.right,
+                        }]}
                         pointerEvents="box-none"
                     >
-                        {tools.map(({ tool, title, subtitle }) => (
-                            <TouchableOpacity
-                                key={tool}
-                                style={[styles.card, { backgroundColor: tint }]}
-                                onPress={() => {
-                                    setOpen(false);
-                                    router.push(ROUTES[tool] as any);
-                                }}
-                                activeOpacity={0.85}
-                                accessibilityRole="button"
-                                accessibilityLabel={`${title}. ${subtitle}`}
-                            >
-                                <View style={styles.glyph}><ToolGlyph tool={tool} color={colors.white} /></View>
-                                <View style={styles.copy}>
-                                    <Text style={[styles.title, { color: colors.white }]}>{title}</Text>
-                                    <Text style={[styles.subtitle, { color: colors.white }]}>{subtitle}</Text>
-                                </View>
-                            </TouchableOpacity>
+                        {tools.map(({ tool, title, subtitle }, index) => (
+                            <PopoverItem key={tool} index={tools.length - 1 - index} origin="bottom right">
+                                <TouchableOpacity
+                                    style={[styles.card, { backgroundColor: tint }]}
+                                    onPress={() => {
+                                        setOpen(false);
+                                        router.push(ROUTES[tool] as any);
+                                    }}
+                                    activeOpacity={0.85}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`${title}. ${subtitle}`}
+                                >
+                                    <View style={styles.glyph}><ToolGlyph tool={tool} color={colors.white} /></View>
+                                    <View style={styles.copy}>
+                                        <Text style={[styles.title, { color: colors.white }]}>{title}</Text>
+                                        <Text style={[styles.subtitle, { color: colors.white }]}>{subtitle}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </PopoverItem>
                         ))}
                     </View>
                     {button(() => setOpen(false), l('Çalışma araçlarını kapat', 'Close study tools'))}
                 </View>
-            </Modal>
+            </PopoverModal>
         </>
     );
 }

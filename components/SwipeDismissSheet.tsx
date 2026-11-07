@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useI18n } from '../hooks/useI18n';
 import { useThemeColors } from '../constants/theme';
+import { MotionEasing, MotionSpring } from '../constants/motion';
 
 interface SwipeDismissSheetProps {
     active?: boolean;
@@ -72,6 +73,7 @@ export default function SwipeDismissSheet({
         Animated.timing(translateY, {
             toValue: Math.max(height, 600),
             duration: 180,
+            easing: MotionEasing.out,
             useNativeDriver: NATIVE_DRIVER,
         }).start(() => onDismiss());
     }, [height, onDismiss, translateY]);
@@ -98,16 +100,14 @@ export default function SwipeDismissSheet({
             }
             Animated.spring(translateY, {
                 toValue: 0,
-                speed: 22,
-                bounciness: 5,
+                ...MotionSpring.snap,
                 useNativeDriver: NATIVE_DRIVER,
             }).start();
         },
         onPanResponderTerminate: () => {
             Animated.spring(translateY, {
                 toValue: 0,
-                speed: 22,
-                bounciness: 5,
+                ...MotionSpring.snap,
                 useNativeDriver: NATIVE_DRIVER,
             }).start();
         },

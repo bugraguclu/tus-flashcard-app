@@ -35,6 +35,7 @@ import { filteredOrderLabel } from '../lib/i18n';
 import CustomStudyModal from '../components/CustomStudyModal';
 import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
 import HeaderBackIcon from '../components/HeaderBackIcon';
+import PressableScale from '../components/PressableScale';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { getDeckOverviewSnapshot } from '../lib/screenSnapshots';
 
@@ -275,11 +276,13 @@ export default function DeckOverviewScreen() {
                     </TouchableOpacity>
                 )}
 
-                <TouchableOpacity
+                <PressableScale
                     style={[styles.studyBtn, totalReady === 0 && styles.studyBtnIdle, studyDisabled && styles.buttonDisabled]}
                     onPress={handleStudyNow}
                     disabled={studyDisabled}
+                    activeOpacity={0.85}
                     accessibilityRole="button"
+                    accessibilityState={{ disabled: studyDisabled }}
                 >
                     <Text style={styles.studyBtnText}>
                         {studyDisabled
@@ -288,7 +291,7 @@ export default function DeckOverviewScreen() {
                                 ? l(`Şimdi çalış · ${studyNowCount} kart`, `Study Now · ${studyNowCount} ${studyNowCount === 1 ? 'card' : 'cards'}`)
                                 : l('Çalışma ekranını aç', 'Open Study Screen')}
                     </Text>
-                </TouchableOpacity>
+                </PressableScale>
 
                 {totalReady === 0 && (
                     <Text style={styles.doneNote}>
