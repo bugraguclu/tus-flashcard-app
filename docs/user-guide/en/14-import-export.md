@@ -133,8 +133,8 @@ You can preset the options by putting lines that start with `#` at the top of th
 | --- | --- |
 | `#separator:tab` | Sets the separator: `tab`, `comma`, `semicolon`, `pipe`, `colon`, `space`, or the character itself. |
 | `#html:true` | Fields are read as HTML (bold text, images and so on). |
-| `#deck:Pharmacology` | If you have a deck with this name, it is preselected in the **Deck** row. |
-| `#notetype:Basic` | If you have a note type with this name, it is preselected. |
+| `#deck:Pharmacology` | Preselects this deck in the **Deck** row. If you don't have it, the row says **A new deck will be created: Pharmacology**; the deck is created only when you tap **Import**. You can still pick another deck. |
+| `#notetype:Basic` | If you have a note type with this name, it is preselected (upper/lower case does not matter). |
 | `#tags:mock-exam-1` | Adds a tag to every note. |
 | `#tags column:3` | Reads tags from column 3. |
 | `#deck column:4`, `#notetype column:5` | Reads each line's deck or note type from that column. Missing decks are created. |
@@ -161,7 +161,8 @@ Mechanism of action of atropine?	Muscarinic receptor antagonist	pharmacology
 - **Allow HTML in fields:** when off, text appears exactly as written and line breaks are kept.
   When on, tags such as `<b>` are read as formatting. It turns on by itself when the file contains
   HTML.
-- **Note type** and **Deck:** which note type the notes use and which deck they go into. You can
+- **Note type** and **Deck:** which note type the notes use and which deck they go into. If the
+  file has `#notetype:` and `#deck:` lines, these start on them, and you can change them. You can
   also create a new deck from the deck list. If the file gives these in a column, the row shows
   **From file (column N)**.
 - **Existing notes:** when you already have a note of the same note type with the same first field

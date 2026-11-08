@@ -207,6 +207,35 @@ describe('importDelimitedNotes', () => {
         expect(createNoteMock.mock.calls[0][2]).toBe(99);
     });
 
+    // The import screen preselects a `#deck:` that names a missing deck and passes it as `deckName`;
+    // Anki creates that deck only when the import runs (text/csv/metadata.rs, behaviour only).
+    it('creates a deckName destination inside the import transaction, not before', () => {
+        const result = importDelimitedNotes('#deck:Import Testi\nSoru 1,Cevap 1', { noteType: NT, deckId: 1, deckName: 'Import Testi' });
+        expect(result.added).toBe(1);
+        expect(h.store.exec).toEqual(['BEGIN TRANSACTION;', 'CREATE DECK:Import Testi', 'COMMIT;']);
+        expect(createNoteMock.mock.calls[0][2]).toBe(99);
+    });
+
+    it('rolls a deckName destination back with a failed import', () => {
+        createNoteMock.mockImplementationOnce(() => {
+            throw new Error('boom');
+        });
+        expect(() => importDelimitedNotes('Soru 1,Cevap 1', { noteType: NT, deckId: 1, deckName: 'Import Testi' })).toThrow('boom');
+        expect(h.store.exec).toEqual(['BEGIN TRANSACTION;', 'CREATE DECK:Import Testi', 'ROLLBACK;']);
+    });
+
+    it('never creates a deckName destination while previewing', () => {
+        const preview = previewDelimitedNotes('Soru 1,Cevap 1', { noteType: NT, deckId: 1, deckName: 'Import Testi', matchScope: 'notetypeAndDeck' });
+        expect(preview.added).toBe(1);
+        expect(h.store.createdDecks).toEqual([]);
+        expect(h.store.exec).toEqual([]);
+    });
+
+    it('lets the chosen deckName win over a different #deck header', () => {
+        importDelimitedNotes('#deck:Dosyadaki\nSoru 1,Cevap 1', { noteType: NT, deckId: 1, deckName: 'Seçilen' });
+        expect(h.store.createdDecks).toEqual(['Seçilen']);
+    });
+
     it('honours #guid column: dedupes by guid and maps fields past the guid column', () => {
         h.store.existingGuids.push('g-existing');
         const res = importDelimitedNotes(

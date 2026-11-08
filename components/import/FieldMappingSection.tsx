@@ -4,9 +4,10 @@ import { Text } from '../AppText';
 import type { NoteTypeField } from '../../lib/models';
 import { ChevronDownIcon, ChoiceModal } from './ImportControls';
 import type { ImportStyles } from './importStyles';
+import type { ColumnMapping } from '../../lib/importTextOptions';
 
 /** What a text column is mapped to: a note field, the tags field, or nothing. */
-export type ColumnMapping = `field:${number}` | 'tags' | 'none';
+export type { ColumnMapping };
 
 /**
  * A text file's field-mapping table and its preview, as Anki's import screen shows them: each

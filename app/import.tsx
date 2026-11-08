@@ -19,7 +19,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { useThemeColors } from '../constants/theme';
 import { getAllDecks, getDeck, getDeckByName, createOrSelectDeck } from '../lib/deckManager';
-import { resolveInitialTargetDeckId } from '../lib/importTargetDeck';
+import {
+    newDeckPickerEntries,
+    resolveInitialTargetDeckId,
+    textImportHeaderPresets,
+    type ImportDeckChoice,
+} from '../lib/importTargetDeck';
+import { buildTextImportOptions, type ColumnMapping } from '../lib/importTextOptions';
 import { alert, confirmAsync } from '../lib/confirm';
 import { assertKnownFileSize, readUriBytes, readUriText } from '../lib/files';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
@@ -58,7 +64,7 @@ import { importCopy, type PackageSummary, type UpdateChoice } from '../component
 import ImportFilePrompt from '../components/import/ImportFilePrompt';
 import PackageImportOptions from '../components/import/PackageImportOptions';
 import TextImportOptions from '../components/import/TextImportOptions';
-import FieldMappingSection, { type ColumnMapping } from '../components/import/FieldMappingSection';
+import FieldMappingSection from '../components/import/FieldMappingSection';
 
 const MAX_TEXT_CHARS = 50_000_000;
 const MAX_TEXT_BYTES = 50 * 1024 * 1024;
@@ -68,6 +74,8 @@ const PREVIEW_ROWS = 5;
 const MAX_PREVIEW_COLUMNS = 24;
 /** Rows sampled to decide how wide the file is; a ragged file must not lose its later columns. */
 const WIDTH_SAMPLE_ROWS = 200;
+/** The note type a file without a usable `#notetype:` header starts on: the stock Basic type. */
+const DEFAULT_NOTE_TYPE_ID = 1;
 
 type PickedFile = {
     name: string;
@@ -109,8 +117,12 @@ export default function ImportScreen() {
     const [separator, setSeparator] = useState<string | null>(null);
     const [guessedSeparator, setGuessedSeparator] = useState<string>(',');
     const [allowHtml, setAllowHtml] = useState(false);
-    const [noteTypeId, setNoteTypeId] = useState<number>(1);
-    const [targetDeckId, setTargetDeckId] = useState<number>(() => resolveInitialTargetDeckId(params));
+    const [noteTypeId, setNoteTypeId] = useState<number>(DEFAULT_NOTE_TYPE_ID);
+    const [deckChoice, setDeckChoice] = useState<ImportDeckChoice>(
+        () => ({ kind: 'existing', deckId: resolveInitialTargetDeckId(params) }),
+    );
+    /** A deck the file's `#deck:` header names that does not exist yet; the picker keeps offering it. */
+    const [headerNewDeckName, setHeaderNewDeckName] = useState<string | null>(null);
     const [duplicateResolution, setDuplicateResolution] = useState<DuplicateResolution>('update');
     const [matchScope, setMatchScope] = useState<MatchScope>('notetype');
     const [tagAllNotes, setTagAllNotes] = useState('');
@@ -128,14 +140,18 @@ export default function ImportScreen() {
     const [showDeckPicker, setShowDeckPicker] = useState(false);
     const [showNoteTypePicker, setShowNoteTypePicker] = useState(false);
 
+    const targetDeckId = deckChoice.kind === 'existing' ? deckChoice.deckId : null;
+    /** The chosen existing deck; while a new deck is chosen, the deck its id is sent alongside. */
     const targetDeck = useMemo(
-        () => getDeck(targetDeckId) ?? getDeckByName('Varsayılan') ?? getDeck(1),
+        () => (targetDeckId !== null ? getDeck(targetDeckId) : null) ?? getDeckByName('Varsayılan') ?? getDeck(1),
         [targetDeckId, dataVersion],
     );
-    const deckPickerDecks = useMemo(
-        () => getAllDecks().filter((deck) => !deck.isFiltered),
-        [dataVersion, showDeckPicker],
-    );
+    const deckChoiceName = deckChoice.kind === 'new' ? deckChoice.name : targetDeck?.name ?? null;
+    const deckPickerDecks = useMemo(() => {
+        const decks = getAllDecks();
+        const choosable = decks.filter((deck) => !deck.isFiltered);
+        return headerNewDeckName ? [...choosable, ...newDeckPickerEntries(headerNewDeckName, decks)] : choosable;
+    }, [dataVersion, showDeckPicker, headerNewDeckName]);
     const selectedNoteType = useMemo(
         () => getNoteType(noteTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === noteTypeId) ?? BUILTIN_NOTE_TYPES[0]!,
         [noteTypeId, dataVersion],
@@ -203,10 +219,14 @@ export default function ImportScreen() {
         else router.replace('/decks' as any);
     };
 
+    /** Every file starts afresh, as Anki opens a new import screen per file: its own headers or none. */
     const resetOptions = () => {
         setOutcome(null);
         setColumnMappings({});
         setSeparator(null);
+        setNoteTypeId(DEFAULT_NOTE_TYPE_ID);
+        setDeckChoice({ kind: 'existing', deckId: resolveInitialTargetDeckId(params) });
+        setHeaderNewDeckName(null);
     };
 
     const loadFile = async (uri: string, name: string, type: ImportFileType, knownSize?: number) => {
@@ -230,15 +250,11 @@ export default function ImportScreen() {
         setGuessedSeparator(guess.delimiter);
         setSeparator(type === 'tsv' ? '\t' : null);
         setAllowHtml(guess.metadata.html ?? delimitedContainsHtml(guess.rows));
-        if (guess.metadata.notetype) {
-            const wanted = guess.metadata.notetype.trim().toLocaleLowerCase();
-            const found = getAllNoteTypes().find((type_) => type_.name.trim().toLocaleLowerCase() === wanted);
-            if (found) setNoteTypeId(found.id);
-        }
-        if (guess.metadata.deck) {
-            const found = getDeckByName(guess.metadata.deck.trim());
-            if (found) setTargetDeckId(found.id);
-        }
+        // A deck the header names that does not exist is preselected too, and made only on import.
+        const presets = textImportHeaderPresets(guess.metadata, getAllDecks(), getAllNoteTypes());
+        if (presets.noteTypeId !== null) setNoteTypeId(presets.noteTypeId);
+        if (presets.deck) setDeckChoice(presets.deck);
+        if (presets.deck?.kind === 'new') setHeaderNewDeckName(presets.deck.name);
         setFile({ name, type, text, bytes: null });
     };
 
@@ -292,37 +308,23 @@ export default function ImportScreen() {
         }
     };
 
-    const parseTagInput = (value: string): string[] => value.split(/[\s,]+/).filter(Boolean);
-
-    const buildTextImportOptions = (): ImportOptions => {
-        const fieldColumns: number[] = new Array(selectedNoteType.fields.length).fill(-1);
-        let tagsColumn = metadata?.tagsColumn;
-
-        for (let column = 0; !perRowNoteTypes && column < columnCount; column++) {
-            if (metaColumns.has(column)) continue;
-            const mapping = mappingFor(column);
-            if (mapping.startsWith('field:')) {
-                const index = Number(mapping.slice(6));
-                if (index >= 0 && index < selectedNoteType.fields.length) fieldColumns[index] = column;
-            } else if (mapping === 'tags') {
-                tagsColumn = column + 1;
-            }
-        }
-
-        return {
-            noteType: selectedNoteType,
-            deckId: targetDeck?.id ?? 1,
-            ...(separator ? { delimiter: separator } : {}),
-            ...(perRowNoteTypes ? {} : { fieldColumns }),
-            tagsColumn,
-            defaultFields: new Array(selectedNoteType.fields.length).fill(''),
-            tags: parseTagInput(tagAllNotes),
-            updatedTags: parseTagInput(tagUpdatedNotes),
-            duplicateResolution,
-            matchScope,
-            isHtml: allowHtml,
-        };
-    };
+    const currentTextImportOptions = (): ImportOptions => buildTextImportOptions({
+        noteType: selectedNoteType,
+        // A chosen deck deleted meanwhile falls back to the deck shown in its place.
+        deck: deckChoice.kind === 'new' ? deckChoice : { kind: 'existing', deckId: targetDeck?.id ?? 1 },
+        fallbackDeckId: targetDeck?.id ?? 1,
+        separator,
+        perRowNoteTypes,
+        columnCount,
+        metaColumns,
+        mappingFor,
+        headerTagsColumn: metadata?.tagsColumn,
+        tagAllNotes,
+        tagUpdatedNotes,
+        duplicateResolution,
+        matchScope,
+        allowHtml,
+    });
 
     const importInFlightRef = useRef(false);
     const importFailed = l('İçe aktarma tamamlanamadı. Dosyanızı kontrol edip tekrar deneyin.', 'Import could not be completed. Check your file and try again.');
@@ -437,7 +439,7 @@ export default function ImportScreen() {
             let textOptions: ImportOptions | null = null;
             let backupFirst = false;
             if (file.text !== null) {
-                textOptions = buildTextImportOptions();
+                textOptions = currentTextImportOptions();
                 // Anki refuses an import whose first field has no column: every row would have an
                 // empty first field, so nothing would be written and no card could be generated.
                 if (!perRowNoteTypes && textOptions.fieldColumns?.[0] === -1) {
@@ -524,7 +526,13 @@ export default function ImportScreen() {
                             notetypeColumn={metadata?.notetypeColumn}
                             deckColumn={metadata?.deckColumn}
                             noteTypeName={localizeNoteTypeName(locale, selectedNoteType.name)}
-                            deckName={targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
+                            deckName={deckChoiceName?.replaceAll('::', ' › ') ?? '—'}
+                            newDeckNotice={deckChoice.kind === 'new'
+                                ? l(
+                                    `Yeni deste oluşturulacak: ${deckChoice.name.replaceAll('::', ' › ')}`,
+                                    `A new deck will be created: ${deckChoice.name.replaceAll('::', ' › ')}`,
+                                )
+                                : null}
                             onPickNoteType={() => setShowNoteTypePicker(true)}
                             onPickDeck={() => setShowDeckPicker(true)}
                             duplicateResolution={duplicateResolution}
@@ -609,8 +617,8 @@ export default function ImportScreen() {
                     visible={showDeckPicker}
                     colors={colors}
                     decks={deckPickerDecks}
-                    selectedDeckName={targetDeck?.name ?? null}
-                    activeDeckName={targetDeck?.name ?? null}
+                    selectedDeckName={deckChoiceName}
+                    activeDeckName={deckChoiceName}
                     title={l('Hedef deste', 'Target Deck')}
                     allDecksLabel={null}
                     searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
@@ -623,8 +631,10 @@ export default function ImportScreen() {
                     onSelect={(name) => {
                         if (!name) return;
                         const deck = getDeckByName(name);
-                        if (!deck) return;
-                        setTargetDeckId(deck.id);
+                        if (deck) setDeckChoice({ kind: 'existing', deckId: deck.id });
+                        // A stand-in for the header's new deck (or one of its new parents).
+                        else if (deckPickerDecks.some((entry) => entry.id < 0 && entry.name === name)) setDeckChoice({ kind: 'new', name });
+                        else return;
                         setShowDeckPicker(false);
                     }}
                     onCreateDeck={(name) => {

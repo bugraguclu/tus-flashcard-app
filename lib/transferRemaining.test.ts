@@ -18,7 +18,9 @@ import { importApkg } from './importApkg';
 import { openSqlJsReader } from './webDb';
 import { BUILTIN_NOTE_TYPES, DEFAULT_DECK_CONFIG, checksumField, type AnkiCard, type Deck } from './models';
 import { getAllAnkiCards, getAllNotes } from './noteManager';
-import { importDelimitedNotes } from './importNotes';
+import { importDelimitedNotes, previewDelimitedNotes } from './importNotes';
+import { textImportHeaderPresets } from './importTargetDeck';
+import { buildTextImportOptions, type TextImportChoices } from './importTextOptions';
 import { defaultDelimitedMapping, parseDelimited } from './importDelimited';
 import { getAllDecks, saveDeck } from './deckManager';
 import { getNoteIdsInDeck } from './exportNotes';
@@ -195,5 +197,80 @@ describe('sort field and template deck override', () => {
         await importApkg(await pkg(data), options);
         const stored = JSON.parse(h.db.getFirstSync('SELECT data FROM note_types WHERE name = ?', 'Transfer').data);
         expect(stored.templates[0].deckOverrideId).toBeUndefined();
+    });
+});
+
+/**
+ * The import screen's path for a text file's `#deck:` / `#notetype:` headers: the pickers start on
+ * them, the learner may change either, and a deck the file names that does not exist yet is made
+ * only by the import itself — as Anki 26.09.3 does (rslib text/csv/metadata.rs, behaviour only).
+ * https://docs.ankiweb.net/importing/text-files.html#file-headers
+ */
+describe('text file deck and note type headers on the import screen', () => {
+    const repro = '#separator:tab\n#html:false\n#deck:Import Testi\n#notetype:Basic\nSoru 1\tCevap 1';
+    const ROUTE_DECK = 1;
+
+    /** What the screen does: preset from the headers, let the learner change, build, preview, import. */
+    function screenImport(text: string, change: (choices: TextImportChoices) => Partial<TextImportChoices> = () => ({})) {
+        const parsed = parseDelimited(text);
+        const presets = textImportHeaderPresets(parsed.metadata, getAllDecks(), BUILTIN_NOTE_TYPES);
+        const noteType = BUILTIN_NOTE_TYPES.find((type) => type.id === (presets.noteTypeId ?? 1))!;
+        const initial: TextImportChoices = {
+            noteType,
+            deck: presets.deck ?? { kind: 'existing', deckId: ROUTE_DECK },
+            fallbackDeckId: ROUTE_DECK,
+            separator: null,
+            perRowNoteTypes: false,
+            columnCount: parsed.rows[0]?.length ?? 0,
+            metaColumns: new Map(),
+            mappingFor: (column) => `field:${column}`,
+            tagAllNotes: '',
+            tagUpdatedNotes: '',
+            duplicateResolution: 'update',
+            matchScope: 'notetype',
+            allowHtml: false,
+        };
+        const options = buildTextImportOptions({ ...initial, ...change(initial) });
+        const decksBeforePreview = getAllDecks().map((entry) => entry.name);
+        previewDelimitedNotes(text, options);
+        expect(getAllDecks().map((entry) => entry.name)).toEqual(decksBeforePreview);
+        const result = importDelimitedNotes(text, options);
+        return { initial, result };
+    }
+    const cardDeckNames = () => getAllAnkiCards().map((card) => getAllDecks().find((entry) => entry.id === card.deckId)?.name);
+
+    beforeEach(() => { saveDeck(deck(ROUTE_DECK, 'Varsayılan')); });
+
+    it('starts on the deck the header names and creates it only when the import runs', () => {
+        const { initial, result } = screenImport(repro);
+        expect(initial.deck).toEqual({ kind: 'new', name: 'Import Testi' });
+        expect(initial.noteType.name).toBe('Basic');
+        expect(result.added).toBe(1);
+        expect(getAllDecks().map((entry) => entry.name).sort()).toEqual(['Import Testi', 'Varsayılan']);
+        expect(cardDeckNames()).toEqual(['Import Testi']);
+    });
+
+    it('imports into an existing deck the header names without making another', () => {
+        saveDeck(deck(710, 'Import Testi'));
+        const { initial } = screenImport(repro.replace('Import Testi', 'import testi'));
+        expect(initial.deck).toEqual({ kind: 'existing', deckId: 710 });
+        expect(getAllDecks()).toHaveLength(2);
+        expect(cardDeckNames()).toEqual(['Import Testi']);
+    });
+
+    it('lets the learner change the preset deck and note type, and then makes no header deck', () => {
+        const reversed = BUILTIN_NOTE_TYPES.find((type) => type.name === 'Basic (and reversed card)')!;
+        screenImport(repro, () => ({ deck: { kind: 'existing', deckId: ROUTE_DECK }, noteType: reversed }));
+        expect(getAllDecks().map((entry) => entry.name)).toEqual(['Varsayılan']);
+        expect(getAllNotes().map((note) => note.noteTypeId)).toEqual([reversed.id]);
+        expect(cardDeckNames()).toEqual(['Varsayılan', 'Varsayılan']);
+    });
+
+    it('imports a file without headers into the screen’s deck as before', () => {
+        const { initial } = screenImport('Soru 1\tCevap 1');
+        expect(initial.deck).toEqual({ kind: 'existing', deckId: ROUTE_DECK });
+        expect(initial.noteType.id).toBe(1);
+        expect(getAllDecks().map((entry) => entry.name)).toEqual(['Varsayılan']);
+        expect(cardDeckNames()).toEqual(['Varsayılan']);
     });
 });

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-11-05",
+  "lastVerified": "2026-11-08",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -102,7 +102,7 @@
       "priority": 1,
       "platform": "cross-platform text import behavior",
       "url": "https://docs.ankiweb.net/importing/text-files.html",
-      "useFor": ["first-field duplicate updates", "duplicate match scope", "deck directives", "deck columns", "GUID columns", "field separator override", "allow HTML in fields", "field mapping", "tag all notes", "tag updated notes"]
+      "useFor": ["first-field duplicate updates", "duplicate match scope", "deck directives (the File Headers table still says #deck: and #notetype: preset only an existing deck or note type; Anki 25.07+ creates a missing #deck: deck, see anki-source-csv-metadata)", "deck columns", "GUID columns", "field separator override", "allow HTML in fields", "field mapping", "tag all notes", "tag updated notes"]
     },
     {
       "id": "anki-manual-editing",
@@ -1409,7 +1409,7 @@
       "platform": "cross-platform text import defaults",
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/import_export/text/csv/metadata.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["delimiter guess: first of tab, pipe, semicolon, colon, comma, space in the first 8 KiB", "#columns name mapping", "tags column after the last mapped field", "#if matches, #match scope and the legacy tags: line; lib/transferRemaining.test.ts"]
+      "useFor": ["delimiter guess: first of tab, pipe, semicolon, colon, comma, space in the first 8 KiB", "#columns name mapping", "tags column after the last mapped field", "#if matches, #match scope and the legacy tags: line; lib/transferRemaining.test.ts", "#deck: and #notetype: preset the import screen by id, then by case-insensitive name; an unknown #deck: name becomes a deck created only when the import runs (ankitects/anki#4154, Anki 25.07+; probed in Anki 26.09.3), an unknown #notetype: keeps the default; lib/importTargetDeck.test.ts"]
     },
     {
       "id": "anki-source-buttons-hours-graphs",
