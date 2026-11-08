@@ -29,6 +29,7 @@ import {
     applyCatalogProgress,
     encodeCatalogProgress,
     hasStudyProgress,
+    isCatalogPackRow,
     parseCatalogProgress,
     type CatalogProgress,
 } from './catalogRows';
@@ -38,6 +39,7 @@ import { catalogPackKey } from './catalogPackKey';
 import { BKA_MANIFEST } from './bkaManifest';
 import { preserveCatalogNoteEdits } from './catalogNoteEdits';
 import { carryCatalogLearnerState, readInstalledCatalogState } from './catalogLearnerState';
+import { withCatalogIds } from './catalogIds';
 import { applyPendingCatalogLearnerData } from './backupCatalogLearnerData';
 import {
     BKA_CATALOG_DEFAULT_ROOT_DECK,
@@ -273,6 +275,20 @@ function inTransaction<T>(work: () => T): T {
 }
 
 /**
+ * The rows below are written with INSERT OR REPLACE, which must only ever replace the catalog's
+ * own rows. lib/catalogIds.ts already moved the snapshot off any id a learner row holds; this is
+ * the last check before writing, and it fails the whole transaction.
+ */
+function assertOnlyCatalogRowsReplaced(table: 'note_types' | 'deck_configs' | 'decks', ids: number[]): void {
+    for (const id of ids) {
+        const row = getDB().getFirstSync<{ data: string }>(`SELECT data FROM ${table} WHERE id = ?`, id);
+        if (row && !isCatalogPackRow(row.data)) {
+            throw new Error(`BKA kurulumu kendi kaydınızın (${table} ${id}) üzerine yazacaktı. Koleksiyon değiştirilmedi.`);
+        }
+    }
+}
+
+/**
  * Write the snapshot's rows. Runs inside the caller's transaction. A card whose state was carried
  * from the installed rows keeps it; any other card gets progress stashed by an earlier removal.
  */
@@ -281,6 +297,10 @@ function writeCatalogRows(snapshot: BkaCatalogSnapshot, carriedCardIds: Readonly
     const now = Date.now();
     const stashed = readStashedProgress();
     let restoredProgress = 0;
+
+    assertOnlyCatalogRowsReplaced('deck_configs', snapshot.deckConfigs.map((config) => config.id));
+    assertOnlyCatalogRowsReplaced('decks', snapshot.decks.map((deck) => deck.id));
+    assertOnlyCatalogRowsReplaced('note_types', snapshot.noteTypes.map((noteType) => noteType.id));
 
     for (const config of snapshot.deckConfigs) {
         db.runSync('INSERT OR REPLACE INTO deck_configs (id, data) VALUES (?, ?)', config.id, JSON.stringify(config));
@@ -357,8 +377,9 @@ function replaceInstalledCatalog(
     tier: BkaCatalogTier,
     currentTier: BkaCatalogTier | null,
 ): { snapshot: BkaCatalogSnapshot; restoredProgress: number; replaced: boolean } {
+    // Package ids a learner row holds are given up for fresh ones, never written over.
+    const edited: BkaCatalogSnapshot = withCatalogIds(source);
     const learnerState = readInstalledCatalogState();
-    const edited: BkaCatalogSnapshot = { ...source };
     if (currentTier === 'full' && tier === 'full') {
         // Fields the learner edited, and the cards their edits generated, replace the package's.
         const editedNoteIds = new Set(learnerState.editedNotes.map((note) => note.id));

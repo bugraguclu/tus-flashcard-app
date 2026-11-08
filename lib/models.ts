@@ -43,6 +43,8 @@ export interface NoteType {
     sourcePackageId?: string;
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
+    /** A catalog row's id in the package, when a learner row held it (lib/catalogIds.ts). */
+    catalogSourceId?: number;
 }
 
 export const LEGACY_TUS_NOTE_TYPE_IDS = [4, 5, 6] as const;
@@ -294,6 +296,8 @@ export interface Deck {
     filteredBuildAt?: number;
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
+    /** A catalog row's id in the package, when a learner row held it (lib/catalogIds.ts). */
+    catalogSourceId?: number;
 }
 
 export interface DeckConfig {
@@ -387,6 +391,8 @@ export interface DeckConfig {
 
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
+    /** A catalog row's id in the package, when a learner row held it (lib/catalogIds.ts). */
+    catalogSourceId?: number;
 }
 
 export const DEFAULT_DECK_CONFIG: DeckConfig = {

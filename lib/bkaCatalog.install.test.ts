@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import initSqlJs from 'sql.js';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Platform } from 'react-native';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 
 const holder = vi.hoisted(() => ({
@@ -24,6 +25,12 @@ vi.mock('expo-asset', () => ({
     Asset: { fromModule: () => ({ downloadAsync: async () => {}, localUri: 'file://bka.apkg', uri: 'file://bka.apkg' }) },
 }));
 vi.mock('./bkaCatalogAsset', () => ({ requireBkaCatalogAsset: () => 0 }));
+// The learner's own package imports read and write media; nothing here needs the files.
+vi.mock('./mediaStore', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('./mediaStore')>()),
+    saveMediaBytes: async () => {},
+    readMediaBytes: async () => null,
+}));
 vi.mock('./files', () => ({
     readUriBytes: async () => {
         // The web build downloads the package; this stands in for that download failing.
@@ -79,11 +86,14 @@ import {
 } from './bkaCatalog';
 import { BKA_MANIFEST } from './bkaManifest';
 import {
-    getAllNotes, getAnkiCard, getNote, getCardsForNote, saveAnkiCard, saveNote, setNoteTags, updateTusCardByCardId,
+    getAllNoteTypes, getAllNotes, getAnkiCard, getNote, getNoteType, getCardsForNote, saveAnkiCard, saveNote, setNoteTags,
+    updateTusCardByCardId,
 } from './noteManager';
+import { importApkg, openAnkiReader } from './importApkg';
+import { buildAnkiExport } from './exportAnkiPackage';
 import { getDeck, getDeckByName, getDeckConfig, saveDeck, saveDeckConfig } from './deckManager';
 import { repositionSelectedNewCards } from './browserReposition';
-import { DEFAULT_DECK_CONFIG } from './models';
+import { DEFAULT_DECK_CONFIG, type NoteType } from './models';
 import { getBrowserCardCount, getBrowserCardIdsMatchingText, getBrowserCards } from './studyRepository';
 import { DEFAULT_SETTINGS } from './storage';
 
@@ -165,6 +175,7 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
+    Platform.OS = 'ios';
     holder.db = createAppDb(holder.SQL);
     holder.failPackageRead = false;
     holder.failReader = false;
@@ -520,5 +531,123 @@ describe('BKA catalog installation', () => {
         const reinstall = await installBkaCatalog();
         expect(reinstall.installed).toBe(true);
         expect(getInstalledBkaCardCount()).toBe(BKA_CATALOG_EXPECTED.cards);
+    }, 120_000);
+});
+
+/** AnKing's cloze note type: the catalog's comes from the same source, under the same id. */
+const ANKING_CLOZE_ID = 1566160514431;
+
+describe('BKA catalog beside the learner’s AnKing note types', () => {
+    const noteTypeRow = (id: number) => db.getFirstSync<{ name: string; data: string }>(
+        'SELECT name, data FROM note_types WHERE id = ?', id,
+    );
+    const catalogCloze = () => getAllNoteTypes().find((type) => type.catalogPack === 'bka-tus' && type.kind === 'cloze');
+
+    it('installs its own note type when the learner already owns that id, and leaves the learner’s alone', async () => {
+        // A learner who imported an AnKing-based deck owns AnKing's cloze type under its own id.
+        const learnerType = {
+            id: ANKING_CLOZE_ID, name: 'Cloze-AnKingMaster', kind: 'cloze', sortFieldIdx: 0, mod: 1_700_000_000,
+            fields: [{ name: 'Text', ord: 0, sticky: false, rtl: false }, { name: 'Extra', ord: 1, sticky: false, rtl: false }],
+            templates: [{ name: 'Cloze', ord: 0, qfmt: '{{cloze:Text}}', afmt: '{{cloze:Text}}<br>{{Extra}}' }],
+            css: '.card { color: navy; }',
+        };
+        db.runSync(
+            'INSERT INTO note_types (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, 0, -1, 0)',
+            learnerType.id, learnerType.name, JSON.stringify(learnerType),
+        );
+        db.runSync(
+            'INSERT INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone) VALUES (?, ?, ?, 0, ?, ?, 0, -1, 0)',
+            5151, ANKING_CLOZE_ID, 'Kendi notum', '',
+            JSON.stringify({ id: 5151, guid: 'kendi-anking-notum', noteTypeId: ANKING_CLOZE_ID, fields: ['{{c1::Kendi}} notum', ''], tags: [] }),
+        );
+        const learnerRow = noteTypeRow(ANKING_CLOZE_ID);
+
+        await installBkaCatalog();
+        expect(noteTypeRow(ANKING_CLOZE_ID)).toEqual(learnerRow);
+        const catalogType = catalogCloze()!;
+        expect(catalogType.id).not.toBe(ANKING_CLOZE_ID);
+        expect(getNote(5151)?.noteTypeId).toBe(ANKING_CLOZE_ID);
+        expect(db.getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM notes WHERE noteTypeId = ?', ANKING_CLOZE_ID)?.n).toBe(1);
+        expect(db.getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM notes WHERE noteTypeId = ?', catalogType.id)?.n)
+            .toBeGreaterThan(0);
+
+        // A refresh finds the catalog's type where it put it; a removal takes only that one.
+        markOlderPackageInstalled(db);
+        await installBkaCatalog();
+        expect(noteTypeRow(ANKING_CLOZE_ID)).toEqual(learnerRow);
+        expect(catalogCloze()?.id).toBe(catalogType.id);
+        uninstallBkaCatalog();
+        expect(noteTypeRow(ANKING_CLOZE_ID)).toEqual(learnerRow);
+        expect(noteTypeRow(catalogType.id)).toBeNull();
+    }, 120_000);
+
+    it('leaves a learner deck and preset that hold catalog ids alone', async () => {
+        // Ids a learner's own rows can hold: a course deck's id from the package, and the id the
+        // catalog's preset takes (a preset that came along in a package exported from this app).
+        const anatomyId = BKA_MANIFEST.courses.find((course) => course.name === 'Anatomi')!.sourceDeckId;
+        const presetId = 8_100_000_000_000;
+        db.runSync('INSERT INTO deck_configs (id, data) VALUES (?, ?)', presetId,
+            JSON.stringify({ ...DEFAULT_DECK_CONFIG, id: presetId, name: 'Benim ayarım', newPerDay: 3 }));
+        db.runSync(
+            'INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, 0, -1, 0)',
+            anatomyId, 'Benim Anatomim',
+            JSON.stringify({ id: anatomyId, name: 'Benim Anatomim', configId: presetId, mod: 0, usn: -1, description: '', collapsed: false, isFiltered: false }),
+        );
+        const learnerCard = JSON.parse(db.getFirstSync<{ data: string }>('SELECT data FROM anki_cards WHERE id = ?', LEARNER.cardId)!.data);
+        db.runSync('UPDATE anki_cards SET deckId = ?, data = ? WHERE id = ?',
+            anatomyId, JSON.stringify({ ...learnerCard, deckId: anatomyId }), LEARNER.cardId);
+        const rows = () => ({
+            deck: db.getFirstSync('SELECT name, data FROM decks WHERE id = ?', anatomyId),
+            preset: db.getFirstSync('SELECT data FROM deck_configs WHERE id = ?', presetId),
+        });
+        const before = rows();
+
+        const install = await installBkaCatalog();
+        expect(rows()).toEqual(before);
+        const catalogAnatomy = getDeckByName(`${install.rootDeckName}::Anatomi`)!;
+        expect(catalogAnatomy.id).not.toBe(anatomyId);
+        expect(catalogAnatomy.configId).not.toBe(presetId);
+        expect(getAnkiCard(LEARNER.cardId)?.deckId).toBe(anatomyId);
+        expect(getBrowserCardCount({ deckIds: [anatomyId] })).toBe(1);
+        expect(getInstalledBkaCardCount()).toBe(BKA_CATALOG_EXPECTED.cards);
+
+        markOlderPackageInstalled(db);
+        await installBkaCatalog();
+        expect(rows()).toEqual(before);
+        expect(getDeckByName(`${install.rootDeckName}::Anatomi`)?.id).toBe(catalogAnatomy.id);
+        uninstallBkaCatalog();
+        expect(rows()).toEqual(before);
+        expect(getAnkiCard(LEARNER.cardId)?.deckId).toBe(anatomyId);
+    }, 120_000);
+
+    it('imports an AnKing deck after the catalog under a note type of its own', async () => {
+        await installBkaCatalog();
+        const catalogType = catalogCloze()!;
+        const catalogRow = noteTypeRow(catalogType.id);
+        const catalogNotes = db.getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM notes WHERE noteTypeId = ?', catalogType.id)!.n;
+
+        // The learner's AnKing deck: the same note type, newer, with a note of their own.
+        const { catalogPack: _owner, ...ankingType } = getNoteType(catalogType.id)!;
+        const noteType: NoteType = { ...ankingType, id: ANKING_CLOZE_ID, mod: catalogType.mod + 100, css: '.card { color: navy; }' };
+        const fields = noteType.fields.map((_, index) => (index === 0 ? '{{c1::AnKing}} kartım' : ''));
+        // The package is written and read with sql.js, as the web build does.
+        Platform.OS = 'web';
+        const { bytes } = await buildAnkiExport('apkg', undefined, false, undefined, {}, {
+            noteTypes: [noteType],
+            notes: [{ id: 6161, guid: 'kendi-anking-notum', noteTypeId: ANKING_CLOZE_ID, mod: 1_800_000_000, usn: -1, tags: [], fields, sfld: 'AnKing kartım', csum: 0, flags: 0 }],
+            cards: [{ id: 616161, noteId: 6161, deckId: 6262, ord: 0, mod: 1_800_000_000, usn: -1, type: 0, queue: 0, due: 1, ivl: 0, factor: 0, reps: 0, lapses: 0, left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0 }],
+            decks: [{ id: 6262, name: 'AnKing', configId: 1, mod: 1_800_000_000, usn: -1, description: '', collapsed: false, isFiltered: false }],
+            deckConfigs: [{ ...DEFAULT_DECK_CONFIG }], revlog: [], graves: [], rolloverHour: 4,
+        });
+
+        await importApkg(bytes!, { subject: 'tus', openReader: openAnkiReader });
+        Platform.OS = 'ios';
+        expect(noteTypeRow(catalogType.id)).toEqual(catalogRow);
+        expect(db.getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM notes WHERE noteTypeId = ?', catalogType.id)?.n)
+            .toBe(catalogNotes);
+        const imported = getAllNotes().find((note) => note.guid === 'kendi-anking-notum')!;
+        expect(imported.noteTypeId).not.toBe(catalogType.id);
+        expect(getNoteType(imported.noteTypeId)).toMatchObject({ name: 'Cloze-AnKingMaster (Imported)', css: '.card { color: navy; }' });
+        expect(getNoteType(imported.noteTypeId)?.catalogPack).toBeUndefined();
     }, 120_000);
 });

@@ -20,6 +20,7 @@ import { getDB } from './db';
 import { deckNameKey } from './deckNames';
 import { checksumFieldText } from './noteChecksum';
 import { CATALOG_LEARNER_DATA_KEY } from './backupCatalogLearnerData';
+import { isCatalogPackRow } from './catalogRows';
 import { QUEUE_BOOKKEEPING_PREFIXES } from './backupSnapshot';
 import {
     FIELD_SEPARATOR,
@@ -139,22 +140,26 @@ export function importAnkiReaderLossless(
             rememberCollection({ crt: meta.crt, conf: meta.conf });
         }
         const reservedTypeNames = new Set(existingNoteTypes.map((row) => row.name));
+        // A note type of the paid catalog is never matched: an import neither updates it nor adds
+        // notes to it. A package note type under a catalog type's id (AnKing's, which the catalog
+        // uses) arrives as a type of its own, with a free id and an "(Imported)" name.
+        const matchableNoteTypes = existingNoteTypes.filter((row) => !isCatalogPackRow(row.data));
         const writtenNoteTypeIds = new Set<number>();
         for (const [sourceKey, raw] of Object.entries(meta.models)) {
             const sourceId = numberValue(raw.id, numberValue(sourceKey));
-            const samePackage = existingNoteTypes.find((row) => {
+            const samePackage = matchableNoteTypes.find((row) => {
                 try { return (JSON.parse(row.data) as NoteType).sourcePackageId === packageId && numberValue((JSON.parse(row.data) as NoteType).ankiRaw?.id) === sourceId; }
                 catch { return false; }
             });
             const candidate = importedNoteType(raw, sourceId, packageId);
-            const sameOrigin = existingNoteTypes.find(row => {
+            const sameOrigin = matchableNoteTypes.find(row => {
                 try {
                     const type = JSON.parse(row.data) as NoteType;
                     const original = type.ankiRaw?.originalId ?? type.ankiRaw?.original_id;
                     return Number(original) === sourceId && sameImportedNoteShape(type, candidate);
                 } catch { return false; }
             });
-            const sameIdentity = sameOrigin ?? existingNoteTypes.find((row) => row.id === sourceId);
+            const sameIdentity = sameOrigin ?? matchableNoteTypes.find((row) => row.id === sourceId);
             let targetId = samePackage?.id ?? sameIdentity?.id ?? nextFreeId('note_types', sourceId, reservedTypes);
             const existing = samePackage ?? sameIdentity;
             if (!existing) {
