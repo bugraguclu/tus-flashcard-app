@@ -68,6 +68,7 @@ export default function ReviewerFlagMenu({
                                     />
                                 )}
                                 checked={currentFlag === flag}
+                                exclusive
                                 onPress={() => { onSelect(flag); onClose(); }}
                             />
                         ))}

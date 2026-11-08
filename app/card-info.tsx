@@ -80,7 +80,7 @@ export default function CardInfoScreen() {
         return (
             <SafeAreaView style={styles.container}>
                 {header}
-                <EmptyState style={styles.emptyState} title={l('Kart bulunamadı.', 'Card not found.')} />
+                <EmptyState style={styles.emptyState} body={l('Kart bulunamadı.', 'Card not found.')} />
             </SafeAreaView>
         );
     }

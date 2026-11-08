@@ -35,7 +35,13 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
         )],
     ];
     return (
-        <AppSheet visible={visible} onClose={onClose} title={l('İstatistikler hakkında', 'About statistics')} closeButton>
+        <AppSheet
+            visible={visible}
+            onClose={onClose}
+            title={l('İstatistikler hakkında', 'About statistics')}
+            closeButton
+            closeLabel={l('Bilgiyi kapat', 'Close information')}
+        >
             <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
                 {sections.map(([title, body]) => (
                     <View key={title} style={styles.section}>

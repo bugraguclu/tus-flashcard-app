@@ -1,9 +1,26 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { Text } from './AppText';
 import { FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { Notice } from './ui/Feedback';
+
+/** A light bulb, drawn like the kit's line icons: the notice explains rather than alarms. */
+function TipIcon({ color }: { color: string }) {
+    return (
+        <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
+            <Path
+                d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.3 1.1 2.2v.5h5V16c0-.9.5-1.7 1.1-2.2A6 6 0 0 0 12 3ZM9.5 19h5M10.5 21.5h3"
+                stroke={color}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
 
 type LeechExplainerProps = {
     context: 'settings' | 'card';
@@ -29,7 +46,12 @@ export default function LeechExplainer({ context }: LeechExplainerProps) {
     ];
 
     return (
-        <Notice tone="warning" title={l('Sürekli Unutulan Kart nedir?', 'What is a Leech?')} style={styles.notice}>
+        <Notice
+            tone="warning"
+            icon={<TipIcon color={colors.warning} />}
+            title={l('Sürekli Unutulan Kart nedir?', 'What is a Leech?')}
+            style={styles.notice}
+        >
             <View style={styles.content}>
                 <Text style={styles.body}>
                     {context === 'card'

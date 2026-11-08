@@ -22,10 +22,10 @@ import { useI18n } from '../hooks/useI18n';
 import PencilGlyph from './PencilGlyph';
 import { Button, IconButton } from './ui/Button';
 import { TextField } from './ui/Fields';
-import { BackIcon, ChevronRightIcon } from './ui/icons';
+import { BackIcon } from './ui/icons';
 import { MenuItem } from './ui/Menu';
 import { AppSwitch } from './ui/Rows';
-import { DISABLED_OPACITY, HIT_TARGET, Radius } from './ui/tokens';
+import { HIT_TARGET, Radius } from './ui/tokens';
 import { parseDueRange } from '../lib/schedulingIntervals';
 import type { ResetCardOptions } from '../lib/resetCards';
 
@@ -457,11 +457,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     );
 }
 
-/**
- * One entry of the panel: a `MenuItem` with the reviewer's own glyph. An entry that opens a
- * submenu ends in a chevron, which the kit's item cannot draw yet, so it is laid over the row's
- * trailing edge and fades with it.
- */
+/** One entry of the panel: a `MenuItem` with the reviewer's own glyph; `chevron` opens a submenu. */
 function MenuRow({ icon, label, onPress, chevron = false, disabled = false }: {
     icon: ReviewerMenuIcon;
     label: string;
@@ -470,22 +466,14 @@ function MenuRow({ icon, label, onPress, chevron = false, disabled = false }: {
     disabled?: boolean;
 }) {
     const colors = useThemeColors();
-    const item = (
+    return (
         <MenuItem
             icon={<MenuIcon name={icon} color={colors.textMuted} />}
             label={label}
             onPress={onPress}
+            chevron={chevron}
             disabled={disabled}
         />
-    );
-    if (!chevron) return item;
-    return (
-        <View>
-            {item}
-            <View style={[rowStyles.chevron, disabled && rowStyles.disabled]}>
-                <ChevronRightIcon color={colors.textMuted} size={16} />
-            </View>
-        </View>
     );
 }
 
@@ -505,9 +493,6 @@ function OptionSwitch({ label, value, onChange }: {
 }
 
 const rowStyles = StyleSheet.create({
-    // The row pads its content 16 points from the trailing edge, where the chevron sits.
-    chevron: { position: 'absolute', top: 0, bottom: 0, right: Spacing.lg, justifyContent: 'center', pointerEvents: 'none' },
-    disabled: { opacity: DISABLED_OPACITY },
     switchRow: {
         minHeight: 48,
         flexDirection: 'row',
