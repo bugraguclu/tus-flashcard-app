@@ -83,7 +83,8 @@ The screens used to carry their own small kits. They map onto the parts like thi
 - Close is an icon (×), never a text glyph. Back is `BackIcon` in the header's leading slot.
 - A row that opens something ends in `ChevronRightIcon`; a value that opens a list ends in
   `ChevronDownIcon`. Text characters (›, ⌄, ×, ✓, ⋮, ＋) are not icons.
-- A group of rows is a `Section` or a `divided` `Card`: the card draws the hairlines.
+- A group of rows is a `Section` or a `divided` `Card`: the card draws the hairlines between its
+  direct children, so pass rows directly (a fragment counts as one child).
 - Sheets are `AppSheet` over `BottomSheetModal`; dialogs are `AppDialog`; neither draws its own
   backdrop colour.
 - Disabled controls fade with `DISABLED_OPACITY` and say so with `accessibilityState`.

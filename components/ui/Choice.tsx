@@ -230,7 +230,9 @@ const styles = StyleSheet.create({
     chipText: { fontSize: FontSize.sm, fontWeight: '500' },
     chipTextSelected: { fontWeight: '700' },
     chipRemove: { minHeight: 32, paddingRight: Spacing.sm + 2, paddingLeft: 0, justifyContent: 'center' },
-    badge: { alignSelf: 'flex-start', paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: Radius.pill },
+    // A badge mostly sits in a row beside a title, where the row centres it; a column that should
+    // not stretch it passes alignSelf.
+    badge: { paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: Radius.pill },
     badgeText: { fontSize: FontSize.xs + 1, fontWeight: '700' },
     track: { flexDirection: 'row', alignSelf: 'flex-start', padding: 2, borderRadius: Radius.inset },
     trackFill: { alignSelf: 'stretch' },

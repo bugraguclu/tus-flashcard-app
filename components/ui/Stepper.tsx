@@ -75,10 +75,10 @@ export function Stepper({
 }
 
 const styles = StyleSheet.create({
+    // No alignSelf: in a row it centres with the label; a column that should not stretch it says so.
     track: {
         flexDirection: 'row',
         alignItems: 'center',
-        alignSelf: 'flex-start',
         gap: Spacing.sm,
         padding: 4,
         borderRadius: Radius.pill,
