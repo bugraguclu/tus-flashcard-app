@@ -47,7 +47,7 @@ You can use any or all of these three ways.
 3. Installing takes a few seconds. Tap **OK** on the **Package unlocked** message; you are back
    on the deck list, where the 12 subject decks and their subdecks are.
 
-The **Add 9,575 ready-made TUS cards for free** button on the **This Deck is Empty** screen, which
+The **Add ready-made TUS cards** button on the **This Deck is Empty** screen, which
 appears when you open an empty deck, installs the pack too; once it is done the study screen opens
 straight on **TUS Kartları**.
 

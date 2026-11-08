@@ -2776,9 +2776,10 @@ export default function StudyScreen() {
         && Boolean(selectedDeckName && getDeckByName(selectedDeckName)?.catalogPack === BKA_CATALOG_PACK);
     // A new learner's first deck is empty, and the free pack is the quickest way to cards: it
     // installs over this screen and opens on the pack (CatalogUnlockSheet's onUnlocked).
+    // Two short centred lines: the whole sentence wrapped on a phone and left "ekleyin" alone.
     const emptyDeckCatalogOffer = isCatalogPurchaseSimulationEnabled() && catalogTier !== 'full' ? (
         <TouchableOpacity
-            style={styles.secondaryActionBtn}
+            style={[styles.secondaryActionBtn, styles.catalogOfferBtn]}
             onPress={() => setCatalogUnlockVisible(true)}
             accessibilityRole="button"
             accessibilityLabel={l(
@@ -2786,10 +2787,11 @@ export default function StudyScreen() {
                 `Add ${formatCount(BKA_MANIFEST.totals.cards, 'en')} ready-made TUS cards for free`,
             )}
         >
-            <Text style={styles.secondaryActionText}>
+            <Text style={styles.secondaryActionText}>{l('Hazır TUS kartlarını ekleyin', 'Add ready-made TUS cards')}</Text>
+            <Text style={styles.catalogOfferHint}>
                 {l(
-                    `Hazır ${formatCount(BKA_MANIFEST.totals.cards, 'tr')} TUS kartını ücretsiz ekleyin`,
-                    `Add ${formatCount(BKA_MANIFEST.totals.cards, 'en')} ready-made TUS cards for free`,
+                    `${formatCount(BKA_MANIFEST.totals.cards, 'tr')} kart · ücretsiz`,
+                    `${formatCount(BKA_MANIFEST.totals.cards, 'en')} cards · free`,
                 )}
             </Text>
         </TouchableOpacity>
@@ -4026,6 +4028,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     },
     catalogPurchaseBtnText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
     catalogPurchaseBtnHint: { color: colors.white, opacity: 0.82, fontSize: FontSize.xs, marginTop: 3 },
+    catalogOfferBtn: { flexDirection: 'column', gap: 1 },
+    catalogOfferHint: { fontSize: FontSize.sm, color: colors.textMuted, textAlign: 'center' },
     emptySub: { fontSize: FontSize.md, color: colors.textSecondary, marginTop: Spacing.lg },
     });
 }

@@ -327,6 +327,10 @@ A card whose front no longer renders, kept because an edit never deletes cards, 
 Editing fields updates the shared note while preserving each existing card's deck and scheduling.
 Choosing a different destination moves the selected card the way Change Deck does (FSRS memory state cleared for re-derivation, remaining learning steps remapped to the destination preset, `lib/tusCards.deckMove.test.ts`); newly generated cards use that
 destination. `lib/noteManager.newTypes.test.ts` covers siblings stored in different decks.
+A save first waits for every field to deliver its last edit: web reads the field document directly, and a
+native WebView answers a flush token after the edits it has already posted, so ✓ pressed right after typing
+no longer saves the previous text (seen on the iPhone 17 Pro simulator 2026-11-08; `lib/editorFlushBarrier.ts`,
+`lib/editorFlushBarrier.test.ts`, `lib/richTextEditorScript.test.ts`).
 Editor success, draft-baseline reset and external callbacks follow durable storage completion;
 a read-only tab is rejected before note/tag mutation. A failed new-note flush removes its
 unacknowledged rows so retry creates one note.
