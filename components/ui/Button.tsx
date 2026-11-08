@@ -123,6 +123,8 @@ interface IconButtonProps {
     disabled?: boolean;
     /** Marks a toggle's state, e.g. a pinned or active tool. */
     selected?: boolean;
+    /** Marks what the button opens as open or closed, e.g. a help panel. */
+    expanded?: boolean;
     style?: StyleProp<ViewStyle>;
     hitSlop?: Insets;
 }
@@ -135,6 +137,7 @@ export function IconButton({
     accessibilityHint,
     disabled = false,
     selected,
+    expanded,
     style,
     hitSlop,
 }: IconButtonProps) {
@@ -147,7 +150,11 @@ export function IconButton({
             accessibilityRole="button"
             accessibilityLabel={accessibilityLabel}
             accessibilityHint={accessibilityHint}
-            accessibilityState={selected === undefined ? { disabled } : { disabled, selected }}
+            accessibilityState={{
+                disabled,
+                ...(selected === undefined ? {} : { selected }),
+                ...(expanded === undefined ? {} : { expanded }),
+            }}
         >
             {children}
         </TouchableOpacity>
@@ -170,10 +177,15 @@ export function CloseButton({ accessibilityLabel, onPress, color }: {
 }
 
 /** The round “?” beside a heading that opens its explanation. */
-export function HelpButton({ accessibilityLabel, onPress }: { accessibilityLabel: string; onPress: () => void }) {
+export function HelpButton({ accessibilityLabel, onPress, expanded }: {
+    accessibilityLabel: string;
+    onPress: () => void;
+    /** Whether the explanation it opens is showing. */
+    expanded?: boolean;
+}) {
     const colors = useThemeColors();
     return (
-        <IconButton accessibilityLabel={accessibilityLabel} onPress={onPress}>
+        <IconButton accessibilityLabel={accessibilityLabel} onPress={onPress} expanded={expanded}>
             <View style={[styles.helpCircle, { borderColor: colors.accent, backgroundColor: colors.accentLight }]}>
                 <Text style={[styles.helpMark, { color: colors.accent }]} maxFontSizeMultiplier={1.2}>?</Text>
             </View>

@@ -173,12 +173,14 @@ interface SelectRowProps {
     onPress: () => void;
     summary?: React.ReactNode;
     disabled?: boolean;
+    /** Spoken instead of "label, value", e.g. when the value is an abbreviation. */
+    accessibilityLabel?: string;
     accessibilityHint?: string;
     style?: StyleProp<ViewStyle>;
 }
 
 /** A label and the chosen option; tapping it opens the list of options. */
-export function SelectRow({ label, value, onPress, summary, disabled = false, accessibilityHint, style }: SelectRowProps) {
+export function SelectRow({ label, value, onPress, summary, disabled = false, accessibilityLabel, accessibilityHint, style }: SelectRowProps) {
     const colors = useThemeColors();
     return (
         <TouchableOpacity
@@ -186,7 +188,7 @@ export function SelectRow({ label, value, onPress, summary, disabled = false, ac
             onPress={onPress}
             disabled={disabled}
             accessibilityRole="button"
-            accessibilityLabel={`${label}, ${value}`}
+            accessibilityLabel={accessibilityLabel ?? `${label}, ${value}`}
             accessibilityHint={accessibilityHint}
             accessibilityState={{ disabled }}
         >

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
 import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
-import { CheckIcon } from './icons';
+import { CheckIcon, ChevronRightIcon } from './icons';
 import { DISABLED_OPACITY, Radius } from './tokens';
 
 interface PopoverMenuProps {
@@ -71,21 +71,40 @@ interface MenuItemProps {
     hint?: string;
     /** Draws a tick at the end: the item is an option that is on. */
     checked?: boolean;
+    /** With `checked`: the item is one of a set of which exactly one is chosen (a radio button). */
+    exclusive?: boolean;
+    /** Draws a trailing › : the item opens a submenu or another list. */
+    chevron?: boolean;
     destructive?: boolean;
     disabled?: boolean;
     accessibilityLabel?: string;
+    accessibilityHint?: string;
 }
 
 /** One action of a `PopoverMenu` or of an action sheet. */
-export function MenuItem({ label, onPress, icon, hint, checked, destructive = false, disabled = false, accessibilityLabel }: MenuItemProps) {
+export function MenuItem({
+    label,
+    onPress,
+    icon,
+    hint,
+    checked,
+    exclusive = false,
+    chevron = false,
+    destructive = false,
+    disabled = false,
+    accessibilityLabel,
+    accessibilityHint,
+}: MenuItemProps) {
     const colors = useThemeColors();
+    const role = checked === undefined ? 'menuitem' : exclusive ? 'radio' : 'checkbox';
     return (
         <TouchableOpacity
             style={[styles.item, disabled && styles.disabled]}
             onPress={onPress}
             disabled={disabled}
-            accessibilityRole={checked === undefined ? 'menuitem' : 'checkbox'}
+            accessibilityRole={role}
             accessibilityLabel={accessibilityLabel ?? label}
+            accessibilityHint={accessibilityHint}
             accessibilityState={checked === undefined ? { disabled } : { disabled, checked }}
         >
             {icon ? <View style={styles.icon}>{icon}</View> : null}
@@ -94,6 +113,7 @@ export function MenuItem({ label, onPress, icon, hint, checked, destructive = fa
                 {hint ? <Text style={[styles.hint, { color: colors.textMuted }]}>{hint}</Text> : null}
             </View>
             {checked ? <CheckIcon color={colors.accent} size={18} /> : null}
+            {chevron ? <ChevronRightIcon color={colors.textMuted} size={16} /> : null}
         </TouchableOpacity>
     );
 }

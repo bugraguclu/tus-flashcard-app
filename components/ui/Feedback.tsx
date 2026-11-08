@@ -44,13 +44,15 @@ interface NoticeProps {
     tone?: NoticeTone;
     title?: string;
     children?: React.ReactNode;
+    /** A small line icon before the text, in the notice's colour. */
+    icon?: React.ReactNode;
     /** E.g. a compact `Button` that resolves what the notice is about. */
     action?: React.ReactNode;
     style?: StyleProp<ViewStyle>;
 }
 
 /** A boxed note under a field or at the top of a form: a warning, an error, a hint or a success. */
-export function Notice({ tone = 'info', title, children, action, style }: NoticeProps) {
+export function Notice({ tone = 'info', title, children, icon, action, style }: NoticeProps) {
     const colors = useThemeColors();
     const palette = {
         info: { border: colors.border, background: colors.bgSecondary, title: colors.textPrimary },
@@ -58,11 +60,8 @@ export function Notice({ tone = 'info', title, children, action, style }: Notice
         danger: { border: colors.danger, background: colors.dangerBg, title: colors.danger },
         success: { border: colors.success, background: colors.successBg, title: colors.success },
     }[tone];
-    return (
-        <View
-            style={[styles.notice, { borderColor: palette.border, backgroundColor: palette.background }, style]}
-            accessibilityLiveRegion="polite"
-        >
+    const body = (
+        <>
             {title ? <Text style={[styles.noticeTitle, { color: palette.title }]}>{title}</Text> : null}
             {children ? (
                 typeof children === 'string'
@@ -70,6 +69,19 @@ export function Notice({ tone = 'info', title, children, action, style }: Notice
                     : children
             ) : null}
             {action ? <View style={styles.noticeAction}>{action}</View> : null}
+        </>
+    );
+    return (
+        <View
+            style={[styles.notice, icon ? styles.noticeWithIcon : null, { borderColor: palette.border, backgroundColor: palette.background }, style]}
+            accessibilityLiveRegion="polite"
+        >
+            {icon ? (
+                <>
+                    <View style={styles.noticeIcon}>{icon}</View>
+                    <View style={styles.noticeBody}>{body}</View>
+                </>
+            ) : body}
         </View>
     );
 }
@@ -111,6 +123,9 @@ const styles = StyleSheet.create({
     emptyAction: { marginTop: Spacing.lg, alignSelf: 'stretch', alignItems: 'center' },
     loading: { alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, paddingVertical: Spacing.xxl },
     notice: { gap: Spacing.xs, padding: Spacing.md, borderRadius: Radius.inset, borderWidth: 1 },
+    noticeWithIcon: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
+    noticeIcon: { paddingTop: 1 },
+    noticeBody: { flex: 1, minWidth: 0, gap: Spacing.xs },
     noticeTitle: { fontSize: FontSize.sm, fontWeight: '800' },
     noticeAction: { marginTop: Spacing.sm, alignItems: 'flex-start' },
     track: { height: 6, borderRadius: 3, overflow: 'hidden' },
