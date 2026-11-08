@@ -3,7 +3,8 @@
 Yemek Takibi'nin hesap ekranı ve altyapısı TusAnkiM'e taşındı ve iPhone için yeniden ele alındı.
 Hesap **isteğe bağlıdır**: kartlar, desteler, çalışma geçmişi, yedekler ve ayarlar yine yalnızca
 cihazda tutulur, hesap sunucusuna hiç gönderilmez. Ağ yokken veya sunucu kapalıyken çalışma hiçbir
-yerde beklemez. Bu çalışma `claude/yemek-takibi-login-screen-021f47` dalındadır; `ready`e alınmadı.
+yerde beklemez. Hesap sunucusu canlıya kurulana kadar bu çalışma `next-step` dalında bekler;
+`ready`e ve canlıya alınmadı.
 
 ## Kullanıcı deneyimi
 
