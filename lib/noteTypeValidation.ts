@@ -62,6 +62,16 @@ function scanTemplate(source: string, template: string, side: 'front' | 'back', 
     return { problems, references, hasCloze };
 }
 
+/**
+ * Whether one side of a template shows a real field (a replacement, not only a section around
+ * one) and whether it has a cloze replacement — the two things a card front cannot do without.
+ */
+export function templateSideFieldUse(source: string, fieldNames: readonly string[]): { usesField: boolean; hasCloze: boolean } {
+    const names = new Set(fieldNames);
+    const scan = scanTemplate(source, '', 'front', new Set<string>([...names, ...TEMPLATE_SPECIAL_FIELDS]));
+    return { usesField: scan.references.some((key) => names.has(key)), hasCloze: scan.hasCloze };
+}
+
 /** Every reason the note type should not be saved yet; empty when it is fine. */
 export function validateNoteType(nt: NoteType): NoteTypeProblem[] {
     const problems: NoteTypeProblem[] = [];

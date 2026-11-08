@@ -4,6 +4,7 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
+    Platform,
 } from 'react-native';
 import { Text, TextInput } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,8 +23,11 @@ import {
     removeField,
     moveField,
     applyFieldEdit,
+    countNotesOfType,
+    structuralEditOverDraft,
     type FieldEdit,
 } from '../lib/noteTypeEditor';
+import { isCatalogNoteType } from '../lib/catalogProtection';
 import type { NoteType, Note, AnkiCard } from '../lib/models';
 import CardWebView from '../components/CardWebView';
 import { FieldNameInput } from '../components/note-type/FieldNameInput';
@@ -33,7 +37,8 @@ import { useI18n } from '../hooks/useI18n';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 
-const MONOSPACE = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+// iOS takes one installed family, not a CSS list; an unknown name falls back to proportional text.
+const MONOSPACE = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' });
 
 function makePreview(nt: NoteType, exampleSuffix: string, ord: number): { note: Note; card: AnkiCard } {
     const note: Note = {
@@ -103,14 +108,25 @@ export default function NoteTypeScreen() {
     // Cloze cards are generated from the {{c1::…}} markers in the cloze field, so reordering or
     // removing fields would desync the generated cards. Only cosmetic edits are allowed for them.
     const isCloze = nt.kind === 'cloze';
+    // A catalog update writes the pack's own note type back over the notes' positional fields, so
+    // a field added, removed or moved here would put every catalog note's values in the wrong
+    // field at the next update.
+    const catalogOwned = isCatalogNoteType(nt);
+    const fieldsLocked = isCloze || catalogOwned;
 
-    // Structural field changes migrate every note, so they persist immediately.
-    const applyStructural = (edit: FieldEdit) => {
-        if (edit.noteType === nt) return; // no-op edit
+    /**
+     * Structural field changes migrate every note, so they persist at once. They are built on the
+     * saved note type: a name, template or styling still being edited is neither saved with them
+     * unchecked nor marked as saved. The same change is applied to the draft on screen.
+     */
+    const applyStructural = (makeEdit: (base: NoteType) => FieldEdit) => {
+        const saved = getNoteType(nt.id);
+        const edit = saved ? structuralEditOverDraft(saved, nt, makeEdit) : null;
+        if (!edit) return; // no-op edit
         try {
-            applyFieldEdit(nt.id, edit);
-            setNt(edit.noteType);
-            setSavedSnapshot(stableSnapshot(edit.noteType));
+            applyFieldEdit(nt.id, edit.persist);
+            setNt(edit.draft);
+            setSavedSnapshot(stableSnapshot(edit.persist.noteType));
             // Fields and notes change, no card does: a study session keeps its queue, as in Anki.
             bumpDataVersion({ keepsStudyQueue: true });
         } catch (e) {
@@ -120,16 +136,15 @@ export default function NoteTypeScreen() {
     };
 
     const handleRemoveField = (ord: number) => {
-        if (isCloze) {
-            alert(l('Uyarı', 'Warning'), l('Kapama (Cloze) türünde alanlar yeniden düzenlenemez.', 'Fields cannot be reordered in a Cloze note type.'));
-            return;
-        }
+        if (fieldsLocked) return;
         if (nt.fields.length <= 1) {
             alert(l('Uyarı', 'Warning'), l('Bir not türünde en az bir alan bulunmalıdır.', 'A note type must have at least one field.'));
             return;
         }
-        confirm(l('Alanı sil', 'Delete Field'), l(`“${nt.fields[ord].name}” alanı ve tüm notlardaki değeri silinecek.`, `The “${nt.fields[ord].name}” field and its value in every note will be deleted.`), () =>
-            applyStructural(removeField(nt, ord)),
+        const name = nt.fields[ord].name;
+        const notes = countNotesOfType(nt.id);
+        confirm(l('Alanı sil', 'Delete Field'), l(`“${name}” alanı ve ${notes} nottaki değeri silinecek.`, `The “${name}” field and its value in ${notes} ${notes === 1 ? 'note' : 'notes'} will be deleted.`), () =>
+            applyStructural((base) => removeField(base, ord)),
             { destructive: true },
         );
     };
@@ -153,7 +168,14 @@ export default function NoteTypeScreen() {
     };
 
     const handleSave = () => {
-        const problems = validateNoteType(nt);
+        // The name is kept as typed, spaces included, and trimmed only here.
+        const name = nt.name.trim();
+        if (!name) {
+            alert(l('Ad gerekli', 'Name Required'), l('Not türüne bir ad verin.', 'Give the note type a name.'));
+            return;
+        }
+        const next = renameNoteType(nt, name);
+        const problems = validateNoteType(next);
         if (problems.length) {
             alert(
                 l('Not türü kaydedilemedi', 'Cannot Save Note Type'),
@@ -162,8 +184,9 @@ export default function NoteTypeScreen() {
             return;
         }
         try {
-            saveNoteType(nt);
-            setSavedSnapshot(stableSnapshot(nt));
+            saveNoteType(next);
+            setNt(next);
+            setSavedSnapshot(stableSnapshot(next));
             // Templates and styling only: the card on screen is redrawn, the queue keeps its order.
             bumpDataVersion({ keepsStudyQueue: true });
             alert(t('common.saved'), l('Not türü güncellendi.', 'Note type updated.'), () => goBackOr(router, '/note-types'));
@@ -175,14 +198,22 @@ export default function NoteTypeScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView
+                contentContainerStyle={styles.content}
+                // Without the keyboard's inset the back template and the styling sit under the
+                // keyboard, caret included, as the multiline fields grow.
+                automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+                keyboardShouldPersistTaps="handled"
+            >
                 <Text style={styles.label}>{l('AD', 'NAME')}</Text>
                 <TextInput
                     style={styles.input}
                     value={nt.name}
-                    onChangeText={(text) => setNt(renameNoteType(nt, text))}
+                    onChangeText={(text) => setNt((current) => (current ? { ...current, name: text } : current))}
                     placeholder={l('Not türü adı', 'Note type name')}
                     placeholderTextColor={colors.textMuted}
+                    accessibilityLabel={l('Not türü adı', 'Note type name')}
                 />
 
                 <Text style={styles.label}>{l('ALANLAR', 'FIELDS')}</Text>
@@ -196,32 +227,47 @@ export default function NoteTypeScreen() {
                             accessibilityLabel={l(`Alan adı: ${field.name}`, `Field name: ${field.name}`)}
                         />
                         <TouchableOpacity
-                            style={[styles.iconBtn, (i === 0 || isCloze) && styles.iconBtnDisabled]}
-                            disabled={i === 0 || isCloze}
-                            onPress={() => applyStructural(moveField(nt, i, i - 1))}
+                            style={[styles.iconBtn, (i === 0 || fieldsLocked) && styles.iconBtnDisabled]}
+                            disabled={i === 0 || fieldsLocked}
+                            onPress={() => applyStructural((base) => moveField(base, i, i - 1))}
+                            accessibilityRole="button"
+                            accessibilityLabel={l(`“${field.name}” alanını yukarı taşı`, `Move “${field.name}” up`)}
+                            accessibilityState={{ disabled: i === 0 || fieldsLocked }}
                         >
                             <Text style={styles.iconText}>↑</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.iconBtn, (i === nt.fields.length - 1 || isCloze) && styles.iconBtnDisabled]}
-                            disabled={i === nt.fields.length - 1 || isCloze}
-                            onPress={() => applyStructural(moveField(nt, i, i + 1))}
+                            style={[styles.iconBtn, (i === nt.fields.length - 1 || fieldsLocked) && styles.iconBtnDisabled]}
+                            disabled={i === nt.fields.length - 1 || fieldsLocked}
+                            onPress={() => applyStructural((base) => moveField(base, i, i + 1))}
+                            accessibilityRole="button"
+                            accessibilityLabel={l(`“${field.name}” alanını aşağı taşı`, `Move “${field.name}” down`)}
+                            accessibilityState={{ disabled: i === nt.fields.length - 1 || fieldsLocked }}
                         >
                             <Text style={styles.iconText}>↓</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.iconBtn, isCloze && styles.iconBtnDisabled]}
-                            disabled={isCloze}
+                            style={[styles.iconBtn, fieldsLocked && styles.iconBtnDisabled]}
+                            disabled={fieldsLocked}
                             onPress={() => handleRemoveField(field.ord)}
+                            accessibilityRole="button"
+                            accessibilityLabel={l(`“${field.name}” alanını sil`, `Delete “${field.name}”`)}
+                            accessibilityState={{ disabled: fieldsLocked }}
                         >
                             <Text style={[styles.iconText, styles.removeText]}>✕</Text>
                         </TouchableOpacity>
                     </View>
                 ))}
-                {isCloze ? (
+                {catalogOwned ? (
+                    <Text style={styles.help}>{l('Bu not türü TUS Kartları paketine ait ve paket güncellenince yenilenir; alan eklenemez, silinemez veya taşınamaz.', 'This note type belongs to the TUS card pack and is refreshed when the pack updates; fields cannot be added, removed or moved.')}</Text>
+                ) : isCloze ? (
                     <Text style={styles.help}>{l('Kapama (Cloze) türünde alanlar yeniden düzenlenemez.', 'Fields cannot be reordered in a Cloze note type.')}</Text>
                 ) : (
-                    <TouchableOpacity style={styles.addFieldBtn} onPress={() => applyStructural(addField(nt, l('Yeni alan', 'New Field')))}>
+                    <TouchableOpacity
+                        style={styles.addFieldBtn}
+                        onPress={() => applyStructural((base) => addField(base, l('Yeni alan', 'New Field')))}
+                        accessibilityRole="button"
+                    >
                         <Text style={styles.addFieldText}>+ {l('Alan ekle', 'Add Field')}</Text>
                     </TouchableOpacity>
                 )}
@@ -256,6 +302,9 @@ export default function NoteTypeScreen() {
                             multiline
                             textAlignVertical="top"
                             autoCapitalize="none"
+                            autoCorrect={false}
+                            spellCheck={false}
+                            accessibilityLabel={l(`${template.name}: ön yüz şablonu`, `${template.name}: front template`)}
                         />
 
                         <Text style={styles.label}>{l('ARKA YÜZ (CEVAP)', 'BACK TEMPLATE')}</Text>
@@ -266,6 +315,9 @@ export default function NoteTypeScreen() {
                             multiline
                             textAlignVertical="top"
                             autoCapitalize="none"
+                            autoCorrect={false}
+                            spellCheck={false}
+                            accessibilityLabel={l(`${template.name}: arka yüz şablonu`, `${template.name}: back template`)}
                         />
                     </>
                 )}
@@ -278,6 +330,9 @@ export default function NoteTypeScreen() {
                     multiline
                     textAlignVertical="top"
                     autoCapitalize="none"
+                    autoCorrect={false}
+                    spellCheck={false}
+                    accessibilityLabel={l('Stil (CSS)', 'Styling (CSS)')}
                 />
 
                 <Text style={styles.label}>{l('ÖNİZLEME', 'PREVIEW')}</Text>
@@ -288,10 +343,10 @@ export default function NoteTypeScreen() {
                     <CardWebView noteType={nt} note={preview.note} card={preview.card} side="answer" scrollMode="intrinsic" />
                 </View>
 
-                <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+                <TouchableOpacity style={styles.saveBtn} onPress={handleSave} accessibilityRole="button">
                     <Text style={styles.saveBtnText}>{t('common.save')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => goBackOr(router, '/note-types')}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => goBackOr(router, '/note-types')} accessibilityRole="button">
                     <Text style={styles.cancelBtnText}>{t('common.close')}</Text>
                 </TouchableOpacity>
             </ScrollView>

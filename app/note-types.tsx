@@ -37,6 +37,7 @@ export default function NoteTypesScreen() {
                         key={nt.id}
                         style={styles.row}
                         onPress={() => router.push(`/note-type?id=${nt.id}`)}
+                        accessibilityRole="button"
                     >
                         <View style={styles.rowText}>
                             <Text style={styles.rowTitle}>{localizeNoteTypeName(locale, nt.name)}</Text>
@@ -49,7 +50,7 @@ export default function NoteTypesScreen() {
                     </TouchableOpacity>
                 ))}
 
-                <TouchableOpacity style={styles.addBtn} onPress={createNoteType}>
+                <TouchableOpacity style={styles.addBtn} onPress={createNoteType} accessibilityRole="button">
                     <Text style={styles.addBtnText}>+ {l('Yeni not türü', 'New Note Type')}</Text>
                 </TouchableOpacity>
             </ScrollView>

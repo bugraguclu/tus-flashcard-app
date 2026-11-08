@@ -28,6 +28,7 @@ import {
     renameNoteType,
     setCss,
     applyFieldEdit,
+    structuralEditOverDraft,
 } from './noteTypeEditor';
 
 function makeNoteType(overrides: Partial<NoteType> = {}): NoteType {
@@ -149,6 +150,61 @@ describe('removeField', () => {
         const { noteType, migrate } = removeField(single, 0);
         expect(noteType.fields).toHaveLength(1);
         expect(migrate(['a'])).toEqual(['a']);
+    });
+
+    it('gives a front that lost its last field the first remaining field, as Anki does', () => {
+        const typed = makeNoteType({ templates: [{ name: 'Kart 1', ord: 0, qfmt: 'Soru: {{Soru}}', afmt: '{{FrontSide}}<hr id=answer>{{Cevap}}' }] });
+        const { noteType } = removeField(typed, 0);
+        expect(noteType.templates[0].qfmt).toBe('Soru: {{Cevap}}');
+        // The back is left as it is for a standard type, as in Anki.
+        expect(noteType.templates[0].afmt).toBe('{{FrontSide}}<hr id=answer>{{Cevap}}');
+    });
+
+    it('leaves a front alone while it still shows another field', () => {
+        const typed = makeNoteType({ templates: [{ name: 'Kart 1', ord: 0, qfmt: '{{Soru}} {{#Kaynak}}{{Kaynak}}{{/Kaynak}}', afmt: '{{Cevap}}' }] });
+        expect(removeField(typed, 0).noteType.templates[0].qfmt).toBe(' {{#Kaynak}}{{Kaynak}}{{/Kaynak}}');
+        // A section alone is not a replacement: the front still needs a field.
+        const sectionOnly = makeNoteType({ templates: [{ name: 'Kart 1', ord: 0, qfmt: '{{Soru}}{{#Kaynak}}x{{/Kaynak}}', afmt: '{{Cevap}}' }] });
+        expect(removeField(sectionOnly, 0).noteType.templates[0].qfmt).toBe('{{#Kaynak}}x{{/Kaynak}}{{Cevap}}');
+    });
+
+    it('keeps a cloze replacement on both sides of a cloze type', () => {
+        const cloze = makeNoteType({
+            kind: 'cloze',
+            fields: [{ name: 'Text', ord: 0, sticky: false, rtl: false }, { name: 'Extra', ord: 1, sticky: false, rtl: false }],
+            templates: [{ name: 'Cloze', ord: 0, qfmt: 'front {{cloze:Text}}', afmt: 'back {{cloze:Text}}<br>{{Extra}}' }],
+        });
+        const { noteType } = removeField(cloze, 0);
+        expect(noteType.templates[0].qfmt).toBe('front {{cloze:Extra}}');
+        expect(noteType.templates[0].afmt).toBe('back <br>{{Extra}}{{cloze:Extra}}');
+    });
+});
+
+describe('structuralEditOverDraft', () => {
+    it('persists the field change on the saved type, not the unsaved template edit', () => {
+        const saved = makeNoteType();
+        const draft = updateTemplate(renameNoteType(saved, 'Taslak'), 0, { qfmt: '{{#Cevap}}{{Soru}}' });
+        const edit = structuralEditOverDraft(saved, draft, (base) => addField(base, 'Not'))!;
+        expect(edit.persist.noteType.name).toBe('TUS Kartı');
+        expect(edit.persist.noteType.templates[0].qfmt).toBe('{{Soru}}');
+        expect(edit.persist.noteType.fields.map((f) => f.name)).toEqual(['Soru', 'Cevap', 'Kaynak', 'Not']);
+        // The screen keeps showing the unsaved edit with the new field, still unsaved.
+        expect(edit.draft.name).toBe('Taslak');
+        expect(edit.draft.templates[0].qfmt).toBe('{{#Cevap}}{{Soru}}');
+        expect(edit.draft.fields.map((f) => f.name)).toEqual(['Soru', 'Cevap', 'Kaynak', 'Not']);
+        expect(edit.draft.mod).toBe(edit.persist.noteType.mod);
+        expect(edit.persist.migrate(['a', 'b', 'c'])).toEqual(['a', 'b', 'c', '']);
+    });
+
+    it('matches the saved type when nothing else was edited', () => {
+        const saved = makeNoteType();
+        const edit = structuralEditOverDraft(saved, saved, (base) => moveField(base, 0, 1))!;
+        expect(edit.draft).toEqual(edit.persist.noteType);
+    });
+
+    it('is null for an edit that changes nothing', () => {
+        const saved = makeNoteType();
+        expect(structuralEditOverDraft(saved, saved, (base) => moveField(base, 1, 1))).toBeNull();
     });
 });
 
