@@ -36,6 +36,16 @@ export default function MediaCheckSection({ disabled }: { disabled: boolean }) {
         }
     });
 
+    /** Read the folder again after files moved, however the move ended, so no stale name is listed. */
+    const recheck = async () => {
+        try {
+            setResult(await checkMedia());
+        } catch (error) {
+            console.warn('[Media] re-check failed:', error);
+            setResult(null);
+        }
+    };
+
     const handleTrash = () => {
         if (!result || result.unused.length === 0) return;
         const names = result.unused;
@@ -48,12 +58,18 @@ export default function MediaCheckSection({ disabled }: { disabled: boolean }) {
             () => void run(async () => {
                 try {
                     await createBackupNow();
-                    const { moved } = await moveUnusedMediaToTrash(names);
-                    setResult(await checkMedia());
-                    alert(t('common.completed'), l(`${moved} dosya çöp kutusuna taşındı.`, `${moved} files moved to the trash.`));
+                    const { moved, failed } = await moveUnusedMediaToTrash(names);
+                    alert(
+                        failed > 0 ? l('Kısmen tamamlandı', 'Partly Completed') : t('common.completed'),
+                        failed > 0
+                            ? l(`${moved} dosya çöp kutusuna taşındı; ${failed} dosya taşınamadı ve yerinde kaldı.`, `${moved} files moved to the trash; ${failed} could not be moved and stayed where they were.`)
+                            : l(`${moved} dosya çöp kutusuna taşındı.`, `${moved} files moved to the trash.`),
+                    );
                 } catch (error) {
                     console.warn('[Media] trash failed:', error);
                     alert(t('common.error'), l('Kullanılmayan medya taşınamadı. Hiçbir dosya silinmedi.', 'Unused media could not be moved. No file was deleted.'));
+                } finally {
+                    await recheck();
                 }
             }),
             { destructive: true },
@@ -62,14 +78,19 @@ export default function MediaCheckSection({ disabled }: { disabled: boolean }) {
 
     const handleRestoreTrash = () => run(async () => {
         try {
-            const { restored, skipped } = await restoreMediaTrash();
-            if (result) setResult(await checkMedia());
-            alert(t('common.completed'), skipped
-                ? l(`${restored} dosya geri kondu; aynı adlı ${skipped} dosya olduğu gibi bırakıldı.`, `${restored} files restored; ${skipped} with a name already in use were left in the trash.`)
-                : l(`${restored} dosya geri kondu.`, `${restored} files restored.`));
+            const { restored, skipped, failed } = await restoreMediaTrash();
+            const message = [
+                skipped
+                    ? l(`${restored} dosya geri kondu; aynı adlı ${skipped} dosya olduğu gibi bırakıldı.`, `${restored} files restored; ${skipped} with a name already in use were left in the trash.`)
+                    : l(`${restored} dosya geri kondu.`, `${restored} files restored.`),
+                failed > 0 ? l(`${failed} dosya geri konamadı ve çöpte kaldı.`, `${failed} could not be restored and stayed in the trash.`) : '',
+            ].filter(Boolean).join(' ');
+            alert(failed > 0 ? l('Kısmen tamamlandı', 'Partly Completed') : t('common.completed'), message);
         } catch (error) {
             console.warn('[Media] trash restore failed:', error);
             alert(t('common.error'), l('Çöpteki medya geri konamadı.', 'The media trash could not be restored.'));
+        } finally {
+            if (result) await recheck();
         }
     });
 
