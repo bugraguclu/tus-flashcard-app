@@ -74,7 +74,7 @@ import CardWebView from '../../components/CardWebView';
 import ReviewerDeckScope from '../../components/reviewer/ReviewerDeckScope';
 import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
 import { DownChevron, ReviewerBackIcon, ReviewerSettingsIcon, UndoReviewIcon } from '../../components/reviewer/ReviewerIcons';
-import { reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
+import { canReplayCardAudio, reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
 import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
 import { useReviewerAutoplay } from '../../lib/reviewerAutoplay';
 import { CarriedSoundGate } from '../../lib/reviewerCarriedSound';
@@ -1735,6 +1735,13 @@ export default function StudyScreen() {
         return html ? avPlaybackOrder(html, voicePlaybackEnabled && !explicit) : [];
     }, [explicitTtsSides, voicePlaybackEnabled]);
     const cardHasAudio = cardHasAttachedMedia || explicitTtsSides.question || explicitTtsSides.answer;
+    // Replay Audio also reads the side again while whole-card text to speech is on, so it is offered
+    // for a card with no audio of its own too; autoplay still goes by cardHasAudio.
+    const canReplayAudio = useMemo(() => canReplayCardAudio({
+        cardHasAudio,
+        wholeCardReading: voicePlaybackEnabled,
+        sideHtml: showingAnswer ? explicitTtsSides.answerHtml : explicitTtsSides.questionHtml,
+    }), [cardHasAudio, voicePlaybackEnabled, showingAnswer, explicitTtsSides]);
     // Whether the back's OWN content (FrontSide excluded) embeds audio/video — decides where
     // a play signal goes once the answer is shown, so the answer's sound is reachable even
     // when the question has one too.
@@ -3499,7 +3506,7 @@ export default function StudyScreen() {
                 cardSuspended={currentCard ? currentCard.state.suspended : false}
                 noteMarked={currentNoteMarked}
                 hasSiblingCards={hasSiblingCards}
-                cardHasAudio={cardHasAudio}
+                canReplayAudio={canReplayAudio}
                 onReplayAudio={replayAudio}
                 onBuryCard={handleBury}
                 onSuspendCard={handleToggleSuspendCard}

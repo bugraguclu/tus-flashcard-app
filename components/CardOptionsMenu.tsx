@@ -55,7 +55,8 @@ export interface CardOptionsMenuProps {
     noteMarked: boolean;
     /** Anki shows note-level Bury/Suspend choices only when the note has sibling cards. */
     hasSiblingCards: boolean;
-    cardHasAudio: boolean;
+    /** Replay Audio has sound files, `{{tts}}` regions or (with text to speech on) text to play. */
+    canReplayAudio: boolean;
     onReplayAudio: () => void;
     onBuryCard: () => void;
     onSuspendCard: () => void;
@@ -350,7 +351,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     colors={colors}
                                     icon="replay"
                                     label={l('Sesi yeniden oynat', 'Replay audio')}
-                                    disabled={!hasCard || !props.cardHasAudio}
+                                    disabled={!hasCard || !props.canReplayAudio}
                                     onPress={() => runAndClose(props.onReplayAudio)}
                                 />
                                 <MenuRow
