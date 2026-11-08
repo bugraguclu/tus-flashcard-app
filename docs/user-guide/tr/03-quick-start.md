@@ -45,8 +45,8 @@ kart eklemek için **＋** düğmesi, sağ üstte de **⋮** (Diğer seçenekler
 3. Kurulum birkaç saniye sürer. **Paket açıldı** mesajında **Tamam**'a dokunun; deste listesine
    dönersiniz ve 12 ders destesi ile alt desteleri orada olur.
 
-Boş bir desteyi açtığınızda çıkan **Bu Deste Henüz Boş** ekranındaki **Hazır 9.575 TUS kartını
-ücretsiz ekleyin** düğmesi de paketi kurar; kurulum bitince çalışma ekranı doğrudan **TUS Kartları**
+Boş bir desteyi açtığınızda çıkan **Bu Deste Henüz Boş** ekranındaki **Hazır TUS kartlarını
+ekleyin** düğmesi de paketi kurar; kurulum bitince çalışma ekranı doğrudan **TUS Kartları**
 ile açılır.
 
 Paket internet gerektirmez, ödeme veya hesap istemez. Bkz. [TUS Kartları paketi](17-tus-card-pack.md).

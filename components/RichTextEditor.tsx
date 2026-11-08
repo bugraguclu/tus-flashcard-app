@@ -20,6 +20,7 @@ import {
 import { readEditorFormatState, type EditorFormatState } from '../lib/editorFormatState';
 import { editorFieldFontFamily } from '../lib/editorFieldStyle';
 import { isPlainFieldText, prepareEditorContent } from '../lib/richTextEditorContent';
+import { EditorFlushBarrier } from '../lib/editorFlushBarrier';
 import WebHtmlFrame from './WebHtmlFrame';
 import {
     embeddedWebViewLayout,
@@ -68,12 +69,13 @@ export interface RichTextEditorHandle {
     /** Ask the document to resend its caret state, e.g. after the toolbar changes fields. */
     requestFormatState: () => void;
     /**
-     * Hand any edit the host has not heard about yet to `onChange` before returning. Web reads the
-     * same-origin field document directly, since the browser can deliver the message for the last
-     * keystroke after a click made later. A native WebView cannot be read synchronously, so there
-     * this does nothing and its messages stay the only channel.
+     * Hand any edit the host has not heard about yet to `onChange`. Web reads the same-origin
+     * field document directly, since the browser can deliver the message for the last keystroke
+     * after a click made later, and is done before returning. A native WebView cannot be read
+     * synchronously, so there the returned promise settles once the field has answered a flush
+     * request, by which time every edit it posted before has been delivered.
      */
-    flushChange: () => void;
+    flushChange: () => Promise<void>;
 }
 
 interface RichTextEditorProps {
@@ -193,7 +195,8 @@ type EditorFunction =
     | '__tusEditorBlockStyle'
     | '__tusEditorReplaceSelectionText'
     | '__tusEditorRequestState'
-    | '__tusEditorSetHtml';
+    | '__tusEditorSetHtml'
+    | '__tusEditorFlush';
 
 interface EditorCall {
     fn: EditorFunction;
@@ -241,6 +244,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     const latestValueRef = useRef(value);
     const editorReadyRef = useRef(false);
     const pendingCallsRef = useRef<EditorCall[]>([]);
+    // Native saves wait on this until the field has delivered its last edit (flushChange).
+    const [flushBarrier] = useState(() => new EditorFlushBarrier());
     const pastedImageSequenceRef = useRef(0);
     const editorNonceRef = useRef(createEditorNonce());
     latestValueRef.current = value;
@@ -366,6 +371,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         resolve();
     };
     useEffect(() => () => mediaObserverRef.current?.disconnect(), []);
+    useEffect(() => () => flushBarrier.settleAll(), [flushBarrier]);
 
     useImperativeHandle(ref, () => ({
         focus: () => {
@@ -408,13 +414,19 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
         },
         requestFormatState: () => runWhenReady({ fn: '__tusEditorRequestState', args: [] }),
         flushChange: () => {
-            if (Platform.OS !== 'web' || !editorReadyRef.current) return;
+            if (!editorReadyRef.current) return Promise.resolve();
+            if (Platform.OS !== 'web') {
+                // A field that is not on screen has nothing in flight; only a live WebView answers.
+                if (!webViewRef.current) return Promise.resolve();
+                return flushBarrier.request((token) => callEditor({ fn: '__tusEditorFlush', args: [token] }));
+            }
             const read = (iframeRef.current?.contentWindow as unknown as {
                 __tusEditorReadHtml?: () => { html?: unknown; seq?: unknown };
             } | null | undefined)?.__tusEditorReadHtml;
-            if (typeof read !== 'function') return;
+            if (typeof read !== 'function') return Promise.resolve();
             const reading = read();
             if (typeof reading?.html === 'string') acceptDocumentChange(reading.html, reading.seq);
+            return Promise.resolve();
         },
     }));
 
@@ -452,6 +464,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 dataUrl?: string;
                 shortcut?: string;
                 seq?: unknown;
+                token?: unknown;
             };
             if (message.type === 'change' && typeof message.html === 'string') {
                 acceptDocumentChange(message.html, message.seq);
@@ -472,6 +485,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 if (!fallbackFocusedRef.current) {
                     completeHandoff();
                 }
+            } else if (message.type === 'flushed') {
+                flushBarrier.settle(message.token);
             } else if (message.type === 'focus') {
                 onFocus?.();
             } else if (message.type === 'height' && typeof message.height === 'number') {

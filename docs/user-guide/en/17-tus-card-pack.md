@@ -71,7 +71,7 @@ called **TUS Kartları**. Course and subdeck names are in Turkish.
 4. An **Installing cards** window shows for a few seconds, then **Package unlocked** appears.
 5. Tap **OK**; you are back on the deck list. **TUS Kartları** is now an ordinary deck in your list.
 
-The **Add 9,575 ready-made TUS cards for free** button on the **This Deck is Empty** screen, which
+The **Add ready-made TUS cards** button on the **This Deck is Empty** screen, which
 appears when you open an empty deck, installs the pack too; once it is done the study screen opens
 straight on **TUS Kartları**. The **Unlock the TUS pack** row of the first-launch **Welcome** card
 opens this screen.

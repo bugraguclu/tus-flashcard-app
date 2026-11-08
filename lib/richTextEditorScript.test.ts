@@ -140,6 +140,7 @@ function runEditorScript(config: RichTextEditorDocumentConfig, host: 'native' | 
         editorHtml: () => html,
         setEditorHtml: (value: string) => { html = value; },
         readHtml: () => (window.__tusEditorReadHtml as () => unknown)(),
+        flush: (token: unknown) => (window.__tusEditorFlush as (t: unknown) => void)(token),
         insertHtml: (html: unknown, options?: unknown) => (window.__tusEditorInsertHtml as (h: unknown, o?: unknown) => void)(html, options),
         setHtml: (html: unknown) => (window.__tusEditorSetHtml as (h: unknown) => void)(html),
         command: (payload: { command: string; value?: string }) => (window.__tusEditorCommand as (p: unknown) => void)(payload),
@@ -204,6 +205,20 @@ describe('rich text field script', () => {
             { type: 'change', html: 'ilk', seq: 1 },
             { type: 'change', html: 'ilk ikinci', seq: 2 },
         ]);
+    });
+
+    it('answers a native flush after every edit it has already posted, without resending the field', () => {
+        // The native host cannot read the document synchronously, so it saves once this answer is
+        // in (lib/editorFlushBarrier.ts). Messages keep their order, so the edit is in by then;
+        // an untouched field is never written back in the document's own serialization.
+        const run = runEditorScript(baseConfig, 'native');
+        run.setEditorHtml('son kelime');
+        run.dispatch('input');
+        const before = run.posted.length;
+        run.flush(7);
+        const types = run.posted.map((entry) => (entry.message as { type: string }).type);
+        expect(types.lastIndexOf('change')).toBeLessThan(types.indexOf('flushed'));
+        expect(run.posted.slice(before).map((entry) => entry.message)).toEqual([{ type: 'flushed', token: 7 }]);
     });
 
     it('lets the web host read the newest edit before its message has been delivered', () => {

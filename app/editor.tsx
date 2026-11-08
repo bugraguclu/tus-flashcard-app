@@ -617,10 +617,14 @@ export default function EditorScreen() {
         return fieldEditorRefs.current[activeFieldIndex] ?? fieldEditorRefs.current[0] ?? null;
     };
 
-    /** Bring every field's newest edit into `fieldValuesRef` before a handler reads the fields. */
-    const flushFieldEdits = () => {
-        fieldEditorRefs.current.forEach((fieldEditor) => fieldEditor?.flushChange());
-    };
+    /**
+     * Bring every field's newest edit into `fieldValuesRef` before a handler reads the fields: at
+     * once on web, while a native field answers once its last edit has been delivered, so a
+     * handler that must have it (saving) awaits the promise.
+     */
+    const flushFieldEdits = () => Promise.all(
+        fieldEditorRefs.current.map((fieldEditor) => fieldEditor?.flushChange()),
+    ).then(() => undefined);
 
     const persistStickyFieldValues = (pinned: Set<number> = pinnedFields) => {
         const persisted: Record<number, { pinned: boolean; value: string }> = {};
@@ -930,9 +934,16 @@ export default function EditorScreen() {
             handleSaveCatalogTags();
             return;
         }
-        flushFieldEdits();
+        // The keyboard goes first, so anything it commits as the field lets go is flushed as well;
+        // the fields are read only once every edit they made has reached this screen.
         dismissEditorKeyboard();
         setShowOverflowMenu(false);
+        saveInFlightRef.current = true;
+        try {
+            await flushFieldEdits();
+        } finally {
+            saveInFlightRef.current = false;
+        }
         const latestFields = fieldValuesRef.current;
         if (!isEditing && isAddScreenFinished(
             fieldsToRender.map((_, index) => latestFields[index] || ''),
@@ -1152,7 +1163,7 @@ export default function EditorScreen() {
         openMathPicker: () => setShowMathPicker(true),
         openHtmlSource: () => {
             Keyboard.dismiss();
-            flushFieldEdits();
+            void flushFieldEdits();
             const currentVal = fieldValuesRef.current[activeFieldIndex] ?? '';
             setHtmlEditorValue(currentVal);
             setShowHtmlEditor(true);
@@ -1458,7 +1469,7 @@ export default function EditorScreen() {
                         // As in Anki, the cloze goes into the field being edited and is numbered over
                         // every field of the note; a long press reuses the highest number (EDT-3).
                         if (!selectedNoteType) return;
-                        flushFieldEdits();
+                        void flushFieldEdits();
                         const targetIndex = fieldEditorRefs.current[activeFieldIndex] ? activeFieldIndex : clozeFieldIndex(selectedNoteType);
                         const targetEditor = fieldEditorRefs.current[targetIndex] ?? getActiveEditor();
                         targetEditor?.runCommand('cloze', String(nextClozeNumber(fieldValuesRef.current, same)));

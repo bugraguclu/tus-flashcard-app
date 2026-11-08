@@ -242,6 +242,11 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
     return { html: cleanForExport(editor.innerHTML), seq: changeSeq };
   };
 
+  // The native host cannot read this document synchronously, so before it saves it sends a token
+  // and waits for it to come back (lib/editorFlushBarrier.ts). Messages arrive in the order they
+  // were posted, so every edit reported before this answer has reached the host by then.
+  window.__tusEditorFlush = function (token) { post({ type: 'flushed', token: token }); };
+
   window.__tusEditorReplaceSelectionText = function (text) {
     bridge.replaceSelectionText(text);
     emitChange();
