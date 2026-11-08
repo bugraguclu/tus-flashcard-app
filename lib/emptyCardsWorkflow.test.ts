@@ -1,7 +1,7 @@
 // Empty Cards deletes only behind a restorable safety backup, the way Repair and Reset do
 // (lib/maintenanceWorkflow.ts, lib/resetWorkflow.ts). Keep Notes follows Anki's Empty Cards
-// dialog, https://docs.ankiweb.net/browsing.html#empty-cards: a note whose every card is empty
-// keeps its first card.
+// tool (https://docs.ankiweb.net/templates/generation.html#card-generation--deletion, source
+// anki-manual-empty-cards): a note whose every card is empty keeps its first card.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
