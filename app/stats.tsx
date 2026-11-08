@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Animated, View, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
-import { Text } from '../components/AppText';
+import { Animated, View, ScrollView, useWindowDimensions } from 'react-native';
 import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
@@ -10,9 +9,10 @@ import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../con
 import DeckPickerModal from '../components/DeckPickerModal';
 import ScreenHeader from '../components/ScreenHeader';
 import { HelpButton } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
 import { SegmentedControl } from '../components/ui/Choice';
 import { LoadingState, Notice } from '../components/ui/Feedback';
-import { ChevronDownIcon } from '../components/ui/icons';
+import { SelectRow } from '../components/ui/Rows';
 import { ChartScrollLockProvider } from '../components/stats/ChartScrollLock';
 import TodaySection from '../components/stats/TodaySection';
 import ReviewsSection from '../components/stats/ReviewsSection';
@@ -177,6 +177,7 @@ export default function StatsScreen() {
                     <HelpButton
                         accessibilityLabel={l('İstatistikler hakkında', 'About statistics')}
                         onPress={() => setHelpVisible(true)}
+                        expanded={helpVisible}
                     />
                 )}
             />
@@ -189,18 +190,15 @@ export default function StatsScreen() {
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + Spacing.xxxl }]}
             >
                 <View style={styles.filters}>
-                    <TouchableOpacity
-                        style={styles.deckSelector}
-                        onPress={() => setDeckPickerVisible(true)}
-                        activeOpacity={0.7}
-                        accessibilityRole="button"
-                        accessibilityLabel={l(`İstatistik destesi: ${scopeTitle}`, `Statistics deck: ${scopeTitle}`)}
-                        accessibilityState={{ expanded: deckPickerVisible }}
-                    >
-                        <Text style={styles.deckSelectorLabel}>{l('Deste', 'Deck')}</Text>
-                        <Text style={styles.deckSelectorText} numberOfLines={1}>{scopeTitle}</Text>
-                        <ChevronDownIcon color={colors.textSecondary} />
-                    </TouchableOpacity>
+                    <Card>
+                        <SelectRow
+                            label={l('Deste', 'Deck')}
+                            value={scopeTitle}
+                            onPress={() => setDeckPickerVisible(true)}
+                            accessibilityLabel={l(`İstatistik destesi: ${scopeTitle}`, `Statistics deck: ${scopeTitle}`)}
+                            expanded={deckPickerVisible}
+                        />
+                    </Card>
                     <SegmentedControl
                         fill
                         options={rangeOptions.map(({ value, label, title }) => ({ value, label, accessibilityLabel: title }))}
