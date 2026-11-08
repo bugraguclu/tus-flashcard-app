@@ -535,7 +535,9 @@ function applyTemplateFilter(
                     const inputHtml = `<input id="typeans" class="tus-type-answer-input" type="text"`
                         + ` data-tus-type-answer-token="${token}" maxlength="${MAX_TYPE_ANSWER_CHARS}"`
                         + ` placeholder="${placeholder}" aria-label="${placeholder}"`
-                        + ' autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="done">';
+                        // iOS autocorrects and capitalizes text fields unless told not to; the typed
+                        // answer is compared as typed, as the native answer field (autoCorrect off) is.
+                        + ' autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">';
                     return inputHtml;
                 }
                 return '';
