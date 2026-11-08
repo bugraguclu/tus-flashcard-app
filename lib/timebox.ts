@@ -40,3 +40,27 @@ export class TimeboxTracker {
         this.repetitions = 0;
     }
 }
+
+/**
+ * The reviewer's Timebox check after an answer. Anki checks the block only once a repetition has
+ * completed, so the answer's own bookkeeping (`completeRepetition`) is done before the learner is
+ * asked, and holds whether they continue or finish there. Resolves true to keep studying; Continue
+ * starts a new block.
+ */
+export async function checkTimeboxAfterAnswer(input: {
+    tracker: TimeboxTracker;
+    limitMinutes: number;
+    completeRepetition: () => void;
+    /** Shows the checkpoint; resolves true for Continue, false for Finish. */
+    ask: (checkpoint: TimeboxCheckpoint) => Promise<boolean>;
+    now?: () => number;
+}): Promise<boolean> {
+    const now = input.now ?? Date.now;
+    input.completeRepetition();
+    input.tracker.recordRepetition();
+    const checkpoint = input.tracker.checkpoint(input.limitMinutes, now());
+    if (!checkpoint) return true;
+    if (!(await input.ask(checkpoint))) return false;
+    input.tracker.reset(now());
+    return true;
+}

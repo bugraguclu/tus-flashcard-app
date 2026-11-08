@@ -145,7 +145,7 @@ import { isCatalogCard, isCatalogNote } from '../../lib/catalogProtection';
 import { ActiveElapsedTimer } from '../../lib/activeElapsedTimer';
 import { useReviewerDwellTimer } from '../../lib/reviewerDwellTimer';
 import { beginStudyActivity } from '../../lib/backupWindow';
-import { TimeboxTracker } from '../../lib/timebox';
+import { TimeboxTracker, checkTimeboxAfterAnswer } from '../../lib/timebox';
 import {
     canGradeRevealedCard,
     DEFAULT_ANSWER_TAP_ACTIONS,
@@ -1079,45 +1079,42 @@ export default function StudyScreen() {
 
             // Anki checks Timebox only after a repetition has completed. The answered card stays
             // on screen while the learner chooses, so the next card (and its audio) cannot start
-            // behind the checkpoint dialog.
-            timeboxTrackerRef.current.recordRepetition();
-            const checkpoint = timeboxTrackerRef.current.checkpoint(
-                settings.timeboxMinutes ?? 0,
-                Date.now(),
-            );
-            if (checkpoint) {
-                if (scheduledRefreshRef.current) {
-                    clearTimeout(scheduledRefreshRef.current);
-                    scheduledRefreshRef.current = null;
-                }
-                const shouldContinue = await choose(
-                    l('Zaman kutusu', 'Timebox'),
-                    l(
-                        `${checkpoint.minutes} dakikada ${checkpoint.cards} kart çalıştınız.`,
-                        `You studied ${checkpoint.cards} ${checkpoint.cards === 1 ? 'card' : 'cards'} in ${checkpoint.minutes} ${checkpoint.minutes === 1 ? 'minute' : 'minutes'}.`,
-                    ),
-                    l('Devam', 'Continue'),
-                    l('Bitir', 'Finish'),
-                );
-
-                if (!shouldContinue) {
-                    setShowingAnswer(false);
-                    router.dismissTo('/decks' as any);
-                    return;
-                }
-
-                timeboxTrackerRef.current.reset(Date.now());
+            // behind the checkpoint dialog. The answer's own bookkeeping is done first, so it holds
+            // when the learner finishes there.
+            const keepStudying = await checkTimeboxAfterAnswer({
+                tracker: timeboxTrackerRef.current,
+                limitMinutes: settings.timeboxMinutes ?? 0,
+                // A study-ahead id is a one-shot pass: once this card has been answered it must
+                // earn its way back onto the queue through its own (possibly still-running) timer,
+                // not keep resurfacing forever just because it was under the button's window. The
+                // pass outlives this screen, so Finish must not leave the id behind either.
+                completeRepetition: () => setStudyAheadCardIds((prev) => (
+                    prev.includes(currentCard.cardId) ? prev.filter((id) => id !== currentCard.cardId) : prev
+                )),
+                ask: (checkpoint) => {
+                    if (scheduledRefreshRef.current) {
+                        clearTimeout(scheduledRefreshRef.current);
+                        scheduledRefreshRef.current = null;
+                    }
+                    return choose(
+                        l('Zaman kutusu', 'Timebox'),
+                        l(
+                            `${checkpoint.minutes} dakikada ${checkpoint.cards} kart çalıştınız.`,
+                            `You studied ${checkpoint.cards} ${checkpoint.cards === 1 ? 'card' : 'cards'} in ${checkpoint.minutes} ${checkpoint.minutes === 1 ? 'minute' : 'minutes'}.`,
+                        ),
+                        l('Devam', 'Continue'),
+                        l('Bitir', 'Finish'),
+                    );
+                },
+            });
+            if (!keepStudying) {
+                setShowingAnswer(false);
+                router.dismissTo('/decks' as any);
+                return;
             }
 
             // Incremental queue update: pop current card, optionally reinsert if still due now.
             const nowMs = Date.now();
-
-            // A study-ahead id is a one-shot pass: once this card has been answered it must
-            // earn its way back onto the queue through its own (possibly still-running) timer,
-            // not keep resurfacing forever just because it was under the button's window.
-            setStudyAheadCardIds((prev) => (
-                prev.includes(currentCard.cardId) ? prev.filter((id) => id !== currentCard.cardId) : prev
-            ));
 
             // Computed outside a state updater: a setter called from inside one runs during the
             // next render, after (and over) whatever the immediate rebuild below just chose.
