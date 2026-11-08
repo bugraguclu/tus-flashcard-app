@@ -80,6 +80,7 @@ import { loadSettings, saveSettings } from '../lib/storage';
 import { rememberedCurrentDeck } from '../lib/currentDeck';
 import { recomputeMemoryAfterDeckMove } from '../lib/fsrsMaintenance';
 import { editorDraftKey, hasEditorDraftChanged, type EditorDraftState } from '../lib/editorDraft';
+import { remapFieldPositions, remapFieldValues, sameFieldLayout } from '../lib/editorFieldLayout';
 import { editorFieldFontSize } from '../lib/editorFieldStyle';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import {
@@ -456,6 +457,37 @@ export default function EditorScreen() {
             tags: note.tags,
         });
     }, [routeCardId]);
+
+    // The field names `fieldValues` is laid out for, and of which note type. The note type screen
+    // can add, remove or move this type's fields while the editor is open beneath it, migrating
+    // the stored notes at once; the values and pins here then follow their fields, or Save would
+    // write each value into whichever field now sits where it used to.
+    const fieldLayoutRef = useRef<{ typeId: number; names: string[] } | null>(null);
+    useEffect(() => {
+        if (!selectedNoteType) return;
+        const names = selectedNoteType.fields.map((field) => field.name);
+        const previous = fieldLayoutRef.current;
+        fieldLayoutRef.current = { typeId: selectedNoteType.id, names };
+        // Choosing another note type lays its fields out itself (handleSelectNoteType).
+        if (!previous || previous.typeId !== selectedNoteType.id || sameFieldLayout(previous.names, names)) return;
+        const card = routeCardId ? getAnkiCard(routeCardId) : null;
+        const stored = card ? getNote(card.noteId)?.fields ?? null : null;
+        const baseline = initialDraftRef.current;
+        setFieldValues(remapFieldValues(previous.names, names, fieldValuesRef.current, baseline?.fields ?? null, stored));
+        setPinnedFields((pins) => remapFieldPositions(previous.names, names, pins));
+        if (baseline) {
+            const fields = stored
+                ? names.map((_, index) => stored[index] ?? '')
+                : remapFieldValues(previous.names, names, baseline.fields ?? [], null, null);
+            resetDraftBaseline({
+                ...baseline,
+                fields,
+                question: fields[0] ?? '',
+                answer: fields[1] ?? '',
+                reverseAnswer: baseline.cardTypeId === 7 ? fields[2] ?? '' : '',
+            });
+        }
+    }, [selectedNoteType]);
 
     useEffect(() => {
         if (routeCardId || targetDeckId !== null) return;
@@ -1008,7 +1040,10 @@ export default function EditorScreen() {
                 // it keeps the single acknowledgement and hands control straight back.
                 if (externalSuccessUrl) {
                     alert(t('common.completed'), savedMessage, () => {
-                        void Linking.openURL(externalSuccessUrl).catch(() => goBackOr(router));
+                        // The caller has its note: leave, so coming back neither shows the saved
+                        // text nor lets ✓ add it a second time.
+                        goBackOr(router);
+                        void Linking.openURL(externalSuccessUrl).catch(() => undefined);
                     });
                     return;
                 }
