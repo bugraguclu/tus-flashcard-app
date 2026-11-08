@@ -23,7 +23,7 @@ import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Spacing, FontSize, Shadows, BorderRadius, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Spacing, FontSize, Shadows, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
 import { rememberSetDueDateInput } from '../../lib/setDueDateDefaults';
 import { schedulerForSettings, withClassicReviewContext, todayLocalYMD } from '../../lib/scheduler';
@@ -73,7 +73,10 @@ import { previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
 import ReviewerDeckScope from '../../components/reviewer/ReviewerDeckScope';
 import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
-import { DownChevron, ReviewerBackIcon, ReviewerSettingsIcon, UndoReviewIcon } from '../../components/reviewer/ReviewerIcons';
+import { UndoReviewIcon } from '../../components/reviewer/ReviewerIcons';
+import { IconButton } from '../../components/ui/Button';
+import { BackIcon, ChevronDownIcon, ChevronRightIcon, CloseIcon, MoreVerticalIcon } from '../../components/ui/icons';
+import { HIT_TARGET, Radius } from '../../components/ui/tokens';
 import { reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
 import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
 import { CarriedSoundGate } from '../../lib/reviewerCarriedSound';
@@ -172,7 +175,6 @@ import {
     isReviewerUndoKey,
     normalizeReviewerToolbarPosition,
     reviewerUndoKeys,
-    reviewerUndoShortcutHint,
     visibleReviewerGrades,
 } from '../../lib/reviewerPresentation';
 import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
@@ -486,10 +488,6 @@ export default function StudyScreen() {
     // Undo has no entry in the key-binding settings, so it takes only the default keys the
     // learner has not claimed for bury, suspend, mark or replay.
     const undoKeys = useMemo(() => reviewerUndoKeys(settings.keyBindings), [settings.keyBindings]);
-    const undoShortcutHint = useMemo(
-        () => reviewerUndoShortcutHint(undoKeys, Platform.OS === 'web'),
-        [undoKeys],
-    );
     // Anki labels Undo and Redo with the operation they act on, so the learner can see whether
     // the next Undo unburies a card or takes back an answer.
     const undoOp = undoEntryOp(undoStack[undoStack.length - 1]);
@@ -2894,6 +2892,37 @@ export default function StudyScreen() {
             remainingMinutes={remainingMinutes}
         />
     );
+    // Both toolbars end in the same four actions.
+    const toolbarActions = (
+        <View style={styles.toolbarActions}>
+            <IconButton
+                onPress={() => { void undoLast(); }}
+                disabled={!canUndoReview(undoStack.length)}
+                accessibilityLabel={undoOpLabel
+                    ? l(`Geri al: ${undoOpLabel}`, `Undo: ${undoOpLabel}`)
+                    : l('Geri alınacak işlem yok', 'Nothing to undo')}
+            >
+                <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
+            </IconButton>
+            <IconButton
+                onPress={openFlagMenu}
+                disabled={!currentCard}
+                accessibilityLabel={currentCard ? l('Bayrakla işaretle', 'Flag card') : l('İşaretlenecek kart yok', 'No card to flag')}
+            >
+                <FlagGlyph
+                    color={currentFlag > 0 ? FLAG_COLORS[currentFlag].color : (!currentCard ? colors.textMuted : colors.textSecondary)}
+                    size={18}
+                    filled={currentFlag > 0}
+                />
+            </IconButton>
+            <IconButton onPress={handleDeckOptions} accessibilityLabel={l('Deste ayarları', 'Deck settings')}>
+                <GearGlyph color={colors.textSecondary} size={21} />
+            </IconButton>
+            <IconButton onPress={openMoreMenu} accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}>
+                <MoreVerticalIcon color={colors.textSecondary} />
+            </IconButton>
+        </View>
+    );
     const reviewerToolbar = newStudyScreenEnabled && settings.showStudyTopBar !== false ? (
         <View
             style={[
@@ -2904,16 +2933,13 @@ export default function StudyScreen() {
             ]}
             accessibilityRole="toolbar"
         >
-            <TouchableOpacity
-                style={styles.toolbarIconButton}
+            <IconButton
                 onPress={handleReturnToDecks}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                accessibilityRole="button"
                 accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
-                {...webTitle(l('Geri', 'Back'))}
             >
-                <ReviewerBackIcon color={colors.textSecondary} />
-            </TouchableOpacity>
+                <BackIcon color={colors.textSecondary} size={22} />
+            </IconButton>
 
             <ReviewerDeckScope
                 compact={isCompact}
@@ -2934,59 +2960,12 @@ export default function StudyScreen() {
                 ) : settings.showDeckTitle === false ? (
                     <Text style={styles.toolbarDeckFallback}>▦</Text>
                 ) : null}
-                <DownChevron color={colors.textMuted} />
+                <ChevronDownIcon color={colors.textMuted} size={16} />
             </ReviewerDeckScope>
 
             {statusItems}
 
-            <View style={styles.toolbarActions}>
-                <TouchableOpacity
-                    style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
-                    onPress={() => { void undoLast(); }}
-                    disabled={!canUndoReview(undoStack.length)}
-                    accessibilityRole="button"
-                    accessibilityLabel={undoOpLabel
-                        ? l(`Geri al: ${undoOpLabel}`, `Undo: ${undoOpLabel}`)
-                        : l('Geri alınacak işlem yok', 'Nothing to undo')}
-                    accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
-                    {...webTitle(undoOpLabel
-                        ? l(`Geri al: ${undoOpLabel}${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo: ${undoOpLabel}${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
-                        : l('Geri alınacak işlem yok', 'Nothing to undo'))}
-                >
-                    <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.toolbarIconButton, !currentCard && styles.toolbarIconButtonDisabled]}
-                    onPress={openFlagMenu}
-                    disabled={!currentCard}
-                    accessibilityRole="button"
-                    accessibilityLabel={currentCard ? l('Bayrakla işaretle', 'Flag card') : l('İşaretlenecek kart yok', 'No card to flag')}
-                    accessibilityState={{ disabled: !currentCard }}
-                >
-                    <FlagGlyph
-                        color={currentFlag > 0 ? FLAG_COLORS[currentFlag].color : (!currentCard ? colors.textMuted : colors.textSecondary)}
-                        size={18}
-                        filled={currentFlag > 0}
-                    />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.toolbarIconButton}
-                    onPress={handleDeckOptions}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Deste ayarları', 'Deck settings')}
-                    {...webTitle(l('Deste ayarları', 'Deck settings'))}
-                >
-                    <ReviewerSettingsIcon color={colors.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.toolbarIconButton}
-                    onPress={openMoreMenu}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}
-                >
-                    <Text style={styles.toolbarActionIcon}>⋮</Text>
-                </TouchableOpacity>
-            </View>
+            {toolbarActions}
         </View>
     ) : null;
 
@@ -3068,16 +3047,13 @@ export default function StudyScreen() {
 
     const classicToolbar = !newStudyScreenEnabled && settings.showStudyTopBar !== false ? (
         <View style={[styles.classicToolbar, { paddingTop: insets.top }]} accessibilityRole="toolbar">
-            <TouchableOpacity
-                style={styles.toolbarIconButton}
+            <IconButton
                 onPress={handleReturnToDecks}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                accessibilityRole="button"
                 accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
-                {...webTitle(l('Geri', 'Back'))}
             >
-                <ReviewerBackIcon color={colors.textSecondary} />
-            </TouchableOpacity>
+                <BackIcon color={colors.textSecondary} size={22} />
+            </IconButton>
             <TouchableOpacity
                 style={styles.classicTitleButton}
                 onPress={openDeckPicker}
@@ -3089,63 +3065,16 @@ export default function StudyScreen() {
                 <Text style={styles.classicToolbarTitle} numberOfLines={1} maxFontSizeMultiplier={1.15}>
                     {settings.showDeckTitle !== false ? reviewerDeckTitle : l('Bugünün Kartları', 'Cards for Today')}
                 </Text>
-                <DownChevron color={colors.textMuted} />
+                <ChevronDownIcon color={colors.textMuted} size={16} />
                 {streak.current > 0 ? (
                     <View style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}>
-                        <FlameGlyph size={12} color="#f59e0b" />
+                        <FlameGlyph size={12} />
                         <Text style={styles.streakChipText}>{streak.current}</Text>
                     </View>
                 ) : null}
             </TouchableOpacity>
             {statusItems}
-            <View style={styles.toolbarActions}>
-                <TouchableOpacity
-                    style={[styles.toolbarIconButton, !canUndoReview(undoStack.length) && styles.toolbarIconButtonDisabled]}
-                    onPress={() => { void undoLast(); }}
-                    disabled={!canUndoReview(undoStack.length)}
-                    accessibilityRole="button"
-                    accessibilityLabel={undoOpLabel
-                        ? l(`Geri al: ${undoOpLabel}`, `Undo: ${undoOpLabel}`)
-                        : l('Geri alınacak işlem yok', 'Nothing to undo')}
-                    accessibilityState={{ disabled: !canUndoReview(undoStack.length) }}
-                    {...webTitle(undoOpLabel
-                        ? l(`Geri al: ${undoOpLabel}${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`, `Undo: ${undoOpLabel}${undoShortcutHint ? ` (${undoShortcutHint})` : ''}`)
-                        : l('Geri alınacak işlem yok', 'Nothing to undo'))}
-                >
-                    <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.toolbarIconButton, !currentCard && styles.toolbarIconButtonDisabled]}
-                    onPress={openFlagMenu}
-                    disabled={!currentCard}
-                    accessibilityRole="button"
-                    accessibilityLabel={currentCard ? l('Bayrakla işaretle', 'Flag card') : l('İşaretlenecek kart yok', 'No card to flag')}
-                    accessibilityState={{ disabled: !currentCard }}
-                >
-                    <FlagGlyph
-                        color={currentFlag > 0 ? FLAG_COLORS[currentFlag].color : (!currentCard ? colors.textMuted : colors.textSecondary)}
-                        size={18}
-                        filled={currentFlag > 0}
-                    />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.toolbarIconButton}
-                    onPress={handleDeckOptions}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Deste ayarları', 'Deck settings')}
-                    {...webTitle(l('Deste ayarları', 'Deck settings'))}
-                >
-                    <ReviewerSettingsIcon color={colors.textSecondary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.toolbarIconButton}
-                    onPress={openMoreMenu}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}
-                >
-                    <Text style={styles.toolbarActionIcon}>⋮</Text>
-                </TouchableOpacity>
-            </View>
+            {toolbarActions}
         </View>
     ) : null;
 
@@ -3164,7 +3093,7 @@ export default function StudyScreen() {
                     ]}
                     accessibilityLiveRegion="polite"
                 >
-                    <Text style={styles.answerFeedbackText}>×</Text>
+                    <CloseIcon color={colors.onAccent} size={26} />
                 </View>
             ) : null}
             {newStudyScreenEnabled ? (toolbarPosition === 'top' ? reviewerToolbar : null) : classicToolbar}
@@ -3229,7 +3158,7 @@ export default function StudyScreen() {
                                     <Text style={styles.cardSubject} numberOfLines={1}>
                                         {subject ? `${subject.icon} ${subject.name}` : '📝'}
                                     </Text>
-                                    {topic ? <Text style={styles.contextSeparator}>›</Text> : null}
+                                    {topic ? <ChevronRightIcon color={colors.textMuted} size={16} /> : null}
                                     {topic ? (
                                         <Text style={styles.cardTopic} numberOfLines={1}>{localizeTopicName(locale, topic)}</Text>
                                     ) : null}
@@ -3244,7 +3173,7 @@ export default function StudyScreen() {
                                         style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
                                         accessibilityLabel={l(`Günlük seri: ${streak.current} gün`, `Daily streak: ${streak.current} days`)}
                                     >
-                                        <FlameGlyph size={12} color="#f59e0b" />
+                                        <FlameGlyph size={12} />
                                         <Text style={styles.streakChipText}>{streak.current}</Text>
                                     </View>
                                 ) : null}
@@ -3271,7 +3200,7 @@ export default function StudyScreen() {
                                         ].filter(Boolean).join(', ')}
                                     >
                                         {currentNoteMarked ? (
-                                            <StarGlyph color="#f59e0b" size={16} filled />
+                                            <StarGlyph size={16} filled />
                                         ) : null}
                                         {currentFlag > 0 ? (
                                             <FlagGlyph color={FLAG_COLORS[currentFlag].color} size={16} filled />
@@ -3393,7 +3322,8 @@ export default function StudyScreen() {
                                 accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                                 {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
                             >
-                                <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
+                                <BackIcon color={colors.textSecondary} size={16} />
+                                <Text style={styles.secondaryActionText}>{l('Destelere Dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
                         </View>
                     ) : totalDeckCards === 0 && !emptyStateDeck?.isFiltered ? (
@@ -3422,7 +3352,8 @@ export default function StudyScreen() {
                                 accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                                 {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
                             >
-                                <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
+                                <BackIcon color={colors.textSecondary} size={16} />
+                                <Text style={styles.secondaryActionText}>{l('Destelere Dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
                             {trialPurchaseAction}
                         </View>
@@ -3485,7 +3416,8 @@ export default function StudyScreen() {
                                 accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                                 {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
                             >
-                                <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
+                                <BackIcon color={colors.textSecondary} size={16} />
+                                <Text style={styles.secondaryActionText}>{l('Destelere Dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
                             <Text style={styles.emptySub}>
                                 {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
@@ -3660,14 +3592,13 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         zIndex: 300,
         width: 42,
         height: 42,
-        borderRadius: 21,
+        borderRadius: Radius.pill,
         alignItems: 'center',
         justifyContent: 'center',
         ...Shadows.md,
     },
     answerFeedbackLeft: { left: Spacing.lg },
     answerFeedbackAgain: { backgroundColor: colors.btnAgain },
-    answerFeedbackText: { color: colors.white, fontSize: 27, lineHeight: 31, fontWeight: '800' },
     loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.lg },
     loadingText: { fontSize: FontSize.md, color: colors.textMuted },
 
@@ -3693,26 +3624,22 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     },
     classicTitleButton: { flex: 1, minWidth: 0, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.xs },
     classicToolbarTitle: { flexShrink: 1, fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-    toolbarIconButton: { width: 42, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    toolbarIconButtonDisabled: { opacity: 0.34 },
     toolbarDeckFallback: { fontSize: 19, color: colors.textMuted },
     toolbarActions: { flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' },
-    toolbarActionIcon: { fontSize: 23, lineHeight: 25, color: colors.textSecondary },
 
     streakChip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.btnHardBg,
+        backgroundColor: colors.streakBg,
         paddingHorizontal: 10,
         paddingVertical: 3,
-        borderRadius: 12,
+        borderRadius: Radius.pill,
     },
     streakChipIdle: { opacity: 0.55 },
-    streakChipText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.btnHard },
+    streakChipText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.streak },
 
     contentArea: { flex: 1, position: 'relative', overflow: 'hidden' },
     cardContext: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
-    contextSeparator: { color: colors.textMuted, fontSize: FontSize.md },
     cardStage: { flex: 1, minHeight: 0 },
     cardScroll: { flex: 1, minHeight: 0 },
     cardArea: {
@@ -3739,10 +3666,10 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         flexShrink: 0,
         paddingHorizontal: 8,
         paddingVertical: 2,
-        borderRadius: BorderRadius.full,
-        backgroundColor: colors.badgeNewBg,
+        borderRadius: Radius.pill,
+        backgroundColor: colors.infoBg,
     },
-    previewBadgeText: { fontSize: 10, fontWeight: '700', color: colors.badgeNew, letterSpacing: 0.5 },
+    previewBadgeText: { fontSize: 10, fontWeight: '700', color: colors.info, letterSpacing: 0.5 },
     deckDescription: {
         fontSize: FontSize.sm,
         color: colors.textMuted,
@@ -3789,7 +3716,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         minHeight: 50,
         borderWidth: 1.5,
         borderColor: colors.border,
-        borderRadius: 14,
+        borderRadius: Radius.card,
         backgroundColor: colors.bgInput,
         paddingHorizontal: Spacing.lg,
         paddingVertical: Spacing.md,
@@ -3802,7 +3729,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         zIndex: 240,
         width: 50,
         height: 50,
-        borderRadius: 25,
+        borderRadius: Radius.pill,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.bgCard,
@@ -3829,12 +3756,12 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.xl,
         backgroundColor: colors.accent,
-        borderRadius: 16,
+        borderRadius: Radius.card,
         alignItems: 'center',
         justifyContent: 'center',
         ...Shadows.sm,
     },
-    showAnswerText: { fontSize: 17, fontWeight: '700', color: colors.white, letterSpacing: 0.2 },
+    showAnswerText: { fontSize: 17, fontWeight: '700', color: colors.onAccent, letterSpacing: 0.2 },
 
     answerBar: {
         width: '100%',
@@ -3867,7 +3794,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     reviewerToolsInlineBtn: {
         width: 54,
         height: 54,
-        borderRadius: BorderRadius.lg,
+        borderRadius: Radius.card,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.bgSecondary,
@@ -3884,7 +3811,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         justifyContent: 'center',
         paddingVertical: Spacing.sm,
         paddingHorizontal: 4,
-        borderRadius: 14,
+        borderRadius: Radius.card,
         borderWidth: 1,
         gap: 1,
         backgroundColor: colors.bgSecondary,
@@ -3906,14 +3833,14 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         minHeight: 56,
         paddingVertical: Spacing.sm,
         paddingHorizontal: 4,
-        borderRadius: 14,
+        borderRadius: Radius.card,
         borderWidth: 1,
         gap: 1,
         ...Shadows.sm,
     },
     answerBtnTwoRow: { flexBasis: '47%', flexGrow: 1 },
-    btnTime: { color: colors.white, opacity: 0.85, fontSize: FontSize.sm, fontWeight: '700', fontVariant: ['tabular-nums'] as any },
-    btnLabel: { color: colors.white, fontSize: isCompact ? 15 : 16, fontWeight: '800' },
+    btnTime: { color: colors.onAccent, opacity: 0.85, fontSize: FontSize.sm, fontWeight: '700', fontVariant: ['tabular-nums'] as any },
+    btnLabel: { color: colors.onAccent, fontSize: isCompact ? 15 : 16, fontWeight: '800' },
 
     queueCounts: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: isCompact ? 7 : 9 },
     queueCount: { fontSize: FontSize.md, fontWeight: '800', fontVariant: ['tabular-nums'] as any },
@@ -3933,14 +3860,14 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     emptyInfo: {
         fontSize: FontSize.md,
         fontWeight: '600',
-        color: colors.btnHard,
+        color: colors.warning,
         textAlign: 'center',
         marginTop: Spacing.md,
         maxWidth: 520,
-        backgroundColor: colors.btnHardBg,
+        backgroundColor: colors.warningBg,
         borderWidth: 1,
-        borderColor: colors.btnHard,
-        borderRadius: BorderRadius.md,
+        borderColor: colors.warning,
+        borderRadius: Radius.inset,
         paddingVertical: Spacing.sm,
         paddingHorizontal: Spacing.lg,
         overflow: 'hidden',
@@ -3950,10 +3877,11 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         backgroundColor: colors.accent,
         paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.xxl,
-        borderRadius: 8,
+        borderRadius: Radius.control,
     },
-    primaryActionText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.white },
+    primaryActionText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.onAccent },
     secondaryActionBtn: {
+        minHeight: HIT_TARGET,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -3964,7 +3892,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderColor: colors.border,
         paddingVertical: Spacing.sm,
         paddingHorizontal: Spacing.xl,
-        borderRadius: 8,
+        borderRadius: Radius.control,
     },
     secondaryActionText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textSecondary },
     catalogPurchaseBtn: {
@@ -3973,12 +3901,12 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         marginTop: Spacing.lg,
         paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.lg,
-        borderRadius: BorderRadius.md,
+        borderRadius: Radius.control,
         backgroundColor: colors.accent,
         alignItems: 'center',
     },
-    catalogPurchaseBtnText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
-    catalogPurchaseBtnHint: { color: colors.white, opacity: 0.82, fontSize: FontSize.xs, marginTop: 3 },
+    catalogPurchaseBtnText: { color: colors.onAccent, fontSize: FontSize.md, fontWeight: '800' },
+    catalogPurchaseBtnHint: { color: colors.onAccent, opacity: 0.82, fontSize: FontSize.xs, marginTop: 3 },
     emptySub: { fontSize: FontSize.md, color: colors.textSecondary, marginTop: Spacing.lg },
     });
 }

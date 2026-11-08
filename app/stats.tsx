@@ -1,14 +1,18 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, Animated, View, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { Animated, View, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Text } from '../components/AppText';
 import { studyDataSettingsKey } from '../lib/studyDataSettings';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
-import { useThemeColors } from '../constants/theme';
+import { Spacing, useThemeColors } from '../constants/theme';
 import { createOrSelectDeck } from '../lib/deckManager';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import DeckPickerModal from '../components/DeckPickerModal';
-import HeaderBackIcon from '../components/HeaderBackIcon';
+import ScreenHeader from '../components/ScreenHeader';
+import { HelpButton } from '../components/ui/Button';
+import { SegmentedControl } from '../components/ui/Choice';
+import { LoadingState, Notice } from '../components/ui/Feedback';
+import { ChevronDownIcon } from '../components/ui/icons';
 import { ChartScrollLockProvider } from '../components/stats/ChartScrollLock';
 import TodaySection from '../components/stats/TodaySection';
 import ReviewsSection from '../components/stats/ReviewsSection';
@@ -19,7 +23,6 @@ import IntervalsSection from '../components/stats/IntervalsSection';
 import HourlySection from '../components/stats/HourlySection';
 import AddedSection from '../components/stats/AddedSection';
 import DeckProgressSection from '../components/stats/DeckProgressSection';
-import StatsSegmented from '../components/stats/StatsSegmented';
 import StatsHelpSheet from '../components/stats/StatsHelpSheet';
 import { createStatsScreenStyles } from '../components/stats/statsScreenStyles';
 import { useI18n } from '../hooks/useI18n';
@@ -39,6 +42,7 @@ export default function StatsScreen() {
     const isCompact = width < 600;
     const colors = useThemeColors();
     const styles = useMemo(() => createStatsScreenStyles(colors, isCompact), [colors, isCompact]);
+    const insets = useSafeAreaInsets();
     const router = useRouter();
     const params = useLocalSearchParams();
     const { settings } = useAppSettings();
@@ -164,34 +168,25 @@ export default function StatsScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.screenHeader}>
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={handleBack}
-                    hitSlop={{ top: 6, right: 6, bottom: 6, left: 6 }}
-                    accessibilityRole="button"
-                    accessibilityLabel={deckScope ? l('Deste genel bakışına dön', 'Back to deck overview') : l('Destelere dön', 'Back to decks')}
-                >
-                    <HeaderBackIcon color={colors.accent} />
-                </TouchableOpacity>
-                <Text style={styles.screenTitle} numberOfLines={1} accessibilityRole="header">{t('common.statistics')}</Text>
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={() => setHelpVisible(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('İstatistikler hakkında', 'About statistics')}
-                    accessibilityState={{ expanded: helpVisible }}
-                >
-                    <View style={styles.infoGlyph}><Text style={styles.infoGlyphText}>i</Text></View>
-                </TouchableOpacity>
-            </View>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+            <ScreenHeader
+                title={t('common.statistics')}
+                backAccessibilityLabel={deckScope ? l('Deste genel bakışına dön', 'Back to deck overview') : l('Destelere dön', 'Back to decks')}
+                onBack={handleBack}
+                actions={(
+                    <HelpButton
+                        accessibilityLabel={l('İstatistikler hakkında', 'About statistics')}
+                        onPress={() => setHelpVisible(true)}
+                    />
+                )}
+            />
             <ChartScrollLockProvider value={setScrollLocked}>
             <ScrollView
                 ref={scrollRef}
+                style={styles.scroll}
                 scrollEnabled={!scrollLocked}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + Spacing.xxxl }]}
             >
                 <View style={styles.filters}>
                     <TouchableOpacity
@@ -204,9 +199,9 @@ export default function StatsScreen() {
                     >
                         <Text style={styles.deckSelectorLabel}>{l('Deste', 'Deck')}</Text>
                         <Text style={styles.deckSelectorText} numberOfLines={1}>{scopeTitle}</Text>
-                        <Text style={styles.deckSelectorCaret}>⌄</Text>
+                        <ChevronDownIcon color={colors.textSecondary} />
                     </TouchableOpacity>
-                    <StatsSegmented
+                    <SegmentedControl
                         fill
                         options={rangeOptions.map(({ value, label, title }) => ({ value, label, accessibilityLabel: title }))}
                         value={rangeKey}
@@ -216,12 +211,9 @@ export default function StatsScreen() {
                 </View>
 
                 {!snapshot ? (
-                    <View style={styles.loadState} accessible>
-                        {error ? null : <ActivityIndicator color={colors.accent} />}
-                        <Text style={styles.loadText}>
-                            {error ? l('İstatistikler yüklenemedi.', 'Statistics could not be loaded.') : t('common.loading')}
-                        </Text>
-                    </View>
+                    error
+                        ? <Notice tone="danger">{l('İstatistikler yüklenemedi.', 'Statistics could not be loaded.')}</Notice>
+                        : <LoadingState style={styles.loadState} label={t('common.loading')} />
                 ) : (
                     <Animated.View style={[styles.body, { opacity }]} accessibilityState={{ busy: loading }}>
                         <TodaySection
