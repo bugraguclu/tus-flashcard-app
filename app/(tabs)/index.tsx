@@ -173,6 +173,9 @@ import {
     canUndoReview,
     isReviewerUndoKey,
     normalizeReviewerToolbarPosition,
+    reviewerCountsLabel,
+    reviewerDeckButtonLabel,
+    reviewerStreakLabel,
     reviewerUndoKeys,
     reviewerUndoShortcutHint,
     visibleReviewerGrades,
@@ -2786,10 +2789,7 @@ export default function StudyScreen() {
         { color },
         currentQueueBucket === bucket && styles.queueCountCurrent,
     ];
-    const queueCountsLabel = l(
-        `${queueStats.newCount} yeni, ${queueStats.learningCount} öğrenme, ${queueStats.reviewCount} tekrar kartı`,
-        `${queueStats.newCount} new, ${queueStats.learningCount} learning, ${queueStats.reviewCount} review cards`,
-    );
+    const queueCountsLabel = reviewerCountsLabel(l, queueStats);
 
     const gradePresentation: Record<Grade, { label: string; time: string; color: string }> | null = preview ? {
         1: { label: t('anki.again'), time: preview.again, color: colors.btnAgain },
@@ -2871,14 +2871,16 @@ export default function StudyScreen() {
                 compact={isCompact}
                 title={settings.showDeckTitle !== false ? reviewerDeckTitle : null}
                 onPress={openDeckPicker}
-                accessibilityLabel={l(
-                    `Deste seç. Geçerli kapsam: ${reviewerDeckTitle}`,
-                    `Select deck. Current scope: ${reviewerDeckTitle}`,
-                )}
+                // The counts sit inside the button, which VoiceOver reads by its label alone.
+                accessibilityLabel={reviewerDeckButtonLabel(l, {
+                    deckTitle: reviewerDeckTitle,
+                    counts: currentCard && settings.showRemainingCount ? queueStats : null,
+                    streakDays: null,
+                })}
                 tooltip={l('Çalışılacak desteyi seç', 'Choose which deck to study')}
             >
                 {currentCard && settings.showRemainingCount ? (
-                    <View style={styles.queueCounts} accessibilityLabel={queueCountsLabel}>
+                    <View style={styles.queueCounts}>
                         <Text style={queueCountStyle('newCount', colors.badgeNew)}>{queueStats.newCount}</Text>
                         <Text style={queueCountStyle('learningCount', colors.badgeLearn)}>{queueStats.learningCount}</Text>
                         <Text style={queueCountStyle('reviewCount', colors.badgeReview)}>{queueStats.reviewCount}</Text>
@@ -3034,7 +3036,12 @@ export default function StudyScreen() {
                 style={styles.classicTitleButton}
                 onPress={openDeckPicker}
                 accessibilityRole="button"
-                accessibilityLabel={l(`Deste seç. Geçerli kapsam: ${reviewerDeckTitle}`, `Select deck. Current scope: ${reviewerDeckTitle}`)}
+                // The streak chip sits inside the button, which VoiceOver reads by its label alone.
+                accessibilityLabel={reviewerDeckButtonLabel(l, {
+                    deckTitle: reviewerDeckTitle,
+                    counts: null,
+                    streakDays: streak.current > 0 ? streak.current : null,
+                })}
                 {...webTitle(l('Çalışılacak desteyi seç', 'Choose which deck to study'))}
             >
                 {/* Toolbar chrome between fixed icons: it grows less than content, as a navigation bar title does. */}
@@ -3196,7 +3203,8 @@ export default function StudyScreen() {
                                 {newStudyScreenEnabled && streak.current > 0 ? (
                                     <View
                                         style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
-                                        accessibilityLabel={l(`Günlük seri: ${streak.current} gün`, `Daily streak: ${streak.current} days`)}
+                                        accessible
+                                        accessibilityLabel={reviewerStreakLabel(l, streak.current)}
                                     >
                                         <FlameGlyph size={12} color="#f59e0b" />
                                         <Text style={styles.streakChipText}>{streak.current}</Text>

@@ -4,6 +4,7 @@ import {
     canUndoReview,
     isReviewerUndoKey,
     normalizeReviewerToolbarPosition,
+    reviewerDeckButtonLabel,
     reviewerFeedbackSide,
     reviewerUndoKeys,
     reviewerUndoShortcutHint,
@@ -111,5 +112,25 @@ describe('answerScrollTarget', () => {
 
     it('clamps to the end of the content like scrollIntoView does', () => {
         expect(answerScrollTarget({ ...geometry, anchorInDocument: 1300 })).toBe(800);
+    });
+});
+
+// VoiceOver reads a button by its label alone, so what the reviewer's deck button shows (the
+// queue counts in the redesigned toolbar, the streak in the classic one) has to be in it.
+describe('reviewer deck button label', () => {
+    const tr = (turkish: string) => turkish;
+    const en = (_turkish: string, english: string) => english;
+
+    it('reads the counts and the streak the button shows', () => {
+        const counts = { newCount: 3, learningCount: 2, reviewCount: 14 };
+        expect(reviewerDeckButtonLabel(tr, { deckTitle: 'Dahiliye', counts, streakDays: 5 }))
+            .toBe('Deste seç. Geçerli kapsam: Dahiliye. 3 yeni, 2 öğrenme, 14 tekrar kartı. Günlük seri: 5 gün');
+        expect(reviewerDeckButtonLabel(en, { deckTitle: 'Dahiliye', counts, streakDays: null }))
+            .toBe('Select deck. Current scope: Dahiliye. 3 new, 2 learning, 14 review cards');
+    });
+
+    it('is the scope alone when the button shows neither', () => {
+        expect(reviewerDeckButtonLabel(en, { deckTitle: 'Cards for Today', counts: null, streakDays: null }))
+            .toBe('Select deck. Current scope: Cards for Today');
     });
 });
