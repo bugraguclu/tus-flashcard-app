@@ -7,8 +7,8 @@ import { Divider } from '../ui/Card';
 import { AppDialog } from '../ui/Dialog';
 import { TextField } from '../ui/Fields';
 import { MenuItem, PopoverMenu } from '../ui/Menu';
+import { ListRow } from '../ui/Rows';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
-import { PickerOption } from './SettingControls';
 import type { DeckConfig } from '../../lib/models';
 
 type I18n = Pick<ReturnType<typeof useI18n>, 'l' | 't'>;
@@ -87,6 +87,7 @@ export function PresetPickerModal({ presets, activePresetId, currentDeckId, hidd
             visible
             onClose={onClose}
             title={l('Ayar grubu seç', 'Choose Preset')}
+            closeLabel={l('Ayar grubu seçiciyi kapat', 'Close preset picker')}
             actions={<Button variant="plain" label={t('common.cancel')} onPress={onClose} />}
         >
             <ScrollView style={styles.presetList}>
@@ -97,12 +98,12 @@ export function PresetPickerModal({ presets, activePresetId, currentDeckId, hidd
                     return (
                         <Fragment key={preset.id}>
                             {index > 0 ? <Divider /> : null}
-                            <PickerOption
-                                label={`${preset.name} · ${l(`${used} deste`, `${used} decks`)}`}
-                                meta={representative ? representative.name.replaceAll('::', ' › ') : undefined}
+                            <ListRow
+                                title={`${preset.name} · ${l(`${used} deste`, `${used} decks`)}`}
+                                summary={representative ? representative.name.replaceAll('::', ' › ') : undefined}
                                 selected={preset.id === activePresetId}
                                 onPress={() => onPick(preset.id)}
-                                styles={styles}
+                                style={styles.dialogRow}
                             />
                         </Fragment>
                     );
@@ -125,6 +126,7 @@ export function RenamePresetModal({ title, value, onChangeValue, onSave, onClose
             visible
             onClose={onClose}
             title={title ?? l('Ayar grubunu yeniden adlandır', 'Rename Preset')}
+            closeLabel={l('Yeniden adlandırma penceresini kapat', 'Close rename dialog')}
             actions={(
                 <>
                     <Button variant="plain" label={t('common.cancel')} onPress={onClose} />

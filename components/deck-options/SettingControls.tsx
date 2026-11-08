@@ -1,14 +1,14 @@
 import { Fragment, useContext, useEffect, useState, type ReactNode, type Ref } from 'react';
-import { Keyboard, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Keyboard, ScrollView, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import { sanitizeNumericDraft } from '../../lib/deckOptionsForm';
 import { Button, HelpButton } from '../ui/Button';
 import { Card, Divider } from '../ui/Card';
-import { SegmentedControl, SelectedMark } from '../ui/Choice';
+import { SegmentedControl } from '../ui/Choice';
 import { AppDialog } from '../ui/Dialog';
 import { Notice } from '../ui/Feedback';
 import { TextField } from '../ui/Fields';
-import { SelectRow, ValueRow } from '../ui/Rows';
+import { ListRow, SelectRow, ValueRow } from '../ui/Rows';
 import { AppSheet } from '../ui/Sheet';
 import { DeckOptionsContext } from './DeckOptionsContext';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
@@ -36,6 +36,8 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
                 accessory={help ? (
                     <HelpButton
                         accessibilityLabel={`${title}: ${help.title}`}
+                        accessibilityHint={help.summary}
+                        expanded={helpOpen}
                         onPress={() => { Keyboard.dismiss(); setHelpOpen(true); }}
                     />
                 ) : undefined}
@@ -49,6 +51,7 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
                     title={help.title}
                     subtitle={help.eyebrow}
                     closeButton
+                    closeLabel={help.dismissLabel}
                     backdropLabel={help.dismissLabel}
                 >
                     <ScrollView
@@ -71,35 +74,6 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
                 </AppSheet>
             ) : null}
         </View>
-    );
-}
-
-/**
- * One choice of a picker dialog; the chosen one ends in the tick. The kit has no single-choice
- * row, so this one keeps the radio semantics VoiceOver reads the choice with.
- */
-export function PickerOption({ label, meta, selected, onPress, styles }: {
-    label: string;
-    /** A second line, e.g. a deck that uses the preset. */
-    meta?: string;
-    selected: boolean;
-    onPress: () => void;
-    styles: DeckOptionsStyles;
-}) {
-    return (
-        <TouchableOpacity
-            style={styles.pickerOption}
-            onPress={onPress}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
-            aria-checked={selected}
-        >
-            <View style={styles.pickerOptionCopy}>
-                <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextSelected]}>{label}</Text>
-                {meta ? <Text style={styles.pickerOptionMeta} numberOfLines={1}>{meta}</Text> : null}
-            </View>
-            <SelectedMark visible={selected} />
-        </TouchableOpacity>
     );
 }
 
@@ -245,11 +219,11 @@ export function SelectSetting({ label, value, options, onChange, styles, cancelL
                         {options.map((option, index) => (
                             <Fragment key={option.key}>
                                 {index > 0 ? <Divider /> : null}
-                                <PickerOption
-                                    label={option.label}
+                                <ListRow
+                                    title={option.label}
                                     selected={option.key === value}
                                     onPress={() => { onChange(option.key); setOpen(false); }}
-                                    styles={styles}
+                                    style={styles.dialogRow}
                                 />
                             </Fragment>
                         ))}

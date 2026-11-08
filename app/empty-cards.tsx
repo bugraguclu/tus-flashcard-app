@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -10,27 +9,11 @@ import { useCollectionInvalidation } from '../contexts/AppContext';
 import { findEmptyCards, deleteAnkiCardOnly, deleteAnkiCardsOnly, type EmptyCardEntry } from '../lib/noteManager';
 import { useI18n } from '../hooks/useI18n';
 import ScreenHeader from '../components/ScreenHeader';
-import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
 import { Button, IconButton } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { EmptyState, LoadingState } from '../components/ui/Feedback';
 import { ListRow, SwitchRow } from '../components/ui/Rows';
-import { CloseIcon } from '../components/ui/icons';
-
-/** A bin, drawn like the kit's control glyphs: the kit has no delete icon yet. */
-function TrashIcon({ color, size = 18 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 11v5.5M14 11v5.5"
-                stroke={color}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
-}
+import { CloseIcon, TrashIcon } from '../components/ui/icons';
 
 function emptyCardReason(reason: EmptyCardEntry['reason'], l: (tr: string, en: string) => string): string {
     if (reason.includes('Kapama')) return l('Kapama metinde yok', 'Cloze is missing from the text');
@@ -146,7 +129,7 @@ export default function EmptyCardsScreen() {
                         </Card>
                         <Button
                             variant="destructive"
-                            icon={<TrashIcon color={colors.onAccent} />}
+                            icon={<TrashIcon color={colors.onAccent} size={18} />}
                             label={`${l('Tümünü sil', 'Delete All')} (${entries.length})`}
                             onPress={deleteAll}
                             busy={busy}

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Keyboard, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Keyboard, Platform, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
-import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Choice';
 import { Notice } from '../ui/Feedback';
 import { ValueRow } from '../ui/Rows';
-import { HIT_TARGET, Radius, Type } from '../ui/tokens';
+import { Type } from '../ui/tokens';
 import { keyBindingRecordingResult } from '../../lib/hardwareKeyboard';
 import { DEFAULT_KEY_BINDINGS } from '../../lib/storage';
 import type { KeyBindings } from '../../lib/types';
@@ -119,7 +119,6 @@ export default function KeyboardSettingsSection({ bindings, onChange }: Props) {
                             <Badge
                                 tone="accent"
                                 label={recording ? l('Bir tuşa basın', 'Press a key') : formatKeyLabel(bindings[row.field])}
-                                style={styles.keyBadge}
                             />
                             {recording && Platform.OS !== 'web' ? (
                                 <TextInput
@@ -142,21 +141,20 @@ export default function KeyboardSettingsSection({ bindings, onChange }: Props) {
                                 />
                             ) : null}
                         </View>
-                        {/* Drawn as a compact secondary Button. The kit's Button has no press-in, and this
-                            one records at touch-down whether the press began while the row was recording. */}
-                        <TouchableOpacity
-                            style={styles.changeButton}
-                            hitSlop={{ top: (HIT_TARGET - 40) / 2, bottom: (HIT_TARGET - 40) / 2 }}
+                        {/* Press-in records whether the press began while this row was recording: the
+                            hidden native input may blur before the press itself arrives. */}
+                        <Button
+                            variant="secondary"
+                            size="compact"
+                            numberOfLines={1}
                             onPressIn={() => { buttonPressRef.current = { field: row.field, cancelling: recordingRef.current === row.field }; }}
                             onPress={() => startRecording(row.field)}
-                            accessibilityRole="button"
                             accessibilityLabel={recording
                                 ? l(`${label} tuş atamasını iptal et`, `Cancel key assignment for ${label}`)
                                 : l(`${label} kısayolunu değiştir`, `Change shortcut for ${label}`)}
                             accessibilityHint={l('Bağlı fiziksel klavyede bir tuşa basın', 'Press a key on a connected physical keyboard')}
-                        >
-                            <Text style={styles.changeText} numberOfLines={1}>{recording ? l('İptal', 'Cancel') : l('Değiştir', 'Change')}</Text>
-                        </TouchableOpacity>
+                            label={recording ? l('İptal', 'Cancel') : l('Değiştir', 'Change')}
+                        />
                     </ValueRow>
                 );
             })}
@@ -189,21 +187,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         block: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
         keySlot: { minWidth: 54, alignItems: 'center', justifyContent: 'center' },
-        keyBadge: { alignSelf: 'center' },
         capture: { position: 'absolute', width: 1, height: 1, opacity: 0 },
         conflict: { ...Type.caption, color: colors.textPrimary },
-        // The kit's compact secondary Button, which this one has to stand in for.
-        changeButton: {
-            minHeight: 40,
-            minWidth: HIT_TARGET,
-            paddingHorizontal: Spacing.md,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: Radius.control,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        changeText: { ...Type.button, fontSize: FontSize.sm, color: colors.textPrimary },
     });
 }

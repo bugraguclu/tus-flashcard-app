@@ -4,7 +4,7 @@ import {
     ScrollView,
     StyleSheet,
 } from 'react-native';
-import { Text, TextInput } from '../components/AppText';
+import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -14,7 +14,6 @@ import { Chip } from '../components/ui/Choice';
 import { EmptyState } from '../components/ui/Feedback';
 import { TextField } from '../components/ui/Fields';
 import { ArrowDownIcon, ArrowUpIcon, CloseIcon, PlusIcon } from '../components/ui/icons';
-import { Radius } from '../components/ui/tokens';
 import { confirm, alert } from '../lib/confirm';
 import { goBackOr } from '../lib/backNavigation';
 import { useCollectionInvalidation } from '../contexts/AppContext';
@@ -38,8 +37,6 @@ import { validateNoteType } from '../lib/noteTypeValidation';
 import { useI18n } from '../hooks/useI18n';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
-
-const MONOSPACE = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
 function makePreview(nt: NoteType, exampleSuffix: string, ord: number): { note: Note; card: AnkiCard } {
     const note: Note = {
@@ -252,41 +249,32 @@ export default function NoteTypeScreen() {
                 {template && (
                     <>
                         <SectionLabel style={styles.label}>{l('ÖN YÜZ (SORU)', 'FRONT TEMPLATE')}</SectionLabel>
-                        <TextInput
-                            style={styles.code}
+                        <TextField
+                            monospace
                             value={template.qfmt}
                             onChangeText={(text) => setNt(updateTemplate(nt, template.ord, { qfmt: text }))}
                             multiline
-                            textAlignVertical="top"
                             autoCapitalize="none"
-                            placeholderTextColor={colors.textMuted}
-                            selectionColor={colors.accent}
                         />
 
                         <SectionLabel style={styles.label}>{l('ARKA YÜZ (CEVAP)', 'BACK TEMPLATE')}</SectionLabel>
-                        <TextInput
-                            style={styles.code}
+                        <TextField
+                            monospace
                             value={template.afmt}
                             onChangeText={(text) => setNt(updateTemplate(nt, template.ord, { afmt: text }))}
                             multiline
-                            textAlignVertical="top"
                             autoCapitalize="none"
-                            placeholderTextColor={colors.textMuted}
-                            selectionColor={colors.accent}
                         />
                     </>
                 )}
 
                 <SectionLabel style={styles.label}>{l('STİL (CSS)', 'STYLING (CSS)')}</SectionLabel>
-                <TextInput
-                    style={styles.code}
+                <TextField
+                    monospace
                     value={nt.css}
                     onChangeText={(text) => setNt(setCss(nt, text))}
                     multiline
-                    textAlignVertical="top"
                     autoCapitalize="none"
-                    placeholderTextColor={colors.textMuted}
-                    selectionColor={colors.accent}
                 />
 
                 <SectionLabel style={styles.label}>{l('ÖNİZLEME', 'PREVIEW')}</SectionLabel>
@@ -310,18 +298,6 @@ function createStyles(colors: ColorScheme) {
     content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
     help: { fontSize: FontSize.md, color: colors.textMuted, padding: Spacing.lg },
     label: { marginTop: Spacing.sm },
-    // A template editor: the kit's TextField box, in a monospaced face the kit's field does not offer.
-    code: {
-        minHeight: 72,
-        backgroundColor: colors.bgInput,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: Radius.control,
-        padding: Spacing.md,
-        fontFamily: MONOSPACE,
-        fontSize: FontSize.sm,
-        color: colors.textPrimary,
-    },
     fieldRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
     fieldName: { flex: 1 },
     templateTabs: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm - 2 },

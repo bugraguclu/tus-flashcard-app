@@ -114,11 +114,8 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
 
         optionList: { maxHeight: 380 },
         presetList: { maxHeight: 320 },
-        pickerOption: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
-        pickerOptionCopy: { flex: 1, minWidth: 0, gap: 2 },
-        pickerOptionText: { ...Type.body, color: colors.textPrimary },
-        pickerOptionTextSelected: { color: colors.accent, fontWeight: '700' },
-        pickerOptionMeta: { ...Type.caption, color: colors.textMuted },
+        // A list row inside a dialog: the dialog's own padding is its inset.
+        dialogRow: { paddingHorizontal: 0 },
     });
 }
 

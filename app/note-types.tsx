@@ -41,12 +41,9 @@ export default function NoteTypesScreen() {
                         <ListRow
                             key={nt.id}
                             title={localizeNoteTypeName(locale, nt.name)}
-                            summary={(
-                                <>
-                                    {l(`${nt.fields.length} alan`, `${nt.fields.length} fields`)} · {l(`${nt.templates.length} şablon`, `${nt.templates.length} templates`)} ·{' '}
-                                    {nt.kind === 'cloze' ? l('boşluk doldurma', 'cloze') : l('standart', 'standard')}
-                                </>
-                            )}
+                            // A plain string, so the row speaks it after the name.
+                            summary={`${l(`${nt.fields.length} alan`, `${nt.fields.length} fields`)} · ${l(`${nt.templates.length} şablon`, `${nt.templates.length} templates`)} · ${
+                                nt.kind === 'cloze' ? l('boşluk doldurma', 'cloze') : l('standart', 'standard')}`}
                             onPress={() => router.push(`/note-type?id=${nt.id}`)}
                         />
                     ))}
