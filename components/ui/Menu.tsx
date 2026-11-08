@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
 import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
-import { CheckIcon, ChevronRightIcon } from './icons';
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, MinusIcon } from './icons';
 import { DISABLED_OPACITY, Radius } from './tokens';
 
 interface PopoverMenuProps {
@@ -19,6 +19,8 @@ interface PopoverMenuProps {
     anchor?: { top?: number; right?: number };
     /** Names the menu for VoiceOver. */
     accessibilityLabel?: string;
+    /** Spoken for the dimmed backdrop that closes the menu; "Menüyü kapat" by default. */
+    closeLabel?: string;
     children: React.ReactNode;
     style?: StyleProp<ViewStyle>;
 }
@@ -27,7 +29,7 @@ interface PopoverMenuProps {
  * The one ••• menu: a white card that hangs from the button that opened it, over a light dimming
  * that closes it. Rows are `MenuItem`s.
  */
-export function PopoverMenu({ visible, onClose, onDismiss, anchor, accessibilityLabel, children, style }: PopoverMenuProps) {
+export function PopoverMenu({ visible, onClose, onDismiss, anchor, accessibilityLabel, closeLabel, children, style }: PopoverMenuProps) {
     const colors = useThemeColors();
     const insets = useSafeAreaInsets();
     const { l } = useI18n();
@@ -38,7 +40,7 @@ export function PopoverMenu({ visible, onClose, onDismiss, anchor, accessibility
                     style={StyleSheet.absoluteFill}
                     onPress={onClose}
                     accessibilityRole="button"
-                    accessibilityLabel={l('Menüyü kapat', 'Close menu')}
+                    accessibilityLabel={closeLabel ?? l('Menüyü kapat', 'Close menu')}
                 />
                 <View
                     style={[
@@ -69,12 +71,16 @@ interface MenuItemProps {
     icon?: React.ReactNode;
     /** A one-line explanation under the label. */
     hint?: string;
-    /** Draws a tick at the end: the item is an option that is on. */
-    checked?: boolean;
+    /** Draws a tick at the end: the item is an option that is on; `mixed` for a partly chosen group. */
+    checked?: boolean | 'mixed';
     /** With `checked`: the item is one of a set of which exactly one is chosen (a radio button). */
     exclusive?: boolean;
     /** Draws a trailing › : the item opens a submenu or another list. */
     chevron?: boolean;
+    /** Makes the item a disclosure that opens rows under it: a down or up chevron and its state. */
+    expanded?: boolean;
+    /** Drawn at the end before any tick or chevron, e.g. a count `Badge`. */
+    accessory?: React.ReactNode;
     destructive?: boolean;
     disabled?: boolean;
     accessibilityLabel?: string;
@@ -90,6 +96,8 @@ export function MenuItem({
     checked,
     exclusive = false,
     chevron = false,
+    expanded,
+    accessory,
     destructive = false,
     disabled = false,
     accessibilityLabel,
@@ -105,14 +113,23 @@ export function MenuItem({
             accessibilityRole={role}
             accessibilityLabel={accessibilityLabel ?? label}
             accessibilityHint={accessibilityHint}
-            accessibilityState={checked === undefined ? { disabled } : { disabled, checked }}
+            accessibilityState={{
+                disabled,
+                ...(checked === undefined ? {} : { checked }),
+                ...(expanded === undefined ? {} : { expanded }),
+            }}
         >
             {icon ? <View style={styles.icon}>{icon}</View> : null}
             <View style={styles.copy}>
                 <Text style={[styles.label, { color: destructive ? colors.danger : colors.textPrimary }]}>{label}</Text>
                 {hint ? <Text style={[styles.hint, { color: colors.textMuted }]}>{hint}</Text> : null}
             </View>
-            {checked ? <CheckIcon color={colors.accent} size={18} /> : null}
+            {accessory}
+            {checked === true ? <CheckIcon color={colors.accent} size={18} /> : null}
+            {checked === 'mixed' ? <MinusIcon color={colors.accent} size={18} /> : null}
+            {expanded === undefined
+                ? null
+                : expanded ? <ChevronUpIcon color={colors.textMuted} size={16} /> : <ChevronDownIcon color={colors.textMuted} size={16} />}
             {chevron ? <ChevronRightIcon color={colors.textMuted} size={16} /> : null}
         </TouchableOpacity>
     );
