@@ -1,24 +1,60 @@
-import { useMemo, useRef } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text } from '../AppText';
-import { Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { useEffect, useRef } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 import { useI18n } from '../../hooks/useI18n';
 import { deckRowMenuLabel, type DeckRowMenuAction } from '../../lib/deckRowMenu';
+import { Card } from '../ui/Card';
+import { MenuItem } from '../ui/Menu';
+import { AppSheet } from '../ui/Sheet';
 
-/** A deck's ••• menu card: the deck path as its title and one row per action. */
-export default function DeckRowMenu({ deckName, actions, onSelect }: {
+interface DeckRowMenuProps {
+    visible: boolean;
     deckName: string;
     actions: DeckRowMenuAction[];
     onSelect: (action: DeckRowMenuAction) => void;
-}) {
+    onClose: () => void;
+    /**
+     * Runs once the sheet has been dismissed. iOS cannot present the route, dialog or sheet chosen
+     * in it until then, so the deck list holds the chosen action back until this is called.
+     */
+    onDismissed: () => void;
+    backdropLabel?: string;
+}
+
+/** A deck's ••• actions as an action sheet: the deck path as its title and one row per action. */
+export default function DeckRowMenu({ visible, deckName, actions, onSelect, onClose, onDismissed, backdropLabel }: DeckRowMenuProps) {
+    return (
+        <AppSheet
+            visible={visible}
+            onClose={onClose}
+            title={deckName.replaceAll('::', ' › ')}
+            backdropLabel={backdropLabel}
+        >
+            <DeckRowMenuRows actions={actions} onSelect={onSelect} />
+            <DismissedSignal onDismissed={onDismissed} />
+        </AppSheet>
+    );
+}
+
+/**
+ * Reports its own unmount. The sheet's content stays mounted until its modal is gone (on iOS
+ * React Native keeps a closing modal's content until UIKit has dismissed it), so this is the
+ * moment the sheet has left — `AppSheet` has no `onDismiss` of its own.
+ */
+function DismissedSignal({ onDismissed }: { onDismissed: () => void }) {
+    const latest = useRef(onDismissed);
+    latest.current = onDismissed;
+    useEffect(() => () => latest.current(), []);
+    return null;
+}
+
+/** Mounted afresh each time the sheet opens, so the scroll hint below is shown once per opening. */
+function DeckRowMenuRows({ actions, onSelect }: { actions: DeckRowMenuAction[]; onSelect: (action: DeckRowMenuAction) => void }) {
     const { l } = useI18n();
-    const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
     const scrollRef = useRef<ScrollView>(null);
     const heights = useRef({ viewport: 0, content: 0, flashed: false });
 
     // On a short phone the last rows sit below the fold. Flashing the indicator once says the list
-    // goes on; a row cut off at the card's edge alone left "Delete deck" looking absent.
+    // goes on; a row cut off at the sheet's edge alone left "Delete deck" looking absent.
     const flashWhenScrollable = () => {
         const { viewport, content, flashed } = heights.current;
         if (flashed || viewport === 0 || content <= viewport + 1) return;
@@ -27,66 +63,33 @@ export default function DeckRowMenu({ deckName, actions, onSelect }: {
     };
 
     return (
-        <View style={styles.card} accessibilityViewIsModal>
-            <Text style={styles.title}>{deckName.replaceAll('::', ' › ')}</Text>
-            <ScrollView
-                ref={scrollRef}
-                style={styles.scroll}
-                contentContainerStyle={styles.content}
-                onLayout={(event) => {
-                    heights.current.viewport = event.nativeEvent.layout.height;
-                    flashWhenScrollable();
-                }}
-                onContentSizeChange={(_, height) => {
-                    heights.current.content = height;
-                    flashWhenScrollable();
-                }}
-            >
-                {actions.map((action) => {
-                    const label = deckRowMenuLabel(action, l);
-                    return (
-                        <TouchableOpacity
-                            key={action}
-                            style={styles.item}
-                            onPress={() => onSelect(action)}
-                            accessibilityRole="button"
-                            accessibilityLabel={label}
-                        >
-                            <Text style={styles.itemText}>{label}</Text>
-                        </TouchableOpacity>
-                    );
-                })}
-            </ScrollView>
-        </View>
+        <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            onLayout={(event) => {
+                heights.current.viewport = event.nativeEvent.layout.height;
+                flashWhenScrollable();
+            }}
+            onContentSizeChange={(_, height) => {
+                heights.current.content = height;
+                flashWhenScrollable();
+            }}
+        >
+            <Card divided>
+                {actions.map((action) => (
+                    <MenuItem
+                        key={action}
+                        label={deckRowMenuLabel(action, l)}
+                        destructive={action === 'delete'}
+                        onPress={() => onSelect(action)}
+                    />
+                ))}
+            </Card>
+        </ScrollView>
     );
 }
 
-function createStyles(colors: ColorScheme) {
-    return StyleSheet.create({
-        card: {
-            width: '100%',
-            maxWidth: 520,
-            maxHeight: '88%',
-            zIndex: 1,
-            overflow: 'hidden',
-            backgroundColor: colors.badgeNewBg,
-            borderRadius: 28,
-            paddingTop: Spacing.xl,
-            ...Shadows.lg,
-        },
-        title: {
-            paddingHorizontal: 30,
-            paddingBottom: Spacing.sm,
-            fontSize: 20,
-            lineHeight: 27,
-            fontWeight: '500',
-            color: colors.textPrimary,
-        },
-        scroll: { flexGrow: 0 },
-        content: { paddingHorizontal: 30, paddingBottom: Spacing.xl },
-        // Twelve rows fit a 6.1" iPhone at the designed text size, and every row stays a full touch
-        // target; a larger text size grows the rows and the list scrolls.
-        item: { minHeight: 54, justifyContent: 'center' },
-        itemText: { fontSize: 17, lineHeight: 23, fontWeight: '400', color: colors.textPrimary },
-    });
-}
+const styles = StyleSheet.create({
+    // Hug a short list; give way to the sheet's height limit when the rows run long.
+    scroll: { flexGrow: 0 },
+});
