@@ -17,6 +17,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { getAllTags } from '../lib/noteManager';
+import { filterTagsForSearch, searchNamesKnownTag } from '../lib/tagPickerFilter';
 import { useI18n } from '../hooks/useI18n';
 
 function SearchIcon({ color, size = 20 }: { color: string; size?: number }) {
@@ -46,6 +47,7 @@ interface TagPickerModalProps {
     loadTags?: () => string[];
 }
 
+/** Which entries are the same tag. The search field matches by its own, looser rules (lib/tagPickerFilter.ts). */
 function tagKey(tag: string): string {
     return tag.normalize('NFC').toLowerCase();
 }
@@ -123,16 +125,15 @@ export default function TagPickerModal({
 
     const selectedKeys = useMemo(() => new Set(draftTags.map(tagKey)), [draftTags]);
     const trimmedQuery = searchText.trim();
-    const normalizedQuery = tagKey(trimmedQuery);
-    const filteredTags = useMemo(() => {
-        if (!normalizedQuery) return knownTags;
-        return knownTags.filter((tag) => tagKey(tag).includes(normalizedQuery));
-    }, [knownTags, normalizedQuery]);
+    const filteredTags = useMemo(
+        () => filterTagsForSearch(knownTags, trimmedQuery),
+        [knownTags, trimmedQuery],
+    );
 
-    const hasExactMatch = useMemo(() => {
-        if (!normalizedQuery) return true;
-        return knownTags.some((tag) => tagKey(tag) === normalizedQuery);
-    }, [knownTags, normalizedQuery]);
+    const hasExactMatch = useMemo(
+        () => searchNamesKnownTag(knownTags, trimmedQuery),
+        [knownTags, trimmedQuery],
+    );
 
     const allVisibleSelected = filteredTags.length > 0
         && filteredTags.every((tag) => selectedKeys.has(tagKey(tag)));
