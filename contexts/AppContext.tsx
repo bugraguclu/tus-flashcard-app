@@ -30,7 +30,7 @@ import { dbIndexAllCards } from '../lib/db';
 import { getSearchIndexCards } from '../lib/noteManager';
 import { invalidateSubjectsCache } from '../lib/subjects';
 import { rememberCurrentDeck } from '../lib/currentDeck';
-import { reconcileCatalogAccessWithInstall } from '../lib/catalogReconciliation';
+import { catalogAccessAfterInstallFailure, reconcileCatalogAccessWithInstall } from '../lib/catalogReconciliation';
 import { changesStudyQueue, DeferredSchedulingInvalidation, type CollectionChange } from '../lib/deferredInvalidation';
 
 /** Course + topic of the card currently on screen; drives the live sidebar highlight. */
@@ -217,12 +217,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             setCatalogAccess(next);
             return next;
         } catch (error) {
-            const failed: CatalogAccessState = {
-                ...next,
-                status: 'error',
-                hasAccess: getBkaCatalogTier() === 'full',
-                error: error instanceof Error ? error.message : String(error),
-            };
+            // A purchase the store granted stays granted when the cards fail to install; the
+            // catalog screen says so and offers the installation again.
+            const failed = catalogAccessAfterInstallFailure(next, error, getBkaCatalogTier() === 'full');
             setCatalogInstalled(isBkaCatalogInstalled());
             setCatalogAccess(failed);
             return failed;
