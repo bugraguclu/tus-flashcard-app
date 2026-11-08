@@ -27,12 +27,12 @@ import {
     type OcclusionShape,
 } from '../../lib/imageOcclusion';
 import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
-import { RedoGlyph, UndoGlyph } from '../drawing/drawingGlyphs';
 import { RotateLeftGlyph, RotateRightGlyph } from '../photo-editor/photoEditorGlyphs';
 import ScreenHeader from '../ScreenHeader';
 import { Button, IconButton, type ButtonVariant } from '../ui/Button';
 import { AppDialog } from '../ui/Dialog';
 import { TextField } from '../ui/Fields';
+import { RedoIcon, UndoIcon } from '../ui/icons';
 import OcclusionCanvas from './OcclusionCanvas';
 import { createOcclusionEditorStyles } from './occlusionEditorStyles';
 import { LABEL_COLOURS, MASK_COLOURS, removePolygonCorner, snappedTurn, turnShape, type OcclusionTool, type Point, type Size } from './occlusionEditorModel';
@@ -277,10 +277,10 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                         ))}
                     </View>
                     <IconButton accessibilityLabel={l('Geri al', 'Undo')} disabled={!history.past.length} onPress={() => step('undo')}>
-                        <UndoGlyph color={colors.textPrimary} size={22} />
+                        <UndoIcon color={colors.textPrimary} size={22} />
                     </IconButton>
                     <IconButton accessibilityLabel={l('Yinele', 'Redo')} disabled={!history.future.length} onPress={() => step('redo')}>
-                        <RedoGlyph color={colors.textPrimary} size={22} />
+                        <RedoIcon color={colors.textPrimary} size={22} />
                     </IconButton>
                 </View>
 

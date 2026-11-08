@@ -58,9 +58,9 @@ import { DrawingToolbar } from '../drawing/DrawingToolbar';
 import { MoreToolsSheet } from '../drawing/MoreToolsSheet';
 import { SelectionFrame } from '../drawing/SelectionFrame';
 import { TextEntrySheet } from '../drawing/TextEntrySheet';
-import { RedoGlyph, UndoGlyph } from '../drawing/drawingGlyphs';
 import { Button, IconButton } from '../ui/Button';
 import { LoadingState } from '../ui/Feedback';
+import { RedoIcon, UndoIcon } from '../ui/icons';
 import { EXPORT_MAX_DIMENSION, type ExportSurface } from './editorModel';
 import { AnnotationLayer, renderAnnotation } from './annotationRendering';
 import { rasterizeEditedPhotoWeb } from './webExport';
@@ -444,7 +444,7 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
     const inks = drawing.tool === 'highlighter' ? HIGHLIGHTER_INKS : drawing.tool === 'eraser' ? [] : PHOTO_PEN_INKS;
     const untouched = isPhotoEditUntouched(edit);
 
-    const historyButton = (label: string, enabled: boolean, onPress: () => void, Glyph: typeof UndoGlyph) => (
+    const historyButton = (label: string, enabled: boolean, onPress: () => void, Glyph: typeof UndoIcon) => (
         <IconButton accessibilityLabel={label} onPress={onPress} disabled={!enabled}>
             <Glyph color={colors.textPrimary} size={22} />
         </IconButton>
@@ -579,8 +579,8 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                     title={l('Fotoğraf', 'Photo')}
                     actions={(
                         <>
-                            {historyButton(l('Geri al', 'Undo'), history.canUndo, undo, UndoGlyph)}
-                            {historyButton(l('Yinele', 'Redo'), history.canRedo, redo, RedoGlyph)}
+                            {historyButton(l('Geri al', 'Undo'), history.canUndo, undo, UndoIcon)}
+                            {historyButton(l('Yinele', 'Redo'), history.canRedo, redo, RedoIcon)}
                             {historyButton(l('Orijinale dön', 'Revert to original'), !untouched, revertAll, RevertGlyph)}
                             <Button
                                 label={l('Ekle', 'Add')}

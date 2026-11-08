@@ -70,9 +70,10 @@ type PickedFile = {
 
 /**
  * iOS presents nothing new (a picker, the editor, the recorder) while a sheet's modal is still on
- * screen. A sheet slides away in 300 ms, so what was chosen in it runs once it has gone.
+ * screen, so what was chosen in a sheet runs from the sheet's onDismiss. For the attach menu a timer
+ * covers a dismissal that is not reported; the sheet's own exit gives up at 550 ms.
  */
-const SHEET_GONE_MS = 450;
+const MENU_GONE_FALLBACK_MS = 700;
 
 /** The paperclip on each field's label row. */
 function PaperclipIcon({ color }: { color: string }) {
@@ -109,6 +110,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     const pendingActionRef = useRef<(() => void) | null>(null);
     const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    /** Both sheets' onDismiss: whatever was chosen in the sheet that has just gone. */
     const runPendingAction = () => {
         if (dismissTimerRef.current) {
             clearTimeout(dismissTimerRef.current);
@@ -119,23 +121,20 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         action?.();
     };
 
-    const runAfterSheetCloses = (action: () => void) => {
-        if (Platform.OS !== 'ios') {
-            action();
-            return;
-        }
-        pendingActionRef.current = action;
-        dismissTimerRef.current = setTimeout(runPendingAction, SHEET_GONE_MS);
-    };
-
     const closeMenu = () => {
         pendingActionRef.current = null;
         setMenuVisible(false);
     };
 
     const runAfterMenuClose = (action: () => void) => {
+        if (Platform.OS === 'ios') {
+            pendingActionRef.current = action;
+            setMenuVisible(false);
+            dismissTimerRef.current = setTimeout(runPendingAction, MENU_GONE_FALLBACK_MS);
+            return;
+        }
         setMenuVisible(false);
-        runAfterSheetCloses(action);
+        action();
     };
 
     const openMenu = () => {
@@ -268,7 +267,12 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         const photo = pickedPhoto;
         if (!photo) return;
         setPickedPhoto(null);
-        runAfterSheetCloses(() => setPhotoToEdit(photo));
+        // The editor is a modal of its own: on iOS it opens once the photo sheet has gone.
+        if (Platform.OS === 'ios') {
+            pendingActionRef.current = () => setPhotoToEdit(photo);
+            return;
+        }
+        setPhotoToEdit(photo);
     };
 
     /**
@@ -397,6 +401,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 onClose={closeMenu}
                 title={l('Ek ekle', 'Add Attachment')}
                 backdropLabel={l('Ek menüsünü kapat', 'Close attachment menu')}
+                onDismiss={runPendingAction}
             >
                 <Card divided>
                     {options.map((opt) => (
@@ -411,6 +416,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
                 onClose={() => setPickedPhoto(null)}
                 title={l('Fotoğrafı nasıl ekleyelim?', 'How should the photo be added?')}
                 backdropLabel={l('Fotoğraf seçimini kapat', 'Close photo options')}
+                onDismiss={runPendingAction}
             >
                 <Card divided>
                     <MenuItem

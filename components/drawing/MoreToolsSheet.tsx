@@ -16,10 +16,12 @@ interface MoreToolsSheetProps {
     tools?: (DrawingShapeTool | 'image')[];
     onPick: (tool: DrawingShapeTool | 'image') => void;
     onClose: () => void;
+    /** Runs once the sheet has gone, e.g. to open the photo library for the picture tool. */
+    onDismiss?: () => void;
 }
 
 /** The tools that do not fit on the bar: arrow, boxes, cover-up and a picture from the library. */
-export function MoreToolsSheet({ visible, tool, tools = DRAWING_MORE_TOOLS, onPick, onClose }: MoreToolsSheetProps) {
+export function MoreToolsSheet({ visible, tool, tools = DRAWING_MORE_TOOLS, onPick, onClose, onDismiss }: MoreToolsSheetProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
 
@@ -34,7 +36,9 @@ export function MoreToolsSheet({ visible, tool, tools = DRAWING_MORE_TOOLS, onPi
             onClose={onClose}
             title={l('Diğer araçlar', 'More Tools')}
             backdropLabel={l('Diğer araçları kapat', 'Close more tools')}
+            onDismiss={onDismiss}
         >
+            {/* One tool is in hand at a time: each row is an option of a single choice. */}
             <Card divided>
                 {tools.map((id) => {
                     const Glyph = DRAWING_TOOL_GLYPHS[id];
@@ -46,6 +50,7 @@ export function MoreToolsSheet({ visible, tool, tools = DRAWING_MORE_TOOLS, onPi
                             hint={captions[id]}
                             icon={<Glyph color={selected ? colors.accent : colors.textMuted} size={22} />}
                             checked={selected}
+                            exclusive
                             onPress={() => onPick(id)}
                         />
                     );

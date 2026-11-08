@@ -89,11 +89,13 @@ export function AdjustPanel({ tab, onTabChange, adjustments, onFilter, onSlide, 
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.filters}
+                    accessibilityRole="radiogroup"
                     accessibilityLabel={l('Hazır görünümler', 'Ready-made looks')}
                 >
                     {PHOTO_FILTERS.map(({ id }) => (
                         <Chip
                             key={id}
+                            role="radio"
                             label={filterLabel(id)}
                             selected={id === activeFilter}
                             onPress={() => onFilter(id)}

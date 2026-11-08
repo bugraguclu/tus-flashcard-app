@@ -37,6 +37,7 @@ import {
 import PaperSwatch, { pageColorLabel, paperLabel } from '../PaperSwatch';
 import ScreenHeader from '../ScreenHeader';
 import { Button, IconButton } from '../ui/Button';
+import { ChevronDownIcon, RedoIcon, TrashIcon, UndoIcon } from '../ui/icons';
 import { EXPORT_MAX_DIMENSION, makeId, type ExportSurface } from '../photo-editor/editorModel';
 import { AnnotationLayer, renderAnnotation } from '../photo-editor/annotationRendering';
 import { rasterizeBlankCanvasWeb } from '../photo-editor/webExport';
@@ -46,7 +47,6 @@ import { MoreToolsSheet } from './MoreToolsSheet';
 import { PageOptionsSheet, shapeLabel } from './PageOptionsSheet';
 import { SelectionFrame } from './SelectionFrame';
 import { TextEntrySheet } from './TextEntrySheet';
-import { ClearGlyph, PageGlyph, RedoGlyph, UndoGlyph } from './drawingGlyphs';
 import { pickDrawingPicture } from './pickDrawingPicture';
 import { useDrawingGestures, type DrawingBrush } from './useDrawingGestures';
 
@@ -61,6 +61,12 @@ interface DrawingPadModalProps {
 type PadSnapshot = { annotations: PhotoAnnotation[]; setup: BlankCanvasSetup };
 
 const HISTORY_LIMIT = 50;
+/**
+ * iOS presents no picker while the More sheet's modal is still on screen, so the photo library
+ * opens from the sheet's onDismiss. The timer covers a dismissal that is not reported; the sheet's
+ * own exit gives up at 550 ms.
+ */
+const SHEET_GONE_FALLBACK_MS = 700;
 const DEFAULT_SIZES: Record<DrawingTool, DrawingSize> = {
     pen: 1, highlighter: 1, eraser: 1, text: 1, arrow: 1, rect: 1, ellipse: 1, cover: 1, image: 1,
 };
@@ -310,6 +316,20 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
         }
     };
 
+    // The picture tool waits here until the More sheet has gone.
+    const picturePendingRef = useRef(false);
+    const pictureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const addPendingPicture = () => {
+        if (pictureTimerRef.current) {
+            clearTimeout(pictureTimerRef.current);
+            pictureTimerRef.current = null;
+        }
+        if (!picturePendingRef.current) return;
+        picturePendingRef.current = false;
+        void addPicture();
+    };
+
     const pickMoreTool = (next: DrawingShapeTool | 'image') => {
         setMoreSheet(false);
         if (next !== 'image') {
@@ -317,7 +337,12 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
             return;
         }
         // The picker cannot be presented while the sheet is still leaving the screen.
-        setTimeout(() => { void addPicture(); }, Platform.OS === 'ios' ? 450 : 0);
+        if (Platform.OS !== 'ios') {
+            setTimeout(() => { void addPicture(); }, 0);
+            return;
+        }
+        picturePendingRef.current = true;
+        pictureTimerRef.current = setTimeout(addPendingPicture, SHEET_GONE_FALLBACK_MS);
     };
 
     const editingText = textEntry && 'id' in textEntry
@@ -456,7 +481,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
     const showSelection = selectedObject && (tool === 'text' || tool === 'image');
 
     // The round buttons float over the page, so they keep a surface and a shadow of their own.
-    const historyButton = (label: string, enabled: boolean, onPress: () => void, Glyph: typeof UndoGlyph) => (
+    const historyButton = (label: string, enabled: boolean, onPress: () => void, Glyph: typeof UndoIcon) => (
         <IconButton accessibilityLabel={label} onPress={onPress} disabled={!enabled} style={styles.historyButton}>
             <Glyph color={colors.textPrimary} size={20} />
         </IconButton>
@@ -486,20 +511,21 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
 
                 <View style={styles.historyBar}>
                     {/* The page line opens the paper, colour and shape. It sits here rather than as
-                        the header's subtitle, which cannot be tapped. */}
+                        the header's subtitle, which cannot be tapped; like any value that opens a
+                        list of options, it ends in a down chevron. */}
                     <Button
                         label={pageSummary}
                         variant="plain"
                         size="compact"
-                        icon={<PageGlyph color={colors.accent} size={18} />}
+                        trailingIcon={<ChevronDownIcon color={colors.accent} size={14} />}
                         onPress={() => setPageSheet(true)}
                         numberOfLines={1}
                         accessibilityLabel={l(`Sayfa seçenekleri: ${pageSummary}`, `Page options: ${pageSummary}`)}
                         style={styles.pageButton}
                     />
-                    {historyButton(l('Geri al', 'Undo'), undoStack.length > 0, undo, UndoGlyph)}
-                    {historyButton(l('Yinele', 'Redo'), redoStack.length > 0, redo, RedoGlyph)}
-                    {historyButton(l('Sayfayı temizle', 'Clear page'), !nothingDrawn, clear, ClearGlyph)}
+                    {historyButton(l('Geri al', 'Undo'), undoStack.length > 0, undo, UndoIcon)}
+                    {historyButton(l('Yinele', 'Redo'), redoStack.length > 0, redo, RedoIcon)}
+                    {historyButton(l('Sayfayı temizle', 'Clear page'), !nothingDrawn, clear, TrashIcon)}
                 </View>
 
                 <View style={styles.stage} onLayout={onStageLayout}>
@@ -577,6 +603,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                     tool={tool}
                     onPick={pickMoreTool}
                     onClose={() => setMoreSheet(false)}
+                    onDismiss={addPendingPicture}
                 />
                 <TextEntrySheet
                     visible={textEntry !== null}

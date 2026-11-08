@@ -52,8 +52,8 @@ import {
     shareWhiteboardImage,
     useWhiteboardPageCapture,
 } from './whiteboardSave';
-import { EraserGlyph, PenGlyph, RedoGlyph, UndoGlyph } from './drawing/drawingGlyphs';
-import { CheckIcon, CloseIcon } from './ui/icons';
+import { EraserGlyph, PenGlyph } from './drawing/drawingGlyphs';
+import { CheckIcon, CloseIcon, RedoIcon, UndoIcon } from './ui/icons';
 import { DISABLED_OPACITY, Radius } from './ui/tokens';
 
 export interface WhiteboardHandle {
@@ -559,7 +559,7 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
                         accessibilityLabel={l('Geri al', 'Undo')}
                         accessibilityState={{ disabled: !undoable }}
                     >
-                        <UndoGlyph color={colors.textPrimary} size={22} />
+                        <UndoIcon color={colors.textPrimary} size={22} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.toolButton, !redoable && styles.toolButtonDisabled]}
@@ -570,7 +570,7 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
                         accessibilityLabel={l('Yinele', 'Redo')}
                         accessibilityState={{ disabled: !redoable }}
                     >
-                        <RedoGlyph color={colors.textPrimary} size={22} />
+                        <RedoIcon color={colors.textPrimary} size={22} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.toolButton, !clearable && styles.toolButtonDisabled]}

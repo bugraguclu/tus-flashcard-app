@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from './AppText';
 import {
@@ -44,8 +44,10 @@ interface AudioRecordModalProps {
     onSaved: (filename: string) => void;
 }
 
-/** The sheet slides away in 300 ms; the recorder is let go once it has gone. */
-const SHEET_GONE_MS = 600;
+interface RecorderSheetProps extends AudioRecordModalProps {
+    /** The sheet has slid away and its modal is gone, so the recorder can be let go. */
+    onDismissed: () => void;
+}
 
 /** A voice note: one microphone needs one channel, which halves the file of the stereo preset. */
 const VOICE_RECORDING: RecordingOptions = {
@@ -123,14 +125,16 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
             setMounted(true);
             return;
         }
-        const timer = setTimeout(() => setMounted(false), SHEET_GONE_MS);
+        // iOS reports the end of the slide through onDismiss; the timer covers a dismissal it misses.
+        const timer = setTimeout(() => setMounted(false), Platform.OS === 'ios' ? 600 : 0);
         return () => clearTimeout(timer);
     }, [visible]);
+    const dismissed = useCallback(() => setMounted(false), []);
     if (!visible && !mounted) return null;
-    return <RecorderSheet visible={visible} onClose={onClose} onSaved={onSaved} />;
+    return <RecorderSheet visible={visible} onClose={onClose} onSaved={onSaved} onDismissed={dismissed} />;
 }
 
-function RecorderSheet({ visible, onClose, onSaved }: AudioRecordModalProps) {
+function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheetProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -505,6 +509,7 @@ function RecorderSheet({ visible, onClose, onSaved }: AudioRecordModalProps) {
             closeButton
             swipeEnabled={phase === 'idle' && !busy}
             backdropLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
+            onDismiss={onDismissed}
         >
             <View style={styles.body}>
                 <Text style={styles.clock} accessibilityRole="timer">{formatRecordingTime(clockMs)}</Text>

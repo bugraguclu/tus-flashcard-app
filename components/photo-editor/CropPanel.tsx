@@ -60,11 +60,13 @@ export function CropPanel({ aspect, onAspectChange, onTurn, onMirror, onReset, c
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.aspects}
+                accessibilityRole="radiogroup"
                 accessibilityLabel={l('Kırpma oranı', 'Crop ratio')}
             >
                 {PHOTO_CROP_ASPECTS.map((id) => (
                     <Chip
                         key={id}
+                        role="radio"
                         label={aspectLabel(id)}
                         selected={id === aspect}
                         onPress={() => onAspectChange(id)}

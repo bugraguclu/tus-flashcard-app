@@ -24,18 +24,11 @@ export function EraserGlyph(props: GlyphProps) {
     return <LineGlyph {...props} d="M8.5 20 3.7 15.2a1.5 1.5 0 0 1 0-2.1l9.4-9.4a1.5 1.5 0 0 1 2.1 0l5.1 5.1a1.5 1.5 0 0 1 0 2.1L12 19.2M8.5 20H20M8 9l7 7" />;
 }
 
-/** Undo and redo on every drawing surface: the pad, the photo editor, Image Occlusion and the whiteboard. */
-export function UndoGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />;
-}
-
-export function RedoGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="m15 14 5-5-5-5m5 5H9.5a5.5 5.5 0 0 0 0 11H13" />;
-}
-
-export function ClearGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="M4 7h16M9.5 7V4.5h5V7M6 7l1 12a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8l1-12M10 11v6m4-6v6" />;
-}
+/**
+ * The bin a selected label or picture is deleted with. The kit's `TrashIcon` draws it; the old name
+ * is kept for the selection frame. Undo and redo are the kit's `UndoIcon` and `RedoIcon`.
+ */
+export { TrashIcon as ClearGlyph } from '../ui/icons';
 
 export function TextGlyph(props: GlyphProps) {
     return <LineGlyph {...props} d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6" />;
@@ -63,9 +56,4 @@ export function CoverGlyph({ color, size = 22 }: GlyphProps) {
 
 export function ImageGlyph(props: GlyphProps) {
     return <LineGlyph {...props} d="M4.5 5.5h15v13h-15zM4.5 15.5l4-4 3.5 3.5 2.5-2.5 5 5M15 9.5h.01" />;
-}
-
-/** The sheet the drawing is made on: opens the paper, page colour and shape. */
-export function PageGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="M7 3.5h10A1.5 1.5 0 0 1 18.5 5v14a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5ZM8.5 8.5h7m-7 3.5h7m-7 3.5h4" />;
 }
