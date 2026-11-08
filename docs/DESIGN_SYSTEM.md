@@ -49,7 +49,7 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | Rows | `ListRow` (opens something; `selected` makes it an option of a single-choice list, `expanded` a disclosure), `SwitchRow`, `ValueRow` (label and value or control), `SelectRow` (label and chosen option) | `components/ui/Rows.tsx` |
 | Switch | `AppSwitch` | `components/ui/Rows.tsx` |
 | Chips, badges, segmented control, checkboxes, chosen-row tick | `Chip` (`role` button, radio or checkbox), `Badge`, `SegmentedControl`, `Checkbox` / `CheckRow` (`mixed` for a partly ticked group), `SelectedMark` | `components/ui/Choice.tsx` |
-| Text entry | `TextField`, `SearchField` | `components/ui/Fields.tsx` |
+| Text entry | `TextField` (`label` for a caption above it, `monospace` for code), `SearchField` | `components/ui/Fields.tsx` |
 | Empty, loading, notices, progress | `EmptyState`, `LoadingState`, `Notice` (`info`, `warning`, `danger`, `success`), `ProgressBar` | `components/ui/Feedback.tsx` |
 | Bottom sheet | `AppSheet` (title, subtitle, optional close button, keyboard lift, overlay picker) | `components/ui/Sheet.tsx` |
 | Centred form, picker or explanation | `AppDialog` | `components/ui/Dialog.tsx` |
@@ -87,5 +87,7 @@ The screens used to carry their own small kits. They map onto the parts like thi
   direct children, so pass rows directly (a fragment counts as one child).
 - Sheets are `AppSheet` over `BottomSheetModal`; dialogs are `AppDialog`; neither draws its own
   backdrop colour.
-- Disabled controls fade with `DISABLED_OPACITY` and say so with `accessibilityState`.
+- Disabled controls fade with `DISABLED_OPACITY`. Every state a control has (disabled, checked,
+  selected, expanded, busy) is passed both as `accessibilityState` and as the matching `aria-*`
+  prop: react-native-web reads only the `aria-*` props, iOS reads both.
 - Everything tappable is at least 44 × 44 points (hit slop may make up a compact control's height).

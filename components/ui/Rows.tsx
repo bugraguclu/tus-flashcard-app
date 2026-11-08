@@ -131,6 +131,9 @@ export function ListRow({
                 ...(choice ? { checked: selected } : {}),
                 ...(disclosure ? { expanded } : {}),
             }}
+            aria-disabled={disabled}
+            aria-checked={choice ? selected : undefined}
+            aria-expanded={expanded}
         >
             {content}
         </TouchableOpacity>
@@ -157,6 +160,8 @@ export function SwitchRow({ title, summary, value, onValueChange, disabled = fal
             accessibilityRole="switch"
             accessibilityLabel={spokenLabel(title, undefined, summary)}
             accessibilityState={{ checked: value, disabled }}
+            aria-checked={value}
+            aria-disabled={disabled}
         >
             <RowText title={title} summary={summary} />
             {/* The row takes the tap: a switch that also took it would toggle twice on web. */}
@@ -221,6 +226,8 @@ export function SelectRow({ label, value, onPress, summary, disabled = false, ac
             accessibilityLabel={accessibilityLabel ?? `${label}, ${value}`}
             accessibilityHint={accessibilityHint}
             accessibilityState={expanded === undefined ? { disabled } : { disabled, expanded }}
+            aria-disabled={disabled}
+            aria-expanded={expanded}
         >
             <View style={styles.copy}>
                 <Text style={[Type.body, { color: colors.textPrimary }]}>{label}</Text>

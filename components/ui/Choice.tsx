@@ -50,6 +50,9 @@ export function Chip({ label, selected = false, onPress, onRemove, removeLabel, 
                 accessibilityRole={role}
                 accessibilityLabel={accessibilityLabel ?? label}
                 accessibilityState={role === 'button' ? { selected, disabled } : { checked: selected, disabled }}
+                aria-selected={role === 'button' ? selected : undefined}
+                aria-checked={role === 'button' ? undefined : selected}
+                aria-disabled={disabled}
             >
                 {icon}
                 <Text style={[styles.chipText, { color: tint }, selected && styles.chipTextSelected]} numberOfLines={1}>{label}</Text>
@@ -134,6 +137,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
                         accessibilityRole="tab"
                         accessibilityLabel={option.accessibilityLabel ?? option.label}
                         accessibilityState={{ selected }}
+                        aria-selected={selected}
                     >
                         <Text
                             style={[styles.segmentText, { color: selected ? colors.textPrimary : colors.textSecondary }, selected && styles.segmentTextSelected]}
@@ -183,6 +187,8 @@ export function Checkbox({ checked, mixed = false, onChange, accessibilityLabel,
             accessibilityRole="checkbox"
             accessibilityLabel={accessibilityLabel}
             accessibilityState={{ checked: checked ? true : mixed ? 'mixed' : false, disabled }}
+            aria-checked={checked ? true : mixed ? 'mixed' : false}
+            aria-disabled={disabled}
         >
             {box}
         </TouchableOpacity>
@@ -210,6 +216,8 @@ export function CheckRow({ label, summary, checked, mixed = false, onChange, dis
             accessibilityRole="checkbox"
             accessibilityLabel={label}
             accessibilityState={{ checked: checked ? true : mixed ? 'mixed' : false, disabled }}
+            aria-checked={checked ? true : mixed ? 'mixed' : false}
+            aria-disabled={disabled}
         >
             <Checkbox checked={checked} mixed={mixed} />
             <View style={styles.checkCopy}>

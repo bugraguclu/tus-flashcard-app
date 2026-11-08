@@ -53,6 +53,7 @@ export function Stepper({
                 accessibilityRole="button"
                 accessibilityLabel={kind === 'increment' ? incrementLabel : decrementLabel}
                 accessibilityState={{ disabled: !enabled }}
+                aria-disabled={!enabled}
             >
                 {kind === 'increment'
                     ? <PlusIcon color={colors.onAccent} size={18} />

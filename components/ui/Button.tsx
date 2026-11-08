@@ -99,6 +99,8 @@ export const Button = forwardRef<View, ButtonProps>(function Button({
             accessibilityLabel={accessibilityLabel ?? label}
             accessibilityHint={accessibilityHint}
             accessibilityState={{ disabled: inactive, busy }}
+            aria-disabled={inactive}
+            aria-busy={busy}
         >
             {busy ? (
                 <ActivityIndicator size="small" color={labelColor} />
@@ -164,6 +166,9 @@ export function IconButton({
                 ...(selected === undefined ? {} : { selected }),
                 ...(expanded === undefined ? {} : { expanded }),
             }}
+            aria-disabled={disabled}
+            aria-selected={selected}
+            aria-expanded={expanded}
         >
             {children}
         </TouchableOpacity>

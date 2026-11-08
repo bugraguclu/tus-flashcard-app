@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { Platform, type StyleProp, StyleSheet, type TextInputProps, TouchableOpacity, View, type ViewStyle } from 'react-native';
-import { TextInput } from '../AppText';
+import { Text, TextInput } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { CloseIcon, SearchIcon } from './icons';
 import { HIT_TARGET, Radius } from './tokens';
@@ -12,14 +12,16 @@ type FieldProps = Omit<TextInputProps, 'style'> & {
     invalid?: boolean;
     /** Draws code (a card template, CSS) in a fixed-width face. */
     monospace?: boolean;
+    /** A caption above the field naming what goes in it; `style` then lays out the pair. */
+    label?: string;
 };
 
 /** The one text field: single or multi-line, filled with the input tone and edged by a hairline. */
 const MONOSPACE = Platform.select({ ios: 'Menlo', default: 'monospace' });
 
-export const TextField = forwardRef<TextInput, FieldProps>(function TextField({ style, invalid = false, monospace = false, multiline, ...props }, ref) {
+export const TextField = forwardRef<TextInput, FieldProps>(function TextField({ style, invalid = false, monospace = false, label, multiline, ...props }, ref) {
     const colors = useThemeColors();
-    return (
+    const field = (
         <TextInput
             ref={ref}
             placeholderTextColor={colors.textMuted}
@@ -31,9 +33,17 @@ export const TextField = forwardRef<TextInput, FieldProps>(function TextField({ 
                 multiline && styles.multiline,
                 monospace && { fontFamily: MONOSPACE },
                 { backgroundColor: colors.bgInput, borderColor: invalid ? colors.danger : colors.border, color: colors.textPrimary },
-                style as object,
+                label ? null : style as object,
             ]}
+            accessibilityLabel={props.accessibilityLabel ?? label}
         />
+    );
+    if (!label) return field;
+    return (
+        <View style={[styles.labelled, style]}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>
+            {field}
+        </View>
     );
 });
 
@@ -94,6 +104,8 @@ const styles = StyleSheet.create({
         fontSize: FontSize.md,
     },
     multiline: { minHeight: 120, textAlignVertical: 'top', paddingTop: Spacing.md },
+    labelled: { gap: Spacing.xs + 2 },
+    label: { fontSize: FontSize.sm, fontWeight: '700' },
     search: {
         minHeight: HIT_TARGET,
         flexDirection: 'row',

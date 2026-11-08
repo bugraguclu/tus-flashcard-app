@@ -118,6 +118,9 @@ export function MenuItem({
                 ...(checked === undefined ? {} : { checked }),
                 ...(expanded === undefined ? {} : { expanded }),
             }}
+            aria-disabled={disabled}
+            aria-checked={checked}
+            aria-expanded={expanded}
         >
             {icon ? <View style={styles.icon}>{icon}</View> : null}
             <View style={styles.copy}>
