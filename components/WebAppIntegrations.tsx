@@ -4,6 +4,7 @@ import { Text } from './AppText';
 import { useRouter } from 'expo-router';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
+import { returnToDeckList } from '../lib/backNavigation';
 import { alert } from '../lib/confirm';
 import { inferImportFileType } from '../lib/importFile';
 import { onStudyReminderOpened } from '../lib/studyNotifications';
@@ -41,7 +42,7 @@ export default function WebAppIntegrations() {
         registerWebServiceWorker();
     }, []);
 
-    useEffect(() => onStudyReminderOpened(() => router.replace('/decks' as never)), [router]);
+    useEffect(() => onStudyReminderOpened(() => returnToDeckList(router)), [router]);
 
     useEffect(() => {
         const launchQueue = (window as unknown as { launchQueue?: LaunchQueue }).launchQueue;

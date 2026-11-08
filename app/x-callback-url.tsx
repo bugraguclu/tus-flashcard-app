@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
 import { externalAppUrlFromQuery, parseExternalAppUrl } from '../lib/externalLinking';
 import { externalActionRoute } from '../lib/externalActionRoute';
+import { returnToDeckList } from '../lib/backNavigation';
 
 /**
  * The web address of TusAnkiM's x-callback automation: `/x-callback-url?action=addnote&type=…`.
@@ -11,7 +12,7 @@ import { externalActionRoute } from '../lib/externalActionRoute';
  * An iPhone receives the same requests as `tusankim://x-callback-url/<action>?…`, handled in
  * `app/_layout.tsx`. A browser cannot own that scheme, so the site answers here instead; the query
  * is read by the same parser and opens the same screen. An unknown or incomplete request lands on
- * the deck list rather than on an error.
+ * the deck list already beneath (or, opened on its own, a new one) rather than on an error.
  */
 export default function ExternalActionScreen() {
     const router = useRouter();
@@ -22,7 +23,8 @@ export default function ExternalActionScreen() {
         const url = externalAppUrlFromQuery(params);
         const action = url ? parseExternalAppUrl(url) : null;
         const route = action ? externalActionRoute(action) : null;
-        router.replace((route ?? '/decks') as never);
+        if (route) router.replace(route as never);
+        else returnToDeckList(router);
         // The request is read once, when the address is opened.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

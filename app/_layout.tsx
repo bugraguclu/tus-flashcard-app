@@ -42,6 +42,7 @@ import WebAppIntegrations from '../components/WebAppIntegrations';
 import { TextScaleProvider } from '../components/AppText';
 import { textSizeMultiplier } from '../lib/textScale';
 import { userFacingErrorMessage } from '../lib/userFacingError';
+import { returnToDeckList } from '../lib/backNavigation';
 // Imported here, ahead of the router, so its `popstate` listener is added before the router's.
 import '../lib/webPopStateGuard';
 
@@ -629,7 +630,7 @@ function AppStack() {
     // The web build takes reminder clicks in WebAppIntegrations, which is mounted below.
     useEffect(() => {
         if (Platform.OS !== 'ios') return undefined;
-        return onStudyReminderOpened(() => router.replace('/decks' as any));
+        return onStudyReminderOpened(() => returnToDeckList(router));
     }, [router]);
 
     // A Kronometre block reminder brings the stopwatch to the front, unless it already is.

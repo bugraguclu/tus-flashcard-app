@@ -5,13 +5,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Spacing, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
+import { returnToDeckList } from '../lib/backNavigation';
 
 /**
  * Shown for an address no screen answers: a mistyped or outdated web link, or an unknown deep link.
  *
  * It replaces Expo Router's built-in page, which is English-only, ignores the app theme and links
- * to the developer route map. The only way on is the deck list, and it replaces the bad address so
- * the browser's Back button does not return to it.
+ * to the developer route map. The only way on is the deck list the app already has: this page is
+ * closed (or, opened on its own, swapped for the deck list), so the browser's Back button does not
+ * return to the bad address.
  */
 export default function NotFoundScreen() {
     const { l } = useI18n();
@@ -31,7 +33,7 @@ export default function NotFoundScreen() {
                 </Text>
                 <TouchableOpacity
                     style={styles.primaryButton}
-                    onPress={() => router.replace('/decks')}
+                    onPress={() => returnToDeckList(router)}
                     accessibilityRole="button"
                 >
                     <Text style={styles.primaryButtonText}>{l('Destelere dön', 'Back to Decks')}</Text>
