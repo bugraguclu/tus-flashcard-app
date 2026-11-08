@@ -5,6 +5,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { localDateToYmd, ymdToLocalDate } from '../../lib/studyPlans';
+import { ValueRow } from '../ui/Rows';
 
 /**
  * Building blocks of the study tools' screens (analysis, planning, clearing): a titled card with
@@ -33,25 +34,26 @@ export function ToolRow({ label, value, children, last = false }: { label: strin
     );
 }
 
-export function DateField({ label, ymd, onChange, minimumYmd, last }: {
+export function DateField({ label, ymd, onChange, minimumYmd }: {
     label: string;
     ymd: string;
     onChange: (ymd: string) => void;
     minimumYmd?: string;
-    last?: boolean;
 }) {
     const { localeTag } = useI18n();
+    const colors = useThemeColors();
     return (
-        <ToolRow label={label} last={last}>
+        <ValueRow label={label}>
             <DateTimePicker
                 value={ymdToLocalDate(ymd)}
                 mode="date"
                 display="compact"
                 locale={localeTag}
+                accentColor={colors.accent}
                 minimumDate={minimumYmd ? ymdToLocalDate(minimumYmd) : undefined}
                 onChange={(_event, value) => { if (value) onChange(localDateToYmd(value)); }}
             />
-        </ToolRow>
+        </ValueRow>
     );
 }
 

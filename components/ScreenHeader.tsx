@@ -1,22 +1,40 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { FontSize, Spacing, useThemeColors } from '../constants/theme';
-import HeaderBackIcon from './HeaderBackIcon';
+import { IconButton } from './ui/Button';
+import { BackIcon, CloseIcon } from './ui/icons';
+import { Type } from './ui/tokens';
 
 interface ScreenHeaderProps {
     backAccessibilityLabel: string;
     onBack: () => void;
     title: string;
-    /** Icon buttons on the right; without them an empty slot keeps the title's position. */
+    /** A second line under the title, e.g. the deck the screen is about. */
+    subtitle?: string;
+    /**
+     * `back` (the arrow) for a screen pushed onto the stack; `close` (×) for a full-screen form or
+     * workflow presented over another screen.
+     */
+    leading?: 'back' | 'close';
+    /** Icon buttons or a compact button on the right; without them a spacer keeps the title placed. */
     actions?: React.ReactNode;
-    /** A coloured header (the Kronometre's): its background, and the back arrow and title on it. */
+    /** A coloured header (the Kronometre's): its background, and the arrow and title on it. */
     tint?: { background: string; foreground: string };
 }
 
-/** Shared header for full-screen utility workflows such as Browse, Import and Export. */
-export default function ScreenHeader({ backAccessibilityLabel, onBack, title, actions, tint }: ScreenHeaderProps) {
+/** The one header of every routed screen and full-screen form. */
+export default function ScreenHeader({
+    backAccessibilityLabel,
+    onBack,
+    title,
+    subtitle,
+    leading = 'back',
+    actions,
+    tint,
+}: ScreenHeaderProps) {
     const colors = useThemeColors();
+    const foreground = tint?.foreground ?? colors.textPrimary;
 
     return (
         <View
@@ -27,18 +45,21 @@ export default function ScreenHeader({ backAccessibilityLabel, onBack, title, ac
                     : { backgroundColor: colors.bgCard, borderBottomColor: colors.border },
             ]}
         >
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={onBack}
-                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel={backAccessibilityLabel}
-            >
-                <HeaderBackIcon color={tint?.foreground ?? colors.accent} />
-            </TouchableOpacity>
-            <Text style={[styles.title, { color: tint?.foreground ?? colors.textPrimary }]} numberOfLines={1}>
-                {title}
-            </Text>
+            <IconButton accessibilityLabel={backAccessibilityLabel} onPress={onBack} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+                {leading === 'close'
+                    ? <CloseIcon color={tint?.foreground ?? colors.textSecondary} />
+                    : <BackIcon color={tint?.foreground ?? colors.accent} />}
+            </IconButton>
+            <View style={styles.titleBlock}>
+                <Text style={[Type.title, { color: foreground }]} numberOfLines={1} accessibilityRole="header">
+                    {title}
+                </Text>
+                {subtitle ? (
+                    <Text style={[styles.subtitle, { color: tint ? foreground : colors.textMuted }]} numberOfLines={1}>
+                        {subtitle}
+                    </Text>
+                ) : null}
+            </View>
             {actions ? <View style={styles.actions}>{actions}</View> : <View style={styles.spacer} />}
         </View>
     );
@@ -52,17 +73,7 @@ interface HeaderIconButtonProps {
 
 /** A 44-point icon button for the `actions` slot of `ScreenHeader`. */
 export function HeaderIconButton({ accessibilityLabel, onPress, children }: HeaderIconButtonProps) {
-    return (
-        <TouchableOpacity
-            style={styles.iconButton}
-            onPress={onPress}
-            hitSlop={{ top: 4, right: 4, bottom: 4, left: 4 }}
-            accessibilityRole="button"
-            accessibilityLabel={accessibilityLabel}
-        >
-            {children}
-        </TouchableOpacity>
-    );
+    return <IconButton accessibilityLabel={accessibilityLabel} onPress={onPress}>{children}</IconButton>;
 }
 
 const styles = StyleSheet.create({
@@ -73,9 +84,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.sm,
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
-    backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    title: { flex: 1, fontSize: FontSize.xl, fontWeight: '800' },
+    titleBlock: { flex: 1, minWidth: 0, paddingVertical: Spacing.xs },
+    subtitle: { fontSize: FontSize.sm },
     spacer: { width: 44 },
     actions: { flexDirection: 'row', alignItems: 'center' },
-    iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

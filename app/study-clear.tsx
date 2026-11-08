@@ -4,7 +4,11 @@ import { Text } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
-import { DateField, ToolButton, ToolRow, ToolSection } from '../components/stopwatch/StudyToolControls';
+import { DateField } from '../components/stopwatch/StudyToolControls';
+import { Button } from '../components/ui/Button';
+import { Section } from '../components/ui/Card';
+import { Notice } from '../components/ui/Feedback';
+import { ValueRow } from '../components/ui/Rows';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
@@ -119,67 +123,62 @@ export default function StudyClearScreen() {
                 onBack={() => goBackOr(router)}
             />
             <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxl }]}>
-                <ToolSection title={l('Tarih Aralığı', 'Date Range')}>
+                <Section label={l('Tarih Aralığı', 'Date Range')}>
                     <DateField label={l('Başlangıç', 'From')} ymd={fromYmd} onChange={setFromYmd} />
-                    <DateField label={l('Bitiş', 'Through')} ymd={throughYmd} onChange={setThroughYmd} last />
-                </ToolSection>
+                    <DateField label={l('Bitiş', 'Through')} ymd={throughYmd} onChange={setThroughYmd} />
+                </Section>
 
-                <ToolSection
-                    title={l('Temizlenecek Çalışmalar', 'Sessions to Clear')}
-                    footer={l(
+                {!valid ? (
+                    <Notice tone="danger">{l('Bitiş tarihi başlangıç tarihinden önce olamaz.', 'The end date cannot be before the start date.')}</Notice>
+                ) : null}
+
+                <Section
+                    label={l('Temizlenecek Çalışmalar', 'Sessions to Clear')}
+                    footnote={l(
                         'Başlangıç ve bitiş günleri dahildir. Kayıtlar başladıkları güne göre seçilir; gün, takvimdeki gibi gün dönüm saatinde başlar. Kart tekrarlarınız, planlarınız ve çalışan kronometre korunur. Temizlenen kayıtları aşağıdan geri yükleyebilirsiniz.',
                         'Both days are included. Sessions are chosen by the day they started, which turns over at your rollover hour as in the calendar. Card reviews, plans and the running stopwatch are kept. You can restore cleared sessions below.',
                     )}
                 >
-                    {!valid ? (
-                        <Text style={[styles.error, { color: colors.btnAgain }]}>
-                            {l('Bitiş tarihi başlangıç tarihinden önce olamaz.', 'The end date cannot be before the start date.')}
-                        </Text>
-                    ) : null}
-                    <ToolRow label={l('Çalışma Sayısı', 'Sessions')} value={count(matching.length)} />
-                    <ToolRow label={l('Çalışma Süresi', 'Study Time')} value={formatStudyTotal(totalMs, locale)} />
+                    <ValueRow label={l('Çalışma Sayısı', 'Sessions')} value={count(matching.length)} />
+                    <ValueRow label={l('Çalışma Süresi', 'Study Time')} value={formatStudyTotal(totalMs, locale)} />
                     <View style={styles.buttonRow}>
-                        <ToolButton
+                        <Button
                             label={l('Çalışmaları Temizle', 'Clear Sessions')}
-                            tone="danger"
+                            variant="destructive"
                             disabled={!valid || matching.length === 0 || !cleared.readable}
                             onPress={handleClear}
                         />
                     </View>
-                </ToolSection>
+                </Section>
 
                 {!cleared.readable ? (
-                    <Text style={[styles.error, { color: colors.btnAgain }]}>
+                    <Notice tone="danger">
                         {l(
                             'Daha önce temizlenen çalışmalar okunamadı. Üzerlerine yazılmaması için temizleme kapalı.',
                             'Previously cleared sessions could not be read. Clearing is off so they are not overwritten.',
                         )}
-                    </Text>
+                    </Notice>
                 ) : null}
 
                 {cleared.sessions.length > 0 ? (
-                    <ToolSection title={l('Geri Yükleme', 'Restore')}>
-                        <ToolRow
+                    <Section label={l('Geri Yükleme', 'Restore')}>
+                        <ValueRow
                             label={l(
                                 `${count(cleared.sessions.length)} temizlenmiş çalışma saklanıyor.`,
                                 `${count(cleared.sessions.length)} cleared sessions are kept.`,
                             )}
                         />
                         <View style={styles.buttonRow}>
-                            <ToolButton label={l('Temizlenen Çalışmaları Geri Yükle', 'Restore Cleared Sessions')} tone="plain" onPress={handleRestore} />
+                            <Button label={l('Temizlenen Çalışmaları Geri Yükle', 'Restore Cleared Sessions')} variant="secondary" onPress={handleRestore} />
                         </View>
-                    </ToolSection>
+                    </Section>
                 ) : null}
 
-                <ToolSection title={l('Ön İzleme', 'Preview')}>
+                <Section label={l('Ön İzleme', 'Preview')}>
                     {matching.length === 0 ? (
-                        <ToolRow label={l('Bu aralıkta çalışma kaydınız yok.', 'No sessions in this range.')} last />
-                    ) : matching.slice(0, PREVIEW_LIMIT).map((session, index, shown) => (
-                        <View
-                            key={session.id}
-                            style={[styles.previewRow, index < shown.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}
-                            accessible
-                        >
+                        <ValueRow label={l('Bu aralıkta çalışma kaydınız yok.', 'No sessions in this range.')} />
+                    ) : matching.slice(0, PREVIEW_LIMIT).map((session) => (
+                        <View key={session.id} style={styles.previewRow} accessible>
                             <Text style={styles.previewTitle} numberOfLines={1}>{session.subject}</Text>
                             <Text style={styles.previewMeta}>
                                 {`${timeLabel(session.startMs)} · ${formatStudyTotal(session.studyMs, locale)} · ${studyTypeLabel(l, session.kind, session.pass)}`}
@@ -187,9 +186,9 @@ export default function StudyClearScreen() {
                         </View>
                     ))}
                     {matching.length > PREVIEW_LIMIT ? (
-                        <ToolRow label={l(`ve ${count(matching.length - PREVIEW_LIMIT)} çalışma daha`, `and ${count(matching.length - PREVIEW_LIMIT)} more`)} last />
+                        <ValueRow label={l(`ve ${count(matching.length - PREVIEW_LIMIT)} çalışma daha`, `and ${count(matching.length - PREVIEW_LIMIT)} more`)} />
                     ) : null}
-                </ToolSection>
+                </Section>
             </ScrollView>
         </SafeAreaView>
     );
@@ -200,9 +199,8 @@ function createStyles(colors: ColorScheme) {
         container: { flex: 1, backgroundColor: colors.bgCard },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
         content: { padding: Spacing.lg, gap: Spacing.lg },
-        error: { fontSize: FontSize.sm, paddingHorizontal: Spacing.md, paddingTop: Spacing.sm },
-        buttonRow: { padding: Spacing.md },
-        previewRow: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: 2 },
+        buttonRow: { padding: Spacing.lg },
+        previewRow: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2, gap: 2 },
         previewTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
         previewMeta: { fontSize: FontSize.xs, color: colors.textMuted },
     });

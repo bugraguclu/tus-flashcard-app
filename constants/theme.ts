@@ -72,6 +72,29 @@ const LightColors = {
     clozeText: '#1d5fa6',
     clozeTint: 'rgba(29, 95, 166, 0.12)',
 
+    // Roles for chrome that is not a grade or a card state. They keep the values screens used to
+    // borrow from the answer buttons and badges, so a Delete stays red if Again ever changes.
+    danger: '#c0392b',
+    dangerBg: '#fdecea',
+    warning: '#d68910',
+    warningBg: '#fef5e7',
+    success: '#27864e',
+    successBg: '#e8f6ee',
+    info: '#2874a6',
+    infoBg: '#ddeaf5',
+    /** Text and icons drawn on an accent or danger fill. */
+    onAccent: '#ffffff',
+    /** The marked-note star. */
+    marked: '#f59e0b',
+    /** The chosen segment of a segmented control, raised above its track. */
+    segmentSelected: '#ffffff',
+    /** Dimming behind a dialog or bottom sheet. */
+    scrim: 'rgba(0, 0, 0, 0.4)',
+    /** Lighter dimming behind a popover or side menu that stays tied to the screen under it. */
+    scrimLight: 'rgba(0, 0, 0, 0.22)',
+    /** Dimming behind a speed-dial menu whose labels sit directly on it. */
+    scrimStrong: 'rgba(0, 0, 0, 0.6)',
+
     white: '#ffffff',
     transparent: 'transparent',
 };
@@ -128,6 +151,23 @@ const DarkColors: ColorScheme = {
     reviewerCardBorder: '#252b28',
     clozeText: '#5aa9f0',
     clozeTint: 'rgba(90, 169, 240, 0.16)',
+
+    danger: '#e05545',
+    dangerBg: '#321d1d',
+    warning: '#e8a020',
+    warningBg: '#322916',
+    success: '#3aad60',
+    successBg: '#17301f',
+    info: '#4a9ad0',
+    infoBg: '#253040',
+    onAccent: '#ffffff',
+    marked: '#f59e0b',
+    // On a dark track the card colour is darker than the track itself; the border tone lifts the
+    // chosen segment instead of sinking it.
+    segmentSelected: '#343b37',
+    scrim: 'rgba(0, 0, 0, 0.4)',
+    scrimLight: 'rgba(0, 0, 0, 0.22)',
+    scrimStrong: 'rgba(0, 0, 0, 0.6)',
 
     white: '#ffffff',
     transparent: 'transparent',

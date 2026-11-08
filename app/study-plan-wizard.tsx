@@ -6,7 +6,11 @@ import { useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
 import { CapacityStep, CoursesStep } from '../components/stopwatch/DetailedPlanSteps';
 import { weekdayShortName } from '../components/stopwatch/StudyPlanEditorSheet';
-import { DateField, ToolButton, ToolSection } from '../components/stopwatch/StudyToolControls';
+import { DateField } from '../components/stopwatch/StudyToolControls';
+import { Button } from '../components/ui/Button';
+import { Section } from '../components/ui/Card';
+import { Notice, ProgressBar } from '../components/ui/Feedback';
+import { TextField } from '../components/ui/Fields';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
@@ -72,48 +76,44 @@ export default function StudyPlanWizardScreen() {
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <ScreenHeader title={l('Detaylı Çalışma Planı', 'Detailed Study Plan')} backAccessibilityLabel={l('Vazgeç', 'Cancel')} onBack={leave} />
             <View style={styles.progressRow} accessible accessibilityLabel={l(`Adım ${step + 1} / ${STEPS}`, `Step ${step + 1} of ${STEPS}`)}>
-                <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${((step + 1) / STEPS) * 100}%` }]} />
-                </View>
+                <ProgressBar value={(step + 1) / STEPS} style={styles.progressTrack} />
                 <Text style={styles.progressText}>{`${step + 1} / ${STEPS}`}</Text>
             </View>
             <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
                 {step === 0 ? (
-                    <ToolSection
-                        title={l('Hedeflediğiniz TUS', 'Your Target TUS')}
-                        footer={l(
+                    <Section
+                        label={l('Hedeflediğiniz TUS', 'Your Target TUS')}
+                        footnote={l(
                             'Ders sırasını, tekrarınızı, yeterlilik seviyenizi ve planladığınız süreleri belirleyin. Son adımda takvimi inceleyip kaydedebilirsiniz.',
                             'Set the course order, your pass, proficiency and planned hours. You can review the calendar before saving.',
                         )}
                     >
-                        <TextInput
-                            style={styles.input}
-                            value={draft.targetExam}
-                            onChangeText={(targetExam) => update({ targetExam })}
-                            placeholder={l('Hedef sınav adı (örn. 2027 TUS 1. Dönem)', 'Target exam (e.g. 2027 TUS spring)')}
-                            placeholderTextColor={colors.textMuted}
-                            maxLength={60}
-                            accessibilityLabel={l('Hedef sınav adı', 'Target exam')}
-                        />
+                        <View style={styles.inputRow}>
+                            <TextField
+                                value={draft.targetExam}
+                                onChangeText={(targetExam) => update({ targetExam })}
+                                placeholder={l('Hedef sınav adı (örn. 2027 TUS 1. Dönem)', 'Target exam (e.g. 2027 TUS spring)')}
+                                maxLength={60}
+                                accessibilityLabel={l('Hedef sınav adı', 'Target exam')}
+                            />
+                        </View>
                         <DateField label={l('Başlangıç', 'Start')} ymd={draft.startYmd} onChange={(startYmd) => update({ startYmd })} />
-                        <DateField label={l('Hedef Tarihi', 'Target Date')} ymd={draft.deadlineYmd} onChange={(deadlineYmd) => update({ deadlineYmd })} last />
-                    </ToolSection>
+                        <DateField label={l('Hedef Tarihi', 'Target Date')} ymd={draft.deadlineYmd} onChange={(deadlineYmd) => update({ deadlineYmd })} />
+                    </Section>
                 ) : step === 1 ? (
                     <CoursesStep courses={draft.courses} onChange={(courses) => update({ courses })} />
                 ) : (
                     <CapacityStep draft={draft} onChange={update} preview={result.ok ? result.blocks : []} weekdayName={weekdayName} />
                 )}
-                {step > 0 && problemText ? <Text style={styles.error} accessibilityLiveRegion="polite">{problemText}</Text> : null}
+                {step > 0 && problemText ? <Notice tone="danger">{problemText}</Notice> : null}
             </ScrollView>
             <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.md }]}>
-                {step > 0 ? <View style={styles.footerButton}><ToolButton label={l('Geri', 'Back')} tone="plain" onPress={() => setStep(step - 1)} /></View> : null}
-                <View style={styles.footerButton}>
-                    {step < STEPS - 1 ? (
-                        <ToolButton label={l('İleri', 'Next')} onPress={() => setStep(step + 1)} />
-                    ) : (
-                        <ToolButton label={l('Oluştur', 'Create')} onPress={create} disabled={!result.ok} />
-                    )}
-                </View>
+                {step > 0 ? <Button label={l('Geri', 'Back')} variant="secondary" onPress={() => setStep(step - 1)} style={styles.footerButton} /> : null}
+                {step < STEPS - 1 ? (
+                    <Button label={l('İleri', 'Next')} onPress={() => setStep(step + 1)} style={styles.footerButton} />
+                ) : (
+                    <Button label={l('Oluştur', 'Create')} onPress={create} disabled={!result.ok} style={styles.footerButton} />
+                )}
             </View>
         </SafeAreaView>
     );
@@ -123,23 +123,11 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgCard },
         progressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
-        progressTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.borderLight, overflow: 'hidden' },
-        progressFill: { height: '100%', backgroundColor: colors.accent },
+        progressTrack: { flex: 1 },
         progressText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textSecondary },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
         content: { padding: Spacing.lg, gap: Spacing.lg },
-        input: {
-            margin: Spacing.md,
-            borderRadius: 10,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            backgroundColor: colors.bgInput,
-            color: colors.textPrimary,
-            paddingHorizontal: Spacing.md,
-            paddingVertical: Spacing.sm,
-            fontSize: FontSize.md,
-        },
-        error: { fontSize: FontSize.sm, fontWeight: '600', color: colors.btnAgain },
+        inputRow: { padding: Spacing.lg },
         footer: {
             flexDirection: 'row',
             gap: Spacing.md,
