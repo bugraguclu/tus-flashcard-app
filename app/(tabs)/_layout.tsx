@@ -14,7 +14,7 @@ import {
 import { Text } from '../../components/AppText';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
+import { useThemeColors, type ColorScheme, Spacing } from '../../constants/theme';
 import { getNavigationCardCounts } from '../../lib/noteManager';
 import { getAllSubjects, getSubjectsForDeck } from '../../lib/subjects';
 import { buildDeckTree, getAllDecks, getCardCountsByDeck } from '../../lib/deckManager';
@@ -28,6 +28,7 @@ import {
     useStudyScope,
 } from '../../contexts/AppContext';
 import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
+import StartupIssueScreen from '../../components/StartupIssueScreen';
 import { useI18n } from '../../hooks/useI18n';
 import { consumeSchedulingRevision } from '../../lib/deferredInvalidation';
 
@@ -401,13 +402,7 @@ export default function TabLayout() {
 
                 <View style={[styles.mainContent, isWide && !isDeckScreen && styles.mainContentWithSidebar]}>
                     {startupError ? (
-                        <View style={styles.startupErrorContainer}>
-                            <Text style={styles.startupErrorIcon}>📱</Text>
-                            <Text style={styles.startupErrorTitle}>{t('root.errorTitle')}</Text>
-                            <Text style={styles.startupErrorText}>
-                                {t('root.startupErrorMessage')}
-                            </Text>
-                        </View>
+                        <StartupIssueScreen />
                     ) : (
                         <Stack
                             initialRouteName="decks"
@@ -464,28 +459,5 @@ function createStyles(colors: ColorScheme) {
 
     mainContent: { flex: 1 },
     mainContentWithSidebar: { marginLeft: SIDEBAR_WIDTH },
-
-    startupErrorContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: Spacing.xl,
-    },
-    startupErrorIcon: {
-        fontSize: 48,
-        marginBottom: Spacing.md,
-    },
-    startupErrorTitle: {
-        fontSize: FontSize.lg,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        textAlign: 'center',
-        marginBottom: Spacing.sm,
-    },
-    startupErrorText: {
-        fontSize: FontSize.md,
-        color: colors.textMuted,
-        textAlign: 'center',
-    },
     });
 }

@@ -33,6 +33,9 @@ import {
     StartupCoordinator,
     type StartupRun,
 } from '../lib/startupCoordinator';
+import type { StartupIssue } from '../lib/startupIssue';
+
+export type { StartupIssue };
 
 const startupCoordinator = new StartupCoordinator();
 
@@ -41,8 +44,6 @@ const startupCoordinator = new StartupCoordinator();
 // Purchased catalog content is installed after startup, from the store screen, so this budget
 // only has to cover schema migration and legacy AsyncStorage imports.
 const STARTUP_TIMEOUT_MS = 30_000;
-
-export type StartupIssue = 'timeout' | 'failed';
 
 /** True only on devices that still carry the withdrawn pre-release trial installation. */
 function needsLegacyCatalogRemoval(): boolean {
