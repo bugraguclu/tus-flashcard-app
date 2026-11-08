@@ -53,7 +53,6 @@ import {
     updateFilteredDeck,
     buildDeckTree,
     getDirectDecksForScope,
-    getPopulatedDecksForScope,
     initializeDeckDisclosureDefaults,
     setDeckCollapsed,
     completeFilteredCard,
@@ -207,46 +206,6 @@ describe('getDirectDecksForScope', () => {
         expect(getDirectDecksForScope(getAllDecks(), 'Python::Temeller').map((deck) => deck.name)).toEqual([
             'Python::Temeller::Yazdırma',
         ]);
-    });
-});
-
-describe('getPopulatedDecksForScope', () => {
-    it('hides empty ghost branches in every deck while retaining ancestors of real cards', () => {
-        const python = createDeck('Python');
-        const emptyModule = createDeck('Python::Modüller & Hata Ayıklama');
-        createDeck('Python::Modüller & Hata Ayıklama::random');
-        const tus = createDeck('BKA TUS');
-        const medicine = createDeck('BKA TUS::Dahiliye');
-        const cardiology = createDeck('BKA TUS::Dahiliye::Kardiyoloji');
-        createDeck('BKA TUS::Dahiliye::Boş Konu');
-        const counts = new Map([
-            [python.id, { total: 0 }],
-            [emptyModule.id, { total: 0 }],
-            [tus.id, { total: 0 }],
-            [medicine.id, { total: 0 }],
-            [cardiology.id, { total: 12 }],
-        ]);
-
-        expect(getPopulatedDecksForScope(getAllDecks(), counts, 'Python')).toEqual([]);
-        expect(getPopulatedDecksForScope(getAllDecks(), counts, 'BKA TUS').map((deck) => deck.name)).toEqual([
-            'BKA TUS::Dahiliye',
-            'BKA TUS::Dahiliye::Kardiyoloji',
-        ]);
-        expect(getPopulatedDecksForScope(getAllDecks(), counts, null).map((deck) => deck.name)).toEqual([
-            'BKA TUS',
-            'BKA TUS::Dahiliye',
-            'BKA TUS::Dahiliye::Kardiyoloji',
-        ]);
-        // Browser scope chips expose one useful level at a time: the populated ancestor remains
-        // reachable, while a grandchild appears only after entering its parent scope.
-        expect(getDirectDecksForScope(
-            getPopulatedDecksForScope(getAllDecks(), counts, null),
-            null,
-        ).map((deck) => deck.name)).toEqual(['BKA TUS']);
-        expect(getDirectDecksForScope(
-            getPopulatedDecksForScope(getAllDecks(), counts, 'BKA TUS'),
-            'BKA TUS',
-        ).map((deck) => deck.name)).toEqual(['BKA TUS::Dahiliye']);
     });
 });
 

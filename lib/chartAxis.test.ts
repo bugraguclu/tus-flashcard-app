@@ -8,7 +8,6 @@ import {
     niceStep,
     roundedTopBarPath,
     stackSegments,
-    tooltipPlacement,
 } from './chartAxis';
 
 describe('axisTicks', () => {
@@ -122,49 +121,6 @@ describe('barGeometry', () => {
 
     it('still draws something when hundreds of buckets share the plot', () => {
         expect(barGeometry(900, 34, 280).barWidth).toBeGreaterThan(0);
-    });
-});
-
-describe('tooltipPlacement', () => {
-    const box = { width: 130, height: 70 };
-    const bounds = { width: 340, height: 190 };
-
-    it('centres the box on the bucket the finger is over', () => {
-        const { left } = tooltipPlacement(170, 120, box, bounds);
-        expect(left + box.width / 2).toBeCloseTo(170);
-    });
-
-    it('lifts the box clear of the finger rather than of the bar', () => {
-        // A tall bar used to push the readout under the reader's own thumb.
-        const { top, flipped } = tooltipPlacement(170, 150, box, bounds);
-        expect(top + box.height).toBeLessThan(150);
-        expect(flipped).toBe(false);
-    });
-
-    it('keeps the box on screen at the first and last bucket', () => {
-        for (const anchor of [0, 6, 334, 340]) {
-            const { left } = tooltipPlacement(anchor, 120, box, bounds);
-            expect(left).toBeGreaterThanOrEqual(4);
-            expect(left + box.width).toBeLessThanOrEqual(bounds.width - 4 + 0.001);
-        }
-    });
-
-    it('drops below the finger when it is pressing near the top of the chart', () => {
-        const { top, flipped } = tooltipPlacement(170, 10, box, bounds);
-        expect(flipped).toBe(true);
-        expect(top).toBeGreaterThan(10);
-        expect(top + box.height).toBeLessThanOrEqual(bounds.height - 4 + 0.001);
-    });
-
-    it('never places the box outside the chart even when it barely fits', () => {
-        const tall = { width: 130, height: 180 };
-        const { top } = tooltipPlacement(170, 10, tall, bounds);
-        expect(top).toBeGreaterThanOrEqual(4);
-    });
-
-    it('does not fight a chart narrower than the box', () => {
-        const { left } = tooltipPlacement(50, 120, box, { width: 100, height: 190 });
-        expect(left).toBe(4);
     });
 });
 

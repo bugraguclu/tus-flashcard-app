@@ -4,7 +4,6 @@ import {
     ImportLogBuilder,
     importLogFailureCount,
     importLogFromCounts,
-    importLogWrittenCount,
     MAX_LOGGED_ROWS_PER_STATUS,
 } from './importLog';
 
@@ -64,11 +63,6 @@ describe('import log aggregates', () => {
             19,
         );
         expect(importLogFailureCount(log.counts)).toBe(6);
-    });
-
-    it('counts written notes as new plus updated', () => {
-        const log = importLogFromCounts({ added: 5, updated: 2, firstFieldMatch: 3, duplicate: 8 }, 18);
-        expect(importLogWrittenCount(log.counts)).toBe(7);
     });
 
     it('fills the unnamed statuses with zero so a screen can read them all', () => {

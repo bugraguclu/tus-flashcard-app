@@ -337,17 +337,6 @@ export function withPhotoExtension(name: string, extension: string): string {
     return `${base || 'gorsel'}.${extension}`;
 }
 
-/** How much smaller the result is, as a whole percentage. Zero when there is no saving. */
-export function compressionSavingPercent(
-    originalBytes: number | null | undefined,
-    compressedBytes: number | null | undefined,
-): number {
-    const original = positiveInteger(originalBytes);
-    const compressed = positiveInteger(compressedBytes);
-    if (!original || !compressed || compressed >= original) return 0;
-    return Math.round(((original - compressed) / original) * 100);
-}
-
 // ---------- Native side ----------
 
 /** Size of a local file in bytes, or null when it cannot be determined. */

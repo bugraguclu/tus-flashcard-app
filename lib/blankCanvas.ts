@@ -124,43 +124,6 @@ export function scaleBlankCanvasRuling(ruling: BlankCanvasRuling, factor: number
     };
 }
 
-/**
- * Ruling after the page is trimmed. Only the phase moves: cutting a sheet down does not resize
- * its squares, so the strokes drawn over a line stay over that same line.
- */
-export function cropBlankCanvasRuling(
-    ruling: BlankCanvasRuling,
-    page: { width: number; height: number },
-    crop: { x: number; y: number },
-): BlankCanvasRuling {
-    const left = page.width * Math.min(1, Math.max(0, crop.x));
-    const top = page.height * Math.min(1, Math.max(0, crop.y));
-    return {
-        spacing: ruling.spacing,
-        offsetX: wrapPhase(ruling.offsetX - left, ruling.spacing),
-        offsetY: wrapPhase(ruling.offsetY - top, ruling.spacing),
-        orientation: ruling.orientation,
-    };
-}
-
-/**
- * Ruling after the page is turned a quarter turn clockwise, which sends `(x, y)` to
- * `(pageHeight - y, x)`. The ink is turned with it, so the paper has to follow or the writing
- * comes down off its lines: horizontal rules become vertical, and each phase picks up the other
- * axis's.
- */
-export function rotateBlankCanvasRulingClockwise(
-    ruling: BlankCanvasRuling,
-    pageHeight: number,
-): BlankCanvasRuling {
-    return {
-        spacing: ruling.spacing,
-        offsetX: wrapPhase(pageHeight - ruling.offsetY, ruling.spacing),
-        offsetY: wrapPhase(ruling.offsetX, ruling.spacing),
-        orientation: ruling.orientation === 'horizontal' ? 'vertical' : 'horizontal',
-    };
-}
-
 /** A page this finely ruled is a tint, not a grid; the cap stops a bad ruling from hanging. */
 const MAX_RULING_LINES = 512;
 
@@ -255,17 +218,3 @@ export function blankCanvasPaperInk(background: string): string {
     return isDarkBlankCanvasPage(background) ? 'rgba(255, 255, 255, 0.16)' : 'rgba(17, 24, 39, 0.14)';
 }
 
-/** Pen colour a page opens with, so the first stroke is never invisible. */
-export function blankCanvasDefaultInk(background: string): string {
-    return isDarkBlankCanvasPage(background) ? '#ffffff' : '#111827';
-}
-
-/** Page size after a crop, in export pixels; `cropBlankCanvasRuling` moves the ruling with it. */
-export function cropBlankCanvasSize(
-    page: { width: number; height: number },
-    crop: { x: number; y: number; width: number; height: number },
-): { width: number; height: number } {
-    const width = Math.max(1, Math.round(page.width * Math.min(1, Math.max(0, crop.width))));
-    const height = Math.max(1, Math.round(page.height * Math.min(1, Math.max(0, crop.height))));
-    return { width, height };
-}

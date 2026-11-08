@@ -37,38 +37,6 @@ export function getDirectDecksForScope(
 }
 
 /**
- * Return only deck branches that actually contain at least one card in the requested scope.
- *
- * Browser shortcuts used to include every persisted descendant. An early Ders/Konu migration
- * created empty descendants, so those rows surfaced as "ghost" chips even though the selected
- * deck correctly reported zero cards. Keeping the empty decks themselves is intentional (users
- * may have created them), but an empty branch is not a useful card filter.
- */
-export function getPopulatedDecksForScope(
-    decks: Deck[],
-    cardCounts: Map<number, { total: number }>,
-    scopeName: string | null,
-): Deck[] {
-    const candidates = decks.filter((deck) => !deck.isFiltered && (
-        scopeName ? deck.name.startsWith(`${scopeName}::`) : true
-    ));
-    const candidateNames = new Set(candidates.map((deck) => deck.name));
-    const populatedNames = new Set<string>();
-
-    for (const deck of candidates) {
-        if ((cardCounts.get(deck.id)?.total ?? 0) <= 0) continue;
-
-        let branchName: string | null = deck.name;
-        while (branchName) {
-            if (candidateNames.has(branchName)) populatedNames.add(branchName);
-            branchName = getParentDeckName(branchName);
-        }
-    }
-
-    return candidates.filter((deck) => populatedNames.has(deck.name));
-}
-
-/**
  * Every deck in the order the deck list shows it, collapsed branches included: siblings by
  * `compareDeckDisplayOrder`, each deck straight after its parent and before the parent's next
  * sibling. A deck whose parent is missing stands among the roots, as in `buildDeckTree`.

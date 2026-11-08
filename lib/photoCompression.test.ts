@@ -3,7 +3,6 @@ import {
     PHOTO_COMFORTABLE_BYTES,
     PHOTO_COMPRESSION_MIN_BYTES,
     PHOTO_MAX_LONG_EDGE,
-    compressionSavingPercent,
     formatByteSize,
     isCompressionWorthKeeping,
     planPhotoCompression,
@@ -283,11 +282,3 @@ describe('withPhotoExtension', () => {
     });
 });
 
-describe('compressionSavingPercent', () => {
-    it('reports the share of the file that was saved', () => {
-        expect(compressionSavingPercent(100, 10)).toBe(90);
-        expect(compressionSavingPercent(100, 100)).toBe(0);
-        expect(compressionSavingPercent(100, 120)).toBe(0);
-        expect(compressionSavingPercent(null, 10)).toBe(0);
-    });
-});

@@ -14,8 +14,6 @@ import {
     BLANK_CANVAS_PAPERS,
     BLANK_CANVAS_SHAPES,
     DEFAULT_BLANK_CANVAS_PAGE,
-    defaultBlankCanvasRuling,
-    type BlankCanvasPage,
     type BlankCanvasPaper,
     type BlankCanvasShape,
 } from './blankCanvas';
@@ -71,18 +69,6 @@ export function serializeBlankCanvasSetup(setup: BlankCanvasSetup): string {
         background: setup.background,
         shape: setup.shape,
     });
-}
-
-/** The page this setup describes, ruled and sized for export. */
-export function blankCanvasPageFromSetup(setup: BlankCanvasSetup): BlankCanvasPage {
-    const shape = BLANK_CANVAS_SHAPES.find((option) => option.id === setup.shape) ?? BLANK_CANVAS_SHAPES[0];
-    return {
-        background: setup.background,
-        paper: setup.paper,
-        width: shape.width,
-        height: shape.height,
-        ruling: defaultBlankCanvasRuling(shape.width, shape.height),
-    };
 }
 
 export function loadBlankCanvasSetup(): BlankCanvasSetup {

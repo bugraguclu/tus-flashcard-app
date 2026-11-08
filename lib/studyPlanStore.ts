@@ -55,12 +55,6 @@ export function removeStudyPlans(ids: readonly string[]): StudyPlanBlock[] {
     return next;
 }
 
-// --- Backup ---
-
-export function readStudyPlansForBackup(): StudyPlanBlock[] {
-    return readStudyPlansForDisplay();
-}
-
 /** Replace every plan with a backup's. Runs inside the restore's own transaction. */
 export function replaceStudyPlans(raw: unknown): void {
     writePlans(normalizeStudyPlans(raw));

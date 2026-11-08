@@ -18,8 +18,6 @@
  * property this app does not know.
  */
 
-export type OcclusionShapeKind = 'rect' | 'ellipse' | 'polygon' | 'text';
-
 export interface OcclusionProperty {
     name: string;
     /** The unescaped value. */
@@ -366,7 +364,7 @@ export function groupOcclusionShapes(shapes: readonly OcclusionShape[], selected
 export function ungroupOcclusionShapes(shapes: readonly OcclusionShape[], selected: ReadonlySet<number>): OcclusionShape[] {
     const next = [...shapes];
     // A number an unselected shape keeps is taken; otherwise the first selected shape keeps it.
-    const taken = new Set(shapes.filter((shape, index) => !selected.has(index)).map((shape) => shape.ordinal));
+    const taken = new Set(shapes.filter((_shape, index) => !selected.has(index)).map((shape) => shape.ordinal));
     next.forEach((shape, index) => {
         if (!selected.has(index) || shape.kind === 'text') return;
         if (!taken.has(shape.ordinal)) {
