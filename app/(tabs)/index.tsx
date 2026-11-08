@@ -181,6 +181,7 @@ import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
 import {
     advanceQueueAfterAnswer,
     avoidImmediateRepeat,
+    cardKeptOnScreen,
     coordinatePostAnswerQueueRefresh,
     countsAfterAnswer,
     keepSessionOrder,
@@ -358,6 +359,8 @@ export default function StudyScreen() {
     const inkedCardIdRef = useRef<number | null>(null);
     const whiteboardActiveRef = useRef(whiteboardActive);
     whiteboardActiveRef.current = whiteboardActive;
+    const whiteboardHasContentRef = useRef(whiteboardHasContent);
+    whiteboardHasContentRef.current = whiteboardHasContent;
     const whiteboardStylusOnlyRef = useRef(whiteboardStylusOnly);
     whiteboardStylusOnlyRef.current = whiteboardStylusOnly;
     // AnkiDroid-compatible whole-card TTS. Explicit Anki TTS regions take precedence; otherwise
@@ -653,19 +656,6 @@ export default function StudyScreen() {
             ? ordered
             : avoidImmediateRepeat(ordered, result.mainQueue, answeredCardId);
 
-        // Background refreshes must not yank the card the user is looking at (or hide the
-        // answer they are reading) — keep it in front and merge the fresh queue behind it.
-        const active = preserveCurrent ? currentCardRef.current : null;
-        const activeStillQueued = active != null
-            && sessionCards.some((card) => card.cardId === active.cardId);
-
-        // Ink on the whiteboard is unsaved work belonging to the card it was drawn over, so the
-        // 45-second background refresh must not swap that card out either — the fresh queue is
-        // merged behind it and the swap waits for the learner's next answer. Without this, a card
-        // that merely left the fresh queue (a learning step moving past the learn-ahead window,
-        // say) took the drawing with it.
-        const holdForDrawing = active != null && whiteboardActiveRef.current;
-
         // Undo brings the card it took back to the screen, as Anki's reviewer does, instead of
         // whatever the rebuilt queue happens to start with (CAL-4).
         const focusId = focusCardIdRef.current;
@@ -676,13 +666,29 @@ export default function StudyScreen() {
             () => getStudyCardById(focusId, scopeSettings),
         );
 
+        // Background refreshes must not yank the card the user is looking at (or hide the
+        // answer they are reading) — keep it in front, as the fresh build has it, and merge the
+        // fresh queue behind it. Ink on the whiteboard is unsaved work belonging to the card it was
+        // drawn over, so a card that merely left the fresh queue (a learning step moving past the
+        // learn-ahead window, say) stays too, while it still exists and can be studied.
+        const active = preserveCurrent ? currentCardRef.current : null;
+        const kept = focused ? null : cardKeptOnScreen({
+            current: active,
+            sessionCards,
+            whiteboardOn: whiteboardActiveRef.current,
+            hasInk: whiteboardHasContentRef.current,
+            reload: () => (active ? getStudyCardById(active.cardId, scopeSettings) : null),
+        });
+
         let nextQueue: StudyCard[];
         if (focused) {
             nextQueue = focused;
             setCurrentCard(focused[0]);
             setShowingAnswer(false);
-        } else if (activeStillQueued || holdForDrawing) {
-            nextQueue = [active!, ...sessionCards.filter((card) => card.cardId !== active!.cardId)];
+        } else if (kept) {
+            nextQueue = [kept, ...sessionCards.filter((card) => card.cardId !== kept.cardId)];
+            // The same card, so its revealed answer and its clocks stay as they are.
+            setCurrentCard(kept);
         } else {
             nextQueue = sessionCards;
             setCurrentCard(sessionCards.length > 0 ? sessionCards[0] : null);

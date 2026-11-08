@@ -107,6 +107,38 @@ export function queueWithFocusedCard<T extends { cardId: number; state: { suspen
     return [focused, ...queue.filter((card) => card.cardId !== cardId)];
 }
 
+/**
+ * The card a background rebuild keeps on screen, or null to show the rebuilt queue's first card.
+ *
+ * A refresh must not yank the card the learner is looking at (or hide the answer they are reading),
+ * so it stays in front. It is shown as the fresh build has it: the object the screen holds was read
+ * before the change, so after a Deck Options step change, say, its answer buttons used the old steps.
+ * A card that left the queue (a learning step moved past the learn-ahead window, or the editor moved,
+ * suspended or deleted it) is kept only for ink on the whiteboard, which is unsaved work belonging
+ * to it, and only while it still exists and can be studied: a deleted card showed its raw text and
+ * could not be graded.
+ */
+export function cardKeptOnScreen<T extends { cardId: number; state: { suspended: boolean; buried: boolean } }>(input: {
+    /** The card on screen, when the rebuild keeps it (`preserveCurrent`). */
+    current: T | null;
+    /** The rebuilt queue. */
+    sessionCards: readonly T[];
+    /** The whiteboard is open over the card. */
+    whiteboardOn: boolean;
+    /** It holds ink. */
+    hasInk: boolean;
+    /** The card as it is stored now; null once it is deleted. */
+    reload: () => T | null;
+}): T | null {
+    const { current } = input;
+    if (!current) return null;
+    const fresh = input.sessionCards.find((card) => card.cardId === current.cardId);
+    if (fresh) return fresh;
+    if (!input.whiteboardOn || !input.hasInk) return null;
+    const stored = input.reload();
+    return stored && !stored.state.suspended && !stored.state.buried ? stored : null;
+}
+
 export type PostAnswerQueueInput = {
     /** The reviewer's queue as it stood when the card was answered, answered card included. */
     queue: StudyCard[];

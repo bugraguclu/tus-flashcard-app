@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     ANSWERS_BETWEEN_REBUILDS,
     avoidImmediateRepeat,
+    cardKeptOnScreen,
     coordinatePostAnswerQueueRefresh,
     keepSessionOrder,
     queueWithFocusedCard,
@@ -119,5 +120,45 @@ describe('avoidImmediateRepeat', () => {
         expect(ids(avoidImmediateRepeat(cards, { start: 1, end: 2 }, 1))).toEqual([1, 2, 3]);
         expect(ids(avoidImmediateRepeat(cards, { start: 0, end: 0 }, 2))).toEqual([1, 2, 3]);
         expect(ids(avoidImmediateRepeat([{ cardId: 1 }], { start: 0, end: 0 }, 1))).toEqual([1]);
+    });
+});
+
+// A background rebuild (the 45-second refresh, a change saved on another screen) keeps the card on
+// screen in front. It shows the card as the fresh build has it, so a Deck Options step change reaches
+// its answer buttons, and it keeps a card that left the queue only for unsaved ink on the whiteboard.
+describe('cardKeptOnScreen', () => {
+    type Card = { cardId: number; step: string; state: { suspended: boolean; buried: boolean } };
+    const card = (cardId: number, step: string, state: Partial<Card['state']> = {}): Card => ({
+        cardId, step, state: { suspended: false, buried: false, ...state },
+    });
+    const keep = (input: Partial<Parameters<typeof cardKeptOnScreen<Card>>[0]>) => cardKeptOnScreen<Card>({
+        current: card(1, 'old'),
+        sessionCards: [],
+        whiteboardOn: false,
+        hasInk: false,
+        reload: () => card(1, 'stored'),
+        ...input,
+    });
+
+    it('shows a card still in the queue as the fresh build has it', () => {
+        expect(keep({ sessionCards: [card(2, 'fresh'), card(1, 'fresh')] })?.step).toBe('fresh');
+        expect(keep({ sessionCards: [card(1, 'fresh')], whiteboardOn: true, hasInk: true })?.step).toBe('fresh');
+    });
+
+    it('keeps a card that left the queue only for ink on the board, read as it is stored now', () => {
+        expect(keep({ whiteboardOn: true, hasInk: true })?.step).toBe('stored');
+        expect(keep({ whiteboardOn: true, hasInk: false })).toBeNull();
+        expect(keep({ whiteboardOn: false, hasInk: true })).toBeNull();
+        expect(keep({})).toBeNull();
+    });
+
+    it('lets go of a card the editor deleted, or one suspended or buried elsewhere, ink or not', () => {
+        expect(keep({ whiteboardOn: true, hasInk: true, reload: () => null })).toBeNull();
+        expect(keep({ whiteboardOn: true, hasInk: true, reload: () => card(1, 'stored', { suspended: true }) })).toBeNull();
+        expect(keep({ whiteboardOn: true, hasInk: true, reload: () => card(1, 'stored', { buried: true }) })).toBeNull();
+    });
+
+    it('keeps nothing when the rebuild does not keep the card on screen', () => {
+        expect(keep({ current: null, sessionCards: [card(1, 'fresh')] })).toBeNull();
     });
 });
