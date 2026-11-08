@@ -58,6 +58,12 @@ export interface FilteredServingOptions {
     buryOptionsOf: (card: StudyCard) => BuryOptions;
     /** The card's modification time, for Anki's `fnvhash(id, mod)` tiebreak. */
     modOf: (card: StudyCard) => number;
+    /**
+     * Cards the learner asked to study now ("Beklemeden çalış"). Those still waiting on a step or a
+     * preview delay are dealt after the learning ahead instead of waiting, as a regular deck deals
+     * its study-ahead cards; nothing else moves.
+     */
+    studyAheadIds?: ReadonlySet<number>;
 }
 
 export interface FilteredServing {
@@ -181,23 +187,27 @@ export function serveFilteredDeckCards(cards: readonly StudyCard[], options: Fil
 
     const learningNow = intradayGathered.filter((slot) => slot.gathered || slot.due <= nowMs);
     const learningAhead = intradayGathered.filter((slot) => !slot.gathered && slot.due > nowMs && slot.due <= learnAheadCutoff);
-    const waiting = intraday.filter((slot) => !slot.gathered && slot.due > learnAheadCutoff);
+    const notAhead = intraday.filter((slot) => !slot.gathered && slot.due > learnAheadCutoff);
+    const studyingAhead = (slot: Slot) => options.studyAheadIds?.has(slot.card.cardId) === true;
+    const studiedAhead = notAhead.filter(studyingAhead);
+    const waiting = notAhead.filter((slot) => !studyingAhead(slot));
     // As with a normal deck's reviews, only day learning due at the next rollover is "upcoming".
     const dayWaiting = slots.filter((slot) => slot.kind === 'day' && !slot.gathered && slot.due === options.today + 1);
 
     const mainCards = intersperseEvenly(intersperseEvenly(reviewCards, dayCards), newCards);
-    const notDueYet = [...learningAhead, ...waiting].map((slot) => slot.due);
+    const notDueYet = [...learningAhead, ...notAhead].map((slot) => slot.due);
     return {
         cards: [
             ...learningNow.map((slot) => slot.card),
             ...mainCards,
             ...learningAhead.map((slot) => slot.card),
+            ...studiedAhead.map((slot) => slot.card),
         ],
         mainQueue: { start: learningNow.length, end: learningNow.length + mainCards.length },
         learningComesDueAt: notDueYet.length > 0 ? Math.min(...notDueYet) : null,
         stats: {
             newCount: newCards.length,
-            learningCount: learningNow.length + learningAhead.length + dayCards.length,
+            learningCount: learningNow.length + learningAhead.length + studiedAhead.length + dayCards.length,
             reviewCount: reviewCards.length,
         },
         nextLearningDue: waiting.length > 0 ? Math.min(...waiting.map((slot) => slot.due)) : null,
