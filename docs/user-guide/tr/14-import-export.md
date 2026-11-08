@@ -11,7 +11,7 @@ app_screens:
   - "Dışa aktar — app/export.tsx, components/DeckExportSelector.tsx"
   - "Dosya devri (Paylaş › TusAnkiM) — app/_layout.tsx; web: components/WebAppIntegrations.tsx"
   - "Ayarlar › Veri yönetimi › İçe ve dışa aktar — app/settings.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # İçe ve dışa aktarma
@@ -54,8 +54,8 @@ aktarmasından önce otomatik bir güvenlik yedeği alınır
 
 iPhone'da bir `.apkg`, `.colpkg`, `.csv`, `.tsv` veya `.txt` dosyasını doğrudan TusAnkiM'e
 gönderebilirsiniz: **Dosyalar** uygulamasında dosyaya basılı tutun (Mail'de ekin, AirDrop'ta gelen
-dosyanın üzerinde de aynı) ve **Paylaş**'a dokunup listeden **TusAnkiM**'i seçin. **Deste içe
-aktar** ekranı dosya seçilmiş olarak açılır. `.zip` uzantılı bir paketi uygulamanın içinden
+dosyanın üzerinde de aynı) ve **Paylaş**'a dokunup listeden **TusAnkiM**'i seçin. **İçe aktar**
+ekranı dosya seçilmiş olarak açılır. `.zip` uzantılı bir paketi uygulamanın içinden
 **Dosya seç** ile açın.
 
 > **Web sürümünde:** Dosyayı tarayıcı penceresinin üzerine sürükleyip bırakın; **İçe aktarmak için
@@ -327,8 +327,9 @@ paylaşılamaz.
 | Metin dosyası | En fazla 50 MB |
 | Önizleme ve alan eşlemesi | İlk 5 satır; en fazla 24 sütun |
 
-Sınırı aşan bir dosya için **Dosya güvenli boyut sınırını aşıyor.** uyarısı çıkar ve
-koleksiyonunuz değişmez. TUS Kartları paketinden kart içeren bir dosya içe aktarılamaz; paket
+Dosyanın kendisi sınırı aşıyorsa **Dosya çok büyük. Paketler en fazla 400 MB, metin dosyaları en
+fazla 50 MB olabilir.** uyarısı çıkar; paketin içindeki bir sınır aşılırsa uyarı **Paket veya
+içindeki bir dosya güvenli boyut sınırını aşıyor.** der. İki durumda da koleksiyonunuz değişmez. TUS Kartları paketinden kart içeren bir dosya içe aktarılamaz; paket
 yalnızca uygulamanın içinden kurulur (bkz. [TUS Kartları paketi](17-tus-card-pack.md)). **Yedekler**
 ekranındaki yedekler bu ekrandan değil, kendi ekranlarından geri yüklenir.
 

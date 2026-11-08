@@ -438,7 +438,7 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
     const canAdd = !busy && ((phase === 'recorded' && take !== null) || ((phase === 'recording' || phase === 'paused') && recordedMs >= MIN_RECORDING_MS));
 
     const status = phase === 'idle'
-        ? l('Başlamak için dokunun', 'Tap to start')
+        ? l('Başlamak için dokunun. Bitirdiğinizde dinleyip ekleyebilirsiniz.', 'Tap to start. When you stop, you can listen back and add it.')
         : phase === 'recording'
             ? l('Kaydediliyor', 'Recording')
             : phase === 'paused'
@@ -593,7 +593,7 @@ function createStyles(colors: ColorScheme) {
         },
         statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 20 },
         liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: record },
-        status: { fontSize: FontSize.sm, color: colors.textMuted },
+        status: { flexShrink: 1, fontSize: FontSize.sm, color: colors.textMuted, textAlign: 'center' },
         meter: {
             height: 40,
             marginTop: Spacing.lg,

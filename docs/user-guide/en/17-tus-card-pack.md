@@ -10,7 +10,7 @@ app_screens:
   - "TUS Kartları screen — app/catalog.tsx"
   - "••• menu of the pack decks — app/(tabs)/decks.tsx (renderMenuModal)"
   - "Note editor on a pack note — app/editor.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # TUS card pack
@@ -48,7 +48,7 @@ called **TUS Kartları**. Course and subdeck names are in Turkish.
   their own text. All subdecks of Anatomi, FHE, Patoloji and Farmakoloji come from this second
   step.
 - **Cards that fit no topic** (2,612 in total) stay directly in their course deck. When you open a
-  course on the **TUS Kartları** screen, they are counted on the **Cards without a topic tag** row.
+  course on the **TUS Kartları** screen, they are counted on the **Cards not sorted into a topic** row.
   Studying the course deck includes them.
 - You can see the subdeck names and card counts before installing: tap a course on the
   **TUS Kartları** screen.
@@ -206,7 +206,7 @@ There is no way to remove the pack on its own; its decks and cards cannot be del
 the parts you do not want to study folded or suspended
 (see [Studying the pack](#studying-the-pack)).
 
-The pack is removed only by **Settings › Data Management › Reset progress**. This command deletes
+The pack is removed only by **Settings › Data Management › Reset collection**. This command deletes
 **your whole collection** together with the pack: your own decks, cards and review history. A
 restorable safety backup is made first. After the reset, **TUS Kartları** appears locked again;
 you can reinstall it with **Unlock cards for free** whenever you like. Details:

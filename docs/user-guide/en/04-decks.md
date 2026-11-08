@@ -11,7 +11,7 @@ app_screens:
   - "Overview — app/deck-overview.tsx"
   - "Deck picker — components/DeckPickerModal.tsx"
   - "Sidebar (wide web window only) — components/Sidebar.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Decks
@@ -146,8 +146,10 @@ The **⋮** button at the top right holds actions for the whole collection:
 - **Import:** brings in `.apkg`, `.colpkg` and text files.
   See [Import and export](14-import-export.md).
 - **Export:** saves decks or the whole collection as a file.
-- **Create Backup** and **Restore from Backup:** both open the **Backups** screen, where you
-  name and create a backup or restore one. See [Backups and maintenance](15-backups-and-maintenance.md).
+- **Create Backup:** makes a backup at once; **Manage my backups** in the message that follows
+  opens the **Backups** screen.
+- **Restore from Backup:** opens the **Backups** screen, where you name and create a backup or
+  restore one. See [Backups and maintenance](15-backups-and-maintenance.md).
 - **Help:** opens this guide.
   <!-- Proposed entry point: in-app/01-decks.md › help.decks.more.help. Remove this item if it is not implemented. -->
 
@@ -160,7 +162,7 @@ path (for example "Pharmacology › Antibiotics"). Which items appear depends on
 | Item | What it does | Shown for |
 | --- | --- | --- |
 | **Overview** | Opens the deck's summary screen. | All decks |
-| **Add** | Opens the add-card screen for this deck. | All except filtered decks |
+| **Add note** | Opens the add-card screen for this deck. | All except filtered decks |
 | **Browse cards** | Opens **Card Browser** on this deck and its subdecks. | All decks |
 | **Rename deck** | See [Renaming](#rename-and-move). | All except TUS Kartları |
 | **Create subdeck** | Adds a deck under this one. | Your own regular decks |
@@ -224,8 +226,8 @@ is not deleted.
   See [Deleting a filtered deck](11-filtered-decks.md#delete-filtered-deck).
 - The **Varsayılan** deck cannot be removed completely: its cards and subdecks are deleted, and
   the deck stays, empty, under the name **Default**.
-- TUS Kartları decks cannot be deleted. To remove the pack, see
-  [TUS card pack](17-tus-card-pack.md).
+- TUS Kartları decks cannot be deleted, and the pack cannot be removed on its own. See
+  [Removing the pack](17-tus-card-pack.md#remove-the-pack).
 
 > **Warning:** No automatic backup is made before a deletion. Before deleting a large deck, make
 > a backup with **⋮ › Create Backup**. See [Backups and maintenance](15-backups-and-maintenance.md).

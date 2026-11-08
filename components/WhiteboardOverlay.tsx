@@ -101,6 +101,10 @@ export interface WhiteboardToolbarProps {
 }
 
 const STROKE_COLORS = ['#e0393e', '#2f7fd6', '#2ea043', '#e8a33d', '#8e44ad', '#111111'];
+/** Spoken names for the swatches, in STROKE_COLORS order: VoiceOver reads a name, not a hex code. */
+const STROKE_COLOR_NAMES: readonly (readonly [string, string])[] = [
+    ['kırmızı', 'red'], ['mavi', 'blue'], ['yeşil', 'green'], ['turuncu', 'orange'], ['mor', 'purple'], ['siyah', 'black'],
+];
 /** The pen a deck with no stored preference draws with, in either theme. */
 export const DEFAULT_WHITEBOARD_PEN_COLOR = STROKE_COLORS[0];
 const STROKE_WIDTHS = [2.5, 5, 9];
@@ -578,7 +582,7 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
                 {paletteOpen && (
                     <View style={styles.palette} accessibilityRole="toolbar">
                         <Text style={styles.paletteLabel}>{l('Renk', 'Color')}</Text>
-                        {STROKE_COLORS.map((swatchColor) => (
+                        {STROKE_COLORS.map((swatchColor, index) => (
                             <TouchableOpacity
                                 key={swatchColor}
                                 style={[
@@ -587,7 +591,7 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
                                 ]}
                                 onPress={() => { pickColor(swatchColor); setTool('pen'); }}
                                 accessibilityRole="button"
-                                accessibilityLabel={l(`Kalem rengi ${swatchColor}`, `Pen color ${swatchColor}`)}
+                                accessibilityLabel={l(`Kalem rengi: ${STROKE_COLOR_NAMES[index][0]}`, `Pen color: ${STROKE_COLOR_NAMES[index][1]}`)}
                                 accessibilityState={{ selected: color === swatchColor }}
                             >
                                 <View style={[styles.swatch, { backgroundColor: swatchColor }]} />

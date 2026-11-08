@@ -16,7 +16,7 @@ import { isCatalogDeck } from '../lib/catalogProtection';
 import DeckExportSelector from '../components/DeckExportSelector';
 import ScreenHeader from '../components/ScreenHeader';
 import { userFacingErrorMessage } from '../lib/userFacingError';
-import { readBackup } from '../lib/backup';
+import { displayBackupName, readBackup } from '../lib/backup';
 import { parseBackupExportSource } from '../lib/backupExport';
 
 /** Anki's export formats, in the order of its dialog. */
@@ -239,7 +239,7 @@ export default function ExportScreen() {
                 {backupExport ? (
                     <View style={styles.backupNotice}>
                         <Text style={styles.backupNoticeTitle}>{l('Seçilen yedekten hazırlanıyor', 'Prepared from selected backup')}</Text>
-                        <Text style={styles.backupNoticeName} numberOfLines={2}>{backupName}</Text>
+                        <Text style={styles.backupNoticeName} numberOfLines={2}>{backupName ? displayBackupName(backupName) : null}</Text>
                         <Text style={styles.backupNoticeText}>{l(
                             'Seçenekler yalnızca bu anlık görüntüye uygulanır; mevcut koleksiyonunuz değiştirilmez. Oluşturulan dosya şifreli değildir, yalnızca güvendiğiniz yerlere gönderin.',
                             'The options apply only to this snapshot; your current collection is not changed. The generated file is not encrypted, so send it only to locations you trust.',
@@ -279,7 +279,7 @@ export default function ExportScreen() {
                 ) : (
                     <Text style={styles.selectionCaption}>{selectionExport
                         ? l(`${selectedCardIds?.length ?? 0} seçili kart dışa aktarılacak.`, `${selectedCardIds?.length ?? 0} selected cards will be exported.`)
-                        : l('Koleksiyonun tamamı, çalışma programıyla birlikte.', 'The whole collection, with its scheduling.')}</Text>
+                        : l('TUS Kartları dışında koleksiyonun tamamı, çalışma programıyla birlikte.', 'The whole collection with its scheduling, except TUS Kartları.')}</Text>
                 )}
 
                 <Text style={styles.label}>{l('Dahil et', 'Include')}</Text>

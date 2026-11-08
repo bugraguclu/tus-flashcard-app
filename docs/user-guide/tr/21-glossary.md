@@ -7,7 +7,7 @@ web_path: /yardim/sozluk
 app_help: help?article=glossary
 app_screens:
   - "Yardım merkezi — app/help.tsx (yeni)"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Sözlük
@@ -140,7 +140,7 @@ için de kullanabilirsiniz.
 | Medyayı denetle | Check Media | Kullanılmayan ve eksik resim/ses dosyalarını bulur. |
 | Veritabanını kontrol et | Check database | Koleksiyonu değiştirmeden denetler. |
 | Onar ve optimize et | Repair and optimize | Önce yedek alır, sonra bozuk satırları onarır. |
-| İlerlemeyi sıfırla | Reset progress | Koleksiyonun tamamını siler. Bkz. [Yedekler ve bakım](15-backups-and-maintenance.md#reset-progress). |
+| Koleksiyonu sıfırla | Reset collection | Koleksiyonun tamamını siler. Bkz. [Yedekler ve bakım](15-backups-and-maintenance.md#reset-progress). |
 | Kurtarılan Kartlar | (aynı ad) | Onarımın destesi kaybolan kartları koyduğu deste. |
 
 <a id="app-terms"></a>

@@ -9,7 +9,7 @@ app_screens:
   - "Stopwatch — app/stopwatch.tsx"
   - "Stopwatch sheets — components/stopwatch/ (StudyStartSheet, StudyPickers, SessionEditorSheet, RunningNoteSheet, StopwatchSettingsSheet, StopwatchAlertsSheet, SessionActionsMenu)"
   - "Study Calendar — app/study-calendar.tsx"
-verified_against: kronometre-screen-functions (2026-10-28)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Stopwatch and study calendar
@@ -41,7 +41,7 @@ the Stopwatch's header opens the Study Calendar.
 - The header has a bell (reminders), a calendar (Study Calendar) and a gear (stopwatch settings);
   the orange study tools button is at the bottom right.
 
-Stopwatch sessions do not appear in the Statistics charts or in the **Study time** of the
+Stopwatch sessions do not appear in the Statistics charts or in the **Time** of the
 **Today** card, but they do count for the **Study streak**. See
 [Study streak](12-statistics.md#streak).
 
@@ -137,7 +137,7 @@ The ring's **Total Study Time** for today adds up:
 - a stopwatch started today that is still running.
 
 Cards you answer while the stopwatch runs are not counted twice. On Statistics, **Today** ›
-**Study time** counts card answers only and follows the selected deck, so the total here is usually
+**Time** counts card answers only and follows the selected deck, so the total here is usually
 higher. The day changes at the **Start of next day** hour.
 
 Change the **Daily Goal** in half-hour steps with **−** and **+** next to the ring (00:30 to 16:00,
@@ -220,7 +220,7 @@ the timeline.
   scroll the list below to it; tap a dimmed day of the neighbouring month to switch to that month.
 - Under each day is its total study time as `H:MM`; see [Day totals](#day-totals).
 - Below the calendar are the sessions of the month or week shown, oldest day first.
-- The **•••** menu: **Go to this session** on card sessions (opens the deck's overview);
+- The **•••** menu: **Go to this deck** on card sessions (opens the deck's overview);
   **Session details** and **Open this day in the weekly view** on all sessions; **Edit** and
   **Delete session** on stopwatch sessions.
 - The chart icon at the top right opens **Statistics**; the orange button at the bottom right

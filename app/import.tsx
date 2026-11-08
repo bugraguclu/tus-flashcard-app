@@ -61,7 +61,8 @@ import TextImportOptions from '../components/import/TextImportOptions';
 import FieldMappingSection, { type ColumnMapping } from '../components/import/FieldMappingSection';
 
 const MAX_TEXT_CHARS = 50_000_000;
-const MAX_TEXT_BYTES = 50 * 1024 * 1024;
+const MIB = 1024 * 1024;
+const MAX_TEXT_BYTES = 50 * MIB;
 /** Data rows shown under the field-mapping headers, as Anki's import preview does. */
 const PREVIEW_ROWS = 5;
 /** Anki truncates a very wide file's preview rather than rendering hundreds of columns. */
@@ -249,7 +250,10 @@ export default function ImportScreen() {
         alert(
             t('common.error'),
             tooLarge
-                ? l('Dosya güvenli boyut sınırını aşıyor.', 'The file exceeds the safe size limit.')
+                ? l(
+                    `Dosya çok büyük. Paketler en fazla ${MAX_APKG_BYTES / MIB} MB, metin dosyaları en fazla ${MAX_TEXT_BYTES / MIB} MB olabilir.`,
+                    `The file is too large. Packages can be up to ${MAX_APKG_BYTES / MIB} MB and text files up to ${MAX_TEXT_BYTES / MIB} MB.`,
+                )
                 : l('Dosya okunamadı.', 'The file could not be read.'),
         );
     };
@@ -280,8 +284,8 @@ export default function ImportScreen() {
                 alert(
                     l('Bilinmeyen dosya biçimi', 'Unknown file format'),
                     l(
-                        'Yalnızca .apkg, .colpkg, .csv, .tsv ve .txt dosyaları içe aktarılabilir.',
-                        'Only .apkg, .colpkg, .csv, .tsv and .txt files can be imported.',
+                        'Yalnızca .apkg (veya .zip), .colpkg, .csv, .tsv ve .txt dosyaları içe aktarılabilir.',
+                        'Only .apkg (or .zip), .colpkg, .csv, .tsv and .txt files can be imported.',
                     ),
                 );
                 return;
@@ -554,6 +558,7 @@ export default function ImportScreen() {
                             styles={styles}
                             accentColor={colors.accent}
                             cancelLabel={t('common.cancel')}
+                            locale={locale}
                             l={l}
                         />
                     </>
@@ -614,7 +619,7 @@ export default function ImportScreen() {
                     title={l('Hedef deste', 'Target Deck')}
                     allDecksLabel={null}
                     searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                    emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                    emptySearchLabel={l('Aramanızla eşleşen deste yok. Kelimelerin başını yazın; örneğin “farm”.', 'No decks match your search. Type the start of a word, for example “anat”.')}
                     cancelLabel={t('common.cancel')}
                     closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
                     searchAccessibilityLabel={l('Deste ara', 'Search decks')}

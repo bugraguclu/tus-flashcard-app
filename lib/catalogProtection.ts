@@ -7,6 +7,7 @@
 
 import type { AnkiCard, Deck, DeckConfig, Note, NoteType } from './models';
 import { getDB } from './db';
+import { translateActive } from './i18n';
 import { BKA_MANIFEST } from './bkaManifest';
 import { CATALOG_INSTALL_KEY, CATALOG_PACK_ID, isCatalogPackRow } from './catalogRows';
 
@@ -34,9 +35,7 @@ export function isProtectedCatalogGuid(guid: unknown): boolean {
 
 export function assertNoProtectedCatalogGuids(guids: Iterable<unknown>): void {
     for (const guid of guids) {
-        if (isProtectedCatalogGuid(guid)) throw new PaidCatalogProtectionError(
-            'Bu dosyada ücretli BKA kartları bulundu. Katalog yalnızca uygulama içi satın alma ile etkinleştirilebilir.',
-        );
+        if (isProtectedCatalogGuid(guid)) throw new PaidCatalogProtectionError(translateActive('catalog.importBlocked'));
     }
 }
 
@@ -116,7 +115,7 @@ export function isCatalogNoteType(typeOrId: NoteType | number): boolean {
 
 function assertMutable(owned: boolean): void {
     if (owned && !isPaidCatalogUnlocked()) {
-        throw new PaidCatalogProtectionError('Bu içerik satın alma tamamlanmadan değiştirilemez.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.contentLocked'));
     }
 }
 
@@ -137,59 +136,59 @@ export function assertCatalogNoteTypeMutable(value: NoteType | number): void { a
 
 export function assertCatalogDeckNotDeletable(value: Deck | number): void {
     if (isCatalogDeck(value)) {
-        throw new PaidCatalogProtectionError('Katalog desteleri silinemez. Kataloğu Ayarlar ekranından kaldırabilirsiniz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.deckNotDeletable'));
     }
 }
 
 export function assertCatalogDeckNotRenamable(value: Deck | number): void {
     if (isCatalogDeck(value)) {
-        throw new PaidCatalogProtectionError('Katalog desteleri yeniden adlandırılamaz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.deckNotRenamable'));
     }
 }
 
 export function assertCatalogNoteNotDeletable(value: Note | number): void {
     if (isCatalogNote(value)) {
-        throw new PaidCatalogProtectionError('Katalog kartları tek tek silinemez. Kataloğu Ayarlar ekranından kaldırabilirsiniz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.noteNotDeletable'));
     }
 }
 
 export function assertCatalogNoteNotDuplicable(value: Note | number): void {
     if (isCatalogNote(value)) {
-        throw new PaidCatalogProtectionError('Katalog notları çoğaltılamaz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.noteNotDuplicable'));
     }
 }
 
 export function assertCatalogNoteTypeNotChangeable(value: Note | number): void {
     if (isCatalogNote(value)) {
-        throw new PaidCatalogProtectionError('Katalog notlarının türü değiştirilemez.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.noteTypeLocked'));
     }
 }
 
 export function assertCatalogCardsMovable(cardsOrIds: (AnkiCard | number)[], targetDeckOrId: Deck | number): void {
     if (isCatalogDeck(targetDeckOrId)) {
-        throw new PaidCatalogProtectionError('Katalog destelerine dışarıdan kart taşınamaz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.cannotMoveIntoPack'));
     }
     if (cardsOrIds.some((card) => isCatalogCard(card))) {
-        throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.cardsNotMovable'));
     }
 }
 
 export function assertCatalogNoteContentMutable(newNote: Note, existingNote: Note): void {
     if (!isCatalogNote(existingNote)) return;
     if (newNote.noteTypeId !== existingNote.noteTypeId) {
-        throw new PaidCatalogProtectionError('Katalog notlarının türü değiştirilemez.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.noteTypeLocked'));
     }
     if (newNote.guid !== existingNote.guid) {
-        throw new PaidCatalogProtectionError('Katalog notlarının kimliği değiştirilemez.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.noteIdentityLocked'));
     }
     if (newNote.catalogPack !== existingNote.catalogPack) {
-        throw new PaidCatalogProtectionError('Katalog notlarının sahipliği değiştirilemez.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.noteOwnershipLocked'));
     }
     if (isPaidCatalogUnlocked()) return;
     const fieldsA = Array.isArray(newNote.fields) ? newNote.fields : [];
     const fieldsB = Array.isArray(existingNote.fields) ? existingNote.fields : [];
     if (fieldsA.length !== fieldsB.length || fieldsA.some((val, idx) => val !== fieldsB[idx])) {
-        throw new PaidCatalogProtectionError('Katalog notlarının içeriği değiştirilemez.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.contentLocked'));
     }
 }
 

@@ -11,7 +11,7 @@ export default function ImportFilePrompt({ styles, l, onPick }: {
     return (
         <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>{l('İçe aktarılacak dosyayı seçin', 'Choose a file to import')}</Text>
-            <Text style={styles.emptyBody}>.apkg · .colpkg · .csv · .tsv · .txt</Text>
+            <Text style={styles.emptyBody}>.apkg / .zip · .colpkg · .csv · .tsv · .txt</Text>
             <TouchableOpacity
                 style={styles.primaryButton}
                 onPress={onPick}

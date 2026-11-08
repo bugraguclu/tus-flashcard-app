@@ -924,14 +924,14 @@ export default function StudyScreen() {
             } else if (min > 0) {
                 setCountdown(`${min}:${String(sec).padStart(2, '0')}`);
             } else {
-                setCountdown(`${sec}sn`);
+                setCountdown(l(`${sec}sn`, `${sec}s`));
             }
         };
 
         update();
         const timer = setInterval(update, 1000);
         return () => clearInterval(timer);
-    }, [waitingTargetMs, currentCard, buildQueue]);
+    }, [waitingTargetMs, currentCard, buildQueue, l]);
 
     const statusToQueueBucket = (status: StudyCard['state']['status']): keyof QueueStats => {
         if (status === 'new') return 'newCount';
@@ -1099,8 +1099,8 @@ export default function StudyScreen() {
                 const shouldContinue = await choose(
                     l('Zaman kutusu', 'Timebox'),
                     l(
-                        `${checkpoint.minutes} dakikada ${checkpoint.cards} kart çalıştınız.`,
-                        `You studied ${checkpoint.cards} ${checkpoint.cards === 1 ? 'card' : 'cards'} in ${checkpoint.minutes} ${checkpoint.minutes === 1 ? 'minute' : 'minutes'}.`,
+                        `${checkpoint.minutes} dakikada ${checkpoint.cards} kart çalıştınız. Devam yeni bir süre başlatır; Bitir sizi deste listesine götürür.`,
+                        `You studied ${checkpoint.cards} ${checkpoint.cards === 1 ? 'card' : 'cards'} in ${checkpoint.minutes} ${checkpoint.minutes === 1 ? 'minute' : 'minutes'}. Continue starts a new block; Finish takes you to the deck list.`,
                     ),
                     l('Devam', 'Continue'),
                     l('Bitir', 'Finish'),
@@ -3121,7 +3121,7 @@ export default function StudyScreen() {
             >
                 {/* Toolbar chrome between fixed icons: it grows less than content, as a navigation bar title does. */}
                 <Text style={styles.classicToolbarTitle} numberOfLines={1} maxFontSizeMultiplier={1.15}>
-                    {settings.showDeckTitle !== false ? reviewerDeckTitle : l('Bugünün Kartları', 'Cards for Today')}
+                    {settings.showDeckTitle !== false ? reviewerDeckTitle : l('Deste seç', 'Select deck')}
                 </Text>
                 <DownChevron color={colors.textMuted} />
                 {streak.current > 0 ? (
@@ -3414,7 +3414,7 @@ export default function StudyScreen() {
                             </TouchableOpacity>
                             {trialPurchaseAction}
                             <Text style={styles.emptySub}>
-                                {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
+                                {l('Bugün tüm destelerde', 'You gave')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('cevap verdiniz.', sessionStats.reviewed === 1 ? 'answer today across all decks.' : 'answers today across all decks.')}
                             </Text>
                         </View>
                     ) : emptyStateDeck?.isFiltered && emptyStateDeck.filteredDeckEmpty ? (
@@ -3537,7 +3537,7 @@ export default function StudyScreen() {
                                 <Text style={styles.secondaryActionText}>‹ {l('Destelere Dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
                             <Text style={styles.emptySub}>
-                                {l('Bugün', 'Today')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('kart tekrar edildi.', sessionStats.reviewed === 1 ? 'card was reviewed.' : 'cards were reviewed.')}
+                                {l('Bugün tüm destelerde', 'You gave')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('cevap verdiniz.', sessionStats.reviewed === 1 ? 'answer today across all decks.' : 'answers today across all decks.')}
                             </Text>
                             {trialPurchaseAction}
                         </View>
@@ -3651,7 +3651,7 @@ export default function StudyScreen() {
                 title={l('Deste seç', 'Select Deck')}
                 allDecksLabel={l('Tüm desteler', 'All Decks')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                emptySearchLabel={l('Aramanızla eşleşen deste yok. Kelimelerin başını yazın; örneğin “farm”.', 'No decks match your search. Type the start of a word, for example “anat”.')}
                 cancelLabel={t('common.cancel')}
                 closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
                 searchAccessibilityLabel={l('Deste ara', 'Search decks')}

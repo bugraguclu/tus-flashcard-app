@@ -24,20 +24,20 @@ Bilgi sayfaları README'deki genel `HelpSheet` kalıbını kullanır (`SwipeDism
 
 | # | Bölüm TR / EN | Durum | Çapa |
 | --- | --- | --- | --- |
-| 1 | Deste ve dönem / Deck and period | Mevcut — güncelle | `scope-and-period` |
+| 1 | Deste ve dönem / Deck and period | Mevcut — koru (2026-11-08) | `scope-and-period` |
 | 2 | Bugün / Today | Yeni | `today` |
 | 3 | Çalışma serisi / Study streak | Yeni | `streak` |
-| 4 | Gelecek vadeler / Future Due | Mevcut — güncelle | `future-due` |
-| 5 | Tekrarlar / Reviews (eski: Tekrarlar ve cevaplar) | Mevcut — güncelle | `reviews` |
+| 4 | Gelecek vadeler / Future Due | Mevcut — koru (2026-11-08) | `future-due` |
+| 5 | Tekrarlar / Reviews (eski: Tekrarlar ve cevaplar) | Mevcut — koru (2026-11-08) | `reviews` |
 | 6 | Cevap düğmeleri / Answer Buttons | Yeni | `answer-buttons` |
-| 7 | Saatlik dağılım / Hourly Breakdown | Mevcut — güncelle | `hourly` |
-| 8 | Tekrar aralıkları / Review Intervals (eski: Aralıklar ve kart sayıları) | Mevcut — güncelle | `intervals` |
+| 7 | Saatlik dağılım / Hourly Breakdown | Mevcut — koru (2026-11-08) | `hourly` |
+| 8 | Tekrar aralıkları / Review Intervals (eski: Aralıklar ve kart sayıları) | Mevcut — koru (2026-11-08) | `intervals` |
 | 9 | Kart sayıları / Card Counts | Yeni | `card-counts` |
 | 10 | Eklenenler / Added | Yeni | `added` |
 | 11 | Desteler / Decks | Yeni | `deck-progress` |
-| 12 | Grafikleri kullanma / Using charts | Mevcut — güncelle | `chart-tips` |
+| 12 | Grafikleri kullanma / Using charts | Mevcut — koru (2026-11-08) | `chart-tips` |
 
-**1. Deste ve dönem** — Mevcut — güncelle (eski metin: "Deste ve zaman aralığı üstten seçilir. Bugün ve çalışma serisi bu dönemden bağımsızdır." / "Choose a deck and period at the top. Today and the study streak are independent of that period.")
+**1. Deste ve dönem** — Mevcut — koru (2026-11-08; eski metin: "Deste ve zaman aralığı üstten seçilir. Bugün ve çalışma serisi bu dönemden bağımsızdır." / "Choose a deck and period at the top. Today and the study streak are independent of that period.")
 - TR: Deste ve zaman aralığı üstten seçilir; bir deste seçince alt desteleri de dahil olur. Bugün, çalışma serisi, kart sayıları ve deste satırları dönemden etkilenmez. Çalışma serisi her zaman tüm koleksiyonu gösterir.
 - EN: Choose a deck and period at the top; a deck includes its subdecks. Today, the study streak, card counts and the deck rows do not depend on the period. The study streak always covers the whole collection.
 
@@ -49,25 +49,25 @@ Bilgi sayfaları README'deki genel `HelpSheet` kalıbını kullanır (`SwipeDism
 - TR: Art arda çalıştığınız gün sayısı. Kart yanıtladığınız veya Kronometre'de oturum kaydettiğiniz her gün sayılır; bugün henüz çalışmadıysanız seri dünden devam eder. Karta dokunmak Kronometre'yi açar.
 - EN: How many days in a row you have studied. Every day with a card answer or a saved stopwatch session counts; if you have not studied yet today, the streak runs to yesterday. Tap the card to open the Stopwatch.
 
-**4. Gelecek vadeler** — Mevcut — güncelle (eski metin: "Yeni kart öğrenmediğiniz ve kart unutmadığınız varsayımıyla beklenen tekrarlar. Gecikenlerle seçeneği vadesi geçmiş kartları da içerir." / "Expected reviews assuming no new cards are learned and none are forgotten. With backlog includes overdue cards.")
+**4. Gelecek vadeler** — Mevcut — koru (2026-11-08; eski metin: "Yeni kart öğrenmediğiniz ve kart unutmadığınız varsayımıyla beklenen tekrarlar. Gecikenlerle seçeneği vadesi geçmiş kartları da içerir." / "Expected reviews assuming no new cards are learned and none are forgotten. With backlog includes overdue cards.")
 - TR: Yeni kart öğrenmediğiniz ve kart unutmadığınız varsayımıyla beklenen tekrarlar; seçilen dönem kadar ileriye bakar. Gecikenlerle vadesi geçmiş kartları da gösterir. Genç kartların aralığı 21 günden kısadır, olgunlarınki 21 gün veya daha uzundur. Günlük yük, her gün ortalama kaç tekrar geleceğinin tahminidir.
 - EN: Expected reviews assuming no new cards are learned and none are forgotten; looks as far ahead as the selected period. With backlog also shows overdue cards. Young cards have intervals under 21 days, mature cards 21 days or more. Daily load estimates how many reviews come up per day.
 
-**5. Tekrarlar** — Mevcut — güncelle (eski başlık "Tekrarlar ve cevaplar"; eski metin: "Tekrarlar, kart türüne göre cevap sayısını veya çalışma süresini gösterir. Doğruluk, Tekrar dışındaki cevapların oranıdır." / "Reviews shows answer counts or study time by card type. Accuracy is the share of answers other than Again.")
-- TR: Her gün, hafta veya ayda verdiğiniz cevapları ya da cevaplara harcadığınız süreyi kart türüne göre gösterir. Filtreli, filtrelenmiş destelerde ve özel çalışmada verilen cevaplardır. Günlük ortalama bütün günlere, Çalışılan günlerde yalnızca çalıştığınız günlere bölünür.
-- EN: Shows the answers you gave, or the time spent on them, per day, week or month by card type. Filtered means answers in filtered decks and Custom Study. Daily average divides by every day; On days studied by the days you studied only.
+**5. Tekrarlar** — Mevcut — koru (2026-11-08; eski başlık "Tekrarlar ve cevaplar"; eski metin: "Tekrarlar, kart türüne göre cevap sayısını veya çalışma süresini gösterir. Doğruluk, Tekrar dışındaki cevapların oranıdır." / "Reviews shows answer counts or study time by card type. Accuracy is the share of answers other than Again." Öneriden farkı: "Filtreli" bütün filtrelenmiş deste cevapları değildir, `lib/studyAnswer.ts` yalnızca vadesinden önceki tekrarları ve önizlemeleri revlog türü 3 olarak yazar; sütunlar uzun geçmişte yıl da olabilir, `lib/statsSeries.ts` `historyUnit`)
+- TR: Verdiğiniz cevapları veya cevaplara harcadığınız süreyi kart türüne göre gösterir; her sütun bir gün, hafta, ay veya yıldır. Filtreli, filtrelenmiş destelerde ve özel çalışmada vadesinden önce tekrarlanan ya da önizlenen kartların cevaplarıdır. Günlük ortalama bütün günlere, Çalışılan günlerde yalnızca çalıştığınız günlere bölünür.
+- EN: Shows the answers you gave, or the time spent on them, by card type, one bar per day, week, month or year. Filtered means answers in filtered decks and Custom Study to cards that were not yet due or were previewed. Daily average divides by every day; On days studied by the days you studied only.
 
 **6. Cevap düğmeleri** — Yeni
 - TR: Her düğmeye kaç kez bastığınızı öğrenme, genç ve olgun kartlara göre gösterir. Alttaki oranlar her kart türünde Tekrar dışındaki cevapların payıdır. Son ay seçiliyken son 30 gün sayılır.
 - EN: How often you pressed each button, split into learning, young and mature cards. The figures below are the share of answers that were not Again for each kind. Last Month counts the last 30 days here.
 
-**7. Saatlik dağılım** — Mevcut — güncelle (eski metin: "Saatlere göre cevap sayısı ve doğru cevap oranı." / "Answer counts and accuracy by hour of day.")
-- TR: Saate göre cevap sayısı ve Tekrar dışındaki cevapların oranı. Oran çizgisi %0'dan değil, en düşük saatin biraz altından başlar. En başarılı saat için o saatte en az 10 cevap gerekir. Filtrelenmiş destelerdeki cevaplar sayılmaz.
-- EN: Answers by hour and the share that were not Again. The rate line starts just below the lowest hour, not at 0%. An hour needs at least 10 answers to be the strongest hour. Answers in filtered decks are left out.
+**7. Saatlik dağılım** — Mevcut — koru (2026-11-08; eski metin: "Saatlere göre cevap sayısı ve doğru cevap oranı." / "Answer counts and accuracy by hour of day." Öneriden farkı: eşik en az 10 cevap ve bütün cevapların %3'üdür, `lib/statsSeries.ts` `hourHighlights`; grafik filtrelenmiş destedeki bütün cevapları değil yalnızca Filtreli (revlog türü 3) cevapları dışarıda bırakır, `lib/ankiStats.ts` `getHourBreakdown`)
+- TR: Saate göre cevap sayısı ve Tekrar dışındaki cevapların oranı. Oran çizgisi %0'dan değil, en düşük saatin biraz altından başlar. En başarılı saat için o saatte en az 10 cevap ve bütün cevapların en az %3'ü gerekir. Filtreli cevaplar sayılmaz.
+- EN: Answers by hour and the share that were not Again. The rate line starts just below the lowest hour, not at 0%. An hour needs at least 10 answers, and at least 3% of all answers, to be the strongest hour. Filtered answers are left out.
 
-**8. Tekrar aralıkları** — Mevcut — güncelle (eski başlık "Aralıklar ve kart sayıları"; eski metin: "İkisi de güncel kart durumunu gösterir. Seçilen dönem, tekrar aralıklarının yalnızca üst sınırını belirler; kart sayılarını değiştirmez." / "Both show current card state. The period only limits the longest review interval shown; it does not change card counts.")
-- TR: Tekrar kartlarınızın şu anki aralıkları. Grafik seçilen dönemden uzun aralıkları göstermez; Ortalama aralık ve En uzun aralık ise bütün tekrar kartlarını sayar.
-- EN: The current intervals of your review cards. The chart leaves out intervals longer than the period; Average interval and Longest interval count every review card.
+**8. Tekrar aralıkları** — Mevcut — koru (2026-11-08; eski başlık "Aralıklar ve kart sayıları"; eski metin: "İkisi de güncel kart durumunu gösterir. Seçilen dönem, tekrar aralıklarının yalnızca üst sınırını belirler; kart sayılarını değiştirmez." / "Both show current card state. The period only limits the longest review interval shown; it does not change card counts." Eski metindeki "daha uzun aralıktaki kartlar grafiğin altında sayılır" bilgisi korundu, `IntervalsSection.tsx`)
+- TR: Tekrar kartlarınızın şu anki aralıkları. Grafik seçilen dönemden uzun aralıkları göstermez, onların sayısını altına yazar; Ortalama aralık ve En uzun aralık ise bütün tekrar kartlarını sayar.
+- EN: The current intervals of your review cards. The chart leaves out intervals longer than the period and gives their count beneath it; Average interval and Longest interval count every review card.
 
 **9. Kart sayıları** — Yeni
 - TR: Kartlarınızın şu anki durumu; dönemden etkilenmez. Genç ve olgun tekrar kartları 21 günlük aralıkla ayrılır, Görülmemiş yeni kartlardır. Askıdaki ve gömülü kartlar, hangi aşamada olursa olsun, yalnızca kendi satırlarında sayılır.
@@ -81,9 +81,9 @@ Bilgi sayfaları README'deki genel `HelpSheet` kalıbını kullanır (`SwipeDism
 - TR: Her destenin yüzde kaçının en az bir kez çalışıldığını gösterir; çubuk olgun, genç, öğrenme ve yeni kartlara bölünür. Bir desteye dokunmak bütün ekranı o desteye göre gösterir.
 - EN: The share of each deck's cards studied at least once; the bar splits into mature, young, learning and new cards. Tap a deck to show the whole screen for it.
 
-**12. Grafikleri kullanma** — Mevcut — güncelle (eski metin: "…Tekrarlar ve Saatlik dağılım üzerinde yana kaydırarak değerleri gezebilirsiniz. Eklenenler sütununa dokunmak o kartları açar." / "…Slide across Reviews and Hourly Breakdown to inspect values. Tap an Added bar to open its cards.")
-- TR: Ayrıntı için sütuna dokunun; kapatmak için yeniden dokunun. Tekrarlar, Saatlik dağılım ve Eklenenler üzerinde parmağınızı yana kaydırarak sütunları gezebilirsiniz. Eklenenler sütununa dokunmak o kartları açar.
-- EN: Tap a bar for details and again to dismiss. Slide across Reviews, Hourly Breakdown and Added to inspect values. Tap an Added bar to open its cards.
+**12. Grafikleri kullanma** — Mevcut — koru (2026-11-08; eski metin: "…Grafiğin üzerinde parmağınızı yana kaydırarak değerleri gezebilirsiniz. Eklenenler sütununa dokunmak o kartları açar." / "…Slide across a chart to inspect values. Tap an Added bar to open its cards." Öneriden farkı: kaydırma yalnızca üç grafikte değil, `StatsBarChart` kullanan beşinde de (Tekrarlar, Gelecek vadeler, Tekrar aralıkları, Saatlik dağılım, Eklenenler) çalışır, bu yüzden grafik adı sayılmadı; Eklenenler'de dokunma değeri göstermediği için kaydırma ayrıca anıldı)
+- TR: Ayrıntı için sütuna dokunun; kapatmak için yeniden dokunun. Parmağınızı yana kaydırarak sütundan sütuna geçebilirsiniz. Eklenenler'de bir sütuna dokunmak o günlerde eklenen kartları Kartlarım'da açar; ayrıntısını görmek için üzerinde kaydırın.
+- EN: Tap a bar for details and again to dismiss, or slide sideways to move from bar to bar. On Added, tapping a bar opens the cards added then in the Card Browser; slide across it for details.
 
 ### İstatistikler — kısa metinler
 
@@ -91,9 +91,9 @@ Bilgi sayfaları README'deki genel `HelpSheet` kalıbını kullanır (`SwipeDism
 | --- | --- | --- | --- | --- | --- |
 | help.stats.rangeSubtitle | Zaman aralığı seçicisi, "Zaman aralığı" başlığının altı (`components/stats/StatsRangePicker.tsx:46`) | alt başlık | Bugün, çalışma serisi ve kart sayıları dönemden etkilenmez. | Today, the study streak and card counts do not depend on the period. | Yeni |
 | help.stats.deckRowsHint | En alttaki "Desteler" / "Alt desteler" başlığının altı (`components/stats/DeckProgressSection.tsx:26`) | ipucu | Yüzde, en az bir kez çalışılmış kartların payıdır. Ayrıntı için desteye dokunun. | The percentage is the share of cards studied at least once. Tap a deck for its statistics. | Yeni |
-| help.stats.addedHint | Eklenenler grafiğinin üstündeki başlık satırı, hiçbir sütun seçili değilken (`components/stats/AddedSection.tsx:51`; çizim `StatsBarChart.tsx:204`) | görünür ipucu | Kartları görmek için bir sütuna dokunun | Tap a bar to see its cards | Mevcut — güncelle (metin var ama hiç gösterilmiyor: StatsBarChart notu yalnızca seçili sütunda çizer) |
-| help.stats.todayAnswered | Bugün kartı, ilk kutunun etiketi (`app/stats.tsx:308`) | etiket | Yanıtlanan (koru) | Answered | Mevcut — güncelle (eski metin EN: Reviews; bütün cevapları sayar, yalnızca tekrar kartlarını değil) |
-| help.stats.intervalAxis | Tekrar aralıkları grafiğinin eksen etiketleri (`lib/ankiStats.ts:333`) | eksen etiketi | 5g, 0–6g (koru) | 5d, 0–6d | Mevcut — güncelle (eski metin EN: "5g", "0–6g") |
+| help.stats.addedHint | Eklenenler grafiğinin üstündeki başlık satırı, hiçbir sütun seçili değilken (`components/stats/AddedSection.tsx` `summary.note`; çizim `StatsBarChart.tsx`) | görünür ipucu | Kartları görmek için bir sütuna dokunun | Tap a bar to see its cards | Mevcut — koru (2026-11-08; eski durum: metin vardı ama hiç gösterilmiyordu, StatsBarChart notu yalnızca seçili sütunda çiziyordu. Artık `onPressBar` olan grafikte, yani yalnızca Eklenenler'de, seçim yokken de çizilir; öteki grafiklerin özet notu VoiceOver ipucu olarak kalır) |
+| help.stats.todayAnswered | Bugün kartı, ilk kutunun etiketi (`components/stats/TodaySection.tsx`) | etiket | Cevap | Answers | Mevcut — koru (2026-11-08; kod değişikliği gerekmedi: Bugün kartı yeniden yazılırken etiket iki dilde de "Cevap" / "Answers" oldu, eski EN "Reviews" artık yok. Kutu bütün cevapları sayar, `getTodayAnswerStats`) |
+| help.stats.intervalAxis | Tekrar aralıkları grafiğinin eksen etiketleri (`components/stats/IntervalsSection.tsx`, `l('g', 'd')`) | eksen etiketi | 5g, 1–7g | 5d, 1–7d | Mevcut — koru (2026-11-08; kod değişikliği gerekmedi: birim artık İngilizcede "d". Sütunlar 1 günden başlar, bu yüzden örnek aralık "1–7"dir) |
 | help.stats.streakHint | Çalışma serisi kartı başlığı, VoiceOver ipucu (`app/stats.tsx:337`) | erişilebilirlik ipucu | Kronometreyi açar | Opens the stopwatch | Mevcut — koru |
 | help.stats.empty.* | Grafik boş durumları (`app/stats.tsx:404, 450, 495`; `ReviewsSection.tsx:118`; `HourlySection.tsx:58`; `AddedSection.tsx:60`) | boş durum | (mevcut metinler) | (existing texts) | Mevcut — koru |
 | help.stats.deckOverviewEntry | Genel bakış › **Deste istatistikleri** açıklaması (`app/deck-overview.tsx:330`) | alt satır | İlerlemeyi ve tekrar yükünü görüntüleyin | View progress and review workload | Mevcut — koru |
@@ -132,7 +132,7 @@ Bilgi sayfaları README'deki genel `HelpSheet` kalıbını kullanır (`SwipeDism
 | help.stopwatch.startSubtitle | **Çalışmaya Başla** sayfası, **Başla** düğmesinin üstü (`components/stopwatch/StudyStartSheet.tsx`) | alt başlık | Kronometre seçtiğiniz dersle başlar; tekrar sayısı o dersin son oturumundan devam eder. | The stopwatch starts on the subject you choose and continues its latest pass. | Yeni (eski **Hangi dersi çalışacaksınız?** sayfasının alt başlığıydı; sayfa TUSBuddy düzenindeki **Çalışmaya Başla** ile değişti) |
 | help.stopwatch.editorPassHint | — | — | — | — | Kaldırıldı: tekrar sayısı artık **Tür Seçin** listesinde ("1. Tekrar"–"8. Tekrar") seçilir, ayrı bir **Tekrar** satırı yok |
 | help.stopwatch.alertsUndetermined | **Hatırlatmalar** sayfası, anahtarın altındaki durum satırı, iPhone'da izin henüz istenmemişken (`components/stopwatch/StopwatchAlertsSheet.tsx:55-63`) | durum satırı | Hatırlatmalar için bildirim izni gerekiyor. İzin vermek için anahtarı kapatıp yeniden açın. | Reminders need notification permission. Turn the switch off and on again to allow it. | Yeni (bkz. açık soru 2) |
-| help.stopwatch.sessionDuration | Oturum kartlarındaki **Çalışma** / **Mola** süreleri (`lib/studyCalendar.ts:413-424`) | biçim | 1 sa 39 dk, 36 dk | 1h 39m (koru) | Mevcut — güncelle (eski metin TR: "1s 39dk"; "s" saniye gibi okunuyor, uygulamanın geri kalanı "sa" kullanır) |
+| help.stopwatch.sessionDuration | Oturum kartlarındaki **Çalışma** / **Mola** süreleri ve oturum ayrıntıları (`lib/studyCalendar.ts` `formatSessionDuration`) | biçim | 1 sa 39 dk, 36 dk, 45 sn | 1h 39m, 36m, 45s | Mevcut — koru (2026-11-08; eski metin TR: "1s 39dk", "36dk", "45sn"; "s" saniye gibi okunuyordu. Türkçe birimler İstatistikler'deki gibi boşlukla yazılır; İngilizce değişmedi) |
 | help.stopwatch.existing | Ayar ipuçları (`StopwatchSettingsSheet.tsx:43-45, 80, 93`), hatırlatma ipucu ve durumları (`StopwatchAlertsSheet.tsx:55-72`), plan kartları (`PlannedStudyCard.tsx`, `NoStudyPlanCard.tsx`), boş günler (`StopwatchTimeline.tsx`), blok ilerlemesi (`LiveSessionCard.tsx`), form bilgi kutusu ve hataları (`SessionEditorSheet.tsx`), onaylar ve bildirimler (`app/stopwatch.tsx`) | çeşitli | (mevcut metinler) | (existing texts) | Mevcut — koru |
 
 ---
@@ -165,7 +165,7 @@ Bilgi sayfaları README'deki genel `HelpSheet` kalıbını kullanır (`SwipeDism
 
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.calendar.goToDeck | ••• menüsü, kart oturumunun ilk öğesi (`app/study-calendar.tsx:242`) | menü öğesi | Bu desteye git | Go to this deck | Mevcut — güncelle (eski metin: "Bu oturuma git" / "Go to this session"; öğe destenin genel bakışını açar, Kronometre'deki aynı öğe "Bu desteye git" der: `app/stopwatch.tsx:265`) |
+| help.calendar.goToDeck | ••• menüsü, kart oturumunun ilk öğesi (`app/study-calendar.tsx` `key: 'deck'`) | menü öğesi | Bu desteye git | Go to this deck | Mevcut — koru (2026-11-08; eski metin: "Bu oturuma git" / "Go to this session"; öğe destenin genel bakışını açar, Kronometre'deki aynı öğe "Bu desteye git" der: `app/stopwatch.tsx`) |
 | help.calendar.empty | Liste boşken (`app/study-calendar.tsx:313-319, 446-449`) | boş durum | (mevcut metinler) | (existing texts) | Mevcut — koru |
 | help.calendar.analyticsLabel | Başlıktaki grafik düğmesi (`app/study-calendar.tsx:329`) | erişilebilirlik etiketi | Çalışma analizleri | Study analytics | Mevcut — koru |
 

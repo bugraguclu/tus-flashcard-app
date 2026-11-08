@@ -6,6 +6,7 @@ import {
     calloutHtml,
     EDITOR_CALLOUTS,
     EDITOR_FONT_FAMILIES,
+    EDITOR_FONT_SIZE_LABELS,
     EDITOR_FONT_SIZES,
     EDITOR_LINE_SPACINGS,
     type EditorFontFamilyKey,
@@ -34,7 +35,7 @@ export function EditorFontSizeModal({ visible, currentSize, onChoose, onClose, s
             <View style={styles.modalOverlay}>
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
                 <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Yazı boyutu', 'Font Size')}</Text>
+                    <Text style={styles.modalTitle}>{l('Düzenleyici yazı boyutu', 'Editor Text Size')}</Text>
                     {[12, 14, 16, 18, 20, 24, 28, 32].map((size) => (
                         <TouchableOpacity
                             key={size}
@@ -208,7 +209,7 @@ export function InlineFontSizePickerModal({ visible, currentSize, onChoose, onCl
                             accessibilityState={{ selected: currentSize === size }}
                             onPress={() => onChoose(size)}
                         >
-                            <Text style={styles.formatPickerOptionText}>{size}</Text>
+                            <Text style={styles.formatPickerOptionText}>{l(...EDITOR_FONT_SIZE_LABELS[size])}</Text>
                         </TouchableOpacity>
                     ))}
                     <TouchableOpacity style={styles.modalClose} onPress={onClose}>
@@ -416,8 +417,9 @@ export function ColorPickerModal({ visible, onCommand, onClose, colors, styles, 
     );
 }
 
-/** The active field's raw HTML; the screen sanitizes it before it is written back. */
-export function HtmlSourceModal({ visible, value, onChangeValue, onSave, onClose, styles, l, t }: PickerBaseProps & {
+/** The active field's raw HTML. It is stored as written; card rendering sanitizes what it shows. */
+export function HtmlSourceModal({ visible, fieldName, value, onChangeValue, onSave, onClose, styles, l, t }: PickerBaseProps & {
+    fieldName: string;
     value: string;
     onChangeValue: (value: string) => void;
     onSave: () => void;
@@ -435,7 +437,10 @@ export function HtmlSourceModal({ visible, value, onChangeValue, onSave, onClose
                 <View style={styles.modalCard} accessibilityViewIsModal>
                     <Text style={styles.modalTitle}>{l('HTML Kaynağını Düzenle', 'Edit HTML Source')}</Text>
                     <Text style={styles.customToolbarExplanation}>
-                        {l('Alanın ham HTML içeriğini doğrudan düzenleyin. Kaydedildiğinde güvenlik doğrulaması uygulanır.', 'Edit raw HTML content directly. Sanitization is applied upon saving.')}
+                        {l(
+                            `${fieldName} alanının HTML kaynağı. Yazdığınız kaynak olduğu gibi saklanır; betikler ve güvenli olmayan öğeler kartta gösterilmez.`,
+                            `HTML source of the ${fieldName} field. The source is stored as you write it; scripts and other unsafe parts are not shown on the card.`,
+                        )}
                     </Text>
                     <TextInput
                         style={[styles.modalInput, { minHeight: 140, maxHeight: 260, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 13 }]}

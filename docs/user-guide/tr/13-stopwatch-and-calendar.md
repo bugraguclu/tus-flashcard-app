@@ -9,7 +9,7 @@ app_screens:
   - "Kronometre — app/stopwatch.tsx"
   - "Kronometre sayfaları — components/stopwatch/ (StudyStartSheet, StudyPickers, SessionEditorSheet, RunningNoteSheet, StopwatchSettingsSheet, StopwatchAlertsSheet, SessionActionsMenu)"
   - "Çalışma Takvimi — app/study-calendar.tsx"
-verified_against: kronometre-screen-functions (2026-10-28)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Kronometre ve çalışma takvimi
@@ -40,7 +40,7 @@ açarsınız; Çalışma Takvimi'ni Kronometre başlığındaki takvim düğmesi
 - Başlıkta zil (hatırlatmalar), takvim (Çalışma Takvimi) ve dişli (Kronometre ayarları)
   düğmeleri, sağ altta turuncu çalışma araçları düğmesi vardır.
 
-Kronometre oturumları İstatistikler'deki grafiklere ve **Bugün** kartındaki **Çalışma süresi**'ne
+Kronometre oturumları İstatistikler'deki grafiklere ve **Bugün** kartındaki **Süre**'ye
 girmez; **Çalışma serisi**'ni ise etkiler. Bkz. [Çalışma serisi](12-statistics.md#streak).
 
 <a id="start-and-break"></a>
@@ -137,7 +137,7 @@ Halkadaki **Toplam Çalışma Süresi** bugün için şunların toplamıdır:
 - bugün başlattığınız ve hâlâ çalışan kronometre.
 
 Kronometre çalışırken yanıtladığınız kartlar iki kez sayılmaz. İstatistikler'deki **Bugün** ›
-**Çalışma süresi** yalnızca kart cevaplarını sayar ve seçili desteye uyar, bu yüzden buradaki toplam
+**Süre** yalnızca kart cevaplarını sayar ve seçili desteye uyar, bu yüzden buradaki toplam
 genellikle daha yüksektir. Gün, **Sonraki günün başlangıcı** saatinde değişir.
 
 **Günlük Hedef**'i halkanın yanındaki **−** ve **+** ile yarımşar saat değiştirirsiniz (00:30 ile
@@ -223,7 +223,7 @@ kartıyla açılır.
 - Her günün altında o günün toplam çalışma süresi `S:DD` biçiminde yazar; bkz.
   [Gün toplamları](#day-totals).
 - Takvimin altında görünen ayın veya haftanın oturumları, eski günden yeniye sıralanır.
-- **•••** menüsü: kart oturumlarında **Bu oturuma git** (destenin genel bakışını açar); bütün
+- **•••** menüsü: kart oturumlarında **Bu desteye git** (destenin genel bakışını açar); bütün
   oturumlarda **Oturum ayrıntıları** ve **Bu günü haftalık görünümde aç**; Kronometre
   oturumlarında **Düzenle** ve **Oturumu sil**.
 - Sağ üstteki grafik simgesi **İstatistikler**'i, sağ alttaki turuncu düğme Kronometre'yi açar.
@@ -245,7 +245,7 @@ Kart oturumları cevaplarınızdan kendiliğinden oluşur:
   bir kart oturumu olarak görünmez.
 
 Örnek: 09:00 ile 09:40 arasında Farmakoloji destesinden kart yanıtladınız ve cevaplara toplam 25
-dakika harcadınız. Oturum **Çalışma 25dk**, **Mola 15dk** gösterir.
+dakika harcadınız. Oturum **Çalışma 25 dk**, **Mola 15 dk** gösterir.
 
 <a id="day-totals"></a>
 ## Gün toplamları

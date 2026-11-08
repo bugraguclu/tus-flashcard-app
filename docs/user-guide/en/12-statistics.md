@@ -8,18 +8,17 @@ app_help: help?article=statistics
 app_screens:
   - "Statistics — app/stats.tsx"
   - "About statistics (Info sheet) — components/stats/StatsHelpSheet.tsx"
-  - "Time range picker — components/stats/StatsRangePicker.tsx"
+  - "Sections and charts — components/stats/"
   - "Study streak week strip — components/WeekStreakStrip.tsx"
-  - "Reviews, Hourly Breakdown, Added and Decks sections — components/stats/"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Statistics
 
 The **Statistics** screen shows how much you have studied, how many reviews lie ahead and where
 your cards stand right now. To open it, tap **Stats** in the bottom bar of the **Decks** screen, or
-**Deck Statistics** on a deck's overview. **Info** at the top right opens short explanations of the
-charts.
+**Deck Statistics** on a deck's overview. **ⓘ** at the top right (**About statistics**) opens short
+explanations of the charts.
 
 > **In the web version:** In a wide browser window, the sidebar next to the study screen also has a
 > **Stats** button; it opens the screen on the deck you are studying.
@@ -40,9 +39,9 @@ Two selectors sit at the top of the screen:
 - **Deck selector** (**Whole Collection** or the deck's name): When you pick a deck, the whole
   screen shows that deck and its subdecks. For a filtered deck, the cards currently in it are
   counted. Changing the deck keeps the period you chose.
-- **Time range** (default **Last Year**): **Last Week**, **Last Month**, **Last 3 Months**,
-  **Last Year** or **All Time**. For your own range, pick **Start** and **End** under
-  **Custom Date Range** and tap **Use This Range**.
+- **Time range** (default **Year**): **Week**, **Month**, **3 Mo**, **Year** or **All**. The
+  charts are headed with the period's name (**Last week**, **Last month**, **Last 3 months**,
+  **Last year**, **All time**).
 
 Opened from a deck's overview, the screen starts on that deck; opened from the bottom bar of the
 Decks screen, it starts on the whole collection.
@@ -68,15 +67,15 @@ Days change at the **Start of next day** hour, not at midnight (default 04:00;
 The **Today** card sums up the answers you gave this study day. It follows the deck selector and
 ignores the period.
 
-- **Reviews:** Every answer you gave today: new, learning and review cards, plus answers in
+- **Answers:** Every answer you gave today: new, learning and review cards, plus answers in
   filtered decks. An answer you undo is taken off the count.
-- **Accuracy:** The share of today's answers where you pressed something other than **Again**.
+- **Correct:** The share of today's answers where you pressed something other than **Again**.
   Shows "—" until you answer.
-- **Study time:** The time you spent on answers today. However long you stay on a card, an answer
+- **Time:** The time you spent on answers today. However long you stay on a card, an answer
   counts for at most the **Maximum answer time** (default 60 seconds; **Deck Options › Timers**).
-- **New Cards:** The number of cards you answered for the first time today.
+- **New cards:** The number of cards you answered for the first time today.
 
-Time measured with the **Stopwatch** is not added to this **Study time**. The total of card study
+Time measured with the **Stopwatch** is not added to this **Time**. The total of card study
 and stopwatch sessions is the ring on the Stopwatch screen; see
 [Daily goal and total time](13-stopwatch-and-calendar.md#daily-goal).
 
@@ -113,31 +112,34 @@ so real numbers end up a little higher.
   cards, to the left of the dashed **Today** line.
 - Bars are split into **Young** and **Mature** cards. A card's interval is the number of days
   between its last review and the next one; under 21 days it is young, 21 days or more mature.
-- The grey **Cumulative** line adds up every card due up to that bar.
-- The chart looks as far ahead as the period: the coming week for **Last Week**, about a year for
-  **Last Year**, and up to the furthest due card for **All Time**. Over long periods each bar
-  covers one or more weeks.
+- With no bar selected, the line above the chart gives the cards **Coming due**. Select a bar to
+  see its count and the **Running total**: every card due up to that bar.
+- The chart looks as far ahead as the period: the coming week for **Last week**, about a year for
+  **Last year**, and up to the furthest due card for **All time**. Over long periods each bar
+  covers one week, two weeks or a month.
 - New and suspended cards are not counted, nor are buried cards due today or earlier.
 
 | Figure | Meaning |
 | --- | --- |
-| **Total** | The cards in the chart. |
 | **Daily load** | An estimate of how many reviews come up per day on average. Cards with short intervals raise it. |
 | **Tomorrow** | Cards due tomorrow. |
-| **Backlog** | Overdue cards; shown only with **With backlog**. |
+| **Overdue** | Overdue cards; shown only with **With backlog**. |
 
 <a id="reviews"></a>
 ## Reviews
-<!-- In the app: Statistics › Info › "Reviews and answers" section (StatsHelpSheet.tsx:20-23) → this section -->
+<!-- In the app: Statistics › ⓘ › "Reviews" section (StatsHelpSheet.tsx) → this section -->
 
 Shows the answers you gave in the period. The **Answers** / **Time** switch at the top changes
 between the number of answers and the time spent on them.
 
-- Bars are days for **Last Week** and **Last Month**, weeks for **Last 3 Months** and months for
-  **Last Year**.
+- Bars are days for **Last week** and **Last month**, weeks for **Last 3 months** and months for
+  **Last year**. **All time** uses days, weeks, months or years, depending on how long your history
+  is.
 - Colours show the kind of answer: **Mature** and **Young** (review cards, split at a 21-day
-  interval), **Relearning**, **Learning** and **Filtered** (answers in a filtered deck or Custom
-  Study). See [Filtered decks and Custom Study](11-filtered-decks.md).
+  interval), **Relearning**, **Learning** and **Filtered**. **Filtered** means answers in a
+  filtered deck or Custom Study to cards that were not yet due or were previewed (studied without
+  rescheduling); an answer there to a card that was due counts as its own kind. See
+  [Filtered decks and Custom Study](11-filtered-decks.md).
 - Select a bar to see its value and the **Running total** above the chart.
 
 The figures under the chart:
@@ -148,7 +150,7 @@ The figures under the chart:
   day of the period.
 - **Per answer:** The average seconds per answer, with the cards you answer per minute below it.
 
-Example: if you studied on 20 days of **Last Month** (31 days) and gave 1,240 answers,
+Example: if you studied on 20 days of **Last month** (31 days) and gave 1,240 answers,
 **Days studied** shows `20 / 31` (65%), **Daily average** 40 and **On days studied** 62.
 
 <a id="answer-buttons"></a>
@@ -162,14 +164,14 @@ split into **Learning** (learning, relearning and filtered-deck answers), **Youn
 - The three figures at the bottom (**Correct on learning cards**, **Correct on young cards**,
   **Correct on mature cards**) give the share of answers of that kind that were not **Again**. The
   mature figure is a rough sign of how well you keep long-interval cards.
-- With **Last Month** selected, this chart counts the last 30 days (as Anki does).
+- With **Last month** selected, this chart counts the last 30 days (as Anki does).
 
 <a id="hourly"></a>
 ## Hourly Breakdown
 <!-- In the app: Statistics › Info › "Hourly Breakdown" section (StatsHelpSheet.tsx:24-27) → this section -->
 
-Spreads your answers over the hours of the day (00–23, your device's clock). Answers in filtered
-decks are left out (as Anki does). With **Last Month** selected, the last 30 days are counted.
+Spreads your answers over the hours of the day (00–23, your device's clock). **Filtered** answers
+(see [Reviews](#reviews)) are left out. With **Last month** selected, the last 30 days are counted.
 
 - The **Share answered correctly** line underneath is the share of answers that were not
   **Again** in each hour. So that differences show, its scale starts just below the lowest hour
@@ -181,14 +183,14 @@ decks are left out (as Anki does). With **Last Month** selected, the last 30 day
 
 <a id="intervals"></a>
 ## Review Intervals
-<!-- In the app: Statistics › Info › "Review Intervals" section (StatsHelpSheet.tsx:28-31, to be updated) → this section -->
+<!-- In the app: Statistics › ⓘ › "Review Intervals" section (StatsHelpSheet.tsx) → this section -->
 
 Shows the current intervals of your review and relearning cards. The bars are labelled with day
-counts.
+counts (for example `5d`, `1–7d`).
 
-- The period only sets the chart's upper limit: with **Last Year**, cards with intervals over
-  365 days are not drawn; **All Time** shows them all.
-- The grey line (**At or below**) gives the share of cards whose interval is that long or shorter.
+- The period only sets the chart's upper limit: with **Last year**, cards with intervals over
+  365 days are not drawn; **All time** shows them all. The number of cards with a longer interval
+  is given under the chart.
 - **Average interval** and **Longest interval** count all your review cards, whatever the period.
 
 To see one card's interval and review history, use the **Card Info** screen; see
@@ -223,7 +225,8 @@ Shows how many cards were created in the period. The figures under it are the **
 
 - A card's date is the day it was created. Imported cards keep their original creation date: a
   shared deck you import today spreads over the days its author added the cards.
-- Tap a filled bar to open the **Card Browser** on the cards added on those days; the search box
+- The line above the chart says **Tap a bar to see its cards**. Tap a filled bar to open the
+  **Card Browser** on the cards added on those days; the search box
   shows a search starting with `added:`. If the cards share a deck, the browser opens on that deck,
   otherwise on the deck selected in Statistics. Going back keeps your deck and period.
 - To read a bar without opening it, slide your finger sideways across the chart.
@@ -244,14 +247,16 @@ selected, or the chosen deck's subdecks (**Subdecks**). Filtered decks are not l
 
 <a id="chart-tips"></a>
 ## Using the charts
-<!-- In the app: Statistics › Info › "Using charts" section (StatsHelpSheet.tsx:32-35) → this section -->
+<!-- In the app: Statistics › ⓘ › "Using charts" section (StatsHelpSheet.tsx) → this section -->
 
-- **Future Due**, **Answer Buttons** and **Review Intervals:** Tap a bar to open a small box with
-  the exact numbers. Tap the same bar again to close it.
-- **Reviews**, **Hourly Breakdown** and **Added:** Tap a bar and the line above the chart shows its
-  value. Slide your finger sideways to move between bars; the page holds still meanwhile and the
-  iPhone gives a light tap on each bar. Dragging up or down scrolls the page.
-- **VoiceOver:** On these three charts, swipe up or down to step through the bars; on **Added**,
+- **Reviews**, **Future Due**, **Review Intervals** and **Hourly Breakdown:** Tap a bar and the
+  line above the chart shows its value; tap the same bar again to clear it.
+- On **Added**, tapping a filled bar opens its cards rather than showing its value.
+- On these five charts, slide your finger sideways to move from bar to bar and read the values;
+  the page holds still meanwhile and the iPhone gives a light tap on each bar. Dragging up or down
+  scrolls the page.
+- **Answer Buttons** always shows its numbers; there is nothing to tap.
+- **VoiceOver:** On these charts, swipe up or down to step through the bars; on **Added**,
   double-tap the selected bar to open its cards.
 - If a chart is empty, pick another deck or a longer period.
 

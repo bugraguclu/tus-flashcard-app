@@ -12,6 +12,7 @@ import { getDB } from './db';
 import { TUS_CARDS } from './data';
 import { resolveSubjectDeckId } from './subjects';
 import { isCatalogCard, isCatalogNote, PaidCatalogProtectionError } from './catalogProtection';
+import { translateActive } from './i18n';
 import { getNoteType } from './noteTypeStore';
 import { updateAnkiCardData } from './fsrsCardData';
 import { learningLeftAfterDeckMove } from './deckPresetSteps';
@@ -212,10 +213,10 @@ export function updateTusCardByCardId(
 
     if (isCatalogCard(card) || isCatalogNote(note)) {
         if (input.deckId !== undefined && input.deckId !== card.deckId) {
-            throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+            throw new PaidCatalogProtectionError(translateActive('catalog.cardsNotMovable'));
         }
         if (input.subject !== undefined && resolveSubjectDeckId(input.subject) !== card.deckId) {
-            throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+            throw new PaidCatalogProtectionError(translateActive('catalog.cardsNotMovable'));
         }
     }
 

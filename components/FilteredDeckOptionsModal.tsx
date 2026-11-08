@@ -232,8 +232,8 @@ export default function FilteredDeckOptionsModal({
         alert(
             l('Arama filtresi', 'Search filter'),
             l(
-                `${matchCount} uygun kart bulundu.\n\nSorguları boşlukla birleştirin; dışlamak için “-” kullanın. Örnek:\n\ndeck:"TUS Kartları" is:due -is:suspended`,
-                `${matchCount} eligible cards matched.\n\nCombine terms with spaces; use “-” to exclude. Example:\n\ndeck:"TUS Kartları" is:due -is:suspended`,
+                `Bu sorguyla ${matchCount} uygun kart bulundu.\n\nÖrnekler: is:due -is:buried · rated:7:1 · tag:etiket · deck:"Deste" is:new`,
+                `Found ${matchCount} matching cards for this query.\n\nExamples: is:due -is:buried · rated:7:1 · tag:name · deck:"Deck" is:new`,
             ),
         );
     };
@@ -249,11 +249,11 @@ export default function FilteredDeckOptionsModal({
             ),
             l(
                 count > 0
-                    ? `${count} kart sorguyla eşleşiyor ancak askıya alınmış, gömülmüş veya başka bir filtrelenmiş destede oldukları için desteye dahil edilemiyor.`
-                    : 'Bu arama kriterleriyle eşleşen tüm kartlar desteye dahil edilebilir. Askıya alınmış veya gömülmüş kart bulunmuyor.',
+                    ? 'Bu kartlar aramayla eşleşiyor ama askıya alınmış veya gömülü oldukları için alınamıyor.'
+                    : 'Aramayla eşleşen kartlardan hiçbiri askıya alınmış veya gömülü değil.',
                 count > 0
-                    ? `${count} cards match the query but cannot be gathered because they are suspended, buried, or already in another filtered deck.`
-                    : 'All cards matching the search are eligible. No matching cards are suspended, buried, or in another filtered deck.',
+                    ? 'These cards match the search but cannot be gathered because they are suspended or buried.'
+                    : 'None of the cards matching the search are suspended or buried.',
             ),
         );
     };
@@ -369,7 +369,7 @@ export default function FilteredDeckOptionsModal({
                             <View style={styles.numberLabelWrap}>
                                 <Text style={styles.numberLabel}>{l('Kart limiti', 'Card limit')}</Text>
                                 <Text style={styles.numberSublabel}>
-                                    {l('Desteye alınacak en fazla kart sayısı', 'Maximum cards to gather into this deck')}
+                                    {l('Desteye alınacak en fazla kart sayısı (1–99.999)', 'Maximum cards to gather into this deck (1–99,999)')}
                                 </Text>
                             </View>
                             <TextInput
@@ -626,7 +626,7 @@ export default function FilteredDeckOptionsModal({
                         title={l('Hedef deste', 'Target Deck')}
                         allDecksLabel={l('Tüm desteler', 'All decks')}
                         searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                        emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                        emptySearchLabel={l('Aramanızla eşleşen deste yok. Kelimelerin başını yazın; örneğin “farm”.', 'No decks match your search. Type the start of a word, for example “anat”.')}
                         cancelLabel={t('common.cancel')}
                         closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
                         searchAccessibilityLabel={l('Deste ara', 'Search decks')}

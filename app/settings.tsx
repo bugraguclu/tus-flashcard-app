@@ -874,8 +874,8 @@ export default function SettingsScreen() {
         }
         if (repair.protectedRowsKept > 0) {
             lines.push(l(
-                `${repair.protectedRowsKept} katalog satırına dokunulmadı; ücretli içerik yeniden kurularak onarılır.`,
-                `${repair.protectedRowsKept} catalog rows were left alone; paid content is repaired by reinstalling it.`,
+                `${repair.protectedRowsKept} TUS Kartları satırına dokunulmadı; onarım paketin kartlarını değiştirmez.`,
+                `${repair.protectedRowsKept} TUS Kartları rows were left alone; repair never changes the pack’s cards.`,
             ));
         }
         if (repair.unreadableNotes > 0) {
@@ -1029,9 +1029,9 @@ export default function SettingsScreen() {
 
     const handleResetProgress = useCallback(() => {
         if (maintenanceAction) return;
-        confirm(l('İlerlemeyi sıfırla', 'Reset Progress'), l(
-            'Bütün desteler, notlar, kartlar, not türleri, çalışma geçmişi ve Kronometre oturumları silinecek; uygulama ayarları da ilk değerlerine dönecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulur.',
-            'All decks, notes, cards, note types, study history and Stopwatch sessions will be deleted, and app settings will return to their starting values. A restorable safety backup is created first.',
+        confirm(l('Koleksiyonu sıfırla', 'Reset Collection'), l(
+            'Bütün desteler, notlar, kartlar, not türleri, ayar grupları, tekrar geçmişi, istatistikler ve Kronometre kayıtları silinecek; uygulama ayarları da ilk değerlerine dönecek. TUS Kartları paketi de kaldırılır; Desteler’deki TUS Kartları satırından yeniden kurabilirsiniz. Medya dosyaları ve yedekler kalır. Başlamadan önce geri yüklenebilir bir güvenlik yedeği alınır. Devam etmeden önce koleksiyonunuzu .colpkg olarak dışa aktarmanızı öneririz.',
+            'All decks, notes, cards, note types, presets, review history, statistics and Stopwatch records will be deleted, and app settings will return to their starting values. The TUS Kartları pack is removed too; you can install it again from the TUS Kartları row in Decks. Media files and backups are kept. A restorable safety backup is made before it starts. We recommend exporting your collection as .colpkg before you continue.',
         ), () => {
             void (async () => {
                 setMaintenanceAction('reset');
@@ -1045,7 +1045,7 @@ export default function SettingsScreen() {
                     // Reset removes both the installed catalog rows and its local access marker.
                     await refreshCatalogAccess();
                     alert(
-                        l('İlerleme sıfırlandı', 'Progress Reset'),
+                        l('Koleksiyon sıfırlandı', 'Collection Reset'),
                         l(`Geri dönüş için ${backupFileName} yedeği saklandı.`, `The backup ${backupFileName} was kept for recovery.`),
                     );
                 } catch (error) {
@@ -1221,7 +1221,7 @@ export default function SettingsScreen() {
                 <ToggleRow label={l('Kalan süreyi göster', 'Show remaining time')} summary={l('Mevcut hızla tahmini bitiş süresini gösterir.', 'Shows an estimated time remaining at the current pace.')} value={Boolean(settings.showRemainingTime)} onChange={(value) => updateSetting('showRemainingTime', value)} styles={styles} />
             </Group>
             <Group title={l('Araç çubuğu', 'Toolbar')} styles={styles}>
-                <ToggleRow label={l('Araç çubuğunu göster', 'Show toolbar')} summary={l('Geri, deste kapsamı, sayaçlar ve kart işlemlerini gösterir.', 'Shows back, deck scope, counts and card actions.')} value={settings.showStudyTopBar !== false} onChange={(value) => updateSetting('showStudyTopBar', value)} styles={styles} />
+                <ToggleRow label={l('Araç çubuğunu göster', 'Show toolbar')} summary={l('Geri, deste kapsamı, sayaçlar ve kart işlemlerini gösterir. Kapalıyken menüleri kaydırma hareketleriyle veya Yüzen Araçlar düğmesiyle açarsınız; ikisini de Kontroller’de açabilirsiniz.', 'Shows back, deck scope, counts and card actions. When off, open the menus with swipe gestures or the floating Tools button; turn either on in Controls.')} value={settings.showStudyTopBar !== false} onChange={(value) => updateSetting('showStudyTopBar', value)} styles={styles} />
                 {settings.showStudyTopBar !== false && Boolean(settings.newStudyScreenEnabled) ? (
                     <ChoiceRow
                         label={l('Araç çubuğu konumu', 'Toolbar position')}
@@ -1671,7 +1671,7 @@ export default function SettingsScreen() {
                 />
                 <DataActionRow
                     icon="↺"
-                    label={maintenanceAction === 'reset' ? l('Sıfırlanıyor…', 'Resetting…') : l('İlerlemeyi sıfırla', 'Reset progress')}
+                    label={maintenanceAction === 'reset' ? l('Sıfırlanıyor…', 'Resetting…') : l('Koleksiyonu sıfırla', 'Reset collection')}
                     onPress={handleResetProgress}
                     disabled={maintenanceAction !== null}
                     danger

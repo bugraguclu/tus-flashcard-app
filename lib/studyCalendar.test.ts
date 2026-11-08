@@ -228,23 +228,23 @@ describe('day totals', () => {
 
 describe('duration formatting', () => {
     it('formats session durations bilingually', () => {
-        expect(formatSessionDuration(99 * MINUTE, 'tr')).toBe('1s 39dk');
+        expect(formatSessionDuration(99 * MINUTE, 'tr')).toBe('1 sa 39 dk');
         expect(formatSessionDuration(99 * MINUTE, 'en')).toBe('1h 39m');
-        expect(formatSessionDuration(36 * MINUTE, 'tr')).toBe('36dk');
+        expect(formatSessionDuration(36 * MINUTE, 'tr')).toBe('36 dk');
         expect(formatSessionDuration(36 * MINUTE, 'en')).toBe('36m');
-        expect(formatSessionDuration(0, 'tr')).toBe('0dk');
+        expect(formatSessionDuration(0, 'tr')).toBe('0 dk');
         expect(formatSessionDuration(-5, 'en')).toBe('0m');
-        expect(formatSessionDuration(2 * 60 * MINUTE, 'tr')).toBe('2s 0dk');
+        expect(formatSessionDuration(2 * 60 * MINUTE, 'tr')).toBe('2 sa 0 dk');
     });
 
-    it('reports a real sub-minute session in seconds instead of a misleading 0dk', () => {
-        expect(formatSessionDuration(45_000, 'tr')).toBe('45sn');
+    it('reports a real sub-minute session in seconds instead of a misleading 0 dk', () => {
+        expect(formatSessionDuration(45_000, 'tr')).toBe('45 sn');
         expect(formatSessionDuration(45_000, 'en')).toBe('45s');
-        expect(formatSessionDuration(59_900, 'tr')).toBe('59sn');
-        // Anything above zero stays visible; only a true zero reads as "0dk".
-        expect(formatSessionDuration(400, 'tr')).toBe('1sn');
-        expect(formatSessionDuration(0, 'tr')).toBe('0dk');
-        expect(formatSessionDuration(MINUTE, 'tr')).toBe('1dk');
+        expect(formatSessionDuration(59_900, 'tr')).toBe('59 sn');
+        // Anything above zero stays visible; only a true zero reads as "0 dk".
+        expect(formatSessionDuration(400, 'tr')).toBe('1 sn');
+        expect(formatSessionDuration(0, 'tr')).toBe('0 dk');
+        expect(formatSessionDuration(MINUTE, 'tr')).toBe('1 dk');
     });
 
     it('formats calendar totals as H:MM and leaves an unstudied day blank', () => {

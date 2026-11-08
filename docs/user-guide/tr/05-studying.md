@@ -13,7 +13,7 @@ app_screens:
   - "Deste seç penceresi — components/DeckPickerModal.tsx"
   - "Yazı tahtası — components/WhiteboardOverlay.tsx"
   - "Kart görünümü: yazarak cevap, ses, bağlantılar — components/CardWebView.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Çalışma ekranı
@@ -45,6 +45,8 @@ kaydırın. Çalışmaya nereden başlamış olursanız olun, ikisi de sizi **De
 
 - Bir desteye dokunursanız çalışma o desteyle sürer; ekran kapanmaz, yalnızca kartlar değişir.
 - **Tüm desteler** bütün destelerinizi birlikte çalıştırır; başlıkta **Bugünün kartları** yazar.
+- **Ayarlar › Yeni çalışma ekranı › Deste başlığını göster** kapalıysa klasik düzenin başlığında
+  deste adı yerine **Deste seç** yazar; dokununca aynı pencere açılır.
 - 🔍 ile desteleri süzebilir, **＋** ile yeni bir deste oluşturabilirsiniz; yeni deste hemen seçilir.
 
 Deste değiştirdiğinizde ekrandaki kart, geri alma geçmişi ve yazı tahtasındaki çizim sıfırlanır.
@@ -70,7 +72,8 @@ menüler ikisinde aynıdır. Farklar:
 **Ayarlar › Yeni çalışma ekranı** bölümündeki öteki seçenekler (çerçeve stili, sayılar, deste
 başlığı, kalan süre, araç çubuğunu gizleme, cevap düğmeleri, otomatik ilerleme) iki düzende de
 geçerlidir. **Araç çubuğunu göster** kapalıyken **‹**, **↶**, **⚑**, **⚙** ve **⋮** düğmeleri de
-gizlenir; menülere o zaman **Yüzen Araçlar düğmesi** veya bir kaydırma hareketiyle ulaşırsınız.
+gizlenir; menüleri o zaman kaydırma hareketleriyle veya **Yüzen Araçlar düğmesi**yle açarsınız.
+İkisi de varsayılan olarak kapalıdır; **Ayarlar › Kontroller**'den açın.
 Bkz. [Ayarlar](16-settings.md).
 
 <a id="show-answer"></a>
@@ -234,7 +237,7 @@ bölmek çoğu zaman işe yarar. Ayar için bkz. [Deste seçenekleri](06-deck-op
   geri koy** (varsayılan açık) ve **Tekrar ve unutma sayılarını sıfırla** (varsayılan kapalı)
   seçeneklerinden sonra **Sıfırla**'ya dokunun. Son seçiminiz hatırlanır.
 - **Notu sil:** Onay sorulur. Silindikten sonra açılan **Not silindi** penceresinde **Geri al** notu
-  geri getirir; **Bitti**'ye dokunduğunuzda silme kalıcı olur. TUS Kartları paketindeki notlarda bu
+  geri getirir; **Bitti**'ye dokunduğunuzda silme kalıcı olur. Bu silme **↶** ile geri alınamaz. TUS Kartları paketindeki notlarda bu
   madde yoktur.
 
 <a id="audio-and-tts"></a>
@@ -348,7 +351,7 @@ veya yazı kutusuna yazarken kısayollar çalışmaz; basılı tutulan tuş yaln
 
 **Ayarlar › İnceleme › Zamanlama › Zaman kutusu sınırı** ile bir süre verin (örneğin 20 dk; 0 kapalı,
 varsayılan). Süre dolduktan sonra bir kartı cevapladığınızda **Zaman kutusu** penceresi o sürede
-kaç kart cevapladığınızı söyler:
+kaç kart çalıştığınızı söyler:
 
 - **Devam** yeni bir süre başlatır.
 - **Bitir** sizi **Desteler** listesine götürür.
@@ -408,8 +411,8 @@ ekran, destedeki yeni kartlar da bittiğinde gelir.
   toplar. Boşaltılmış bir filtrelenmiş destede **Filtreli deste boş** yazar.
 - Destede hiç kart yoksa **Bu Deste Henüz Boş** ve **Kart Ekle** görünür.
 
-Altta **Bugün N kart tekrar edildi** satırı, bugün bütün destelerde verdiğiniz cevap sayısını
-gösterir; aynı karta birden çok cevap ayrı sayılır.
+Altta **Bugün tüm destelerde N cevap verdiniz** satırı, bugün bütün destelerde verdiğiniz cevap
+sayısını gösterir; aynı karta birden çok cevap ayrı sayılır.
 
 ## İlgili konular
 

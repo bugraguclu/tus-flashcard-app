@@ -9,7 +9,7 @@ app_screens:
   - "Deck Options — app/deck-options.tsx"
   - "Setting guide sheets (the ? buttons on each card) — components/deck-options/SettingControls.tsx, components/deck-options/deckOptionsCopy.ts"
   - "Preset picker, name dialog and ••• menu — components/deck-options/PresetModals.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Deck options
@@ -58,7 +58,7 @@ The commands in the **•••** menu:
 | --- | --- | --- |
 | **Add Preset** | Creates a new preset with the default values; you choose its name. This deck switches to it. | Immediately |
 | **Create a Separate Preset for This Deck** | Copies the saved state of the selected preset as "‹deck name› options" and gives it to this deck only. | Immediately |
-| **Rename preset** | Changes the preset's name. | Immediately |
+| **Rename Preset** | Changes the preset's name. | Immediately |
 | **Restore Defaults** | Returns the preset's study settings, FSRS values included, to the defaults. Affects every deck using the preset; the preset's name and the decks' own limits and descriptions are kept. | When you confirm |
 | **Delete** | Deletes the preset; decks using it go back to the default preset. If you leave without saving, the preset stays. | When you tap **Save** |
 | **Save and Apply to All Subdecks** | Saves, then moves all subdecks to this preset (see below). | Immediately |

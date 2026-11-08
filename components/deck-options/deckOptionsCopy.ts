@@ -30,8 +30,8 @@ export function deckOptionsWarningText(id: DeckOptionsWarningId, l: Localize): s
             );
         case 'insertionOrderRandom':
             return l(
-                'Rastgele ekleme kartların konum numaralarını karıştırır. Günlük çalışma sırası yine Görüntüleme sırasından gelir.',
-                'Random insertion shuffles the position numbers of new cards. The daily study order still comes from Display Order.',
+                'Rastgele seçiliyken, yeni kart toplama sırası Deste ise yeni kartlar her gün karışık sırayla gelir. Kartların konum numaraları değişmez.',
+                'With Random, new cards come in a shuffled order each day when the new card gather order is Deck. Card position numbers do not change.',
             );
         case 'relearningStepsAboveMinimum':
             return l(
@@ -94,7 +94,7 @@ export function buildOptionHelp(l: Localize) {
                 l('Stability, hatırlama olasılığının %90’a düştüğü gün sayısıdır. Hedeflenen hatırlama oranı 0,90 iken bir sonraki aralık tam olarak stability kadar olur.', 'Stability is the number of days until recall probability falls to 90%. At a desired retention of 0.90 the next interval is exactly the stability.'),
                 l('Öğrenme ve yeniden öğrenme adımları aynen korunur; FSRS yalnızca gün ölçeğindeki aralıkları belirler.', 'Learning and relearning steps are unchanged; FSRS only decides the day-scale intervals.'),
                 l('Hedeflenen hatırlama oranını yükseltmek tekrar yükünü hızla artırır: 0,90 yerine 0,97 seçmek günlük tekrar sayısını katlayabilir.', 'Raising the desired retention increases the workload quickly: 0.97 instead of 0.90 can multiply your daily reviews.'),
-                l('“Optimize et”, parametreleri kendi tekrar geçmişinizden yeniden hesaplar ve yalnızca daha iyi tahmin ediyorsa yazar.', '“Optimize” refits the parameters from your own review history and only writes them when they predict better.'),
+                l('“Parametreleri optimize et”, parametreleri kendi tekrar geçmişinizden yeniden hesaplar ve yalnızca daha iyi tahmin ediyorsa yazar.', '“Optimize parameters” refits the parameters from your own review history and only writes them when they predict better.'),
             ],
             note: l(
                 'FSRS açıldığında mevcut kartların hafıza durumu tekrar geçmişinden yeniden hesaplanır. Geçmişi olmayan kartlar için aralık ve kolaylık çarpanından tahmin edilir.',
@@ -122,7 +122,7 @@ export function buildOptionHelp(l: Localize) {
             points: [
                 l('Adımları boşlukla yazın: “1m 10m”, İyi yanıtından sonra kartı önce 1, sonra 10 dakika içinde yeniden gösterir. s, m, h ve d birimleri desteklenir.', 'Enter space-separated steps: “1m 10m” shows the card after 1 minute, then 10 minutes after Good. s, m, h, and d units are supported.'),
                 l('Tekrar ilk adıma döndürür. Son adımda İyi kartı mezun eder; Kolay ise kalan adımları atlayarak kolay aralığını kullanır.', 'Again returns to the first step. Good on the final step graduates the card; Easy skips the remaining steps and uses the Easy interval.'),
-                l('Ekleniş sırası kartların konum numaralarını belirler. Günlük çalışma sırasını değiştirmek için “Görüntüleme Sırası” bölümünü kullanın.', 'Insertion order assigns card position numbers. Use Display Order to control the daily study sequence.'),
+                l('Ekleniş sırası kartların konum numaralarını değiştirmez. “Rastgele” seçiliyken ve yeni kart toplama sırası “Deste” iken yeni kartlar her gün karışık sırayla gelir. Diğer sıralar için “Görüntüleme sırası” bölümünü kullanın.', 'Insertion order does not change card position numbers. With “Random” and the new card gather order set to “Deck”, new cards come in a shuffled order each day. Use “Display Order” for other orders.'),
             ],
             note: l('Bu değişiklikler daha önce oluşturulmuş öğrenme gecikmelerini geriye dönük değiştirmez.', 'These changes do not retroactively alter learning delays that were already scheduled.'),
             ...helpChrome,
@@ -190,7 +190,7 @@ export function buildOptionHelp(l: Localize) {
                 l('Sesin bitmesini bekle açıkken geri sayım, o yüzdeki ses tamamlanana kadar işlemi uygulamaz.', 'When Wait for audio is on, the action is delayed until audio on that side finishes.'),
                 l('Cevap işlemi kartı gömebilir, Tekrar/Zor/İyi ile yanıtlayabilir veya yalnızca süre uyarısı gösterebilir.', 'The answer action can bury the card, grade it Again/Hard/Good, or only show a time reminder.'),
             ],
-            note: l('Bu ayarlar süreleri tanımlar. Çalışma ekranındaki Otomatik İlerleme anahtarı ayrıca açık olmalıdır; otomatik verilen notlar normal inceleme kaydı oluşturur.', 'These options define the timings. Auto Advance must also be enabled for studying; automatic grades create normal review-log entries.'),
+            note: l('Bu ayarlar süreleri tanımlar. Çalışması için “Ayarlar › Yeni çalışma ekranı › Yanıt düğmeleri › Otomatik ilerleme” de açık olmalıdır. Otomatik verilen cevaplar tekrar geçmişine normal cevap olarak yazılır.', 'These options set the timings. For them to run, “Settings › New study screen › Answer buttons › Auto advance” must be on as well. Automatic answers are saved in the review history like normal answers.'),
             ...helpChrome,
         },
         easyDays: {

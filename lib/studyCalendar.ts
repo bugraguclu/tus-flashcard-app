@@ -428,24 +428,25 @@ export function formatDayTotalHhMm(ms: number): string {
 }
 
 /**
- * Session duration: `1s 39dk` / `36dk` / `0dk` in Turkish, `1h 39m` / `36m` / `0m` in English.
+ * Session duration: `1 sa 39 dk` / `36 dk` / `0 dk` in Turkish, `1h 39m` / `36m` / `0m` in English.
+ * Turkish spells its units out with a space, as the Statistics screen does (`sa`, not `s`, which
+ * reads as seconds).
  *
- * A real but sub-minute duration is reported in seconds (`45sn` / `45s`) rather than floored to
- * `0dk`, which would make a short session indistinguishable from no study at all. Only a true
- * zero — the common case for the "Mola" column — renders as `0dk`, as TusBuddy does.
+ * A real but sub-minute duration is reported in seconds (`45 sn` / `45s`) rather than floored to
+ * `0 dk`, which would make a short session indistinguishable from no study at all. Only a true
+ * zero — the common case for the "Mola" column — renders as `0 dk`, as TusBuddy does.
  * The seconds unit matches `formatChartMinutes` in `statsPresentation.ts`.
  */
 export function formatSessionDuration(ms: number, locale: SupportedLocale): string {
-    const hourUnit = locale === 'tr' ? 's' : 'h';
-    const minuteUnit = locale === 'tr' ? 'dk' : 'm';
-    const secondUnit = locale === 'tr' ? 'sn' : 's';
+    const tr = locale === 'tr';
+    const unit = (value: number, trUnit: string, enUnit: string) => (tr ? `${value} ${trUnit}` : `${value}${enUnit}`);
     const safeMs = Number.isFinite(ms) && ms > 0 ? ms : 0;
-    if (safeMs === 0) return `0${minuteUnit}`;
-    if (safeMs < MINUTE_MS) return `${Math.max(1, Math.floor(safeMs / 1000))}${secondUnit}`;
+    if (safeMs === 0) return unit(0, 'dk', 'm');
+    if (safeMs < MINUTE_MS) return unit(Math.max(1, Math.floor(safeMs / 1000)), 'sn', 's');
     const minutes = Math.floor(safeMs / MINUTE_MS);
     const hours = Math.floor(minutes / 60);
-    if (hours === 0) return `${minutes}${minuteUnit}`;
-    return `${hours}${hourUnit} ${minutes % 60}${minuteUnit}`;
+    if (hours === 0) return unit(minutes, 'dk', 'm');
+    return `${unit(hours, 'sa', 'h')} ${unit(minutes % 60, 'dk', 'm')}`;
 }
 
 /** Local wall clock as `HH:MM`. */

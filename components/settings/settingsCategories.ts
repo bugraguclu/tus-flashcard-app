@@ -101,7 +101,7 @@ export function settingsCategories(
                 l('Deste ve verileri içe aktar', 'Import decks and data'),
                 l('Veritabanını kontrol et', 'Check database'),
                 l('Onar ve optimize et', 'Repair and optimize'),
-                l('İlerlemeyi sıfırla', 'Reset progress'),
+                l('Koleksiyonu sıfırla', 'Reset collection'),
             ],
         },
         {

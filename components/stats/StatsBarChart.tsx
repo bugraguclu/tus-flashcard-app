@@ -35,7 +35,10 @@ interface StatsBarChartProps {
     points: readonly ChartPoint[];
     /** Series in stack order, bottom to top. */
     series: readonly StatsChartSeries[];
-    /** Caption while nothing is selected. */
+    /**
+     * Caption while nothing is selected. Its note is drawn only on a chart with `onPressBar`, where
+     * a tap does something other than show the figures; elsewhere it is just the VoiceOver hint.
+     */
     summary: StatsChartReadout;
     /** Caption for a selected bucket; defaults to its detail and total. */
     readout?: (index: number) => StatsChartReadout;
@@ -203,7 +206,7 @@ export default function StatsBarChart({
                     </Text>
                     <Text style={styles.captionValue} numberOfLines={1} maxFontSizeMultiplier={1.3}>{caption.value}</Text>
                 </View>
-                {hasData && selected !== null && caption.note ? (
+                {hasData && caption.note && (selected !== null || onPressBar) ? (
                     <Text style={styles.captionNote} maxFontSizeMultiplier={1.3}>{caption.note}</Text>
                 ) : null}
             </View>

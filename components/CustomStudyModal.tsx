@@ -630,12 +630,14 @@ export default function CustomStudyModal({
                             )}
                         </View>
 
-                        <Text style={styles.note}>
-                            {l(
-                                'Yeni bir işlem, mevcut “Özel Çalışma Oturumu” destesini yeniden oluşturur. Mevcut oturumu korumak istiyorsanız önce adını değiştirin.',
-                                'A new action rebuilds the existing Custom Study Session deck. Rename the current session first if you want to keep it.',
-                            )}
-                        </Text>
+                        {buildsSession && (
+                            <Text style={styles.note}>
+                                {l(
+                                    'Yeni bir işlem, mevcut “Özel Çalışma Oturumu” destesini yeniden oluşturur. Mevcut oturumu korumak istiyorsanız önce adını değiştirin.',
+                                    'A new action rebuilds the existing Custom Study Session deck. Rename the current session first if you want to keep it.',
+                                )}
+                            </Text>
+                        )}
                     </>
                 )}
             </ScrollView>

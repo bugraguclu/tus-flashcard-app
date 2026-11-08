@@ -10,7 +10,7 @@ app_screens:
   - "tusankim:// bağlantıları — app/_layout.tsx, lib/externalLinking.ts, lib/externalActionRoute.ts"
   - "Web otomasyon adresi — app/x-callback-url.tsx"
   - "Web sürümü — components/WebAppIntegrations.tsx, public/manifest.webmanifest"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Kısayollar ve otomasyon
@@ -124,7 +124,8 @@ iPhone uygulamasıdır. Web sürümünde farklı olanlar:
   (`action=search&query=…` arama içindir). Eksik bir istek deste listesini açar.
 - Geniş bir pencerede çalışma ekranının yanında bir kenar çubuğu görünür.
 - Uygulama aynı anda iki sekmede açılırsa yalnızca ilk sekme kaydeder. Öbür sekmenin üstünde
-  **⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez.** yazar.
+  **⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez.** yazar. İlk sekmeyi
+  kapatınca öbür sekme kendiliğinden yeniden yüklenir ve kaydetmeye başlar.
 - Tarayıcının site verilerini silerseniz koleksiyon da silinir. Önemli çalışmalarınızı
   [dışa aktararak](14-import-export.md) saklayın.
 

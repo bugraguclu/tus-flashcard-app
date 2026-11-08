@@ -127,6 +127,13 @@ export function rebuildFilteredDeck(deckId: number): boolean {
     return true;
 }
 
+/** How many cards the deck's current build holds; a Rebuild's result message reads it. */
+export function filteredDeckBuiltCount(deckId: number): number {
+    const deck = getDeck(deckId);
+    if (!deck?.isFiltered) return 0;
+    return filteredDeckMemberIds(deck, loadSettings(), Date.now()).length;
+}
+
 /** Retire one card from the current filtered-deck build after it has completed its steps. */
 export function completeFilteredCard(deckId: number, cardId: number): boolean {
     const deck = getDeck(deckId);

@@ -8,7 +8,7 @@ app_help: help?article=settings
 app_screens:
   - "Settings — app/settings.tsx"
   - "Settings › Controls › Keyboard — components/settings/KeyboardSettingsSection.tsx"
-verified_against: settings-page-full-functionality (2026-10-30)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Settings
@@ -136,7 +136,7 @@ Every other option on the page, except **Toolbar position**, also applies to the
 | **Center align** | Off | Places the card content in the vertical middle of the screen. |
 | **Show deck title** | On | Shows the name of the deck you are studying at the top. |
 | **Show remaining time** | Off | Estimates how long is left at your current pace. |
-| **Show toolbar** | On | Shows back, the deck picker, the counts and card actions. |
+| **Show toolbar** | On | Shows back, the deck picker, the counts and card actions. When off, open the menus with swipe gestures or the **floating Tools button**; turn either on in **Controls**. |
 | **Toolbar position** | **Top** | On the new screen you can move the toolbar to the **Bottom**. |
 | **Show answer buttons** | On | When off, you answer with tap zones or swipes. One of them must be on in **Controls** before you can turn this off. |
 | **Show next review time above answer buttons** | On | Each button shows when the card would come back. |
@@ -332,8 +332,8 @@ The commands on this page run without waiting for **Save**.
   shows what it found and, once you agree, backs up and repairs. See
   [Checking the database](15-backups-and-maintenance.md#check-database) and
   [Repairing](15-backups-and-maintenance.md#repair).
-- **Reset progress** deletes your cards, decks and your whole study history; it takes a safety
-  backup first. See [Resetting progress](15-backups-and-maintenance.md#reset-progress).
+- **Reset collection** deletes your cards, decks and your whole study history; it takes a safety
+  backup first. See [Resetting the collection](15-backups-and-maintenance.md#reset-progress).
 
 <a id="about"></a>
 ## About

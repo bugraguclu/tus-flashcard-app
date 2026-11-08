@@ -7,7 +7,7 @@ web_path: /en/help/glossary
 app_help: help?article=glossary
 app_screens:
   - "Help center — app/help.tsx (new)"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Glossary
@@ -140,7 +140,7 @@ you are looking for in Anki resources.
 | Check Media | Medyayı denetle | Finds unused and missing image/sound files. |
 | Check database | Veritabanını kontrol et | Checks the collection without changing it. |
 | Repair and optimize | Onar ve optimize et | Makes a backup first, then repairs damaged rows. |
-| Reset progress | İlerlemeyi sıfırla | Deletes the whole collection. See [Backups and maintenance](15-backups-and-maintenance.md#reset-progress). |
+| Reset collection | Koleksiyonu sıfırla | Deletes the whole collection. See [Backups and maintenance](15-backups-and-maintenance.md#reset-progress). |
 | Kurtarılan Kartlar ("Recovered Cards") | Kurtarılan Kartlar | The deck where a repair puts cards whose deck was lost. It keeps this name in the English interface too. |
 
 <a id="app-terms"></a>

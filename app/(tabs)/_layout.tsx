@@ -40,7 +40,7 @@ export default function TabLayout() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { settings } = useAppSettings();
     const { collectionVersion, getSchedulingRevision } = useCollectionInvalidation();
-    const { startupError, isLoading } = useStartupStatus();
+    const { startupError, isLoading, startupActionPending, continueStartupWait, retryStartup } = useStartupStatus();
     const studyPosition = useStudyPosition();
     const {
         selectedSubject,
@@ -403,10 +403,20 @@ export default function TabLayout() {
                     {startupError ? (
                         <View style={styles.startupErrorContainer}>
                             <Text style={styles.startupErrorIcon}>📱</Text>
-                            <Text style={styles.startupErrorTitle}>{t('root.errorTitle')}</Text>
+                            <Text style={styles.startupErrorTitle}>{t(startupError === 'timeout' ? 'root.startupSlowTitle' : 'root.errorTitle')}</Text>
                             <Text style={styles.startupErrorText}>
-                                {t('root.startupErrorMessage')}
+                                {t(startupError === 'timeout' ? 'root.startupSlowMessage' : 'root.startupErrorMessage')}
                             </Text>
+                            {/* Waiting again never starts a second migration; retrying runs only after a failure. */}
+                            <TouchableOpacity
+                                style={[styles.startupErrorButton, startupActionPending && styles.startupErrorButtonBusy]}
+                                onPress={startupError === 'timeout' ? continueStartupWait : retryStartup}
+                                disabled={startupActionPending}
+                                accessibilityRole="button"
+                                accessibilityState={{ disabled: startupActionPending, busy: startupActionPending }}
+                            >
+                                <Text style={styles.startupErrorButtonText}>{t(startupError === 'timeout' ? 'root.startupKeepWaiting' : 'common.retry')}</Text>
+                            </TouchableOpacity>
                         </View>
                     ) : (
                         <Stack
@@ -485,6 +495,20 @@ function createStyles(colors: ColorScheme) {
     startupErrorText: {
         fontSize: FontSize.md,
         color: colors.textMuted,
+        textAlign: 'center',
+    },
+    startupErrorButton: {
+        marginTop: Spacing.lg,
+        paddingHorizontal: Spacing.xl,
+        paddingVertical: Spacing.md,
+        borderRadius: 12,
+        backgroundColor: colors.accent,
+    },
+    startupErrorButtonBusy: { opacity: 0.6 },
+    startupErrorButtonText: {
+        fontSize: FontSize.md,
+        fontWeight: '700',
+        color: colors.white,
         textAlign: 'center',
     },
     });

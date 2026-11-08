@@ -9,7 +9,7 @@ app_screens:
   - "Help center — app/help.tsx (new)"
   - "Error screen — app/_layout.tsx (Something went wrong)"
   - "Support page — docs/support.html (website)"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # FAQ and troubleshooting
@@ -159,9 +159,9 @@ Yes. Before every package import, the app makes an automatic safety backup. Use
 [Backups and maintenance](15-backups-and-maintenance.md).
 
 <a id="reset-progress"></a>
-### What does "Reset progress" do?
+### What does "Reset collection" do?
 
-**Settings › Data Management › Maintenance › Reset progress** does not reset individual cards; it
+**Settings › Data Management › Maintenance › Reset collection** does not reset individual cards; it
 deletes the whole collection: decks, cards, review history, Stopwatch records and app settings.
 The app opens as it did when first installed. A restorable safety backup is made first. If you
 only want to start some cards over, select them in the **Card Browser** and use the
@@ -204,6 +204,11 @@ easier. The cards are for education; for clinical decisions, rely on current sou
 
 If you want to report it to us, add the text that opens with **Show technical details** to your
 support message. Your data is not affected by this screen.
+
+If this title appears while the app is opening and shows only **Try Again**, the app could not
+start; your data is not deleted. **Try Again** runs startup again. If opening says **Startup is
+taking longer than usual**, a large collection is being prepared: keep the app open, and it opens
+by itself when ready. **Keep waiting** only waits longer; it never starts a second startup.
 
 <a id="app-slow"></a>
 ### The app has slowed down or search gives odd results

@@ -19,6 +19,7 @@ import { ANKI_DEFAULT_DECK_ID, packageDecksToImport } from './importApkgDecks';
 import { getDB } from './db';
 import { deckNameKey } from './deckNames';
 import { checksumFieldText } from './noteChecksum';
+import { translateActive } from './i18n';
 import { CATALOG_LEARNER_DATA_KEY } from './backupCatalogLearnerData';
 import { QUEUE_BOOKKEEPING_PREFIXES } from './backupSnapshot';
 import {
@@ -405,7 +406,7 @@ export function importAnkiReaderLossless(
             const sourceId = numberValue(row.id);
             const sourceMid = numberValue(row.mid);
             const targetMid = noteTypeMap.get(sourceMid);
-            if (!targetMid) throw new Error(`Anki not türü bulunamadı: ${sourceMid}`);
+            if (!targetMid) throw new Error(translateActive('import.noteTypeMissing'));
             const fields = String(row.flds ?? '').split(FIELD_SEPARATOR);
             const tags = String(row.tags ?? '').split(/\s+/).filter(Boolean)
                 .filter((tag) => withScheduling || !['marked', 'leech'].includes(tag.toLocaleLowerCase('en-US')));

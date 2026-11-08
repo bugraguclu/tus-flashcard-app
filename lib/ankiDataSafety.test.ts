@@ -278,7 +278,7 @@ it('N4 generated catalog siblings retain ownership and cannot be created by a lo
   const owned = { ...note, catalogPack: 'bka-tus' };
   h.db.runSync('UPDATE notes SET data = ? WHERE id = ?', JSON.stringify(owned), note.id);
   h.db.runSync('DELETE FROM anki_cards WHERE id = ?', cards[1].id);
-  expect(() => importRows([note.fields], { noteType: type, deckId: 2 })).toThrow(/satın alma/);
+  expect(() => importRows([note.fields], { noteType: type, deckId: 2 })).toThrow(/paket tam kurulmadan/);
   expect(getCardsForNote(note.id)).toHaveLength(1);
   h.db.runSync('INSERT INTO settings (key, value) VALUES (?, ?)', 'bka_tus_catalog_installed_v5', 'full');
   importRows([note.fields], { noteType: type, deckId: 2 });

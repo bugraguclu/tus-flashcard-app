@@ -10,7 +10,7 @@ app_screens:
   - "tusankim:// links — app/_layout.tsx, lib/externalLinking.ts, lib/externalActionRoute.ts"
   - "Web automation address — app/x-callback-url.tsx"
   - "Web version — components/WebAppIntegrations.tsx, public/manifest.webmanifest"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Shortcuts and automation
@@ -124,7 +124,8 @@ app. What is different on the web:
   (`action=search&query=…` for a search). An incomplete request opens the deck list.
 - In a wide window, a sidebar appears next to the study screen.
 - If the app is open in two tabs at once, only the first tab saves. The other tab shows
-  **⚠️ The app is open in another tab — changes in this tab will not be saved.**
+  **⚠️ The app is open in another tab — changes in this tab will not be saved.** When you close the
+  first tab, the other one reloads by itself and starts saving.
 - Clearing the browser's site data also deletes the collection. Keep important work safe by
   [exporting it](14-import-export.md).
 

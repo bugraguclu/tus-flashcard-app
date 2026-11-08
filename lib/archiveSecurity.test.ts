@@ -25,6 +25,6 @@ describe('archive security', () => {
     it('rejects archives with an excessive entry count before inflation', () => {
         const zip = new JSZip();
         for (let index = 0; index <= MAX_ARCHIVE_ENTRIES; index++) zip.file(String(index), '');
-        expect(() => assertSafeAnkiArchive(zip)).toThrow(/çok fazla dosya/);
+        expect(() => assertSafeAnkiArchive(zip)).toThrow(/çok kayıt veya dosya/);
     });
 });

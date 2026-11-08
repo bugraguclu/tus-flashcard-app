@@ -11,7 +11,7 @@ app_screens:
   - "Export Backup — app/export.tsx (?backup=…)"
   - "Settings › Data Management (Backup, Maintenance) — app/settings.tsx"
   - "Empty Cards — app/empty-cards.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Backups and maintenance
@@ -20,9 +20,10 @@ TusAnkiM backs up your collection on this device by itself. On the **Backups** s
 backups, make one yourself, restore one, or export a backup as a file. The maintenance tools find
 and repair inconsistencies in the collection.
 
-To open **Backups**, tap **•••** at the top right of the **Decks** screen › **Create Backup** or
-**Restore from Backup** (both open the same screen), or go to **Settings › Data Management ›
-Manage backups**.
+To open **Backups**, tap **•••** at the top right of the **Decks** screen › **Restore from
+Backup**, or go to **Settings › Data Management › Manage backups**. **Create Backup** in the same
+menu makes a backup at once without opening a screen; **Manage my backups** in the message that
+follows also opens **Backups**.
 
 <a id="automatic-backups"></a>
 ## Automatic backups
@@ -124,7 +125,7 @@ Some operations that change the collection make a backup by themselves before th
 | Importing a text file | Only if it will update existing notes |
 | Restoring a backup | Yes, as a **Pre-restore snapshot** |
 | **Repair and optimize** | Always |
-| **Reset progress** | Always |
+| **Reset collection** | Always |
 | Moving unused media to the trash | Always (a collection backup) |
 | Deleting empty cards | No |
 
@@ -132,7 +133,7 @@ These backups appear in the list as **Collection backup** with the time of the o
 replaced by newer ones over time like automatic backups.
 
 If the collection contains unreadable rows, the app cannot make a backup that can be restored. In
-that case importing a collection package and **Reset progress** stop before they start and show the
+that case importing a collection package and **Reset collection** stop before they start and show the
 **Repair First** alert, and **Back Up Now** saves only a **recovery copy**. A recovery copy can be
 exported as a raw file with **Share** but cannot be restored. Run [Repair and optimize](#repair)
 first.
@@ -223,10 +224,12 @@ reason.
 > their cards are.
 
 <a id="reset-progress"></a>
-## Reset progress: starting the collection over
-<!-- In the app: Settings › Data Management › Maintenance › Reset progress app/settings.tsx:1585-1591; confirmation 979; result 991-1007 -->
+## Reset collection: starting over
+<!-- In the app: Settings › Data Management › Maintenance › Reset collection (`handleResetProgress`, app/settings.tsx) -->
 
-**Reset progress deletes the whole collection, not just your study progress.**
+**Reset collection deletes the whole collection, not just your study progress.** Its confirmation
+lists what is deleted and what is kept, and suggests exporting the collection as **.colpkg**
+first.
 
 | Deleted | Kept |
 | --- | --- |
@@ -245,8 +248,8 @@ Before you use it:
 2. Export the collection as **.colpkg** and keep the file off the device
    (see [Moving your collection to a new device](14-import-export.md#move-to-new-device)).
 
-Then tap **Settings › Data Management › Reset progress** and confirm with **OK**. The app first
-makes a safety backup that can be restored; the **Progress Reset** message names it. If you change
+Then tap **Settings › Data Management › Reset collection** and confirm with **OK**. The app first
+makes a safety backup that can be restored; the **Collection Reset** message names it. If you change
 your mind, restore that backup from the **Backups** screen.
 
 If you only want to turn some cards back into new cards, do not use this command: select the cards
@@ -254,7 +257,7 @@ in the **Card Browser** and tap **More** › **Reset cards…**
 (see [Card Browser and search](10-browser-and-search.md)).
 
 > **Different from Anki:** Resetting cards in Anki only turns the cards you select into new cards.
-> **Reset progress** deletes the whole collection.
+> **Reset collection** deletes the whole collection.
 
 <a id="delete-app-warning"></a>
 ## Before you delete the app

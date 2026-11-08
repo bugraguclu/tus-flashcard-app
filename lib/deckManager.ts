@@ -28,6 +28,7 @@ export {
     updateFilteredDeck,
     emptyFilteredDeck,
     rebuildFilteredDeck,
+    filteredDeckBuiltCount,
     completeFilteredCard,
     restoreFilteredCard,
     setFilteredPreviewDue,

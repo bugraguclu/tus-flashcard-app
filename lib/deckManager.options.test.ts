@@ -285,7 +285,7 @@ describe('getAvailableDeckName', () => {
         // saveDeck refuses catalog rows, so the catalog installer's row is written directly.
         dbHolder.db.runSync('UPDATE decks SET data = ? WHERE id = ?', JSON.stringify({ ...catalog, catalogPack: CATALOG_PACK_ID }), catalog.id);
         const mine = createDeck('Benim');
-        expect(() => renameDeck(mine.id, 'BKA TUS::Benim')).toThrow(/Katalog/);
+        expect(() => renameDeck(mine.id, 'BKA TUS::Benim')).toThrow(/TUS Kartları destelerinin altına/);
         expect(getDeckByName('Benim')?.id).toBe(mine.id);
     });
 });

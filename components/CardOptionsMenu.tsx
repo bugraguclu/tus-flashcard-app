@@ -331,7 +331,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                         label={l('Notu sil', 'Delete note')}
                                         onPress={() => confirmAndClose(
                                             l('Notu sil', 'Delete note'),
-                                            l('Bu not ve kartları silinecek. Silme sonrasında geri alabilirsiniz.', 'This note and its cards will be deleted. You can undo after deletion.'),
+                                            l('Bu not ve bütün kartları silinecek. Hemen ardından açılan pencerede Geri al ile geri getirebilirsiniz.', 'This note and all its cards will be deleted. You can bring it back with Undo in the dialog that follows.'),
                                             props.onDeleteNote,
                                             true,
                                         )}
@@ -408,7 +408,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
 
                         {view === 'tags' && (
                             <View style={styles.formContent}>
-                                <Text style={styles.subDesc}>{l('Etiketleri boşlukla ayırın.', 'Separate tags with spaces.')}</Text>
+                                <Text style={styles.subDesc}>{l('Etiketleri boşlukla ayırın. Etiketler notun bütün kartlarına uygulanır.', 'Separate tags with spaces. Tags apply to every card of the note.')}</Text>
                                 <TextInput
                                     style={styles.textInput}
                                     value={tagsInput}

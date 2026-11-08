@@ -224,7 +224,7 @@ describe('importDelimitedNotes', () => {
         expect(() => importDelimitedNotes(
             `#separator:comma\n#guid column:1\n${BKA_MANIFEST.protectedNoteGuids[0]},Paid,Answer`,
             { noteType: NT, deckId: 1 },
-        )).toThrow(/ücretli BKA/i);
+        )).toThrow(/TUS Kartları paketinden/i);
         expect(h.store.exec).toEqual([]);
         expect(createNoteMock).not.toHaveBeenCalled();
     });

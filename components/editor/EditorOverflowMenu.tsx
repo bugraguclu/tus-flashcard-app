@@ -74,7 +74,7 @@ export function EditorOverflowMenu({
                         style={styles.overflowItem}
                         onPress={onOpenFontSize}
                     >
-                        <Text style={styles.overflowItemText}>{l('Yazı boyutu', 'Font size')}</Text>
+                        <Text style={styles.overflowItemText}>{l('Düzenleyici yazı boyutu', 'Editor text size')}</Text>
                         <Text style={styles.overflowItemValue}>{preferences.fontSize}</Text>
                         <Text style={styles.overflowChevron}>›</Text>
                     </TouchableOpacity>

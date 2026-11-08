@@ -218,6 +218,17 @@ export const EDITOR_FONT_SIZES = [
 
 export type EditorFontSize = (typeof EDITOR_FONT_SIZES)[number];
 
+/** What the size picker calls each keyword, Turkish first; the keyword itself is CSS, not copy. */
+export const EDITOR_FONT_SIZE_LABELS: Record<EditorFontSize, [string, string]> = {
+    'xx-small': ['En küçük', 'Tiny'],
+    'x-small': ['Çok küçük', 'Extra small'],
+    small: ['Küçük', 'Small'],
+    medium: ['Orta', 'Medium'],
+    large: ['Büyük', 'Large'],
+    'x-large': ['Çok büyük', 'Extra large'],
+    'xx-large': ['En büyük', 'Huge'],
+};
+
 /**
  * The next size up or down, for Word's grow/shrink buttons (Ctrl+Shift+> and Ctrl+Shift+<).
  *

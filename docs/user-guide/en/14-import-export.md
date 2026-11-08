@@ -11,7 +11,7 @@ app_screens:
   - "Export — app/export.tsx, components/DeckExportSelector.tsx"
   - "File hand-off (Share › TusAnkiM) — app/_layout.tsx; web: components/WebAppIntegrations.tsx"
   - "Settings › Data Management › Import and export — app/settings.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Import and export
@@ -54,8 +54,8 @@ before every package import
 
 On iPhone you can send an `.apkg`, `.colpkg`, `.csv`, `.tsv` or `.txt` file straight to
 TusAnkiM: in the **Files** app, touch and hold the file (the same works for a Mail attachment or a
-file received with AirDrop), tap **Share** and choose **TusAnkiM** from the list. The **Import
-deck** screen opens with the file already chosen. Open a package with a `.zip` extension from
+file received with AirDrop), tap **Share** and choose **TusAnkiM** from the list. The **Import**
+screen opens with the file already chosen. Open a package with a `.zip` extension from
 inside the app with **Choose File**.
 
 > **In the web version:** Drag the file onto the browser window; **Drop to import** appears. If you
@@ -326,8 +326,9 @@ be shared.
 | Text file | Up to 50 MB |
 | Preview and field mapping | First 5 lines; at most 24 columns |
 
-A file over a limit shows **The file exceeds the safe size limit.** and your collection is not
-changed. A file that contains cards from the TUS Cards pack cannot be imported; the pack is
+A file that is itself over its limit shows **The file is too large. Packages can be up to 400 MB
+and text files up to 50 MB.**; when a limit inside a package is passed, the alert says **The
+package, or a file in it, exceeds the safe size limit.** Either way your collection is not changed. A file that contains cards from the TUS Cards pack cannot be imported; the pack is
 installed only from inside the app (see [TUS card pack](17-tus-card-pack.md)). Backups on the
 **Backups** screen are restored there, not from this screen.
 

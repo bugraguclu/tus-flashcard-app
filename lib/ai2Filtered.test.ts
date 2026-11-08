@@ -5,7 +5,7 @@ import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => holder.db, dbIndexAllCards() {}, dbUpsertFtsCard() {} }));
 import { seedBase, settings, makeCard, deckConfig } from '../test/studyQueueFixtures';
-import { createFilteredDeck, updateFilteredDeck, rebuildFilteredDeck, emptyFilteredDeck, completeFilteredCard } from './filteredDecks';
+import { createFilteredDeck, updateFilteredDeck, rebuildFilteredDeck, emptyFilteredDeck, completeFilteredCard, filteredDeckBuiltCount } from './filteredDecks';
 import { getStudyQueue } from './studyQueue';
 import { getAnkiCard, saveAnkiCard } from './noteManager';
 import { answerStudyCard, undoAnswer } from './studyAnswer';
@@ -39,6 +39,15 @@ describe('AI-2 fixed filtered builds', () => {
         const deck = createFilteredDeck('Session', 'is:new', 1);
         updateFilteredDeck(deck.id, { searchQuery: 'is:new', searchLimit: 1, searchOrder: 5, searchQuery2: 'is:new', searchLimit2: 2, searchOrder2: 5, reschedule: true });
         expect(ids('Session')).toHaveLength(3);
+    });
+    it('reports how many cards a rebuild gathered, for the Rebuild message', () => {
+        const deck = createFilteredDeck('Session', 'is:new', 2);
+        rebuildFilteredDeck(deck.id);
+        expect(filteredDeckBuiltCount(deck.id)).toBe(ids('Session').length);
+        expect(filteredDeckBuiltCount(deck.id)).toBe(2);
+        emptyFilteredDeck(deck.id);
+        expect(filteredDeckBuiltCount(deck.id)).toBe(0);
+        expect(filteredDeckBuiltCount(7)).toBe(0);
     });
     it('prevents two filtered decks from claiming the same card', () => {
         createFilteredDeck('One', 'is:new', 2);

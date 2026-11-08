@@ -189,7 +189,7 @@ export function SelectionMenuModal({
                                 if (hasCatalogNotesSelected || hasCatalogCardsSelected) {
                                     alert(
                                         l('Katalog Korumalı', 'Catalog Protected'),
-                                        l('Dahili TUS kartları silinemez. Kataloğu kaldırmak için Ayarlar ekranını kullanabilirsiniz.', 'Built-in TUS cards cannot be deleted. Use Settings to remove the catalog.')
+                                        l('TUS Kartları paketindeki notlar silinemez. Çalışmak istemediğiniz kartları askıya alabilirsiniz.', 'Notes in the TUS Kartları pack cannot be deleted. You can suspend cards you don’t want to study.')
                                     );
                                     return;
                                 }
@@ -593,7 +593,7 @@ export function BrowserOptionsModal({
             <View style={styles.modalOverlay}>
                 <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOptions(false)} />
                 <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Kart tarayıcısı seçenekleri', 'Card Browser Options')}</Text>
+                    <Text style={styles.modalTitle}>{l('Kartlarım seçenekleri', 'Card Browser Options')}</Text>
                     <Text style={styles.optionTitle}>{l('Görünüm', 'View')}</Text>
                     <Text style={styles.optionCaption}>{l('Listede kartları veya her notu tek satır olarak göster.', 'Show cards, or show each note as a single row.')}</Text>
                     <View style={styles.directionRow}>

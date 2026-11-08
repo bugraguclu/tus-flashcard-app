@@ -15,7 +15,7 @@ app_screens:
   - "Edit Photo — components/photo-editor/PhotoEditorModal.tsx"
   - "Drawing — components/drawing/DrawingPadModal.tsx"
   - "Tags — components/TagPickerModal.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Adding and editing cards
@@ -31,7 +31,7 @@ The same screen opens as **Edit Card** when you change an existing note.
 To add a new note:
 
 - On the **Decks** tab, tap the round **＋** button at the bottom right › **Add note**.
-- A deck's **•••** button › **Add**: the note goes straight into that deck.
+- A deck's **•••** button › **Add note**: the note goes straight into that deck.
 - In the **Card Browser**, tap **＋ New Note** (or **＋ New Card**).
 - While studying, tap **⋮** at the top or **Tools** › **Add note**.
 
@@ -262,7 +262,7 @@ window is the only chance; once you tap **Done**, it cannot be undone.
 - **Clear fields:** empties every field, pinned ones included. It cannot be undone.
 - **Delete note:** shown only while editing; deletes the note and every card made from it. Review
   history is kept.
-- **Font size:** only the size of text on this screen; it does not change how cards look. Some
+- **Editor text size:** only the size of text on this screen; it does not change how cards look. Some
   imported note types use their own field size.
 - **Capitalize sentences**, **Show toolbar**, **Scroll toolbar:** preferences saved at once. Hiding
   the toolbar also hides **[…]** and **Undo**. With scrolling off, the toolbar wraps onto several

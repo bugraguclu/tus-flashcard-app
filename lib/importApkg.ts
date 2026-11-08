@@ -22,6 +22,7 @@ import { resolveSubjectDeckId } from './subjects';
 import { applyAnkiProgress, readAnkiProgress } from './importApkgProgress';
 import { sourcePackageId } from './importApkgIdentity';
 import { assertSafeAnkiArchive, assertZipEntrySize, decompressZstdBounded } from './archiveSecurity';
+import { translateActive } from './i18n';
 import { deserializeFtsSafeDatabaseSync } from './sqliteOpenOptions';
 import { FIELD_SEPARATOR, MEDIA_RE, type ApkgImportOptions, type ApkgImportResult, type ApkgReader, type JSZipType, type SqliteReader } from './apkgFormat';
 import { importAnkiReaderLossless } from './importApkgLossless';
@@ -107,7 +108,7 @@ export function hardenAndValidateAnkiReader(reader: SqliteReader): void {
 
     const integrity = reader.getFirstSync<Record<string, unknown>>('PRAGMA quick_check(1)');
     if (!integrity || String(Object.values(integrity)[0] ?? '').toLowerCase() !== 'ok') {
-        throw new Error('Koleksiyon bütünlük denetimini geçemedi.');
+        throw new Error(translateActive('import.integrityFailed'));
     }
 
     const schema = reader.getAllSync<{ name: string; type: string }>(
@@ -115,13 +116,13 @@ export function hardenAndValidateAnkiReader(reader: SqliteReader): void {
     );
     const types = new Map(schema.map((entry) => [String(entry.name), String(entry.type)]));
     if (types.get('notes') !== 'table' || types.get('cards') !== 'table') {
-        throw new Error('Koleksiyonun temel tablo yapısı geçersiz.');
+        throw new Error(translateActive('import.noCollection'));
     }
     for (const [table, limit] of Object.entries(IMPORT_TABLE_ROW_LIMITS)) {
         if (!types.has(table)) continue;
         const count = Number(reader.getFirstSync<{ count: number }>(`SELECT COUNT(*) AS count FROM ${table}`)?.count);
         if (!Number.isFinite(count) || count < 0 || count > limit) {
-            throw new Error('Koleksiyon güvenli biçimde işlenemeyecek kadar çok fazla kayıt içeriyor.');
+            throw new Error(translateActive('import.tooManyRecords'));
         }
     }
 
@@ -129,7 +130,7 @@ export function hardenAndValidateAnkiReader(reader: SqliteReader): void {
         'SELECT MAX(length(flds)) AS maxFields, MAX(length(tags)) AS maxTags FROM notes',
     );
     if (Number(noteSizes?.maxFields ?? 0) > MAX_NOTE_FIELD_CHARS || Number(noteSizes?.maxTags ?? 0) > 1_000_000) {
-        throw new Error('Koleksiyondaki bir not alanı güvenli boyut sınırını aşıyor.');
+        throw new Error(translateActive('import.noteFieldTooLarge'));
     }
 
     reader.execSync?.('PRAGMA query_only = ON');
@@ -265,7 +266,7 @@ export function importAnkiReader(reader: SqliteReader, options: ApkgImportOption
 
 export async function loadAnkiZip(zipBytes: Uint8Array): Promise<JSZipType> {
     if (zipBytes.length > MAX_APKG_BYTES) {
-        throw new Error('Dosya çok büyük (en fazla 200 MB).');
+        throw new Error(translateActive('import.tooLarge'));
     }
     const zip = await JSZip.loadAsync(zipBytes);
     assertSafeAnkiArchive(zip);
@@ -302,7 +303,7 @@ async function readCollectionEntry(zip: JSZipType): Promise<Uint8Array> {
         assertZipEntrySize(file, MAX_COLLECTION_BYTES, 'Koleksiyon');
         const bytes = await file.async('uint8array');
         if (bytes.length > MAX_COLLECTION_BYTES) {
-            throw new Error('Koleksiyon çok büyük (açılmış en fazla 200 MB).');
+            throw new Error(translateActive('import.tooLarge'));
         }
         return bytes;
     }
@@ -322,7 +323,7 @@ async function readCollectionEntry(zip: JSZipType): Promise<Uint8Array> {
     const oldest = zip.file(OLDEST_COLLECTION_NAME);
     if (oldest) return inflate(oldest);
 
-    throw new Error('Geçerli bir Anki koleksiyonu bulunamadı.');
+    throw new Error(translateActive('import.noCollection'));
 }
 
 export async function openAnkiReader(bytes: Uint8Array): Promise<ApkgReader> {
@@ -359,7 +360,7 @@ export async function importApkg(zipBytes: Uint8Array, options: ApkgImportOption
         const lossless = importAnkiReaderLossless(reader, options, packageId);
         if (!lossless && options.replaceCollection) {
             // Without its note types and decks a collection cannot replace this one faithfully.
-            throw new Error('Bu koleksiyon paketinin not türleri ve desteleri okunamadı; koleksiyonunuz değiştirilmedi.');
+            throw new Error(translateActive('import.colpkgUnreadable'));
         }
         if (!lossless) console.warn('[ApkgImport] package metadata unreadable; importing with the simplified importer');
         // Said in the result, so the import summary can warn that note types were simplified.

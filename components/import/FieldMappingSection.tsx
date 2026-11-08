@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
+import { localizeFieldName, type SupportedLocale } from '../../lib/i18n';
 import type { NoteTypeField } from '../../lib/models';
 import { ChevronDownIcon, ChoiceModal } from './ImportControls';
 import type { ImportStyles } from './importStyles';
@@ -27,16 +28,21 @@ export default function FieldMappingSection(props: {
     styles: ImportStyles;
     accentColor: string;
     cancelLabel: string;
+    /** Standard field names (Front, Back…) show in the interface language, as in the editor. */
+    locale: SupportedLocale;
     l: (tr: string, en: string) => string;
 }) {
     const {
         fields, notetypeColumn, columnCount, visibleColumnCount, previewRows, metaColumns, defaultMapping,
-        mappingFor, setColumnMappings, styles, accentColor, cancelLabel, l,
+        mappingFor, setColumnMappings, styles, accentColor, cancelLabel, locale, l,
     } = props;
     const perRowNoteTypes = Boolean(notetypeColumn);
     const [mappingColumn, setMappingColumn] = useState<number | null>(null);
     const mappingLabel = (mapping: ColumnMapping): string => {
-        if (mapping.startsWith('field:')) return fields[Number(mapping.slice(6))]?.name ?? l('Geçersiz alan', 'Invalid field');
+        if (mapping.startsWith('field:')) {
+            const field = fields[Number(mapping.slice(6))];
+            return field ? localizeFieldName(locale, field.name) : l('Geçersiz alan', 'Invalid field');
+        }
         if (mapping === 'tags') return l('Etiketler', 'Tags');
         return l('Yok sayıldı', 'Ignored');
     };
@@ -148,7 +154,7 @@ export default function FieldMappingSection(props: {
                 options={[
                     ...fields.map((field, index) => ({
                         value: `field:${index}`,
-                        label: field.name,
+                        label: localizeFieldName(locale, field.name),
                         selected: mappingColumn !== null && mappingFor(mappingColumn) === `field:${index}`,
                     })),
                     {

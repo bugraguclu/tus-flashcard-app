@@ -146,7 +146,7 @@ export function Sidebar(props: SidebarProps) {
                             style={styles.deckExpandBtn}
                             onPress={() => onToggleDeckExpand?.(deck.name)}
                             accessibilityRole="button"
-                            accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
+                            accessibilityLabel={isExpanded ? t('sidebar.hideSubdecks') : t('sidebar.showSubdecks')}
                             accessibilityState={{ expanded: isExpanded }}
                         >
                             <DeckChevron

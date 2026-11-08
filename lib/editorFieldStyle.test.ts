@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { editorFieldFontFamily, editorFieldFontSize } from './editorFieldStyle';
+import { editorFieldFontFamily, editorFieldFontSize, editorFieldRole } from './editorFieldStyle';
+import { BUILTIN_NOTE_TYPES } from './models';
 
 describe('editorFieldFontSize', () => {
     it('uses the field size a note type actually specifies', () => {
@@ -54,5 +55,28 @@ describe('editorFieldFontFamily', () => {
     it('bounds a name long enough to be a payload rather than a face', () => {
         const family = editorFieldFontFamily('A'.repeat(500));
         expect(family).toBe(`"${'A'.repeat(64)}", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`);
+    });
+});
+
+describe('editorFieldRole', () => {
+    const builtin = (name: string) => BUILTIN_NOTE_TYPES.find((type) => type.name === name)!;
+
+    it('marks the optional reversed type\'s switch field', () => {
+        const type = builtin('Basic (optional reversed card)');
+        expect(editorFieldRole(type, 'Add Reverse')).toBe('addReverse');
+        expect(editorFieldRole(type, 'Back')).toBeNull();
+    });
+
+    it('marks the field a front template asks the learner to type', () => {
+        const type = builtin('Basic (type in the answer)');
+        expect(editorFieldRole(type, 'Back')).toBe('typedAnswer');
+        expect(editorFieldRole(type, 'Front')).toBeNull();
+        expect(editorFieldRole({ kind: 'standard', templates: [{ qfmt: '{{Front}} {{type:nc:Answer}}' }] }, 'Answer')).toBe('typedAnswer');
+    });
+
+    it('leaves plain and cloze fields to the generic hint', () => {
+        expect(editorFieldRole(builtin('Basic'), 'Back')).toBeNull();
+        expect(editorFieldRole({ kind: 'cloze', templates: [{ qfmt: '{{cloze:Text}}{{type:cloze:Text}}' }] }, 'Text')).toBeNull();
+        expect(editorFieldRole(null, 'Add Reverse')).toBeNull();
     });
 });

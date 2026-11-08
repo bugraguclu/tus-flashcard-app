@@ -15,7 +15,7 @@ app_screens:
   - "Fotoğrafı düzenle — components/photo-editor/PhotoEditorModal.tsx"
   - "Çizim — components/drawing/DrawingPadModal.tsx"
   - "Etiketler — components/TagPickerModal.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Kart ekleme ve düzenleme
@@ -31,7 +31,7 @@ Aynı ekran, var olan bir notu düzenlerken **Kartı düzenle** adıyla açılı
 Yeni not eklemek için:
 
 - **Desteler** sekmesinde sağ alttaki **＋** düğmesi › **Kart ekle**.
-- Bir destenin **•••** düğmesi › **Ekle**: not doğrudan o desteye gider.
+- Bir destenin **•••** düğmesi › **Kart ekle**: not doğrudan o desteye gider.
 - **Kartlarım** ekranında **＋ Yeni not** (veya **＋ Yeni kart**) düğmesi.
 - Çalışırken üstteki **⋮** düğmesi veya **Araçlar** › **Not ekle**.
 
@@ -125,7 +125,7 @@ Boşluk doldurma kartında metnin bir parçası gizlenir ve onu hatırlamanız b
 İsterseniz boşluğu elle de yazabilirsiniz: `{{c1::atropin::antikolinerjik}}` yazdığınızda soru
 yüzünde gizli kısmın yerinde `[antikolinerjik]` ipucu görünür. **Arka Ek** alanı cevap yüzünde
 gösterilen ek bilgi içindir. **[…]** düğmesi yalnızca boşluk doldurma türlerinde ve araç çubuğu
-açıkken görünür. Hiç boşluk eklemeden kaydederseniz **Kapama bulunamadı** diye sorulur; onaylarsanız
+açıkken görünür. Hiç boşluk eklemeden kaydederseniz **Boşluk bulunamadı** diye sorulur; onaylarsanız
 not tek kartla kaydedilir.
 
 <a id="images"></a>
@@ -273,7 +273,7 @@ geri getirir. Bu fırsat yalnızca o penceredir; **Bitti**'ye dokununca geri al�
 - **Alanları temizle:** Sabitlenenler dahil bütün alanları boşaltır. Geri alınamaz.
 - **Notu sil:** Yalnızca düzenlerken görünür; notu ve ondan üretilen bütün kartları siler. Tekrar
   geçmişi silinmez.
-- **Yazı boyutu:** Yalnızca bu ekrandaki yazının boyutudur; kartların görünümünü değiştirmez. Bazı
+- **Düzenleyici yazı boyutu:** Yalnızca bu ekrandaki yazının boyutudur; kartların görünümünü değiştirmez. Bazı
   içe aktarılmış not türleri kendi alan boyutunu kullanır.
 - **Cümleleri büyük harfle başlat**, **Araç çubuğunu göster**, **Araç çubuğunu kaydır:** Hemen
   kaydedilen tercihlerdir. Araç çubuğunu gizlerseniz **[…]** ve **Geri al** düğmeleri de gizlenir.

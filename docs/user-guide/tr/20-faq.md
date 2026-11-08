@@ -9,7 +9,7 @@ app_screens:
   - "Yardım merkezi — app/help.tsx (yeni)"
   - "Hata ekranı — app/_layout.tsx (Beklenmeyen Bir Hata Oluştu)"
   - "Destek sayfası — docs/support.html (web sitesi)"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Sık sorulanlar ve sorun giderme
@@ -160,9 +160,9 @@ Evet. Paketli her içe aktarmadan önce uygulama otomatik bir güvenlik yedeği 
 [Yedekler ve bakım](15-backups-and-maintenance.md).
 
 <a id="reset-progress"></a>
-### "İlerlemeyi sıfırla" ne yapar?
+### "Koleksiyonu sıfırla" ne yapar?
 
-**Ayarlar › Veri yönetimi › Bakım › İlerlemeyi sıfırla**, tek tek kartları değil, koleksiyonun
+**Ayarlar › Veri yönetimi › Bakım › Koleksiyonu sıfırla**, tek tek kartları değil, koleksiyonun
 tamamını siler: desteler, kartlar, tekrar geçmişi, Kronometre kayıtları ve uygulama ayarları.
 Uygulama ilk kurulduğu gibi açılır. Önce geri yüklenebilir bir güvenlik yedeği alınır. Yalnızca
 bazı kartları baştan almak istiyorsanız bunun yerine **Kartlarım** ekranında kartları seçip
@@ -205,6 +205,12 @@ Kartlar eğitim amaçlıdır; klinik karar için güncel kaynaklara başvurun.
 
 Bize bildirmek isterseniz **Teknik detayları göster** ile açılan metni destek mesajınıza ekleyin.
 Verileriniz bu ekrandan etkilenmez.
+
+Uygulama açılırken bu başlıkla yalnızca **Tekrar dene** düğmesi görünüyorsa uygulama
+başlatılamamıştır; verileriniz silinmez. **Tekrar dene** başlatmayı yeniden çalıştırır. Açılış
+**Başlatma uzun sürüyor** diyorsa büyük bir koleksiyon hazırlanıyordur: uygulamayı kapatmayın,
+hazır olunca kendiliğinden açılır. **Beklemeye devam et** yalnızca beklemeyi uzatır, ikinci bir
+başlatma çalıştırmaz.
 
 <a id="app-slow"></a>
 ### Uygulama yavaşladı veya arama tuhaf sonuçlar veriyor
