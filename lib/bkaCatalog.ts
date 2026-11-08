@@ -37,6 +37,7 @@ import { unpackCatalogBytes } from './catalogPack';
 import { catalogPackKey } from './catalogPackKey';
 import { BKA_MANIFEST } from './bkaManifest';
 import { preserveCatalogNoteEdits } from './catalogNoteEdits';
+import { carryCatalogLearnerState, readInstalledCatalogState } from './catalogLearnerState';
 import { applyPendingCatalogLearnerData } from './backupCatalogLearnerData';
 import {
     BKA_CATALOG_DEFAULT_ROOT_DECK,
@@ -271,8 +272,11 @@ function inTransaction<T>(work: () => T): T {
     }
 }
 
-/** Write the snapshot's rows. Runs inside the caller's transaction. */
-function writeCatalogRows(snapshot: BkaCatalogSnapshot): { restoredProgress: number } {
+/**
+ * Write the snapshot's rows. Runs inside the caller's transaction. A card whose state was carried
+ * from the installed rows keeps it; any other card gets progress stashed by an earlier removal.
+ */
+function writeCatalogRows(snapshot: BkaCatalogSnapshot, carriedCardIds: ReadonlySet<number>): { restoredProgress: number } {
     const db = getDB();
     const now = Date.now();
     const stashed = readStashedProgress();
@@ -310,9 +314,10 @@ function writeCatalogRows(snapshot: BkaCatalogSnapshot): { restoredProgress: num
         );
     }
     for (const sourceCard of snapshot.cards) {
-        const stored = stashed[String(sourceCard.id)];
-        if (stored) restoredProgress++;
+        const carried = carriedCardIds.has(sourceCard.id);
+        const stored = carried ? undefined : stashed[String(sourceCard.id)];
         const card = applyCatalogProgress(sourceCard, stored);
+        if (stored || (carried && hasStudyProgress(card))) restoredProgress++;
         db.runSync(
             `INSERT OR REPLACE INTO anki_cards
              (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags,
@@ -352,19 +357,17 @@ function replaceInstalledCatalog(
     tier: BkaCatalogTier,
     currentTier: BkaCatalogTier | null,
 ): { snapshot: BkaCatalogSnapshot; restoredProgress: number; replaced: boolean } {
-    const snapshot: BkaCatalogSnapshot = { ...source };
+    const learnerState = readInstalledCatalogState();
+    const edited: BkaCatalogSnapshot = { ...source };
     if (currentTier === 'full' && tier === 'full') {
         // Fields the learner edited, and the cards their edits generated, replace the package's.
-        const editedNotes = parseRows<Note>('notes').map((row) => row.value)
-            .filter((note) => isCatalogRow(note) && note.catalogFieldsEdited);
-        const editedNoteIds = new Set(editedNotes.map((note) => note.id));
-        const editedCards = editedNotes.length > 0
-            ? getDB().getAllSync<{ noteId: number; data: string }>('SELECT noteId, data FROM anki_cards')
-                .filter((row) => editedNoteIds.has(Number(row.noteId)))
-                .map((row) => JSON.parse(row.data) as AnkiCard)
-            : [];
-        preserveCatalogNoteEdits(snapshot, editedNotes, editedCards);
+        const editedNoteIds = new Set(learnerState.editedNotes.map((note) => note.id));
+        const editedCards = [...learnerState.cards.values()].filter((card) => editedNoteIds.has(card.noteId));
+        preserveCatalogNoteEdits(edited, learnerState.editedNotes, editedCards);
     }
+    // Everything else the learner made of the installed rows: scheduling and card data, positions,
+    // tags, and on the same tier the presets and deck settings.
+    const { snapshot, carriedCardIds } = carryCatalogLearnerState(edited, learnerState, currentTier === tier);
     const installed = findInstalledCatalogRows();
 
     return inTransaction(() => {
@@ -372,7 +375,7 @@ function replaceInstalledCatalog(
             removeCatalogRows(installed);
             removeCatalogSubjects();
         }
-        const { restoredProgress } = writeCatalogRows(snapshot);
+        const { restoredProgress } = writeCatalogRows(snapshot, carriedCardIds);
         assertInstalledDatabase(snapshot);
         writeCatalogSubjects(snapshot.subjects);
         writeSetting(ROOT_DECK_NAME_KEY, snapshot.rootDeckName);

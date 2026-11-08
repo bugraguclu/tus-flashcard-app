@@ -1,7 +1,11 @@
 import type { AnkiCard, Note } from './models';
 import { CATALOG_PACK_ID } from './catalogRows';
 
-/** Keep learner-authored fields and their generated cards when the bundled package is updated. */
+/**
+ * Keep learner-authored fields and their generated cards when the bundled package is updated.
+ * The note keeps the package's tags here; lib/catalogLearnerState.ts lays the learner's tag
+ * changes over them, as it does on every other note.
+ */
 export function preserveCatalogNoteEdits(
     snapshot: { notes: Note[]; cards: AnkiCard[] },
     installedNotes: Note[],
@@ -19,7 +23,6 @@ export function preserveCatalogNoteEdits(
         return {
             ...source,
             fields: [...local.fields],
-            tags: [...local.tags],
             sfld: local.sfld,
             csum: local.csum,
             mod: local.mod,

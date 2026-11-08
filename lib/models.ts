@@ -191,6 +191,12 @@ export interface Note {
     catalogTopic?: string;
     /** Learner-edited fields survive a bundled catalog package refresh. */
     catalogFieldsEdited?: boolean;
+    /**
+     * The tags the bundled catalog package gave this note when it was installed. A package
+     * refresh compares the note's tags with them to tell the learner's own tag changes, which it
+     * keeps, from the package's (lib/catalogLearnerState.ts).
+     */
+    catalogPackageTags?: string[];
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
 }

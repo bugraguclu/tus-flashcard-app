@@ -78,7 +78,12 @@ import {
     uninstallBkaCatalog,
 } from './bkaCatalog';
 import { BKA_MANIFEST } from './bkaManifest';
-import { getAllNotes, getNote, getCardsForNote, saveNote, updateTusCardByCardId } from './noteManager';
+import {
+    getAllNotes, getAnkiCard, getNote, getCardsForNote, saveAnkiCard, saveNote, setNoteTags, updateTusCardByCardId,
+} from './noteManager';
+import { getDeck, getDeckByName, getDeckConfig, saveDeck, saveDeckConfig } from './deckManager';
+import { repositionSelectedNewCards } from './browserReposition';
+import { DEFAULT_DECK_CONFIG } from './models';
 import { getBrowserCardCount, getBrowserCardIdsMatchingText, getBrowserCards } from './studyRepository';
 import { DEFAULT_SETTINGS } from './storage';
 
@@ -356,7 +361,7 @@ describe('BKA catalog installation', () => {
         expect(JSON.parse(restored.data).factor).toBe(2350);
     }, 120_000);
 
-    it('refreshes an older package while keeping learner field edits, generated cards and study progress', async () => {
+    it('refreshes an older package while keeping learner field edits, generated cards, study progress and every other learner choice', async () => {
         await installBkaCatalog();
         const studied = db.getFirstSync<{ id: number; data: string }>(
             'SELECT id, data FROM anki_cards WHERE id != ?', LEARNER.cardId)!;
@@ -376,6 +381,40 @@ describe('BKA catalog installation', () => {
         const expectedCount = getInstalledBkaCardCount();
         expect(needsBkaCatalogInstall()).toBe(false);
 
+        // Learner choices that are not field edits, each on a note of its own.
+        const [fsrsRow, repositionedRow, taggedRow, olderTaggedRow] = db.getAllSync<{ id: number; noteId: number }>(
+            `SELECT MIN(id) AS id, noteId FROM anki_cards WHERE noteId NOT IN (?, ?)
+             AND noteId IN (SELECT id FROM notes WHERE tags LIKE '% % % %') GROUP BY noteId ORDER BY noteId LIMIT 4`,
+            LEARNER.noteId, editedNote.id,
+        );
+        // FSRS memory state, desired retention, original position and custom data, on a studied card.
+        const fsrsData = JSON.stringify({ s: 12.5, d: 5.25, dr: 0.85, pos: 3, cd: { kaynak: 'ben' } });
+        saveAnkiCard({ ...getAnkiCard(fsrsRow.id)!, type: 2, queue: 2, due: 30, ivl: 9, reps: 2, ankiData: fsrsData });
+        // A new card moved to the end of the new-card queue.
+        repositionSelectedNewCards([repositionedRow.id], 99_999, 1, false);
+        // Tags changed without a field edit: one of the package's tags removed, Anki's `marked` added.
+        const packageTags = getNote(taggedRow.noteId)!.tags;
+        const learnerTags = [...packageTags.slice(1), 'marked'];
+        setNoteTags(taggedRow.noteId, learnerTags);
+        // The same on a note an earlier build installed, which did not record the package's tags.
+        const { catalogPackageTags: _recorded, ...olderNote } = getNote(olderTaggedRow.noteId)!;
+        db.runSync('UPDATE notes SET data = ? WHERE id = ?', JSON.stringify(olderNote), olderNote.id);
+        const olderLearnerTags = [...olderNote.tags.slice(1), 'leech'];
+        setNoteTags(olderNote.id, olderLearnerTags);
+        // The catalog's own preset tuned, a course moved to a preset of the learner's own with
+        // per-deck limits, and the root deck unfolded.
+        const root = getDeckByName(BKA_CATALOG_DEFAULT_ROOT_DECK)!;
+        const catalogPreset = getDeckConfig(root.configId);
+        const tunedPreset = {
+            ...catalogPreset, newPerDay: 77, maxReviewsPerDay: 333, learningSteps: [2, 20], desiredRetention: 0.85,
+            fsrsParams: [0.4, 1.2, 3.1, 15.7, 7.2, 0.5, 1.4, 0.01, 1.5, 0.1, 1.0, 1.9, 0.1, 0.3, 2.3, 0.2, 3.0, 0.5, 0.6, 0.1, 0.5],
+        };
+        saveDeckConfig(tunedPreset);
+        saveDeckConfig({ ...DEFAULT_DECK_CONFIG, id: 77, name: 'Benim ayarım', newPerDay: 5 });
+        const course = getDeckByName(`${BKA_CATALOG_DEFAULT_ROOT_DECK}::Pediatri`)!;
+        saveDeck({ ...course, configId: 77, newLimit: 3, reviewLimit: 40, desiredRetention: 0.8 });
+        saveDeck({ ...root, collapsed: false });
+
         // Installing again with nothing changed is a no-op: the package marker still matches.
         expect((await installBkaCatalog()).installed).toBe(false);
 
@@ -389,11 +428,20 @@ describe('BKA catalog installation', () => {
         expect(getNote(editedNote.id)?.fields).toEqual(fields);
         expect(getNote(editedNote.id)?.tags).toEqual(['kendi-etiketim']);
         expect(getCardsForNote(editedNote.id)).toEqual(editedCards);
-        expect(refreshed.restoredProgress).toBe(1);
+        expect(refreshed.restoredProgress).toBe(2);
 
         const restored = db.getFirstSync<{ ivl: number; reps: number }>(
             'SELECT ivl, reps FROM anki_cards WHERE id = ?', studied.id)!;
         expect({ ivl: restored.ivl, reps: restored.reps }).toEqual({ ivl: 21, reps: 4 });
+        expect(getAnkiCard(fsrsRow.id)).toMatchObject({ type: 2, queue: 2, due: 30, ivl: 9, reps: 2, ankiData: fsrsData });
+        expect(getAnkiCard(repositionedRow.id)).toMatchObject({ type: 0, queue: 0, due: 99_999 });
+        expect(getNote(taggedRow.noteId)?.tags).toEqual(learnerTags);
+        expect(getNote(olderNote.id)?.tags).toEqual(olderLearnerTags);
+        expect(getNote(olderNote.id)?.catalogPackageTags).toEqual(olderNote.tags);
+        expect(getDeckConfig(catalogPreset.id)).toEqual(tunedPreset);
+        expect(getDeck(course.id)).toMatchObject({ configId: 77, newLimit: 3, reviewLimit: 40, desiredRetention: 0.8 });
+        expect(getDeck(root.id)?.collapsed).toBe(false);
+        expect(getDeckConfig(77)).toMatchObject({ name: 'Benim ayarım', newPerDay: 5 });
         expect(db.getFirstSync<{ value: string }>(
             'SELECT value FROM settings WHERE key = ?', 'bka_tus_catalog_package_v1')?.value,
         ).toBe(BKA_MANIFEST.sha256);
