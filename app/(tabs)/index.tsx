@@ -214,7 +214,7 @@ import {
 } from '../../lib/reviewerUndoSteps';
 import { parseDueRange, setSelectedDueDate } from '../../lib/browserSelection';
 import { canonifyTags, sameTagSet } from '../../lib/noteTags';
-import { parseNotePayload } from '../../lib/studyCardRows';
+import { parseNotePayload, studyCardHomeDeckId } from '../../lib/studyCardRows';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -820,10 +820,11 @@ export default function StudyScreen() {
 
     // Anki reads Timers, Auto Advance and the audio replay rule from the deck the card lives in,
     // not from the deck that was selected to study — a card drawn from a subdeck follows its own
-    // deck's preset.
+    // deck's preset, and one an imported filtered deck holds follows its home deck's.
+    const cardHomeDeckId = currentCard ? studyCardHomeDeckId(currentCard) : null;
     const cardDeckOptions = useMemo(() => {
-        const config = currentCard
-            ? getDeckConfigForDeck(currentCard.deckId, settings.dayRolloverHour)
+        const config = cardHomeDeckId !== null
+            ? getDeckConfigForDeck(cardHomeDeckId, settings.dayRolloverHour)
             : DEFAULT_DECK_CONFIG;
         return {
             autoPlayAudio: settings.autoPlayAudio && config.autoPlayAudio !== false,
@@ -839,7 +840,7 @@ export default function StudyScreen() {
             audioPlaybackRate: config.audioPlaybackRate ?? settings.audioPlaybackRate ?? 1.0,
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentCard?.deckId, settings.dayRolloverHour, settings.audioPlaybackRate, settings.autoPlayAudio, collectionVersion]);
+    }, [cardHomeDeckId, settings.dayRolloverHour, settings.audioPlaybackRate, settings.autoPlayAudio, collectionVersion]);
 
     // The on-screen timer counts the same foreground-only time the review log records, and stops
     // at the deck's maximum answer seconds, exactly as the manual describes. "Stop timer on
@@ -1640,8 +1641,9 @@ export default function StudyScreen() {
             };
         }
         // The labels have to be produced with the card's own preset: learning steps, maximum
-        // interval and the FSRS parameters all live there, not on the collection defaults.
-        const cardSettings = resolveSettingsForDeck(currentCard.deckId, settings);
+        // interval and the FSRS parameters all live there (its home deck's, for a card an imported
+        // filtered deck holds), not on the collection defaults.
+        const cardSettings = resolveSettingsForDeck(studyCardHomeDeckId(currentCard), settings);
         const scheduler = schedulerForSettings(cardSettings);
         // The load balancer can move a review day, so the labels ask it exactly as the answer will.
         const nowMs = Date.now();

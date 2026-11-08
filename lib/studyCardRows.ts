@@ -424,6 +424,15 @@ export function loadNextLearningDue(
     return row?.nextDue ?? null;
 }
 
+/**
+ * The deck whose preset a card answers to. A card an imported filtered deck holds physically sits in
+ * that deck with its home in `odid`; the answer, its scheduling and its state all read the home
+ * deck, so the reviewer's button labels, timer, autoplay and Auto Advance must too.
+ */
+export function studyCardHomeDeckId(card: Pick<StudyCard, 'deckId' | 'rawCard'>): number {
+    return card.rawCard?.odid || card.deckId;
+}
+
 export function resolveSettingsForDeck(deckId: number, base: AppSettings, cache?: Map<number, AppSettings>): AppSettings {
     if (cache?.has(deckId)) {
         return cache.get(deckId)!;

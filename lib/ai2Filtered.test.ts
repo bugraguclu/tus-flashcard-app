@@ -11,7 +11,8 @@ import { getAnkiCard, saveAnkiCard } from './noteManager';
 import { answerStudyCard, undoAnswer } from './studyAnswer';
 import { getDeckListSnapshot } from './deckListSnapshot';
 import { dayNumberToYmd, localDayNumber } from './ankiState';
-import { getDeck, saveDeck, saveDeckConfig } from './deckManager';
+import { getDeck, getDeckConfigForDeck, saveDeck, saveDeckConfig } from './deckManager';
+import { resolveSettingsForDeck, studyCardHomeDeckId } from './studyCardRows';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
@@ -79,6 +80,24 @@ describe('AI-2 fixed filtered builds', () => {
         saveAnkiCard(makeCard(1010, 101, deck.id, { odid: 7, odue: localDayNumber(Date.now(), settings.dayRolloverHour), type: 2, queue: 2, due: -100000, ivl: 10, factor: 2500 }));
         const result = answerStudyCard(1010, 3, settings, 30000);
         expect(db.getFirstSync<{ time: number }>('SELECT time FROM revlog WHERE id = ?', result.reviewLogId)!.time).toBe(1000);
+    });
+
+    // The reviewer's button labels, timer, autoplay and Auto Advance come from the card's preset,
+    // which is the home deck's for a card an imported filtered deck holds physically, as its answer.
+    it('reads an imported physical card\'s options from its home deck', () => {
+        const deck = createFilteredDeck('Session', 'nid:101', 1);
+        saveDeckConfig({ ...deckConfig, id: 2, name: 'Home', learningSteps: [3, 30], relearningSteps: [5], showTimer: true, autoPlayAudio: false });
+        saveDeck({ ...getDeck(7)!, configId: 2 });
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        saveAnkiCard(makeCard(1010, 101, deck.id, { odid: 7, odue: today, type: 2, queue: 2, due: -100000, ivl: 10, factor: 2500 }));
+        const shown = getStudyQueue({ settings, selectedDeckName: 'Session' }).cards.find((card) => card.cardId === 1010)!;
+        expect(shown.deckId).toBe(deck.id);
+        expect(studyCardHomeDeckId(shown)).toBe(7);
+        expect(getDeckConfigForDeck(studyCardHomeDeckId(shown))).toMatchObject({ showTimer: true, autoPlayAudio: false });
+        expect(resolveSettingsForDeck(studyCardHomeDeckId(shown), settings)).toMatchObject({ learningSteps: [3, 30], lapseSteps: [5] });
+        // A card of a regular deck answers to the deck it sits in.
+        const regular = getStudyQueue({ settings, selectedDeckName: 'Python::Temeller' }).cards[0];
+        expect(studyCardHomeDeckId(regular)).toBe(regular.deckId);
     });
 
     it('a future filtered review does not subtract an unrelated due review from the home count', () => {
