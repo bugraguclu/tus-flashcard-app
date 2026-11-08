@@ -1,9 +1,10 @@
 import type { ComponentProps } from 'react';
-import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { View } from 'react-native';
 import { Text } from '../AppText';
 import type { ColorScheme } from '../../constants/theme';
 import CardWebView from '../CardWebView';
-import { EyeIcon } from './EditorIcons';
+import { AppDialog } from '../ui/Dialog';
+import { SegmentedControl } from '../ui/Choice';
 import type { EditorI18n } from './types';
 import type { EditorStyles } from './editorStyles';
 
@@ -39,94 +40,37 @@ export function EditorPreviewModal({
     bodyHeight,
     audioPlaybackRate,
     onClose,
-    colors,
     styles,
     l,
-    t,
 }: EditorPreviewModalProps) {
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={onClose}
-                    accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')}
-                />
-                <View style={styles.previewCard}>
-                    <View style={styles.previewHeader}>
-                        <View style={styles.previewTitleRow}>
-                            <EyeIcon color={colors.textPrimary} size={22} />
-                            <Text style={styles.previewTitleText}>{l('Önizleme', 'Preview')}</Text>
-                        </View>
-                        <TouchableOpacity
-                            style={styles.previewHeaderClose}
-                            onPress={onClose}
-                            accessibilityLabel={t('common.close')}
-                        >
-                            <Text style={styles.previewHeaderCloseText}>✕</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <Text style={styles.previewMeta} numberOfLines={1}>
-                        {deck?.name.replaceAll('::', ' › ') ?? '—'}
-                    </Text>
-                    <View style={styles.previewToggleRow}>
-                        <TouchableOpacity
-                            style={[
-                                styles.previewToggleButton,
-                                side === 'question' && styles.previewToggleButtonActive,
-                            ]}
-                            onPress={() => onSideChange('question')}
-                        >
-                            <Text
-                                style={[
-                                    styles.previewToggleText,
-                                    side === 'question' && styles.previewToggleTextActive,
-                                ]}
-                            >
-                                {l('Soru', 'Question')}
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.previewToggleButton,
-                                side === 'answer' && styles.previewToggleButtonActive,
-                            ]}
-                            onPress={() => onSideChange('answer')}
-                        >
-                            <Text
-                                style={[
-                                    styles.previewToggleText,
-                                    side === 'answer' && styles.previewToggleTextActive,
-                                ]}
-                            >
-                                {l('Cevap', 'Answer')}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={[styles.previewBody, { height: bodyHeight }]}>
-                        {payload && (
-                            <CardWebView
-                                noteType={payload.noteType}
-                                note={payload.note}
-                                card={payload.card}
-                                deck={deck}
-                                side={side}
-                                scrollMode="contained"
-                                maxHeight={bodyHeight}
-                                audioPlaybackRate={audioPlaybackRate}
-                            />
-                        )}
-                    </View>
-                    <TouchableOpacity
-                        style={styles.previewCloseButton}
-                        onPress={onClose}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('common.close')}
-                    >
-                        <Text style={styles.previewCloseButtonText}>{t('common.close')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog visible={visible} onClose={onClose} title={l('Önizleme', 'Preview')} closeButton>
+            <Text style={styles.previewMeta} numberOfLines={1}>
+                {deck?.name.replaceAll('::', ' › ') ?? '—'}
+            </Text>
+            <SegmentedControl
+                options={[
+                    { value: 'question', label: l('Soru', 'Question') },
+                    { value: 'answer', label: l('Cevap', 'Answer') },
+                ]}
+                value={side}
+                onChange={onSideChange}
+                accessibilityLabel={l('Önizleme', 'Preview')}
+            />
+            <View style={[styles.previewBody, { height: bodyHeight }]}>
+                {payload && (
+                    <CardWebView
+                        noteType={payload.noteType}
+                        note={payload.note}
+                        card={payload.card}
+                        deck={deck}
+                        side={side}
+                        scrollMode="contained"
+                        maxHeight={bodyHeight}
+                        audioPlaybackRate={audioPlaybackRate}
+                    />
+                )}
             </View>
-        </Modal>
+        </AppDialog>
     );
 }

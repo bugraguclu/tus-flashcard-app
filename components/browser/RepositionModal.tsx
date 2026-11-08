@@ -1,7 +1,11 @@
 import { useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text, TextInput } from '../AppText';
+import { View } from 'react-native';
+import { Text } from '../AppText';
 import { alert } from '../../lib/confirm';
+import { AppDialog } from '../ui/Dialog';
+import { Button } from '../ui/Button';
+import { CheckRow } from '../ui/Choice';
+import { TextField } from '../ui/Fields';
 import { canUndoLastReposition, getNewQueuePositionRange, repositionSelectedNewCards, undoLastReposition } from '../../lib/browserReposition';
 import { setDbSetting } from '../../lib/storage';
 import { readBrowserBoolean } from './browserHelpers';
@@ -55,10 +59,19 @@ export function RepositionModal({
     }, [showRepositionDialog]);
 
     const checkbox = (checked: boolean, label: string, onPress: () => void) => (
-        <TouchableOpacity style={styles.checkboxRow} onPress={onPress} accessibilityRole="checkbox" accessibilityState={{ checked }} aria-checked={checked}>
-            <View style={[styles.checkbox, checked && styles.checkboxChecked]}>{checked ? <Text style={styles.checkboxTick}>✓</Text> : null}</View>
-            <Text style={styles.checkboxLabel}>{label}</Text>
-        </TouchableOpacity>
+        <CheckRow label={label} checked={checked} onChange={onPress} style={styles.dialogRow} />
+    );
+    const field = (label: string, value: string, onChange: (value: string) => void) => (
+        <View style={styles.dialogField}>
+            <Text style={styles.fieldLabel}>{label}</Text>
+            <TextField
+                value={value}
+                onChangeText={(text) => onChange(text.replace(/[^0-9]/g, ''))}
+                keyboardType="number-pad"
+                inputMode="numeric"
+                accessibilityLabel={label}
+            />
+        </View>
     );
 
     const apply = () => {
@@ -89,34 +102,35 @@ export function RepositionModal({
     };
 
     return (
-        <Modal visible={showRepositionDialog} transparent animationType="fade" onRequestClose={close}>
-            <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={close} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Yeniden Konumlandır', 'Reposition')}</Text>
-                    <Text style={styles.modalCaption}>{l('Yalnızca seçili yeni kartlar etkilenir.', 'Only selected new cards are affected.')}</Text>
-                    <Text style={styles.modalCaption}>
-                        {l(`Kuyruk başı: ${queueRange.top}\nKuyruk sonu: ${queueRange.bottom}`, `Queue top: ${queueRange.top}\nQueue bottom: ${queueRange.bottom}`)}
-                    </Text>
-                    <Text style={styles.fieldLabel}>{l('Başlangıç konumu', 'Start position')}</Text>
-                    <TextInput style={styles.dialogInput} value={repositionStart} onChangeText={(value) => setRepositionStart(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" inputMode="numeric" />
-                    <Text style={styles.fieldLabel}>{l('Adım', 'Step')}</Text>
-                    <TextInput style={styles.dialogInput} value={repositionStep} onChangeText={(value) => setRepositionStep(value.replace(/[^0-9]/g, ''))} keyboardType="number-pad" inputMode="numeric" />
-                    {checkbox(randomize, l('Sırayı rastgele yap', 'Randomize order'), () => setRandomize((value) => !value))}
-                    {checkbox(repositionShiftExisting, l('Mevcut kartların konumunu kaydır', 'Shift position of existing cards'), () => setRepositionShiftExisting((value) => !value))}
-                    <View style={styles.dialogActions}>
-                        {canUndo && (
-                            <TouchableOpacity style={styles.dialogButton} onPress={undo} accessibilityLabel={l('Son yeniden konumlandırmayı geri al', 'Undo the last reposition')}>
-                                <Text style={styles.dialogButtonText}>{l('Geri al', 'Undo')}</Text>
-                            </TouchableOpacity>
-                        )}
-                        <TouchableOpacity style={styles.dialogButton} onPress={close}><Text style={styles.dialogButtonText}>{t('common.cancel')}</Text></TouchableOpacity>
-                        <TouchableOpacity style={[styles.dialogButton, styles.dialogButtonPrimary]} onPress={apply}>
-                            <Text style={styles.dialogButtonPrimaryText}>{l('Uygula', 'Apply')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </KeyboardAvoidingView>
-        </Modal>
+        <AppDialog
+            visible={showRepositionDialog}
+            onClose={close}
+            title={l('Yeniden Konumlandır', 'Reposition')}
+            message={l('Yalnızca seçili yeni kartlar etkilenir.', 'Only selected new cards are affected.')}
+            actions={(
+                <>
+                    {canUndo && (
+                        <Button
+                            variant="plain"
+                            label={l('Geri al', 'Undo')}
+                            onPress={undo}
+                            accessibilityLabel={l('Son yeniden konumlandırmayı geri al', 'Undo the last reposition')}
+                        />
+                    )}
+                    <Button variant="plain" label={t('common.cancel')} onPress={close} />
+                    <Button label={l('Uygula', 'Apply')} onPress={apply} />
+                </>
+            )}
+        >
+            <Text style={styles.dialogNote}>
+                {l(`Kuyruk başı: ${queueRange.top}\nKuyruk sonu: ${queueRange.bottom}`, `Queue top: ${queueRange.top}\nQueue bottom: ${queueRange.bottom}`)}
+            </Text>
+            {field(l('Başlangıç konumu', 'Start position'), repositionStart, setRepositionStart)}
+            {field(l('Adım', 'Step'), repositionStep, setRepositionStep)}
+            <View>
+                {checkbox(randomize, l('Sırayı rastgele yap', 'Randomize order'), () => setRandomize((value) => !value))}
+                {checkbox(repositionShiftExisting, l('Mevcut kartların konumunu kaydır', 'Shift position of existing cards'), () => setRepositionShiftExisting((value) => !value))}
+            </View>
+        </AppDialog>
     );
 }

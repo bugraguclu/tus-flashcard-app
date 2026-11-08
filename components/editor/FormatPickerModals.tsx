@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text, TextInput } from '../AppText';
-import { BorderRadius, type ColorScheme } from '../../constants/theme';
+import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
+import { Spacing, type ColorScheme } from '../../constants/theme';
 import {
     calloutHtml,
     EDITOR_CALLOUTS,
@@ -14,6 +14,11 @@ import {
 } from '../../lib/editorToolbar';
 import type { EditorFormatState } from '../../lib/editorFormatState';
 import type { RichTextCommand } from '../RichTextEditor';
+import { AppDialog } from '../ui/Dialog';
+import { Button } from '../ui/Button';
+import { SelectedMark } from '../ui/Choice';
+import { TextField } from '../ui/Fields';
+import { Radius } from '../ui/tokens';
 import type { EditorI18n } from './types';
 import type { EditorStyles } from './editorStyles';
 
@@ -24,36 +29,59 @@ interface PickerBaseProps extends EditorI18n {
     styles: EditorStyles;
 }
 
+/** The Cancel every picker ends with. */
+function cancelAction(t: EditorI18n['t'], onClose: () => void) {
+    return <Button variant="plain" label={t('common.cancel')} onPress={onClose} />;
+}
+
+/** One option of a picker; the chosen one is tinted and ends in a tick. */
+function PickerOption({ styles, label, labelStyle, selected, onPress, accessibilityRole = 'button', accessibilityLabel, extraStyle }: {
+    styles: EditorStyles;
+    label: string;
+    labelStyle?: object | null;
+    /** Left out for a list without a current value, such as the table sizes. */
+    selected?: boolean;
+    onPress: () => void;
+    accessibilityRole?: 'button' | 'radio';
+    accessibilityLabel?: string;
+    extraStyle?: object;
+}) {
+    return (
+        <TouchableOpacity
+            style={[styles.formatPickerOption, local.option, selected && styles.pickerOptionActive, extraStyle]}
+            onPress={onPress}
+            accessibilityRole={accessibilityRole}
+            accessibilityLabel={accessibilityLabel}
+            accessibilityState={selected === undefined ? undefined : { selected }}
+            aria-checked={accessibilityRole === 'radio' ? selected : undefined}
+        >
+            <Text style={[styles.formatPickerOptionText, local.optionText, labelStyle]}>{label}</Text>
+            {selected !== undefined ? <SelectedMark visible={selected} /> : null}
+        </TouchableOpacity>
+    );
+}
+
 /** The editor's default field text size, chosen from the overflow menu. */
 export function EditorFontSizeModal({ visible, currentSize, onChoose, onClose, styles, l, t }: PickerBaseProps & {
     currentSize: number;
     onChoose: (size: number) => void;
 }) {
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Yazı boyutu', 'Font Size')}</Text>
-                    {[12, 14, 16, 18, 20, 24, 28, 32].map((size) => (
-                        <TouchableOpacity
-                            key={size}
-                            style={[styles.fontSizeOption, currentSize === size && styles.pickerOptionActive]}
-                            onPress={() => onChoose(size)}
-                            accessibilityRole="radio"
-                            accessibilityState={{ selected: currentSize === size }}
-                            aria-checked={currentSize === size}
-                        >
-                            <Text style={[styles.fontSizeSample, { fontSize: size }]}>{size}</Text>
-                            {currentSize === size && <Text style={styles.pickerCheck}>✓</Text>}
-                        </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-                        <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog visible={visible} onClose={onClose} title={l('Yazı boyutu', 'Font Size')} actions={cancelAction(t, onClose)}>
+            <View>
+                {[12, 14, 16, 18, 20, 24, 28, 32].map((size) => (
+                    <PickerOption
+                        key={size}
+                        styles={styles}
+                        label={String(size)}
+                        labelStyle={[styles.fontSizeSample, { fontSize: size }]}
+                        selected={currentSize === size}
+                        onPress={() => onChoose(size)}
+                        accessibilityRole="radio"
+                    />
+                ))}
             </View>
-        </Modal>
+        </AppDialog>
     );
 }
 
@@ -61,37 +89,22 @@ export function TablePickerModal({ visible, onInsertTable, onClose, styles, l, t
     onInsertTable: (rows: number, columns: number) => void;
 }) {
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Tablo ekle', 'Insert Table')}</Text>
-                    {[[2, 2], [3, 3], [3, 2], [4, 4]].map(([rows, columns]) => (
-                        <TouchableOpacity
-                            key={`${rows}x${columns}`}
-                            style={styles.formatPickerOption}
-                            onPress={() => onInsertTable(rows, columns)}
-                            accessibilityRole="button"
-                            accessibilityLabel={l(
-                                `${rows} satır ${columns} sütun tablo`,
-                                `${rows} by ${columns} table`,
-                            )}
-                        >
-                            <Text style={styles.formatPickerOptionText}>{`${rows} × ${columns}`}</Text>
-                        </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-                        <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog visible={visible} onClose={onClose} title={l('Tablo ekle', 'Insert Table')} actions={cancelAction(t, onClose)}>
+            <View>
+                {[[2, 2], [3, 3], [3, 2], [4, 4]].map(([rows, columns]) => (
+                    <PickerOption
+                        key={`${rows}x${columns}`}
+                        styles={styles}
+                        label={`${rows} × ${columns}`}
+                        onPress={() => onInsertTable(rows, columns)}
+                        accessibilityLabel={l(
+                            `${rows} satır ${columns} sütun tablo`,
+                            `${rows} by ${columns} table`,
+                        )}
+                    />
+                ))}
             </View>
-        </Modal>
+        </AppDialog>
     );
 }
 
@@ -99,87 +112,58 @@ export function CalloutPickerModal({ visible, onInsertCallout, onClose, styles, 
     onInsertCallout: (tone: Parameters<typeof calloutHtml>[0]) => void;
 }) {
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Bilgi kutusu ekle', 'Insert Callout')}</Text>
-                    {EDITOR_CALLOUTS.map((tone) => (
-                        <TouchableOpacity
-                            key={tone.key}
-                            style={[styles.formatPickerOption, styles.calloutOption, { borderLeftColor: tone.border }]}
-                            onPress={() => onInsertCallout(tone.key)}
-                            accessibilityRole="button"
-                            accessibilityLabel={l(tone.tr, tone.en)}
-                        >
-                            <Text style={styles.formatPickerOptionText}>{l(tone.tr, tone.en)}</Text>
-                        </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-                        <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog visible={visible} onClose={onClose} title={l('Bilgi kutusu ekle', 'Insert Callout')} actions={cancelAction(t, onClose)}>
+            <View>
+                {EDITOR_CALLOUTS.map((tone) => (
+                    <PickerOption
+                        key={tone.key}
+                        styles={styles}
+                        label={l(tone.tr, tone.en)}
+                        // The tone's own border colour is the card content the callout inserts.
+                        extraStyle={[styles.calloutOption, { borderLeftColor: tone.border }]}
+                        onPress={() => onInsertCallout(tone.key)}
+                        accessibilityLabel={l(tone.tr, tone.en)}
+                    />
+                ))}
             </View>
-        </Modal>
+        </AppDialog>
     );
 }
 
-export function LinkEditorModal({ visible, draft, onDraftChange, onConfirm, onClose, colors, styles, l, t }: PickerBaseProps & {
+export function LinkEditorModal({ visible, draft, onDraftChange, onConfirm, onClose, styles, l, t }: PickerBaseProps & {
     draft: { url: string; label: string };
     onDraftChange: Dispatch<SetStateAction<{ url: string; label: string }>>;
     onConfirm: () => void;
     colors: ColorScheme;
 }) {
     return (
-        <Modal
+        <AppDialog
             visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
+            onClose={onClose}
+            title={l('Bağlantı ekle', 'Insert Link')}
+            actions={(
+                <>
+                    {cancelAction(t, onClose)}
+                    <Button label={l('Ekle', 'Insert')} onPress={onConfirm} />
+                </>
+            )}
         >
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Bağlantı ekle', 'Insert Link')}</Text>
-                    <TextInput
-                        style={styles.linkInput}
-                        value={draft.url}
-                        onChangeText={(url) => onDraftChange((draft) => ({ ...draft, url }))}
-                        placeholder="https://docs.ankiweb.net"
-                        placeholderTextColor={colors.textMuted}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        keyboardType="url"
-                        accessibilityLabel={l('Bağlantı adresi', 'Link address')}
-                    />
-                    <TextInput
-                        style={styles.linkInput}
-                        value={draft.label}
-                        onChangeText={(label) => onDraftChange((draft) => ({ ...draft, label }))}
-                        placeholder={l('Görünecek metin (isteğe bağlı)', 'Display text (optional)')}
-                        placeholderTextColor={colors.textMuted}
-                        accessibilityLabel={l('Bağlantı metni', 'Link text')}
-                    />
-                    <TouchableOpacity
-                        style={styles.formatPickerOption}
-                        onPress={onConfirm}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.formatPickerOptionText}>{l('Ekle', 'Insert')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-                        <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
+            <TextField
+                value={draft.url}
+                onChangeText={(url) => onDraftChange((draft) => ({ ...draft, url }))}
+                placeholder="https://docs.ankiweb.net"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+                accessibilityLabel={l('Bağlantı adresi', 'Link address')}
+            />
+            <TextField
+                value={draft.label}
+                onChangeText={(label) => onDraftChange((draft) => ({ ...draft, label }))}
+                placeholder={l('Görünecek metin (isteğe bağlı)', 'Display text (optional)')}
+                accessibilityLabel={l('Bağlantı metni', 'Link text')}
+            />
+        </AppDialog>
     );
 }
 
@@ -189,34 +173,13 @@ export function InlineFontSizePickerModal({ visible, currentSize, onChoose, onCl
     onChoose: (size: EditorFontSize) => void;
 }) {
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Yazı boyutu', 'Font Size')}</Text>
-                    {EDITOR_FONT_SIZES.map((size) => (
-                        <TouchableOpacity
-                            key={size}
-                            style={styles.formatPickerOption}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: currentSize === size }}
-                            onPress={() => onChoose(size)}
-                        >
-                            <Text style={styles.formatPickerOptionText}>{size}</Text>
-                        </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-                        <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog visible={visible} onClose={onClose} title={l('Yazı boyutu', 'Font Size')} actions={cancelAction(t, onClose)}>
+            <View>
+                {EDITOR_FONT_SIZES.map((size) => (
+                    <PickerOption key={size} styles={styles} label={size} selected={currentSize === size} onPress={() => onChoose(size)} />
+                ))}
             </View>
-        </Modal>
+        </AppDialog>
     );
 }
 
@@ -225,42 +188,21 @@ export function FontFamilyPickerModal({ visible, currentFamily, onChoose, onClos
     onChoose: (family: EditorFontFamilyKey) => void;
 }) {
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Yazı tipi', 'Font')}</Text>
-                    {EDITOR_FONT_FAMILIES.map((entry) => (
-                        <TouchableOpacity
-                            key={entry.key}
-                            style={styles.formatPickerOption}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: currentFamily === entry.key }}
-                            onPress={() => onChoose(entry.key)}
-                        >
-                            {/* Each row is drawn in its own face, the way Word's font list previews itself. */}
-                            <Text
-                                style={[
-                                    styles.formatPickerOptionText,
-                                    entry.css ? { fontFamily: entry.css.split(',')[0]!.trim().replace(/^["']|["']$/g, '') } : null,
-                                ]}
-                            >
-                                {l(entry.tr, entry.en)}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-                        <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog visible={visible} onClose={onClose} title={l('Yazı tipi', 'Font')} actions={cancelAction(t, onClose)}>
+            <View>
+                {EDITOR_FONT_FAMILIES.map((entry) => (
+                    <PickerOption
+                        key={entry.key}
+                        styles={styles}
+                        label={l(entry.tr, entry.en)}
+                        // Each row is drawn in its own face, the way Word's font list previews itself.
+                        labelStyle={entry.css ? { fontFamily: entry.css.split(',')[0]!.trim().replace(/^["']|["']$/g, '') } : null}
+                        selected={currentFamily === entry.key}
+                        onPress={() => onChoose(entry.key)}
+                    />
+                ))}
             </View>
-        </Modal>
+        </AppDialog>
     );
 }
 
@@ -269,34 +211,19 @@ export function LineSpacingPickerModal({ visible, currentSpacing, onChoose, onCl
     onChoose: (spacing: EditorLineSpacing) => void;
 }) {
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Satır aralığı', 'Line spacing')}</Text>
-                    {EDITOR_LINE_SPACINGS.map((spacing) => (
-                        <TouchableOpacity
-                            key={spacing}
-                            style={styles.formatPickerOption}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: currentSpacing === spacing }}
-                            onPress={() => onChoose(spacing)}
-                        >
-                            <Text style={styles.formatPickerOptionText}>{spacing.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}</Text>
-                        </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-                        <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog visible={visible} onClose={onClose} title={l('Satır aralığı', 'Line spacing')} actions={cancelAction(t, onClose)}>
+            <View>
+                {EDITOR_LINE_SPACINGS.map((spacing) => (
+                    <PickerOption
+                        key={spacing}
+                        styles={styles}
+                        label={spacing.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}
+                        selected={currentSpacing === spacing}
+                        onPress={() => onChoose(spacing)}
+                    />
+                ))}
             </View>
-        </Modal>
+        </AppDialog>
     );
 }
 
@@ -304,35 +231,12 @@ export function MathPickerModal({ visible, onWrap, onClose, styles, l, t }: Pick
     onWrap: (prefix: string, suffix: string) => void;
 }) {
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('MathJax ekle', 'Insert MathJax')}</Text>
-                    <TouchableOpacity
-                        style={styles.formatPickerOption}
-                        onPress={() => onWrap('\\[', '\\]')}
-                    >
-                        <Text style={styles.formatPickerOptionText}>{l('Blok denklem', 'Block equation')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.formatPickerOption}
-                        onPress={() => onWrap('\\( \\ce{', '} \\)')}
-                    >
-                        <Text style={styles.formatPickerOptionText}>{l('Kimya denklemi', 'Chemistry equation')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-                        <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog visible={visible} onClose={onClose} title={l('MathJax ekle', 'Insert MathJax')} actions={cancelAction(t, onClose)}>
+            <View>
+                <PickerOption styles={styles} label={l('Blok denklem', 'Block equation')} onPress={() => onWrap('\\[', '\\]')} />
+                <PickerOption styles={styles} label={l('Kimya denklemi', 'Chemistry equation')} onPress={() => onWrap('\\( \\ce{', '} \\)')} />
             </View>
-        </Modal>
+        </AppDialog>
     );
 }
 
@@ -340,124 +244,103 @@ export function ColorPickerModal({ visible, onCommand, onClose, colors, styles, 
     onCommand: (command: RichTextCommand, value?: string) => void;
     colors: ColorScheme;
 }) {
+    // The swatches are the ink and highlight colours written into the note, so they keep their
+    // own values in both themes; only "Default" follows the theme's text colour.
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
-        >
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Metin & Vurgu Rengi', 'Text & Highlight Color')}</Text>
-                    <Text style={[styles.fieldName, { marginTop: 4 }]}>{l('Yazı rengi', 'Text color')}</Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 }}>
-                        {[
-                            { label: l('Kırmızı', 'Red'), color: '#ef4444' },
-                            { label: l('Turuncu', 'Orange'), color: '#f97316' },
-                            { label: l('Yeşil', 'Green'), color: '#16a34a' },
-                            { label: l('Mavi', 'Blue'), color: '#3b82f6' },
-                            { label: l('Mor', 'Purple'), color: '#a855f7' },
-                            { label: l('Varsayılan', 'Default'), color: colors.textPrimary },
-                        ].map((item) => (
-                            <TouchableOpacity
-                                key={item.color}
-                                style={{
-                                    paddingHorizontal: 12,
-                                    paddingVertical: 8,
-                                    borderRadius: BorderRadius.md,
-                                    backgroundColor: colors.bgCard,
-                                    borderWidth: 1.5,
-                                    borderColor: item.color,
-                                }}
-                                onPress={() => onCommand('foreColor', item.color)}
-                            >
-                                <Text style={{ color: item.color, fontWeight: '600' }}>{item.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                    <Text style={[styles.fieldName, { marginTop: 8 }]}>{l('Vurgu rengi', 'Highlight color')}</Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 }}>
-                        {[
-                            { label: l('Sarı', 'Yellow'), bg: '#fef08a' },
-                            { label: l('Yeşil', 'Green'), bg: '#bbf7d0' },
-                            { label: l('Mavi', 'Blue'), bg: '#bfdbfe' },
-                            { label: l('Pembe', 'Pink'), bg: '#fbcfe8' },
-                            { label: l('Turuncu', 'Orange'), bg: '#fed7aa' },
-                        ].map((item) => (
-                            <TouchableOpacity
-                                key={item.bg}
-                                style={{
-                                    paddingHorizontal: 12,
-                                    paddingVertical: 8,
-                                    borderRadius: BorderRadius.md,
-                                    backgroundColor: item.bg,
-                                }}
-                                onPress={() => onCommand('hiliteColor', item.bg)}
-                            >
-                                <Text style={{ color: '#1f2937', fontWeight: '600' }}>{item.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                    <TouchableOpacity
-                        style={[styles.formatPickerOption, { marginTop: 8 }]}
-                        onPress={() => onCommand('removeFormat')}
-                    >
-                        <Text style={styles.formatPickerOptionText}>{l('Biçimlendirmeyi temizle', 'Clear formatting')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-                        <Text style={styles.modalCloseText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
+        <AppDialog visible={visible} onClose={onClose} title={l('Metin & Vurgu Rengi', 'Text & Highlight Color')} actions={cancelAction(t, onClose)}>
+            <View style={local.swatchGroup}>
+                <Text style={styles.fieldName}>{l('Yazı rengi', 'Text color')}</Text>
+                <View style={local.swatches}>
+                    {[
+                        { label: l('Kırmızı', 'Red'), color: '#ef4444' },
+                        { label: l('Turuncu', 'Orange'), color: '#f97316' },
+                        { label: l('Yeşil', 'Green'), color: '#16a34a' },
+                        { label: l('Mavi', 'Blue'), color: '#3b82f6' },
+                        { label: l('Mor', 'Purple'), color: '#a855f7' },
+                        { label: l('Varsayılan', 'Default'), color: colors.textPrimary },
+                    ].map((item) => (
+                        <TouchableOpacity
+                            key={item.color}
+                            style={[local.swatch, { backgroundColor: colors.bgCard, borderWidth: 1.5, borderColor: item.color }]}
+                            onPress={() => onCommand('foreColor', item.color)}
+                            hitSlop={SWATCH_SLOP}
+                            accessibilityRole="button"
+                        >
+                            <Text style={[local.swatchText, { color: item.color }]}>{item.label}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
-        </Modal>
+            <View style={local.swatchGroup}>
+                <Text style={styles.fieldName}>{l('Vurgu rengi', 'Highlight color')}</Text>
+                <View style={local.swatches}>
+                    {[
+                        { label: l('Sarı', 'Yellow'), bg: '#fef08a' },
+                        { label: l('Yeşil', 'Green'), bg: '#bbf7d0' },
+                        { label: l('Mavi', 'Blue'), bg: '#bfdbfe' },
+                        { label: l('Pembe', 'Pink'), bg: '#fbcfe8' },
+                        { label: l('Turuncu', 'Orange'), bg: '#fed7aa' },
+                    ].map((item) => (
+                        <TouchableOpacity
+                            key={item.bg}
+                            style={[local.swatch, { backgroundColor: item.bg }]}
+                            onPress={() => onCommand('hiliteColor', item.bg)}
+                            hitSlop={SWATCH_SLOP}
+                            accessibilityRole="button"
+                        >
+                            {/* Dark ink on the light highlight, as the highlighted text itself reads. */}
+                            <Text style={[local.swatchText, { color: '#1f2937' }]}>{item.label}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+            <View>
+                <PickerOption styles={styles} label={l('Biçimlendirmeyi temizle', 'Clear formatting')} onPress={() => onCommand('removeFormat')} />
+            </View>
+        </AppDialog>
     );
 }
 
 /** The active field's raw HTML; the screen sanitizes it before it is written back. */
-export function HtmlSourceModal({ visible, value, onChangeValue, onSave, onClose, styles, l, t }: PickerBaseProps & {
+export function HtmlSourceModal({ visible, value, onChangeValue, onSave, onClose, l, t }: PickerBaseProps & {
     value: string;
     onChangeValue: (value: string) => void;
     onSave: () => void;
 }) {
     return (
-        <Modal
+        <AppDialog
             visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
+            onClose={onClose}
+            title={l('HTML Kaynağını Düzenle', 'Edit HTML Source')}
+            message={l('Alanın ham HTML içeriğini doğrudan düzenleyin. Kaydedildiğinde güvenlik doğrulaması uygulanır.', 'Edit raw HTML content directly. Sanitization is applied upon saving.')}
+            actions={(
+                <>
+                    {cancelAction(t, onClose)}
+                    <Button label={t('common.save')} onPress={onSave} />
+                </>
+            )}
         >
-            <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('HTML Kaynağını Düzenle', 'Edit HTML Source')}</Text>
-                    <Text style={styles.customToolbarExplanation}>
-                        {l('Alanın ham HTML içeriğini doğrudan düzenleyin. Kaydedildiğinde güvenlik doğrulaması uygulanır.', 'Edit raw HTML content directly. Sanitization is applied upon saving.')}
-                    </Text>
-                    <TextInput
-                        style={[styles.modalInput, { minHeight: 140, maxHeight: 260, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 13 }]}
-                        value={value}
-                        onChangeText={onChangeValue}
-                        multiline
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                    />
-                    <View style={styles.customToolbarActions}>
-                        <TouchableOpacity style={styles.customToolbarTextAction} onPress={onClose}>
-                            <Text style={styles.customToolbarTextActionLabel}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.customToolbarTextAction}
-                            onPress={onSave}
-                        >
-                            <Text style={styles.customToolbarTextActionLabel}>{t('common.save')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </KeyboardAvoidingView>
-        </Modal>
+            <TextField
+                style={local.htmlSource}
+                value={value}
+                onChangeText={onChangeValue}
+                multiline
+                autoCapitalize="none"
+                autoCorrect={false}
+            />
+        </AppDialog>
     );
 }
+
+// The swatches are drawn compact; the slop makes them a finger's height.
+const SWATCH_SLOP = { top: 5, bottom: 5 };
+
+const local = StyleSheet.create({
+    option: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    optionText: { flex: 1 },
+    swatchGroup: { gap: Spacing.sm },
+    swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+    swatch: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.inset },
+    swatchText: { fontWeight: '600' },
+    htmlSource: { minHeight: 140, maxHeight: 260, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 13 },
+});
