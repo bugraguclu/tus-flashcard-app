@@ -2,19 +2,15 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     Keyboard,
     Linking,
-    Modal,
     Platform,
     Pressable,
     ScrollView,
-    StyleSheet,
-    Switch,
     TouchableWithoutFeedback,
     TouchableOpacity,
     View,
-    ActivityIndicator,
     useWindowDimensions,
 } from 'react-native';
-import { Text, TextInput, useLayoutTextScale } from '../components/AppText';
+import { Text, useLayoutTextScale } from '../components/AppText';
 import { createSettingsStyles as createStyles } from '../components/settings/settingsStyles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
@@ -64,7 +60,16 @@ import HandTapGlyph from '../components/HandTapGlyph';
 import AccessibilityGlyph from '../components/AccessibilityGlyph';
 import ArchiveBoxGlyph from '../components/ArchiveBoxGlyph';
 import InfoCircleGlyph from '../components/InfoCircleGlyph';
-import HeaderBackIcon from '../components/HeaderBackIcon';
+import ScreenHeader from '../components/ScreenHeader';
+import { Button, HelpButton } from '../components/ui/Button';
+import { Card, Divider, SectionLabel } from '../components/ui/Card';
+import { SegmentedControl, SelectedMark } from '../components/ui/Choice';
+import { AppDialog } from '../components/ui/Dialog';
+import { EmptyState, LoadingState, Notice } from '../components/ui/Feedback';
+import { SearchField } from '../components/ui/Fields';
+import { ListRow, SelectRow, SwitchRow, ValueRow } from '../components/ui/Rows';
+import { Stepper } from '../components/ui/Stepper';
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon, ExternalLinkIcon, RefreshIcon } from '../components/ui/icons';
 import {
     disableStudyNotifications,
     requestStudyNotificationPermission,
@@ -79,7 +84,6 @@ import { resetAllDataWithBackup, ResetWorkflowError } from '../lib/resetWorkflow
 import { BackupNotRestorableError } from '../lib/backup';
 import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
-import { useRepeatPress } from '../hooks/useRepeatPress';
 
 import {
     canGradeRevealedCard,
@@ -89,6 +93,7 @@ import {
     normalizeSwipeSensitivity,
     REVIEW_TAP_ZONES,
     SWIPE_PRESETS,
+    type SwipePresetId,
 } from '../lib/reviewerTouchControls';
 
 type SectionId = SettingsSectionId;
@@ -120,7 +125,10 @@ const PRIVACY_URL = 'https://bugraguclu.github.io/tus-flashcard-app/privacy.html
 const SUPPORT_URL = 'https://bugraguclu.github.io/tus-flashcard-app/support.html';
 
 type GestureSettingKey = 'swipeLeftAction' | 'swipeRightAction' | 'swipeUpAction' | 'swipeDownAction';
+type SwipeDirection = 'left' | 'right' | 'up' | 'down';
 type TapSide = 'question' | 'answer';
+/** Shown as the swipe preset while the directions match neither preset; no segment is chosen. */
+const CUSTOM_SWIPE_LAYOUT = 'custom';
 type GesturePickerTarget =
     | { kind: 'swipe'; field: GestureSettingKey }
     | { kind: 'tap'; side: TapSide; zone: ReviewTapZone };
@@ -147,145 +155,24 @@ function settingsMatch(actual: AppSettings, expected: AppSettings): boolean {
     return stableSnapshot(actual) === stableSnapshot(expected);
 }
 
-function Group({ title, description, onHelpPress, helpLabel, children, styles }: {
-    title: string;
-    description?: string;
-    onHelpPress?: () => void;
-    helpLabel?: string;
-    children: React.ReactNode;
-    styles: ReturnType<typeof createStyles>;
-}) {
-    return (
-        <View style={styles.group}>
-            <View style={styles.groupTitleRow}>
-                <Text style={styles.groupTitle}>{title}</Text>
-                {onHelpPress ? (
-                    <TouchableOpacity
-                        style={styles.groupHelpButton}
-                        onPress={onHelpPress}
-                        accessibilityRole="button"
-                        accessibilityLabel={helpLabel ?? title}
-                    >
-                        <Text style={styles.groupHelpText}>?</Text>
-                    </TouchableOpacity>
-                ) : null}
-            </View>
-            {description ? <Text style={styles.groupDescription}>{description}</Text> : null}
-            {children}
-        </View>
-    );
-}
+type SettingsStyles = ReturnType<typeof createStyles>;
 
-function GestureActionRow({ icon, label, value, onPress, styles }: {
-    icon: string;
-    label: string;
-    value: string;
-    onPress: () => void;
-    styles: ReturnType<typeof createStyles>;
-}) {
-    return (
-        <TouchableOpacity
-            style={styles.gestureActionRow}
-            onPress={onPress}
-            accessibilityRole="button"
-            accessibilityLabel={`${label}: ${value}`}
-        >
-            <View style={styles.gestureDirectionIcon}>
-                <Text style={styles.gestureDirectionText}>{icon}</Text>
-            </View>
-            <View style={styles.preferenceCopy}>
-                <Text style={styles.preferenceLabel}>{label}</Text>
-                <Text style={styles.gestureActionValue}>{value}</Text>
-            </View>
-            <Text style={styles.appearanceValueArrow}>›</Text>
-        </TouchableOpacity>
-    );
-}
-
-function DataActionRow({ icon, label, detail, onPress, danger = false, divider = true, disabled = false, styles }: {
-    icon: string;
-    label: string;
-    detail?: string;
-    onPress: () => void;
-    danger?: boolean;
-    divider?: boolean;
-    disabled?: boolean;
-    styles: ReturnType<typeof createStyles>;
-}) {
-    return (
-        <TouchableOpacity
-            style={[styles.dataActionRow, !divider && styles.dataActionRowNoDivider, disabled && { opacity: 0.5 }]}
-            onPress={onPress}
-            disabled={disabled}
-            accessibilityRole="button"
-            accessibilityState={{ disabled }}
-        >
-            <View style={[styles.dataActionIcon, danger && styles.dataActionIconDanger]}>
-                <Text style={[styles.dataActionIconText, danger && styles.dataActionIconTextDanger]}>{icon}</Text>
-            </View>
-            <View style={styles.dataActionCopy}>
-                <Text style={[styles.dataActionLabel, danger && styles.dangerText]}>{label}</Text>
-                {detail ? <Text style={styles.dataActionDetail}>{detail}</Text> : null}
-            </View>
-            <Text style={[styles.dataActionArrow, danger && styles.dangerText]}>›</Text>
-        </TouchableOpacity>
-    );
-}
-
-function ToggleRow({ label, summary, value, onChange, divider = true, styles }: {
-    label: string;
-    summary?: string;
-    value: boolean;
-    onChange: (value: boolean) => void;
-    divider?: boolean;
-    styles: ReturnType<typeof createStyles>;
-}) {
-    const colors = useThemeColors();
-    return (
-        <TouchableOpacity
-            style={[styles.preferenceRow, !divider && styles.preferenceRowNoDivider]}
-            onPress={() => onChange(!value)}
-            activeOpacity={0.7}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: value }}
-            aria-checked={value}
-        >
-            <View style={styles.preferenceCopy}>
-                <Text style={styles.preferenceLabel}>{label}</Text>
-                {summary ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
-            </View>
-            {/* react-native-web paints the off track only from `false`; left out, it is transparent. */}
-            <Switch value={value} onValueChange={onChange} trackColor={{ false: colors.border, true: '#71c7a5' }} />
-        </TouchableOpacity>
-    );
-}
-
+/** A setting with a few short options: its label and summary over a segmented control. */
 function ChoiceRow<T extends string>({ label, summary, value, options, onChange, styles }: {
     label: string;
     summary?: string;
     value: T;
     options: Array<{ value: T; label: string }>;
     onChange: (value: T) => void;
-    styles: ReturnType<typeof createStyles>;
+    styles: SettingsStyles;
 }) {
     return (
-        <View style={styles.preferenceBlock}>
-            <Text style={styles.preferenceLabel}>{label}</Text>
-            {summary ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
-            <View style={styles.choiceRow}>
-                {options.map((option) => (
-                    <TouchableOpacity
-                        key={option.value}
-                        style={[styles.choiceButton, value === option.value && styles.choiceButtonActive]}
-                        onPress={() => onChange(option.value)}
-                        accessibilityRole="radio"
-                        accessibilityState={{ checked: value === option.value }}
-                        aria-checked={value === option.value}
-                    >
-                        <Text style={[styles.choiceText, value === option.value && styles.choiceTextActive]}>{option.label}</Text>
-                    </TouchableOpacity>
-                ))}
+        <View style={styles.block}>
+            <View style={styles.blockCopy}>
+                <Text style={styles.label}>{label}</Text>
+                {summary ? <Text style={styles.summary}>{summary}</Text> : null}
             </View>
+            <SegmentedControl fill options={options} value={value} onChange={onChange} accessibilityLabel={label} />
         </View>
     );
 }
@@ -302,34 +189,30 @@ function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, m
     wrap?: boolean;
     inline?: boolean;
     onChange: (value: number) => void;
-    styles: ReturnType<typeof createStyles>;
+    styles: SettingsStyles;
 }) {
     const { l } = useI18n();
     const { width } = useWindowDimensions();
     const summaryBelow = inline && width < 480;
     const inputRef = useRef<BoundedIntegerInputHandle>(null);
 
-    const decrementRepeat = useRepeatPress(() => inputRef.current?.stepBy(-step));
-    const incrementRepeat = useRepeatPress(() => inputRef.current?.stepBy(step));
-
     return (
-        <View style={inline ? styles.inlineStepperBlock : styles.preferenceBlock}>
-            <View style={inline && styles.inlineStepperLayout}>
-                <View style={inline && styles.preferenceCopy}>
-                    <Text style={styles.preferenceLabel}>{label}</Text>
-                    {summary && !summaryBelow ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
+        <View style={styles.block}>
+            <View style={inline ? styles.inlineStepperLayout : styles.stackedStepperLayout}>
+                <View style={inline ? styles.inlineStepperCopy : styles.blockCopy}>
+                    <Text style={styles.label}>{label}</Text>
+                    {summary && !summaryBelow ? <Text style={styles.summary}>{summary}</Text> : null}
                 </View>
-                <View style={[styles.stepperRow, inline && styles.inlineStepperRow]}>
-                    <TouchableOpacity
-                        style={[styles.stepButton, inline && styles.inlineStepButton]}
-                        {...decrementRepeat}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${label} ${l('azalt', 'decrease')}`}
-                    >
-                        <Text style={styles.stepButtonText}>−</Text>
-                    </TouchableOpacity>
+                <Stepper
+                    onDecrement={() => inputRef.current?.stepBy(-step)}
+                    onIncrement={() => inputRef.current?.stepBy(step)}
+                    decrementLabel={`${label} ${l('azalt', 'decrease')}`}
+                    incrementLabel={`${label} ${l('artır', 'increase')}`}
+                    style={inline ? styles.inlineStepper : undefined}
+                >
                     <BoundedIntegerInput
                         ref={inputRef}
+                        bare
                         value={value}
                         min={min}
                         max={max}
@@ -338,20 +221,55 @@ function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, m
                         minimumDigits={minimumDigits}
                         onChange={onChange}
                         accessibilityLabel={label}
-                        style={inline ? styles.inlineStepValueInput : styles.stepValueInput}
                     />
-                    <TouchableOpacity
-                        style={[styles.stepButton, inline && styles.inlineStepButton]}
-                        {...incrementRepeat}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${label} ${l('artır', 'increase')}`}
-                    >
-                        <Text style={styles.stepButtonText}>+</Text>
-                    </TouchableOpacity>
-                </View>
+                </Stepper>
             </View>
-            {summary && summaryBelow ? <Text style={styles.preferenceSummary}>{summary}</Text> : null}
+            {summary && summaryBelow ? <Text style={styles.summary}>{summary}</Text> : null}
         </View>
+    );
+}
+
+/** The direction of a swipe, for its row. */
+function SwipeDirectionIcon({ direction, color, styles }: { direction: SwipeDirection; color: string; styles: SettingsStyles }) {
+    if (direction === 'up') return <ArrowUpIcon color={color} size={22} />;
+    if (direction === 'down') return <ArrowDownIcon color={color} size={22} />;
+    return (
+        <View style={direction === 'left' ? styles.turnLeft : styles.turnRight}>
+            <ArrowUpIcon color={color} size={22} />
+        </View>
+    );
+}
+
+/** ↺, for putting something back the way it was. */
+function RestoreIcon({ color, size = 22, styles }: { color: string; size?: number; styles: SettingsStyles }) {
+    return (
+        <View style={styles.mirrored}>
+            <RefreshIcon color={color} size={size} />
+        </View>
+    );
+}
+
+/**
+ * One choice of a picker dialog; the chosen one ends in the tick. The kit has no single-choice
+ * row, so this one keeps the radio semantics VoiceOver reads the choice with.
+ */
+function PickerOption({ label, selected, onPress, styles }: {
+    label: string;
+    selected: boolean;
+    onPress: () => void;
+    styles: SettingsStyles;
+}) {
+    return (
+        <TouchableOpacity
+            style={styles.pickerOption}
+            onPress={onPress}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: selected }}
+            aria-checked={selected}
+        >
+            <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextSelected]}>{label}</Text>
+            <SelectedMark visible={selected} />
+        </TouchableOpacity>
     );
 }
 
@@ -360,7 +278,7 @@ function SwipeSensitivitySlider({ value, onChange, label, summary, styles }: {
     onChange: (value: number) => void;
     label: string;
     summary: string;
-    styles: ReturnType<typeof createStyles>;
+    styles: SettingsStyles;
 }) {
     const normalized = normalizeSwipeSensitivity(value);
     const [draft, setDraft] = useState(normalized);
@@ -378,12 +296,14 @@ function SwipeSensitivitySlider({ value, onChange, label, summary, styles }: {
     const ratio = (draft - 1) / 199;
 
     return (
-        <View style={styles.swipeSensitivityBlock}>
-            <View style={styles.swipeSensitivityHeader}>
-                <Text style={styles.preferenceLabel}>{label}</Text>
-                <Text style={styles.swipeSensitivityValue}>{draft}%</Text>
+        <View style={styles.block}>
+            <View style={styles.blockCopy}>
+                <View style={styles.swipeSensitivityHeader}>
+                    <Text style={styles.label}>{label}</Text>
+                    <Text style={styles.swipeSensitivityValue}>{draft}%</Text>
+                </View>
+                <Text style={styles.summary}>{summary}</Text>
             </View>
-            <Text style={styles.preferenceSummary}>{summary}</Text>
             <View
                 style={styles.swipeSliderTouchTarget}
                 onStartShouldSetResponder={() => true}
@@ -1066,56 +986,36 @@ export default function SettingsScreen() {
 
     const renderGeneral = useCallback(() => (
         <>
-            <Group title={l('Dil', 'Language')} styles={styles}>
-                <View style={styles.themeChoiceRow}>
-                    {([
+            <Card padded title={l('Dil', 'Language')}>
+                <SegmentedControl
+                    fill
+                    accessibilityLabel={l('Dil', 'Language')}
+                    value={settings.language}
+                    onChange={(value) => updateSetting('language', value)}
+                    options={[
                         { value: 'system' as AppLanguage, label: l('Sistem', 'System') },
                         { value: 'tr' as AppLanguage, label: 'Türkçe' },
                         { value: 'en' as AppLanguage, label: 'English' },
-                    ]).map((option) => {
-                        const selected = settings.language === option.value;
-                        return (
-                            <TouchableOpacity
-                                key={option.value}
-                                style={[styles.themeChoiceButton, selected && styles.themeChoiceButtonActive]}
-                                onPress={() => updateSetting('language', option.value)}
-                                accessibilityRole="radio"
-                                accessibilityState={{ checked: selected }}
-                                aria-checked={selected}
-                            >
-                                <Text style={[styles.themeChoiceText, selected && styles.themeChoiceTextActive]}>{option.label}</Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-            </Group>
-            <Group title={l('Tema', 'Theme')} styles={styles}>
-                <View style={styles.themeChoiceRow}>
-                    {([
+                    ]}
+                />
+            </Card>
+            <Card padded title={l('Tema', 'Theme')}>
+                <SegmentedControl
+                    fill
+                    accessibilityLabel={l('Tema', 'Theme')}
+                    value={settings.themeMode}
+                    onChange={(value) => updateSetting('themeMode', value)}
+                    options={[
                         { value: 'system' as const, label: l('Sistem', 'System') },
                         { value: 'light' as const, label: l('Açık', 'Light') },
                         { value: 'dark' as const, label: l('Koyu', 'Dark') },
-                    ]).map((option) => {
-                        const selected = settings.themeMode === option.value;
-                        return (
-                            <TouchableOpacity
-                                key={option.value}
-                                style={[styles.themeChoiceButton, selected && styles.themeChoiceButtonActive]}
-                                onPress={() => updateSetting('themeMode', option.value)}
-                                accessibilityRole="radio"
-                                accessibilityState={{ checked: selected }}
-                                aria-checked={selected}
-                            >
-                                <Text style={[styles.themeChoiceText, selected && styles.themeChoiceTextActive]}>{option.label}</Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-            </Group>
-            <Group title={l('Yazı boyutu', 'Text size')} styles={styles}>
+                    ]}
+                />
+            </Card>
+            <Card padded title={l('Yazı boyutu', 'Text size')}>
                 <TextSizeSlider value={settings.textSizeLevel} onChange={(level) => updateSetting('textSizeLevel', level)} />
-            </Group>
-            <Group title={l('Düzenleme', 'Editing')} styles={styles}>
+            </Card>
+            <Card divided title={l('Düzenleme', 'Editing')}>
                 <ChoiceRow
                     label={l('Yeni kartların destesi', 'Deck for new cards')}
                     summary={l('Kart ekleme ekranı bir desteden açılmadığında başlangıç destesini seçer. Geçerli deste en son çalıştığınız destedir.', 'Picks the starting deck when the add-card screen is not opened from a deck. Current deck is the deck you studied last.')}
@@ -1127,66 +1027,64 @@ export default function SettingsScreen() {
                     onChange={(value) => updateSetting('newCardDeckMode', value)}
                     styles={styles}
                 />
-                <ToggleRow
-                    label={l('Pano görsellerini PNG olarak yapıştır', 'Paste clipboard images as PNG')}
+                <SwitchRow
+                    title={l('Pano görsellerini PNG olarak yapıştır', 'Paste clipboard images as PNG')}
                     summary={l('Yapıştırılan görseller her zaman koleksiyon medyasına kaydedilir: açıkken PNG, kapalıyken JPEG olarak.', 'Pasted images are always saved as collection media: as PNG when on, as JPEG when off.')}
                     value={Boolean(settings.pasteClipboardImagesAsPng)}
-                    onChange={(value) => updateSetting('pasteClipboardImagesAsPng', value)}
-                    styles={styles}
+                    onValueChange={(value) => updateSetting('pasteClipboardImagesAsPng', value)}
                 />
-                <ToggleRow
-                    label={l('Yazarak cevap alanlarını devre dışı bırak', 'Never type answers')}
+                <SwitchRow
+                    title={l('Yazarak cevap alanlarını devre dışı bırak', 'Never type answers')}
                     summary={l('Yazarak cevap şablonlarında klavyeyi açmadan normal kartı gösterir.', 'Shows type-answer cards without opening the answer keyboard.')}
                     value={Boolean(settings.neverTypeAnswer)}
-                    onChange={(value) => updateSetting('neverTypeAnswer', value)}
-                    styles={styles}
+                    onValueChange={(value) => updateSetting('neverTypeAnswer', value)}
                 />
+                {/* One row each, so the card draws a hairline between them. */}
                 {!settings.neverTypeAnswer ? (
-                    <>
-                        <ToggleRow
-                            label={l('Cevabı kartın içine yaz', 'Type answer into the card')}
-                            summary={l('Giriş alanını şablondaki {{type:Alan}} konumuna yerleştirir ve kartın #typeans stilini uygular.', 'Places the input at {{type:Field}} so the card’s #typeans styling applies.')}
-                            value={Boolean(settings.typeAnswerInCard)}
-                            onChange={(value) => updateSetting('typeAnswerInCard', value)}
-                            styles={styles}
-                        />
-                        <ToggleRow
-                            label={l('Yazarak cevap alanına odaklan', 'Focus type-in-answer')}
-                            summary={l('Yazarak cevap kartı açıldığında alanı seçer ve klavyeyi açar.', 'Selects the field and opens the keyboard when a type-answer card appears.')}
-                            value={settings.focusTypeAnswer !== false}
-                            onChange={(value) => updateSetting('focusTypeAnswer', value)}
-                            styles={styles}
-                        />
-                    </>
+                    <SwitchRow
+                        title={l('Cevabı kartın içine yaz', 'Type answer into the card')}
+                        summary={l('Giriş alanını şablondaki {{type:Alan}} konumuna yerleştirir ve kartın #typeans stilini uygular.', 'Places the input at {{type:Field}} so the card’s #typeans styling applies.')}
+                        value={Boolean(settings.typeAnswerInCard)}
+                        onValueChange={(value) => updateSetting('typeAnswerInCard', value)}
+                    />
                 ) : null}
-            </Group>
-            <View style={styles.group}>
-                <ToggleRow
-                    label={l('Dosya adlarını göster', 'Show filenames')}
+                {!settings.neverTypeAnswer ? (
+                    <SwitchRow
+                        title={l('Yazarak cevap alanına odaklan', 'Focus type-in-answer')}
+                        summary={l('Yazarak cevap kartı açıldığında alanı seçer ve klavyeyi açar.', 'Selects the field and opens the keyboard when a type-answer card appears.')}
+                        value={settings.focusTypeAnswer !== false}
+                        onValueChange={(value) => updateSetting('focusTypeAnswer', value)}
+                    />
+                ) : null}
+            </Card>
+            <Card>
+                <SwitchRow
+                    title={l('Dosya adlarını göster', 'Show filenames')}
                     summary={l('Kart tarayıcısındaki soru/cevap alanlarında ses dosyası adlarını gösterir.', 'Displays audio filenames in the card browser question/answer fields.')}
                     value={Boolean(settings.showBrowserAudioFilenames)}
-                    onChange={(value) => updateSetting('showBrowserAudioFilenames', value)}
-                    divider={false}
-                    styles={styles}
+                    onValueChange={(value) => updateSetting('showBrowserAudioFilenames', value)}
                 />
-            </View>
+            </Card>
             {Platform.OS === 'android' ? (
-                <Group title={l('Android gezinme', 'Android navigation')} description={l('AnkiDroid’dan esinlenen, Android’e özgü isteğe bağlı davranışlar.', 'Optional Android-specific behaviors inspired by AnkiDroid.')} styles={styles}>
-                    <ToggleRow label={l('Tam ekrandan sağa kaydırınca menüyü aç', 'Open menu with a full-screen right swipe')} value={Boolean(settings.fullScreenNavigationDrawer)} onChange={(value) => updateSetting('fullScreenNavigationDrawer', value)} styles={styles} />
-                    <ToggleRow label={l('Geri/çıkış için iki kez geri bas', 'Press back twice to go back/exit')} value={Boolean(settings.doubleBackToExit)} onChange={(value) => updateSetting('doubleBackToExit', value)} styles={styles} />
-                </Group>
+                <Card divided title={l('Android gezinme', 'Android navigation')} description={l('AnkiDroid’dan esinlenen, Android’e özgü isteğe bağlı davranışlar.', 'Optional Android-specific behaviors inspired by AnkiDroid.')}>
+                    <SwitchRow title={l('Tam ekrandan sağa kaydırınca menüyü aç', 'Open menu with a full-screen right swipe')} value={Boolean(settings.fullScreenNavigationDrawer)} onValueChange={(value) => updateSetting('fullScreenNavigationDrawer', value)} />
+                    <SwitchRow title={l('Geri/çıkış için iki kez geri bas', 'Press back twice to go back/exit')} value={Boolean(settings.doubleBackToExit)} onValueChange={(value) => updateSetting('doubleBackToExit', value)} />
+                </Card>
             ) : null}
-            <TouchableOpacity style={styles.outlineButton} onPress={handleResetSettings} accessibilityRole="button">
-                <Text style={styles.outlineButtonText}>↺ {l('Varsayılan ayarlara dön', 'Restore default settings')}</Text>
-            </TouchableOpacity>
+            <Button
+                variant="secondary"
+                icon={<RestoreIcon color={colors.textPrimary} size={18} styles={styles} />}
+                label={l('Varsayılan ayarlara dön', 'Restore default settings')}
+                onPress={handleResetSettings}
+            />
         </>
-    ), [handleResetSettings, l, settings, styles, updateSetting]);
+    ), [colors, handleResetSettings, l, settings, styles, updateSetting]);
 
     const renderNewStudy = () => (
         <>
-            <Group title={l('Yeni çalışma ekranı', 'New study screen')} styles={styles}>
-                <ToggleRow
-                    label={l('Yeni çalışma ekranını kullan', 'Use new study screen')}
+            <Card divided title={l('Yeni çalışma ekranı', 'New study screen')}>
+                <SwitchRow
+                    title={l('Yeni çalışma ekranını kullan', 'Use new study screen')}
                     summary={settings.showStudyTopBar === false
                         ? l(
                             'Yönlü yanıt geri bildirimini etkinleştirir. Yeni araç çubuğu, aşağıdaki "Araç çubuğunu göster" kapalı olduğu sürece gizli kalır.',
@@ -1197,11 +1095,10 @@ export default function SettingsScreen() {
                             'Enables the new toolbar with remaining counts, timer and estimated finish, and directional answer feedback.',
                         )}
                     value={Boolean(settings.newStudyScreenEnabled)}
-                    onChange={(value) => updateSetting('newStudyScreenEnabled', value)}
-                    styles={styles}
+                    onValueChange={(value) => updateSetting('newStudyScreenEnabled', value)}
                 />
-            </Group>
-            <Group title={l('Ekran', 'Screen')} styles={styles}>
+            </Card>
+            <Card divided title={l('Ekran', 'Screen')}>
                 <ChoiceRow
                     label={l('Çerçeve stili', 'Frame style')}
                     value={settings.studyFrameStyle ?? 'card'}
@@ -1209,15 +1106,15 @@ export default function SettingsScreen() {
                     onChange={(value) => updateSetting('studyFrameStyle', value)}
                     styles={styles}
                 />
-                <ToggleRow label={l('Kalan kart sayısını göster', 'Show remaining card count')} value={settings.showRemainingCount} onChange={(value) => updateSetting('showRemainingCount', value)} styles={styles} />
-                <ToggleRow label={l('Sesli kartlarda oynatma düğmelerini göster', 'Show play buttons on cards with audio')} value={settings.showAudioPlayButtons !== false} onChange={(value) => updateSetting('showAudioPlayButtons', value)} styles={styles} />
-                <ToggleRow label={l('Yanıt geri bildirimini göster', 'Show answer feedback')} summary={l('Tekrar yanıtında kırmızı çarpı, tüm yanıt düğmelerinde dokunsal geri bildirim gösterir.', 'Shows a red cross for Again and haptic feedback for all answer buttons.')} value={settings.showAnswerFeedback !== false} onChange={(value) => updateSetting('showAnswerFeedback', value)} styles={styles} />
-                <ToggleRow label={l('Ortaya hizala', 'Center align')} summary={l('Kart içeriğini dikey olarak ortalar.', 'Centers card content vertically.')} value={Boolean(settings.centerCardContent)} onChange={(value) => updateSetting('centerCardContent', value)} styles={styles} />
-                <ToggleRow label={l('Deste başlığını göster', 'Show deck title')} value={settings.showDeckTitle !== false} onChange={(value) => updateSetting('showDeckTitle', value)} styles={styles} />
-                <ToggleRow label={l('Kalan süreyi göster', 'Show remaining time')} summary={l('Mevcut hızla tahmini bitiş süresini gösterir.', 'Shows an estimated time remaining at the current pace.')} value={Boolean(settings.showRemainingTime)} onChange={(value) => updateSetting('showRemainingTime', value)} styles={styles} />
-            </Group>
-            <Group title={l('Araç çubuğu', 'Toolbar')} styles={styles}>
-                <ToggleRow label={l('Araç çubuğunu göster', 'Show toolbar')} summary={l('Geri, deste kapsamı, sayaçlar ve kart işlemlerini gösterir.', 'Shows back, deck scope, counts and card actions.')} value={settings.showStudyTopBar !== false} onChange={(value) => updateSetting('showStudyTopBar', value)} styles={styles} />
+                <SwitchRow title={l('Kalan kart sayısını göster', 'Show remaining card count')} value={settings.showRemainingCount} onValueChange={(value) => updateSetting('showRemainingCount', value)} />
+                <SwitchRow title={l('Sesli kartlarda oynatma düğmelerini göster', 'Show play buttons on cards with audio')} value={settings.showAudioPlayButtons !== false} onValueChange={(value) => updateSetting('showAudioPlayButtons', value)} />
+                <SwitchRow title={l('Yanıt geri bildirimini göster', 'Show answer feedback')} summary={l('Tekrar yanıtında kırmızı çarpı, tüm yanıt düğmelerinde dokunsal geri bildirim gösterir.', 'Shows a red cross for Again and haptic feedback for all answer buttons.')} value={settings.showAnswerFeedback !== false} onValueChange={(value) => updateSetting('showAnswerFeedback', value)} />
+                <SwitchRow title={l('Ortaya hizala', 'Center align')} summary={l('Kart içeriğini dikey olarak ortalar.', 'Centers card content vertically.')} value={Boolean(settings.centerCardContent)} onValueChange={(value) => updateSetting('centerCardContent', value)} />
+                <SwitchRow title={l('Deste başlığını göster', 'Show deck title')} value={settings.showDeckTitle !== false} onValueChange={(value) => updateSetting('showDeckTitle', value)} />
+                <SwitchRow title={l('Kalan süreyi göster', 'Show remaining time')} summary={l('Mevcut hızla tahmini bitiş süresini gösterir.', 'Shows an estimated time remaining at the current pace.')} value={Boolean(settings.showRemainingTime)} onValueChange={(value) => updateSetting('showRemainingTime', value)} />
+            </Card>
+            <Card divided title={l('Araç çubuğu', 'Toolbar')}>
+                <SwitchRow title={l('Araç çubuğunu göster', 'Show toolbar')} summary={l('Geri, deste kapsamı, sayaçlar ve kart işlemlerini gösterir.', 'Shows back, deck scope, counts and card actions.')} value={settings.showStudyTopBar !== false} onValueChange={(value) => updateSetting('showStudyTopBar', value)} />
                 {settings.showStudyTopBar !== false && Boolean(settings.newStudyScreenEnabled) ? (
                     <ChoiceRow
                         label={l('Araç çubuğu konumu', 'Toolbar position')}
@@ -1230,13 +1127,13 @@ export default function SettingsScreen() {
                         styles={styles}
                     />
                 ) : null}
-            </Group>
-            <Group title={l('Yanıt düğmeleri', 'Answer buttons')} styles={styles}>
-                <ToggleRow
-                    label={l('Yanıt düğmelerini göster', 'Show answer buttons')}
+            </Card>
+            <Card divided title={l('Yanıt düğmeleri', 'Answer buttons')}>
+                <SwitchRow
+                    title={l('Yanıt düğmelerini göster', 'Show answer buttons')}
                     summary={l('Kapalıyken kartlar dokunma bölgeleri veya kaydırma hareketleriyle yanıtlanır.', 'When hidden, cards are answered with tap zones or swipe gestures.')}
                     value={settings.showAnswerButtons !== false}
-                    onChange={(value) => {
+                    onValueChange={(value) => {
                         if (!value && !canGradeRevealedCard({ ...settings, showAnswerButtons: false })) {
                             alert(
                                 l('Dokunma veya kaydırmayı etkinleştirin', 'Enable taps or swipes'),
@@ -1249,25 +1146,24 @@ export default function SettingsScreen() {
                         }
                         updateSetting('showAnswerButtons', value);
                     }}
-                    styles={styles}
                 />
-                <ToggleRow label={l('Sonraki inceleme süresini göster', 'Show next review time above answer buttons')} value={settings.showNextReviewTimes} onChange={(value) => updateSetting('showNextReviewTimes', value)} styles={styles} />
-                <ToggleRow label={l('Zor ve Kolay düğmelerini gizle', 'Hide Hard and Easy buttons')} summary={l('Yalnızca Tekrar ve İyi gösterilir.', 'Only Again and Good are shown.')} value={Boolean(settings.hideHardAndEasy)} onChange={(value) => updateSetting('hideHardAndEasy', value)} styles={styles} />
-                <ToggleRow label={l('Otomatik ilerleme', 'Auto advance')} summary={l('Deste seçeneklerindeki Otomatik ilerleme sürelerini çalıştırır. Süreleri her deste için Deste seçenekleri › Otomatik ilerleme bölümünde verin; 0 saniye kapalı demektir.', 'Runs the Auto Advance times set in deck options. Set them per deck in Deck Options › Auto Advance; 0 seconds means off.')} value={settings.autoAdvance} onChange={(value) => updateSetting('autoAdvance', value)} styles={styles} />
-            </Group>
+                <SwitchRow title={l('Sonraki inceleme süresini göster', 'Show next review time above answer buttons')} value={settings.showNextReviewTimes} onValueChange={(value) => updateSetting('showNextReviewTimes', value)} />
+                <SwitchRow title={l('Zor ve Kolay düğmelerini gizle', 'Hide Hard and Easy buttons')} summary={l('Yalnızca Tekrar ve İyi gösterilir.', 'Only Again and Good are shown.')} value={Boolean(settings.hideHardAndEasy)} onValueChange={(value) => updateSetting('hideHardAndEasy', value)} />
+                <SwitchRow title={l('Otomatik ilerleme', 'Auto advance')} summary={l('Deste seçeneklerindeki Otomatik ilerleme sürelerini çalıştırır. Süreleri her deste için Deste seçenekleri › Otomatik ilerleme bölümünde verin; 0 saniye kapalı demektir.', 'Runs the Auto Advance times set in deck options. Set them per deck in Deck Options › Auto Advance; 0 seconds means off.')} value={settings.autoAdvance} onValueChange={(value) => updateSetting('autoAdvance', value)} />
+            </Card>
         </>
     );
 
     const renderReviewing = useCallback(() => (
         <>
-            <Group title={l('Zamanlama', 'Scheduling')} styles={styles}>
+            <Card divided title={l('Zamanlama', 'Scheduling')}>
                 <StepperRow label={l('Sonraki günün başlangıcı', 'Start of next day')} summary={l('Günlük istatistikler ve limitler bu saatte yenilenir.', 'Daily statistics and limits reset at this hour.')} value={settings.dayRolloverHour} suffix=":00" minimumDigits={2} step={1} min={0} max={23} wrap onChange={(value) => updateSetting('dayRolloverHour', value)} styles={styles} />
                 <StepperRow label={l('Önceden öğrenme sınırı', 'Learn ahead limit')} summary={l('Sırada başka kart kalmadığında öğrenme kartlarını erken gösterir.', 'Shows learning cards early when nothing else is queued.')} value={settings.learnAheadMinutes} suffix={l('dk.', 'mins')} step={5} min={0} max={120} onChange={(value) => updateSetting('learnAheadMinutes', value)} styles={styles} />
                 <StepperRow label={l('Zaman kutusu sınırı', 'Timebox time limit')} summary={l('Her zaman kutusu sona erdiğinde çalıştığınız kart sayısını gösterir; 0 özelliği kapatır.', 'Shows how many cards you studied when each timebox ends; 0 disables it.')} value={settings.timeboxMinutes ?? 0} suffix={l('dk.', 'mins')} step={1} min={0} max={9999} onChange={(value) => updateSetting('timeboxMinutes', value)} styles={styles} />
-            </Group>
-            <Group title={l('Gelişmiş', 'Advanced')} styles={styles}>
-                <ToggleRow label={l('Ekranı açık tut', 'Keep screen on')} summary={l('Çalışma sırasında ekran zaman aşımını devre dışı bırakır.', 'Disables screen timeout while reviewing.')} value={Boolean(settings.keepScreenOn)} onChange={(value) => updateSetting('keepScreenOn', value)} styles={styles} />
-                <ToggleRow label={l('Sesi otomatik oynat', 'Automatically play audio')} value={settings.autoPlayAudio} onChange={(value) => updateSetting('autoPlayAudio', value)} styles={styles} />
+            </Card>
+            <Card divided title={l('Gelişmiş', 'Advanced')}>
+                <SwitchRow title={l('Ekranı açık tut', 'Keep screen on')} summary={l('Çalışma sırasında ekran zaman aşımını devre dışı bırakır.', 'Disables screen timeout while reviewing.')} value={Boolean(settings.keepScreenOn)} onValueChange={(value) => updateSetting('keepScreenOn', value)} />
+                <SwitchRow title={l('Sesi otomatik oynat', 'Automatically play audio')} value={settings.autoPlayAudio} onValueChange={(value) => updateSetting('autoPlayAudio', value)} />
                 <ChoiceRow
                     label={l('Ses oynatma hızı', 'Audio playback speed')}
                     summary={l('Varsayılan ayar grubunu ve kendi hızı olmayan desteleri etkiler. Bir ayar grubuna özel hız Deste seçenekleri › Ses bölümünden verilir.', 'Affects the Default preset and decks without a speed of their own. A preset’s own speed is set in Deck Options › Audio.')}
@@ -1282,40 +1178,28 @@ export default function SettingsScreen() {
                     onChange={(value) => updateSetting('audioPlaybackRate', parseFloat(value))}
                     styles={styles}
                 />
-                <ToggleRow label={l('Yanıtlarken sesi kes', 'Interrupt audio when answering')} summary={l('Cevap açılınca ya da sonraki karta geçilince çalan ses dosyasını ve metin okumayı keser. Kapalıyken ses dosyası sonuna kadar çalar, yeni yüzün sesleri onu bekler.', 'Stops the sound file or text-to-speech still playing when the answer is shown or the next card appears. When off, the sound file plays to its end and the new side’s audio follows it.')} value={settings.interruptAudioOnAnswer} onChange={(value) => updateSetting('interruptAudioOnAnswer', value)} styles={styles} />
-            </Group>
+                <SwitchRow title={l('Yanıtlarken sesi kes', 'Interrupt audio when answering')} summary={l('Cevap açılınca ya da sonraki karta geçilince çalan ses dosyasını ve metin okumayı keser. Kapalıyken ses dosyası sonuna kadar çalar, yeni yüzün sesleri onu bekler.', 'Stops the sound file or text-to-speech still playing when the answer is shown or the next card appears. When off, the sound file plays to its end and the new side’s audio follows it.')} value={settings.interruptAudioOnAnswer} onValueChange={(value) => updateSetting('interruptAudioOnAnswer', value)} />
+            </Card>
         </>
     ), [l, settings, styles, updateSetting]);
 
     const renderNotifications = () => (
-        <Group title={l('Bildirimler', 'Notifications')} styles={styles}>
-            <ToggleRow
-                label={l('Bildirimler', 'Notifications')}
+        <Card divided title={l('Bildirimler', 'Notifications')}>
+            <SwitchRow
+                title={l('Bildirimler', 'Notifications')}
                 value={Boolean(settings.studyNotificationsEnabled)}
-                onChange={(value) => { void handleStudyNotificationsToggle(value); }}
-                styles={styles}
+                onValueChange={(value) => { void handleStudyNotificationsToggle(value); }}
             />
-            <TouchableOpacity
-                style={styles.preferenceRow}
+            <SelectRow
+                label={l('Şu durumda bildir', 'Notify when')}
+                value={notificationThresholdLabel(settings.studyNotificationsEnabled, settings.studyNotificationThreshold)}
                 onPress={() => setNotificationThresholdPickerVisible(true)}
-                accessibilityRole="button"
-                accessibilityLabel={l('Şu durumda bildir', 'Notify when')}
-                accessibilityValue={{ text: notificationThresholdLabel(settings.studyNotificationsEnabled, settings.studyNotificationThreshold) }}
-            >
-                <View style={styles.preferenceCopy}>
-                    <Text style={styles.preferenceLabel}>{l('Şu durumda bildir', 'Notify when')}</Text>
-                    <Text style={styles.preferenceSummary}>
-                        {notificationThresholdLabel(settings.studyNotificationsEnabled, settings.studyNotificationThreshold)}
-                    </Text>
-                </View>
-                <Text style={styles.appearanceValueArrow}>›</Text>
-            </TouchableOpacity>
+            />
             {settings.studyNotificationsEnabled && studyNotificationsSupported() ? (
-                <View style={styles.preferenceRow}>
-                    <View style={styles.preferenceCopy}>
-                        <Text style={styles.preferenceLabel}>{l('Hatırlatma saati', 'Reminder time')}</Text>
-                        <Text style={styles.preferenceSummary}>{l('Her gün bu yerel saatte zamanı gelmiş kartlar kontrol edilir.', 'The reminder checks for due cards at this local time each day.')}</Text>
-                    </View>
+                <ValueRow
+                    label={l('Hatırlatma saati', 'Reminder time')}
+                    summary={l('Her gün bu yerel saatte zamanı gelmiş kartlar kontrol edilir.', 'The reminder checks for due cards at this local time each day.')}
+                >
                     <View style={styles.notificationTimeRow}>
                         <BoundedIntegerInput
                             value={settings.studyNotificationHour ?? 9}
@@ -1339,9 +1223,9 @@ export default function SettingsScreen() {
                             style={styles.notificationTimeInput}
                         />
                     </View>
-                </View>
+                </ValueRow>
             ) : null}
-        </Group>
+        </Card>
     );
 
     const activeSwipePreset = matchingSwipePreset(settings);
@@ -1353,34 +1237,38 @@ export default function SettingsScreen() {
 
     const renderControls = useCallback(() => (
         <>
-            <Group
+            <Card
+                divided
                 title={l('Dokunma ve kaydırma', 'Taps and swipes')}
                 description={l(
                     'Kart yüzeyindeki dokuz bölgeye ve dört kaydırma yönüne ayrı eylemler atayın.',
                     'Assign separate actions to the nine card zones and four swipe directions.',
                 )}
-                onHelpPress={() => setControlsHelpVisible(true)}
-                helpLabel={l('Çalışma kontrolleri yardımını aç', 'Open reviewer controls help')}
-                styles={styles}
+                accessory={(
+                    <HelpButton
+                        accessibilityLabel={l('Çalışma kontrolleri yardımını aç', 'Open reviewer controls help')}
+                        onPress={() => setControlsHelpVisible(true)}
+                    />
+                )}
             >
-                <ToggleRow
-                    label={l('9 noktalı dokunma', '9-point touch')}
+                <SwitchRow
+                    title={l('9 noktalı dokunma', '9-point touch')}
                     summary={l('Kart yüzeyini 3×3 bölgeye ayırır; soru ve yanıt tarafları ayrı ayrı ayarlanır.', 'Divides the card surface into a 3×3 grid; question and answer sides are configured separately.')}
                     value={settings.ninePointTouchEnabled !== false}
-                    onChange={(value) => updateSettingsKeepingGrading({ ninePointTouchEnabled: value })}
-                    styles={styles}
+                    onValueChange={(value) => updateSettingsKeepingGrading({ ninePointTouchEnabled: value })}
                 />
                 {settings.ninePointTouchEnabled !== false ? (
-                    <View style={styles.tapMappingBlock}>
-                        <ChoiceRow
-                            label={l('Kart tarafı', 'Card side')}
+                    <View style={styles.block}>
+                        <Text style={styles.label}>{l('Kart tarafı', 'Card side')}</Text>
+                        <SegmentedControl
+                            fill
+                            accessibilityLabel={l('Kart tarafı', 'Card side')}
                             value={tapSide}
                             options={[
                                 { value: 'question', label: l('Soru', 'Question') },
                                 { value: 'answer', label: l('Yanıt', 'Answer') },
                             ]}
                             onChange={setTapSide}
-                            styles={styles}
                         />
                         <View style={styles.tapGrid}>
                             {REVIEW_TAP_ZONES.map((zone) => {
@@ -1414,143 +1302,106 @@ export default function SettingsScreen() {
                         </View>
                     </View>
                 ) : null}
-                <ToggleRow
-                    label={l('Kaydırma hareketlerini etkinleştir', 'Enable swipe gestures')}
+                <SwitchRow
+                    title={l('Kaydırma hareketlerini etkinleştir', 'Enable swipe gestures')}
                     summary={l('Kapalıyken çalışma ekranı tüm kaydırmaları normal kart gezinmesine bırakır.', 'When off, the reviewer leaves every swipe to normal card navigation.')}
                     value={Boolean(settings.gesturesEnabled)}
-                    onChange={(value) => updateSettingsKeepingGrading({ gesturesEnabled: value })}
-                    styles={styles}
+                    onValueChange={(value) => updateSettingsKeepingGrading({ gesturesEnabled: value })}
                 />
-                {settings.gesturesEnabled ? (
-                    <>
-                        <View style={styles.gesturePresetBlock}>
-                            <Text style={styles.preferenceLabel}>{l('Hazır düzenler', 'Presets')}</Text>
-                            <Text style={styles.preferenceSummary}>{l('Bir düzen seçin, ardından yönleri tek tek değiştirebilirsiniz.', 'Choose a preset, then fine-tune each direction.')}</Text>
-                            <View style={styles.choiceRow} accessibilityRole="radiogroup">
-                                {([
-                                    ['balanced', l('iPhone için dengeli', 'Balanced for iPhone')],
-                                    ['fastAnswers', l('Hızlı yanıt', 'Fast answers')],
-                                ] as const).map(([preset, label]) => {
-                                    const selected = activeSwipePreset === preset;
-                                    return (
-                                        <TouchableOpacity
-                                            key={preset}
-                                            style={[styles.choiceButton, selected && styles.choiceButtonActive]}
-                                            onPress={() => updateSettingsKeepingGrading(SWIPE_PRESETS[preset])}
-                                            accessibilityRole="radio"
-                                            accessibilityState={{ checked: selected }}
-                                            aria-checked={selected}
-                                        >
-                                            <Text style={[styles.choiceText, selected && styles.choiceTextActive]}>{label}</Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-                            {activeSwipePreset === null ? (
-                                <Text style={styles.preferenceSummary}>{l('Özel düzen kullanılıyor.', 'Using a custom layout.')}</Text>
-                            ) : null}
+                {/* An array, not a fragment, so the card draws a hairline between its rows. */}
+                {settings.gesturesEnabled ? [
+                    <View key="presets" style={styles.block}>
+                        <View style={styles.blockCopy}>
+                            <Text style={styles.label}>{l('Hazır düzenler', 'Presets')}</Text>
+                            <Text style={styles.summary}>{l('Bir düzen seçin, ardından yönleri tek tek değiştirebilirsiniz.', 'Choose a preset, then fine-tune each direction.')}</Text>
                         </View>
-                        {([
-                            ['swipeLeftAction', '←', l('Sola kaydırma', 'Swipe left'), settings.swipeLeftAction ?? 'tools'],
-                            ['swipeRightAction', '→', l('Sağa kaydırma', 'Swipe right'), settings.swipeRightAction ?? 'decks'],
-                            ['swipeUpAction', '↑', l('Yukarı kaydırma', 'Swipe up'), settings.swipeUpAction ?? 'off'],
-                            ['swipeDownAction', '↓', l('Aşağı kaydırma', 'Swipe down'), settings.swipeDownAction ?? 'off'],
-                        ] as Array<[GestureSettingKey, string, string, ReviewGestureAction]>).map(([field, icon, label, action]) => (
-                            <GestureActionRow
-                                key={field}
-                                icon={icon}
-                                label={label}
-                                value={gestureActionLabel(action)}
-                                onPress={() => setGesturePickerTarget({ kind: 'swipe', field })}
-                                styles={styles}
-                            />
-                        ))}
-                        <SwipeSensitivitySlider
-                            label={l('Kaydırma hassasiyeti', 'Swipe sensitivity')}
-                            summary={l('Yüksek değer daha kısa hareketleri, düşük değer daha uzun ve belirgin hareketleri algılar.', 'A higher value detects shorter movements; a lower value requires a longer, deliberate swipe.')}
-                            value={settings.swipeSensitivity ?? 100}
-                            onChange={(value) => updateSetting('swipeSensitivity', value)}
-                            styles={styles}
+                        <SegmentedControl<SwipePresetId | typeof CUSTOM_SWIPE_LAYOUT>
+                            fill
+                            accessibilityLabel={l('Hazır düzenler', 'Presets')}
+                            value={activeSwipePreset ?? CUSTOM_SWIPE_LAYOUT}
+                            options={[
+                                { value: 'balanced', label: l('iPhone için dengeli', 'Balanced for iPhone') },
+                                { value: 'fastAnswers', label: l('Hızlı yanıt', 'Fast answers') },
+                            ]}
+                            onChange={(preset) => {
+                                if (preset !== CUSTOM_SWIPE_LAYOUT) updateSettingsKeepingGrading(SWIPE_PRESETS[preset]);
+                            }}
                         />
-                    </>
-                ) : null}
+                        {activeSwipePreset === null ? (
+                            <Text style={styles.summary}>{l('Özel düzen kullanılıyor.', 'Using a custom layout.')}</Text>
+                        ) : null}
+                    </View>,
+                    ...([
+                        ['swipeLeftAction', 'left', l('Sola kaydırma', 'Swipe left'), settings.swipeLeftAction ?? 'tools'],
+                        ['swipeRightAction', 'right', l('Sağa kaydırma', 'Swipe right'), settings.swipeRightAction ?? 'decks'],
+                        ['swipeUpAction', 'up', l('Yukarı kaydırma', 'Swipe up'), settings.swipeUpAction ?? 'off'],
+                        ['swipeDownAction', 'down', l('Aşağı kaydırma', 'Swipe down'), settings.swipeDownAction ?? 'off'],
+                    ] as Array<[GestureSettingKey, SwipeDirection, string, ReviewGestureAction]>).map(([field, direction, label, action]) => (
+                        <ListRow
+                            key={field}
+                            icon={<SwipeDirectionIcon direction={direction} color={colors.accent} styles={styles} />}
+                            title={label}
+                            summary={<Text style={styles.actionValue}>{gestureActionLabel(action)}</Text>}
+                            onPress={() => setGesturePickerTarget({ kind: 'swipe', field })}
+                            accessibilityLabel={`${label}: ${gestureActionLabel(action)}`}
+                        />
+                    )),
+                    <SwipeSensitivitySlider
+                        key="sensitivity"
+                        label={l('Kaydırma hassasiyeti', 'Swipe sensitivity')}
+                        summary={l('Yüksek değer daha kısa hareketleri, düşük değer daha uzun ve belirgin hareketleri algılar.', 'A higher value detects shorter movements; a lower value requires a longer, deliberate swipe.')}
+                        value={settings.swipeSensitivity ?? 100}
+                        onChange={(value) => updateSetting('swipeSensitivity', value)}
+                        styles={styles}
+                    />,
+                ] : null}
                 {gradingIsStranded ? (
-                    <View style={styles.controlsWarning} accessibilityRole="alert">
-                        <Text style={styles.controlsWarningTitle}>
-                            {l('Kartları yanıtlamanın bir yolu kalmadı', 'No way left to answer cards')}
-                        </Text>
-                        <Text style={styles.controlsWarningText}>
+                    <View style={styles.block} accessibilityRole="alert">
+                        <Notice
+                            tone="warning"
+                            title={l('Kartları yanıtlamanın bir yolu kalmadı', 'No way left to answer cards')}
+                            action={(
+                                <Button
+                                    size="compact"
+                                    label={l('Yanıt düğmelerini geri aç', 'Show the answer buttons again')}
+                                    onPress={() => updateSetting('showAnswerButtons', true)}
+                                />
+                            )}
+                        >
                             {l(
                                 'Yanıt düğmeleri gizli ve etkin hiçbir dokunma bölgesi veya kaydırma yönü Tekrar, Zor, İyi ya da Kolay uygulamıyor. Bir bölgeye veya yöne bir yanıt eylemi atayın ya da yanıt düğmelerini geri açın.',
                                 'The answer buttons are hidden and no enabled tap zone or swipe direction answers Again, Hard, Good, or Easy. Assign an answer action to a zone or direction, or bring the answer buttons back.',
                             )}
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.controlsWarningButton}
-                            onPress={() => updateSetting('showAnswerButtons', true)}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.controlsWarningButtonText}>
-                                {l('Yanıt düğmelerini geri aç', 'Show the answer buttons again')}
-                            </Text>
-                        </TouchableOpacity>
+                        </Notice>
                     </View>
                 ) : null}
-            </Group>
-            <Group title={l('Ekran kontrolü', 'On-screen control')} styles={styles}>
-                <ToggleRow
-                    label={l('Yüzen Araçlar düğmesini göster', 'Show the floating Tools button')}
+            </Card>
+            <Card divided title={l('Ekran kontrolü', 'On-screen control')}>
+                <SwitchRow
+                    title={l('Yüzen Araçlar düğmesini göster', 'Show the floating Tools button')}
                     summary={l('Araç menüsüne tek elle erişmek için çalışma ekranında sabit bir düğme gösterir.', 'Shows a fixed reviewer button for one-handed access to the Tools menu.')}
                     value={Boolean(settings.showToolsOverlayButton)}
-                    onChange={(value) => updateSetting('showToolsOverlayButton', value)}
-                    divider={false}
-                    styles={styles}
+                    onValueChange={(value) => updateSetting('showToolsOverlayButton', value)}
                 />
                 {settings.showToolsOverlayButton ? (
-                    <View style={styles.overlayControlContainer}>
-                        <View style={styles.overlayControlHeader}>
-                            <Text style={styles.preferenceLabel}>{l('Düğme konumu', 'Button position')}</Text>
-                            <Text style={styles.preferenceSummary}>
+                    <View style={styles.block}>
+                        <View style={styles.blockCopy}>
+                            <Text style={styles.label}>{l('Düğme konumu', 'Button position')}</Text>
+                            <Text style={styles.summary}>
                                 {l('Tek elle çalışma sırasında başparmağınızla en rahat ulaşabileceğiniz tarafı belirleyin.', 'Select the side easiest to reach with your thumb during one-handed review.')}
                             </Text>
                         </View>
 
-                        <View style={styles.overlayPositionSegment}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.overlayPositionButton,
-                                    settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonActive,
-                                ]}
-                                onPress={() => updateSetting('toolsOverlayPosition', 'left')}
-                                accessibilityRole="radio"
-                                accessibilityState={{ checked: settings.toolsOverlayPosition === 'left' }}
-                                aria-checked={settings.toolsOverlayPosition === 'left'}
-                            >
-                                <Text style={[
-                                    styles.overlayPositionButtonText,
-                                    settings.toolsOverlayPosition === 'left' && styles.overlayPositionButtonTextActive,
-                                ]}>
-                                    {l('◧ Sol taraf', '◧ Left side')}
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.overlayPositionButton,
-                                    (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonActive,
-                                ]}
-                                onPress={() => updateSetting('toolsOverlayPosition', 'right')}
-                                accessibilityRole="radio"
-                                accessibilityState={{ checked: (settings.toolsOverlayPosition ?? 'right') === 'right' }}
-                                aria-checked={(settings.toolsOverlayPosition ?? 'right') === 'right'}
-                            >
-                                <Text style={[
-                                    styles.overlayPositionButtonText,
-                                    (settings.toolsOverlayPosition ?? 'right') === 'right' && styles.overlayPositionButtonTextActive,
-                                ]}>
-                                    {l('◨ Sağ taraf', '◨ Right side')}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
+                        <SegmentedControl
+                            fill
+                            accessibilityLabel={l('Düğme konumu', 'Button position')}
+                            value={settings.toolsOverlayPosition ?? 'right'}
+                            onChange={(position) => updateSetting('toolsOverlayPosition', position)}
+                            options={[
+                                { value: 'left', label: l('◧ Sol taraf', '◧ Left side') },
+                                { value: 'right', label: l('◨ Sağ taraf', '◨ Right side') },
+                            ]}
+                        />
 
                         <View style={styles.overlayPreviewWrap}>
                             <Pressable
@@ -1582,7 +1433,7 @@ export default function SettingsScreen() {
                                             : styles.overlayPreviewFloatingBtnRight,
                                     ]}
                                 >
-                                    <GearGlyph color="#ffffff" size={13} />
+                                    <GearGlyph color={colors.onAccent} size={13} />
                                 </View>
                             </Pressable>
                             <Text style={styles.overlayPreviewCaption}>
@@ -1593,26 +1444,26 @@ export default function SettingsScreen() {
                         </View>
                     </View>
                 ) : null}
-            </Group>
+            </Card>
             <KeyboardSettingsSection bindings={settings.keyBindings} onChange={handleKeyBindingsChange} />
         </>
-    ), [activeSwipePreset, gestureActionLabel, gradingIsStranded, handleKeyBindingsChange, l, settings, styles, tapSide, updateSetting, updateSettings, updateSettingsKeepingGrading]);
+    ), [activeSwipePreset, colors, gestureActionLabel, gradingIsStranded, handleKeyBindingsChange, l, settings, styles, tapSide, updateSetting, updateSettings, updateSettingsKeepingGrading]);
 
     const renderAccessibility = () => (
         <>
-            <Group title={l('Kart', 'Card')} styles={styles}>
+            <Card divided title={l('Kart', 'Card')}>
                 <StepperRow inline label={l('Kart yakınlaştırma', 'Card zoom')} value={settings.cardZoomPercent ?? 100} suffix="%" step={10} min={50} max={200} onChange={(value) => updateSetting('cardZoomPercent', value)} styles={styles} />
                 <StepperRow inline label={l('Görsel yakınlaştırma', 'Image zoom')} value={settings.imageZoomPercent ?? 100} suffix="%" step={10} min={50} max={200} onChange={(value) => updateSetting('imageZoomPercent', value)} styles={styles} />
-            </Group>
-            <Group title={l('Yanıt düğmeleri', 'Answer buttons')} styles={styles}>
+            </Card>
+            <Card divided title={l('Yanıt düğmeleri', 'Answer buttons')}>
                 <StepperRow inline label={l('Yanıt düğmesi boyutu', 'Answer button size')} value={settings.answerButtonScalePercent ?? 100} suffix="%" step={10} min={100} max={175} onChange={(value) => updateSetting('answerButtonScalePercent', value)} styles={styles} />
-                <ToggleRow label={l('Büyük yanıt düğmelerini iki satırda göster', 'Show large answer buttons in two rows')} value={Boolean(settings.twoRowAnswerButtons)} onChange={(value) => updateSetting('twoRowAnswerButtons', value)} styles={styles} />
+                <SwitchRow title={l('Büyük yanıt düğmelerini iki satırda göster', 'Show large answer buttons in two rows')} value={Boolean(settings.twoRowAnswerButtons)} onValueChange={(value) => updateSetting('twoRowAnswerButtons', value)} />
                 <StepperRow inline label={l('Cevabı göster basılı tutma süresi', 'Show answer long-press time')} summary={l('0 ms normal dokunmadır. Yalnızca Cevabı göster düğmesine uygulanır.', '0 ms uses a normal tap. Applies only to the Show Answer button.')} value={settings.showAnswerLongPressMs ?? 0} suffix="ms" step={100} min={0} max={2000} onChange={(value) => updateSetting('showAnswerLongPressMs', value)} styles={styles} />
                 <StepperRow inline label={l('Çift dokunma aralığı', 'Double tap time interval')} summary={l('Yanlışlıkla iki kez yanıtlamayı önler.', 'Prevents accidental double answers.')} value={settings.answerDoubleTapMs ?? 200} suffix="ms" step={50} min={0} max={1000} onChange={(value) => updateSetting('answerDoubleTapMs', value)} styles={styles} />
-            </Group>
-            <Group title={l('Kart tarayıcısı', 'Card browser')} styles={styles}>
+            </Card>
+            <Card divided title={l('Kart tarayıcısı', 'Card browser')}>
                 <StepperRow inline label={l('Yazı ölçeği', 'Font scaling')} value={settings.browserFontScalePercent ?? 100} suffix="%" step={10} min={75} max={175} onChange={(value) => updateSetting('browserFontScalePercent', value)} styles={styles} />
-            </Group>
+            </Card>
         </>
     );
 
@@ -1624,58 +1475,52 @@ export default function SettingsScreen() {
     );
     const renderData = useCallback(() => (
         <>
-            <Group title={l('Yedekleme', 'Backup')} styles={styles}>
-                <ToggleRow
-                    label={l('Otomatik yedekleme', 'Automatic backup')}
+            <Card divided title={l('Yedekleme', 'Backup')}>
+                <SwitchRow
+                    title={l('Otomatik yedekleme', 'Automatic backup')}
                     summary={autoBackupSummary}
                     value={settings.autoBackupEnabled !== false}
-                    onChange={(value) => updateSetting('autoBackupEnabled', value)}
-                    divider={false}
-                    styles={styles}
+                    onValueChange={(value) => updateSetting('autoBackupEnabled', value)}
                 />
-                <DataActionRow
-                    icon="↻"
-                    label={l('Yedekleri yönet', 'Manage backups')}
-                    detail={l('Görüntüle veya geri yükle', 'View or restore')}
+                <ListRow
+                    icon={<RefreshIcon color={colors.accent} />}
+                    title={l('Yedekleri yönet', 'Manage backups')}
+                    summary={l('Görüntüle veya geri yükle', 'View or restore')}
                     onPress={() => router.push('/backups')}
-                    styles={styles}
                 />
-            </Group>
+            </Card>
 
-            <Group title={l('İçe ve dışa aktar', 'Import and export')} styles={styles}>
-                <DataActionRow icon="↑" label={l('Verileri dışa aktar', 'Export data')} onPress={handleExport} divider={false} styles={styles} />
-                <DataActionRow icon="↓" label={l('Deste ve verileri içe aktar', 'Import decks and data')} onPress={handleImport} styles={styles} />
-            </Group>
+            <Card divided title={l('İçe ve dışa aktar', 'Import and export')}>
+                <ListRow icon={<ArrowUpIcon color={colors.accent} size={22} />} title={l('Verileri dışa aktar', 'Export data')} onPress={handleExport} />
+                <ListRow icon={<ArrowDownIcon color={colors.accent} size={22} />} title={l('Deste ve verileri içe aktar', 'Import decks and data')} onPress={handleImport} />
+            </Card>
 
-            <Group title={l('Bakım', 'Maintenance')} styles={styles}>
-                <DataActionRow
-                    icon="✓"
-                    label={l('Veritabanını kontrol et', 'Check database')}
-                    detail={l('Salt okunur bütünlük denetimi', 'Read-only integrity audit')}
+            <Card divided title={l('Bakım', 'Maintenance')}>
+                <ListRow
+                    icon={<CheckIcon color={colors.accent} size={22} />}
+                    title={l('Veritabanını kontrol et', 'Check database')}
+                    summary={l('Salt okunur bütünlük denetimi', 'Read-only integrity audit')}
                     onPress={handleCheckDatabase}
                     disabled={maintenanceAction !== null}
-                    divider={false}
-                    styles={styles}
                 />
-                <DataActionRow
-                    icon="⌁"
-                    label={maintenanceAction === 'optimize' ? l('Optimize ediliyor…', 'Optimizing…') : l('Onar ve optimize et', 'Repair and optimize')}
-                    detail={l('Önce denetler ve onaylatır; yedek alıp bozuk satırları onarır ve indeksleri yeniler', 'Audits and confirms first, then backs up, repairs broken rows and refreshes indexes')}
+                <ListRow
+                    // The kit has no repair glyph; the gear stands for maintenance.
+                    icon={<GearGlyph color={colors.accent} size={22} />}
+                    title={maintenanceAction === 'optimize' ? l('Optimize ediliyor…', 'Optimizing…') : l('Onar ve optimize et', 'Repair and optimize')}
+                    summary={l('Önce denetler ve onaylatır; yedek alıp bozuk satırları onarır ve indeksleri yeniler', 'Audits and confirms first, then backs up, repairs broken rows and refreshes indexes')}
                     onPress={handleOptimizeDatabase}
                     disabled={maintenanceAction !== null}
-                    styles={styles}
                 />
-                <DataActionRow
-                    icon="↺"
-                    label={maintenanceAction === 'reset' ? l('Sıfırlanıyor…', 'Resetting…') : l('İlerlemeyi sıfırla', 'Reset progress')}
+                <ListRow
+                    icon={<RestoreIcon color={colors.danger} styles={styles} />}
+                    title={maintenanceAction === 'reset' ? l('Sıfırlanıyor…', 'Resetting…') : l('İlerlemeyi sıfırla', 'Reset progress')}
                     onPress={handleResetProgress}
                     disabled={maintenanceAction !== null}
-                    danger
-                    styles={styles}
+                    destructive
                 />
-            </Group>
+            </Card>
         </>
-    ), [autoBackupSummary, handleCheckDatabase, handleExport, handleImport, handleOptimizeDatabase, handleResetProgress, l, maintenanceAction, settings.autoBackupEnabled, styles, updateSetting]);
+    ), [autoBackupSummary, colors, handleCheckDatabase, handleExport, handleImport, handleOptimizeDatabase, handleResetProgress, l, maintenanceAction, settings.autoBackupEnabled, styles, updateSetting]);
 
     const openExternalPage = (url: string) => {
         Linking.openURL(url).catch((error) => {
@@ -1688,10 +1533,10 @@ export default function SettingsScreen() {
     };
 
     const renderAbout = () => (
-        <Group title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki paketleriyle çalışan, verilerini cihazınızda tutan bağımsız bir kart uygulaması. Anki veya Ankitects ile bağlantılı değildir.`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • An independent flashcard app that works with Anki packages and keeps its data on your device. Not affiliated with Anki or Ankitects.`)} styles={styles}>
-            <TouchableOpacity style={styles.linkRow} onPress={() => openExternalPage(PRIVACY_URL)} accessibilityRole="link"><Text style={styles.linkText}>{l('Gizlilik politikası', 'Privacy Policy')}</Text><Text style={styles.linkArrow}>↗</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.linkRow} onPress={() => openExternalPage(SUPPORT_URL)} accessibilityRole="link"><Text style={styles.linkText}>{l('Destek', 'Support')}</Text><Text style={styles.linkArrow}>↗</Text></TouchableOpacity>
-        </Group>
+        <Card divided title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki paketleriyle çalışan, verilerini cihazınızda tutan bağımsız bir kart uygulaması. Anki veya Ankitects ile bağlantılı değildir.`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • An independent flashcard app that works with Anki packages and keeps its data on your device. Not affiliated with Anki or Ankitects.`)}>
+            <ListRow title={l('Gizlilik politikası', 'Privacy Policy')} onPress={() => openExternalPage(PRIVACY_URL)} chevron={false} accessory={<ExternalLinkIcon color={colors.textMuted} />} />
+            <ListRow title={l('Destek', 'Support')} onPress={() => openExternalPage(SUPPORT_URL)} chevron={false} accessory={<ExternalLinkIcon color={colors.textMuted} />} />
+        </Card>
     );
 
     const renderActiveSection = () => {
@@ -1709,43 +1554,31 @@ export default function SettingsScreen() {
     };
 
     if (loading) {
-        return <SafeAreaView style={styles.container}><View style={styles.loading}><ActivityIndicator size="large" color={colors.accent} /></View></SafeAreaView>;
+        return <SafeAreaView style={styles.container}><LoadingState style={styles.loading} /></SafeAreaView>;
     }
 
     return (
         <KeyboardDismissArea>
         <SafeAreaView style={styles.container}>
-            <View style={styles.screenHeader}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={handleBack}
-                    accessibilityRole="button"
-                    accessibilityLabel={activeSection ? l('Ayarlara dön', 'Back to settings') : l('Geri dön', 'Go back')}
-                >
-                    <HeaderBackIcon color={colors.accent} />
-                </TouchableOpacity>
-                <Text style={styles.screenTitle} numberOfLines={1}>
-                    {activeCategory?.title ?? l('Ayarlar', 'Settings')}
-                </Text>
-                {activeSection || isDirty ? (
-                    <TouchableOpacity
-                        style={[
-                            styles.headerSaveButton,
-                            showSaved && styles.headerSaveButtonSaved,
-                            !isDirty && !showSaved && styles.headerSaveButtonDisabled,
-                        ]}
+            <ScreenHeader
+                title={activeCategory?.title ?? l('Ayarlar', 'Settings')}
+                backAccessibilityLabel={activeSection ? l('Ayarlara dön', 'Back to settings') : l('Geri dön', 'Go back')}
+                onBack={handleBack}
+                actions={activeSection || isDirty ? (
+                    <Button
+                        size="compact"
+                        variant={showSaved ? 'secondary' : 'primary'}
+                        icon={showSaved ? <CheckIcon color={colors.success} size={14} /> : undefined}
+                        label={showSaved ? l('Kaydedildi', 'Saved') : l('Kaydet', 'Save')}
+                        numberOfLines={1}
                         onPress={handleSaveSettings}
-                        disabled={saving || (!isDirty && !showSaved)}
-                        aria-busy={saving}
-                        accessibilityRole="button"
+                        disabled={!isDirty && !showSaved}
+                        busy={saving}
                         accessibilityLabel={showSaved ? l('Ayarlar kaydedildi', 'Settings saved') : l('Ayarları kaydet', 'Save settings')}
-                    >
-                        <Text style={[styles.headerSaveText, showSaved && styles.headerSaveTextSaved]} numberOfLines={1}>
-                            {showSaved ? `✓ ${l('Kaydedildi', 'Saved')}` : l('Kaydet', 'Save')}
-                        </Text>
-                    </TouchableOpacity>
-                ) : <View style={styles.headerSpacer} />}
-            </View>
+                        style={styles.headerSaveButton}
+                    />
+                ) : undefined}
+            />
             <ScrollView
                 key={activeSection ?? 'settings-root'}
                 ref={sectionScrollRef}
@@ -1761,240 +1594,165 @@ export default function SettingsScreen() {
                     renderActiveSection()
                 ) : (
                     <>
-                        <View style={styles.searchBox}>
-                            <Text style={styles.searchIcon}>⌕</Text>
-                            <TextInput
-                                value={search}
-                                onChangeText={setSearch}
-                                placeholder={l('Ara…', 'Search…')}
-                                placeholderTextColor={colors.textMuted}
-                                style={styles.searchInput}
-                                accessibilityLabel={l('Ayarlarda ara', 'Search settings')}
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                returnKeyType="search"
-                                clearButtonMode="while-editing"
+                        <SearchField
+                            value={search}
+                            onChangeText={setSearch}
+                            placeholder={l('Ara…', 'Search…')}
+                            accessibilityLabel={l('Ayarlarda ara', 'Search settings')}
+                            clearLabel={l('Aramayı temizle', 'Clear search')}
+                            autoCapitalize="none"
+                        />
+                        {searchResults.length > 0 ? (
+                            <Card divided>
+                                {searchResults.map(({ category, matchedSettings }) => {
+                                    // A match on a single setting names it, so the row says where the setting is.
+                                    const detail = matchedSettings.length > 0 ? matchedSettings.join(' • ') : category.summary;
+                                    return (
+                                        <ListRow
+                                            key={category.id}
+                                            icon={<CategoryGlyph id={category.id} color={colors.accent} />}
+                                            title={category.title}
+                                            // At a large text size the contents wrap; a no-break space keeps each
+                                            // separator with the heading after it, so no line ends on a bullet.
+                                            summary={detail.replaceAll(' • ', ' •\u00A0')}
+                                            onPress={() => openSection(category.id)}
+                                            accessibilityLabel={category.title}
+                                            accessibilityHint={detail}
+                                        />
+                                    );
+                                })}
+                            </Card>
+                        ) : (
+                            <EmptyState
+                                title={l(
+                                    'Eşleşen ayar bulunamadı. Bir ayarın veya kategorinin adıyla arayın; örneğin “bildirim” veya “zaman kutusu”.',
+                                    'No matching settings found. Search by the name of a setting or a category, for example “notification” or “timebox”.',
+                                )}
                             />
-                        </View>
-                        <View style={styles.categoryList}>
-                            {searchResults.map(({ category, matchedSettings }, index) => {
-                                // A match on a single setting names it, so the row says where the setting is.
-                                const detail = matchedSettings.length > 0 ? matchedSettings.join(' • ') : category.summary;
-                                return (
-                                    <TouchableOpacity
-                                        key={category.id}
-                                        style={styles.categoryRow}
-                                        onPress={() => openSection(category.id)}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={category.title}
-                                        accessibilityHint={detail}
-                                    >
-                                        <View style={styles.categoryIconContainer}>
-                                            <CategoryGlyph id={category.id} color={colors.accent} />
-                                        </View>
-                                        <View style={[styles.categoryBody, index > 0 && styles.categoryDivider]}>
-                                            <View style={styles.categoryCopy}>
-                                                <Text style={styles.categoryTitle} numberOfLines={1}>{category.title}</Text>
-                                                {/* At a large text size the contents wrap; a no-break space keeps each
-                                                    separator with the heading after it, so no line ends on a bullet. */}
-                                                <Text style={styles.categorySummary} numberOfLines={2}>{detail.replaceAll(' • ', ' •\u00A0')}</Text>
-                                            </View>
-                                            <Text style={styles.categoryArrow}>›</Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                            {searchResults.length === 0 ? (
-                                <Text style={styles.emptySearch}>
-                                    {l(
-                                        'Eşleşen ayar bulunamadı. Bir ayarın veya kategorinin adıyla arayın; örneğin “bildirim” veya “zaman kutusu”.',
-                                        'No matching settings found. Search by the name of a setting or a category, for example “notification” or “timebox”.',
-                                    )}
-                                </Text>
-                            ) : null}
-                        </View>
+                        )}
                     </>
                 )}
             </ScrollView>
-            {controlsHelpVisible ? <Modal
-                visible={controlsHelpVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setControlsHelpVisible(false)}
-                statusBarTranslucent
-            >
-                <View style={styles.controlsHelpOverlay}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={() => setControlsHelpVisible(false)}
-                        accessibilityLabel={l('Kontroller yardımını kapat', 'Close controls help')}
-                    />
-                    <View style={styles.controlsHelpCard} accessibilityViewIsModal>
-                        <View style={styles.controlsHelpHeader}>
-                            <View style={styles.controlsHelpHeaderCopy}>
-                                <Text style={styles.controlsHelpEyebrow}>{l('ÇALIŞMA KONTROLLERİ', 'REVIEWER CONTROLS')}</Text>
-                                <Text style={styles.controlsHelpTitle}>{l('Dokunma ve kaydırmayı özelleştirin', 'Customize taps and swipes')}</Text>
-                            </View>
-                            <TouchableOpacity
-                                style={styles.controlsHelpClose}
-                                onPress={() => setControlsHelpVisible(false)}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Yardımı kapat', 'Close help')}
-                            >
-                                <Text style={styles.controlsHelpCloseText}>×</Text>
-                            </TouchableOpacity>
-                        </View>
+            {controlsHelpVisible ? (
+                <AppDialog
+                    visible
+                    onClose={() => setControlsHelpVisible(false)}
+                    title={l('Dokunma ve kaydırmayı özelleştirin', 'Customize taps and swipes')}
+                    closeButton
+                    actions={<Button label={l('Anladım', 'Got it')} onPress={() => setControlsHelpVisible(false)} />}
+                >
+                    <ScrollView
+                        style={styles.helpScroll}
+                        contentContainerStyle={styles.helpContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <SectionLabel>{l('ÇALIŞMA KONTROLLERİ', 'REVIEWER CONTROLS')}</SectionLabel>
+                        <Text style={styles.helpIntro}>
+                            {l(
+                                'Kartın dokuz bölgesini ve dört kaydırma yönünü en sık kullandığınız işlemlere bağlayabilirsiniz. Seçimleriniz yalnızca çalışma ekranında geçerlidir.',
+                                'Connect the card’s nine tap zones and four swipe directions to the actions you use most. Your choices apply only while studying.',
+                            )}
+                        </Text>
 
-                        <ScrollView
-                            style={styles.controlsHelpScroll}
-                            contentContainerStyle={styles.controlsHelpContent}
-                            showsVerticalScrollIndicator={false}
-                        >
-                            <Text style={styles.controlsHelpIntro}>
+                        <Notice title={l('9 noktalı dokunma', '9-point touch')}>
+                            {l(
+                                'Soru tarafında varsayılan olarak her bölge yanıtı gösterir. Yanıt tarafında sol sütun Tekrar, orta sütun kapalı, sağ sütun İyi eylemini uygular. Bağlantılar, form alanları ve ses denetimleri kendi dokunmalarını almaya devam eder.',
+                                'On the question side, every zone shows the answer by default. On the answer side, the left column answers Again, the center column is off, and the right column answers Good. Links, form fields, and audio controls continue to receive their own taps.',
+                            )}
+                        </Notice>
+
+                        <View style={styles.helpStatus}>
+                            <View style={[styles.helpStatusDot, (settings.gesturesEnabled || settings.ninePointTouchEnabled !== false) && styles.helpStatusDotOn]} />
+                            <Text style={styles.helpStatusText}>
                                 {l(
-                                    'Kartın dokuz bölgesini ve dört kaydırma yönünü en sık kullandığınız işlemlere bağlayabilirsiniz. Seçimleriniz yalnızca çalışma ekranında geçerlidir.',
-                                    'Connect the card’s nine tap zones and four swipe directions to the actions you use most. Your choices apply only while studying.',
+                                    `9 noktalı dokunma ${settings.ninePointTouchEnabled !== false ? 'açık' : 'kapalı'} · Kaydırma ${settings.gesturesEnabled ? 'açık' : 'kapalı'}`,
+                                    `9-point touch ${settings.ninePointTouchEnabled !== false ? 'on' : 'off'} · Swipes ${settings.gesturesEnabled ? 'on' : 'off'}`,
                                 )}
                             </Text>
-
-                            <View style={styles.controlsHelpPanel}>
-                                <Text style={styles.controlsHelpPanelTitle}>{l('9 noktalı dokunma', '9-point touch')}</Text>
-                                <Text style={styles.controlsHelpPanelText}>
-                                    {l(
-                                        'Soru tarafında varsayılan olarak her bölge yanıtı gösterir. Yanıt tarafında sol sütun Tekrar, orta sütun kapalı, sağ sütun İyi eylemini uygular. Bağlantılar, form alanları ve ses denetimleri kendi dokunmalarını almaya devam eder.',
-                                        'On the question side, every zone shows the answer by default. On the answer side, the left column answers Again, the center column is off, and the right column answers Good. Links, form fields, and audio controls continue to receive their own taps.',
-                                    )}
-                                </Text>
-                            </View>
-
-                            <View style={styles.controlsHelpStatus}>
-                                <View style={[styles.controlsHelpStatusDot, (settings.gesturesEnabled || settings.ninePointTouchEnabled !== false) && styles.controlsHelpStatusDotEnabled]} />
-                                <Text style={styles.controlsHelpStatusText}>
-                                    {l(
-                                        `9 noktalı dokunma ${settings.ninePointTouchEnabled !== false ? 'açık' : 'kapalı'} · Kaydırma ${settings.gesturesEnabled ? 'açık' : 'kapalı'}`,
-                                        `9-point touch ${settings.ninePointTouchEnabled !== false ? 'on' : 'off'} · Swipes ${settings.gesturesEnabled ? 'on' : 'off'}`,
-                                    )}
-                                </Text>
-                            </View>
-
-                            <Text style={styles.controlsHelpSectionTitle}>{l('Şu anki yönleriniz', 'Your current directions')}</Text>
-                            <View style={styles.controlsHelpDirectionList}>
-                                {([
-                                    ['←', l('Sola kaydırma', 'Swipe left'), settings.swipeLeftAction ?? 'tools'],
-                                    ['→', l('Sağa kaydırma', 'Swipe right'), settings.swipeRightAction ?? 'decks'],
-                                    ['↑', l('Yukarı kaydırma', 'Swipe up'), settings.swipeUpAction ?? 'off'],
-                                    ['↓', l('Aşağı kaydırma', 'Swipe down'), settings.swipeDownAction ?? 'off'],
-                                ] as Array<[string, string, ReviewGestureAction]>).map(([icon, label, action]) => (
-                                    <View key={label} style={styles.controlsHelpDirectionRow}>
-                                        <View style={styles.controlsHelpDirectionIcon}>
-                                            <Text style={styles.controlsHelpDirectionIconText}>{icon}</Text>
-                                        </View>
-                                        <View style={styles.controlsHelpDirectionCopy}>
-                                            <Text style={styles.controlsHelpDirectionLabel}>{label}</Text>
-                                            <Text style={styles.controlsHelpDirectionValue}>{gestureActionLabel(action)}</Text>
-                                        </View>
-                                    </View>
-                                ))}
-                            </View>
-
-                            <View style={styles.controlsHelpPanel}>
-                                <Text style={styles.controlsHelpPanelTitle}>{l('Yanıt hareketleri nasıl çalışır?', 'How do answer gestures work?')}</Text>
-                                <Text style={styles.controlsHelpPanelText}>
-                                    {l(
-                                        'Kartın sorusu açıksa bir yanıt eylemi önce cevabı gösterir. Cevap açıkken aynı dokunma veya kaydırma seçtiğiniz Tekrar, Zor, İyi ya da Kolay yanıtını uygular. Böylece görülmemiş bir cevap yanlışlıkla puanlanmaz.',
-                                        'When the question is showing, an answer action reveals it first. Once the answer is visible, the same tap or swipe applies your selected Again, Hard, Good, or Easy rating. This prevents an unseen answer from being graded accidentally.',
-                                    )}
-                                </Text>
-                            </View>
-
-                            <View style={styles.controlsHelpPanel}>
-                                <Text style={styles.controlsHelpPanelTitle}>{l('Hassasiyet ayarı', 'Sensitivity')}</Text>
-                                <Text style={styles.controlsHelpPanelText}>
-                                    {l(
-                                        `Geçerli değeriniz %${settings.swipeSensitivity ?? 100}. Yüksek değer kısa hareketleri daha kolay algılar; düşük değer daha uzun ve belirgin bir kaydırma ister. Başlangıç için %100 dengeli bir seçimdir.`,
-                                        `Your current value is ${settings.swipeSensitivity ?? 100}%. A higher value recognizes shorter movements; a lower value requires a longer, more deliberate swipe. 100% is a balanced starting point.`,
-                                    )}
-                                </Text>
-                            </View>
-
-                            <View style={styles.controlsHelpPanel}>
-                                <Text style={styles.controlsHelpPanelTitle}>{l('Hazır düzenler', 'Presets')}</Text>
-                                <View style={styles.controlsHelpBulletRow}>
-                                    <Text style={styles.controlsHelpBullet}>•</Text>
-                                    <Text style={styles.controlsHelpPanelText}><Text style={styles.controlsHelpStrong}>{l('iPhone için dengeli:', 'Balanced for iPhone:')}</Text> {l('sol Araçlar, sağ Desteler; dikey hareketler kapalı.', 'left opens Tools, right returns to Decks; vertical gestures are off.')}</Text>
-                                </View>
-                                <View style={styles.controlsHelpBulletRow}>
-                                    <Text style={styles.controlsHelpBullet}>•</Text>
-                                    <Text style={styles.controlsHelpPanelText}><Text style={styles.controlsHelpStrong}>{l('Hızlı yanıt:', 'Fast answers:')}</Text> {l('sol Tekrar, sağ İyi, yukarı Kolay, aşağı Zor.', 'left Again, right Good, up Easy and down Hard.')}</Text>
-                                </View>
-                            </View>
-
-                            <View style={styles.controlsHelpNotice}>
-                                <Text style={styles.controlsHelpNoticeTitle}>{l('Güvenli kullanım', 'Safe operation')}</Text>
-                                <Text style={styles.controlsHelpNoticeText}>
-                                    {l(
-                                        'Kaydırmayı kapatırsanız kart hareketleri normal gezinmeye bırakılır. Yanıt düğmelerini gizlemek için 9 noktalı dokunma veya kaydırmadan en az biri etkin olmalıdır.',
-                                        'When swipes are off, card movements are left to normal navigation. Before hiding answer buttons, keep either 9-point touch or swipes enabled.',
-                                    )}
-                                </Text>
-                            </View>
-                        </ScrollView>
-
-                        <View style={styles.controlsHelpFooter}>
-                            <TouchableOpacity
-                                style={styles.controlsHelpDone}
-                                onPress={() => setControlsHelpVisible(false)}
-                                accessibilityRole="button"
-                            >
-                                <Text style={styles.controlsHelpDoneText}>{l('Anladım', 'Got it')}</Text>
-                            </TouchableOpacity>
                         </View>
-                    </View>
-                </View>
-            </Modal> : null}
-            {gesturePickerTarget !== null ? <Modal
-                visible={gesturePickerTarget !== null}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setGesturePickerTarget(null)}
-            >
-                <View style={styles.themeModalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setGesturePickerTarget(null)} />
-                    <View style={[styles.themeModalCard, styles.gesturePickerCard]} accessibilityViewIsModal>
-                        <View style={styles.gesturePickerHeader}>
-                            <Text style={styles.themeModalTitle}>
-                                {gesturePickerTarget?.kind === 'tap'
-                                    ? l('Dokunma eylemi', 'Tap action')
-                                    : l('Kaydırma eylemi', 'Swipe action')}
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.gesturePickerClose}
-                                onPress={() => setGesturePickerTarget(null)}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Eylem seçiciyi kapat', 'Close action picker')}
-                            >
-                                <Text style={styles.gesturePickerCloseText}>×</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            {gestureActionOptions.map((option) => {
-                                let selected = false;
-                                if (gesturePickerTarget?.kind === 'swipe') {
-                                    selected = (settings[gesturePickerTarget.field] ?? 'off') === option.value;
-                                } else if (gesturePickerTarget?.kind === 'tap') {
-                                    const actions = gesturePickerTarget.side === 'question'
-                                        ? settings.questionTapActions ?? DEFAULT_QUESTION_TAP_ACTIONS
-                                        : settings.answerTapActions ?? DEFAULT_ANSWER_TAP_ACTIONS;
-                                    selected = actions[gesturePickerTarget.zone] === option.value;
-                                }
-                                return (
-                                    <TouchableOpacity
-                                        key={option.value}
-                                        style={[styles.themeModalOption, selected && styles.themeModalOptionActive]}
+
+                        <Text style={styles.helpSectionTitle} accessibilityRole="header">{l('Şu anki yönleriniz', 'Your current directions')}</Text>
+                        <Card divided>
+                            {([
+                                ['left', l('Sola kaydırma', 'Swipe left'), settings.swipeLeftAction ?? 'tools'],
+                                ['right', l('Sağa kaydırma', 'Swipe right'), settings.swipeRightAction ?? 'decks'],
+                                ['up', l('Yukarı kaydırma', 'Swipe up'), settings.swipeUpAction ?? 'off'],
+                                ['down', l('Aşağı kaydırma', 'Swipe down'), settings.swipeDownAction ?? 'off'],
+                            ] as Array<[SwipeDirection, string, ReviewGestureAction]>).map(([direction, label, action]) => (
+                                <ListRow
+                                    key={label}
+                                    icon={<SwipeDirectionIcon direction={direction} color={colors.accent} styles={styles} />}
+                                    title={label}
+                                    summary={<Text style={styles.actionValue}>{gestureActionLabel(action)}</Text>}
+                                />
+                            ))}
+                        </Card>
+
+                        <Notice title={l('Yanıt hareketleri nasıl çalışır?', 'How do answer gestures work?')}>
+                            {l(
+                                'Kartın sorusu açıksa bir yanıt eylemi önce cevabı gösterir. Cevap açıkken aynı dokunma veya kaydırma seçtiğiniz Tekrar, Zor, İyi ya da Kolay yanıtını uygular. Böylece görülmemiş bir cevap yanlışlıkla puanlanmaz.',
+                                'When the question is showing, an answer action reveals it first. Once the answer is visible, the same tap or swipe applies your selected Again, Hard, Good, or Easy rating. This prevents an unseen answer from being graded accidentally.',
+                            )}
+                        </Notice>
+
+                        <Notice title={l('Hassasiyet ayarı', 'Sensitivity')}>
+                            {l(
+                                `Geçerli değeriniz %${settings.swipeSensitivity ?? 100}. Yüksek değer kısa hareketleri daha kolay algılar; düşük değer daha uzun ve belirgin bir kaydırma ister. Başlangıç için %100 dengeli bir seçimdir.`,
+                                `Your current value is ${settings.swipeSensitivity ?? 100}%. A higher value recognizes shorter movements; a lower value requires a longer, more deliberate swipe. 100% is a balanced starting point.`,
+                            )}
+                        </Notice>
+
+                        <Notice title={l('Hazır düzenler', 'Presets')}>
+                            <View style={styles.helpBulletRow}>
+                                <Text style={styles.helpBullet}>•</Text>
+                                <Text style={styles.helpBulletText}><Text style={styles.helpStrong}>{l('iPhone için dengeli:', 'Balanced for iPhone:')}</Text> {l('sol Araçlar, sağ Desteler; dikey hareketler kapalı.', 'left opens Tools, right returns to Decks; vertical gestures are off.')}</Text>
+                            </View>
+                            <View style={styles.helpBulletRow}>
+                                <Text style={styles.helpBullet}>•</Text>
+                                <Text style={styles.helpBulletText}><Text style={styles.helpStrong}>{l('Hızlı yanıt:', 'Fast answers:')}</Text> {l('sol Tekrar, sağ İyi, yukarı Kolay, aşağı Zor.', 'left Again, right Good, up Easy and down Hard.')}</Text>
+                            </View>
+                        </Notice>
+
+                        <Notice title={l('Güvenli kullanım', 'Safe operation')}>
+                            {l(
+                                'Kaydırmayı kapatırsanız kart hareketleri normal gezinmeye bırakılır. Yanıt düğmelerini gizlemek için 9 noktalı dokunma veya kaydırmadan en az biri etkin olmalıdır.',
+                                'When swipes are off, card movements are left to normal navigation. Before hiding answer buttons, keep either 9-point touch or swipes enabled.',
+                            )}
+                        </Notice>
+                    </ScrollView>
+                </AppDialog>
+            ) : null}
+            {gesturePickerTarget !== null ? (
+                <AppDialog
+                    visible
+                    onClose={() => setGesturePickerTarget(null)}
+                    title={gesturePickerTarget.kind === 'tap'
+                        ? l('Dokunma eylemi', 'Tap action')
+                        : l('Kaydırma eylemi', 'Swipe action')}
+                    closeButton
+                >
+                    <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
+                        {gestureActionOptions.map((option, index) => {
+                            let selected = false;
+                            if (gesturePickerTarget.kind === 'swipe') {
+                                selected = (settings[gesturePickerTarget.field] ?? 'off') === option.value;
+                            } else {
+                                const actions = gesturePickerTarget.side === 'question'
+                                    ? settings.questionTapActions ?? DEFAULT_QUESTION_TAP_ACTIONS
+                                    : settings.answerTapActions ?? DEFAULT_ANSWER_TAP_ACTIONS;
+                                selected = actions[gesturePickerTarget.zone] === option.value;
+                            }
+                            return (
+                                <React.Fragment key={option.value}>
+                                    {index > 0 ? <Divider /> : null}
+                                    <PickerOption
+                                        label={option.label}
+                                        selected={selected}
+                                        styles={styles}
                                         onPress={() => {
-                                            if (gesturePickerTarget?.kind === 'swipe') {
+                                            if (gesturePickerTarget.kind === 'swipe') {
                                                 updateSetting(gesturePickerTarget.field, option.value);
-                                            } else if (gesturePickerTarget?.kind === 'tap') {
+                                            } else {
                                                 const field = gesturePickerTarget.side === 'question'
                                                     ? 'questionTapActions'
                                                     : 'answerTapActions';
@@ -2008,63 +1766,41 @@ export default function SettingsScreen() {
                                             }
                                             setGesturePickerTarget(null);
                                         }}
-                                        accessibilityRole="radio"
-                                        accessibilityState={{ checked: selected }}
-                                        aria-checked={selected}
-                                    >
-                                        <Text style={[styles.themeModalOptionText, selected && styles.themeModalOptionTextActive]}>{option.label}</Text>
-                                        {selected ? <Text style={styles.themeModalCheck}>✓</Text> : null}
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal> : null}
-            {notificationThresholdPickerVisible ? <Modal
-                visible={notificationThresholdPickerVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setNotificationThresholdPickerVisible(false)}
-            >
-                <View style={styles.themeModalOverlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setNotificationThresholdPickerVisible(false)} />
-                    <View style={[styles.themeModalCard, styles.gesturePickerCard]} accessibilityViewIsModal>
-                        <View style={styles.gesturePickerHeader}>
-                            <Text style={styles.themeModalTitle}>{l('Şu durumda bildir', 'Notify when')}</Text>
-                            <TouchableOpacity
-                                style={styles.gesturePickerClose}
-                                onPress={() => setNotificationThresholdPickerVisible(false)}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Bildirim koşulu seçicisini kapat', 'Close notification condition picker')}
-                            >
-                                <Text style={styles.gesturePickerCloseText}>×</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            {notificationThresholdOptions.map((option) => {
-                                const selected = option.value === null
-                                    ? !settings.studyNotificationsEnabled
-                                    : settings.studyNotificationsEnabled
-                                        && normalizeStudyNotificationThreshold(settings.studyNotificationThreshold) === option.value;
-                                return (
-                                    <TouchableOpacity
-                                        key={option.value ?? 'never'}
-                                        style={[styles.themeModalOption, selected && styles.themeModalOptionActive]}
+                                    />
+                                </React.Fragment>
+                            );
+                        })}
+                    </ScrollView>
+                </AppDialog>
+            ) : null}
+            {notificationThresholdPickerVisible ? (
+                <AppDialog
+                    visible
+                    onClose={() => setNotificationThresholdPickerVisible(false)}
+                    title={l('Şu durumda bildir', 'Notify when')}
+                    closeButton
+                >
+                    <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
+                        {notificationThresholdOptions.map((option, index) => {
+                            const selected = option.value === null
+                                ? !settings.studyNotificationsEnabled
+                                : settings.studyNotificationsEnabled
+                                    && normalizeStudyNotificationThreshold(settings.studyNotificationThreshold) === option.value;
+                            return (
+                                <React.Fragment key={option.value ?? 'never'}>
+                                    {index > 0 ? <Divider /> : null}
+                                    <PickerOption
+                                        label={option.label}
+                                        selected={Boolean(selected)}
+                                        styles={styles}
                                         onPress={() => { void handleStudyNotificationPolicySelect(option.value); }}
-                                        accessibilityRole="radio"
-                                        accessibilityState={{ checked: selected }}
-                                        aria-checked={selected}
-                                    >
-                                        <Text style={[styles.themeModalOptionText, selected && styles.themeModalOptionTextActive]}>{option.label}</Text>
-                                        {selected ? <Text style={styles.themeModalCheck}>✓</Text> : null}
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal> : null}
+                                    />
+                                </React.Fragment>
+                            );
+                        })}
+                    </ScrollView>
+                </AppDialog>
+            ) : null}
         </SafeAreaView>
         </KeyboardDismissArea>
     );
