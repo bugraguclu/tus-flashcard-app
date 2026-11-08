@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { StyleSheet, View } from 'react-native';
+import { Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import type { StudyKind } from '../../lib/stopwatch';
-import { FormRow, FormSelector } from './FormControls';
-import StopwatchSheet from './StopwatchSheet';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { SelectRow } from '../ui/Rows';
+import { AppSheet } from '../ui/Sheet';
 import { PlayIcon } from './StopwatchIcons';
 import { StudyTypePicker, SubjectGridPicker } from './StudyPickers';
 import { studyTypeLabel } from './StudyTypeChips';
@@ -72,49 +73,45 @@ export default function StudyStartSheet({ visible, initial, recentSubjects, pass
     ) : null;
 
     return (
-        <StopwatchSheet visible={visible} onClose={onClose} title={l('Çalışmaya Başla', 'Start Studying')} formHeader overlay={overlay}>
+        <AppSheet
+            visible={visible}
+            onClose={onClose}
+            title={l('Çalışmaya Başla', 'Start Studying')}
+            closeButton
+            dividedHeader
+            avoidKeyboard
+            maxHeight="92%"
+            overlay={overlay}
+        >
             <View style={styles.body}>
-                <FormRow label={l('Ders seçin', 'Subject')}>
-                    <FormSelector
+                <Card divided>
+                    <SelectRow
+                        label={l('Ders seçin', 'Subject')}
                         value={choice.subject}
                         onPress={() => setPicker('subject')}
-                        accessibilityLabel={l(`Ders: ${choice.subject}`, `Subject: ${choice.subject}`)}
                         accessibilityHint={l('Ders listesini açar', 'Opens the subject list')}
                     />
-                </FormRow>
-                <FormRow label={l('Tür Seçin', 'Type')}>
-                    <FormSelector
+                    <SelectRow
+                        label={l('Tür Seçin', 'Type')}
                         value={typeLabel}
                         onPress={() => setPicker('type')}
-                        accessibilityLabel={l(`Tür: ${typeLabel}`, `Type: ${typeLabel}`)}
                         accessibilityHint={l('Tür listesini açar', 'Opens the type list')}
                     />
-                </FormRow>
-                <TouchableOpacity
-                    style={[styles.startButton, { backgroundColor: colors.accent }]}
-                    onPress={() => onStart(choice)}
-                    disabled={!visible}
-                    accessibilityRole="button"
+                </Card>
+                <Button
+                    label={l('Başla', 'Start')}
+                    icon={<PlayIcon color={colors.onAccent} size={22} />}
+                    // A sheet that is already closing has started once; a second tap must not restart it.
+                    onPress={() => { if (visible) onStart(choice); }}
                     accessibilityLabel={l(`${choice.subject}, ${typeLabel}: kronometreyi başlat`, `Start the stopwatch: ${choice.subject}, ${typeLabel}`)}
-                >
-                    <PlayIcon color={colors.white} size={22} />
-                    <Text style={styles.startText}>{l('Başla', 'Start')}</Text>
-                </TouchableOpacity>
+                    style={styles.start}
+                />
             </View>
-        </StopwatchSheet>
+        </AppSheet>
     );
 }
 
 const styles = StyleSheet.create({
     body: { gap: Spacing.sm, paddingTop: Spacing.sm, paddingBottom: Spacing.md },
-    startButton: {
-        marginTop: Spacing.lg,
-        minHeight: 50,
-        borderRadius: BorderRadius.md,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: Spacing.sm,
-    },
-    startText: { color: '#ffffff', fontSize: FontSize.xl, fontWeight: '700' },
+    start: { marginTop: Spacing.lg },
 });

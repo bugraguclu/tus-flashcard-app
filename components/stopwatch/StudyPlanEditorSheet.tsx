@@ -1,25 +1,30 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text, TextInput } from '../AppText';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../AppText';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { MAX_STUDY_NOTE_LENGTH, MAX_STUDY_PASS, clampPass } from '../../lib/stopwatch';
-import { studySubjectInitial } from '../../lib/studyCalendar';
 import {
     MAX_PLAN_TITLE_LENGTH,
     WEEKDAYS_MONDAY_FIRST,
     formatPlanClock,
-    localDateToYmd,
     studyPlanProblem,
-    ymdToLocalDate,
     type StudyPlanBlock,
     type StudyPlanProblem,
 } from '../../lib/studyPlans';
-import StopwatchSheet from './StopwatchSheet';
+import { Button } from '../ui/Button';
+import { Card, Section } from '../ui/Card';
+import { Chip } from '../ui/Choice';
+import { Notice } from '../ui/Feedback';
+import { TextField } from '../ui/Fields';
+import { ListRow, ValueRow } from '../ui/Rows';
+import { AppSheet } from '../ui/Sheet';
+import { Stepper } from '../ui/Stepper';
+import { Type } from '../ui/tokens';
+import { DateField } from './StudyToolControls';
 import StudyTypeChips, { studyTypeLabel } from './StudyTypeChips';
 import SubjectList from './SubjectList';
-import { SettingRow, SheetButton, Stepper } from './SheetControls';
 
 interface StudyPlanEditorSheetProps {
     /** The plan to edit, or a new one; null hides the sheet. */
@@ -74,10 +79,11 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
     const minutes = draft.durationMinutes % 60;
 
     return (
-        <StopwatchSheet
+        <AppSheet
             visible={plan !== null}
             onClose={onClose}
             title={step === 'subject' ? l('Ders seçin', 'Choose a subject') : isNew ? l('Sade Plan', 'Simple Plan') : l('Çalışma Planı', 'Study Plan')}
+            avoidKeyboard
         >
             {step === 'subject' ? (
                 <>
@@ -89,166 +95,132 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
                         }}
                     />
                     <View style={styles.footer}>
-                        <SheetButton label={l('Forma dön', 'Back to the form')} tone="plain" onPress={() => setStep('form')} />
+                        <Button label={l('Forma dön', 'Back to the form')} variant="plain" onPress={() => setStep('form')} />
                     </View>
                 </>
             ) : (
-                <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                    <TextInput
-                        style={[styles.input, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
+                <ScrollView
+                    style={styles.form}
+                    contentContainerStyle={styles.formContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    <TextField
                         value={draft.title}
                         onChangeText={(title) => update({ title })}
                         placeholder={l('Plan adı', 'Plan name')}
-                        placeholderTextColor={colors.textMuted}
                         maxLength={MAX_PLAN_TITLE_LENGTH}
                         accessibilityLabel={l('Plan adı', 'Plan name')}
                     />
-                    <TouchableOpacity
-                        style={[styles.subjectButton, { backgroundColor: colors.bgCard }]}
-                        onPress={() => setStep('subject')}
-                        accessibilityRole="button"
-                        accessibilityLabel={l(`Ders: ${draft.subject}. Değiştirmek için dokunun.`, `Subject: ${draft.subject}. Tap to change.`)}
-                    >
-                        <View style={[styles.tile, { backgroundColor: colors.accentLight }]}>
-                            <Text style={[styles.tileText, { color: colors.accent }]}>{studySubjectInitial(draft.subject)}</Text>
-                        </View>
-                        <Text style={[styles.subjectText, { color: colors.textPrimary }]} numberOfLines={1}>{draft.subject}</Text>
-                        <Text style={[styles.chevron, { color: colors.textMuted }]}>›</Text>
-                    </TouchableOpacity>
-
-                    <StudyTypeChips value={draft.kind} onChange={(kind) => update({ kind })} />
-                    {draft.kind === 'pass' ? (
-                        <SettingRow label={l('Tekrar', 'Pass')}>
-                            <Stepper
-                                value={studyTypeLabel(l, 'pass', draft.pass)}
-                                onStep={(direction) => update({ pass: clampPass(draft.pass + direction) })}
-                                decreaseLabel={l('Önceki tekrar', 'Previous pass')}
-                                increaseLabel={l('Sonraki tekrar', 'Next pass')}
-                                canDecrease={draft.pass > 1}
-                                canIncrease={draft.pass < MAX_STUDY_PASS}
-                            />
-                        </SettingRow>
-                    ) : null}
-
-                    <SettingRow label={l('Başlangıç', 'From')}>
-                        <DateTimePicker
-                            value={ymdToLocalDate(draft.fromYmd)}
-                            mode="date"
-                            display="compact"
-                            locale={localeTag}
-                            onChange={(_event, value) => { if (value) update({ fromYmd: localDateToYmd(value) }); }}
+                    <Card>
+                        <ListRow
+                            title={draft.subject}
+                            onPress={() => setStep('subject')}
+                            accessibilityLabel={l(`Ders: ${draft.subject}. Değiştirmek için dokunun.`, `Subject: ${draft.subject}. Tap to change.`)}
                         />
-                    </SettingRow>
-                    <SettingRow label={l('Bitiş', 'Through')}>
-                        <DateTimePicker
-                            value={ymdToLocalDate(draft.throughYmd)}
-                            mode="date"
-                            display="compact"
-                            locale={localeTag}
-                            onChange={(_event, value) => { if (value) update({ throughYmd: localDateToYmd(value) }); }}
-                        />
-                    </SettingRow>
+                    </Card>
 
-                    <View style={styles.daysSection}>
-                        <Text style={[styles.label, { color: colors.textPrimary }]}>{l('Çalışma Günleri', 'Study Days')}</Text>
+                    <Card padded>
+                        <StudyTypeChips value={draft.kind} onChange={(kind) => update({ kind })} />
+                    </Card>
+
+                    <Card divided>
+                        {draft.kind === 'pass' ? (
+                            <ValueRow label={l('Tekrar', 'Pass')}>
+                                <Stepper
+                                    value={studyTypeLabel(l, 'pass', draft.pass)}
+                                    onDecrement={() => update({ pass: clampPass(draft.pass - 1) })}
+                                    onIncrement={() => update({ pass: clampPass(draft.pass + 1) })}
+                                    decrementLabel={l('Önceki tekrar', 'Previous pass')}
+                                    incrementLabel={l('Sonraki tekrar', 'Next pass')}
+                                    canDecrement={draft.pass > 1}
+                                    canIncrement={draft.pass < MAX_STUDY_PASS}
+                                    style={styles.stepper}
+                                />
+                            </ValueRow>
+                        ) : null}
+                        <DateField label={l('Başlangıç', 'From')} ymd={draft.fromYmd} onChange={(fromYmd) => update({ fromYmd })} />
+                        <DateField label={l('Bitiş', 'Through')} ymd={draft.throughYmd} onChange={(throughYmd) => update({ throughYmd })} />
+                    </Card>
+
+                    <Card padded>
+                        <Text style={[Type.rowTitle, { color: colors.textPrimary }]}>{l('Çalışma Günleri', 'Study Days')}</Text>
                         <View style={styles.days}>
                             {WEEKDAYS_MONDAY_FIRST.map((weekday) => {
                                 const selected = draft.weekdays.includes(weekday);
                                 return (
-                                    <TouchableOpacity
+                                    <Chip
                                         key={weekday}
-                                        style={[styles.day, { borderColor: colors.accent }, selected && { backgroundColor: colors.accent }]}
+                                        label={weekdayShortName(weekday, locale)}
+                                        selected={selected}
                                         onPress={() => update({
                                             weekdays: selected
                                                 ? draft.weekdays.filter((day) => day !== weekday)
                                                 : [...draft.weekdays, weekday].sort(),
                                         })}
-                                        accessibilityRole="checkbox"
-                                        accessibilityState={{ checked: selected }}
-                                    >
-                                        <Text style={[styles.dayText, { color: selected ? colors.white : colors.accent }]}>
-                                            {weekdayShortName(weekday, locale)}
-                                        </Text>
-                                    </TouchableOpacity>
+                                    />
                                 );
                             })}
                         </View>
-                    </View>
+                    </Card>
 
-                    <SettingRow label={l('Başlangıç saati', 'Start time')}>
-                        <DateTimePicker
-                            value={startDate}
-                            mode="time"
-                            display="compact"
-                            locale={localeTag}
-                            onChange={(_event, value) => { if (value) update({ startMinute: value.getHours() * 60 + value.getMinutes() }); }}
-                        />
-                    </SettingRow>
-                    <SettingRow
-                        label={l('Çalışma süresi', 'Duration')}
-                        hint={l(`Bitiş: ${formatPlanClock(draft.startMinute + draft.durationMinutes)}`, `Ends: ${formatPlanClock(draft.startMinute + draft.durationMinutes)}`)}
-                    >
-                        <Stepper
-                            value={hours > 0 ? l(`${hours} sa ${minutes} dk`, `${hours} h ${minutes} min`) : l(`${minutes} dk`, `${minutes} min`)}
-                            onStep={(direction) => update({ durationMinutes: Math.max(DURATION_STEP, Math.min(1440, draft.durationMinutes + direction * DURATION_STEP)) })}
-                            decreaseLabel={l('15 dakika az', '15 minutes less')}
-                            increaseLabel={l('15 dakika fazla', '15 minutes more')}
-                            canDecrease={draft.durationMinutes > DURATION_STEP}
-                        />
-                    </SettingRow>
+                    <Card divided>
+                        <ValueRow label={l('Başlangıç saati', 'Start time')}>
+                            <DateTimePicker
+                                value={startDate}
+                                mode="time"
+                                display="compact"
+                                locale={localeTag}
+                                accentColor={colors.accent}
+                                onChange={(_event, value) => { if (value) update({ startMinute: value.getHours() * 60 + value.getMinutes() }); }}
+                            />
+                        </ValueRow>
+                        <ValueRow
+                            label={l('Çalışma süresi', 'Duration')}
+                            summary={l(`Bitiş: ${formatPlanClock(draft.startMinute + draft.durationMinutes)}`, `Ends: ${formatPlanClock(draft.startMinute + draft.durationMinutes)}`)}
+                        >
+                            <Stepper
+                                value={hours > 0 ? l(`${hours} sa ${minutes} dk`, `${hours} h ${minutes} min`) : l(`${minutes} dk`, `${minutes} min`)}
+                                onDecrement={() => update({ durationMinutes: Math.max(DURATION_STEP, Math.min(1440, draft.durationMinutes - DURATION_STEP)) })}
+                                onIncrement={() => update({ durationMinutes: Math.max(DURATION_STEP, Math.min(1440, draft.durationMinutes + DURATION_STEP)) })}
+                                decrementLabel={l('15 dakika az', '15 minutes less')}
+                                incrementLabel={l('15 dakika fazla', '15 minutes more')}
+                                canDecrement={draft.durationMinutes > DURATION_STEP}
+                                style={styles.stepper}
+                            />
+                        </ValueRow>
+                    </Card>
 
-                    <View style={styles.noteSection}>
-                        <Text style={[styles.label, { color: colors.textPrimary }]}>{l('Çalışma notu', 'Study note')}</Text>
-                        <TextInput
-                            style={[styles.input, styles.note, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
+                    <Section label={l('Çalışma notu', 'Study note')} padded>
+                        <TextField
                             value={draft.note}
                             onChangeText={(note) => update({ note })}
                             placeholder={l('Örn. Kardiyoloji bölümü, 40 soru', 'E.g. cardiology chapter, 40 questions')}
-                            placeholderTextColor={colors.textMuted}
                             maxLength={MAX_STUDY_NOTE_LENGTH}
                             multiline
-                            textAlignVertical="top"
                             accessibilityLabel={l('Çalışma notu', 'Study note')}
                         />
                         <Text style={[styles.count, { color: colors.textMuted }]}>{`${draft.note.length} / ${MAX_STUDY_NOTE_LENGTH}`}</Text>
-                    </View>
+                    </Section>
 
-                    {problem ? <Text style={[styles.error, { color: colors.btnAgain }]} accessibilityLiveRegion="polite">{messages[problem]}</Text> : null}
+                    {problem ? <Notice tone="danger">{messages[problem]}</Notice> : null}
                     <View style={styles.footer}>
-                        <SheetButton label={l('Kaydet', 'Save')} onPress={() => { if (!problem) onSave(draft); }} disabled={problem !== null} />
+                        <Button label={l('Kaydet', 'Save')} onPress={() => { if (!problem) onSave(draft); }} disabled={problem !== null} />
                         {!isNew ? (
-                            <SheetButton label={l('Planı Sil', 'Delete Plan')} tone="danger" onPress={() => onDelete(draft)} />
+                            <Button label={l('Planı Sil', 'Delete Plan')} variant="destructive" onPress={() => onDelete(draft)} />
                         ) : null}
                     </View>
                 </ScrollView>
             )}
-        </StopwatchSheet>
+        </AppSheet>
     );
 }
 
 const styles = StyleSheet.create({
     form: { flexShrink: 1 },
-    input: {
-        borderRadius: BorderRadius.md,
-        borderWidth: StyleSheet.hairlineWidth,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        fontSize: FontSize.md,
-        marginBottom: Spacing.sm,
-    },
-    note: { minHeight: 64 },
-    subjectButton: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md, borderRadius: BorderRadius.md, marginBottom: Spacing.xs },
-    tile: { width: 40, height: 40, borderRadius: BorderRadius.sm, alignItems: 'center', justifyContent: 'center' },
-    tileText: { fontSize: FontSize.xl, fontWeight: '800' },
-    subjectText: { flex: 1, fontSize: FontSize.lg, fontWeight: '700' },
-    chevron: { fontSize: FontSize.xxl, fontWeight: '300' },
-    label: { fontSize: FontSize.lg, fontWeight: '600' },
-    daysSection: { gap: Spacing.sm, paddingVertical: Spacing.md },
+    formContent: { gap: Spacing.md, paddingBottom: Spacing.xs },
+    stepper: { alignSelf: 'center' },
     days: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
-    day: { minWidth: 42, alignItems: 'center', paddingVertical: 7, paddingHorizontal: 6, borderRadius: 999, borderWidth: 1 },
-    dayText: { fontSize: FontSize.sm, fontWeight: '700' },
-    noteSection: { gap: Spacing.xs, paddingTop: Spacing.md },
     count: { alignSelf: 'flex-end', fontSize: FontSize.sm, fontVariant: ['tabular-nums'] },
-    error: { marginTop: Spacing.md, fontSize: FontSize.md, fontWeight: '600' },
     footer: { paddingTop: Spacing.md, paddingBottom: Spacing.xs, gap: Spacing.sm },
 });

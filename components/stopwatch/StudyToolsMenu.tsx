@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
+import { Radius } from '../ui/tokens';
 import { AnalyticsIcon } from './StopwatchIcons';
 
 export const STUDY_TOOLS_FAB_SIZE = 56;
@@ -19,7 +20,8 @@ const ROUTES: Record<StudyTool, string> = {
     clear: '/study-clear',
 };
 
-function ToolGlyph({ tool, color }: { tool: StudyTool; color: string }) {
+/** A tool's glyph in `color`; `cutout` draws what is cut out of its filled parts (the card's tint). */
+function ToolGlyph({ tool, color, cutout }: { tool: StudyTool; color: string; cutout: string }) {
     const stroke = { fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
     return (
         <Svg width={32} height={32} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
@@ -38,7 +40,7 @@ function ToolGlyph({ tool, color }: { tool: StudyTool; color: string }) {
                     <Rect x={4} y={3} width={14} height={18} rx={2} {...stroke} />
                     <Path d="M7 8l1.2 1.2L10.5 7M7 13l1.2 1.2 2.3-2.2M12.5 8.2H15M12.5 13.2H14" {...stroke} />
                     <Circle cx={17.5} cy={17.5} r={3.6} fill={color} />
-                    <Path d="M17.5 15.9v1.8l1.2.8" fill="none" stroke="#ffffff" strokeWidth={1.4} strokeLinecap="round" />
+                    <Path d="M17.5 15.9v1.8l1.2.8" fill="none" stroke={cutout} strokeWidth={1.4} strokeLinecap="round" />
                 </>
             ) : (
                 <>
@@ -103,7 +105,7 @@ export default function StudyToolsMenu({ bottom }: StudyToolsMenuProps) {
             accessibilityRole="button"
             accessibilityLabel={label}
         >
-            <AnalyticsIcon color={colors.white} size={26} />
+            <AnalyticsIcon color={colors.onAccent} size={26} />
         </TouchableOpacity>
     );
 
@@ -113,7 +115,7 @@ export default function StudyToolsMenu({ bottom }: StudyToolsMenuProps) {
             <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
                 <View style={styles.overlay}>
                     <Pressable
-                        style={[StyleSheet.absoluteFill, styles.backdrop]}
+                        style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrimStrong }]}
                         onPress={() => setOpen(false)}
                         accessibilityRole="button"
                         accessibilityLabel={l('Kapat', 'Close')}
@@ -134,10 +136,10 @@ export default function StudyToolsMenu({ bottom }: StudyToolsMenuProps) {
                                 accessibilityRole="button"
                                 accessibilityLabel={`${title}. ${subtitle}`}
                             >
-                                <View style={styles.glyph}><ToolGlyph tool={tool} color={colors.white} /></View>
+                                <View style={styles.glyph}><ToolGlyph tool={tool} color={colors.onAccent} cutout={tint} /></View>
                                 <View style={styles.copy}>
-                                    <Text style={[styles.title, { color: colors.white }]}>{title}</Text>
-                                    <Text style={[styles.subtitle, { color: colors.white }]}>{subtitle}</Text>
+                                    <Text style={[styles.title, { color: colors.onAccent }]}>{title}</Text>
+                                    <Text style={[styles.subtitle, { color: colors.onAccent }]}>{subtitle}</Text>
                                 </View>
                             </TouchableOpacity>
                         ))}
@@ -161,7 +163,6 @@ const styles = StyleSheet.create({
         ...Shadows.md,
     },
     overlay: { flex: 1, justifyContent: 'flex-end' },
-    backdrop: { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
     cards: { gap: Spacing.md },
     card: {
         flexDirection: 'row',
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
         minHeight: 76,
         paddingHorizontal: Spacing.lg,
         paddingVertical: Spacing.md,
-        borderRadius: 12,
+        borderRadius: Radius.card,
         ...Shadows.md,
     },
     glyph: { width: 36, alignItems: 'center' },

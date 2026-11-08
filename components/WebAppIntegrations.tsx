@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { useRouter } from 'expo-router';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Radius, Type } from './ui/tokens';
 import { useI18n } from '../hooks/useI18n';
 import { alert } from '../lib/confirm';
 import { inferImportFileType } from '../lib/importFile';
@@ -128,19 +129,19 @@ function createStyles(colors: ColorScheme) {
             zIndex: 1000,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.35)',
+            backgroundColor: colors.scrim,
         },
         card: {
             paddingVertical: Spacing.xl,
             paddingHorizontal: Spacing.xl * 2,
-            borderRadius: BorderRadius.lg,
+            borderRadius: Radius.card,
             borderWidth: 2,
             borderStyle: 'dashed',
             borderColor: colors.accent,
             backgroundColor: colors.bgCard,
             alignItems: 'center',
         },
-        title: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        body: { marginTop: Spacing.sm, fontSize: FontSize.sm, color: colors.textMuted },
+        title: { ...Type.sectionTitle, color: colors.textPrimary },
+        body: { ...Type.caption, marginTop: Spacing.sm, color: colors.textMuted },
     });
 }

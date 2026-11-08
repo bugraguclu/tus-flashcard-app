@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { Text, TextInput } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
+import { Text } from '../AppText';
+import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
     LISTED_STUDY_PASSES,
@@ -12,8 +12,18 @@ import {
     studySubjectKey,
     type StudyKind,
 } from '../../lib/stopwatch';
-import { CheckIcon, SearchIcon } from './StopwatchIcons';
+import { Button } from '../ui/Button';
+import { Divider } from '../ui/Card';
+import { SelectedMark } from '../ui/Choice';
+import { SearchField, TextField } from '../ui/Fields';
+import { CheckIcon } from '../ui/icons';
+import { HIT_TARGET, Radius, Type } from '../ui/tokens';
 import { studyTypeLabel } from './StudyTypeChips';
+
+/**
+ * The pickers the Kronometre's sheets draw over themselves (`AppSheet`'s `overlay`, which dims the
+ * sheet under them): a white panel, its own close, and the sheet's backdrop tap behind it.
+ */
 
 /** "Karışık" first, as TUSBuddy offers it, then the TUS courses in the exam's order. */
 const GRID_SUBJECTS: readonly string[] = ['Karışık', ...TUS_STUDY_SUBJECTS.filter((subject) => subject !== 'Karışık')];
@@ -72,9 +82,9 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                 accessibilityRole="button"
                 accessibilityLabel={l('Ders seçimini kapat', 'Close the subject picker')}
             />
-            <View style={[styles.layer, styles.card, { backgroundColor: colors.bgCard, maxHeight: height * 0.86 }]}>
+            <View style={[styles.panel, { backgroundColor: colors.bgCard, maxHeight: height * 0.86 }]}>
                 <ScrollView contentContainerStyle={styles.gridContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                    <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">{l('Ders Seçin', 'Choose a Subject')}</Text>
+                    <Text style={[Type.title, { color: colors.textPrimary }]} accessibilityRole="header">{l('Ders Seçin', 'Choose a Subject')}</Text>
                     <View style={[styles.grid, typing && styles.hidden]} accessibilityRole="radiogroup" accessibilityLabel={l('Ders', 'Subject')}>
                         {subjects.map((subject) => {
                             const isSelected = studySubjectKey(subject) === selectedKey;
@@ -101,20 +111,19 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                                                 : { borderColor: colors.border },
                                         ]}
                                     >
-                                        {isSelected ? <CheckIcon color={colors.white} size={10} /> : null}
+                                        {isSelected ? <CheckIcon color={colors.onAccent} size={10} /> : null}
                                     </View>
                                     <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>{GRID_CAPTIONS[subject] ?? subject}</Text>
                                 </TouchableOpacity>
                             );
                         })}
                     </View>
-                    <View style={[styles.customRow, { borderColor: colors.border, backgroundColor: colors.bgInput }]}>
-                        <TextInput
-                            style={[styles.customInput, { color: colors.textPrimary }]}
+                    <View style={styles.customRow}>
+                        <TextField
+                            style={styles.customField}
                             value={custom}
                             onChangeText={setCustom}
                             placeholder={l('Listede olmayan bir ders yazın', 'Type a subject not in the list')}
-                            placeholderTextColor={colors.textMuted}
                             maxLength={MAX_SUBJECT_LENGTH}
                             autoCorrect={false}
                             returnKeyType="done"
@@ -124,24 +133,15 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                             accessibilityLabel={l('Yeni ders adı', 'New subject name')}
                         />
                         {typed ? (
-                            <TouchableOpacity
-                                style={[styles.customButton, { backgroundColor: colors.accent }]}
+                            <Button
+                                size="compact"
+                                label={l('Seç', 'Choose')}
                                 onPress={addTyped}
-                                accessibilityRole="button"
                                 accessibilityLabel={l(`${typed} dersini seç`, `Choose ${typed}`)}
-                            >
-                                <Text style={styles.customButtonText}>{l('Seç', 'Choose')}</Text>
-                            </TouchableOpacity>
+                            />
                         ) : null}
                     </View>
-                    <TouchableOpacity
-                        style={[styles.closeButton, { backgroundColor: colors.accent }]}
-                        onPress={onClose}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Kapat', 'Close')}
-                    >
-                        <Text style={styles.closeText}>{l('Kapat', 'Close')}</Text>
-                    </TouchableOpacity>
+                    <Button variant="plain" label={l('Kapat', 'Close')} onPress={onClose} />
                 </ScrollView>
             </View>
         </>
@@ -187,72 +187,68 @@ export function StudyTypePicker({ kind, pass, onSelect, onClose }: StudyTypePick
                 accessibilityRole="button"
                 accessibilityLabel={l('Tür seçimini kapat', 'Close the type picker')}
             />
-            <View style={[styles.layer, styles.typeLayer, { maxHeight: height * 0.9 }]}>
-                <View style={[styles.search, { backgroundColor: colors.bgCard }]}>
-                    <SearchIcon color={colors.textMuted} size={20} />
-                    <TextInput
-                        style={[styles.searchInput, { color: colors.textPrimary }]}
+            <View style={[styles.panel, styles.typePanel, { backgroundColor: colors.bgCard, maxHeight: height * 0.9 }]}>
+                <View style={styles.searchWrap}>
+                    <SearchField
                         value={query}
                         onChangeText={setQuery}
                         placeholder={l('Ara', 'Search')}
-                        placeholderTextColor={colors.textMuted}
-                        autoCorrect={false}
+                        clearLabel={l('Aramayı temizle', 'Clear search')}
                         accessibilityLabel={l('Tür ara', 'Search types')}
                     />
                 </View>
-                <View style={[styles.listCard, { backgroundColor: colors.bgCard }]}>
-                    <ScrollView keyboardShouldPersistTaps="handled" accessibilityRole="radiogroup" accessibilityLabel={l('Tür', 'Type')}>
-                        {visible.map((option) => {
-                            const isSelected = option.kind === kind && (option.kind !== 'pass' || option.pass === pass);
-                            return (
+                <Divider />
+                <ScrollView
+                    style={styles.typeList}
+                    keyboardShouldPersistTaps="handled"
+                    accessibilityRole="radiogroup"
+                    accessibilityLabel={l('Tür', 'Type')}
+                >
+                    {visible.map((option, index) => {
+                        const isSelected = option.kind === kind && (option.kind !== 'pass' || option.pass === pass);
+                        return (
+                            <React.Fragment key={option.label}>
+                                {index > 0 ? <Divider /> : null}
+                                {/* A single-choice row: the kit's rows have no radio role or checked state. */}
                                 <TouchableOpacity
-                                    key={option.label}
-                                    style={[styles.typeRow, { borderBottomColor: colors.borderLight }]}
+                                    style={styles.typeRow}
                                     onPress={() => onSelect(option.kind, option.pass)}
                                     accessibilityRole="radio"
                                     accessibilityState={{ checked: isSelected }}
                                     aria-checked={isSelected}
                                     accessibilityLabel={option.label}
                                 >
-                                    <Text style={[styles.typeText, { color: isSelected ? colors.accent : colors.textSecondary }, isSelected && styles.typeTextSelected]}>
+                                    <Text style={[Type.body, styles.typeText, { color: isSelected ? colors.accent : colors.textPrimary }, isSelected && styles.typeTextSelected]}>
                                         {option.label}
                                     </Text>
-                                    {isSelected ? <CheckIcon color={colors.accent} size={18} /> : null}
+                                    <SelectedMark visible={isSelected} />
                                 </TouchableOpacity>
-                            );
-                        })}
-                        {visible.length === 0 ? (
-                            <Text style={[styles.empty, { color: colors.textMuted }]}>{l('Eşleşen tür yok', 'No matching type')}</Text>
-                        ) : null}
-                    </ScrollView>
-                </View>
-                <TouchableOpacity
-                    style={[styles.closeWide, { backgroundColor: colors.accent }]}
-                    onPress={onClose}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Kapat', 'Close')}
-                >
-                    <Text style={styles.closeText}>{l('Kapat', 'Close')}</Text>
-                </TouchableOpacity>
+                            </React.Fragment>
+                        );
+                    })}
+                    {visible.length === 0 ? (
+                        <Text style={[Type.caption, styles.empty, { color: colors.textMuted }]}>{l('Eşleşen tür yok', 'No matching type')}</Text>
+                    ) : null}
+                </ScrollView>
+                <Divider />
+                <Button variant="plain" label={l('Kapat', 'Close')} onPress={onClose} />
             </View>
         </>
     );
 }
 
 const styles = StyleSheet.create({
-    layer: { width: '100%', maxWidth: 480, alignSelf: 'center' },
     // Shrinks into the room the keyboard leaves; its content scrolls.
-    card: { flexShrink: 1, borderRadius: BorderRadius.lg, ...Shadows.lg },
+    panel: { width: '100%', maxWidth: 480, alignSelf: 'center', flexShrink: 1, borderRadius: Radius.card, ...Shadows.lg },
     hidden: { display: 'none' },
-    gridContent: { alignItems: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.lg, gap: Spacing.md },
-    title: { fontSize: FontSize.lg, fontWeight: '700' },
+    gridContent: { alignItems: 'center', padding: Spacing.lg, gap: Spacing.md },
     grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: Spacing.sm, alignSelf: 'stretch' },
     tile: {
         width: '31%',
         minHeight: 56,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: BorderRadius.md,
+        borderRadius: Radius.inset,
         borderWidth: 1,
         paddingHorizontal: 4,
         paddingTop: Spacing.sm,
@@ -271,41 +267,20 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     tileLabel: { fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center', lineHeight: 15 },
-    customRow: {
-        alignSelf: 'stretch',
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: StyleSheet.hairlineWidth,
-        borderRadius: BorderRadius.md,
-        paddingLeft: Spacing.md,
-        paddingRight: 4,
-        minHeight: 44,
-    },
-    customInput: { flex: 1, fontSize: FontSize.md, paddingVertical: Spacing.sm },
-    customButton: { borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.md, paddingVertical: 7 },
-    customButtonText: { color: '#ffffff', fontSize: FontSize.md, fontWeight: '700' },
-    closeButton: { minWidth: 120, alignItems: 'center', borderRadius: BorderRadius.md, paddingVertical: 10, paddingHorizontal: Spacing.xl },
-    closeText: { color: '#ffffff', fontSize: FontSize.lg, fontWeight: '700' },
-    typeLayer: { flexShrink: 1, gap: Spacing.sm },
-    search: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-        minHeight: 48,
-        borderRadius: BorderRadius.md,
-        paddingHorizontal: Spacing.md,
-    },
-    searchInput: { flex: 1, fontSize: FontSize.lg, paddingVertical: Spacing.sm },
-    listCard: { flexShrink: 1, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
+    customRow: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    customField: { flex: 1 },
+    typePanel: { paddingTop: Spacing.lg, paddingBottom: Spacing.xs },
+    searchWrap: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md },
+    typeList: { flexShrink: 1 },
     typeRow: {
+        minHeight: HIT_TARGET + 4,
         flexDirection: 'row',
         alignItems: 'center',
-        minHeight: 46,
-        paddingHorizontal: Spacing.sm,
-        borderBottomWidth: StyleSheet.hairlineWidth,
+        gap: Spacing.md,
+        paddingHorizontal: Spacing.lg,
+        paddingVertical: Spacing.sm + 2,
     },
-    typeText: { flex: 1, fontSize: FontSize.lg },
+    typeText: { flex: 1 },
     typeTextSelected: { fontWeight: '700' },
-    empty: { textAlign: 'center', paddingVertical: Spacing.lg, fontSize: FontSize.md },
-    closeWide: { alignItems: 'center', borderRadius: BorderRadius.md, paddingVertical: 12 },
+    empty: { textAlign: 'center', paddingVertical: Spacing.lg },
 });

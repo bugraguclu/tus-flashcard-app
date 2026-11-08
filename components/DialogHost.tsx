@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { registerDialogHost, type DialogRequest } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
+import { Button } from './ui/Button';
+import { Radius, Type } from './ui/tokens';
 
 /**
  * Web dialog surface for confirm()/alert()/choose(). iPhone keeps the native Apple alert surface
@@ -16,6 +18,8 @@ export function DialogHost() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [request, setRequest] = useState<DialogRequest | null>(null);
+    // The slots around the two buttons: the kit's Button takes no ref, and on web each slot is the
+    // DOM node that holds the focusable button.
     const cancelButtonRef = useRef<View>(null);
     const acceptButtonRef = useRef<View>(null);
 
@@ -31,7 +35,8 @@ export function DialogHost() {
     // opener), so each time the backdrop or the card receives it, it is moved on after the trap.
     const preferredButton = (): HTMLElement | null => {
         const preferCancel = request?.destructive && request.kind !== 'alert';
-        return ((preferCancel ? cancelButtonRef.current : null) ?? acceptButtonRef.current) as unknown as HTMLElement | null;
+        const slot = ((preferCancel ? cancelButtonRef.current : null) ?? acceptButtonRef.current) as unknown as HTMLElement | null;
+        return slot?.querySelector?.<HTMLElement>('button, [role="button"]') ?? null;
     };
     const moveFocusToPreferredButton = (event: { target: unknown; currentTarget: unknown }) => {
         // Focus reaching a button bubbles through here too; only the surface itself is moved on.
@@ -115,28 +120,17 @@ export function DialogHost() {
                     </ScrollView>
                     <View style={[styles.actions, request.stacked && styles.stackedActions]}>
                         {(isConfirm || isChoice) && (
-                            <Pressable
-                                ref={cancelButtonRef}
-                                style={({ pressed }) => [styles.button, request.stacked && styles.stackedButton, styles.cancel, pressed && styles.buttonPressed]}
-                                onPress={cancel}
-                                accessibilityRole="button"
-                            >
-                                <Text style={styles.cancelText}>{request.cancelLabel ?? t('common.cancel')}</Text>
-                            </Pressable>
+                            <View ref={cancelButtonRef} style={[styles.buttonSlot, request.stacked && styles.stackedSlot]}>
+                                <Button label={request.cancelLabel ?? t('common.cancel')} variant="secondary" onPress={cancel} />
+                            </View>
                         )}
-                        <Pressable
-                            ref={acceptButtonRef}
-                            style={({ pressed }) => [
-                                styles.button,
-                                request.stacked && styles.stackedButton,
-                                request.destructive ? styles.destructive : styles.accept,
-                                pressed && styles.buttonPressed,
-                            ]}
-                            onPress={accept}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.acceptText}>{request.acceptLabel ?? t('common.ok')}</Text>
-                        </Pressable>
+                        <View ref={acceptButtonRef} style={[styles.buttonSlot, request.stacked && styles.stackedSlot]}>
+                            <Button
+                                label={request.acceptLabel ?? t('common.ok')}
+                                variant={request.destructive ? 'destructive' : 'primary'}
+                                onPress={accept}
+                            />
+                        </View>
                     </View>
                 </Pressable>
             </Pressable>
@@ -148,7 +142,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         backdrop: {
             flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.45)',
+            backgroundColor: colors.scrim,
             justifyContent: 'center',
             alignItems: 'center',
             paddingHorizontal: Spacing.xl,
@@ -157,7 +151,7 @@ function createStyles(colors: ColorScheme) {
             width: '100%',
             maxWidth: 400,
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.xl,
+            borderRadius: Radius.card,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: colors.borderLight,
             padding: Spacing.xxl,
@@ -167,41 +161,27 @@ function createStyles(colors: ColorScheme) {
         iconCircle: {
             width: 44,
             height: 44,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.accentLight,
             marginBottom: Spacing.lg,
         },
-        iconCircleDestructive: { backgroundColor: colors.btnAgainBg },
+        iconCircleDestructive: { backgroundColor: colors.dangerBg },
         iconText: { fontSize: FontSize.xl, fontWeight: '800', color: colors.accent },
-        iconTextDestructive: { color: colors.btnAgain },
+        iconTextDestructive: { color: colors.danger },
         title: {
-            fontSize: FontSize.xl,
-            fontWeight: '700',
+            ...Type.title,
             color: colors.textPrimary,
             textAlign: 'center',
             marginBottom: Spacing.sm,
         },
         messageScroll: { maxHeight: 220, alignSelf: 'stretch' },
         messageContent: { paddingBottom: Spacing.xl },
-        message: { fontSize: FontSize.md, color: colors.textSecondary, textAlign: 'center', lineHeight: 21 },
+        message: { ...Type.body, color: colors.textSecondary, textAlign: 'center', lineHeight: 21 },
         actions: { flexDirection: 'row', alignSelf: 'stretch', gap: Spacing.md },
         stackedActions: { flexDirection: 'column' },
-        stackedButton: { flex: 0 },
-        button: {
-            flex: 1,
-            minHeight: 48,
-            paddingHorizontal: Spacing.xl,
-            borderRadius: BorderRadius.md,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        buttonPressed: { opacity: 0.72, transform: [{ scale: 0.985 }] },
-        cancel: { backgroundColor: colors.bgInput, borderWidth: 1, borderColor: colors.borderLight },
-        cancelText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textSecondary },
-        accept: { backgroundColor: colors.accent },
-        destructive: { backgroundColor: colors.btnAgain },
-        acceptText: { fontSize: FontSize.md, fontWeight: '600', color: colors.white },
+        buttonSlot: { flex: 1 },
+        stackedSlot: { flex: 0 },
     });
 }

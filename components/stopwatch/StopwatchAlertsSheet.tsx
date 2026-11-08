@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Platform, StyleSheet, Switch, View } from 'react-native';
-import { Text } from '../AppText';
-import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
+import { Spacing } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
     getStopwatchAlertPermission,
@@ -10,8 +9,11 @@ import {
     type StopwatchAlertPermission,
 } from '../../lib/stopwatchNotifications';
 import type { StopwatchPrefs } from '../../lib/stopwatch';
-import StopwatchSheet from './StopwatchSheet';
-import { SettingRow, SheetButton } from './SheetControls';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Notice } from '../ui/Feedback';
+import { SwitchRow } from '../ui/Rows';
+import { AppSheet } from '../ui/Sheet';
 
 interface StopwatchAlertsSheetProps {
     visible: boolean;
@@ -27,7 +29,6 @@ interface StopwatchAlertsSheetProps {
  */
 export default function StopwatchAlertsSheet({ visible, prefs, onChange, onClose }: StopwatchAlertsSheetProps) {
     const { l } = useI18n();
-    const colors = useThemeColors();
     const supported = stopwatchAlertsSupported();
     const [permission, setPermission] = useState<StopwatchAlertPermission | null>(null);
 
@@ -64,33 +65,30 @@ export default function StopwatchAlertsSheet({ visible, prefs, onChange, onClose
                 : null;
 
     return (
-        <StopwatchSheet visible={visible} onClose={onClose} title={l('Hatırlatmalar', 'Reminders')}>
-            <SettingRow
-                label={l('Ders ve mola hatırlatmaları', 'Study and break reminders')}
-                hint={l(
-                    `Ders süresi (${prefs.focusMinutes > 0 ? `${prefs.focusMinutes} dk` : 'kapalı'}) dolunca mola, mola süresi (${prefs.breakMinutes > 0 ? `${prefs.breakMinutes} dk` : 'kapalı'}) dolunca derse dönüş bildirimi gelir.`,
-                    `A notification when the study block (${prefs.focusMinutes > 0 ? `${prefs.focusMinutes} min` : 'off'}) or the break (${prefs.breakMinutes > 0 ? `${prefs.breakMinutes} min` : 'off'}) is over.`,
-                )}
-            >
-                <Switch
+        <AppSheet visible={visible} onClose={onClose} title={l('Hatırlatmalar', 'Reminders')} avoidKeyboard>
+            <Card>
+                <SwitchRow
+                    title={l('Ders ve mola hatırlatmaları', 'Study and break reminders')}
+                    summary={l(
+                        `Ders süresi (${prefs.focusMinutes > 0 ? `${prefs.focusMinutes} dk` : 'kapalı'}) dolunca mola, mola süresi (${prefs.breakMinutes > 0 ? `${prefs.breakMinutes} dk` : 'kapalı'}) dolunca derse dönüş bildirimi gelir.`,
+                        `A notification when the study block (${prefs.focusMinutes > 0 ? `${prefs.focusMinutes} min` : 'off'}) or the break (${prefs.breakMinutes > 0 ? `${prefs.breakMinutes} min` : 'off'}) is over.`,
+                    )}
                     value={prefs.alertsEnabled}
                     onValueChange={(value) => void toggle(value)}
-                    trackColor={{ false: colors.border, true: colors.accent }}
-                    accessibilityLabel={l('Ders ve mola hatırlatmaları', 'Study and break reminders')}
                 />
-            </SettingRow>
-            {status ? <Text style={[styles.status, { color: blocked ? colors.btnAgain : colors.textMuted }]}>{status}</Text> : null}
+            </Card>
+            {status ? <Notice tone={blocked ? 'danger' : 'info'} style={styles.status}>{status}</Notice> : null}
             <View style={styles.footer}>
                 {blocked && Platform.OS === 'ios' ? (
-                    <SheetButton label={l('Ayarları Aç', 'Open Settings')} tone="plain" onPress={() => void Linking.openSettings()} />
+                    <Button label={l('Ayarları Aç', 'Open Settings')} variant="secondary" onPress={() => void Linking.openSettings()} />
                 ) : null}
-                <SheetButton label={l('Tamam', 'Done')} onPress={onClose} />
+                <Button label={l('Tamam', 'Done')} onPress={onClose} />
             </View>
-        </StopwatchSheet>
+        </AppSheet>
     );
 }
 
 const styles = StyleSheet.create({
-    status: { marginTop: Spacing.md, fontSize: FontSize.md, lineHeight: 20 },
+    status: { marginTop: Spacing.md },
     footer: { paddingTop: Spacing.lg, gap: Spacing.sm },
 });

@@ -1,8 +1,10 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 import { ClockIcon } from './StopwatchIcons';
 import { timelineStyles } from './timelineStyles';
 
@@ -29,25 +31,22 @@ function NoStudyPlanCard({ hasPlans, onPress }: NoStudyPlanCardProps) {
                 <View style={styles.line} />
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
                     <View style={[styles.node, styles.nodeMissed]}>
-                        <ClockIcon color={colors.white} size={13} />
+                        <ClockIcon color={colors.onAccent} size={13} />
                     </View>
                 </View>
             </View>
             <View style={styles.column}>
-                <View style={[styles.card, local.card]}>
+                <Card padded>
                     <View style={local.titleRow}>
                         <Text style={[local.title, { color: colors.textPrimary }]} accessibilityRole="header">
                             {hasPlans ? l('Bugün için planınız yok!', 'Nothing planned for today!') : l('Çalışma planınız yok!', 'You have no study plan!')}
                         </Text>
-                        <TouchableOpacity
-                            style={[local.button, { backgroundColor: colors.accent }]}
+                        <Button
+                            size="compact"
+                            label={hasPlans ? l('Planlar', 'Plans') : l('Oluştur', 'Create')}
                             onPress={onPress}
-                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                            accessibilityRole="button"
                             accessibilityLabel={hasPlans ? l('Çalışma planlarını aç', 'Open the study plans') : l('Çalışma planı oluştur', 'Create a study plan')}
-                        >
-                            <Text style={[local.buttonText, { color: colors.white }]}>{hasPlans ? l('Planlar', 'Plans') : l('Oluştur', 'Create')}</Text>
-                        </TouchableOpacity>
+                        />
                     </View>
                     <Text style={[local.hint, { color: colors.textSecondary }]}>
                         {hasPlans
@@ -57,18 +56,15 @@ function NoStudyPlanCard({ hasPlans, onPress }: NoStudyPlanCardProps) {
                                 'Create a study plan to see what to study each day right here.',
                             )}
                     </Text>
-                </View>
+                </Card>
             </View>
         </View>
     );
 }
 
 const local = StyleSheet.create({
-    card: { flexDirection: 'column', gap: Spacing.xs },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
     title: { flex: 1, fontSize: FontSize.md, fontWeight: '700' },
-    button: { borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
-    buttonText: { fontSize: FontSize.sm, fontWeight: '700' },
     hint: { fontSize: FontSize.sm, lineHeight: 18 },
 });
 

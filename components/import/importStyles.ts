@@ -1,7 +1,12 @@
 import { StyleSheet } from 'react-native';
-import { BorderRadius, FontSize, Spacing, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, type ColorScheme } from '../../constants/theme';
+import { Type } from '../ui/tokens';
 
-/** Styles for the import workflow screen and its choice lists. */
+/**
+ * Layout of the import workflow screen. Its cards, rows, buttons and choice lists are the shared
+ * parts in `components/ui`; what is left here is the page, the hints set inside a card and the
+ * preview table.
+ */
 export function createImportStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
@@ -11,215 +16,24 @@ export function createImportStyles(colors: ColorScheme) {
             alignSelf: 'center',
             padding: Spacing.lg,
             paddingBottom: 100,
-            gap: Spacing.md,
+            gap: Spacing.lg,
         },
 
-        emptyCard: {
-            gap: Spacing.md,
-            padding: Spacing.lg,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        emptyTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
-        emptyBody: { fontSize: FontSize.sm, lineHeight: 19, color: colors.textSecondary },
+        /** A group label over something that is not a card of rows, e.g. a notice. */
+        labelled: { gap: Spacing.xs + 2 },
 
-        section: {
-            padding: Spacing.md,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        sectionTitle: {
-            fontSize: 10,
-            fontWeight: '700',
-            letterSpacing: 1.5,
-            color: colors.textMuted,
-            textTransform: 'uppercase',
-            marginBottom: 4,
-        },
-        subsectionTitle: {
-            fontSize: 10,
-            fontWeight: '700',
-            letterSpacing: 1.5,
-            color: colors.textMuted,
-            textTransform: 'uppercase',
-            marginTop: Spacing.md,
-            marginBottom: 2,
-        },
+        /** A sentence set inside a card between its rows. */
+        hint: { ...Type.caption, color: colors.textMuted, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
 
-        fileRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: 4 },
-        fileCopy: { flex: 1, gap: 2 },
-        fileName: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
-        fileMeta: { fontSize: FontSize.xs, color: colors.textMuted },
+        /** A tag field's row: its label over the field. */
+        fieldRow: { gap: 6, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2 },
+        fieldLabel: { ...Type.body, color: colors.textPrimary },
 
-        optionRow: {
-            minHeight: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        optionLabel: { flexShrink: 0, fontSize: FontSize.md, color: colors.textPrimary },
-        optionValue: { flex: 1, textAlign: 'right', fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
-        optionValueMuted: { flex: 1, textAlign: 'right', fontSize: FontSize.sm, color: colors.textMuted },
-        optionHint: { fontSize: FontSize.xs, lineHeight: 17, color: colors.textMuted, paddingVertical: 6 },
-
-        toggleRow: {
-            minHeight: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.md,
-            paddingVertical: 8,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        toggleCopy: { flex: 1, gap: 2 },
-        checkbox: {
-            width: 22,
-            height: 22,
-            borderRadius: 3,
-            borderWidth: 2,
-            borderColor: colors.textMuted,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        checkboxChecked: { backgroundColor: colors.accent, borderColor: colors.accent },
-        checkmark: { color: colors.white, fontSize: 16, fontWeight: '800', lineHeight: 18 },
-
-        tagRow: {
-            gap: 6,
-            paddingVertical: 10,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        tagInput: {
-            minHeight: 42,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgInput,
-            paddingHorizontal: Spacing.md,
-            fontSize: FontSize.md,
-            color: colors.textPrimary,
-        },
-
-        mappingRow: {
-            minHeight: 50,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        mappingInfo: { flex: 1, gap: 2 },
-        mappingColumn: { fontSize: FontSize.xs, fontWeight: '700', color: colors.textMuted },
-        mappingSample: { fontSize: FontSize.sm, color: colors.textPrimary },
-        mappingBadge: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 4,
-            maxWidth: 190,
-            minHeight: 34,
-            paddingHorizontal: 10,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.accent,
-            backgroundColor: colors.accentLight,
-        },
-        mappingBadgeText: { flexShrink: 1, fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
-        mappingLockedBadge: {
-            maxWidth: 190,
-            minHeight: 34,
-            justifyContent: 'center',
-            paddingHorizontal: 10,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgSecondary,
-        },
-        mappingLockedText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textMuted },
-
-        previewTable: { paddingTop: 4 },
         previewHeaderRow: { flexDirection: 'row' },
         previewRow: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
         previewCell: { width: 150, paddingVertical: 8, paddingRight: Spacing.md },
         previewHeaderText: { fontSize: FontSize.xs, fontWeight: '800', color: colors.textMuted, textTransform: 'uppercase' },
         previewCellText: { fontSize: FontSize.sm, lineHeight: 18, color: colors.textPrimary },
-
-        destructiveNotice: { fontSize: FontSize.sm, lineHeight: 20, color: colors.btnAgain, paddingVertical: 4 },
-
-        primaryButton: {
-            minHeight: 50,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: BorderRadius.sm,
-            backgroundColor: colors.accent,
-        },
-        primaryButtonDisabled: { opacity: 0.5 },
-        primaryButtonText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
-        secondaryButton: {
-            minHeight: 38,
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.md,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-        },
-        secondaryButtonText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
-
-        modalOverlay: {
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.35)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: Spacing.lg,
-        },
-        modalCard: {
-            width: '100%',
-            maxWidth: 480,
-            maxHeight: '80%',
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-            overflow: 'hidden',
-        },
-        modalTitle: {
-            fontSize: FontSize.md,
-            fontWeight: '800',
-            color: colors.textPrimary,
-            padding: Spacing.md,
-        },
-        modalList: { flexGrow: 0 },
-        modalListContent: { paddingBottom: 4 },
-        modalOption: {
-            minHeight: 50,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            paddingHorizontal: Spacing.md,
-            paddingVertical: 8,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-        },
-        modalOptionActive: { backgroundColor: colors.accentLight },
-        modalOptionCopy: { flex: 1, gap: 2 },
-        modalOptionText: { fontSize: FontSize.md, color: colors.textPrimary },
-        modalOptionTextActive: { color: colors.accent, fontWeight: '700' },
-        modalOptionHint: { fontSize: FontSize.xs, lineHeight: 16, color: colors.textMuted },
-        modalCheck: { fontSize: FontSize.md, fontWeight: '800', color: colors.accent },
-        modalClose: {
-            minHeight: 48,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.border,
-        },
-        modalCloseText: { fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
     });
 }
 

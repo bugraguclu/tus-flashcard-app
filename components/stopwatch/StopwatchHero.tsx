@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Shadows, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
     MAX_GOAL_MINUTES,
@@ -13,14 +13,23 @@ import {
     type RunningStopwatch,
     type StopwatchElapsed,
 } from '../../lib/stopwatch';
+import { ProgressBar } from '../ui/Feedback';
+import { Stepper } from '../ui/Stepper';
+import { Radius } from '../ui/tokens';
 import ProgressRing from './ProgressRing';
-import { Stepper } from './SheetControls';
 import { PauseIcon, PlayIcon, StopIcon } from './StopwatchIcons';
 
 const MINUTE_MS = 60_000;
-/** Secondary text and the ring's track on the coloured hero. */
-const ON_HERO_SOFT = 'rgba(255, 255, 255, 0.85)';
-const RING_TRACK = 'rgba(255, 255, 255, 0.3)';
+/** The hero's pill buttons are drawn 36–42 points tall; their slop makes up a full target. */
+const PILL_SLOP = { top: 4, bottom: 4 };
+
+/** A `#rrggbb` colour at an opacity: the hero's secondary text and its ring's track. */
+function translucent(hex: string, alpha: number): string {
+    const value = hex.replace('#', '');
+    const full = value.length === 3 ? value.split('').map((digit) => digit + digit).join('') : value;
+    const [red, green, blue] = [0, 2, 4].map((at) => parseInt(full.slice(at, at + 2), 16));
+    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
 
 /**
  * The hero's background, which the Kronometre's header shares: the accent, or in dark mode its
@@ -67,6 +76,7 @@ export default function StopwatchHero({
     const { width } = useWindowDimensions();
     const ringSize = Math.round(Math.min(156, Math.max(116, width * 0.34)));
     const styles = useMemo(() => createStyles(colors, heroColor), [colors, heroColor]);
+    const ringTrack = translucent(colors.onAccent, 0.3);
     const total = formatHeroDuration(todayStudyMs, locale);
     const goal = formatHeroDuration(goalMinutes * MINUTE_MS, locale);
     const progress = goalProgress(todayStudyMs, goalMinutes);
@@ -91,9 +101,7 @@ export default function StopwatchHero({
                             <Text style={styles.todayValue}>{goal}</Text>
                         </Text>
                     </View>
-                    <View style={styles.goalTrack}>
-                        <View style={[styles.goalFill, { width: `${progress * 100}%` }]} />
-                    </View>
+                    <ProgressBar value={progress} color={colors.onAccent} style={[styles.goalTrack, { backgroundColor: ringTrack }]} />
                     <Text style={styles.runningSubject} numberOfLines={1}>
                         {running.subject.toLocaleUpperCase(locale === 'tr' ? 'tr' : 'en')}
                     </Text>
@@ -108,22 +116,24 @@ export default function StopwatchHero({
                     <TouchableOpacity
                         style={styles.pill}
                         onPress={onFinish}
+                        hitSlop={PILL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Çalışmayı sonlandır ve kaydet', 'Finish and save the session')}
                     >
                         <View style={styles.pillIcon}>
-                            <StopIcon color={colors.white} size={12} />
+                            <StopIcon color={colors.onAccent} size={12} />
                         </View>
                         <Text style={styles.pillText}>{l('Sonlandır', 'Finish')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.pill}
                         onPress={onBreak ? onResume : onPause}
+                        hitSlop={PILL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={onBreak ? l('Moladan dön, devam et', 'End the break and resume') : l('Mola ver', 'Take a break')}
                     >
                         <View style={styles.pillIcon}>
-                            {onBreak ? <PlayIcon color={colors.white} size={14} /> : <PauseIcon color={colors.white} size={13} />}
+                            {onBreak ? <PlayIcon color={colors.onAccent} size={14} /> : <PauseIcon color={colors.onAccent} size={13} />}
                         </View>
                         <Text style={styles.pillText}>{onBreak ? l('Devam Et', 'Resume') : l('Mola Ver', 'Break')}</Text>
                     </TouchableOpacity>
@@ -147,9 +157,9 @@ export default function StopwatchHero({
                         size={ringSize}
                         strokeWidth={10}
                         progress={progress}
-                        trackColor={RING_TRACK}
-                        progressColor={colors.white}
-                        knobColor={colors.white}
+                        trackColor={ringTrack}
+                        progressColor={colors.onAccent}
+                        knobColor={colors.onAccent}
                         knobDotColor={heroColor}
                     >
                         {/* The ring is drawn at a fixed size around this copy, which already fills its
@@ -164,22 +174,25 @@ export default function StopwatchHero({
                 <View style={styles.controls}>
                     <Text style={styles.goalLabel}>{l('Günlük Hedef', 'Daily Goal')}</Text>
                     <Stepper
-                        size="hero"
+                        onSurface="tinted"
                         value={formatGoalClock(goalMinutes)}
-                        onStep={onStepGoal}
-                        decreaseLabel={l('Günlük hedefi yarım saat azalt', 'Lower the daily goal by half an hour')}
-                        increaseLabel={l('Günlük hedefi yarım saat artır', 'Raise the daily goal by half an hour')}
-                        canDecrease={goalMinutes > MIN_GOAL_MINUTES}
-                        canIncrease={goalMinutes < MAX_GOAL_MINUTES}
+                        onDecrement={() => onStepGoal(-1)}
+                        onIncrement={() => onStepGoal(1)}
+                        decrementLabel={l('Günlük hedefi yarım saat azalt', 'Lower the daily goal by half an hour')}
+                        incrementLabel={l('Günlük hedefi yarım saat artır', 'Raise the daily goal by half an hour')}
+                        canDecrement={goalMinutes > MIN_GOAL_MINUTES}
+                        canIncrement={goalMinutes < MAX_GOAL_MINUTES}
+                        style={styles.goalStepper}
                     />
                     <TouchableOpacity
                         style={styles.startButton}
                         onPress={onStart}
+                        hitSlop={PILL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Kronometreyi başlat', 'Start the stopwatch')}
                     >
                         <View style={styles.iconCircle}>
-                            <PlayIcon color={colors.white} size={20} />
+                            <PlayIcon color={colors.onAccent} size={20} />
                         </View>
                         <Text style={styles.startText}>{l('Başla', 'Start')}</Text>
                     </TouchableOpacity>
@@ -190,6 +203,7 @@ export default function StopwatchHero({
 }
 
 function createStyles(colors: ColorScheme, heroColor: string) {
+    const soft = translucent(colors.onAccent, 0.85);
     return StyleSheet.create({
         hero: {
             backgroundColor: heroColor,
@@ -204,10 +218,11 @@ function createStyles(colors: ColorScheme, heroColor: string) {
         heroRunning: { paddingTop: Spacing.xs, gap: Spacing.sm, paddingBottom: Spacing.lg },
         row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md },
         ringCenter: { alignItems: 'center', gap: 2 },
-        ringLabel: { fontSize: FontSize.sm, color: ON_HERO_SOFT, textAlign: 'center', lineHeight: 16 },
-        ringValue: { fontWeight: '800', color: colors.white, marginTop: 2 },
+        ringLabel: { fontSize: FontSize.sm, color: soft, textAlign: 'center', lineHeight: 16 },
+        ringValue: { fontWeight: '800', color: colors.onAccent, marginTop: 2 },
         controls: { flex: 1, alignItems: 'center', gap: Spacing.sm },
-        goalLabel: { fontSize: FontSize.md, fontWeight: '700', color: colors.white },
+        goalLabel: { fontSize: FontSize.md, fontWeight: '700', color: colors.onAccent },
+        goalStepper: { alignSelf: 'center' },
         startButton: {
             flexDirection: 'row',
             alignItems: 'center',
@@ -216,7 +231,7 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             maxWidth: 188,
             marginTop: Spacing.xs,
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             padding: 4,
             paddingRight: Spacing.lg,
         },
@@ -231,13 +246,12 @@ function createStyles(colors: ColorScheme, heroColor: string) {
         startText: { flex: 1, textAlign: 'center', fontSize: FontSize.xl, fontWeight: '800', color: colors.accent },
         runningTop: { alignItems: 'center', gap: 6 },
         todayRow: { alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.xs },
-        todayLabel: { fontSize: FontSize.md, color: ON_HERO_SOFT },
-        todayValue: { color: colors.white, fontWeight: '700' },
-        goalTrack: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: RING_TRACK, overflow: 'hidden' },
-        goalFill: { height: 8, borderRadius: 4, backgroundColor: colors.white },
-        runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', letterSpacing: 0.6, color: colors.white },
-        bigClock: { fontSize: 44, lineHeight: 52, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
-        breakLine: { fontSize: FontSize.md, fontWeight: '600', color: ON_HERO_SOFT, fontVariant: ['tabular-nums'] },
+        todayLabel: { fontSize: FontSize.md, color: soft },
+        todayValue: { color: colors.onAccent, fontWeight: '700' },
+        goalTrack: { alignSelf: 'stretch', height: 8, borderRadius: 4 },
+        runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', letterSpacing: 0.6, color: colors.onAccent },
+        bigClock: { fontSize: 44, lineHeight: 52, fontWeight: '700', color: colors.onAccent, fontVariant: ['tabular-nums'] },
+        breakLine: { fontSize: FontSize.md, fontWeight: '600', color: soft, fontVariant: ['tabular-nums'] },
         runningButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.md },
         pill: {
             flexDirection: 'row',
@@ -245,7 +259,7 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             gap: Spacing.sm,
             minWidth: 132,
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             padding: 4,
             paddingRight: Spacing.lg,
         },

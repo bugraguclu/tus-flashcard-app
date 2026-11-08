@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Button } from '../ui/Button';
+import { Section } from '../ui/Card';
+import { LoadingState } from '../ui/Feedback';
+import { Type } from '../ui/tokens';
 import { alert, confirm } from '../../lib/confirm';
 import { createBackupNow } from '../../lib/backup';
 import { canTrashMedia, checkMedia, moveUnusedMediaToTrash, restoreMediaTrash, type MediaCheckResult } from '../../lib/mediaCheck';
@@ -76,14 +80,11 @@ export default function MediaCheckSection({ disabled }: { disabled: boolean }) {
     const listed = (names: string[]) => names.slice(0, LISTED_NAMES).join('\n') + (names.length > LISTED_NAMES ? `\n… +${names.length - LISTED_NAMES}` : '');
 
     return (
-        <View style={styles.section}>
-            <Text style={styles.label} accessibilityRole="header">{l('MEDYA', 'MEDIA')}</Text>
-            <TouchableOpacity style={[styles.button, locked && styles.disabled]} onPress={handleCheck} disabled={locked} accessibilityRole="button">
-                <Text style={styles.buttonText}>{l('Medyayı denetle', 'Check Media')}</Text>
-            </TouchableOpacity>
-            {working && <ActivityIndicator color={colors.accent} />}
+        <Section label={l('MEDYA', 'MEDIA')} padded>
+            <Button label={l('Medyayı denetle', 'Check Media')} variant="secondary" onPress={handleCheck} disabled={locked} />
+            {working && <LoadingState />}
             {result && (
-                <View style={styles.card}>
+                <View style={styles.result}>
                     <Text style={styles.summary}>
                         {l(
                             `${result.storedCount} dosya kayıtlı · ${result.unused.length} kullanılmıyor · ${result.missing.length} eksik`,
@@ -103,34 +104,27 @@ export default function MediaCheckSection({ disabled }: { disabled: boolean }) {
                         </>
                     )}
                     {result.unused.length > 0 && canTrashMedia() && (
-                        <TouchableOpacity style={[styles.button, locked && styles.disabled]} onPress={handleTrash} disabled={locked} accessibilityRole="button">
-                            <Text style={[styles.buttonText, styles.danger]}>{l(`Kullanılmayanları çöpe taşı (${result.unused.length})`, `Move Unused to Trash (${result.unused.length})`)}</Text>
-                        </TouchableOpacity>
+                        <Button
+                            label={l(`Kullanılmayanları çöpe taşı (${result.unused.length})`, `Move Unused to Trash (${result.unused.length})`)}
+                            variant="destructive"
+                            onPress={handleTrash}
+                            disabled={locked}
+                        />
                     )}
                 </View>
             )}
             {canTrashMedia() && (
-                <TouchableOpacity style={[styles.secondary, locked && styles.disabled]} onPress={handleRestoreTrash} disabled={locked} accessibilityRole="button">
-                    <Text style={styles.secondaryText}>{l('Çöptekileri geri getir', 'Restore Trash')}</Text>
-                </TouchableOpacity>
+                <Button label={l('Çöptekileri geri getir', 'Restore Trash')} variant="plain" tone="muted" size="compact" onPress={handleRestoreTrash} disabled={locked} />
             )}
-        </View>
+        </Section>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        section: { gap: Spacing.sm, marginTop: Spacing.lg },
-        label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.7, color: colors.textMuted },
-        button: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgCard, borderRadius: BorderRadius.sm, paddingVertical: Spacing.md, alignItems: 'center' },
-        buttonText: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
-        danger: { color: colors.btnAgain },
-        disabled: { opacity: 0.5 },
-        card: { backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.sm, padding: Spacing.md, gap: Spacing.sm },
-        summary: { fontSize: FontSize.md, color: colors.textPrimary },
-        heading: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textSecondary },
-        names: { fontSize: FontSize.sm, color: colors.textMuted },
-        secondary: { alignSelf: 'center', paddingVertical: Spacing.sm },
-        secondaryText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
+        result: { gap: Spacing.sm },
+        summary: { ...Type.body, color: colors.textPrimary },
+        heading: { ...Type.caption, fontWeight: '700', color: colors.textSecondary },
+        names: { ...Type.caption, color: colors.textMuted },
     });
 }

@@ -1,12 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from './AppText';
-import { BorderRadius, FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
 import { buildDeckTree, type DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';
 import { initialExpandedDeckNames, prioritizeDeckTree } from '../lib/deckPickerExpansion';
 import DisclosureChevron from './DisclosureChevron';
+import { Button } from './ui/Button';
+import { Card } from './ui/Card';
+import { Checkbox } from './ui/Choice';
+import { MinusIcon } from './ui/icons';
+import { Type } from './ui/tokens';
 
 interface DeckExportSelectorProps {
     decks: Deck[];
@@ -78,6 +83,9 @@ export default function DeckExportSelector({
                         <TouchableOpacity
                             style={styles.disclosureButton}
                             onPress={() => toggleExpanded(node.deck.name)}
+                            // Drawn 34 points wide beside the checkbox; the slop on its free side
+                            // makes a full target.
+                            hitSlop={{ left: 10 }}
                             accessibilityRole="button"
                             accessibilityState={{ expanded: isExpanded }}
                             accessibilityLabel={isExpanded
@@ -100,9 +108,12 @@ export default function DeckExportSelector({
                             `Export ${getDeckDisplayName(node.deck.name)} deck`,
                         )}
                     >
-                        <View style={[styles.checkbox, (checked || mixed) && styles.checkboxActive]}>
-                            <Text style={styles.checkboxMark}>{checked ? '✓' : mixed ? '—' : ''}</Text>
-                        </View>
+                        {mixed ? (
+                            // The kit's checkbox has no mixed state: a branch partly chosen shows a dash.
+                            <View style={styles.mixedBox}>
+                                <MinusIcon color={colors.onAccent} size={16} />
+                            </View>
+                        ) : <Checkbox checked={checked} />}
                         <View style={styles.rowCopy}>
                             <Text style={[styles.deckName, (checked || mixed) && styles.deckNameActive]} numberOfLines={1}>
                                 {getDeckDisplayName(node.deck.name)}
@@ -121,63 +132,33 @@ export default function DeckExportSelector({
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.headerCopy}>
-                    <Text style={styles.title}>{l('Dışa aktarılacak desteler', 'Decks to export')}</Text>
-                    <Text style={styles.selectionCount}>
-                        {l(`${selectedIds.size} / ${decks.length} deste seçili`, `${selectedIds.size} of ${decks.length} decks selected`)}
-                    </Text>
-                </View>
-                <TouchableOpacity
-                    style={styles.selectAllButton}
+        <Card
+            divided
+            title={l('Dışa aktarılacak desteler', 'Decks to export')}
+            description={l(`${selectedIds.size} / ${decks.length} deste seçili`, `${selectedIds.size} of ${decks.length} decks selected`)}
+            accessory={(
+                <Button
+                    variant="plain"
+                    size="compact"
+                    label={allSelected ? l('Temizle', 'Clear') : l('Tümünü seç', 'Select all')}
                     onPress={toggleAll}
-                    accessibilityRole="button"
                     accessibilityLabel={allSelected ? l('Deste seçimini temizle', 'Clear deck selection') : l('Tüm desteleri seç', 'Select all decks')}
-                >
-                    <Text style={styles.selectAllText}>{allSelected ? l('Temizle', 'Clear') : l('Tümünü seç', 'Select all')}</Text>
-                </TouchableOpacity>
-            </View>
-            <View style={styles.tree}>
+                    style={styles.selectAll}
+                />
+            )}
+        >
+            <View>
                 {tree.length > 0 ? tree.map(renderNode) : (
                     <Text style={styles.emptyText}>{l('Dışa aktarılabilecek deste yok.', 'There are no decks available to export.')}</Text>
                 )}
             </View>
-        </View>
+        </Card>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        container: {
-            overflow: 'hidden',
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.bgSecondary,
-        },
-        header: {
-            minHeight: 62,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            paddingLeft: Spacing.md,
-            paddingRight: Spacing.xs,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        headerCopy: { flex: 1, minWidth: 0 },
-        title: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
-        selectionCount: { marginTop: 2, color: colors.textMuted, fontSize: FontSize.xs },
-        selectAllButton: {
-            minHeight: 44,
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.sm,
-            borderRadius: BorderRadius.sm,
-        },
-        selectAllText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '700' },
-        tree: { backgroundColor: colors.bgCard },
+        selectAll: { marginVertical: -Spacing.sm, marginRight: -Spacing.sm },
         row: {
             minHeight: 54,
             flexDirection: 'row',
@@ -189,22 +170,21 @@ function createStyles(colors: ColorScheme) {
         disclosureButton: { width: 34, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
         disclosureSpacer: { width: 34 },
         rowMain: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-        checkbox: {
+        // Drawn as the kit's checked box (22 points, 2-point edge), with a dash for a partial branch.
+        mixedBox: {
             width: 22,
             height: 22,
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 2,
-            borderColor: colors.textMuted,
             borderRadius: 4,
-            backgroundColor: colors.bgCard,
+            borderColor: colors.accent,
+            backgroundColor: colors.accent,
         },
-        checkboxActive: { borderColor: colors.accent, backgroundColor: colors.accent },
-        checkboxMark: { color: colors.white, fontSize: 15, lineHeight: 17, fontWeight: '900' },
         rowCopy: { flex: 1, minWidth: 0, paddingVertical: 7 },
         deckName: { color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
         deckNameActive: { color: colors.accent },
         subdeckCount: { marginTop: 2, color: colors.textMuted, fontSize: FontSize.xs },
-        emptyText: { padding: Spacing.lg, color: colors.textMuted, fontSize: FontSize.sm, textAlign: 'center' },
+        emptyText: { ...Type.caption, padding: Spacing.lg, color: colors.textMuted, textAlign: 'center' },
     });
 }

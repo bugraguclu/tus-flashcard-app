@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text, TextInput } from '../AppText';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../AppText';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { BorderRadius, FontSize, Spacing, useIsDarkTheme, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useIsDarkTheme, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
     MAX_BREAK_COUNT,
@@ -16,8 +16,14 @@ import {
     type StudySessionDraft,
 } from '../../lib/stopwatch';
 import type { StudySession } from '../../lib/studyCalendar';
-import { CountStepper, FormDivider, FormInfoBox, FormRow, FormSelector } from './FormControls';
-import StopwatchSheet from './StopwatchSheet';
+import { Button } from '../ui/Button';
+import { Card, Section } from '../ui/Card';
+import { Notice } from '../ui/Feedback';
+import { TextField } from '../ui/Fields';
+import { SelectRow, ValueRow } from '../ui/Rows';
+import { AppSheet } from '../ui/Sheet';
+import { Stepper } from '../ui/Stepper';
+import { Type } from '../ui/tokens';
 import type { StudyChoice } from './StudyStartSheet';
 import { StudyTypePicker, SubjectGridPicker } from './StudyPickers';
 import { studyTypeLabel } from './StudyTypeChips';
@@ -205,16 +211,13 @@ export default function SessionEditorSheet({
     ) : null;
 
     const timeRow = (field: Field, label: string, ms: number) => (
-        <View>
-            <FormRow label={label}>
-                <FormSelector
-                    value={dateLabel(ms)}
-                    active={openField === field}
-                    onPress={() => setOpenField((current) => (current === field ? null : field))}
-                    accessibilityLabel={`${label}: ${dateLabel(ms)}`}
-                    accessibilityHint={l('Tarih ve saat seçiciyi açar veya kapatır', 'Opens or closes the date and time picker')}
-                />
-            </FormRow>
+        <View key={field}>
+            <SelectRow
+                label={label}
+                value={dateLabel(ms)}
+                onPress={() => setOpenField((current) => (current === field ? null : field))}
+                accessibilityHint={l('Tarih ve saat seçiciyi açar veya kapatır', 'Opens or closes the date and time picker')}
+            />
             {openField === field ? (
                 <View style={styles.pickerWrap}>
                     <DateTimePicker
@@ -224,6 +227,7 @@ export default function SessionEditorSheet({
                         maximumDate={new Date()}
                         locale={localeTag}
                         themeVariant={isDark ? 'dark' : 'light'}
+                        accentColor={colors.accent}
                         onChange={(_event, value) => changeField(field, value)}
                     />
                 </View>
@@ -232,35 +236,42 @@ export default function SessionEditorSheet({
     );
 
     return (
-        <StopwatchSheet
+        <AppSheet
             visible={visible}
             onClose={onClose}
-            formHeader
-            overlay={overlay}
             title={recordId !== null ? l('Çalışmanızı Düzenleyin', 'Edit Your Session') : l('Geçmiş Çalışmanızı Ekleyin', 'Add a Past Session')}
+            closeButton
+            dividedHeader
+            avoidKeyboard
+            maxHeight="92%"
+            overlay={overlay}
         >
-            <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                <FormRow label={l('Ders seçin', 'Subject')}>
-                    <FormSelector
+            <ScrollView
+                style={styles.form}
+                contentContainerStyle={styles.formContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
+                <Card divided>
+                    <SelectRow
+                        label={l('Ders seçin', 'Subject')}
                         value={subject || l('Seçin', 'Choose')}
                         onPress={() => setPicker('subject')}
-                        accessibilityLabel={l(`Ders: ${subject || 'seçilmedi'}`, `Subject: ${subject || 'none'}`)}
                         accessibilityHint={l('Ders listesini açar', 'Opens the subject list')}
                     />
-                </FormRow>
-                <FormRow label={l('Tür Seçin', 'Type')}>
-                    <FormSelector
+                    <SelectRow
+                        label={l('Tür Seçin', 'Type')}
                         value={typeLabel}
                         onPress={() => setPicker('type')}
-                        accessibilityLabel={l(`Tür: ${typeLabel}`, `Type: ${typeLabel}`)}
                         accessibilityHint={l('Tür listesini açar', 'Opens the type list')}
                     />
-                </FormRow>
-                <FormDivider />
-                {timeRow('start', l('Çalışma Başlangıcı', 'Start'), startMs)}
-                {timeRow('end', l('Çalışma Bitişi', 'End'), endMs)}
-                <FormInfoBox
-                    lines={[
+                </Card>
+                <Card divided>
+                    {timeRow('start', l('Çalışma Başlangıcı', 'Start'), startMs)}
+                    {timeRow('end', l('Çalışma Bitişi', 'End'), endMs)}
+                </Card>
+                <Notice>
+                    {[
                         l(
                             'Çalışma süreniz, başlangıç ile bitiş arasındaki süreden toplam mola çıkarılarak hesaplanır.',
                             'Your study time is the time from start to end less the total break.',
@@ -269,85 +280,68 @@ export default function SessionEditorSheet({
                             'Elle eklediğiniz çalışmalar da günlük hedefinize, takviminize ve çalışma serinize sayılır.',
                             'Sessions you add by hand count towards your daily goal, calendar and streak too.',
                         ),
-                    ]}
-                />
-                <FormRow label={l('Mola Sayısı', 'Breaks')}>
-                    <CountStepper
-                        value={String(breakCount)}
-                        onStep={(direction) => setBreakCount((current) => clampBreakCount(current + direction))}
-                        decreaseLabel={l('Bir mola az', 'One break fewer')}
-                        increaseLabel={l('Bir mola fazla', 'One break more')}
-                        canDecrease={breakCount > 0}
-                        canIncrease={breakCount < MAX_BREAK_COUNT}
-                    />
-                </FormRow>
-                <FormRow label={l('Toplam Mola Süresi', 'Total Break')}>
-                    <CountStepper
-                        value={formatGoalClock(breakMinutes)}
-                        onStep={(direction) => setBreakMs(Math.max(0, Math.min(MAX_BREAK_MINUTES, breakMinutes + direction)) * MINUTE_MS)}
-                        decreaseLabel={l('Bir dakika az mola', 'One minute less break')}
-                        increaseLabel={l('Bir dakika fazla mola', 'One minute more break')}
-                        canDecrease={breakMs > 0}
-                        canIncrease={breakMinutes < MAX_BREAK_MINUTES}
-                    />
-                </FormRow>
-                <FormDivider />
+                    ].map((line) => (
+                        <Text key={line} style={[Type.caption, { color: colors.textSecondary }]}>{`* ${line}`}</Text>
+                    ))}
+                </Notice>
+                <Card divided>
+                    <ValueRow label={l('Mola Sayısı', 'Breaks')}>
+                        <Stepper
+                            value={String(breakCount)}
+                            onDecrement={() => setBreakCount((current) => clampBreakCount(current - 1))}
+                            onIncrement={() => setBreakCount((current) => clampBreakCount(current + 1))}
+                            decrementLabel={l('Bir mola az', 'One break fewer')}
+                            incrementLabel={l('Bir mola fazla', 'One break more')}
+                            canDecrement={breakCount > 0}
+                            canIncrement={breakCount < MAX_BREAK_COUNT}
+                            style={styles.stepper}
+                        />
+                    </ValueRow>
+                    <ValueRow label={l('Toplam Mola Süresi', 'Total Break')}>
+                        <Stepper
+                            value={formatGoalClock(breakMinutes)}
+                            onDecrement={() => setBreakMs(Math.max(0, Math.min(MAX_BREAK_MINUTES, breakMinutes - 1)) * MINUTE_MS)}
+                            onIncrement={() => setBreakMs(Math.max(0, Math.min(MAX_BREAK_MINUTES, breakMinutes + 1)) * MINUTE_MS)}
+                            decrementLabel={l('Bir dakika az mola', 'One minute less break')}
+                            incrementLabel={l('Bir dakika fazla mola', 'One minute more break')}
+                            canDecrement={breakMs > 0}
+                            canIncrement={breakMinutes < MAX_BREAK_MINUTES}
+                            style={styles.stepper}
+                        />
+                    </ValueRow>
+                </Card>
 
-                <View style={styles.noteSection}>
-                    <Text style={[styles.noteLabel, { color: colors.textPrimary }]}>{l('Çalışma Notu', 'Study Note')}</Text>
-                    <TextInput
-                        style={[styles.noteInput, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
+                <Section label={l('Çalışma Notu', 'Study Note')} padded>
+                    <TextField
                         value={note}
                         onChangeText={setNote}
                         placeholder={l('Sayfa 120-140 arasını çalıştım, 30 soru çözdüm.', 'Studied pages 120-140, solved 30 questions.')}
-                        placeholderTextColor={colors.textMuted}
                         maxLength={MAX_STUDY_NOTE_LENGTH}
                         multiline
-                        textAlignVertical="top"
                         accessibilityLabel={l('Çalışma notu', 'Study note')}
                         accessibilityHint={l(`En fazla ${MAX_STUDY_NOTE_LENGTH} karakter`, `Up to ${MAX_STUDY_NOTE_LENGTH} characters`)}
                     />
                     <Text style={[styles.noteCount, { color: colors.textMuted }]}>
                         {l(`Kalan: ${MAX_STUDY_NOTE_LENGTH - note.length}`, `${MAX_STUDY_NOTE_LENGTH - note.length} left`)}
                     </Text>
-                </View>
-                <FormDivider />
+                </Section>
 
-                <TouchableOpacity
-                    style={[styles.saveButton, { backgroundColor: colors.accent }, error ? styles.saveDisabled : null]}
+                <Button
+                    label={recordId !== null ? l('Değişiklikleri Kaydet', 'Save Changes') : l('Çalışma Ekle', 'Add Session')}
                     onPress={save}
                     disabled={Boolean(error)}
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: Boolean(error) }}
                     accessibilityLabel={recordId !== null ? l('Değişiklikleri kaydet', 'Save changes') : l('Çalışma ekle', 'Add session')}
-                >
-                    <Text style={styles.saveText}>
-                        {recordId !== null ? l('Değişiklikleri Kaydet', 'Save Changes') : l('Çalışma Ekle', 'Add Session')}
-                    </Text>
-                </TouchableOpacity>
-                {error ? <Text style={[styles.error, { color: colors.btnAgain }]} accessibilityLiveRegion="polite">{error}</Text> : null}
+                />
+                {error ? <Notice tone="danger">{error}</Notice> : null}
             </ScrollView>
-        </StopwatchSheet>
+        </AppSheet>
     );
 }
 
 const styles = StyleSheet.create({
     form: { flexShrink: 1 },
+    formContent: { gap: Spacing.md, paddingTop: Spacing.xs, paddingBottom: Spacing.sm },
     pickerWrap: { alignItems: 'center', paddingBottom: Spacing.sm },
-    noteSection: { gap: Spacing.xs, paddingTop: Spacing.xs },
-    noteLabel: { fontSize: FontSize.lg, fontWeight: '600' },
-    noteInput: {
-        minHeight: 72,
-        borderRadius: BorderRadius.md,
-        borderWidth: StyleSheet.hairlineWidth,
-        paddingHorizontal: Spacing.md,
-        paddingTop: Spacing.sm,
-        paddingBottom: Spacing.sm,
-        fontSize: FontSize.md,
-    },
+    stepper: { alignSelf: 'center' },
     noteCount: { alignSelf: 'flex-end', fontSize: FontSize.sm, fontVariant: ['tabular-nums'] },
-    saveButton: { minHeight: 50, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.md },
-    saveDisabled: { opacity: 0.45 },
-    saveText: { color: '#ffffff', fontSize: FontSize.xl, fontWeight: '700' },
-    error: { marginTop: Spacing.sm, marginBottom: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', textAlign: 'center' },
 });

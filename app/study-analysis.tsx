@@ -1,13 +1,17 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
-import { HeaderBackIcon, HeaderForwardIcon } from '../components/HeaderBackIcon';
-import { Segmented, ToolSection } from '../components/stopwatch/StudyToolControls';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Button, IconButton } from '../components/ui/Button';
+import { Card, Section, SectionFootnote } from '../components/ui/Card';
+import { Chip, SegmentedControl } from '../components/ui/Choice';
+import { EmptyState, ProgressBar } from '../components/ui/Feedback';
+import { BackIcon, ForwardIcon } from '../components/ui/icons';
+import { Radius, Type } from '../components/ui/tokens';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
 import { goBackOr } from '../lib/backNavigation';
@@ -83,24 +87,23 @@ export default function StudyAnalysisScreen() {
         const groups = repetitionGroups(data.sessions, rolloverHour);
         if (groups.length === 0) {
             return (
-                <View style={styles.empty}>
-                    <Text style={styles.emptyTitle}>{l('Henüz tekrar kaydınız yok', 'No sessions yet')}</Text>
-                    <Text style={styles.emptyText}>
-                        {l('Kaydettiğiniz çalışmalar ders ve tekrar türüne göre burada görünür.', 'Your sessions appear here by course and type.')}
-                    </Text>
-                </View>
+                <EmptyState
+                    title={l('Henüz tekrar kaydınız yok', 'No sessions yet')}
+                    body={l('Kaydettiğiniz çalışmalar ders ve tekrar türüne göre burada görünür.', 'Your sessions appear here by course and type.')}
+                />
             );
         }
         return groups.map((group) => (
-            <View key={`${group.kind}-${group.pass}`} style={styles.card}>
-                <View style={styles.groupHeader}>
-                    <Text style={styles.groupTitle}>{studyTypeLabel(l, group.kind, group.pass)}</Text>
-                    <Text style={styles.groupMeta}>{`${duration(group.studyMs)} · ${daysLabel(group.days)}`}</Text>
-                </View>
-                {group.subjects.map((course, index) => (
+            <Card
+                key={`${group.kind}-${group.pass}`}
+                divided
+                title={studyTypeLabel(l, group.kind, group.pass)}
+                accessory={<Text style={styles.groupMeta}>{`${duration(group.studyMs)} · ${daysLabel(group.days)}`}</Text>}
+            >
+                {group.subjects.map((course) => (
                     <View
                         key={course.subject}
-                        style={[styles.courseRow, index < group.subjects.length - 1 && styles.divider]}
+                        style={styles.courseRow}
                         accessible
                         accessibilityLabel={`${course.subject}: ${duration(course.studyMs)}, ${daysLabel(course.days)}, ${lastLabel(course.lastStartMs)}`}
                     >
@@ -115,7 +118,7 @@ export default function StudyAnalysisScreen() {
                         </View>
                     </View>
                 ))}
-            </View>
+            </Card>
         ));
     };
 
@@ -146,66 +149,60 @@ export default function StudyAnalysisScreen() {
                     <Text style={styles.shareLabel} numberOfLines={1}>{label}</Text>
                     <Text style={styles.shareValue}>{`${duration(ms)} · %${sharePercent(ms, analysis.studyMs)}`}</Text>
                 </View>
-                <View style={styles.track}>
-                    <View style={[styles.fill, { width: `${analysis.studyMs > 0 ? (ms / analysis.studyMs) * 100 : 0}%` }]} />
-                </View>
+                <ProgressBar value={analysis.studyMs > 0 ? ms / analysis.studyMs : 0} />
             </View>
         );
 
         return (
             <>
                 <View style={styles.periodBar}>
-                    <TouchableOpacity
-                        style={styles.stepButton}
+                    <IconButton
                         onPress={() => setAnchorYmd(shiftAnalysisAnchor(period, anchorYmd, -1))}
-                        accessibilityRole="button"
                         accessibilityLabel={l('Önceki dönem', 'Previous period')}
                     >
-                        <HeaderBackIcon color={colors.textPrimary} size={18} />
-                    </TouchableOpacity>
+                        <BackIcon color={colors.textPrimary} size={18} />
+                    </IconButton>
                     <Text style={styles.periodTitle} numberOfLines={1}>{title}</Text>
-                    <TouchableOpacity
-                        style={styles.stepButton}
+                    <IconButton
                         onPress={() => setAnchorYmd(shiftAnalysisAnchor(period, anchorYmd, 1))}
-                        accessibilityRole="button"
                         accessibilityLabel={l('Sonraki dönem', 'Next period')}
                     >
-                        <HeaderForwardIcon color={colors.textPrimary} size={18} />
-                    </TouchableOpacity>
+                        <ForwardIcon color={colors.textPrimary} size={18} />
+                    </IconButton>
                 </View>
                 {!includesToday ? (
-                    <TouchableOpacity onPress={() => setAnchorYmd(todayYmd)} accessibilityRole="button" style={styles.todayLink}>
-                        <Text style={styles.todayText}>{l('Bugüne dön', 'Back to today')}</Text>
-                    </TouchableOpacity>
+                    <Button
+                        variant="plain"
+                        size="compact"
+                        label={l('Bugüne dön', 'Back to today')}
+                        onPress={() => setAnchorYmd(todayYmd)}
+                        style={styles.todayLink}
+                    />
                 ) : null}
 
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-                    {[null, ...subjects].map((option) => {
-                        const selected = option === subject;
-                        return (
-                            <TouchableOpacity
-                                key={option ?? 'all'}
-                                style={[styles.chip, selected && styles.chipSelected]}
-                                onPress={() => setSubject(option)}
-                                accessibilityRole="button"
-                                accessibilityState={{ selected }}
-                            >
-                                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{option ?? l('Tüm Dersler', 'All Courses')}</Text>
-                            </TouchableOpacity>
-                        );
-                    })}
+                    {[null, ...subjects].map((option) => (
+                        <Chip
+                            key={option ?? 'all'}
+                            label={option ?? l('Tüm Dersler', 'All Courses')}
+                            selected={option === subject}
+                            onPress={() => setSubject(option)}
+                        />
+                    ))}
                 </ScrollView>
 
                 <View style={styles.metrics}>
                     {metrics.map(([label, value]) => (
-                        <View key={label} style={styles.metric} accessible accessibilityLabel={`${label}: ${value}`}>
-                            <Text style={styles.metricValue}>{value}</Text>
-                            <Text style={styles.metricLabel}>{label}</Text>
-                        </View>
+                        <Card key={label} padded style={styles.metric}>
+                            <View style={styles.metricBody} accessible accessibilityLabel={`${label}: ${value}`}>
+                                <Text style={styles.metricValue}>{value}</Text>
+                                <Text style={styles.metricLabel}>{label}</Text>
+                            </View>
+                        </Card>
                     ))}
                 </View>
 
-                <ToolSection title={l('Günlere Göre Çalışma', 'Study by Day')}>
+                <Section label={l('Günlere Göre Çalışma', 'Study by Day')} padded>
                     <View style={styles.chart}>
                         {analysis.days.map((day, index) => {
                             const ms = analysis.dayStudyMs[index];
@@ -235,28 +232,24 @@ export default function StudyAnalysisScreen() {
                     {analysis.sessions.length === 0 ? (
                         <Text style={styles.chartEmpty}>{l('Bu dönemde çalışma kaydınız yok.', 'No sessions in this period.')}</Text>
                     ) : null}
-                </ToolSection>
+                </Section>
 
-                <ToolSection title={l('Temel / Klinik', 'Basic / Clinical')}>
-                    <View style={styles.shares}>
-                        {analysis.sciences.map((entry) => bar(scienceLabel[entry.group], entry.studyMs, entry.group))}
-                    </View>
-                </ToolSection>
+                <Section label={l('Temel / Klinik', 'Basic / Clinical')} padded>
+                    {analysis.sciences.map((entry) => bar(scienceLabel[entry.group], entry.studyMs, entry.group))}
+                </Section>
 
-                <ToolSection title={l('Derslere Göre Çalışma', 'Study by Course')}>
-                    <View style={styles.shares}>
-                        {analysis.subjects.length === 0
-                            ? <Text style={styles.chartEmpty}>{l('Henüz ders yok.', 'No courses yet.')}</Text>
-                            : analysis.subjects.map((entry) => bar(entry.subject, entry.studyMs, entry.subject))}
-                    </View>
-                </ToolSection>
+                <Section label={l('Derslere Göre Çalışma', 'Study by Course')} padded>
+                    {analysis.subjects.length === 0
+                        ? <Text style={styles.chartEmpty}>{l('Henüz ders yok.', 'No courses yet.')}</Text>
+                        : analysis.subjects.map((entry) => bar(entry.subject, entry.studyMs, entry.subject))}
+                </Section>
 
-                <Text style={styles.footnote}>
+                <SectionFootnote>
                     {l(
                         'Günlük ortalama, dönemin bugüne kadar geçen günleri üzerinden hesaplanır. Molalar çalışma süresine dahil edilmez. Gece yarısını geçen kayıtlar başladıkları günde gösterilir. Analiz Kronometre kayıtlarını kapsar; kart tekrarlarınız İstatistikler’dedir.',
                         'The daily average divides by the days of the period so far. Breaks are not study time. Sessions past midnight count on the day they started. The analysis covers Kronometre sessions; card reviews are in Statistics.',
                     )}
-                </Text>
+                </SectionFootnote>
             </>
         );
     };
@@ -269,7 +262,7 @@ export default function StudyAnalysisScreen() {
                 onBack={() => goBackOr(router)}
             />
             <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxl }]}>
-                <Segmented
+                <SegmentedControl
                     options={[
                         { value: 'repetitions', label: l('Tekrarlar', 'Passes') },
                         { value: 'week', label: l('Haftalık', 'Weekly') },
@@ -277,6 +270,8 @@ export default function StudyAnalysisScreen() {
                     ]}
                     value={view}
                     onChange={setView}
+                    accessibilityLabel={l('Görünüm', 'View')}
+                    fill
                 />
                 {view === 'repetitions' ? renderRepetitions() : renderPeriod(view)}
             </ScrollView>
@@ -289,56 +284,34 @@ function createStyles(colors: ColorScheme) {
         container: { flex: 1, backgroundColor: colors.bgCard },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
         content: { padding: Spacing.lg, gap: Spacing.lg },
-        card: { backgroundColor: colors.bgCard, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: colors.borderLight, padding: Spacing.md, gap: Spacing.sm },
-        groupHeader: {
-            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-            backgroundColor: colors.bgInput, borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
-        },
-        groupTitle: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
         groupMeta: { fontSize: FontSize.sm, color: colors.textSecondary },
-        courseRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
-        divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-        tile: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },
+        courseRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
+        tile: { width: 36, height: 36, borderRadius: Radius.inset, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },
         tileText: { fontSize: FontSize.sm, fontWeight: '800', color: colors.accent },
         courseCopy: { flex: 1, gap: 2 },
         courseName: { fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
         courseMeta: { fontSize: FontSize.xs, color: colors.textMuted },
         courseNumbers: { alignItems: 'flex-end', gap: 2 },
         courseTime: { fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
-        empty: { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xxl },
-        emptyTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textSecondary },
-        emptyText: { fontSize: FontSize.sm, color: colors.textMuted, textAlign: 'center' },
         periodBar: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-        stepButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgCard },
-        periodTitle: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+        periodTitle: { flex: 1, textAlign: 'center', ...Type.bodyStrong, color: colors.textPrimary },
         todayLink: { alignSelf: 'center', marginTop: -Spacing.sm },
-        todayText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
         chips: { gap: Spacing.sm },
-        chip: { paddingHorizontal: Spacing.md, paddingVertical: 7, borderRadius: 999, backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.borderLight },
-        chipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
-        chipText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
-        chipTextSelected: { color: colors.white },
         metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-        metric: {
-            flexBasis: '48%', flexGrow: 1, minHeight: 72, alignItems: 'center', justifyContent: 'center', gap: 4,
-            backgroundColor: colors.bgCard, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: colors.borderLight,
-        },
+        metric: { flexBasis: '48%', flexGrow: 1 },
+        metricBody: { alignItems: 'center', justifyContent: 'center', gap: 4 },
         metricValue: { fontSize: FontSize.lg, fontWeight: '800', color: colors.accent, fontVariant: ['tabular-nums'] },
         metricLabel: { fontSize: FontSize.xs, color: colors.textMuted },
-        chart: { flexDirection: 'row', alignItems: 'flex-end', height: 170, paddingHorizontal: Spacing.sm, paddingTop: Spacing.md, gap: 2 },
+        chart: { flexDirection: 'row', alignItems: 'flex-end', height: 170, gap: 2 },
         barSlot: { flex: 1, height: '100%', alignItems: 'center' },
         barArea: { flex: 1, width: '100%', justifyContent: 'flex-end', alignItems: 'center' },
         bar: { width: '70%', maxWidth: 22, borderTopLeftRadius: 4, borderTopRightRadius: 4, backgroundColor: colors.accent },
         barToday: { backgroundColor: colors.studyTool },
         barLabel: { fontSize: 10, color: colors.textMuted, marginTop: 4, height: 14 },
-        chartEmpty: { fontSize: FontSize.sm, color: colors.textMuted, padding: Spacing.md },
-        shares: { padding: Spacing.md, gap: Spacing.md },
+        chartEmpty: { fontSize: FontSize.sm, color: colors.textMuted },
         shareRow: { gap: 5 },
         shareHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.sm },
         shareLabel: { flex: 1, fontSize: FontSize.sm, color: colors.textPrimary },
         shareValue: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textSecondary, fontVariant: ['tabular-nums'] },
-        track: { height: 6, borderRadius: 3, backgroundColor: colors.borderLight, overflow: 'hidden' },
-        fill: { height: '100%', borderRadius: 3, backgroundColor: colors.accent },
-        footnote: { fontSize: FontSize.xs, lineHeight: 16, color: colors.textMuted },
     });
 }

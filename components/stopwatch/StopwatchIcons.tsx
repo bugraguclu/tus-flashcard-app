@@ -3,7 +3,8 @@ import Svg, { Circle, G, Line, Path, Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
 
 /**
- * Line icons for the Kronometre and the study calendar, drawn on a 24-unit grid. They are
+ * Line icons of the Kronometre and the study calendar, drawn on a 24-unit grid. Control glyphs
+ * (close, tick, chevrons, plus, minus, search) come from `components/ui/icons`. They are
  * decorative: the control that holds one carries the accessibility label.
  */
 
@@ -134,60 +135,12 @@ export function HourglassIcon({ color, size }: IconProps) {
     );
 }
 
-export function PlusIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M12 5v14M5 12h14" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function MinusIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M5 12h14" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function PlusCircleIcon({ color, size }: IconProps) {
+/** A filled circle with a plus cut into it: "Çalışma Ekle". `markColor` draws the plus. */
+export function PlusCircleIcon({ color, size, markColor }: IconProps & { markColor: string }) {
     return (
         <IconFrame size={size}>
             <Circle cx={12} cy={12} r={9.4} fill={color} />
-            <Path d="M12 7.6v8.8M7.6 12h8.8" fill="none" stroke="#ffffff" strokeWidth={2.2} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function CheckIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M5.5 12.6l4.2 4.2 8.8-9.6" fill="none" stroke={color} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
-        </IconFrame>
-    );
-}
-
-export function ChevronDownIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M6 9.5l6 6 6-6" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-        </IconFrame>
-    );
-}
-
-export function CloseIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M6 6l12 12M18 6L6 18" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function SearchIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Circle cx={10.5} cy={10.5} r={6.2} fill="none" stroke={color} strokeWidth={2.2} />
-            <Path d="M15.2 15.2l4.6 4.6" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" />
+            <Path d="M12 7.6v8.8M7.6 12h8.8" fill="none" stroke={markColor} strokeWidth={2.2} strokeLinecap="round" />
         </IconFrame>
     );
 }

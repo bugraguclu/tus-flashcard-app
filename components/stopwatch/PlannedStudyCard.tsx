@@ -6,9 +6,13 @@ import { useI18n } from '../../hooks/useI18n';
 import { formatHeroDuration } from '../../lib/stopwatch';
 import { studySubjectInitial } from '../../lib/studyCalendar';
 import { formatPlanClock, type StudyPlanBlock } from '../../lib/studyPlans';
+import { IconButton } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Choice';
+import { CheckIcon } from '../ui/icons';
 import { ClockIcon, GearIcon, PlayIcon } from './StopwatchIcons';
 import { studyTypeLabel } from './StudyTypeChips';
-import { timelineStyles } from './timelineStyles';
+import { SIDE_BUTTON_SLOP, timelineStyles } from './timelineStyles';
 
 const MINUTE_MS = 60_000;
 
@@ -49,66 +53,67 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
             <View style={styles.gutter}>
                 <View style={styles.line} />
                 <View style={styles.sideButtonSlot}>
-                    <TouchableOpacity
+                    <IconButton
                         style={styles.sideButton}
                         onPress={onOpen}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        accessibilityRole="button"
+                        hitSlop={SIDE_BUTTON_SLOP}
                         accessibilityLabel={l('Çalışma planlarını aç', 'Open the study plans')}
                     >
                         <GearIcon color={colors.textSecondary} size={15} />
-                    </TouchableOpacity>
+                    </IconButton>
                 </View>
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
                     <View style={[styles.node, done ? styles.nodeDone : styles.nodePlanned]}>
-                        <ClockIcon color={colors.white} size={13} />
+                        <ClockIcon color={colors.onAccent} size={13} />
                     </View>
                 </View>
             </View>
             <View style={styles.column}>
-                <View style={styles.card}>
-                    <TouchableOpacity
-                        style={local.open}
-                        onPress={onOpen}
-                        accessibilityRole="button"
-                        accessibilityLabel={l(
-                            `Planlanan çalışma: ${plan.subject}, ${type}, ${formatPlanClock(plan.startMinute)}–${end}. ${summary}`,
-                            `Planned: ${plan.subject}, ${type}, ${formatPlanClock(plan.startMinute)}–${end}. ${summary}`,
-                        )}
-                    >
-                        <View style={styles.tile}>
-                            <Text style={styles.tileText}>{studySubjectInitial(plan.subject)}</Text>
-                        </View>
-                        <View style={styles.body}>
-                            <View style={styles.titleRow}>
-                                <Text style={styles.subject} numberOfLines={1}>{plan.subject}</Text>
-                                <View style={styles.chip}>
-                                    <Text style={styles.chipText}>{type}</Text>
-                                </View>
-                            </View>
-                            {done ? (
-                                <Text style={[local.left, { color: colors.btnGood }]}>{l('Tamamlandı ✓', 'Done ✓')}</Text>
-                            ) : (
-                                <Text style={[local.left, { color: colors.textPrimary }]}>
-                                    {remainingMs === undefined ? l('Süre: ', 'Length: ') : l('Kalan: ', 'Left: ')}
-                                    <Text style={{ color: colors.accent }}>{amount}</Text>
-                                </Text>
-                            )}
-                            {plan.note ? <Text style={styles.note}>{plan.note}</Text> : null}
-                        </View>
-                    </TouchableOpacity>
-                    {onStart ? (
+                <Card padded>
+                    <View style={styles.cardRow}>
                         <TouchableOpacity
-                            style={[local.start, { backgroundColor: colors.accent }]}
-                            onPress={onStart}
-                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                            style={local.open}
+                            onPress={onOpen}
                             accessibilityRole="button"
-                            accessibilityLabel={l(`${plan.subject} çalışmasını başlat`, `Start ${plan.subject}`)}
+                            accessibilityLabel={l(
+                                `Planlanan çalışma: ${plan.subject}, ${type}, ${formatPlanClock(plan.startMinute)}–${end}. ${summary}`,
+                                `Planned: ${plan.subject}, ${type}, ${formatPlanClock(plan.startMinute)}–${end}. ${summary}`,
+                            )}
                         >
-                            <PlayIcon color={colors.white} size={16} />
+                            <View style={styles.tile}>
+                                <Text style={styles.tileText}>{studySubjectInitial(plan.subject)}</Text>
+                            </View>
+                            <View style={styles.body}>
+                                <View style={styles.titleRow}>
+                                    <Text style={styles.subject} numberOfLines={1}>{plan.subject}</Text>
+                                    <Badge label={type} tone="info" style={styles.typeBadge} />
+                                </View>
+                                {done ? (
+                                    <View style={local.done}>
+                                        <Text style={[local.left, { color: colors.success }]}>{l('Tamamlandı', 'Done')}</Text>
+                                        <CheckIcon color={colors.success} size={16} />
+                                    </View>
+                                ) : (
+                                    <Text style={[local.left, { color: colors.textPrimary }]}>
+                                        {remainingMs === undefined ? l('Süre: ', 'Length: ') : l('Kalan: ', 'Left: ')}
+                                        <Text style={{ color: colors.accent }}>{amount}</Text>
+                                    </Text>
+                                )}
+                                {plan.note ? <Text style={styles.note}>{plan.note}</Text> : null}
+                            </View>
                         </TouchableOpacity>
-                    ) : null}
-                </View>
+                        {onStart ? (
+                            <IconButton
+                                style={[local.start, { backgroundColor: colors.accent }]}
+                                onPress={onStart}
+                                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                                accessibilityLabel={l(`${plan.subject} çalışmasını başlat`, `Start ${plan.subject}`)}
+                            >
+                                <PlayIcon color={colors.onAccent} size={16} />
+                            </IconButton>
+                        ) : null}
+                    </View>
+                </Card>
                 <Text style={styles.timeRange}>
                     {l('Plan', 'Plan')} : {formatPlanClock(plan.startMinute)} - {end}
                 </Text>
@@ -120,7 +125,8 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
 const local = StyleSheet.create({
     open: { flex: 1, flexDirection: 'row', gap: Spacing.md },
     left: { fontSize: FontSize.md, fontWeight: '500' },
-    start: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginLeft: Spacing.sm, alignSelf: 'center' },
+    done: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+    start: { width: 34, height: 34, marginLeft: Spacing.sm, alignSelf: 'center' },
 });
 
 export default React.memo(PlannedStudyCard);
