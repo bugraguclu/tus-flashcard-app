@@ -79,6 +79,7 @@ import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
 import { useReviewerAutoplay } from '../../lib/reviewerAutoplay';
 import { CarriedSoundGate } from '../../lib/reviewerCarriedSound';
 import { useCarriedCardSound } from '../../components/reviewer/useCarriedCardSound';
+import ReviewerLeechNotice, { type ReviewerLeechNoticeState } from '../../components/reviewer/ReviewerLeechNotice';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
 import {
@@ -382,6 +383,8 @@ export default function StudyScreen() {
     const [showingAnswer, setShowingAnswer] = useState(false);
     const [typedAnswer, setTypedAnswer] = useState('');
     const [answerFeedback, setAnswerFeedback] = useState<{ nonce: number } | null>(null);
+    // Anki's "Card was a leech." after the answer that made the card a leech.
+    const [leechNotice, setLeechNotice] = useState<ReviewerLeechNoticeState | null>(null);
     const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
     const [redoStack, setRedoStack] = useState<UndoEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -993,6 +996,8 @@ export default function StudyScreen() {
                     l('Yanıt kaydedilemedi. Lütfen tekrar deneyin.', 'Could not save the answer. Please try again.')));
                 return;
             }
+            // The leech action may have suspended the card, which then leaves the session: say so.
+            if (result.leeched) setLeechNotice({ nonce: Date.now(), suspended: result.suspended });
 
             // A preview answer that set a delay: when the card is due again.
             let previewRequeueAt: number | null = null;
@@ -1202,6 +1207,12 @@ export default function StudyScreen() {
         return () => clearTimeout(timer);
     }, [answerFeedback]);
 
+    useEffect(() => {
+        if (!leechNotice) return;
+        const timer = setTimeout(() => setLeechNotice(null), 3500);
+        return () => clearTimeout(timer);
+    }, [leechNotice]);
+
     /**
      * Step across a non-answer operation in either direction.
      *
@@ -1342,6 +1353,7 @@ export default function StudyScreen() {
                 if (redo.preview) setFilteredPreviewDue(redo.preview.deckId, redo.cardId, redo.preview.previousDueMs);
             });
 
+            if (result.leeched) setLeechNotice({ nonce: Date.now(), suspended: result.suspended });
             setRedoStack((prev) => prev.slice(0, -1));
             setUndoStack((prev) => [
                 ...prev.slice(-29),
@@ -3099,6 +3111,8 @@ export default function StudyScreen() {
                     <Text style={styles.answerFeedbackText}>×</Text>
                 </View>
             ) : null}
+            {/* Above the redesigned reviewer's "×" feedback, which an Again that makes a leech also shows. */}
+            <ReviewerLeechNotice notice={leechNotice} bottom={feedbackBottom + (newStudyScreenEnabled ? 50 : 0)} />
             {newStudyScreenEnabled ? (toolbarPosition === 'top' ? reviewerToolbar : null) : classicToolbar}
 
             <View

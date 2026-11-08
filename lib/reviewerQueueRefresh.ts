@@ -151,17 +151,19 @@ function isCardDueNow(card: StudyCard, nowMs: number, today: string): boolean {
 export function advanceQueueAfterAnswer(input: PostAnswerQueueInput): PostAnswerQueueStep {
     const { updatedCard, nowMs } = input;
     const withoutAnswered = input.queue.filter((card) => card.cardId !== input.answeredCardId);
+    // A card the leech action suspended has left the session.
+    const stillStudied = !updatedCard.state.suspended;
     const learnAhead = withoutAnswered.length === 0
         && updatedCard.state.status === 'learning'
         && updatedCard.state.dueTime > 0
         && updatedCard.state.dueTime <= nowMs + Math.max(0, input.learnAheadMs);
-    const reinsert = !input.preview && (learnAhead || isCardDueNow(updatedCard, nowMs, input.today));
+    const reinsert = !input.preview && stillStudied && (learnAhead || isCardDueNow(updatedCard, nowMs, input.today));
     const queue = reinsert ? [...withoutAnswered, updatedCard] : withoutAnswered;
 
     const futureLearningDue = queue
         .filter((card) => card.state.status === 'learning' && card.state.dueTime > nowMs)
         .map((card) => card.state.dueTime);
-    if (updatedCard.state.status === 'learning' && updatedCard.state.dueTime > nowMs) {
+    if (stillStudied && updatedCard.state.status === 'learning' && updatedCard.state.dueTime > nowMs) {
         futureLearningDue.push(updatedCard.state.dueTime);
     }
 
@@ -187,7 +189,8 @@ export function queueCountBucket(status: StudyCard['state']['status']): keyof Re
  *
  * A card on an intraday step counts as learning for the rest of the study day, so ÖĞRENİYOR grows
  * the moment a new card enters learning. A day-long step (`dueTime` 0, as Anki's interday learning
- * is stored) is due on a later day after any answer, so it is not today's work.
+ * is stored) is due on a later day after any answer, so it is not today's work, and a card the leech
+ * action suspended has left the session.
  */
 export function countsAfterAnswer(counts: ReviewerQueueCounts, input: {
     answeredStatus: StudyCard['state']['status'];
@@ -203,6 +206,7 @@ export function countsAfterAnswer(counts: ReviewerQueueCounts, input: {
     const answeredBucket = queueCountBucket(input.answeredStatus);
     next[answeredBucket] = Math.max(0, next[answeredBucket] - 1);
     const updated = input.updatedCard;
+    if (updated.state.suspended) return next;
     if (updated.state.status === 'learning') {
         if (updated.state.dueTime > 0 && updated.state.dueTime < input.endOfDayMs) next.learningCount += 1;
     } else if (isCardDueNow(updated, input.nowMs, input.today)) {

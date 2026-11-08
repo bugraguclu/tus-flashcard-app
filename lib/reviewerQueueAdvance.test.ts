@@ -91,3 +91,34 @@ describe('queue counts after an answer', () => {
         expect(after('review', { status: 'review', dueDate: '2026-10-24' })).toEqual({ newCount: 1, learningCount: 0, reviewCount: 0 });
     });
 });
+
+// The leech action can suspend the card it answered ("Card was a leech. It has been suspended."):
+// the card leaves the session, so the reviewer neither deals it again nor counts it.
+describe('a card the leech action suspended', () => {
+    const suspendedLeech = card(1, { status: 'learning', dueTime: NOW + 10 * MINUTE, suspended: true });
+
+    it('is not dealt again, even as the last card inside the learn ahead limit', () => {
+        const step = advanceQueueAfterAnswer({
+            queue: [card(1, { status: 'review' })],
+            answeredCardId: 1,
+            updatedCard: suspendedLeech,
+            nowMs: NOW,
+            today: '2026-10-21',
+            learnAheadMs: 20 * MINUTE,
+            preview: false,
+        });
+        expect(step.currentCard).toBeNull();
+        expect(step.queue).toEqual([]);
+        expect(step.nextLearningDue).toBeNull();
+    });
+
+    it('leaves the counts', () => {
+        expect(countsAfterAnswer({ newCount: 0, learningCount: 0, reviewCount: 3 }, {
+            answeredStatus: 'review',
+            updatedCard: suspendedLeech,
+            nowMs: NOW,
+            today: '2026-10-21',
+            endOfDayMs: NOW + 10 * 60 * MINUTE,
+        })).toEqual({ newCount: 0, learningCount: 0, reviewCount: 2 });
+    });
+});
