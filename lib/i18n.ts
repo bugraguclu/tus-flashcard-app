@@ -70,6 +70,7 @@ const tr = {
     'noteTypes.changeNeedsConfirmation': 'Not türünü değiştirmek {{count}} kartı silecek; önce bunu onaylamanız gerekiyor.',
     'decks.nameExists': '“{{name}}” adında bir deste zaten var.',
     'decks.filteredNameExists': '“{{name}}” bir filtreli deste; kartlar oraya taşınamaz.',
+    'decks.holdsCatalogCards': 'Bu destede katalog kartları var, bu yüzden silinemez.',
 
     'settings.title': '⚙️ Ayarlar',
     'settings.learnAheadOn': 'Süresinin dolmasına {{minutes}} dakikadan az kalan öğrenme kartları, sırada başka kart kalmadığında gösterilir.',
@@ -155,6 +156,7 @@ const en: Record<TranslationKey, string> = {
     'noteTypes.changeNeedsConfirmation': 'Changing the note type would remove {{count}} card(s), so it needs your confirmation first.',
     'decks.nameExists': 'A deck named “{{name}}” already exists.',
     'decks.filteredNameExists': '“{{name}}” is a filtered deck, so cards cannot be placed in it.',
+    'decks.holdsCatalogCards': 'This deck holds catalog cards, so it can’t be deleted.',
 
     'settings.title': '⚙️ Settings',
     'settings.learnAheadOn': 'Learning cards due in less than {{minutes}} minutes are shown when no other cards remain.',

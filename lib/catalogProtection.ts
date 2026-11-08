@@ -9,6 +9,7 @@ import type { AnkiCard, Deck, DeckConfig, Note, NoteType } from './models';
 import { getDB } from './db';
 import { BKA_MANIFEST } from './bkaManifest';
 import { CATALOG_INSTALL_KEY, CATALOG_PACK_ID, isCatalogPackRow } from './catalogRows';
+import { translateActive } from './i18n';
 
 type CatalogOwned = { catalogPack?: string };
 
@@ -138,6 +139,25 @@ export function assertCatalogNoteTypeMutable(value: NoteType | number): void { a
 export function assertCatalogDeckNotDeletable(value: Deck | number): void {
     if (isCatalogDeck(value)) {
         throw new PaidCatalogProtectionError('Katalog desteleri silinemez. Kataloğu Ayarlar ekranından kaldırabilirsiniz.');
+    }
+}
+
+/**
+ * Deleting a deck takes its subdecks, their cards and the notes left without cards. Refuse when
+ * any of those belongs to the catalog, even when the deck itself has no marker: an import in an
+ * earlier build could rewrite a catalog deck without it.
+ */
+export function assertDeckDeletionSparesCatalog(deckIds: readonly number[], noteIds: readonly number[]): void {
+    const rows = (table: 'decks' | 'notes', ids: readonly number[]) => (ids.length === 0 ? [] : getDB().getAllSync<{ data: string }>(
+        `SELECT data FROM ${table} WHERE id IN (SELECT value FROM json_each(?))`,
+        JSON.stringify([...new Set(ids)]),
+    ));
+    const catalogNote = (data: string): boolean => {
+        if (isCatalogPackRow(data)) return true;
+        try { return isProtectedCatalogGuid((JSON.parse(data) as Note).guid); } catch { return false; }
+    };
+    if (rows('decks', deckIds).some((row) => isCatalogPackRow(row.data)) || rows('notes', noteIds).some((row) => catalogNote(row.data))) {
+        throw new PaidCatalogProtectionError(translateActive('decks.holdsCatalogCards'));
     }
 }
 

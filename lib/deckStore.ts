@@ -22,6 +22,7 @@ import {
     assertCatalogDeckMutable,
     assertCatalogDeckNotDeletable,
     assertCatalogDeckNotRenamable,
+    assertDeckDeletionSparesCatalog,
     isCatalogDeck,
     PaidCatalogProtectionError,
 } from './catalogProtection';
@@ -227,6 +228,9 @@ export function deleteDeck(id: number): DeletionUndo | undefined {
         : `deckId IN (${sqlPlaceholders(affectedDecks.length)}) OR COALESCE(json_extract(data, '$.odid'), 0) IN (${sqlPlaceholders(affectedDecks.length)})`;
     const cardsOfDecksParams = deck.isFiltered ? affectedDecks : [...affectedDecks, ...affectedDecks];
     const affectedCards = db.getAllSync<{ id: number; noteId: number }>(`SELECT id, noteId FROM anki_cards WHERE ${cardsOfDecksSql}`, ...cardsOfDecksParams);
+    // A filtered deck only sends its cards home; a regular one deletes them, so it must hold no
+    // catalog deck or card, whatever its own marker says.
+    if (!deck.isFiltered) assertDeckDeletionSparesCatalog(affectedDecks, affectedCards.map((card) => card.noteId));
     const finishDeletion = captureDeletion({ deckIds: affectedDecks, cardIds: affectedCards.map(c => c.id), noteIds: [...new Set(affectedCards.map(c => c.noteId))] });
     db.execSync('BEGIN TRANSACTION;');
     try {
