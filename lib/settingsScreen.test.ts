@@ -407,6 +407,22 @@ describe('checking and repairing the database', () => {
         expect(byText('Veritabanını kontrol et').props.disabled).toBe(false);
     });
 
+    it('refreshes the open screens after a repair that only fixed due dates, as on web', async () => {
+        h.findings = { ...cleanAudit(), invalidDueCards: 2 };
+        h.optimizeOutcome = {
+            backupFileName: 'tus-backup-2026-11-08-120000000.json',
+            backupRestorable: true,
+            result: { repair: { ...emptyRepairResult(), duesRepaired: 2 }, ftsReindexed: 0, freedBytes: 0, failedSteps: [] },
+        };
+        openMaintenance();
+
+        act(() => byText('Onar ve optimize et').props.onPress());
+        await settle();
+
+        expect(h.optimize).toHaveBeenCalledTimes(1);
+        expect(h.invalidated).toBe(1);
+    });
+
     it('runs one audit when Check Database is pressed twice, and disables the rows while it runs', async () => {
         openMaintenance();
         const check = byText('Veritabanını kontrol et');
