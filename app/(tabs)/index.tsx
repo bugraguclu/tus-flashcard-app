@@ -76,6 +76,7 @@ import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
 import { DownChevron, ReviewerBackIcon, ReviewerSettingsIcon, UndoReviewIcon } from '../../components/reviewer/ReviewerIcons';
 import { reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
 import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
+import { useReviewerAutoplay } from '../../lib/reviewerAutoplay';
 import { CarriedSoundGate } from '../../lib/reviewerCarriedSound';
 import { useCarriedCardSound } from '../../components/reviewer/useCarriedCardSound';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
@@ -2247,52 +2248,6 @@ export default function StudyScreen() {
         };
     }, [targetDeckId]);
 
-    // One automatic TTS owner covers both whole-card reading and explicit Anki template tags.
-    // The short debounce lets React discard superseded side/card effects before native speech is
-    // enqueued; the generation-safe queue then serializes stop -> speak across the native bridge.
-    useEffect(() => {
-        const sideHasExplicitTts = showingAnswer ? explicitTtsSides.answer : explicitTtsSides.question;
-        const shouldReadWholeCard = voicePlaybackEnabled;
-        const shouldAutoPlayExplicitTts = cardDeckOptions.autoPlayAudio && sideHasExplicitTts;
-        if (!reviewerFocused || !appForegrounded || (!shouldReadWholeCard && !shouldAutoPlayExplicitTts)) return;
-        // "Interrupt current audio when answering" off lets speech run on into the next side.
-        const cleanup = () => { if (settings.interruptAudioOnAnswer) stopSpeech(); };
-        const order = avOrderFor(showingAnswer);
-        const gate = carriedSoundGateRef.current;
-        if (cardDeckOptions.autoPlayAudio && order[0] === 'sound' && order.includes('tts')) {
-            // The side's sound files come first; speech starts once they have played.
-            const sequencer = avSequencerRef.current;
-            const release = gate.whenClear(() => sequencer.after('sound', () => speakSide(showingAnswer)));
-            return () => {
-                release();
-                sequencer.cancel();
-                cleanup();
-            };
-        }
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        // Speech follows a sound carried over from the side before, as Anki's audio queue does.
-        const release = gate.whenClear(() => {
-            timer = setTimeout(() => speakSide(showingAnswer), shouldReadWholeCard ? 120 : 450);
-        });
-        return () => {
-            release();
-            clearTimeout(timer);
-            cleanup();
-        };
-    }, [
-        avOrderFor,
-        settings.interruptAudioOnAnswer,
-        voicePlaybackEnabled,
-        reviewerFocused,
-        appForegrounded,
-        cardDeckOptions.autoPlayAudio,
-        showingAnswer,
-        currentCard?.cardId,
-        explicitTtsSides,
-        speakSide,
-        stopSpeech,
-    ]);
-
     useEffect(() => stopSpeech, [stopSpeech]);
     useEffect(() => {
         if (reviewerFocused && appForegrounded) return;
@@ -2318,34 +2273,30 @@ export default function StudyScreen() {
         }
     }, [currentCard?.cardId, showingAnswer, settings.interruptAudioOnAnswer, stopSpeech]);
 
-    useEffect(() => {
-        if (!reviewerFocused || !appForegrounded || !cardDeckOptions.autoPlayAudio || !cardHasAudio) return;
-        // Anki: flipping to the answer auto-plays only the answer side's own sounds.
-        if (showingAnswer && !answerSideHasAudio) return;
-        const playSounds = () => {
-            setAudioPlaybackScope(reviewerPlaybackScope(showingAnswer, false, true));
-            setAudioSignal((value) => value + 1);
-        };
-        const order = avOrderFor(showingAnswer);
-        const gate = carriedSoundGateRef.current;
-        if (order[0] === 'tts' && order.includes('sound')) {
-            // Speech leads on this side; the sound files wait until it has finished.
-            const sequencer = avSequencerRef.current;
-            const release = gate.whenClear(() => sequencer.after('tts', playSounds));
-            return () => {
-                release();
-                sequencer.cancel();
-            };
-        }
-        // Give the side's media a moment to resolve (web swaps blob URLs in asynchronously). A
-        // sound carried over from the side before finishes first.
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const release = gate.whenClear(() => { timer = setTimeout(playSounds, 450); });
-        return () => {
-            release();
-            clearTimeout(timer);
-        };
-    }, [currentCard?.cardId, showingAnswer, reviewerFocused, appForegrounded, cardDeckOptions.autoPlayAudio, cardHasAudio, answerSideHasAudio, avOrderFor]);
+    // A side's sound files and speech start once, when it is shown: a flag, a mark, a tag edit or
+    // coming back from Card Info, Deck Options or the editor leaves them alone.
+    const playSideSounds = useCallback((answerSide: boolean) => {
+        setAudioPlaybackScope(reviewerPlaybackScope(answerSide, false, true));
+        setAudioSignal((value) => value + 1);
+    }, []);
+    useReviewerAutoplay({
+        cardId: currentCard?.cardId,
+        answerSide: showingAnswer,
+        focused: reviewerFocused,
+        foregrounded: appForegrounded,
+        autoPlayAudio: cardDeckOptions.autoPlayAudio,
+        wholeCardReading: voicePlaybackEnabled,
+        interruptAudioOnAnswer: Boolean(settings.interruptAudioOnAnswer),
+        sideHasExplicitTts: showingAnswer ? explicitTtsSides.answer : explicitTtsSides.question,
+        cardHasAudio,
+        answerSideHasAudio,
+        order: avOrderFor(showingAnswer),
+        speak: speakSide,
+        stopSpeech,
+        playSounds: playSideSounds,
+        gate: carriedSoundGateRef.current,
+        sequencer: avSequencerRef.current,
+    });
 
     // Deck description (Anki shows it on the deck's study screen).
     const deckDescription = useMemo(() => {
