@@ -148,15 +148,17 @@ export function assertCatalogDeckNotDeletable(value: Deck | number): void {
  * earlier build could rewrite a catalog deck without it.
  */
 export function assertDeckDeletionSparesCatalog(deckIds: readonly number[], noteIds: readonly number[]): void {
-    const rows = (table: 'decks' | 'notes', ids: readonly number[]) => (ids.length === 0 ? [] : getDB().getAllSync<{ data: string }>(
-        `SELECT data FROM ${table} WHERE id IN (SELECT value FROM json_each(?))`,
+    // Only the marker and the GUID come out of SQLite, not every note's fields.
+    const owners = (table: 'decks' | 'notes', ids: readonly number[]) => (ids.length === 0 ? [] : getDB().getAllSync<{
+        pack: unknown; guid: unknown;
+    }>(
+        `SELECT CASE WHEN json_valid(data) THEN json_extract(data, '$.catalogPack') END AS pack,
+                CASE WHEN json_valid(data) THEN json_extract(data, '$.guid') END AS guid
+         FROM ${table} WHERE id IN (SELECT value FROM json_each(?))`,
         JSON.stringify([...new Set(ids)]),
     ));
-    const catalogNote = (data: string): boolean => {
-        if (isCatalogPackRow(data)) return true;
-        try { return isProtectedCatalogGuid((JSON.parse(data) as Note).guid); } catch { return false; }
-    };
-    if (rows('decks', deckIds).some((row) => isCatalogPackRow(row.data)) || rows('notes', noteIds).some((row) => catalogNote(row.data))) {
+    if (owners('decks', deckIds).some((row) => row.pack === CATALOG_PACK_ID)
+        || owners('notes', noteIds).some((row) => row.pack === CATALOG_PACK_ID || isProtectedCatalogGuid(row.guid))) {
         throw new PaidCatalogProtectionError(translateActive('decks.holdsCatalogCards'));
     }
 }

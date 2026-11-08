@@ -12,7 +12,7 @@
 
 import { getDB } from './db';
 import type { AnkiCard, Deck, DeckConfig, Note } from './models';
-import { CATALOG_PROGRESS_FIELDS, isCatalogPackRow } from './catalogRows';
+import { CATALOG_PACK_ID, CATALOG_PROGRESS_FIELDS, isCatalogPackRow } from './catalogRows';
 import type { BkaCatalogSnapshot } from './bkaCatalogSnapshot';
 
 /** What a refresh needs from an installed note; the fields of the ~7,700 notes are left out. */
@@ -33,8 +33,12 @@ export interface InstalledCatalogState {
 /** Deck settings a learner chooses on a catalog deck; the package's are only a starting point. */
 const DECK_LEARNER_FIELDS = ['configId', 'newLimit', 'reviewLimit', 'desiredRetention', 'collapsed'] as const;
 
-function parseCatalogRows<T>(rows: Array<{ id: number; data: string }>): Map<number, T> {
+/** The catalog's rows of a table, by id. Only rows naming the pack are read out of SQLite. */
+function readCatalogRows<T>(table: 'notes' | 'decks' | 'deck_configs'): Map<number, T> {
     const parsed = new Map<number, T>();
+    const rows = getDB().getAllSync<{ id: number; data: string }>(
+        `SELECT id, data FROM ${table} WHERE instr(data, ?) > 0`, CATALOG_PACK_ID,
+    );
     for (const row of rows) {
         if (!isCatalogPackRow(row.data)) continue;
         try { parsed.set(Number(row.id), JSON.parse(row.data) as T); } catch { /* the marker check parsed it once */ }
@@ -47,23 +51,25 @@ export function readInstalledCatalogState(): InstalledCatalogState {
     const db = getDB();
     const notes = new Map<number, InstalledCatalogNote>();
     const editedNotes: Note[] = [];
-    for (const note of parseCatalogRows<Note>(db.getAllSync('SELECT id, data FROM notes')).values()) {
-        notes.set(note.id, { id: note.id, guid: note.guid, tags: note.tags, catalogPackageTags: note.catalogPackageTags });
+    for (const [id, note] of readCatalogRows<Note>('notes')) {
+        notes.set(id, { id, guid: note.guid, tags: note.tags, catalogPackageTags: note.catalogPackageTags });
         if (note.catalogFieldsEdited) editedNotes.push(note);
     }
     const cards = new Map<number, AnkiCard>();
-    for (const row of db.getAllSync<{ id: number; noteId: number; data: string }>('SELECT id, noteId, data FROM anki_cards')) {
-        if (!notes.has(Number(row.noteId))) continue;
+    const cardRows = notes.size === 0 ? [] : db.getAllSync<{ id: number; data: string }>(
+        'SELECT id, data FROM anki_cards WHERE noteId IN (SELECT value FROM json_each(?))',
+        JSON.stringify([...notes.keys()]),
+    );
+    for (const row of cardRows) {
         try { cards.set(Number(row.id), JSON.parse(row.data) as AnkiCard); } catch { /* nothing readable to keep */ }
     }
-    const presetRows = db.getAllSync<{ id: number; data: string }>('SELECT id, data FROM deck_configs');
     return {
         notes,
         editedNotes,
         cards,
-        decks: parseCatalogRows<Deck>(db.getAllSync('SELECT id, data FROM decks')),
-        presets: parseCatalogRows<DeckConfig>(presetRows),
-        presetIds: new Set(presetRows.map((row) => Number(row.id))),
+        decks: readCatalogRows<Deck>('decks'),
+        presets: readCatalogRows<DeckConfig>('deck_configs'),
+        presetIds: new Set(db.getAllSync<{ id: number }>('SELECT id FROM deck_configs').map((row) => Number(row.id))),
     };
 }
 
