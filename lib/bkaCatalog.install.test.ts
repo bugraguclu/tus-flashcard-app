@@ -4,13 +4,16 @@
  * package and the app's actual SQLite schema.
  */
 
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import initSqlJs from 'sql.js';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 
-const holder = vi.hoisted(() => ({ db: null as any, SQL: null as any, failPackageRead: false }));
+const holder = vi.hoisted(() => ({
+    db: null as any, SQL: null as any, failPackageRead: false, failReader: false, failMedia: false,
+}));
 
 vi.mock('./db', () => ({
     getDB: () => holder.db,
@@ -34,6 +37,8 @@ vi.mock('./importApkg', async () => {
         ...actual,
         // Node has neither expo-sqlite nor the native media store; everything else is the real path.
         openAnkiReader: async (bytes: Uint8Array) => {
+            // Stands in for expo-sqlite failing to open the unpacked collection.
+            if (holder.failReader) throw new Error('unable to open database file');
             const database = new holder.SQL.Database(bytes);
             return {
                 getAllSync: <T,>(sql: string, ...params: any[]): T[] => {
@@ -50,6 +55,8 @@ vi.mock('./importApkg', async () => {
             };
         },
         importMediaFromZip: async (zip: JSZip) => {
+            // Stands in for the media folder running out of space.
+            if (holder.failMedia) throw new Error('No space left on device');
             const manifest = JSON.parse(await zip.file('media')!.async('text')) as Record<string, string>;
             const filenames = Object.values(manifest);
             return { imported: filenames.length, skipped: 0, filenames };
@@ -122,6 +129,30 @@ const learnerRowsIntact = (db: SyncDb) => ({
     config: db.getFirstSync('SELECT id FROM deck_configs WHERE id = 1') !== null,
 });
 
+const COLLECTION_TABLES = ['settings', 'note_types', 'notes', 'decks', 'deck_configs', 'anki_cards', 'revlog', 'graves', 'cards_fts'];
+
+/** Every row of every collection table, so a failed refresh can be shown to have changed nothing. */
+function collectionDigest(db: SyncDb): Record<string, string> {
+    return Object.fromEntries(COLLECTION_TABLES.map((table) => {
+        const rows = db.getAllSync(`SELECT * FROM ${table} ORDER BY 1`);
+        return [table, `${rows.length} rows ${createHash('sha256').update(JSON.stringify(rows)).digest('hex')}`];
+    }));
+}
+
+/** Make the nth statement matching `pattern` fail, the way a full disk fails a write. */
+function failNthWrite(db: SyncDb, pattern: RegExp, nth: number): void {
+    const runSync = db.runSync.bind(db);
+    let seen = 0;
+    db.runSync = (sql: string, ...params: any[]) => {
+        if (pattern.test(sql) && ++seen === nth) throw new Error('database or disk is full');
+        return runSync(sql, ...params);
+    };
+}
+
+const markOlderPackageInstalled = (db: SyncDb) => db.runSync(
+    'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', 'bka_tus_catalog_package_v1', 'onceki-paketin-hash-i',
+);
+
 let db: SyncDb;
 
 beforeAll(async () => {
@@ -131,6 +162,8 @@ beforeAll(async () => {
 beforeEach(() => {
     holder.db = createAppDb(holder.SQL);
     holder.failPackageRead = false;
+    holder.failReader = false;
+    holder.failMedia = false;
     db = holder.db;
     seedLearnerCollection(db);
 });
@@ -348,10 +381,7 @@ describe('BKA catalog installation', () => {
 
         // A corrected package ships under a different hash. That is what tells an existing
         // install its cards are stale.
-        db.runSync(
-            'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
-            'bka_tus_catalog_package_v1', 'onceki-paketin-hash-i',
-        );
+        markOlderPackageInstalled(db);
 
         const refreshed = await installBkaCatalog();
         expect(refreshed.installed).toBe(true);
@@ -383,6 +413,35 @@ describe('BKA catalog installation', () => {
         expect(isBkaCatalogInstalled()).toBe(true);
         expect(learnerRowsIntact(db)).toEqual({ noteType: true, deck: true, note: true, card: true, config: true });
     }, 120_000);
+
+    it.each(['package reader', 'media copy', 'card write'] as const)(
+        'leaves the collection exactly as it was when a refresh fails in the %s',
+        async (failure) => {
+            await installBkaCatalog();
+            // Progress and a field edit: the edit lives only in this install's rows until the
+            // refresh writes it into the new ones.
+            const studied = db.getFirstSync<{ id: number; data: string }>(
+                'SELECT id, data FROM anki_cards WHERE id != ? ORDER BY id', LEARNER.cardId)!;
+            db.runSync(
+                'UPDATE anki_cards SET type = 2, queue = 2, due = 12, ivl = 21, reps = 4, data = ? WHERE id = ?',
+                JSON.stringify({ ...JSON.parse(studied.data), type: 2, queue: 2, due: 12, ivl: 21, reps: 4 }), studied.id,
+            );
+            const note = getNote(JSON.parse(studied.data).noteId)!;
+            const fields = ['{{c1::Kendi açıklamam}}', ...note.fields.slice(1)];
+            updateTusCardByCardId(studied.id, { question: fields[0], answer: fields[1] ?? '', fieldValues: fields });
+            markOlderPackageInstalled(db);
+            const before = collectionDigest(db);
+
+            if (failure === 'package reader') holder.failReader = true;
+            if (failure === 'media copy') holder.failMedia = true;
+            if (failure === 'card write') failNthWrite(db, /INSERT OR REPLACE INTO anki_cards/, 500);
+
+            await expect(installBkaCatalog()).rejects.toThrow();
+            expect(collectionDigest(db)).toEqual(before);
+            expect(getNote(note.id)?.fields).toEqual(fields);
+        },
+        120_000,
+    );
 
     it('gives the catalog its own root deck when the learner already owns that name', async () => {
         db.runSync(
