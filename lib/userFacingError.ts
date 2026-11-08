@@ -25,11 +25,29 @@ const TECHNICAL_ERROR_PATTERNS = [
     /\b(?:React\.createElement|createNavigatorFactory|ExpoRouter)\b/i,
 ];
 
+function looksLikeDiagnostics(message: string): boolean {
+    return TECHNICAL_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+}
+
 export function isTechnicalErrorMessage(message: string): boolean {
     const normalized = message.trim();
     if (!normalized) return true;
     if (normalized.length > MAX_USER_MESSAGE_LENGTH) return true;
-    return TECHNICAL_ERROR_PATTERNS.some((pattern) => pattern.test(normalized));
+    return looksLikeDiagnostics(normalized);
+}
+
+/**
+ * The text a dialog shows. The app writes it, so its length is never a reason to hide it: a
+ * Repair confirmation or its result runs past the 600-character cap in English, and replacing it
+ * would have the learner approve a destructive repair while reading an error. Diagnostics that
+ * reach a dialog are still replaced. The cap stays on `userFacingErrorMessage`, for raw errors.
+ */
+export function userFacingDialogText(
+    message: string,
+    fallback: string = translateActive('common.genericError'),
+): string {
+    const normalized = typeof message === 'string' ? message.trim() : '';
+    return !normalized || looksLikeDiagnostics(normalized) ? fallback : normalized;
 }
 
 /** Return a concise user-safe message while callers keep the original error for console logs. */

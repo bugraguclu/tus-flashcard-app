@@ -1,6 +1,6 @@
 import { Alert, Platform } from 'react-native';
 import { translateActive } from './i18n';
-import { userFacingErrorMessage } from './userFacingError';
+import { userFacingDialogText } from './userFacingError';
 
 export interface ConfirmOptions {
     /** Style the confirm action as destructive (red) — for delete/overwrite actions. */
@@ -45,7 +45,8 @@ export function registerDialogHost(handler: DialogHandler): () => void {
 
 /**
  * Cross-platform confirm dialog. Web uses the mounted app-styled host; iPhone uses the native,
- * accessible Apple alert surface. Both paths receive sanitized text.
+ * accessible Apple alert surface. Both paths receive sanitized text: diagnostics are replaced,
+ * but a long message the app wrote is shown whole (`userFacingDialogText`).
  */
 export function confirm(
     title: string,
@@ -53,7 +54,7 @@ export function confirm(
     onConfirm: () => void,
     options: ConfirmOptions = {},
 ): void {
-    const safeMessage = userFacingErrorMessage(message);
+    const safeMessage = userFacingDialogText(message);
     if (webHandler) {
         webHandler({ kind: 'confirm', title, message: safeMessage, destructive: !!options.destructive, acceptLabel: options.confirmLabel, onAccept: onConfirm });
         return;
@@ -78,7 +79,7 @@ export function confirmAsync(
     message: string,
     options: ConfirmOptions = {},
 ): Promise<boolean> {
-    const safeMessage = userFacingErrorMessage(message);
+    const safeMessage = userFacingDialogText(message);
     return new Promise((resolve) => {
         let settled = false;
         const finish = (accepted: boolean) => {
@@ -164,7 +165,7 @@ export function chooseOption(title: string, message: string, options: readonly s
 
 /** Cross-platform alert (info only, no yes/no). */
 export function alert(title: string, message: string, onDismiss?: () => void): void {
-    const safeMessage = userFacingErrorMessage(message);
+    const safeMessage = userFacingDialogText(message);
     if (webHandler) {
         webHandler({ kind: 'alert', title, message: safeMessage, destructive: false, onAccept: onDismiss });
         return;
@@ -191,7 +192,7 @@ export function choose(
     alternateLabel: string,
     options: { stacked?: boolean } = {},
 ): Promise<boolean> {
-    const safeMessage = userFacingErrorMessage(message);
+    const safeMessage = userFacingDialogText(message);
 
     return new Promise((resolve) => {
         if (webHandler) {
