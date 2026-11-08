@@ -3,7 +3,7 @@ import { useThemeColors } from '../../constants/theme';
 import type { AddedDay } from '../../lib/ankiStats';
 import { bucketHistory, historyPoints, historyUnit } from '../../lib/statsSeries';
 import StatsBarChart from './StatsBarChart';
-import StatsCard from './StatsCard';
+import { Card } from '../ui/Card';
 import StatsTiles from './StatsTiles';
 import { useStatsFormat } from './useStatsFormat';
 
@@ -39,9 +39,7 @@ export default function AddedSection({ addedDays, firstDay, lastDay, rangeTitle,
     const cards = (value: number) => l(`${f.count(value)} kart`, `${f.count(value)} ${value === 1 ? 'card' : 'cards'}`);
 
     return (
-        <StatsCard
-            title={l('Eklenenler', 'Added')}
-        >
+        <Card padded title={l('Eklenenler', 'Added')}>
             <StatsBarChart
                 points={points}
                 series={[{ key: 'added', label: l('Yeni kart', 'New cards'), color: colors.chartNew }]}
@@ -76,6 +74,6 @@ export default function AddedSection({ addedDays, firstDay, lastDay, rangeTitle,
                     },
                 ]}
             />
-        </StatsCard>
+        </Card>
     );
 }

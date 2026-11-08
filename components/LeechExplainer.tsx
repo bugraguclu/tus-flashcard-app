@@ -1,15 +1,16 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
-import { BorderRadius, FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
+import { Notice } from './ui/Feedback';
 
 type LeechExplainerProps = {
     context: 'settings' | 'card';
 };
 
 /**
- * User-facing explanation for Anki's technical "leech" concept.
+ * User-facing explanation for Anki's technical "leech" concept, as a warning notice.
  * The stored `leech` tag is intentionally unchanged for Anki/APKG compatibility.
  */
 export default function LeechExplainer({ context }: LeechExplainerProps) {
@@ -28,67 +29,45 @@ export default function LeechExplainer({ context }: LeechExplainerProps) {
     ];
 
     return (
-        <View style={styles.container} accessibilityRole="summary">
-            <View style={styles.titleRow}>
-                <Text style={styles.icon}>💡</Text>
-                <Text style={styles.title}>{l('Sürekli Unutulan Kart nedir?', 'What is a Leech?')}</Text>
-            </View>
-            <Text style={styles.body}>
-                {context === 'card'
-                    ? l(
-                        'Bu kart sık sık unutulduğu için “Sürekli Unutulan Kart” olarak işaretlendi.',
-                        'This card was marked as a Leech because it has been forgotten repeatedly.',
-                    )
-                    : l(
-                        'Bir kart, belirlediğiniz unutma sayısına ulaştığında “Sürekli Unutulan Kart” olarak işaretlenir.',
-                        'A card is marked as a Leech when it reaches the number of lapses you set.',
-                    )}
-            </Text>
-            <Text style={styles.lead}>{l('Bu işaret genellikle şunlardan birini gösterir:', 'This usually indicates one of the following:')}</Text>
-            <View style={styles.list}>
-                {reasons.map((reason) => (
-                    <View key={reason} style={styles.listRow}>
-                        <Text style={styles.bullet}>•</Text>
-                        <Text style={styles.reason}>{reason}</Text>
-                    </View>
-                ))}
-            </View>
-            <View style={styles.recommendation}>
-                <Text style={styles.recommendationText}>
-                    {l(
-                        'Öneri: Soruyu ve cevabı kısaltın, kartı tek bir bilgiye bölün veya konuyu yeniden çalışın. Düzeltene kadar kartı askıya alabilirsiniz.',
-                        'Suggestion: Shorten the question and answer, split the card into one fact per card, or revisit the topic. You can suspend the card until it is improved.',
-                    )}
+        <Notice tone="warning" title={l('Sürekli Unutulan Kart nedir?', 'What is a Leech?')} style={styles.notice}>
+            <View style={styles.content}>
+                <Text style={styles.body}>
+                    {context === 'card'
+                        ? l(
+                            'Bu kart sık sık unutulduğu için “Sürekli Unutulan Kart” olarak işaretlendi.',
+                            'This card was marked as a Leech because it has been forgotten repeatedly.',
+                        )
+                        : l(
+                            'Bir kart, belirlediğiniz unutma sayısına ulaştığında “Sürekli Unutulan Kart” olarak işaretlenir.',
+                            'A card is marked as a Leech when it reaches the number of lapses you set.',
+                        )}
                 </Text>
+                <Text style={styles.lead}>{l('Bu işaret genellikle şunlardan birini gösterir:', 'This usually indicates one of the following:')}</Text>
+                <View style={styles.list}>
+                    {reasons.map((reason) => (
+                        <View key={reason} style={styles.listRow}>
+                            <Text style={styles.bullet}>•</Text>
+                            <Text style={styles.reason}>{reason}</Text>
+                        </View>
+                    ))}
+                </View>
+                <View style={styles.recommendation}>
+                    <Text style={styles.recommendationText}>
+                        {l(
+                            'Öneri: Soruyu ve cevabı kısaltın, kartı tek bir bilgiye bölün veya konuyu yeniden çalışın. Düzeltene kadar kartı askıya alabilirsiniz.',
+                            'Suggestion: Shorten the question and answer, split the card into one fact per card, or revisit the topic. You can suspend the card until it is improved.',
+                        )}
+                    </Text>
+                </View>
             </View>
-        </View>
+        </Notice>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        container: {
-            marginTop: Spacing.sm,
-            padding: Spacing.md,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.btnHard,
-            backgroundColor: colors.btnHardBg,
-            gap: Spacing.sm,
-        },
-        titleRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.xs,
-        },
-        icon: { fontSize: FontSize.md },
-        title: {
-            flex: 1,
-            fontSize: FontSize.md,
-            lineHeight: 21,
-            fontWeight: '700',
-            color: colors.textPrimary,
-        },
+        notice: { marginBottom: Spacing.md },
+        content: { gap: Spacing.sm },
         body: {
             fontSize: FontSize.sm,
             lineHeight: 20,
@@ -121,7 +100,7 @@ function createStyles(colors: ColorScheme) {
             marginTop: 2,
             paddingTop: Spacing.sm,
             borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.btnHard,
+            borderTopColor: colors.warning,
         },
         recommendationText: {
             fontSize: FontSize.sm,

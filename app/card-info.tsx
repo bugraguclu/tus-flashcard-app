@@ -1,14 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
     View,
     ScrollView,
     StyleSheet,
-    TouchableOpacity,
 } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Spacing, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import ScreenHeader from '../components/ScreenHeader';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Choice';
+import { EmptyState } from '../components/ui/Feedback';
 import { FLAG_COLORS } from '../lib/models';
 import { getAnkiCard, getNote, getNoteType } from '../lib/noteManager';
 import { getDeck } from '../lib/deckManager';
@@ -63,19 +66,21 @@ export default function CardInfoScreen() {
         };
     }, [cardId]);
 
+    // Card Info is presented as a sheet over the reviewer or the browser, so it closes (×).
+    const header = (
+        <ScreenHeader
+            leading="close"
+            title={t('root.cardInfo')}
+            backAccessibilityLabel={t('common.close')}
+            onBack={() => goBackOr(router)}
+        />
+    );
+
     if (!payload) {
         return (
             <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => goBackOr(router)} accessibilityRole="button">
-                        <Text style={styles.backBtn}>← {l('Geri', 'Back')}</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.title}>{t('root.cardInfo')}</Text>
-                    <View style={{ width: 60 }} />
-                </View>
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyTitle}>{l('Kart bulunamadı.', 'Card not found.')}</Text>
-                </View>
+                {header}
+                <EmptyState style={styles.emptyState} title={l('Kart bulunamadı.', 'Card not found.')} />
             </SafeAreaView>
         );
     }
@@ -199,35 +204,25 @@ export default function CardInfoScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => goBackOr(router)} accessibilityRole="button">
-                    <Text style={styles.backBtn}>← {l('Geri', 'Back')}</Text>
-                </TouchableOpacity>
-                <Text style={styles.title}>{t('root.cardInfo')}</Text>
-                <View style={{ width: 60 }} />
-            </View>
+            {header}
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 {note?.tags.includes('leech') ? <LeechExplainer context="card" /> : null}
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Genel bilgi', 'General Information')}</Text>
+                <InfoSection title={l('Genel bilgi', 'General Information')}>
                     <InfoRow label={t('common.deck')} value={deck?.name || '—'} />
                     <InfoRow label={l('Not türü', 'Note type')} value={noteType ? localizeNoteTypeName(locale, noteType.name) : '—'} />
                     <InfoRow label={l('Oluşturulma', 'Created')} value={formatDate(createdAt)} />
                     <InfoRow label={l('Değiştirilme', 'Modified')} value={formatDate(modifiedAt)} />
                     <InfoRow label={l('Kart ID', 'Card ID')} value={`#${card.id}`} />
                     <InfoRow label={l('Not ID', 'Note ID')} value={`#${card.noteId}`} />
-                </View>
+                </InfoSection>
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Etiketler ve bayrak', 'Tags & Flag')}</Text>
+                <InfoSection title={l('Etiketler ve bayrak', 'Tags & Flag')}>
                     {note?.tags.length ? (
                         <View style={styles.tagsRow}>
                             {note.tags.map((tag) => (
-                                <View key={tag} style={styles.tag}>
-                                    <Text style={styles.tagText}>{tag === 'leech' ? l('Sürekli Unutulan Kart', 'Leech') : tag}</Text>
-                                </View>
+                                <Badge key={tag} tone="accent" label={tag === 'leech' ? l('Sürekli Unutulan Kart', 'Leech') : tag} />
                             ))}
                         </View>
                     ) : (
@@ -238,10 +233,9 @@ export default function CardInfoScreen() {
                         value={card.flags ? cardFlagName(locale, card.flags) : l('Bayrak yok', 'No flag')}
                         dotColor={card.flags ? FLAG_COLORS[card.flags]?.color : undefined}
                     />
-                </View>
+                </InfoSection>
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Zamanlama', 'Scheduling')}</Text>
+                <InfoSection title={l('Zamanlama', 'Scheduling')}>
                     <InfoRow label={l('Kart durumu', 'Card state')} value={typeLabel} />
                     <InfoRow label={l('Sıra', 'Queue')} value={queueLabel} />
                     <InfoRow label={l('Sonraki gösterim', 'Due')} value={dueLabel} />
@@ -251,11 +245,10 @@ export default function CardInfoScreen() {
                     )}
                     <InfoRow label={l('Tekrar sayısı', 'Reviews')} value={String(card.reps)} />
                     <InfoRow label={l('Unutma sayısı', 'Lapses')} value={String(card.lapses)} highlight={card.lapses > 0} />
-                </View>
+                </InfoSection>
 
                 {memory ? (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{l('FSRS hafıza durumu', 'FSRS Memory State')}</Text>
+                    <InfoSection title={l('FSRS hafıza durumu', 'FSRS Memory State')}>
                         <InfoRow
                             label={l('Hafıza gücü (stability)', 'Stability')}
                             value={l(`${memory.stability.toFixed(2)} gün`, `${memory.stability.toFixed(2)} days`)}
@@ -276,11 +269,10 @@ export default function CardInfoScreen() {
                                 value={cardData.desiredRetention.toFixed(2)}
                             />
                         )}
-                    </View>
+                    </InfoSection>
                 ) : null}
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Teknik bilgi', 'Technical Information')}</Text>
+                <InfoSection title={l('Teknik bilgi', 'Technical Information')}>
                     <InfoRow
                         label={l('İlk çalışma', 'First review')}
                         value={firstReviewAt ? formatDateTime(firstReviewAt) : l('Hiç çalışılmadı', 'Never studied')}
@@ -298,11 +290,9 @@ export default function CardInfoScreen() {
                         value={answeredReviews.length > 0 ? formatTime(totalReviewMs) : '—'}
                     />
                     <InfoRow label={l('Kart şablonu', 'Card template')} value={`#${card.ord + 1}`} />
-                </View>
+                </InfoSection>
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{l('Çalışma geçmişi', 'Review History')} ({reviews.length})</Text>
-
+                <InfoSection title={`${l('Çalışma geçmişi', 'Review History')} (${reviews.length})`}>
                     {reviews.length === 0 && (
                         <Text style={styles.emptyHint}>{l('Bu kart henüz hiç çalışılmadı.', 'This card has not been reviewed yet.')}</Text>
                     )}
@@ -330,13 +320,26 @@ export default function CardInfoScreen() {
                             </View>
                         );
                     })}
-                </View>
+                </InfoSection>
 
                 <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>
     );
 }
+
+/** A titled card of Card Info's figures; its rows sit close together, as a table's do. */
+function InfoSection({ title, children }: { title: string; children: ReactNode }) {
+    return (
+        <Card padded title={title} style={sectionStyles.card}>
+            <View>{children}</View>
+        </Card>
+    );
+}
+
+const sectionStyles = StyleSheet.create({
+    card: { marginBottom: Spacing.md },
+});
 
 function InfoRow({ label, value, highlight, dotColor }: {
     label: string;
@@ -364,47 +367,17 @@ function createInfoStyles(colors: ColorScheme) {
     valueGroup: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
     valueDot: { width: 10, height: 10, borderRadius: 5 },
     value: { flexShrink: 1, textAlign: 'right', fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
-    valueHighlight: { color: colors.btnAgain },
+    // A lapse count above zero is the figure that says the card is in trouble.
+    valueHighlight: { color: colors.danger },
     });
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.borderLight,
-    },
-    backBtn: { fontSize: FontSize.md, color: colors.accent, fontWeight: '600' },
-    title: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
     content: { flex: 1, width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg },
 
-    section: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.lg,
-        marginBottom: Spacing.md,
-        ...Shadows.sm,
-    },
-    sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
-
     tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-    tag: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        backgroundColor: colors.accentLight,
-        borderRadius: BorderRadius.full,
-        borderWidth: 1,
-        borderColor: colors.accent,
-    },
-    tagText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.accent },
 
     emptyHint: { fontSize: FontSize.sm, color: colors.textMuted, paddingVertical: 6 },
 
@@ -425,7 +398,6 @@ function createStyles(colors: ColorScheme) {
     tableRowEven: { backgroundColor: colors.bgSecondary },
     td: { fontSize: FontSize.xs, color: colors.textSecondary },
 
-    emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    emptyTitle: { fontSize: FontSize.lg, color: colors.textSecondary },
+    emptyState: { flex: 1 },
     });
 }

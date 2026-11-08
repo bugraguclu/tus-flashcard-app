@@ -8,21 +8,24 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Switch,
-    TouchableOpacity,
     View,
     useWindowDimensions,
 } from 'react-native';
-import { Text, TextInput } from './AppText';
+import { Text } from './AppText';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm } from '../lib/confirm';
 import { getSetDueDateDefault } from '../lib/setDueDateDefaults';
 import { useI18n } from '../hooks/useI18n';
-import HeaderBackIcon from './HeaderBackIcon';
 import PencilGlyph from './PencilGlyph';
+import { Button, IconButton } from './ui/Button';
+import { TextField } from './ui/Fields';
+import { BackIcon, ChevronRightIcon } from './ui/icons';
+import { MenuItem } from './ui/Menu';
+import { AppSwitch } from './ui/Rows';
+import { DISABLED_OPACITY, HIT_TARGET, Radius } from './ui/tokens';
 import { parseDueRange } from '../lib/schedulingIntervals';
 import type { ResetCardOptions } from '../lib/resetCards';
 
@@ -213,15 +216,13 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                 >
                     {view !== 'menu' && (
                         <View style={styles.sheetHeader}>
-                            <TouchableOpacity
-                                style={styles.backBtn}
+                            <IconButton
                                 onPress={goToParent}
-                                accessibilityRole="button"
                                 accessibilityLabel={l('Önceki menüye dön', 'Back to previous menu')}
                             >
-                                <HeaderBackIcon color={colors.textPrimary} size={22} />
-                            </TouchableOpacity>
-                            <Text style={styles.sheetTitle} numberOfLines={1}>{sheetTitle}</Text>
+                                <BackIcon color={colors.textPrimary} size={22} />
+                            </IconButton>
+                            <Text style={styles.sheetTitle} numberOfLines={1} accessibilityRole="header">{sheetTitle}</Text>
                             <View style={styles.headerSpacer} />
                         </View>
                     )}
@@ -236,8 +237,6 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                             <>
                                 {hasCard && props.whiteboardActive && props.whiteboardHasContent && (
                                     <MenuRow
-                                        styles={styles}
-                                        colors={colors}
                                         icon="undo"
                                         label={l('Konturu geri al', 'Undo stroke')}
                                         onPress={() => runAndClose(props.onUndoWhiteboard)}
@@ -246,8 +245,6 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                 {/* Undo survives the end of the queue: the last answer of a
                                     session is exactly the one a learner needs to take back. */}
                                 <MenuRow
-                                    styles={styles}
-                                    colors={colors}
                                     icon="undo"
                                     label={undoLabel}
                                     disabled={!props.canUndo}
@@ -255,8 +252,6 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                 />
                                 {props.canRedo && (
                                     <MenuRow
-                                        styles={styles}
-                                        colors={colors}
                                         icon="redo"
                                         label={redoLabel}
                                         onPress={() => runAndClose(props.onRedo)}
@@ -266,24 +261,18 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                 {hasCard && props.whiteboardActive && (
                                     <>
                                         <MenuRow
-                                            styles={styles}
-                                            colors={colors}
                                             icon="clear"
                                             label={l('Yazı tahtasını temizle', 'Clear whiteboard')}
                                             disabled={!props.whiteboardHasContent}
                                             onPress={() => runAndClose(props.onClearWhiteboard)}
                                         />
                                         <MenuRow
-                                            styles={styles}
-                                            colors={colors}
                                             icon="save"
                                             label={l('Yazı tahtasını kaydet', 'Save whiteboard')}
                                             disabled={!props.whiteboardHasContent}
                                             onPress={() => runAndClose(props.onSaveWhiteboard)}
                                         />
                                         <MenuRow
-                                            styles={styles}
-                                            colors={colors}
                                             icon="stylus"
                                             label={props.stylusOnly ? l('Kalemle yazmayı kapat', 'Disable stylus') : l('Kalemle yazmayı aç', 'Enable stylus')}
                                             onPress={props.onToggleStylus}
@@ -292,8 +281,6 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                 )}
 
                                 <MenuRow
-                                    styles={styles}
-                                    colors={colors}
                                     icon="whiteboard"
                                     disabled={!hasCard}
                                     label={props.whiteboardActive
@@ -301,20 +288,18 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                         : l('Yazı tahtasını etkinleştir', 'Enable whiteboard')}
                                     onPress={() => runAndClose(props.whiteboardActive ? props.onDisableWhiteboard : props.onToggleWhiteboard)}
                                 />
-                                <MenuRow styles={styles} colors={colors} icon="edit" label={l('Notu düzenle', 'Edit note')} disabled={!hasCard} onPress={() => runAndClose(props.onEditNote)} />
-                                <MenuRow styles={styles} colors={colors} icon="add" label={l('Not ekle', 'Add note')} onPress={() => runAndClose(props.onAddNote)} />
-                                <MenuRow styles={styles} colors={colors} icon="tag" label={l('Etiketleri düzenle', 'Edit tags')} disabled={!hasCard} onPress={() => setView('tags')} />
+                                <MenuRow icon="edit" label={l('Notu düzenle', 'Edit note')} disabled={!hasCard} onPress={() => runAndClose(props.onEditNote)} />
+                                <MenuRow icon="add" label={l('Not ekle', 'Add note')} onPress={() => runAndClose(props.onAddNote)} />
+                                <MenuRow icon="tag" label={l('Etiketleri düzenle', 'Edit tags')} disabled={!hasCard} onPress={() => setView('tags')} />
                                 {props.hasSiblingCards ? (
-                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Göm', 'Bury')} chevron disabled={!hasCard} onPress={() => setView('bury')} />
+                                    <MenuRow icon="bury" label={l('Göm', 'Bury')} chevron disabled={!hasCard} onPress={() => setView('bury')} />
                                 ) : (
-                                    <MenuRow styles={styles} colors={colors} icon="bury" label={l('Kartı göm', 'Bury card')} disabled={!hasCard} onPress={() => runAndClose(props.onBuryCard)} />
+                                    <MenuRow icon="bury" label={l('Kartı göm', 'Bury card')} disabled={!hasCard} onPress={() => runAndClose(props.onBuryCard)} />
                                 )}
                                 {props.hasSiblingCards ? (
-                                    <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Askıya al', 'Suspend')} chevron disabled={!hasCard} onPress={() => setView('suspend')} />
+                                    <MenuRow icon="suspend" label={l('Askıya al', 'Suspend')} chevron disabled={!hasCard} onPress={() => setView('suspend')} />
                                 ) : (
                                     <MenuRow
-                                        styles={styles}
-                                        colors={colors}
                                         icon="suspend"
                                         disabled={!hasCard}
                                         label={props.cardSuspended ? l('Kartı askıdan çıkar', 'Unsuspend card') : l('Kartı askıya al', 'Suspend card')}
@@ -323,8 +308,6 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                 )}
                                 {props.canDeleteNote !== false && (
                                     <MenuRow
-                                        styles={styles}
-                                        colors={colors}
                                         icon="delete"
                                         disabled={!hasCard}
                                         label={l('Notu sil', 'Delete note')}
@@ -337,51 +320,43 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     />
                                 )}
                                 <MenuRow
-                                    styles={styles}
-                                    colors={colors}
                                     icon="mark"
                                     disabled={!hasCard}
                                     label={props.noteMarked ? l('Not işaretini kaldır', 'Unmark note') : l('Notu işaretle', 'Mark note')}
                                     onPress={() => runAndClose(props.onToggleMarkNote)}
                                 />
-                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Yeniden zamanla', 'Reschedule')} chevron disabled={!hasCard} onPress={() => setView('reschedule')} />
+                                <MenuRow icon="reschedule" label={l('Yeniden zamanla', 'Reschedule')} chevron disabled={!hasCard} onPress={() => setView('reschedule')} />
                                 <MenuRow
-                                    styles={styles}
-                                    colors={colors}
                                     icon="replay"
                                     label={l('Sesi yeniden oynat', 'Replay audio')}
                                     disabled={!hasCard || !props.cardHasAudio}
                                     onPress={() => runAndClose(props.onReplayAudio)}
                                 />
                                 <MenuRow
-                                    styles={styles}
-                                    colors={colors}
                                     icon="voice"
                                     label={props.voicePlaybackEnabled
                                         ? l('Metin okumayı kapat', 'Disable text to speech')
                                         : l('Metin okumayı aç', 'Enable text to speech')}
                                     onPress={() => runAndClose(props.onToggleVoicePlayback)}
                                 />
-                                <MenuRow styles={styles} colors={colors} icon="deck" label={l('Deste seçenekleri', 'Deck options')} onPress={() => runAndClose(props.onDeckOptions)} />
+                                <MenuRow icon="deck" label={l('Deste seçenekleri', 'Deck options')} onPress={() => runAndClose(props.onDeckOptions)} />
                                 {props.onCardInfo ? (
-                                    <MenuRow styles={styles} colors={colors} icon="info" label={l('Kart bilgisi', 'Card info')} disabled={!hasCard} onPress={() => runAndClose(props.onCardInfo!)} />
+                                    <MenuRow icon="info" label={l('Kart bilgisi', 'Card info')} disabled={!hasCard} onPress={() => runAndClose(props.onCardInfo!)} />
                                 ) : null}
                             </>
                         )}
 
                         {view === 'bury' && (
                             <>
-                                <MenuRow styles={styles} colors={colors} icon="bury" label={l('Notu göm', 'Bury note')} onPress={() => runAndClose(props.onBuryNote)} />
-                                <MenuRow styles={styles} colors={colors} icon="bury" label={l('Kartı göm', 'Bury card')} onPress={() => runAndClose(props.onBuryCard)} />
+                                <MenuRow icon="bury" label={l('Notu göm', 'Bury note')} onPress={() => runAndClose(props.onBuryNote)} />
+                                <MenuRow icon="bury" label={l('Kartı göm', 'Bury card')} onPress={() => runAndClose(props.onBuryCard)} />
                             </>
                         )}
 
                         {view === 'suspend' && (
                             <>
-                                <MenuRow styles={styles} colors={colors} icon="suspend" label={l('Notu askıya al', 'Suspend note')} onPress={() => runAndClose(props.onSuspendNote)} />
+                                <MenuRow icon="suspend" label={l('Notu askıya al', 'Suspend note')} onPress={() => runAndClose(props.onSuspendNote)} />
                                 <MenuRow
-                                    styles={styles}
-                                    colors={colors}
                                     icon="suspend"
                                     label={props.cardSuspended ? l('Kartı askıdan çıkar', 'Unsuspend card') : l('Kartı askıya al', 'Suspend card')}
                                     onPress={() => runAndClose(props.onSuspendCard)}
@@ -391,10 +366,8 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
 
                         {view === 'reschedule' && (
                             <>
-                                <MenuRow styles={styles} colors={colors} icon="reschedule" label={l('Son tarihi ayarla…', 'Set due date…')} onPress={() => setView('dueDate')} />
+                                <MenuRow icon="reschedule" label={l('Son tarihi ayarla…', 'Set due date…')} onPress={() => setView('dueDate')} />
                                 <MenuRow
-                                    styles={styles}
-                                    colors={colors}
                                     icon="redo"
                                     label={l('Kartı sıfırla…', 'Reset card…')}
                                     onPress={() => {
@@ -408,12 +381,11 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                         {view === 'tags' && (
                             <View style={styles.formContent}>
                                 <Text style={styles.subDesc}>{l('Etiketleri boşlukla ayırın.', 'Separate tags with spaces.')}</Text>
-                                <TextInput
-                                    style={styles.textInput}
+                                <TextField
+                                    style={styles.field}
                                     value={tagsInput}
                                     onChangeText={setTagsInput}
                                     placeholder={l('etiketler', 'tags')}
-                                    placeholderTextColor={colors.textMuted}
                                     autoCapitalize="none"
                                     autoCorrect={false}
                                     autoFocus
@@ -421,9 +393,7 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     onSubmitEditing={saveTags}
                                     accessibilityLabel={l('Notun etiketleri', 'Note tags')}
                                 />
-                                <TouchableOpacity style={styles.confirmBtn} onPress={saveTags} accessibilityRole="button">
-                                    <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
-                                </TouchableOpacity>
+                                <Button style={styles.formButton} label={t('common.save')} onPress={saveTags} />
                             </View>
                         )}
 
@@ -433,26 +403,20 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     {l('Kart Yeni durumuna döner. Tekrar geçmişi korunur.', 'The card goes back to New. Its review history is kept.')}
                                 </Text>
                                 <OptionSwitch
-                                    styles={styles}
-                                    colors={colors}
                                     label={l('Mümkünse ilk sırasına geri koy', 'Restore original position where possible')}
                                     value={resetOptions.restorePosition}
                                     onChange={(restorePosition) => setResetOptions((current) => ({ ...current, restorePosition }))}
                                 />
                                 <OptionSwitch
-                                    styles={styles}
-                                    colors={colors}
                                     label={l('Tekrar ve unutma sayılarını sıfırla', 'Reset repetition and lapse counts')}
                                     value={resetOptions.resetCounts}
                                     onChange={(resetCounts) => setResetOptions((current) => ({ ...current, resetCounts }))}
                                 />
-                                <TouchableOpacity
-                                    style={styles.confirmBtn}
+                                <Button
+                                    style={styles.formButton}
+                                    label={l('Sıfırla', 'Reset')}
                                     onPress={() => runAndClose(() => props.onResetCard(resetOptions))}
-                                    accessibilityRole="button"
-                                >
-                                    <Text style={styles.confirmBtnText}>{l('Sıfırla', 'Reset')}</Text>
-                                </TouchableOpacity>
+                                />
                             </View>
                         )}
 
@@ -463,8 +427,8 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     {l('0 = bugün, 1 = yarın, 3-7 = aralıktan rastgele. Sonuna ! eklerseniz aralık da bu değere ayarlanır.',
                                        '0 = today, 1 = tomorrow, 3-7 = random in range. Append ! to also set the interval to that value.')}
                                 </Text>
-                                <TextInput
-                                    style={styles.textInput}
+                                <TextField
+                                    style={styles.field}
                                     value={dueDateInput}
                                     onChangeText={setDueDateInput}
                                     maxLength={12}
@@ -476,18 +440,14 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
                                     returnKeyType="done"
                                     onSubmitEditing={saveDueDate}
                                     placeholder={l('örn. 1 veya 3-7!', 'e.g. 1 or 3-7!')}
-                                    placeholderTextColor={colors.textMuted}
                                     accessibilityLabel={l('Kaç gün sonra', 'Due in days')}
                                 />
-                                <TouchableOpacity
-                                    style={[styles.confirmBtn, !dueDateSpecValid && styles.confirmBtnDisabled]}
+                                <Button
+                                    style={styles.formButton}
+                                    label={t('common.save')}
                                     disabled={!dueDateSpecValid}
                                     onPress={saveDueDate}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ disabled: !dueDateSpecValid }}
-                                >
-                                    <Text style={styles.confirmBtnText}>{t('common.save')}</Text>
-                                </TouchableOpacity>
+                                />
                             </View>
                         )}
                     </ScrollView>
@@ -497,58 +457,75 @@ export function CardOptionsMenu(props: CardOptionsMenuProps) {
     );
 }
 
-function MenuRow({ styles, colors, icon, label, onPress, chevron, disabled = false }: {
-    styles: ReturnType<typeof createStyles>;
-    colors: ColorScheme;
+/**
+ * One entry of the panel: a `MenuItem` with the reviewer's own glyph. An entry that opens a
+ * submenu ends in a chevron, which the kit's item cannot draw yet, so it is laid over the row's
+ * trailing edge and fades with it.
+ */
+function MenuRow({ icon, label, onPress, chevron = false, disabled = false }: {
     icon: ReviewerMenuIcon;
     label: string;
     onPress: () => void;
     chevron?: boolean;
     disabled?: boolean;
 }) {
-    const color = disabled ? colors.textMuted : colors.textSecondary;
-    return (
-        <TouchableOpacity
-            style={[styles.row, disabled && styles.rowDisabled]}
+    const colors = useThemeColors();
+    const item = (
+        <MenuItem
+            icon={<MenuIcon name={icon} color={colors.textMuted} />}
+            label={label}
             onPress={onPress}
             disabled={disabled}
-            accessibilityRole="button"
-            accessibilityLabel={label}
-            accessibilityState={{ disabled }}
-        >
-            <View style={styles.rowIcon}><MenuIcon name={icon} color={color} /></View>
-            <Text style={[styles.rowLabel, disabled && styles.rowLabelDisabled]}>{label}</Text>
-            {chevron && <Text style={styles.rowChevron}>›</Text>}
-        </TouchableOpacity>
+        />
     );
-}
-
-function OptionSwitch({ styles, colors, label, value, onChange }: {
-    styles: ReturnType<typeof createStyles>;
-    colors: ColorScheme;
-    label: string;
-    value: boolean;
-    onChange: (value: boolean) => void;
-}) {
+    if (!chevron) return item;
     return (
-        <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>{label}</Text>
-            <Switch
-                value={value}
-                onValueChange={onChange}
-                trackColor={{ false: colors.border, true: colors.accent }}
-                accessibilityLabel={label}
-            />
+        <View>
+            {item}
+            <View style={[rowStyles.chevron, disabled && rowStyles.disabled]}>
+                <ChevronRightIcon color={colors.textMuted} size={16} />
+            </View>
         </View>
     );
 }
 
+/** A reset option: its label and the app's switch. */
+function OptionSwitch({ label, value, onChange }: {
+    label: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+}) {
+    const colors = useThemeColors();
+    return (
+        <View style={rowStyles.switchRow}>
+            <Text style={[rowStyles.switchLabel, { color: colors.textPrimary }]}>{label}</Text>
+            <AppSwitch value={value} onValueChange={onChange} accessibilityLabel={label} />
+        </View>
+    );
+}
+
+const rowStyles = StyleSheet.create({
+    // The row pads its content 16 points from the trailing edge, where the chevron sits.
+    chevron: { position: 'absolute', top: 0, bottom: 0, right: Spacing.lg, justifyContent: 'center', pointerEvents: 'none' },
+    disabled: { opacity: DISABLED_OPACITY },
+    switchRow: {
+        minHeight: 48,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.md,
+        marginBottom: Spacing.sm,
+        gap: Spacing.sm,
+    },
+    switchLabel: { flex: 1, fontSize: 15, lineHeight: 20 },
+});
+
+/** The menu's line icons, drawn at the 22 points a `MenuItem` gives its icon. */
 function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
-    if (name === 'edit' || name === 'stylus') return <PencilGlyph color={color} />;
+    if (name === 'edit' || name === 'stylus') return <PencilGlyph color={color} size={22} />;
 
     const common = { fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
     return (
-        <Svg width={24} height={24} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
+        <Svg width={22} height={22} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             {name === 'undo' && <Path d="M9 7H4V2M4.5 7A8 8 0 1 1 6 18" {...common} />}
             {name === 'redo' && <Path d="M15 7h5V2m-.5 5A8 8 0 1 0 18 18" {...common} />}
             {name === 'whiteboard' && (
@@ -607,13 +584,13 @@ function createStyles(colors: ColorScheme) {
         },
         scrim: {
             ...StyleSheet.absoluteFill,
-            backgroundColor: 'rgba(0,0,0,0.22)',
+            backgroundColor: colors.scrimLight,
         },
         sheet: {
             maxHeight: '100%',
             backgroundColor: colors.bgCard,
-            borderTopLeftRadius: 4,
-            borderBottomLeftRadius: 4,
+            borderTopLeftRadius: Radius.inset,
+            borderBottomLeftRadius: Radius.inset,
             overflow: 'hidden',
             ...dropShadow({ x: -4, y: 4, blur: 10, opacity: 0.22, elevation: 16 }),
         },
@@ -634,54 +611,12 @@ function createStyles(colors: ColorScheme) {
             fontWeight: '700',
             color: colors.textPrimary,
         },
-        backBtn: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
-        headerSpacer: { width: 46, height: 46 },
+        // Balances the back button so the title stays centred.
+        headerSpacer: { width: HIT_TARGET, height: HIT_TARGET },
         sheetContent: { paddingVertical: 4, paddingBottom: 6 },
-        row: {
-            minHeight: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 15,
-            paddingVertical: 7,
-        },
-        rowDisabled: { opacity: 0.48 },
-        rowIcon: { width: 32, alignItems: 'flex-start', justifyContent: 'center' },
-        rowLabel: { flex: 1, color: colors.textPrimary, fontSize: 15, lineHeight: 20 },
-        rowLabelDisabled: { color: colors.textMuted },
-        rowChevron: { color: colors.textPrimary, fontSize: 22, marginLeft: 5 },
         formContent: { paddingTop: Spacing.md },
-        switchRow: {
-            minHeight: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: Spacing.md,
-            marginBottom: Spacing.sm,
-            gap: Spacing.sm,
-        },
-        switchLabel: { flex: 1, color: colors.textPrimary, fontSize: 15, lineHeight: 20 },
         subDesc: { color: colors.textSecondary, fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
-        textInput: {
-            minHeight: 48,
-            marginHorizontal: Spacing.md,
-            marginBottom: Spacing.md,
-            paddingHorizontal: Spacing.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.sm,
-            color: colors.textPrimary,
-            fontSize: FontSize.md,
-        },
-        confirmBtn: {
-            minHeight: 46,
-            marginHorizontal: Spacing.md,
-            borderRadius: BorderRadius.sm,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.accent,
-        },
-        confirmBtnDisabled: {
-            opacity: 0.4,
-        },
-        confirmBtnText: { color: colors.white, fontSize: FontSize.md, fontWeight: '700' },
+        field: { marginHorizontal: Spacing.md, marginBottom: Spacing.md },
+        formButton: { marginHorizontal: Spacing.md },
     });
 }

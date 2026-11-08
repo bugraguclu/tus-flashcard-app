@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { formatStopwatch } from '../../lib/reviewerTimers';
+import { Radius } from '../ui/tokens';
 
 type Props = {
     compact: boolean;
@@ -68,9 +69,9 @@ function createStyles(colors: ColorScheme, compact: boolean) {
             flexShrink: 0,
             fontSize: FontSize.xs,
             fontWeight: '700',
-            color: colors.btnHard,
-            backgroundColor: colors.btnHardBg,
-            borderRadius: BorderRadius.full,
+            color: colors.warning,
+            backgroundColor: colors.warningBg,
+            borderRadius: Radius.pill,
             paddingHorizontal: 8,
             paddingVertical: 2,
             overflow: 'hidden',

@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { AnswerButtonPoint } from '../../lib/ankiStats';
-import StatsCard from './StatsCard';
+import { Card } from '../ui/Card';
 import StatsTiles from './StatsTiles';
 import { useStatsFormat } from './useStatsFormat';
 
@@ -40,7 +40,7 @@ export default function AnswerButtonsSection({ buttons }: { buttons: readonly An
     };
 
     return (
-        <StatsCard title={l('Cevap düğmeleri', 'Answer Buttons')}>
+        <Card padded title={l('Cevap düğmeleri', 'Answer Buttons')}>
             {total === 0 ? (
                 <Text style={styles.empty}>{l('Bu dönemde cevap yok.', 'No answers in this period.')}</Text>
             ) : (
@@ -70,7 +70,7 @@ export default function AnswerButtonsSection({ buttons }: { buttons: readonly An
                     { key: 'mature', label: l('Olgun', 'Mature'), ...correct('mature') },
                 ]}
             />
-        </StatsCard>
+        </Card>
     );
 }
 

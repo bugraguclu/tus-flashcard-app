@@ -4,7 +4,8 @@
 import { useMemo } from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 import { Text } from './AppText';
-import { BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Radius } from './ui/tokens';
 
 const DAY_MS = 86400000;
 
@@ -95,7 +96,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
         box: {
             width: size,
             height: size,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             borderWidth: 1.5,
             borderColor: colors.border,
             backgroundColor: colors.bgCard,
@@ -107,8 +108,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
         boxSelected: { borderColor: colors.accent, borderWidth: 2 },
         boxDimmed: { opacity: 0.45 },
         date: { color: highContrast ? colors.textPrimary : colors.textSecondary, fontSize: FontSize.sm, fontWeight: '800' },
-        dateStudied: { color: colors.white },
+        dateStudied: { color: colors.onAccent },
         dateDimmed: { color: highContrast ? colors.textPrimary : colors.textMuted },
-        dot: { position: 'absolute', bottom: 3, width: 3, height: 3, borderRadius: 2, backgroundColor: colors.white },
+        dot: { position: 'absolute', bottom: 3, width: 3, height: 3, borderRadius: 2, backgroundColor: colors.onAccent },
     });
 }

@@ -2,13 +2,15 @@ import React, { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import { useNavigation, useRouter } from 'expo-router';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { dayNumberToYmd } from '../../lib/ankiState';
 import { openOrDismissTo } from '../../lib/backNavigation';
 import type { StudyStreak, TodayAnswerStats } from '../../lib/reviewLogger';
-import { HeaderForwardIcon } from '../HeaderBackIcon';
+import FlameGlyph from '../FlameGlyph';
 import WeekStreakStrip from '../WeekStreakStrip';
-import StatsCard from './StatsCard';
+import { Card } from '../ui/Card';
+import { ChevronRightIcon } from '../ui/icons';
+import { Radius } from '../ui/tokens';
 import { useStatsFormat } from './useStatsFormat';
 
 interface TodaySectionProps {
@@ -42,20 +44,23 @@ export default function TodaySection({ today, streak, rolloverHour, dataVersion,
     ];
 
     return (
-        <StatsCard
+        <Card
+            padded
             title={l('Bugün', 'Today')}
             accessory={(
                 <TouchableOpacity
                     style={[styles.streakPill, streak.current === 0 && styles.streakPillIdle]}
                     onPress={() => router.push('/stopwatch' as any)}
                     activeOpacity={0.7}
+                    // The pill is drawn 24 points tall; the slop makes up a finger's 44.
+                    hitSlop={{ top: 10, bottom: 10 }}
                     accessibilityRole="button"
                     accessibilityLabel={l(`Çalışma serisi: ${days(streak.current)}`, `Study streak: ${days(streak.current)}`)}
                     accessibilityHint={l('Kronometreyi açar', 'Opens the stopwatch')}
                 >
-                    <Text style={styles.streakIcon}>🔥</Text>
+                    <FlameGlyph size={13} />
                     <Text style={[styles.streakText, streak.current === 0 && styles.streakTextIdle]}>{days(streak.current)}</Text>
-                    <HeaderForwardIcon color={streak.current === 0 ? colors.textSecondary : colors.streak} size={14} />
+                    <ChevronRightIcon color={streak.current === 0 ? colors.textSecondary : colors.streak} size={16} />
                 </TouchableOpacity>
             )}
         >
@@ -83,7 +88,7 @@ export default function TodaySection({ today, streak, rolloverHour, dataVersion,
                 />
                 <Text style={styles.best}>{l(`En uzun seri: ${days(streak.best)}`, `Longest streak: ${days(streak.best)}`)}</Text>
             </View>
-        </StatsCard>
+        </Card>
     );
 }
 
@@ -95,11 +100,10 @@ function createStyles(colors: ColorScheme) {
             gap: 4,
             paddingHorizontal: 10,
             paddingVertical: 4,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             backgroundColor: colors.streakBg,
         },
         streakPillIdle: { backgroundColor: colors.bgInput },
-        streakIcon: { fontSize: FontSize.sm },
         streakText: { color: colors.streak, fontSize: FontSize.sm, fontWeight: '700' },
         streakTextIdle: { color: colors.textSecondary },
         figures: { flexDirection: 'row', gap: Spacing.sm },

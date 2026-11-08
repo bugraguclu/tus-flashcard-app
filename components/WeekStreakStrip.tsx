@@ -6,14 +6,15 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { View, TouchableOpacity, PanResponder, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from './AppText';
-import { useThemeColors, type ColorScheme, Spacing, FontSize, BorderRadius } from '../constants/theme';
+import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../constants/theme';
 import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';
 import { getStudiedDaysBetween } from '../lib/reviewLogger';
 import { useI18n } from '../hooks/useI18n';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
-import { HeaderBackIcon, HeaderForwardIcon } from './HeaderBackIcon';
 import StudyDayBox, { formatWeekRange, mondayIndex, studyWeekdayLabels } from './StudyDayBox';
 import SideDragArea, { SIDE_DRAG_IS_NATIVE } from './SideDragArea';
+import { IconButton } from './ui/Button';
+import { BackIcon, ForwardIcon } from './ui/icons';
 
 const DAY_MS = 86400000;
 
@@ -116,28 +117,22 @@ export default function WeekStreakStrip({
             {...panResponder.panHandlers}
         >
             <View style={styles.headerRow}>
-                <TouchableOpacity
-                    style={styles.arrowBtn}
+                <IconButton
                     onPress={() => setWeeksBack((prev) => prev + 1)}
-                    accessibilityRole="button"
                     accessibilityLabel={l('Önceki hafta', 'Previous week')}
-                    {...webTitle(l('Önceki hafta', 'Previous week'))}
                 >
-                    <HeaderBackIcon color={colors.textSecondary} size={20} />
-                </TouchableOpacity>
+                    <BackIcon color={colors.textSecondary} size={20} />
+                </IconButton>
 
                 <Text style={styles.rangeText}>{formatWeekRange(monday, sunday, localeTag)}</Text>
 
-                <TouchableOpacity
-                    style={[styles.arrowBtn, atCurrentWeek && styles.arrowBtnDisabled]}
+                <IconButton
                     onPress={() => setWeeksBack((prev) => Math.max(0, prev - 1))}
                     disabled={atCurrentWeek}
-                    accessibilityRole="button"
                     accessibilityLabel={l('Sonraki hafta', 'Next week')}
-                    {...webTitle(l('Sonraki hafta', 'Next week'))}
                 >
-                    <HeaderForwardIcon color={colors.textSecondary} size={20} />
-                </TouchableOpacity>
+                    <ForwardIcon color={colors.textSecondary} size={20} />
+                </IconButton>
             </View>
 
             <View style={styles.daysRow}>
@@ -195,14 +190,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
         gap: isCompact ? 2 : Spacing.xs,
         marginBottom: Spacing.sm,
     },
-    arrowBtn: {
-        width: 44,
-        height: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: BorderRadius.sm,
-    },
-    arrowBtnDisabled: { opacity: 0.25 },
     rangeText: {
         flexShrink: 1,
         textAlign: 'center',

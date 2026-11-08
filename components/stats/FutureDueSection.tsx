@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { useThemeColors } from '../../constants/theme';
 import type { AnkiStatsSnapshot } from '../../lib/ankiStats';
 import type { ChartPoint } from '../../lib/statsSeries';
+import { Card } from '../ui/Card';
+import { SegmentedControl } from '../ui/Choice';
 import StatsBarChart from './StatsBarChart';
-import StatsCard from './StatsCard';
-import StatsSegmented from './StatsSegmented';
 import StatsTiles, { type StatTile } from './StatsTiles';
 import { useStatsFormat } from './useStatsFormat';
 
@@ -41,20 +41,16 @@ export default function FutureDueSection({ stats }: { stats: AnkiStatsSnapshot }
     }
 
     return (
-        <StatsCard
-            title={l('Gelecek vadeler', 'Future Due')}
-            controls={(
-                <StatsSegmented
-                    options={[
-                        { value: 'backlog', label: l('Gecikenlerle', 'With backlog') },
-                        { value: 'today', label: l('Bugünden', 'From today') },
-                    ]}
-                    value={showBacklog ? 'backlog' : 'today'}
-                    onChange={(value) => setShowBacklog(value === 'backlog')}
-                    accessibilityLabel={l('Gecikenler', 'Backlog')}
-                />
-            )}
-        >
+        <Card padded title={l('Gelecek vadeler', 'Future Due')}>
+            <SegmentedControl
+                options={[
+                    { value: 'backlog', label: l('Gecikenlerle', 'With backlog') },
+                    { value: 'today', label: l('Bugünden', 'From today') },
+                ]}
+                value={showBacklog ? 'backlog' : 'today'}
+                onChange={(value) => setShowBacklog(value === 'backlog')}
+                accessibilityLabel={l('Gecikenler', 'Backlog')}
+            />
             <StatsBarChart
                 points={points}
                 series={[
@@ -73,6 +69,6 @@ export default function FutureDueSection({ stats }: { stats: AnkiStatsSnapshot }
                 accessibilityLabel={l('Gelecek vadeler grafiği', 'Future due chart')}
             />
             <StatsTiles tiles={tiles} />
-        </StatsCard>
+        </Card>
     );
 }

@@ -9,9 +9,9 @@ import {
     reviewValues,
     summarizeReviewPeriod,
 } from '../../lib/statsSeries';
+import { Card } from '../ui/Card';
+import { SegmentedControl } from '../ui/Choice';
 import StatsBarChart from './StatsBarChart';
-import StatsCard from './StatsCard';
-import StatsSegmented from './StatsSegmented';
 import StatsTiles, { type StatTile } from './StatsTiles';
 import { useStatsFormat } from './useStatsFormat';
 
@@ -79,20 +79,16 @@ export default function ReviewsSection({ reviewDays, firstDay, lastDay, rangeTit
     });
 
     return (
-        <StatsCard
-            title={l('Tekrarlar', 'Reviews')}
-            controls={(
-                <StatsSegmented
-                    options={[
-                        { value: 'count', label: l('Cevap', 'Answers') },
-                        { value: 'time', label: l('Süre', 'Time') },
-                    ]}
-                    value={asTime ? 'time' : 'count'}
-                    onChange={(value) => setAsTime(value === 'time')}
-                    accessibilityLabel={l('Ölçü', 'Measure')}
-                />
-            )}
-        >
+        <Card padded title={l('Tekrarlar', 'Reviews')}>
+            <SegmentedControl
+                options={[
+                    { value: 'count', label: l('Cevap', 'Answers') },
+                    { value: 'time', label: l('Süre', 'Time') },
+                ]}
+                value={asTime ? 'time' : 'count'}
+                onChange={(value) => setAsTime(value === 'time')}
+                accessibilityLabel={l('Ölçü', 'Measure')}
+            />
             <StatsBarChart
                 points={points}
                 series={[
@@ -120,6 +116,6 @@ export default function ReviewsSection({ reviewDays, firstDay, lastDay, rangeTit
                 accessibilityLabel={l('Tekrarlar grafiği', 'Reviews chart')}
             />
             <StatsTiles tiles={tiles} />
-        </StatsCard>
+        </Card>
     );
 }
