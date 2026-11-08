@@ -14,7 +14,8 @@
  * Storage backends: a folder under documentDirectory on native, an IndexedDB
  * store on web (localStorage is too small for a full collection). On web only
  * the elected writer tab (Web Locks) takes backups, mirroring the DB snapshot
- * policy. All dependencies are injectable for tests.
+ * policy. All dependencies are injectable for tests. Writes and prunes run one at a time, in the
+ * order asked for (serializeBackupWork).
  */
 
 import { Platform } from 'react-native';
@@ -232,6 +233,15 @@ function assertValidBackupContents(contents: string): void {
 
 // --- Native filesystem store ---
 
+/**
+ * Temporary files a write in this process is still filling. The folder sweep leaves them alone:
+ * deleting one mid-write does not fail the write, because appending recreates the file, so the
+ * rename would publish a snapshot that lost its first chunks and still report success.
+ */
+const tempFilesInFlight = new Set<string>();
+
+const TEMP_FILE_RE = /^\.tus-(?:backup|prerestore)-.+\.json\.\d+\.tmp$/;
+
 export function getNativeBackupDir(): string {
     return `${getLegacyFileSystem().documentDirectory ?? ''}tus-backups/`;
 }
@@ -255,10 +265,10 @@ function createNativeStore(): BackupStore {
             const dir = await ensureNativeBackupDir();
             const fs = getLegacyFileSystem();
             const names = await fs.readDirectoryAsync(dir);
-            // A process kill during an atomic write may leave only the hidden
-            // temporary file. It is never a valid backup; clean it on the next list.
+            // A process kill during an atomic write may leave only the hidden temporary file. It
+            // is never a valid backup; clean it on the next list, unless a write is still on it.
             await Promise.all(names
-                .filter((name) => /^\.tus-(?:backup|prerestore)-.+\.json\.\d+\.tmp$/.test(name))
+                .filter((name) => TEMP_FILE_RE.test(name) && !tempFilesInFlight.has(`${dir}${name}`))
                 .map((name) => fs.deleteAsync(`${dir}${name}`, { idempotent: true }).catch(() => undefined)));
             const stats = await Promise.all(
                 names
@@ -281,6 +291,7 @@ function createNativeStore(): BackupStore {
             const fs = getLegacyFileSystem();
             const target = `${dir}${name}`;
             const temp = `${dir}.${name}.${Date.now()}.tmp`;
+            tempFilesInFlight.add(temp);
             try {
                 await fs.writeAsStringAsync(temp, contents);
                 // A rename makes the snapshot appear all at once. If the process is
@@ -291,6 +302,8 @@ function createNativeStore(): BackupStore {
                     await fs.deleteAsync(temp, { idempotent: true });
                 } catch { /* best-effort cleanup */ }
                 throw error;
+            } finally {
+                tempFilesInFlight.delete(temp);
             }
         },
         async writeChunks(name, chunks) {
@@ -298,6 +311,7 @@ function createNativeStore(): BackupStore {
             const fs = getLegacyFileSystem();
             const target = `${dir}${name}`;
             const temp = `${dir}.${name}.${Date.now()}.tmp`;
+            tempFilesInFlight.add(temp);
             try {
                 // Appended chunk by chunk, so no string the size of the collection is built.
                 await fs.writeAsStringAsync(temp, chunks[0] ?? '');
@@ -310,6 +324,8 @@ function createNativeStore(): BackupStore {
                     await fs.deleteAsync(temp, { idempotent: true });
                 } catch { /* best-effort cleanup */ }
                 throw error;
+            } finally {
+                tempFilesInFlight.delete(temp);
             }
         },
         remove(name) {
@@ -321,6 +337,21 @@ function createNativeStore(): BackupStore {
 async function writeSnapshot(store: BackupStore, name: string, chunks: readonly string[]): Promise<void> {
     if (store.writeChunks) await store.writeChunks(name, chunks);
     else await store.write(name, chunks.join(''));
+}
+
+/**
+ * Every write to the backup folder (a snapshot, a pre-restore copy, a deletion) and every prune
+ * runs here, one at a time and in the order asked for. The 5-minute poll and the background run
+ * can otherwise overlap the screens that back up first (Back Up Now, Repair, Reset, the media
+ * trash, an import): a duplicate-name check or a prune sees the folder rightly only while no
+ * other write is half done. Work queued here must not queue more work, or it waits on itself.
+ */
+let backupWork: Promise<void> = Promise.resolve();
+
+function serializeBackupWork<T>(work: () => Promise<T>): Promise<T> {
+    const result = backupWork.then(work);
+    backupWork = result.then(() => undefined, () => undefined);
+    return result;
 }
 
 /** Distinguishes this app session's database connection from the previous one. */
@@ -428,33 +459,37 @@ export async function createBackupNow(
     options: CreateBackupOptions = {},
 ): Promise<{ fileName: string; restorable: boolean }> {
     const d = resolveDeps(deps);
-    const now = d.now();
     const customName = options.name === undefined ? undefined : normalizeManualBackupName(options.name);
-    const fileName = customName?.fileName ?? getDefaultBackupFileName(now, d.rolloverHour());
 
-    // Never let a manual name (or a same-millisecond automatic name) replace an existing
-    // snapshot. Check before exporting so a collision cannot waste work or alter snapshot time.
-    const existing = await d.store.list();
-    // Native iOS storage is commonly case-insensitive; use the same conservative rule on web
-    // so a backup cannot become inaccessible after moving between platforms.
-    if (existing.some((entry) => entry.name.toLocaleLowerCase() === fileName.toLocaleLowerCase())) {
-        throw new BackupNameError('duplicate', 'A backup with this name already exists.');
-    }
+    // Taken once the write before it is done, so the snapshot and its name are of that moment.
+    return serializeBackupWork(async () => {
+        const now = d.now();
+        const fileName = customName?.fileName ?? getDefaultBackupFileName(now, d.rolloverHour());
 
-    const snapshot = await d.exportSnapshot();
-    if (!snapshot.restorable && options.requireRestorable) throw new BackupNotRestorableError(snapshot.reason ?? 'recovery-only');
-    await writeSnapshot(d.store, fileName, snapshot.chunks);
-    // Mark the time only after the write succeeds, so a failure retries next launch.
-    d.setLastBackupAt(String(now.getTime()));
-    lastBackupChangeToken = d.changeToken();
+        // Never let a manual name (or a same-millisecond automatic name) replace an existing
+        // snapshot. Check before exporting so a collision cannot waste work or alter snapshot time.
+        const existing = await d.store.list();
+        // Native iOS storage is commonly case-insensitive; use the same conservative rule on web
+        // so a backup cannot become inaccessible after moving between platforms.
+        if (existing.some((entry) => entry.name.toLocaleLowerCase() === fileName.toLocaleLowerCase())) {
+            throw new BackupNameError('duplicate', 'A backup with this name already exists.');
+        }
 
-    try {
-        await pruneBackups(d.store, d.maxCopies?.(), d.now());
-    } catch (e) {
-        console.warn('[Backup] prune failed:', e);
-    }
+        const snapshot = await d.exportSnapshot();
+        if (!snapshot.restorable && options.requireRestorable) throw new BackupNotRestorableError(snapshot.reason ?? 'recovery-only');
+        await writeSnapshot(d.store, fileName, snapshot.chunks);
+        // Mark the time only after the write succeeds, so a failure retries next launch.
+        d.setLastBackupAt(String(now.getTime()));
+        lastBackupChangeToken = d.changeToken();
 
-    return { fileName, restorable: snapshot.restorable };
+        try {
+            await pruneBackups(d.store, d.maxCopies?.(), d.now());
+        } catch (e) {
+            console.warn('[Backup] prune failed:', e);
+        }
+
+        return { fileName, restorable: snapshot.restorable };
+    });
 }
 
 let _autoBackupInFlight: Promise<{ didRun: boolean; fileName?: string }> | null = null;
@@ -488,7 +523,7 @@ export function runAutoBackupIfDue(
 
         if (options.prune !== false) {
             try {
-                await pruneBackups(d.store, d.maxCopies?.(), d.now());
+                await serializeBackupWork(() => pruneBackups(d.store, d.maxCopies?.(), d.now()));
             } catch (error) {
                 console.warn('[Backup] startup prune failed:', error);
             }
@@ -561,34 +596,37 @@ export async function importBackupContents(
     // A web tab that is not the writer would restore into memory only and lose it on reload.
     if (!d.isWriter()) throw new Error(translateActive('root.readOnlyTabAction'));
 
-    // Restoring a chosen backup is a way out of a damaged collection, so the copy of what it
-    // replaces may be a recovery copy: it keeps the damaged rows verbatim and stays shareable.
-    const current = await d.exportSnapshot();
-    const preRestoreName = `${PRE_RESTORE_PREFIX}${d.now().getTime()}.json`;
-    await writeSnapshot(d.store, preRestoreName, current.chunks);
+    return serializeBackupWork(async () => {
+        // Restoring a chosen backup is a way out of a damaged collection, so the copy of what it
+        // replaces may be a recovery copy: it keeps the damaged rows verbatim and stays shareable.
+        const current = await d.exportSnapshot();
+        const preRestoreName = `${PRE_RESTORE_PREFIX}${d.now().getTime()}.json`;
+        await writeSnapshot(d.store, preRestoreName, current.chunks);
 
-    const ok = await d.importData(contents);
-    if (!ok && JSON.parse(contents).canonical !== true) {
-        // Canonical table/progress writes own their transaction. Re-importing a live snapshot
-        // after rejection would itself delete/reinstall catalog rows. Only legacy imports need
-        // an automatic compensating restore because they can mutate before returning false.
-        try {
-            await d.importData(current.chunks.join(''));
-        } catch (error) {
-            console.error('[Backup] automatic restore rollback failed:', error);
+        const ok = await d.importData(contents);
+        if (!ok && JSON.parse(contents).canonical !== true) {
+            // Canonical table/progress writes own their transaction. Re-importing a live snapshot
+            // after rejection would itself delete/reinstall catalog rows. Only legacy imports need
+            // an automatic compensating restore because they can mutate before returning false.
+            try {
+                await d.importData(current.chunks.join(''));
+            } catch (error) {
+                console.error('[Backup] automatic restore rollback failed:', error);
+            }
         }
-    }
 
-    try {
-        await pruneBackups(d.store, d.maxCopies?.(), d.now());
-    } catch (e) {
-        console.warn('[Backup] prune failed:', e);
-    }
+        try {
+            await pruneBackups(d.store, d.maxCopies?.(), d.now());
+        } catch (e) {
+            console.warn('[Backup] prune failed:', e);
+        }
 
-    return { ok, preRestoreName };
+        return { ok, preRestoreName };
+    });
 }
 
 export async function deleteBackup(name: string, deps: BackupDeps = {}): Promise<void> {
     if (!isBackupFileName(name)) throw new Error(`Invalid backup name: ${name}`);
-    await resolveDeps(deps).store.remove(name);
+    const { store } = resolveDeps(deps);
+    await serializeBackupWork(() => store.remove(name));
 }

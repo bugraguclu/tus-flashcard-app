@@ -1,4 +1,48 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+/**
+ * The parts of expo-file-system/legacy the native backup store calls, kept in memory. Like the
+ * real module, appending to a file that does not exist creates it.
+ */
+const disk = vi.hoisted(() => {
+    const files = new Map<string, { contents: string; modified: number }>();
+    const hooks = { beforeAppend: null as null | ((path: string) => Promise<void> | void) };
+    const childNames = (dir: string) => [...new Set([...files.keys()]
+        .filter((path) => path.startsWith(dir))
+        .map((path) => path.slice(dir.length).split('/')[0]))];
+    const fs = {
+        documentDirectory: 'file:///docs/',
+        async getInfoAsync(path: string) {
+            const file = files.get(path);
+            if (file) return { exists: true, isDirectory: false, size: file.contents.length, modificationTime: file.modified };
+            return path.endsWith('/') ? { exists: true, isDirectory: true } : { exists: false, isDirectory: false };
+        },
+        async makeDirectoryAsync() {},
+        async readDirectoryAsync(dir: string) { return childNames(dir); },
+        async readAsStringAsync(path: string) {
+            const file = files.get(path);
+            if (!file) throw new Error(`no file at ${path}`);
+            return file.contents;
+        },
+        async writeAsStringAsync(path: string, contents: string, options?: { append?: boolean }) {
+            if (options?.append) {
+                await hooks.beforeAppend?.(path);
+                files.set(path, { contents: (files.get(path)?.contents ?? '') + contents, modified: Date.now() / 1000 });
+                return;
+            }
+            files.set(path, { contents, modified: Date.now() / 1000 });
+        },
+        async moveAsync({ from, to }: { from: string; to: string }) {
+            const file = files.get(from);
+            if (!file) throw new Error(`no file at ${from}`);
+            files.set(to, file);
+            files.delete(from);
+        },
+        async deleteAsync(path: string) { files.delete(path); },
+    };
+    return { files, hooks, fs };
+});
+vi.mock('./files', () => ({ getLegacyFileSystem: () => disk.fs }));
 
 // backup.ts pulls in native-only modules for its default deps; every test here
 // injects fakes, so the real implementations can be stubbed out entirely.
@@ -380,6 +424,99 @@ describe('listBackups / readBackup / deleteBackup', () => {
 
         await expect(readBackup('nope.json', h.deps)).rejects.toThrow('Invalid backup name');
         await expect(deleteBackup('nope.json', h.deps)).rejects.toThrow('Invalid backup name');
+    });
+});
+
+describe('native backup folder', () => {
+    const DIR = 'file:///docs/tus-backups/';
+    const CHUNKS = [
+        '{"version":6,"canonical":true,"tables":{"note_types":[],"notes":[],',
+        '"anki_cards":[],"decks":[],"deck_configs":[],',
+        '"revlog":[],"graves":[],"session_stats":[]}}',
+    ];
+
+    /** The real native store over the in-memory disk; every other dependency is a fake. */
+    function nativeDeps(startIso: string, onExport: () => void = () => {}): BackupDeps {
+        let guard: string | null = null;
+        return {
+            now: () => new Date(startIso),
+            exportSnapshot: async () => { onExport(); return { chunks: [...CHUNKS], restorable: true }; },
+            importData: async () => true,
+            getLastBackupAt: () => guard,
+            setLastBackupAt: (timestamp) => { guard = timestamp; },
+            rolloverHour: () => 4,
+            isWriter: () => true,
+            autoBackupEnabled: () => true,
+            intervalMinutes: () => 30,
+            maxCopies: () => 7,
+        };
+    }
+
+    /** Hold the next chunked write after its first chunk, until `release` is called. */
+    function pauseNextAppend() {
+        let release!: () => void;
+        const released = new Promise<void>((resolve) => { release = resolve; });
+        let reached!: () => void;
+        const paused = new Promise<void>((resolve) => { reached = resolve; });
+        disk.hooks.beforeAppend = async () => {
+            disk.hooks.beforeAppend = null;
+            reached();
+            await released;
+        };
+        return { paused, release };
+    }
+
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    beforeEach(() => {
+        disk.files.clear();
+        disk.hooks.beforeAppend = null;
+    });
+
+    it('publishes the whole snapshot when the Backups screen lists the folder mid-write', async () => {
+        const deps = nativeDeps('2026-07-05T12:00:00');
+        const { paused, release } = pauseNextAppend();
+
+        const writing = createBackupNow(deps);
+        await paused;
+        // Backups › reload() while the snapshot is still being appended to its temporary file.
+        await listBackups(deps);
+        release();
+        const { fileName } = await writing;
+
+        expect(disk.files.get(`${DIR}${fileName}`)?.contents).toBe(CHUNKS.join(''));
+        expect(validateBackupContents(disk.files.get(`${DIR}${fileName}`)!.contents)).toEqual({ valid: true });
+    });
+
+    it('writes a second backup only after the one in progress, both whole', async () => {
+        const events: string[] = [];
+        const automatic = nativeDeps('2026-07-05T12:00:00', () => events.push('export automatic'));
+        const manual = nativeDeps('2026-07-05T12:00:00', () => events.push('export manual'));
+        const { paused, release } = pauseNextAppend();
+
+        // The 5-minute poll's snapshot is being written when the learner taps Back Up Now.
+        const first = createBackupNow(automatic);
+        await paused;
+        const second = createBackupNow(manual, { name: 'Before exam' });
+        await settle();
+        events.push('first write released');
+        release();
+        const [a, b] = await Promise.all([first, second]);
+
+        expect(events).toEqual(['export automatic', 'first write released', 'export manual']);
+        expect(disk.files.get(`${DIR}${a.fileName}`)?.contents).toBe(CHUNKS.join(''));
+        expect(disk.files.get(`${DIR}${b.fileName}`)?.contents).toBe(CHUNKS.join(''));
+    });
+
+    it('still clears a temporary file that an interrupted write left behind', async () => {
+        const deps = nativeDeps('2026-07-05T12:00:00');
+        disk.files.set(`${DIR}.tus-backup-2026-07-04-120000000.json.1751600000000.tmp`, { contents: '{"version":6,', modified: 0 });
+        disk.files.set(`${DIR}tus-backup-2026-07-04-120000000.json`, { contents: CHUNKS.join(''), modified: 1 });
+
+        const listed = await listBackups(deps);
+
+        expect(listed.map((info) => info.name)).toEqual(['tus-backup-2026-07-04-120000000.json']);
+        expect([...disk.files.keys()]).toEqual([`${DIR}tus-backup-2026-07-04-120000000.json`]);
     });
 });
 
