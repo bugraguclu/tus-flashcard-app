@@ -172,6 +172,45 @@ export function advanceQueueAfterAnswer(input: PostAnswerQueueInput): PostAnswer
     };
 }
 
+export type ReviewerQueueCounts = { newCount: number; learningCount: number; reviewCount: number };
+
+/** The count a card on screen is drawn from (Anki underlines it). */
+export function queueCountBucket(status: StudyCard['state']['status']): keyof ReviewerQueueCounts {
+    if (status === 'new') return 'newCount';
+    if (status === 'learning') return 'learningCount';
+    return 'reviewCount';
+}
+
+/**
+ * The counts straight after an answer, until the next rebuild reads them again: the answered card
+ * leaves the count it was drawn from and joins the one it is due in today.
+ *
+ * A card on an intraday step counts as learning for the rest of the study day, so ÖĞRENİYOR grows
+ * the moment a new card enters learning. A day-long step (`dueTime` 0, as Anki's interday learning
+ * is stored) is due on a later day after any answer, so it is not today's work.
+ */
+export function countsAfterAnswer(counts: ReviewerQueueCounts, input: {
+    answeredStatus: StudyCard['state']['status'];
+    /** The answered card with its new schedule. */
+    updatedCard: StudyCard;
+    nowMs: number;
+    /** Local study day (YYYY-MM-DD) at `nowMs`, for review cards. */
+    today: string;
+    /** When the study day ends (the next rollover). */
+    endOfDayMs: number;
+}): ReviewerQueueCounts {
+    const next = { ...counts };
+    const answeredBucket = queueCountBucket(input.answeredStatus);
+    next[answeredBucket] = Math.max(0, next[answeredBucket] - 1);
+    const updated = input.updatedCard;
+    if (updated.state.status === 'learning') {
+        if (updated.state.dueTime > 0 && updated.state.dueTime < input.endOfDayMs) next.learningCount += 1;
+    } else if (isCardDueNow(updated, input.nowMs, input.today)) {
+        next[queueCountBucket(updated.state.status)] += 1;
+    }
+    return next;
+}
+
 /**
  * A queue built straight after an answer, without the answered card in front when the main queue
  * has run out and another learning card is waiting inside the learn-ahead limit.

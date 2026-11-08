@@ -181,7 +181,9 @@ import {
     advanceQueueAfterAnswer,
     avoidImmediateRepeat,
     coordinatePostAnswerQueueRefresh,
+    countsAfterAnswer,
     keepSessionOrder,
+    queueCountBucket,
     queueWithFocusedCard,
     shouldRebuildAfterAnswer,
 } from '../../lib/reviewerQueueRefresh';
@@ -929,25 +931,6 @@ export default function StudyScreen() {
         return () => clearInterval(timer);
     }, [waitingTargetMs, currentCard, buildQueue]);
 
-    const statusToQueueBucket = (status: StudyCard['state']['status']): keyof QueueStats => {
-        if (status === 'new') return 'newCount';
-        if (status === 'learning') return 'learningCount';
-        return 'reviewCount';
-    };
-
-    const isCardDueNow = (card: StudyCard, nowMs: number): boolean => {
-        if (card.state.status === 'learning') {
-            return Boolean(card.state.dueTime && card.state.dueTime <= nowMs);
-        }
-
-        if (card.state.status === 'review') {
-            const today = todayLocalYMD(new Date(nowMs), settings.dayRolloverHour);
-            return card.state.dueDate <= today;
-        }
-
-        return true;
-    };
-
     const answerCard = useCallback(async (grade: Grade) => {
         if (!currentCard || isMutatingRef.current) return;
         const now = Date.now();
@@ -1155,26 +1138,16 @@ export default function StudyScreen() {
                 .filter((value): value is number => value !== null);
             learningComesDueAtRef.current = knownLearningDues.length > 0 ? Math.min(...knownLearningDues) : null;
 
-            setQueueStats((prev) => {
-                const next = { ...prev };
-                const currentBucket = statusToQueueBucket(currentCard.state.status);
-                next[currentBucket] = Math.max(0, next[currentBucket] - 1);
-
-                const updated = result.updatedCard;
-                if (updated.state.status === 'learning') {
-                    // Learning counts for the whole study day (Anki deck-list semantics):
-                    // a card waiting on its 10-minute step is still today's workload, so the
-                    // ÖĞRENİYOR counter must grow the moment a new card enters learning.
-                    const endOfDay = nextRolloverMs(nowMs, settings.dayRolloverHour);
-                    if (updated.state.dueTime === 0 || updated.state.dueTime < endOfDay) {
-                        next.learningCount += 1;
-                    }
-                } else if (isCardDueNow(updated, nowMs)) {
-                    next[statusToQueueBucket(updated.state.status)] += 1;
-                }
-
-                return next;
-            });
+            // Learning counts for the whole study day (Anki deck-list semantics): a card waiting on
+            // its 10-minute step is still today's workload; one moved to a day-long step is not.
+            const answeredStatus = currentCard.state.status;
+            setQueueStats((prev) => countsAfterAnswer(prev, {
+                answeredStatus,
+                updatedCard: result.updatedCard,
+                nowMs,
+                today: todayLocalYMD(new Date(nowMs), settings.dayRolloverHour),
+                endOfDayMs: nextRolloverMs(nowMs, settings.dayRolloverHour),
+            }));
 
             setShowingAnswer(false);
             setTypedAnswer('');
@@ -2787,7 +2760,7 @@ export default function StudyScreen() {
 
     const plainFrame = settings.studyFrameStyle === 'plain';
     // Anki underlines the count of the queue the card on screen was drawn from.
-    const currentQueueBucket = currentCard ? statusToQueueBucket(currentCard.state.status) : null;
+    const currentQueueBucket = currentCard ? queueCountBucket(currentCard.state.status) : null;
     const queueCountStyle = (bucket: keyof QueueStats, color: string) => [
         styles.queueCount,
         { color },

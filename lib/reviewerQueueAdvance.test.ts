@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceQueueAfterAnswer } from './reviewerQueueRefresh';
+import { advanceQueueAfterAnswer, countsAfterAnswer } from './reviewerQueueRefresh';
 import type { StudyCard } from './types';
 
 const NOW = Date.UTC(2026, 9, 21, 13, 5, 37);
@@ -63,5 +63,31 @@ describe('reviewer queue after an answer (learn ahead limit)', () => {
             preview: true,
         });
         expect(step.currentCard).toBeNull();
+    });
+});
+
+describe('queue counts after an answer', () => {
+    const END_OF_DAY = NOW + 10 * 60 * MINUTE;
+    const after = (answered: StudyCard['state']['status'], updated: Partial<StudyCard['state']>) => countsAfterAnswer(
+        { newCount: 1, learningCount: 0, reviewCount: 1 },
+        { answeredStatus: answered, updatedCard: card(1, updated), nowMs: NOW, today: '2026-10-21', endOfDayMs: END_OF_DAY },
+    );
+
+    it('counts a card on an intraday step as today\'s learning', () => {
+        expect(after('new', { status: 'learning', dueTime: NOW + 10 * MINUTE })).toEqual({ newCount: 0, learningCount: 1, reviewCount: 1 });
+    });
+
+    // With steps "10m 1d", Good on the 10m step moves the card to a day-long step: it is due on a
+    // later day (dueTime 0 marks day learning), never again today.
+    it('does not count a card moved to a day-long step', () => {
+        expect(after('learning', { status: 'learning', dueTime: 0, dueDate: '2026-10-22' }))
+            .toEqual({ newCount: 1, learningCount: 0, reviewCount: 1 });
+        expect(after('new', { status: 'learning', dueTime: 0, dueDate: '2026-10-22' }))
+            .toEqual({ newCount: 0, learningCount: 0, reviewCount: 1 });
+    });
+
+    it('does not count a step that ends after the rollover or a review due later', () => {
+        expect(after('new', { status: 'learning', dueTime: END_OF_DAY + MINUTE })).toEqual({ newCount: 0, learningCount: 0, reviewCount: 1 });
+        expect(after('review', { status: 'review', dueDate: '2026-10-24' })).toEqual({ newCount: 1, learningCount: 0, reviewCount: 0 });
     });
 });
