@@ -56,6 +56,11 @@ interface AppSheetProps {
     /** Extra style for the sheet surface, e.g. a fixed height for a long list. */
     sheetStyle?: StyleProp<ViewStyle>;
     backdropLabel?: string;
+    /**
+     * Runs once the sheet has gone, so an action chosen in it can present its own modal (a picker,
+     * an editor) without racing the sheet's exit.
+     */
+    onDismiss?: () => void;
     children: React.ReactNode;
 }
 
@@ -77,6 +82,7 @@ export function AppSheet({
     maxHeight = '88%',
     sheetStyle,
     backdropLabel,
+    onDismiss,
     children,
 }: AppSheetProps) {
     const colors = useThemeColors();
@@ -91,6 +97,7 @@ export function AppSheet({
             accessibilityViewIsModal={!covered}
             backdropHidden={covered}
             backdropLabel={backdropLabel}
+            onDismiss={onDismiss}
             sheetStyle={[
                 styles.sheet,
                 { maxHeight, backgroundColor: colors.bgPrimary, paddingBottom: Math.max(insets.bottom, Spacing.md) },

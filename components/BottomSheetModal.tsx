@@ -43,6 +43,11 @@ interface BottomSheetModalProps {
     backdropHidden?: boolean;
     /** Drawn over the sheet inside the same modal (a picker on its own dimmed layer). */
     overlay?: React.ReactNode;
+    /**
+     * Runs once the sheet has slid away and its modal is gone, so what was chosen in it can present
+     * another modal: iOS will not show one while this one is still on screen.
+     */
+    onDismiss?: () => void;
 }
 
 // One shared Reduce Motion subscription: every option card on Deck Options keeps a sheet mounted.
@@ -89,6 +94,7 @@ export default function BottomSheetModal({
     backdropLabel,
     backdropHidden = false,
     overlay,
+    onDismiss,
 }: BottomSheetModalProps) {
     const { l } = useI18n();
     const { height: windowHeight } = useWindowDimensions();
@@ -171,6 +177,7 @@ export default function BottomSheetModal({
             transparent
             animationType={reduceMotion ? 'fade' : 'none'}
             onRequestClose={onClose}
+            onDismiss={onDismiss}
         >
             <KeyboardAvoidingView
                 style={[styles.container, containerStyle, { pointerEvents: visible ? 'auto' : 'none' }]}
