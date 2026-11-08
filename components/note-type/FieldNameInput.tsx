@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { type StyleProp, type TextStyle } from 'react-native';
-import { TextInput } from '../AppText';
+import { type StyleProp, type ViewStyle } from 'react-native';
+import { TextField } from '../ui/Fields';
 
 interface FieldNameInputProps {
     name: string;
@@ -9,8 +9,8 @@ interface FieldNameInputProps {
     /** Reports whether typed text is waiting to be committed, for the screen's unsaved-changes guard. */
     onPendingChange?: (pending: boolean) => void;
     accessibilityLabel?: string;
-    placeholderTextColor?: string;
-    style?: StyleProp<TextStyle>;
+    /** Layout of the field (width, flex, margins); it is drawn as the kit's TextField. */
+    style?: StyleProp<ViewStyle>;
 }
 
 /**
@@ -24,7 +24,6 @@ export function FieldNameInput({
     onCommit,
     onPendingChange,
     accessibilityLabel,
-    placeholderTextColor,
     style,
 }: FieldNameInputProps) {
     const [draft, setDraft] = useState<string | null>(null);
@@ -53,7 +52,7 @@ export function FieldNameInput({
     }, []);
 
     return (
-        <TextInput
+        <TextField
             style={style}
             value={draft ?? name}
             onChangeText={updateDraft}
@@ -62,7 +61,6 @@ export function FieldNameInput({
             returnKeyType="done"
             autoCorrect={false}
             accessibilityLabel={accessibilityLabel}
-            placeholderTextColor={placeholderTextColor}
         />
     );
 }

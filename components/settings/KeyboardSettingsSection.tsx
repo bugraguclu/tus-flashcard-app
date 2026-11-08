@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Choice';
+import { Notice } from '../ui/Feedback';
+import { ValueRow } from '../ui/Rows';
+import { HIT_TARGET, Radius, Type } from '../ui/tokens';
 import { keyBindingRecordingResult } from '../../lib/hardwareKeyboard';
 import { DEFAULT_KEY_BINDINGS } from '../../lib/storage';
 import type { KeyBindings } from '../../lib/types';
@@ -96,97 +102,108 @@ export default function KeyboardSettingsSection({ bindings, onChange }: Props) {
     };
 
     return (
-        <View style={styles.group}>
-            <Text style={styles.title}>{l('Klavye', 'Keyboard')}</Text>
-            <Text style={styles.description}>{l(
+        <Card
+            divided
+            title={l('Klavye', 'Keyboard')}
+            description={l(
                 'Bir satırda Değiştir’e dokunun, ardından bağlı fiziksel klavyede bir tuşa basın. Her tuşu yalnızca bir işleme atayın. Esc çalışmadan çıkar, Z veya U son işlemi geri alır. Değişiklikleri Kaydet ile saklayın.',
                 'Choose Change on a row, then press a key on a connected physical keyboard. Give each key to only one action. Esc leaves study, and Z or U undoes the last action. Use Save to keep your changes.',
-            )}</Text>
+            )}
+        >
             {KEY_ROWS.map((row) => {
                 const recording = recordingField === row.field;
                 const label = l(row.tr, row.en);
                 return (
-                    <View key={row.field} style={styles.row}>
-                        <Text style={styles.label}>{label}</Text>
-                        <View style={styles.actions}>
-                            <View style={styles.keyChip}>
-                                <Text style={styles.keyText} accessibilityLiveRegion="polite">
-                                    {recording ? l('Bir tuşa basın', 'Press a key') : formatKeyLabel(bindings[row.field])}
-                                </Text>
-                                {recording && Platform.OS !== 'web' ? (
-                                    <TextInput
-                                        key={row.field}
-                                        autoFocus
-                                        value=""
-                                        onChangeText={() => undefined}
-                                        onKeyPress={(event) => recordKey(event.nativeEvent.key, row.field)}
-                                        onSubmitEditing={() => recordKey('Enter', row.field)}
-                                        onBlur={() => cancelRecording(row.field)}
-                                        showSoftInputOnFocus={false}
-                                        caretHidden
-                                        autoCapitalize="none"
-                                        autoCorrect={false}
-                                        spellCheck={false}
-                                        contextMenuHidden
-                                        accessible={false}
-                                        importantForAccessibility="no-hide-descendants"
-                                        style={styles.capture}
-                                    />
-                                ) : null}
-                            </View>
-                            <TouchableOpacity
-                                style={styles.button}
-                                onPressIn={() => { buttonPressRef.current = { field: row.field, cancelling: recordingRef.current === row.field }; }}
-                                onPress={() => startRecording(row.field)}
-                                accessibilityRole="button"
-                                accessibilityLabel={recording
-                                    ? l(`${label} tuş atamasını iptal et`, `Cancel key assignment for ${label}`)
-                                    : l(`${label} kısayolunu değiştir`, `Change shortcut for ${label}`)}
-                                accessibilityHint={l('Bağlı fiziksel klavyede bir tuşa basın', 'Press a key on a connected physical keyboard')}
-                            >
-                                <Text style={styles.buttonText}>{recording ? l('İptal', 'Cancel') : l('Değiştir', 'Change')}</Text>
-                            </TouchableOpacity>
+                    <ValueRow key={row.field} label={label}>
+                        <View style={styles.keySlot} accessibilityLiveRegion="polite">
+                            <Badge
+                                tone="accent"
+                                label={recording ? l('Bir tuşa basın', 'Press a key') : formatKeyLabel(bindings[row.field])}
+                                style={styles.keyBadge}
+                            />
+                            {recording && Platform.OS !== 'web' ? (
+                                <TextInput
+                                    key={row.field}
+                                    autoFocus
+                                    value=""
+                                    onChangeText={() => undefined}
+                                    onKeyPress={(event) => recordKey(event.nativeEvent.key, row.field)}
+                                    onSubmitEditing={() => recordKey('Enter', row.field)}
+                                    onBlur={() => cancelRecording(row.field)}
+                                    showSoftInputOnFocus={false}
+                                    caretHidden
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    spellCheck={false}
+                                    contextMenuHidden
+                                    accessible={false}
+                                    importantForAccessibility="no-hide-descendants"
+                                    style={styles.capture}
+                                />
+                            ) : null}
                         </View>
-                    </View>
+                        {/* Drawn as a compact secondary Button. The kit's Button has no press-in, and this
+                            one records at touch-down whether the press began while the row was recording. */}
+                        <TouchableOpacity
+                            style={styles.changeButton}
+                            hitSlop={{ top: (HIT_TARGET - 40) / 2, bottom: (HIT_TARGET - 40) / 2 }}
+                            onPressIn={() => { buttonPressRef.current = { field: row.field, cancelling: recordingRef.current === row.field }; }}
+                            onPress={() => startRecording(row.field)}
+                            accessibilityRole="button"
+                            accessibilityLabel={recording
+                                ? l(`${label} tuş atamasını iptal et`, `Cancel key assignment for ${label}`)
+                                : l(`${label} kısayolunu değiştir`, `Change shortcut for ${label}`)}
+                            accessibilityHint={l('Bağlı fiziksel klavyede bir tuşa basın', 'Press a key on a connected physical keyboard')}
+                        >
+                            <Text style={styles.changeText} numberOfLines={1}>{recording ? l('İptal', 'Cancel') : l('Değiştir', 'Change')}</Text>
+                        </TouchableOpacity>
+                    </ValueRow>
                 );
             })}
             {conflict ? (
-                <Text style={styles.conflict} accessibilityRole="alert" accessibilityLiveRegion="assertive">
-                    {l(
-                        `${formatKeyLabel(conflict.key)} zaten “${conflict.row.tr}” için kullanılıyor. Başka bir tuş seçin.`,
-                        `${formatKeyLabel(conflict.key)} is already used for “${conflict.row.en}”. Choose another key.`,
-                    )}
-                </Text>
+                <View style={styles.block}>
+                    <Notice tone="danger">
+                        <Text style={styles.conflict} accessibilityRole="alert" accessibilityLiveRegion="assertive">
+                            {l(
+                                `${formatKeyLabel(conflict.key)} zaten “${conflict.row.tr}” için kullanılıyor. Başka bir tuş seçin.`,
+                                `${formatKeyLabel(conflict.key)} is already used for “${conflict.row.en}”. Choose another key.`,
+                            )}
+                        </Text>
+                    </Notice>
+                </View>
             ) : null}
             {JSON.stringify(bindings) !== JSON.stringify(DEFAULT_KEY_BINDINGS) ? (
-                <TouchableOpacity
-                    style={styles.resetButton}
-                    onPress={() => { cancelRecording(); setConflict(null); onChange({ ...DEFAULT_KEY_BINDINGS }); }}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Kısayolları sıfırla', 'Reset shortcuts')}
-                >
-                    <Text style={styles.resetText}>{l('Kısayolları sıfırla', 'Reset shortcuts')}</Text>
-                </TouchableOpacity>
+                <View style={styles.block}>
+                    <Button
+                        variant="secondary"
+                        label={l('Kısayolları sıfırla', 'Reset shortcuts')}
+                        onPress={() => { cancelRecording(); setConflict(null); onChange({ ...DEFAULT_KEY_BINDINGS }); }}
+                    />
+                </View>
             ) : null}
-        </View>
+        </Card>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        group: { backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, ...Shadows.sm },
-        title: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary, minHeight: 32 },
-        description: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 19, marginBottom: Spacing.sm },
-        row: { minHeight: 54, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight, gap: Spacing.sm, paddingVertical: Spacing.xs },
-        label: { flexGrow: 1, flexShrink: 1, flexBasis: 100, fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '600' },
-        actions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginLeft: 'auto' },
-        keyChip: { minWidth: 54, minHeight: 32, paddingHorizontal: Spacing.sm, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm, backgroundColor: colors.accentLight },
-        keyText: { fontSize: FontSize.sm, color: colors.accent, fontWeight: '800' },
+        block: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+        keySlot: { minWidth: 54, alignItems: 'center', justifyContent: 'center' },
+        keyBadge: { alignSelf: 'center' },
         capture: { position: 'absolute', width: 1, height: 1, opacity: 0 },
-        conflict: { fontSize: FontSize.sm, color: colors.btnAgain, lineHeight: 19, marginTop: Spacing.sm },
-        button: { minHeight: 44, paddingHorizontal: Spacing.sm, justifyContent: 'center', borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border },
-        buttonText: { fontSize: FontSize.xs, color: colors.textSecondary, fontWeight: '700' },
-        resetButton: { minHeight: 48, marginTop: Spacing.sm, borderRadius: BorderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bgSecondary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.md },
-        resetText: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '600', textAlign: 'center' },
+        conflict: { ...Type.caption, color: colors.textPrimary },
+        // The kit's compact secondary Button, which this one has to stand in for.
+        changeButton: {
+            minHeight: 40,
+            minWidth: HIT_TARGET,
+            paddingHorizontal: Spacing.md,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: Radius.control,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.bgCard,
+        },
+        changeText: { ...Type.button, fontSize: FontSize.sm, color: colors.textPrimary },
     });
 }

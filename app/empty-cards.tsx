@@ -1,21 +1,36 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-    View,
-    TouchableOpacity,
-    ScrollView,
-    StyleSheet,
-    ActivityIndicator,
-    Switch,
-} from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Spacing, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
 import { useCollectionInvalidation } from '../contexts/AppContext';
 import { findEmptyCards, deleteAnkiCardOnly, deleteAnkiCardsOnly, type EmptyCardEntry } from '../lib/noteManager';
 import { useI18n } from '../hooks/useI18n';
 import ScreenHeader from '../components/ScreenHeader';
+import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
+import { Button, IconButton } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { EmptyState, LoadingState } from '../components/ui/Feedback';
+import { ListRow, SwitchRow } from '../components/ui/Rows';
+import { CloseIcon } from '../components/ui/icons';
+
+/** A bin, drawn like the kit's control glyphs: the kit has no delete icon yet. */
+function TrashIcon({ color, size = 18 }: { color: string; size?: number }) {
+    return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
+            <Path
+                d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 11v5.5M14 11v5.5"
+                stroke={color}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
 
 function emptyCardReason(reason: EmptyCardEntry['reason'], l: (tr: string, en: string) => string): string {
     if (reason.includes('Kapama')) return l('Kapama metinde yok', 'Cloze is missing from the text');
@@ -105,53 +120,52 @@ export default function EmptyCardsScreen() {
                 </Text>
 
                 {entries === null ? (
-                    <View style={styles.loadingBox}>
-                        <ActivityIndicator color={colors.accent} />
-                        <Text style={styles.help}>{l('Taranıyor…', 'Scanning…')}</Text>
-                    </View>
+                    <LoadingState label={l('Taranıyor…', 'Scanning…')} />
                 ) : error ? (
-                    <View style={styles.emptyBox}>
-                        <Text style={styles.emptyText}>{l('Kartlar taranamadı.', 'Cards could not be scanned.')}</Text>
-                        <TouchableOpacity style={styles.secondaryBtn} onPress={scan} accessibilityRole="button" accessibilityLabel={l('Tekrar tara', 'Scan again')}>
-                            <Text style={styles.secondaryBtnText}>{t('common.retry')}</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <EmptyState
+                        title={l('Kartlar taranamadı.', 'Cards could not be scanned.')}
+                        action={(
+                            <Button
+                                variant="secondary"
+                                label={t('common.retry')}
+                                accessibilityLabel={l('Tekrar tara', 'Scan again')}
+                                onPress={scan}
+                            />
+                        )}
+                    />
                 ) : entries.length === 0 ? (
-                    <View style={styles.emptyBox}>
-                        <Text style={styles.emptyText}>{l('Boş kart bulunamadı.', 'No empty cards found.')}</Text>
-                    </View>
+                    <EmptyState title={l('Boş kart bulunamadı.', 'No empty cards found.')} />
                 ) : (
                     <>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Text style={styles.help}>{l('Geçerli kartı olmayan notları koru', 'Keep notes with no valid cards')}</Text>
-                            <Switch value={preserveNotes} onValueChange={setPreserveNotes} accessibilityLabel={l('Notları koru', 'Keep notes')} />
-                        </View>
-                        <TouchableOpacity
-                            style={[styles.deleteAllBtn, busy && styles.btnDisabled]}
+                        <Card>
+                            <SwitchRow
+                                title={l('Geçerli kartı olmayan notları koru', 'Keep notes with no valid cards')}
+                                value={preserveNotes}
+                                onValueChange={setPreserveNotes}
+                            />
+                        </Card>
+                        <Button
+                            variant="destructive"
+                            icon={<TrashIcon color={colors.onAccent} />}
+                            label={`${l('Tümünü sil', 'Delete All')} (${entries.length})`}
                             onPress={deleteAll}
-                            disabled={busy}
-                        >
-                            <Text style={styles.deleteAllText}>🗑️ {l('Tümünü sil', 'Delete All')} ({entries.length})</Text>
-                        </TouchableOpacity>
+                            busy={busy}
+                        />
 
-                        {entries.map((entry) => (
-                            <View key={entry.cardId} style={styles.row}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.rowQuestion} numberOfLines={2}>
-                                        {entry.question || l('(boş)', '(empty)')}
-                                    </Text>
-                                    <Text style={styles.rowReason}>{emptyCardReason(entry.reason, l)}</Text>
-                                </View>
-                                <TouchableOpacity
-                                    style={styles.rowDeleteBtn}
-                                    onPress={() => deleteOne(entry)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Bu kartı sil', 'Delete this card')}
-                                >
-                                    <Text style={styles.rowDeleteText}>✕</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ))}
+                        <Card divided>
+                            {entries.map((entry) => (
+                                <ListRow
+                                    key={entry.cardId}
+                                    title={entry.question || l('(boş)', '(empty)')}
+                                    summary={emptyCardReason(entry.reason, l)}
+                                    accessory={(
+                                        <IconButton accessibilityLabel={l('Bu kartı sil', 'Delete this card')} onPress={() => deleteOne(entry)}>
+                                            <CloseIcon color={colors.danger} size={20} />
+                                        </IconButton>
+                                    )}
+                                />
+                            ))}
+                        </Card>
                     </>
                 )}
 
@@ -165,48 +179,5 @@ function createStyles(colors: ColorScheme) {
         container: { flex: 1, backgroundColor: colors.bgPrimary },
         content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
         help: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 20 },
-        loadingBox: { alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.xxl },
-        emptyBox: { alignItems: 'center', gap: Spacing.xs, paddingVertical: Spacing.xxl },
-        emptyText: { fontSize: FontSize.lg, color: colors.textSecondary },
-        secondaryBtn: {
-            marginTop: Spacing.sm,
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.sm,
-        },
-        secondaryBtnText: { color: colors.accent, fontWeight: '600' },
-        deleteAllBtn: {
-            backgroundColor: colors.badgeNewBg,
-            borderWidth: 1,
-            borderColor: colors.badgeNew,
-            borderRadius: BorderRadius.sm,
-            paddingVertical: Spacing.sm,
-            alignItems: 'center',
-        },
-        btnDisabled: { opacity: 0.5 },
-        deleteAllText: { color: colors.badgeNew, fontWeight: '700' },
-        row: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            backgroundColor: colors.bgCard,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.sm,
-            padding: Spacing.md,
-        },
-        rowQuestion: { fontSize: FontSize.sm, color: colors.textPrimary, fontWeight: '600' },
-        rowReason: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-        rowDeleteBtn: {
-            width: 32,
-            height: 32,
-            borderRadius: BorderRadius.sm,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.bgInput,
-        },
-        rowDeleteText: { color: colors.badgeNew, fontWeight: '700' },
     });
 }

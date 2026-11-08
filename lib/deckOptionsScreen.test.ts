@@ -58,7 +58,6 @@ vi.mock('./confirm', () => ({
 vi.mock('./exportAnkiPackage', () => ({ withoutPreservedReviewOrder: (raw: unknown) => raw }));
 vi.mock('./fsrsOptimizer', () => ({ optimizeFsrsPreset: async () => null }));
 vi.mock('../components/DeckPickerModal', () => ({ default: () => null }));
-vi.mock('../components/HeaderBackIcon', () => ({ default: () => null }));
 vi.mock('../components/BottomSheetModal', () => ({ default: () => null }));
 
 import DeckOptionsScreen from '../app/deck-options';
@@ -94,9 +93,11 @@ const root = () => renderer!.root;
 const buttons = (text: string) => root().findAll((node) => isHost(node, 'TouchableOpacity') && textOf(node) === text);
 const press = (node: ReactTestInstance) => act(() => { node.props.onPress(); });
 const field = (label: string) => root().find((node) => isHost(node, 'TextInput') && node.props.accessibilityLabel === label);
-const tabs = (text: string) => root().findAll((node) => isHost(node, 'TouchableOpacity') && node.props.accessibilityRole === 'tab' && textOf(node) === text);
-/** The toolbar's Save button: the one control that reports whether it is disabled. */
-const saveButton = () => root().find((node) => isHost(node, 'TouchableOpacity') && node.props.accessibilityState?.disabled !== undefined);
+/** A segment of the scope controls (the kit's SegmentedControl draws each one as a Pressable). */
+const tabs = (text: string) => root().findAll((node) => isHost(node, 'Pressable') && node.props.accessibilityRole === 'tab' && textOf(node) === text);
+/** The toolbar's Save button, whichever of its states the label shows. */
+const SAVE_LABELS = ['Kaydet', 'Kaydedildi', 'Kaydediliyor…'];
+const saveButton = () => root().find((node) => isHost(node, 'TouchableOpacity') && SAVE_LABELS.includes(textOf(node)));
 const typeLimit = (value: string) => act(() => { field('Günlük en fazla tekrar').props.onChangeText(value); });
 
 function mount() {

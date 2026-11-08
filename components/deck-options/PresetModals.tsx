@@ -1,9 +1,14 @@
-import { useRef } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text, TextInput } from '../AppText';
+import { Fragment, useRef } from 'react';
+import { Platform, ScrollView } from 'react-native';
 import type { useI18n } from '../../hooks/useI18n';
 import { getAllDeckConfigs, getDecksUsingConfig } from '../../lib/deckManager';
+import { Button } from '../ui/Button';
+import { Divider } from '../ui/Card';
+import { AppDialog } from '../ui/Dialog';
+import { TextField } from '../ui/Fields';
+import { MenuItem, PopoverMenu } from '../ui/Menu';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
+import { PickerOption } from './SettingControls';
 import type { DeckConfig } from '../../lib/models';
 
 type I18n = Pick<ReturnType<typeof useI18n>, 'l' | 't'>;
@@ -20,11 +25,13 @@ export interface PresetAction {
  * remove. iOS drops an alert or a second modal presented while this menu is still dismissing, so
  * there the chosen action runs from `onDismiss`, once the menu has gone.
  */
-export function PresetActionsMenu({ visible, actions, onClose, styles }: {
+export function PresetActionsMenu({ visible, actions, onClose, anchor, accessibilityLabel }: {
     visible: boolean;
     actions: PresetAction[];
     onClose: () => void;
-    styles: DeckOptionsStyles;
+    /** Where the menu hangs, under the ••• button that opened it (see `PopoverMenu`). */
+    anchor?: { top?: number; right?: number };
+    accessibilityLabel?: string;
 }) {
     const pending = useRef<(() => void) | null>(null);
     const runPending = () => {
@@ -42,23 +49,22 @@ export function PresetActionsMenu({ visible, actions, onClose, styles }: {
         action();
     };
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onDismiss={runPending}>
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.actionMenu} accessibilityViewIsModal>
-                    {actions.map((item) => (
-                        <TouchableOpacity
-                            key={item.label}
-                            style={styles.actionMenuRow}
-                            onPress={() => choose(item.action)}
-                            accessibilityRole="button"
-                        >
-                            <Text style={[styles.actionMenuText, item.destructive && styles.actionMenuDanger]}>{item.label}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
-        </Modal>
+        <PopoverMenu
+            visible={visible}
+            onClose={onClose}
+            onDismiss={runPending}
+            anchor={anchor}
+            accessibilityLabel={accessibilityLabel}
+        >
+            {actions.map((item) => (
+                <MenuItem
+                    key={item.label}
+                    label={item.label}
+                    onPress={() => choose(item.action)}
+                    destructive={item.destructive}
+                />
+            ))}
+        </PopoverMenu>
     );
 }
 
@@ -75,93 +81,66 @@ export function PresetPickerModal({ presets, activePresetId, currentDeckId, hidd
     onClose: () => void;
     styles: DeckOptionsStyles;
 }) {
+    const shown = (presets ?? getAllDeckConfigs()).filter((preset) => !hiddenPresetIds.includes(preset.id));
     return (
-        <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={onClose}
-                    accessibilityLabel={l('Ayar grubu seçiciyi kapat', 'Close preset picker')}
-                />
-                <View style={styles.modalCard}>
-                    <Text style={styles.modalTitle}>{l('Ayar grubu seç', 'Choose Preset')}</Text>
-                    <ScrollView style={{ maxHeight: 320 }}>
-                        {(presets ?? getAllDeckConfigs()).filter((preset) => !hiddenPresetIds.includes(preset.id)).map((preset) => {
-                            const presetDecks = getDecksUsingConfig(preset.id).filter((deck) => deck.id !== currentDeckId);
-                            const used = presetDecks.length + (currentDeckId !== undefined && preset.id === activePresetId ? 1 : 0);
-                            const representative = presetDecks[0];
-                            return (
-                                <TouchableOpacity
-                                    key={preset.id}
-                                    style={styles.presetOption}
-                                    onPress={() => onPick(preset.id)}
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ checked: preset.id === activePresetId }}
-                                >
-                                    <Text style={[styles.presetOptionText, preset.id === activePresetId && styles.presetOptionActive]}>
-                                        {preset.name} · {l(`${used} deste`, `${used} decks`)}
-                                    </Text>
-                                    {representative ? (
-                                        <Text style={styles.presetOptionMeta} numberOfLines={1}>
-                                            {representative.name.replaceAll('::', ' › ')}
-                                        </Text>
-                                    ) : null}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-                    <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-                        <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
+        <AppDialog
+            visible
+            onClose={onClose}
+            title={l('Ayar grubu seç', 'Choose Preset')}
+            actions={<Button variant="plain" label={t('common.cancel')} onPress={onClose} />}
+        >
+            <ScrollView style={styles.presetList}>
+                {shown.map((preset, index) => {
+                    const presetDecks = getDecksUsingConfig(preset.id).filter((deck) => deck.id !== currentDeckId);
+                    const used = presetDecks.length + (currentDeckId !== undefined && preset.id === activePresetId ? 1 : 0);
+                    const representative = presetDecks[0];
+                    return (
+                        <Fragment key={preset.id}>
+                            {index > 0 ? <Divider /> : null}
+                            <PickerOption
+                                label={`${preset.name} · ${l(`${used} deste`, `${used} decks`)}`}
+                                meta={representative ? representative.name.replaceAll('::', ' › ') : undefined}
+                                selected={preset.id === activePresetId}
+                                onPress={() => onPick(preset.id)}
+                                styles={styles}
+                            />
+                        </Fragment>
+                    );
+                })}
+            </ScrollView>
+        </AppDialog>
     );
 }
 
-export function RenamePresetModal({ title, value, onChangeValue, onSave, onClose, styles, l, t }: I18n & {
+export function RenamePresetModal({ title, value, onChangeValue, onSave, onClose, l, t }: I18n & {
     /** Defaults to the rename title; Add Preset reuses the dialog to ask for a name. */
     title?: string;
     value: string;
     onChangeValue: (value: string) => void;
     onSave: () => void;
     onClose: () => void;
-    styles: DeckOptionsStyles;
 }) {
     return (
-        <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-            <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={onClose}
-                    accessibilityLabel={l('Yeniden adlandırma penceresini kapat', 'Close rename dialog')}
-                />
-                <View style={styles.modalCard}>
-                    <Text style={styles.modalTitle}>{title ?? l('Ayar grubunu yeniden adlandır', 'Rename Preset')}</Text>
-                    {/* Return saves, as Anki's name prompt does on Enter. */}
-                    <TextInput
-                        style={styles.input}
-                        value={value}
-                        onChangeText={onChangeValue}
-                        autoFocus
-                        returnKeyType="done"
-                        onSubmitEditing={onSave}
-                        accessibilityLabel={l('Ayar grubu adı', 'Preset name')}
-                    />
-                    <View style={styles.modalActions}>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={onClose} accessibilityRole="button">
-                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.saveBtnSmall}
-                            onPress={onSave}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.saveBtnText}>{t('common.save')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </KeyboardAvoidingView>
-        </Modal>
+        <AppDialog
+            visible
+            onClose={onClose}
+            title={title ?? l('Ayar grubunu yeniden adlandır', 'Rename Preset')}
+            actions={(
+                <>
+                    <Button variant="plain" label={t('common.cancel')} onPress={onClose} />
+                    <Button label={t('common.save')} onPress={onSave} />
+                </>
+            )}
+        >
+            {/* Return saves, as Anki's name prompt does on Enter. */}
+            <TextField
+                value={value}
+                onChangeText={onChangeValue}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={onSave}
+                accessibilityLabel={l('Ayar grubu adı', 'Preset name')}
+            />
+        </AppDialog>
     );
 }

@@ -1,9 +1,13 @@
 import { useMemo } from 'react';
-import { View, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Spacing, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { ListRow } from '../components/ui/Rows';
+import { PlusIcon } from '../components/ui/icons';
 import { useCollectionInvalidation } from '../contexts/AppContext';
 import { getAllNoteTypes, getNoteType, saveNoteType } from '../lib/noteManager';
 import { uniqueId, BUILTIN_NOTE_TYPES, isLegacyTusNoteType } from '../lib/models';
@@ -32,26 +36,29 @@ export default function NoteTypesScreen() {
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.help}>{l('Not türlerini, alanlarını ve kart şablonlarını düzenleyin.', 'Edit note types, fields, and card templates.')}</Text>
 
-                {noteTypes.map((nt) => (
-                    <TouchableOpacity
-                        key={nt.id}
-                        style={styles.row}
-                        onPress={() => router.push(`/note-type?id=${nt.id}`)}
-                    >
-                        <View style={styles.rowText}>
-                            <Text style={styles.rowTitle}>{localizeNoteTypeName(locale, nt.name)}</Text>
-                            <Text style={styles.rowSub}>
-                                {l(`${nt.fields.length} alan`, `${nt.fields.length} fields`)} · {l(`${nt.templates.length} şablon`, `${nt.templates.length} templates`)} ·{' '}
-                                {nt.kind === 'cloze' ? l('boşluk doldurma', 'cloze') : l('standart', 'standard')}
-                            </Text>
-                        </View>
-                        <Text style={styles.chevron}>›</Text>
-                    </TouchableOpacity>
-                ))}
+                <Card divided>
+                    {noteTypes.map((nt) => (
+                        <ListRow
+                            key={nt.id}
+                            title={localizeNoteTypeName(locale, nt.name)}
+                            summary={(
+                                <>
+                                    {l(`${nt.fields.length} alan`, `${nt.fields.length} fields`)} · {l(`${nt.templates.length} şablon`, `${nt.templates.length} templates`)} ·{' '}
+                                    {nt.kind === 'cloze' ? l('boşluk doldurma', 'cloze') : l('standart', 'standard')}
+                                </>
+                            )}
+                            onPress={() => router.push(`/note-type?id=${nt.id}`)}
+                        />
+                    ))}
+                </Card>
 
-                <TouchableOpacity style={styles.addBtn} onPress={createNoteType}>
-                    <Text style={styles.addBtnText}>+ {l('Yeni not türü', 'New Note Type')}</Text>
-                </TouchableOpacity>
+                <Button
+                    variant="secondary"
+                    icon={<PlusIcon color={colors.textPrimary} size={18} />}
+                    label={l('Yeni not türü', 'New Note Type')}
+                    onPress={createNoteType}
+                    style={styles.addButton}
+                />
             </ScrollView>
         </SafeAreaView>
     );
@@ -62,27 +69,6 @@ function createStyles(colors: ColorScheme) {
     container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
     help: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm },
-    row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.md,
-    },
-    rowText: { flex: 1 },
-    rowTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
-    rowSub: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
-    chevron: { fontSize: 24, color: colors.textMuted },
-    addBtn: {
-        borderWidth: 1,
-        borderColor: colors.accent,
-        borderRadius: BorderRadius.sm,
-        paddingVertical: Spacing.md,
-        alignItems: 'center',
-        marginTop: Spacing.sm,
-    },
-    addBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
+    addButton: { marginTop: Spacing.sm },
     });
 }
