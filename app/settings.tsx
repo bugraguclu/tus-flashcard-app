@@ -435,7 +435,7 @@ export default function SettingsScreen() {
     const [gesturePickerTarget, setGesturePickerTarget] = useState<GesturePickerTarget | null>(null);
     const [tapSide, setTapSide] = useState<TapSide>('question');
     const [notificationThresholdPickerVisible, setNotificationThresholdPickerVisible] = useState(false);
-    const [maintenanceAction, setMaintenanceAction] = useState<'optimize' | 'reset' | null>(null);
+    const [maintenanceAction, setMaintenanceAction] = useState<'check' | 'audit' | 'optimize' | 'reset' | null>(null);
     const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaveFailedRef = useRef(false);
     const sectionScrollRef = useRef<ScrollView>(null);
@@ -733,56 +733,79 @@ export default function SettingsScreen() {
     const handleExport = useCallback(() => router.push(DATA_EXPORT_ROUTE), [router]);
     const handleImport = useCallback(() => router.push(DATA_IMPORT_ROUTE), [router]);
 
-    /** One line per defect, shared by the audit report and the repair preview so they agree. */
-    const describeFindings = useCallback((result: DatabaseCheckResult) => [
-        `${l('Sahipsiz kart', 'Orphaned cards')}: ${result.orphanCards}`,
-        `${l('Kartsız not', 'Notes without cards')}: ${result.orphanNotes}`,
-        `${l('Destesi kayıp kart', 'Cards with a missing deck')}: ${result.strandedCards}`,
-        `${l('Filtre artığı kalan kart', 'Cards left with filtered-deck state')}: ${result.filteredLeftoverCards}`,
-        `${l('Geçersiz aralıklı kart', 'Cards with an invalid interval')}: ${result.invalidIntervalCards}`,
-        `${l('Sırası taşmış yeni kart', 'New cards with an out-of-range position')}: ${result.highPositionNewCards}`,
-        `${l('Geçersiz tarihli kart', 'Cards with an invalid due date')}: ${result.invalidDueCards}`,
-        `${l('Geçersiz şablon sıralı kart', 'Cards with an invalid template ordinal')}: ${result.invalidOrdinalCards}`,
-        `${l('Artık ön-filtre tarihi taşıyan kart', 'Cards keeping a stale pre-filter due')}: ${result.orphanedOriginalDueCards}`,
-        `${l('Son tekrar zamanı hatalı kart', 'Cards with a wrong last review time')}: ${result.lastReviewTimeCards}`,
-        `${l('Okunamayan not', 'Unreadable notes')}: ${result.unreadableNotes}`,
-    ], [l]);
+    /**
+     * One line per defect the audit found, shared by the audit report and the repair preview so
+     * they agree. Classes with nothing found are left out, so the learner reads only the findings.
+     */
+    const describeFindings = useCallback((result: DatabaseCheckResult) => ([
+        [l('Sahipsiz kart', 'Orphaned cards'), result.orphanCards],
+        [l('Kartsız not', 'Notes without cards'), result.orphanNotes],
+        [l('Destesi kayıp kart', 'Cards with a missing deck'), result.strandedCards],
+        [l('Filtre artığı kalan kart', 'Cards left with filtered-deck state'), result.filteredLeftoverCards],
+        [l('Geçersiz aralıklı kart', 'Cards with an invalid interval'), result.invalidIntervalCards],
+        [l('Sırası taşmış yeni kart', 'New cards with an out-of-range position'), result.highPositionNewCards],
+        [l('Geçersiz tarihli kart', 'Cards with an invalid due date'), result.invalidDueCards],
+        [l('Geçersiz şablon sıralı kart', 'Cards with an invalid template ordinal'), result.invalidOrdinalCards],
+        [l('Artık ön-filtre tarihi taşıyan kart', 'Cards keeping a stale pre-filter due'), result.orphanedOriginalDueCards],
+        [l('Son tekrar zamanı hatalı kart', 'Cards with a wrong last review time'), result.lastReviewTimeCards],
+        [l('Okunamayan not', 'Unreadable notes'), result.unreadableNotes],
+    ] as const).filter(([, count]) => count > 0).map(([label, count]) => `${label}: ${count}`), [l]);
+
+    /**
+     * Held from the press until the audit or the repair has ended. It is set synchronously, so a
+     * second press queued before the busy state disables the rows cannot start another audit or
+     * open a second question.
+     */
+    const maintenanceRunRef = useRef<symbol | null>(null);
 
     const handleCheckDatabase = useCallback(() => {
-        try {
-            const result = checkDatabase();
-            const integrityMessage = result.integrity === 'ok'
-                ? l('Bütünlük: tamam', 'Integrity: OK')
-                : result.integrity === 'check_failed'
-                    ? l('Bütünlük kontrolü tamamlanamadı', 'Integrity check could not be completed')
-                    : l('Bütünlük sorunu algılandı', 'An integrity issue was detected');
+        if (maintenanceRunRef.current || maintenanceAction) return;
+        const run = Symbol('check');
+        maintenanceRunRef.current = run;
+        setMaintenanceAction('check');
+        void (async () => {
+            try {
+                // Let the disabled rows paint before the synchronous audit.
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                const result = checkDatabase();
+                const integrityMessage = result.integrity === 'ok'
+                    ? l('Bütünlük: tamam', 'Integrity: OK')
+                    : result.integrity === 'check_failed'
+                        ? l('Bütünlük kontrolü tamamlanamadı', 'Integrity check could not be completed')
+                        : l('Bütünlük sorunu algılandı', 'An integrity issue was detected');
 
-            const hints: string[] = [];
-            if (repairableDefectCount(result) > 0) {
-                hints.push(l(
-                    '“Onar ve optimize et” bu satırları düzeltebilir.',
-                    '“Repair and optimize” can fix these rows.',
-                ));
-            }
-            if (result.unreadableNotes > 0) {
-                hints.push(l(
-                    'Okunamayan notlar otomatik onarılamaz: metinleri yalnızca bir yedekten geri gelebilir.',
-                    'Unreadable notes cannot be repaired automatically: their text can only come back from a backup.',
-                ));
-            }
-            if (totalDefectCount(result) === 0) {
-                hints.push(l('Onarılacak bir şey yok.', 'Nothing needs repair.'));
-            }
+                const hints: string[] = [];
+                if (repairableDefectCount(result) > 0) {
+                    hints.push(l(
+                        '“Onar ve optimize et” bu satırları düzeltebilir.',
+                        '“Repair and optimize” can fix these rows.',
+                    ));
+                }
+                if (result.unreadableNotes > 0) {
+                    hints.push(l(
+                        'Okunamayan notlar otomatik onarılamaz: metinleri yalnızca bir yedekten geri gelebilir.',
+                        'Unreadable notes cannot be repaired automatically: their text can only come back from a backup.',
+                    ));
+                }
+                if (totalDefectCount(result) === 0) {
+                    hints.push(l('Onarılacak bir şey yok.', 'Nothing needs repair.'));
+                }
 
-            alert(
-                l('Veritabanını kontrol et', 'Check Database'),
-                [integrityMessage, ...describeFindings(result), '', ...hints].join('\n'),
-            );
-        } catch (error) {
-            console.warn('[Settings] database check failed:', error);
-            alert(l('Hata', 'Error'), l('Veritabanı kontrol edilemedi.', 'Database check failed.'));
-        }
-    }, [describeFindings, l]);
+                alert(
+                    l('Veritabanını kontrol et', 'Check Database'),
+                    [integrityMessage, ...describeFindings(result), '', ...hints].join('\n'),
+                );
+            } catch (error) {
+                console.warn('[Settings] database check failed:', error);
+                alert(l('Hata', 'Error'), l('Veritabanı kontrol edilemedi.', 'Database check failed.'));
+            } finally {
+                if (maintenanceRunRef.current === run) {
+                    maintenanceRunRef.current = null;
+                    setMaintenanceAction(null);
+                }
+            }
+        })();
+    }, [describeFindings, l, maintenanceAction]);
 
     const stepLabel = useCallback((step: MaintenanceStep) => ({
         repair: l('onarım', 'repair'),
@@ -915,49 +938,55 @@ export default function SettingsScreen() {
      * it starts.
      */
     const handleOptimizeDatabase = useCallback(() => {
-        if (maintenanceAction) return;
+        if (maintenanceRunRef.current || maintenanceAction) return;
+        const run = Symbol('optimize');
+        maintenanceRunRef.current = run;
+        // The rows stay disabled through the audit and the question, not only the repair.
+        setMaintenanceAction('audit');
         void (async () => {
-            let findings: DatabaseCheckResult;
             try {
-                findings = checkDatabase();
-            } catch (error) {
-                console.warn('[Settings] pre-repair audit failed:', error);
-                alert(
-                    l('Hata', 'Error'),
-                    l('Veritabanı okunamadı, onarım başlatılmadı.', 'The database could not be read, so no repair was started.'),
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                let findings: DatabaseCheckResult;
+                try {
+                    findings = checkDatabase();
+                } catch (error) {
+                    console.warn('[Settings] pre-repair audit failed:', error);
+                    alert(
+                        l('Hata', 'Error'),
+                        l('Veritabanı okunamadı, onarım başlatılmadı.', 'The database could not be read, so no repair was started.'),
+                    );
+                    return;
+                }
+
+                const repairable = repairableDefectCount(findings);
+                const preview = repairable > 0
+                    ? [
+                        l('Bulunanlar:', 'Found:'),
+                        ...describeFindings(findings),
+                        '',
+                        l(
+                            'Sahipsiz kartlar silinecek; kartsız notların ilk kartı yeniden oluşturulacak ve destesi kayıp kartlar kurtarılacak. Not metni silinmez.',
+                            'Orphaned cards will be deleted; notes without cards get their first card back, and cards whose deck is gone will be rescued. No note text is deleted.',
+                        ),
+                    ].join('\n')
+                    : l('Onarılacak bozuk satır bulunamadı.', 'No broken rows were found to repair.');
+
+                const accepted = await confirmAsync(
+                    l('Veritabanını onar ve optimize et', 'Repair and Optimize Database'),
+                    [
+                        preview,
+                        '',
+                        l(
+                            'Ardından veritabanı sıkıştırılır, indeksler ve arama dizini yenilenir. Başlamadan önce güvenlik yedeği alınacaktır.',
+                            'The database is then compacted and its indexes and search index refreshed. A safety backup will be created first.',
+                        ),
+                    ].join('\n'),
+                    { destructive: repairable > 0 },
                 );
-                return;
-            }
+                // Re-check after the question: only the run that asked may go on to repair.
+                if (!accepted || maintenanceRunRef.current !== run) return;
 
-            const repairable = repairableDefectCount(findings);
-            const preview = repairable > 0
-                ? [
-                    l('Bulunanlar:', 'Found:'),
-                    ...describeFindings(findings),
-                    '',
-                    l(
-                        'Sahipsiz kartlar silinecek; kartsız notların ilk kartı yeniden oluşturulacak ve destesi kayıp kartlar kurtarılacak. Not metni silinmez.',
-                        'Orphaned cards will be deleted; notes without cards get their first card back, and cards whose deck is gone will be rescued. No note text is deleted.',
-                    ),
-                ].join('\n')
-                : l('Onarılacak bozuk satır bulunamadı.', 'No broken rows were found to repair.');
-
-            const accepted = await confirmAsync(
-                l('Veritabanını onar ve optimize et', 'Repair and Optimize Database'),
-                [
-                    preview,
-                    '',
-                    l(
-                        'Ardından veritabanı sıkıştırılır, indeksler ve arama dizini yenilenir. Başlamadan önce güvenlik yedeği alınacaktır.',
-                        'The database is then compacted and its indexes and search index refreshed. A safety backup will be created first.',
-                    ),
-                ].join('\n'),
-                { destructive: repairable > 0 },
-            );
-            if (!accepted) return;
-
-            setMaintenanceAction('optimize');
-            try {
+                setMaintenanceAction('optimize');
                 // Allow the busy state to paint before synchronous SQLite maintenance.
                 await new Promise((resolve) => setTimeout(resolve, 0));
                 const { backupFileName, backupRestorable, result } = await optimizeDatabaseWithBackup();
@@ -991,7 +1020,10 @@ export default function SettingsScreen() {
                         ),
                 );
             } finally {
-                setMaintenanceAction(null);
+                if (maintenanceRunRef.current === run) {
+                    maintenanceRunRef.current = null;
+                    setMaintenanceAction(null);
+                }
             }
         })();
     }, [describeFindings, describeOptimizeResult, invalidateCollection, l, maintenanceAction]);

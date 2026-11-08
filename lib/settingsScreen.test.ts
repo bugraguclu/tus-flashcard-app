@@ -9,9 +9,16 @@ import { createAppDb } from '../test/sqljsHarness';
 const h = vi.hoisted(() => ({
     db: null as any,
     focus: null as null | (() => void),
-    confirmAsyncAnswer: true,
+    english: false,
+    confirmAsyncAnswer: true as boolean | Promise<boolean>,
     alerts: [] as Array<[string, string]>,
     confirmAsyncCalls: [] as string[],
+    confirmAsyncMessages: [] as string[],
+    findings: {} as Record<string, unknown>,
+    checkDatabase: null as any,
+    optimizeOutcome: {} as Record<string, unknown>,
+    optimize: null as any,
+    invalidated: 0,
 }));
 
 vi.mock('./db', () => ({ getDB: () => h.db, flushDatabaseWrites: async () => {}, dbIndexAllCards: () => {}, dbUpsertFtsCard: () => {} }));
@@ -59,22 +66,39 @@ vi.mock('../constants/theme', () => {
     const sizes = new Proxy({}, { get: () => 8 });
     return { useThemeColors: () => colors, BorderRadius: sizes, FontSize: sizes, Spacing: sizes, Shadows: new Proxy({}, { get: () => ({}) }) };
 });
-vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ t: (key: string) => key, l: (tr: string) => tr }) }));
+vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ t: (key: string) => key, l: (tr: string, en: string) => (h.english ? en : tr) }) }));
 vi.mock('../hooks/useUnsavedChangesGuard', () => ({ useUnsavedChangesGuard: () => {} }));
 vi.mock('../hooks/useRepeatPress', () => ({ useRepeatPress: (step: () => void) => ({ onPress: step }) }));
 vi.mock('../contexts/AppContext', () => {
     const settings = { refreshSettings: () => {}, previewSettings: () => {} };
-    const collection = { invalidateCollection: () => {}, markSchedulingStale: () => {} };
+    const collection = { invalidateCollection: () => { h.invalidated += 1; }, markSchedulingStale: () => {} };
     const catalog = { refreshCatalogAccess: async () => ({}) };
     return { useAppSettingsActions: () => settings, useCollectionInvalidation: () => collection, useCatalogStatus: () => catalog };
 });
 vi.mock('./confirm', () => ({
     alert: (title: string, message: string) => { h.alerts.push([title, message]); },
     confirm: (_title: string, _message: string, onConfirm: () => void) => onConfirm(),
-    confirmAsync: async (title: string) => { h.confirmAsyncCalls.push(title); return h.confirmAsyncAnswer; },
+    confirmAsync: async (title: string, message: string) => {
+        h.confirmAsyncCalls.push(title);
+        h.confirmAsyncMessages.push(message);
+        return h.confirmAsyncAnswer;
+    },
 }));
-vi.mock('./maintenance', () => ({ checkDatabase: () => ({}), repairChangedRows: () => false, repairableDefectCount: () => 0, totalDefectCount: () => 0 }));
-vi.mock('./maintenanceWorkflow', () => ({ MaintenanceWorkflowError: class extends Error {}, optimizeDatabaseWithBackup: async () => ({}) }));
+// The audit and the repair are faked; the counting rules Settings reads them with are the real ones.
+vi.mock('./maintenance', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('./maintenance')>();
+    return {
+        checkDatabase: () => h.checkDatabase(),
+        emptyRepairResult: actual.emptyRepairResult,
+        repairChangedRows: actual.repairChangedRows,
+        repairableDefectCount: actual.repairableDefectCount,
+        totalDefectCount: actual.totalDefectCount,
+    };
+});
+vi.mock('./maintenanceWorkflow', () => ({
+    MaintenanceWorkflowError: class extends Error {},
+    optimizeDatabaseWithBackup: (...args: unknown[]) => h.optimize(...args),
+}));
 vi.mock('./resetWorkflow', () => ({ ResetWorkflowError: class extends Error {}, resetAllDataWithBackup: async () => ({ backupFileName: 'x' }) }));
 vi.mock('./backup', () => ({ BackupNotRestorableError: class extends Error {} }));
 vi.mock('./studyNotifications', () => ({
@@ -106,6 +130,7 @@ vi.mock('../components/HeaderBackIcon', () => ({ default: () => null }));
 import SettingsScreen from '../app/settings';
 import { DEFAULT_SETTINGS, loadSettings, saveCollectionDeckOptions, saveSettings } from './settingsStore';
 import { getDeckConfig } from './deckPresets';
+import { emptyRepairResult } from './maintenance';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -116,10 +141,26 @@ beforeAll(async () => {
 beforeEach(() => {
     h.db = createAppDb(SQL);
     h.focus = null;
+    h.english = false;
     h.confirmAsyncAnswer = true;
     h.alerts = [];
     h.confirmAsyncCalls = [];
+    h.confirmAsyncMessages = [];
+    h.invalidated = 0;
+    h.findings = cleanAudit();
+    h.checkDatabase = vi.fn(() => h.findings);
+    h.optimizeOutcome = { backupFileName: 'tus-backup-2026-11-08-120000000.json', backupRestorable: true, result: { repair: emptyRepairResult(), ftsReindexed: 0, freedBytes: 0, failedSteps: [] } };
+    h.optimize = vi.fn(async () => h.optimizeOutcome);
 });
+
+/** An audit that found nothing. */
+function cleanAudit() {
+    return {
+        integrity: 'ok', orphanCards: 0, orphanNotes: 0, strandedCards: 0, filteredLeftoverCards: 0,
+        invalidIntervalCards: 0, highPositionNewCards: 0, invalidDueCards: 0, invalidOrdinalCards: 0,
+        orphanedOriginalDueCards: 0, lastReviewTimeCards: 0, unreadableNotes: 0,
+    };
+}
 afterEach(() => {
     if (renderer) act(() => renderer?.unmount());
     renderer = undefined;
@@ -261,5 +302,121 @@ describe('searching Settings', () => {
 
         const rows = pressables().filter((node) => node.props.accessibilityHint !== undefined);
         expect(rows.map((row) => row.props.accessibilityLabel)).toEqual(['Veri yönetimi']);
+    });
+});
+
+describe('checking and repairing the database', () => {
+    /** Let the deferred audit, the confirmation and the repair run to the end. */
+    const settle = () => act(async () => {
+        for (let i = 0; i < 6; i++) await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    function openMaintenance() {
+        mount();
+        openCategory(h.english ? 'Data Management' : 'Veri yönetimi');
+    }
+
+    it('asks in English with the defects it found, listing only those', async () => {
+        h.english = true;
+        h.findings = { ...cleanAudit(), orphanCards: 2, invalidDueCards: 3, lastReviewTimeCards: 1 };
+        openMaintenance();
+
+        act(() => byText('Repair and optimize').props.onPress());
+        await settle();
+
+        expect(h.confirmAsyncCalls).toEqual(['Repair and Optimize Database']);
+        const lines = h.confirmAsyncMessages[0].split('\n');
+        expect(lines.slice(0, 4)).toEqual([
+            'Found:',
+            'Orphaned cards: 2',
+            'Cards with an invalid due date: 3',
+            'Cards with a wrong last review time: 1',
+        ]);
+        expect(h.confirmAsyncMessages[0]).not.toMatch(/: 0$/m);
+    });
+
+    it('names the recovery copy in an English result with many repaired classes', async () => {
+        h.english = true;
+        h.findings = { ...cleanAudit(), orphanCards: 1, strandedCards: 1, filteredLeftoverCards: 1, invalidIntervalCards: 1, highPositionNewCards: 1, invalidDueCards: 1, invalidOrdinalCards: 1 };
+        h.optimizeOutcome = {
+            backupFileName: 'tus-backup-2026-11-08-120000000.json',
+            backupRestorable: false,
+            result: {
+                repair: { ...emptyRepairResult(), orphanCardsDeleted: 1, strandedCardsRehomed: 1, recoveryDeckName: 'Kurtarılan Kartlar', filteredLeftoversCleared: 1, intervalsClamped: 1, newCardPositionsWrapped: 1, duesRepaired: 1, ordinalsClamped: 1 },
+                ftsReindexed: 0, freedBytes: 0, failedSteps: [],
+            },
+        };
+        openMaintenance();
+
+        act(() => byText('Repair and optimize').props.onPress());
+        await settle();
+
+        expect(h.optimize).toHaveBeenCalledTimes(1);
+        expect(h.alerts).toHaveLength(1);
+        expect(h.alerts[0][1]).toContain('Recovery copy: tus-backup-2026-11-08-120000000.json.');
+    });
+
+    it('reports only the defects the audit found, and that nothing needs repair when there are none', async () => {
+        openMaintenance();
+        act(() => byText('Veritabanını kontrol et').props.onPress());
+        await settle();
+        h.findings = { ...cleanAudit(), orphanNotes: 4 };
+        act(() => byText('Veritabanını kontrol et').props.onPress());
+        await settle();
+
+        expect(h.alerts.map(([, message]) => message)).toEqual([
+            'Bütünlük: tamam\n\nOnarılacak bir şey yok.',
+            'Bütünlük: tamam\nKartsız not: 4\n\n“Onar ve optimize et” bu satırları düzeltebilir.',
+        ]);
+    });
+
+    it('starts one audit and one repair however fast Repair is pressed twice', async () => {
+        h.findings = { ...cleanAudit(), orphanCards: 2 };
+        openMaintenance();
+        const repair = byText('Onar ve optimize et');
+
+        // The second press was queued before the first one's state could disable the row.
+        act(() => { repair.props.onPress(); repair.props.onPress(); });
+        await settle();
+
+        expect(h.checkDatabase).toHaveBeenCalledTimes(1);
+        expect(h.confirmAsyncCalls).toHaveLength(1);
+        expect(h.optimize).toHaveBeenCalledTimes(1);
+        expect(h.alerts).toHaveLength(1);
+    });
+
+    it('keeps the rows disabled from the press until the repair ends, the question included', async () => {
+        h.findings = { ...cleanAudit(), orphanCards: 2 };
+        let answer!: (accepted: boolean) => void;
+        h.confirmAsyncAnswer = new Promise<boolean>((resolve) => { answer = resolve; });
+        openMaintenance();
+
+        act(() => byText('Onar ve optimize et').props.onPress());
+        expect(byText('Veritabanını kontrol et').props.disabled).toBe(true);
+        await settle();
+        expect(h.confirmAsyncCalls).toHaveLength(1);
+        // Pressed again while the question is open: no second audit, no stacked question.
+        act(() => byText('Veritabanını kontrol et').props.onPress());
+        await settle();
+        expect(h.checkDatabase).toHaveBeenCalledTimes(1);
+
+        await act(async () => { answer(true); });
+        await settle();
+
+        expect(h.optimize).toHaveBeenCalledTimes(1);
+        expect(byText('Veritabanını kontrol et').props.disabled).toBe(false);
+    });
+
+    it('runs one audit when Check Database is pressed twice, and disables the rows while it runs', async () => {
+        openMaintenance();
+        const check = byText('Veritabanını kontrol et');
+
+        act(() => { check.props.onPress(); check.props.onPress(); });
+        expect(byText('Onar ve optimize et').props.disabled).toBe(true);
+        await settle();
+
+        expect(h.checkDatabase).toHaveBeenCalledTimes(1);
+        expect(h.alerts).toHaveLength(1);
+        expect(byText('Onar ve optimize et').props.disabled).toBe(false);
     });
 });
