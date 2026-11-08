@@ -9,7 +9,6 @@ import {
     Linking,
     Platform,
     View,
-    TouchableOpacity,
     StyleSheet,
     ScrollView,
 } from 'react-native';
@@ -18,8 +17,10 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import * as Clipboard from 'expo-clipboard';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
+import { Button } from '../components/ui/Button';
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '../components/ui/icons';
+import { Radius, Type } from '../components/ui/tokens';
 import {
-    BorderRadius,
     Colors,
     DARK_MODE_UI_ENABLED,
     FontSize,
@@ -99,21 +100,6 @@ function ErrorCopyIcon({ color, size = 15 }: { color: string; size?: number }) {
                 fill="none"
                 stroke={color}
                 strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
-}
-
-function ErrorCheckIcon({ color, size = 15 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="m5 12 5 5L20 7"
-                fill="none"
-                stroke={color}
-                strokeWidth={2.2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
             />
@@ -218,40 +204,24 @@ function LocalizedErrorFallback({
                 <Text style={errorStyles.message}>{safeMessage}</Text>
 
                 <View style={errorStyles.buttonGroup}>
-                    <TouchableOpacity
-                        style={errorStyles.primaryButton}
-                        onPress={onRetry}
-                        activeOpacity={0.82}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('common.retry')}
-                    >
-                        <Text style={errorStyles.primaryButtonText}>{t('common.retry')}</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={errorStyles.secondaryButton}
-                        onPress={handleReturnHome}
-                        activeOpacity={0.75}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('root.returnHome')}
-                    >
-                        <Text style={errorStyles.secondaryButtonText}>{t('root.returnHome')}</Text>
-                    </TouchableOpacity>
+                    <Button label={t('common.retry')} onPress={onRetry} />
+                    <Button label={t('root.returnHome')} variant="secondary" onPress={handleReturnHome} />
                 </View>
 
-                <TouchableOpacity
-                    style={errorStyles.detailsToggle}
+                <Button
+                    label={showDetails
+                        ? l('Teknik detayları gizle', 'Hide technical details')
+                        : l('Teknik detayları göster', 'Show technical details')}
+                    icon={showDetails
+                        ? <ChevronUpIcon color={Colors.textMuted} size={14} />
+                        : <ChevronDownIcon color={Colors.textMuted} size={14} />}
+                    variant="plain"
+                    tone="muted"
+                    size="compact"
                     onPress={() => setShowDetails(!showDetails)}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
                     accessibilityLabel={t('root.technicalDetails')}
-                >
-                    <Text style={errorStyles.detailsToggleText}>
-                        {showDetails
-                            ? l('Teknik detayları gizle ▴', 'Hide technical details ▴')
-                            : l('Teknik detayları göster ▾', 'Show technical details ▾')}
-                    </Text>
-                </TouchableOpacity>
+                    style={errorStyles.detailsToggle}
+                />
 
                 {showDetails && (
                     <View style={errorStyles.detailsBox}>
@@ -261,25 +231,19 @@ function LocalizedErrorFallback({
                                 {componentStack ? `\n\nComponent Stack:\n${componentStack}` : ''}
                             </Text>
                         </ScrollView>
-                        <TouchableOpacity
-                            style={errorStyles.copyButton}
-                            onPress={handleCopyDetails}
-                            activeOpacity={0.7}
-                            accessibilityRole="button"
-                            accessibilityLabel={t('root.copyError')}
-                        >
-                            {copied ? (
-                                <>
-                                    <ErrorCheckIcon color={Colors.accent} size={15} />
-                                    <Text style={errorStyles.copyButtonTextCopied}>{t('root.errorCopied')}</Text>
-                                </>
-                            ) : (
-                                <>
-                                    <ErrorCopyIcon color={Colors.textSecondary} size={15} />
-                                    <Text style={errorStyles.copyButtonText}>{t('root.copyError')}</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
+                        <View style={errorStyles.copyRow}>
+                            <Button
+                                label={copied ? t('root.errorCopied') : t('root.copyError')}
+                                icon={copied
+                                    ? <CheckIcon color={Colors.accent} size={15} />
+                                    : <ErrorCopyIcon color={Colors.textSecondary} size={15} />}
+                                variant="plain"
+                                tone={copied ? 'accent' : 'muted'}
+                                size="compact"
+                                onPress={handleCopyDetails}
+                                accessibilityLabel={t('root.copyError')}
+                            />
+                        </View>
                     </View>
                 )}
             </View>
@@ -287,6 +251,8 @@ function LocalizedErrorFallback({
     );
 }
 
+// The error screens sit outside the theme provider (they must survive a crash in it), so they draw
+// with the static light palette; the shared Button reads that same palette there.
 const errorStyles = StyleSheet.create({
     container: {
         flex: 1,
@@ -299,7 +265,7 @@ const errorStyles = StyleSheet.create({
         width: '100%',
         maxWidth: 420,
         backgroundColor: Colors.bgCard,
-        borderRadius: BorderRadius.xl,
+        borderRadius: Radius.card,
         padding: Spacing.xxl,
         alignItems: 'center',
         ...Shadows.md,
@@ -309,15 +275,14 @@ const errorStyles = StyleSheet.create({
     iconBadge: {
         width: 72,
         height: 72,
-        borderRadius: BorderRadius.full,
-        backgroundColor: Colors.badgeNewBg,
+        borderRadius: Radius.pill,
+        backgroundColor: Colors.infoBg,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: Spacing.lg,
     },
     title: {
-        fontSize: FontSize.xl,
-        fontWeight: '700',
+        ...Type.title,
         color: Colors.textPrimary,
         textAlign: 'center',
         marginBottom: Spacing.sm,
@@ -334,49 +299,14 @@ const errorStyles = StyleSheet.create({
         width: '100%',
         gap: Spacing.sm,
     },
-    primaryButton: {
-        backgroundColor: Colors.accent,
-        paddingVertical: 14,
-        paddingHorizontal: Spacing.xl,
-        borderRadius: BorderRadius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...Shadows.sm,
-    },
-    primaryButtonText: {
-        fontSize: FontSize.md,
-        fontWeight: '600',
-        color: '#ffffff',
-    },
-    secondaryButton: {
-        backgroundColor: Colors.bgSecondary,
-        paddingVertical: 13,
-        paddingHorizontal: Spacing.xl,
-        borderRadius: BorderRadius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: Colors.border,
-    },
-    secondaryButtonText: {
-        fontSize: FontSize.md,
-        fontWeight: '600',
-        color: Colors.textPrimary,
-    },
     detailsToggle: {
-        marginTop: Spacing.lg,
-        paddingVertical: Spacing.xs,
-    },
-    detailsToggleText: {
-        fontSize: FontSize.xs,
-        fontWeight: '500',
-        color: Colors.textMuted,
+        marginTop: Spacing.md,
     },
     detailsBox: {
         width: '100%',
         marginTop: Spacing.md,
         backgroundColor: Colors.bgSecondary,
-        borderRadius: BorderRadius.md,
+        borderRadius: Radius.inset,
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: Colors.border,
         padding: Spacing.md,
@@ -390,28 +320,14 @@ const errorStyles = StyleSheet.create({
         color: Colors.textSecondary,
         lineHeight: 18,
     },
-    copyButton: {
-        flexDirection: 'row',
+    copyRow: {
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
         marginTop: Spacing.sm,
-        paddingTop: Spacing.xs,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: Colors.border,
     },
-    copyButtonText: {
-        fontSize: FontSize.xs,
-        fontWeight: '500',
-        color: Colors.textSecondary,
-    },
-    copyButtonTextCopied: {
-        fontSize: FontSize.xs,
-        fontWeight: '600',
-        color: Colors.accent,
-    },
-    secondaryBar: { backgroundColor: Colors.badgeNewBg, paddingVertical: 6, paddingHorizontal: 12 },
-    secondaryBarText: { fontSize: 12, color: Colors.badgeNew, textAlign: 'center' },
+    secondaryBar: { backgroundColor: Colors.infoBg, paddingVertical: 6, paddingHorizontal: 12 },
+    secondaryBarText: { ...Type.caption, color: Colors.info, textAlign: 'center' },
 });
 
 // Routed utility screens behave as native iPhone sheets: UIKit owns the grabber, rounded
@@ -492,18 +408,18 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
             <View style={errorStyles.container}>
                 <View style={errorStyles.card}>
                     <View style={errorStyles.iconBadge}>
-                        <Text style={{ fontSize: 32 }}>⚠️</Text>
+                        <ErrorAlertShieldIcon color={Colors.accent} size={38} />
                     </View>
                     <Text style={errorStyles.title}>{t('root.databaseError')}</Text>
                     <Text style={errorStyles.message}>{safeMessage}</Text>
-                    <TouchableOpacity
-                        style={errorStyles.primaryButton}
-                        // sql.js keeps a failed WebAssembly start for the life of the page, so a
-                        // second attempt in place fails at once; a reload starts everything afresh.
-                        onPress={() => window.location.reload()}
-                    >
-                        <Text style={errorStyles.primaryButtonText}>{t('common.retry')}</Text>
-                    </TouchableOpacity>
+                    <View style={errorStyles.buttonGroup}>
+                        <Button
+                            label={t('common.retry')}
+                            // sql.js keeps a failed WebAssembly start for the life of the page, so a
+                            // second attempt in place fails at once; a reload starts everything afresh.
+                            onPress={() => window.location.reload()}
+                        />
+                    </View>
                 </View>
             </View>
         );
