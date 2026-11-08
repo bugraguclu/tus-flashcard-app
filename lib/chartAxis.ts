@@ -99,43 +99,6 @@ export function barGeometry(
     };
 }
 
-export interface TooltipBox {
-    left: number;
-    top: number;
-    /** True when there was no room above the bar and the box had to sit below its top. */
-    flipped: boolean;
-}
-
-/**
- * Where the touch readout goes.
- *
- * The box is centred on the bucket the finger is over — so it lines up with the bar it describes —
- * but lifted off the **finger**, not off the bar. Anchoring it to the top of the stack put it
- * under the reader's own thumb on tall bars; anchoring it to the touch point keeps the value
- * visible wherever on the chart they press. If there is no room above the finger the box drops
- * below it, and both axes are clamped to the chart so it never leaves the card.
- */
-export function tooltipPlacement(
-    anchorX: number,
-    touchY: number,
-    box: { width: number; height: number },
-    bounds: { width: number; height: number },
-    options: { margin?: number; gap?: number } = {},
-): TooltipBox {
-    const { margin = 4, gap = 14 } = options;
-    const left = Math.min(
-        Math.max(margin, anchorX - box.width / 2),
-        Math.max(margin, bounds.width - box.width - margin),
-    );
-    const above = touchY - box.height - gap;
-    if (above >= margin) return { left, top: above, flipped: false };
-    return {
-        left,
-        top: Math.min(touchY + gap, Math.max(margin, bounds.height - box.height - margin)),
-        flipped: true,
-    };
-}
-
 /** Which bucket a horizontal position falls in, clamped to the buckets that exist. */
 export function indexAtPosition(x: number, plotLeft: number, step: number, count: number): number | null {
     if (count <= 0 || !(step > 0) || !Number.isFinite(x)) return null;

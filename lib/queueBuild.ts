@@ -39,39 +39,6 @@ export function intersperseEvenly<T>(one: readonly T[], two: readonly T[]): T[] 
 }
 
 /**
- * Cap cards by a global limit and by each deck's limit applied hierarchically: a card counts
- * against its own deck and every ancestor (Anki "limits start from the top"), so a parent deck
- * caps the combined intake of all its subdecks. `deckKeysForCard` returns the deck name chain.
- */
-export function applyHierarchicalLimit(
-    cards: StudyCard[],
-    globalLimit: number,
-    deckKeysForCard: (card: StudyCard) => string[],
-    limitForDeckKey: (deckKey: string) => number,
-): StudyCard[] {
-    if (globalLimit <= 0) return [];
-
-    const result: StudyCard[] = [];
-    const counts = new Map<string, number>();
-
-    for (const card of cards) {
-        if (result.length >= globalLimit) break;
-
-        const keys = deckKeysForCard(card);
-        if (keys.some((key) => (counts.get(key) ?? 0) >= Math.max(0, limitForDeckKey(key)))) {
-            continue;
-        }
-
-        result.push(card);
-        for (const key of keys) {
-            counts.set(key, (counts.get(key) ?? 0) + 1);
-        }
-    }
-
-    return result;
-}
-
-/**
  * Partition intraday learning cards around `nowMs`, mirroring Anki's serving order
  * (rslib scheduler/queue/mod.rs `iter`): cards whose step timer has expired are served before
  * the main queue, while cards still waiting — inside the learn-ahead window — are served only
@@ -338,7 +305,6 @@ export function sortNewCards(
             return cards;
     }
 }
-
 
 /**
  * Suppress siblings in memory, considering only cards that fit the active limits. As Anki's

@@ -27,7 +27,6 @@ import {
     updateTemplate,
     renameNoteType,
     setCss,
-    setSortField,
     applyFieldEdit,
 } from './noteTypeEditor';
 
@@ -103,10 +102,6 @@ describe('cosmetic transforms', () => {
         expect(setCss(makeNoteType(), 'x').css).toBe('x');
     });
 
-    it('clamps the sort field to a valid index', () => {
-        expect(setSortField(makeNoteType(), 2).sortFieldIdx).toBe(2);
-        expect(setSortField(makeNoteType(), 9).sortFieldIdx).toBe(0);
-    });
 });
 
 describe('addField', () => {

@@ -39,7 +39,6 @@ export {
 } from './filteredDecks';
 export {
     getDirectDecksForScope,
-    getPopulatedDecksForScope,
     buildDeckTree,
     flattenDeckTree,
     decksInDisplayOrder,

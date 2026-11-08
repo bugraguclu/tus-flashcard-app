@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { StudyCard } from './types';
 import type { DeckConfig } from './models';
 import {
-    applyHierarchicalLimit,
     buryBuildTimeSiblings,
     interleaveNewWithReviews,
     sortReviewCards,
@@ -59,48 +58,6 @@ describe('interleaveNewWithReviews (Anki "mix with reviews")', () => {
         expect(interleaveNewWithReviews(reviews, [])).toBe(reviews);
         const news = [fresh(1)];
         expect(interleaveNewWithReviews([], news)).toBe(news);
-    });
-});
-
-// applyHierarchicalLimit only reads deckId via the injected resolvers; a thin stub suffices.
-function card(cardId: number, deck: string): StudyCard {
-    return { cardId, deck } as unknown as StudyCard;
-}
-const deckOf = (c: StudyCard) => (c as unknown as { deck: string }).deck;
-const ancestors = (name: string): string[] =>
-    name.split('::').map((_, i, parts) => parts.slice(0, i + 1).join('::'));
-
-describe('applyHierarchicalLimit (Anki "limits start from the top")', () => {
-    it('lets a parent deck cap the combined intake of its subdecks', () => {
-        // Parent "TUS" limit 3 caps the sum of its two children, even though each child allows 5.
-        const cards = [
-            card(1, 'TUS::Anatomi'), card(2, 'TUS::Anatomi'), card(3, 'TUS::Anatomi'),
-            card(4, 'TUS::Fizyoloji'), card(5, 'TUS::Fizyoloji'),
-        ];
-        const limitForKey = (key: string) => (key === 'TUS' ? 3 : 5);
-
-        const result = applyHierarchicalLimit(cards, 99, (c) => ancestors(deckOf(c)), limitForKey);
-
-        expect(result.map((c) => c.cardId)).toEqual([1, 2, 3]);
-    });
-
-    it('still enforces each subdeck limit under a generous parent', () => {
-        const cards = [
-            card(1, 'TUS::Anatomi'), card(2, 'TUS::Anatomi'), card(3, 'TUS::Anatomi'),
-            card(4, 'TUS::Fizyoloji'),
-        ];
-        const limitForKey = (key: string) => (key === 'TUS' ? 99 : 2);
-
-        const result = applyHierarchicalLimit(cards, 99, (c) => ancestors(deckOf(c)), limitForKey);
-
-        // Anatomi capped at 2; Fizyoloji still allowed.
-        expect(result.map((c) => c.cardId)).toEqual([1, 2, 4]);
-    });
-
-    it('honours the global limit regardless of deck budgets', () => {
-        const cards = [card(1, 'TUS'), card(2, 'TUS'), card(3, 'TUS')];
-        const result = applyHierarchicalLimit(cards, 2, (c) => ancestors(deckOf(c)), () => 99);
-        expect(result.map((c) => c.cardId)).toEqual([1, 2]);
     });
 });
 

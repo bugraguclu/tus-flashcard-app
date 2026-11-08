@@ -126,11 +126,6 @@ export function importLogFailureCount(counts: ImportLogCounts): number {
     return IMPORT_FAILURE_STATUSES.reduce((total, status) => total + counts[status], 0);
 }
 
-/** Rows that produced a written note: new ones plus first-field duplicates added on purpose. */
-export function importLogWrittenCount(counts: ImportLogCounts): number {
-    return counts.added + counts.updated;
-}
-
 /** Merges a package importer's aggregate figures into a log, for screens that render both. */
 export function importLogFromCounts(counts: Partial<ImportLogCounts>, found: number): ImportLog {
     return { found, counts: { ...emptyImportLogCounts(), ...counts }, entries: [], truncated: false };

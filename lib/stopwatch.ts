@@ -554,23 +554,6 @@ export function formatStudyTotal(ms: number, locale: SupportedLocale): string {
     return rest === 0 ? `${hours} ${hourUnit}` : `${hours} ${hourUnit} ${rest} ${minuteUnit}`;
 }
 
-/**
- * Time still needed to reach the goal: `8 saat`, `7 sa 30 dk`, `25 dk`. A part of a minute left
- * rounds up, so the card never reads "0 dk" while the goal is still unmet.
- */
-export function formatGoalRemaining(ms: number, locale: SupportedLocale): string {
-    const minutes = Math.ceil(Math.max(0, Number.isFinite(ms) ? ms : 0) / MINUTE_MS);
-    const hours = Math.floor(minutes / 60);
-    const rest = minutes % 60;
-    if (locale === 'tr') {
-        if (hours === 0) return `${rest} dk`;
-        return rest === 0 ? `${hours} saat` : `${hours} sa ${rest} dk`;
-    }
-    if (hours === 0) return `${rest} min`;
-    if (rest === 0) return hours === 1 ? '1 hour' : `${hours} hours`;
-    return `${hours} h ${rest} min`;
-}
-
 /** Today's progress towards the goal, from 0 to 1. */
 export function goalProgress(studiedMs: number, goalMinutes: number): number {
     if (!(goalMinutes > 0) || !(studiedMs > 0)) return 0;
@@ -596,12 +579,6 @@ export function examDaysLeft(examYmd: string | null, nowMs: number): number | nu
         return Date.UTC(year!, month! - 1, day!) / DAY_MS;
     };
     return Math.round(toUtcDay(exam) - toUtcDay(localYmd(nowMs)));
-}
-
-/** The hours and minutes of a duration, for the hand-entry steppers. */
-export function splitHoursMinutes(ms: number): { hours: number; minutes: number } {
-    const minutes = Math.round(Math.max(0, ms) / MINUTE_MS);
-    return { hours: Math.floor(minutes / 60), minutes: minutes % 60 };
 }
 
 /**

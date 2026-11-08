@@ -20,11 +20,10 @@ import {
     getRecentStudySnapshot,
     recentStudyDays,
     studyMsBySubject,
-    studySubjectGlyph,
     subjectOfDeck,
     type StudyReviewRow,
 } from './studyCalendar';
-import { TUS_STUDY_SUBJECTS, type StudySessionRecord } from './stopwatch';
+import { type StudySessionRecord } from './stopwatch';
 
 const ROLLOVER = 4;
 const MINUTE = 60_000;
@@ -481,52 +480,6 @@ describe('deck attribution (real SQLite)', () => {
     });
 });
 
-describe('studySubjectGlyph', () => {
-    it('recognises a branch however the learner cased or accented its name', () => {
-        // All four spellings are the same deck to a learner, so all four must reach the same tile.
-        for (const name of ['Mikrobiyoloji', 'MIKROBIYOLOJI', 'M\u0130KROB\u0130YOLOJ\u0130', 't\u0131bbi mikrobiyoloji']) {
-            expect(studySubjectGlyph(name)).toBe('\u{1F52C}');
-        }
-    });
-
-    it('folds the Turkish letters the table is written without', () => {
-        expect(studySubjectGlyph('Kad\u0131n Do\u011fum')).toBe(studySubjectGlyph('kadin dogum'));
-        expect(studySubjectGlyph('N\u00f6roloji')).toBe(studySubjectGlyph('noroloji'));
-        expect(studySubjectGlyph('G\u00f6\u011f\u00fcs Hastal\u0131klar\u0131')).toBe(studySubjectGlyph('gogus hastaliklari'));
-        expect(studySubjectGlyph('Halk Sa\u011fl\u0131\u011f\u0131')).toBe(studySubjectGlyph('halk sagligi'));
-    });
-
-    it('prefers the more specific branch when one name contains another', () => {
-        // The table is ordered longest-first, so these must not all collapse onto "Cerrahi".
-        expect(studySubjectGlyph('\u00c7ocuk Cerrahisi')).not.toBe(studySubjectGlyph('Genel Cerrahi'));
-        expect(studySubjectGlyph('Beyin Cerrahisi')).not.toBe(studySubjectGlyph('Genel Cerrahi'));
-        expect(studySubjectGlyph('T\u0131bbi Genetik')).toBe('\u{1F9EC}');
-    });
-
-    it('draws a tile for every subject the Kronometre offers', () => {
-        for (const subject of TUS_STUDY_SUBJECTS) {
-            expect(studySubjectGlyph(subject), subject).not.toBe(subject.charAt(0).toLocaleUpperCase('tr'));
-        }
-        expect(studySubjectGlyph('Karışık')).toBe('\u{1F4DA}');
-    });
-
-    it('keeps the tiles of sessions recorded under subjects that are now types', () => {
-        expect(studySubjectGlyph('Soru Çözümü')).toBe('\u{1F4DD}');
-        expect(studySubjectGlyph('Deneme Sınavı')).toBe('\u{1F3AF}');
-    });
-
-    it('falls back to the subject initial for a deck that is not a TUS branch', () => {
-        expect(studySubjectGlyph('Deneme 3')).toBe('D');
-        // The initial is upper-cased in Turkish, so a leading dotless i does not become "I".
-        expect(studySubjectGlyph('\u0131spanyolca')).toBe('I');
-        expect(studySubjectGlyph('ingilizce')).toBe('\u0130');
-    });
-
-    it('always has something to draw, even for an empty or blank subject', () => {
-        expect(studySubjectGlyph('')).toBe('?');
-        expect(studySubjectGlyph('   ')).toBe('?');
-    });
-});
 describe('Kronometre sessions', () => {
     function timer(id: number, isoStart: string, studyMinutes: number, breakMinutes = 0, subject = 'Fizyoloji', pass = 1): StudySessionRecord {
         const startMs = new Date(isoStart).getTime();

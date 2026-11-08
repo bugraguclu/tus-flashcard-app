@@ -124,11 +124,6 @@ export function setFieldSticky(nt: NoteType, ord: number, sticky: boolean): Note
     return touch(nt, { fields: nt.fields.map((f) => (f.ord === ord ? { ...f, sticky } : f)) });
 }
 
-export function setSortField(nt: NoteType, ord: number): NoteType {
-    if (ord < 0 || ord >= nt.fields.length) return nt;
-    return touch(nt, { sortFieldIdx: ord });
-}
-
 export function updateTemplate(
     nt: NoteType,
     ord: number,

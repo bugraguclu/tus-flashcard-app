@@ -15,7 +15,7 @@ import { BUILTIN_NOTE_TYPES } from './models';
 import { createNote, getCardsForNote, getNote } from './noteStore';
 import { createDeck } from './deckStore';
 
-const l = (tr: string, en: string) => en;
+const l = (_tr: string, en: string) => en;
 const lTr = (tr: string) => tr;
 
 function fakeSteps(removed: number, accept: boolean) {

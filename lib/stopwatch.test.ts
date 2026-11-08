@@ -12,7 +12,6 @@ import {
     examDaysLeft,
     finishStopwatch,
     formatGoalClock,
-    formatGoalRemaining,
     formatHeroDuration,
     formatStopwatchClock,
     formatStudyTotal,
@@ -365,14 +364,6 @@ describe('display', () => {
         expect(formatStudyTotal(45 * MINUTE + 59_000, 'tr')).toBe('45 dk');
         expect(formatStudyTotal(80 * MINUTE, 'tr')).toBe('1 sa 20 dk');
         expect(formatStudyTotal(120 * MINUTE, 'en')).toBe('2 h');
-    });
-
-    it('rounds the time left up, so an unmet goal never reads as zero', () => {
-        expect(formatGoalRemaining(8 * 60 * MINUTE, 'tr')).toBe('8 saat');
-        expect(formatGoalRemaining(7.5 * 60 * MINUTE, 'tr')).toBe('7 sa 30 dk');
-        expect(formatGoalRemaining(10_000, 'tr')).toBe('1 dk');
-        expect(formatGoalRemaining(60 * MINUTE, 'en')).toBe('1 hour');
-        expect(formatGoalRemaining(150 * MINUTE, 'en')).toBe('2 h 30 min');
     });
 
     it('measures progress against the goal, capped at a full ring', () => {
