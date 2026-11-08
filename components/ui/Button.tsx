@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import {
     ActivityIndicator,
     type GestureResponderEvent,
@@ -33,6 +33,8 @@ interface ButtonProps {
     busy?: boolean;
     /** Drawn before the label, e.g. an icon from `components/ui/icons`. */
     icon?: React.ReactNode;
+    /** Drawn after the label, e.g. a chevron that shows the button expands something. */
+    trailingIcon?: React.ReactNode;
     /** Layout only (width, flex, margins); the look comes from `variant`. */
     style?: StyleProp<ViewStyle>;
     accessibilityLabel?: string;
@@ -42,7 +44,7 @@ interface ButtonProps {
 }
 
 /** The one button: every filled, outlined and text action in the app is drawn by it. */
-export function Button({
+export const Button = forwardRef<View, ButtonProps>(function Button({
     label,
     onPress,
     variant = 'primary',
@@ -51,12 +53,13 @@ export function Button({
     disabled = false,
     busy = false,
     icon,
+    trailingIcon,
     style,
     accessibilityLabel,
     accessibilityHint,
     numberOfLines = 2,
     hitSlop,
-}: ButtonProps) {
+}, ref) {
     const colors = useThemeColors();
     const compact = size === 'compact';
     const plainColor = tone === 'danger' ? colors.danger : tone === 'muted' ? colors.textSecondary : colors.accent;
@@ -76,6 +79,7 @@ export function Button({
 
     return (
         <TouchableOpacity
+            ref={ref}
             style={[
                 styles.base,
                 compact ? styles.compact : styles.regular,
@@ -108,11 +112,12 @@ export function Button({
                     >
                         {label}
                     </Text>
+                    {trailingIcon}
                 </View>
             )}
         </TouchableOpacity>
     );
-}
+});
 
 interface IconButtonProps {
     /** Spoken by VoiceOver; the icon itself is decorative. */

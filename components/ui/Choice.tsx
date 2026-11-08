@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, type StyleProp, StyleSheet, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
-import { CheckIcon, CloseIcon } from './icons';
+import { CheckIcon, CloseIcon, MinusIcon } from './icons';
 import { DISABLED_OPACITY, HIT_TARGET, Radius } from './tokens';
 
 /**
@@ -20,12 +20,17 @@ interface ChipProps {
     /** A small icon before the label, e.g. a flag. */
     icon?: React.ReactNode;
     disabled?: boolean;
+    /**
+     * How the chip speaks: a `button` that is selected (a filter), a `radio` of a set where one is
+     * chosen, or a `checkbox` of a set where any may be.
+     */
+    role?: 'button' | 'radio' | 'checkbox';
     accessibilityLabel?: string;
     style?: StyleProp<ViewStyle>;
 }
 
 /** A capsule that filters a list or picks one of a few short options. */
-export function Chip({ label, selected = false, onPress, onRemove, removeLabel, icon, disabled = false, accessibilityLabel, style }: ChipProps) {
+export function Chip({ label, selected = false, onPress, onRemove, removeLabel, icon, disabled = false, role = 'button', accessibilityLabel, style }: ChipProps) {
     const colors = useThemeColors();
     const tint = selected ? colors.accent : colors.textSecondary;
     return (
@@ -42,9 +47,9 @@ export function Chip({ label, selected = false, onPress, onRemove, removeLabel, 
                 onPress={onPress}
                 disabled={disabled || !onPress}
                 hitSlop={{ top: 6, bottom: 6 }}
-                accessibilityRole="button"
+                accessibilityRole={role}
                 accessibilityLabel={accessibilityLabel ?? label}
-                accessibilityState={{ selected, disabled }}
+                accessibilityState={role === 'button' ? { selected, disabled } : { checked: selected, disabled }}
             >
                 {icon}
                 <Text style={[styles.chipText, { color: tint }, selected && styles.chipTextSelected]} numberOfLines={1}>{label}</Text>
@@ -146,6 +151,8 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
 
 interface CheckboxProps {
     checked: boolean;
+    /** Some of what the box stands for is ticked (a deck whose subdecks are partly chosen). */
+    mixed?: boolean;
     onChange?: (checked: boolean) => void;
     /** Spoken label; leave it out when a surrounding row speaks for the box. */
     accessibilityLabel?: string;
@@ -153,17 +160,18 @@ interface CheckboxProps {
 }
 
 /** A square box with a tick: one of several independent options. */
-export function Checkbox({ checked, onChange, accessibilityLabel, disabled = false }: CheckboxProps) {
+export function Checkbox({ checked, mixed = false, onChange, accessibilityLabel, disabled = false }: CheckboxProps) {
     const colors = useThemeColors();
+    const filled = checked || mixed;
     const box = (
         <View
             style={[
                 styles.box,
-                { borderColor: checked ? colors.accent : colors.textMuted, backgroundColor: checked ? colors.accent : 'transparent' },
+                { borderColor: filled ? colors.accent : colors.textMuted, backgroundColor: filled ? colors.accent : 'transparent' },
                 disabled && styles.disabled,
             ]}
         >
-            {checked ? <CheckIcon color={colors.onAccent} size={16} /> : null}
+            {checked ? <CheckIcon color={colors.onAccent} size={16} /> : mixed ? <MinusIcon color={colors.onAccent} size={16} /> : null}
         </View>
     );
     if (!onChange) return box;
@@ -174,7 +182,7 @@ export function Checkbox({ checked, onChange, accessibilityLabel, disabled = fal
             disabled={disabled}
             accessibilityRole="checkbox"
             accessibilityLabel={accessibilityLabel}
-            accessibilityState={{ checked, disabled }}
+            accessibilityState={{ checked: checked ? true : mixed ? 'mixed' : false, disabled }}
         >
             {box}
         </TouchableOpacity>
@@ -185,13 +193,14 @@ interface CheckRowProps {
     label: string;
     summary?: string;
     checked: boolean;
+    mixed?: boolean;
     onChange: (checked: boolean) => void;
     disabled?: boolean;
     style?: StyleProp<ViewStyle>;
 }
 
 /** A row with a checkbox; the whole row ticks it. */
-export function CheckRow({ label, summary, checked, onChange, disabled = false, style }: CheckRowProps) {
+export function CheckRow({ label, summary, checked, mixed = false, onChange, disabled = false, style }: CheckRowProps) {
     const colors = useThemeColors();
     return (
         <TouchableOpacity
@@ -200,9 +209,9 @@ export function CheckRow({ label, summary, checked, onChange, disabled = false, 
             disabled={disabled}
             accessibilityRole="checkbox"
             accessibilityLabel={label}
-            accessibilityState={{ checked, disabled }}
+            accessibilityState={{ checked: checked ? true : mixed ? 'mixed' : false, disabled }}
         >
-            <Checkbox checked={checked} />
+            <Checkbox checked={checked} mixed={mixed} />
             <View style={styles.checkCopy}>
                 <Text style={[styles.checkLabel, { color: colors.textPrimary }]}>{label}</Text>
                 {summary ? <Text style={[styles.checkSummary, { color: colors.textMuted }]}>{summary}</Text> : null}

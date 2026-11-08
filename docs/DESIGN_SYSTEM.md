@@ -46,9 +46,9 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | − value + | `Stepper` (holding repeats; `children` for an editable value) | `components/ui/Stepper.tsx` |
 | A surface for rows, charts or fields | `Card` (`divided` for rows, `padded` for free content; `title`, `description`, `accessory` draw its heading inside), `CardHeader` | `components/ui/Card.tsx` |
 | A labelled group of rows | `Section` (`SectionLabel` + `Card` + `SectionFootnote`) | `components/ui/Card.tsx` |
-| Rows | `ListRow` (opens something), `SwitchRow`, `ValueRow` (label and value or control), `SelectRow` (label and chosen option) | `components/ui/Rows.tsx` |
+| Rows | `ListRow` (opens something; `selected` makes it an option of a single-choice list, `expanded` a disclosure), `SwitchRow`, `ValueRow` (label and value or control), `SelectRow` (label and chosen option) | `components/ui/Rows.tsx` |
 | Switch | `AppSwitch` | `components/ui/Rows.tsx` |
-| Chips, badges, segmented control, checkboxes, chosen-row tick | `Chip`, `Badge`, `SegmentedControl`, `Checkbox`, `CheckRow`, `SelectedMark` | `components/ui/Choice.tsx` |
+| Chips, badges, segmented control, checkboxes, chosen-row tick | `Chip` (`role` button, radio or checkbox), `Badge`, `SegmentedControl`, `Checkbox` / `CheckRow` (`mixed` for a partly ticked group), `SelectedMark` | `components/ui/Choice.tsx` |
 | Text entry | `TextField`, `SearchField` | `components/ui/Fields.tsx` |
 | Empty, loading, notices, progress | `EmptyState`, `LoadingState`, `Notice` (`info`, `warning`, `danger`, `success`), `ProgressBar` | `components/ui/Feedback.tsx` |
 | Bottom sheet | `AppSheet` (title, subtitle, optional close button, keyboard lift, overlay picker) | `components/ui/Sheet.tsx` |

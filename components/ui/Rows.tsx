@@ -2,7 +2,8 @@ import React from 'react';
 import { type StyleProp, StyleSheet, Switch, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
-import { ChevronDownIcon, ChevronRightIcon } from './icons';
+import { SelectedMark } from './Choice';
+import { ChevronDownIcon, ChevronRightIcon, ChevronUpIcon } from './icons';
 import { DISABLED_OPACITY, Type } from './tokens';
 
 /**
@@ -60,6 +61,13 @@ interface ListRowProps {
     chevron?: boolean;
     /** Anything else at the row's end: a badge, a spinner. */
     accessory?: React.ReactNode;
+    /**
+     * Makes the row an option of a single-choice list: a tick marks the chosen one, the row
+     * speaks as a radio button and has no chevron.
+     */
+    selected?: boolean;
+    /** Makes the row a disclosure: a down or up chevron, and its expanded state spoken. */
+    expanded?: boolean;
     destructive?: boolean;
     disabled?: boolean;
     accessibilityLabel?: string;
@@ -67,7 +75,7 @@ interface ListRowProps {
     style?: StyleProp<ViewStyle>;
 }
 
-/** A row that opens a screen, a picker or runs an action. */
+/** A row that opens a screen, a picker or runs an action; or an option of a list. */
 export function ListRow({
     title,
     summary,
@@ -76,6 +84,8 @@ export function ListRow({
     onPress,
     chevron,
     accessory,
+    selected,
+    expanded,
     destructive = false,
     disabled = false,
     accessibilityLabel,
@@ -83,13 +93,19 @@ export function ListRow({
     style,
 }: ListRowProps) {
     const colors = useThemeColors();
-    const showChevron = chevron ?? Boolean(onPress);
+    const choice = selected !== undefined;
+    const disclosure = expanded !== undefined;
+    const showChevron = !choice && !disclosure && (chevron ?? Boolean(onPress));
     const content = (
         <>
             {icon ? <View style={styles.icon}>{icon}</View> : null}
             <RowText title={title} summary={summary} destructive={destructive} />
             {value ? <Text style={[styles.value, { color: colors.textMuted }]} numberOfLines={1}>{value}</Text> : null}
             {accessory}
+            {choice ? <SelectedMark visible={selected} /> : null}
+            {disclosure
+                ? (expanded ? <ChevronUpIcon color={colors.textMuted} size={16} /> : <ChevronDownIcon color={colors.textMuted} size={16} />)
+                : null}
             {showChevron ? <ChevronRightIcon color={colors.textMuted} size={16} /> : null}
         </>
     );
@@ -99,10 +115,14 @@ export function ListRow({
             style={[styles.row, disabled && styles.disabled, style]}
             onPress={onPress}
             disabled={disabled}
-            accessibilityRole="button"
+            accessibilityRole={choice ? 'radio' : 'button'}
             accessibilityLabel={accessibilityLabel ?? (value ? `${title}, ${value}` : title)}
             accessibilityHint={accessibilityHint}
-            accessibilityState={{ disabled }}
+            accessibilityState={{
+                disabled,
+                ...(choice ? { checked: selected } : {}),
+                ...(disclosure ? { expanded } : {}),
+            }}
         >
             {content}
         </TouchableOpacity>
@@ -176,11 +196,13 @@ interface SelectRowProps {
     /** Spoken instead of "label, value", e.g. when the value is an abbreviation. */
     accessibilityLabel?: string;
     accessibilityHint?: string;
+    /** For a row whose options open in place under it: whether they are showing. */
+    expanded?: boolean;
     style?: StyleProp<ViewStyle>;
 }
 
 /** A label and the chosen option; tapping it opens the list of options. */
-export function SelectRow({ label, value, onPress, summary, disabled = false, accessibilityLabel, accessibilityHint, style }: SelectRowProps) {
+export function SelectRow({ label, value, onPress, summary, disabled = false, accessibilityLabel, accessibilityHint, expanded, style }: SelectRowProps) {
     const colors = useThemeColors();
     return (
         <TouchableOpacity
@@ -190,7 +212,7 @@ export function SelectRow({ label, value, onPress, summary, disabled = false, ac
             accessibilityRole="button"
             accessibilityLabel={accessibilityLabel ?? `${label}, ${value}`}
             accessibilityHint={accessibilityHint}
-            accessibilityState={{ disabled }}
+            accessibilityState={expanded === undefined ? { disabled } : { disabled, expanded }}
         >
             <View style={styles.copy}>
                 <Text style={[Type.body, { color: colors.textPrimary }]}>{label}</Text>
