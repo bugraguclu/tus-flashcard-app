@@ -34,15 +34,14 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
         inlineStepperCopy: stackControls ? { gap: 2 } : { flex: 1, minWidth: 0, gap: 2 },
         inlineStepper: { alignSelf: stackControls ? 'flex-end' : 'center', flexShrink: 0 },
         stackedStepperLayout: { gap: Spacing.sm },
+        // Under its label, a stepper keeps its own width instead of stretching across the card.
+        stackedStepper: { alignSelf: 'flex-start' },
 
         tapGrid: { flexDirection: 'row', flexWrap: 'wrap', overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderRadius: Radius.inset, backgroundColor: colors.bgSecondary },
         tapGridCell: { width: '33.3333%', minHeight: 78, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, paddingVertical: Spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderLight },
         tapGridZone: { fontSize: 11, lineHeight: 15, fontWeight: '800', color: colors.textSecondary, textAlign: 'center' },
         tapGridAction: { marginTop: 4, fontSize: 11, lineHeight: 15, fontWeight: '700', color: colors.accent, textAlign: 'center' },
 
-        // The kit has arrows up and down only; left and right turn the up arrow.
-        turnLeft: { transform: [{ rotate: '-90deg' }] },
-        turnRight: { transform: [{ rotate: '90deg' }] },
         // ↺: the kit's refresh arrow, turned the other way.
         mirrored: { transform: [{ scaleX: -1 }] },
 
@@ -125,8 +124,7 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
         helpStrong: { fontWeight: '800', color: colors.textPrimary },
 
         pickerList: { flexShrink: 1 },
-        pickerOption: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
-        pickerOptionText: { ...Type.body, flex: 1, color: colors.textPrimary },
-        pickerOptionTextSelected: { color: colors.accent, fontWeight: '700' },
+        // A list row inside a dialog: the dialog's own padding is its inset.
+        dialogRow: { paddingHorizontal: 0 },
     });
 }

@@ -63,13 +63,13 @@ import InfoCircleGlyph from '../components/InfoCircleGlyph';
 import ScreenHeader from '../components/ScreenHeader';
 import { Button, HelpButton } from '../components/ui/Button';
 import { Card, Divider, SectionLabel } from '../components/ui/Card';
-import { SegmentedControl, SelectedMark } from '../components/ui/Choice';
+import { SegmentedControl } from '../components/ui/Choice';
 import { AppDialog } from '../components/ui/Dialog';
 import { EmptyState, LoadingState, Notice } from '../components/ui/Feedback';
 import { SearchField } from '../components/ui/Fields';
 import { ListRow, SelectRow, SwitchRow, ValueRow } from '../components/ui/Rows';
 import { Stepper } from '../components/ui/Stepper';
-import { ArrowDownIcon, ArrowUpIcon, CheckIcon, ExternalLinkIcon, RefreshIcon } from '../components/ui/icons';
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, CheckIcon, ExternalLinkIcon, RefreshIcon } from '../components/ui/icons';
 import {
     disableStudyNotifications,
     requestStudyNotificationPermission,
@@ -208,7 +208,7 @@ function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, m
                     onIncrement={() => inputRef.current?.stepBy(step)}
                     decrementLabel={`${label} ${l('azalt', 'decrease')}`}
                     incrementLabel={`${label} ${l('artır', 'increase')}`}
-                    style={inline ? styles.inlineStepper : undefined}
+                    style={inline ? styles.inlineStepper : styles.stackedStepper}
                 >
                     <BoundedIntegerInput
                         ref={inputRef}
@@ -230,14 +230,9 @@ function StepperRow({ label, summary, value, suffix, minimumDigits, step, min, m
 }
 
 /** The direction of a swipe, for its row. */
-function SwipeDirectionIcon({ direction, color, styles }: { direction: SwipeDirection; color: string; styles: SettingsStyles }) {
-    if (direction === 'up') return <ArrowUpIcon color={color} size={22} />;
-    if (direction === 'down') return <ArrowDownIcon color={color} size={22} />;
-    return (
-        <View style={direction === 'left' ? styles.turnLeft : styles.turnRight}>
-            <ArrowUpIcon color={color} size={22} />
-        </View>
-    );
+function SwipeDirectionIcon({ direction, color }: { direction: SwipeDirection; color: string }) {
+    const Arrow = { left: ArrowLeftIcon, right: ArrowRightIcon, up: ArrowUpIcon, down: ArrowDownIcon }[direction];
+    return <Arrow color={color} size={22} />;
 }
 
 /** ↺, for putting something back the way it was. */
@@ -246,30 +241,6 @@ function RestoreIcon({ color, size = 22, styles }: { color: string; size?: numbe
         <View style={styles.mirrored}>
             <RefreshIcon color={color} size={size} />
         </View>
-    );
-}
-
-/**
- * One choice of a picker dialog; the chosen one ends in the tick. The kit has no single-choice
- * row, so this one keeps the radio semantics VoiceOver reads the choice with.
- */
-function PickerOption({ label, selected, onPress, styles }: {
-    label: string;
-    selected: boolean;
-    onPress: () => void;
-    styles: SettingsStyles;
-}) {
-    return (
-        <TouchableOpacity
-            style={styles.pickerOption}
-            onPress={onPress}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
-            aria-checked={selected}
-        >
-            <Text style={[styles.pickerOptionText, selected && styles.pickerOptionTextSelected]}>{label}</Text>
-            <SelectedMark visible={selected} />
-        </TouchableOpacity>
     );
 }
 
@@ -1339,7 +1310,7 @@ export default function SettingsScreen() {
                     ] as Array<[GestureSettingKey, SwipeDirection, string, ReviewGestureAction]>).map(([field, direction, label, action]) => (
                         <ListRow
                             key={field}
-                            icon={<SwipeDirectionIcon direction={direction} color={colors.accent} styles={styles} />}
+                            icon={<SwipeDirectionIcon direction={direction} color={colors.accent} />}
                             title={label}
                             summary={<Text style={styles.actionValue}>{gestureActionLabel(action)}</Text>}
                             onPress={() => setGesturePickerTarget({ kind: 'swipe', field })}
@@ -1534,8 +1505,8 @@ export default function SettingsScreen() {
 
     const renderAbout = () => (
         <Card divided title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki paketleriyle çalışan, verilerini cihazınızda tutan bağımsız bir kart uygulaması. Anki veya Ankitects ile bağlantılı değildir.`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • An independent flashcard app that works with Anki packages and keeps its data on your device. Not affiliated with Anki or Ankitects.`)}>
-            <ListRow title={l('Gizlilik politikası', 'Privacy Policy')} onPress={() => openExternalPage(PRIVACY_URL)} chevron={false} accessory={<ExternalLinkIcon color={colors.textMuted} />} />
-            <ListRow title={l('Destek', 'Support')} onPress={() => openExternalPage(SUPPORT_URL)} chevron={false} accessory={<ExternalLinkIcon color={colors.textMuted} />} />
+            <ListRow title={l('Gizlilik politikası', 'Privacy Policy')} onPress={() => openExternalPage(PRIVACY_URL)} accessibilityRole="link" chevron={false} accessory={<ExternalLinkIcon color={colors.textMuted} />} />
+            <ListRow title={l('Destek', 'Support')} onPress={() => openExternalPage(SUPPORT_URL)} accessibilityRole="link" chevron={false} accessory={<ExternalLinkIcon color={colors.textMuted} />} />
         </Card>
     );
 
@@ -1624,7 +1595,7 @@ export default function SettingsScreen() {
                             </Card>
                         ) : (
                             <EmptyState
-                                title={l(
+                                body={l(
                                     'Eşleşen ayar bulunamadı. Bir ayarın veya kategorinin adıyla arayın; örneğin “bildirim” veya “zaman kutusu”.',
                                     'No matching settings found. Search by the name of a setting or a category, for example “notification” or “timebox”.',
                                 )}
@@ -1639,6 +1610,7 @@ export default function SettingsScreen() {
                     onClose={() => setControlsHelpVisible(false)}
                     title={l('Dokunma ve kaydırmayı özelleştirin', 'Customize taps and swipes')}
                     closeButton
+                    closeLabel={l('Yardımı kapat', 'Close help')}
                     actions={<Button label={l('Anladım', 'Got it')} onPress={() => setControlsHelpVisible(false)} />}
                 >
                     <ScrollView
@@ -1681,7 +1653,7 @@ export default function SettingsScreen() {
                             ] as Array<[SwipeDirection, string, ReviewGestureAction]>).map(([direction, label, action]) => (
                                 <ListRow
                                     key={label}
-                                    icon={<SwipeDirectionIcon direction={direction} color={colors.accent} styles={styles} />}
+                                    icon={<SwipeDirectionIcon direction={direction} color={colors.accent} />}
                                     title={label}
                                     summary={<Text style={styles.actionValue}>{gestureActionLabel(action)}</Text>}
                                 />
@@ -1730,6 +1702,7 @@ export default function SettingsScreen() {
                         ? l('Dokunma eylemi', 'Tap action')
                         : l('Kaydırma eylemi', 'Swipe action')}
                     closeButton
+                    closeLabel={l('Eylem seçiciyi kapat', 'Close action picker')}
                 >
                     <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
                         {gestureActionOptions.map((option, index) => {
@@ -1745,10 +1718,10 @@ export default function SettingsScreen() {
                             return (
                                 <React.Fragment key={option.value}>
                                     {index > 0 ? <Divider /> : null}
-                                    <PickerOption
-                                        label={option.label}
+                                    <ListRow
+                                        title={option.label}
                                         selected={selected}
-                                        styles={styles}
+                                        style={styles.dialogRow}
                                         onPress={() => {
                                             if (gesturePickerTarget.kind === 'swipe') {
                                                 updateSetting(gesturePickerTarget.field, option.value);
@@ -1779,6 +1752,7 @@ export default function SettingsScreen() {
                     onClose={() => setNotificationThresholdPickerVisible(false)}
                     title={l('Şu durumda bildir', 'Notify when')}
                     closeButton
+                    closeLabel={l('Bildirim koşulu seçicisini kapat', 'Close notification condition picker')}
                 >
                     <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
                         {notificationThresholdOptions.map((option, index) => {
@@ -1789,10 +1763,10 @@ export default function SettingsScreen() {
                             return (
                                 <React.Fragment key={option.value ?? 'never'}>
                                     {index > 0 ? <Divider /> : null}
-                                    <PickerOption
-                                        label={option.label}
+                                    <ListRow
+                                        title={option.label}
                                         selected={Boolean(selected)}
-                                        styles={styles}
+                                        style={styles.dialogRow}
                                         onPress={() => { void handleStudyNotificationPolicySelect(option.value); }}
                                     />
                                 </React.Fragment>
