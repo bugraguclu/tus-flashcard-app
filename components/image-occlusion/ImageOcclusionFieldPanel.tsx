@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Platform, StyleSheet, TouchableOpacity, View, type LayoutChangeEvent } from 'react-native';
+import { Image, Platform, StyleSheet, TouchableOpacity, View, type LayoutChangeEvent } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { alert, confirmAsync } from '../../lib/confirm';
 import { occlusionImageField, occlusionImageFilename, parseOcclusionField } from '../../lib/imageOcclusion';
+import { Button } from '../ui/Button';
+import { EmptyState, LoadingState } from '../ui/Feedback';
+import { Radius, Type } from '../ui/tokens';
 import ImageOcclusionEditorModal from './ImageOcclusionEditorModal';
 import OcclusionShapesSvg from './OcclusionShapesSvg';
 import { imageSize, mediaDisplayUri, pickOcclusionImage } from './occlusionMedia';
@@ -85,31 +88,32 @@ export default function ImageOcclusionFieldPanel({ occlusion, image, editable, o
 
     const pickButtons = (
         <View style={styles.actions}>
-            <ActionButton label={filename ? l('Görseli değiştir', 'Change Picture') : l('Galeriden görsel seç', 'Choose Picture')}
-                onPress={() => pick('library')} styles={styles} primary={!filename} disabled={!editable || busy} />
+            <Button label={filename ? l('Görseli değiştir', 'Change Picture') : l('Galeriden görsel seç', 'Choose Picture')}
+                onPress={() => pick('library')} variant={filename ? 'secondary' : 'primary'} disabled={!editable || busy} />
             {Platform.OS !== 'web' && (
-                <ActionButton label={l('Fotoğraf çek', 'Take Photo')} onPress={() => pick('camera')} styles={styles} disabled={!editable || busy} />
+                <Button label={l('Fotoğraf çek', 'Take Photo')} onPress={() => pick('camera')} variant="secondary" disabled={!editable || busy} />
             )}
         </View>
     );
 
     return (
         <View style={styles.container} onLayout={onLayout}>
+            {/* The empty field keeps its dashed edge: it is where the picture will go. */}
             {!filename ? (
-                <View style={styles.empty}>
-                    <Text style={styles.emptyTitle}>{l('Örtülecek bir görsel seçin', 'Choose a picture to occlude')}</Text>
-                    <Text style={styles.emptyText}>
-                        {l('Görselin üzerine maskeler çizin; her maske (ya da grup) bir kart olur.',
-                            'Draw masks over the picture; each mask (or group) becomes one card.')}
-                    </Text>
-                    {busy ? <ActivityIndicator color={colors.accent} /> : pickButtons}
-                </View>
+                <EmptyState
+                    title={l('Örtülecek bir görsel seçin', 'Choose a picture to occlude')}
+                    body={l('Görselin üzerine maskeler çizin; her maske (ya da grup) bir kart olur.',
+                        'Draw masks over the picture; each mask (or group) becomes one card.')}
+                    action={busy ? <LoadingState /> : pickButtons}
+                    style={styles.empty}
+                />
             ) : picture === 'missing' ? (
-                <View style={styles.empty}>
-                    <Text style={styles.emptyTitle}>{l('Görsel bulunamadı', 'Picture not found')}</Text>
-                    <Text style={styles.emptyText}>{filename}</Text>
-                    {pickButtons}
-                </View>
+                <EmptyState
+                    title={l('Görsel bulunamadı', 'Picture not found')}
+                    body={filename}
+                    action={pickButtons}
+                    style={styles.empty}
+                />
             ) : (
                 <>
                     <TouchableOpacity
@@ -125,7 +129,7 @@ export default function ImageOcclusionFieldPanel({ occlusion, image, editable, o
                                 <OcclusionShapesSvg shapes={shapes} size={preview} natural={ready.natural} accent={colors.accent} />
                             </>
                         ) : (
-                            <ActivityIndicator color={colors.accent} />
+                            <LoadingState />
                         )}
                     </TouchableOpacity>
                     <Text style={styles.caption}>
@@ -134,9 +138,9 @@ export default function ImageOcclusionFieldPanel({ occlusion, image, editable, o
                             : l(`${masks.length} maske · ${cardCount} kart`, `${masks.length} masks · ${cardCount} cards`)}
                     </Text>
                     <View style={styles.actions}>
-                        <ActionButton label={l('Maskeleri düzenle', 'Edit Masks')} onPress={() => setEditing(true)} styles={styles} primary
+                        <Button label={l('Maskeleri düzenle', 'Edit Masks')} onPress={() => setEditing(true)}
                             disabled={!ready || !editable} />
-                        <ActionButton label={l('Görseli değiştir', 'Change Picture')} onPress={() => pick('library')} styles={styles}
+                        <Button label={l('Görseli değiştir', 'Change Picture')} onPress={() => pick('library')} variant="secondary"
                             disabled={!editable || busy} />
                     </View>
                 </>
@@ -158,57 +162,29 @@ export default function ImageOcclusionFieldPanel({ occlusion, image, editable, o
     );
 }
 
-function ActionButton({ label, onPress, styles, primary, disabled }: {
-    label: string; onPress: () => void; styles: ReturnType<typeof createStyles>; primary?: boolean; disabled?: boolean;
-}) {
-    return (
-        <TouchableOpacity style={[styles.button, primary && styles.buttonPrimary, disabled && styles.buttonDisabled]}
-            onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }}>
-            <Text style={[styles.buttonText, primary && styles.buttonTextPrimary]}>{label}</Text>
-        </TouchableOpacity>
-    );
-}
-
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { marginBottom: Spacing.md, gap: Spacing.sm },
         empty: {
+            paddingVertical: Spacing.lg,
+            paddingHorizontal: Spacing.lg,
             borderWidth: 1,
             borderStyle: 'dashed',
             borderColor: colors.border,
-            borderRadius: BorderRadius.lg,
-            padding: Spacing.lg,
-            gap: Spacing.sm,
-            alignItems: 'center',
+            borderRadius: Radius.card,
             backgroundColor: colors.bgCard,
         },
-        emptyTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700', textAlign: 'center' },
-        emptyText: { color: colors.textSecondary, fontSize: FontSize.md, textAlign: 'center' },
         preview: {
             alignSelf: 'center',
             minHeight: 120,
             minWidth: 120,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: BorderRadius.sm,
+            borderRadius: Radius.control,
             overflow: 'hidden',
             backgroundColor: colors.bgInput,
         },
-        caption: { color: colors.textSecondary, fontSize: FontSize.sm, textAlign: 'center' },
+        caption: { ...Type.caption, color: colors.textSecondary, textAlign: 'center' },
         actions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, justifyContent: 'center' },
-        button: {
-            minHeight: 44,
-            paddingHorizontal: Spacing.lg,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.bgCard,
-        },
-        buttonPrimary: { backgroundColor: colors.accent, borderColor: colors.accent },
-        buttonDisabled: { opacity: 0.5 },
-        buttonText: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
-        buttonTextPrimary: { color: '#ffffff' },
     });
 }

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Modal, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from './AppText';
 import {
     RecordingPresets,
@@ -13,7 +13,7 @@ import {
     type RecordingOptions,
     type RecordingStatus,
 } from 'expo-audio';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { alert, confirmAsync } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { saveMediaBytes, saveMediaFromUri } from '../lib/mediaStore';
@@ -31,8 +31,11 @@ import {
     type RecorderPhase,
 } from '../lib/audioRecording';
 import { useI18n } from '../hooks/useI18n';
-import SwipeDismissSheet from './SwipeDismissSheet';
 import { PauseIcon, PlayIcon, RetakeIcon } from './editor/AttachmentIcons';
+import { Button } from './ui/Button';
+import { ProgressBar } from './ui/Feedback';
+import { AppSheet } from './ui/Sheet';
+import { Radius } from './ui/tokens';
 
 interface AudioRecordModalProps {
     visible: boolean;
@@ -41,10 +44,8 @@ interface AudioRecordModalProps {
     onSaved: (filename: string) => void;
 }
 
-interface RecorderSheetProps extends AudioRecordModalProps {
-    /** The modal has finished fading out, so the recorder can be let go. */
-    onDismissed: () => void;
-}
+/** The sheet slides away in 300 ms; the recorder is let go once it has gone. */
+const SHEET_GONE_MS = 600;
 
 /** A voice note: one microphone needs one channel, which halves the file of the stereo preset. */
 const VOICE_RECORDING: RecordingOptions = {
@@ -113,7 +114,7 @@ async function takeHasSound(uri: string): Promise<boolean> {
  * A take is never thrown away by a stray tap or swipe — closing with one asks first.
  *
  * Every field of the editor has its own attach button, so the recorder, its player and the
- * status polling they need exist only while this sheet is on screen and fading out.
+ * status polling they need exist only while this sheet is on screen and sliding away.
  */
 export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRecordModalProps) {
     const [mounted, setMounted] = useState(visible);
@@ -122,16 +123,14 @@ export default function AudioRecordModal({ visible, onClose, onSaved }: AudioRec
             setMounted(true);
             return;
         }
-        // iOS reports the end of the fade through onDismiss; the timer covers a dismissal it misses.
-        const timer = setTimeout(() => setMounted(false), Platform.OS === 'ios' ? 600 : 0);
+        const timer = setTimeout(() => setMounted(false), SHEET_GONE_MS);
         return () => clearTimeout(timer);
     }, [visible]);
-    const dismissed = useCallback(() => setMounted(false), []);
     if (!visible && !mounted) return null;
-    return <RecorderSheet visible={visible} onClose={onClose} onSaved={onSaved} onDismissed={dismissed} />;
+    return <RecorderSheet visible={visible} onClose={onClose} onSaved={onSaved} />;
 }
 
-function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheetProps) {
+function RecorderSheet({ visible, onClose, onSaved }: AudioRecordModalProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -478,7 +477,7 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
             accessibilityRole="button"
             accessibilityLabel={playback.playing ? l('Dinlemeyi durdur', 'Pause playback') : l('Kaydı dinle', 'Play the recording')}
         >
-            {playback.playing ? <PauseIcon color={colors.white} size={28} /> : <PlayIcon color={colors.white} size={30} />}
+            {playback.playing ? <PauseIcon color={colors.onAccent} size={28} /> : <PlayIcon color={colors.onAccent} size={30} />}
         </TouchableOpacity>
     ) : (
         <TouchableOpacity
@@ -492,98 +491,69 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
         </TouchableOpacity>
     );
 
+    // The Add button spins while a take is being finished or stored, and is faded only when there
+    // is nothing to add.
+    const adding = busy && phase !== 'idle';
+
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={requestClose} onDismiss={onDismissed}>
-            <View style={styles.overlay}>
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={requestClose}
-                    accessibilityLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
-                />
-                <SwipeDismissSheet active={visible} enabled={phase === 'idle' && !busy} style={styles.sheet} onDismiss={close}>
-                    <View style={styles.header}>
-                        <TouchableOpacity style={styles.headerButton} onPress={requestClose} disabled={busy} accessibilityRole="button">
-                            <Text style={styles.cancelText}>{l('Vazgeç', 'Cancel')}</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.title}>{l('Ses kaydet', 'Record Audio')}</Text>
-                        <TouchableOpacity
-                            style={[styles.headerButton, styles.headerButtonEnd]}
-                            onPress={add}
-                            disabled={!canAdd}
-                            accessibilityRole="button"
-                            accessibilityState={{ disabled: !canAdd }}
-                        >
-                            {busy && phase !== 'idle'
-                                ? <ActivityIndicator size="small" color={colors.accent} />
-                                : <Text style={[styles.addText, !canAdd && styles.addTextDisabled]}>{l('Ekle', 'Add')}</Text>}
-                        </TouchableOpacity>
-                    </View>
+        // A stray swipe never throws a take away: the sheet is pulled down only while it is empty,
+        // and × and the backdrop ask first when there is something recorded.
+        <AppSheet
+            visible={visible}
+            onClose={requestClose}
+            title={l('Ses kaydet', 'Record Audio')}
+            closeButton
+            swipeEnabled={phase === 'idle' && !busy}
+            backdropLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
+        >
+            <View style={styles.body}>
+                <Text style={styles.clock} accessibilityRole="timer">{formatRecordingTime(clockMs)}</Text>
+                <View style={styles.statusRow}>
+                    {phase === 'recording' ? <View style={styles.liveDot} /> : null}
+                    <Text style={styles.status}>{status}</Text>
+                </View>
 
-                    <Text style={styles.clock} accessibilityRole="timer">{formatRecordingTime(clockMs)}</Text>
-                    <View style={styles.statusRow}>
-                        {phase === 'recording' ? <View style={styles.liveDot} /> : null}
-                        <Text style={styles.status}>{status}</Text>
+                {/* The clock speaks the time; the bar and the meter are only for the eye. */}
+                {phase === 'recorded' ? (
+                    <View style={styles.track} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                        <ProgressBar value={progress} />
                     </View>
-
-                    {phase === 'recorded' ? (
-                        <View style={styles.track} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                            <View style={[styles.trackFill, { width: `${progress * 100}%` }]} />
-                        </View>
-                    ) : (
-                        <View style={styles.meter} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                            {levels.map((level, index) => (
-                                <View
-                                    key={index}
-                                    style={[
-                                        styles.meterBar,
-                                        { height: 4 + level * 32 },
-                                        phase === 'recording' && styles.meterBarLive,
-                                    ]}
-                                />
-                            ))}
-                        </View>
-                    )}
-
-                    <View style={styles.controls}>
-                        <View style={styles.sideSlot}>{secondary}</View>
-                        {primary}
-                        <View style={styles.sideSlot} />
+                ) : (
+                    <View style={styles.meter} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                        {levels.map((level, index) => (
+                            <View
+                                key={index}
+                                style={[
+                                    styles.meterBar,
+                                    { height: 4 + level * 32 },
+                                    phase === 'recording' && styles.meterBarLive,
+                                ]}
+                            />
+                        ))}
                     </View>
-                </SwipeDismissSheet>
+                )}
+
+                <View style={styles.controls}>
+                    <View style={styles.sideSlot}>{secondary}</View>
+                    {primary}
+                    <View style={styles.sideSlot} />
+                </View>
             </View>
-        </Modal>
+            <Button
+                label={l('Ekle', 'Add')}
+                onPress={add}
+                disabled={!adding && !canAdd}
+                busy={adding}
+                style={styles.add}
+            />
+        </AppSheet>
     );
 }
 
 function createStyles(colors: ColorScheme) {
-    const record = colors.btnAgain;
+    const record = colors.danger;
     return StyleSheet.create({
-        overlay: {
-            flex: 1,
-            backgroundColor: 'rgba(0, 0, 0, 0.35)',
-            justifyContent: 'flex-end',
-        },
-        sheet: {
-            backgroundColor: colors.bgCard,
-            borderTopLeftRadius: BorderRadius.lg,
-            borderTopRightRadius: BorderRadius.lg,
-            paddingHorizontal: Spacing.lg,
-            paddingTop: 40,
-            paddingBottom: 40,
-            alignItems: 'center',
-        },
-        header: {
-            alignSelf: 'stretch',
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: 44,
-        },
-        headerButton: { minWidth: 72, minHeight: 44, justifyContent: 'center' },
-        headerButtonEnd: { alignItems: 'flex-end' },
-        title: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
-        cancelText: { fontSize: FontSize.md, color: colors.textMuted, fontWeight: '600' },
-        addText: { fontSize: FontSize.md, color: colors.accent, fontWeight: '700' },
-        addTextDisabled: { color: colors.border },
+        body: { alignItems: 'center' },
         clock: {
             marginTop: Spacing.lg,
             fontSize: 44,
@@ -592,7 +562,7 @@ function createStyles(colors: ColorScheme) {
             fontVariant: ['tabular-nums'],
         },
         statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 20 },
-        liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: record },
+        liveDot: { width: 8, height: 8, borderRadius: Radius.pill, backgroundColor: record },
         status: { fontSize: FontSize.sm, color: colors.textMuted },
         meter: {
             height: 40,
@@ -603,17 +573,13 @@ function createStyles(colors: ColorScheme) {
         },
         meterBar: { width: 3, borderRadius: 2, backgroundColor: colors.border },
         meterBarLive: { backgroundColor: record },
+        // As tall as the meter it replaces, so the controls below stay where they were.
         track: {
             alignSelf: 'stretch',
-            height: 4,
-            marginTop: Spacing.lg + 18,
-            marginBottom: 18,
+            marginTop: Spacing.lg + 17,
+            marginBottom: 17,
             marginHorizontal: Spacing.xl,
-            borderRadius: 2,
-            backgroundColor: colors.borderLight,
-            overflow: 'hidden',
         },
-        trackFill: { height: 4, borderRadius: 2, backgroundColor: colors.accent },
         controls: {
             marginTop: Spacing.xl,
             flexDirection: 'row',
@@ -621,30 +587,32 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
         },
         sideSlot: { width: 96, alignItems: 'center' },
+        // The recorder's own round controls, drawn like the system's voice recorder.
         primaryButton: {
             width: 76,
             height: 76,
-            borderRadius: 38,
+            borderRadius: Radius.pill,
             borderWidth: 4,
             borderColor: colors.borderLight,
             alignItems: 'center',
             justifyContent: 'center',
         },
         playButton: { borderWidth: 0, backgroundColor: colors.accent },
-        recordDot: { width: 56, height: 56, borderRadius: 28, backgroundColor: record },
-        stopSquare: { width: 28, height: 28, borderRadius: 6, backgroundColor: record },
+        recordDot: { width: 56, height: 56, borderRadius: Radius.pill, backgroundColor: record },
+        stopSquare: { width: 28, height: 28, borderRadius: Radius.control, backgroundColor: record },
         secondaryButton: { alignItems: 'center', gap: 6 },
         secondaryCircle: {
             width: 48,
             height: 48,
-            borderRadius: 24,
+            borderRadius: Radius.pill,
             backgroundColor: colors.bgSecondary,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: colors.border,
             alignItems: 'center',
             justifyContent: 'center',
         },
-        resumeDot: { width: 18, height: 18, borderRadius: 9, backgroundColor: record },
+        resumeDot: { width: 18, height: 18, borderRadius: Radius.pill, backgroundColor: record },
         secondaryLabel: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '600' },
+        add: { marginTop: Spacing.xl },
     });
 }

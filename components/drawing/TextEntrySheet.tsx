@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { Text, TextInput } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { StyleSheet, TouchableOpacity, View, type TextStyle } from 'react-native';
+import { Text } from '../AppText';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { photoTextColors, type PhotoTextStyle } from '../../lib/photoEditor';
+import { Button } from '../ui/Button';
+import { TextField } from '../ui/Fields';
+import { AppSheet } from '../ui/Sheet';
+import { Radius } from '../ui/tokens';
 
 interface TextEntrySheetProps {
     visible: boolean;
@@ -31,7 +27,7 @@ interface TextEntrySheetProps {
     onClose: () => void;
 }
 
-/** A small card over the keyboard for writing or changing one label on the page. */
+/** A sheet over the keyboard for writing or changing one label on the page. */
 export function TextEntrySheet({
     visible,
     initialText,
@@ -55,6 +51,8 @@ export function TextEntrySheet({
     const submit = () => onSubmit(draft.trim());
     // White ink would vanish on the light field and samples; it is shown in the text colour.
     const readableInk = color === '#ffffff' ? colors.textPrimary : color;
+    // The field writes in the label's ink. `TextField` keeps its own look otherwise.
+    const inkStyle: TextStyle = { color: readableInk };
 
     const styleName = (style: PhotoTextStyle) => {
         switch (style) {
@@ -64,6 +62,7 @@ export function TextEntrySheet({
         }
     };
 
+    // The samples show the label as it will be drawn on the photo, so they keep the photo's colours.
     const styleSample = (style: PhotoTextStyle) => {
         if (style === 'badge') {
             const plate = photoTextColors({ id: 'sample', type: 'text', text: 'Aa', point: { x: 0.5, y: 0.5 }, fontSize: 16, bgStyle: 'badge', color, width: 1, opacity: 1 });
@@ -85,93 +84,65 @@ export function TextEntrySheet({
     };
 
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={onClose}
-                    accessibilityLabel={l('Metin yazmayı kapat', 'Close text entry')}
+        <AppSheet
+            visible={visible}
+            onClose={onClose}
+            title={editing ? l('Metni düzenle', 'Edit Text') : l('Metin ekle', 'Add Text')}
+            avoidKeyboard
+            backdropLabel={l('Metin yazmayı kapat', 'Close text entry')}
+        >
+            <View style={styles.body}>
+                <TextField
+                    value={draft}
+                    onChangeText={setDraft}
+                    autoFocus
+                    multiline
+                    placeholder={l('Yazın…', 'Type…')}
+                    style={[styles.input, inkStyle]}
+                    accessibilityLabel={l('Sayfaya eklenecek metin', 'Text to add to the page')}
                 />
-                <View style={styles.card}>
-                    <Text style={styles.title}>{editing ? l('Metni düzenle', 'Edit Text') : l('Metin ekle', 'Add Text')}</Text>
-                    <TextInput
-                        value={draft}
-                        onChangeText={setDraft}
-                        autoFocus
-                        multiline
-                        placeholder={l('Yazın…', 'Type…')}
-                        placeholderTextColor={colors.textMuted}
-                        style={[styles.input, { color: readableInk }]}
-                        accessibilityLabel={l('Sayfaya eklenecek metin', 'Text to add to the page')}
-                    />
-                    {labelStyles && labelStyles.length > 1 ? (
-                        <View style={styles.styleRow} accessibilityRole="radiogroup" accessibilityLabel={l('Metin stili', 'Text style')}>
-                            {labelStyles.map((style) => {
-                                const selected = style === labelStyle;
-                                return (
-                                    <TouchableOpacity
-                                        key={style}
-                                        style={[styles.styleChip, selected && styles.styleChipActive]}
-                                        onPress={() => onLabelStyleChange?.(style)}
-                                        accessibilityRole="radio"
-                                        accessibilityLabel={styleName(style)}
-                                        accessibilityState={{ selected }}
-                                        aria-checked={selected}
-                                    >
-                                        {styleSample(style)}
-                                        <Text style={[styles.styleLabel, selected && styles.styleLabelActive]}>{styleName(style)}</Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    ) : null}
-                    <View style={styles.actions}>
-                        <TouchableOpacity style={styles.secondary} onPress={onClose} accessibilityRole="button">
-                            <Text style={styles.secondaryText}>{l('Vazgeç', 'Cancel')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.primary, !draft.trim() && !editing && styles.primaryDisabled]}
-                            onPress={submit}
-                            disabled={!draft.trim() && !editing}
-                            accessibilityRole="button"
-                            accessibilityLabel={editing ? l('Metni kaydet', 'Save text') : l('Metni sayfaya ekle', 'Add text to the page')}
-                        >
-                            <Text style={styles.primaryText}>{editing ? l('Kaydet', 'Save') : l('Ekle', 'Add')}</Text>
-                        </TouchableOpacity>
+                {/* Samples of the result, which a segmented control cannot draw: the tiles stay. */}
+                {labelStyles && labelStyles.length > 1 ? (
+                    <View style={styles.styleRow} accessibilityRole="radiogroup" accessibilityLabel={l('Metin stili', 'Text style')}>
+                        {labelStyles.map((style) => {
+                            const selected = style === labelStyle;
+                            return (
+                                <TouchableOpacity
+                                    key={style}
+                                    style={[styles.styleTile, selected && styles.styleTileActive]}
+                                    onPress={() => onLabelStyleChange?.(style)}
+                                    accessibilityRole="radio"
+                                    accessibilityLabel={styleName(style)}
+                                    accessibilityState={{ selected }}
+                                    aria-checked={selected}
+                                >
+                                    {styleSample(style)}
+                                    <Text style={[styles.styleLabel, selected && styles.styleLabelActive]}>{styleName(style)}</Text>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
+                ) : null}
+                <View style={styles.actions}>
+                    <Button label={l('Vazgeç', 'Cancel')} variant="plain" onPress={onClose} />
+                    <Button
+                        label={editing ? l('Kaydet', 'Save') : l('Ekle', 'Add')}
+                        onPress={submit}
+                        disabled={!draft.trim() && !editing}
+                        accessibilityLabel={editing ? l('Metni kaydet', 'Save text') : l('Metni sayfaya ekle', 'Add text to the page')}
+                    />
                 </View>
-            </KeyboardAvoidingView>
-        </Modal>
+            </View>
+        </AppSheet>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.35)', justifyContent: 'flex-end', padding: Spacing.md },
-        card: {
-            backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
-            padding: Spacing.lg,
-            gap: Spacing.md,
-            marginBottom: Spacing.md,
-            ...Shadows.lg,
-        },
-        title: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        input: {
-            minHeight: 72,
-            maxHeight: 180,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgInput,
-            paddingHorizontal: Spacing.md,
-            paddingVertical: Spacing.sm,
-            fontSize: FontSize.lg,
-            fontWeight: '600',
-            textAlignVertical: 'top',
-        },
+        body: { gap: Spacing.md },
+        input: { minHeight: 72, maxHeight: 180 },
         styleRow: { flexDirection: 'row', gap: Spacing.sm },
-        styleChip: {
+        styleTile: {
             flex: 1,
             minHeight: 44,
             flexDirection: 'row',
@@ -179,27 +150,16 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
             gap: Spacing.xs,
             paddingHorizontal: Spacing.xs,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             borderWidth: 1,
             borderColor: colors.border,
-            backgroundColor: colors.bgInput,
+            backgroundColor: colors.bgCard,
         },
-        styleChipActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
+        styleTileActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
         styleLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
         styleLabelActive: { color: colors.accent },
         samplePlate: { borderRadius: 5, paddingHorizontal: 4, paddingVertical: 1 },
         sampleText: { fontSize: FontSize.md, fontWeight: '800' },
-        actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: Spacing.sm },
-        secondary: { minHeight: 44, paddingHorizontal: Spacing.lg, justifyContent: 'center' },
-        secondaryText: { color: colors.textSecondary, fontWeight: '600', fontSize: FontSize.md },
-        primary: {
-            minHeight: 44,
-            paddingHorizontal: Spacing.xl,
-            borderRadius: BorderRadius.full,
-            backgroundColor: colors.accent,
-            justifyContent: 'center',
-        },
-        primaryDisabled: { opacity: 0.4 },
-        primaryText: { color: colors.white, fontWeight: '700', fontSize: FontSize.md },
+        actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: Spacing.sm },
     });
 }

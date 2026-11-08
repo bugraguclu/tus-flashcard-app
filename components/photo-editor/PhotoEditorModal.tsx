@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     Modal,
     PanResponder,
     PixelRatio,
     Platform,
     StyleSheet,
-    TouchableOpacity,
     View,
     type LayoutChangeEvent,
 } from 'react-native';
@@ -55,11 +53,14 @@ import {
 } from '../../lib/photoEdit';
 import { PHOTO_LABEL_STYLES, PHOTO_PEN_INKS, photoCanvasScale, reframePhotoAnnotations } from '../../lib/photoMarkup';
 import { PHOTO_JPEG_QUALITY } from '../../lib/photoCompression';
+import ScreenHeader from '../ScreenHeader';
 import { DrawingToolbar } from '../drawing/DrawingToolbar';
 import { MoreToolsSheet } from '../drawing/MoreToolsSheet';
 import { SelectionFrame } from '../drawing/SelectionFrame';
 import { TextEntrySheet } from '../drawing/TextEntrySheet';
 import { RedoGlyph, UndoGlyph } from '../drawing/drawingGlyphs';
+import { Button, IconButton } from '../ui/Button';
+import { LoadingState } from '../ui/Feedback';
 import { EXPORT_MAX_DIMENSION, type ExportSurface } from './editorModel';
 import { AnnotationLayer, renderAnnotation } from './annotationRendering';
 import { rasterizeEditedPhotoWeb } from './webExport';
@@ -444,16 +445,9 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
     const untouched = isPhotoEditUntouched(edit);
 
     const historyButton = (label: string, enabled: boolean, onPress: () => void, Glyph: typeof UndoGlyph) => (
-        <TouchableOpacity
-            style={[styles.historyButton, !enabled && styles.disabled]}
-            onPress={onPress}
-            disabled={!enabled}
-            accessibilityRole="button"
-            accessibilityLabel={label}
-            accessibilityState={{ disabled: !enabled }}
-        >
+        <IconButton accessibilityLabel={label} onPress={onPress} disabled={!enabled}>
             <Glyph color={colors.textPrimary} size={22} />
-        </TouchableOpacity>
+        </IconButton>
     );
 
     const measurePanel = (panel: PhotoEditMode) => (event: LayoutChangeEvent) => {
@@ -576,42 +570,35 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
         <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={close}>
             {/* A modal is a root of its own, so the drawing gesture needs its own gesture root. */}
             <GestureHandlerRootView style={[styles.container, { paddingTop: insets.top }]}>
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        style={styles.headerSide}
-                        onPress={close}
-                        disabled={saving}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Fotoğraf düzenlemeyi iptal et', 'Cancel photo editing')}
-                    >
-                        <Text style={styles.cancelText}>{l('Vazgeç', 'Cancel')}</Text>
-                    </TouchableOpacity>
-                    {/* Undo, redo and back to the original sit in the top bar, between Cancel and Add. */}
-                    <View style={styles.headerTools}>
-                        {historyButton(l('Geri al', 'Undo'), history.canUndo, undo, UndoGlyph)}
-                        {historyButton(l('Yinele', 'Redo'), history.canRedo, redo, RedoGlyph)}
-                        {historyButton(l('Orijinale dön', 'Revert to original'), !untouched, revertAll, RevertGlyph)}
-                    </View>
-                    <View style={[styles.headerSide, styles.headerRight]}>
-                        <TouchableOpacity
-                            style={[styles.addButton, (!working || saving) && styles.addButtonDisabled]}
-                            onPress={save}
-                            disabled={!working || saving}
-                            accessibilityRole="button"
-                            accessibilityLabel={outputSize
-                                ? l(
-                                    `Fotoğrafı karta ekle, ${outputSize.width} × ${outputSize.height} piksel`,
-                                    `Add the photo to the card, ${outputSize.width} × ${outputSize.height} pixels`,
-                                )
-                                : l('Fotoğrafı karta ekle', 'Add the photo to the card')}
-                            accessibilityState={{ disabled: !working || saving }}
-                        >
-                            {saving
-                                ? <ActivityIndicator size="small" color={colors.white} />
-                                : <Text style={styles.addText}>{l('Ekle', 'Add')}</Text>}
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                {/* × asks before edits are thrown away; `close` does nothing while a save runs.
+                    Undo, redo and back to the original sit in the top bar, before Add. */}
+                <ScreenHeader
+                    leading="close"
+                    onBack={close}
+                    backAccessibilityLabel={l('Fotoğraf düzenlemeyi iptal et', 'Cancel photo editing')}
+                    title={l('Fotoğraf', 'Photo')}
+                    actions={(
+                        <>
+                            {historyButton(l('Geri al', 'Undo'), history.canUndo, undo, UndoGlyph)}
+                            {historyButton(l('Yinele', 'Redo'), history.canRedo, redo, RedoGlyph)}
+                            {historyButton(l('Orijinale dön', 'Revert to original'), !untouched, revertAll, RevertGlyph)}
+                            <Button
+                                label={l('Ekle', 'Add')}
+                                size="compact"
+                                onPress={save}
+                                disabled={!working}
+                                busy={saving}
+                                accessibilityLabel={outputSize
+                                    ? l(
+                                        `Fotoğrafı karta ekle, ${outputSize.width} × ${outputSize.height} piksel`,
+                                        `Add the photo to the card, ${outputSize.width} × ${outputSize.height} pixels`,
+                                    )
+                                    : l('Fotoğrafı karta ekle', 'Add the photo to the card')}
+                                style={styles.addButton}
+                            />
+                        </>
+                    )}
+                />
 
                 <View
                     style={styles.stage}
@@ -624,7 +611,7 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
                         : undefined}
                 >
                     {!working || !stage
-                        ? <ActivityIndicator color={colors.accent} />
+                        ? <LoadingState />
                         : mode === 'crop' ? cropStage : pageStage}
                 </View>
 
@@ -689,38 +676,7 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
-        header: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: 56,
-            paddingHorizontal: Spacing.md,
-            backgroundColor: colors.bgCard,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-        },
-        headerSide: { minWidth: 76, minHeight: 44, justifyContent: 'center' },
-        headerRight: { alignItems: 'flex-end' },
-        headerTools: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.xs },
-        cancelText: { fontSize: FontSize.lg, color: colors.accent, fontWeight: '600' },
-        addButton: {
-            minWidth: 64,
-            height: 36,
-            paddingHorizontal: Spacing.lg,
-            borderRadius: BorderRadius.full,
-            backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        addButtonDisabled: { opacity: 0.4 },
-        addText: { color: colors.white, fontWeight: '700', fontSize: FontSize.md },
-        historyButton: {
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        disabled: { opacity: 0.35 },
+        addButton: { marginLeft: Spacing.xs },
         stage: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
         panelArea: { backgroundColor: colors.bgCard },
         panelSlot: { position: 'absolute', left: 0, right: 0, top: 0 },
@@ -734,6 +690,8 @@ function createStyles(colors: ColorScheme) {
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: colors.border,
         },
+        // The ring and the badge are drawn over the photo, whatever its colours, like the crop
+        // frame, so they keep their own grey, white and black.
         eraserRing: {
             position: 'absolute',
             borderWidth: 1.5,

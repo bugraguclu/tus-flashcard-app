@@ -52,6 +52,9 @@ import {
     shareWhiteboardImage,
     useWhiteboardPageCapture,
 } from './whiteboardSave';
+import { EraserGlyph, PenGlyph, RedoGlyph, UndoGlyph } from './drawing/drawingGlyphs';
+import { CheckIcon, CloseIcon } from './ui/icons';
+import { DISABLED_OPACITY, Radius } from './ui/tokens';
 
 export interface WhiteboardHandle {
     /** Reset ink and history immediately (used when advancing to another card). */
@@ -104,6 +107,9 @@ const STROKE_COLORS = ['#e0393e', '#2f7fd6', '#2ea043', '#e8a33d', '#8e44ad', '#
 /** The pen a deck with no stored preference draws with, in either theme. */
 export const DEFAULT_WHITEBOARD_PEN_COLOR = STROKE_COLORS[0];
 const STROKE_WIDTHS = [2.5, 5, 9];
+/** The 38-point tool buttons and 32-point swatches reach the 44-point target through their slop. */
+const TOOL_SLOP = { top: 3, bottom: 3 };
+const SWATCH_SLOP = { top: 6, bottom: 6 };
 const MIN_POINT_DISTANCE_SQUARED = 2.25;
 const MAX_POINTS_PER_STROKE = 6000;
 
@@ -429,6 +435,7 @@ export function WhiteboardCanvas({ style }: WhiteboardCanvasProps) {
         canDraw,
     } = useWhiteboard();
 
+    // The eraser's trail is ink on the card, like the strokes it rubs out, so it keeps its own grey.
     const liveColor = tool === 'eraser' ? 'rgba(110,125,118,0.38)' : color;
     const liveWidth = tool === 'eraser' ? Math.max(28, strokeWidth * 7) : strokeWidth;
 
@@ -486,6 +493,10 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
 
     if (!active) return null;
 
+    const undoable = board.past.length > 0;
+    const redoable = board.future.length > 0;
+    const clearable = board.strokes.length > 0;
+
     return (
         <View style={[styles.toolbar, { top: toolbarTopOffset + Spacing.sm }, style]}>
             <View
@@ -496,25 +507,28 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
                     <TouchableOpacity
                         style={[styles.toolButton, tool === 'pen' && styles.toolButtonActive]}
                         onPress={() => { setTool('pen'); setPaletteOpen(false); }}
+                        hitSlop={TOOL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Kalem', 'Pen')}
                         accessibilityState={{ selected: tool === 'pen' }}
                     >
-                        <Text style={[styles.toolSymbol, tool === 'pen' && styles.toolSymbolActive]}>✎</Text>
+                        <PenGlyph color={tool === 'pen' ? colors.accent : colors.textPrimary} size={22} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.toolButton, tool === 'eraser' && styles.toolButtonActive]}
                         onPress={() => { setTool('eraser'); setPaletteOpen(false); }}
+                        hitSlop={TOOL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Silgi', 'Eraser')}
                         accessibilityState={{ selected: tool === 'eraser' }}
                     >
-                        <Text style={[styles.eraserSymbol, tool === 'eraser' && styles.toolSymbolActive]}>▱</Text>
+                        <EraserGlyph color={tool === 'eraser' ? colors.accent : colors.textPrimary} size={22} />
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={[styles.toolButton, paletteOpen && styles.toolButtonActive]}
                         onPress={() => { setTool('pen'); setPaletteOpen((open) => !open); }}
+                        hitSlop={TOOL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Renk paleti', 'Color palette')}
                         accessibilityState={{ expanded: paletteOpen }}
@@ -524,6 +538,7 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
                     <TouchableOpacity
                         style={styles.toolButton}
                         onPress={cycleStrokeWidth}
+                        hitSlop={TOOL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Çizgi kalınlığını değiştir', 'Change stroke width')}
                         accessibilityHint={l('İnce, orta ve kalın arasında geçiş yapar', 'Cycles through thin, medium, and thick')}
@@ -536,42 +551,50 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
 
                     <View style={styles.divider} />
                     <TouchableOpacity
-                        style={[styles.toolButton, board.past.length === 0 && styles.toolButtonDisabled]}
+                        style={[styles.toolButton, !undoable && styles.toolButtonDisabled]}
                         onPress={undo}
-                        disabled={board.past.length === 0}
+                        disabled={!undoable}
+                        hitSlop={TOOL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Geri al', 'Undo')}
+                        accessibilityState={{ disabled: !undoable }}
                     >
-                        <Text style={styles.historySymbol}>↶</Text>
+                        <UndoGlyph color={colors.textPrimary} size={22} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.toolButton, board.future.length === 0 && styles.toolButtonDisabled]}
+                        style={[styles.toolButton, !redoable && styles.toolButtonDisabled]}
                         onPress={redo}
-                        disabled={board.future.length === 0}
+                        disabled={!redoable}
+                        hitSlop={TOOL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Yinele', 'Redo')}
+                        accessibilityState={{ disabled: !redoable }}
                     >
-                        <Text style={styles.historySymbol}>↷</Text>
+                        <RedoGlyph color={colors.textPrimary} size={22} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.toolButton, board.strokes.length === 0 && styles.toolButtonDisabled]}
+                        style={[styles.toolButton, !clearable && styles.toolButtonDisabled]}
                         onPress={requestClear}
-                        disabled={board.strokes.length === 0}
+                        disabled={!clearable}
+                        hitSlop={TOOL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Yazı tahtasını temizle', 'Clear whiteboard')}
+                        accessibilityState={{ disabled: !clearable }}
                     >
-                        <Text style={styles.clearSymbol}>×</Text>
+                        <CloseIcon color={colors.danger} size={22} />
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.doneButton, saving && styles.toolButtonDisabled]}
                         onPress={onDone}
                         disabled={saving}
+                        hitSlop={TOOL_SLOP}
                         accessibilityRole="button"
                         accessibilityLabel={l('Çizimi bitir', 'Finish drawing')}
+                        accessibilityState={{ disabled: saving, busy: saving }}
                     >
                         {saving
-                            ? <ActivityIndicator size="small" color={colors.white} />
-                            : <Text style={styles.doneSymbol}>✓</Text>}
+                            ? <ActivityIndicator size="small" color={colors.onAccent} />
+                            : <CheckIcon color={colors.onAccent} size={22} />}
                     </TouchableOpacity>
                 </View>
 
@@ -586,6 +609,7 @@ export function WhiteboardToolbar({ toolbarTopOffset = 0, style }: WhiteboardToo
                                     color === swatchColor && styles.swatchButtonActive,
                                 ]}
                                 onPress={() => { pickColor(swatchColor); setTool('pen'); }}
+                                hitSlop={SWATCH_SLOP}
                                 accessibilityRole="button"
                                 accessibilityLabel={l(`Kalem rengi ${swatchColor}`, `Pen color ${swatchColor}`)}
                                 accessibilityState={{ selected: color === swatchColor }}
@@ -628,7 +652,7 @@ function createStyles(colors: ColorScheme) {
         toolButton: {
             width: 38,
             height: 38,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.bgInput,
@@ -639,32 +663,26 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.accentLight,
             borderColor: colors.accent,
         },
-        toolButtonDisabled: { opacity: 0.34 },
-        toolSymbol: { color: colors.textPrimary, fontSize: 24, lineHeight: 26, fontWeight: '600' },
-        eraserSymbol: { color: colors.textPrimary, fontSize: 22, lineHeight: 24, transform: [{ rotate: '-18deg' }] },
-        toolSymbolActive: { color: colors.accent },
-        historySymbol: { color: colors.textPrimary, fontSize: 25, lineHeight: 27 },
-        clearSymbol: { color: colors.btnAgain, fontSize: 26, lineHeight: 27, fontWeight: '400' },
+        toolButtonDisabled: { opacity: DISABLED_OPACITY },
         currentColor: {
             width: 20,
             height: 20,
-            borderRadius: 10,
+            borderRadius: Radius.pill,
             borderWidth: 2,
             borderColor: colors.bgCard,
             ...Shadows.sm,
         },
-        widthPreview: { width: 21, minHeight: 2.5, maxHeight: 9, borderRadius: BorderRadius.full },
+        widthPreview: { width: 21, minHeight: 2.5, maxHeight: 9, borderRadius: Radius.pill },
         divider: { width: 1, height: 26, backgroundColor: colors.border, marginHorizontal: 1 },
         doneButton: {
             width: 40,
             height: 38,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.accent,
             marginLeft: 1,
         },
-        doneSymbol: { color: colors.white, fontSize: 21, lineHeight: 23, fontWeight: '800' },
         palette: {
             flexDirection: 'row',
             alignItems: 'center',
@@ -679,13 +697,13 @@ function createStyles(colors: ColorScheme) {
         swatchButton: {
             width: 32,
             height: 32,
-            borderRadius: 16,
+            borderRadius: Radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 2,
             borderColor: colors.transparent,
         },
         swatchButtonActive: { borderColor: colors.accent },
-        swatch: { width: 22, height: 22, borderRadius: 11 },
+        swatch: { width: 22, height: 22, borderRadius: Radius.pill },
     });
 }
