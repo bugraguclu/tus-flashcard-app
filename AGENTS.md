@@ -43,6 +43,12 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   `lib/exportAnkiPackage.ts`, `lib/exportNotes.ts`.
 - Storage: `lib/db.ts` (SQLite, schema, migrations); `lib/storage.ts` re-exports `settingsStore`
   and `backupData`; backups `lib/backup*.ts`; database check `lib/maintenance*.ts`.
+- Optional accounts (sign-in screen ported from Yemek Takibi, `docs/HESAP_GIRIS.md`):
+  `lib/accountContract.ts` (rules, error codes and wire types shared with the server — keep it
+  import-free), `lib/accountApi.ts`, `lib/accountVault*.ts` (Keychain), `contexts/AccountContext.tsx`,
+  routes `sign-in` and `account`, pieces in `components/account/`, and the dependency-free Node
+  server in `server/account/`. Accounts never block local study and never receive collection data;
+  a build without `EXPO_PUBLIC_ACCOUNT_API_URL` hides them entirely.
 - Catalog and purchases: `lib/bkaCatalog.ts`, `lib/catalog*.ts`, `lib/catalogProtection.ts`,
   `lib/purchasesSdk.ts`. App-wide state: `contexts/AppContext.tsx`. Theme: `constants/theme.ts`.
   Copy: `lib/i18n.ts` keys and inline `l('Türkçe', 'English')`. Web-only code is in `*.web.ts`.

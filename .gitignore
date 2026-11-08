@@ -60,3 +60,7 @@ docs/expo-go-qr.png
 
 # Graphify code graph (built locally per checkout; see docs/CODE_GRAPH.md)
 graphify-out/
+
+# account server data (server/account)
+server/account/.data/
+server/account/.env

@@ -155,6 +155,9 @@ vi.mock('../components/HandTapGlyph', () => ({ default: () => null }));
 vi.mock('../components/AccessibilityGlyph', () => ({ default: () => null }));
 vi.mock('../components/ArchiveBoxGlyph', () => ({ default: () => null }));
 vi.mock('../components/InfoCircleGlyph', () => ({ default: () => null }));
+vi.mock('../components/HeaderBackIcon', () => ({ default: () => null }));
+// The account row reads the Keychain-backed account context, which has its own tests.
+vi.mock('../components/account/AccountSettingsRow', () => ({ default: () => null }));
 
 import SettingsScreen from '../components/settings/SettingsScreen';
 import { SettingsDraftProvider } from '../components/settings/SettingsDraft';

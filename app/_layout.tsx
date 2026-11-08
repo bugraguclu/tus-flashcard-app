@@ -36,6 +36,8 @@ import { Shadow } from '../components/ui/tokens';
 import { initWebDb, isPrimaryTab, isStorageReadError } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppContext';
+import { AccountProvider, useAccount } from '../contexts/AccountContext';
+import AccountFirstRunGate from '../components/account/AccountFirstRunGate';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { onStudyReminderOpened } from '../lib/studyNotifications';
 import { onStopwatchAlertOpened } from '../lib/stopwatchNotifications';
@@ -475,11 +477,14 @@ function ThemeGate({ children }: { children: React.ReactNode }) {
 /**
  * Holds route screens until startup finishes. Several screens read SQLite in state initializers,
  * and a fresh install has no tables until migrations complete. Purchased content is installed
- * later, from the store screen, so this gate never waits on the network.
+ * later, from the store screen, so this gate never waits on the network. It also waits for the
+ * stored account session (a local Keychain read, never the network), so the first screen is
+ * already the right one: the deck list, or the welcome sign-in on a new installation.
  */
 function StartupGate({ children }: { children: React.ReactNode }) {
     const { isLoading, startupError } = useStartupStatus();
-    const ready = !isLoading || Boolean(startupError);
+    const { ready: accountReady } = useAccount();
+    const ready = (!isLoading && accountReady) || Boolean(startupError);
     const splashReleased = useSplashHandoff(ready);
 
     if (ready) return children;
@@ -714,6 +719,25 @@ function AppStack() {
                     }}
                 />
                 <Stack.Screen
+                    name="sign-in"
+                    options={{
+                        // A form with a keyboard: a full-screen surface with its own close button,
+                        // so a pull on the scroll view can never discard what was typed.
+                        presentation: 'fullScreenModal',
+                        gestureEnabled: false,
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="account"
+                    options={{
+                        presentation: 'card',
+                        gestureEnabled: true,
+                        gestureDirection: 'horizontal',
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
                     name="note-types"
                     options={{
                         ...dismissibleSheetPresentation,
@@ -748,13 +772,17 @@ export default function RootLayout() {
             <AppErrorBoundary>
                 <WebDbGate>
                     <AppProvider>
-                        <PageTitleLocaleContext.Provider value={setTitleLocale}>
-                            <ThemeGate>
-                                <StartupGate>
-                                    <AppStack />
-                                </StartupGate>
-                            </ThemeGate>
-                        </PageTitleLocaleContext.Provider>
+                        <AccountProvider>
+                            <PageTitleLocaleContext.Provider value={setTitleLocale}>
+                                <ThemeGate>
+                                    <StartupGate>
+                                        <AccountFirstRunGate>
+                                            <AppStack />
+                                        </AccountFirstRunGate>
+                                    </StartupGate>
+                                </ThemeGate>
+                            </PageTitleLocaleContext.Provider>
+                        </AccountProvider>
                     </AppProvider>
                 </WebDbGate>
             </AppErrorBoundary>

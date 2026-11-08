@@ -38,7 +38,13 @@ The app is for medical exam education only. It does not diagnose, treat, monitor
 ## App Privacy yanıtları
 
 Mevcut ücretsiz erişim Apple veya RevenueCat’i çağırmadığı için uygulama tarafından satın alma geçmişi
-toplanmaz. `NSPrivacyCollectedDataTypes` boştur; kart içeriği ve çalışma geçmişi de cihazdan çıkmaz.
+toplanmaz. Kart içeriği ve çalışma geçmişi cihazdan çıkmaz.
+
+İsteğe bağlı hesap (`EXPO_PUBLIC_ACCOUNT_API_URL` ile derlenen sürümler) ad, e-posta adresi ve hesap
+kimliği toplar. App Privacy yanıtı: Contact Info › Name ve Email Address, Identifiers › User ID;
+üçü de kullanıcıya bağlı (Linked to You), amaç App Functionality, izleme yok. Aynı beyan
+`app.json` içindeki `NSPrivacyCollectedDataTypes` alanındadır. Uygulama içi hesap silme
+Ayarlar › Hesap › Hesabı sil yolundadır (Guideline 5.1.1(v)).
 Ödeme yolu yeniden etkinleştirilirse Purchase History beyanı, RevenueCat gizlilik bildirimi ve App Store
 Privacy cevapları aynı sürümde yeniden eklenmelidir.
 

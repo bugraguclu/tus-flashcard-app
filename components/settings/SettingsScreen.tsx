@@ -67,6 +67,8 @@ import { SegmentedControl } from '../ui/Choice';
 import { AppDialog } from '../ui/Dialog';
 import { EmptyState, LoadingState, Notice } from '../ui/Feedback';
 import { SearchField } from '../ui/Fields';
+import { PRIVACY_URL, SUPPORT_URL } from '../../lib/legalLinks';
+import AccountSettingsRow from '../account/AccountSettingsRow';
 import { ListRow, SelectRow, SwitchRow, ValueRow } from '../ui/Rows';
 import { Stepper } from '../ui/Stepper';
 import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, CheckIcon, ExternalLinkIcon, RefreshIcon } from '../ui/icons';
@@ -120,8 +122,6 @@ function CategoryGlyph({ id, color }: { id: SectionId; color: string }) {
     }
 }
 
-const PRIVACY_URL = 'https://bugraguclu.github.io/tus-flashcard-app/privacy.html';
-const SUPPORT_URL = 'https://bugraguclu.github.io/tus-flashcard-app/support.html';
 
 type GestureSettingKey = 'swipeLeftAction' | 'swipeRightAction' | 'swipeUpAction' | 'swipeDownAction';
 type SwipeDirection = 'left' | 'right' | 'up' | 'down';
@@ -1479,6 +1479,7 @@ export default function SettingsScreen({ section: activeSection }: { section: Se
                     renderActiveSection()
                 ) : (
                     <>
+                        <AccountSettingsRow />
                         <SearchField
                             value={search}
                             onChangeText={setSearch}

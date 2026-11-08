@@ -1,0 +1,24 @@
+# Depo kökünden:  docker compose -f server/account/compose.yaml up -d --build
+# HTTPS'i önündeki ters vekil (ör. Caddy) sağlar; bu servis yalnızca 127.0.0.1'de dinler.
+services:
+  account:
+    build:
+      context: ../..
+      dockerfile: server/account/Dockerfile
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      TRUST_PROXY: "1"
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - account-data:/data
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  account-data:
