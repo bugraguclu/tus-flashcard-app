@@ -22,7 +22,7 @@ import { useI18n } from '../hooks/useI18n';
 import PencilGlyph from './PencilGlyph';
 import { Button, IconButton } from './ui/Button';
 import { TextField } from './ui/Fields';
-import { BackIcon } from './ui/icons';
+import { BackIcon, RedoIcon, TrashIcon, UndoIcon } from './ui/icons';
 import { MenuItem } from './ui/Menu';
 import { AppSwitch } from './ui/Rows';
 import { HIT_TARGET, Radius } from './ui/tokens';
@@ -504,15 +504,19 @@ const rowStyles = StyleSheet.create({
     switchLabel: { flex: 1, fontSize: 15, lineHeight: 20 },
 });
 
-/** The menu's line icons, drawn at the 22 points a `MenuItem` gives its icon. */
+/**
+ * The menu's line icons, drawn at the 22 points a `MenuItem` gives its icon. Undo, redo and
+ * delete are the app's own glyphs, so they read the same here as everywhere else.
+ */
 function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
     if (name === 'edit' || name === 'stylus') return <PencilGlyph color={color} size={22} />;
+    if (name === 'undo') return <UndoIcon color={color} size={22} />;
+    if (name === 'redo') return <RedoIcon color={color} size={22} />;
+    if (name === 'delete') return <TrashIcon color={color} size={22} />;
 
     const common = { fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
     return (
         <Svg width={22} height={22} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            {name === 'undo' && <Path d="M9 7H4V2M4.5 7A8 8 0 1 1 6 18" {...common} />}
-            {name === 'redo' && <Path d="M15 7h5V2m-.5 5A8 8 0 1 0 18 18" {...common} />}
             {name === 'whiteboard' && (
                 <>
                     <Path d="M4 18c2-5 3-9 5-9 1.8 0-.2 7 2 7 1.4 0 1.8-4 3.2-4 1.2 0 .4 4 2 4 1.1 0 1.6-1 3.8-1" {...common} />
@@ -535,7 +539,6 @@ function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
                     <Path d="M9.5 9v6m5-6v6" {...common} />
                 </>
             )}
-            {name === 'delete' && <Path d="M5 7h14M9 7V4h6v3m-8 0 1 14h8l1-14M10 11v6m4-6v6" {...common} />}
             {name === 'mark' && <Path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" {...common} />}
             {name === 'reschedule' && (
                 <>
