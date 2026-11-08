@@ -134,7 +134,6 @@ export function LinkEditorModal({ visible, draft, onDraftChange, onConfirm, onCl
     draft: { url: string; label: string };
     onDraftChange: Dispatch<SetStateAction<{ url: string; label: string }>>;
     onConfirm: () => void;
-    colors: ColorScheme;
 }) {
     return (
         <AppDialog

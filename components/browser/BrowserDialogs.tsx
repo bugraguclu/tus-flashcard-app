@@ -157,7 +157,6 @@ export function ResetCardsModal({
 }
 
 interface DueDateModalProps {
-    colors: ColorScheme;
     dueInput: string;
     l: BrowserI18n['l'];
     runSelectionAction: (action: () => void) => void;
@@ -166,7 +165,6 @@ interface DueDateModalProps {
     setShowDueDialog: Dispatch<SetStateAction<boolean>>;
     settings: AppSettings;
     showDueDialog: boolean;
-    styles: BrowserStyles;
     t: BrowserI18n['t'];
 }
 

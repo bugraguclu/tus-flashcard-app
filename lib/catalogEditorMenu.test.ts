@@ -4,11 +4,14 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-native', () => ({
     Platform: { OS: 'ios', select: (spec: { ios?: unknown; default?: unknown }) => spec.ios ?? spec.default },
-    StyleSheet: { create: (styles: unknown) => styles, absoluteFill: {} },
+    StyleSheet: { create: (styles: unknown) => styles, absoluteFill: {}, hairlineWidth: 1 },
     Text: 'Text', View: 'View', Pressable: 'Pressable', TouchableOpacity: 'TouchableOpacity',
+    Modal: 'Modal', ScrollView: 'ScrollView',
 }));
+// The menu is the shared PopoverMenu, which hangs below the safe area and labels its backdrop.
+vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }) }));
+vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ t: (key: string) => key, l: (tr: string) => tr }) }));
 import { EditorOverflowMenu } from '../components/editor/EditorOverflowMenu';
-import type { EditorStyles } from '../components/editor/editorStyles';
 
 beforeAll(() => { (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true; });
 let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -19,10 +22,10 @@ function mount(contentReadOnly: boolean) {
     const preferences = vi.fn();
     act(() => {
         renderer = TestRenderer.create(React.createElement(EditorOverflowMenu, {
-            topInset: 0, isCatalog: true, isEditing: true, contentReadOnly,
+            visible: true, isCatalog: true, isEditing: true, contentReadOnly,
             preferences: { fontSize: 16, capitalizeSentences: true, toolbarVisible: true, toolbarScrollable: true, pasteClipboardImagesAsPng: false },
             onClearFields: clear, onUpdatePreferences: preferences, onDeleteNote: vi.fn(),
-            onOpenFontSize: vi.fn(), onClose: vi.fn(), styles: {} as EditorStyles,
+            onOpenFontSize: vi.fn(), onClose: vi.fn(),
             l: (tr: string) => tr,
         }));
     });

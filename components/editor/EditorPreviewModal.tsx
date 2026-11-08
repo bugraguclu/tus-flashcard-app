@@ -1,7 +1,6 @@
 import type { ComponentProps } from 'react';
 import { View } from 'react-native';
 import { Text } from '../AppText';
-import type { ColorScheme } from '../../constants/theme';
 import CardWebView from '../CardWebView';
 import { AppDialog } from '../ui/Dialog';
 import { SegmentedControl } from '../ui/Choice';
@@ -26,7 +25,6 @@ interface EditorPreviewModalProps extends EditorI18n {
     bodyHeight: number;
     audioPlaybackRate: number;
     onClose: () => void;
-    colors: ColorScheme;
     styles: EditorStyles;
 }
 

@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { Spacing, type ColorScheme } from '../../constants/theme';
+import { Spacing } from '../../constants/theme';
 import { CUSTOM_TOOLBAR_PRESETS, type CustomToolbarPreset, type LocalizedPresetText } from '../../lib/customToolbar';
 import { AppDialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
@@ -22,7 +22,6 @@ interface CustomToolbarEditorModalProps extends EditorI18n {
     onDelete: () => void;
     onSave: () => void;
     onClose: () => void;
-    colors: ColorScheme;
     styles: EditorStyles;
 }
 

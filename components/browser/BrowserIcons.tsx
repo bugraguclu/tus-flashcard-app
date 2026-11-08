@@ -22,21 +22,6 @@ function line(color: string) {
     return { stroke: color, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 }
 
-export function SearchIcon({ color }: { color: string }) {
-    return (
-        <Svg
-            width={18}
-            height={18}
-            viewBox="0 0 24 24"
-            fill="none"
-            {...DECORATIVE_SVG_PROPS}
-        >
-            <Circle cx={10.5} cy={10.5} r={6.5} stroke={color} strokeWidth={1.8} />
-            <Path d="M15.4 15.4 21 21" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-        </Svg>
-    );
-}
-
 /** Change deck. */
 export function SelectionDeckIcon({ color, size }: GlyphProps) {
     return (

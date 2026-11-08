@@ -78,7 +78,6 @@ interface SelectionMenuModalProps {
     setShowSelectionMenu: Dispatch<SetStateAction<boolean>>;
     settings: AppSettings;
     showSelectionMenu: boolean;
-    styles: BrowserStyles;
     t: BrowserI18n['t'];
     tableMode: BrowserTableMode;
 }
@@ -616,7 +615,6 @@ export function FlagPickerModal({
 }
 
 interface BrowserOptionsModalProps {
-    colors: ColorScheme;
     l: BrowserI18n['l'];
     setShowOptions: Dispatch<SetStateAction<boolean>>;
     showAnswerSnippet: boolean;

@@ -1,23 +1,11 @@
 import { StyleSheet, Platform } from 'react-native';
-import { Spacing, BorderRadius, FontSize, Shadows, type ColorScheme } from '../../constants/theme';
+import { Spacing, FontSize, Shadows, type ColorScheme } from '../../constants/theme';
 import { DISABLED_OPACITY, Radius, Type } from '../ui/tokens';
 
 /** Styles for the card browser, its rows, bars, menus and dialogs. */
 export function createBrowserStyles(colors: ColorScheme) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
-    screenHeader: {
-        minHeight: 56,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.sm,
-        backgroundColor: colors.bgCard,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.border,
-    },
-    screenTitle: { flex: 1, fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
-    headerSpacer: { width: 44 },
-    backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
     scopeToolbar: {
         minHeight: 68,
         flexDirection: 'row',
@@ -29,75 +17,15 @@ export function createBrowserStyles(colors: ColorScheme) {
     scopeBlock: { flex: 1, minWidth: 0 },
     scopeSelector: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 30, maxWidth: '100%' },
     scopeSelectorText: { flexShrink: 1, color: colors.accent, fontSize: FontSize.lg, fontWeight: '800' },
-    scopeSelectorCaret: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '800', marginTop: 2 },
     scopeCount: { color: colors.textMuted, fontSize: FontSize.xs, marginTop: 1 },
-    addCardBtn: {
-        flexShrink: 0,
-        backgroundColor: colors.accent,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: 8,
-        borderRadius: BorderRadius.sm,
-    },
-    addCardBtnText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.white },
-    moreButton: {
-        width: 40,
-        height: 40,
-        flexShrink: 0,
-        marginRight: -6,
-        borderRadius: BorderRadius.full,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    moreButtonText: { color: colors.textSecondary, fontSize: 28, lineHeight: 30, fontWeight: '700' },
+    addCardBtn: { flexShrink: 0 },
+    // The ⋮ keeps its dots where they were, a little into the gutter.
+    moreButton: { flexShrink: 0, marginRight: -Spacing.sm },
 
     searchContainer: { paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
-    searchField: {
-        height: 44,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingLeft: Spacing.md,
-        paddingRight: Spacing.xs,
-    },
-    searchIcon: {
-        width: 18,
-        height: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: Spacing.sm,
-    },
-    searchHelpButton: {
-        width: 36,
-        height: 36,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    searchHelpButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textMuted },
-    searchClearButton: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.bgInput,
-    },
+    searchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+    searchField: { flex: 1 },
     searchDraftHint: { marginHorizontal: 4, marginTop: 4, fontSize: FontSize.xs, color: colors.textMuted },
-    searchClearButtonText: { fontSize: 13, fontWeight: '700', color: colors.textMuted, lineHeight: 15 },
-    searchInput: {
-        flex: 1,
-        minWidth: 0,
-        height: '100%',
-        paddingTop: 0,
-        paddingBottom: 0,
-        paddingHorizontal: 0,
-        fontSize: FontSize.md,
-        color: colors.textPrimary,
-        includeFontPadding: false,
-        textAlignVertical: 'center',
-    },
 
     // flexGrow: 0 + centered content pin the chips to their natural size; otherwise the
     // row stretches into leftover space when the list below is short, inflating the chips.
@@ -106,11 +34,8 @@ export function createBrowserStyles(colors: ColorScheme) {
 
     list: { flex: 1 },
     listContent: { flexGrow: 1, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: 3 },
-    emptyState: { flex: 1, justifyContent: 'center', paddingVertical: 48, paddingHorizontal: Spacing.xl, alignItems: 'center', gap: Spacing.sm },
-    emptyTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700', textAlign: 'center' },
-    emptyText: { color: colors.textSecondary, fontSize: FontSize.sm, textAlign: 'center' },
-    pageLoader: { paddingVertical: Spacing.lg, alignItems: 'center', gap: Spacing.sm },
-    pageLoaderText: { color: colors.textSecondary, fontSize: FontSize.sm },
+    // Centred in the space the list leaves when it has nothing to show.
+    emptyState: { flex: 1 },
 
     cardItem: {
         backgroundColor: colors.bgCard,
