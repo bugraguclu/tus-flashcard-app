@@ -43,7 +43,8 @@ describe('non-destructive card generation', () => {
  it('keeps one card by default when every card of a note is empty', () => {
   const { note, cards } = noteOf(builtin(2), ['Front', 'Back']);
   saveNote({ ...note, fields: ['', ''] });
-  deleteAnkiCardsOnly(cards.map(c => c.id));
+  // The kept card is reported, so the screen can say why it is still there.
+  expect(deleteAnkiCardsOnly(cards.map(c => c.id))).toEqual({ deleted: [cards[1].id], kept: [cards[0].id] });
   expect(getCardsForNote(note.id).map(c => c.ord)).toEqual([0]);
   expect(getNote(note.id)?.fields).toEqual(['', '']);
  });

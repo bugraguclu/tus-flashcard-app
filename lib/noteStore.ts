@@ -745,28 +745,54 @@ export function findDuplicateNote(
  * deleteTusCardByCardId, which deletes the whole note. For orphaned cards found by
  * findEmptyCards(), where the note (and its other cards) may still be perfectly valid.
  */
-export function deleteAnkiCardOnly(cardId: number, options?: { preserveNotes?: boolean }): void {
-    deleteAnkiCardsOnly([cardId], options);
+export function deleteAnkiCardOnly(cardId: number, options?: { preserveNotes?: boolean }): CardOnlyDeletion {
+    return deleteAnkiCardsOnly([cardId], options);
+}
+
+export interface CardOnlyDeletion {
+    /** Cards removed, by id. */
+    deleted: number[];
+    /** Selected cards left in place: with Keep Notes, the first card of a note whose cards were all selected. */
+    kept: number[];
+}
+
+/**
+ * What `deleteAnkiCardsOnly` does with these cards, without doing it. A card that no longer
+ * exists is in neither list. Empty Cards marks the kept rows with it.
+ */
+export function planCardOnlyDeletion(cardIds: readonly number[], options: { preserveNotes?: boolean } = {}): CardOnlyDeletion {
+    const unique = [...new Set(cardIds)];
+    if (unique.length === 0) return { deleted: [], kept: [] };
+    const existing = getDB().getAllSync<{ id: number }>(
+        'SELECT id FROM anki_cards WHERE id IN (SELECT value FROM json_each(?)) ORDER BY id', JSON.stringify(unique),
+    ).map((row) => Number(row.id));
+    const selected = new Set(existing);
+    const kept: number[] = [];
+    if (options.preserveNotes !== false) {
+        const noteIds = new Set(existing.map(id => getAnkiCard(id)?.noteId).filter((id): id is number => id !== undefined));
+        for (const noteId of noteIds) {
+            const siblings = getCardsForNote(noteId).sort((a, b) => a.ord - b.ord || a.id - b.id);
+            if (siblings.length && siblings.every(c => selected.has(c.id))) {
+                selected.delete(siblings[0].id);
+                kept.push(siblings[0].id);
+            }
+        }
+    }
+    return { deleted: [...selected], kept };
 }
 
 /** Delete empty cards as one transaction so a failed bulk operation cannot partially apply. */
-export function deleteAnkiCardsOnly(cardIds: number[], options: { preserveNotes?: boolean } = {}): void {
-    if (cardIds.length === 0) return;
+export function deleteAnkiCardsOnly(cardIds: number[], options: { preserveNotes?: boolean } = {}): CardOnlyDeletion {
+    if (cardIds.length === 0) return { deleted: [], kept: [] };
     // Editing cloze fields can remove a generated sibling after the catalog is unlocked.
     for (const cardId of cardIds) assertCatalogCardMutable(cardId);
     const db = getDB();
     db.execSync('BEGIN TRANSACTION;');
     try {
-        const selected = new Set(cardIds);
-        if (options.preserveNotes !== false) {
-            const noteIds = new Set(cardIds.map(id => getAnkiCard(id)?.noteId).filter((id): id is number => id !== undefined));
-            for (const noteId of noteIds) {
-                const siblings = getCardsForNote(noteId).sort((a, b) => a.ord - b.ord || a.id - b.id);
-                if (siblings.length && siblings.every(c => selected.has(c.id))) selected.delete(siblings[0].id);
-            }
-        }
-        deleteCardRows([...selected]);
+        const outcome = planCardOnlyDeletion(cardIds, options);
+        deleteCardRows(outcome.deleted);
         db.execSync('COMMIT;');
+        return outcome;
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
