@@ -196,7 +196,9 @@ function LocalizedErrorFallback({
             // Nothing was stacked above the tabs.
         }
         try {
-            globalRouter.replace('/decks' as never);
+            // Pops the tabs back to their deck list; `replace` swapped the reviewer for a second
+            // one, which a back swipe then showed. With no deck list on the stack it replaces.
+            globalRouter.dismissTo('/decks' as never);
         } catch {
             // The navigator never mounted; clearing the boundary is all that is left.
         }
