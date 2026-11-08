@@ -1833,6 +1833,7 @@ export default function StudyScreen() {
     const handleUnburyDeck = useCallback(async () => {
         if (!emptyStateDeck) return;
         const kind = await chooseUnburyKind(getBuriedKindsForDeck(emptyStateDeck.id), l);
+        if (!kind) return;
         unburyDeck(emptyStateDeck.id, settings.dayRolloverHour, kind);
         invalidateCollection();
     }, [emptyStateDeck, settings.dayRolloverHour, invalidateCollection, l]);

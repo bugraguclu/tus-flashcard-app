@@ -115,7 +115,12 @@ export default function DeckOverviewScreen() {
         );
     }
 
+    // Cards the reviewer can deal now. The new part of `cards` stops at the queue's new-card window
+    // while the tiles above (and the reviewer's own header) count the whole backlog, so the button
+    // states the same total as the tiles.
     const totalReady = queue ? queue.cards.length : 0;
+    const totalDue = queue ? queue.stats.newCount + queue.stats.learningCount + queue.stats.reviewCount : 0;
+    const studyNowCount = Math.max(totalDue, totalReady);
 
     const unburyKind = (kind: UnburyKind) => {
         const count = unburyDeck(deck.id, settings.dayRolloverHour, kind);
@@ -125,7 +130,8 @@ export default function DeckOverviewScreen() {
     };
 
     const handleUnbury = async () => {
-        unburyKind(await chooseUnburyKind(getBuriedKindsForDeck(deck.id), l));
+        const kind = await chooseUnburyKind(getBuriedKindsForDeck(deck.id), l);
+        if (kind) unburyKind(kind);
     };
 
     const handleRebuild = () => {
@@ -259,7 +265,12 @@ export default function DeckOverviewScreen() {
                 )}
 
                 {buriedCount > 0 && (
-                    <TouchableOpacity style={styles.unburyBtn} onPress={() => { void handleUnbury(); }}>
+                    <TouchableOpacity
+                        style={styles.unburyBtn}
+                        onPress={() => { void handleUnbury(); }}
+                        accessibilityRole="button"
+                        accessibilityLabel={l(`${buriedCount} gömülü kartı şimdi aç`, `Unbury ${buriedCount} cards now`)}
+                    >
                         <Text style={styles.unburyText}>💤 {l(`${buriedCount} gömülü kartı şimdi aç`, `Unbury ${buriedCount} cards now`)}</Text>
                     </TouchableOpacity>
                 )}
@@ -274,7 +285,7 @@ export default function DeckOverviewScreen() {
                         {studyDisabled
                             ? l('Deste boş — yeniden oluşturun', 'Deck is empty — rebuild it')
                             : totalReady > 0
-                                ? l(`Şimdi çalış · ${totalReady} kart`, `Study Now · ${totalReady} ${totalReady === 1 ? 'card' : 'cards'}`)
+                                ? l(`Şimdi çalış · ${studyNowCount} kart`, `Study Now · ${studyNowCount} ${studyNowCount === 1 ? 'card' : 'cards'}`)
                                 : l('Çalışma ekranını aç', 'Open Study Screen')}
                     </Text>
                 </TouchableOpacity>
@@ -289,13 +300,23 @@ export default function DeckOverviewScreen() {
 
                 {deck.isFiltered && (
                     <View style={styles.filteredActions}>
-                        <TouchableOpacity style={styles.lifecycleBtn} onPress={handleRebuild}>
+                        <TouchableOpacity
+                            style={styles.lifecycleBtn}
+                            onPress={handleRebuild}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Yeniden oluştur', 'Rebuild')}
+                        >
                             <Text style={styles.lifecycleBtnText}>↻ {l('Yeniden oluştur', 'Rebuild')}</Text>
                         </TouchableOpacity>
+                        {/* Members waiting past the learn-ahead limit, or on a day-long step, are
+                            still held out of their home decks, so Empty stays available, as in
+                            Anki, until the deck has been emptied. */}
                         <TouchableOpacity
-                            style={[styles.lifecycleBtn, styles.lifecycleBtnDanger, totalReady === 0 && styles.buttonDisabled]}
+                            style={[styles.lifecycleBtn, styles.lifecycleBtnDanger, deck.filteredDeckEmpty && styles.buttonDisabled]}
                             onPress={handleEmpty}
-                            disabled={totalReady === 0}
+                            disabled={Boolean(deck.filteredDeckEmpty)}
+                            accessibilityRole="button"
+                            accessibilityState={{ disabled: Boolean(deck.filteredDeckEmpty) }}
                         >
                             <Text style={styles.lifecycleDangerText}>{l('Boşalt', 'Empty')}</Text>
                         </TouchableOpacity>
@@ -306,6 +327,8 @@ export default function DeckOverviewScreen() {
                     <TouchableOpacity
                         style={styles.secondaryBtn}
                         onPress={() => setFilterOptionsOpen(true)}
+                        accessibilityRole="button"
+                        accessibilityHint={l('Arama, limit, sıralama ve önizleme modu', 'Search, limit, order, and preview mode')}
                     >
                         <Text style={styles.secondaryText}>{l('Filtre seçenekleri', 'Filtered Deck Options')}</Text>
                         <Text style={styles.secondaryCaption}>{l('Arama, limit, sıralama ve önizleme modu', 'Search, limit, order, and preview mode')}</Text>
@@ -317,6 +340,8 @@ export default function DeckOverviewScreen() {
                         <TouchableOpacity
                             style={styles.secondaryBtn}
                             onPress={() => setCustomStudyOpen(true)}
+                            accessibilityRole="button"
+                            accessibilityHint={l('Limit artırın, unutulanları seçin veya ileriye çalışın', 'Increase limits, review forgotten cards, or study ahead')}
                         >
                             <Text style={styles.secondaryText}>{t('anki.customStudy')}</Text>
                             <Text style={styles.secondaryCaption}>{l('Limit artırın, unutulanları seçin veya ileriye çalışın', 'Increase limits, review forgotten cards, or study ahead')}</Text>
@@ -324,6 +349,8 @@ export default function DeckOverviewScreen() {
                         <TouchableOpacity
                             style={styles.secondaryBtn}
                             onPress={() => router.push(`/deck-options?deckId=${deck.id}` as any)}
+                            accessibilityRole="button"
+                            accessibilityHint={l('Limitler, sıralama, gömme ve ayar grubu', 'Limits, display order, burying, and preset')}
                         >
                             <Text style={styles.secondaryText}>{l('Deste seçenekleri', 'Deck Options')}</Text>
                             <Text style={styles.secondaryCaption}>{l('Limitler, sıralama, gömme ve ayar grubu', 'Limits, display order, burying, and preset')}</Text>
@@ -334,6 +361,8 @@ export default function DeckOverviewScreen() {
                 <TouchableOpacity
                     style={styles.secondaryBtn}
                     onPress={() => router.push(`/stats?deck=${encodeURIComponent(deck.name)}` as any)}
+                    accessibilityRole="button"
+                    accessibilityHint={l('İlerlemeyi ve tekrar yükünü görüntüleyin', 'View progress and review workload')}
                 >
                     <Text style={styles.secondaryText}>{l('Deste istatistikleri', 'Deck Statistics')}</Text>
                     <Text style={styles.secondaryCaption}>{l('İlerlemeyi ve tekrar yükünü görüntüleyin', 'View progress and review workload')}</Text>

@@ -63,6 +63,7 @@ export function DialogHost() {
 
     const isConfirm = request.kind === 'confirm';
     const isChoice = request.kind === 'choice';
+    const isOptions = request.kind === 'options';
     const close = () => setRequest(null);
     const accept = () => {
         close();
@@ -72,8 +73,12 @@ export function DialogHost() {
         close();
         request.onCancel?.();
     };
-    const dismiss = isChoice ? undefined : isConfirm ? cancel : accept;
-    const icon = request.destructive ? '!' : isConfirm ? '?' : 'i';
+    const pick = (index: number) => {
+        close();
+        request.onOption?.(index);
+    };
+    const dismiss = isChoice ? undefined : isConfirm || isOptions ? cancel : accept;
+    const icon = request.destructive ? '!' : isConfirm || isOptions ? '?' : 'i';
 
     // Alerts have a single button, so dismissing (Escape / back) must still run the
     // callback — e.g. a success alert that navigates back. Confirms treat dismiss as cancel.
@@ -114,7 +119,18 @@ export function DialogHost() {
                         <Text style={styles.message}>{request.message}</Text>
                     </ScrollView>
                     <View style={[styles.actions, request.stacked && styles.stackedActions]}>
-                        {(isConfirm || isChoice) && (
+                        {isOptions && (request.options ?? []).map((label, index) => (
+                            <Pressable
+                                key={label}
+                                ref={index === 0 ? acceptButtonRef : undefined}
+                                style={({ pressed }) => [styles.button, styles.stackedButton, styles.accept, pressed && styles.buttonPressed]}
+                                onPress={() => pick(index)}
+                                accessibilityRole="button"
+                            >
+                                <Text style={styles.acceptText}>{label}</Text>
+                            </Pressable>
+                        ))}
+                        {(isConfirm || isChoice || isOptions) && (
                             <Pressable
                                 ref={cancelButtonRef}
                                 style={({ pressed }) => [styles.button, request.stacked && styles.stackedButton, styles.cancel, pressed && styles.buttonPressed]}
@@ -124,19 +140,21 @@ export function DialogHost() {
                                 <Text style={styles.cancelText}>{request.cancelLabel ?? t('common.cancel')}</Text>
                             </Pressable>
                         )}
-                        <Pressable
-                            ref={acceptButtonRef}
-                            style={({ pressed }) => [
-                                styles.button,
-                                request.stacked && styles.stackedButton,
-                                request.destructive ? styles.destructive : styles.accept,
-                                pressed && styles.buttonPressed,
-                            ]}
-                            onPress={accept}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.acceptText}>{request.acceptLabel ?? t('common.ok')}</Text>
-                        </Pressable>
+                        {!isOptions && (
+                            <Pressable
+                                ref={acceptButtonRef}
+                                style={({ pressed }) => [
+                                    styles.button,
+                                    request.stacked && styles.stackedButton,
+                                    request.destructive ? styles.destructive : styles.accept,
+                                    pressed && styles.buttonPressed,
+                                ]}
+                                onPress={accept}
+                                accessibilityRole="button"
+                            >
+                                <Text style={styles.acceptText}>{request.acceptLabel ?? t('common.ok')}</Text>
+                            </Pressable>
+                        )}
                     </View>
                 </Pressable>
             </Pressable>

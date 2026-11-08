@@ -11,7 +11,7 @@ export interface ConfirmOptions {
 
 /** A dialog request handed to the web DialogHost (see components/DialogHost.tsx). */
 export interface DialogRequest {
-    kind: 'confirm' | 'alert' | 'choice';
+    kind: 'confirm' | 'alert' | 'choice' | 'options';
     title: string;
     message: string;
     destructive: boolean;
@@ -21,8 +21,12 @@ export interface DialogRequest {
     stacked?: boolean;
     /** Runs when the user confirms (confirm) or dismisses (alert). */
     onAccept?: () => void;
-    /** Runs when the user selects the alternate action in a choice dialog. */
+    /** Runs when the user selects the alternate action in a choice dialog, or cancels. */
     onCancel?: () => void;
+    /** An options dialog's actions, in order; Cancel follows them. */
+    options?: string[];
+    /** Runs with the index of the action chosen in an options dialog. */
+    onOption?: (index: number) => void;
 }
 
 type DialogHandler = (request: DialogRequest) => void;
@@ -109,6 +113,51 @@ export function confirmAsync(
                 { text: options.confirmLabel ?? translateActive('common.ok'), style: options.destructive ? 'destructive' : 'default', onPress: () => finish(true) },
             ],
             { cancelable: true, onDismiss: () => finish(false) },
+        );
+    });
+}
+
+/**
+ * Cross-platform dialog with several labelled actions and Cancel, like Anki's askUserDialog with
+ * a Cancel button. Resolves to the chosen action's index, or null for Cancel or a dismissal.
+ */
+export function chooseOption(title: string, message: string, options: readonly string[]): Promise<number | null> {
+    const safeMessage = userFacingErrorMessage(message);
+    return new Promise((resolve) => {
+        let settled = false;
+        const finish = (choice: number | null) => {
+            if (settled) return;
+            settled = true;
+            resolve(choice);
+        };
+
+        if (webHandler) {
+            webHandler({
+                kind: 'options',
+                title,
+                message: safeMessage,
+                destructive: false,
+                options: [...options],
+                stacked: true,
+                onOption: finish,
+                onCancel: () => finish(null),
+            });
+            return;
+        }
+
+        if (Platform.OS === 'web') {
+            finish(window.confirm(`${title}\n${safeMessage}\n\n${options[0] ?? ''}`) ? 0 : null);
+            return;
+        }
+
+        Alert.alert(
+            title,
+            safeMessage,
+            [
+                ...options.map((text, index) => ({ text, onPress: () => finish(index) })),
+                { text: translateActive('common.cancel'), style: 'cancel' as const, onPress: () => finish(null) },
+            ],
+            { cancelable: true, onDismiss: () => finish(null) },
         );
     });
 }
