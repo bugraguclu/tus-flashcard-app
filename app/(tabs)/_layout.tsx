@@ -27,7 +27,7 @@ import {
     useStudyPosition,
     useStudyScope,
 } from '../../contexts/AppContext';
-import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
+import { Sidebar, SIDEBAR_WIDTH, SidebarToggleIcon } from '../../components/Sidebar';
 import { useI18n } from '../../hooks/useI18n';
 import { consumeSchedulingRevision } from '../../lib/deferredInvalidation';
 
@@ -360,7 +360,7 @@ export default function TabLayout() {
                         accessibilityLabel={sidebarOpen ? t('tabs.closeMenu') : t('tabs.openMenu')}
                         accessibilityState={{ expanded: sidebarOpen }}
                     >
-                        <Text style={styles.hamburgerText}>☰</Text>
+                        <SidebarToggleIcon color={colors.textPrimary} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }} />
                     <View style={{ width: 48 }} />
@@ -451,14 +451,13 @@ function createStyles(colors: ColorScheme) {
         borderBottomColor: colors.border,
     },
     hamburger: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
-    hamburgerText: { fontSize: 22, color: colors.textPrimary },
     overlay: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: colors.scrimLight,
         zIndex: 99,
     },
 

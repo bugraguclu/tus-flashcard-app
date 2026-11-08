@@ -1,9 +1,12 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import DeckOverflowGlyph from '../DeckOverflowGlyph';
+import PencilGlyph from '../PencilGlyph';
+import { PlusIcon } from '../ui/icons';
 
 const FAB_SIZE = 56;
 export const DECK_ADD_MENU_LIST_INSET = FAB_SIZE + 2 * Spacing.md;
@@ -18,7 +21,7 @@ interface DeckAddMenuProps {
     onAddCard: () => void;
 }
 
-/** The deck list's add actions as labelled buttons above ＋, fading in over the stopwatch tools' dimmed backdrop. */
+/** The deck list's add actions as labelled buttons above ＋, fading in over the speed-dial's strong dimming. */
 export default function DeckAddMenu({
     bottom, visible, onOpen, onClose, onCreateFilteredDeck, onCreateDeck, onAddCard,
 }: DeckAddMenuProps) {
@@ -27,9 +30,24 @@ export default function DeckAddMenu({
     const insets = useSafeAreaInsets();
     const pendingAction = useRef<(() => void) | null>(null);
     const actions = [
-        { label: l('Filtrelenmiş deste oluştur', 'Create filtered deck'), glyph: '⧉', onPress: onCreateFilteredDeck },
-        { label: l('Deste oluştur', 'Create deck'), glyph: '▤', onPress: onCreateDeck },
-        { label: l('Kart ekle', 'Add note'), glyph: '✎', onPress: onAddCard },
+        {
+            key: 'filtered-deck',
+            label: l('Filtrelenmiş deste oluştur', 'Create filtered deck'),
+            icon: <DeckOverflowGlyph kind="filteredDeck" color={colors.onAccent} size={22} />,
+            onPress: onCreateFilteredDeck,
+        },
+        {
+            key: 'deck',
+            label: l('Deste oluştur', 'Create deck'),
+            icon: <DeckOverflowGlyph kind="deck" color={colors.onAccent} size={22} />,
+            onPress: onCreateDeck,
+        },
+        {
+            key: 'note',
+            label: l('Kart ekle', 'Add note'),
+            icon: <PencilGlyph color={colors.onAccent} size={22} />,
+            onPress: onAddCard,
+        },
     ];
 
     const selectAction = (action: () => void) => {
@@ -62,7 +80,7 @@ export default function DeckAddMenu({
             accessibilityLabel={expanded ? l('Ekleme menüsünü kapat', 'Close add menu') : l('Ekle', 'Add')}
             accessibilityState={{ expanded }}
         >
-            <Text style={[styles.fabIcon, { color: colors.white }]}>＋</Text>
+            <PlusIcon color={colors.onAccent} size={28} />
         </TouchableOpacity>
     );
 
@@ -78,7 +96,7 @@ export default function DeckAddMenu({
             >
                 <View style={styles.overlay}>
                     <Pressable
-                        style={[StyleSheet.absoluteFill, styles.backdrop]}
+                        style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrimStrong }]}
                         onPress={onClose}
                         accessibilityRole="button"
                         accessibilityLabel={l('Kapat', 'Close')}
@@ -90,19 +108,20 @@ export default function DeckAddMenu({
                         }]}
                         pointerEvents="box-none"
                     >
-                        {actions.map(({ label, glyph, onPress }) => (
+                        {actions.map(({ key, label, icon, onPress }) => (
                             <TouchableOpacity
-                                key={glyph}
+                                key={key}
                                 style={styles.actionRow}
                                 onPress={() => selectAction(onPress)}
                                 accessibilityRole="button"
                                 accessibilityLabel={label}
                             >
+                                {/* The labels sit directly on the strong dimming, as a speed dial's do. */}
                                 <View style={styles.actionLabel}>
-                                    <Text style={[styles.actionLabelText, { color: colors.white }]}>{label}</Text>
+                                    <Text style={[styles.actionLabelText, { color: colors.onAccent }]}>{label}</Text>
                                 </View>
                                 <View style={[styles.actionButton, { backgroundColor: colors.accent }]}>
-                                    <Text style={[styles.actionIcon, { color: colors.white }]}>{glyph}</Text>
+                                    {icon}
                                 </View>
                             </TouchableOpacity>
                         ))}
@@ -125,9 +144,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         ...Shadows.lg,
     },
-    fabIcon: { fontSize: 30, fontWeight: '400', lineHeight: 32 },
     overlay: { flex: 1, justifyContent: 'flex-end' },
-    backdrop: { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
     actions: {
         gap: Spacing.md,
         alignItems: 'flex-end',
@@ -141,8 +158,6 @@ const styles = StyleSheet.create({
     },
     actionLabel: {
         maxWidth: 240,
-        borderRadius: 4,
-        backgroundColor: 'rgba(65, 65, 65, 0.82)',
         paddingHorizontal: 10,
         paddingVertical: 7,
     },
@@ -155,5 +170,4 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         ...Shadows.md,
     },
-    actionIcon: { fontSize: 21, fontWeight: '700' },
 });

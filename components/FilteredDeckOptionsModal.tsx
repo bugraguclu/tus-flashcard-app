@@ -4,11 +4,9 @@ import {
     Modal,
     Platform,
     ScrollView,
-    Switch,
-    TouchableOpacity,
     View,
 } from 'react-native';
-import { Text, TextInput } from './AppText';
+import { Text } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Spacing, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
@@ -44,9 +42,16 @@ import { findInvalidFilteredSearch } from '../lib/searchValidation';
 import type { AppSettings } from '../lib/types';
 import DeckPickerModal from './DeckPickerModal';
 import InfoCircleGlyph from './InfoCircleGlyph';
-import SwipeDismissSheet from './SwipeDismissSheet';
+import ScreenHeader from './ScreenHeader';
 import FilteredDeckHelpSheet from './filtered-deck/FilteredDeckHelpSheet';
 import { createFilteredDeckOptionsStyles } from './filtered-deck/filteredDeckOptionsStyles';
+import { Button, HelpButton, IconButton } from './ui/Button';
+import { Card, Section } from './ui/Card';
+import { TextField } from './ui/Fields';
+import { SearchIcon } from './ui/icons';
+import { MenuItem } from './ui/Menu';
+import { SelectRow, SwitchRow, ValueRow } from './ui/Rows';
+import { AppSheet } from './ui/Sheet';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 
 interface FilteredDeckOptionsModalProps {
@@ -89,6 +94,8 @@ export default function FilteredDeckOptionsModal({
     const creating = deck === null;
     const [form, setForm] = useState<FilteredDeckFormValues>(() => newFilteredDeckForm('', ''));
     const [orderPicker, setOrderPicker] = useState<1 | 2 | null>(null);
+    // Which filter's order the picker sheet edits; kept while the sheet slides away.
+    const [orderTarget, setOrderTarget] = useState<1 | 2>(1);
     const [helpVisible, setHelpVisible] = useState(false);
     const [showDeckPicker, setShowDeckPicker] = useState(false);
     const [deckPickerTarget, setDeckPickerTarget] = useState<1 | 2>(1);
@@ -258,41 +265,113 @@ export default function FilteredDeckOptionsModal({
         );
     };
 
-    const selectedOrder = orderPicker === 2 ? form.order2 : form.order;
+    const openOrderPicker = (target: 1 | 2) => {
+        Keyboard.dismiss();
+        setOrderTarget(target);
+        setOrderPicker(target);
+    };
+    const selectedOrder = orderTarget === 2 ? form.order2 : form.order;
     const chooseOrder = (value: number) => {
-        update(orderPicker === 2 ? 'order2' : 'order', value);
+        update(orderTarget === 2 ? 'order2' : 'order', value);
         setOrderPicker(null);
     };
+
+    const openDeckPicker = (target: 1 | 2) => {
+        Keyboard.dismiss();
+        setDeckPickerTarget(target);
+        setShowDeckPicker(true);
+    };
+    const deckLabel = (name: string | null) => (name ? name.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks'));
 
     const allowEmptyLabel = creating
         ? l('Boş olsa bile oluştur', 'Build even if empty')
         : l('Boş olsa bile güncelle', 'Update even if empty');
 
+    // One filter's deck, search, limit and order rows; Card draws the hairlines between them.
+    const filterRows = (target: 1 | 2) => {
+        const second = target === 2;
+        const deckName = second ? selectedDeckName2 : selectedDeckName1;
+        const search = second ? form.search2 : form.search;
+        const order = second ? form.order2 : form.order;
+        return [
+            <SelectRow
+                key={`deck-${target}`}
+                label={l('Deste', 'Deck')}
+                value={deckLabel(deckName)}
+                onPress={() => openDeckPicker(target)}
+            />,
+            <View key={`search-${target}`} style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('common.search')}</Text>
+                <View style={styles.searchRow}>
+                    <TextField
+                        style={styles.searchInput}
+                        value={search}
+                        onChangeText={(value) => update(second ? 'search2' : 'search', value)}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        placeholder={second ? 'deck:"Deste" is:new' : 'deck:"Deste" is:due'}
+                        accessibilityLabel={second
+                            ? l('İkinci filtre araması', 'Second filter search')
+                            : l('Birinci filtre araması', 'First filter search')}
+                    />
+                    <IconButton
+                        onPress={() => showSearchInfo(search)}
+                        accessibilityLabel={second
+                            ? l('İkinci arama sorgusunu kontrol et', 'Check second search query')
+                            : l('Arama sorgusunu kontrol et', 'Check search query')}
+                    >
+                        <SearchIcon color={colors.accent} size={22} />
+                    </IconButton>
+                </View>
+            </View>,
+            <ValueRow
+                key={`limit-${target}`}
+                label={l('Kart limiti', 'Card limit')}
+                summary={second
+                    ? l('İkinci gruptan alınacak en fazla kart sayısı', 'Maximum cards from the second group')
+                    : l('Desteye alınacak en fazla kart sayısı', 'Maximum cards to gather into this deck')}
+            >
+                <TextField
+                    style={styles.numberInput}
+                    value={second ? form.limit2 : form.limit}
+                    onChangeText={(value) => update(second ? 'limit2' : 'limit', value.replace(/\D/g, '').slice(0, 5))}
+                    keyboardType="number-pad"
+                    inputMode="numeric"
+                    maxLength={5}
+                    textAlign="center"
+                    accessibilityLabel={second
+                        ? l('İkinci filtre kart limiti', 'Second filter card limit')
+                        : l('Birinci filtre kart limiti', 'First filter card limit')}
+                />
+            </ValueRow>,
+            <SelectRow
+                key={`order-${target}`}
+                label={l('Kartların seçilme sırası', 'Cards selected by')}
+                value={filteredOrderLabel(locale, order)}
+                onPress={() => openOrderPicker(target)}
+            />,
+        ];
+    };
+
     return (
         <Modal visible={visible} animationType="slide" onRequestClose={close} onDismiss={reportCreated}>
-            <View style={[styles.screen, { paddingTop: insets.top, paddingBottom: insets.bottom }]} accessibilityViewIsModal>
-                <View style={styles.toolbar}>
-                    <TouchableOpacity style={styles.iconButton} onPress={close} accessibilityRole="button" accessibilityLabel={t('common.close')}>
-                        <Text style={styles.closeIcon}>×</Text>
-                    </TouchableOpacity>
-                    <View style={styles.toolbarCopy}>
-                        <Text style={styles.toolbarTitle}>
-                            {creating ? l('Filtrelenmiş deste oluştur', 'Create Filtered Deck') : l('Filtre seçenekleri', 'Filtered Deck Options')}
-                        </Text>
-                        <Text style={styles.toolbarSubtitle} numberOfLines={1}>{getDeckDisplayName(creating ? form.name : deck.name)}</Text>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.iconButton}
-                        onPress={() => {
-                            Keyboard.dismiss();
-                            setHelpVisible(true);
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Filtrelenmiş deste yardımı', 'Filtered deck help')}
-                    >
-                        <View style={styles.helpCircle}><Text style={styles.helpIcon}>?</Text></View>
-                    </TouchableOpacity>
-                </View>
+            <View style={[styles.screen, { paddingTop: insets.top }]} accessibilityViewIsModal>
+                <ScreenHeader
+                    leading="close"
+                    backAccessibilityLabel={t('common.close')}
+                    onBack={close}
+                    title={creating ? l('Filtrelenmiş deste oluştur', 'Create Filtered Deck') : l('Filtre seçenekleri', 'Filtered Deck Options')}
+                    subtitle={getDeckDisplayName(creating ? form.name : deck.name)}
+                    actions={(
+                        <HelpButton
+                            accessibilityLabel={l('Filtrelenmiş deste yardımı', 'Filtered deck help')}
+                            onPress={() => {
+                                Keyboard.dismiss();
+                                setHelpVisible(true);
+                            }}
+                        />
+                    )}
+                />
 
                 <ScrollView
                     style={styles.scroll}
@@ -302,319 +381,106 @@ export default function FilteredDeckOptionsModal({
                     automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
                     showsVerticalScrollIndicator={false}
                 >
-                    <Text style={[styles.sectionHeader, styles.sectionHeaderFirst]}>{l('Deste adı', 'Deck name')}</Text>
-                    <View style={styles.card}>
-                        <View style={styles.cardField}>
-                            <TextInput
-                                style={styles.input}
+                    <Section label={l('Deste adı', 'Deck name')}>
+                        <View style={styles.fieldRow}>
+                            <TextField
                                 value={form.name}
                                 onChangeText={(value) => update('name', value)}
                                 placeholder={l('Deste adı girin', 'Enter deck name')}
-                                placeholderTextColor={colors.textMuted}
                                 accessibilityLabel={l('Deste adı', 'Deck name')}
                             />
                         </View>
-                    </View>
+                    </Section>
 
-                    <Text style={styles.sectionHeader}>{l('1. Filtre', 'Filter 1')}</Text>
-                    <View style={styles.card}>
-                        <TouchableOpacity
-                            style={styles.pickerButton}
-                            onPress={() => {
-                                Keyboard.dismiss();
-                                setDeckPickerTarget(1);
-                                setShowDeckPicker(true);
-                            }}
-                            accessibilityRole="button"
-                            accessibilityLabel={`${l('Deste', 'Deck')}: ${selectedDeckName1 ? selectedDeckName1.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}`}
-                        >
-                            <View style={styles.pickerLabelWrap}>
-                                <Text style={styles.pickerLabel}>{l('Deste', 'Deck')}</Text>
-                                <Text style={styles.pickerValue} numberOfLines={1}>
-                                    {selectedDeckName1 ? selectedDeckName1.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}
-                                </Text>
-                            </View>
-                            <Text style={styles.pickerChevron}>⌄</Text>
-                        </TouchableOpacity>
+                    <Section label={l('1. Filtre', 'Filter 1')}>
+                        {filterRows(1)}
+                    </Section>
 
-                        <View style={styles.divider} />
+                    <Section label={l('2. Filtre', 'Filter 2')}>
+                        <SwitchRow
+                            title={l('İkinci filtreyi etkinleştir', 'Enable second filter')}
+                            summary={l('Farklı arama ve sıralama ile ikinci bir grup ekleyin', 'Combine a second group with separate query and order')}
+                            value={form.secondEnabled}
+                            onValueChange={(value) => update('secondEnabled', value)}
+                        />
+                        {form.secondEnabled ? filterRows(2) : null}
+                    </Section>
 
-                        <View style={styles.cardField}>
-                            <Text style={styles.fieldLabel}>{t('common.search')}</Text>
-                            <View style={styles.searchRow}>
-                                <TextInput
-                                    style={[styles.input, styles.searchInput]}
-                                    value={form.search}
-                                    onChangeText={(value) => update('search', value)}
+                    <Section label={l('Seçenekler', 'Options')}>
+                        <SwitchRow
+                            title={l('Kartları yeniden zamanla', 'Reschedule cards')}
+                            summary={form.reschedule
+                                ? l('Yanıtlar kartların normal programını günceller.', 'Answers update the cards’ normal schedule.')
+                                : l('Önizleme modu; mevcut zamanlama değişmez.', 'Preview mode; existing scheduling is unchanged.')}
+                            value={form.reschedule}
+                            onValueChange={(value) => update('reschedule', value)}
+                        />
+                        {!form.reschedule ? (
+                            <View style={styles.fieldRow}>
+                                <Text style={styles.fieldLabel}>{l('Önizleme gecikmeleri (saniye)', 'Preview delays (seconds)')}</Text>
+                                <TextField
+                                    value={form.previewDelays}
+                                    onChangeText={(value) => update('previewDelays', value)}
+                                    placeholder="60 600 0"
                                     autoCapitalize="none"
                                     autoCorrect={false}
-                                    placeholder='deck:"Deste" is:due'
-                                    placeholderTextColor={colors.textMuted}
-                                    accessibilityLabel={l('Birinci filtre araması', 'First filter search')}
+                                    accessibilityLabel={l('Önizleme gecikmeleri (saniye)', 'Preview delays (seconds)')}
                                 />
-                                <TouchableOpacity
-                                    style={styles.searchInfoButton}
-                                    onPress={() => showSearchInfo(form.search)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Arama sorgusunu kontrol et', 'Check search query')}
-                                >
-                                    <Text style={styles.searchInfoText}>⌕</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        <View style={styles.divider} />
-
-                        <View style={styles.numberRow}>
-                            <View style={styles.numberLabelWrap}>
-                                <Text style={styles.numberLabel}>{l('Kart limiti', 'Card limit')}</Text>
-                                <Text style={styles.numberSublabel}>
-                                    {l('Desteye alınacak en fazla kart sayısı', 'Maximum cards to gather into this deck')}
+                                <Text style={styles.fieldDescription}>
+                                    {l(
+                                        'Tekrar, Zor ve İyi için saniye cinsinden süreler (0 = kartı oturumdan çıkarır). Kolay kartı her zaman çıkarır. Örnek: 60 600 0',
+                                        'Delays in seconds for Again, Hard, and Good (0 = removes the card from the session). Easy always removes the card. Example: 60 600 0',
+                                    )}
                                 </Text>
                             </View>
-                            <TextInput
-                                style={styles.numberInput}
-                                value={form.limit}
-                                onChangeText={(value) => update('limit', value.replace(/\D/g, '').slice(0, 5))}
-                                keyboardType="number-pad"
-                                inputMode="numeric"
-                                maxLength={5}
-                                accessibilityLabel={l('Birinci filtre kart limiti', 'First filter card limit')}
-                            />
-                        </View>
+                        ) : null}
+                        <SwitchRow
+                            title={allowEmptyLabel}
+                            summary={l('Hiçbir kart eşleşmese de deste ve kuralları korunur.', 'Keep the deck and its rules even when no cards match.')}
+                            value={form.allowEmpty}
+                            onValueChange={(value) => update('allowEmpty', value)}
+                        />
+                    </Section>
 
-                        <View style={styles.divider} />
-
-                        <TouchableOpacity
-                            style={styles.pickerButton}
-                            onPress={() => setOrderPicker(1)}
-                            accessibilityRole="button"
-                            accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, form.order)}`}
-                        >
-                            <View style={styles.pickerLabelWrap}>
-                                <Text style={styles.pickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                                <Text style={styles.pickerValue}>{filteredOrderLabel(locale, form.order)}</Text>
-                            </View>
-                            <Text style={styles.pickerChevron}>⌄</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <Text style={styles.sectionHeader}>{l('2. Filtre', 'Filter 2')}</Text>
-                    <View style={styles.card}>
-                        <View style={styles.toggleRow}>
-                            <View style={styles.toggleCopy}>
-                                <Text style={styles.toggleTitle}>{l('İkinci filtreyi etkinleştir', 'Enable second filter')}</Text>
-                                <Text style={styles.toggleSubtitle}>
-                                    {l('Farklı arama ve sıralama ile ikinci bir grup ekleyin', 'Combine a second group with separate query and order')}
-                                </Text>
-                            </View>
-                            <Switch
-                                value={form.secondEnabled}
-                                onValueChange={(value) => update('secondEnabled', value)}
-                                trackColor={{ false: colors.border, true: colors.accent }}
-                                thumbColor={colors.white}
-                                accessibilityLabel={l('İkinci filtreyi etkinleştir', 'Enable second filter')}
-                            />
-                        </View>
-
-                        {form.secondEnabled && (
-                            <>
-                                <View style={styles.divider} />
-
-                                <TouchableOpacity
-                                    style={styles.pickerButton}
-                                    onPress={() => {
-                                        Keyboard.dismiss();
-                                        setDeckPickerTarget(2);
-                                        setShowDeckPicker(true);
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`${l('Deste', 'Deck')}: ${selectedDeckName2 ? selectedDeckName2.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}`}
-                                >
-                                    <View style={styles.pickerLabelWrap}>
-                                        <Text style={styles.pickerLabel}>{l('Deste', 'Deck')}</Text>
-                                        <Text style={styles.pickerValue} numberOfLines={1}>
-                                            {selectedDeckName2 ? selectedDeckName2.replaceAll('::', ' › ') : l('Tüm desteler', 'All decks')}
-                                        </Text>
-                                    </View>
-                                    <Text style={styles.pickerChevron}>⌄</Text>
-                                </TouchableOpacity>
-
-                                <View style={styles.divider} />
-
-                                <View style={styles.cardField}>
-                                    <Text style={styles.fieldLabel}>{t('common.search')}</Text>
-                                    <View style={styles.searchRow}>
-                                        <TextInput
-                                            style={[styles.input, styles.searchInput]}
-                                            value={form.search2}
-                                            onChangeText={(value) => update('search2', value)}
-                                            autoCapitalize="none"
-                                            autoCorrect={false}
-                                            placeholder='deck:"Deste" is:new'
-                                            placeholderTextColor={colors.textMuted}
-                                            accessibilityLabel={l('İkinci filtre araması', 'Second filter search')}
-                                        />
-                                        <TouchableOpacity
-                                            style={styles.searchInfoButton}
-                                            onPress={() => showSearchInfo(form.search2)}
-                                            accessibilityRole="button"
-                                            accessibilityLabel={l('İkinci arama sorgusunu kontrol et', 'Check second search query')}
-                                        >
-                                            <Text style={styles.searchInfoText}>⌕</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-
-                                <View style={styles.divider} />
-
-                                <View style={styles.numberRow}>
-                                    <View style={styles.numberLabelWrap}>
-                                        <Text style={styles.numberLabel}>{l('Kart limiti', 'Card limit')}</Text>
-                                        <Text style={styles.numberSublabel}>
-                                            {l('İkinci gruptan alınacak en fazla kart sayısı', 'Maximum cards from the second group')}
-                                        </Text>
-                                    </View>
-                                    <TextInput
-                                        style={styles.numberInput}
-                                        value={form.limit2}
-                                        onChangeText={(value) => update('limit2', value.replace(/\D/g, '').slice(0, 5))}
-                                        keyboardType="number-pad"
-                                        inputMode="numeric"
-                                        maxLength={5}
-                                        accessibilityLabel={l('İkinci filtre kart limiti', 'Second filter card limit')}
-                                    />
-                                </View>
-
-                                <View style={styles.divider} />
-
-                                <TouchableOpacity
-                                    style={styles.pickerButton}
-                                    onPress={() => setOrderPicker(2)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`${l('Kartların seçilme sırası', 'Cards selected by')}: ${filteredOrderLabel(locale, form.order2)}`}
-                                >
-                                    <View style={styles.pickerLabelWrap}>
-                                        <Text style={styles.pickerLabel}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                                        <Text style={styles.pickerValue}>{filteredOrderLabel(locale, form.order2)}</Text>
-                                    </View>
-                                    <Text style={styles.pickerChevron}>⌄</Text>
-                                </TouchableOpacity>
-                            </>
-                        )}
-                    </View>
-
-                    <Text style={styles.sectionHeader}>{l('Seçenekler', 'Options')}</Text>
-                    <View style={styles.card}>
-                        <View style={styles.toggleRow}>
-                            <View style={styles.toggleCopy}>
-                                <Text style={styles.toggleTitle}>{l('Kartları yeniden zamanla', 'Reschedule cards')}</Text>
-                                <Text style={styles.toggleSubtitle}>
-                                    {form.reschedule
-                                        ? l('Yanıtlar kartların normal programını günceller.', 'Answers update the cards’ normal schedule.')
-                                        : l('Önizleme modu; mevcut zamanlama değişmez.', 'Preview mode; existing scheduling is unchanged.')}
-                                </Text>
-                            </View>
-                            <Switch
-                                value={form.reschedule}
-                                onValueChange={(value) => update('reschedule', value)}
-                                trackColor={{ false: colors.border, true: colors.accent }}
-                                thumbColor={colors.white}
-                                accessibilityLabel={l('Kartları yeniden zamanla', 'Reschedule cards')}
-                            />
-                        </View>
-
-                        {!form.reschedule && (
-                            <>
-                                <View style={styles.divider} />
-                                <View style={styles.cardField}>
-                                    <Text style={styles.fieldLabel}>{l('Önizleme gecikmeleri (saniye)', 'Preview delays (seconds)')}</Text>
-                                    <TextInput
-                                        style={[styles.input, { marginTop: 4 }]}
-                                        value={form.previewDelays}
-                                        onChangeText={(value) => update('previewDelays', value)}
-                                        placeholder="60 600 0"
-                                        placeholderTextColor={colors.textMuted}
-                                        autoCapitalize="none"
-                                        autoCorrect={false}
-                                        accessibilityLabel={l('Önizleme gecikmeleri (saniye)', 'Preview delays (seconds)')}
-                                    />
-                                    <Text style={styles.fieldDescription}>
-                                        {l(
-                                            'Tekrar, Zor ve İyi için saniye cinsinden süreler (0 = kartı oturumdan çıkarır). Kolay kartı her zaman çıkarır. Örnek: 60 600 0',
-                                            'Delays in seconds for Again, Hard, and Good (0 = removes the card from the session). Easy always removes the card. Example: 60 600 0',
-                                        )}
-                                    </Text>
-                                </View>
-                            </>
-                        )}
-
-                        <View style={styles.divider} />
-
-                        <View style={styles.toggleRow}>
-                            <View style={styles.toggleCopy}>
-                                <Text style={styles.toggleTitle}>{allowEmptyLabel}</Text>
-                                <Text style={styles.toggleSubtitle}>
-                                    {l('Hiçbir kart eşleşmese de deste ve kuralları korunur.', 'Keep the deck and its rules even when no cards match.')}
-                                </Text>
-                            </View>
-                            <Switch
-                                value={form.allowEmpty}
-                                onValueChange={(value) => update('allowEmpty', value)}
-                                trackColor={{ false: colors.border, true: colors.accent }}
-                                thumbColor={colors.white}
-                                accessibilityLabel={allowEmptyLabel}
-                            />
-                        </View>
-                    </View>
-
-                    <TouchableOpacity
-                        style={styles.excludedButton}
+                    <Button
+                        label={l('Dahil edilemeyen kartları göster', 'Show any excluded cards')}
+                        variant="plain"
+                        tone="muted"
+                        icon={<InfoCircleGlyph color={colors.textSecondary} size={15} />}
                         onPress={showExcluded}
-                        accessibilityRole="button"
-                        activeOpacity={0.6}
-                    >
-                        <InfoCircleGlyph color={colors.textSecondary} size={15} />
-                        <Text style={styles.excludedText}>{l('Dahil edilemeyen kartları göster', 'Show any excluded cards')}</Text>
-                    </TouchableOpacity>
+                        style={styles.excludedButton}
+                    />
                 </ScrollView>
 
-                <View style={styles.footer}>
-                    <TouchableOpacity
-                        style={[styles.saveButton, saveDisabled && styles.disabled]}
+                <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.md }]}>
+                    <Button
+                        label={creating ? l('Oluştur', 'Build') : l('Kaydet ve yeniden oluştur', 'Save and Rebuild')}
                         onPress={saveAndBuild}
                         disabled={saveDisabled}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.saveText}>
-                            {creating ? l('Oluştur', 'Build') : l('Kaydet ve yeniden oluştur', 'Save and Rebuild')}
-                        </Text>
-                    </TouchableOpacity>
+                    />
                 </View>
 
-                {orderPicker !== null && (
-                    <View style={styles.overlayLayer}>
-                        <TouchableOpacity style={styles.overlayBackdrop} activeOpacity={1} onPress={() => setOrderPicker(null)} />
-                        <SwipeDismissSheet
-                            style={[styles.pickerCard, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}
-                            onDismiss={() => setOrderPicker(null)}
-                        >
-                            <Text style={styles.pickerTitle}>{l('Kartların seçilme sırası', 'Cards selected by')}</Text>
-                            <ScrollView showsVerticalScrollIndicator={false}>
-                                {filteredDeckOrderChoices(settings.fsrsEnabled === true).map((value) => (
-                                    <TouchableOpacity key={value} style={[styles.pickerOption, selectedOrder === value && styles.pickerOptionSelected]} onPress={() => chooseOrder(value)}>
-                                        <Text style={[styles.pickerOptionText, selectedOrder === value && styles.pickerOptionTextSelected]}>{filteredOrderLabel(locale, value)}</Text>
-                                        {selectedOrder === value && <Text style={styles.check}>✓</Text>}
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </SwipeDismissSheet>
-                    </View>
-                )}
+                <AppSheet
+                    visible={orderPicker !== null}
+                    onClose={() => setOrderPicker(null)}
+                    title={l('Kartların seçilme sırası', 'Cards selected by')}
+                    maxHeight="70%"
+                >
+                    <ScrollView style={styles.sheetList} showsVerticalScrollIndicator={false}>
+                        <Card divided>
+                            {filteredDeckOrderChoices(settings.fsrsEnabled === true).map((value) => (
+                                <MenuItem
+                                    key={value}
+                                    label={filteredOrderLabel(locale, value)}
+                                    checked={selectedOrder === value}
+                                    onPress={() => chooseOrder(value)}
+                                />
+                            ))}
+                        </Card>
+                    </ScrollView>
+                </AppSheet>
 
-                {helpVisible && (
-                    <FilteredDeckHelpSheet styles={styles} bottomInset={insets.bottom} onClose={() => setHelpVisible(false)} />
-                )}
+                <FilteredDeckHelpSheet visible={helpVisible} onClose={() => setHelpVisible(false)} />
 
                 {showDeckPicker && (
                     <DeckPickerModal

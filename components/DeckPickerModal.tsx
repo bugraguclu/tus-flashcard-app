@@ -10,13 +10,20 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Text, TextInput } from './AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
+import { Text } from './AppText';
+import { FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
 import { buildDeckTree } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';
 import { useI18n } from '../hooks/useI18n';
+import CardsGlyph from './CardsGlyph';
 import DisclosureChevron from './DisclosureChevron';
 import { userFacingErrorMessage } from '../lib/userFacingError';
+import { Button, CloseButton, IconButton } from './ui/Button';
+import { SelectedMark } from './ui/Choice';
+import { EmptyState, Notice } from './ui/Feedback';
+import { SearchField, TextField } from './ui/Fields';
+import { BackIcon, PlusIcon, SearchIcon } from './ui/icons';
+import { Radius, Type } from './ui/tokens';
 
 import {
     filterDeckTree,
@@ -175,6 +182,10 @@ export default function DeckPickerModal({
         }
     };
 
+    // Searching and naming a new deck are steps inside the picker: the leading arrow steps back
+    // out of them. On the list itself the picker closes with ×, as a dialog does.
+    const inStep = searching || creating;
+
     return (
         <Modal
             visible={visible}
@@ -184,96 +195,76 @@ export default function DeckPickerModal({
             onRequestClose={handleBack}
         >
             <KeyboardAvoidingView
-                style={styles.keyboardLayer}
+                style={[styles.layer, { backgroundColor: colors.scrim }]}
                 behavior={Platform.OS === 'ios' && (searching || creating) ? 'padding' : undefined}
             >
-                <Pressable style={styles.overlay} onPress={onClose}>
-                    <Pressable style={styles.card} onPress={() => {}} accessibilityViewIsModal>
-                    <View style={styles.toolbar}>
-                        <TouchableOpacity
-                            style={styles.toolbarButton}
-                            onPress={handleBack}
-                            accessibilityRole="button"
-                            accessibilityLabel={closeAccessibilityLabel}
-                        >
-                            <Text style={styles.backIcon}>←</Text>
-                        </TouchableOpacity>
+                <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel={closeAccessibilityLabel}
+                />
+                <View style={styles.card} accessibilityViewIsModal>
+                    <View style={styles.header}>
+                        {inStep ? (
+                            <IconButton accessibilityLabel={closeAccessibilityLabel} onPress={handleBack}>
+                                <BackIcon color={colors.accent} />
+                            </IconButton>
+                        ) : null}
 
                         {creating ? (
-                            <TextInput
-                                style={styles.searchInput}
+                            <TextField
+                                style={styles.headerField}
                                 value={newDeckName}
                                 onChangeText={(value) => {
                                     setNewDeckName(value);
                                     if (createError) setCreateError(null);
                                 }}
                                 placeholder={l('Yeni deste adı', 'New deck name')}
-                                placeholderTextColor="rgba(255,255,255,0.72)"
                                 autoFocus
                                 returnKeyType="done"
                                 onSubmitEditing={submitCreate}
                                 accessibilityLabel={l('Yeni deste adı', 'New deck name')}
                             />
                         ) : searching ? (
-                            <TextInput
-                                style={styles.searchInput}
+                            <SearchField
+                                style={styles.headerField}
                                 value={query}
                                 onChangeText={setQuery}
                                 placeholder={searchPlaceholder}
-                                placeholderTextColor="rgba(255,255,255,0.72)"
+                                clearLabel={l('Aramayı temizle', 'Clear search')}
                                 autoFocus
-                                autoCorrect={false}
-                                returnKeyType="search"
                                 accessibilityLabel={searchPlaceholder}
                             />
                         ) : (
-                            <Text style={styles.title} numberOfLines={1}>{title}</Text>
+                            <Text style={[Type.title, styles.title]} numberOfLines={1} accessibilityRole="header">{title}</Text>
                         )}
 
-                        {!searching && !creating && (
-                            <TouchableOpacity
-                                style={styles.toolbarButton}
-                                onPress={() => setSearching(true)}
-                                accessibilityRole="button"
-                                accessibilityLabel={searchAccessibilityLabel}
-                            >
-                                <View style={styles.searchGlyph}>
-                                    <View style={styles.searchGlyphCircle} />
-                                    <View style={styles.searchGlyphHandle} />
-                                </View>
-                            </TouchableOpacity>
+                        {!inStep && (
+                            <IconButton accessibilityLabel={searchAccessibilityLabel} onPress={() => setSearching(true)}>
+                                <SearchIcon color={colors.textSecondary} size={22} />
+                            </IconButton>
                         )}
                         {creating ? (
-                            <TouchableOpacity
-                                style={styles.createConfirmButton}
-                                onPress={submitCreate}
-                                accessibilityRole="button"
-                                accessibilityLabel={t('common.create')}
-                            >
-                                <Text style={styles.createConfirmText}>{t('common.create')}</Text>
-                            </TouchableOpacity>
+                            <Button label={t('common.create')} size="compact" onPress={submitCreate} />
                         ) : (
-                            <TouchableOpacity
-                                style={styles.toolbarButton}
-                                onPress={handleCreate}
-                                accessibilityRole="button"
-                                accessibilityLabel={createAccessibilityLabel}
-                            >
-                                <Text style={styles.plusIcon}>＋</Text>
-                            </TouchableOpacity>
+                            <IconButton accessibilityLabel={createAccessibilityLabel} onPress={handleCreate}>
+                                <PlusIcon color={colors.accent} />
+                            </IconButton>
                         )}
+                        {!inStep && <CloseButton accessibilityLabel={closeAccessibilityLabel} onPress={onClose} />}
                     </View>
 
                     {creating ? (
                         <View style={styles.createBody}>
-                            <Text style={styles.createTitle}>{l('Yeni deste oluştur', 'Create a new deck')}</Text>
-                            <Text style={styles.createDescription}>
+                            <Text style={[Type.title, { color: colors.textPrimary }]}>{l('Yeni deste oluştur', 'Create a new deck')}</Text>
+                            <Text style={[Type.body, styles.createDescription]}>
                                 {l(
                                     'Deste burada oluşturulur ve mevcut işleminiz için otomatik seçilir. Bu ekrandan ayrılmazsınız.',
                                     'The deck is created here and automatically selected for your current task. You will not leave this screen.',
                                 )}
                             </Text>
-                            {createError ? <Text style={styles.createError}>{createError}</Text> : null}
+                            {createError ? <Notice tone="danger">{createError}</Notice> : null}
                         </View>
                     ) : <FlatList
                         style={styles.scroll}
@@ -296,9 +287,11 @@ export default function DeckPickerModal({
                                 accessibilityRole="button"
                                 accessibilityState={{ selected: selectedDeckName === null }}
                             >
-                                <Text style={styles.allIcon}>▦</Text>
+                                <View style={styles.allIcon}>
+                                    <CardsGlyph color={colors.textMuted} size={20} />
+                                </View>
                                 <Text style={[styles.rowText, selectedDeckName === null && styles.rowTextActive]}>{allDecksLabel}</Text>
-                                {selectedDeckName === null && <Text style={styles.check}>✓</Text>}
+                                {selectedDeckName === null && <SelectedMark />}
                             </TouchableOpacity>
                         ) : null}
                         renderItem={({ item: { node, depth }, index }) => {
@@ -320,6 +313,8 @@ export default function DeckPickerModal({
                                         <TouchableOpacity
                                             style={styles.disclosureButton}
                                             onPress={() => toggleExpanded(node.deck.name)}
+                                            // The slop makes the 38-wide column a full target, into the row's inset.
+                                            hitSlop={{ left: 6 }}
                                             accessibilityRole="button"
                                             accessibilityState={{ expanded: isExpanded }}
                                         >
@@ -338,23 +333,18 @@ export default function DeckPickerModal({
                                         <Text style={[styles.rowText, active && styles.rowTextActive]} numberOfLines={1}>
                                             {getDeckDisplayName(node.deck.name)}
                                         </Text>
-                                        {active && <Text style={styles.check}>✓</Text>}
+                                        {active && <SelectedMark />}
                                     </TouchableOpacity>
                                 </View>
                             );
                         }}
-                        ListEmptyComponent={query.trim() ? (
-                            <View style={styles.emptyWrap}>
-                                <Text style={styles.emptyText}>{emptySearchLabel}</Text>
-                            </View>
-                        ) : null}
+                        ListEmptyComponent={query.trim() ? <EmptyState title={emptySearchLabel} /> : null}
                     />}
 
-                    <TouchableOpacity style={styles.cancelButton} onPress={onClose} accessibilityRole="button">
-                        <Text style={styles.cancelText}>{cancelLabel}</Text>
-                    </TouchableOpacity>
-                    </Pressable>
-                </Pressable>
+                    <View style={styles.footer}>
+                        <Button label={cancelLabel} variant="plain" onPress={onClose} />
+                    </View>
+                </View>
             </KeyboardAvoidingView>
         </Modal>
     );
@@ -362,13 +352,11 @@ export default function DeckPickerModal({
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        keyboardLayer: { flex: 1 },
-        overlay: {
+        layer: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
             padding: Spacing.xl,
-            backgroundColor: 'rgba(0,0,0,0.42)',
         },
         card: {
             width: '100%',
@@ -377,33 +365,23 @@ function createStyles(colors: ColorScheme) {
             maxHeight: 680,
             overflow: 'hidden',
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
+            borderRadius: Radius.card,
             ...Shadows.lg,
         },
-        toolbar: {
+        // A white header inside the card: the title, or the field of the step the picker is in.
+        header: {
             minHeight: 58,
             flexDirection: 'row',
             alignItems: 'center',
-            paddingHorizontal: Spacing.xs,
-            backgroundColor: colors.accent,
+            gap: Spacing.xs,
+            paddingLeft: Spacing.sm,
+            paddingRight: Spacing.xs,
+            paddingVertical: Spacing.xs,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.border,
         },
-        toolbarButton: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-        createConfirmButton: { minWidth: 72, height: 48, paddingHorizontal: Spacing.sm, alignItems: 'center', justifyContent: 'center' },
-        createConfirmText: { color: colors.white, fontSize: FontSize.sm, fontWeight: '800' },
-        backIcon: { color: colors.white, fontSize: 27, lineHeight: 29, fontWeight: '400' },
-        searchGlyph: { width: 24, height: 24, position: 'relative' },
-        searchGlyphCircle: { position: 'absolute', left: 2, top: 2, width: 15, height: 15, borderWidth: 2.2, borderColor: colors.white, borderRadius: 9 },
-        searchGlyphHandle: { position: 'absolute', left: 16, top: 16, width: 9, height: 2.2, borderRadius: 2, backgroundColor: colors.white, transform: [{ rotate: '45deg' }] },
-        plusIcon: { color: colors.white, fontSize: 28, lineHeight: 30, fontWeight: '300' },
-        title: { flex: 1, color: colors.white, fontSize: FontSize.xl, fontWeight: '800' },
-        searchInput: {
-            flex: 1,
-            minWidth: 0,
-            height: 44,
-            paddingHorizontal: Spacing.sm,
-            color: colors.white,
-            fontSize: FontSize.lg,
-        },
+        title: { flex: 1, paddingLeft: Spacing.sm, color: colors.textPrimary },
+        headerField: { flex: 1, minWidth: 0 },
         scroll: { flex: 1, backgroundColor: colors.bgCard },
         row: {
             minHeight: 54,
@@ -415,28 +393,22 @@ function createStyles(colors: ColorScheme) {
         },
         rowLast: { borderBottomWidth: 0 },
         rowActive: { backgroundColor: colors.accentLight },
-        allIcon: { width: 38, color: colors.textMuted, fontSize: 19, textAlign: 'center' },
+        allIcon: { width: 38, alignItems: 'center' },
         disclosureButton: { width: 38, height: 54, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
         disclosureSpacer: { width: 38 },
         rowMain: { flex: 1, minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         rowText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '600' },
         rowTextActive: { color: colors.accent, fontWeight: '800' },
-        check: { color: colors.accent, fontSize: 20, fontWeight: '900' },
-        emptyWrap: { minHeight: 180, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl },
-        emptyText: { color: colors.textMuted, fontSize: FontSize.md, fontWeight: '600', textAlign: 'center' },
-        createBody: { flex: 1, padding: Spacing.xl, backgroundColor: colors.bgCard },
-        createTitle: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: '800', marginBottom: Spacing.sm },
-        createDescription: { color: colors.textSecondary, fontSize: FontSize.md, lineHeight: 22 },
-        createError: { color: colors.btnAgain, fontSize: FontSize.sm, lineHeight: 20, marginTop: Spacing.lg, fontWeight: '700' },
-        cancelButton: {
+        createBody: { flex: 1, padding: Spacing.xl, gap: Spacing.sm, backgroundColor: colors.bgCard },
+        createDescription: { color: colors.textSecondary, lineHeight: 22, marginBottom: Spacing.sm },
+        footer: {
             minHeight: 54,
             alignItems: 'flex-end',
             justifyContent: 'center',
-            paddingHorizontal: Spacing.xl,
+            paddingHorizontal: Spacing.sm,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.borderLight,
             backgroundColor: colors.bgCard,
         },
-        cancelText: { color: colors.accent, fontSize: FontSize.md, fontWeight: '800' },
     });
 }

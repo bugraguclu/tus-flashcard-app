@@ -19,6 +19,11 @@ import CardsGlyph from './CardsGlyph';
 import StatsGlyph from './StatsGlyph';
 import GearGlyph from './GearGlyph';
 import CalendarGlyph from './CalendarGlyph';
+import DisclosureChevron from './DisclosureChevron';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { StopwatchIcon } from './stopwatch/StopwatchIcons';
+import { Button } from './ui/Button';
+import { HIT_TARGET } from './ui/tokens';
 
 export const SIDEBAR_WIDTH = 292;
 
@@ -55,7 +60,7 @@ function webTitle(text: string): Record<string, string> {
 
 function DeckFolderIcon({ color, root = false }: { color: string; root?: boolean }) {
     return (
-        <Svg width={18} height={18} viewBox="0 0 24 24">
+        <Svg width={18} height={18} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             <Path
                 d={root
                     ? 'M4 7.5h16v11H4zM7 4.5h7l2 3H7zM8 11h8M8 14.5h5'
@@ -70,29 +75,14 @@ function DeckFolderIcon({ color, root = false }: { color: string; root?: boolean
     );
 }
 
-function DeckChevron({ color, expanded }: { color: string; expanded: boolean }) {
+/** The drawer's toggle (☰), for the layouts that open the sidebar from a header button. */
+export function SidebarToggleIcon({ color, size = 24 }: { color: string; size?: number }) {
     return (
-        <Svg
-            width={14}
-            height={14}
-            viewBox="0 0 14 14"
-            style={expanded ? stylesForIcon.chevronExpanded : undefined}
-        >
-            <Path
-                d="M5 3.5 9 7l-4 3.5"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
+            <Path d="M4.5 7h15M4.5 12h15M4.5 17h15" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
         </Svg>
     );
 }
-
-const stylesForIcon = StyleSheet.create({
-    chevronExpanded: { transform: [{ rotate: '90deg' }] },
-});
 
 export function Sidebar(props: SidebarProps) {
     const { t, l, locale } = useI18n();
@@ -145,13 +135,16 @@ export function Sidebar(props: SidebarProps) {
                         <TouchableOpacity
                             style={styles.deckExpandBtn}
                             onPress={() => onToggleDeckExpand?.(deck.name)}
+                            // The row is 44 tall; the slop makes up the 32-wide column to a full target.
+                            hitSlop={{ left: 6, right: 6, top: 1, bottom: 1 }}
                             accessibilityRole="button"
                             accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
                             accessibilityState={{ expanded: isExpanded }}
                         >
-                            <DeckChevron
+                            <DisclosureChevron
                                 color={isExpanded || isSelected ? colors.accent : colors.textMuted}
                                 expanded={isExpanded}
+                                size={16}
                             />
                         </TouchableOpacity>
                     ) : (
@@ -171,7 +164,7 @@ export function Sidebar(props: SidebarProps) {
                             isSelected && styles.deckIconActive,
                         ]}>
                             <DeckFolderIcon
-                                color={isSelected ? colors.white : colors.accent}
+                                color={isSelected ? colors.onAccent : colors.accent}
                                 root={depth === 0}
                             />
                         </View>
@@ -256,11 +249,14 @@ export function Sidebar(props: SidebarProps) {
                                     onPress={() => onToggleExpand(subject.id)}
                                     accessibilityRole="button"
                                     accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
+                                    accessibilityState={{ expanded: isExpanded }}
                                     {...webTitle(isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics'))}
                                 >
-                                    <Text style={[styles.expandArrow, isExpanded && styles.expandArrowOpen]}>
-                                        {isExpanded ? '▾' : '▸'}
-                                    </Text>
+                                    <DisclosureChevron
+                                        color={isExpanded ? colors.accent : colors.textMuted}
+                                        expanded={isExpanded}
+                                        size={16}
+                                    />
                                 </TouchableOpacity>
                             </View>
 
@@ -299,36 +295,46 @@ export function Sidebar(props: SidebarProps) {
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                    style={styles.settingsBtn}
+                <Button
+                    label={l('Kronometre', 'Stopwatch')}
+                    variant="secondary"
+                    size="compact"
+                    icon={<StopwatchIcon color={colors.textSecondary} size={16} />}
                     onPress={() => navigate('/stopwatch')}
-                    {...webTitle(l('Kronometre', 'Stopwatch'))}
-                >
-                    <Text style={styles.settingsBtnText}>⏱️ {l('Kronometre', 'Stopwatch')}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
                     style={styles.settingsBtn}
+                />
+
+                <Button
+                    label={l('Çalışma Takvimi', 'Study Calendar')}
+                    variant="secondary"
+                    size="compact"
+                    icon={<CalendarGlyph color={colors.textSecondary} size={16} />}
                     onPress={() => navigate('/study-calendar')}
-                    {...webTitle(l('Çalışma Takvimi', 'Study Calendar'))}
-                >
-                    <CalendarGlyph color={colors.textSecondary} size={16} />
-                    <Text style={styles.settingsBtnText}>{l('Çalışma Takvimi', 'Study Calendar')}</Text>
-                </TouchableOpacity>
+                    style={styles.settingsBtn}
+                />
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/decks')} {...webTitle(t('common.decks'))}>
-                    <CardsGlyph color={colors.textSecondary} size={16} />
-                    <Text style={styles.settingsBtnText}>{t('tabs.decks')}</Text>
-                </TouchableOpacity>
+                <Button
+                    label={t('tabs.decks')}
+                    variant="secondary"
+                    size="compact"
+                    icon={<CardsGlyph color={colors.textSecondary} size={16} />}
+                    onPress={() => navigate('/decks')}
+                    style={styles.settingsBtn}
+                />
 
-                <TouchableOpacity style={styles.settingsBtn} onPress={() => navigate('/settings')} {...webTitle(t('common.settings'))}>
-                    <GearGlyph color={colors.textSecondary} size={16} />
-                    <Text style={styles.settingsBtnText}>{t('tabs.settings')}</Text>
-                </TouchableOpacity>
+                <Button
+                    label={t('tabs.settings')}
+                    variant="secondary"
+                    size="compact"
+                    icon={<GearGlyph color={colors.textSecondary} size={16} />}
+                    onPress={() => navigate('/settings')}
+                    style={styles.settingsBtn}
+                />
 
                 <TouchableOpacity
                     style={styles.creditContainer}
                     onPress={() => Linking.openURL('https://www.instagram.com/kursatguclu1/')}
+                    hitSlop={{ top: 10, bottom: 10 }}
                 >
                     <Text style={styles.creditText}>
                         Powered by <Text style={styles.creditName}>Kürşad Güçlü</Text>
@@ -376,7 +382,8 @@ function createStyles(colors: ColorScheme) {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 9,
+        minHeight: HIT_TARGET,
+        paddingVertical: Spacing.xs,
         paddingHorizontal: Spacing.lg,
     },
     deckItem: {
@@ -444,11 +451,11 @@ function createStyles(colors: ColorScheme) {
     },
     deckCountActive: { backgroundColor: colors.accent },
     deckCountText: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '700' },
-    deckCountTextActive: { color: colors.white },
+    deckCountTextActive: { color: colors.onAccent },
     subjectItemActive: { backgroundColor: colors.accentLight },
     expandBtn: {
-        paddingVertical: 9,
-        paddingHorizontal: 8,
+        minWidth: HIT_TARGET,
+        minHeight: HIT_TARGET,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -456,7 +463,7 @@ function createStyles(colors: ColorScheme) {
     subjectName: { flex: 1, fontSize: FontSize.md, color: colors.textSecondary, fontWeight: '500' },
     subjectNameActive: { color: colors.accent, fontWeight: '700' },
     subjectCount: {
-        backgroundColor: 'rgba(0,0,0,0.04)',
+        backgroundColor: colors.bgInput,
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 10,
@@ -465,19 +472,12 @@ function createStyles(colors: ColorScheme) {
     },
     subjectCountActive: { backgroundColor: colors.accent },
     subjectCountText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.textMuted },
-    subjectCountTextActive: { color: colors.white },
-    expandArrow: {
-        fontSize: 11,
-        color: colors.textMuted,
-        marginLeft: 6,
-        width: 14,
-        textAlign: 'center',
-    },
-    expandArrowOpen: { color: colors.accent },
+    subjectCountTextActive: { color: colors.onAccent },
     topicItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 7,
+        minHeight: HIT_TARGET,
+        paddingVertical: Spacing.xs,
         paddingLeft: 52,
         paddingRight: Spacing.lg,
         marginHorizontal: Spacing.sm,
@@ -515,19 +515,7 @@ function createStyles(colors: ColorScheme) {
         gap: 2,
     },
     actionText: { fontSize: 9, fontWeight: '600', color: colors.textSecondary },
-    settingsBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        paddingVertical: 8,
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        marginBottom: Spacing.sm,
-    },
-    settingsBtnText: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textSecondary },
+    settingsBtn: { marginBottom: Spacing.sm },
     creditContainer: { alignItems: 'center', paddingVertical: 6 },
     creditText: { fontSize: 10, color: colors.textMuted, letterSpacing: 0.3 },
     creditName: { fontWeight: '700', color: colors.accent },

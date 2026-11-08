@@ -15,6 +15,9 @@ import { getAllNoteTypes, getNoteType } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type NoteType } from '../lib/models';
 import { localizeNoteTypeName } from '../lib/i18n';
 import { useI18n } from '../hooks/useI18n';
+import { Button, CloseButton } from './ui/Button';
+import { Badge, SelectedMark } from './ui/Choice';
+import { Radius, Type } from './ui/tokens';
 
 type Props = {
     visible: boolean;
@@ -34,22 +37,6 @@ type Props = {
     onManage?: () => void;
     manageLabel?: string;
 };
-
-function BackIcon({ color, size = 26 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path d="M15 18 9 12l6-6" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-    );
-}
-
-function CheckIcon({ color, size = 22 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path d="m5 12.5 4.2 4L19 6.8" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-    );
-}
 
 /** Two stacked cards — the shape of a standard note type that renders front/back templates. */
 function StandardTypeIcon({ color, size = 21 }: { color: string; size?: number }) {
@@ -110,19 +97,19 @@ export default function NoteTypePickerModal({
             presentationStyle="overFullScreen"
             onRequestClose={onClose}
         >
-            <Pressable style={styles.overlay} onPress={onClose}>
-                <Pressable style={styles.card} onPress={() => {}} accessibilityViewIsModal>
-                    <View style={styles.toolbar}>
-                        <TouchableOpacity
-                            style={styles.toolbarButton}
-                            onPress={onClose}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Kapat', 'Close')}
-                        >
-                            <BackIcon color={colors.white} />
-                        </TouchableOpacity>
-                        <Text style={styles.title} numberOfLines={1}>{title ?? l('Not türü', 'Note Type')}</Text>
-                        <View style={styles.toolbarButton} />
+            <View style={[styles.layer, { backgroundColor: colors.scrim }]}>
+                <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel={l('Kapat', 'Close')}
+                />
+                <View style={styles.card} accessibilityViewIsModal>
+                    <View style={styles.header}>
+                        <Text style={[Type.title, styles.title]} numberOfLines={1} accessibilityRole="header">
+                            {title ?? l('Not türü', 'Note Type')}
+                        </Text>
+                        <CloseButton accessibilityLabel={l('Kapat', 'Close')} onPress={onClose} />
                     </View>
 
                     <ScrollView
@@ -167,18 +154,10 @@ export default function NoteTypePickerModal({
                                         </Text>
                                         <View style={styles.rowMetaLine}>
                                             <Text style={styles.rowSubtitle} numberOfLines={1}>{subtitle}</Text>
-                                            {isCloze && (
-                                                <View style={styles.kindChip}>
-                                                    <Text style={styles.kindChipText}>
-                                                        {l('Boşluk doldurma', 'Cloze')}
-                                                    </Text>
-                                                </View>
-                                            )}
+                                            {isCloze && <Badge label={l('Boşluk doldurma', 'Cloze')} tone="warning" />}
                                         </View>
                                     </View>
-                                    <View style={styles.rowCheck}>
-                                        {selected && <CheckIcon color={colors.accent} />}
-                                    </View>
+                                    <SelectedMark visible={selected} />
                                 </TouchableOpacity>
                             );
                         })}
@@ -186,41 +165,33 @@ export default function NoteTypePickerModal({
 
                     <View style={styles.footer}>
                         {onManage ? (
-                            <TouchableOpacity
-                                style={styles.footerButton}
-                                onPress={onManage}
-                                accessibilityRole="button"
+                            <Button
+                                label={manageLabel ?? l('Not türlerini yönet…', 'Manage note types…')}
                                 accessibilityLabel={manageLabel ?? l('Not türlerini yönet', 'Manage note types')}
-                            >
-                                <Text style={styles.manageText} numberOfLines={1}>
-                                    {manageLabel ?? l('Not türlerini yönet…', 'Manage note types…')}
-                                </Text>
-                            </TouchableOpacity>
+                                variant="plain"
+                                tone="muted"
+                                numberOfLines={1}
+                                onPress={onManage}
+                                style={styles.manageButton}
+                            />
                         ) : (
                             <View style={styles.footerSpacer} />
                         )}
-                        <TouchableOpacity
-                            style={styles.footerButton}
-                            onPress={onClose}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.cancelText}>{cancelLabel ?? t('common.cancel')}</Text>
-                        </TouchableOpacity>
+                        <Button label={cancelLabel ?? t('common.cancel')} variant="plain" onPress={onClose} />
                     </View>
-                </Pressable>
-            </Pressable>
+                </View>
+            </View>
         </Modal>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        overlay: {
+        layer: {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
             padding: Spacing.xl,
-            backgroundColor: 'rgba(0,0,0,0.42)',
         },
         card: {
             width: '100%',
@@ -228,20 +199,23 @@ function createStyles(colors: ColorScheme) {
             maxHeight: '80%',
             overflow: 'hidden',
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
+            borderRadius: Radius.card,
             ...Shadows.lg,
         },
-        toolbar: {
+        // A white header inside the card, as every picker and dialog draws it.
+        header: {
             minHeight: 58,
             flexDirection: 'row',
             alignItems: 'center',
-            paddingHorizontal: Spacing.xs,
-            backgroundColor: colors.accent,
+            gap: Spacing.sm,
+            paddingLeft: Spacing.lg,
+            paddingRight: Spacing.xs,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.border,
         },
-        toolbarButton: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-        title: { flex: 1, color: colors.white, fontSize: FontSize.xl, fontWeight: '800' },
+        title: { flex: 1, color: colors.textPrimary },
         // flexGrow: 0 lets the card hug a short list; flexShrink: 1 makes a long one give way to
-        // the toolbar and footer instead of pushing them past the card's max height.
+        // the header and footer instead of pushing them past the card's max height.
         list: { flexGrow: 0, flexShrink: 1, backgroundColor: colors.bgCard },
         listContent: { paddingVertical: Spacing.xs },
         row: {
@@ -272,28 +246,18 @@ function createStyles(colors: ColorScheme) {
         rowTitleActive: { color: colors.accent },
         rowMetaLine: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         rowSubtitle: { flexShrink: 1, color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '500' },
-        kindChip: {
-            paddingHorizontal: Spacing.sm,
-            paddingVertical: 2,
-            borderRadius: BorderRadius.full,
-            backgroundColor: colors.badgeLearnBg,
-        },
-        kindChipText: { color: colors.badgeLearn, fontSize: FontSize.xs, fontWeight: '800', letterSpacing: 0.3 },
-        rowCheck: { width: 24, alignItems: 'center' },
         footer: {
             minHeight: 54,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: Spacing.sm,
-            paddingHorizontal: Spacing.md,
+            paddingHorizontal: Spacing.xs,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.borderLight,
             backgroundColor: colors.bgCard,
         },
-        footerButton: { minHeight: 54, justifyContent: 'center', paddingHorizontal: Spacing.sm },
+        manageButton: { flexShrink: 1 },
         footerSpacer: { flex: 1 },
-        manageText: { color: colors.textSecondary, fontSize: FontSize.md, fontWeight: '700' },
-        cancelText: { color: colors.accent, fontSize: FontSize.md, fontWeight: '800' },
     });
 }

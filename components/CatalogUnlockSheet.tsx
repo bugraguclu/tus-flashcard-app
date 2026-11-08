@@ -1,21 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-    ActivityIndicator,
-    Modal,
-    Pressable,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../constants/theme';
+import { Spacing, useThemeColors } from '../constants/theme';
 import { useCatalogStatus } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
 import { BKA_CATALOG_DEFAULT_ROOT_DECK, getBkaCatalogRootDeckName } from '../lib/bkaCatalog';
 import { BKA_MANIFEST } from '../lib/bkaManifest';
 import { readOnlyTabMessage } from '../lib/db';
 import { formatCount } from '../lib/i18n';
-import SwipeDismissSheet from './SwipeDismissSheet';
+import { Button } from './ui/Button';
+import { Notice } from './ui/Feedback';
+import { AppSheet } from './ui/Sheet';
+import { Radius, Type } from './ui/tokens';
 
 type Props = {
     visible: boolean;
@@ -72,127 +68,69 @@ export default function CatalogUnlockSheet({ visible, onClose, onUnlocked }: Pro
     const busy = submitting || catalogInstalling;
 
     return (
-        <Modal
+        <AppSheet
             visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={busy ? undefined : onClose}
+            // While the pack installs the sheet stays: its backdrop, grabber and back action wait.
+            onClose={busy ? () => undefined : onClose}
+            swipeEnabled={!busy}
         >
-            <Pressable style={styles.overlay} onPress={busy ? undefined : onClose}>
-                <Pressable style={styles.sheetHitTarget} onPress={() => {}}>
-                    <SwipeDismissSheet
-                        active={visible}
-                        enabled={!busy}
-                        onDismiss={onClose}
-                        accessibilityViewIsModal
-                        style={styles.sheet}
-                    >
-                        <View style={styles.iconWrap}>
-                            <Text style={styles.icon}>🔓</Text>
-                        </View>
-                        <Text style={styles.title}>{BKA_CATALOG_DEFAULT_ROOT_DECK}</Text>
-                        <Text style={styles.description}>
-                            {l(
-                                `${formatCount(BKA_MANIFEST.totals.cards, 'tr')} kartın tamamını ücretsiz açın. Çalışma ekranından ayrılmadan paket kurulacak ve bu deste seçilecek.`,
-                                `Unlock all ${formatCount(BKA_MANIFEST.totals.cards, locale)} cards for free. The pack will be installed and selected without leaving the study screen.`,
-                            )}
-                        </Text>
-                        {error ? <Text style={styles.error}>{error}</Text> : null}
-                        <TouchableOpacity
-                            style={[styles.primaryButton, busy && styles.primaryButtonDisabled]}
-                            onPress={() => { void unlock(); }}
-                            disabled={busy}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('TUS Kartlarını ücretsiz aç', 'Unlock TUS Cards for free')}
-                        >
-                            {busy ? (
-                                <ActivityIndicator color={colors.white} />
-                            ) : (
-                                <Text style={styles.primaryButtonText}>{l('Ücretsiz aç', 'Unlock free')}</Text>
-                            )}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.cancelButton}
-                            onPress={onClose}
-                            disabled={busy}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.cancelButtonText}>{l('Vazgeç', 'Cancel')}</Text>
-                        </TouchableOpacity>
-                    </SwipeDismissSheet>
-                </Pressable>
-            </Pressable>
-        </Modal>
+            <View style={styles.content}>
+                <View style={styles.iconWrap}>
+                    <Text style={styles.icon}>🔓</Text>
+                </View>
+                <Text style={[Type.title, styles.title]} accessibilityRole="header">{BKA_CATALOG_DEFAULT_ROOT_DECK}</Text>
+                <Text style={[Type.body, styles.description]}>
+                    {l(
+                        `${formatCount(BKA_MANIFEST.totals.cards, 'tr')} kartın tamamını ücretsiz açın. Çalışma ekranından ayrılmadan paket kurulacak ve bu deste seçilecek.`,
+                        `Unlock all ${formatCount(BKA_MANIFEST.totals.cards, locale)} cards for free. The pack will be installed and selected without leaving the study screen.`,
+                    )}
+                </Text>
+                {error ? <Notice tone="danger" style={styles.error}>{error}</Notice> : null}
+                <Button
+                    label={l('Ücretsiz aç', 'Unlock free')}
+                    accessibilityLabel={l('TUS Kartlarını ücretsiz aç', 'Unlock TUS Cards for free')}
+                    onPress={() => { void unlock(); }}
+                    busy={busy}
+                    style={styles.primaryButton}
+                />
+                <Button
+                    label={l('Vazgeç', 'Cancel')}
+                    variant="plain"
+                    tone="muted"
+                    onPress={onClose}
+                    disabled={busy}
+                />
+            </View>
+        </AppSheet>
     );
 }
 
 function createStyles(colors: ReturnType<typeof useThemeColors>) {
     return StyleSheet.create({
-        overlay: {
-            flex: 1,
-            justifyContent: 'flex-end',
-            backgroundColor: 'rgba(0,0,0,0.46)',
-        },
-        sheetHitTarget: { width: '100%' },
-        sheet: {
-            paddingTop: 48,
-            paddingHorizontal: Spacing.xl,
-            paddingBottom: Spacing.xxl,
-            borderTopLeftRadius: BorderRadius.xl,
-            borderTopRightRadius: BorderRadius.xl,
-            backgroundColor: colors.bgSecondary,
+        content: {
             alignItems: 'center',
-            ...Shadows.lg,
+            paddingHorizontal: Spacing.xs,
+            paddingBottom: Spacing.sm,
         },
         iconWrap: {
             width: 54,
             height: 54,
-            borderRadius: 27,
+            borderRadius: Radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.accentLight,
             marginBottom: Spacing.md,
         },
         icon: { fontSize: 26 },
-        title: {
-            color: colors.textPrimary,
-            fontSize: FontSize.xl,
-            fontWeight: '800',
-            textAlign: 'center',
-        },
+        title: { color: colors.textPrimary, textAlign: 'center' },
         description: {
             color: colors.textSecondary,
-            fontSize: FontSize.md,
             lineHeight: 22,
             textAlign: 'center',
             marginTop: Spacing.sm,
             maxWidth: 430,
         },
-        error: {
-            color: colors.btnAgain,
-            fontSize: FontSize.sm,
-            textAlign: 'center',
-            marginTop: Spacing.md,
-        },
-        primaryButton: {
-            width: '100%',
-            minHeight: 50,
-            borderRadius: BorderRadius.md,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.accent,
-            marginTop: Spacing.xl,
-        },
-        primaryButtonDisabled: { opacity: 0.65 },
-        primaryButtonText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
-        cancelButton: {
-            minHeight: 44,
-            paddingHorizontal: Spacing.xl,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginTop: Spacing.sm,
-        },
-        cancelButtonText: { color: colors.textSecondary, fontSize: FontSize.md, fontWeight: '700' },
+        error: { alignSelf: 'stretch', marginTop: Spacing.md },
+        primaryButton: { alignSelf: 'stretch', marginTop: Spacing.xl, marginBottom: Spacing.sm },
     });
 }

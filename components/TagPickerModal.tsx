@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     InteractionManager,
     Keyboard,
@@ -12,27 +11,17 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Text, TextInput } from './AppText';
-import Svg, { Circle, Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
-import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { Text } from './AppText';
+import { FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { getAllTags } from '../lib/noteManager';
 import { useI18n } from '../hooks/useI18n';
-
-function SearchIcon({ color, size = 20 }: { color: string; size?: number }) {
-    return (
-        <Svg
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill="none"
-            {...DECORATIVE_SVG_PROPS}
-        >
-            <Circle cx={10.5} cy={10.5} r={6.5} stroke={color} strokeWidth={2.2} />
-            <Path d="M15.4 15.4 21 21" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
-        </Svg>
-    );
-}
+import { Button, CloseButton, IconButton } from './ui/Button';
+import { Divider } from './ui/Card';
+import { Badge, Checkbox } from './ui/Choice';
+import { EmptyState, LoadingState } from './ui/Feedback';
+import { SearchField, TextField } from './ui/Fields';
+import { PlusIcon } from './ui/icons';
+import { HIT_TARGET, Radius, Type } from './ui/tokens';
 
 interface TagPickerModalProps {
     visible: boolean;
@@ -196,31 +185,33 @@ export default function TagPickerModal({
             onRequestClose={onCancel}
         >
             <KeyboardAvoidingView
-                style={styles.overlay}
+                style={[styles.overlay, { backgroundColor: colors.scrim }]}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 <Pressable
                     style={StyleSheet.absoluteFill}
                     onPress={onCancel}
+                    accessibilityRole="button"
                     accessibilityLabel={l('Etiket penceresini kapat', 'Close tags dialog')}
                 />
                 <View style={styles.card} accessibilityViewIsModal>
                     <View style={styles.header}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>
+                        <Text style={[Type.title, styles.headerTitle]} numberOfLines={1} accessibilityRole="header">
                             {title ?? l('Etiketler', 'Tags')}
                         </Text>
                         {allowCreate && (
-                            <TouchableOpacity
-                                style={[styles.headerAction, addVisible && styles.headerActionActive]}
+                            <IconButton
+                                style={addVisible ? { backgroundColor: colors.accentLight } : undefined}
                                 onPress={toggleAdd}
-                                accessibilityRole="button"
+                                selected={addVisible}
                                 accessibilityLabel={l('Yeni etiket ekle', 'Add new tag')}
                             >
-                                <Text style={styles.headerActionText}>＋</Text>
-                            </TouchableOpacity>
+                                <PlusIcon color={colors.accent} />
+                            </IconButton>
                         )}
+                        {/* The tick box selects every tag the search leaves visible. */}
                         <TouchableOpacity
-                            style={styles.headerAction}
+                            style={styles.headerCheck}
                             onPress={toggleAllVisible}
                             accessibilityRole="checkbox"
                             accessibilityState={{ checked: allVisibleSelected }}
@@ -229,64 +220,30 @@ export default function TagPickerModal({
                                 ? l('Görünen etiketlerin seçimini kaldır', 'Deselect all visible tags')
                                 : l('Görünen etiketlerin tümünü seç', 'Select all visible tags')}
                         >
-                            <View
-                                style={[
-                                    styles.selectAllCheckbox,
-                                    allVisibleSelected && styles.selectAllCheckboxSelected,
-                                ]}
-                            >
-                                {allVisibleSelected && <Text style={styles.selectAllCheckboxTick}>✓</Text>}
-                            </View>
+                            <Checkbox checked={allVisibleSelected} />
                         </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.headerAction}
-                            onPress={onCancel}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Kapat', 'Close')}
-                        >
-                            <Text style={styles.headerCloseIcon}>×</Text>
-                        </TouchableOpacity>
+                        <CloseButton accessibilityLabel={l('Kapat', 'Close')} onPress={onCancel} />
                     </View>
 
                     <View style={styles.searchContainer}>
-                        <View style={styles.searchField}>
-                            <View style={[styles.searchIconContainer, { pointerEvents: 'none' }]}>
-                                <SearchIcon color={colors.textMuted} />
-                            </View>
-                            <TextInput
-                                style={styles.searchInput}
-                                value={searchText}
-                                onChangeText={setSearchText}
-                                placeholder={l('Etiketlerde ara…', 'Search tags…')}
-                                placeholderTextColor={colors.textMuted}
-                                autoCorrect={false}
-                                autoCapitalize="none"
-                                returnKeyType="search"
-                                clearButtonMode="while-editing"
-                                accessibilityLabel={l('Etiketlerde ara', 'Search tags')}
-                            />
-                            {searchText.length > 0 && Platform.OS !== 'ios' && (
-                                <TouchableOpacity
-                                    style={styles.clearButton}
-                                    onPress={() => setSearchText('')}
-                                    accessibilityLabel={l('Aramayı temizle', 'Clear search')}
-                                    hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                                >
-                                    <Text style={styles.clearButtonText}>×</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
+                        <SearchField
+                            value={searchText}
+                            onChangeText={setSearchText}
+                            placeholder={l('Etiketlerde ara…', 'Search tags…')}
+                            autoCapitalize="none"
+                            clearLabel={l('Aramayı temizle', 'Clear search')}
+                            accessibilityLabel={l('Etiketlerde ara', 'Search tags')}
+                        />
                     </View>
 
                     {allowCreate && addVisible && (
                         <View style={styles.addPanel}>
                             <View style={styles.addInputRow}>
-                                <TextInput
+                                <TextField
                                     style={styles.addInput}
                                     value={newTagText}
                                     onChangeText={setNewTagText}
                                     placeholder={l('Yeni etiket adı…', 'New tag name…')}
-                                    placeholderTextColor={colors.textMuted}
                                     autoFocus
                                     autoCapitalize="none"
                                     autoCorrect={false}
@@ -294,17 +251,14 @@ export default function TagPickerModal({
                                     onSubmitEditing={addTags}
                                     accessibilityLabel={l('Yeni etiket adı', 'New tag name')}
                                 />
-                                <TouchableOpacity
-                                    style={[styles.addButton, !newTagText.trim() && styles.buttonDisabled]}
+                                <Button
+                                    label={t('common.add')}
+                                    size="compact"
                                     onPress={addTags}
                                     disabled={!newTagText.trim()}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={t('common.add')}
-                                >
-                                    <Text style={styles.addButtonText}>{t('common.add')}</Text>
-                                </TouchableOpacity>
+                                />
                             </View>
-                            <Text style={styles.addHelperText}>
+                            <Text style={[Type.caption, styles.addHelperText]}>
                                 {l('Birden fazla etiket eklemek için boşluk kullanın.', 'Separate multiple tags with spaces.')}
                             </Text>
                         </View>
@@ -317,8 +271,8 @@ export default function TagPickerModal({
                             accessibilityRole="button"
                             accessibilityLabel={l(`"${trimmedQuery}" etiketini ekle`, `Add tag "${trimmedQuery}"`)}
                         >
-                            <View style={styles.quickAddIcon}>
-                                <Text style={styles.quickAddIconText}>＋</Text>
+                            <View style={[styles.quickAddIcon, { backgroundColor: colors.accent }]}>
+                                <PlusIcon color={colors.onAccent} size={16} />
                             </View>
                             <Text style={styles.quickAddText} numberOfLines={1}>
                                 {l(`"${trimmedQuery}" etiketini ekle`, `Add tag "${trimmedQuery}"`)}
@@ -327,10 +281,7 @@ export default function TagPickerModal({
                     )}
 
                     {loadingTags ? (
-                        <View style={styles.loadingState}>
-                            <ActivityIndicator color={colors.accent} />
-                            <Text style={styles.loadingText}>{l('Etiketler yükleniyor…', 'Loading tags…')}</Text>
-                        </View>
+                        <LoadingState label={l('Etiketler yükleniyor…', 'Loading tags…')} style={styles.loadingState} />
                     ) : (
                         <FlatList
                             style={styles.list}
@@ -341,28 +292,24 @@ export default function TagPickerModal({
                             maxToRenderPerBatch={16}
                             windowSize={7}
                             removeClippedSubviews={Platform.OS !== 'web'}
+                            ItemSeparatorComponent={Divider}
                             ListEmptyComponent={(
-                                <View style={styles.emptyState}>
-                                    <Text style={styles.emptyTitle}>{l('Etiket bulunamadı', 'No tags found')}</Text>
-                                    <Text style={styles.emptyText}>
-                                        {allowCreate
-                                            ? l('Yeni bir etiket eklemek için arama kutusunu veya ＋ düğmesini kullanabilirsiniz.', 'Use search or ＋ to add a new tag.')
-                                            : l('Koleksiyonda bu aramayla eşleşen etiket yok.', 'No collection tag matches this search.')}
-                                    </Text>
-                                </View>
+                                <EmptyState
+                                    title={l('Etiket bulunamadı', 'No tags found')}
+                                    body={allowCreate
+                                        ? l('Yeni bir etiket eklemek için arama kutusunu veya ＋ düğmesini kullanabilirsiniz.', 'Use search or ＋ to add a new tag.')
+                                        : l('Koleksiyonda bu aramayla eşleşen etiket yok.', 'No collection tag matches this search.')}
+                                />
                             )}
-                            renderItem={({ item: tag, index }) => {
+                            renderItem={({ item: tag }) => {
                                 const selected = selectedKeys.has(tagKey(tag));
                                 const depth = Math.max(0, tag.split('::').length - 1);
-                                const isLast = index === filteredTags.length - 1;
                                 return (
                                     <TouchableOpacity
                                         key={tagKey(tag)}
                                         style={[
                                             styles.tagRow,
-                                            { paddingLeft: Spacing.md + Math.min(depth, 8) * 18 },
-                                            selected && styles.tagRowSelected,
-                                            isLast && styles.tagRowLast,
+                                            { paddingLeft: Spacing.lg + Math.min(depth, 8) * 18 },
                                         ]}
                                         onPress={() => toggleTag(tag)}
                                         accessibilityRole="checkbox"
@@ -373,9 +320,7 @@ export default function TagPickerModal({
                                         <Text style={[styles.tagText, selected && styles.tagTextSelected]} numberOfLines={2}>
                                             {tag.replaceAll('::', ' › ')}
                                         </Text>
-                                        <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-                                            {selected && <Text style={styles.checkboxTick}>✓</Text>}
-                                        </View>
+                                        <Checkbox checked={selected} />
                                     </TouchableOpacity>
                                 );
                             }}
@@ -384,33 +329,15 @@ export default function TagPickerModal({
 
                     <View style={styles.footer}>
                         <View style={styles.selectionInfo}>
-                            <View style={[styles.selectionBadge, draftTags.length > 0 && styles.selectionBadgeActive]}>
-                                <Text style={[styles.selectionBadgeText, draftTags.length > 0 && styles.selectionBadgeTextActive]}>
-                                    {draftTags.length}
-                                </Text>
-                            </View>
-                            <Text style={styles.selectionText}>
+                            <Badge label={String(draftTags.length)} tone={draftTags.length > 0 ? 'accent' : 'neutral'} style={styles.selectionBadge} />
+                            <Text style={[Type.bodyStrong, { color: colors.textPrimary }]}>
                                 {l('seçili', 'selected')}
                             </Text>
                         </View>
 
                         <View style={styles.footerActions}>
-                            <TouchableOpacity
-                                style={styles.footerCancelButton}
-                                onPress={onCancel}
-                                accessibilityRole="button"
-                                accessibilityLabel={t('common.cancel')}
-                            >
-                                <Text style={styles.footerCancelText}>{t('common.cancel')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.footerConfirmButton}
-                                onPress={() => onConfirm(uniqueTags(draftTags))}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Onayla', 'Confirm')}
-                            >
-                                <Text style={styles.footerConfirmText}>{l('Onayla', 'Confirm')}</Text>
-                            </TouchableOpacity>
+                            <Button label={t('common.cancel')} variant="plain" onPress={onCancel} />
+                            <Button label={l('Onayla', 'Confirm')} onPress={() => onConfirm(uniqueTags(draftTags))} />
                         </View>
                     </View>
                 </View>
@@ -427,107 +354,35 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
             paddingHorizontal: Spacing.lg,
             paddingVertical: Spacing.xxl,
-            backgroundColor: 'rgba(0,0,0,0.38)',
         },
         card: {
             width: '100%',
             maxWidth: 440,
             height: '82%',
             overflow: 'hidden',
-            backgroundColor: colors.bgSecondary,
-            borderRadius: BorderRadius.lg,
+            backgroundColor: colors.bgCard,
+            borderRadius: Radius.card,
             ...Shadows.lg,
         },
+        // A white header inside the card, as every picker and dialog draws it.
         header: {
             minHeight: 56,
             flexDirection: 'row',
             alignItems: 'center',
             paddingLeft: Spacing.lg,
             paddingRight: Spacing.xs,
-            backgroundColor: colors.accent,
         },
-        headerTitle: { flex: 1, color: colors.white, fontSize: FontSize.lg, fontWeight: '700' },
-        headerAction: {
-            width: 44,
-            height: 44,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: BorderRadius.full,
-        },
-        headerActionActive: { backgroundColor: 'rgba(255,255,255,0.22)' },
-        headerActionText: { color: colors.white, fontSize: 24, lineHeight: 26, fontWeight: '400' },
-        headerCloseIcon: { color: colors.white, fontSize: 26, lineHeight: 28, fontWeight: '300' },
-        selectAllCheckbox: {
-            width: 22,
-            height: 22,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 2,
-            borderColor: 'rgba(255, 255, 255, 0.9)',
-            borderRadius: BorderRadius.sm,
-            backgroundColor: 'transparent',
-        },
-        selectAllCheckboxSelected: {
-            borderWidth: 2,
-            borderColor: colors.white,
-            backgroundColor: 'rgba(255, 255, 255, 0.25)',
-        },
-        selectAllCheckboxTick: {
-            color: colors.white,
-            fontSize: 15,
-            lineHeight: 16,
-            fontWeight: '900',
-        },
+        headerTitle: { flex: 1, color: colors.textPrimary },
+        headerCheck: { width: HIT_TARGET, height: HIT_TARGET, alignItems: 'center', justifyContent: 'center' },
         searchContainer: {
             paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.md,
-            backgroundColor: colors.bgCard,
+            paddingBottom: Spacing.md,
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
-        },
-        searchField: {
-            height: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: colors.bgInput,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            paddingHorizontal: Spacing.md,
-            gap: Spacing.sm + 2,
-        },
-        searchIconContainer: {
-            width: 24,
-            height: 24,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        searchInput: {
-            flex: 1,
-            height: '100%',
-            color: colors.textPrimary,
-            fontSize: FontSize.lg,
-            paddingVertical: 0,
-            includeFontPadding: false,
-        },
-        clearButton: {
-            width: 28,
-            height: 28,
-            borderRadius: BorderRadius.full,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.borderLight,
-        },
-        clearButtonText: {
-            color: colors.textSecondary,
-            fontSize: 18,
-            lineHeight: 20,
-            fontWeight: '600',
         },
         addPanel: {
             paddingHorizontal: Spacing.lg,
             paddingVertical: Spacing.md,
-            backgroundColor: colors.bgCard,
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
@@ -536,36 +391,8 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             gap: Spacing.sm + 2,
         },
-        addInput: {
-            flex: 1,
-            minHeight: 48,
-            paddingHorizontal: Spacing.md,
-            paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-            color: colors.textPrimary,
-            fontSize: FontSize.lg,
-            backgroundColor: colors.bgInput,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.md,
-        },
-        addButton: {
-            minWidth: 76,
-            height: 48,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.md,
-            backgroundColor: colors.accent,
-            borderRadius: BorderRadius.md,
-        },
-        addButtonText: { color: colors.white, fontSize: FontSize.md, fontWeight: '700' },
-        addHelperText: {
-            fontSize: FontSize.sm,
-            color: colors.textMuted,
-            marginTop: 6,
-            paddingHorizontal: 2,
-            lineHeight: 18,
-        },
-        buttonDisabled: { opacity: 0.45 },
+        addInput: { flex: 1 },
+        addHelperText: { color: colors.textMuted, marginTop: 6, paddingHorizontal: 2 },
         quickAddRow: {
             minHeight: 50,
             flexDirection: 'row',
@@ -580,16 +407,9 @@ function createStyles(colors: ColorScheme) {
         quickAddIcon: {
             width: 26,
             height: 26,
-            borderRadius: BorderRadius.full,
-            backgroundColor: colors.accent,
+            borderRadius: Radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
-        },
-        quickAddIconText: {
-            color: colors.white,
-            fontSize: 16,
-            lineHeight: 18,
-            fontWeight: '700',
         },
         quickAddText: {
             flex: 1,
@@ -598,8 +418,7 @@ function createStyles(colors: ColorScheme) {
             fontWeight: '700',
         },
         list: { flex: 1 },
-        loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
-        loadingText: { color: colors.textMuted, fontSize: FontSize.sm },
+        loadingState: { flex: 1 },
         tagRow: {
             minHeight: 52,
             flexDirection: 'row',
@@ -607,31 +426,10 @@ function createStyles(colors: ColorScheme) {
             gap: Spacing.md,
             paddingRight: Spacing.lg,
             paddingVertical: Spacing.sm + 2,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.borderLight,
             backgroundColor: colors.bgCard,
-        },
-        tagRowLast: { borderBottomWidth: 0 },
-        tagRowSelected: {
-            backgroundColor: colors.bgSecondary,
         },
         tagText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md + 1 },
         tagTextSelected: { color: colors.accent, fontWeight: '700' },
-        checkbox: {
-            width: 22,
-            height: 22,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 2,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.sm,
-            backgroundColor: colors.bgCard,
-        },
-        checkboxSelected: { borderColor: colors.accent, backgroundColor: colors.accent },
-        checkboxTick: { color: colors.white, fontSize: 15, lineHeight: 16, fontWeight: '900' },
-        emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 56 },
-        emptyTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
-        emptyText: { marginTop: Spacing.sm, color: colors.textMuted, fontSize: FontSize.sm, textAlign: 'center' },
         footer: {
             minHeight: 68,
             flexDirection: 'row',
@@ -639,7 +437,6 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'space-between',
             paddingHorizontal: Spacing.lg,
             paddingVertical: Spacing.md,
-            backgroundColor: colors.bgCard,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.borderLight,
             gap: Spacing.md,
@@ -647,71 +444,14 @@ function createStyles(colors: ColorScheme) {
         selectionInfo: {
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 10,
+            gap: Spacing.sm,
             flexShrink: 1,
         },
-        selectionBadge: {
-            minWidth: 32,
-            height: 32,
-            paddingHorizontal: 9,
-            borderRadius: BorderRadius.full,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.bgInput,
-            borderWidth: 1.5,
-            borderColor: colors.border,
-        },
-        selectionBadgeActive: {
-            backgroundColor: colors.accentLight,
-            borderColor: colors.accent,
-        },
-        selectionBadgeText: {
-            fontSize: FontSize.md,
-            fontWeight: '800',
-            color: colors.textSecondary,
-        },
-        selectionBadgeTextActive: {
-            color: colors.accent,
-        },
-        selectionText: {
-            fontSize: FontSize.lg,
-            fontWeight: '700',
-            color: colors.textPrimary,
-        },
+        selectionBadge: { alignSelf: 'center' },
         footerActions: {
             flexDirection: 'row',
             alignItems: 'center',
-            gap: Spacing.sm,
-        },
-        footerCancelButton: {
-            minWidth: 76,
-            minHeight: 44,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.md,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.bgInput,
-            borderWidth: 1,
-            borderColor: colors.borderLight,
-        },
-        footerCancelText: {
-            color: colors.textSecondary,
-            fontSize: FontSize.md,
-            fontWeight: '600',
-        },
-        footerConfirmButton: {
-            minWidth: 88,
-            minHeight: 44,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.lg,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.accent,
-        },
-        footerConfirmText: {
-            color: colors.white,
-            fontSize: FontSize.md,
-            fontWeight: '700',
+            gap: Spacing.xs,
         },
     });
 }

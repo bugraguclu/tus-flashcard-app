@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
     ActivityIndicator,
-    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -11,7 +10,7 @@ import { Text } from '../components/AppText';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useCatalogStatus } from '../contexts/AppContext';
 import { BKA_PRODUCT, isCatalogPurchaseSimulationEnabled } from '../lib/catalogPurchases';
 import { BKA_MANIFEST } from '../lib/bkaManifest';
@@ -22,6 +21,14 @@ import { goBackOr } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
 import DisclosureChevron from '../components/DisclosureChevron';
 import LockGlyph from '../components/LockGlyph';
+import ScreenHeader from '../components/ScreenHeader';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Choice';
+import { AppDialog } from '../components/ui/Dialog';
+import { Notice } from '../components/ui/Feedback';
+import { CheckIcon } from '../components/ui/icons';
+import { Type } from '../components/ui/tokens';
 import { BKA_CATALOG_DEFAULT_ROOT_DECK, getBkaCatalogRootDeckName } from '../lib/bkaCatalog';
 import { getDeckByName } from '../lib/deckManager';
 
@@ -30,7 +37,8 @@ const HERO_TOP = '#0d3128';
 const HERO_BOTTOM = '#14513f';
 const HERO_TEXT = '#f2f7f4';
 const HERO_MUTED = '#9fbcb0';
-const HERO_ACCENT = '#7ddcae';
+/** The hairline over the hero's stats. */
+const HERO_RULE = 'rgba(255,255,255,0.18)';
 
 export default function CatalogScreen() {
     const router = useRouter();
@@ -116,22 +124,18 @@ export default function CatalogScreen() {
 
     return (
         <View style={styles.screen}>
-            <View style={[styles.topBar, { paddingTop: Math.max(insets.top, Spacing.sm) }]}>
-                <Pressable
-                    style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-                    onPress={() => goBackOr(router)}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Kapat', 'Close')}
-                    hitSlop={8}
-                >
-                    <Text style={styles.iconButtonText}>✕</Text>
-                </Pressable>
-                <Text style={styles.topTitle} numberOfLines={1}>{BKA_CATALOG_DEFAULT_ROOT_DECK}</Text>
-                <View style={[styles.statusChip, owned && styles.statusChipOwned]}>
-                    <Text style={[styles.statusChipText, owned && styles.statusChipTextOwned]}>
-                        {owned ? l('Açık', 'Unlocked') : l('Kilitli', 'Locked')}
-                    </Text>
-                </View>
+            <View style={[styles.headerWrap, { paddingTop: insets.top }]}>
+                <ScreenHeader
+                    leading="close"
+                    title={BKA_CATALOG_DEFAULT_ROOT_DECK}
+                    backAccessibilityLabel={l('Kapat', 'Close')}
+                    onBack={() => goBackOr(router)}
+                    actions={(
+                        <View style={styles.statusBadge}>
+                            <Badge label={owned ? l('Açık', 'Unlocked') : l('Kilitli', 'Locked')} tone={owned ? 'accent' : 'neutral'} />
+                        </View>
+                    )}
+                />
             </View>
 
             <ScrollView
@@ -164,11 +168,10 @@ export default function CatalogScreen() {
                         </Svg>
                     )}
 
-                    <View style={styles.heroBadge}>
-                        <Text style={styles.heroBadgeText}>
-                            {owned ? l('SATIN ALINDI', 'PURCHASED') : l('PREMIUM KART PAKETİ', 'PREMIUM CARD PACK')}
-                        </Text>
-                    </View>
+                    <Badge
+                        label={owned ? l('SATIN ALINDI', 'PURCHASED') : l('PREMIUM KART PAKETİ', 'PREMIUM CARD PACK')}
+                        tone="accent"
+                    />
                     <Text style={styles.heroTitle}>
                         {l(
                             `TUS için hazır\n${number(BKA_MANIFEST.totals.cards)} kart`,
@@ -205,9 +208,11 @@ export default function CatalogScreen() {
                     )}
                 </View>
 
-                <Text style={styles.sectionTitle}>{l('Paket içeriği', "What's inside")}</Text>
-                <Text style={styles.sectionHint}>
-                    {owned
+                <Card
+                    divided
+                    style={styles.courseCard}
+                    title={l('Paket içeriği', "What's inside")}
+                    description={`${owned
                         ? l('Desteler koleksiyonuna eklendi.', 'These decks are in your collection.')
                         : l(
                             purchaseSimulationEnabled
@@ -216,26 +221,18 @@ export default function CatalogScreen() {
                             purchaseSimulationEnabled
                                 ? 'Tap Unlock cards for free to add every card to your deck list.'
                                 : 'The free trial includes the best 30 real cards from every subtopic; purchasing the pack unlocks every card.',
-                        )}
-                    {' '}
-                    {l(
+                        )} ${l(
                         'Alt desteler, paketi hazırlayanın kendi etiketlerinden gelir; etiketsiz kartlar dersin kendi destesinde kalır.',
                         'Subdecks come from the pack author’s own tags; untagged cards stay in the course deck itself.',
-                    )}
-                </Text>
-
-                <View style={styles.courseCard}>
-                    {BKA_MANIFEST.courses.map((course, index) => {
+                    )}`}
+                >
+                    {BKA_MANIFEST.courses.map((course) => {
                         const isOpen = expanded === course.id;
                         const subdeckCount = course.topics.filter((topic) => topic.deck).length;
                         return (
                             <View key={course.id}>
                                 <Pressable
-                                    style={({ pressed }) => [
-                                        styles.courseRow,
-                                        index > 0 && styles.courseRowDivider,
-                                        pressed && styles.pressed,
-                                    ]}
+                                    style={({ pressed }) => [styles.courseRow, pressed && styles.pressed]}
                                     onPress={() => setExpanded(isOpen ? null : course.id)}
                                     accessibilityRole="button"
                                     accessibilityState={{ expanded: isOpen }}
@@ -287,9 +284,9 @@ export default function CatalogScreen() {
                             </View>
                         );
                     })}
-                </View>
+                </Card>
 
-                <View style={styles.infoCard}>
+                <Card padded style={styles.infoCard}>
                     {[
                         ...(purchaseSimulationEnabled ? [{
                             title: l('Ücretsiz erişim', 'Free access'),
@@ -312,14 +309,16 @@ export default function CatalogScreen() {
                         },
                     ].map((item) => (
                         <View key={item.title} style={styles.infoRow}>
-                            <Text style={styles.infoCheck}>✓</Text>
+                            <View style={styles.infoCheck}>
+                                <CheckIcon color={colors.accent} size={18} />
+                            </View>
                             <View style={styles.infoCopy}>
-                                <Text style={styles.infoTitle}>{item.title}</Text>
+                                <Text style={[Type.bodyStrong, { color: colors.textPrimary }]}>{item.title}</Text>
                                 <Text style={styles.infoText}>{item.text}</Text>
                             </View>
                         </View>
                     ))}
-                </View>
+                </Card>
 
                 <Text style={styles.legal}>
                     {purchaseSimulationEnabled
@@ -336,83 +335,64 @@ export default function CatalogScreen() {
 
             <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
                 {!purchaseSimulationEnabled && catalogAccess.status === 'error' && !!catalogAccess.error && (
-                    <Text style={styles.errorText} numberOfLines={3}>{l(
+                    <Notice tone="danger" style={styles.footerNotice}>{l(
                         'Mağazaya bağlanılamadı. Bağlantınızı kontrol edip yeniden deneyin.',
                         'Could not connect to the store. Check your connection and try again.',
-                    )}</Text>
+                    )}</Notice>
                 )}
                 {catalogAccess.status === 'unconfigured' && !purchaseSimulationEnabled && (
-                    <Text style={styles.errorText}>
+                    <Notice tone="danger" style={styles.footerNotice}>
                         {l('Mağaza bağlantısı bu derlemede yapılandırılmadı.', 'The store connection is not configured in this build.')}
-                    </Text>
+                    </Notice>
                 )}
 
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.primaryButton,
-                        (!canBuy && !owned) && styles.primaryButtonDisabled,
-                        pressed && styles.pressed,
-                    ]}
+                <Button
+                    label={primaryLabel()}
                     onPress={owned ? () => router.replace('/decks' as any) : buy}
-                    disabled={(!canBuy && !owned) || Boolean(busy) || catalogInstalling}
-                    accessibilityRole="button"
-                    accessibilityLabel={primaryLabel()}
-                >
-                    {busy === 'purchase' || catalogAccess.status === 'loading' ? (
-                        <ActivityIndicator color="#ffffff" />
-                    ) : (
-                        <Text style={styles.primaryButtonText}>{primaryLabel()}</Text>
-                    )}
-                </Pressable>
+                    // The purchase's own spinner shows on the button; anything else under way disables it.
+                    // An owner's way to the decks never waits on a store refresh.
+                    busy={busy === 'purchase' || (!owned && catalogAccess.status === 'loading')}
+                    disabled={(!canBuy && !owned) || (Boolean(busy) && busy !== 'purchase') || catalogInstalling}
+                />
 
                 {!owned && !purchaseSimulationEnabled && (
                     <>
-                        <Pressable
-                            style={({ pressed }) => [styles.trialButton, pressed && styles.pressed]}
+                        <Button
+                            label={l('Ücretsiz denemeyi çöz', 'Study Free Trial')}
+                            accessibilityLabel={l('Ücretsiz TUS Kartları denemesini çöz', 'Study the free TUS Cards trial')}
+                            accessibilityHint={l('Her alt başlıktan en iyi 30 soru', 'Best 30 questions from every subtopic')}
+                            variant="secondary"
                             onPress={() => router.replace(`/deck-overview?deck=${encodeURIComponent(trialDeckName)}` as any)}
                             disabled={!trialAvailable || Boolean(busy) || catalogInstalling}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Ücretsiz TUS Kartları denemesini çöz', 'Study the free TUS Cards trial')}
-                        >
-                            <Text style={[styles.trialButtonText, !trialAvailable && styles.secondaryTextDisabled]}>
-                                {l('Ücretsiz denemeyi çöz', 'Study Free Trial')}
-                            </Text>
-                            <Text style={styles.trialButtonHint}>
-                                {l('Her alt başlıktan en iyi 30 soru', 'Best 30 questions from every subtopic')}
-                            </Text>
-                        </Pressable>
-                        <Pressable
-                            style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+                            style={styles.trialButton}
+                        />
+                        <Text style={styles.trialHint}>
+                            {l('Her alt başlıktan en iyi 30 soru', 'Best 30 questions from every subtopic')}
+                        </Text>
+                        <Button
+                            label={l('Satın almayı geri yükle', 'Restore purchase')}
+                            variant="plain"
                             onPress={restore}
-                            disabled={!catalogAccess.configured || Boolean(busy)}
-                            accessibilityRole="button"
-                        >
-                            {busy === 'restore' ? (
-                                <ActivityIndicator size="small" color={colors.accent} />
-                            ) : (
-                                <Text style={[styles.secondaryText, !catalogAccess.configured && styles.secondaryTextDisabled]}>
-                                    {l('Satın almayı geri yükle', 'Restore purchase')}
-                                </Text>
-                            )}
-                        </Pressable>
+                            busy={busy === 'restore'}
+                            disabled={!catalogAccess.configured || (Boolean(busy) && busy !== 'restore')}
+                        />
                     </>
                 )}
             </View>
 
-            {catalogInstalling && (
-                <View style={styles.installOverlay}>
-                    <View style={styles.installCard}>
-                        <ActivityIndicator size="large" color={colors.accent} />
-                        <Text style={styles.installTitle}>{l('Kartlar kuruluyor', 'Installing cards')}</Text>
-                        <Text style={styles.installText}>
-                            {l(
-                                'TUS Kartları deste listeniz için hazırlanıyor. Bu işlem birkaç saniye sürebilir.',
-                                'Preparing TUS Cards for your deck list. This can take a few seconds.',
-                            )}
-                        </Text>
-                    </View>
-                </View>
-            )}
+            <AppDialog
+                visible={catalogInstalling}
+                // Nothing closes it: it goes when the pack has been installed.
+                onClose={() => undefined}
+                dismissOnBackdrop={false}
+                title={l('Kartlar kuruluyor', 'Installing cards')}
+                message={l(
+                    'TUS Kartları deste listeniz için hazırlanıyor. Bu işlem birkaç saniye sürebilir.',
+                    'Preparing TUS Cards for your deck list. This can take a few seconds.',
+                )}
+            >
+                <ActivityIndicator size="large" color={colors.accent} />
+            </AppDialog>
         </View>
     );
 }
@@ -422,30 +402,9 @@ function createStyles(colors: ColorScheme) {
         screen: { flex: 1, backgroundColor: colors.bgPrimary },
         pressed: { opacity: 0.72 },
 
-        topBar: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            paddingHorizontal: Spacing.md,
-            paddingBottom: Spacing.sm,
-            backgroundColor: colors.bgSecondary,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-        },
-        iconButton: {
-            width: 36, height: 36, borderRadius: 18,
-            alignItems: 'center', justifyContent: 'center',
-            backgroundColor: colors.bgInput,
-        },
-        iconButtonText: { color: colors.textSecondary, fontSize: 15, fontWeight: '700' },
-        topTitle: { flex: 1, color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
-        statusChip: {
-            paddingHorizontal: 10, paddingVertical: 5, borderRadius: BorderRadius.full,
-            backgroundColor: colors.bgInput, borderWidth: 1, borderColor: colors.border,
-        },
-        statusChipOwned: { backgroundColor: colors.accentLight, borderColor: colors.accent },
-        statusChipText: { color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '800', letterSpacing: 0.4 },
-        statusChipTextOwned: { color: colors.accentHover },
+        // The safe area above the header takes the header's colour.
+        headerWrap: { backgroundColor: colors.bgCard },
+        statusBadge: { paddingRight: Spacing.sm },
 
         scroll: { flex: 1 },
         content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: Spacing.md },
@@ -458,14 +417,6 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: HERO_TOP,
             ...Shadows.md,
         },
-        heroBadge: {
-            alignSelf: 'flex-start',
-            paddingHorizontal: 10, paddingVertical: 6,
-            borderRadius: BorderRadius.full,
-            backgroundColor: 'rgba(125,220,174,0.16)',
-            borderWidth: 1, borderColor: 'rgba(125,220,174,0.4)',
-        },
-        heroBadgeText: { color: HERO_ACCENT, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
         heroTitle: {
             color: HERO_TEXT, fontSize: 32, lineHeight: 38, fontWeight: '900',
             letterSpacing: -0.8, marginTop: Spacing.lg,
@@ -476,7 +427,7 @@ function createStyles(colors: ColorScheme) {
             marginTop: Spacing.lg,
             paddingTop: Spacing.md,
             borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: 'rgba(255,255,255,0.18)',
+            borderTopColor: HERO_RULE,
         },
         heroStat: { flex: 1 },
         heroStatValue: { color: HERO_TEXT, fontSize: FontSize.xl, fontWeight: '900' },
@@ -485,22 +436,8 @@ function createStyles(colors: ColorScheme) {
         heroPrice: { color: HERO_TEXT, fontSize: 30, fontWeight: '900', letterSpacing: -0.8 },
         heroPriceNote: { color: HERO_MUTED, fontSize: FontSize.sm, fontWeight: '600', flexShrink: 1 },
 
-        sectionTitle: {
-            color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800',
-            marginTop: Spacing.xl, marginHorizontal: Spacing.xs,
-        },
-        sectionHint: { color: colors.textMuted, fontSize: FontSize.sm, marginTop: 2, marginHorizontal: Spacing.xs },
-
-        courseCard: {
-            marginTop: Spacing.md,
-            backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            overflow: 'hidden',
-        },
+        courseCard: { marginTop: Spacing.xl },
         courseRow: { flexDirection: 'row', alignItems: 'center', minHeight: 60, paddingHorizontal: Spacing.md },
-        courseRowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
         courseChevron: { width: 22, alignItems: 'center' },
         courseIcon: { fontSize: 20, marginHorizontal: Spacing.sm },
         courseCopy: { flex: 1 },
@@ -524,22 +461,11 @@ function createStyles(colors: ColorScheme) {
         topicNamePlain: { color: colors.textMuted, fontStyle: 'italic' },
         topicCount: { color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '700' },
 
-        infoCard: {
-            marginTop: Spacing.xl,
-            backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            padding: Spacing.md,
-            gap: Spacing.md,
-        },
+        infoCard: { marginTop: Spacing.xl },
         infoRow: { flexDirection: 'row', alignItems: 'flex-start' },
-        infoCheck: {
-            width: 22, color: colors.accent, fontSize: FontSize.md, fontWeight: '900', marginTop: 1,
-        },
+        infoCheck: { width: 26, paddingTop: 1 },
         infoCopy: { flex: 1 },
-        infoTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
-        infoText: { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 19, marginTop: 2 },
+        infoText: { ...Type.caption, lineHeight: 19, color: colors.textMuted, marginTop: 2 },
 
         legal: {
             color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 16,
@@ -553,49 +479,8 @@ function createStyles(colors: ColorScheme) {
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.border,
         },
-        primaryButton: {
-            minHeight: 54, borderRadius: 15,
-            backgroundColor: colors.accent,
-            alignItems: 'center', justifyContent: 'center',
-            paddingHorizontal: Spacing.lg,
-            ...Shadows.sm,
-        },
-        primaryButtonDisabled: { backgroundColor: colors.textMuted, opacity: 0.6 },
-        primaryButtonText: { color: '#ffffff', fontSize: FontSize.lg, fontWeight: '800' },
-        trialButton: {
-            minHeight: 54,
-            marginTop: Spacing.sm,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: colors.accent,
-            borderRadius: 15,
-            backgroundColor: colors.accentLight,
-        },
-        trialButtonText: { color: colors.accent, fontSize: FontSize.md, fontWeight: '800' },
-        trialButtonHint: { color: colors.textMuted, fontSize: FontSize.xs, marginTop: 2 },
-        secondaryButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.xs },
-        secondaryText: { color: colors.accent, fontSize: FontSize.md, fontWeight: '700' },
-        secondaryTextDisabled: { color: colors.textMuted },
-        errorText: {
-            color: colors.btnAgain, fontSize: FontSize.sm, lineHeight: 18,
-            textAlign: 'center', marginBottom: Spacing.sm,
-        },
-
-        installOverlay: {
-            ...StyleSheet.absoluteFill,
-            backgroundColor: Platform.OS === 'ios' ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.55)',
-            alignItems: 'center', justifyContent: 'center', padding: Spacing.xl,
-        },
-        installCard: {
-            width: '100%', maxWidth: 340,
-            backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
-            padding: Spacing.xl,
-            alignItems: 'center',
-            ...Shadows.lg,
-        },
-        installTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800', marginTop: Spacing.md },
-        installText: { color: colors.textMuted, fontSize: FontSize.sm, lineHeight: 19, textAlign: 'center', marginTop: Spacing.xs },
+        footerNotice: { marginBottom: Spacing.sm },
+        trialButton: { marginTop: Spacing.sm },
+        trialHint: { ...Type.caption, color: colors.textMuted, textAlign: 'center', marginTop: Spacing.xs },
     });
 }
