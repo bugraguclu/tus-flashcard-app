@@ -23,6 +23,8 @@ export default function TextImportOptions(props: {
     deckColumn?: number;
     noteTypeName: string;
     deckName: string;
+    /** Set while the deck is one the file's `#deck:` header names and the import will create. */
+    newDeckNotice?: string | null;
     onPickNoteType: () => void;
     onPickDeck: () => void;
     duplicateResolution: DuplicateResolution;
@@ -40,7 +42,7 @@ export default function TextImportOptions(props: {
 }) {
     const {
         separator, guessedSeparator, onSeparator, allowHtml, setAllowHtml, notetypeColumn, deckColumn,
-        noteTypeName, deckName, onPickNoteType, onPickDeck, duplicateResolution, setDuplicateResolution,
+        noteTypeName, deckName, newDeckNotice, onPickNoteType, onPickDeck, duplicateResolution, setDuplicateResolution,
         matchScope, setMatchScope, tagAllNotes, setTagAllNotes, tagUpdatedNotes, setTagUpdatedNotes,
         styles, mutedColor, cancelLabel, l,
     } = props;
@@ -83,6 +85,9 @@ export default function TextImportOptions(props: {
                 {deckColumn
                     ? fromFile(l('Deste', 'Deck'), deckColumn)
                     : renderOptionRow(l('Deste', 'Deck'), deckName, onPickDeck)}
+                {!deckColumn && newDeckNotice ? (
+                    <Text style={styles.optionHint}>{newDeckNotice}</Text>
+                ) : null}
                 {renderOptionRow(
                     l('Mevcut notlar', 'Existing notes'),
                     existingNotesLabel(duplicateResolution),

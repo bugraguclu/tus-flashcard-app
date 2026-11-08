@@ -133,8 +133,8 @@ Dosyanın başına `#` ile başlayan satırlar yazarak seçenekleri önceden bel
 | --- | --- |
 | `#separator:tab` | Ayırıcıyı belirler: `tab`, `comma`, `semicolon`, `pipe`, `colon`, `space` veya karakterin kendisi. |
 | `#html:true` | Alanlar HTML olarak okunur (kalın yazı, resim gibi). |
-| `#deck:Farmakoloji` | Bu adda bir desteniz varsa **Deste** satırında seçili gelir. |
-| `#notetype:Basic` | Bu adda bir not türünüz varsa seçili gelir. **Temel** türünün dosyadaki adı `Basic`'tir. |
+| `#deck:Farmakoloji` | **Deste** satırında bu deste seçili gelir. Böyle bir desteniz yoksa satırın altında **Yeni deste oluşturulacak: Farmakoloji** yazar; deste ancak **İçe aktar**'a dokunduğunuzda oluşturulur. İsterseniz başka bir deste seçebilirsiniz. |
+| `#notetype:Basic` | Bu adda bir not türünüz varsa seçili gelir (büyük/küçük harf fark etmez). **Temel** türünün dosyadaki adı `Basic`'tir. |
 | `#tags:deneme-1` | Bütün notlara etiket ekler. |
 | `#tags column:3` | Etiketleri 3. sütundan okur. |
 | `#deck column:4`, `#notetype column:5` | Her satırın destesini veya not türünü o sütundan okur. Olmayan desteler oluşturulur. |
@@ -160,7 +160,8 @@ Atropinin etki mekanizması?	Muskarinik reseptör antagonisti	farmakoloji
   seçin. Metninizde iki nokta (`:`) veya noktalı virgül varsa tahmin yanılabilir.
 - **Alanlarda HTML'e izin ver:** Kapalıyken metin yazıldığı gibi görünür, satır sonları korunur.
   Açıkken `<b>` gibi etiketler biçimlendirme olarak okunur. Dosyada HTML varsa kendiliğinden açılır.
-- **Not türü** ve **Deste:** Notların hangi türle ve hangi desteye ekleneceği. Deste listesinden
+- **Not türü** ve **Deste:** Notların hangi türle ve hangi desteye ekleneceği. Dosyada `#notetype:`
+  ve `#deck:` satırları varsa bu seçimler onlarla başlar; değiştirebilirsiniz. Deste listesinden
   yeni bir deste de oluşturabilirsiniz. Dosya bunları bir sütundan veriyorsa satırda **Dosyadan
   (sütun N)** yazar.
 - **Mevcut notlar:** Aynı not türünde ilk alanı aynı olan bir not (dosyada kimlik sütunu varsa aynı
