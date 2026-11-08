@@ -115,6 +115,33 @@ export function ArrowDownIcon({ color, size = 20 }: IconProps) {
     return <Frame size={size}><Path d="M12 5v14M6 13l6 6 6-6" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
 }
 
+/** Point left (a direction, e.g. a swipe gesture). */
+export function ArrowLeftIcon({ color, size = 20 }: IconProps) {
+    return <Frame size={size}><Path d="M19 12H5M11 6l-6 6 6 6" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+}
+
+/** Point right (a direction, e.g. a swipe gesture). */
+export function ArrowRightIcon({ color, size = 20 }: IconProps) {
+    return <Frame size={size}><Path d="M5 12h14M13 6l6 6-6 6" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+}
+
+/** Delete or clear. */
+export function TrashIcon({ color, size = 20 }: IconProps) {
+    return (
+        <Frame size={size}>
+            <Path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 12a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8l1-12M10 11v6m4-6v6" stroke={color} strokeWidth={2} {...ROUND} />
+        </Frame>
+    );
+}
+
+export function UndoIcon({ color, size = 22 }: IconProps) {
+    return <Frame size={size}><Path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" stroke={color} strokeWidth={2} {...ROUND} /></Frame>;
+}
+
+export function RedoIcon({ color, size = 22 }: IconProps) {
+    return <Frame size={size}><Path d="m15 14 5-5-5-5m5 5H9.5a5.5 5.5 0 0 0 0 11H13" stroke={color} strokeWidth={2} {...ROUND} /></Frame>;
+}
+
 /** Opens outside the app (a web page, the share sheet). */
 export function ExternalLinkIcon({ color, size = 18 }: IconProps) {
     return (

@@ -42,7 +42,7 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | Header icon action | `IconButton` / `HeaderIconButton` | `components/ui/Button.tsx` |
 | Any filled, outlined or text action | `Button` (`primary`, `secondary`, `destructive`, `plain`; `regular` 50 pt or `compact` 40 pt) | `components/ui/Button.tsx` |
 | Close and help controls | `CloseButton` (SVG ×), `HelpButton` (round ?) | `components/ui/Button.tsx` |
-| Control glyphs | `BackIcon`, `ForwardIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `ChevronUpIcon`, `CloseIcon`, `CheckIcon`, `PlusIcon`, `MinusIcon`, `MoreIcon` (•••), `MoreVerticalIcon` (⋮), `SearchIcon`, `RefreshIcon`, `ArrowUpIcon`, `ArrowDownIcon`, `ExternalLinkIcon`, `DragHandleIcon` | `components/ui/icons.tsx` |
+| Control glyphs | `BackIcon`, `ForwardIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `ChevronUpIcon`, `CloseIcon`, `CheckIcon`, `PlusIcon`, `MinusIcon`, `MoreIcon` (•••), `MoreVerticalIcon` (⋮), `SearchIcon`, `RefreshIcon`, `ArrowUpIcon`, `ArrowDownIcon`, `ArrowLeftIcon`, `ArrowRightIcon`, `TrashIcon`, `UndoIcon`, `RedoIcon`, `ExternalLinkIcon`, `DragHandleIcon` | `components/ui/icons.tsx` |
 | − value + | `Stepper` (holding repeats; `children` for an editable value) | `components/ui/Stepper.tsx` |
 | A surface for rows, charts or fields | `Card` (`divided` for rows, `padded` for free content; `title`, `description`, `accessory` draw its heading inside), `CardHeader` | `components/ui/Card.tsx` |
 | A labelled group of rows | `Section` (`SectionLabel` + `Card` + `SectionFootnote`) | `components/ui/Card.tsx` |

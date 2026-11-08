@@ -15,10 +15,12 @@ interface SheetHeaderProps {
     onClose?: () => void;
     /** A rule under the header, for a form whose fields scroll under it. */
     divided?: boolean;
+    /** Spoken for the close button; "Kapat" by default. */
+    closeLabel?: string;
 }
 
 /** The title block at the top of every bottom sheet. */
-export function SheetHeader({ title, subtitle, onClose, divided = false }: SheetHeaderProps) {
+export function SheetHeader({ title, subtitle, onClose, divided = false, closeLabel }: SheetHeaderProps) {
     const colors = useThemeColors();
     const { l } = useI18n();
     return (
@@ -27,7 +29,7 @@ export function SheetHeader({ title, subtitle, onClose, divided = false }: Sheet
                 <Text style={[Type.title, { color: colors.textPrimary }]} accessibilityRole="header" numberOfLines={2}>{title}</Text>
                 {subtitle ? <Text style={[Type.caption, { color: colors.textMuted }]}>{subtitle}</Text> : null}
             </View>
-            {onClose ? <View style={styles.close}><CloseButton accessibilityLabel={l('Kapat', 'Close')} onPress={onClose} /></View> : null}
+            {onClose ? <View style={styles.close}><CloseButton accessibilityLabel={closeLabel ?? l('Kapat', 'Close')} onPress={onClose} /></View> : null}
         </View>
     );
 }
@@ -40,6 +42,8 @@ interface AppSheetProps {
     subtitle?: string;
     /** Puts a close button in the header (forms with a Save action). */
     closeButton?: boolean;
+    /** Spoken for the close button, e.g. "Yardımı kapat"; "Kapat" by default. */
+    closeLabel?: string;
     /** A rule under the header, for a form whose fields scroll under it. */
     dividedHeader?: boolean;
     /** Lift the sheet above the keyboard while one of its fields has focus. */
@@ -75,6 +79,7 @@ export function AppSheet({
     title,
     subtitle,
     closeButton = false,
+    closeLabel,
     dividedHeader = false,
     avoidKeyboard = false,
     swipeEnabled = true,
@@ -126,6 +131,7 @@ export function AppSheet({
                         subtitle={subtitle}
                         onClose={closeButton ? onClose : undefined}
                         divided={dividedHeader}
+                        closeLabel={closeLabel}
                     />
                 ) : null}
                 {children}

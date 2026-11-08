@@ -19,6 +19,8 @@ export type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'plain';
 interface ButtonProps {
     label: string;
     onPress: (event: GestureResponderEvent) => void;
+    /** For a control that acts as the finger lands (e.g. starting to capture a key). */
+    onPressIn?: (event: GestureResponderEvent) => void;
     /**
      * `primary` is the screen's main action (accent fill), `secondary` its companion (outlined),
      * `destructive` deletes or clears (red fill) and `plain` is a text-only action such as Cancel.
@@ -47,6 +49,7 @@ interface ButtonProps {
 export const Button = forwardRef<View, ButtonProps>(function Button({
     label,
     onPress,
+    onPressIn,
     variant = 'primary',
     size = 'regular',
     tone = 'accent',
@@ -89,6 +92,7 @@ export const Button = forwardRef<View, ButtonProps>(function Button({
                 style,
             ]}
             onPress={onPress}
+            onPressIn={onPressIn}
             disabled={inactive}
             hitSlop={slop}
             accessibilityRole="button"
@@ -182,15 +186,17 @@ export function CloseButton({ accessibilityLabel, onPress, color }: {
 }
 
 /** The round “?” beside a heading that opens its explanation. */
-export function HelpButton({ accessibilityLabel, onPress, expanded }: {
+export function HelpButton({ accessibilityLabel, accessibilityHint, onPress, expanded }: {
     accessibilityLabel: string;
+    /** E.g. the explanation's first sentence, read after the label. */
+    accessibilityHint?: string;
     onPress: () => void;
     /** Whether the explanation it opens is showing. */
     expanded?: boolean;
 }) {
     const colors = useThemeColors();
     return (
-        <IconButton accessibilityLabel={accessibilityLabel} onPress={onPress} expanded={expanded}>
+        <IconButton accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint} onPress={onPress} expanded={expanded}>
             <View style={[styles.helpCircle, { borderColor: colors.accent, backgroundColor: colors.accentLight }]}>
                 <Text style={[styles.helpMark, { color: colors.accent }]} maxFontSizeMultiplier={1.2}>?</Text>
             </View>

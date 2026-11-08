@@ -32,6 +32,11 @@ export function AppSwitch({ value, onValueChange, disabled, accessibilityLabel }
     );
 }
 
+/** What VoiceOver reads for a row: its title, value and a plain-text summary, in reading order. */
+function spokenLabel(title: string, value?: string, summary?: React.ReactNode): string {
+    return [title, value, typeof summary === 'string' ? summary : undefined].filter(Boolean).join(', ');
+}
+
 function RowText({ title, summary, destructive, titleLines = 2 }: {
     title: string;
     summary?: React.ReactNode;
@@ -72,6 +77,8 @@ interface ListRowProps {
     disabled?: boolean;
     accessibilityLabel?: string;
     accessibilityHint?: string;
+    /** `link` for a row that leaves the app (a web page); `button` otherwise. */
+    accessibilityRole?: 'button' | 'link';
     style?: StyleProp<ViewStyle>;
 }
 
@@ -90,6 +97,7 @@ export function ListRow({
     disabled = false,
     accessibilityLabel,
     accessibilityHint,
+    accessibilityRole,
     style,
 }: ListRowProps) {
     const colors = useThemeColors();
@@ -115,8 +123,8 @@ export function ListRow({
             style={[styles.row, disabled && styles.disabled, style]}
             onPress={onPress}
             disabled={disabled}
-            accessibilityRole={choice ? 'radio' : 'button'}
-            accessibilityLabel={accessibilityLabel ?? (value ? `${title}, ${value}` : title)}
+            accessibilityRole={choice ? 'radio' : accessibilityRole ?? 'button'}
+            accessibilityLabel={accessibilityLabel ?? spokenLabel(title, value, summary)}
             accessibilityHint={accessibilityHint}
             accessibilityState={{
                 disabled,
@@ -147,7 +155,7 @@ export function SwitchRow({ title, summary, value, onValueChange, disabled = fal
             disabled={disabled}
             activeOpacity={0.7}
             accessibilityRole="switch"
-            accessibilityLabel={title}
+            accessibilityLabel={spokenLabel(title, undefined, summary)}
             accessibilityState={{ checked: value, disabled }}
         >
             <RowText title={title} summary={summary} />

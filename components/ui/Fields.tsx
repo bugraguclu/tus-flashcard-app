@@ -10,10 +10,14 @@ type FieldProps = Omit<TextInputProps, 'style'> & {
     style?: StyleProp<ViewStyle>;
     /** Marks the field as holding a value the form will not accept. */
     invalid?: boolean;
+    /** Draws code (a card template, CSS) in a fixed-width face. */
+    monospace?: boolean;
 };
 
 /** The one text field: single or multi-line, filled with the input tone and edged by a hairline. */
-export const TextField = forwardRef<TextInput, FieldProps>(function TextField({ style, invalid = false, multiline, ...props }, ref) {
+const MONOSPACE = Platform.select({ ios: 'Menlo', default: 'monospace' });
+
+export const TextField = forwardRef<TextInput, FieldProps>(function TextField({ style, invalid = false, monospace = false, multiline, ...props }, ref) {
     const colors = useThemeColors();
     return (
         <TextInput
@@ -25,6 +29,7 @@ export const TextField = forwardRef<TextInput, FieldProps>(function TextField({ 
             style={[
                 styles.field,
                 multiline && styles.multiline,
+                monospace && { fontFamily: MONOSPACE },
                 { backgroundColor: colors.bgInput, borderColor: invalid ? colors.danger : colors.border, color: colors.textPrimary },
                 style as object,
             ]}

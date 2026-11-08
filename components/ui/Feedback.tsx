@@ -5,7 +5,8 @@ import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { Radius, Type } from './tokens';
 
 interface EmptyStateProps {
-    title: string;
+    /** Leave it out when one sentence says it all; `body` is then drawn as the message. */
+    title?: string;
     body?: string;
     /** A line icon above the title. */
     icon?: React.ReactNode;
@@ -20,8 +21,8 @@ export function EmptyState({ title, body, icon, action, style }: EmptyStateProps
     return (
         <View style={[styles.empty, style]}>
             {icon ? <View style={styles.emptyIcon}>{icon}</View> : null}
-            <Text style={[Type.sectionTitle, styles.center, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text>
-            {body ? <Text style={[Type.caption, styles.center, { color: colors.textMuted }]}>{body}</Text> : null}
+            {title ? <Text style={[Type.sectionTitle, styles.center, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text> : null}
+            {body ? <Text style={[title ? Type.caption : Type.body, styles.center, { color: title ? colors.textMuted : colors.textSecondary }]}>{body}</Text> : null}
             {action ? <View style={styles.emptyAction}>{action}</View> : null}
         </View>
     );

@@ -19,6 +19,8 @@ interface AppDialogProps {
     dismissOnBackdrop?: boolean;
     /** Buttons at the bottom, right-aligned: a plain Cancel, then the primary action. */
     actions?: React.ReactNode;
+    /** Spoken for the close button and the backdrop, e.g. "Yardımı kapat"; "Kapat" by default. */
+    closeLabel?: string;
     /** Extra style for the card, e.g. a wider limit for a table. */
     cardStyle?: StyleProp<ViewStyle>;
     children?: React.ReactNode;
@@ -36,11 +38,13 @@ export function AppDialog({
     closeButton = false,
     dismissOnBackdrop = true,
     actions,
+    closeLabel,
     cardStyle,
     children,
 }: AppDialogProps) {
     const colors = useThemeColors();
     const { l } = useI18n();
+    const spokenClose = closeLabel ?? l('Kapat', 'Close');
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
             <KeyboardAvoidingView
@@ -51,7 +55,7 @@ export function AppDialog({
                     style={StyleSheet.absoluteFill}
                     onPress={dismissOnBackdrop ? onClose : undefined}
                     accessibilityRole="button"
-                    accessibilityLabel={l('Kapat', 'Close')}
+                    accessibilityLabel={spokenClose}
                     importantForAccessibility={dismissOnBackdrop ? 'auto' : 'no-hide-descendants'}
                     accessibilityElementsHidden={!dismissOnBackdrop}
                 />
@@ -61,7 +65,7 @@ export function AppDialog({
                             {title}
                         </Text>
                         {closeButton ? (
-                            <View style={styles.close}><CloseButton accessibilityLabel={l('Kapat', 'Close')} onPress={onClose} /></View>
+                            <View style={styles.close}><CloseButton accessibilityLabel={spokenClose} onPress={onClose} /></View>
                         ) : null}
                     </View>
                     {message ? <Text style={[Type.body, styles.message, { color: colors.textSecondary }]}>{message}</Text> : null}
