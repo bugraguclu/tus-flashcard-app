@@ -24,6 +24,7 @@ import { cardFlagName, localizeNoteTypeName } from '../lib/i18n';
 import { ankiCardToCardState, dayNumberToYmd, localDayNumber } from '../lib/ankiState';
 import { useAppSettings } from '../contexts/AppContext';
 import LeechExplainer from '../components/LeechExplainer';
+import { answeredEntries, lastAnsweredAt, revlogFactorText, revlogKind, scheduleShownFor } from '../lib/cardInfo';
 
 function parseCardId(raw: string | string[] | undefined): number {
     const value = Array.isArray(raw) ? raw[0] : raw;
@@ -47,9 +48,12 @@ export default function CardInfoScreen() {
         const note = getNote(card.noteId);
         const noteType = note ? getNoteType(note.noteTypeId) : null;
         const deck = getDeck(card.deckId);
+        // A card sitting in an imported filtered deck is described by its home deck and schedule.
+        const homeDeck = card.odid > 0 ? getDeck(card.odid) : null;
         const reviews = getReviewsForCard(card.id);
 
-        const createdAt = note?.id ? new Date(note.id) : null;
+        // A card's id is the time it was added, which a note's later cards do not share.
+        const createdAt = card.id ? new Date(card.id) : null;
         const modifiedAt = card.mod ? new Date(card.mod * 1000) : null;
 
         return {
@@ -57,6 +61,7 @@ export default function CardInfoScreen() {
             note,
             noteType,
             deck,
+            homeDeck,
             reviews,
             createdAt,
             modifiedAt,
@@ -80,7 +85,13 @@ export default function CardInfoScreen() {
         );
     }
 
-    const { card, note, noteType, deck, reviews, createdAt, modifiedAt } = payload;
+    const { card, note, noteType, deck, homeDeck, reviews, createdAt, modifiedAt } = payload;
+    // In an imported filtered deck `due` is the deck's gather position; the home schedule is in `odue`.
+    const shown = scheduleShownFor(card);
+    const deckLabel = homeDeck && deck ? `${homeDeck.name} (${deck.name})` : deck?.name || '—';
+    const template = noteType?.kind === 'cloze'
+        ? noteType.templates[0] ? `${noteType.templates[0].name} ${card.ord + 1}` : null
+        : noteType?.templates.find((entry) => entry.ord === card.ord)?.name ?? null;
 
     // Card Info projects a missing memory state from history with the home preset, without
     // persisting it. Reuse the read-only inputs path used before answering, so cutoff dates and
@@ -102,19 +113,19 @@ export default function CardInfoScreen() {
         )
         : null;
 
-    const typeLabel = card.type === 0 ? t('anki.new') : card.type === 1 ? t('anki.learn') : card.type === 2 ? t('anki.review') : t('anki.relearn');
+    const typeLabel = shown.type === 0 ? t('anki.new') : shown.type === 1 ? t('anki.learn') : shown.type === 2 ? t('anki.review') : t('anki.relearn');
     // Anki's queue constants: -2 is SchedBuried (a sibling the scheduler set aside) and -3 is
     // UserBuried (the learner's own "Bury card"). Naming them the other way round reported every
     // manual bury as the scheduler's doing.
-    const queueLabel = card.queue === -1
+    const queueLabel = shown.queue === -1
         ? l('Askıda', 'Suspended')
-        : card.queue === -2
+        : shown.queue === -2
             ? l('Zamanlayıcı tarafından gömüldü', 'Buried by scheduler')
-            : card.queue === -3
+            : shown.queue === -3
                 ? l('Kullanıcı tarafından gömüldü', 'Buried manually')
-                : card.queue === 0
+                : shown.queue === 0
                     ? t('anki.new')
-                    : card.queue === 1 || card.queue === 3
+                    : shown.queue === 1 || shown.queue === 3
                         ? t('anki.learn')
                         : t('anki.review');
 
@@ -137,17 +148,17 @@ export default function CardInfoScreen() {
      * so each case is decoded into what the user actually wants to know.
      */
     const dueLabel = (() => {
-        if (card.queue === -1) return l('Askıya alındı', 'Suspended');
-        if (card.queue < 0) return l('Gömüldü (yarına kadar)', 'Buried (until tomorrow)');
-        if (card.queue === 0) return l(`Sırada · ${card.due}. kart`, `Queued · position ${card.due}`);
-        if (card.queue === 1) {
-            const remainingMs = (card.due || 0) - Date.now();
+        if (shown.queue === -1) return l('Askıya alındı', 'Suspended');
+        if (shown.queue < 0) return l('Gömüldü (yarına kadar)', 'Buried (until tomorrow)');
+        if (shown.queue === 0) return l(`Sırada · ${shown.due}. kart`, `Queued · position ${shown.due}`);
+        if (shown.queue === 1) {
+            const remainingMs = (shown.due || 0) - Date.now();
             if (remainingMs <= 0) return l('Şimdi', 'Now');
             if (remainingMs < 3_600_000) return l(`${Math.ceil(remainingMs / 60_000)} dk. sonra`, `in ${Math.ceil(remainingMs / 60_000)}m`);
-            return formatDateTime(new Date(card.due));
+            return formatDateTime(new Date(shown.due));
         }
         const today = localDayNumber(Date.now(), settings.dayRolloverHour);
-        const dueDay = card.due || today;
+        const dueDay = shown.due || today;
         const [year, month, day] = dayNumberToYmd(dueDay, settings.dayRolloverHour).split('-').map(Number);
         const dueDate = new Date(year, (month || 1) - 1, day || 1);
         return `${dueDate.toLocaleDateString(localeTag)} · ${formatRelativeDays(dueDay - today)}`;
@@ -185,16 +196,22 @@ export default function CardInfoScreen() {
      * leave behind — `ease = 0` is exactly the marker that separates the two (rslib counts
      * entries with `button_chosen > 0`).
      */
-    const answeredReviews = reviews.filter((entry) => entry.ease > 0);
+    const answeredReviews = answeredEntries(reviews);
     const totalReviewMs = answeredReviews.reduce((sum, entry) => sum + entry.time, 0);
     const firstReviewAt = answeredReviews.length > 0 ? new Date(answeredReviews[0].id) : null;
+    const lastAnswered = lastAnsweredAt(reviews, card);
+    // Anki lists the newest answer first.
+    const history = [...reviews].reverse();
 
     const reviewTypeLabel = (type: number) => {
-        if (type === 0) return t('anki.learn');
-        if (type === 1) return t('anki.review');
-        if (type === 2) return t('anki.relearn');
-        if (type === 3) return l('Filtrelenmiş', 'Filtered');
-        return l('El ile', 'Manual');
+        switch (revlogKind(type)) {
+            case 'learn': return t('anki.learn');
+            case 'review': return t('anki.review');
+            case 'relearn': return t('anki.relearn');
+            case 'filtered': return l('Filtrelenmiş', 'Filtered');
+            case 'rescheduled': return l('Yeniden zamanlandı', 'Rescheduled');
+            default: return l('El ile', 'Manual');
+        }
     };
 
     return (
@@ -212,7 +229,7 @@ export default function CardInfoScreen() {
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{l('Genel bilgi', 'General Information')}</Text>
-                    <InfoRow label={t('common.deck')} value={deck?.name || '—'} />
+                    <InfoRow label={t('common.deck')} value={deckLabel} />
                     <InfoRow label={l('Not türü', 'Note type')} value={noteType ? localizeNoteTypeName(locale, noteType.name) : '—'} />
                     <InfoRow label={l('Oluşturulma', 'Created')} value={formatDate(createdAt)} />
                     <InfoRow label={l('Değiştirilme', 'Modified')} value={formatDate(modifiedAt)} />
@@ -287,7 +304,7 @@ export default function CardInfoScreen() {
                     />
                     <InfoRow
                         label={l('Son çalışma', 'Last review')}
-                        value={card.lastReview ? formatDateTime(new Date(card.lastReview)) : l('Hiç çalışılmadı', 'Never studied')}
+                        value={lastAnswered ? formatDateTime(new Date(lastAnswered)) : l('Hiç çalışılmadı', 'Never studied')}
                     />
                     <InfoRow
                         label={l('Ortalama süre', 'Average time')}
@@ -297,7 +314,7 @@ export default function CardInfoScreen() {
                         label={l('Toplam süre', 'Total time')}
                         value={answeredReviews.length > 0 ? formatTime(totalReviewMs) : '—'}
                     />
-                    <InfoRow label={l('Kart şablonu', 'Card template')} value={`#${card.ord + 1}`} />
+                    <InfoRow label={l('Kart şablonu', 'Card template')} value={template ?? `#${card.ord + 1}`} />
                 </View>
 
                 <View style={styles.section}>
@@ -316,7 +333,7 @@ export default function CardInfoScreen() {
                         <Text style={[styles.th, { flex: 1 }]}>{l('Tür', 'Type')}</Text>
                     </View>}
 
-                    {reviews.map((rev, index) => {
+                    {history.map((rev, index) => {
                         const ease = easeLabel(rev.ease);
                         const date = new Date(rev.id);
                         return (
@@ -324,7 +341,7 @@ export default function CardInfoScreen() {
                                 <Text style={[styles.td, { flex: 2 }]}>{formatDateTime(date)}</Text>
                                 <Text style={[styles.td, { flex: 1, color: ease.color, fontWeight: '700' }]}>{ease.text}</Text>
                                 <Text style={[styles.td, { flex: 1 }]}>{formatIvl(rev.ivl)}</Text>
-                                <Text style={[styles.td, { flex: 1 }]}>{(rev.factor / 10).toFixed(0)}%</Text>
+                                <Text style={[styles.td, { flex: 1 }]}>{revlogFactorText(rev.factor)}</Text>
                                 <Text style={[styles.td, { flex: 1 }]}>{formatTime(rev.time)}</Text>
                                 <Text style={[styles.td, { flex: 1 }]}>{reviewTypeLabel(rev.type)}</Text>
                             </View>
