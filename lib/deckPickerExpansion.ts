@@ -6,6 +6,8 @@ import type { DeckTreeNode } from './deckManager';
 export interface VisibleDeckPickerRow {
     node: DeckTreeNode;
     depth: number;
+    /** True when the row's subdecks are drawn beneath it: what its disclosure control shows and reports. */
+    expanded: boolean;
 }
 
 /** Keep only the branches whose deck name matches the query, parents included. */
@@ -179,7 +181,19 @@ export function initialExpandedDeckNames(
     return names;
 }
 
-/** Flatten the tree into the rows a list renders, honouring the open branches. */
+/**
+ * Whether the search shows every branch of its matches. Only a typed search does: with the field
+ * open but empty, the list is the whole tree with the branches the user opened, and its disclosure
+ * controls must say so rather than draw every branch as open.
+ */
+export function searchOpensEveryBranch(searching: boolean, query: string): boolean {
+    return searching && query.trim().length > 0;
+}
+
+/**
+ * Flatten the tree into the rows a list renders, honouring the open branches. Each row carries
+ * whether its subdecks are drawn, so the control that toggles them reports what is on screen.
+ */
 export function flattenVisibleDeckPicker(
     nodes: DeckTreeNode[],
     expanded: Set<string>,
@@ -188,9 +202,10 @@ export function flattenVisibleDeckPicker(
     const rows: VisibleDeckPickerRow[] = [];
     const walk = (items: DeckTreeNode[], depth: number) => {
         for (const node of items) {
-            rows.push({ node, depth });
             // A search shows every match, however deep it sits.
-            if (searching || expanded.has(node.deck.name)) walk(node.children, depth + 1);
+            const open = node.children.length > 0 && (searching || expanded.has(node.deck.name));
+            rows.push({ node, depth, expanded: open });
+            if (open) walk(node.children, depth + 1);
         }
     };
     walk(nodes, 0);
