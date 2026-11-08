@@ -123,7 +123,7 @@ export function confirmAsync(
  * a Cancel button. Resolves to the chosen action's index, or null for Cancel or a dismissal.
  */
 export function chooseOption(title: string, message: string, options: readonly string[]): Promise<number | null> {
-    const safeMessage = userFacingErrorMessage(message);
+    const safeMessage = userFacingDialogText(message);
     return new Promise((resolve) => {
         let settled = false;
         const finish = (choice: number | null) => {
