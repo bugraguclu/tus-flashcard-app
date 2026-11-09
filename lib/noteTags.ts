@@ -27,6 +27,11 @@ export function sameTagSet(a: readonly string[], b: readonly string[]): boolean 
     return key(a) === key(b);
 }
 
+/** The key tags are matched by: NFC and case-insensitive, the way Anki compares tag names. */
+export function tagMatchKey(tag: string): string {
+    return tag.normalize('NFC').toLocaleLowerCase('en-US');
+}
+
 /**
  * One tag name as the tag picker stores a typed one: NFC, no control characters, and no empty or
  * padded `::` parts, so "a::" and "::a" both read as "a". Whitespace inside a part is left for

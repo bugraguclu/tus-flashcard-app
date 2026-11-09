@@ -45,6 +45,8 @@ interface TagPickerModalProps {
     title?: string;
     /** Browser filters load only tags reachable from the active deck/card scope. */
     loadTags?: () => string[];
+    /** Offered where tags can be renamed (the browser's tag filter): holding a row asks for it. */
+    onRenameTag?: (tag: string) => void;
 }
 
 /** Which entries are the same tag. The search field matches by its own, looser rules (lib/tagPickerFilter.ts). */
@@ -84,6 +86,7 @@ export default function TagPickerModal({
     allowCreate = true,
     title,
     loadTags = getAllTags,
+    onRenameTag,
 }: TagPickerModalProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
@@ -277,6 +280,11 @@ export default function TagPickerModal({
                                 </TouchableOpacity>
                             )}
                         </View>
+                        {onRenameTag && (
+                            <Text style={styles.renameHint}>
+                                {l('Yeniden adlandırmak için bir etikete basılı tutun.', 'Hold a tag to rename it.')}
+                            </Text>
+                        )}
                     </View>
 
                     {allowCreate && addVisible && (
@@ -366,10 +374,15 @@ export default function TagPickerModal({
                                             isLast && styles.tagRowLast,
                                         ]}
                                         onPress={() => toggleTag(tag)}
+                                        onLongPress={onRenameTag ? () => onRenameTag(tag) : undefined}
                                         accessibilityRole="checkbox"
                                         accessibilityState={{ checked: selected }}
                                         aria-checked={selected}
                                         accessibilityLabel={tag.replaceAll('::', ' › ')}
+                                        accessibilityActions={onRenameTag ? [{ name: 'rename', label: l('Yeniden adlandır', 'Rename') }] : undefined}
+                                        onAccessibilityAction={onRenameTag
+                                            ? (event) => { if (event.nativeEvent.actionName === 'rename') onRenameTag(tag); }
+                                            : undefined}
                                     >
                                         <Text style={[styles.tagText, selected && styles.tagTextSelected]} numberOfLines={2}>
                                             {tag.replaceAll('::', ' › ')}
@@ -525,6 +538,7 @@ function createStyles(colors: ColorScheme) {
             lineHeight: 20,
             fontWeight: '600',
         },
+        renameHint: { marginTop: Spacing.xs, color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
         addPanel: {
             paddingHorizontal: Spacing.lg,
             paddingVertical: Spacing.md,

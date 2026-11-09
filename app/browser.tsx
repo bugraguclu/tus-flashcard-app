@@ -89,6 +89,7 @@ import {
     SearchHelpModal,
 } from '../components/browser/BrowserDialogs';
 import { BrowserNoteTools, type BrowserNoteTool } from '../components/browser/BrowserNoteTools';
+import { renameTagFilters } from '../lib/tagRename';
 
 export default function BrowserScreen() {
     const { height: windowHeight } = useWindowDimensions();
@@ -815,6 +816,16 @@ export default function BrowserScreen() {
         closeSelection();
     }, [clearBrowserFilters, closeSelection, setDeckName]);
 
+    // Rename Tag opens from the tag filter list and returns to it, with the filter following
+    // the renamed tag.
+    const closeNoteTool = useCallback(() => {
+        if (noteTool?.kind === 'rename-tag') setShowTagFilter(true);
+        setNoteTool(null);
+    }, [noteTool]);
+    const followRenamedTag = useCallback((oldName: string, newName: string) => {
+        setTagFilters((current) => renameTagFilters(current, oldName, newName));
+    }, []);
+
     const openFilteredDeckDialog = useCallback(() => {
         setShowOverflowMenu(false);
         setFilteredDeckFormSearch(browserSearch);
@@ -1180,6 +1191,10 @@ export default function BrowserScreen() {
                     setTagFilters(tags);
                     setShowTagFilter(false);
                 }}
+                onRenameTag={(tag) => {
+                    setShowTagFilter(false);
+                    setNoteTool({ kind: 'rename-tag', tag });
+                }}
             />}
 
             {showSelectionTags && <TagPickerModal
@@ -1285,8 +1300,9 @@ export default function BrowserScreen() {
                 locale={locale}
                 noteTypes={noteTypes}
                 onChanged={refreshSelection}
-                onClose={() => setNoteTool(null)}
+                onClose={closeNoteTool}
                 onShowSearch={showSearchInPlace}
+                onTagRenamed={followRenamedTag}
                 selectedNoteIds={selectedNoteIds}
                 selectedNoteTypeIds={selectedNoteTypeIds}
                 styles={styles}
