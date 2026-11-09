@@ -63,6 +63,43 @@ const REGEX_SYNTAX = /[.*+?^${}()|[\]\\/]/g;
 /** Rust's inline flags at the start of a pattern (`(?i)`, `(?-i)`, `(?is)`); JavaScript has no inline form. */
 const LEADING_FLAGS = /^\(\?([a-zA-Z]*)(?:-([a-zA-Z]*))?\)/;
 
+/** A word character as Rust's regex crate counts one: a letter, mark, digit or connector of any script. */
+const WORD = '\\p{L}\\p{M}\\p{Nd}\\p{Pc}';
+const WORD_BOUNDARY = `(?:(?<=[${WORD}])(?![${WORD}])|(?<![${WORD}])(?=[${WORD}]))`;
+const NOT_WORD_BOUNDARY = `(?:(?<=[${WORD}])(?=[${WORD}])|(?<![${WORD}])(?![${WORD}]))`;
+/** Punctuation Rust lets a pattern escape although the escape means nothing; JavaScript refuses it. */
+const NEEDLESS_ESCAPE = /[!"#%&',:;=@_`~ ]/;
+
+/**
+ * A Rust pattern's classes and escapes in JavaScript's terms. In Rust `\w`, `\d` and `\b` know
+ * every script; in JavaScript they know ASCII only, so `\w+` stopped at the first ş or ğ and
+ * `\bşu\b` matched nothing. Inside a `[…]` class `\W` keeps JavaScript's meaning (a negated class
+ * cannot be written into another one) and `\b` stays a backspace.
+ */
+function unicodeAwareSource(source: string): string {
+    let translated = '';
+    let inClass = false;
+    for (let index = 0; index < source.length; index++) {
+        const char = source[index];
+        if (char !== '\\' || index + 1 >= source.length) {
+            if (char === '[') inClass = true;
+            else if (char === ']') inClass = false;
+            translated += char;
+            continue;
+        }
+        const escaped = source[++index];
+        if (escaped === 'w') translated += inClass ? WORD : `[${WORD}]`;
+        else if (escaped === 'W' && !inClass) translated += `[^${WORD}]`;
+        else if (escaped === 'd') translated += '\\p{Nd}';
+        else if (escaped === 'D') translated += '\\P{Nd}';
+        else if (escaped === 'b' && !inClass) translated += WORD_BOUNDARY;
+        else if (escaped === 'B' && !inClass) translated += NOT_WORD_BOUNDARY;
+        else if (NEEDLESS_ESCAPE.test(escaped) || (escaped === '-' && !inClass)) translated += escaped;
+        else translated += `\\${escaped}`;
+    }
+    return translated;
+}
+
 function patternFor(request: FindReplaceRequest): RegExp {
     const find = request.find.normalize('NFC');
     if (!find) throw new FindReplaceInputError('empty-find');
@@ -84,10 +121,17 @@ function patternFor(request: FindReplaceRequest): RegExp {
     }
     // Rust also spells a named group `(?P<name>…)`; JavaScript knows only `(?<name>…)`.
     source = source.replace(/(^|[^\\])\(\?P</g, '$1(?<');
+    const jsFlags = `g${flags.i ? 'i' : ''}${flags.s ? 's' : ''}${flags.m ? 'm' : ''}u`;
     try {
-        return new RegExp(source, `g${flags.i ? 'i' : ''}${flags.s ? 's' : ''}${flags.m ? 'm' : ''}u`);
-    } catch (cause) {
-        throw new FindReplaceInputError('invalid-regex', { cause });
+        return new RegExp(unicodeAwareSource(source), jsFlags);
+    } catch {
+        // An engine without lookbehind cannot take the translated `\b`: the pattern as written
+        // still works there, with JavaScript's ASCII-only classes.
+        try {
+            return new RegExp(source, jsFlags);
+        } catch (cause) {
+            throw new FindReplaceInputError('invalid-regex', { cause });
+        }
     }
 }
 
