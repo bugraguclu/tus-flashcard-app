@@ -104,13 +104,36 @@ describe('reviewer autoplay runs once per card and side', () => {
         run.unmount();
     });
 
-    it('plays the side again when the app comes back from the background', () => {
+    it('does not play the side again when the app comes back from the background', () => {
         const run = setup({ order: ['sound'] });
         run.wait(450);
         run.rerender({ foregrounded: false });
         run.rerender({ foregrounded: true });
+        run.wait(5000);
+        expect(run.playSounds).toHaveBeenCalledTimes(1);
+        run.unmount();
+    });
+
+    it('does not read the side again when the app comes back from the background', () => {
+        const run = setup({ order: ['tts'], wholeCardReading: true, cardHasAudio: false });
+        run.wait(120);
+        expect(run.speak).toHaveBeenCalledTimes(1);
+        run.rerender({ foregrounded: false });
+        run.rerender({ foregrounded: true });
+        run.wait(5000);
+        expect(run.speak).toHaveBeenCalledTimes(1);
+        run.unmount();
+    });
+
+    it('still plays a side whose audio had not started when the app left the foreground', () => {
+        const run = setup({ order: ['sound'] });
+        run.wait(100);
+        run.rerender({ foregrounded: false });
+        run.wait(1000);
+        expect(run.playSounds).not.toHaveBeenCalled();
+        run.rerender({ foregrounded: true });
         run.wait(450);
-        expect(run.playSounds).toHaveBeenCalledTimes(2);
+        expect(run.playSounds).toHaveBeenCalledTimes(1);
         run.unmount();
     });
 

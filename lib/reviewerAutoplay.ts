@@ -49,8 +49,9 @@ export function autoplaySideKey(cardId: number | undefined, answerSide: boolean)
  * whenever the screen rebuilt the card on show: a flag, a mark or a tag edit invalidates the
  * collection, which hands the reviewer fresh callbacks, and coming back from Card Info, Deck Options
  * or the editor refocuses it. So it runs once per card and side, its effects depend on plain values
- * only, and the callbacks are read when they are called. Coming back from the background is the
- * exception: the side plays again then, as it always has.
+ * only, and the callbacks are read when they are called. Coming back from the background does not
+ * start it again either (owner decision): the learner replays the side with R or ••• › Replay audio.
+ * A side whose audio had not started yet when the app left the foreground still plays on return.
  */
 export function useReviewerAutoplay(input: ReviewerAutoplayInput): void {
     const {
@@ -65,12 +66,6 @@ export function useReviewerAutoplay(input: ReviewerAutoplayInput): void {
     actionsRef.current = input;
     /** The side whose autoplay has started; the effects below do not start it twice. */
     const startedRef = useRef<string | null>(null);
-
-    // Coming back from the background plays the side again (owner decision, unchanged); coming back
-    // from another screen does not, so only leaving the foreground on this screen clears the mark.
-    useEffect(() => {
-        if (focused && !foregrounded) startedRef.current = null;
-    }, [focused, foregrounded]);
 
     // Switching whole-card reading on asks for the side to be read now, as it always has.
     const readingRef = useRef(wholeCardReading);
