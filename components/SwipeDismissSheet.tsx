@@ -116,6 +116,12 @@ export default function SwipeDismissSheet({
 
     const gate = useMemo<SheetDragGate>(() => ({ exclude: () => { excludedTouch.current = true; } }), []);
 
+    // The responder is built once and reads what changes between renders from here. A responder
+    // built anew starts a new gesture, so an owner that re-rendered mid-drag (a running
+    // stopwatch, the keyboard closing) dropped the sheet back to the top under the finger.
+    const live = useRef({ dismiss, enabled });
+    live.current = { dismiss, enabled };
+
     const panResponder = useMemo(() => {
         const settle = () => {
             Animated.spring(translateY, {
@@ -137,10 +143,10 @@ export default function SwipeDismissSheet({
             // Bubble phase, once every control under the finger has declined the touch. A sheet
             // inside a React Native Modal has to take it here: the Modal claims any touch nobody
             // else wants, and after that the sheet is never asked about the drag.
-            onStartShouldSetPanResponder: () => enabled && !excludedTouch.current,
+            onStartShouldSetPanResponder: () => live.current.enabled && !excludedTouch.current,
             // A control that took the touch keeps a tap, and gives it up once the finger clearly
             // travels down.
-            onMoveShouldSetPanResponder: (_event, gesture) => enabled && !excludedTouch.current && pullsDown(gesture),
+            onMoveShouldSetPanResponder: (_event, gesture) => live.current.enabled && !excludedTouch.current && pullsDown(gesture),
             onPanResponderGrant: () => {
                 dragging.current = false;
             },
@@ -158,7 +164,7 @@ export default function SwipeDismissSheet({
                 dragging.current = false;
                 const distance = gesture.dy - dragStart.current;
                 if (distance >= DISMISS_DISTANCE || (distance > 12 && gesture.vy >= DISMISS_VELOCITY)) {
-                    dismiss();
+                    live.current.dismiss();
                     return;
                 }
                 settle();
@@ -171,7 +177,7 @@ export default function SwipeDismissSheet({
             // Until the sheet moves, a part of it that scrolls sideways may still take the touch.
             onPanResponderTerminationRequest: () => !dragging.current,
         });
-    }, [dismiss, enabled, translateY]);
+    }, [translateY]);
 
     const hasHeader = Boolean(title || subtitle || headerLeft || headerRight);
     const hasSides = Boolean(headerLeft || headerRight);
