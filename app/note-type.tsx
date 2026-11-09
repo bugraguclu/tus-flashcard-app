@@ -28,9 +28,9 @@ import {
     structuralEditOverDraft,
     type FieldEdit,
 } from '../lib/noteTypeEditor';
-import { isCatalogNoteType } from '../lib/catalogProtection';
+import { isCatalogNoteType, PaidCatalogProtectionError } from '../lib/catalogProtection';
 import { isImageOcclusionNoteType } from '../lib/imageOcclusionNoteType';
-import { canDeleteNoteType, deleteNoteTypeWithBackup, NoteTypeDeletionError, noteTypeDeletionImpact } from '../lib/noteTypeDeletion';
+import { canDeleteNoteType, catalogNotesOfType, deleteNoteTypeWithBackup, NoteTypeDeletionError, noteTypeDeletionImpact } from '../lib/noteTypeDeletion';
 import { BackupNotRestorableError, displayBackupName } from '../lib/backup';
 import type { NoteType, Note, AnkiCard } from '../lib/models';
 import CardWebView from '../components/CardWebView';
@@ -168,6 +168,15 @@ export default function NoteTypeScreen() {
         );
     };
 
+    /** A catalog note is never deleted, so a type that holds one stays too. */
+    const announceCatalogNotes = () => alert(
+        l('Not türü silinemez', 'Note Type Cannot Be Deleted'),
+        l(
+            'Bu not türünde TUS kataloğuna ait notlar var. Katalog notları silinemediği için not türü de silinemez; hiçbir şey değişmedi.',
+            'This note type holds notes of the TUS catalog. Catalog notes cannot be deleted, so the note type cannot be either; nothing changed.',
+        ),
+    );
+
     /** Back up, then delete the type with its notes and cards, and leave the screen. */
     const runDelete = async () => {
         setDeleting(true);
@@ -188,7 +197,10 @@ export default function NoteTypeScreen() {
             );
         } catch (e) {
             console.warn('[NoteType] delete failed:', e);
-            if (e instanceof NoteTypeDeletionError && e.stage === 'backup' && e.cause instanceof BackupNotRestorableError) {
+            // Refused before the backup, or by the deletion itself if a catalog note arrived meanwhile.
+            if ((e instanceof NoteTypeDeletionError ? e.cause : e) instanceof PaidCatalogProtectionError) {
+                announceCatalogNotes();
+            } else if (e instanceof NoteTypeDeletionError && e.stage === 'backup' && e.cause instanceof BackupNotRestorableError) {
                 alert(t('backup.notRestorableTitle'), t('backup.notRestorableMessage'));
             } else if (e instanceof NoteTypeDeletionError && e.stage === 'backup') {
                 alert(t('common.error'), l(
@@ -205,6 +217,11 @@ export default function NoteTypeScreen() {
 
     const handleDelete = () => {
         if (deleting || !deletable) return;
+        // Say so before asking: a confirmation that then cannot be carried out promises too much.
+        if (catalogNotesOfType(nt.id) > 0) {
+            announceCatalogNotes();
+            return;
+        }
         const { notes, cards } = noteTypeDeletionImpact(nt.id);
         const name = getNoteType(nt.id)?.name ?? nt.name;
         confirm(

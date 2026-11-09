@@ -10,7 +10,8 @@ import { createNote, getNote } from './noteStore';
 import { createDeck } from './deckStore';
 import { getNoteType } from './noteTypeStore';
 import { createNoteTypeFrom } from './noteTypeManage';
-import { canDeleteNoteType, deleteNoteTypeWithBackup, NoteTypeDeletionError, noteTypeDeletionImpact } from './noteTypeDeletion';
+import { canDeleteNoteType, catalogNotesOfType, deleteNoteTypeWithBackup, NoteTypeDeletionError, noteTypeDeletionImpact } from './noteTypeDeletion';
+import { PaidCatalogProtectionError } from './catalogProtection';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
@@ -54,6 +55,23 @@ describe('deleting a note type', () => {
 
         expect(getNoteType(own.id)).not.toBeNull();
         expect(getNote(note.id)).not.toBeNull();
+    });
+
+    it('refuses a type that holds a catalog note before any backup is taken', async () => {
+        const own = createNoteTypeFrom(reversed, 'Çift yönlü');
+        const deck = createDeck('Kardiyo');
+        const { note } = createNote(own, ['Kalp', 'Heart'], deck.id);
+        const moved = createNote(own, ['Katalog', 'Catalog'], deck.id).note;
+        db.runSync("UPDATE notes SET data = json_set(data, '$.catalogPack', 'bka-tus') WHERE id = ?", moved.id);
+        expect(catalogNotesOfType(own.id)).toBe(1);
+        const createBackup = vi.fn(async () => ({ fileName: 'safety.json' }));
+
+        await expect(deleteNoteTypeWithBackup(own, { createBackup })).rejects.toBeInstanceOf(PaidCatalogProtectionError);
+
+        expect(createBackup).not.toHaveBeenCalled();
+        expect(getNoteType(own.id)).not.toBeNull();
+        expect(getNote(note.id)).not.toBeNull();
+        expect(getNote(moved.id)).not.toBeNull();
     });
 
     it('never deletes a stock, legacy or catalog type', async () => {
