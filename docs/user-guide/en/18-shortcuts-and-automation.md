@@ -60,9 +60,9 @@ tusankim://x-callback-url/addnote?type=Basic&deck=Farmakoloji&fldFront=Aspirin&f
 
 | Value | Required? | Meaning |
 | --- | --- | --- |
-| `type` | Yes | The note type's name; upper and lower case do not matter. For the built-in types use their English names: `Basic`, `Basic (and reversed card)`, `Basic (optional reversed card)`, `Basic (type in the answer)`, `Cloze`. |
+| `type` | Yes | The note type's name; upper and lower case do not matter. For the built-in types use their English names (`Basic`, `Basic (and reversed card)`, `Basic (optional reversed card)`, `Basic (type in the answer)`, `Cloze`) or the Turkish names the interface shows (`Temel`, `Boşluklu`). |
 | `deck` | Yes | The deck's name; case does not matter. For a subdeck use `::`: `TUS%3A%3AFarmakoloji`. It cannot be a filtered deck. |
-| `fld` + field name | At least one field | The field's content. Put the field name right after `fld`, written exactly as it is named: `fldFront`, `fldBack`, `fldText`, `fldBack%20Extra`. The built-in types' fields are Front, Back, Text and Back Extra (shown as **Ön**, **Arka**, **Metin**, **Arka Ek** in the Turkish interface). |
+| `fld` + field name | At least one field | The field's content. Put the field name right after `fld`: `fldFront`, `fldBack`, `fldText`, `fldBack%20Extra`. Case does not matter, and a built-in type's field also takes the name the Turkish interface shows (`fld%C3%96n` for **Ön**, `fldArka`, `fldMetin`, `fldArka%20Ek`). |
 | `tags` | No | Tags separated by spaces. |
 | `x-success` | No | A link to open after the note is saved. See [Return link](#x-callback). |
 
@@ -80,10 +80,11 @@ A cloze note example:
 tusankim://x-callback-url/addnote?type=Cloze&deck=Farmakoloji&fldText=%7B%7Bc1%3A%3AAspirin%7D%7D%20inhibits%20COX&fldBack%20Extra=NSAID
 ```
 
-If the link is incomplete (no `type`, no `deck` or no field) or the deck or note type cannot be
-found, TusAnkiM ignores the link and stays on the screen it was on. If nothing happens, check the
-deck and note type names. Notes cannot be added to the decks of the TUS card pack; if you give
-such a deck, the screen opens with another deck, so change the deck before saving.
+If the link is incomplete (no `type`, no `deck` or no field), the deck or note type cannot be
+found, the deck is a filtered deck, or none of the fields is in the note type, TusAnkiM says why in
+a **Couldn't open the link** notice and stays on the screen it was on; for unmatched fields the
+notice lists the note type's fields. A link cannot add notes to the decks of the TUS card pack;
+naming such a deck brings up the same notice.
 
 <a id="search-url"></a>
 ### Search link

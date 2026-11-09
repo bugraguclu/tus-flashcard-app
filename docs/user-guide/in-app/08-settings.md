@@ -288,8 +288,8 @@ Hepsi `lib/permissions.ts:20-41` üzerinden açılır: iPhone'da **Ayarları Aç
 
 ## 13. Otomasyon bağlantıları
 
-### help.automation.ignored — Açılamayan bağlantı uyarısı (yeni)
-- **Yer:** iPhone: `app/_layout.tsx:601-606` (`externalActionRoute` null döndüğünde); web: `app/x-callback-url.tsx:22-25` (deste listesine geçmeden önce). Kaynak: `lib/externalActionRoute.ts:23-26` (bugün yalnızca konsol uyarısı)
+### help.automation.ignored — Açılamayan bağlantı uyarısı
+- **Yer:** iPhone: `app/_layout.tsx` (bağlantı reddedildiğinde); web: `app/x-callback-url.tsx` (deste listesine geçerken). Metinler: `lib/externalLinkRejection.ts` (her ret nedeni için ayrı, uygulandı)
 - **Tetikleyici:** `addnote` isteğinde not türü veya deste bulunamadığında, deste filtrelenmiş olduğunda ya da zorunlu değer eksik olduğunda
 - **Bileşen:** uyarı (`alert`), ikincil düğme **Daha fazla bilgi**
 - **Daha fazla bilgi:** `tr/18-shortcuts-and-automation.md#add-note-url`

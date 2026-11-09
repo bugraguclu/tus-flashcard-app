@@ -37,6 +37,8 @@ import { onStudyReminderOpened } from '../lib/studyNotifications';
 import { onStopwatchAlertOpened } from '../lib/stopwatchNotifications';
 import { externalActionRoute } from '../lib/externalActionRoute';
 import { attachIncomingUrlHandler, incomingUrlNavigation, startIncomingUrls } from '../lib/incomingUrl';
+import { externalLinkRejectionText } from '../lib/externalLinkRejection';
+import { alert as showAlert } from '../lib/confirm';
 import WebAppIntegrations from '../components/WebAppIntegrations';
 import { TextScaleProvider } from '../components/AppText';
 import { textSizeMultiplier } from '../lib/textScale';
@@ -621,10 +623,16 @@ function AppStack() {
             const current = navigationRef.getCurrentRoute() as { name?: string } | undefined;
             const navigation = incomingUrlNavigation(url, current?.name, externalActionRoute);
             if (!navigation) return;
+            if (navigation.method === 'reject') {
+                // A request that cannot be carried out says why instead of doing nothing.
+                const { title, message } = externalLinkRejectionText(locale, navigation.rejection);
+                showAlert(title, message);
+                return;
+            }
             if (navigation.method === 'replace') router.replace(navigation.href as any);
             else router.push(navigation.href as any);
         });
-    }, [navigationRef, router, startupSucceeded]);
+    }, [navigationRef, router, startupSucceeded, locale]);
 
     // The web build takes reminder clicks in WebAppIntegrations, which is mounted below.
     useEffect(() => {

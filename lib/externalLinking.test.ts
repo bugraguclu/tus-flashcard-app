@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     externalAppUrlFromQuery,
     parseExternalAppUrl,
+    readExternalAppUrl,
     safeExternalCallbackUrl,
 } from './externalLinking';
 
@@ -73,3 +74,32 @@ describe('the web form of the x-callback URLs', () => {
         expect(externalAppUrlFromQuery({ action: '../decks' })).toBeNull();
     });
 });
+
+describe('why an x-callback request is refused', () => {
+    const reason = (url: string) => {
+        const reading = readExternalAppUrl(url);
+        return reading && 'rejected' in reading ? reading.rejected : reading;
+    };
+
+    it('names what an incomplete request is missing', () => {
+        expect(reason('tusankim://x-callback-url/addnote?deck=TUS&fldFront=a')).toEqual({ reason: 'missingType' });
+        expect(reason('tusankim://x-callback-url/addnote?type=Basic&fldFront=a')).toEqual({ reason: 'missingDeck' });
+        expect(reason('tusankim://x-callback-url/addnote?type=Basic&deck=TUS&tags=x')).toEqual({ reason: 'missingFields' });
+        expect(reason('tusankim://x-callback-url/search')).toEqual({ reason: 'missingQuery' });
+    });
+
+    it('names an action it does not support and a link that is too long', () => {
+        expect(reason('tusankim://x-callback-url/deletenote?id=1')).toEqual({ reason: 'unknownAction', action: 'deletenote' });
+        expect(reason('tusankim://x-callback-url')).toEqual({ reason: 'unknownAction', action: '' });
+        expect(reason(`tusankim://x-callback-url/addnote?type=Basic&deck=TUS&fldFront=${'a'.repeat(33_000)}`)).toEqual({ reason: 'tooLong' });
+    });
+
+    it('reads a complete request as its action, and leaves other URLs alone', () => {
+        expect(readExternalAppUrl('tusankim://x-callback-url/search?query=tag%3Amarked')).toEqual({ action: { kind: 'search', query: 'tag:marked' } });
+        expect(readExternalAppUrl('tusankim:///stats')).toBeNull();
+        expect(readExternalAppUrl('file:///private/var/mobile/Inbox/deck.apkg')).toBeNull();
+        expect(readExternalAppUrl(`file:///${'a'.repeat(33_000)}.apkg`)).toBeNull();
+        expect(readExternalAppUrl('')).toBeNull();
+    });
+});
+

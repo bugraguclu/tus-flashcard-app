@@ -29,9 +29,38 @@ export function safeExternalCallbackUrl(raw: string | null): string | null {
     }
 }
 
-/** Parse the AnkiMobile-style x-callback subset supported by TusAnkiM. */
-export function parseExternalAppUrl(rawUrl: string): ExternalAppAction | null {
-    if (!rawUrl || rawUrl.length > 32_768) return null;
+/**
+ * Why a `tusankim://x-callback-url/…` request could not be carried out. The learner is told
+ * (lib/externalLinkRejection.ts): a rejected request used to do nothing but log a warning.
+ */
+export type ExternalLinkRejection =
+    | { reason: 'tooLong' }
+    | { reason: 'unknownAction'; action: string }
+    | { reason: 'missingQuery' }
+    | { reason: 'missingType' }
+    | { reason: 'missingDeck' }
+    | { reason: 'missingFields' }
+    | { reason: 'noteTypeNotFound'; noteTypeName: string }
+    | { reason: 'deckNotFound'; deckName: string }
+    | { reason: 'filteredDeck'; deckName: string }
+    | { reason: 'catalogDeck'; deckName: string }
+    | { reason: 'noMatchingFields'; noteTypeName: string; fieldNames: string[] };
+
+/** A request read from a URL: what it asks for, or why it cannot be done. */
+export type ExternalAppUrlReading = { action: ExternalAppAction } | { rejected: ExternalLinkRejection };
+
+const MAX_EXTERNAL_URL_LENGTH = 32_768;
+const X_CALLBACK_URL = /^tusankim:\/\/x-callback-url(?:[/?#]|$)/i;
+
+/**
+ * Read the AnkiMobile-style x-callback subset supported by TusAnkiM. Null for any URL that is not
+ * an x-callback request (a file, a screen address), which other code handles.
+ */
+export function readExternalAppUrl(rawUrl: string): ExternalAppUrlReading | null {
+    if (!rawUrl) return null;
+    if (rawUrl.length > MAX_EXTERNAL_URL_LENGTH) {
+        return X_CALLBACK_URL.test(rawUrl) ? { rejected: { reason: 'tooLong' } } : null;
+    }
     let url: URL;
     try {
         url = new URL(rawUrl);
@@ -44,13 +73,14 @@ export function parseExternalAppUrl(rawUrl: string): ExternalAppAction | null {
     const action = url.pathname.replace(/^\/+/, '').toLowerCase();
     if (action === 'search') {
         const query = cleanValue(url.searchParams.get('query'), 4096);
-        return query ? { kind: 'search', query } : null;
+        return query ? { action: { kind: 'search', query } } : { rejected: { reason: 'missingQuery' } };
     }
-    if (action !== 'addnote') return null;
+    if (action !== 'addnote') return { rejected: { reason: 'unknownAction', action: cleanValue(action, 60) } };
 
     const noteTypeName = cleanValue(url.searchParams.get('type'), 200);
+    if (!noteTypeName) return { rejected: { reason: 'missingType' } };
     const deckName = cleanValue(url.searchParams.get('deck'), 500);
-    if (!noteTypeName || !deckName) return null;
+    if (!deckName) return { rejected: { reason: 'missingDeck' } };
 
     const fields: Record<string, string> = {};
     for (const [key, value] of url.searchParams.entries()) {
@@ -59,17 +89,25 @@ export function parseExternalAppUrl(rawUrl: string): ExternalAppAction | null {
         if (!fieldName || Object.keys(fields).length >= 100) continue;
         fields[fieldName] = value.slice(0, 100_000);
     }
-    if (Object.keys(fields).length === 0) return null;
+    if (Object.keys(fields).length === 0) return { rejected: { reason: 'missingFields' } };
 
     return {
-        kind: 'addnote',
-        noteTypeName,
-        deckName,
-        fields,
-        tags: cleanValue(url.searchParams.get('tags'), 10_000).split(/\s+/).filter(Boolean).slice(0, 200),
-        allowDuplicates: url.searchParams.get('dupes') === '1',
-        successUrl: safeExternalCallbackUrl(url.searchParams.get('x-success')),
+        action: {
+            kind: 'addnote',
+            noteTypeName,
+            deckName,
+            fields,
+            tags: cleanValue(url.searchParams.get('tags'), 10_000).split(/\s+/).filter(Boolean).slice(0, 200),
+            allowDuplicates: url.searchParams.get('dupes') === '1',
+            successUrl: safeExternalCallbackUrl(url.searchParams.get('x-success')),
+        },
     };
+}
+
+/** The action an x-callback URL asks for, or null when it asks for none that can be done. */
+export function parseExternalAppUrl(rawUrl: string): ExternalAppAction | null {
+    const reading = readExternalAppUrl(rawUrl);
+    return reading && 'action' in reading ? reading.action : null;
 }
 
 /**
@@ -78,7 +116,7 @@ export function parseExternalAppUrl(rawUrl: string): ExternalAppAction | null {
  * A browser cannot own the `tusankim:` scheme, so the site answers at one route and names the
  * action in the query — a static host can serve that route, while `/x-callback-url/addnote` would
  * need a server rewrite. The parameters are turned back into the `tusankim://` URL
- * `parseExternalAppUrl` reads, so both platforms share one parser and one set of limits.
+ * `readExternalAppUrl` reads, so both platforms share one parser and one set of limits.
  */
 export function externalAppUrlFromQuery(params: Record<string, string | string[] | undefined>): string | null {
     const rawAction = params.action;

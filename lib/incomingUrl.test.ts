@@ -185,6 +185,14 @@ describe('incoming URL navigation', () => {
         expect(incomingUrlNavigation(SEARCH, 'browser', routeFor)).toEqual({ method: 'replace', href: browserRoute });
     });
 
+    it('rejects, with the reason, a request that is incomplete or that the collection cannot serve', () => {
+        expect(incomingUrlNavigation('tusankim://x-callback-url/addnote?type=Basic&fldFront=a', 'decks', routeFor))
+            .toEqual({ method: 'reject', rejection: { reason: 'missingDeck' } });
+        const missingDeck = { rejected: { reason: 'deckNotFound' as const, deckName: 'Farmakoloji' } };
+        expect(incomingUrlNavigation(ADD_NOTE, 'decks', () => missingDeck))
+            .toEqual({ method: 'reject', rejection: missingDeck.rejected });
+    });
+
     it('ignores a request the collection cannot serve and a URL that is neither', () => {
         expect(incomingUrlNavigation(ADD_NOTE, 'decks', () => null)).toBeNull();
         expect(incomingUrlNavigation('tusankim:///stats', 'decks', routeFor)).toBeNull();
@@ -200,7 +208,7 @@ describe('incoming URL navigation', () => {
         const stack = ['decks'];
         queue.attach((url) => {
             const navigation = incomingUrlNavigation(url, stack[stack.length - 1], routeFor);
-            if (!navigation) return;
+            if (!navigation || navigation.method === 'reject') return;
             const screen = navigation.href.pathname.slice(1);
             if (navigation.method === 'replace') stack.splice(stack.length - 1, 1, screen);
             else stack.push(screen);

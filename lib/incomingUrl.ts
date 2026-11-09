@@ -1,6 +1,6 @@
-import { parseExternalAppUrl, type ExternalAppAction } from './externalLinking';
+import { readExternalAppUrl, type ExternalAppAction, type ExternalLinkRejection } from './externalLinking';
 // Type-only: the route resolver reads the collection and is handed in by the caller.
-import type { ExternalActionRoute } from './externalActionRoute';
+import type { ExternalActionResult } from './externalActionRoute';
 import { inferImportFileType } from './importFile';
 
 /** Where the iPhone hands the app a URL: React Native's `Linking`. */
@@ -94,28 +94,30 @@ export function attachIncomingUrlHandler(handler: IncomingUrlHandler): () => voi
     return incomingUrls.attach(handler);
 }
 
-export interface IncomingUrlNavigation {
-    method: 'push' | 'replace';
-    href: { pathname: string; params: Record<string, string> };
-}
+export type IncomingUrlNavigation =
+    | { method: 'push' | 'replace'; href: { pathname: string; params: Record<string, string> } }
+    /** An x-callback request that cannot be carried out; the shell says why. */
+    | { method: 'reject'; rejection: ExternalLinkRejection };
 
 /**
  * The screen an incoming URL opens, given the name of the screen on top. A file opens the import
  * screen. An x-callback request opens what `routeForAction` resolves (the editor, filled in, or a
  * browser search); when that screen is already on top it is replaced rather than stacked, so a
- * Shortcut that adds note after note leaves one editor instead of one per note. Null for a request
- * the collection cannot serve (a missing note type or deck) and for any other URL, which the router
- * opens itself.
+ * Shortcut that adds note after note leaves one editor instead of one per note. A request that is
+ * incomplete or that the collection cannot serve (a missing note type or deck) is rejected with
+ * its reason. Null for any other URL, which the router opens itself.
  */
 export function incomingUrlNavigation(
     url: string,
     currentRouteName: string | undefined,
-    routeForAction: (action: ExternalAppAction) => ExternalActionRoute | null,
+    routeForAction: (action: ExternalAppAction) => ExternalActionResult | null,
 ): IncomingUrlNavigation | null {
-    const action = parseExternalAppUrl(url);
-    if (action) {
-        const route = routeForAction(action);
+    const reading = readExternalAppUrl(url);
+    if (reading) {
+        if ('rejected' in reading) return { method: 'reject', rejection: reading.rejected };
+        const route = routeForAction(reading.action);
         if (!route) return null;
+        if ('rejected' in route) return { method: 'reject', rejection: route.rejected };
         return { method: currentRouteName === route.pathname.slice(1) ? 'replace' : 'push', href: route };
     }
     if (!inferImportFileType(url)) return null;

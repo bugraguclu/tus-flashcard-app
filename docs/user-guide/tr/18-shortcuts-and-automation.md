@@ -61,9 +61,9 @@ tusankim://x-callback-url/addnote?type=Basic&deck=Farmakoloji&fldFront=Aspirin&f
 
 | Değer | Gerekli mi? | Anlamı |
 | --- | --- | --- |
-| `type` | Evet | Not türünün adı; büyük-küçük harf fark etmez. Hazır türlerde İngilizce adı yazın: `Basic`, `Basic (and reversed card)`, `Basic (optional reversed card)`, `Basic (type in the answer)`, `Cloze`. Türkçe arayüzde bunlar **Temel**, **Boşluklu** gibi görünür. |
+| `type` | Evet | Not türünün adı; büyük-küçük harf fark etmez. Hazır türlerde İngilizce adı ya da arayüzde görünen Türkçe adı yazın: `Basic` veya `Temel`, `Cloze` veya `Boşluklu`, `Basic (and reversed card)`, `Basic (optional reversed card)`, `Basic (type in the answer)`. |
 | `deck` | Evet | Destenin adı; büyük-küçük harf fark etmez. Alt deste için `::` kullanın: `TUS%3A%3AFarmakoloji`. Filtrelenmiş bir deste olamaz. |
-| `fld` + alan adı | En az bir alan | Alanın içeriği. Alan adını `fld`'nin hemen arkasına, yazıldığı gibi ekleyin: `fldFront`, `fldBack`, `fldText`, `fldBack%20Extra`. Hazır türlerin alan adları İngilizcedir (Türkçe arayüzde **Ön**, **Arka**, **Metin**, **Arka Ek** görünür). |
+| `fld` + alan adı | En az bir alan | Alanın içeriği. Alan adını `fld`'nin hemen arkasına ekleyin: `fldFront`, `fldBack`, `fldText`, `fldBack%20Extra`. Büyük-küçük harf fark etmez; hazır türlerde Türkçe arayüzde görünen ad da olur (`fld%C3%96n` = **Ön**, `fldArka`, `fldMetin`, `fldArka%20Ek`). |
 | `tags` | Hayır | Boşlukla ayrılmış etiketler. |
 | `x-success` | Hayır | Not kaydedildikten sonra açılacak bağlantı. Bkz. [Geri dönüş bağlantısı](#x-callback). |
 
@@ -81,10 +81,11 @@ Boşluk doldurma notu örneği:
 tusankim://x-callback-url/addnote?type=Cloze&deck=Farmakoloji&fldText=%7B%7Bc1%3A%3AAspirin%7D%7D%20COX%20enzimini%20inhibe%20eder&fldBack%20Extra=NSAID
 ```
 
-Bağlantı eksikse (`type`, `deck` veya hiç alan yoksa) ya da deste veya not türü bulunamazsa
-TusAnkiM bağlantıyı yok sayar ve olduğu ekranda kalır. Hiçbir şey olmuyorsa destenin ve not
-türünün adını kontrol edin. TUS Kartları paketindeki destelere not eklenemez; böyle bir deste adı
-verirseniz ekran başka bir desteyle açılır, kaydetmeden önce desteyi değiştirin.
+Bağlantı eksikse (`type`, `deck` veya hiç alan yoksa), deste veya not türü bulunamazsa, deste
+filtreli bir desteyse ya da alanlardan hiçbiri not türünde yoksa TusAnkiM **Bağlantı açılamadı**
+uyarısıyla nedenini söyler ve olduğu ekranda kalır; uyarı, eşleşmeyen alanlarda not türünün
+alanlarını da sayar. TUS Kartları paketindeki destelere bağlantıyla not eklenemez; böyle bir deste
+adı verirseniz de aynı uyarı çıkar.
 
 <a id="search-url"></a>
 ### Arama bağlantısı
