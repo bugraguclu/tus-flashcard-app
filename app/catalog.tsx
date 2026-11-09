@@ -19,7 +19,7 @@ import { BKA_MANIFEST } from '../lib/bkaManifest';
 import { formatCount } from '../lib/i18n';
 import { alert } from '../lib/confirm';
 import { readOnlyTabMessage } from '../lib/db';
-import { goBackOr } from '../lib/backNavigation';
+import { goBackOr, returnToDeckList } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
 import DisclosureChevron from '../components/DisclosureChevron';
 import LockGlyph from '../components/LockGlyph';
@@ -426,7 +426,7 @@ export default function CatalogScreen() {
                         (!canBuy && !owned && !installFailed) && styles.primaryButtonDisabled,
                         pressed && styles.pressed,
                     ]}
-                    onPress={owned ? () => router.replace('/decks' as any) : installFailed ? retryInstall : buy}
+                    onPress={owned ? () => returnToDeckList(router) : installFailed ? retryInstall : buy}
                     disabled={(!canBuy && !owned && !installFailed) || Boolean(busy) || catalogInstalling}
                     accessibilityRole="button"
                     accessibilityLabel={primaryLabel()}
