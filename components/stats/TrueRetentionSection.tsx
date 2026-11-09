@@ -43,7 +43,6 @@ export default function TrueRetentionSection({ table }: { table: TrueRetentionTa
             title={l('Gerçek Hatırlama', 'True Retention')}
             controls={(
                 <StatsSegmented
-                    fill
                     options={[
                         { value: 'simple' as const, label: l('Basit', 'Simple') },
                         { value: 'detailed' as const, label: l('Ayrıntılı', 'Detailed') },
