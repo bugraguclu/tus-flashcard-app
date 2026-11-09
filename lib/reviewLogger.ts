@@ -6,7 +6,8 @@ import type { FsrsMemoryState } from './fsrs';
 import type { ReviewLog, AnkiCard } from './models';
 import { getDB } from './db';
 import { uniqueId } from './models';
-import { dayNumberToYmd, localDayNumber, ymdToLocalDayNumber } from './ankiState';
+import { dayNumberToYmd, localDayNumber } from './ankiState';
+import { localSecondsPerRowSql, revlogLocalSecondsSql } from './localClockSql';
 
 const HOUR_MS = 3600000;
 
@@ -447,23 +448,22 @@ export interface StudyStreak {
  */
 export function getStudyStreak(rolloverHour: number = 4): StudyStreak {
     const db = getDB();
-    const shiftSec = rolloverHour * 3600;
+    const shiftSec = Math.trunc(rolloverHour * 3600);
 
     // Same rollover-shifted local date as studyDaySql in ankiStats.ts, so the streak, the
     // statistics charts and localDayNumber all agree on where a study day starts. A Kronometre
     // session belongs to the day it started on, as it does in the study calendar.
-    const rows = db.getAllSync<{ d: string }>(
-        `SELECT date(id / 1000 - ?, 'unixepoch', 'localtime') AS d FROM revlog WHERE ease != 0
+    // The review log's days come from one time-zone lookup per day, not per answer.
+    const rows = db.getAllSync<{ day: number | null }>(
+        `SELECT ${revlogLocalSecondsSql(`id / 1000 - ${shiftSec}`)} / 86400 AS day FROM revlog WHERE ease != 0
          UNION
-         SELECT date(startMs / 1000 - ?, 'unixepoch', 'localtime') AS d FROM study_sessions WHERE studyMs > 0
-         ORDER BY d ASC`,
-        shiftSec,
-        shiftSec,
+         SELECT ${localSecondsPerRowSql(`startMs / 1000 - ${shiftSec}`)} / 86400 AS day FROM study_sessions WHERE studyMs > 0
+         ORDER BY day ASC`,
     );
 
     const dayNumbers = rows
-        .map((row) => ymdToLocalDayNumber(row.d, -1))
-        .filter((day) => day >= 0);
+        .map((row) => (row.day === null ? -1 : Number(row.day)))
+        .filter((day) => Number.isInteger(day) && day >= 0);
     const today = localDayNumber(Date.now(), rolloverHour);
 
     const days = new Set(dayNumbers);
