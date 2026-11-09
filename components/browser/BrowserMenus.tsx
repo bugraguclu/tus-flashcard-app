@@ -18,6 +18,7 @@ import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { toggleSelectedBury, toggleSelectedSuspend } from '../../lib/browserSelection';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
+import type { BrowserNoteTool } from './BrowserNoteTools';
 import { ALL_CARD_FLAGS, BROWSER_SORT_KEYS } from './browserHelpers';
 
 interface SelectionMenuModalProps {
@@ -25,6 +26,8 @@ interface SelectionMenuModalProps {
     hasCatalogCardsSelected: boolean;
     hasCatalogNotesSelected: boolean;
     l: BrowserI18n['l'];
+    /** Opens one of the note tools (Find and Replace…) over the browser. */
+    openNoteTool: (tool: BrowserNoteTool) => void;
     openSelectionTags: () => void;
     /** Opens Reset Cards with the options last used in the browser. */
     openResetDialog: () => void;
@@ -59,6 +62,7 @@ export function SelectionMenuModal({
     hasCatalogCardsSelected,
     hasCatalogNotesSelected,
     l,
+    openNoteTool,
     openSelectionTags,
     openResetDialog,
     refreshSelection,
@@ -150,6 +154,14 @@ export function SelectionMenuModal({
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={openSelectionTags}>
                             <Text style={styles.selectionMenuIcon}>🏷</Text><Text style={styles.selectionMenuText}>{l('Etiketleri düzenle', 'Edit tags')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.selectionMenuItem}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Seçili notlarda bul ve değiştir', 'Find and replace in the selected notes')}
+                            onPress={() => { setShowSelectionMenu(false); openNoteTool({ kind: 'find-replace' }); }}
+                        >
+                            <Text style={styles.selectionMenuIcon}>⇄</Text><Text style={styles.selectionMenuText}>{l('Bul ve değiştir…', 'Find and replace…')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setShowGradePicker(true); }}>
                             <Text style={styles.selectionMenuIcon}>✓</Text><Text style={styles.selectionMenuText}>{l('Şimdi derecelendir', 'Grade now')}</Text><Text style={styles.overflowChevron}>›</Text>
@@ -243,6 +255,8 @@ interface OverflowMenuModalProps {
     markedOnly: boolean;
     openFilteredDeckDialog: () => void;
     openFlagFilter: () => void;
+    /** Opens one of the note tools (Find and Replace…) over the browser. */
+    openNoteTool: (tool: BrowserNoteTool) => void;
     selectAllVisible: () => void;
     setMarkedOnly: Dispatch<SetStateAction<boolean>>;
     setShowOptions: Dispatch<SetStateAction<boolean>>;
@@ -274,6 +288,7 @@ export function OverflowMenuModal({
     markedOnly,
     openFilteredDeckDialog,
     openFlagFilter,
+    openNoteTool,
     selectAllVisible,
     setMarkedOnly,
     setShowOptions,
@@ -430,6 +445,16 @@ export function OverflowMenuModal({
                             <GearGlyph color={styles.overflowItemIcon.color} size={18} />
                         </View>
                         <Text style={styles.overflowItemText}>{l('Seçenekler', 'Options')}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.overflowSeparator} />
+                    <TouchableOpacity
+                        style={styles.overflowItem}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Notlarda bul ve değiştir', 'Find and replace in notes')}
+                        onPress={() => { setShowOverflowMenu(false); openNoteTool({ kind: 'find-replace' }); }}
+                    >
+                        <Text style={styles.overflowItemIcon}>⇄</Text>
+                        <Text style={styles.overflowItemText}>{l('Bul ve değiştir…', 'Find and replace…')}</Text>
                     </TouchableOpacity>
                     <View style={styles.overflowSeparator} />
                     <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={openFilteredDeckDialog}>

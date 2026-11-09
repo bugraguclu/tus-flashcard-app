@@ -27,6 +27,22 @@ export function sameTagSet(a: readonly string[], b: readonly string[]): boolean 
     return key(a) === key(b);
 }
 
+/**
+ * One tag name as the tag picker stores a typed one: NFC, no control characters, and no empty or
+ * padded `::` parts, so "a::" and "::a" both read as "a". Whitespace inside a part is left for
+ * the caller to refuse, since it would split the name into two tags. Returns '' when nothing is
+ * left.
+ */
+export function normalizeTagName(raw: string): string {
+    return raw
+        .normalize('NFC')
+        .replace(/[\u0000-\u001f\u007f]/g, '')
+        .split('::')
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .join('::');
+}
+
 /** Split typed tag text into Anki's canonical tag list. */
 export function canonifyTags(input: string | readonly string[]): string[] {
     const parts = typeof input === 'string' ? input.split(/\s+/) : input;

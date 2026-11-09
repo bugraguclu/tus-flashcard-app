@@ -88,6 +88,7 @@ import {
     ResetCardsModal,
     SearchHelpModal,
 } from '../components/browser/BrowserDialogs';
+import { BrowserNoteTools, type BrowserNoteTool } from '../components/browser/BrowserNoteTools';
 
 export default function BrowserScreen() {
     const { height: windowHeight } = useWindowDimensions();
@@ -158,6 +159,8 @@ export default function BrowserScreen() {
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
     const [previewAnswerVisible, setPreviewAnswerVisible] = useState(false);
     const [lastDeckMove, setLastDeckMove] = useState<CardDeckMoveSnapshot[]>([]);
+    // Find and Replace and the other note tools open over the list and keep its context.
+    const [noteTool, setNoteTool] = useState<BrowserNoteTool | null>(null);
     const [reloadToken, setReloadToken] = useState(0);
     const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
     const [loadingMore, setLoadingMore] = useState(false);
@@ -197,7 +200,8 @@ export default function BrowserScreen() {
         || resetDialogOptions !== null
         || showDueDialog
         || showGradePicker
-        || previewIndex !== null;
+        || previewIndex !== null
+        || noteTool !== null;
 
     // Browser actions can be launched while its search field owns the keyboard. Every new
     // popup starts from the full window; input dialogs then use their own avoiding layer.
@@ -600,6 +604,10 @@ export default function BrowserScreen() {
     const selectedNotes = useMemo(
         () => selectedNoteIds.map((noteId) => noteById.get(noteId)).filter((note): note is Note => note !== undefined),
         [selectedNoteIds, noteById],
+    );
+    const selectedNoteTypeIds = useMemo(
+        () => [...new Set(selectedNotes.map((note) => note.noteTypeId))],
+        [selectedNotes],
     );
     const hasCatalogCardsSelected = useMemo(
         () => selectedCards.some((card) => isCatalogCard(card.cardId)),
@@ -1062,6 +1070,7 @@ export default function BrowserScreen() {
                 hasCatalogCardsSelected={hasCatalogCardsSelected}
                 hasCatalogNotesSelected={hasCatalogNotesSelected}
                 l={l}
+                openNoteTool={setNoteTool}
                 openSelectionTags={openSelectionTags}
                 openResetDialog={() => setResetDialogOptions(getResetCardDefaults('browser'))}
                 refreshSelection={refreshSelection}
@@ -1102,6 +1111,7 @@ export default function BrowserScreen() {
                 markedOnly={markedOnly}
                 openFilteredDeckDialog={openFilteredDeckDialog}
                 openFlagFilter={openFlagFilter}
+                openNoteTool={setNoteTool}
                 selectAllVisible={selectAllVisible}
                 setMarkedOnly={setMarkedOnly}
                 setShowOptions={setShowOptions}
@@ -1252,6 +1262,20 @@ export default function BrowserScreen() {
                 styles={styles}
                 tableMode={tableMode}
                 windowHeight={windowHeight}
+            />
+
+            <BrowserNoteTools
+                colors={colors}
+                l={l}
+                locale={locale}
+                noteTypes={noteTypes}
+                onChanged={refreshSelection}
+                onClose={() => setNoteTool(null)}
+                selectedNoteIds={selectedNoteIds}
+                selectedNoteTypeIds={selectedNoteTypeIds}
+                styles={styles}
+                t={t}
+                tool={noteTool}
             />
 
             <FlagPickerModal
