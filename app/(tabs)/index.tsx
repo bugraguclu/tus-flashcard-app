@@ -1283,6 +1283,8 @@ export default function StudyScreen() {
         // stack entries while actually undoing the same answer twice.
         if (undoStack.length === 0 || isMutatingRef.current) return;
         isMutatingRef.current = true;
+        // The notice describes the answer being taken back: an undone leech is no longer suspended.
+        setLeechNotice(null);
 
         try {
             const undo = undoStack[undoStack.length - 1];
