@@ -147,6 +147,7 @@ import { useReviewerDwellTimer } from '../../lib/reviewerDwellTimer';
 import { beginStudyActivity } from '../../lib/backupWindow';
 import { TimeboxTracker, checkTimeboxAfterAnswer } from '../../lib/timebox';
 import {
+    cardTapOnlyHidesKeyboard,
     canGradeRevealedCard,
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
@@ -2088,8 +2089,23 @@ export default function StudyScreen() {
         router,
     ]);
 
+    // The typed answer's box below the card: whether it has focus, and when it last lost it.
+    const typeAnswerFocusRef = useRef<{ focused: boolean; blurredAt: number | null }>({ focused: false, blurredAt: null });
     const handleCardTap = useCallback((xRatio: number, yRatio: number) => {
         if (!settings.ninePointTouchEnabled || !currentCard || whiteboardActive) return;
+        // The tap that puts the typed answer's keyboard away does only that (the in-card box has
+        // the same rule in lib/typeAnswerBridge.ts).
+        if (cardTapOnlyHidesKeyboard({
+            showingAnswer,
+            typeAnswerFocused: typeAnswerFocusRef.current.focused,
+            typeAnswerBlurredAt: typeAnswerFocusRef.current.blurredAt,
+            now: Date.now(),
+        })) {
+            // The blur this causes is ours, so it does not hold back the next tap.
+            typeAnswerFocusRef.current = { focused: false, blurredAt: null };
+            Keyboard.dismiss();
+            return;
+        }
         const zone = reviewTapZoneAt(xRatio, yRatio);
         const actions = showingAnswer
             ? settings.answerTapActions ?? DEFAULT_ANSWER_TAP_ACTIONS
@@ -2975,8 +2991,16 @@ export default function StudyScreen() {
                         style={[styles.typeAnswerInput, typeAnswerFocused && styles.typeAnswerInputFocused]}
                         value={typedAnswer}
                         onChangeText={setTypedAnswer}
-                        onFocus={() => setTypeAnswerFocused(true)}
-                        onBlur={() => setTypeAnswerFocused(false)}
+                        onFocus={() => {
+                            typeAnswerFocusRef.current = { focused: true, blurredAt: null };
+                            setTypeAnswerFocused(true);
+                        }}
+                        onBlur={() => {
+                            // A blur the card tap asked for (focused already false) arms nothing.
+                            const lostFocus = typeAnswerFocusRef.current.focused;
+                            typeAnswerFocusRef.current = { focused: false, blurredAt: lostFocus ? Date.now() : null };
+                            setTypeAnswerFocused(false);
+                        }}
                         placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
                         placeholderTextColor={colors.textMuted}
                         autoCapitalize="none"
