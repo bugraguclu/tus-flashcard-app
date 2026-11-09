@@ -120,6 +120,25 @@ describe('queryTrueRetention', () => {
         expect(row(deck, 'today').mature).toEqual({ passed: 0, failed: 1 });
     });
 
+    it('counts every answer of a group it reads as one row, each in the windows it falls in', () => {
+        // Alike answers (same button, type and interval class) in three different windows, and
+        // intervals on both sides of a day and of maturity.
+        for (let n = 0; n < 40; n++) add(ago(0.5) + n, 10, 3, 5);
+        for (let n = 0; n < 7; n++) add(ago(1.5) + n, 10, 3, 9);
+        for (let n = 0; n < 5; n++) add(ago(20) + n, 10, 1, 21);
+        for (let n = 0; n < 3; n++) add(ago(400) + n, 10, 4, 200);
+        add(ago(0.5) + 100, 10, 2, -90_000, 2);
+        add(ago(0.5) + 101, 10, 2, -600, 2);
+        const all = queryTrueRetention({ join: '', where: '', params: [] }, '', ROLLOVER, NOW);
+        const rows = db.getAllSync<RetentionLogRow>('SELECT id, ease, type, lastIvl, factor FROM revlog');
+        expect(all).toEqual(buildTrueRetention(rows, NEXT));
+        expect(row(all, 'today').young).toEqual({ passed: 41, failed: 0 });
+        expect(row(all, 'yesterday').young).toEqual({ passed: 7, failed: 0 });
+        expect(row(all, 'month').mature).toEqual({ passed: 0, failed: 5 });
+        expect(row(all, 'year').mature).toEqual({ passed: 0, failed: 5 });
+        expect(row(all, 'all').mature).toEqual({ passed: 3, failed: 5 });
+    });
+
     it('ignores answers after the coming rollover', () => {
         add(NEXT + 1000, 10, 3, 5);
         const all = queryTrueRetention({ join: '', where: '', params: [] }, '', ROLLOVER, NOW);

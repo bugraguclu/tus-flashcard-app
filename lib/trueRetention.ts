@@ -36,6 +36,8 @@ export interface RetentionLogRow {
     type: number;
     lastIvl: number;
     factor?: number;
+    /** How many answers the row stands for, when the query grouped alike answers; one when absent. */
+    count?: number;
 }
 
 /** Rolling windows, in study days ending at the coming rollover. Today and yesterday are single days. */
@@ -97,11 +99,12 @@ export function buildTrueRetention(rows: readonly RetentionLogRow[], nextRollove
         if (!countsForRetention(log)) continue;
         const mature = log.lastIvl >= MATURE_MIN_IVL;
         const passed = log.ease > 1;
+        const answers = log.count ?? 1;
         table.rows.forEach((row, index) => {
             if (log.id < bounds[index].start || log.id >= bounds[index].end) return;
             const cell = mature ? row.mature : row.young;
-            if (passed) cell.passed++;
-            else cell.failed++;
+            if (passed) cell.passed += answers;
+            else cell.failed += answers;
         });
     }
     return table;
@@ -118,10 +121,22 @@ export interface RetentionScope {
 export function queryTrueRetention(scope: RetentionScope, cardJoin: string, rolloverHour: number, nowMs: number = Date.now()): TrueRetentionTable {
     const db = getDB();
     const next = nextRolloverMs(nowMs, rolloverHour);
+    // SQLite hands back one row per group of answers the table cannot tell apart, not one per
+    // answer: a year of study is some 200,000 answers, read again on every deck or period change.
+    // A group shares everything `countsForRetention` and the young/mature split read (the button,
+    // the entry type, which side of a day and of maturity the interval was on, whether the factor
+    // is zero) and lies between two neighbouring window edges, so its first id stands for all of it.
+    const edges = [...new Set(Object.values(WINDOW_DAYS).flatMap((window) => (window ? [window.from, window.to] : [])))]
+        .filter((days) => days > 0)
+        .map((days) => Math.ceil(daysBefore(next, days)));
+    const windowOf = edges.map((edge) => `(r.id >= ${edge})`).join(' + ');
+    const intervalOf = `CASE WHEN r.lastIvl >= ${MATURE_MIN_IVL} THEN ${MATURE_MIN_IVL} WHEN r.lastIvl >= 1 THEN 1 WHEN r.lastIvl <= -86400 THEN -86400 ELSE 0 END`;
+    const factorOf = 'CASE WHEN r.factor = 0 THEN 0 ELSE 1 END';
     const rows = db.getAllSync<RetentionLogRow>(
-        `SELECT r.id AS id, r.ease AS ease, r.type AS type, r.lastIvl AS lastIvl, r.factor AS factor
+        `SELECT MIN(r.id) AS id, r.ease AS ease, r.type AS type, ${intervalOf} AS lastIvl, ${factorOf} AS factor, COUNT(*) AS count
          FROM revlog r ${cardJoin} ${scope.join}
-         WHERE r.ease BETWEEN 1 AND 4 AND r.type IN (0, 1, 2, 3) AND r.id < ? ${scope.where}`,
+         WHERE r.ease BETWEEN 1 AND 4 AND r.type IN (0, 1, 2, 3) AND r.id < ? ${scope.where}
+         GROUP BY ${windowOf}, r.ease, r.type, ${intervalOf}, ${factorOf}`,
         next, ...scope.params,
     );
     return buildTrueRetention(rows, next);
