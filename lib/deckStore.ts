@@ -13,6 +13,7 @@ import { localDayNumber, restoreQueueFromType } from './ankiState';
 import { saveAnkiCard } from './noteManager';
 import { clearDeckWhiteboards } from './whiteboardSession';
 import { returnFilteredDeckCardsHome } from './filteredDeckReturn';
+import { reservedFilteredCardIds, storedFilteredDeckMemberIds } from './filteredDeckMembership';
 import {
     clearFilteredDeckMembership,
     readFilteredDeckMembershipRow,
@@ -614,17 +615,37 @@ export function setDeckCollapsed(deckId: number, collapsed: boolean): void {
 }
 
 /** Buried-card count (sched- or user-buried) inside a deck subtree, for the overview screen. */
+/**
+ * The cards whose burying a deck's Unbury counts and undoes. Filtered decks hold their cards
+ * virtually here: a member stays in its home deck and the deck's current build lists it. So a
+ * filtered deck's buried cards are the buried members of its build, and a regular deck's are the
+ * cards of its subtree that no filtered deck holds. Counting by deck alone, a filtered deck never
+ * offered Unbury, and the home deck's Unbury woke a card that then went back to the filtered deck,
+ * as in Anki a card in a filtered deck is that deck's, not its home deck's.
+ */
+function buriedCardScope(deck: Deck): { where: string; params: (string | number)[] } {
+    if (deck.isFiltered) {
+        const done = new Set(deck.filteredDoneCardIds ?? []);
+        const members = deck.filteredDeckEmpty ? [] : (storedFilteredDeckMemberIds(deck) ?? []).filter((id) => !done.has(id));
+        return { where: 'c.id IN (SELECT value FROM json_each(?))', params: [JSON.stringify(members)] };
+    }
+    return {
+        where: '(d.name = ? OR instr(d.name, ?) = 1) AND c.id NOT IN (SELECT value FROM json_each(?))',
+        params: [deck.name, `${deck.name}::`, JSON.stringify(reservedFilteredCardIds())],
+    };
+}
+
 export function getBuriedCountForDeck(deckId: number): number {
     const deck = getDeck(deckId);
     if (!deck) return 0;
 
+    const scope = buriedCardScope(deck);
     const row = getDB().getFirstSync<{ cnt: number }>(
         `SELECT COUNT(*) AS cnt
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN (-2, -3) AND (d.name = ? OR instr(d.name, ?) = 1)`,
-        deck.name,
-        `${deck.name}::`,
+         WHERE c.queue IN (-2, -3) AND ${scope.where}`,
+        ...scope.params,
     );
     return row?.cnt ?? 0;
 }
@@ -633,20 +654,21 @@ export function getBuriedCountForDeck(deckId: number): number {
 export function getBuriedKindsForDeck(deckId: number): { manual: number; siblings: number } {
     const deck = getDeck(deckId);
     if (!deck) return { manual: 0, siblings: 0 };
+    const scope = buriedCardScope(deck);
     const row = getDB().getFirstSync<{ manual: number | null; siblings: number | null }>(
         `SELECT SUM(c.queue = -3) AS manual, SUM(c.queue = -2) AS siblings
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN (-2, -3) AND (d.name = ? OR instr(d.name, ?) = 1)`,
-        deck.name,
-        `${deck.name}::`,
+         WHERE c.queue IN (-2, -3) AND ${scope.where}`,
+        ...scope.params,
     );
     return { manual: Number(row?.manual ?? 0), siblings: Number(row?.siblings ?? 0) };
 }
 
 /**
- * Anki's overview "Unbury": wake buried cards in the deck subtree now instead of at rollover —
- * all of them, only the manually buried ones, or only the buried siblings.
+ * Anki's overview "Unbury": wake the deck's buried cards now instead of at rollover — all of them,
+ * only the manually buried ones, or only the buried siblings. A filtered deck's are the buried
+ * members of its build, a regular deck's those of its subtree no filtered deck holds.
  */
 export function unburyDeck(deckId: number, rolloverHour: number = 4, kind: 'all' | 'manual' | 'siblings' = 'all'): number {
     const deck = getDeck(deckId);
@@ -654,13 +676,13 @@ export function unburyDeck(deckId: number, rolloverHour: number = 4, kind: 'all'
 
     const db = getDB();
     const queues = kind === 'manual' ? '(-3)' : kind === 'siblings' ? '(-2)' : '(-2, -3)';
+    const scope = buriedCardScope(deck);
     const rows = db.getAllSync<{ data: string }>(
         `SELECT c.data AS data
          FROM anki_cards c
          JOIN decks d ON d.id = c.deckId
-         WHERE c.queue IN ${queues} AND (d.name = ? OR instr(d.name, ?) = 1)`,
-        deck.name,
-        `${deck.name}::`,
+         WHERE c.queue IN ${queues} AND ${scope.where}`,
+        ...scope.params,
     );
     if (rows.length === 0) return 0;
 
