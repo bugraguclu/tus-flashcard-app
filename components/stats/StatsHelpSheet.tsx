@@ -26,6 +26,10 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
             'Saatlere göre cevap sayısı ve doğru cevap oranı.',
             'Answer counts and accuracy by hour of day.',
         )],
+        [l('Gerçek Hatırlama', 'True Retention'), l(
+            'Bellek sınamalarının kaçının geçtiğini gösterir: Tekrar kaldı, Zor/İyi/Kolay geçti sayılır. Genç, cevaplandığı andaki aralığı 21 günden kısa; Olgun ise 21 gün ve üzeri kartlardır. Yeni kartların ilk öğrenme adımları ve elle ertelemeler sayılmaz. Çalışma günü sınırına göre bugün, dün, son 7, 30 ve 365 gün hesaplanır; seçilen dönemden bağımsızdır. Boş hücre — gösterir.',
+            'Shows how many memory tests passed: Again counts as failed, Hard/Good/Easy as passed. Young cards had an interval under 21 days when answered; Mature cards 21 days or more. First learning steps of new cards and manual rescheduling are not counted. Today, yesterday and the last 7, 30 and 365 days follow the study-day rollover and ignore the period above. An empty cell shows —.',
+        )],
         [l('Aralıklar ve kart sayıları', 'Intervals and card counts'), l(
             'İkisi de güncel kart durumunu gösterir. Seçilen dönem, tekrar aralıklarının yalnızca üst sınırını belirler (daha uzun aralıktaki kartlar grafiğin altında sayılır); kart sayılarını değiştirmez.',
             'Both show current card state. The period only caps the review intervals drawn (cards with longer intervals are counted under the chart); it does not change card counts.',

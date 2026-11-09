@@ -8,6 +8,7 @@
 import { dayNumberToYmd, localDayNumber, nextRolloverMs } from './ankiState';
 import { getDB } from './db';
 import { MATURE_MIN_IVL } from './statsHelpers';
+import { queryTrueRetention, type TrueRetentionTable } from './trueRetention';
 
 const DAY_MS = 86_400_000;
 
@@ -76,6 +77,8 @@ export interface AnkiStatsSnapshot {
     averageInterval: number;
     longestInterval: number;
     cardCounts: CardCountStats;
+    /** Anki's True Retention table; absent from snapshots built before it existed. */
+    trueRetention?: TrueRetentionTable;
 }
 
 /** One study day of answers, split the way Anki's Reviews graph splits them. */
@@ -425,6 +428,11 @@ export function getAnkiStatsSnapshot(
         averageInterval: intervals.average,
         longestInterval: intervals.longest,
         cardCounts: getCardCounts(deckName, scopedCardIds),
+        trueRetention: queryTrueRetention(
+            deckClause(deckName, 'c', scopedCardIds),
+            revlogCardJoin(deckName, scopedCardIds),
+            rolloverHour,
+        ),
     };
 }
 
