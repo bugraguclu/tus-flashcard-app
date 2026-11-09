@@ -8,6 +8,7 @@
 import { dayNumberToYmd, localDayNumber, nextRolloverMs } from './ankiState';
 import { getDB } from './db';
 import { MATURE_MIN_IVL } from './statsHelpers';
+import { revlogLocalSecondsSql } from './localClockSql';
 import { queryTrueRetention, type TrueRetentionTable } from './trueRetention';
 
 const DAY_MS = 86_400_000;
@@ -208,6 +209,15 @@ function revlogCardJoin(deckName: string | null, scopedCardIds?: number[]): stri
  */
 function studyDaySql(msExpression: string): string {
     return `CAST(julianday(date((${msExpression}) / 1000 - ?, 'unixepoch', 'localtime')) - 2440587.5 AS INTEGER)`;
+}
+
+/**
+ * `studyDaySql` for an answer time taken from `revlog.id`, without its per-row time-zone lookup
+ * (see lib/localClockSql.ts). Takes no parameter.
+ */
+function revlogStudyDaySql(idExpression: string, rolloverHour: number): string {
+    const shiftSeconds = Math.trunc(rolloverHour * 3600);
+    return `(${revlogLocalSecondsSql(`(${idExpression}) / 1000 - ${shiftSeconds}`)} / 86400)`;
 }
 
 /**
@@ -447,7 +457,7 @@ export function getReviewDays(deckName: string | null, rolloverHour: number, sco
     const young = `r.type = 1 AND r.lastIvl < ${MATURE_MIN_IVL}`;
     const mature = `r.type = 1 AND r.lastIvl >= ${MATURE_MIN_IVL}`;
     const rows = db.getAllSync<Record<string, number>>(
-        `SELECT ${studyDaySql('r.id')} AS day,
+        `SELECT ${revlogStudyDaySql('r.id', rolloverHour)} AS day,
                 SUM(CASE WHEN r.type = 0 THEN 1 ELSE 0 END) AS learn,
                 SUM(CASE WHEN r.type = 2 THEN 1 ELSE 0 END) AS relearn,
                 SUM(CASE WHEN ${young} THEN 1 ELSE 0 END) AS young,
@@ -464,7 +474,7 @@ export function getReviewDays(deckName: string | null, rolloverHour: number, sco
          WHERE r.ease BETWEEN 1 AND 4 AND r.type BETWEEN 0 AND 3 ${deck.where}
          GROUP BY day
          ORDER BY day`,
-        rolloverHour * 3600, ...deck.params,
+        ...deck.params,
     );
     return rows.map((row) => ({
         day: toNumber(row.day),
@@ -529,7 +539,7 @@ export function getHourBreakdown(deckName: string | null, range: StatsDateRange,
     const db = getDB();
     const deck = deckClause(deckName, 'c', scopedCardIds);
     const rows = db.getAllSync<{ hour: number; total: number; correct: number }>(
-        `SELECT CAST(strftime('%H', r.id / 1000, 'unixepoch', 'localtime') AS INTEGER) AS hour,
+        `SELECT ${revlogLocalSecondsSql('r.id / 1000')} / 3600 % 24 AS hour,
                 COUNT(*) AS total,
                 SUM(CASE WHEN r.ease > 1 THEN 1 ELSE 0 END) AS correct
          FROM revlog r
