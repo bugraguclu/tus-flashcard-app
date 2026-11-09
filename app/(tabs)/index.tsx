@@ -2749,7 +2749,8 @@ export default function StudyScreen() {
 
     // Anki shows these around its congrats page (CongratsPage.svelte and the overview's bottom
     // bar in qt/aqt/overview.py): Custom Study for a regular deck, Rebuild for a filtered one, and
-    // Unbury when the deck has buried cards. A filtered deck gathers its cards by search and
+    // Unbury when the deck has buried cards. The page is the same while a learning card is still
+    // to come, so the waiting state shows them as well as the finished one. A filtered deck gathers its cards by search and
     // usually holds none itself, so the empty-deck state (Add Card) skips it and a filtered deck
     // that runs dry ends on the finished state with Rebuild.
     const finishedDeckActions = emptyStateDeck ? (
@@ -3338,6 +3339,8 @@ export default function StudyScreen() {
                             >
                                 <Text style={styles.primaryActionText}>⚡ {l('Beklemeden çalış', 'Study Now')}</Text>
                             </TouchableOpacity>
+                            {/* Anki's congrats page keeps these while a learning card is waiting too. */}
+                            {finishedDeckActions}
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
                                 onPress={() => router.push('/settings')}
