@@ -156,7 +156,22 @@ export function getTodayStudyTimeMs(rolloverHour: number = 4): number {
  * allowance: Anki charges it to the filtered deck it was answered in. So it cannot be the answer
  * that introduced a card.
  */
-const INTRODUCES_CARD = 'NOT (type = 3 AND factor = 0)';
+const introducesCard = (row: string) => `${row}.ease != 0 AND NOT (${row}.type = 3 AND ${row}.factor = 0)`;
+
+/**
+ * The cards introduced since a moment: answered at or after it by an answer that can introduce a
+ * card, and by no such answer before it. Takes that moment twice as parameters.
+ *
+ * Reads the answers since then and, through the card index, only those cards' earlier answers.
+ * Taking every card's earliest answer instead reads the whole review log on each deck-list load.
+ * NOT INDEXED keeps the first read on the id range; SQLite otherwise walks the whole card index
+ * to get the distinct cards in order.
+ */
+const INTRODUCED_SINCE = `SELECT DISTINCT today.cardId AS cardId FROM revlog AS today NOT INDEXED
+    WHERE today.id >= ? AND ${introducesCard('today')}
+      AND NOT EXISTS (
+          SELECT 1 FROM revlog AS earlier
+          WHERE earlier.cardId = today.cardId AND earlier.id < ? AND ${introducesCard('earlier')})`;
 
 /** Get today's review count */
 export function getTodayReviewCount(rolloverHour: number = 4): number {
@@ -205,15 +220,8 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
             startMs, ...cardIds,
         );
         const introduced = db.getFirstSync<{ cnt: number }>(
-            `SELECT COUNT(*) AS cnt
-             FROM (
-                SELECT cardId, MIN(id) AS firstReview
-                FROM revlog
-                WHERE ease != 0 AND ${INTRODUCES_CARD} AND cardId IN (${placeholders})
-                GROUP BY cardId
-             )
-             WHERE firstReview >= ?`,
-            ...cardIds, startMs,
+            `SELECT COUNT(*) AS cnt FROM (${INTRODUCED_SINCE}) WHERE cardId IN (${placeholders})`,
+            startMs, startMs, ...cardIds,
         );
         const reviewed = totals?.reviewed ?? 0;
         const failed = totals?.failed ?? 0;
@@ -261,10 +269,8 @@ export function getTodayAnswerStats(rolloverHour: number = 4, deckName?: string,
     );
 
     const introduced = db.getFirstSync<{ cnt: number }>(
-        `SELECT COUNT(*) AS cnt
-         FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog WHERE ease != 0 AND ${INTRODUCES_CARD} GROUP BY cardId)
-         WHERE firstReview >= ?`,
-        startMs,
+        `SELECT COUNT(*) AS cnt FROM (${INTRODUCED_SINCE})`,
+        startMs, startMs,
     );
 
     const reviewed = totals?.reviewed ?? 0;
@@ -291,18 +297,14 @@ export function getNewCardsIntroducedTodayInDeck(deckName: string, rolloverHour:
 
     const row = db.getFirstSync<{ cnt: number }>(
         `SELECT COUNT(*) AS cnt
-         FROM (
-            SELECT r.cardId, MIN(r.id) AS firstReview
-            FROM revlog r
-            JOIN anki_cards c ON c.id = r.cardId
-            JOIN decks d ON d.id = c.deckId
-            WHERE r.ease != 0 AND NOT (r.type = 3 AND r.factor = 0) AND (d.name = ? OR instr(d.name, ?) = 1)
-            GROUP BY r.cardId
-         )
-         WHERE firstReview >= ?`,
+         FROM (${INTRODUCED_SINCE}) f
+         JOIN anki_cards c ON c.id = f.cardId
+         JOIN decks d ON d.id = c.deckId
+         WHERE d.name = ? OR instr(d.name, ?) = 1`,
+        startMs,
+        startMs,
         deckName,
         subtreePrefix,
-        startMs,
     );
 
     return row?.cnt ?? 0;
@@ -373,11 +375,10 @@ export function getTodayLimitUsageByDeck(rolloverHour: number = 4): Map<number, 
     try {
         for (const row of db.getAllSync<{ deckId: number; cnt: number }>(
             `SELECT c.deckId AS deckId, COUNT(*) AS cnt
-             FROM (SELECT cardId, MIN(id) AS firstReview FROM revlog WHERE ease != 0 AND ${INTRODUCES_CARD} GROUP BY cardId) f
+             FROM (${INTRODUCED_SINCE}) f
              JOIN anki_cards c ON c.id = f.cardId
-             WHERE f.firstReview >= ?
              GROUP BY c.deckId`,
-            startMs,
+            startMs, startMs,
         )) entryFor(Number(row.deckId)).newIntroduced = Number(row.cnt) || 0;
 
         for (const row of db.getAllSync<{ deckId: number; cnt: number }>(
