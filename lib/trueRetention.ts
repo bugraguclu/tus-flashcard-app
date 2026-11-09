@@ -72,11 +72,13 @@ export function countsForRetention(row: RetentionLogRow): boolean {
     return row.lastIvl >= 1 || row.lastIvl <= -86_400;
 }
 
-/** The instant `days` study days before `boundaryMs`, calendar-aware so a DST shift does not move it. */
+/**
+ * The instant `days` whole days before `boundaryMs`. Anki steps back from the next day start in
+ * fixed 86,400-second days (`next_day_start.adding_secs(-day)` in rslib/src/stats/graphs/
+ * retention.rs), so the windows are fixed lengths rather than calendar days.
+ */
 function daysBefore(boundaryMs: number, days: number): number {
-    const date = new Date(boundaryMs);
-    date.setDate(date.getDate() - days);
-    return date.getTime();
+    return boundaryMs - days * 86_400_000;
 }
 
 /**

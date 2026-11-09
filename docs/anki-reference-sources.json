@@ -35,6 +35,13 @@
       "useFor": ["empty card detection", "blank front card generation", "safe card-only deletion", "preserving notes and sibling cards"]
     },
     {
+      "id": "anki-source-true-retention",
+      "priority": 2,
+      "platform": "cross-platform statistics",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/stats/graphs/retention.rs",
+      "useFor": ["True Retention table: which answers count, young/mature at 21 days, today/yesterday/week/month/year/all-time windows from the next day start"]
+    },
+    {
       "id": "anki-manual-manage-note-types",
       "priority": 1,
       "platform": "cross-platform note type management",

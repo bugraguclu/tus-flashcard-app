@@ -63,13 +63,14 @@ vi.mock('./emptyCardsWorkflow', () => ({
 }));
 vi.mock('./noteManager', () => ({
     findEmptyCards: () => h.findEmptyCards(),
-    // Keep Notes' rule over the fixture: a note whose every card is listed keeps its first card.
+    // Keep Notes' rule over the fixture: a note whose every card is listed keeps its first card,
+    // and with Keep Notes off goes with its cards.
     planCardOnlyDeletion: (cardIds: number[], options: { preserveNotes?: boolean }) => {
         const selected = new Set(cardIds);
-        const kept = options.preserveNotes === false ? [] : [...h.cardsByNote.values()]
-            .filter((cards) => cards.every((id) => selected.has(id)))
-            .map((cards) => cards[0]);
-        return { deleted: cardIds.filter((id) => !kept.includes(id)), kept };
+        const whole = [...h.cardsByNote.entries()].filter(([, cards]) => cards.every((id) => selected.has(id)));
+        const kept = options.preserveNotes === false ? [] : whole.map(([, cards]) => cards[0]);
+        const deletedNotes = options.preserveNotes === false ? whole.map(([noteId]) => noteId) : [];
+        return { deleted: cardIds.filter((id) => !kept.includes(id)), kept, deletedNotes };
     },
     deleteAnkiCardOnly: (cardId: number) => { h.legacyDeletes.push([cardId]); },
     deleteAnkiCardsOnly: (cardIds: number[]) => { h.legacyDeletes.push(cardIds); },
@@ -93,7 +94,7 @@ beforeEach(() => {
         { cardId: 20, noteId: 2, question: 'Triküspit', reason: 'Gerekli alan boş' },
     ];
     h.findEmptyCards = vi.fn(() => h.entries);
-    h.deleteWithBackup = vi.fn(async () => ({ backupFileName: 'tus-backup-2026-11-08-120000000.json', deleted: [11, 20], kept: [10] }));
+    h.deleteWithBackup = vi.fn(async () => ({ backupFileName: 'tus-backup-2026-11-08-120000000.json', deleted: [11, 20], kept: [10], deletedNotes: [] }));
 });
 afterEach(() => {
     if (renderer) act(() => renderer?.unmount());
@@ -156,6 +157,20 @@ describe('Empty Cards', () => {
         expect(h.findEmptyCards).toHaveBeenCalledTimes(2);
         expect(textOf(deleteAllButton())).toContain('Tümünü sil (0)');
         expect(deleteAllButton().props.disabled).toBe(true);
+    });
+
+    it('with Keep Notes off says which rows take their note, and how many notes go', async () => {
+        await mount();
+        const keepNotes = renderer!.root.find((node) => (node.type as unknown) === 'Switch');
+        act(() => keepNotes.props.onValueChange(false));
+        const texts = renderer!.root.findAll((node) => (node.type as unknown) === 'Text').map(textOf);
+        expect(texts.filter((text) => text === 'Notu da silinir: başka kartı kalmıyor')).toHaveLength(2);
+
+        h.deleteWithBackup = vi.fn(async () => ({ backupFileName: 'tus-backup-2026-11-08-120000000.json', deleted: [10, 11], kept: [], deletedNotes: [1] }));
+        await act(async () => { deleteAllButton().props.onPress(); });
+        await settle();
+        expect(h.deleteWithBackup).toHaveBeenCalledWith([10, 11, 20], { preserveNotes: false });
+        expect(h.alerts[0][1]).toContain('Kartı kalmayan 1 not da silindi.');
     });
 
     it('deletes nothing when the safety backup cannot be made, and says so', async () => {
