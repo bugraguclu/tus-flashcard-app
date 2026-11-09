@@ -17,7 +17,9 @@ vi.mock('expo-router', () => ({ useRouter: () => ({}) }));
 vi.mock('../components/AppText', () => ({ Text: 'Text', TextInput: 'TextInput' }));
 vi.mock('../components/SwipeDismissSheet', async () => {
     const { createElement } = await import('react');
-    return { default: ({ children }: { children: React.ReactNode }) => createElement('SwipeDismissSheet', null, children) };
+    const passThrough = (name: string) => ({ children }: { children: React.ReactNode }) => createElement(name, null, children);
+    // The menu's rows sit in the sheet's scrolling body, so the stand-ins must render their children.
+    return { default: passThrough('SwipeDismissSheet'), SheetScrollView: passThrough('SheetScrollView'), SheetNoDrag: passThrough('SheetNoDrag') };
 });
 vi.mock('../constants/theme', () => ({ FontSize: { md: 15 }, useIsDarkTheme: () => false }));
 vi.mock('./db', () => ({ getDB: () => { throw new Error('no database in this test'); } }));
