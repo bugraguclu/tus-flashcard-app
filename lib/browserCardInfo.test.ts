@@ -96,7 +96,7 @@ describe('Card Info in a row’s details', () => {
             renderer = TestRenderer.create(React.createElement(BrowserCardRow, {
                 item: item as any, browserFontScale: 1, bumpDataVersion: () => {}, colors: {} as any,
                 deckById: new Map(), expandedCard: 9, l, locale: 'en', noteTypes: [], reload: () => {},
-                router: router as any, selectedCardIds: new Set(), selectionMode: false, setExpandedCard: () => {},
+                router: router as any, selectedCardIds: new Set<number>(), selectionMode: false, setExpandedCard: () => {},
                 setSelectionMode: () => {}, settings: { dayRolloverHour: 4, showBrowserAudioFilenames: false } as any,
                 showAnswerSnippet: false, showScheduleDetails: false, styles: {} as any,
                 subject: () => undefined, t, tableMode: 'cards', toggleCardSelection: () => {}, toggleSuspend: () => {},

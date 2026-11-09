@@ -220,11 +220,15 @@ export function updateTusCardByCardId(
     }
 
     const noteType = getNoteType(note.noteTypeId);
+    // The legacy question/answer shape needs two fields. Values given field by field set the
+    // count themselves, so a note of a one-field type keeps its one field: padding it to two left
+    // the note with a field its type does not have.
+    const byField = Array.isArray(input.fieldValues) && input.fieldValues.length > 0;
     const fieldCount = Math.max(
         noteType?.fields.length ?? 2,
         note.fields.length,
         input.fieldValues?.length ?? 0,
-        2,
+        byField ? 1 : 2,
     );
     const fields = [...note.fields];
     fields.length = fieldCount;

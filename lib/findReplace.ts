@@ -25,7 +25,7 @@
 import { dbUpsertFtsCard, getDB } from './db';
 import type { Note, NoteType } from './models';
 import { getNoteType } from './noteTypeStore';
-import { getCardsForNote, saveNote, searchIndexCardFromNote } from './noteStore';
+import { getCardsForNote, searchIndexCardFromNote } from './noteStore';
 import { setNoteTags } from './noteTagStore';
 import { updateTusCardByCardId } from './tusCards';
 import { canonifyTags, normalizeTagName, sameTagSet } from './noteTags';
@@ -258,7 +258,7 @@ export interface FindReplaceResult {
  * The editor's save for new field values (`updateTusCardByCardId`), then the search index, as
  * the editor refreshes it. Returns null when the note has no card to save it through.
  */
-function saveFields(note: Note, fields: string[], noteTypeOf: (id: number) => NoteType | null): { cardsChanged: boolean } | null {
+function saveFields(note: Note, fields: string[]): { cardsChanged: boolean } | null {
     const cards = getCardsForNote(note.id);
     // A card at home: one a filtered deck holds would make that deck the home of any card the
     // edit generates.
@@ -266,15 +266,8 @@ function saveFields(note: Note, fields: string[], noteTypeOf: (id: number) => No
     if (!card) return null;
     const result = updateTusCardByCardId(card.id, { question: fields[0] ?? '', answer: fields[1] ?? '', fieldValues: fields });
     if (!result) return null;
-    let saved = result.note;
-    // The editor's save pads a note to the two fields of its legacy question/answer shape. A
-    // replacement must not change how many fields a note has (a one-field note type), so the
-    // padding is taken off again inside the same transaction.
-    const fieldCount = Math.max(note.fields.length, noteTypeOf(note.noteTypeId)?.fields.length ?? 0);
-    if (saved.fields.length > fieldCount) {
-        saved = { ...saved, fields: saved.fields.slice(0, fieldCount) };
-        saveNote(saved);
-    }
+    // Given field by field, the editor's save keeps the note's field count (a one-field type too).
+    const saved = result.note;
     for (const sibling of getCardsForNote(saved.id)) dbUpsertFtsCard(searchIndexCardFromNote(saved, sibling.id));
     return { cardsChanged: result.cardsChanged };
 }
@@ -302,7 +295,7 @@ export function applyFindReplace(request: FindReplaceRequest): FindReplaceResult
                 result.protectedSkipped += 1;
                 continue;
             }
-            const saved = saveFields(note, edit.fields, noteTypeOf);
+            const saved = saveFields(note, edit.fields);
             if (!saved) continue;
             result.updated += 1;
             result.cardsChanged ||= saved.cardsChanged;
