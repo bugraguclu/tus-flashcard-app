@@ -155,20 +155,26 @@ export default function TabLayout() {
         return () => sub?.remove();
     }, []);
 
+    // The drawer's counts, courses and deck tree are read only while it can be seen. On a narrow
+    // screen it opens only from Android's edge swipe: the hamburger needs a tab other than the
+    // deck list and the reviewer, which this layout never shows, and the iPhone app is
+    // portrait-only, so it is never 768 pt wide. iPhone used to run these queries anyway, on every
+    // collection change and on every move between the deck list and the reviewer.
+    const sidebarVisible = isWide || sidebarOpen;
     const navigationCounts = useMemo(() => {
-        if (isLoading) return [];
+        if (isLoading || !sidebarVisible) return [];
         try {
             return getNavigationCardCounts();
         } catch (e) {
             console.warn('[Layout] navigation counts failed:', e);
             return [];
         }
-    }, [collectionVersion, visibleSchedulingRevision, isLoading]);
+    }, [collectionVersion, visibleSchedulingRevision, isLoading, sidebarVisible]);
 
     // Courses are deck-specific: the sidebar lists only the active deck's own courses
     // (an empty deck lists none). Without a deck context the full list stays visible.
     const subjects = useMemo(() => {
-        if (isLoading) return [];
+        if (isLoading || !sidebarVisible) return [];
         try {
             const list = activeDeckName ? getSubjectsForDeck(activeDeckName) : getAllSubjects();
             if (selectedSubject) {
@@ -183,13 +189,13 @@ export default function TabLayout() {
             console.warn('[Layout] subject list failed:', e);
             return [];
         }
-    }, [collectionVersion, activeDeckName, selectedSubject, isLoading]);
+    }, [collectionVersion, activeDeckName, selectedSubject, isLoading, sidebarVisible]);
 
     // The reviewer menu is a deck navigator while a deck is active. A selected subdeck is a
     // highlight inside its top-level tree, not a new tree root: otherwise opening the hamburger
     // from `Parent::Child` would make every parent and sibling disappear.
     const sidebarDeckTree = useMemo(() => {
-        if (isLoading || !activeDeckName) return [];
+        if (isLoading || !activeDeckName || !sidebarVisible) return [];
         try {
             const rootDeckName = getRootDeckName(activeDeckName);
             if (!rootDeckName) return [];
@@ -208,7 +214,7 @@ export default function TabLayout() {
             console.warn('[Layout] sidebar deck tree failed:', e);
             return [];
         }
-    }, [activeDeckName, collectionVersion, visibleSchedulingRevision, isLoading, settings.dayRolloverHour, settings.learnAheadMinutes, settings.limitsStartFromTop]);
+    }, [activeDeckName, collectionVersion, visibleSchedulingRevision, isLoading, sidebarVisible, settings.dayRolloverHour, settings.learnAheadMinutes, settings.limitsStartFromTop]);
 
     // Reveal only the selected deck's ancestor chain. Opening every parent in a large catalog
     // would flood the drawer with unrelated branches; manual expansion of siblings is preserved.
