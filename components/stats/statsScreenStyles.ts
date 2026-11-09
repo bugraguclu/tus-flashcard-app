@@ -49,7 +49,5 @@ export function createStatsScreenStyles(colors: ColorScheme, isCompact: boolean)
         deckSelectorText: { flex: 1, minWidth: 0, fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
         deckSelectorCaret: { color: colors.textSecondary, fontSize: FontSize.lg, lineHeight: FontSize.lg + 2 },
         body: { gap: Spacing.md },
-        loadState: { minHeight: 240, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm },
-        loadText: { color: colors.textSecondary, fontSize: FontSize.sm },
     });
 }

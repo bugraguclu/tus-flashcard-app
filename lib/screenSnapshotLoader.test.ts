@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     LatestSnapshotGeneration,
     ScreenSnapshotRepository,
+    runAfterFrames,
     runAfterInteractionsWithin,
 } from './screenSnapshotLoader';
 
@@ -96,5 +97,79 @@ describe('runAfterInteractionsWithin', () => {
         manager.settle();
         vi.advanceTimersByTime(1000);
         expect(work).not.toHaveBeenCalled();
+    });
+});
+
+describe('runAfterFrames', () => {
+    /** A stand-in for the display: a frame happens only when the test draws one. */
+    function display() {
+        const queued = new Map<number, () => void>();
+        let nextHandle = 1;
+        return {
+            request: (callback: () => void) => {
+                queued.set(nextHandle, callback);
+                return nextHandle++;
+            },
+            cancel: (handle: number) => { queued.delete(handle); },
+            drawFrame: () => {
+                const callbacks = [...queued.values()];
+                queued.clear();
+                callbacks.forEach((callback) => callback());
+            },
+            get waiting() { return queued.size; },
+        };
+    }
+
+    it('lets the frames be drawn before the work starts', () => {
+        const screen = display();
+        const work = vi.fn();
+        runAfterFrames(work, 3, screen.request, screen.cancel);
+
+        expect(work).not.toHaveBeenCalled();
+        screen.drawFrame();
+        screen.drawFrame();
+        expect(work).not.toHaveBeenCalled();
+        screen.drawFrame();
+        expect(work).toHaveBeenCalledTimes(1);
+        expect(screen.waiting).toBe(0);
+    });
+
+    it('never runs work that was cancelled between two frames', () => {
+        const screen = display();
+        const work = vi.fn();
+        const task = runAfterFrames(work, 2, screen.request, screen.cancel);
+
+        screen.drawFrame();
+        task.cancel();
+        expect(screen.waiting).toBe(0);
+        screen.drawFrame();
+        screen.drawFrame();
+        expect(work).not.toHaveBeenCalled();
+    });
+
+    it('waits for one frame at least', () => {
+        const screen = display();
+        const work = vi.fn();
+        runAfterFrames(work, 0, screen.request, screen.cancel);
+
+        expect(work).not.toHaveBeenCalled();
+        screen.drawFrame();
+        expect(work).toHaveBeenCalledTimes(1);
+    });
+
+    it('still runs when the wait runs out with no frame drawn', () => {
+        vi.useFakeTimers();
+        const screen = display();
+        const work = vi.fn();
+        runAfterInteractionsWithin(work, (callback) => runAfterFrames(callback, 3, screen.request, screen.cancel), 500);
+
+        screen.drawFrame();
+        vi.advanceTimersByTime(500);
+        expect(work).toHaveBeenCalledTimes(1);
+        // The frames it no longer waits for are given back, and a late one does not run it twice.
+        expect(screen.waiting).toBe(0);
+        screen.drawFrame();
+        expect(work).toHaveBeenCalledTimes(1);
+        vi.useRealTimers();
     });
 });

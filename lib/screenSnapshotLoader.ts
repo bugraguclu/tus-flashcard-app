@@ -102,3 +102,35 @@ export function runAfterInteractionsWithin(
     task = afterInteractions(run);
     return { cancel: stop };
 }
+
+/**
+ * Runs `work` once `frames` animation frames have passed.
+ *
+ * React Native shows nothing of a JavaScript turn until that turn ends, and an immediate or a
+ * microtask still belongs to the turn that queued it. A build long enough to notice that starts
+ * there keeps the very frame it was meant to follow off the screen: a tap on Statistics left the
+ * deck list standing until every query had run. Waiting for frames lets the pushed screen and its
+ * loading state be drawn, and take their safe-area insets, before the thread goes quiet.
+ */
+export function runAfterFrames(
+    work: () => void,
+    frames: number,
+    requestFrame: (callback: () => void) => number = (callback) => requestAnimationFrame(callback),
+    cancelFrame: (handle: number) => void = (handle) => cancelAnimationFrame(handle),
+): CancellableTask {
+    let remaining = Math.max(1, Math.floor(frames));
+    let cancelled = false;
+    const next = () => {
+        if (cancelled) return;
+        remaining -= 1;
+        if (remaining <= 0) work();
+        else handle = requestFrame(next);
+    };
+    let handle = requestFrame(next);
+    return {
+        cancel: () => {
+            cancelled = true;
+            cancelFrame(handle);
+        },
+    };
+}

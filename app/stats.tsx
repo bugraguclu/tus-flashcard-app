@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, Animated, View, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { Animated, View, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Text } from '../components/AppText';
 import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +23,7 @@ import AddedSection from '../components/stats/AddedSection';
 import DeckProgressSection from '../components/stats/DeckProgressSection';
 import StatsSegmented from '../components/stats/StatsSegmented';
 import StatsHelpSheet from '../components/stats/StatsHelpSheet';
+import StatsLoadState from '../components/stats/StatsLoadState';
 import { createStatsScreenStyles } from '../components/stats/statsScreenStyles';
 import { useI18n } from '../hooks/useI18n';
 import { getAddedCardDeckNames, rangeStudyDays, resolveStatsDateRange, type StatsRangeKey } from '../lib/ankiStats';
@@ -105,7 +106,10 @@ export default function StatsScreen() {
         settings,
         localeTag,
     }), [deckScope, statsRange, settings, localeTag]);
-    const { snapshot, loading, error } = useDeferredScreenSnapshot(statsSnapshotKey, loadStatsSnapshot);
+    // Reading a long review log takes a moment: the screen opens on its loading state first.
+    const { snapshot, loading, error } = useDeferredScreenSnapshot(statsSnapshotKey, loadStatsSnapshot, {
+        showLoadingFirst: true,
+    });
     const reviewDays = snapshot?.reviewDays ?? [];
     const addedDays = snapshot?.addedDays ?? [];
     const reviewSpan = rangeStudyDays(statsRange, settings.dayRolloverHour, reviewDays[0]?.day ?? null);
@@ -221,12 +225,7 @@ export default function StatsScreen() {
                 </View>
 
                 {!snapshot ? (
-                    <View style={styles.loadState} accessible>
-                        {error ? null : <ActivityIndicator color={colors.accent} />}
-                        <Text style={styles.loadText}>
-                            {error ? l('İstatistikler yüklenemedi.', 'Statistics could not be loaded.') : t('common.loading')}
-                        </Text>
-                    </View>
+                    <StatsLoadState failed={Boolean(error)} />
                 ) : (
                     <Animated.View style={[styles.body, { opacity }]} accessibilityState={{ busy: loading }}>
                         <TodaySection
