@@ -426,7 +426,10 @@ function snapshotTime(info: BackupInfo): number {
     return ymd ? new Date(`${ymd}T12:00:00`).getTime() : 0;
 }
 
-/** Keep the newest collection snapshots and rotate pre-restore safety copies separately. */
+/**
+ * Keep the newest collection snapshots and rotate pre-restore safety copies separately: the
+ * newest few, plus the first copy of the latest series of restores (`retainedPreRestoreNames`).
+ */
 async function pruneBackups(store: BackupStore, maxCopies: number | undefined, now: Date): Promise<void> {
     const all = await store.list();
     const snapshots = all
@@ -434,10 +437,9 @@ async function pruneBackups(store: BackupStore, maxCopies: number | undefined, n
         .sort((a, b) => snapshotTime(b) - snapshotTime(a) || b.name.localeCompare(a.name));
     const retained = maxCopies === undefined ? retainedBackupNames(snapshots.map(info => ({ ...info, createdAt: snapshotTime(info) })), now, normalizeBackupPolicy(loadSettings())) : null;
     const overflow = retained ? snapshots.filter(info => !retained.has(info.name)) : snapshots.slice(Math.max(0, maxCopies!));
-    const preRestore = all
-        .filter((b) => PRE_RESTORE_NAME_RE.test(b.name))
-        .sort((a, b) => parseTimestamp(b.name) - parseTimestamp(a.name))
-        .slice(KEEP_PRE_RESTORE);
+    const preRestoreNames = all.filter((b) => PRE_RESTORE_NAME_RE.test(b.name)).map((b) => b.name);
+    const keptPreRestore = retainedPreRestoreNames(preRestoreNames);
+    const preRestore = all.filter((b) => PRE_RESTORE_NAME_RE.test(b.name) && !keptPreRestore.has(b.name));
 
     for (const info of [...overflow, ...preRestore]) {
         await store.remove(info.name);
@@ -447,6 +449,33 @@ async function pruneBackups(store: BackupStore, maxCopies: number | undefined, n
 function parseTimestamp(preRestoreName: string): number {
     const match = preRestoreName.match(/^tus-prerestore-(\d+)\.json$/);
     return match ? Number(match[1]) : 0;
+}
+
+/**
+ * Restores less than this apart are one series: the learner trying one backup after another. The
+ * first restore of a series is the one that replaced the learner's own collection.
+ */
+export const RESTORE_SERIES_GAP_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The pre-restore copies pruning keeps: the KEEP_PRE_RESTORE newest, and the copy taken before
+ * the first restore of the latest series. Each restore copies the collection it replaces, so in a
+ * series every copy after the first holds a backup restored a moment before, and only the first
+ * holds what the learner had done since their last backup. Keeping only the newest three, a
+ * fourth restore in a row deleted that copy. At most KEEP_PRE_RESTORE + 1 copies are kept; the
+ * first copy of an earlier series goes once a later series starts and it is no longer among the
+ * newest.
+ */
+export function retainedPreRestoreNames(names: readonly string[]): Set<string> {
+    const newestFirst = [...names].sort((a, b) => parseTimestamp(b) - parseTimestamp(a) || b.localeCompare(a));
+    const kept = new Set(newestFirst.slice(0, KEEP_PRE_RESTORE));
+    let seriesStart = newestFirst[0];
+    for (let index = 1; index < newestFirst.length; index++) {
+        if (parseTimestamp(newestFirst[index - 1]) - parseTimestamp(newestFirst[index]) > RESTORE_SERIES_GAP_MS) break;
+        seriesStart = newestFirst[index];
+    }
+    if (seriesStart !== undefined) kept.add(seriesStart);
+    return kept;
 }
 
 /**

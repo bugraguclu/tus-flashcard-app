@@ -86,7 +86,8 @@ ayarları (dil ve tema dahil) yedekteki hâline döner. Medya dosyalarına dokun
 
 Geri yüklemeden hemen önce o anki durumun bir kopyası listeye **Geri yükleme öncesi kopya** olarak
 eklenir. Yanlış yedeği seçtiyseniz o kopyayı geri yükleyerek eski hâle dönersiniz. Bu kopyalardan
-en yeni üçü saklanır.
+en yeni üçü saklanır. Art arda birkaç yedek denediğinizde (aralarında bir günden az varken) serinin
+ilk kopyası da saklanır: kendi çalışmanızı yalnızca o tutar.
 
 Bir yedek geri yüklenemiyorsa **Yedek geri yüklenemedi.** mesajı çıkar ve koleksiyonunuz değişmez.
 Bu, yedek uygulamanın daha yeni bir sürümüyle alındığında veya dosya bozulduğunda olabilir.

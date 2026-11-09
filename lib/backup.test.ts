@@ -73,6 +73,8 @@ import {
     normalizeManualBackupName,
     readBackup,
     restoreBackup,
+    RESTORE_SERIES_GAP_MS,
+    retainedPreRestoreNames,
     runAutoBackupIfDue,
     validateBackupContents,
     type BackupDeps,
@@ -377,17 +379,37 @@ describe('restoreBackup', () => {
         expect(h.imports).toHaveLength(0);
     });
 
-    it('keeps only the 3 newest pre-restore snapshots', async () => {
+    it('keeps the 3 newest pre-restore snapshots and the first of a series of restores', async () => {
         const h = makeHarness();
         const { fileName } = await createBackupNow(h.deps);
+        // The learner's own collection, which only the first restore's copy holds.
+        const own = JSON.parse(h.files.get(fileName)!.contents);
+        own.own = 'work since the last backup';
+        h.setExported(JSON.stringify(own));
 
+        const names: string[] = [];
         for (let i = 0; i < 5; i++) {
             h.setNow(`2026-07-05T12:0${i + 1}:00`);
-            await restoreBackup(fileName, h.deps);
+            names.push((await restoreBackup(fileName, h.deps)).preRestoreName!);
+            h.setExported(h.files.get(fileName)!.contents);
         }
 
-        const preRestores = [...h.files.keys()].filter((n) => n.startsWith('tus-prerestore-'));
-        expect(preRestores).toHaveLength(3);
+        const preRestores = [...h.files.keys()].filter((n) => n.startsWith('tus-prerestore-')).sort();
+        expect(preRestores).toEqual([names[0], ...names.slice(2)].sort());
+        expect(h.files.get(names[0])?.contents).toContain('"own":"work since the last backup"');
+    });
+
+    it('lets the first copy of an earlier series go once a later series starts', () => {
+        const at = (iso: string) => `tus-prerestore-${new Date(iso).getTime()}.json`;
+        const earlier = ['2026-07-01T09:00:00', '2026-07-01T09:05:00', '2026-07-01T09:10:00', '2026-07-01T09:15:00'].map(at);
+        const later = ['2026-07-04T18:00:00', '2026-07-04T18:02:00'].map(at);
+
+        expect(retainedPreRestoreNames(earlier)).toEqual(new Set(earlier));
+        // The later series' first copy is among the newest three; the earlier series' first is not.
+        expect(retainedPreRestoreNames([...earlier, ...later])).toEqual(new Set([...later, earlier[3]]));
+        // Restores a day and more apart are separate series.
+        expect(RESTORE_SERIES_GAP_MS).toBe(24 * 60 * 60 * 1000);
+        expect(retainedPreRestoreNames([])).toEqual(new Set());
     });
 
     it('rejects filenames this module did not generate', async () => {

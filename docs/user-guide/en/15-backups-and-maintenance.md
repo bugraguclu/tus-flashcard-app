@@ -86,7 +86,8 @@ Restoring replaces the whole collection: decks, notes, cards, review history and
 
 Right before restoring, a copy of the current state is added to the list as a **Pre-restore
 snapshot**. If you picked the wrong backup, restore that snapshot to go back. The newest three of
-these snapshots are kept.
+these snapshots are kept. When you try several backups in a row (less than a day apart), the
+first snapshot of that run is kept too: only it holds your own work.
 
 If a backup cannot be restored, **Could not restore the backup.** appears and your collection is not
 changed. This can happen when the backup was made by a newer version of the app or the file is
