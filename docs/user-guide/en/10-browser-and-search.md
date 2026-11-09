@@ -143,8 +143,23 @@ Correct suspend, bury, flag and tag changes by doing the opposite action. **Set 
 **Reset cards** and **Grade now** cannot be undone.
 
 > **Different from Anki:** The Card Browser has no general undo command; only the actions above can
-> be undone. Desktop Anki's column chooser, find and replace, finding duplicates and saved searches
-> are not available. You open Card Info from the study screen.
+> be undone. **Find and replace** and **Rename tag** take a backup first; restore it from **Backups**
+> to undo. Desktop Anki's column chooser and saved searches are not available.
+
+<a id="note-tools"></a>
+## Find and replace, duplicates, renaming a tag
+
+- **Find and replace** (⋮ or More): set **Find**, **Replace With** and **In** (all fields, tags or
+  one field). With notes selected only they change; otherwise the whole collection does. **Ignore
+  case** starts on and **Regular expression** off. The confirmation says how many notes will change;
+  the change runs in one go after a backup. An invalid regular expression changes nothing. Locked TUS
+  catalog notes are skipped.
+- **Find duplicates** (⋮): pick a field and, if you like, narrow it with a search; notes with the
+  same text are grouped. Tap a group to list it; **Tag Duplicates** adds the `duplicate` tag (it
+  asks first).
+- **Renaming a tag:** hold it in the **Filter by tag** list. Child tags follow, and an existing name
+  merges the two. A name with a space is refused. The confirmation says how many notes change, and a
+  backup is taken first.
 
 <a id="change-deck"></a>
 ## Changing the deck
@@ -413,8 +428,9 @@ shown in the Card Browser (for example "General") cannot be searched.
 <!-- In the app: Study screen › ⋮ (Card and note options) or Tools › Card info (components/CardOptionsMenu.tsx:360-362); the screen's ⓘ (new, app/card-info.tsx:207) → help.cardInfo.sheet → this section -->
 
 Card Info shows every detail of the card on screen while you study. On the study screen tap **⋮**
-at the top (or the gear **Tools** button, depending on your settings) and choose **Card info**. It
-does not open from the Card Browser. To close it, swipe down or tap **Back**.
+at the top (or the gear **Tools** button, depending on your settings) and choose **Card info**. In
+the Card Browser, select one card and tap **More › Card info**, or use **ⓘ Card info** in an
+expanded row (in Notes mode, the note's first card). To close it, swipe down or tap **Back**.
 
 | Section | Shows |
 | --- | --- |

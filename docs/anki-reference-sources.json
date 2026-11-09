@@ -35,6 +35,41 @@
       "useFor": ["empty card detection", "blank front card generation", "safe card-only deletion", "preserving notes and sibling cards"]
     },
     {
+      "id": "anki-manual-browsing-find-replace",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://docs.ankiweb.net/browsing.html#find-and-replace",
+      "useFor": ["Find and Replace: In field/tags, selected notes only, ignore case, regular expressions"]
+    },
+    {
+      "id": "anki-manual-browsing-find-duplicates",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://docs.ankiweb.net/browsing.html#finding-duplicates",
+      "useFor": ["Find Duplicates by field with an optional search; Tag Duplicates"]
+    },
+    {
+      "id": "anki-source-find-replace",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/findreplace.rs",
+      "useFor": ["literal vs regex find, replacement expansion, per-field and tag replacement (with tags/findreplace.rs)"]
+    },
+    {
+      "id": "anki-source-find-dupes",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://github.com/ankitects/anki/blob/main/pylib/anki/collection.py",
+      "useFor": ["find_dupes grouping by stripped field text; write_dupe in rslib/src/search/sqlwriter.rs"]
+    },
+    {
+      "id": "anki-source-tag-rename",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/tags/rename.rs",
+      "useFor": ["rename a tag and its children case-insensitively; renaming onto an existing tag merges (with tags/matcher.rs)"]
+    },
+    {
       "id": "anki-source-true-retention",
       "priority": 2,
       "platform": "cross-platform statistics",
