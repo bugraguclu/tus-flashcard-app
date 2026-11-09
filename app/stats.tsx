@@ -106,7 +106,8 @@ export default function StatsScreen() {
         settings,
         localeTag,
     }), [deckScope, statsRange, settings, localeTag]);
-    // Reading a long review log takes a moment: the screen opens on its loading state first.
+    // Reading a long review log takes a moment: the screen shows its loading state, or the new
+    // period or deck over dimmed cards, before the read starts.
     const { snapshot, loading, error } = useDeferredScreenSnapshot(statsSnapshotKey, loadStatsSnapshot, {
         showLoadingFirst: true,
     });

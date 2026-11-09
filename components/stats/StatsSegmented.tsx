@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, View, type LayoutRectangle } from 'react-native';
 import { Text } from '../AppText';
 import { BorderRadius, FontSize, dropShadow, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
-import { MotionDuration, MotionEasing } from '../../constants/motion';
+import { MotionDuration, MotionEasing, NATIVE_DRIVER } from '../../constants/motion';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 
 export interface SegmentOption<T extends string> {
@@ -53,14 +53,14 @@ export default function StatsSegmented<T extends string>({
             pillWidth.setValue(chosen.width);
             return undefined;
         }
-        // Left and width are layout, which the native driver cannot animate; the control is small.
-        const animation = Animated.parallel([pillX, pillWidth].map((position, index) => Animated.timing(position, {
-            toValue: index === 0 ? chosen.x : chosen.width,
-            duration: MotionDuration.move,
-            easing: MotionEasing.inOut,
-            useNativeDriver: false,
-            isInteraction: false,
-        })));
+        // The slide is a transform on the native driver: a choice that starts a long read (the
+        // Statistics period) keeps the pill moving while JavaScript is busy. Width is layout, which
+        // only JavaScript can animate; it changes only between labels of different lengths.
+        const timing = { duration: MotionDuration.move, easing: MotionEasing.inOut, isInteraction: false };
+        const animation = Animated.parallel([
+            Animated.timing(pillX, { ...timing, toValue: chosen.x, useNativeDriver: NATIVE_DRIVER }),
+            Animated.timing(pillWidth, { ...timing, toValue: chosen.width, useNativeDriver: false }),
+        ]);
         animation.start();
         return () => animation.stop();
     }, [chosen?.x, chosen?.width, value, reduceMotion, pillX, pillWidth]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -68,7 +68,9 @@ export default function StatsSegmented<T extends string>({
     return (
         <View style={[styles.track, fill && styles.trackFill]} accessibilityRole="tablist" accessibilityLabel={accessibilityLabel}>
             {chosen ? (
-                <Animated.View style={[styles.pill, { left: pillX, width: pillWidth, pointerEvents: 'none' }]} />
+                <Animated.View style={[styles.pillSlot, { transform: [{ translateX: pillX }], pointerEvents: 'none' }]}>
+                    <Animated.View style={[styles.pill, { width: pillWidth }]} />
+                </Animated.View>
             ) : null}
             {options.map((option) => {
                 const selected = option.value === value;
@@ -137,10 +139,9 @@ function createStyles(colors: ColorScheme, isDark: boolean) {
             ...dropShadow({ y: 1, blur: 3, opacity: 0.08, elevation: 1 }),
         },
         // The chosen segment's pill, drawn under the labels once the segments are measured.
+        pillSlot: { position: 'absolute', left: 0, top: 2, bottom: 2 },
         pill: {
-            position: 'absolute',
-            top: 2,
-            bottom: 2,
+            flex: 1,
             borderRadius: BorderRadius.md - 2,
             backgroundColor: isDark ? colors.border : colors.bgCard,
             ...dropShadow({ y: 1, blur: 3, opacity: 0.08, elevation: 1 }),

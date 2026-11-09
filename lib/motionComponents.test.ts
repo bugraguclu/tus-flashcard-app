@@ -349,32 +349,36 @@ describe('StatsSegmented', () => {
     const measure = () => act(() => find('Pressable').forEach((segment, index) => segment.props.onLayout({
         nativeEvent: { layout: { x: 2 + index * 60, y: 2, width: 60, height: 30 } },
     })));
-    const pill = () => flat(find('AnimatedView')[0]);
+    // The pill sits in a slot: the slot slides (a transform), the pill inside it takes the width.
+    const pillX = () => flat(find('AnimatedView')[0]).transform[0].translateX.value;
+    const pillWidth = () => flat(find('AnimatedView')[1]).width.value;
 
     it('puts the pill under the chosen segment at once, then slides it to a new choice', () => {
         act(() => { renderer = TestRenderer.create(control('week')); });
         // Until the segments are measured the chosen one carries its own background.
         expect(find('AnimatedView')).toHaveLength(0);
         measure();
-        expect(pill().left.value).toBe(2);
-        expect(pill().width.value).toBe(60);
+        expect(pillX()).toBe(2);
+        expect(pillWidth()).toBe(60);
         expect(motion.timings).toHaveLength(0);
 
         act(() => renderer!.update(control('year')));
         expect(motion.timings.map((timing) => timing.toValue)).toEqual([122, 60]);
-        // Left and width are layout: the JS driver moves them, easing in and out over 250 ms.
-        expect(motion.timings.every((timing) => timing.duration === 250 && timing.useNativeDriver === false)).toBe(true);
-        expect(pill().left.value).toBe(122);
+        // Both ease in and out over 250 ms. The slide runs on the native driver, so it keeps going
+        // while a choice's data is read; width is layout, which only JavaScript can animate.
+        expect(motion.timings.every((timing) => timing.duration === 250)).toBe(true);
+        expect(motion.timings.map((timing) => timing.useNativeDriver)).toEqual([true, false]);
+        expect(pillX()).toBe(122);
     });
 
     it('moves the pill without a slide when only the layout changes, or under Reduce Motion', () => {
         act(() => { renderer = TestRenderer.create(control('week')); });
         measure();
         act(() => find('Pressable')[0].props.onLayout({ nativeEvent: { layout: { x: 2, y: 2, width: 80, height: 30 } } }));
-        expect(pill().width.value).toBe(80);
+        expect(pillWidth()).toBe(80);
         act(() => motion.reduceMotionListener?.(true));
         act(() => renderer!.update(control('month')));
         expect(motion.timings).toHaveLength(0);
-        expect(pill().left.value).toBe(62);
+        expect(pillX()).toBe(62);
     });
 });
