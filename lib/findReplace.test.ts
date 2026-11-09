@@ -112,6 +112,25 @@ describe('finding the text', () => {
         expect(expandReplacement('$1a|${1}a|$2|$', ['x', 'y'])).toBe('|ya||$');
     });
 
+    it('reads \\w, \\d and \\b over Turkish letters, as Rust does', () => {
+        const note = addNote(BASIC, ['şu ağrı, başucu ve şu; doz ٣ mg', 'çöğüş-ıİ a_b']);
+        applyFindReplace(request({ find: '\\bşu\\b', replacement: 'bu', regex: true }));
+        expect(stored(note.id).fields[0]).toBe('bu ağrı, başucu ve bu; doz ٣ mg');
+        applyFindReplace(request({ find: '\\w+', replacement: 'x', regex: true, target: { kind: 'field', name: 'Back' } }));
+        expect(stored(note.id).fields[1]).toBe('x-x x');
+        applyFindReplace(request({ find: 'doz \\d', replacement: 'doz 3', regex: true }));
+        applyFindReplace(request({ find: 'a[\\w,]+ b', replacement: 'ağrı; b', regex: true }));
+        applyFindReplace(request({ find: 'baş\\Bucu', replacement: 'başucu:', regex: true }));
+        expect(stored(note.id).fields[0]).toBe('bu ağrı; başucu: ve bu; doz 3 mg');
+    });
+
+    it('accepts the punctuation escapes Rust accepts', () => {
+        const note = addNote(BASIC, ['a&nbsp;b - c#d', '']);
+        applyFindReplace(request({ find: '\\&nbsp\\;', replacement: ' ', regex: true }));
+        applyFindReplace(request({ find: ' \\- c\\#[\\-d]', replacement: '-c', regex: true }));
+        expect(stored(note.id).fields[0]).toBe('a b-c');
+    });
+
     it('reads a leading Rust inline flag', () => {
         const note = addNote(BASIC, ['Kalp kalp', '']);
         applyFindReplace(request({ find: '(?-i)Kalp', replacement: 'K', regex: true }));
