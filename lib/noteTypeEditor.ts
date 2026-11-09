@@ -178,6 +178,17 @@ function keepTemplatesShowingAField(templates: NoteTypeTemplate[], fields: NoteT
     });
 }
 
+/**
+ * Whether a cloze type's cards come from `fieldName`: a template side reads it through the cloze
+ * filter (`{{cloze:Text}}`, `{{type:cloze:Text}}`). Removing that field leaves the cards empty.
+ */
+export function isClozeSourceField(nt: NoteType, fieldName: string): boolean {
+    if (nt.kind !== 'cloze') return false;
+    const escaped = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\{\\{[^{}]*\\bcloze:\\s*${escaped}\\s*\\}\\}`);
+    return nt.templates.some((template) => pattern.test(template.qfmt) || pattern.test(template.afmt));
+}
+
 /** The notes of a type the learner still has, for the question before a field is removed. */
 export function countNotesOfType(noteTypeId: number): number {
     const row = getDB().getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM notes WHERE noteTypeId = ? AND tombstone = 0', noteTypeId);

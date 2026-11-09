@@ -28,6 +28,7 @@ import {
     renameNoteType,
     setCss,
     applyFieldEdit,
+    isClozeSourceField,
     structuralEditOverDraft,
 } from './noteTypeEditor';
 
@@ -177,6 +178,35 @@ describe('removeField', () => {
         const { noteType } = removeField(cloze, 0);
         expect(noteType.templates[0].qfmt).toBe('front {{cloze:Extra}}');
         expect(noteType.templates[0].afmt).toBe('back <br>{{Extra}}{{cloze:Extra}}');
+    });
+
+    // Anki lets a cloze type add, remove and move fields; its cards come from the field the
+    // template reads through the cloze filter (https://docs.ankiweb.net/editing.html#cloze-deletion).
+    it('adds, moves and removes a cloze type field other than its cloze source without touching the cloze', () => {
+        const cloze = makeNoteType({
+            kind: 'cloze',
+            fields: [{ name: 'Text', ord: 0, sticky: false, rtl: false }, { name: 'Back Extra', ord: 1, sticky: false, rtl: false }],
+            templates: [{ name: 'Cloze', ord: 0, qfmt: '{{cloze:Text}}', afmt: '{{cloze:Text}}<br>{{Back Extra}}' }],
+        });
+        const added = addField(cloze, 'Kaynak');
+        expect(added.noteType.fields.map((field) => field.name)).toEqual(['Text', 'Back Extra', 'Kaynak']);
+        expect(added.migrate(['{{c1::a}}', 'x'])).toEqual(['{{c1::a}}', 'x', '']);
+        const moved = moveField(added.noteType, 2, 0);
+        expect(moved.noteType.fields.map((field) => field.name)).toEqual(['Kaynak', 'Text', 'Back Extra']);
+        expect(moved.noteType.templates).toEqual(cloze.templates);
+        const removed = removeField(cloze, 1);
+        expect(removed.noteType.templates[0]).toMatchObject({ qfmt: '{{cloze:Text}}', afmt: '{{cloze:Text}}<br>' });
+    });
+
+    it('tells the cloze source field apart from the others', () => {
+        const cloze = makeNoteType({
+            kind: 'cloze',
+            fields: [{ name: 'Text', ord: 0, sticky: false, rtl: false }, { name: 'Extra', ord: 1, sticky: false, rtl: false }],
+            templates: [{ name: 'Cloze', ord: 0, qfmt: '{{type:cloze:Text}}', afmt: '{{Extra}}' }],
+        });
+        expect(isClozeSourceField(cloze, 'Text')).toBe(true);
+        expect(isClozeSourceField(cloze, 'Extra')).toBe(false);
+        expect(isClozeSourceField({ ...cloze, kind: 'standard' }, 'Text')).toBe(false);
     });
 });
 

@@ -24,10 +24,14 @@ import {
     moveField,
     applyFieldEdit,
     countNotesOfType,
+    isClozeSourceField,
     structuralEditOverDraft,
     type FieldEdit,
 } from '../lib/noteTypeEditor';
 import { isCatalogNoteType } from '../lib/catalogProtection';
+import { isImageOcclusionNoteType } from '../lib/imageOcclusionNoteType';
+import { canDeleteNoteType, deleteNoteTypeWithBackup, NoteTypeDeletionError, noteTypeDeletionImpact } from '../lib/noteTypeDeletion';
+import { BackupNotRestorableError, displayBackupName } from '../lib/backup';
 import type { NoteType, Note, AnkiCard } from '../lib/models';
 import CardWebView from '../components/CardWebView';
 import { FieldNameInput } from '../components/note-type/FieldNameInput';
@@ -71,6 +75,7 @@ export default function NoteTypeScreen() {
     const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
     // Which card template the editor shows; Anki's Cards screen lists every one (SAB-9).
     const [templateIndex, setTemplateIndex] = useState(0);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         const loaded = getNoteType(id);
@@ -105,14 +110,19 @@ export default function NoteTypeScreen() {
     }
 
     const template = nt.templates[shownTemplateIndex];
-    // Cloze cards are generated from the {{c1::…}} markers in the cloze field, so reordering or
-    // removing fields would desync the generated cards. Only cosmetic edits are allowed for them.
+    // A cloze type's cards come from the clozes in the field its template reads through the cloze
+    // filter, by name, so its fields are added, removed and moved as Anki allows; removing that
+    // field empties the cards, and the confirmation says so. Image Occlusion keeps its fields: its
+    // editor and its cards rely on them.
     const isCloze = nt.kind === 'cloze';
+    const isImageOcclusion = isImageOcclusionNoteType(nt);
     // A catalog update writes the pack's own note type back over the notes' positional fields, so
     // a field added, removed or moved here would put every catalog note's values in the wrong
     // field at the next update.
     const catalogOwned = isCatalogNoteType(nt);
-    const fieldsLocked = isCloze || catalogOwned;
+    const fieldsLocked = isImageOcclusion || catalogOwned;
+    // Anki's Delete; the stock, legacy and catalog types stay.
+    const deletable = canDeleteNoteType(nt);
 
     /**
      * Structural field changes migrate every note, so they persist at once. They are built on the
@@ -143,9 +153,73 @@ export default function NoteTypeScreen() {
         }
         const name = nt.fields[ord].name;
         const notes = countNotesOfType(nt.id);
-        confirm(l('Alanı sil', 'Delete Field'), l(`“${name}” alanı ve ${notes} nottaki değeri silinecek.`, `The “${name}” field and its value in ${notes} ${notes === 1 ? 'note' : 'notes'} will be deleted.`), () =>
-            applyStructural((base) => removeField(base, ord)),
+        const clozeSource = isClozeSourceField(nt, name);
+        confirm(
+            l('Alanı sil', 'Delete Field'),
+            l(`“${name}” alanı ve ${notes} nottaki değeri silinecek.`, `The “${name}” field and its value in ${notes} ${notes === 1 ? 'note' : 'notes'} will be deleted.`)
+                + (clozeSource
+                    ? l(
+                        ' Bu türün kartları bu alandaki boşluklardan oluşuyor: alan silinirse kartlar boş kalır ve Boş kartlar’da görünür.',
+                        ' This type’s cards come from the clozes in this field: without it they are empty and show up in Empty Cards.',
+                    )
+                    : ''),
+            () => applyStructural((base) => removeField(base, ord)),
             { destructive: true },
+        );
+    };
+
+    /** Back up, then delete the type with its notes and cards, and leave the screen. */
+    const runDelete = async () => {
+        setDeleting(true);
+        try {
+            const outcome = await deleteNoteTypeWithBackup(getNoteType(nt.id) ?? nt);
+            // Cards left the collection, so a study session rebuilds its queue.
+            bumpDataVersion();
+            // Nothing is left to save: leaving asks nothing.
+            setSavedSnapshot(null);
+            setPendingFieldNames(0);
+            alert(
+                t('common.completed'),
+                l(
+                    `Not türü ${outcome.notes} not ve ${outcome.cards} kartla birlikte silindi. Geri almak için Yedekler’den ${displayBackupName(outcome.backupFileName)} yedeğini geri yükleyin.`,
+                    `The note type was deleted with ${outcome.notes} ${outcome.notes === 1 ? 'note' : 'notes'} and ${outcome.cards} ${outcome.cards === 1 ? 'card' : 'cards'}. To undo, restore ${displayBackupName(outcome.backupFileName)} from Backups.`,
+                ),
+                () => goBackOr(router, '/note-types'),
+            );
+        } catch (e) {
+            console.warn('[NoteType] delete failed:', e);
+            if (e instanceof NoteTypeDeletionError && e.stage === 'backup' && e.cause instanceof BackupNotRestorableError) {
+                alert(t('backup.notRestorableTitle'), t('backup.notRestorableMessage'));
+            } else if (e instanceof NoteTypeDeletionError && e.stage === 'backup') {
+                alert(t('common.error'), l(
+                    'Güvenlik yedeği alınamadığı için hiçbir şey silinmedi. Yedekler ekranını kontrol edip tekrar deneyin.',
+                    'Nothing was deleted because the safety backup could not be created. Check Backups and try again.',
+                ));
+            } else {
+                alert(t('common.error'), l('Not türü silinemedi; hiçbir şey değişmedi.', 'The note type could not be deleted; nothing changed.'));
+            }
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleDelete = () => {
+        if (deleting || !deletable) return;
+        const { notes, cards } = noteTypeDeletionImpact(nt.id);
+        const name = getNoteType(nt.id)?.name ?? nt.name;
+        confirm(
+            l('Not türünü sil', 'Delete Note Type'),
+            notes > 0
+                ? l(
+                    `“${name}” not türü ${notes} notu ve ${cards} kartıyla birlikte silinecek. Tekrar geçmişi korunur. Silmeden önce geri yüklenebilir bir yedek alınır.`,
+                    `The note type “${name}” will be deleted with its ${notes} ${notes === 1 ? 'note' : 'notes'} and ${cards} ${cards === 1 ? 'card' : 'cards'}. Review history is kept. A restorable backup is taken before deleting.`,
+                )
+                : l(
+                    `“${name}” not türü silinecek; bu türde not yok. Silmeden önce geri yüklenebilir bir yedek alınır.`,
+                    `The note type “${name}” will be deleted; it has no notes. A restorable backup is taken before deleting.`,
+                ),
+            () => { void runDelete(); },
+            { destructive: true, confirmLabel: l('Sil', 'Delete') },
         );
     };
 
@@ -260,8 +334,8 @@ export default function NoteTypeScreen() {
                 ))}
                 {catalogOwned ? (
                     <Text style={styles.help}>{l('Bu not türü TUS Kartları paketine ait ve paket güncellenince yenilenir; alan eklenemez, silinemez veya taşınamaz.', 'This note type belongs to the TUS card pack and is refreshed when the pack updates; fields cannot be added, removed or moved.')}</Text>
-                ) : isCloze ? (
-                    <Text style={styles.help}>{l('Kapama (Cloze) türünde alanlar yeniden düzenlenemez.', 'Fields cannot be reordered in a Cloze note type.')}</Text>
+                ) : isImageOcclusion ? (
+                    <Text style={styles.help}>{l('Görüntü Örtme düzenleyicisi ve kartları bu alanlara dayanır; alan eklenemez, silinemez veya taşınamaz.', 'The Image Occlusion editor and its cards rely on these fields, so they cannot be added, removed or moved.')}</Text>
                 ) : (
                     <TouchableOpacity
                         style={styles.addFieldBtn}
@@ -349,6 +423,20 @@ export default function NoteTypeScreen() {
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => goBackOr(router, '/note-types')} accessibilityRole="button">
                     <Text style={styles.cancelBtnText}>{t('common.close')}</Text>
                 </TouchableOpacity>
+                {deletable ? (
+                    <TouchableOpacity
+                        style={[styles.cancelBtn, deleting && styles.iconBtnDisabled]}
+                        onPress={handleDelete}
+                        disabled={deleting}
+                        accessibilityRole="button"
+                        accessibilityLabel={l(`“${nt.name}” not türünü sil`, `Delete the note type “${nt.name}”`)}
+                        accessibilityState={{ disabled: deleting, busy: deleting }}
+                    >
+                        <Text style={[styles.cancelBtnText, styles.deleteTypeText]}>
+                            {deleting ? l('Yedek alınıyor, ardından silinecek…', 'Backing up, then deleting…') : l('Not türünü sil', 'Delete Note Type')}
+                        </Text>
+                    </TouchableOpacity>
+                ) : null}
             </ScrollView>
         </SafeAreaView>
     );
@@ -404,6 +492,7 @@ function createStyles(colors: ColorScheme) {
     templateTabTextActive: { color: colors.accent, fontWeight: '600' },
     iconText: { fontSize: 16, color: colors.textSecondary },
     removeText: { color: colors.badgeNew },
+    deleteTypeText: { color: colors.btnAgain, fontWeight: '600' },
     addFieldBtn: {
         borderWidth: 1,
         borderColor: colors.accent,

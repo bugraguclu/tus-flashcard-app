@@ -35,6 +35,13 @@
       "useFor": ["empty card detection", "blank front card generation", "safe card-only deletion", "preserving notes and sibling cards"]
     },
     {
+      "id": "anki-manual-manage-note-types",
+      "priority": 1,
+      "platform": "cross-platform note type management",
+      "url": "https://docs.ankiweb.net/editing.html#adding-a-note-type",
+      "useFor": ["Add Note Type offers stock types and clones of existing types, then asks for a name", "Delete removes a note type with all its notes and cards", "cloze note types can add, remove and reorder fields"]
+    },
+    {
       "id": "anki-source-empty-cards-orphaned-notes",
       "priority": 2,
       "platform": "cross-platform card generation and maintenance behavior",
