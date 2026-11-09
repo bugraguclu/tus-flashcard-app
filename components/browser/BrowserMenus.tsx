@@ -456,6 +456,15 @@ export function OverflowMenuModal({
                         <Text style={styles.overflowItemIcon}>⇄</Text>
                         <Text style={styles.overflowItemText}>{l('Bul ve değiştir…', 'Find and replace…')}</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.overflowItem}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Yinelenen notları bul', 'Find duplicate notes')}
+                        onPress={() => { setShowOverflowMenu(false); openNoteTool({ kind: 'find-duplicates' }); }}
+                    >
+                        <Text style={styles.overflowItemIcon}>❐</Text>
+                        <Text style={styles.overflowItemText}>{l('Yinelenenleri bul…', 'Find duplicates…')}</Text>
+                    </TouchableOpacity>
                     <View style={styles.overflowSeparator} />
                     <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={openFilteredDeckDialog}>
                         <Text style={styles.overflowItemIcon}>⧉</Text>

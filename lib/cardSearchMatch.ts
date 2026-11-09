@@ -7,6 +7,7 @@
 import { fsrsRetrievabilityAfterSeconds, fsrsSecondsSinceLastReview, type FsrsMemoryState } from './fsrs';
 import { foldSearchNode, parseSearchQuery, SearchSyntaxError } from './searchQuery';
 import { localizeNoteTypeName } from './i18n';
+import { checksumFieldText } from './noteChecksum';
 import {
     firstUnescapedColon, globMatcher, hierarchicalGlobMatcher, searchRegex, stripHtmlForSearch,
     stripSearchQuotes, unescapeSearchText, withoutClozeMarkup, wordMatcher,
@@ -502,16 +503,19 @@ function predicateForTerm(rawTerm: string, options: CardMatcherOptions, needs: C
                 : ids.has(card.deckId) || (card.homeDeckId !== undefined && ids.has(card.homeDeckId)));
         }
         case 'dupe': {
-            // `dupe:<note type id>,<first field>`: notes of that type whose first field, without
-            // formatting, is exactly the text. The Browser's "Find Duplicates" writes these.
+            // `dupe:<note type id>,<first field>`: notes of that type whose first field is exactly
+            // the text once both lose their formatting, as Anki compares them: HTML stripped with
+            // media file names kept and entities decoded (`strip_html_preserving_media_filenames`,
+            // the text the note checksum covers; Anki's checksum only narrows the candidates). The
+            // Browser's Find Duplicates shows a group through this term.
             const comma = body.indexOf(',');
             if (comma <= 0 || !/^\d+$/.test(body.slice(0, comma))) return invalidTerm(term);
             needs.fields = true;
             const noteTypeId = Number(body.slice(0, comma));
-            const text = stripHtmlForSearch(unescapeSearchText(body.slice(comma + 1)));
+            const text = checksumFieldText(unescapeSearchText(body.slice(comma + 1)));
             return (card) => {
                 if (card.noteTypeId === undefined || !card.fields) return undefined;
-                return card.noteTypeId === noteTypeId && stripHtmlForSearch(rawFields(card)[0] ?? '') === text;
+                return card.noteTypeId === noteTypeId && checksumFieldText(rawFields(card)[0] ?? '') === text;
             };
         }
         case 'has-cd': {

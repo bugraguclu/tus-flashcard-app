@@ -3,7 +3,7 @@ import { BorderRadius, FontSize, Spacing, type ColorScheme } from '../../constan
 
 /**
  * Styles the browser's note tools add to the shared dialog styles in browserStyles.ts: the
- * field selector, notices and progress.
+ * field selector, notices, progress and the duplicate groups.
  */
 export function createNoteToolStyles(colors: ColorScheme) {
     return StyleSheet.create({
@@ -47,6 +47,34 @@ export function createNoteToolStyles(colors: ColorScheme) {
         hint: { marginTop: Spacing.xs, color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
         busyRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md },
         busyText: { flex: 1, color: colors.textSecondary, fontSize: FontSize.sm },
+        searchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+        searchInput: { flex: 1 },
+        resultSummary: { marginTop: Spacing.md, color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
+        groupList: { flexGrow: 0, flexShrink: 1, marginTop: Spacing.xs },
+        groupRow: {
+            minHeight: 50,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: Spacing.sm,
+            paddingVertical: Spacing.sm,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.borderLight,
+        },
+        groupCount: {
+            minWidth: 58,
+            paddingHorizontal: Spacing.sm,
+            paddingVertical: 3,
+            overflow: 'hidden',
+            textAlign: 'center',
+            color: colors.accent,
+            backgroundColor: colors.accentLight,
+            borderRadius: BorderRadius.full,
+            fontSize: FontSize.xs,
+            fontWeight: '800',
+        },
+        groupValue: { flex: 1, color: colors.textPrimary, fontSize: FontSize.sm, lineHeight: 19 },
+        groupChevron: { color: colors.textMuted, fontSize: 22 },
+        actionsWrap: { flexWrap: 'wrap' },
     });
 }
 

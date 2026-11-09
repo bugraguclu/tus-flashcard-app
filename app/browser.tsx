@@ -801,6 +801,20 @@ export default function BrowserScreen() {
         setFlagFilters([...ALL_CARD_FLAGS]);
     }, []);
 
+    // A duplicate group is listed here, in place: as Anki's dialog replaces the browser's search,
+    // the group's search runs over the whole collection with no filter chips. Sort and table
+    // mode stay as they are.
+    const showSearchInPlace = useCallback((search: string) => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        setDeckName(null);
+        clearBrowserFilters();
+        setRawQuery(search);
+        setSearchDraftInvalid(false);
+        setSearchQuery(search);
+        setExpandedCard(null);
+        closeSelection();
+    }, [clearBrowserFilters, closeSelection, setDeckName]);
+
     const openFilteredDeckDialog = useCallback(() => {
         setShowOverflowMenu(false);
         setFilteredDeckFormSearch(browserSearch);
@@ -1266,11 +1280,13 @@ export default function BrowserScreen() {
 
             <BrowserNoteTools
                 colors={colors}
+                dataVersion={dataVersion}
                 l={l}
                 locale={locale}
                 noteTypes={noteTypes}
                 onChanged={refreshSelection}
                 onClose={() => setNoteTool(null)}
+                onShowSearch={showSearchInPlace}
                 selectedNoteIds={selectedNoteIds}
                 selectedNoteTypeIds={selectedNoteTypeIds}
                 styles={styles}
