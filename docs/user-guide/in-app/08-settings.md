@@ -252,7 +252,7 @@ Hepsi `lib/permissions.ts:20-41` üzerinden açılır: iPhone'da **Ayarları Aç
 ## 11. Başlangıç hatası, çökme ekranı, bulunamayan sayfa
 
 ### help.shell.startupError — Başlangıç hatası ekranı
-- **Yer:** `app/(tabs)/_layout.tsx:403-410` (şu an yalnızca simge, başlık ve metin; düğme yok)
+- **Yer:** `components/StartupIssueScreen.tsx` (`lib/startupIssue.ts`), Tekrar dene ve Beklemeye devam et düğmeleriyle (uygulandı)
 - **Tetikleyici:** başlatma başarısız (`startupError === 'failed'`) veya 30 sn'yi aştı (`'timeout'`, `hooks/useAppStartup.ts:249-258`)
 - **Bileşen:** tam ekran durum; mevcut `retryStartup` ve `continueStartupWait` işlevlerine bağlanan düğmeler (`hooks/useAppStartup.ts:272-281`, bugün kullanılmıyor)
 - **Daha fazla bilgi:** — (SSS bölümü hazır olunca "Nasıl çözülür?" bağlantısı eklenebilir)
