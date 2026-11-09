@@ -58,7 +58,10 @@ export default function ExternalActionScreen() {
         returnToDeckList(router);
         if (rejection) {
             const { title, message } = externalLinkRejectionText(locale, rejection);
-            alert(title, message);
+            // On a page opened at this address, the app's dialog host registers in the same
+            // commit as this effect, after it; a tick later the notice is the app's own dialog
+            // rather than the browser's alert.
+            setTimeout(() => alert(title, message), 0);
         }
         // The request is read once, when the address is opened and the app has started.
         // eslint-disable-next-line react-hooks/exhaustive-deps
