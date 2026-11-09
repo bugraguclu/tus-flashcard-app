@@ -178,6 +178,26 @@ export function SelectionMenuModal({
                         <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setPreviewAnswerVisible(false); setPreviewIndex(0); }}>
                             <Text style={styles.selectionMenuIcon}>👁</Text><Text style={styles.selectionMenuText}>{l('Önizle', 'Preview')}</Text>
                         </TouchableOpacity>
+                        {/* Anki's Info is about one card: in Notes mode, the note's first card. */}
+                        <TouchableOpacity
+                            style={[styles.selectionMenuItem, selectedCardIds.size !== 1 && styles.overflowItemDisabled]}
+                            disabled={selectedCardIds.size !== 1}
+                            accessibilityRole="button"
+                            accessibilityLabel={tableMode === 'notes' ? l('Notun ilk kartının bilgisi', "Info for the note's first card") : l('Kart bilgisi', 'Card info')}
+                            accessibilityState={{ disabled: selectedCardIds.size !== 1 }}
+                            onPress={() => {
+                                const [cardId] = [...selectedCardIds];
+                                setShowSelectionMenu(false);
+                                router.push(`/card-info?cardId=${cardId}` as any);
+                            }}
+                        >
+                            <Text style={styles.selectionMenuIcon}>ⓘ</Text>
+                            <Text style={styles.selectionMenuText}>
+                                {selectedCardIds.size === 1
+                                    ? l('Kart bilgisi', 'Card info')
+                                    : tableMode === 'notes' ? l('Kart bilgisi (tek not seçin)', 'Card info (select one note)') : l('Kart bilgisi (tek kart seçin)', 'Card info (select one card)')}
+                            </Text>
+                        </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.selectionMenuItem} accessibilityRole="button"
                             onPress={() => {

@@ -293,6 +293,14 @@ export function BrowserCardRow({
                                     : `⏸️ ${t('anki.suspend')}`}
                         </Text>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.suspendBtn, styles.cardInfoBtn]}
+                        accessibilityRole="button"
+                        accessibilityLabel={isNotesMode ? l('Notun ilk kartının bilgisi', "Info for the note's first card") : l('Kart bilgisi', 'Card info')}
+                        onPress={() => router.push(`/card-info?cardId=${item.cardId}`)}
+                    >
+                        <Text style={styles.suspendBtnText}>ⓘ {l('Kart bilgisi', 'Card info')}</Text>
+                    </TouchableOpacity>
                 </View>
             )}
         </TouchableOpacity>

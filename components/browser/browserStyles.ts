@@ -206,6 +206,7 @@ export function createBrowserStyles(colors: ColorScheme) {
         alignItems: 'center',
     },
     suspendBtnActive: { backgroundColor: colors.accentLight },
+    cardInfoBtn: { marginTop: Spacing.sm },
     suspendBtnText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
 
     selectionBar: {
