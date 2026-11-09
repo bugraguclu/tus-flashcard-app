@@ -400,11 +400,11 @@ Card placement and order, recorded from Anki 26.09.3 by `scripts/anki-oracle/bro
 
 All ordinary card removals (note, deck, confirmed type conversion, Empty Cards and orphan-card repair) now share `deleteCardRows` in `lib/noteDeletion.ts`. It writes card graves and removes search rows while retaining revlog. Nonexistent IDs do not create phantom deletion records.
 
-Keep Notes defaults to on: if every card of a note is selected, the lowest-ordinal card remains. Turning the switch off allows card-only deletion while retaining note text and revlog. Database repair recreates card 1 for readable cardless notes rather than deleting their text (`lib/maintenance.test.ts`).
+Keep Notes defaults to on: if every card of a note is selected, the lowest-ordinal card remains. Turning the switch off deletes a note whose cards are all selected together with them and writes its grave, as Anki's Empty Cards does when "Keep notes with no valid cards" is unchecked (`qt/aqt/emptycards.py` calls `remove_cards_and_orphaned_notes`, registry `anki-source-empty-cards-orphaned-notes`); revlog is kept. Before this, the switch left the note without cards, Check Database reported it as "Kartsız not" and Repair gave it its empty card 1 back, so the two undid each other. A catalog note is never deleted: with the switch off it keeps its first card, as with it on. The confirmation and the result name how many notes go (`planCardOnlyDeletion`, `lib/noteCardGeneration.safety.test.ts`, `lib/emptyCardsWorkflow.test.ts`). No card is deleted before a restorable safety backup is on disk, and a failure names the stage it happened in and the backup to restore (`deleteEmptyCardsWithBackup`, `lib/emptyCardsWorkflow.ts`). Database repair still recreates card 1 for readable cardless notes from other sources rather than deleting their text (`lib/maintenance.test.ts`).
 
 **Status:** Implemented subset
 
-**Evidence:** Canonical `/empty-cards` full-screen route; reports cards whose generated front/cloze/template is no longer valid, deletes cards without deleting notes or sibling cards, uses explicit destructive confirmation and transactional bulk deletion
+**Evidence:** Canonical `/empty-cards` full-screen route; reports cards whose generated front/cloze/template is no longer valid, deletes cards without deleting sibling cards, deletes a note only with its last card and only with Keep Notes off, takes a restorable backup first, uses explicit destructive confirmation and transactional bulk deletion
 
 **Next compatibility gate:** Add a named iPhone smoke test for VoiceOver, scan failure and destructive deletion
 

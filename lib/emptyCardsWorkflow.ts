@@ -36,7 +36,10 @@ export interface EmptyCardsDeletionOutcome extends CardOnlyDeletion {
     backupFileName: string | null;
 }
 
-/** Back up, then delete the selected empty cards; Keep Notes leaves the first card of a note whose cards are all selected. */
+/**
+ * Back up, then delete the selected empty cards. Keep Notes leaves the first card of a note whose
+ * cards are all selected; with it off, such a note is deleted with its cards, as in Anki.
+ */
 export async function deleteEmptyCardsWithBackup(
     cardIds: number[],
     options: { preserveNotes: boolean },
@@ -47,7 +50,7 @@ export async function deleteEmptyCardsWithBackup(
     const createBackup = deps.createBackup ?? (() => createBackupNow(deps.backupDeps, { requireRestorable: true }));
 
     const planned = plan(cardIds, options);
-    if (planned.deleted.length === 0) return { backupFileName: null, deleted: [], kept: planned.kept };
+    if (planned.deleted.length === 0) return { backupFileName: null, deleted: [], kept: planned.kept, deletedNotes: [] };
 
     let backupFileName: string;
     try {

@@ -38,6 +38,9 @@ export default function EmptyCardsScreen() {
     const [entries, setEntries] = useState<EmptyCardEntry[] | null>(null);
     /** The listed cards Keep Notes leaves: the first card of each note whose every card is empty. */
     const [noteKeepers, setNoteKeepers] = useState<ReadonlySet<number>>(NO_CARDS);
+    /** With Keep Notes off: the cards still left (a catalog note keeps its first) and the notes that go. */
+    const [catalogKeepers, setCatalogKeepers] = useState<ReadonlySet<number>>(NO_CARDS);
+    const [orphanNotes, setOrphanNotes] = useState<ReadonlySet<number>>(NO_CARDS);
     const [preserveNotes, setPreserveNotes] = useState(true);
     const [busy, setBusy] = useState(false);
     const busyRef = useRef(false);
@@ -50,12 +53,18 @@ export default function EmptyCardsScreen() {
         setTimeout(() => {
             try {
                 const found = findEmptyCards();
-                setNoteKeepers(new Set(planCardOnlyDeletion(found.map((entry) => entry.cardId), { preserveNotes: true }).kept));
+                const cardIds = found.map((entry) => entry.cardId);
+                setNoteKeepers(new Set(planCardOnlyDeletion(cardIds, { preserveNotes: true }).kept));
+                const withoutKeepNotes = planCardOnlyDeletion(cardIds, { preserveNotes: false });
+                setCatalogKeepers(new Set(withoutKeepNotes.kept));
+                setOrphanNotes(new Set(withoutKeepNotes.deletedNotes));
                 setEntries(found);
             } catch (e) {
                 console.warn('[EmptyCards] scan failed:', e);
                 setError(true);
                 setNoteKeepers(NO_CARDS);
+                setCatalogKeepers(NO_CARDS);
+                setOrphanNotes(NO_CARDS);
                 setEntries([]);
             }
         }, 0);
@@ -64,14 +73,19 @@ export default function EmptyCardsScreen() {
     // Each change to the collection, a deletion here included, scans once.
     useEffect(() => { scan(); }, [dataVersion]);
 
-    const kept = preserveNotes ? noteKeepers : NO_CARDS;
+    const kept = preserveNotes ? noteKeepers : catalogKeepers;
+    /** With Keep Notes off, a note whose every card is listed is deleted with them, as in Anki. */
+    const notesDeletedWithAll = preserveNotes ? 0 : orphanNotes.size;
     const deletable = (entries ?? []).filter((entry) => !kept.has(entry.cardId));
     const cardText = (entry: EmptyCardEntry) => humanizeCardText(entry.question) || l('(boş)', '(empty)');
 
-    const describeOutcome = ({ backupFileName, deleted, kept: stayed }: EmptyCardsDeletionOutcome) => [
+    const describeOutcome = ({ backupFileName, deleted, kept: stayed, deletedNotes }: EmptyCardsDeletionOutcome) => [
         deleted.length > 0
             ? l(`${deleted.length} boş kart silindi.`, `Deleted ${deleted.length} empty cards.`)
             : l('Hiçbir kart silinmedi.', 'No card was deleted.'),
+        deletedNotes.length > 0
+            ? l(`Kartı kalmayan ${deletedNotes.length} not da silindi.`, `${deletedNotes.length} ${deletedNotes.length === 1 ? 'note' : 'notes'} left without cards ${deletedNotes.length === 1 ? 'was' : 'were'} deleted too.`)
+            : '',
         stayed.length > 0 ? l(`${stayed.length} kart, notu kartsız kalmasın diye bırakıldı.`, `${stayed.length} were kept so their notes keep a card.`) : '',
         backupFileName
             ? l(`Geri almak için Yedekler’den ${displayBackupName(backupFileName)} yedeğini geri yükleyin.`, `To undo, restore ${displayBackupName(backupFileName)} from Backups.`)
@@ -112,12 +126,19 @@ export default function EmptyCardsScreen() {
 
     const deleteOne = (entry: EmptyCardEntry) => {
         if (busyRef.current) return;
+        // With Keep Notes off, the last card of a note takes the note with it.
+        const takesNote = planCardOnlyDeletion([entry.cardId], { preserveNotes }).deletedNotes.length > 0;
         confirm(
             l('Boş kartı sil', 'Delete Empty Card'),
-            l(
-                'Boş kart silinir; notu, diğer kartları ve tekrar geçmişi korunur. Silmeden önce geri yüklenebilir bir yedek alınır.',
-                'The empty card is deleted; its note, other cards and review history are kept. A restorable backup is taken before deleting.',
-            ),
+            takesNote
+                ? l(
+                    'Boş kart ve başka kartı kalmayan notu silinir; tekrar geçmişi korunur. Silmeden önce geri yüklenebilir bir yedek alınır.',
+                    'The empty card and its note, which has no other card, are deleted; review history is kept. A restorable backup is taken before deleting.',
+                )
+                : l(
+                    'Boş kart silinir; notu, diğer kartları ve tekrar geçmişi korunur. Silmeden önce geri yüklenebilir bir yedek alınır.',
+                    'The empty card is deleted; its note, other cards and review history are kept. A restorable backup is taken before deleting.',
+                ),
             () => { void runDeletion([entry.cardId]); },
             { destructive: true },
         );
@@ -131,6 +152,9 @@ export default function EmptyCardsScreen() {
             l('Boş kartları sil', 'Delete Empty Cards'),
             [
                 l(`${deletable.length} boş kart silinecek.`, `${deletable.length} empty cards will be deleted.`),
+                notesDeletedWithAll > 0
+                    ? l(`Başka kartı kalmayan ${notesDeletedWithAll} not da silinecek.`, `${notesDeletedWithAll} ${notesDeletedWithAll === 1 ? 'note' : 'notes'} with no other card will be deleted too.`)
+                    : '',
                 keptCount > 0 ? l(`${keptCount} kart, notu kartsız kalmasın diye kalacak.`, `${keptCount} stay so their notes keep a card.`) : '',
                 l('Tekrar geçmişi korunur. Silmeden önce geri yüklenebilir bir yedek alınır.', 'Review history is kept. A restorable backup is taken before deleting.'),
             ].filter(Boolean).join(' '),
@@ -148,7 +172,10 @@ export default function EmptyCardsScreen() {
             />
             <ScrollView contentContainerStyle={styles.content}>
                 <Text style={styles.help}>
-                    {l('Ön yüzü artık üretilemeyen kartlar burada görünür. Silmek kartı kaldırır; notu ve diğer kartları korur.', 'Cards whose front can no longer be generated appear here. Deleting one keeps its note and other cards.')}
+                    {l(
+                        'Ön yüzü artık üretilemeyen kartlar burada görünür. Silmek kartı kaldırır; notu ve diğer kartları korur. “Notları koru” kapalıyken, bütün kartları boş olan not da silinir.',
+                        'Cards whose front can no longer be generated appear here. Deleting one keeps its note and other cards. With “Keep notes” off, a note whose cards are all empty is deleted too.',
+                    )}
                 </Text>
 
                 {entries === null ? (
@@ -193,7 +220,12 @@ export default function EmptyCardsScreen() {
                                     </Text>
                                     <Text style={styles.rowReason}>{emptyCardReason(entry.reason, l)}</Text>
                                     {kept.has(entry.cardId) && (
-                                        <Text style={styles.rowKept}>{l('Notları koru: notu kartsız kalmasın diye bu kart kalır', 'Keep Notes: this card stays so its note keeps a card')}</Text>
+                                        <Text style={styles.rowKept}>{preserveNotes
+                                            ? l('Notları koru: notu kartsız kalmasın diye bu kart kalır', 'Keep Notes: this card stays so its note keeps a card')
+                                            : l('Katalog notu silinmez; bu kart kalır', 'A catalog note is never deleted; this card stays')}</Text>
+                                    )}
+                                    {!preserveNotes && orphanNotes.has(entry.noteId) && (
+                                        <Text style={styles.rowKept}>{l('Notu da silinir: başka kartı kalmıyor', 'Its note is deleted too: it has no other card')}</Text>
                                     )}
                                 </View>
                                 {!kept.has(entry.cardId) && (

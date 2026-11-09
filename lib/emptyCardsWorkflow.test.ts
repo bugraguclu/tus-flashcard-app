@@ -15,7 +15,7 @@ import { BUILTIN_NOTE_TYPES } from './models';
 import { createNote, getCardsForNote, getNote, saveAnkiCard, saveNote } from './noteStore';
 import { createDeck } from './deckStore';
 
-const plan = (deleted: number[], kept: number[] = []) => () => ({ deleted, kept });
+const plan = (deleted: number[], kept: number[] = []) => () => ({ deleted, kept, deletedNotes: [] as number[] });
 
 describe('deleteEmptyCardsWithBackup', () => {
     it('does not delete a card when the safety backup fails', async () => {
@@ -47,11 +47,11 @@ describe('deleteEmptyCardsWithBackup', () => {
         const outcome = await deleteEmptyCardsWithBackup([10, 11, 12], { preserveNotes: true }, {
             plan: plan([11, 12], [10]),
             createBackup: async () => { calls.push('backup'); return { fileName: 'safety.json' }; },
-            deleteCards: (ids, options) => { calls.push(`delete ${ids.join(',')} keep notes ${options.preserveNotes}`); return { deleted: [11, 12], kept: [10] }; },
+            deleteCards: (ids, options) => { calls.push(`delete ${ids.join(',')} keep notes ${options.preserveNotes}`); return { deleted: [11, 12], kept: [10], deletedNotes: [] }; },
         });
 
         expect(calls).toEqual(['backup', 'delete 10,11,12 keep notes true']);
-        expect(outcome).toEqual({ backupFileName: 'safety.json', deleted: [11, 12], kept: [10] });
+        expect(outcome).toEqual({ backupFileName: 'safety.json', deleted: [11, 12], kept: [10], deletedNotes: [] });
     });
 
     it('takes no backup when every selected card would be kept', async () => {
@@ -60,7 +60,7 @@ describe('deleteEmptyCardsWithBackup', () => {
 
         const outcome = await deleteEmptyCardsWithBackup([10], { preserveNotes: true }, { plan: plan([], [10]), createBackup, deleteCards });
 
-        expect(outcome).toEqual({ backupFileName: null, deleted: [], kept: [10] });
+        expect(outcome).toEqual({ backupFileName: null, deleted: [], kept: [10], deletedNotes: [] });
         expect(createBackup).not.toHaveBeenCalled();
         expect(deleteCards).not.toHaveBeenCalled();
     });
@@ -121,23 +121,33 @@ describe('deleting empty cards (real SQLite)', () => {
         );
 
         expect(calls).toEqual(['backup with 2 cards']);
-        expect(outcome).toEqual({ backupFileName: 'safety.json', deleted: [emptied.cards[1].id, other.cards[1].id].sort((a, b) => a - b), kept: [emptied.cards[0].id] });
+        expect(outcome).toEqual({ backupFileName: 'safety.json', deleted: [emptied.cards[1].id, other.cards[1].id].sort((a, b) => a - b), kept: [emptied.cards[0].id], deletedNotes: [] });
         expect(getCardsForNote(emptied.note.id).map((card) => card.id)).toEqual([emptied.cards[0].id]);
         expect(getCardsForNote(other.note.id).map((card) => card.id)).toEqual([other.cards[0].id]);
         expect(getNote(emptied.note.id)?.fields).toEqual(['', '']);
     });
 
-    it('deletes the last card too with Keep Notes off, keeping the note text', async () => {
+    // Anki's Empty Cards with "Keep notes with no valid cards" off removes the notes it leaves
+    // without cards (https://docs.ankiweb.net/templates/generation.html#card-generation--deletion).
+    it('deletes a note left without cards, with its grave, when Keep Notes is off', async () => {
         const deckId = createDeck('Cards').id;
         const { note, cards } = createNote(reversed, ['Front', 'Back'], deckId);
+        const partly = createNote(reversed, ['Front', 'Back'], deckId);
 
-        const outcome = await deleteEmptyCardsWithBackup(cards.map((card) => card.id), { preserveNotes: false }, {
-            createBackup: async () => ({ fileName: 'safety.json' }),
-        });
+        const outcome = await deleteEmptyCardsWithBackup(
+            [...cards.map((card) => card.id), partly.cards[1].id],
+            { preserveNotes: false },
+            { createBackup: async () => ({ fileName: 'safety.json' }) },
+        );
 
         expect(outcome.kept).toEqual([]);
-        expect(outcome.deleted).toEqual(cards.map((card) => card.id).sort((a, b) => a - b));
+        expect(outcome.deleted).toEqual([...cards.map((card) => card.id), partly.cards[1].id].sort((a, b) => a - b));
+        expect(outcome.deletedNotes).toEqual([note.id]);
         expect(getCardsForNote(note.id)).toEqual([]);
-        expect(getNote(note.id)?.fields).toEqual(['Front', 'Back']);
+        expect(getNote(note.id)).toBeNull();
+        expect(db.getAllSync<{ oid: number; type: number }>('SELECT oid, type FROM graves WHERE type = 1')).toEqual([{ oid: note.id, type: 1 }]);
+        // A note that keeps a card keeps its text.
+        expect(getNote(partly.note.id)?.fields).toEqual(['Front', 'Back']);
+        expect(getCardsForNote(partly.note.id).map((card) => card.id)).toEqual([partly.cards[0].id]);
     });
 });

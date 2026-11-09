@@ -35,6 +35,13 @@
       "useFor": ["empty card detection", "blank front card generation", "safe card-only deletion", "preserving notes and sibling cards"]
     },
     {
+      "id": "anki-source-empty-cards-orphaned-notes",
+      "priority": 2,
+      "platform": "cross-platform card generation and maintenance behavior",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/emptycards.py",
+      "useFor": ["Empty Cards with Keep Notes off removes the notes left without cards (remove_cards_and_orphaned_notes)", "Keep Notes on leaves a note's first card"]
+    },
+    {
       "id": "anki-manual-check-database",
       "priority": 1,
       "platform": "cross-platform collection maintenance behavior",

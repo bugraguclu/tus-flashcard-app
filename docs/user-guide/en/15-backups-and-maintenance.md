@@ -213,14 +213,12 @@ reason.
 
 - To delete one card, tap **✕** on its row; to delete them all, tap **Delete All (N)**.
 - **Keep notes with no valid cards** (on): if every card of a note is empty, its first card is
-  kept so that the note is not left without cards. When off, all the cards are deleted but the
-  note's text stays without cards; **Check database** then shows such notes as **Notes without
-  cards**, and **Repair and optimize** gives them a card again.
-- Review history is kept. Deleting cannot be undone and no backup is made first; make
-  [a backup yourself](#back-up-now) before you start.
-
-> **Different from Anki:** With **Keep notes with no valid cards** off, notes are not deleted; only
-> their cards are.
+  kept so that the note is not left without cards. When off, as in Anki, a note whose cards are
+  all empty is deleted together with them; the confirmation and the result say how many notes go.
+  Notes of the purchased TUS catalog are never deleted: their first card stays.
+- Review history is kept. Before deleting, the app takes a restorable safety backup; if it cannot
+  be taken, nothing is deleted. To undo the deletion, restore the backup the result message names
+  from the **Backups** screen.
 
 <a id="reset-progress"></a>
 ## Reset progress: starting the collection over

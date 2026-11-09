@@ -754,6 +754,14 @@ export interface CardOnlyDeletion {
     deleted: number[];
     /** Selected cards left in place: with Keep Notes, the first card of a note whose cards were all selected. */
     kept: number[];
+    /**
+     * Notes removed with their last card. With Keep Notes off, a note whose cards are all selected
+     * goes too, as Anki's Empty Cards removes the notes it leaves without cards
+     * (`remove_cards_and_orphaned_notes`); a note left with no card would only come back as
+     * "Kartsız not" in Check Database. A catalog note is never removed: it keeps its first card,
+     * as with Keep Notes.
+     */
+    deletedNotes: number[];
 }
 
 /**
@@ -762,28 +770,34 @@ export interface CardOnlyDeletion {
  */
 export function planCardOnlyDeletion(cardIds: readonly number[], options: { preserveNotes?: boolean } = {}): CardOnlyDeletion {
     const unique = [...new Set(cardIds)];
-    if (unique.length === 0) return { deleted: [], kept: [] };
+    if (unique.length === 0) return { deleted: [], kept: [], deletedNotes: [] };
     const existing = getDB().getAllSync<{ id: number }>(
         'SELECT id FROM anki_cards WHERE id IN (SELECT value FROM json_each(?)) ORDER BY id', JSON.stringify(unique),
     ).map((row) => Number(row.id));
     const selected = new Set(existing);
     const kept: number[] = [];
-    if (options.preserveNotes !== false) {
-        const noteIds = new Set(existing.map(id => getAnkiCard(id)?.noteId).filter((id): id is number => id !== undefined));
-        for (const noteId of noteIds) {
-            const siblings = getCardsForNote(noteId).sort((a, b) => a.ord - b.ord || a.id - b.id);
-            if (siblings.length && siblings.every(c => selected.has(c.id))) {
-                selected.delete(siblings[0].id);
-                kept.push(siblings[0].id);
-            }
+    const deletedNotes: number[] = [];
+    const keepNotes = options.preserveNotes !== false;
+    const noteIds = new Set(existing.map(id => getAnkiCard(id)?.noteId).filter((id): id is number => id !== undefined));
+    for (const noteId of noteIds) {
+        const siblings = getCardsForNote(noteId).sort((a, b) => a.ord - b.ord || a.id - b.id);
+        if (!siblings.length || !siblings.every(c => selected.has(c.id))) continue;
+        if (keepNotes || isCatalogNote(noteId)) {
+            selected.delete(siblings[0].id);
+            kept.push(siblings[0].id);
+        } else {
+            deletedNotes.push(noteId);
         }
     }
-    return { deleted: [...selected], kept };
+    return { deleted: [...selected], kept, deletedNotes: deletedNotes.sort((a, b) => a - b) };
 }
 
-/** Delete empty cards as one transaction so a failed bulk operation cannot partially apply. */
+/**
+ * Delete empty cards as one transaction so a failed bulk operation cannot partially apply. With
+ * Keep Notes off, the notes left without a card are deleted in it too, with their graves.
+ */
 export function deleteAnkiCardsOnly(cardIds: number[], options: { preserveNotes?: boolean } = {}): CardOnlyDeletion {
-    if (cardIds.length === 0) return { deleted: [], kept: [] };
+    if (cardIds.length === 0) return { deleted: [], kept: [], deletedNotes: [] };
     // Editing cloze fields can remove a generated sibling after the catalog is unlocked.
     for (const cardId of cardIds) assertCatalogCardMutable(cardId);
     const db = getDB();
@@ -791,6 +805,11 @@ export function deleteAnkiCardsOnly(cardIds: number[], options: { preserveNotes?
     try {
         const outcome = planCardOnlyDeletion(cardIds, options);
         deleteCardRows(outcome.deleted);
+        if (outcome.deletedNotes.length > 0) {
+            const noteIds = JSON.stringify(outcome.deletedNotes);
+            db.runSync('DELETE FROM notes WHERE id IN (SELECT value FROM json_each(?))', noteIds);
+            db.runSync('INSERT INTO graves (oid, type, usn) SELECT value, 1, -1 FROM json_each(?)', noteIds);
+        }
         db.execSync('COMMIT;');
         return outcome;
     } catch (error) {
