@@ -37,19 +37,31 @@ export function noteTypeDeletionImpact(noteTypeId: number): NoteTypeDeletionImpa
     return { notes: Number(notes), cards: Number(cards) };
 }
 
+/**
+ * How many of the type's notes belong to the TUS catalog. A catalog note is never deleted,
+ * whatever type it was moved to, so a type that holds one cannot be deleted. Only the marker and
+ * the GUID come out of SQLite, not the fields of every note; an unreadable row is not the catalog's.
+ */
+export function catalogNotesOfType(noteTypeId: number): number {
+    return getDB().getAllSync<{ pack: unknown; guid: unknown }>(
+        `SELECT CASE WHEN json_valid(data) THEN json_extract(data, '$.catalogPack') END AS pack,
+                CASE WHEN json_valid(data) THEN json_extract(data, '$.guid') END AS guid
+         FROM notes WHERE noteTypeId = ?`,
+        noteTypeId,
+    ).filter((row) => row.pack === CATALOG_PACK_ID || isProtectedCatalogGuid(row.guid)).length;
+}
+
+function assertNoCatalogNotes(noteTypeId: number): void {
+    if (catalogNotesOfType(noteTypeId) > 0) {
+        throw new PaidCatalogProtectionError('Katalog kartları tek tek silinemez. Kataloğu Ayarlar ekranından kaldırabilirsiniz.');
+    }
+}
+
 /** Delete the type, its notes (with graves) and their cards in one transaction. */
 export function deleteNoteTypeAndNotes(noteTypeId: number): NoteTypeDeletionImpact {
     const db = getDB();
-    const noteRows = db.getAllSync<{ id: number; data: string }>('SELECT id, data FROM notes WHERE noteTypeId = ?', noteTypeId);
-    // A catalog note is never deleted, whatever type it was moved to.
-    for (const row of noteRows) {
-        let note: { guid?: unknown; catalogPack?: unknown } = {};
-        try { note = JSON.parse(row.data) as typeof note; } catch { /* an unreadable row is not the catalog's */ }
-        if (note.catalogPack === CATALOG_PACK_ID || isProtectedCatalogGuid(note.guid)) {
-            throw new PaidCatalogProtectionError('Katalog kartları tek tek silinemez. Kataloğu Ayarlar ekranından kaldırabilirsiniz.');
-        }
-    }
-    const noteIds = noteRows.map((row) => Number(row.id));
+    assertNoCatalogNotes(noteTypeId);
+    const noteIds = db.getAllSync<{ id: number }>('SELECT id FROM notes WHERE noteTypeId = ?', noteTypeId).map((row) => Number(row.id));
     db.execSync('BEGIN TRANSACTION;');
     try {
         const cardIds = noteIds.length === 0 ? [] : db.getAllSync<{ id: number }>(
@@ -80,12 +92,17 @@ export class NoteTypeDeletionError extends Error {
     }
 }
 
-/** Back up, then delete the note type with its notes and cards. */
+/**
+ * Back up, then delete the note type with its notes and cards. A type that holds a catalog note
+ * is refused with `PaidCatalogProtectionError` before the backup, so the refusal leaves no
+ * backup behind and reaches the screen with its reason.
+ */
 export async function deleteNoteTypeWithBackup(
     noteType: NoteType,
     deps: { createBackup?: () => Promise<{ fileName: string }>; backupDeps?: BackupDeps } = {},
 ): Promise<NoteTypeDeletionImpact & { backupFileName: string }> {
     if (!canDeleteNoteType(noteType)) throw new Error(`Note type ${noteType.id} cannot be deleted.`);
+    assertNoCatalogNotes(noteType.id);
     const createBackup = deps.createBackup ?? (() => createBackupNow(deps.backupDeps, { requireRestorable: true }));
     let backupFileName: string;
     try {
