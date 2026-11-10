@@ -24,7 +24,8 @@ import {
     unburyDeck,
     getBuriedKindsForDeck,
 } from '../lib/deckManager';
-import { FILTERED_SEARCH_ORDER } from '../lib/filteredDeckOptions';
+import { FILTERED_SEARCH_ORDER, filteredRebuildOutcome } from '../lib/filteredDeckOptions';
+import { getFilteredDeckMatchCount } from '../lib/studyRepository';
 import { getDeckDisplayName } from '../lib/models';
 import { deckDescriptionHtml, deckDescriptionRuns } from '../lib/deckDescription';
 import { alert, confirm } from '../lib/confirm';
@@ -129,14 +130,34 @@ export default function DeckOverviewScreen() {
     };
 
     const handleRebuild = () => {
+        // The deck's own cards return home first, so they count as matches of its saved search.
+        const outcome = filteredRebuildOutcome(
+            getFilteredDeckMatchCount(settings, deck, deck.id),
+            deck.filteredAllowEmpty ?? false,
+        );
+        if (outcome === 'refuse-empty') {
+            alert(
+                l('Eşleşen kart yok', 'No matching cards'),
+                l(
+                    'Kayıtlı filtre şu an hiçbir kartla eşleşmiyor; deste olduğu gibi bırakıldı. Aramayı deste seçeneklerinden değiştirebilirsiniz.',
+                    'The saved filter matches no cards right now, so the deck was left as it is. You can change the search in the deck options.',
+                ),
+            );
+            return;
+        }
         rebuildFilteredDeck(deck.id);
         const gathered = filteredDeckBuiltCount(deck.id);
         bumpDataVersion();
         setRefreshToken((value) => value + 1);
-        alert(l('Deste yeniden oluşturuldu', 'Deck rebuilt'), l(
-            `Kartlar kayıtlı arama ve sıralama kurallarıyla yeniden toplandı (${formatCount(gathered, locale)} kart).`,
-            `Cards were gathered again using the saved search and sort rules (${formatCount(gathered, locale)} ${gathered === 1 ? 'card' : 'cards'}).`,
-        ));
+        alert(
+            l('Deste yeniden oluşturuldu', 'Deck rebuilt'),
+            outcome === 'rebuild-empty'
+                ? l('Kayıtlı filtre şu an hiçbir kartla eşleşmiyor; deste boş.', 'The saved filter matches no cards right now, so the deck is empty.')
+                : l(
+                    `Kartlar kayıtlı arama ve sıralama kurallarıyla yeniden toplandı (${formatCount(gathered, locale)} kart).`,
+                    `Cards were gathered again using the saved search and sort rules (${formatCount(gathered, locale)} ${gathered === 1 ? 'card' : 'cards'}).`,
+                ),
+        );
     };
 
     const handleEmpty = () => {

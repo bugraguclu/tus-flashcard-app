@@ -295,3 +295,16 @@ export function replaceDeckNameInSearch(searchQuery: string, newDeckName: string
     const first = spans[0];
     return first ? `${deckTerm} ${searchQuery.slice(first.start)}` : deckTerm;
 }
+
+/** What a Rebuild of a saved filtered deck should do, given how many cards its search matches now. */
+export type FilteredRebuildOutcome = 'rebuild' | 'rebuild-empty' | 'refuse-empty';
+
+/**
+ * A saved search can stop matching: its cards were studied, suspended or retagged. The options
+ * dialog refuses to build a deck that gathers nothing unless "build even if empty" is on, and a
+ * Rebuild follows the same rule instead of reporting an empty gather as a rebuilt deck.
+ */
+export function filteredRebuildOutcome(matchCount: number, allowEmpty: boolean): FilteredRebuildOutcome {
+    if (matchCount > 0) return 'rebuild';
+    return allowEmpty ? 'rebuild-empty' : 'refuse-empty';
+}

@@ -111,7 +111,9 @@ export default function StudyCalendarScreen() {
     const [mode, setMode] = useState<ViewMode>(() => (requestedDayNumber >= 0 ? 'week' : 'month'));
     const [anchor, setAnchor] = useState<AnchorDate>(() => (requestedDayNumber >= 0
         ? anchorFromDayNumber(requestedDayNumber)
-        : anchorFromDate(new Date())));
+        // The study day, not the wall clock: before the rollover on the 1st, today is still the
+        // last day of the previous month, and that is the page holding tonight's study.
+        : anchorFromDayNumber(todayDayNumber)));
     const [selectedDayNumber, setSelectedDayNumber] = useState(() => (requestedDayNumber >= 0 ? requestedDayNumber : todayDayNumber));
 
     // Statistics may bring the learner back here with another day; the views after that are local.

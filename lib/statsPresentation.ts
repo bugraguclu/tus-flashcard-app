@@ -52,7 +52,8 @@ export function formatRatio(
 export function formatChartMinutes(minutes: number, locale: SupportedLocale): string {
     if (!Number.isFinite(minutes) || minutes <= 0) return '0';
     if (minutes < 1) return `${Math.max(1, Math.round(minutes * 60))} ${locale === 'tr' ? 'sn' : 's'}`;
-    if (minutes < 60) return `${Math.round(minutes)} ${locale === 'tr' ? 'dk' : 'min'}`;
+    // Round before choosing the unit, so 59.7 minutes read "1 sa" and never "60 dk".
+    if (Math.round(minutes) < 60) return `${Math.round(minutes)} ${locale === 'tr' ? 'dk' : 'min'}`;
     const hours = minutes / 60;
     return `${formatDecimal(hours, locale, hours < 10 ? 1 : 0)} ${locale === 'tr' ? 'sa' : 'h'}`;
 }
@@ -113,4 +114,14 @@ export function formatStudyDayRange(firstDay: number, lastDay: number, locale: S
     const sameYear = dateForStudyDay(firstDay).getFullYear() === dateForStudyDay(lastDay).getFullYear();
     const start = formatStudyDay(firstDay, locale, sameYear ? { day: 'numeric', month: 'short' } : withYear);
     return `${start} – ${formatStudyDay(lastDay, locale, withYear)}`;
+}
+
+/**
+ * Share of a deck's cards that have been studied at least once, as a whole percent. 100 is kept
+ * for a deck with nothing left unseen: 299 of 300 rounds to 100, but one new card is still there.
+ */
+export function deckProgressPercent(studied: number, total: number): number {
+    if (!(total > 0) || !(studied > 0)) return 0;
+    if (studied >= total) return 100;
+    return Math.min(99, Math.round((studied / total) * 100));
 }

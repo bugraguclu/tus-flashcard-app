@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     dateForStudyDay,
+    deckProgressPercent,
     formatChartMinutes,
     formatDecimal,
     formatHourRange,
@@ -74,5 +75,21 @@ describe('statistics presentation', () => {
         expect([date.getFullYear(), date.getMonth(), date.getDate()]).toEqual([2026, 8, 22]);
         expect(formatStudyDayRange(day(2026, 8, 21), day(2026, 8, 27), 'en')).toBe('Sep 21 – Sep 27, 2026');
         expect(formatStudyDayRange(day(2025, 11, 29), day(2026, 0, 4), 'tr')).toBe('29 Ara 2025 – 4 Oca 2026');
+    });
+});
+
+describe('rounding at the edges', () => {
+    it('never reads sixty minutes as minutes', () => {
+        expect(formatChartMinutes(59.4, 'tr')).toBe('59 dk');
+        expect(formatChartMinutes(59.7, 'tr')).toBe('1 sa');
+        expect(formatChartMinutes(60, 'en')).toBe('1 h');
+    });
+
+    it('keeps 100% for a deck with nothing left unseen', () => {
+        expect(deckProgressPercent(299, 300)).toBe(99);
+        expect(deckProgressPercent(300, 300)).toBe(100);
+        expect(deckProgressPercent(150, 300)).toBe(50);
+        expect(deckProgressPercent(1, 1000)).toBe(0);
+        expect(deckProgressPercent(0, 0)).toBe(0);
     });
 });

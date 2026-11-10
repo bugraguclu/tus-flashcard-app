@@ -250,6 +250,9 @@ describe('duration formatting', () => {
     it('formats calendar totals as H:MM and leaves an unstudied day blank', () => {
         expect(formatDayTotalHhMm(135 * MINUTE)).toBe('2:15');
         expect(formatDayTotalHhMm(77 * MINUTE)).toBe('1:17');
+        // A studied day never reads as no study.
+        expect(formatDayTotalHhMm(45_000)).toBe('0:01');
+        expect(formatDayTotalHhMm(0)).toBe('');
         expect(formatDayTotalHhMm(5 * MINUTE)).toBe('0:05');
         expect(formatDayTotalHhMm(0)).toBe('');
         expect(formatDayTotalHhMm(Number.NaN)).toBe('');

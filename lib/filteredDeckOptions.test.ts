@@ -17,6 +17,7 @@ import {
     parsePreviewDelays,
     previewDelaySecondsForGrade,
     replaceDeckNameInSearch,
+    filteredRebuildOutcome,
 } from './filteredDeckOptions';
 import { filteredOrderLabel } from './i18n';
 import { runMigrations } from './db';
@@ -288,5 +289,17 @@ describe('a new filtered deck\'s searches (new_filtered_deck_for_adding)', () =>
     it('saves an empty search as the whole collection, as Anki\'s parser and writer turn it', () => {
         expect(filteredSearchToSave('  ')).toBe('deck:*');
         expect(filteredSearchToSave(' is:due ')).toBe('is:due');
+    });
+});
+
+describe('filteredRebuildOutcome', () => {
+    it('rebuilds when the saved search still matches cards', () => {
+        expect(filteredRebuildOutcome(3, false)).toBe('rebuild');
+        expect(filteredRebuildOutcome(1, true)).toBe('rebuild');
+    });
+
+    it('refuses an empty gather unless the deck allows being empty', () => {
+        expect(filteredRebuildOutcome(0, false)).toBe('refuse-empty');
+        expect(filteredRebuildOutcome(0, true)).toBe('rebuild-empty');
     });
 });

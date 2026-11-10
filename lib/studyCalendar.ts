@@ -423,7 +423,8 @@ export function studyMsBySubject(sessions: readonly Pick<StudySession, 'subject'
 /** Calendar-cell total: `H:MM`. Empty string for a day with no study, so the cell stays bare. */
 export function formatDayTotalHhMm(ms: number): string {
     if (!Number.isFinite(ms) || ms <= 0) return '';
-    const minutes = Math.floor(ms / MINUTE_MS);
+    // Under a minute still counts as a minute: "0:00" on a studied day reads as no study.
+    const minutes = Math.max(1, Math.floor(ms / MINUTE_MS));
     return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`;
 }
 

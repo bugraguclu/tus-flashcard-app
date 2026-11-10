@@ -10,6 +10,7 @@ import {
     type ReviewDay,
     type StatsDateRange,
 } from './ankiStats';
+import { deckProgressPercent } from './statsPresentation';
 import {
     getAllDecks,
     getBuriedCountForDeck,
@@ -212,7 +213,7 @@ export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): Stats
                     displayName: getDeckDisplayName(root.name),
                     ...totals,
                     studied,
-                    pct: totals.total > 0 ? Math.round((studied / totals.total) * 100) : 0,
+                    pct: deckProgressPercent(studied, totals.total),
                 };
             })
             .sort((a, b) => a.name.localeCompare(b.name, params.localeTag));

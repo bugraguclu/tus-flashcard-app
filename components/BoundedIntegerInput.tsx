@@ -69,6 +69,9 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
     const valueRef = useRef(value);
     valueRef.current = value;
     const steppedTargetRef = useRef<number | null>(null);
+    // What the field held when editing began: an emptied draft falls back to it, not to a
+    // half-typed number reported on the way.
+    const focusValueRef = useRef(value);
 
     useEffect(() => {
         if (steppedTargetRef.current !== null) {
@@ -87,7 +90,7 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
     }, [focused, format, value]);
 
     const commit = useCallback(() => {
-        const next = commitBoundedInteger(draftRef.current, valueRef.current, min, max);
+        const next = commitBoundedInteger(draftRef.current, focusValueRef.current, min, max);
         steppedTargetRef.current = next;
         setFocused(false);
         const formatted = format(next);
@@ -134,12 +137,22 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
                 value={draft}
                 onFocus={() => {
                     setFocused(true);
+                    focusValueRef.current = valueRef.current;
                     setDraft(format(valueRef.current));
                 }}
                 onChangeText={(text) => {
                     const sanitized = sanitize(text, maxChars);
                     draftRef.current = sanitized;
                     setDraft(sanitized);
+                    // Report the number as it is typed, as leaving the field would commit it. The
+                    // number pad has no Return key, so a value that waited for blur was missed by
+                    // a Save pressed while the field still had focus, and the screen did not know
+                    // it had a change to save or to warn about.
+                    const typed = commitBoundedInteger(sanitized, focusValueRef.current, min, max);
+                    if (typed !== valueRef.current) {
+                        valueRef.current = typed;
+                        onChange(typed);
+                    }
                 }}
                 onBlur={commit}
                 onSubmitEditing={commit}

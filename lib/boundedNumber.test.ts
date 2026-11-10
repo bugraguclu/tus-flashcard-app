@@ -85,3 +85,18 @@ describe('signed integer drafts', () => {
         expect(commitBoundedInteger('-', 7, -99, 99)).toBe(7);
     });
 });
+
+describe('a number reported while it is typed', () => {
+    // The field reports every keystroke as leaving it would commit it, with the value it held
+    // when editing began as the fallback (components/BoundedIntegerInput.tsx).
+    const typed = (draft: string) => commitBoundedInteger(draft, 20, 5, 120);
+
+    it('follows the digits and stays inside the range', () => {
+        expect(['2', '25'].map(typed)).toEqual([5, 25]);
+        expect(['3', '30', '300'].map(typed)).toEqual([5, 30, 120]);
+    });
+
+    it('goes back to the starting value when the field is emptied', () => {
+        expect(typed('')).toBe(20);
+    });
+});

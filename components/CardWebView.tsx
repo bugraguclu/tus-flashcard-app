@@ -361,7 +361,7 @@ export default function CardWebView({
         document.addEventListener('click', function(event){
             var target = event.target && event.target.closest ? event.target : null;
             if (!target) return;
-            if (target.closest('a,button,input,textarea,select,label,audio,video,[contenteditable="true"],[role="button"],.tappable,[onclick]')) return;
+            if (target.closest('a,button,input,textarea,select,label,audio,video,summary,[contenteditable="true"],[role="button"],.tappable,[onclick]')) return;
             var selection = window.getSelection ? window.getSelection() : null;
             if (selection && !selection.isCollapsed) return;
             var width = Math.max(1, document.documentElement.clientWidth || window.innerWidth || 1);
@@ -654,7 +654,7 @@ export default function CardWebView({
                         doc.addEventListener('click', (event) => {
                             if (Date.now() - swipeEndedAt < 400) return;
                             const target = event.target as Element | null;
-                            if (!target || typeof target.closest !== 'function' || target.closest('a,button,input,textarea,select,label,audio,video,[contenteditable="true"],[role="button"],.tappable,[onclick]')) return;
+                            if (!target || typeof target.closest !== 'function' || target.closest('a,button,input,textarea,select,label,audio,video,summary,[contenteditable="true"],[role="button"],.tappable,[onclick]')) return;
                             const selection = iframeRef.current?.contentWindow?.getSelection();
                             if (selection && !selection.isCollapsed) return;
                             const width = Math.max(1, doc.documentElement.clientWidth);
