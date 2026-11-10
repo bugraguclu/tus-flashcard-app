@@ -27,7 +27,7 @@ import {
 } from '../lib/importTargetDeck';
 import { buildTextImportOptions, type ColumnMapping } from '../lib/importTextOptions';
 import { alert, confirmAsync } from '../lib/confirm';
-import { assertKnownFileSize, readUriBytes, readUriText } from '../lib/files';
+import { assertKnownFileSize, readUriBytes, readUriTextFile } from '../lib/files';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     importDelimitedNotes,
@@ -240,7 +240,7 @@ export default function ImportScreen() {
         }
 
         assertKnownFileSize(knownSize, MAX_TEXT_BYTES);
-        const text = await readUriText(uri, MAX_TEXT_BYTES);
+        const text = await readUriTextFile(uri, MAX_TEXT_BYTES);
         if (text.length > MAX_TEXT_CHARS) throw new Error('IMPORT_TEXT_TOO_LARGE');
 
         // Anki reads the file's own headers before showing the screen, so the separator, HTML

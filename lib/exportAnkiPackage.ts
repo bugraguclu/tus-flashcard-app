@@ -3,6 +3,7 @@
  * current Anki, AnkiMobile and AnkiDroid. */
 
 import { withoutPackageSchedulingData } from './importApkgCardData';
+import { exportFileStem } from './exportFileName';
 import { Platform } from 'react-native';
 import JSZip from 'jszip';
 import { deleteNativeDatabaseSync, openFtsSafeDatabaseSync } from './sqliteOpenOptions';
@@ -85,12 +86,6 @@ interface WritableDb {
 }
 
 const FIELD_SEPARATOR = '\x1f';
-function safeStem(deckName?: string): string {
-    return (deckName?.split('::').pop() || 'koleksiyon')
-        .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9_-]+/gi, '-')
-        .replace(/^-+|-+$/g, '') || 'koleksiyon';
-}
 
 function liveExportSource(): ExportCollectionSource {
     const settings = loadSettings();
@@ -414,7 +409,7 @@ async function buildPackage(
         const bytes = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } });
         const snapshotStem = source.backupName?.replace(/\.json$/i, '');
         return {
-            fileName: `${selectedCardIds ? 'secili-kartlar' : safeStem(deckName ?? snapshotStem)}.${format}`,
+            fileName: `${selectedCardIds ? 'secili-kartlar' : exportFileStem(deckName ?? snapshotStem)}.${format}`,
             mimeType: 'application/zip',
             bytes,
             noteCount: notes.length,
@@ -474,7 +469,7 @@ export async function buildAnkiExport(
 ): Promise<ExportArtifact> {
     const exportSource = source ?? liveExportSource();
     const snapshotStem = source?.backupName?.replace(/\.json$/i, '');
-    const stem = safeStem(format === 'colpkg' ? snapshotStem : deckName ?? snapshotStem);
+    const stem = exportFileStem(format === 'colpkg' ? snapshotStem : deckName ?? snapshotStem);
     const selectedDeckIds = format === 'colpkg' ? undefined : packageOptions.selectedDeckIds;
     const selectedNoteIds = new Set(scopedData(exportSource, deckName, selectedCardIds, selectedDeckIds).notes.map((note) => note.id));
     const selectionStem = selectedCardIds ? 'secili-kartlar' : stem;
