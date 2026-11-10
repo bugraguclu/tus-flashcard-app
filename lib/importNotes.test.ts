@@ -63,6 +63,7 @@ vi.mock('./deckManager', () => ({
 import { importDelimitedNotes, importRows, previewDelimitedNotes } from './importNotes';
 import { createNote } from './noteManager';
 import { BKA_MANIFEST } from './bkaManifest';
+import { ankiFieldChecksum } from './noteChecksum';
 
 const createNoteMock = vi.mocked(createNote);
 const NT: any = { id: 4, fields: [{}, {}], sortFieldIdx: 0 };
@@ -108,6 +109,22 @@ describe('importDelimitedNotes', () => {
         expect(res).toMatchObject({ added: 1, updated: 1, duplicates: 0 });
         expect(createNoteMock.mock.calls.map((c) => (c[1] as string[])[0])).toEqual(['Lung']);
         expect(JSON.parse(h.store.notes.find((row) => JSON.parse(row.data).id === 10)!.data).fields).toEqual(['Heart', 'Kalp']);
+    });
+
+    it('matches a note by the text of its first field, not by how the markup spells it', () => {
+        // Imported with HTML off as "Graves&#x27;in hastalığı", then edited in the app: the editor
+        // stores the apostrophe plain and the learner made a word bold.
+        const stored = "Graves'in <b>hastalığı</b>";
+        h.store.notes.push({ csum: ankiFieldChecksum(stored), noteTypeId: 4, data: JSON.stringify({ id: 11, guid: 'old', noteTypeId: 4, fields: [stored, 'Eski'], tags: [], sortFieldIdx: 0 }) });
+
+        const options = { noteType: NT, deckId: 1, allowHtml: false };
+        expect(previewDelimitedNotes("Graves'in hastalığı;Tirotoksikoz\nGraves'in hastalığı;Yinelenen satır", options))
+            .toMatchObject({ added: 0, updated: 2 });
+        const res = importDelimitedNotes("Graves'in hastalığı;Tirotoksikoz", options);
+
+        expect(res).toMatchObject({ added: 0, updated: 1 });
+        expect(createNoteMock).not.toHaveBeenCalled();
+        expect(JSON.parse(h.store.notes.find((row) => JSON.parse(row.data).id === 11)!.data).fields[1]).toBe('Tirotoksikoz');
     });
 
     it('previews additions and updates without writing notes or decks', () => {

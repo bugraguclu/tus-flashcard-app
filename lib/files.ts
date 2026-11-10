@@ -5,6 +5,7 @@
  */
 
 import { Platform } from 'react-native';
+import { decodeTextFileBytes } from './textFileDecoding';
 
 // The classic file-system API moved to `expo-file-system/legacy` in SDK 54.
 type LegacyFileSystem = typeof import('expo-file-system/legacy');
@@ -60,6 +61,25 @@ export async function readUriText(uri: string, maxBytes?: number): Promise<strin
     const text = await getLegacyFileSystem().readAsStringAsync(location);
     if (maxBytes) assertKnownFileSize(new TextEncoder().encode(text).byteLength, maxBytes);
     return text;
+}
+
+/**
+ * Read a text file the learner picked, whatever wrote it: UTF-8, UTF-16 (Excel's "Unicode Metin")
+ * or Windows-1254 (Excel's "CSV" on a Turkish system). See `textFileDecoding.ts`.
+ */
+export async function readUriTextFile(uri: string, maxBytes?: number): Promise<string> {
+    if (Platform.OS !== 'web') {
+        // The native read decodes UTF-8 itself and refuses anything else; that refusal is the cue
+        // to look at the bytes, so a UTF-8 file, the usual case, never pays for the round trip.
+        try {
+            const text = await readUriText(uri, maxBytes);
+            // UTF-16 without a byte-order mark passes as UTF-8 full of NUL characters.
+            if (!text.includes('\u0000')) return text;
+        } catch (error) {
+            if (error instanceof Error && error.message === 'FILE_TOO_LARGE') throw error;
+        }
+    }
+    return decodeTextFileBytes(await readUriBytes(uri, maxBytes)).text;
 }
 
 const B64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';

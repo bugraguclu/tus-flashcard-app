@@ -84,8 +84,18 @@ export interface ImportResult {
 
 export type DelimitedImportPreview = Omit<ImportResult, 'indexed'>;
 
+/**
+ * The first field as a duplicate is recognised by: its text, whatever markup or character
+ * reference spells it. The importer writes an apostrophe as `&#x27;` and the editor stores it
+ * plain, so comparing the stored strings took a note edited in the app for a different note and
+ * added the corrected row beside it instead of updating it.
+ */
+function firstFieldMatchText(firstField: string): string {
+    return checksumFieldText(firstField).trim();
+}
+
 function firstFieldMatches(noteTypeId: number, firstField: string, deckId: number, scope: MatchScope): Note[] {
-    const target = firstField.trim();
+    const target = firstFieldMatchText(firstField);
     // A note saved before the switch to Anki's checksum still carries the legacy value.
     const candidates = firstFieldChecksums(firstField).flatMap((csum) => getDB().getAllSync<{ data: string }>(
         'SELECT data FROM notes WHERE csum = ? AND noteTypeId = ?',
@@ -96,7 +106,7 @@ function firstFieldMatches(noteTypeId: number, firstField: string, deckId: numbe
         try {
             const note = JSON.parse(row.data) as Note;
             const field0 = note.fields?.[0];
-            return typeof field0 === 'string' && field0.trim() === target ? [note] : [];
+            return typeof field0 === 'string' && firstFieldMatchText(field0) === target ? [note] : [];
         } catch {
             return [];
         }
@@ -457,7 +467,7 @@ function resolveDelimitedDeckIds(
 }
 
 function firstFieldPreviewKey(noteTypeId: number, firstField: string, deckId: number, scope: MatchScope): string {
-    return `${noteTypeId}\u001f${scope === 'notetypeAndDeck' ? deckId : '*'}\u001f${firstField.trim()}`;
+    return `${noteTypeId}\u001f${scope === 'notetypeAndDeck' ? deckId : '*'}\u001f${firstFieldMatchText(firstField)}`;
 }
 
 function previewPreparedRows(
