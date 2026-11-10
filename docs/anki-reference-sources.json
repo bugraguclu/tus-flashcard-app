@@ -1539,7 +1539,7 @@
       "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/ts/lib/html-filter",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": [
-        "a paste keeps structural and emphasis tags and drops the source page's fonts, sizes and classes; lib/pastedHtml.ts is an independent string filter with its own, stricter colour rule",
+        "a paste keeps structural and emphasis tags and drops the source page's fonts, sizes and classes; lib/pastedHtmlScript.ts is an independent string filter with its own, stricter colour rule",
         "lib/pastedHtml.test.ts: Safari, Google Docs and Word clipboard samples"
       ]
     }

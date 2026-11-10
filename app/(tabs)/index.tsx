@@ -813,7 +813,11 @@ export default function StudyScreen() {
         setRedoStack([]);
         invalidateCollection();
         refreshSessionStats();
-        buildQueue();
+        // The card being studied when the day turns is still the learner's card: it stays on
+        // screen with its revealed answer and anything typed into it, as in any other rebuild,
+        // unless the new day's queue no longer holds it. Rebuilding from scratch swapped it for
+        // the queue's first card and threw the typed answer away.
+        buildQueue({ preserveCurrent: true });
     };
     useEffect(() => {
         if (!hasStudyScope) return;
