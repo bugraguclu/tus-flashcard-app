@@ -79,6 +79,11 @@ Bir dakikadan kısa çalışmalar kaydedilmez: **Kısa çalışma** uyarısında
 kaydetmeden sıfırlar. Daha uzun bir oturumu kaydetmek istemiyorsanız bitirdikten sonra silin
 (bkz. [Oturumlar](#sessions)).
 
+Kronometre altı saat ve daha uzun süre hiç mola verilmeden çalıştıysa (çoğunlukla kapatmayı
+unuttuğunuz için) **Sonlandır** bunu sorar: **Kaydet ve süreyi düzelt** oturumu kaydedip bitiş
+saatini düzeltebileceğiniz pencereyi açar, **Olduğu gibi kaydet** ölçülen süreyi kaydeder,
+**Kaydetmeden sıfırla** oturumu atar.
+
 <a id="sessions"></a>
 ## Son Çalışmalarınız ve oturumlar
 
@@ -205,9 +210,12 @@ eder; süre başlangıç anından hesaplandığı için hiçbir şey kaybolmaz. 
 işlemeye devam eder.
 
 - Kronometre ekranı dışında kronometrenin çalıştığını gösteren bir yer yoktur ve kronometre
-  kendiliğinden durmaz. Bitirmeyi unuttuysanız oturumu bitirin, sonra **•••** › **Düzenle** ile
-  süreyi düzeltin.
-- Bir oturum başladığı çalışma gününe yazılır.
+  kendiliğinden durmaz. Bitirmeyi unuttuysanız **Sonlandır**'a dokunun; altı saati aşan kesintisiz
+  bir çalışmada süreyi düzeltme seçeneği kendiliğinden gelir, daha kısasında oturumu bitirip
+  **•••** › **Düzenle** ile düzeltin.
+- Bir oturum başladığı çalışma gününe yazılır. Gün dönümünden önce başlayıp hâlâ çalışan
+  kronometre **Bugün**'ün en üstünde görünmeye devam eder; **Bugün** toplamına gün dönümünden
+  sonraki süresi eklenir.
 - Kaydedilmiş oturumlarınız ve Kronometre ayarlarınız TusAnkiM yedeklerine girer; çalışmakta
   olan kronometre girmez. Bkz. [Yedekler ve bakım](15-backups-and-maintenance.md).
 
@@ -236,8 +244,9 @@ kartıyla açılır.
 Kart oturumları cevaplarınızdan kendiliğinden oluşur:
 
 - Cevaplar güne ve üst desteye göre gruplanır; `Farmakoloji::Otonom` destesindeki bir kart
-  "Farmakoloji" oturumuna girer. Filtrelenmiş destede veya özel çalışmada yanıtladığınız kartlar
-  kendi destelerinin altında sayılır.
+  "Farmakoloji" oturumuna girer. Hazır TUS paketinde ders, paketin hemen altındaki destedir:
+  `TUS Kartları::Pediatri` altındaki bir kart "Pediatri" oturumuna girer. Filtrelenmiş destede veya
+  özel çalışmada yanıtladığınız kartlar kendi destelerinin altında sayılır.
 - İki cevap arasında 30 dakikadan fazla geçerse yeni bir oturum başlar.
 - **Çalışma**, cevaplara harcanan süredir (her cevap en fazla **En fazla cevap süresi** kadar);
   **Mola**, oturum içinde cevaplar arasında geçen boş süredir.

@@ -33,6 +33,7 @@ import {
     studySubjectKey,
     withStudySessionDefaults,
     type ManualSessionEntry,
+    looksForgotten,
 } from './stopwatch';
 
 const MINUTE = 60_000;
@@ -380,5 +381,26 @@ describe('display', () => {
         expect(examDaysLeft('2026-10-01', now)).toBe(-2);
         expect(examDaysLeft(null, now)).toBeNull();
         expect(examDaysLeft('2026-13-01', now)).toBeNull();
+    });
+});
+
+describe('a stopwatch left running', () => {
+    const HOUR = 3_600_000;
+
+    it('is suspected once the study phase has run six hours without a pause', () => {
+        const state = startStopwatch('Anatomi', 1, T0);
+        expect(looksForgotten(state, T0 + 5 * HOUR + 59 * 60_000)).toBe(false);
+        expect(looksForgotten(state, T0 + 6 * HOUR)).toBe(true);
+        // 22:00 to 07:30 the next morning, never paused.
+        expect(looksForgotten(state, T0 + 9.5 * HOUR)).toBe(true);
+    });
+
+    it('is not suspected of a long day with breaks, nor of a long break', () => {
+        // Three hours, a break, four more hours: each phase is one a person sits through.
+        const afterBreak = resumeStopwatch(pauseStopwatch(startStopwatch('Anatomi', 1, T0), T0 + 3 * HOUR), T0 + 3.5 * HOUR);
+        expect(looksForgotten(afterBreak, T0 + 7.5 * HOUR)).toBe(false);
+        // Paused for the night: the break is not study time, so nothing is overstated.
+        const onBreak = pauseStopwatch(startStopwatch('Anatomi', 1, T0), T0 + HOUR);
+        expect(looksForgotten(onBreak, T0 + 12 * HOUR)).toBe(false);
     });
 });

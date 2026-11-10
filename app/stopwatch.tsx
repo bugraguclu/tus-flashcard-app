@@ -27,11 +27,12 @@ import { localDayNumber, dayNumberToYmd } from '../lib/ankiState';
 import { goBackOr, openOrReturnTo } from '../lib/backNavigation';
 import { readStudyPlansForDisplay } from '../lib/studyPlanStore';
 import { plannedTimeLeftMs, plansOnDay, type StudyPlanBlock } from '../lib/studyPlans';
-import { alert, confirm } from '../lib/confirm';
+import { alert, chooseOption, confirm } from '../lib/confirm';
 import {
     MIN_SESSION_MS,
     examDaysLeft,
     finishStopwatch,
+    looksForgotten,
     stepDailyGoal,
     studySubjectKey,
     type RunningStopwatch,
@@ -43,6 +44,7 @@ import {
     formatClockHhMm,
     formatSessionDuration,
     getRecentStudySnapshot,
+    liveStudyMsToday,
     recentStudyDays,
     studyMsBySubject,
     type StudyCalendarAggregate,
@@ -127,9 +129,11 @@ export default function StopwatchScreen() {
         [snapshot, todayDayNumber],
     );
 
-    // A stopwatch started before the day rolled over belongs to that day, as its session will.
-    const runningCountsToday = running !== null && localDayNumber(running.startedAtMs, rolloverHour) === todayDayNumber;
-    const liveStudyMs = runningCountsToday ? elapsed?.studyMs ?? 0 : 0;
+    // A running stopwatch is what the learner is doing now: its card heads Today whenever it was
+    // started, and Today's total takes the part of its study time since the day began.
+    const liveStudyMs = running && elapsed
+        ? liveStudyMsToday(running.startedAtMs, elapsed.studyMs, nowMs, rolloverHour)
+        : 0;
     const todayStudyMs = (days[0]?.studyMs ?? 0) + liveStudyMs;
 
     // Plans are edited on their own screen, which this one stays under; read them on return.
@@ -143,7 +147,7 @@ export default function StopwatchScreen() {
     );
     // Today's study of each subject, the running session's included, counts off today's plans.
     const todaySessions = days[0]?.sessions;
-    const liveSubjectKey = runningCountsToday && running ? studySubjectKey(running.subject) : null;
+    const liveSubjectKey = running ? studySubjectKey(running.subject) : null;
     const liveMinute = Math.floor(liveStudyMs / 60_000);
     const planLeftMs = useMemo(() => {
         const studied = studyMsBySubject(todaySessions ?? []);
@@ -195,6 +199,40 @@ export default function StopwatchScreen() {
                 l('Bir dakikadan kısa çalışmalar kaydedilmez. Kronometre sıfırlansın mı?', 'Sessions shorter than a minute are not saved. Reset the stopwatch?'),
                 () => stopwatch.discard(),
             );
+            return;
+        }
+        if (looksForgotten(running, Date.now())) {
+            // Hours of study with no pause is usually a stopwatch left on overnight. Saving it as
+            // it stands is still on offer; so is correcting its end in the session editor.
+            void chooseOption(
+                l('Kronometre uzun süredir açık', 'The stopwatch has been running for long'),
+                l(
+                    `${running.subject}: ${formatSessionDuration(draft.studyMs, locale)} çalışma ölçüldü. Kronometreyi kapatmayı unuttuysanız süreyi düzeltebilirsiniz.`,
+                    `${running.subject}: ${formatSessionDuration(draft.studyMs, locale)} of study was measured. If you forgot to stop the stopwatch, you can correct the time.`,
+                ),
+                [
+                    l('Kaydet ve süreyi düzelt', 'Save and correct the time'),
+                    l('Olduğu gibi kaydet', 'Save as measured'),
+                    l('Kaydetmeden sıfırla', 'Reset without saving'),
+                ],
+            ).then((choice) => {
+                if (choice === 0) {
+                    try {
+                        const record = stopwatch.finish();
+                        invalidateCollection();
+                        if (record) {
+                            const { id, source: _source, ...session } = record;
+                            openEditor({ recordId: id, ...session });
+                        }
+                    } catch (error) {
+                        reportFailure(error);
+                    }
+                } else if (choice === 1) {
+                    if (saveFinished()) lightHaptic();
+                } else if (choice === 2) {
+                    stopwatch.discard();
+                }
+            });
             return;
         }
         confirm(
@@ -398,7 +436,7 @@ export default function StopwatchScreen() {
                 <StopwatchTimeline
                     days={days}
                     examDaysLeft={examDaysLeft(prefs.examDate, nowMs)}
-                    live={running && runningCountsToday && elapsed
+                    live={running && elapsed
                         ? {
                             subject: running.subject,
                             kind: running.kind,

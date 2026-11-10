@@ -80,6 +80,11 @@ Sessions shorter than a minute are not saved: on **Short session**, **OK** reset
 without saving. If you do not want to keep a longer session, finish it and then delete it (see
 [Sessions](#sessions)).
 
+If the stopwatch has run for six hours or more without a break (usually because it was left on),
+**Finish** asks first: **Save and correct the time** saves the session and opens the editor on it
+so you can set when it really ended, **Save as measured** keeps the measured time, and **Reset
+without saving** drops the session.
+
 <a id="sessions"></a>
 ## Recent Study and sessions
 
@@ -204,8 +209,11 @@ worked out from when it started, so nothing is lost. If you are on a break, brea
 counting too.
 
 - Nothing outside the Stopwatch screen shows that it is running, and it never stops by itself. If
-  you forgot to finish, finish the session and correct its time with **•••** › **Edit**.
-- A session belongs to the study day it started on.
+  you forgot to finish, tap **Finish**: after six unbroken hours it offers to correct the time by
+  itself; for a shorter one, finish the session and correct its time with **•••** › **Edit**.
+- A session belongs to the study day it started on. A stopwatch started before the day turned and
+  still running stays at the top of **Today**, and **Today**'s total takes its time since the
+  day turned.
 - Saved sessions and your stopwatch settings are included in TusAnkiM backups; a stopwatch that is
   still running is not. See [Backups and maintenance](15-backups-and-maintenance.md).
 
@@ -234,8 +242,9 @@ A stopwatch that is still running is added to the calendar once you finish it.
 Card sessions are made from your answers automatically:
 
 - Answers are grouped by day and by top-level deck: a card in `Pharmacology::Autonomic` goes into a
-  "Pharmacology" session. Cards answered in a filtered deck or Custom Study count under their own
-  deck.
+  "Pharmacology" session. In the ready-made TUS package the subject is the deck right below the
+  package: a card under `TUS Kartları::Pediatri` goes into a "Pediatri" session. Cards answered in
+  a filtered deck or Custom Study count under their own deck.
 - If more than 30 minutes pass between two answers, a new session starts.
 - **Study** is the time spent on answers (each counted up to the **Maximum answer time**);
   **Break** is the idle time between answers within the session.

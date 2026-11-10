@@ -20,6 +20,7 @@ import {
     getRecentStudySnapshot,
     recentStudyDays,
     studyMsBySubject,
+    liveStudyMsToday,
     subjectOfDeck,
     type StudyReviewRow,
 } from './studyCalendar';
@@ -48,12 +49,56 @@ function aggregate(rows: StudyReviewRow[], gapMs?: number) {
     return aggregateStudyCalendar(rows, { rolloverHour: ROLLOVER, dayNumbers, gapMs });
 }
 
+describe('liveStudyMsToday', () => {
+    const at = (iso: string) => new Date(iso).getTime();
+    const HOUR = 3_600_000;
+
+    it('is the whole study time of a stopwatch started today', () => {
+        expect(liveStudyMsToday(at('2026-10-03T14:00:00'), 50 * 60_000, at('2026-10-03T15:00:00'), ROLLOVER)).toBe(50 * 60_000);
+    });
+
+    it('is only the time since the day turned for a stopwatch started before it', () => {
+        // Started 03:30, still running at 04:20 with a 04:00 rollover: 20 minutes are today's.
+        expect(liveStudyMsToday(at('2026-10-03T03:30:00'), 50 * 60_000, at('2026-10-03T04:20:00'), 4)).toBe(20 * 60_000);
+        // Left on since 23:00 the evening before, read at 10:00: six hours of today, not eleven.
+        expect(liveStudyMsToday(at('2026-10-02T23:00:00'), 11 * HOUR, at('2026-10-03T10:00:00'), 4)).toBe(6 * HOUR);
+    });
+
+    it('never exceeds the study time, whatever the breaks were', () => {
+        expect(liveStudyMsToday(at('2026-10-02T23:00:00'), 30 * 60_000, at('2026-10-03T10:00:00'), 4)).toBe(30 * 60_000);
+        expect(liveStudyMsToday(at('2026-10-03T14:00:00'), 0, at('2026-10-03T13:00:00'), 4)).toBe(0);
+    });
+});
+
 describe('subjectOfDeck', () => {
     it('uses the top-level deck name as the subject', () => {
         expect(subjectOfDeck('TUS::Mikrobiyoloji::Viroloji')).toBe('TUS');
         expect(subjectOfDeck('Mikrobiyoloji')).toBe('Mikrobiyoloji');
         expect(subjectOfDeck('  Anatomi  ::Kemik')).toBe('Anatomi');
         expect(subjectOfDeck('')).toBe('');
+    });
+
+    it('names the course under the TUS package root, which only holds the courses', () => {
+        expect(subjectOfDeck('TUS Kartları::Pediatri::Yenidoğan', 'TUS Kartları')).toBe('Pediatri');
+        expect(subjectOfDeck('TUS Deneme::Anatomi', 'TUS Deneme')).toBe('Anatomi');
+        // A card left on the root itself, and decks outside the package, keep their top level.
+        expect(subjectOfDeck('TUS Kartları', 'TUS Kartları')).toBe('TUS Kartları');
+        expect(subjectOfDeck('Farmakoloji::Otonom', 'TUS Kartları')).toBe('Farmakoloji');
+        expect(subjectOfDeck('TUS Kartları 2::Pediatri', 'TUS Kartları')).toBe('TUS Kartları 2');
+    });
+
+    it('splits a day of the package into one session per course', () => {
+        const rows = [
+            review('2026-10-03T09:00:00', 30, 'TUS Kartları::Pediatri::Yenidoğan', 1),
+            review('2026-10-03T09:01:00', 30, 'TUS Kartları::Pediatri', 2),
+            review('2026-10-03T09:02:00', 30, 'TUS Kartları::Anatomi::Kemik', 3),
+        ];
+        const dayNumbers = new Set(rows.map((row) => localDayNumber(row.atMs, ROLLOVER)));
+        const subjectsWith = (catalogRootDeckName?: string) => aggregateStudyCalendar(rows, { rolloverHour: ROLLOVER, dayNumbers, catalogRootDeckName })
+            .days.flatMap((day) => day.sessions.map((session) => session.subject)).sort();
+
+        expect(subjectsWith('TUS Kartları')).toEqual(['Anatomi', 'Pediatri']);
+        expect(subjectsWith()).toEqual(['TUS Kartları']);
     });
 });
 

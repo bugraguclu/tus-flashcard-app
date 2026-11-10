@@ -4,7 +4,8 @@
 // The whole aggregation is a pure function of plain rows so it can be unit tested without a
 // database. The fetch functions below are the only parts that touch SQL.
 
-import { dayNumberToYmd, localDayNumber, ymdToLocalDayNumber } from './ankiState';
+import { dayNumberToYmd, localDayNumber, nextRolloverMs, ymdToLocalDayNumber } from './ankiState';
+import { getBkaCatalogRootDeckName } from './bkaCatalog';
 import { getDB } from './db';
 import type { SupportedLocale } from './i18n';
 import { studySubjectKey, type StudyKind, type StudySessionRecord, type StudySessionSource } from './stopwatch';
@@ -110,9 +111,32 @@ export interface StudyCalendarAggregate {
     totalsByDay: Map<number, number>;
 }
 
-/** Top-level deck name — the "subject"/ders a session is attributed to. */
-export function subjectOfDeck(deckName: string): string {
-    const head = (deckName ?? '').split('::')[0]?.trim();
+/**
+ * The part of a running stopwatch's study time that falls in the study day `nowMs` is in.
+ *
+ * A running stopwatch is what the learner is doing now, so its card sits at the top of Today even
+ * when it was started before the day turned (its session is then filed under the day it began,
+ * as every session is). Today's total takes only the time since the day began: the stopwatch
+ * keeps phase totals rather than a timeline, so that is its study time, at most the time elapsed
+ * since the later of its start and the rollover.
+ */
+export function liveStudyMsToday(startedAtMs: number, studyMs: number, nowMs: number, rolloverHour: number): number {
+    const dayStartMs = nextRolloverMs(nowMs, rolloverHour) - DAY_MS;
+    return Math.max(0, Math.min(studyMs, nowMs - Math.max(startedAtMs, dayStartMs)));
+}
+
+/**
+ * The "subject"/ders a card session is attributed to: the deck's top-level name.
+ *
+ * The ready-made TUS package keeps every course under one root (`TUS Kartları::Pediatri::…`). That
+ * root holds the courses, it is not one of them: with it as the subject, a morning of Pediatri and
+ * an afternoon of Anatomi were one session called "TUS Kartları", and a planned Pediatri block
+ * never saw the cards studied for it. Below `containerRoot` the course is the subject.
+ */
+export function subjectOfDeck(deckName: string, containerRoot?: string | null): string {
+    const parts = (deckName ?? '').split('::').map((part) => part.trim());
+    const course = containerRoot && parts[0] === containerRoot.trim() ? parts[1] : undefined;
+    const head = course || parts[0];
     return head && head.length > 0 ? head : (deckName ?? '');
 }
 
@@ -201,6 +225,8 @@ interface AggregateOptions {
     timerSessions?: StudySessionRecord[];
     /** Start of a stopwatch still running: answers from then on already count towards it. */
     runningSinceMs?: number | null;
+    /** The installed TUS package's root deck, whose subdecks are the subjects (see `subjectOfDeck`). */
+    catalogRootDeckName?: string | null;
 }
 
 interface TimeSpan {
@@ -263,7 +289,7 @@ export function aggregateStudyCalendar(
         if (isInsideSpans(row.atMs, coveredSpans)) continue;
         const dayNumber = localDayNumber(row.atMs, rolloverHour);
         if (!dayNumbers.has(dayNumber)) continue;
-        const subject = subjectOfDeck(row.deckName);
+        const subject = subjectOfDeck(row.deckName, options.catalogRootDeckName);
         const key = `${dayNumber}|${subject}`;
         const bucket = buckets.get(key);
         if (bucket) bucket.rows.push(row);
@@ -509,6 +535,7 @@ export function getStudyCalendarSnapshot(
         rolloverHour,
         dayNumbers: new Set(cells.map((cell) => cell.dayNumber)),
         timerSessions: fetchStudySessionsBetween(startMs, endMs),
+        catalogRootDeckName: getBkaCatalogRootDeckName(),
     });
 }
 
@@ -537,6 +564,7 @@ export function getRecentStudySnapshot(
         dayNumbers,
         timerSessions: fetchStudySessionsBetween(startMs, endMs),
         runningSinceMs,
+        catalogRootDeckName: getBkaCatalogRootDeckName(),
     });
 }
 
