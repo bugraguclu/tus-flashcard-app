@@ -36,10 +36,6 @@ export function readBrowserTableMode(): BrowserTableMode {
 export const BROWSER_PAGE_SIZE = 200;
 export const ALL_CARD_FLAGS: CardFlag[] = [0, 1, 2, 3, 4, 5, 6, 7];
 
-export function quoteAnkiSearchValue(value: string): string {
-    return `"${value.replace(/"/g, '\\"')}"`;
-}
-
 /** Compact "how long ago" label for the card list. */
 export function formatLastReview(lastReviewedAtMs: number, locale: SupportedLocale): string {
     if (!lastReviewedAtMs) return locale === 'tr' ? 'Hiç çalışılmadı' : 'Never studied';
@@ -94,5 +90,5 @@ export function formatNextDue(state: CardState, rolloverHour: number, locale: Su
     if (diff === 1) return locale === 'tr' ? 'Yarın' : 'Tomorrow';
     if (diff < 30) return locale === 'tr' ? `${diff} gün sonra` : `in ${diff} days`;
     if (diff < 365) return locale === 'tr' ? `${Math.round(diff / 30)} ay sonra` : `in ${Math.round(diff / 30)} months`;
-    return locale === 'tr' ? `${(diff / 365).toFixed(1)} yıl sonra` : `in ${(diff / 365).toFixed(1)} years`;
+    return locale === 'tr' ? `${(diff / 365).toFixed(1).replace('.', ',')} yıl sonra` : `in ${(diff / 365).toFixed(1)} years`;
 }

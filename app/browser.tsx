@@ -15,7 +15,8 @@ import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
-import { SearchSyntaxError } from '../lib/searchQuery';
+import { SearchSyntaxError, escapeSearchValue } from '../lib/searchQuery';
+import { formatCount } from '../lib/i18n';
 import { isValidSearchQuery } from '../lib/searchValidation';
 import { setSearchCurrentDeckName } from '../lib/collectionCardSearch';
 import { flagForSelection } from '../lib/browserFlags';
@@ -62,7 +63,6 @@ import { LatestSnapshotGeneration, ScreenSnapshotRepository } from '../lib/scree
 import {
     ALL_CARD_FLAGS,
     BROWSER_PAGE_SIZE,
-    quoteAnkiSearchValue,
     readBrowserBoolean,
     readBrowserSortKey,
     readBrowserTableMode,
@@ -169,6 +169,8 @@ export default function BrowserScreen() {
     const [hasMoreCards, setHasMoreCards] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const loadedCountRef = useRef(0);
+    /** The view (deck, filters, sort, search) whose rows `loadedCountRef` counts. */
+    const loadedViewKeyRef = useRef<string | null>(null);
     const totalCardCountRef = useRef(0);
     const pageLoadInProgressRef = useRef(false);
     const pageGenerationRef = useRef(new LatestSnapshotGeneration());
@@ -255,6 +257,14 @@ export default function BrowserScreen() {
         browserQueryOptions,
         searchQuery.trim(),
     ]), [browserScopeKey, reloadToken, browserQueryOptions, searchQuery]);
+    // What the list shows, apart from the data underneath it: a new deck, filter, sort or search
+    // is a new list, while an edit, a suspend or a pull-to-refresh re-reads the same one.
+    const browserViewKey = useMemo(() => JSON.stringify([
+        deckName,
+        browserQueryOptions,
+        searchQuery.trim(),
+        dataSettingsKey,
+    ]), [deckName, browserQueryOptions, searchQuery, dataSettingsKey]);
     const loadBrowserSnapshot = useCallback(() => {
         const scope = scopeRepositoryRef.current.getOrCreate(
             browserScopeKey,
@@ -265,10 +275,15 @@ export default function BrowserScreen() {
             settings,
             query: browserQueryOptions,
             searchQuery,
-            pageSize: BROWSER_PAGE_SIZE,
+            // Re-reading the same list brings back every row already paged in. With only the
+            // first page, the list shrank under a learner who had scrolled past it, and editing
+            // or suspending one card threw them back to its top.
+            pageSize: loadedViewKeyRef.current === browserViewKey
+                ? Math.max(BROWSER_PAGE_SIZE, loadedCountRef.current)
+                : BROWSER_PAGE_SIZE,
             hasActiveFilters: !allFilterActive,
         });
-    }, [browserScopeKey, deckName, settings, browserQueryOptions, searchQuery, allFilterActive]);
+    }, [browserScopeKey, browserViewKey, deckName, settings, browserQueryOptions, searchQuery, allFilterActive]);
     const {
         snapshot: browserSnapshot,
         loading,
@@ -366,6 +381,7 @@ export default function BrowserScreen() {
         setLoadingMore(false);
         if (loading || !browserSnapshot) return;
         loadedCountRef.current = browserSnapshot.cards.length;
+        loadedViewKeyRef.current = browserViewKey;
         totalCardCountRef.current = browserSnapshot.totalCardCount;
         setAllCards(browserSnapshot.cards);
         setCardsSnapshotKey(browserSnapshotKey);
@@ -771,14 +787,14 @@ export default function BrowserScreen() {
         if (scopeDeck?.isFiltered) {
             if (scopeDeck.searchQuery?.trim()) terms.push(scopeDeck.searchQuery.trim());
         } else if (scopeDeck) {
-            terms.push(`deck:${quoteAnkiSearchValue(scopeDeck.name)}`);
+            terms.push(`deck:${escapeSearchValue(scopeDeck.name)}`);
         }
         if (markedOnly) terms.push('tag:marked');
         if (suspendedOnly) terms.push('is:suspended');
         if (tagFilters.length === 1) {
-            terms.push(`tag:${quoteAnkiSearchValue(tagFilters[0])}`);
+            terms.push(`tag:${escapeSearchValue(tagFilters[0])}`);
         } else if (tagFilters.length > 1) {
-            terms.push(`(${tagFilters.map((tag) => `tag:${quoteAnkiSearchValue(tag)}`).join(' OR ')})`);
+            terms.push(`(${tagFilters.map((tag) => `tag:${escapeSearchValue(tag)}`).join(' OR ')})`);
         }
         if (flagFilters.length === 0) {
             terms.push(`-(${ALL_CARD_FLAGS.map((flag) => `flag:${flag}`).join(' OR ')})`);
@@ -793,7 +809,7 @@ export default function BrowserScreen() {
     const hasResultFilter = Boolean(searchQuery.trim()) || !allFilterActive;
     // Loaded-page progress is an implementation detail. Keep the toolbar stable and show only
     // the total number of cards in the current scope/filter, including while search is scanning.
-    const scopeCountText = loading ? '…' : String(browserSnapshot?.totalCardCount ?? 0);
+    const scopeCountText = loading ? '…' : formatCount(browserSnapshot?.totalCardCount ?? 0, locale);
 
     const clearBrowserFilters = useCallback(() => {
         setMarkedOnly(false);
