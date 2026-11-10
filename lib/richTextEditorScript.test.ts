@@ -383,6 +383,32 @@ describe('pasted pictures (EDT-7)', () => {
     });
 });
 
+describe('pasted text', () => {
+    const paste = (data: Record<string, string>) => {
+        const prevented: string[] = [];
+        const run = runEditorScript(baseConfig, 'native');
+        run.posted.length = 0;
+        run.dispatch('paste', {
+            clipboardData: { items: [], getData: (type: string) => data[type] ?? '' },
+            preventDefault: () => prevented.push('paste'),
+        });
+        return { prevented, messages: run.posted.map((entry) => entry.message as { type?: string }).filter((message) => message.type === 'pasteHtml') };
+    };
+
+    it('hands a paste that carries markup to the host instead of inserting it as copied', () => {
+        const html = '<span style="color: rgb(0, 0, 0); font-size: 12px">Kalp</span>';
+        const { prevented, messages } = paste({ 'text/html': html, 'text/plain': 'Kalp' });
+        expect(prevented).toEqual(['paste']);
+        expect(messages).toEqual([{ type: 'pasteHtml', html, text: 'Kalp' }]);
+    });
+
+    it('leaves a plain-text paste to the browser', () => {
+        const { prevented, messages } = paste({ 'text/plain': 'Kalp' });
+        expect(prevented).toEqual([]);
+        expect(messages).toEqual([]);
+    });
+});
+
 describe('attachments from the paper-clip', () => {
     const recording = (focused: boolean) => {
         const trace: string[] = [];

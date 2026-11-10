@@ -5,6 +5,7 @@ import {
     isAddScreenFinished,
     isDraftContentBlank,
     isFieldContentBlank,
+    isFirstFieldEmpty,
     type EditorDraftState,
 } from './editorDraft';
 
@@ -152,6 +153,20 @@ describe('editor draft changes', () => {
 
 // The Add screen stays open after a note is added (Anki's Add window does too), so its ✓ on the
 // cleared form is how the learner says they are done.
+describe('first field of a new note', () => {
+    it('is empty without text, whatever markup the field holds', () => {
+        for (const value of [undefined, '', '   ', '<br>', '<div><br></div>', '&nbsp;', '<p>&nbsp; </p>', '<b></b>']) {
+            expect(isFirstFieldEmpty(value)).toBe(true);
+        }
+    });
+
+    it('is filled by text, a picture or a sound', () => {
+        for (const value of ['Kalp', '<div>a</div>', '<img src="ekg.png">', '[sound:s1.mp3]', '{{c1::aort}}', '&lt;']) {
+            expect(isFirstFieldEmpty(value)).toBe(false);
+        }
+    });
+});
+
 describe('✓ on the cleared Add screen', () => {
     it('closes once a note was added and nothing new is typed', () => {
         expect(isAddScreenFinished(['', '<p><br></p>'], [false, false], 1)).toBe(true);

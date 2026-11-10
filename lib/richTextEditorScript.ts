@@ -416,7 +416,24 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
     const asPng = !!config.pasteImagesAsPng;
     const items = Array.from((event.clipboardData && event.clipboardData.items) || [])
       .filter(function (item) { return item.kind === 'file' && /^image\\//i.test(item.type || ''); });
-    if (!items.length) return;
+    if (!items.length) {
+      // Text copied from a page arrives dressed in that page's fonts, sizes and colours. The host
+      // filters them out (lib/pastedHtml.ts) and hands the result back for insertion; a paste
+      // that carries plain text only is left to the browser.
+      let pastedHtml = '';
+      let pastedText = '';
+      try {
+        pastedHtml = (event.clipboardData && event.clipboardData.getData('text/html')) || '';
+        pastedText = (event.clipboardData && event.clipboardData.getData('text/plain')) || '';
+      } catch (error) {
+        pastedHtml = '';
+      }
+      if (!pastedHtml || pastedHtml.length > 2000000) return;
+      event.preventDefault();
+      saveSelection();
+      post({ type: 'pasteHtml', html: pastedHtml, text: pastedText });
+      return;
+    }
     event.preventDefault();
     saveSelection();
     items.forEach(function (item) {
