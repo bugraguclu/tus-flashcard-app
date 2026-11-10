@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable, Platform } from 'react-native';
 import { Text } from './AppText';
 import * as ImagePicker from 'expo-image-picker';
@@ -45,6 +45,12 @@ interface MediaAttachButtonProps {
      * keyboard would otherwise sit over the menu and the sheets that follow it.
      */
     onBeforeOpen?: () => void;
+    /**
+     * Tells the editor while a picked file is still being compressed or stored. A save pressed in
+     * that window would write the note without the attachment, which then landed in the next,
+     * cleared note.
+     */
+    onBusyChange?: (busy: boolean) => void;
 }
 
 export interface MediaAttachButtonHandle {
@@ -65,12 +71,19 @@ type PickedFile = {
     kind: MediaReferenceKind;
 };
 
-const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert, onBeforeOpen }, ref) {
+const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert, onBeforeOpen, onBusyChange }, ref) {
     const { t, l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [menuVisible, setMenuVisible] = useState(false);
     const [busy, setBusy] = useState(false);
+    const onBusyChangeRef = useRef(onBusyChange);
+    onBusyChangeRef.current = onBusyChange;
+    useEffect(() => {
+        if (!busy) return undefined;
+        onBusyChangeRef.current?.(true);
+        return () => onBusyChangeRef.current?.(false);
+    }, [busy]);
     const [showRecorder, setShowRecorder] = useState(false);
     const [photoToEdit, setPhotoToEdit] = useState<EditablePhoto | null>(null);
     // A picked photo waits here until the user says whether to insert it untouched or edit it.

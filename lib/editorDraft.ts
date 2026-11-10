@@ -1,3 +1,5 @@
+import { checksumFieldText } from './noteChecksum';
+
 export interface EditorDraftState {
     question?: string;
     answer?: string;
@@ -6,6 +8,16 @@ export interface EditorDraftState {
     cardTypeId: number;
     deckId: number | null;
     tags: string[];
+}
+
+/**
+ * Anki refuses to add a note whose first field holds no text ("The first field is empty"): that
+ * field is the note's sort field and the key its duplicate check uses. Markup, `&nbsp;` and
+ * spaces are not text; a picture or a sound is. Editing an existing note is not held to it.
+ * https://docs.ankiweb.net/editing.html#adding-cards-and-notes
+ */
+export function isFirstFieldEmpty(value: string | undefined): boolean {
+    return checksumFieldText(value ?? '').trim() === '';
 }
 
 /**

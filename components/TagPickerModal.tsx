@@ -186,6 +186,15 @@ export default function TagPickerModal({
         Keyboard.dismiss();
     };
 
+    // A tag still sitting in the "new tag" field is one the learner meant to add: Onayla keeps
+    // it, where it used to close the picker without it and without a word.
+    const confirmTags = () => {
+        const pending = addVisible
+            ? parseNewTags(newTagText).map((tag) => knownTags.find((known) => tagKey(known) === tagKey(tag)) ?? tag)
+            : [];
+        onConfirm(uniqueTags([...draftTags, ...pending]));
+    };
+
     const toggleAdd = () => {
         if (addVisible) Keyboard.dismiss();
         setAddVisible((current) => !current);
@@ -419,7 +428,7 @@ export default function TagPickerModal({
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.footerConfirmButton}
-                                onPress={() => onConfirm(uniqueTags(draftTags))}
+                                onPress={confirmTags}
                                 accessibilityRole="button"
                                 accessibilityLabel={l('Onayla', 'Confirm')}
                             >

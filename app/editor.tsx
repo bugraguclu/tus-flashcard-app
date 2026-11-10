@@ -79,7 +79,7 @@ import { clozeFieldIndex, countCardsForNote, nextClozeNumber } from '../lib/temp
 import { loadSettings, saveSettings } from '../lib/storage';
 import { rememberedCurrentDeck } from '../lib/currentDeck';
 import { recomputeMemoryAfterDeckMove } from '../lib/fsrsMaintenance';
-import { editorDraftKey, hasEditorDraftChanged, isAddScreenFinished, type EditorDraftState } from '../lib/editorDraft';
+import { editorDraftKey, hasEditorDraftChanged, isAddScreenFinished, isFirstFieldEmpty, type EditorDraftState } from '../lib/editorDraft';
 import { remapFieldPositions, remapFieldValues, sameFieldLayout } from '../lib/editorFieldLayout';
 import TransientNotice, { type TransientNoticeMessage } from '../components/TransientNotice';
 import { editorFieldFontSize } from '../lib/editorFieldStyle';
@@ -128,6 +128,19 @@ function parseCardId(raw: string | string[] | undefined): number | null {
     const value = Array.isArray(raw) ? raw[0] : raw;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+}
+
+/**
+ * The deck "Add new cards to: current deck" means. The in-memory study scope can still hold the
+ * name a deck had before it was renamed or moved; the stored current deck follows the rename, so
+ * it is asked when the scope's name finds no deck.
+ */
+function currentDeckForNewNote(activeDeckName: string | null) {
+    for (const name of [activeDeckName, rememberedCurrentDeck()]) {
+        const deck = name ? getDeckByName(name) : null;
+        if (deck) return deck;
+    }
+    return null;
 }
 
 // The preview dialog picks its card body height before the card renders, so the sheet never
@@ -197,8 +210,7 @@ export default function EditorScreen() {
             const defDeck = getDeckByName('Varsayılan') ?? getDeck(1);
             if (defDeck && !isCatalogDeck(defDeck)) return defDeck.id;
         }
-        const currentDeckName = activeDeckName ?? rememberedCurrentDeck();
-        const activeDeck = currentDeckName ? getDeckByName(currentDeckName) : null;
+        const activeDeck = currentDeckForNewNote(activeDeckName);
         if (activeDeck && !activeDeck.isFiltered && !isCatalogDeck(activeDeck)) return activeDeck.id;
         return getDeck(1)?.id ?? getAllDecks().find((deck) => !deck.isFiltered && !isCatalogDeck(deck))?.id ?? null;
     });
@@ -302,7 +314,9 @@ export default function EditorScreen() {
 
     const [fieldValues, setFieldValuesState] = useState<string[]>(() => {
         if (routeFieldValues.length > 0) return routeFieldValues;
-        const noteType = getNoteType(routeNoteTypeId ?? 1) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === (routeNoteTypeId ?? 1));
+        // The form opens on `cardTypeId` (the route's type, else the remembered one), so its
+        // field count and pinned values are that type's, not Basic's.
+        const noteType = getNoteType(cardTypeId) ?? BUILTIN_NOTE_TYPES.find((entry) => entry.id === cardTypeId);
         const count = noteType?.fields.length ?? 2;
         const initial = new Array(count).fill('');
         if (params.question && typeof params.question === 'string') {
@@ -361,7 +375,7 @@ export default function EditorScreen() {
                 question: fieldValues[0] || '',
                 answer: fieldValues[1] || '',
                 reverseAnswer: cardTypeId === 7 ? (fieldValues[2] || '') : '',
-                cardTypeId: routeNoteTypeId ?? 1,
+                cardTypeId,
                 deckId: targetDeckId,
                 tags: typeof params.tags === 'string' ? params.tags.split(/\s+/).filter(Boolean) : [],
             },
@@ -381,8 +395,7 @@ export default function EditorScreen() {
 
     const targetDeck = useMemo(() => {
         if (targetDeckId) return getDeck(targetDeckId);
-        if (activeDeckName) return getDeckByName(activeDeckName) ?? getDeck(1);
-        return getDeck(1);
+        return currentDeckForNewNote(activeDeckName) ?? getDeck(1);
     }, [targetDeckId, activeDeckName, dataVersion]);
 
     const deckPickerDecks = useMemo(
@@ -497,8 +510,7 @@ export default function EditorScreen() {
             setTargetDeckId(defDeck && !isCatalogDeck(defDeck) ? defDeck.id : (getDeck(1)?.id ?? null));
             return;
         }
-        const currentDeckName = activeDeckName ?? rememberedCurrentDeck();
-        const activeDeck = currentDeckName ? getDeckByName(currentDeckName) : null;
+        const activeDeck = currentDeckForNewNote(activeDeckName);
         setTargetDeckId(activeDeck && !activeDeck.isFiltered && !isCatalogDeck(activeDeck) ? activeDeck.id : (getDeck(1)?.id ?? null));
     }, [routeCardId, targetDeckId, activeDeckName]);
 
@@ -891,6 +903,8 @@ export default function EditorScreen() {
      * Trial notes keep the narrow tag-only path. Purchased notes use the normal field save.
      */
     const saveInFlightRef = useRef(false);
+    // Fields whose attachment is still being compressed or stored.
+    const busyAttachmentsRef = useRef(new Set<number>());
 
     const handleSaveCatalogTags = async () => {
         if (!routeCardId || saveInFlightRef.current) return;
@@ -932,6 +946,14 @@ export default function EditorScreen() {
         if (saveInFlightRef.current) return;
         if (isContentReadOnly) {
             handleSaveCatalogTags();
+            return;
+        }
+        if (busyAttachmentsRef.current.size > 0) {
+            alert(
+                l('Ek hazırlanıyor', 'Attachment in progress'),
+                l('Eklediğiniz dosya hâlâ hazırlanıyor. Alana yerleşince yeniden kaydedin.',
+                    'The file you attached is still being prepared. Save again once it is in the field.'),
+            );
             return;
         }
         // The keyboard goes first, so anything it commits as the field lets go is flushed as well;
@@ -980,6 +1002,15 @@ export default function EditorScreen() {
             );
             return;
         }
+        if (!isEditing && isFirstFieldEmpty(currentFields[0])) {
+            const firstFieldName = localizeFieldName(locale, selectedNoteType?.fields[0]?.name ?? '');
+            alert(
+                t('common.error'),
+                l(`“${firstFieldName}” alanı boş. Not eklemek için bu alanı doldurun.`,
+                    `The “${firstFieldName}” field is empty. Fill it in to add the note.`),
+            );
+            return;
+        }
         if (cardsCount === 0) {
             alert(
                 t('common.error'),
@@ -989,7 +1020,11 @@ export default function EditorScreen() {
             );
             return;
         }
-        if (!targetDeck || targetDeck.isFiltered) {
+        // A card that sits in a filtered deck (as an imported package can leave it) stays there
+        // when only its text is edited; a filtered deck is refused only as a new destination.
+        const staysInOwnDeck = isEditing && routeCardId != null && targetDeck != null
+            && getAnkiCard(routeCardId)?.deckId === targetDeck.id;
+        if (!targetDeck || (targetDeck.isFiltered && !staysInOwnDeck)) {
             alert(t('common.error'), l('Lütfen not için bir deste seçin.', 'Please choose a deck for the note.'));
             return;
         }
@@ -1338,6 +1373,10 @@ export default function EditorScreen() {
                                             onBeforeOpen={dismissEditorKeyboard}
                                             // The attachment goes in at the caret with the keyboard left down.
                                             onInsert={(snippet) => fieldEditorRefs.current[index]?.insertHtml(snippet, { focus: false })}
+                                            onBusyChange={(busy) => {
+                                                if (busy) busyAttachmentsRef.current.add(index);
+                                                else busyAttachmentsRef.current.delete(index);
+                                            }}
                                         />
                                     </View>
                                 )}
