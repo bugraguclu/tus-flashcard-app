@@ -1,4 +1,5 @@
 import { EDITOR_SOURCE_RESTORE_SCRIPT, type PreservedEditorSource } from './richTextEditorContent';
+import { PASTED_HTML_FILTER_SCRIPT } from './pastedHtmlScript';
 import { richTextBridgeScript } from './richTextCommands';
 import { cspHashSource } from './sha256';
 
@@ -38,6 +39,7 @@ export function richTextEditorConfigJson(config: RichTextEditorDocumentConfig): 
 }
 
 export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
+${PASTED_HTML_FILTER_SCRIPT}
 (function () {
   const configElement = document.getElementById('${RICH_TEXT_EDITOR_CONFIG_ID}');
   const config = JSON.parse((configElement && configElement.textContent) || '{}');
@@ -50,6 +52,7 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
   // Selection and pending-format handling lives in lib/richTextCommands.ts so it can be
   // unit-tested against a fake DOM; see the WebKit notes there for why it is not inline.
   const bridge = createTusFormattingBridge(editor, document);
+  const pasteFilter = createTusPasteFilter();
   let lastHeight = 0;
   let lastState = '';
   // Numbers each reported edit, so the host can tell a late message from a newer reading.
@@ -245,7 +248,17 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
   // The native host cannot read this document synchronously, so before it saves it sends a token
   // and waits for it to come back (lib/editorFlushBarrier.ts). Messages arrive in the order they
   // were posted, so every edit reported before this answer has reached the host by then.
-  window.__tusEditorFlush = function (token) { post({ type: 'flushed', token: token }); };
+  // A paste is filtered and inserted a turn after its event (see the paste listener); until it
+  // has landed, the field has not said its last word, so the answer to a flush waits for it.
+  let pendingPastes = 0;
+  const heldFlushTokens = [];
+  window.__tusEditorFlush = function (token) {
+    if (pendingPastes > 0) {
+      heldFlushTokens.push(token);
+      return;
+    }
+    post({ type: 'flushed', token: token });
+  };
 
   window.__tusEditorReplaceSelectionText = function (text) {
     bridge.replaceSelectionText(text);
@@ -417,9 +430,10 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
     const items = Array.from((event.clipboardData && event.clipboardData.items) || [])
       .filter(function (item) { return item.kind === 'file' && /^image\\//i.test(item.type || ''); });
     if (!items.length) {
-      // Text copied from a page arrives dressed in that page's fonts, sizes and colours. The host
-      // filters them out (lib/pastedHtml.ts) and hands the result back for insertion; a paste
-      // that carries plain text only is left to the browser.
+      // Text copied from a page arrives dressed in that page's fonts, sizes and colours, which
+      // the paste filter (lib/pastedHtmlScript.ts) takes off. It runs here, inside the field, so
+      // nothing has to travel to the app and back before the text is in. A paste that carries
+      // plain text only is left to the browser.
       let pastedHtml = '';
       let pastedText = '';
       try {
@@ -429,9 +443,26 @@ export const RICH_TEXT_EDITOR_SCRIPT = `${richTextBridgeScript()}
         pastedHtml = '';
       }
       if (!pastedHtml || pastedHtml.length > 2000000) return;
+      const filtered = pasteFilter.fieldHtml(pastedHtml, pastedText);
+      if (!filtered) return;
       event.preventDefault();
       saveSelection();
-      post({ type: 'pasteHtml', html: pastedHtml, text: pastedText });
+      // The text goes in on the next turn of the document's own loop, outside the paste event,
+      // at the caret saved above: the way every other insertion reaches the field. A save's
+      // flush that arrives in between is answered only once the text is in, so pasting and
+      // pressing save at once still saves the pasted text (checked on the iPhone simulator,
+      // where the save had already taken the field's focus when the text went in).
+      pendingPastes += 1;
+      setTimeout(function () {
+        try {
+          window.__tusEditorInsertHtml(filtered);
+        } finally {
+          pendingPastes -= 1;
+          if (pendingPastes === 0) {
+            heldFlushTokens.splice(0).forEach(function (token) { post({ type: 'flushed', token: token }); });
+          }
+        }
+      }, 0);
       return;
     }
     event.preventDefault();

@@ -384,28 +384,59 @@ describe('pasted pictures (EDT-7)', () => {
 });
 
 describe('pasted text', () => {
+    const nextTurn = () => new Promise((resolve) => setTimeout(resolve, 0));
     const paste = (data: Record<string, string>) => {
         const prevented: string[] = [];
-        const run = runEditorScript(baseConfig, 'native');
+        const inserted: string[] = [];
+        const run = runEditorScript(baseConfig, 'native', {
+            execCommand: (command, _ui, value) => { if (command === 'insertHTML') inserted.push(String(value)); return true; },
+        });
         run.posted.length = 0;
         run.dispatch('paste', {
             clipboardData: { items: [], getData: (type: string) => data[type] ?? '' },
             preventDefault: () => prevented.push('paste'),
         });
-        return { prevented, messages: run.posted.map((entry) => entry.message as { type?: string }).filter((message) => message.type === 'pasteHtml') };
+        const types = () => run.posted.map((entry) => (entry.message as { type?: string }).type);
+        return { run, prevented, inserted, types };
     };
 
-    it('hands a paste that carries markup to the host instead of inserting it as copied', () => {
-        const html = '<span style="color: rgb(0, 0, 0); font-size: 12px">Kalp</span>';
-        const { prevented, messages } = paste({ 'text/html': html, 'text/plain': 'Kalp' });
+    it('filters a paste that carries markup inside the field and inserts it on the next turn', async () => {
+        const html = '<span style="color: rgb(0, 0, 0); font-size: 12px">Kalp<span class="Apple-converted-space">\u00a0</span><b>BNP</b></span>';
+        const { prevented, inserted, types } = paste({ 'text/html': html, 'text/plain': 'Kalp BNP' });
         expect(prevented).toEqual(['paste']);
-        expect(messages).toEqual([{ type: 'pasteHtml', html, text: 'Kalp' }]);
+        // Not inside the paste event: the text is inserted on the document's next turn.
+        expect(inserted).toEqual([]);
+        await nextTurn();
+        expect(inserted).toEqual(['Kalp <b>BNP</b>']);
+        expect(types()).toContain('change');
+        // Nothing is sent to the app to be filtered there.
+        expect(types()).not.toContain('pasteHtml');
     });
 
-    it('leaves a plain-text paste to the browser', () => {
-        const { prevented, messages } = paste({ 'text/plain': 'Kalp' });
+    it('answers a save\'s flush only once the pasted text is in the field', async () => {
+        const { run, types } = paste({ 'text/html': '<b>BNP</b>', 'text/plain': 'BNP' });
+        run.flush('save-1');
+        expect(types()).not.toContain('flushed');
+        await nextTurn();
+        // The edit is reported first, the flush after it: the save reads the pasted text.
+        expect(types().indexOf('change')).toBeGreaterThanOrEqual(0);
+        expect(types().indexOf('flushed')).toBeGreaterThan(types().indexOf('change'));
+        run.flush('save-2');
+        expect(types().filter((type) => type === 'flushed')).toHaveLength(2);
+    });
+
+    it('falls back to the plain text when the markup holds nothing', async () => {
+        const { prevented, inserted } = paste({ 'text/html': '<meta charset="utf-8"><style>p{}</style>', 'text/plain': 'satır 1\nsatır 2' });
+        await nextTurn();
+        expect(prevented).toEqual(['paste']);
+        expect(inserted).toEqual(['satır 1<br>satır 2']);
+    });
+
+    it('leaves a plain-text paste to the browser', async () => {
+        const { prevented, inserted } = paste({ 'text/plain': 'Kalp' });
+        await nextTurn();
         expect(prevented).toEqual([]);
-        expect(messages).toEqual([]);
+        expect(inserted).toEqual([]);
     });
 });
 

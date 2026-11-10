@@ -7,7 +7,6 @@ import { base64ToBytes } from '../lib/files';
 import { getMediaBaseUrl, saveMediaBytes } from '../lib/mediaStore';
 import { resolveWebFieldMedia } from '../lib/webFieldMedia';
 import { mediaReferenceSnippet } from '../lib/mediaAttachment';
-import { pastedFieldHtml } from '../lib/pastedHtml';
 import { editorContentSecurityPolicy } from '../lib/cardContentSecurity';
 import { isLocalMediaDocumentUrl } from '../lib/localMediaDocument';
 import { useLocalMediaWebViewSource } from '../hooks/useLocalMediaWebViewSource';
@@ -462,7 +461,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 html?: string;
                 height?: number;
                 state?: unknown;
-                dataUrl?: string; text?: string;
+                dataUrl?: string;
                 shortcut?: string;
                 seq?: unknown;
                 token?: unknown;
@@ -508,10 +507,6 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 await saveMediaBytes(filename, bytes, `image/${match[1]}`);
                 const snippet = mediaReferenceSnippet('image', filename);
                 runWhenReady({ fn: '__tusEditorInsertHtml', args: [snippet] });
-            } else if (message.type === 'pasteHtml' && editable && typeof message.html === 'string') {
-                // Structure and emphasis stay; the source page's fonts, sizes and paper do not.
-                const snippet = pastedFieldHtml(message.html, typeof message.text === 'string' ? message.text : '');
-                if (snippet) runWhenReady({ fn: '__tusEditorInsertHtml', args: [snippet] });
             }
         } catch {
             // Ignore non-editor WebView messages.

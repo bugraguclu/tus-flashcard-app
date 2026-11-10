@@ -11,6 +11,16 @@ describe('sanitizePastedHtml', () => {
         expect(sanitizePastedHtml(safari)).toBe('Kalp yetmezliği’nde BNP artar');
     });
 
+    it('turns the spaces Safari made non-breaking for the clipboard back into spaces', () => {
+        // Recorded from the iPhone simulator's Safari (iOS 26.5): every space next to an element.
+        const copied = '<head><meta charset="UTF-8"></head><span style="font-weight: 400; color: rgb(0, 0, 0); font-family: Georgia; font-size: 12px; background-color: rgb(255, 255, 255);">'
+            + 'Kalp yetmezliğinde<span class="Apple-converted-space">\u00a0</span><b>BNP</b><span class="Apple-converted-space">&nbsp;</span>artar;<span class="Apple-converted-space">\u00a0</span></span>'
+            + '<span style="font-weight: 400; color: rgb(220, 38, 38); font-size: 30px;">kırmızı</span>';
+        expect(sanitizePastedHtml(copied)).toBe('Kalp yetmezliğinde <b>BNP</b> artar; <span style="color: rgb(220, 38, 38)">kırmızı</span>');
+        // A non-breaking space the text itself holds is the author's and stays.
+        expect(sanitizePastedHtml('5&nbsp;mg <span class="x Apple-converted-space">&nbsp;</span>tablet')).toBe('5&nbsp;mg  tablet');
+    });
+
     it('keeps emphasis, structure and links, without classes or ids', () => {
         const page = '<div class="mw-parser" id="x"><h2 class="t">Tanı</h2><p style="margin:0 0 8px;font-size:14px;line-height:1.5">'
             + '<strong class="b">EKG</strong>, <em>EKO</em>, <u>BNP</u>, <a href="https://tr.wikipedia.org/wiki/Kalp" class="l" onclick="x()">kalp</a>, H<sub>2</sub>O, m<sup>2</sup></p>'
