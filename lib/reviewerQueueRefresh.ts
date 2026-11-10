@@ -219,9 +219,12 @@ export function queueCountBucket(status: StudyCard['state']['status']): keyof Re
  * The counts straight after an answer, until the next rebuild reads them again: the answered card
  * leaves the count it was drawn from and joins the one it is due in today.
  *
- * A card on an intraday step counts as learning for the rest of the study day, so ÖĞRENİYOR grows
- * the moment a new card enters learning. A day-long step (`dueTime` 0, as Anki's interday learning
- * is stored) is due on a later day after any answer, so it is not today's work, and a card the leech
+ * A card on an intraday step counts as learning once its step ends inside the learn-ahead limit,
+ * which is where the queue's own count stops (`getStudyQueue`, Anki's learning cutoff), so
+ * ÖĞRENİYOR grows the moment a new card enters learning. A longer step joins the count when the
+ * next rebuild finds it inside the limit; counting it at once showed one more card than the
+ * rebuild a few answers later. A day-long step (`dueTime` 0, as Anki's interday learning is
+ * stored) is due on a later day after any answer, so it is not today's work, and a card the leech
  * action suspended has left the session.
  */
 export function countsAfterAnswer(counts: ReviewerQueueCounts, input: {
@@ -233,6 +236,8 @@ export function countsAfterAnswer(counts: ReviewerQueueCounts, input: {
     today: string;
     /** When the study day ends (the next rollover). */
     endOfDayMs: number;
+    /** The learn-ahead limit: an intraday step ending within it is already counted as learning. */
+    learnAheadMs: number;
 }): ReviewerQueueCounts {
     const next = { ...counts };
     const answeredBucket = queueCountBucket(input.answeredStatus);
@@ -240,7 +245,8 @@ export function countsAfterAnswer(counts: ReviewerQueueCounts, input: {
     const updated = input.updatedCard;
     if (updated.state.suspended) return next;
     if (updated.state.status === 'learning') {
-        if (updated.state.dueTime > 0 && updated.state.dueTime < input.endOfDayMs) next.learningCount += 1;
+        const countedUntilMs = Math.min(input.endOfDayMs, input.nowMs + Math.max(0, input.learnAheadMs) + 1);
+        if (updated.state.dueTime > 0 && updated.state.dueTime < countedUntilMs) next.learningCount += 1;
     } else if (isCardDueNow(updated, input.nowMs, input.today)) {
         next[queueCountBucket(updated.state.status)] += 1;
     }

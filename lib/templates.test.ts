@@ -856,6 +856,12 @@ describe('typeAnswerPlainText', () => {
         expect(typeAnswerPlainText('[sound:x.mp3]<img src="y.png">A&nbsp;&amp;&nbsp;B')).toBe('A & B');
     });
 
+    it('expects the characters the field shows, whatever reference stores them', () => {
+        // The text importer writes an apostrophe as "&#x27;"; older editors store "&uuml;".
+        expect(typeAnswerPlainText('T&uuml;rkiye&#x27;de 5&#39; u&ccedil;')).toBe("Türkiye'de 5' uç");
+        expect(typeAnswerPlainText('a &amp;lt; b')).toBe('a &lt; b');
+    });
+
     it('renders a type-in prompt without leaking tags into the answer', () => {
         const noteType: NoteType = {
             id: 900,

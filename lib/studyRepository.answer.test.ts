@@ -476,6 +476,19 @@ describe('setCardBuried', () => {
         expect(shared.cards.get(43)!.queue).toBe(-1);
     });
 
+    it('unsuspend restores a buried card too, as one call does both in Anki', () => {
+        // Anki 26.09.3: `col.sched.unsuspend_cards([suspended, user-buried, sibling-buried])`
+        // leaves all three in their queue (restore_buried_and_suspended_cards), so the browser's
+        // Toggle Suspend on a mixed selection restores every card in it.
+        shared.cards.set(45, { ...baseCard(45, 1, 2, 2), queue: -1 });
+        shared.cards.set(46, { ...baseCard(46, 1, 2, 2), queue: -3 });
+        shared.cards.set(47, { ...baseCard(47, 1, 2, 2), queue: -2 });
+
+        for (const id of [45, 46, 47]) setCardSuspended(id, false, settings.dayRolloverHour);
+
+        expect([45, 46, 47].map((id) => shared.cards.get(id)!.queue)).toEqual([2, 2, 2]);
+    });
+
     it('still suspends a buried card, since suspend outranks bury in Anki', () => {
         shared.cards.set(44, { ...baseCard(44, 1, 2, 2), queue: -3 });
 

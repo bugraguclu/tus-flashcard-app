@@ -1,3 +1,4 @@
+import { decodeHtmlText } from './htmlEntities';
 import { escapeHtml } from './templateEscaping';
 const COMBINING_MARKS = /[\u0300-\u036f]/g;
 
@@ -116,17 +117,14 @@ const MAX_OMISSION_MARKS = 3;
  * dropped, matching what Anki diffs against.
  */
 export function typeAnswerPlainText(value: string): string {
-    return value
+    const stripped = value
         .replace(/\[sound:[^\]]*\]/gi, ' ')
         .replace(/<(?:img|audio|video|source)\b[^>]*>/gi, ' ')
         .replace(/<\/?(?:div|p|br|li|tr|h[1-6])\b[^>]*>/gi, '\n')
-        .replace(/<[^>]+>/g, '')
-        .replace(/&nbsp;/gi, ' ')
-        .replace(/&amp;/gi, '&')
-        .replace(/&lt;/gi, '<')
-        .replace(/&gt;/gi, '>')
-        .replace(/&quot;/gi, '"')
-        .replace(/&#0?39;/g, "'")
+        .replace(/<[^>]+>/g, '');
+    // Anki decodes every character reference of the expected answer: a field stored as
+    // "Türkiye&#x27;de" is the answer "Türkiye'de", which is what the learner types.
+    return decodeHtmlText(stripped)
         .replace(/[ \t]+/g, ' ')
         .replace(/\s*\n\s*/g, ' ')
         .trim();

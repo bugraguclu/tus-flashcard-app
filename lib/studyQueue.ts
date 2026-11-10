@@ -619,7 +619,15 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
 
     let upcomingCardsCount = 0;
     if (nextLearningDue !== null) {
-        upcomingCardsCount = Math.max(1, intradayLearningCount + interdayLearningCount);
+        // What waits for its timer is the intraday learning due after the learn-ahead window;
+        // the cards inside it are already in the queue. Counting those instead always said "1".
+        upcomingCardsCount = Math.max(1, countRowsByQueue(
+            'c.queue = 1 AND c.due > ?',
+            [learnAheadCutoff],
+            params.selectedSubject,
+            params.selectedTopic,
+            params.selectedDeckName,
+        ));
     } else {
         const reviewsDueTomorrow = countRowsByQueue(
             'c.queue IN (2, 3) AND c.due = ?',

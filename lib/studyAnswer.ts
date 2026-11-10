@@ -548,6 +548,9 @@ function answerInPreview(
 export function setCardSuspended(cardId: number, suspended: boolean, rolloverHour: number = 4): void {
     const card = getAnkiCard(cardId);
     if (!card) return;
+    // Unsuspending also brings a buried card back: Anki's Unsuspend and Unbury are one backend
+    // call (`restore_buried_and_suspended_cards`), so a browser selection that mixes the two is
+    // restored as a whole. Probed with Anki 26.09.3 through scripts/anki-oracle.
 
     saveAnkiCard({
         ...card,
