@@ -1156,8 +1156,8 @@ export default function StudyScreen() {
                 .filter((value): value is number => value !== null);
             learningComesDueAtRef.current = knownLearningDues.length > 0 ? Math.min(...knownLearningDues) : null;
 
-            // Learning counts for the whole study day (Anki deck-list semantics): a card waiting on
-            // its 10-minute step is still today's workload; one moved to a day-long step is not.
+            // Learning counts up to the learn-ahead limit, as the rebuilt queue counts it: a card
+            // waiting on its 10-minute step is today's workload; one moved to a day-long step is not.
             const answeredStatus = currentCard.state.status;
             setQueueStats((prev) => countsAfterAnswer(prev, {
                 answeredStatus,
@@ -1165,6 +1165,7 @@ export default function StudyScreen() {
                 nowMs,
                 today: todayLocalYMD(new Date(nowMs), settings.dayRolloverHour),
                 endOfDayMs: nextRolloverMs(nowMs, settings.dayRolloverHour),
+                learnAheadMs: Math.max(0, scopeSettings.learnAheadMinutes || 0) * 60_000,
             }));
 
             setShowingAnswer(false);

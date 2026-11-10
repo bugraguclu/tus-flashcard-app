@@ -70,7 +70,7 @@ describe('queue counts after an answer', () => {
     const END_OF_DAY = NOW + 10 * 60 * MINUTE;
     const after = (answered: StudyCard['state']['status'], updated: Partial<StudyCard['state']>) => countsAfterAnswer(
         { newCount: 1, learningCount: 0, reviewCount: 1 },
-        { answeredStatus: answered, updatedCard: card(1, updated), nowMs: NOW, today: '2026-10-21', endOfDayMs: END_OF_DAY },
+        { answeredStatus: answered, updatedCard: card(1, updated), nowMs: NOW, today: '2026-10-21', endOfDayMs: END_OF_DAY, learnAheadMs: 20 * MINUTE },
     );
 
     it('counts a card on an intraday step as today\'s learning', () => {
@@ -84,6 +84,14 @@ describe('queue counts after an answer', () => {
             .toEqual({ newCount: 1, learningCount: 0, reviewCount: 1 });
         expect(after('new', { status: 'learning', dueTime: 0, dueDate: '2026-10-22' }))
             .toEqual({ newCount: 0, learningCount: 0, reviewCount: 1 });
+    });
+
+    // The rebuilt queue counts intraday learning only up to now + learn ahead, so a longer step
+    // counted here would show one card more until the next rebuild took it away again.
+    it('does not count a step that ends beyond the learn-ahead limit', () => {
+        expect(after('new', { status: 'learning', dueTime: NOW + 20 * MINUTE })).toEqual({ newCount: 0, learningCount: 1, reviewCount: 1 });
+        expect(after('new', { status: 'learning', dueTime: NOW + 60 * MINUTE })).toEqual({ newCount: 0, learningCount: 0, reviewCount: 1 });
+        expect(after('learning', { status: 'learning', dueTime: NOW + 60 * MINUTE })).toEqual({ newCount: 1, learningCount: 0, reviewCount: 1 });
     });
 
     it('does not count a step that ends after the rollover or a review due later', () => {
@@ -119,6 +127,7 @@ describe('a card the leech action suspended', () => {
             nowMs: NOW,
             today: '2026-10-21',
             endOfDayMs: NOW + 10 * 60 * MINUTE,
+            learnAheadMs: 20 * MINUTE,
         })).toEqual({ newCount: 0, learningCount: 0, reviewCount: 2 });
     });
 });

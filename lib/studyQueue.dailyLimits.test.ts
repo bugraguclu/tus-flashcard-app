@@ -117,6 +117,15 @@ describe('queue counters and daily limits', () => {
         // Still not served: the step timer has not expired and learn-ahead is 0.
         expect(result.cards).toHaveLength(0);
         expect(result.nextLearningDue).toBe(dueMs);
+        expect(result.upcomingCardsCount).toBe(1);
+
+        // The waiting screen counts every card whose timer is still running, not just the first.
+        saveAnkiCard(makeCard(1011, 101, 7, { ord: 1, type: 1, queue: 1, due: dueMs + 60_000, left: 1001 }));
+        saveAnkiCard(makeCard(1012, 101, 7, { ord: 2, type: 3, queue: 1, due: dueMs + 3_600_000, left: 1001 }));
+        const waiting = getStudyQueue({ settings, selectedSubject: 'araclar', selectedTopic: 'random' });
+        expect(waiting.cards).toHaveLength(0);
+        expect(waiting.nextLearningDue).toBe(dueMs);
+        expect(waiting.upcomingCardsCount).toBe(3);
     });
 
     it('stops serving reviews once today\'s review limit is spent', () => {
