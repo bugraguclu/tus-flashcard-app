@@ -183,8 +183,9 @@ export default function CardInfoScreen() {
             return sec < 60 ? l(`${sec} sn.`, `${sec}s`) : l(`${Math.round(sec / 60)} dk.`, `${Math.round(sec / 60)}m`);
         }
         if (ivl < 30) return l(`${ivl} gün`, `${ivl} days`);
-        if (ivl < 365) return l(`${(ivl / 30).toFixed(1)} ay`, `${(ivl / 30).toFixed(1)} months`);
-        return l(`${(ivl / 365).toFixed(1)} yıl`, `${(ivl / 365).toFixed(1)} years`);
+        // Turkish writes the decimal mark as a comma: "1,5 ay".
+        if (ivl < 365) return l(`${(ivl / 30).toFixed(1).replace('.', ',')} ay`, `${(ivl / 30).toFixed(1)} months`);
+        return l(`${(ivl / 365).toFixed(1).replace('.', ',')} yıl`, `${(ivl / 365).toFixed(1)} years`);
     };
 
     const formatTime = (ms: number) => {
@@ -275,7 +276,7 @@ export default function CardInfoScreen() {
                     <InfoSection title={l('FSRS hafıza durumu', 'FSRS Memory State')}>
                         <InfoRow
                             label={l('Hafıza gücü (stability)', 'Stability')}
-                            value={l(`${memory.stability.toFixed(2)} gün`, `${memory.stability.toFixed(2)} days`)}
+                            value={l(`${memory.stability.toFixed(2).replace('.', ',')} gün`, `${memory.stability.toFixed(2)} days`)}
                         />
                         <InfoRow
                             label={l('Zorluk', 'Difficulty')}

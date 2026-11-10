@@ -31,6 +31,25 @@ describe('browser listing', () => {
         }
     });
 
+    it('sorts the sort field by the Turkish alphabet in Cards, Notes and a text search', () => {
+        const fronts = ['Zona', 'Çölyak', 'İnme', 'ıspanak', 'Dalak', 'çay'];
+        h.db.runSync('DELETE FROM anki_cards');
+        h.db.runSync('DELETE FROM notes');
+        fronts.forEach((front, index) => {
+            const id = index + 10;
+            h.db.runSync('INSERT INTO notes (id, noteTypeId, sfld, data) VALUES (?, 1, ?, ?)', id, front, JSON.stringify({ id, noteTypeId: 1, fields: [front], tags: [] }));
+            h.db.runSync('INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, flags, data) VALUES (?, ?, 1, 0, 2, 2, 1, 1, 2500, 1, 0, 0, ?)', id, id, JSON.stringify({ id }));
+        });
+        const expected = ['çay', 'Çölyak', 'Dalak', 'ıspanak', 'İnme', 'Zona'];
+        const frontOf = (cardId: number) => fronts[cardId - 10];
+
+        expect(getBrowserCards(DEFAULT_SETTINGS, { sortKey: 'sortField' }).map((card) => frontOf(card.cardId))).toEqual(expected);
+        expect(getBrowserCards(DEFAULT_SETTINGS, { sortKey: 'sortField', tableMode: 'notes' }).map((card) => frontOf(card.cardId))).toEqual(expected);
+        expect(getBrowserRowIdsMatchingText({ sortKey: 'sortField' }, '*a*').map(frontOf)).toEqual(expected.filter((front) => /a/i.test(front)));
+        expect(getBrowserCards(DEFAULT_SETTINGS, { sortKey: 'sortField', descending: true }).map((card) => frontOf(card.cardId)))
+            .toEqual([...expected].reverse());
+    });
+
     it('scopes a deck subtree by exact, case-sensitive name', () => {
         expect(getDeckTotalCardCount('tus')).toBe(2);
         expect(getDeckTotalCardCount('TUS')).toBe(1);

@@ -25,6 +25,13 @@ describe('humanizeCardText', () => {
             .toBe('EKG bulgusu 🖼️ Görsel 🔊 Ses');
     });
 
+    it('decodes every character reference once, as the card shows the text', () => {
+        // "5' uç" imported from a text file with HTML off is stored as "5&#x27; u&ccedil;".
+        expect(humanizeCardText('5&#x27; u&ccedil;, T&uuml;rkiye&#39;de &ldquo;%50&rdquo;')).toBe("5' uç, Türkiye'de “%50”");
+        expect(humanizeCardText('a &amp;lt; b &lt;b&gt;')).toBe('a &lt; b <b>');
+        expect(humanizeCardText('AT&T ve R&D')).toBe('AT&T ve R&D');
+    });
+
     it('keeps inline formatting inside a word run and splits words at block boundaries', () => {
         expect(humanizeCardText('<b>Mitral</b>, triküspit, <i>aort</i>')).toBe('Mitral, triküspit, aort');
         expect(humanizeCardText('Na<sup>+</sup>/K<sup>+</sup> pompası')).toBe('Na+/K+ pompası');

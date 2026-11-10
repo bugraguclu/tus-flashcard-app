@@ -2,6 +2,8 @@
 // Fields legitimately hold raw HTML and Anki media markup; showing that markup as a
 // "card name" is unreadable, so media becomes a small labeled icon and tags are dropped.
 
+import { decodeHtmlText } from './htmlEntities';
+
 const MEDIA_PLACEHOLDERS: Array<[RegExp, string]> = [
     [/\[sound:[^\]]*\]/gi, ' 🔊 Ses '],
     [/<audio\b[^>]*>[\s\S]*?<\/audio>/gi, ' 🔊 Ses '],
@@ -72,15 +74,8 @@ export function humanizeCardText(text: string, options: HumanizeCardTextOptions 
         // A block boundary separates words; inline formatting sits inside a word run, so
         // "<b>Mitral</b>, triküspit" reads "Mitral, triküspit", not "Mitral , triküspit".
         .replace(BLOCK_TAG, ' ')
-        .replace(/<[^>]+>/g, '')
-        .replace(/&nbsp;/gi, ' ')
-        .replace(/&amp;/gi, '&')
-        .replace(/&lt;/gi, '<')
-        .replace(/&gt;/gi, '>')
-        .replace(/&quot;/gi, '"')
-        .replace(/&#0?39;/g, "'")
-        .replace(/\s+/g, ' ')
-        .trim();
+        .replace(/<[^>]+>/g, '');
 
-    return result;
+    // The markup is gone, so what is left is text: "&#x27;" is an apostrophe and "&uuml;" a "ü".
+    return decodeHtmlText(result).replace(/\s+/g, ' ').trim();
 }

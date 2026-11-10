@@ -1,4 +1,5 @@
 import { matchingCollectionCardIdsForAll } from './collectionCardSearch';
+import { turkishSortKeySql } from './turkishSortSql';
 import { escapeSearchValue } from './searchQuery';
 import { getDB } from './db';
 import { ankiCardRetrievability, compareSqlAscending } from './ankiSortKeys';
@@ -112,10 +113,10 @@ function dueSortKey(alias: string): string {
 }
 
 const BROWSER_SORT_SQL: Record<BrowserCardSortKey, string> = {
-    sortField: 'n.sfld COLLATE NOCASE',
+    sortField: turkishSortKeySql('n.sfld'),
     cardType: 'c.ord',
     due: dueSortKey('c'),
-    deck: 'd.name COLLATE NOCASE',
+    deck: turkishSortKeySql('d.name'),
     created: 'c.noteId',
     modified: 'c.updated_at',
     interval: 'c.ivl',
@@ -197,10 +198,10 @@ function getBrowserNoteRows(
     const where = buildBrowserWhere(query, whereOptions);
     const direction = query.descending ? 'DESC' : 'ASC';
     const sortSql: Record<BrowserCardSortKey, string> = {
-        sortField: 'n.sfld COLLATE NOCASE',
+        sortField: turkishSortKeySql('n.sfld'),
         cardType: 'COUNT(c_all.id)',
         due: `MIN(CASE WHEN c_all.type != 0 AND c_all.queue >= 0 THEN ${dueSortKey('c_all')} END)`,
-        deck: "CASE WHEN COUNT(DISTINCT c_all.deckId) > 1 THEN printf('(%d)', COUNT(DISTINCT c_all.deckId)) ELSE MIN(d_all.name) END COLLATE NOCASE",
+        deck: turkishSortKeySql("CASE WHEN COUNT(DISTINCT c_all.deckId) > 1 THEN printf('(%d)', COUNT(DISTINCT c_all.deckId)) ELSE MIN(d_all.name) END"),
         created: 'n.id',
         modified: 'MAX(c_all.updated_at)',
         interval: 'AVG(CASE WHEN c_all.type IN (2, 3) THEN c_all.ivl END)',
