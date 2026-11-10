@@ -36,6 +36,33 @@ export function buildVisibleDeckRows(
     return rows;
 }
 
+export interface DeckDisclosureState {
+    expanded: Set<string>;
+    /** Ids of the decks the list has already shown; an id survives a rename, a name does not. */
+    knownDeckIds: Set<number>;
+}
+
+/**
+ * The expanded branches for a fresh snapshot of the deck list.
+ *
+ * The list keeps its open branches in memory (a toggle on a protected catalog deck cannot be
+ * stored), so a deck it has shown before stays as the learner left it. A deck that has appeared
+ * since — created here or in a picker, imported, installed — has no such state yet and starts
+ * from its stored `collapsed` flag. Without that, a new `Fizyoloji::Kalp` showed a closed
+ * `Fizyoloji` until the app was relaunched, as if `Kalp` had not been created.
+ */
+export function deckDisclosureForSnapshot(
+    decks: ReadonlyArray<{ id: number; name: string; collapsed?: boolean }>,
+    previous: DeckDisclosureState | null,
+): DeckDisclosureState {
+    const expanded = new Set(previous?.expanded);
+    for (const deck of decks) {
+        if (previous?.knownDeckIds.has(deck.id)) continue;
+        if (!deck.collapsed) expanded.add(deck.name);
+    }
+    return { expanded, knownDeckIds: new Set(decks.map((deck) => deck.id)) };
+}
+
 function findNode(nodes: DeckTreeNode[], deckName: string): DeckTreeNode | null {
     for (const node of nodes) {
         if (node.deck.name === deckName) return node;

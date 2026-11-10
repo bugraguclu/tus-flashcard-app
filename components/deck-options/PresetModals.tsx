@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import type { useI18n } from '../../hooks/useI18n';
-import { getAllDeckConfigs, getDecksUsingConfig } from '../../lib/deckManager';
+import { getAllDeckConfigs, getDecksUsingConfig, presetDisplayName } from '../../lib/deckManager';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
 import type { DeckConfig } from '../../lib/models';
 
@@ -99,7 +99,7 @@ export function PresetPickerModal({ presets, activePresetId, currentDeckId, hidd
                                     accessibilityState={{ checked: preset.id === activePresetId }}
                                 >
                                     <Text style={[styles.presetOptionText, preset.id === activePresetId && styles.presetOptionActive]}>
-                                        {preset.name} · {l(`${used} deste`, `${used} decks`)}
+                                        {presetDisplayName(preset, l)} · {l(`${used} deste`, `${used} decks`)}
                                     </Text>
                                     {representative ? (
                                         <Text style={styles.presetOptionMeta} numberOfLines={1}>

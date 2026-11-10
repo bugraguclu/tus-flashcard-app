@@ -5,7 +5,7 @@ import { createAppDb } from '../test/sqljsHarness';
 const h = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => h.db }));
 
-import { rememberCurrentDeck, rememberedCurrentDeck } from './currentDeck';
+import { deckNameAfterRename, followCurrentDeckRename, rememberCurrentDeck, rememberedCurrentDeck } from './currentDeck';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
@@ -29,5 +29,20 @@ describe('current deck', () => {
         rememberCurrentDeck(null);
         rememberCurrentDeck('   ');
         expect(rememberedCurrentDeck()).toBe('Ayar Testi');
+    });
+
+    it('follows the deck when it, or a deck above it, is renamed or moved', () => {
+        rememberCurrentDeck('Anatomi::Kalp');
+        followCurrentDeckRename('Anatomi', 'Temel::Anatomi 2024');
+        expect(rememberedCurrentDeck()).toBe('Temel::Anatomi 2024::Kalp');
+        followCurrentDeckRename('Temel::Anatomi 2024::Kalp', 'Kalp');
+        expect(rememberedCurrentDeck()).toBe('Kalp');
+    });
+
+    it('leaves another deck alone, even one whose name starts the same', () => {
+        rememberCurrentDeck('Anatomi 2');
+        followCurrentDeckRename('Anatomi', 'Fizyoloji');
+        expect(rememberedCurrentDeck()).toBe('Anatomi 2');
+        expect(deckNameAfterRename('Anatomi::Kalp', 'Kalp', 'Kas')).toBe('Anatomi::Kalp');
     });
 });

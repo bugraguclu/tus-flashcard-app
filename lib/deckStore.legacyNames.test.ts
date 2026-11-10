@@ -4,6 +4,7 @@ import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 const holder = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => holder.db, dbUpsertFtsCard: () => {} }));
+import { rememberCurrentDeck, rememberedCurrentDeck } from './currentDeck';
 import { BUILTIN_NOTE_TYPES } from './models';
 import { createNote, getCardsForNote } from './noteStore';
 import {
@@ -60,6 +61,19 @@ describe('rename resolves existing ancestors case-insensitively', () => {
         saveDeck({ ...deck, configId: 5 });
         renameDeck(deck.id, 'New::Y');
         expect(getDeckByName('New')?.configId).toBe(1);
+    });
+
+    it('keeps the current deck on the renamed deck, so new cards do not fall to Default', () => {
+        const child = createDeck('Anatomi::Kalp');
+        rememberCurrentDeck('Anatomi::Kalp');
+        renameDeck(getDeckByName('Anatomi')!.id, 'Anatomi 2024');
+        expect(rememberedCurrentDeck()).toBe('Anatomi 2024::Kalp');
+        expect(getDeckByName(rememberedCurrentDeck()!)?.id).toBe(child.id);
+
+        // A refused rename leaves it where it was.
+        createDeck('Dolu');
+        expect(() => renameDeck(getDeckByName('Anatomi 2024')!.id, 'Dolu')).toThrow();
+        expect(rememberedCurrentDeck()).toBe('Anatomi 2024::Kalp');
     });
 });
 

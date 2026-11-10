@@ -55,6 +55,7 @@ export {
     createDefaultPreset,
     renamePreset,
     presetWithDefaults,
+    presetDisplayName,
     deletePreset,
     assignDeckConfig,
     applyConfigToSubdecks,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DeckTreeNode } from './deckManager';
 import type { Deck } from './models';
-import { buildVisibleDeckRows, toggleDeckBranchRows } from './deckListRows';
+import { buildVisibleDeckRows, deckDisclosureForSnapshot, toggleDeckBranchRows } from './deckListRows';
 
 function node(name: string, id: number, children: DeckTreeNode[] = []): DeckTreeNode {
     const deck: Deck = {
@@ -64,5 +64,46 @@ describe('virtualized deck-list row model', () => {
         expect(closed[0]).not.toBe(opened[0]);
         expect(closed[0].isExpanded).toBe(false);
         expect(closed[1]).toBe(opened[3]);
+    });
+});
+
+describe('deck disclosure across snapshots', () => {
+    const decks = [
+        { id: 1, name: 'Anatomi', collapsed: false },
+        { id: 2, name: 'Anatomi::Kalp', collapsed: true },
+        { id: 3, name: 'Anatomi::Kalp::Kapaklar', collapsed: false },
+    ];
+
+    it('starts from the stored flags', () => {
+        const first = deckDisclosureForSnapshot(decks, null);
+        expect([...first.expanded].sort()).toEqual(['Anatomi', 'Anatomi::Kalp::Kapaklar']);
+        expect([...first.knownDeckIds].sort()).toEqual([1, 2, 3]);
+    });
+
+    it('keeps what the learner toggled and opens a deck that appeared since', () => {
+        const first = deckDisclosureForSnapshot(decks, null);
+        // The learner closes Anatomi; a toggle on a protected deck is never stored, so the stored
+        // flag still says open.
+        first.expanded.delete('Anatomi');
+
+        const next = deckDisclosureForSnapshot([
+            ...decks,
+            { id: 4, name: 'Fizyoloji', collapsed: false },
+            { id: 5, name: 'Fizyoloji::Kalp', collapsed: false },
+            { id: 6, name: 'Paket', collapsed: true },
+        ], first);
+
+        expect(next.expanded.has('Anatomi')).toBe(false);
+        expect(next.expanded.has('Fizyoloji')).toBe(true);
+        expect(next.expanded.has('Paket')).toBe(false);
+        expect(next.knownDeckIds.has(5)).toBe(true);
+    });
+
+    it('does not reopen a renamed deck the learner had closed', () => {
+        const first = deckDisclosureForSnapshot(decks, null);
+        first.expanded.delete('Anatomi');
+        const renamed = decks.map((deck) => ({ ...deck, name: deck.name.replace('Anatomi', 'Anatomi 2024') }));
+
+        expect(deckDisclosureForSnapshot(renamed, first).expanded.has('Anatomi 2024')).toBe(false);
     });
 });

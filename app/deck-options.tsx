@@ -27,6 +27,7 @@ import {
     getDecksUsingConfig,
     saveDeckConfig,
     presetWithDefaults,
+    presetDisplayName,
     assignDeckConfig,
     setDeckDescription,
     getDeckTodayLimits,
@@ -388,9 +389,9 @@ export default function DeckOptionsScreen() {
         const otherDecks = getDecksUsingConfig(configId).filter((presetDeck) => presetDeck.id !== deck?.id);
         return {
             usedBy: otherDecks.length + (deck ? 1 : 0),
-            name: presetStaging.presetFor(configId).name,
+            name: presetDisplayName(presetStaging.presetFor(configId), l),
         };
-    }, [configId, deck?.id, presetRevision, presetStaging.presetFor]);
+    }, [configId, deck?.id, presetRevision, presetStaging.presetFor, l]);
     const usedBy = currentPresetSummary.usedBy;
     const presetName = currentPresetSummary.name;
     const regularDecks = useMemo(

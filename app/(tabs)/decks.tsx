@@ -63,6 +63,7 @@ import { useI18n } from '../../hooks/useI18n';
 import { formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
 import { normalizeDeckName } from '../../lib/deckNames';
+import { deckNameAfterRename } from '../../lib/currentDeck';
 import { createBackupNow } from '../../lib/backup';
 import CustomStudyModal from '../../components/CustomStudyModal';
 import FilteredDeckOptionsModal from '../../components/FilteredDeckOptionsModal';
@@ -100,6 +101,7 @@ import {
 import DeckListWelcome from '../../components/decks/DeckListWelcome';
 import {
     buildVisibleDeckRows,
+    deckDisclosureForSnapshot,
     toggleDeckBranchRows,
     type DeckListRowModel,
 } from '../../lib/deckListRows';
@@ -186,10 +188,11 @@ export default function DecksScreen() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { settings } = useAppSettings();
     const { collectionVersion, invalidateCollection } = useCollectionInvalidation();
-    const { activeDeckName } = useStudyScope();
+    const { activeDeckName, setActiveDeckName } = useStudyScope();
     const { catalogInstalled, catalogInstalling } = useCatalogStatus();
     const expandedDecksRef = useRef<Set<string>>(new Set());
     const expandedInitializedRef = useRef(false);
+    const knownDeckIdsRef = useRef<Set<number>>(new Set());
     const deckTreeRef = useRef<DeckTreeNode[]>([]);
     const [visibleRows, setVisibleRows] = useState<DeckListRowModel[]>([]);
     const [snapshotLoading, setSnapshotLoading] = useState(true);
@@ -200,6 +203,12 @@ export default function DecksScreen() {
     const updateExpandedDecks = useCallback((update: (current: Set<string>) => Set<string>) => {
         expandedDecksRef.current = update(expandedDecksRef.current);
     }, []);
+    // The study scope names its deck; keep it on the same deck when that deck's path changes.
+    const followActiveDeckRename = useCallback((oldPath: string, newPath: string) => {
+        if (!activeDeckName) return;
+        const next = deckNameAfterRename(activeDeckName, oldPath, newPath);
+        if (next !== activeDeckName) setActiveDeckName(next);
+    }, [activeDeckName, setActiveDeckName]);
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [showAddMenu, setShowAddMenu] = useState(false);
     const [bottomBarHeight, setBottomBarHeight] = useState(66);
@@ -244,11 +253,16 @@ export default function DecksScreen() {
             try {
                 if (!expandedInitializedRef.current) initializeDeckDisclosureDefaults();
                 const snapshot = getDeckListSnapshot(countSettings);
-                const nextExpanded = expandedInitializedRef.current
-                    ? expandedDecksRef.current
-                    : new Set(snapshot.decks.filter((deck) => !deck.collapsed).map((deck) => deck.name));
+                const disclosure = deckDisclosureForSnapshot(
+                    snapshot.decks,
+                    expandedInitializedRef.current
+                        ? { expanded: expandedDecksRef.current, knownDeckIds: knownDeckIdsRef.current }
+                        : null,
+                );
+                const nextExpanded = disclosure.expanded;
                 expandedInitializedRef.current = true;
                 expandedDecksRef.current = nextExpanded;
+                knownDeckIdsRef.current = disclosure.knownDeckIds;
                 deckTreeRef.current = snapshot.tree;
                 setVisibleRows(buildVisibleDeckRows(snapshot.tree, nextExpanded));
                 setOwnCardCount(snapshot.ownCardCount);
@@ -400,7 +414,17 @@ export default function DecksScreen() {
         }
 
         try {
-            createDeck(name);
+            const created = createDeck(name);
+            // A deck added under a closed parent would stay out of sight; open the path to it.
+            const ancestors: string[] = [];
+            for (let parent = getParentDeckName(created.name); parent; parent = getParentDeckName(parent)) {
+                ancestors.push(parent);
+                const ancestor = getDeckByName(parent);
+                if (ancestor) setDeckCollapsed(ancestor.id, false);
+            }
+            if (ancestors.length > 0) {
+                updateExpandedDecks((prev) => new Set([...prev, ...ancestors]));
+            }
             setNewDeckName('');
             setShowAddDeck(false);
             refresh();
@@ -711,6 +735,7 @@ export default function DecksScreen() {
             renameDeck(modal.deck.id, nextName);
             const renamedName = getDeck(modal.deck.id)?.name ?? nextName;
             updateExpandedDecks((prev) => remapExpandedDeckPaths(prev, modal.deck.name, renamedName));
+            followActiveDeckRename(modal.deck.name, renamedName);
             setModal(null);
             refresh();
         } catch (e) {
@@ -1026,6 +1051,7 @@ export default function DecksScreen() {
                     nextName,
                     getParentDeckName(nextName),
                 ));
+                followActiveDeckRename(dragged, nextName);
                 refresh();
                 void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
             } catch (e) {
@@ -1058,6 +1084,7 @@ export default function DecksScreen() {
                 nextName,
                 targetParent,
             ));
+            followActiveDeckRename(dragged, nextName);
             refresh();
             void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
         } catch (e) {

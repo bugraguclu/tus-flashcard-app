@@ -43,6 +43,7 @@ import {
     setDeckLimitOverrides,
     setDeckTodayLimits,
     createPreset,
+    presetDisplayName,
     presetWithDefaults,
     deletePreset,
     assignDeckConfig,
@@ -579,6 +580,16 @@ describe('today-only limit boost', () => {
 });
 
 describe('presets', () => {
+
+    it('shows the built-in preset as the default one until the learner renames it', () => {
+        const l = (tr: string, _en: string) => tr;
+        // Stored under the label of what was once the only deck; the package has that name too.
+        expect(presetDisplayName(getDeckConfig(DEFAULT_DECK_CONFIG.id), l)).toBe('Varsayılan');
+        expect(presetDisplayName({ id: DEFAULT_DECK_CONFIG.id, name: 'Sıkı tekrar' }, l)).toBe('Sıkı tekrar');
+        // A preset of the package keeps the package's name.
+        expect(presetDisplayName({ id: 8_000_000_000_001, name: DEFAULT_DECK_CONFIG.name }, l)).toBe(DEFAULT_DECK_CONFIG.name);
+        expect(presetDisplayName(getDeckConfig(DEFAULT_DECK_CONFIG.id), (_tr, en) => en)).toBe('Default');
+    });
     it('clones a preset, assigns it, and lists which decks use it', () => {
         const deck = createDeck('A');
         const preset = createPreset('Sınav modu', DEFAULT_DECK_CONFIG.id);
