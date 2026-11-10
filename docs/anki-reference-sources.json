@@ -1517,6 +1517,31 @@
         "Card::set_deck returns a card held by a filtered deck home (odid/odue cleared, original due) before moving it; lib/changeDeckFiltered.test.ts",
         "reposition_new_cards and schedule_cards_as_new number cards in the order their ids arrive; lib/browserSelection.test.ts"
       ]
+    },
+    {
+      "id": "anki-26.09.3-parity-probes-oracle",
+      "priority": 2,
+      "platform": "unsuspend, first-field check, text-import matching, typed answer and learning count, measured against Anki 26.09.3",
+      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src",
+      "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 on 2026-11-10 by scripts/anki-oracle/parity_probes.py",
+      "useFor": [
+        "Unsuspend and Unbury are one backend call: unsuspend_cards leaves a suspended, a user-buried and a sibling-buried card in queue 0, and unbury_cards unsuspends; lib/studyRepository.answer.test.ts",
+        "fields_check returns EMPTY for a first field of '', &nbsp; or <br>, also on a reversed type with its back filled and on a blank Cloze note, while a picture alone is content; lib/editorDraft.test.ts",
+        "a text import with HTML off matches an existing note whose first field differs only in markup and updates it; lib/importNotes.test.ts",
+        "compare_answer decodes the expected answer's character references once (T&uuml;rkiye&#x27;de equals Türkiye'de; a &amp;lt; b equals a &lt; b); lib/templates.test.ts",
+        "after Good into a 60-minute step with a 20-minute learn-ahead limit the learning count does not include that card; lib/reviewerQueueAdvance.test.ts"
+      ]
+    },
+    {
+      "id": "anki-editor-paste-filter",
+      "priority": 3,
+      "platform": "Anki editor paste filtering",
+      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/ts/lib/html-filter",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": [
+        "a paste keeps structural and emphasis tags and drops the source page's fonts, sizes and classes; lib/pastedHtml.ts is an independent string filter with its own, stricter colour rule",
+        "lib/pastedHtml.test.ts: Safari, Google Docs and Word clipboard samples"
+      ]
     }
   ],
   "requiredDocs": [
