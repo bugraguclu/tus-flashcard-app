@@ -21,3 +21,21 @@ export function rememberedCurrentDeck(): string | null {
     const name = getDbSetting(CURRENT_DECK_KEY)?.trim();
     return name ? name : null;
 }
+
+/** `name` once the deck `oldPath` (with its subtree) is called `newPath`; other names are unchanged. */
+export function deckNameAfterRename(name: string, oldPath: string, newPath: string): string {
+    if (name === oldPath) return newPath;
+    return name.startsWith(`${oldPath}::`) ? `${newPath}${name.slice(oldPath.length)}` : name;
+}
+
+/**
+ * Keep the stored current deck on the same deck when it, or a deck above it, is renamed or moved.
+ * Anki stores the current deck by id, so it follows a rename by itself; this row holds the name,
+ * and a name that no longer exists sent the next added card to the Default deck.
+ */
+export function followCurrentDeckRename(oldPath: string, newPath: string): void {
+    const current = rememberedCurrentDeck();
+    if (!current) return;
+    const next = deckNameAfterRename(current, oldPath, newPath);
+    if (next !== current) setDbSetting(CURRENT_DECK_KEY, next);
+}

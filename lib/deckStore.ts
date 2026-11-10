@@ -1,3 +1,4 @@
+import { followCurrentDeckRename } from './currentDeck';
 import { normalizeDeckName, deckNameKey } from './deckNames';
 import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
 import {
@@ -428,6 +429,7 @@ export function renameDeck(id: number, newName: string): void {
             );
         }
 
+        followCurrentDeckRename(deck.name, newName);
         db.execSync('COMMIT;');
     } catch (error) {
         db.execSync('ROLLBACK;');

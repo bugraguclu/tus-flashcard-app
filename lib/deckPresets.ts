@@ -41,6 +41,20 @@ export function saveDeckConfig(config: DeckConfig): void {
 
 // ---- Presets (Anki: deck options presets shared across decks) ----
 
+/**
+ * The name a preset is shown under.
+ *
+ * The built-in preset was labelled after what used to be the app's one deck, "TUS Kartları". The
+ * ready-made package now brings a deck and presets of that very name, so Deck Options showed a
+ * learner's own decks as sharing "TUS Kartları" with them. Until the learner renames it, the
+ * built-in preset reads "Varsayılan", as Anki's reads "Default". The stored name is left alone.
+ */
+export function presetDisplayName(preset: Pick<DeckConfig, 'id' | 'name'>, l: (tr: string, en: string) => string): string {
+    return preset.id === DEFAULT_DECK_CONFIG.id && preset.name === DEFAULT_DECK_CONFIG.name
+        ? l('Varsayılan', 'Default')
+        : preset.name;
+}
+
 /** Decks currently assigned to a config/preset. */
 export function getDecksUsingConfig(configId: number): Deck[] {
     return getAllDecks().filter((deck) => (deck.configId || DEFAULT_DECK_CONFIG.id) === configId);
