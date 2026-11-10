@@ -210,6 +210,19 @@ export function resumeStopwatch(state: RunningStopwatch, nowMs: number): Running
     return switchPhase(state, 'study', nowMs);
 }
 
+/** A study phase this long without a pause is taken for a stopwatch that was left running. */
+export const FORGOTTEN_STUDY_PHASE_MS = 6 * 60 * MINUTE_MS;
+
+/**
+ * Whether the stopwatch was probably left running: its current study phase has lasted longer
+ * than anyone studies without touching it, as it does after a night or a day away. Finishing it
+ * then offers to correct the time, where it used to save the whole night as study without a word.
+ * A long break is not a concern: break time is not counted as study.
+ */
+export function looksForgotten(state: RunningStopwatch, nowMs: number): boolean {
+    return state.phase === 'study' && stopwatchElapsed(state, nowMs).phaseMs >= FORGOTTEN_STUDY_PHASE_MS;
+}
+
 /**
  * Turn a stopwatch into a session.
  *
