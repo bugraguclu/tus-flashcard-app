@@ -1,23 +1,25 @@
-import { Fragment, useContext, useEffect, useState, type ReactNode, type Ref } from 'react';
-import { Keyboard, ScrollView, View } from 'react-native';
+import { useContext, useEffect, useState, type ReactNode, type Ref } from 'react';
+import {
+    Keyboard,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { Text, TextInput } from '../AppText';
+import { type ColorScheme } from '../../constants/theme';
 import { sanitizeNumericDraft } from '../../lib/deckOptionsForm';
-import { Button, HelpButton } from '../ui/Button';
-import { Card, Divider } from '../ui/Card';
-import { SegmentedControl } from '../ui/Choice';
-import { AppDialog } from '../ui/Dialog';
+import { Button } from '../ui/Button';
 import { Notice } from '../ui/Feedback';
-import { TextField } from '../ui/Fields';
-import { ListRow, SelectRow, ValueRow } from '../ui/Rows';
+import { CheckIcon, ChevronDownIcon } from '../ui/icons';
 import { AppSheet } from '../ui/Sheet';
 import { DeckOptionsContext } from './DeckOptionsContext';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
 import type { OptionHelp, SelectOption } from './types';
 
-/**
- * A card of options. Its children sit between the card's hairlines, one per row: a control and the
- * advice printed under it go together in one fragment, so advice that is not shown leaves no line.
- */
 export function OptionCard({ title, children, styles, wide = false, help }: {
     title: string;
     children: ReactNode;
@@ -30,20 +32,24 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
 
     return (
         <View style={[styles.optionCard, wide && styles.optionCardWide]}>
-            <Card
-                divided
-                title={title}
-                accessory={help ? (
-                    <HelpButton
+            <View style={styles.optionCardHeader}>
+                <Text style={styles.optionCardTitle}>{title}</Text>
+                {help ? (
+                    <TouchableOpacity
+                        style={styles.helpButton}
+                        onPress={() => { Keyboard.dismiss(); setHelpOpen(true); }}
+                        accessibilityRole="button"
                         accessibilityLabel={`${title}: ${help.title}`}
                         accessibilityHint={help.summary}
-                        expanded={helpOpen}
-                        onPress={() => { Keyboard.dismiss(); setHelpOpen(true); }}
-                    />
-                ) : undefined}
-            >
-                {children}
-            </Card>
+                        accessibilityState={{ expanded: helpOpen }}
+                    >
+                        <View style={[styles.helpBadge, { pointerEvents: 'none' }]}>
+                            <Text style={styles.helpBadgeText}>?</Text>
+                        </View>
+                    </TouchableOpacity>
+                ) : null}
+            </View>
+            <View style={styles.optionCardBody}>{children}</View>
             {help ? (
                 <AppSheet
                     visible={helpOpen}
@@ -78,32 +84,33 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
 }
 
 /** Full-width text block, for values too long to sit beside their label (FSRS parameters). */
-export function TextBlockSetting({ label, value, onChange, styles, hint, error, placeholder }: {
+export function TextBlockSetting({ label, value, onChange, styles, colors, hint, error, placeholder }: {
     label: string;
     value: string;
     onChange: (value: string) => void;
     styles: DeckOptionsStyles;
+    colors: ColorScheme;
     hint?: string;
     error?: string;
     placeholder?: string;
 }) {
     return (
-        <View style={styles.block}>
-            <Text style={styles.blockLabel}>{label}</Text>
-            <TextField
-                style={styles.parameterField}
-                invalid={Boolean(error)}
+        <View style={styles.settingBlock}>
+            <Text style={styles.settingLabel}>{label}</Text>
+            <TextInput
+                style={[styles.input, styles.parameterInput, error && styles.numberInputInvalid]}
                 value={value}
                 onChangeText={onChange}
                 placeholder={placeholder}
+                placeholderTextColor={colors.textMuted}
                 multiline
                 autoCorrect={false}
                 autoCapitalize="none"
                 accessibilityLabel={label}
                 accessibilityHint={error}
             />
-            {error ? <Text style={styles.fieldErrorInline} accessibilityLiveRegion="polite">{error}</Text> : null}
-            {hint && !error ? <Text style={styles.blockHint}>{hint}</Text> : null}
+            {error ? <Text style={styles.fieldError} accessibilityLiveRegion="polite">{error}</Text> : null}
+            {hint && !error ? <Text style={styles.fieldHint}>{hint}</Text> : null}
         </View>
     );
 }
@@ -152,16 +159,16 @@ function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'i
     };
 
     return (
-        <View collapsable={false}>
-            <ValueRow label={label} summary={hint}>
+        <View style={styles.settingBlock} collapsable={false}>
+            <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>{label}</Text>
                 <View style={styles.numberControl}>
-                    <TextField
+                    <TextInput
                         ref={inputRef}
-                        style={freeText ? styles.wideField : styles.numberField}
-                        invalid={Boolean(error)}
-                        textAlign="right"
+                        style={[styles.numberInput, error && styles.numberInputInvalid]}
                         value={isFocused ? draft : value}
                         placeholder={placeholder}
+                        placeholderTextColor={styles.inputSuffix.color}
                         onFocus={() => {
                             setIsFocused(true);
                             setDraft(value);
@@ -189,71 +196,115 @@ function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'i
                     />
                     {suffix ? <Text style={styles.inputSuffix}>{suffix}</Text> : null}
                 </View>
-            </ValueRow>
+            </View>
             {error ? <Text style={styles.fieldError} accessibilityLiveRegion="polite">{error}</Text> : null}
+            {hint ? <Text style={styles.settingHint}>{hint}</Text> : null}
         </View>
     );
 }
 
-export function SelectSetting({ label, value, options, onChange, styles, cancelLabel }: {
+function ToggleSetting({ label, value, onChange, styles, colors, hint }: {
+    label: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+    styles: DeckOptionsStyles;
+    colors: ColorScheme;
+    hint?: string;
+}) {
+    return (
+        <View style={styles.settingBlock}>
+            <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>{label}</Text>
+                <Switch
+                    value={value}
+                    onValueChange={onChange}
+                    trackColor={{ false: colors.border, true: colors.accent }}
+                    accessibilityLabel={label}
+                />
+            </View>
+            {hint ? <Text style={styles.settingHint}>{hint}</Text> : null}
+        </View>
+    );
+}
+
+export function SelectSetting({ label, value, options, onChange, styles, colors, cancelLabel }: {
     label: string;
     value: string;
     options: SelectOption[];
     onChange: (value: string) => void;
     styles: DeckOptionsStyles;
+    colors: ColorScheme;
     cancelLabel: string;
 }) {
     const [open, setOpen] = useState(false);
     const selected = options.find((option) => option.key === value) ?? options[0];
     return (
-        <>
-            <SelectRow label={label} value={selected?.label ?? ''} onPress={() => setOpen(true)} />
-            {open ? (
-                <AppDialog
-                    visible
-                    onClose={() => setOpen(false)}
-                    title={label}
-                    actions={<Button variant="plain" label={cancelLabel} onPress={() => setOpen(false)} />}
-                >
-                    <ScrollView style={styles.optionList}>
-                        {options.map((option, index) => (
-                            <Fragment key={option.key}>
-                                {index > 0 ? <Divider /> : null}
-                                <ListRow
-                                    title={option.label}
-                                    selected={option.key === value}
+        <View style={styles.settingRow}>
+            <Text style={styles.settingLabel}>{label}</Text>
+            <TouchableOpacity
+                style={styles.selectControl}
+                onPress={() => setOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`${label}: ${selected?.label ?? ''}`}
+            >
+                <Text style={styles.selectControlText} numberOfLines={2}>{selected?.label ?? ''}</Text>
+                <ChevronDownIcon color={colors.textMuted} size={16} />
+            </TouchableOpacity>
+            {open ? <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+                <View style={styles.modalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} />
+                    <View style={styles.modalCard}>
+                        <Text style={styles.modalTitle}>{label}</Text>
+                        <ScrollView style={styles.selectList}>
+                            {options.map((option) => (
+                                <TouchableOpacity
+                                    key={option.key}
+                                    style={[styles.selectOption, option.key === value && styles.selectOptionActive]}
                                     onPress={() => { onChange(option.key); setOpen(false); }}
-                                    style={styles.dialogRow}
-                                />
-                            </Fragment>
-                        ))}
-                    </ScrollView>
-                </AppDialog>
-            ) : null}
-        </>
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ checked: option.key === value }}
+                                    aria-checked={option.key === value}
+                                >
+                                    <Text style={[styles.selectOptionText, option.key === value && { color: colors.accent, fontWeight: '700' }]}>
+                                        {option.label}
+                                    </Text>
+                                    {option.key === value ? <CheckIcon color={colors.accent} size={18} /> : null}
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel={cancelLabel}>
+                            <Text style={styles.cancelText}>{cancelLabel}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal> : null}
+        </View>
     );
 }
 
-export function LimitTabs<Key extends 'preset' | 'deck' | 'today'>({ value, onChange, styles, labels, keys, accessibilityLabel }: {
+export function LimitTabs<Key extends 'preset' | 'deck' | 'today'>({ value, onChange, styles, labels, keys }: {
     value: Key;
     onChange: (value: Key) => void;
     styles: DeckOptionsStyles;
     labels: { preset: string; deck: string; today: string };
     /** The tabs to offer; desired retention has no "today only" value in Anki. */
     keys?: readonly Key[];
-    /** Names the value the tabs choose the scope of, for VoiceOver. */
-    accessibilityLabel: string;
 }) {
-    const options = (keys ?? (['preset', 'deck', 'today'] as unknown as readonly Key[]))
-        .map((key) => ({ value: key, label: labels[key] }));
     return (
-        <SegmentedControl
-            options={options}
-            value={value}
-            onChange={onChange}
-            accessibilityLabel={accessibilityLabel}
-            style={styles.limitTabs}
-        />
+        <View style={styles.limitTabs}>
+            {(keys ?? (['preset', 'deck', 'today'] as unknown as readonly Key[])).map((key) => (
+                <TouchableOpacity
+                    key={key}
+                    style={[styles.limitTab, value === key && styles.limitTabActive]}
+                    onPress={() => onChange(key)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: value === key }}
+                    aria-selected={value === key}
+                >
+                    <Text style={[styles.limitTabText, value === key && styles.limitTabTextActive]}>{labels[key]}</Text>
+                </TouchableOpacity>
+            ))}
+        </View>
     );
 }
 
@@ -296,13 +347,48 @@ export function FieldAdvice({ field }: { field: string }) {
     const ctx = useContext(DeckOptionsContext);
     const items = ctx?.warnings[field];
     if (!ctx || !items?.length) return null;
+    const { styles } = ctx;
     return (
-        <View style={ctx.styles.adviceList}>
+        <>
             {items.map((warning) => (
-                <Notice key={warning.id} tone={warning.level}>
-                    {ctx.warningText(warning.id)}
-                </Notice>
+                <View
+                    key={warning.id}
+                    style={[
+                        styles.warningBox,
+                        warning.level === 'danger' && styles.warningBoxDanger,
+                        warning.level === 'info' && styles.warningBoxInfo,
+                    ]}
+                    accessibilityLiveRegion="polite"
+                >
+                    <Text style={[
+                        styles.warningText,
+                        warning.level === 'danger' && styles.warningTextDanger,
+                        warning.level === 'info' && styles.warningTextInfo,
+                    ]}>
+                        {ctx.warningText(warning.id)}
+                    </Text>
+                </View>
             ))}
-        </View>
+        </>
+    );
+}
+
+export function SwitchRow({ label, value, onChange, hint }: {
+    label: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+    hint?: string;
+}) {
+    const ctx = useContext(DeckOptionsContext);
+    if (!ctx) return null;
+    return (
+        <ToggleSetting
+            label={label}
+            value={value}
+            onChange={onChange}
+            hint={hint}
+            styles={ctx.styles}
+            colors={ctx.colors}
+        />
     );
 }
