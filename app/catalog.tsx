@@ -10,7 +10,7 @@ import { Text } from '../components/AppText';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useCatalogStatus } from '../contexts/AppContext';
 import { BKA_PRODUCT, isCatalogPurchaseSimulationEnabled } from '../lib/catalogPurchases';
 import { BKA_MANIFEST } from '../lib/bkaManifest';
@@ -37,6 +37,7 @@ const HERO_TOP = '#0d3128';
 const HERO_BOTTOM = '#14513f';
 const HERO_TEXT = '#f2f7f4';
 const HERO_MUTED = '#9fbcb0';
+const HERO_ACCENT = '#7ddcae';
 /** The hairline over the hero's stats. */
 const HERO_RULE = 'rgba(255,255,255,0.18)';
 
@@ -168,10 +169,12 @@ export default function CatalogScreen() {
                         </Svg>
                     )}
 
-                    <Badge
-                        label={owned ? l('SATIN ALINDI', 'PURCHASED') : l('PREMIUM KART PAKETİ', 'PREMIUM CARD PACK')}
-                        tone="accent"
-                    />
+                    {/* Part of the hero artwork: its own colours on the dark green, sized to its text. */}
+                    <View style={styles.heroBadge}>
+                        <Text style={styles.heroBadgeText}>
+                            {owned ? l('SATIN ALINDI', 'PURCHASED') : l('PREMIUM KART PAKETİ', 'PREMIUM CARD PACK')}
+                        </Text>
+                    </View>
                     <Text style={styles.heroTitle}>
                         {l(
                             `TUS için hazır\n${number(BKA_MANIFEST.totals.cards)} kart`,
@@ -417,6 +420,14 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: HERO_TOP,
             ...Shadows.md,
         },
+        heroBadge: {
+            alignSelf: 'flex-start',
+            paddingHorizontal: 10, paddingVertical: 6,
+            borderRadius: BorderRadius.full,
+            backgroundColor: 'rgba(125,220,174,0.16)',
+            borderWidth: 1, borderColor: 'rgba(125,220,174,0.4)',
+        },
+        heroBadgeText: { color: HERO_ACCENT, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
         heroTitle: {
             color: HERO_TEXT, fontSize: 32, lineHeight: 38, fontWeight: '900',
             letterSpacing: -0.8, marginTop: Spacing.lg,

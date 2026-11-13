@@ -75,7 +75,6 @@ import DeckNameButton from '../../components/decks/DeckNameButton';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
 import { Button, IconButton } from '../../components/ui/Button';
 import { SectionLabel } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Choice';
 import { AppDialog } from '../../components/ui/Dialog';
 import { EmptyState, LoadingState } from '../../components/ui/Feedback';
 import { TextField } from '../../components/ui/Fields';
@@ -1277,7 +1276,10 @@ export default function DecksScreen() {
                 </Text>
             </View>
             {!catalogInstalling && (
-                <Badge label={l('Ücretsiz aç', 'Unlock free')} tone="accent" style={styles.lockedDeckBadge} />
+                // A filled call to action, as before the design system: this row sells the free pack.
+                <View style={styles.lockedDeckPricePill}>
+                    <Text style={styles.lockedDeckPriceText}>{l('Ücretsiz aç', 'Unlock free')}</Text>
+                </View>
             )}
         </TouchableOpacity>
     ), [catalogInstalling, colors.accent, l, router, styles]);
@@ -1781,7 +1783,12 @@ function createStyles(colors: ColorScheme) {
     lockedDeckCopy: { flex: 1, marginHorizontal: Spacing.md },
     lockedDeckName: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
     lockedDeckMeta: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
-    lockedDeckBadge: { alignSelf: 'center' },
+    lockedDeckPricePill: {
+        paddingHorizontal: 12, paddingVertical: 7,
+        borderRadius: BorderRadius.full,
+        backgroundColor: colors.accent,
+    },
+    lockedDeckPriceText: { color: colors.onAccent, fontSize: FontSize.sm, fontWeight: '800' },
     deckRowDragging: { opacity: 0.22, transform: [{ scale: 0.99 }] },
     deckRowDropTarget: {
         backgroundColor: colors.accentLight,
