@@ -14,6 +14,7 @@ import SleepingPanda from './SleepingPanda';
 import StudySessionCard from './StudySessionCard';
 import { CalendarIcon, HourglassIcon, MinusIcon } from './StopwatchIcons';
 import { TIMELINE_LINE_X, timelineStyles } from './timelineStyles';
+import { ChevronRightIcon } from '../ui/icons';
 
 export interface TimelineDay {
     dayNumber: number;
@@ -185,7 +186,7 @@ export default function StopwatchTimeline({
                     <Text style={styles.calendarTitle}>{l('Çalışma Takvimi', 'Study Calendar')}</Text>
                     <Text style={styles.calendarHint}>{l('Tüm çalışmalarınızı takvimde görün', 'See all your sessions on the calendar')}</Text>
                 </View>
-                <Text style={styles.calendarChevron}>›</Text>
+                <ChevronRightIcon color={colors.textMuted} size={18} />
             </TouchableOpacity>
         </View>
     );
@@ -239,6 +240,5 @@ function createStyles(colors: ColorScheme) {
         calendarCopy: { flex: 1, gap: 2 },
         calendarTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
         calendarHint: { fontSize: FontSize.sm, color: colors.textSecondary },
-        calendarChevron: { fontSize: FontSize.xxl, color: colors.textMuted },
     });
 }

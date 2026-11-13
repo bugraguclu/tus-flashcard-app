@@ -7,14 +7,15 @@ import {
     StyleSheet,
     Switch,
     TouchableOpacity,
-    useWindowDimensions,
     View,
 } from 'react-native';
 import { Text, TextInput } from '../AppText';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Spacing, type ColorScheme } from '../../constants/theme';
+import { type ColorScheme } from '../../constants/theme';
 import { sanitizeNumericDraft } from '../../lib/deckOptionsForm';
-import BottomSheetModal from '../BottomSheetModal';
+import { Button } from '../ui/Button';
+import { Notice } from '../ui/Feedback';
+import { CheckIcon, ChevronDownIcon } from '../ui/icons';
+import { AppSheet } from '../ui/Sheet';
 import { DeckOptionsContext } from './DeckOptionsContext';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
 import type { OptionHelp, SelectOption } from './types';
@@ -26,8 +27,6 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
     wide?: boolean;
     help?: OptionHelp;
 }) {
-    const { height: windowHeight } = useWindowDimensions();
-    const insets = useSafeAreaInsets();
     const [helpOpen, setHelpOpen] = useState(false);
     const closeHelp = () => setHelpOpen(false);
 
@@ -52,35 +51,18 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
             </View>
             <View style={styles.optionCardBody}>{children}</View>
             {help ? (
-                <BottomSheetModal
+                <AppSheet
                     visible={helpOpen}
                     onClose={closeHelp}
+                    title={help.title}
+                    subtitle={help.eyebrow}
+                    closeButton
+                    closeLabel={help.dismissLabel}
                     backdropLabel={help.dismissLabel}
-                    containerStyle={[styles.helpOverlay, {
-                        paddingTop: insets.top,
-                        paddingBottom: insets.bottom,
-                        paddingLeft: Spacing.sm + insets.left,
-                        paddingRight: Spacing.sm + insets.right,
-                    }]}
-                    sheetStyle={[styles.helpSheet, { maxHeight: Math.max(280, windowHeight - 120) }]}
                 >
-                    <View style={styles.helpSheetHeader}>
-                        <View style={styles.helpSheetTitleWrap}>
-                            <Text style={styles.helpSheetEyebrow}>{help.eyebrow}</Text>
-                            <Text style={styles.helpSheetTitle}>{help.title}</Text>
-                        </View>
-                        <TouchableOpacity
-                            style={styles.helpCloseButton}
-                            onPress={closeHelp}
-                            accessibilityRole="button"
-                            accessibilityLabel={help.dismissLabel}
-                        >
-                            <Text style={styles.helpCloseText}>×</Text>
-                        </TouchableOpacity>
-                    </View>
                     <ScrollView
-                        style={styles.helpSheetScroll}
-                        contentContainerStyle={styles.helpSheetContent}
+                        style={styles.helpScroll}
+                        contentContainerStyle={styles.helpContent}
                         showsVerticalScrollIndicator={false}
                     >
                         <Text style={styles.helpSummary}>{help.summary}</Text>
@@ -92,21 +74,10 @@ export function OptionCard({ title, children, styles, wide = false, help }: {
                                 </View>
                             ))}
                         </View>
-                        {help.note ? (
-                            <View style={styles.helpNote}>
-                                <Text style={styles.helpNoteLabel}>{help.noteLabel}</Text>
-                                <Text style={styles.helpNoteText}>{help.note}</Text>
-                            </View>
-                        ) : null}
+                        {help.note ? <Notice title={help.noteLabel}>{help.note}</Notice> : null}
                     </ScrollView>
-                    <TouchableOpacity
-                        style={styles.helpDismissButton}
-                        onPress={closeHelp}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.helpDismissText}>{help.dismissLabel}</Text>
-                    </TouchableOpacity>
-                </BottomSheetModal>
+                    <Button label={help.dismissLabel} onPress={closeHelp} style={styles.helpDismiss} />
+                </AppSheet>
             ) : null}
         </View>
     );
@@ -277,7 +248,7 @@ export function SelectSetting({ label, value, options, onChange, styles, colors,
                 accessibilityLabel={`${label}: ${selected?.label ?? ''}`}
             >
                 <Text style={styles.selectControlText} numberOfLines={2}>{selected?.label ?? ''}</Text>
-                <Text style={styles.selectChevron}>⌄</Text>
+                <ChevronDownIcon color={colors.textMuted} size={16} />
             </TouchableOpacity>
             {open ? <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
                 <View style={styles.modalOverlay}>
@@ -297,7 +268,7 @@ export function SelectSetting({ label, value, options, onChange, styles, colors,
                                     <Text style={[styles.selectOptionText, option.key === value && { color: colors.accent, fontWeight: '700' }]}>
                                         {option.label}
                                     </Text>
-                                    {option.key === value ? <Text style={styles.selectCheck}>✓</Text> : null}
+                                    {option.key === value ? <CheckIcon color={colors.accent} size={18} /> : null}
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>

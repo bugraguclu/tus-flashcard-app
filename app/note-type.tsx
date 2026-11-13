@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
 } from 'react-native';
-import { Text, TextInput } from '../components/AppText';
+import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Spacing, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Button, IconButton } from '../components/ui/Button';
+import { Card, SectionLabel } from '../components/ui/Card';
+import { Chip } from '../components/ui/Choice';
+import { EmptyState } from '../components/ui/Feedback';
+import { TextField } from '../components/ui/Fields';
+import { ArrowDownIcon, ArrowUpIcon, CloseIcon, PlusIcon } from '../components/ui/icons';
 import { confirm, alert } from '../lib/confirm';
 import { goBackOr } from '../lib/backNavigation';
 import { useCollectionInvalidation } from '../contexts/AppContext';
@@ -32,8 +37,6 @@ import { validateNoteType } from '../lib/noteTypeValidation';
 import { useI18n } from '../hooks/useI18n';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
-
-const MONOSPACE = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
 function makePreview(nt: NoteType, exampleSuffix: string, ord: number): { note: Note; card: AnkiCard } {
     const note: Note = {
@@ -94,7 +97,7 @@ export default function NoteTypeScreen() {
     if (!nt || !preview) {
         return (
             <SafeAreaView style={styles.container}>
-                <Text style={styles.help}>{l('Not türü bulunamadı.', 'Note type not found.')}</Text>
+                <EmptyState title={l('Not türü bulunamadı.', 'Note type not found.')} />
             </SafeAreaView>
         );
     }
@@ -176,124 +179,114 @@ export default function NoteTypeScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.label}>{l('AD', 'NAME')}</Text>
-                <TextInput
-                    style={styles.input}
+                <SectionLabel style={styles.label}>{l('AD', 'NAME')}</SectionLabel>
+                <TextField
                     value={nt.name}
                     onChangeText={(text) => setNt(renameNoteType(nt, text))}
                     placeholder={l('Not türü adı', 'Note type name')}
-                    placeholderTextColor={colors.textMuted}
                 />
 
-                <Text style={styles.label}>{l('ALANLAR', 'FIELDS')}</Text>
+                <SectionLabel style={styles.label}>{l('ALANLAR', 'FIELDS')}</SectionLabel>
                 {nt.fields.map((field, i) => (
                     <View key={field.ord} style={styles.fieldRow}>
                         <FieldNameInput
-                            style={[styles.input, styles.fieldName]}
+                            style={styles.fieldName}
                             name={field.name}
                             onCommit={(draft) => handleCommitFieldName(field.ord, draft)}
                             onPendingChange={handleFieldNamePending}
                             accessibilityLabel={l(`Alan adı: ${field.name}`, `Field name: ${field.name}`)}
                         />
-                        <TouchableOpacity
-                            style={[styles.iconBtn, (i === 0 || isCloze) && styles.iconBtnDisabled]}
+                        <IconButton
+                            accessibilityLabel={l(`${field.name} yukarı taşı`, `Move ${field.name} up`)}
                             disabled={i === 0 || isCloze}
                             onPress={() => applyStructural(moveField(nt, i, i - 1))}
                         >
-                            <Text style={styles.iconText}>↑</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.iconBtn, (i === nt.fields.length - 1 || isCloze) && styles.iconBtnDisabled]}
+                            <ArrowUpIcon color={colors.textSecondary} />
+                        </IconButton>
+                        <IconButton
+                            accessibilityLabel={l(`${field.name} aşağı taşı`, `Move ${field.name} down`)}
                             disabled={i === nt.fields.length - 1 || isCloze}
                             onPress={() => applyStructural(moveField(nt, i, i + 1))}
                         >
-                            <Text style={styles.iconText}>↓</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.iconBtn, isCloze && styles.iconBtnDisabled]}
+                            <ArrowDownIcon color={colors.textSecondary} />
+                        </IconButton>
+                        <IconButton
+                            accessibilityLabel={l(`${field.name} alanını sil`, `Delete the ${field.name} field`)}
                             disabled={isCloze}
                             onPress={() => handleRemoveField(field.ord)}
                         >
-                            <Text style={[styles.iconText, styles.removeText]}>✕</Text>
-                        </TouchableOpacity>
+                            <CloseIcon color={colors.danger} />
+                        </IconButton>
                     </View>
                 ))}
                 {isCloze ? (
                     <Text style={styles.help}>{l('Kapama (Cloze) türünde alanlar yeniden düzenlenemez.', 'Fields cannot be reordered in a Cloze note type.')}</Text>
                 ) : (
-                    <TouchableOpacity style={styles.addFieldBtn} onPress={() => applyStructural(addField(nt, l('Yeni alan', 'New Field')))}>
-                        <Text style={styles.addFieldText}>+ {l('Alan ekle', 'Add Field')}</Text>
-                    </TouchableOpacity>
+                    <Button
+                        variant="secondary"
+                        size="compact"
+                        icon={<PlusIcon color={colors.textPrimary} size={18} />}
+                        label={l('Alan ekle', 'Add Field')}
+                        onPress={() => applyStructural(addField(nt, l('Yeni alan', 'New Field')))}
+                    />
                 )}
 
                 {nt.templates.length > 1 && (
                     <>
-                        <Text style={styles.label}>{l('KART TÜRLERİ', 'CARD TYPES')}</Text>
+                        <SectionLabel style={styles.label}>{l('KART TÜRLERİ', 'CARD TYPES')}</SectionLabel>
                         <View style={styles.templateTabs} accessibilityRole="tablist">
                             {nt.templates.map((entry, index) => (
-                                <TouchableOpacity
+                                <Chip
                                     key={entry.ord}
-                                    style={[styles.templateTab, index === shownTemplateIndex && styles.templateTabActive]}
+                                    label={`${index + 1}: ${entry.name}`}
+                                    selected={index === shownTemplateIndex}
                                     onPress={() => setTemplateIndex(index)}
-                                    accessibilityRole="tab"
-                                    accessibilityState={{ selected: index === shownTemplateIndex }}
-                                >
-                                    <Text style={[styles.templateTabText, index === shownTemplateIndex && styles.templateTabTextActive]}>
-                                        {index + 1}: {entry.name}
-                                    </Text>
-                                </TouchableOpacity>
+                                />
                             ))}
                         </View>
                     </>
                 )}
                 {template && (
                     <>
-                        <Text style={styles.label}>{l('ÖN YÜZ (SORU)', 'FRONT TEMPLATE')}</Text>
-                        <TextInput
-                            style={[styles.input, styles.code]}
+                        <SectionLabel style={styles.label}>{l('ÖN YÜZ (SORU)', 'FRONT TEMPLATE')}</SectionLabel>
+                        <TextField
+                            monospace
                             value={template.qfmt}
                             onChangeText={(text) => setNt(updateTemplate(nt, template.ord, { qfmt: text }))}
                             multiline
-                            textAlignVertical="top"
                             autoCapitalize="none"
                         />
 
-                        <Text style={styles.label}>{l('ARKA YÜZ (CEVAP)', 'BACK TEMPLATE')}</Text>
-                        <TextInput
-                            style={[styles.input, styles.code]}
+                        <SectionLabel style={styles.label}>{l('ARKA YÜZ (CEVAP)', 'BACK TEMPLATE')}</SectionLabel>
+                        <TextField
+                            monospace
                             value={template.afmt}
                             onChangeText={(text) => setNt(updateTemplate(nt, template.ord, { afmt: text }))}
                             multiline
-                            textAlignVertical="top"
                             autoCapitalize="none"
                         />
                     </>
                 )}
 
-                <Text style={styles.label}>{l('STİL (CSS)', 'STYLING (CSS)')}</Text>
-                <TextInput
-                    style={[styles.input, styles.code]}
+                <SectionLabel style={styles.label}>{l('STİL (CSS)', 'STYLING (CSS)')}</SectionLabel>
+                <TextField
+                    monospace
                     value={nt.css}
                     onChangeText={(text) => setNt(setCss(nt, text))}
                     multiline
-                    textAlignVertical="top"
                     autoCapitalize="none"
                 />
 
-                <Text style={styles.label}>{l('ÖNİZLEME', 'PREVIEW')}</Text>
-                <View style={styles.previewBox}>
-                    <Text style={styles.previewCaption}>{l('Soru', 'Question')}</Text>
+                <SectionLabel style={styles.label}>{l('ÖNİZLEME', 'PREVIEW')}</SectionLabel>
+                <Card padded>
+                    <SectionLabel>{l('Soru', 'Question')}</SectionLabel>
                     <CardWebView noteType={nt} note={preview.note} card={preview.card} side="question" scrollMode="intrinsic" />
-                    <Text style={styles.previewCaption}>{l('Cevap', 'Answer')}</Text>
+                    <SectionLabel>{l('Cevap', 'Answer')}</SectionLabel>
                     <CardWebView noteType={nt} note={preview.note} card={preview.card} side="answer" scrollMode="intrinsic" />
-                </View>
+                </Card>
 
-                <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                    <Text style={styles.saveBtnText}>{t('common.save')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => goBackOr(router, '/note-types')}>
-                    <Text style={styles.cancelBtnText}>{t('common.close')}</Text>
-                </TouchableOpacity>
+                <Button label={t('common.save')} onPress={handleSave} style={styles.saveButton} />
+                <Button variant="plain" tone="muted" label={t('common.close')} onPress={() => goBackOr(router, '/note-types')} />
             </ScrollView>
         </SafeAreaView>
     );
@@ -304,83 +297,10 @@ function createStyles(colors: ColorScheme) {
     container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
     help: { fontSize: FontSize.md, color: colors.textMuted, padding: Spacing.lg },
-    label: {
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1.5,
-        color: colors.textMuted,
-        textTransform: 'uppercase',
-        marginTop: Spacing.sm,
-    },
-    input: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.md,
-        fontSize: FontSize.md,
-        color: colors.textPrimary,
-    },
-    code: { minHeight: 72, fontFamily: MONOSPACE, fontSize: FontSize.sm },
-    fieldRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    label: { marginTop: Spacing.sm },
+    fieldRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
     fieldName: { flex: 1 },
-    iconBtn: {
-        width: 38,
-        height: 38,
-        borderRadius: BorderRadius.sm,
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.bgCard,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    iconBtnDisabled: { opacity: 0.35 },
-    templateTabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-    templateTab: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingVertical: 6,
-        paddingHorizontal: Spacing.sm,
-        backgroundColor: colors.bgCard,
-    },
-    templateTabActive: { borderColor: colors.accent },
-    templateTabText: { fontSize: FontSize.sm, color: colors.textSecondary },
-    templateTabTextActive: { color: colors.accent, fontWeight: '600' },
-    iconText: { fontSize: 16, color: colors.textSecondary },
-    removeText: { color: colors.badgeNew },
-    addFieldBtn: {
-        borderWidth: 1,
-        borderColor: colors.accent,
-        borderRadius: BorderRadius.sm,
-        paddingVertical: Spacing.sm,
-        alignItems: 'center',
-    },
-    addFieldText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
-    previewBox: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.sm,
-        gap: 4,
-    },
-    previewCaption: {
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1,
-        color: colors.textMuted,
-        textTransform: 'uppercase',
-    },
-    saveBtn: {
-        backgroundColor: colors.accent,
-        borderRadius: BorderRadius.sm,
-        paddingVertical: Spacing.md,
-        alignItems: 'center',
-        marginTop: Spacing.md,
-    },
-    saveBtnText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.white },
-    cancelBtn: { paddingVertical: Spacing.md, alignItems: 'center' },
-    cancelBtnText: { fontSize: FontSize.md, color: colors.textMuted },
+    templateTabs: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm - 2 },
+    saveButton: { marginTop: Spacing.md },
     });
 }

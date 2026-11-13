@@ -17,40 +17,6 @@ export function EyeIcon({ color, size = 24 }: { color: string; size?: number }) 
     );
 }
 
-export function BackIcon({ color, size = 26 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path d="M15 18 9 12l6-6" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-    );
-}
-
-export function CheckIcon({ color, size = 27 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path d="m5 12.5 4.2 4L19 6.8" fill="none" stroke={color} strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-    );
-}
-
-export function MoreIcon({ color, size = 25 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Circle cx={12} cy={5} r={1.7} fill={color} />
-            <Circle cx={12} cy={12} r={1.7} fill={color} />
-            <Circle cx={12} cy={19} r={1.7} fill={color} />
-        </Svg>
-    );
-}
-
-export function ChevronDownIcon({ color, size = 20 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path d="m7 9.5 5 5 5-5" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-    );
-}
-
 export function KeyboardDismissIcon({ color, size = 18 }: { color: string; size?: number }) {
     return (
         <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>

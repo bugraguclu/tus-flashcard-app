@@ -8,23 +8,19 @@ import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import {
     View,
-    ScrollView,
     FlatList,
     TouchableOpacity,
     StyleSheet,
-    Modal,
     PanResponder,
     Animated,
     LayoutAnimation,
     UIManager,
     Platform,
-    KeyboardAvoidingView,
-    Switch,
     ActivityIndicator,
     InteractionManager,
     useWindowDimensions,
 } from 'react-native';
-import { Text, TextInput } from '../../components/AppText';
+import { Text } from '../../components/AppText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
@@ -78,7 +74,16 @@ import DeckAddMenu, { DECK_ADD_MENU_LIST_INSET } from '../../components/decks/De
 import DeckRowMenu from '../../components/decks/DeckRowMenu';
 import DeckNameButton from '../../components/decks/DeckNameButton';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
-import BottomSheetModal from '../../components/BottomSheetModal';
+import { Button, IconButton } from '../../components/ui/Button';
+import { SectionLabel } from '../../components/ui/Card';
+import { AppDialog } from '../../components/ui/Dialog';
+import { EmptyState, LoadingState } from '../../components/ui/Feedback';
+import { TextField } from '../../components/ui/Fields';
+import { ArrowUpIcon, DragHandleIcon, MoreIcon, MoreVerticalIcon, PlusIcon, RefreshIcon } from '../../components/ui/icons';
+import { MenuItem, PopoverMenu } from '../../components/ui/Menu';
+import { SwitchRow } from '../../components/ui/Rows';
+import { AppSheet } from '../../components/ui/Sheet';
+import { DISABLED_OPACITY, HIT_TARGET, Type } from '../../components/ui/tokens';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import {
@@ -177,9 +182,6 @@ export default function DecksScreen() {
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const isCompact = width < 600;
-    // Bottom-sheet modals fill most of the screen; a top inset keeps the tap-to-dismiss backdrop
-    // reachable below the status bar/notch instead of hiding under it.
-    const compactSheetTopInset = { paddingTop: insets.top + Spacing.md };
     const isDesktopWeb = Platform.OS === 'web' && !isCompact;
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
@@ -210,6 +212,7 @@ export default function DecksScreen() {
     const [modal, setModal] = useState<ModalState>(null);
     // The deck a bottom sheet was opened for, kept after `modal` clears so the sheet can slide
     // away with its content still on it.
+    const [deckMenu, setDeckMenu] = useState<{ deck: Deck; actions: DeckRowMenuAction[] } | null>(null);
     const [customStudyDeck, setCustomStudyDeck] = useState<Deck | null>(null);
     const [descriptionDeck, setDescriptionDeck] = useState<Deck | null>(null);
 
@@ -467,7 +470,7 @@ export default function DecksScreen() {
     };
 
     // Run an action once the deck menu has closed. UIKit rejects pushing a screen or presenting
-    // another modal while the menu Modal is still mounted, so iOS waits for its onDismiss.
+    // another modal while the menu sheet is still mounted, so iOS waits until it reports dismissal.
     const runAfterDeckModalClose = (action: () => void) => {
         if (Platform.OS === 'ios') {
             pendingDeckMenuActionRef.current = action;
@@ -514,18 +517,20 @@ export default function DecksScreen() {
 
     // ---- Gear menu actions ----
 
-    const openMenu = useCallback((deck: Deck) => setModal({ kind: 'menu', deck }), []);
-    const deckMenuActions = useMemo(() => {
-        if (modal?.kind !== 'menu') return [];
+    const openMenu = useCallback((deck: Deck) => {
         let buriedCount = 0;
         try {
-            buriedCount = getBuriedCountForDeck(modal.deck.id);
+            buriedCount = getBuriedCountForDeck(deck.id);
         } catch (e) {
             // A failed count only leaves Unbury out; the overview still offers it.
             console.warn('[Decks] buried count failed:', e);
         }
-        return deckRowMenuActions({ isFiltered: Boolean(modal.deck.isFiltered), isCatalog: isCatalogDeck(modal.deck), buriedCount });
-    }, [modal]);
+        setDeckMenu({
+            deck,
+            actions: deckRowMenuActions({ isFiltered: Boolean(deck.isFiltered), isCatalog: isCatalogDeck(deck), buriedCount }),
+        });
+        setModal({ kind: 'menu', deck });
+    }, []);
 
     const openRename = (deck: Deck) => {
         if (isCatalogDeck(deck)) {
@@ -791,22 +796,23 @@ export default function DecksScreen() {
         }, Platform.OS === 'ios' ? 250 : 0);
     };
 
+    // The menu is a sheet of its own: a dialog or sheet chosen in it opens once it has gone.
     const handleDeckMenuAction = (deck: Deck, action: DeckRowMenuAction) => {
         switch (action) {
             case 'overview': openDeckMenuRoute(`/deck-overview?deck=${encodeURIComponent(deck.name)}`); return;
             case 'add': openDeckMenuRoute(isCatalogDeck(deck) ? '/editor' : `/editor?deckId=${deck.id}`); return;
             case 'browse': openDeckMenuRoute(`/browser?deck=${encodeURIComponent(deck.name)}`); return;
-            case 'rename': openRename(deck); return;
-            case 'createSubdeck': openCreateSubdeck(deck); return;
+            case 'rename': runAfterDeckModalClose(() => openRename(deck)); return;
+            case 'createSubdeck': runAfterDeckModalClose(() => openCreateSubdeck(deck)); return;
             case 'options': openDeckMenuRoute(`/deck-options?deckId=${deck.id}`); return;
-            case 'customStudy': openCustomStudy(deck); return;
+            case 'customStudy': runAfterDeckModalClose(() => openCustomStudy(deck)); return;
             case 'export': openDeckMenuRoute(`/export?deck=${encodeURIComponent(deck.name)}`); return;
             case 'filterOptions': openFilterOptions(deck); return;
             case 'rebuild': handleRebuildFilter(deck); return;
             case 'empty': requestEmptyFilteredDeck(deck); return;
             case 'unbury': requestUnburyDeck(deck); return;
             case 'shortcut': void handleCreateShortcut(deck); return;
-            case 'description': openDescription(deck); return;
+            case 'description': runAfterDeckModalClose(() => openDescription(deck)); return;
             case 'delete': requestDelete(deck); return;
         }
     };
@@ -1167,6 +1173,8 @@ export default function DecksScreen() {
                     <TouchableOpacity
                         style={styles.expandBtn}
                         onPress={() => toggleExpand(deck)}
+                        // The slop makes the 36-wide column a full target.
+                        hitSlop={{ left: 4, right: 4 }}
                         accessibilityRole="button"
                         accessibilityLabel={isExpanded ? l('Alt desteleri gizle', 'Hide subdecks') : l('Alt desteleri göster', 'Show subdecks')}
                         accessibilityState={{ expanded: isExpanded }}
@@ -1178,7 +1186,9 @@ export default function DecksScreen() {
                     </TouchableOpacity>
                 ) : (
                     <View style={styles.expandBtn}>
-                        <Text style={styles.expandDot}>{deck.isFiltered ? '⧉' : '•'}</Text>
+                        {deck.isFiltered
+                            ? <DeckOverflowGlyph kind="filteredDeck" color={colors.border} size={12} />
+                            : <View style={styles.leafDot} />}
                     </View>
                 )}
 
@@ -1231,7 +1241,7 @@ export default function DecksScreen() {
                         accessibilityHint={l('Satırın üstüne veya altına bırakarak sıralayın; ortasına bırakarak alt deste yapın', 'Drop at a row edge to reorder, or at its center to make a subdeck')}
                         {...webTitle(l('Kenarlara bırakın: sırala · Ortaya bırakın: alt deste yap', 'Drop at edges: reorder · Drop at center: make a subdeck'))}
                     >
-                        <Text style={styles.dragHandleText}>⠿</Text>
+                        <DragHandleIcon color={colors.textMuted} />
                     </View>
                 )}
                 {!dragResponder && (
@@ -1242,18 +1252,18 @@ export default function DecksScreen() {
                             ? l('Filtrelenmiş desteler alt deste olarak taşınamaz', 'Filtered decks cannot be moved into the deck tree')
                             : l('Hazır paket desteleri taşınamaz', 'Ready-made pack decks cannot be moved')}
                     >
-                        <Text style={styles.dragHandleText}>⠿</Text>
+                        <DragHandleIcon color={colors.textMuted} />
                     </View>
                 )}
 
-                <TouchableOpacity
-                    style={styles.gearBtn}
+                <IconButton
                     onPress={() => openMenu(deck)}
-                    accessibilityRole="button"
                     accessibilityLabel={l(`${displayName} deste menüsü`, `${displayName} deck menu`)}
+                    // No slop toward the drag handle beside it, which must keep its whole width.
+                    hitSlop={{ top: 4, right: 4, bottom: 4, left: 0 }}
                 >
-                    <Text style={styles.gearText}>•••</Text>
-                </TouchableOpacity>
+                    <MoreIcon color={colors.textMuted} />
+                </IconButton>
             </View>
         );
     }, [
@@ -1303,6 +1313,7 @@ export default function DecksScreen() {
                 </Text>
             </View>
             {!catalogInstalling && (
+                // A filled call to action, as before the design system: this row sells the free pack.
                 <View style={styles.lockedDeckPricePill}>
                     <Text style={styles.lockedDeckPriceText}>{l('Ücretsiz aç', 'Unlock free')}</Text>
                 </View>
@@ -1310,142 +1321,145 @@ export default function DecksScreen() {
         </TouchableOpacity>
     ), [catalogInstalling, colors.accent, l, router, styles]);
 
-    const renderRenameModal = (deck: Deck) => (
-        <View
-            style={[styles.modalCard, styles.createDeckDialog]}
-            accessibilityViewIsModal
-            accessibilityLabel={l(
-                `${getDeckDisplayName(deck.name)} destesini yeniden adlandır`,
-                `Rename deck ${getDeckDisplayName(deck.name)}`,
-            )}
-        >
-            <Text style={styles.createDeckDialogTitle}>{l('Desteyi yeniden adlandır', 'Rename deck')}</Text>
-            <View style={styles.createDeckField}>
-                <Text style={styles.createDeckFieldLabel}>{l('Yeni ad', 'New name')}</Text>
-                <TextInput
-                    style={styles.createDeckInput}
-                    value={renameText}
-                    onChangeText={setRenameText}
-                    onSubmitEditing={handleRename}
-                    autoFocus
-                    selectTextOnFocus
-                    returnKeyType="done"
-                    accessibilityLabel={l('Yeni deste adı', 'New deck name')}
-                />
-            </View>
-            <View style={[styles.modalActions, styles.createDeckActions]}>
-                <TouchableOpacity style={styles.createDeckTextButton} onPress={() => setModal(null)}>
-                    <Text style={styles.createDeckCancelText}>{t('common.cancel')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.createDeckTextButton}
-                    onPress={handleRename}
-                    disabled={!normalizeDeckLeafInput(renameText)}
-                >
-                    <Text
-                        style={[
-                            styles.createDeckCreateText,
-                            !normalizeDeckLeafInput(renameText) && styles.createDeckCreateTextDisabled,
-                        ]}
-                    >
-                        {l('Yeniden adlandır', 'Rename')}
-                    </Text>
-                </TouchableOpacity>
-            </View>
+    // The deck's name fields: the label the old floating outline carried now sits above the field.
+    const renderNameField = ({ label, fieldProps, accessibilityLabel }: {
+        label: string;
+        fieldProps: React.ComponentProps<typeof TextField>;
+        accessibilityLabel?: string;
+    }) => (
+        <View style={styles.dialogField} accessibilityLabel={accessibilityLabel}>
+            <Text style={styles.dialogFieldLabel}>{label}</Text>
+            <TextField autoFocus returnKeyType="done" {...fieldProps} />
         </View>
     );
 
-    const renderCreateSubdeckModal = (deck: Deck) => (
-        <View
-            style={[styles.modalCard, styles.createDeckDialog]}
-            accessibilityViewIsModal
-            accessibilityLabel={l(
-                `${getDeckDisplayName(deck.name)} için alt deste oluştur`,
-                `Create a subdeck for ${getDeckDisplayName(deck.name)}`,
+    const renameDialog = (
+        <AppDialog
+            visible={modal?.kind === 'rename'}
+            onClose={() => setModal(null)}
+            title={l('Desteyi yeniden adlandır', 'Rename deck')}
+            actions={(
+                <>
+                    <Button label={t('common.cancel')} variant="plain" onPress={() => setModal(null)} />
+                    <Button
+                        label={l('Yeniden adlandır', 'Rename')}
+                        onPress={handleRename}
+                        disabled={!normalizeDeckLeafInput(renameText)}
+                    />
+                </>
             )}
         >
-            <Text style={styles.createDeckDialogTitle}>{l('Alt deste oluştur', 'Create subdeck')}</Text>
-            <View style={styles.createDeckField}>
-                <Text style={styles.createDeckFieldLabel}>{l('Ad', 'Name')}</Text>
-                <TextInput
-                    style={styles.createDeckInput}
-                    value={newSubdeckName}
-                    onChangeText={setNewSubdeckName}
-                    onSubmitEditing={handleCreateSubdeck}
+            {renderNameField({
+                label: l('Yeni ad', 'New name'),
+                accessibilityLabel: modal?.kind === 'rename'
+                    ? l(
+                        `${getDeckDisplayName(modal.deck.name)} destesini yeniden adlandır`,
+                        `Rename deck ${getDeckDisplayName(modal.deck.name)}`,
+                    )
+                    : undefined,
+                fieldProps: {
+                    value: renameText,
+                    onChangeText: setRenameText,
+                    onSubmitEditing: handleRename,
+                    selectTextOnFocus: true,
+                    accessibilityLabel: l('Yeni deste adı', 'New deck name'),
+                },
+            })}
+        </AppDialog>
+    );
+
+    const createSubdeckDialog = (
+        <AppDialog
+            visible={modal?.kind === 'create-subdeck'}
+            onClose={() => setModal(null)}
+            title={l('Alt deste oluştur', 'Create subdeck')}
+            actions={(
+                <>
+                    <Button label={t('common.cancel')} variant="plain" onPress={() => setModal(null)} />
+                    <Button
+                        label={l('Oluştur', 'Create')}
+                        onPress={handleCreateSubdeck}
+                        disabled={!normalizeDeckLeafInput(newSubdeckName)}
+                    />
+                </>
+            )}
+        >
+            {renderNameField({
+                label: l('Ad', 'Name'),
+                accessibilityLabel: modal?.kind === 'create-subdeck'
+                    ? l(
+                        `${getDeckDisplayName(modal.deck.name)} için alt deste oluştur`,
+                        `Create a subdeck for ${getDeckDisplayName(modal.deck.name)}`,
+                    )
+                    : undefined,
+                fieldProps: {
+                    value: newSubdeckName,
+                    onChangeText: setNewSubdeckName,
+                    onSubmitEditing: handleCreateSubdeck,
+                    accessibilityLabel: l('Alt deste adı', 'Subdeck name'),
+                },
+            })}
+        </AppDialog>
+    );
+
+    const descriptionFields = (
+        <>
+            <View style={styles.dialogField}>
+                <SectionLabel>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</SectionLabel>
+                <TextField
+                    style={styles.descriptionInput}
+                    value={descriptionText}
+                    onChangeText={setDescriptionText}
+                    placeholder={l('Deste genel bakışında gösterilecek açıklama…', 'Description shown on the deck overview…')}
+                    multiline
                     autoFocus
-                    returnKeyType="done"
-                    accessibilityLabel={l('Alt deste adı', 'Subdeck name')}
+                    textAlignVertical="top"
+                    accessibilityLabel={l('Deste açıklaması', 'Deck description')}
                 />
             </View>
-            <View style={[styles.modalActions, styles.createDeckActions]}>
-                <TouchableOpacity style={styles.createDeckTextButton} onPress={() => setModal(null)}>
-                    <Text style={styles.createDeckCancelText}>{t('common.cancel')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.createDeckTextButton}
-                    onPress={handleCreateSubdeck}
-                    disabled={!normalizeDeckLeafInput(newSubdeckName)}
-                >
-                    <Text
-                        style={[
-                            styles.createDeckCreateText,
-                            !normalizeDeckLeafInput(newSubdeckName) && styles.createDeckCreateTextDisabled,
-                        ]}
-                    >
-                        {l('Oluştur', 'Create')}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+            <SwitchRow
+                title={l('Markdown olarak yorumla', 'Interpret as Markdown')}
+                summary={l(
+                    'Metni Markdown olarak işler: başlıklar, kalın ve italik yazı, listeler ve bağlantılar biçimli görünür.',
+                    'Treats the text as Markdown: headings, bold and italic text, lists and links are shown formatted.',
+                )}
+                value={descriptionMarkdown}
+                onValueChange={setDescriptionMarkdown}
+                style={styles.inlineRow}
+            />
+        </>
     );
+    const descriptionActions = (
+        <>
+            <Button label={t('common.cancel')} variant="plain" onPress={() => setModal(null)} />
+            <Button label={t('common.save')} onPress={handleSaveDescription} />
+        </>
+    );
+    const descriptionTitle = descriptionDeck ? descriptionDeck.name.replaceAll('::', ' › ') : '';
 
     // A centred dialog on wide layouts; on iPhone the same fields sit in a bottom sheet.
-    const renderDescriptionModal = (deck: Deck) => (
-        <View style={styles.modalCard}>{renderDescriptionFields(deck)}</View>
-    );
-
-    const renderDescriptionFields = (deck: Deck) => (
-        <>
-            <Text style={styles.modalEyebrow}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
-            <Text style={styles.modalTitle} numberOfLines={2}>{deck.name.replaceAll('::', ' › ')}</Text>
-            <TextInput
-                style={[styles.modalInput, styles.descriptionInput]}
-                value={descriptionText}
-                onChangeText={setDescriptionText}
-                placeholder={l('Deste genel bakışında gösterilecek açıklama…', 'Description shown on the deck overview…')}
-                placeholderTextColor={colors.textMuted}
-                multiline
-                autoFocus
-                textAlignVertical="top"
-                accessibilityLabel={l('Deste açıklaması', 'Deck description')}
-            />
-            <View style={styles.markdownToggleRow}>
-                <View style={styles.markdownToggleCopy}>
-                    <Text style={styles.markdownToggleTitle}>{l('Markdown olarak yorumla', 'Interpret as Markdown')}</Text>
-                    <Text style={styles.markdownToggleSubtitle}>
-                        {l(
-                            'Metni Markdown olarak işler: başlıklar, kalın ve italik yazı, listeler ve bağlantılar biçimli görünür.',
-                            'Treats the text as Markdown: headings, bold and italic text, lists and links are shown formatted.',
-                        )}
-                    </Text>
-                </View>
-                <Switch
-                    value={descriptionMarkdown}
-                    onValueChange={setDescriptionMarkdown}
-                    trackColor={{ false: colors.border, true: colors.accent }}
-                    thumbColor={colors.white}
-                    accessibilityLabel={l('Markdown olarak yorumla', 'Interpret as Markdown')}
-                />
+    const descriptionEditor = !descriptionDeck ? null : isCompact ? (
+        <AppSheet
+            visible={modal?.kind === 'description'}
+            onClose={() => setModal(null)}
+            title={descriptionTitle}
+            avoidKeyboard
+            backdropLabel={l('Açık pencereyi kapat', 'Close open dialog')}
+        >
+            <View style={styles.sheetForm}>
+                {descriptionFields}
+                <View style={styles.sheetActions}>{descriptionActions}</View>
             </View>
-            <View style={styles.modalActions}>
-                <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setModal(null)}>
-                    <Text style={styles.modalBtnSecondaryText}>{t('common.cancel')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalBtnPrimary} onPress={handleSaveDescription}>
-                    <Text style={styles.modalBtnPrimaryText}>{t('common.save')}</Text>
-                </TouchableOpacity>
-            </View>
-        </>
+        </AppSheet>
+    ) : (
+        <AppDialog
+            visible={modal?.kind === 'description'}
+            onClose={() => setModal(null)}
+            title={descriptionTitle}
+            actions={descriptionActions}
+        >
+            {descriptionFields}
+        </AppDialog>
     );
 
     const renderVirtualizedRow = useCallback(({ item }: { item: DeckListRowModel }) => (
@@ -1470,150 +1484,90 @@ export default function DecksScreen() {
             ) : null}
         </>
     ), [dismissWelcome, fullCatalogPresent, openAddCard, renderLockedCatalogCard, router, showWelcome]);
-    const deckListEmpty = useMemo(() => (
-        <View style={styles.emptyState}>
-            {snapshotLoading ? (
-                <ActivityIndicator size="small" color={colors.accent} />
-            ) : (
-                <>
-                    <Text style={styles.emptyStateIcon}>＋</Text>
-                    <Text style={styles.emptyStateTitle}>{l('İlk destenizi oluşturun', 'Create your first deck')}</Text>
-                    <Text style={styles.emptyStateText}>{l('Sağ alttaki ＋ ile bir deste oluşturun veya ⋮ › İçe aktar ile Anki’den bir deste getirin.', 'Create a deck with ＋ at the bottom right, or bring one in from Anki with ⋮ › Import.')}</Text>
-                </>
-            )}
-        </View>
-    ), [colors.accent, l, snapshotLoading, styles]);
+    const deckListEmpty = useMemo(() => (snapshotLoading ? <LoadingState /> : (
+        <EmptyState
+            icon={<PlusIcon color={colors.accent} size={36} />}
+            title={l('İlk destenizi oluşturun', 'Create your first deck')}
+            body={l('Sağ alttaki ＋ ile bir deste oluşturun veya ⋮ › İçe aktar ile Anki’den bir deste getirin.', 'Create a deck with ＋ at the bottom right, or bring one in from Anki with ⋮ › Import.')}
+        />
+    )), [colors.accent, l, snapshotLoading]);
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>{t('tabs.decks')}</Text>
                 <View style={styles.headerActions}>
-                    <TouchableOpacity
-                        style={styles.headerBtn}
-                        onPress={refresh}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Desteleri yenile', 'Refresh decks')}
-                    >
-                        <Text style={styles.headerBtnText}>↻</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.headerMenuBtn}
+                    <IconButton onPress={refresh} accessibilityLabel={l('Desteleri yenile', 'Refresh decks')}>
+                        <RefreshIcon color={colors.textSecondary} />
+                    </IconButton>
+                    <IconButton
                         onPress={() => setShowOverflowMenu(true)}
-                        accessibilityRole="button"
                         accessibilityLabel={l('Diğer seçenekler', 'More options')}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <View style={styles.headerMenuDot} />
-                        <View style={styles.headerMenuDot} />
-                        <View style={styles.headerMenuDot} />
-                    </TouchableOpacity>
+                        <MoreVerticalIcon color={colors.textSecondary} />
+                    </IconButton>
                 </View>
             </View>
 
-
-            <Modal
+            <PopoverMenu
                 visible={showOverflowMenu}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setShowOverflowMenu(false)}
+                onClose={() => setShowOverflowMenu(false)}
                 onDismiss={handleOverflowDismiss}
+                // Hangs from the bottom of the ⋮ button, flush with the header's right padding.
+                anchor={{ top: Spacing.md + HIT_TARGET, right: Spacing.lg }}
+                accessibilityLabel={l('Diğer seçenekler', 'More options')}
             >
-                <View style={styles.overflowOverlay}>
-                    <TouchableOpacity
-                        style={styles.overflowBackdrop}
-                        activeOpacity={1}
-                        onPress={() => setShowOverflowMenu(false)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Menüyü kapat', 'Close menu')}
-                    />
-                    <View style={styles.overflowSheet} accessibilityViewIsModal>
-                        <TouchableOpacity
-                            style={styles.overflowRow}
-                            onPress={() => openOverflowRoute('/empty-cards')}
-                        >
-                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="emptyCards" color={colors.textSecondary} /></View>
-                            <Text style={styles.overflowLabel}>{l('Boş kartlar', 'Empty Cards')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.overflowRow}
-                            onPress={() => openOverflowRoute(DATA_IMPORT_ROUTE)}
-                        >
-                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="import" color={colors.textSecondary} /></View>
-                            <Text style={styles.overflowLabel}>{t('root.import')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.overflowRow}
-                            onPress={() => openOverflowRoute(DATA_EXPORT_ROUTE)}
-                        >
-                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="export" color={colors.textSecondary} /></View>
-                            <Text style={styles.overflowLabel}>{l('Dışa aktar', 'Export')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.overflowRow}
-                            onPress={handleCreateBackup}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Yedek oluştur', 'Create backup')}
-                        >
-                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="backup" color={colors.textSecondary} /></View>
-                            <Text style={styles.overflowLabel}>{l('Yedek oluştur', 'Create Backup')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.overflowRow}
-                            onPress={() => openOverflowRoute('/backups')}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Yedekten geri yükle', 'Restore from backup')}
-                        >
-                            <View style={styles.overflowIcon}><DeckOverflowGlyph kind="restore" color={colors.textSecondary} /></View>
-                            <Text style={styles.overflowLabel}>{l('Yedekten geri yükle', 'Restore from Backup')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+                <MenuItem
+                    label={l('Boş kartlar', 'Empty Cards')}
+                    icon={<DeckOverflowGlyph kind="emptyCards" color={colors.textMuted} size={22} />}
+                    onPress={() => openOverflowRoute('/empty-cards')}
+                />
+                <MenuItem
+                    label={t('root.import')}
+                    icon={<DeckOverflowGlyph kind="import" color={colors.textMuted} size={22} />}
+                    onPress={() => openOverflowRoute(DATA_IMPORT_ROUTE)}
+                />
+                <MenuItem
+                    label={l('Dışa aktar', 'Export')}
+                    icon={<DeckOverflowGlyph kind="export" color={colors.textMuted} size={22} />}
+                    onPress={() => openOverflowRoute(DATA_EXPORT_ROUTE)}
+                />
+                <MenuItem
+                    label={l('Yedek oluştur', 'Create Backup')}
+                    accessibilityLabel={l('Yedek oluştur', 'Create backup')}
+                    icon={<DeckOverflowGlyph kind="backup" color={colors.textMuted} size={22} />}
+                    onPress={handleCreateBackup}
+                />
+                <MenuItem
+                    label={l('Yedekten geri yükle', 'Restore from Backup')}
+                    accessibilityLabel={l('Yedekten geri yükle', 'Restore from backup')}
+                    icon={<DeckOverflowGlyph kind="restore" color={colors.textMuted} size={22} />}
+                    onPress={() => openOverflowRoute('/backups')}
+                />
+            </PopoverMenu>
 
-            <Modal visible={showAddDeck} transparent animationType="fade" onRequestClose={() => setShowAddDeck(false)}>
-                <KeyboardAvoidingView
-                    style={styles.modalOverlay}
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                >
-                    <TouchableOpacity
-                        style={styles.modalBackdropHit}
-                        activeOpacity={1}
-                        onPress={() => setShowAddDeck(false)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Yeni deste penceresini kapat', 'Close new deck dialog')}
-                    />
-                    <View style={[styles.modalCard, styles.createDeckDialog]} accessibilityViewIsModal>
-                        <Text style={styles.createDeckDialogTitle}>{l('Deste oluştur', 'Create deck')}</Text>
-                        <View style={styles.createDeckField}>
-                            <Text style={styles.createDeckFieldLabel}>{l('Deste adı', 'Name')}</Text>
-                            <TextInput
-                                style={styles.createDeckInput}
-                                value={newDeckName}
-                                onChangeText={setNewDeckName}
-                                onSubmitEditing={handleAddDeck}
-                                autoFocus
-                                returnKeyType="done"
-                                accessibilityLabel={l('Deste adı', 'Deck name')}
-                            />
-                        </View>
-                        <View style={[styles.modalActions, styles.createDeckActions]}>
-                            <TouchableOpacity style={styles.createDeckTextButton} onPress={() => setShowAddDeck(false)}>
-                                <Text style={styles.createDeckCancelText}>{t('common.cancel')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.createDeckTextButton}
-                                onPress={handleAddDeck}
-                                disabled={!newDeckName.trim()}
-                            >
-                                <Text style={[styles.createDeckCreateText, !newDeckName.trim() && styles.createDeckCreateTextDisabled]}>
-                                    {l('Oluştur', 'Create')}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
+            <AppDialog
+                visible={showAddDeck}
+                onClose={() => setShowAddDeck(false)}
+                title={l('Deste oluştur', 'Create deck')}
+                actions={(
+                    <>
+                        <Button label={t('common.cancel')} variant="plain" onPress={() => setShowAddDeck(false)} />
+                        <Button label={l('Oluştur', 'Create')} onPress={handleAddDeck} disabled={!newDeckName.trim()} />
+                    </>
+                )}
+            >
+                {renderNameField({
+                    label: l('Deste adı', 'Name'),
+                    fieldProps: {
+                        value: newDeckName,
+                        onChangeText: setNewDeckName,
+                        onSubmitEditing: handleAddDeck,
+                        accessibilityLabel: l('Deste adı', 'Deck name'),
+                    },
+                })}
+            </AppDialog>
 
             <DeckListColumnHeaders />
 
@@ -1660,14 +1614,24 @@ export default function DecksScreen() {
                             { pointerEvents: 'none' },
                         ]}
                     >
-                        <Text style={[
-                            styles.rootDropZoneText,
-                            dropTarget === ROOT_DROP_TARGET && styles.rootDropZoneTextActive,
-                        ]}>
-                            {dropTarget === ROOT_DROP_TARGET && dragDropFeedback
-                                ? dragDropFeedback.title
-                                : `↑ ${l('Ana seviyeye bırak', 'Drop at top level')}`}
-                        </Text>
+                        {dropTarget === ROOT_DROP_TARGET && dragDropFeedback ? (
+                            <Text style={[styles.rootDropZoneText, styles.rootDropZoneTextActive]}>
+                                {dragDropFeedback.title}
+                            </Text>
+                        ) : (
+                            <View style={styles.rootDropZoneLabel}>
+                                <ArrowUpIcon
+                                    color={dropTarget === ROOT_DROP_TARGET ? colors.onAccent : colors.accent}
+                                    size={16}
+                                />
+                                <Text style={[
+                                    styles.rootDropZoneText,
+                                    dropTarget === ROOT_DROP_TARGET && styles.rootDropZoneTextActive,
+                                ]}>
+                                    {l('Ana seviyeye bırak', 'Drop at top level')}
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 )}
 
@@ -1693,9 +1657,12 @@ export default function DecksScreen() {
                             { pointerEvents: 'none' },
                         ]}
                     >
-                        <Text style={styles.mobileDragPreviewTitle} numberOfLines={1}>
-                            ⠿ {draggingDeck.replaceAll('::', ' › ')}
-                        </Text>
+                        <View style={styles.mobileDragPreviewTitleRow}>
+                            <DragHandleIcon color={colors.textMuted} size={18} />
+                            <Text style={styles.mobileDragPreviewTitle} numberOfLines={1}>
+                                {draggingDeck.replaceAll('::', ' › ')}
+                            </Text>
+                        </View>
                         {dragDropFeedback && (
                             <Text
                                 style={[
@@ -1768,53 +1735,21 @@ export default function DecksScreen() {
                 </View>
             )}
 
-            <Modal
-                // Custom study, and the description on iPhone, bring their own bottom sheets, so
-                // they stay out of this shared container.
-                visible={modal !== null && modal.kind !== 'custom' && !(isCompact && modal.kind === 'description')}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setModal(null)}
-                onDismiss={handleDeckModalDismiss}
-            >
-                <KeyboardAvoidingView
-                    style={styles.modalOverlay}
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                >
-                    {modal !== null && (
-                        <TouchableOpacity
-                            style={styles.modalBackdropHit}
-                            activeOpacity={1}
-                            onPress={() => setModal(null)}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Açık pencereyi kapat', 'Close open dialog')}
-                        />
-                    )}
-                    {modal?.kind === 'menu' && (
-                        <DeckRowMenu
-                            deckName={modal.deck.name}
-                            actions={deckMenuActions}
-                            onSelect={(action) => handleDeckMenuAction(modal.deck, action)}
-                        />
-                    )}
-                    {modal?.kind === 'rename' && renderRenameModal(modal.deck)}
-                    {modal?.kind === 'create-subdeck' && renderCreateSubdeckModal(modal.deck)}
-                    {!isCompact && modal?.kind === 'description' && renderDescriptionModal(modal.deck)}
-                </KeyboardAvoidingView>
-            </Modal>
-
-            {isCompact && descriptionDeck ? (
-                <BottomSheetModal
-                    visible={modal?.kind === 'description'}
-                    onClose={() => setModal(null)}
-                    avoidKeyboard
-                    backdropLabel={l('Açık pencereyi kapat', 'Close open dialog')}
-                    containerStyle={compactSheetTopInset}
-                    sheetStyle={[styles.modalCard, styles.modalCardCompact]}
-                >
-                    {renderDescriptionFields(descriptionDeck)}
-                </BottomSheetModal>
-            ) : null}
+            {/* Kept mounted with the deck it was opened for, so the sheet can slide away. */}
+            <DeckRowMenu
+                visible={modal?.kind === 'menu'}
+                deckName={deckMenu?.deck.name ?? ''}
+                actions={deckMenu?.actions ?? []}
+                onSelect={(action) => {
+                    if (deckMenu) handleDeckMenuAction(deckMenu.deck, action);
+                }}
+                onClose={() => setModal(null)}
+                onDismissed={handleDeckModalDismiss}
+                backdropLabel={l('Açık pencereyi kapat', 'Close open dialog')}
+            />
+            {renameDialog}
+            {createSubdeckDialog}
+            {descriptionEditor}
 
             <FilteredDeckOptionsModal
                 visible={filteredDeckFormVisible}
@@ -1859,60 +1794,6 @@ function createStyles(colors: ColorScheme) {
     },
     title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    headerBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerBtnText: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textSecondary },
-
-    // Keep the native-sized 44 pt touch target, but render a compact 15 pt `more_vert` glyph.
-    headerMenuBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 3,
-    },
-    headerMenuDot: {
-        width: 3,
-        height: 3,
-        borderRadius: 1.5,
-        backgroundColor: colors.textSecondary,
-    },
-
-    overflowOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
-        alignItems: 'flex-end',
-        paddingTop: 56,
-        paddingRight: Spacing.lg,
-    },
-    overflowBackdrop: {
-        ...StyleSheet.absoluteFill,
-    },
-    overflowSheet: {
-        minWidth: 200,
-        zIndex: 1,
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        paddingVertical: Spacing.xs,
-        ...Shadows.lg,
-    },
-    overflowRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-        paddingHorizontal: Spacing.md,
-        minHeight: 48,
-    },
-    overflowIcon: { width: 22, alignItems: 'center' },
-    overflowLabel: { fontSize: FontSize.md, color: colors.textPrimary, fontWeight: '500' },
 
     listWrap: { flex: 1, position: 'relative' },
     deckList: { flex: 1 },
@@ -1955,7 +1836,7 @@ function createStyles(colors: ColorScheme) {
         borderRadius: BorderRadius.full,
         backgroundColor: colors.accent,
     },
-    lockedDeckPriceText: { color: '#ffffff', fontSize: FontSize.sm, fontWeight: '800' },
+    lockedDeckPriceText: { color: colors.onAccent, fontSize: FontSize.sm, fontWeight: '800' },
     deckRowDragging: { opacity: 0.22, transform: [{ scale: 0.99 }] },
     deckRowDropTarget: {
         backgroundColor: colors.accentLight,
@@ -1977,7 +1858,7 @@ function createStyles(colors: ColorScheme) {
         paddingVertical: 4,
         borderRadius: BorderRadius.sm,
         backgroundColor: colors.accent,
-        color: colors.white,
+        color: colors.onAccent,
         fontSize: 11,
         fontWeight: '800',
     },
@@ -1996,12 +1877,12 @@ function createStyles(colors: ColorScheme) {
         paddingVertical: 4,
         borderRadius: BorderRadius.sm,
         backgroundColor: colors.accent,
-        color: colors.white,
+        color: colors.onAccent,
         fontSize: 11,
         fontWeight: '800',
     },
     expandBtn: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-    expandDot: { fontSize: 10, color: colors.border },
+    leafDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.border },
     // The name and its counts share a wrapping line: a name that does not fit beside the
     // counts gets the whole width (a word is never broken) and the counts move under it.
     // The name must not shrink: Yoga would rather narrow it than wrap the counts, which breaks
@@ -2010,7 +1891,7 @@ function createStyles(colors: ColorScheme) {
     // Padding rather than margin: the browser adds a margin on top of maxWidth.
     deckNameTouchable: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', maxWidth: '100%', paddingLeft: 2, minHeight: 44, justifyContent: 'center' },
     deckName: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
-    deckNameFiltered: { color: colors.badgeNew, fontStyle: 'italic' },
+    deckNameFiltered: { color: colors.info, fontStyle: 'italic' },
     // A line of its own under the name and counts: the wrapping row puts a full-width child below.
     deckHint: { width: '100%', paddingLeft: 2, paddingBottom: 2, fontSize: FontSize.sm, color: colors.textMuted },
     dragHandle: {
@@ -2023,10 +1904,7 @@ function createStyles(colors: ColorScheme) {
         ...(Platform.OS === 'web' ? ({ cursor: 'grab', touchAction: 'none' } as object) : null),
     },
     dragHandleActive: { backgroundColor: colors.accentLight, transform: [{ scale: 1.08 }] },
-    dragHandleDisabled: { opacity: 0.25 },
-    dragHandleText: { fontSize: 18, color: colors.textMuted },
-    gearBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-    gearText: { fontSize: 16, fontWeight: '800', color: colors.textMuted, letterSpacing: -1 },
+    dragHandleDisabled: { opacity: DISABLED_OPACITY },
 
     rootDropZone: {
         position: 'absolute',
@@ -2049,8 +1927,9 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.accent,
         transform: [{ scale: 1.015 }],
     },
+    rootDropZoneLabel: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
     rootDropZoneText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '800' },
-    rootDropZoneTextActive: { color: colors.white },
+    rootDropZoneTextActive: { color: colors.onAccent },
     mobileDragPreview: {
         position: 'absolute',
         top: 0,
@@ -2067,7 +1946,8 @@ function createStyles(colors: ColorScheme) {
         borderRadius: BorderRadius.md,
         ...Shadows.lg,
     },
-    mobileDragPreviewTitle: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '800' },
+    mobileDragPreviewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs + 2 },
+    mobileDragPreviewTitle: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '800' },
     mobileDragPreviewHint: {
         marginTop: 4,
         color: colors.accent,
@@ -2089,11 +1969,6 @@ function createStyles(colors: ColorScheme) {
     bottomBtn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 },
     bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2, textAlign: 'center' },
 
-    emptyState: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 64 },
-    emptyStateIcon: { fontSize: 36, color: colors.accent, marginBottom: Spacing.sm },
-    emptyStateTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-    emptyStateText: { marginTop: Spacing.xs, fontSize: FontSize.sm, color: colors.textMuted, textAlign: 'center' },
-
     dragBanner: {
         position: 'absolute',
         bottom: 16,
@@ -2105,175 +1980,15 @@ function createStyles(colors: ColorScheme) {
         paddingHorizontal: Spacing.lg,
         ...Shadows.md,
     },
-    dragBannerText: { color: colors.white, fontWeight: '600', textAlign: 'center' },
+    dragBannerText: { color: colors.onAccent, fontWeight: '600', textAlign: 'center' },
 
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.35)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: Spacing.xl,
-    },
-    markdownToggleRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-        minHeight: 56,
-        gap: Spacing.md,
-    },
-    markdownToggleCopy: {
-        flex: 1,
-        justifyContent: 'center',
-    },
-    markdownToggleTitle: {
-        fontSize: FontSize.md,
-        fontWeight: '600',
-        color: colors.textPrimary,
-    },
-    markdownToggleSubtitle: {
-        fontSize: FontSize.xs,
-        lineHeight: 16,
-        color: colors.textMuted,
-        marginTop: 2,
-    },
-    modalBackdropHit: { ...StyleSheet.absoluteFill },
-    modalCard: {
-        width: '100%',
-        maxWidth: 420,
-        zIndex: 1,
-        backgroundColor: colors.bgCard,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.xl,
-        ...Shadows.lg,
-    },
-    modalCardCompact: {
-        maxWidth: undefined,
-        maxHeight: '90%',
-        borderBottomLeftRadius: 0,
-        borderBottomRightRadius: 0,
-        paddingHorizontal: Spacing.xl,
-        paddingTop: 44,
-        paddingBottom: Spacing.xl,
-    },
-    createDeckDialog: {
-        width: '88%',
-        maxWidth: 380,
-        borderRadius: 28,
-        paddingTop: 26,
-        paddingHorizontal: Spacing.xl,
-        paddingBottom: Spacing.md,
-    },
-    createDeckDialogTitle: {
-        color: colors.textPrimary,
-        fontSize: 24,
-        lineHeight: 31,
-        fontWeight: '600',
-        marginBottom: 24,
-    },
-    createDeckField: {
-        minHeight: 62,
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: colors.accent,
-        borderRadius: 5,
-        marginBottom: Spacing.md,
-        paddingHorizontal: Spacing.md,
-    },
-    createDeckFieldLabel: {
-        position: 'absolute',
-        top: -9,
-        left: 12,
-        paddingHorizontal: 4,
-        color: colors.accent,
-        backgroundColor: colors.bgCard,
-        fontSize: FontSize.xs,
-        lineHeight: 18,
-        fontWeight: '500',
-    },
-    createDeckInput: {
-        minHeight: 48,
-        paddingVertical: 8,
-        color: colors.textPrimary,
-        fontSize: FontSize.md,
-    },
-    createDeckActions: {
-        marginTop: 4,
-        gap: 10,
-    },
-    createDeckTextButton: {
-        minWidth: 68,
-        minHeight: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: Spacing.sm,
-        borderRadius: BorderRadius.sm,
-    },
-    createDeckCancelText: {
-        color: colors.accent,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-    },
-    createDeckCreateText: {
-        color: colors.accent,
-        fontSize: FontSize.sm,
-        fontWeight: '700',
-    },
-    createDeckCreateTextDisabled: { color: colors.textMuted },
-    modalEyebrow: {
-        fontSize: 11,
-        fontWeight: '800',
-        letterSpacing: 1.2,
-        color: colors.accent,
-        marginBottom: Spacing.xs,
-    },
-    modalTitle: {
-        fontSize: FontSize.lg,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        marginBottom: Spacing.md,
-    },
-    descriptionInput: { minHeight: 150, paddingTop: Spacing.md },
-    modalInput: {
-        backgroundColor: colors.bgInput,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.md,
-        minHeight: 44,
-        paddingVertical: 10,
-        fontSize: FontSize.md,
-        color: colors.textPrimary,
-        marginBottom: Spacing.sm,
-    },
-    modalActions: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'flex-end',
-        gap: 8,
-        marginTop: Spacing.md,
-    },
-    modalBtnPrimary: {
-        backgroundColor: colors.accent,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.lg,
-        minHeight: 44,
-        paddingVertical: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    modalBtnPrimaryText: { color: colors.white, fontWeight: '700', fontSize: FontSize.sm },
-    modalBtnSecondary: {
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: Spacing.lg,
-        minHeight: 44,
-        paddingVertical: 10,
-        borderWidth: 1,
-        borderColor: colors.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    modalBtnSecondaryText: { color: colors.textSecondary, fontWeight: '600', fontSize: FontSize.sm },
+    // The deck dialogs and the description sheet.
+    dialogField: { gap: Spacing.xs },
+    dialogFieldLabel: { ...Type.caption, fontWeight: '600', color: colors.textSecondary },
+    descriptionInput: { minHeight: 150 },
+    // A switch row set in a dialog or a sheet lines up with the fields there, not a card's inset.
+    inlineRow: { paddingHorizontal: 0 },
+    sheetForm: { gap: Spacing.md },
+    sheetActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: Spacing.sm },
     });
 }

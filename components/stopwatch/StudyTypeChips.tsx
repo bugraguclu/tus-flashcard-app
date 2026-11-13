@@ -1,8 +1,10 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { STUDY_KINDS, type StudyKind } from '../../lib/stopwatch';
+import { Chip } from '../ui/Choice';
+import { Type } from '../ui/tokens';
 
 type Localize = (turkish: string, english: string) => string;
 
@@ -37,51 +39,23 @@ export default function StudyTypeChips({ value, onChange }: StudyTypeChipsProps)
     const colors = useThemeColors();
 
     return (
-        <View style={[styles.section, { borderBottomColor: colors.borderLight }]}>
-            <Text style={[styles.label, { color: colors.textPrimary }]}>{l('Tür', 'Type')}</Text>
+        <View style={styles.section}>
+            <Text style={[Type.rowTitle, { color: colors.textPrimary }]}>{l('Tür', 'Type')}</Text>
             <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={l('Tür', 'Type')}>
-                {STUDY_KINDS.map((kind) => {
-                    const selected = kind === value;
-                    return (
-                        <TouchableOpacity
-                            key={kind}
-                            style={[
-                                styles.chip,
-                                selected
-                                    ? { backgroundColor: colors.accent, borderColor: colors.accent }
-                                    : { backgroundColor: colors.bgCard, borderColor: colors.border },
-                            ]}
-                            onPress={() => onChange(kind)}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: selected }}
-                            aria-checked={selected}
-                            accessibilityLabel={studyKindName(l, kind)}
-                        >
-                            <Text style={[styles.chipText, { color: selected ? colors.white : colors.textSecondary }]}>
-                                {studyKindName(l, kind)}
-                            </Text>
-                        </TouchableOpacity>
-                    );
-                })}
+                {STUDY_KINDS.map((kind) => (
+                    <Chip
+                        key={kind}
+                        label={studyKindName(l, kind)}
+                        selected={kind === value}
+                        onPress={() => onChange(kind)}
+                    />
+                ))}
             </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    section: {
-        gap: Spacing.sm,
-        paddingVertical: Spacing.md,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-    },
-    label: { fontSize: FontSize.lg, fontWeight: '600' },
+    section: { gap: Spacing.sm },
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-    chip: {
-        minHeight: 36,
-        justifyContent: 'center',
-        paddingHorizontal: Spacing.md,
-        borderRadius: BorderRadius.full,
-        borderWidth: 1,
-    },
-    chipText: { fontSize: FontSize.md, fontWeight: '600' },
 });

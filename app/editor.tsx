@@ -15,7 +15,6 @@ import {
 import { Text } from '../components/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 import { useThemeColors } from '../constants/theme';
 import { resolveSubjectDeckId } from '../lib/subjects';
 import { confirm, confirmAsync, alert, choose } from '../lib/confirm';
@@ -95,14 +94,11 @@ import {
 } from '../lib/customToolbar';
 import { loadNoteTypeStickyFields, saveNoteTypeStickyFields } from '../lib/editorStickyFields';
 import { createEditorStyles } from '../components/editor/editorStyles';
-import {
-    BackIcon,
-    CheckIcon,
-    ChevronDownIcon,
-    EyeIcon,
-    MoreIcon,
-    PinIcon,
-} from '../components/editor/EditorIcons';
+import { EyeIcon, PinIcon } from '../components/editor/EditorIcons';
+import ScreenHeader from '../components/ScreenHeader';
+import { IconButton } from '../components/ui/Button';
+import { Notice } from '../components/ui/Feedback';
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, MoreVerticalIcon } from '../components/ui/icons';
 import { buildEditorTools } from '../components/editor/editorTools';
 import { EditorFormattingToolbar } from '../components/editor/EditorFormattingToolbar';
 import { StandaloneKeyboardDoneBar } from '../components/editor/KeyboardDoneButton';
@@ -130,8 +126,8 @@ function parseCardId(raw: string | string[] | undefined): number | null {
 }
 
 // The preview dialog picks its card body height before the card renders, so the sheet never
-// resizes once the WebView reports its intrinsic height. Everything else in the dialog — header,
-// deck line, side toggle, close button and padding — is fixed, and adds up to this much.
+// resizes once the WebView reports its intrinsic height. Everything else in the dialog — title
+// with its close button, deck line, side toggle and padding — is fixed, and fits in this much.
 const PREVIEW_CHROME_HEIGHT = 180;
 const PREVIEW_BODY_MIN_HEIGHT = 180;
 const PREVIEW_BODY_MAX_HEIGHT = 380;
@@ -818,11 +814,6 @@ export default function EditorScreen() {
         );
     };
 
-    const runAfterOverflowClose = (action: () => void) => {
-        setShowOverflowMenu(false);
-        requestAnimationFrame(action);
-    };
-
     const runAfterFormattingDialogClose = (close: () => void, action: () => void) => {
         close();
         // iOS keeps a transparent native modal layer alive during dismissal. Waiting for the
@@ -1137,49 +1128,32 @@ export default function EditorScreen() {
 
     return (
         <View style={styles.container}>
-            <View style={[{ height: insets.top, backgroundColor: colors.accent }, { pointerEvents: 'none' }]} />
-            <View style={styles.editorHeader}>
-                <TouchableOpacity
-                    style={styles.headerAction}
-                    onPress={handleBack}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Geri dön', 'Go back')}
-                >
-                    <BackIcon color={colors.white} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle} numberOfLines={1}>
-                    {isEditing ? t('root.editCard') : l('Not ekle', 'Add note')}
-                </Text>
-                <View style={styles.headerSpacer} />
-                {(!isContentReadOnly || isDirty) && (
-                    <TouchableOpacity
-                        style={styles.headerAction}
-                        onPress={handleSave}
-                        accessibilityRole="button"
-                        accessibilityLabel={isContentReadOnly
-                            ? l('Etiketleri kaydet', 'Save tags')
-                            : isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Notu kaydet', 'Save note')}
-                    >
-                        <CheckIcon color={colors.white} />
-                    </TouchableOpacity>
+            <View style={[{ height: insets.top, backgroundColor: colors.bgCard }, { pointerEvents: 'none' }]} />
+            <ScreenHeader
+                backAccessibilityLabel={l('Geri dön', 'Go back')}
+                onBack={handleBack}
+                title={isEditing ? t('root.editCard') : l('Not ekle', 'Add note')}
+                actions={(
+                    <>
+                        {(!isContentReadOnly || isDirty) && (
+                            <IconButton
+                                onPress={handleSave}
+                                accessibilityLabel={isContentReadOnly
+                                    ? l('Etiketleri kaydet', 'Save tags')
+                                    : isEditing ? l('Değişiklikleri kaydet', 'Save changes') : l('Notu kaydet', 'Save note')}
+                            >
+                                <CheckIcon color={colors.accent} size={24} />
+                            </IconButton>
+                        )}
+                        <IconButton onPress={openPreview} accessibilityLabel={l('Kartı önizle', 'Preview card')}>
+                            <EyeIcon color={colors.accent} />
+                        </IconButton>
+                        <IconButton onPress={() => setShowOverflowMenu(true)} accessibilityLabel={l('Diğer seçenekler', 'More options')}>
+                            <MoreVerticalIcon color={colors.accent} />
+                        </IconButton>
+                    </>
                 )}
-                <TouchableOpacity
-                    style={styles.headerAction}
-                    onPress={openPreview}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Kartı önizle', 'Preview card')}
-                >
-                    <EyeIcon color={colors.white} size={25} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.headerAction}
-                    onPress={() => setShowOverflowMenu(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Diğer seçenekler', 'More options')}
-                >
-                    <MoreIcon color={colors.white} />
-                </TouchableOpacity>
-            </View>
+            />
             {/* Hangs under the header over the form, whatever the keyboard covers below. */}
             <View style={{ height: 0, zIndex: 20 }}>
                 <TransientNotice message={addedNotice} />
@@ -1227,7 +1201,7 @@ export default function EditorScreen() {
                         <Text style={styles.ankiSelectorLabel}>{l('Tür:', 'Type:')}</Text>
                         <Text style={styles.ankiSelectorValue} numberOfLines={1}>{cardTypeLabel}</Text>
                         <View style={styles.ankiSelectorChevron}>
-                            {!isEditing && !isCatalog && <ChevronDownIcon color={colors.textMuted} size={19} />}
+                            {!isEditing && !isCatalog && <ChevronDownIcon color={colors.textMuted} />}
                         </View>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -1247,7 +1221,7 @@ export default function EditorScreen() {
                             {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
                         </Text>
                         <View style={styles.ankiSelectorChevron}>
-                            {!isCatalog && <ChevronDownIcon color={colors.textMuted} size={19} />}
+                            {!isCatalog && <ChevronDownIcon color={colors.textMuted} />}
                         </View>
                     </TouchableOpacity>
                 </View>
@@ -1291,6 +1265,7 @@ export default function EditorScreen() {
                                             style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
                                             onPress={() => togglePinnedField(field.ord)}
                                             disabled={isEditing}
+                                            hitSlop={{ top: 2, right: 2, bottom: 2, left: 2 }}
                                             accessibilityRole="button"
                                             accessibilityLabel={isPinned
                                                 ? l(`${localizedName} alanının sabitlemesini kaldır`, `Unpin ${localizedName} field`)
@@ -1348,38 +1323,24 @@ export default function EditorScreen() {
                             />
                             {index === 0 && duplicateNote && (
                                 <View
-                                    style={styles.duplicateWarningBadge}
+                                    style={styles.duplicateWarning}
                                     accessibilityRole="alert"
                                     accessibilityLabel={l(
                                         `Yinelenen not uyarısı: ${duplicateNote.firstField}`,
                                         `Duplicate note warning: ${duplicateNote.firstField}`,
                                     )}
                                 >
-                                    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                                        <Path
-                                            d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-                                            stroke={colors.btnHard}
-                                            strokeWidth={2}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </Svg>
-                                    <View style={styles.duplicateWarningTextContainer}>
-                                        <Text style={styles.duplicateWarningTitle}>
-                                            {l('Yinelenen ilk alan bulundu', 'Duplicate first field found')}
-                                        </Text>
-                                        <Text style={styles.duplicateWarningDetail} numberOfLines={2}>
-                                            {duplicateDeckName
-                                                ? l(
-                                                    `"${duplicateDeckName}" destesinde aynı ilk alana sahip bir not var. Kaydedebilirsiniz ancak kartlar yinelenmiş olabilir.`,
-                                                    `A note with the same first field exists in "${duplicateDeckName}". You can still save, but cards may be duplicated.`,
-                                                )
-                                                : l(
-                                                    'Koleksiyonda aynı ilk alana sahip bir not var. Kaydedebilirsiniz ancak kartlar yinelenmiş olabilir.',
-                                                    'A note with the same first field exists in the collection. You can still save, but cards may be duplicated.',
-                                                )}
-                                        </Text>
-                                    </View>
+                                    <Notice tone="warning" title={l('Yinelenen ilk alan bulundu', 'Duplicate first field found')}>
+                                        {duplicateDeckName
+                                            ? l(
+                                                `"${duplicateDeckName}" destesinde aynı ilk alana sahip bir not var. Kaydedebilirsiniz ancak kartlar yinelenmiş olabilir.`,
+                                                `A note with the same first field exists in "${duplicateDeckName}". You can still save, but cards may be duplicated.`,
+                                            )
+                                            : l(
+                                                'Koleksiyonda aynı ilk alana sahip bir not var. Kaydedebilirsiniz ancak kartlar yinelenmiş olabilir.',
+                                                'A note with the same first field exists in the collection. You can still save, but cards may be duplicated.',
+                                            )}
+                                    </Notice>
                                 </View>
                             )}
                         </React.Fragment>
@@ -1400,7 +1361,7 @@ export default function EditorScreen() {
                     <Text style={styles.summaryValue} numberOfLines={1}>
                         {noteTags.join(' · ') || '—'}
                     </Text>
-                    <Text style={styles.summaryChevron}>›</Text>
+                    <ChevronRightIcon color={colors.textMuted} size={16} />
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.summaryRow}
@@ -1413,7 +1374,7 @@ export default function EditorScreen() {
                     <Text style={styles.summaryValue}>
                         {selectedNoteType?.templates.map((template) => localizeCardTemplateName(locale, template.name)).join(' · ') || '—'}
                     </Text>
-                    <Text style={styles.summaryChevron}>›</Text>
+                    <ChevronRightIcon color={colors.textMuted} size={16} />
                 </TouchableOpacity>
                 <Pressable
                     style={styles.scrollBottomDismissArea}
@@ -1466,7 +1427,6 @@ export default function EditorScreen() {
 
             <EditorOverflowMenu
                 visible={showOverflowMenu}
-                topInset={insets.top}
                 isCatalog={isCatalog}
                 contentReadOnly={isContentReadOnly}
                 isEditing={isEditing}
@@ -1474,9 +1434,8 @@ export default function EditorScreen() {
                 onUpdatePreferences={updateEditorPreferences}
                 onClearFields={requestClearFields}
                 onDeleteNote={handleDelete}
-                onOpenFontSize={() => runAfterOverflowClose(() => setShowFontSizePicker(true))}
+                onOpenFontSize={() => setShowFontSizePicker(true)}
                 onClose={() => setShowOverflowMenu(false)}
-                styles={styles}
                 l={l}
             />
 
@@ -1522,7 +1481,6 @@ export default function EditorScreen() {
                 draft={linkDraft}
                 onDraftChange={setLinkDraft}
                 onConfirm={confirmLink}
-                colors={colors}
                 onClose={() => setShowLinkEditor(false)}
                 styles={styles}
                 l={l}
@@ -1617,7 +1575,6 @@ export default function EditorScreen() {
                 onDelete={requestDeleteCustomToolbarButton}
                 onSave={saveCustomToolbarButton}
                 onClose={() => setShowCustomToolbarEditor(false)}
-                colors={colors}
                 styles={styles}
                 l={l}
                 t={t}
@@ -1695,7 +1652,6 @@ export default function EditorScreen() {
                 bodyHeight={previewBodyHeight}
                 audioPlaybackRate={previewAudioPlaybackRate}
                 onClose={() => setShowPreview(false)}
-                colors={colors}
                 styles={styles}
                 l={l}
                 t={t}

@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { View, TouchableOpacity, Platform } from 'react-native';
 import { Text } from '../AppText';
 import { useRouter } from 'expo-router';
-import { FontSize, useIsDarkTheme, type ColorScheme } from '../../constants/theme';
+import { FontSize, type ColorScheme } from '../../constants/theme';
 import type { StudyCard, AppSettings, Subject } from '../../lib/types';
 import { FLAG_COLORS, type CardFlag, type Deck, type NoteType } from '../../lib/models';
 import type { BrowserTableMode } from '../../lib/studyRepository';
@@ -13,6 +13,11 @@ import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
 import { formatLastReview, formatNewPosition, formatNextDue, newQueuePosition } from './browserHelpers';
 import PencilGlyph from '../PencilGlyph';
+import FlagGlyph from '../FlagGlyph';
+import StarGlyph from '../StarGlyph';
+import { Button } from '../ui/Button';
+import { Checkbox } from '../ui/Choice';
+import { SelectionSuspendIcon } from './BrowserIcons';
 
 interface BrowserCardRowProps {
     item: StudyCard;
@@ -68,7 +73,6 @@ export function BrowserCardRow({
     toggleCardSelection,
     toggleSuspend,
 }: BrowserCardRowProps) {
-    const isDark = useIsDarkTheme();
     const isExpanded = expandedCard === item.cardId;
     const isSelected = selectedCardIds.has(item.cardId);
     const sub = subject(item.subject);
@@ -131,11 +135,7 @@ export function BrowserCardRow({
             aria-checked={selectionMode ? isSelected : undefined}
         >
             <View style={styles.cardItemHeader}>
-                {selectionMode && (
-                    <View style={[styles.selectionCheckbox, isSelected && styles.selectionCheckboxActive]}>
-                        {isSelected && <Text style={[styles.selectionCheckboxTick]}>✓</Text>}
-                    </View>
-                )}
+                {selectionMode && <Checkbox checked={isSelected} />}
                 <Text style={styles.cardIcon}>{isNotesMode ? '📝' : (sub?.icon || '📝')}</Text>
                 <View style={styles.cardBody}>
                     <Text
@@ -194,24 +194,33 @@ export function BrowserCardRow({
                         <TouchableOpacity
                             style={[styles.editBtn]}
                             onPress={() => router.push(`/editor?cardId=${item.cardId}`)}
+                            // The pencil is drawn small to keep the row compact; the slop is a finger's target.
+                            hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
                             accessibilityRole="button"
                             accessibilityLabel={isNotesMode ? l('Notu düzenle', 'Edit note') : l('Kartı düzenle', 'Edit card')}
                         >
-                            <PencilGlyph color={isDark ? '#c2c2c2' : '#555555'} size={18} />
+                            <PencilGlyph color={colors.textSecondary} size={18} />
                         </TouchableOpacity>
                     )}
                     {item.noteMarked && (
-                        <Text style={[styles.flagIcon]} accessibilityLabel={l('Not işaretli', 'Note is marked')}>⭐</Text>
+                        <View style={styles.statusIcon} accessible accessibilityLabel={l('Not işaretli', 'Note is marked')}>
+                            <StarGlyph color={colors.marked} size={14} />
+                        </View>
                     )}
                     {!isNotesMode && flag > 0 && (
-                        <Text
-                            style={[styles.flagIcon, { color: FLAG_COLORS[flag].color }]}
+                        <View
+                            style={styles.statusIcon}
+                            accessible
                             accessibilityLabel={l(`Bayrak: ${cardFlagName(locale, flag)}`, `Flag: ${cardFlagName(locale, flag)}`)}
                         >
-                            ⚑
-                        </Text>
+                            <FlagGlyph color={FLAG_COLORS[flag].color} size={14} filled />
+                        </View>
                     )}
-                    {!isNotesMode && item.state.suspended && <Text style={[styles.suspendedIcon]}>⏸️</Text>}
+                    {!isNotesMode && item.state.suspended && (
+                        <View style={styles.statusIcon} accessible accessibilityLabel={l('Askıda', 'Suspended')}>
+                            <SelectionSuspendIcon color={colors.warning} size={14} />
+                        </View>
+                    )}
                 </View>
             </View>
 
@@ -270,9 +279,9 @@ export function BrowserCardRow({
                         )}
                     </View>
 
-                    <TouchableOpacity
-                        style={[styles.suspendBtn, item.state.suspended && styles.suspendBtnActive]}
-                        accessibilityRole="button"
+                    <Button
+                        variant="secondary"
+                        size="compact"
                         onPress={() => {
                             if (isNotesMode) {
                                 toggleSelectedSuspend(expandSelectedCardsToNotes([item.cardId]), settings.dayRolloverHour);
@@ -282,17 +291,14 @@ export function BrowserCardRow({
                                 toggleSuspend(item.cardId, item.state.suspended);
                             }
                         }}
-                    >
-                        <Text style={styles.suspendBtnText}>
-                            {isNotesMode
-                                ? item.state.suspended
-                                    ? l('▶️ Notun kartlarını askıdan çıkar', '▶️ Unsuspend Note Cards')
-                                    : l('⏸️ Notun kartlarını askıya al', '⏸️ Suspend Note Cards')
-                                : item.state.suspended
-                                    ? l('▶️ Askıdan çıkar', '▶️ Unsuspend')
-                                    : `⏸️ ${t('anki.suspend')}`}
-                        </Text>
-                    </TouchableOpacity>
+                        label={isNotesMode
+                            ? item.state.suspended
+                                ? l('▶️ Notun kartlarını askıdan çıkar', '▶️ Unsuspend Note Cards')
+                                : l('⏸️ Notun kartlarını askıya al', '⏸️ Suspend Note Cards')
+                            : item.state.suspended
+                                ? l('▶️ Askıdan çıkar', '▶️ Unsuspend')
+                                : `⏸️ ${t('anki.suspend')}`}
+                    />
                 </View>
             )}
         </TouchableOpacity>

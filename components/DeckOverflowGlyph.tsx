@@ -1,8 +1,12 @@
 import Svg, { Path, Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 
-type Kind = 'emptyCards' | 'import' | 'export' | 'backup' | 'restore';
+type Kind = 'emptyCards' | 'import' | 'export' | 'backup' | 'restore' | 'deck' | 'filteredDeck';
 
+/**
+ * The deck screens' line glyphs: the deck list's overflow menu, its add menu, and the mark of a
+ * regular (`deck`) or filtered (`filteredDeck`) deck, which the list used to draw as ▤ and ⧉.
+ */
 export default function DeckOverflowGlyph({ kind, color, size = 20 }: {
     kind: Kind;
     color: string;
@@ -36,6 +40,18 @@ export default function DeckOverflowGlyph({ kind, color, size = 20 }: {
             {kind === 'restore' && (
                 <>
                     <Path d="M4 6v5h5M4.8 11a8 8 0 1 1 .6 5.2M12 8v4l3 2" {...line} />
+                </>
+            )}
+            {kind === 'deck' && (
+                <>
+                    <Rect x="3.5" y="3.5" width="17" height="17" rx="2.5" {...line} />
+                    <Path d="M7.5 9h9M7.5 12.5h9M7.5 16h5.5" {...line} />
+                </>
+            )}
+            {kind === 'filteredDeck' && (
+                <>
+                    <Rect x="3.5" y="3.5" width="11" height="11" rx="2" {...line} />
+                    <Rect x="9.5" y="9.5" width="11" height="11" rx="2" {...line} />
                 </>
             )}
         </Svg>

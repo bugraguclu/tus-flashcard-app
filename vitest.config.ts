@@ -14,6 +14,8 @@ export default defineConfig({
             // expo-asset drags in expo-modules-core, which reads native globals while it is being
             // imported; lib/webDb only needs it to locate the sql.js wasm binary.
             { find: 'expo-asset', replacement: path.resolve(__dirname, 'test/expo-asset-stub.ts') },
+            // react-native-svg ships syntax vite cannot parse; screens drawing icons render with the stub.
+            { find: /^react-native-svg$/, replacement: path.resolve(__dirname, 'test/react-native-svg-stub.ts') },
         ],
     },
 });

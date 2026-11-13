@@ -13,9 +13,9 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Text, TextInput } from '../components/AppText';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useThemeColors } from '../constants/theme';
+import { Spacing, useThemeColors } from '../constants/theme';
 import { alert, confirm } from '../lib/confirm';
 import { goBackOr } from '../lib/backNavigation';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
@@ -36,7 +36,8 @@ import {
     createOrSelectDeck,
 } from '../lib/deckManager';
 import DeckPickerModal from '../components/DeckPickerModal';
-import HeaderBackIcon from '../components/HeaderBackIcon';
+import ScreenHeader from '../components/ScreenHeader';
+import { ChevronDownIcon, MoreIcon } from '../components/ui/icons';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
 import type { AutoAdvanceAnswerAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from '../lib/types';
 import { normalizeNewCardGatherOrder } from '../lib/queueBuild';
@@ -179,6 +180,10 @@ export default function DeckOptionsScreen() {
     const [deckPickerOpen, setDeckPickerOpen] = useState(false);
     const [presetPickerOpen, setPresetPickerOpen] = useState(false);
     const [presetActionsOpen, setPresetActionsOpen] = useState(false);
+    // The ••• menu hangs under its button, wherever the form has scrolled it to.
+    const presetMenuButtonRef = useRef<View>(null);
+    const [presetMenuAnchor, setPresetMenuAnchor] = useState<{ top: number; right: number } | undefined>(undefined);
+    const insets = useSafeAreaInsets();
     const [renameOpen, setRenameOpen] = useState(false);
     const [renameText, setRenameText] = useState('');
     // Add and Clone ask for a name first (DST-8); nothing is written until Save (P3).
@@ -1085,6 +1090,20 @@ export default function DeckOptionsScreen() {
             `${Object.keys(validation.errors).length} fields need attention.`,
         )
         : saveMessage || (isDirty ? l('Kaydedilmemiş değişiklikler var.', 'There are unsaved changes.') : '');
+    const openPresetActions = () => {
+        const button = presetMenuButtonRef.current;
+        if (!button) {
+            setPresetActionsOpen(true);
+            return;
+        }
+        button.measureInWindow((x, y, buttonWidth, buttonHeight) => {
+            setPresetMenuAnchor({
+                top: y + buttonHeight + Spacing.xs - insets.top,
+                right: Math.max(Spacing.sm, width - (x + buttonWidth)),
+            });
+            setPresetActionsOpen(true);
+        });
+    };
     const deckOptionsContextValue = useMemo(() => ({
         styles,
         colors,
@@ -1097,21 +1116,13 @@ export default function DeckOptionsScreen() {
     return (
         <DeckOptionsContext.Provider value={deckOptionsContextValue}>
             <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={() => goBackOr(router)}
-                    accessibilityRole="button"
-                    // The deck list, the overview and the study screen all open this screen.
-                    accessibilityLabel={l('Geri', 'Back')}
-                >
-                    <HeaderBackIcon color={colors.accent} />
-                </TouchableOpacity>
-                <View style={styles.headerTitleWrap}>
-                    <Text style={styles.headerTitle} numberOfLines={1}>{l('Deste seçenekleri', 'Deck Options')}</Text>
-                    <Text style={styles.headerSubtitle} numberOfLines={1}>{deck.name.replaceAll('::', ' › ')}</Text>
-                </View>
-            </View>
+            <ScreenHeader
+                title={l('Deste seçenekleri', 'Deck Options')}
+                subtitle={deck.name.replaceAll('::', ' › ')}
+                // The deck list, the overview and the study screen all open this screen.
+                backAccessibilityLabel={l('Geri', 'Back')}
+                onBack={() => goBackOr(router)}
+            />
 
             <ScrollView
                 contentContainerStyle={styles.content}
@@ -1137,21 +1148,32 @@ export default function DeckOptionsScreen() {
                             <Text style={styles.presetSelectorLabel}>{l('Deste', 'Deck')}</Text>
                             <Text style={styles.presetSelectorName} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
                         </View>
-                        <Text style={styles.presetSelectorChevron}>⌄</Text>
+                        <View style={styles.presetSelectorChevron}>
+                            <ChevronDownIcon color={colors.textMuted} size={16} />
+                        </View>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.savePrimary, saveDisabled && styles.saveControlDisabled]}
                         onPress={handleSave}
                         accessibilityRole="button"
                         accessibilityState={{ disabled: saveDisabled }}
+                        aria-disabled={saveDisabled}
                         disabled={saveDisabled}
                     >
                         {saveState === 'saving'
-                            ? <ActivityIndicator size="small" color={colors.white} />
+                            ? <ActivityIndicator size="small" color={colors.onAccent} />
                             : <Text style={styles.savePrimaryText}>{saveLabel}</Text>}
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.presetMoreButton} onPress={() => setPresetActionsOpen(true)} accessibilityRole="button" accessibilityLabel={l('Ayar grubu işlemleri', 'Preset actions')}>
-                        <Text style={styles.presetMoreButtonText}>•••</Text>
+                    <TouchableOpacity
+                        ref={presetMenuButtonRef}
+                        style={styles.presetMoreButton}
+                        onPress={openPresetActions}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Ayar grubu işlemleri', 'Preset actions')}
+                        accessibilityState={{ expanded: presetActionsOpen }}
+                        aria-expanded={presetActionsOpen}
+                    >
+                        <MoreIcon color={colors.textSecondary} size={22} />
                     </TouchableOpacity>
                 </View>
 
@@ -1171,7 +1193,9 @@ export default function DeckOptionsScreen() {
                     <Text style={styles.presetSelectorMeta} numberOfLines={1}>
                         {l(`${usedBy} deste`, `${usedBy} decks`)}
                     </Text>
-                    <Text style={styles.presetSelectorChevron}>⌄</Text>
+                    <View style={styles.presetSelectorChevron}>
+                        <ChevronDownIcon color={colors.textMuted} size={16} />
+                    </View>
                 </TouchableOpacity>
 
                 <View
@@ -1653,7 +1677,8 @@ export default function DeckOptionsScreen() {
                         { label: l('Ayar grubunu kaldır', 'Remove Preset'), action: handleDeletePreset, destructive: true },
                     ]}
                     onClose={() => setPresetActionsOpen(false)}
-                    styles={styles}
+                    anchor={presetMenuAnchor}
+                    accessibilityLabel={l('Ayar grubu işlemleri', 'Preset actions')}
                 />
 
             {deckPickerOpen ? (

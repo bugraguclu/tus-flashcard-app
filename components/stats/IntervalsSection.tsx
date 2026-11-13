@@ -5,7 +5,7 @@ import type { AnkiStatsSnapshot } from '../../lib/ankiStats';
 import { formatIntervalDays } from '../../lib/statsPresentation';
 import type { ChartPoint } from '../../lib/statsSeries';
 import StatsBarChart from './StatsBarChart';
-import StatsCard from './StatsCard';
+import { Card } from '../ui/Card';
 import StatsTiles from './StatsTiles';
 import { useStatsFormat } from './useStatsFormat';
 
@@ -30,7 +30,7 @@ export default function IntervalsSection({ stats, rangeTitle }: { stats: AnkiSta
     const cards = (value: number) => l(`${f.count(value)} kart`, `${f.count(value)} ${value === 1 ? 'card' : 'cards'}`);
 
     return (
-        <StatsCard title={l('Tekrar aralıkları', 'Review Intervals')}>
+        <Card padded title={l('Tekrar aralıkları', 'Review Intervals')}>
             <StatsBarChart
                 points={points}
                 series={[{ key: 'cards', label: l('Kart', 'Cards'), color: colors.accent }]}
@@ -56,6 +56,6 @@ export default function IntervalsSection({ stats, rangeTitle }: { stats: AnkiSta
                     { key: 'longest', label: l('En uzun aralık', 'Longest interval'), value: formatIntervalDays(stats.longestInterval, locale) },
                 ]}
             />
-        </StatsCard>
+        </Card>
     );
 }

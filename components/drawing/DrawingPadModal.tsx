@@ -1,21 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     Image as NativeImage,
     Modal,
     PixelRatio,
     Platform,
     StyleSheet,
-    TouchableOpacity,
     View,
     type LayoutChangeEvent,
 } from 'react-native';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { BorderRadius, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { alert, confirm } from '../../lib/confirm';
 import { sanitizeMediaFilename } from '../../lib/mediaFilename';
@@ -38,6 +35,9 @@ import {
     type DrawingTool,
 } from '../../lib/drawingPad';
 import PaperSwatch, { pageColorLabel, paperLabel } from '../PaperSwatch';
+import ScreenHeader from '../ScreenHeader';
+import { Button, IconButton } from '../ui/Button';
+import { ChevronDownIcon, RedoIcon, TrashIcon, UndoIcon } from '../ui/icons';
 import { EXPORT_MAX_DIMENSION, makeId, type ExportSurface } from '../photo-editor/editorModel';
 import { AnnotationLayer, renderAnnotation } from '../photo-editor/annotationRendering';
 import { rasterizeBlankCanvasWeb } from '../photo-editor/webExport';
@@ -47,7 +47,6 @@ import { MoreToolsSheet } from './MoreToolsSheet';
 import { PageOptionsSheet, shapeLabel } from './PageOptionsSheet';
 import { SelectionFrame } from './SelectionFrame';
 import { TextEntrySheet } from './TextEntrySheet';
-import { ChevronDownGlyph, ClearGlyph, RedoGlyph, UndoGlyph } from './drawingGlyphs';
 import { pickDrawingPicture } from './pickDrawingPicture';
 import { useDrawingGestures, type DrawingBrush } from './useDrawingGestures';
 
@@ -62,6 +61,12 @@ interface DrawingPadModalProps {
 type PadSnapshot = { annotations: PhotoAnnotation[]; setup: BlankCanvasSetup };
 
 const HISTORY_LIMIT = 50;
+/**
+ * iOS presents no picker while the More sheet's modal is still on screen, so the photo library
+ * opens from the sheet's onDismiss. The timer covers a dismissal that is not reported; the sheet's
+ * own exit gives up at 550 ms.
+ */
+const SHEET_GONE_FALLBACK_MS = 700;
 const DEFAULT_SIZES: Record<DrawingTool, DrawingSize> = {
     pen: 1, highlighter: 1, eraser: 1, text: 1, arrow: 1, rect: 1, ellipse: 1, cover: 1, image: 1,
 };
@@ -311,6 +316,20 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
         }
     };
 
+    // The picture tool waits here until the More sheet has gone.
+    const picturePendingRef = useRef(false);
+    const pictureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const addPendingPicture = () => {
+        if (pictureTimerRef.current) {
+            clearTimeout(pictureTimerRef.current);
+            pictureTimerRef.current = null;
+        }
+        if (!picturePendingRef.current) return;
+        picturePendingRef.current = false;
+        void addPicture();
+    };
+
     const pickMoreTool = (next: DrawingShapeTool | 'image') => {
         setMoreSheet(false);
         if (next !== 'image') {
@@ -318,7 +337,12 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
             return;
         }
         // The picker cannot be presented while the sheet is still leaving the screen.
-        setTimeout(() => { void addPicture(); }, Platform.OS === 'ios' ? 450 : 0);
+        if (Platform.OS !== 'ios') {
+            setTimeout(() => { void addPicture(); }, 0);
+            return;
+        }
+        picturePendingRef.current = true;
+        pictureTimerRef.current = setTimeout(addPendingPicture, SHEET_GONE_FALLBACK_MS);
     };
 
     const editingText = textEntry && 'id' in textEntry
@@ -456,65 +480,52 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
     const nothingDrawn = annotations.length === 0;
     const showSelection = selectedObject && (tool === 'text' || tool === 'image');
 
-    const historyButton = (label: string, enabled: boolean, onPress: () => void, Glyph: typeof UndoGlyph) => (
-        <TouchableOpacity
-            style={[styles.historyButton, !enabled && styles.disabled]}
-            onPress={onPress}
-            disabled={!enabled}
-            accessibilityRole="button"
-            accessibilityLabel={label}
-            accessibilityState={{ disabled: !enabled }}
-        >
+    // The round buttons float over the page, so they keep a surface and a shadow of their own.
+    const historyButton = (label: string, enabled: boolean, onPress: () => void, Glyph: typeof UndoIcon) => (
+        <IconButton accessibilityLabel={label} onPress={onPress} disabled={!enabled} style={styles.historyButton}>
             <Glyph color={colors.textPrimary} size={20} />
-        </TouchableOpacity>
+        </IconButton>
     );
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={close}>
             {/* A modal is a root of its own, so the page's gesture needs its own gesture root. */}
             <GestureHandlerRootView style={[styles.container, { paddingTop: insets.top }]}>
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        style={styles.headerSide}
-                        onPress={close}
-                        disabled={saving}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Çizimi iptal et', 'Cancel drawing')}
-                    >
-                        <Text style={styles.cancelText}>{l('Vazgeç', 'Cancel')}</Text>
-                    </TouchableOpacity>
-                    <View style={styles.headerCenter}>
-                        <Text style={styles.title}>{l('Çizim', 'Drawing')}</Text>
-                        <TouchableOpacity
-                            style={styles.pageButton}
-                            onPress={() => setPageSheet(true)}
-                            accessibilityRole="button"
-                            accessibilityLabel={l(`Sayfa seçenekleri: ${pageSummary}`, `Page options: ${pageSummary}`)}
-                        >
-                            <Text style={styles.pageButtonText} numberOfLines={1}>{pageSummary}</Text>
-                            <ChevronDownGlyph color={colors.accent} size={14} />
-                        </TouchableOpacity>
-                    </View>
-                    <View style={[styles.headerSide, styles.headerRight]}>
-                        <TouchableOpacity
-                            style={[styles.addButton, (nothingDrawn || saving) && styles.addButtonDisabled]}
+                {/* × asks before a drawing is thrown away; `close` does nothing while a save runs. */}
+                <ScreenHeader
+                    leading="close"
+                    onBack={close}
+                    backAccessibilityLabel={l('Çizimi iptal et', 'Cancel drawing')}
+                    title={l('Çizim', 'Drawing')}
+                    actions={(
+                        <Button
+                            label={l('Ekle', 'Add')}
+                            size="compact"
                             onPress={save}
-                            disabled={nothingDrawn || saving}
-                            accessibilityRole="button"
+                            disabled={nothingDrawn}
+                            busy={saving}
                             accessibilityLabel={l('Çizimi karta ekle', 'Add drawing to the card')}
-                            accessibilityState={{ disabled: nothingDrawn || saving }}
-                        >
-                            {saving
-                                ? <ActivityIndicator size="small" color={colors.white} />
-                                : <Text style={styles.addText}>{l('Ekle', 'Add')}</Text>}
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                        />
+                    )}
+                />
 
                 <View style={styles.historyBar}>
-                    {historyButton(l('Geri al', 'Undo'), undoStack.length > 0, undo, UndoGlyph)}
-                    {historyButton(l('Yinele', 'Redo'), redoStack.length > 0, redo, RedoGlyph)}
-                    {historyButton(l('Sayfayı temizle', 'Clear page'), !nothingDrawn, clear, ClearGlyph)}
+                    {/* The page line opens the paper, colour and shape. It sits here rather than as
+                        the header's subtitle, which cannot be tapped; like any value that opens a
+                        list of options, it ends in a down chevron. */}
+                    <Button
+                        label={pageSummary}
+                        variant="plain"
+                        size="compact"
+                        trailingIcon={<ChevronDownIcon color={colors.accent} size={14} />}
+                        onPress={() => setPageSheet(true)}
+                        numberOfLines={1}
+                        accessibilityLabel={l(`Sayfa seçenekleri: ${pageSummary}`, `Page options: ${pageSummary}`)}
+                        style={styles.pageButton}
+                    />
+                    {historyButton(l('Geri al', 'Undo'), undoStack.length > 0, undo, UndoIcon)}
+                    {historyButton(l('Yinele', 'Redo'), redoStack.length > 0, redo, RedoIcon)}
+                    {historyButton(l('Sayfayı temizle', 'Clear page'), !nothingDrawn, clear, TrashIcon)}
                 </View>
 
                 <View style={styles.stage} onLayout={onStageLayout}>
@@ -592,6 +603,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                     tool={tool}
                     onPick={pickMoreTool}
                     onClose={() => setMoreSheet(false)}
+                    onDismiss={addPendingPicture}
                 />
                 <TextEntrySheet
                     visible={textEntry !== null}
@@ -627,57 +639,17 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
-        header: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: 56,
-            paddingHorizontal: Spacing.md,
-            backgroundColor: colors.bgCard,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-        },
-        headerSide: { minWidth: 76, minHeight: 44, justifyContent: 'center' },
-        headerRight: { alignItems: 'flex-end' },
-        headerCenter: { flex: 1, alignItems: 'center', gap: 1 },
-        cancelText: { fontSize: FontSize.lg, color: colors.accent, fontWeight: '600' },
-        title: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-        pageButton: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 2,
-            minHeight: 24,
-            paddingHorizontal: Spacing.sm,
-            maxWidth: '100%',
-        },
-        pageButtonText: { fontSize: FontSize.sm, color: colors.accent, fontWeight: '600', flexShrink: 1 },
-        addButton: {
-            minWidth: 64,
-            height: 36,
-            paddingHorizontal: Spacing.lg,
-            borderRadius: BorderRadius.full,
-            backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        addButtonDisabled: { opacity: 0.4 },
-        addText: { color: colors.white, fontWeight: '700', fontSize: FontSize.md },
         historyBar: {
             flexDirection: 'row',
+            alignItems: 'center',
             justifyContent: 'flex-end',
             gap: Spacing.sm,
             paddingHorizontal: Spacing.md,
             paddingTop: Spacing.sm,
         },
-        historyButton: {
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: colors.bgCard,
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...Shadows.sm,
-        },
-        disabled: { opacity: 0.35 },
+        // Pulled to the gutter by the text button's own padding, and pushed left of the history.
+        pageButton: { flexShrink: 1, marginLeft: -Spacing.md, marginRight: 'auto' },
+        historyButton: { backgroundColor: colors.bgCard, ...Shadows.sm },
         stage: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
         // The shadow sits on a wrapper: iOS clips a shadow drawn by a view that clips its content.
         pageShadow: { borderRadius: BorderRadius.sm, backgroundColor: colors.bgCard, ...Shadows.md },
@@ -687,6 +659,7 @@ function createStyles(colors: ColorScheme) {
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: colors.border,
         },
+        // Drawn on the page itself, whatever colour the page is, so it keeps its own grey and white.
         eraserRing: {
             position: 'absolute',
             borderWidth: 1.5,

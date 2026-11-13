@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { WebView } from 'react-native-webview';
 import * as Sharing from 'expo-sharing';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
 import { alert } from '../lib/confirm';
 import { attachmentDisplayName, canPreviewAttachment } from '../lib/attachmentKind';
 import { getLegacyFileSystem, shareOrDownloadFileWeb } from '../lib/files';
 import { getMediaBaseUrl, guessMimeFromFilename, readMediaBytes } from '../lib/mediaStore';
 import { DocumentIcon, ShareIcon } from './editor/AttachmentIcons';
+import { Button, IconButton } from './ui/Button';
+import { EmptyState } from './ui/Feedback';
+import { Radius, Type } from './ui/tokens';
 
 /** Where a stored attachment is read from on native, as a URL a WebView can load. */
 function attachmentFileUri(filename: string): string {
@@ -97,13 +100,12 @@ function AttachmentViewer({ filename, onClose }: AttachmentViewerProps) {
     let body: ReactNode;
     if (missing) {
         body = (
-            <View style={styles.notice}>
-                <DocumentIcon color={colors.textMuted} size={44} />
-                <Text style={styles.noticeTitle}>{l('Dosya bulunamadı', 'File not found')}</Text>
-                <Text style={styles.noticeText}>
-                    {l('Bu bağlantının dosyası bu cihazda yok.', 'The file this link points to is not on this device.')}
-                </Text>
-            </View>
+            <EmptyState
+                icon={<DocumentIcon color={colors.textMuted} size={44} />}
+                title={l('Dosya bulunamadı', 'File not found')}
+                body={l('Bu bağlantının dosyası bu cihazda yok.', 'The file this link points to is not on this device.')}
+                style={styles.notice}
+            />
         );
     } else if (filename && canPreviewAttachment(filename)) {
         body = (
@@ -126,16 +128,13 @@ function AttachmentViewer({ filename, onClose }: AttachmentViewerProps) {
         );
     } else {
         body = (
-            <View style={styles.notice}>
-                <DocumentIcon color={colors.accent} size={44} />
-                <Text style={styles.noticeTitle} numberOfLines={2}>{name}</Text>
-                <Text style={styles.noticeText}>
-                    {l('Bu dosya burada gösterilemiyor; başka bir uygulamada açabilirsiniz.', 'This file cannot be shown here; you can open it in another app.')}
-                </Text>
-                <TouchableOpacity style={styles.noticeButton} onPress={share} disabled={sharing} accessibilityRole="button">
-                    <Text style={styles.noticeButtonText}>{l('Başka uygulamada aç', 'Open in Another App')}</Text>
-                </TouchableOpacity>
-            </View>
+            <EmptyState
+                icon={<DocumentIcon color={colors.accent} size={44} />}
+                title={name}
+                body={l('Bu dosya burada gösterilemiyor; başka bir uygulamada açabilirsiniz.', 'This file cannot be shown here; you can open it in another app.')}
+                action={<Button label={l('Başka uygulamada aç', 'Open in Another App')} onPress={share} disabled={sharing} />}
+                style={styles.notice}
+            />
         );
     }
 
@@ -148,25 +147,22 @@ function AttachmentViewer({ filename, onClose }: AttachmentViewerProps) {
             onRequestClose={onClose}
         >
             <View style={styles.container}>
+                {/* React Native's page sheet draws no grabber of its own; this one shows the pull-down. */}
                 <View style={[styles.grabberArea, { pointerEvents: 'none' }]}>
                     <View style={styles.grabber} />
                 </View>
                 <View style={styles.header}>
-                    <TouchableOpacity style={styles.headerButton} onPress={onClose} accessibilityRole="button">
-                        <Text style={styles.headerAction}>{l('Kapat', 'Close')}</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.title} numberOfLines={1}>{name}</Text>
-                    <TouchableOpacity
-                        style={[styles.headerButton, styles.headerButtonEnd]}
-                        onPress={share}
-                        disabled={missing || sharing}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Paylaş', 'Share')}
-                    >
-                        {sharing
-                            ? <ActivityIndicator size="small" color={colors.accent} />
-                            : <ShareIcon color={missing ? colors.textMuted : colors.accent} />}
-                    </TouchableOpacity>
+                    <View style={styles.headerSide}>
+                        <Button label={l('Kapat', 'Close')} variant="plain" onPress={onClose} />
+                    </View>
+                    <Text style={styles.title} numberOfLines={1} accessibilityRole="header">{name}</Text>
+                    <View style={[styles.headerSide, styles.headerSideEnd]}>
+                        <IconButton accessibilityLabel={l('Paylaş', 'Share')} onPress={share} disabled={missing || sharing}>
+                            {sharing
+                                ? <ActivityIndicator size="small" color={colors.accent} />
+                                : <ShareIcon color={colors.accent} />}
+                        </IconButton>
+                    </View>
                 </View>
                 {body}
             </View>
@@ -201,7 +197,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgCard },
         grabberArea: { alignItems: 'center', paddingTop: 8 },
-        grabber: { width: 36, height: 5, borderRadius: 3, backgroundColor: colors.border },
+        grabber: { width: 36, height: 5, borderRadius: Radius.pill, backgroundColor: colors.border },
         header: {
             flexDirection: 'row',
             alignItems: 'center',
@@ -210,22 +206,11 @@ function createStyles(colors: ColorScheme) {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
-        headerButton: { minWidth: 72, minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.sm },
-        headerButtonEnd: { alignItems: 'flex-end' },
-        headerAction: { color: colors.accent, fontSize: FontSize.md, fontWeight: '600' },
-        title: { flex: 1, textAlign: 'center', color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
+        // Equal sides keep the file name centred between Close and Share.
+        headerSide: { minWidth: 72, alignItems: 'flex-start' },
+        headerSideEnd: { alignItems: 'flex-end' },
+        title: { ...Type.title, flex: 1, textAlign: 'center', color: colors.textPrimary },
         preview: { flex: 1, backgroundColor: colors.bgCard },
-        notice: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, padding: Spacing.xl },
-        noticeTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700', textAlign: 'center' },
-        noticeText: { color: colors.textMuted, fontSize: FontSize.sm, textAlign: 'center', lineHeight: 20 },
-        noticeButton: {
-            marginTop: Spacing.md,
-            minHeight: 44,
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.lg,
-            borderRadius: BorderRadius.full,
-            backgroundColor: colors.accent,
-        },
-        noticeButtonText: { color: colors.white, fontSize: FontSize.md, fontWeight: '700' },
+        notice: { flex: 1 },
     });
 }

@@ -94,14 +94,17 @@ vi.mock('react-native', () => {
 vi.mock('../components/AppText', () => ({ Text: 'Text' }));
 vi.mock('../constants/theme', () => ({
     BorderRadius: { md: 10 },
-    FontSize: { sm: 12 },
+    FontSize: new Proxy({}, { get: () => 12 }),
+    // The kit's segmented control lays its track out with the theme's spacing and shadows.
+    Spacing: new Proxy({}, { get: () => 8 }),
+    Shadows: new Proxy({}, { get: () => ({}) }),
     dropShadow: () => ({}),
     useIsDarkTheme: () => false,
     useThemeColors: () => new Proxy({}, { get: () => '#000' }),
 }));
 
 import { PopoverBackdrop, PopoverItem, PopoverModal } from '../components/Popover';
-import StatsSegmented from '../components/stats/StatsSegmented';
+import { SegmentedControl } from '../components/ui/Choice';
 import PressableScale from '../components/PressableScale';
 import AnswerFeedbackBadge from '../components/reviewer/AnswerFeedbackBadge';
 import { useSuccessPulse } from '../hooks/useSuccessPulse';
@@ -341,9 +344,9 @@ describe('AnswerFeedbackBadge', () => {
     });
 });
 
-describe('StatsSegmented', () => {
+describe('SegmentedControl', () => {
     const options = [{ value: 'week', label: 'Hafta' }, { value: 'month', label: 'Ay' }, { value: 'year', label: 'Yıl' }];
-    const control = (value: string) => React.createElement(StatsSegmented<string>, {
+    const control = (value: string) => React.createElement(SegmentedControl<string>, {
         options, value, onChange: () => {}, accessibilityLabel: 'Dönem',
     });
     const measure = () => act(() => find('Pressable').forEach((segment, index) => segment.props.onLayout({

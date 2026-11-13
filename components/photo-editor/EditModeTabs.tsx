@@ -4,6 +4,7 @@ import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { PenGlyph } from '../drawing/drawingGlyphs';
+import { Radius } from '../ui/tokens';
 import { ROW_LABEL_FIT } from './editorModel';
 import { AdjustGlyph, CropGlyph } from './photoEditorGlyphs';
 
@@ -22,7 +23,10 @@ interface EditModeTabsProps {
     bottomInset: number;
 }
 
-/** What the photo editor is doing to the photo: cropping and turning it, adjusting it, or drawing on it. */
+/**
+ * What the photo editor is doing to the photo: cropping and turning it, adjusting it, or drawing on
+ * it. A tab bar of glyphs, which `SegmentedControl` does not draw, so it keeps its own tabs.
+ */
 export function EditModeTabs({ mode, onChange, bottomInset }: EditModeTabsProps) {
     const { l } = useI18n();
     const colors = useThemeColors();
@@ -66,7 +70,7 @@ function createStyles(colors: ColorScheme) {
             paddingHorizontal: Spacing.md,
         },
         tab: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', gap: 2 },
-        marker: { position: 'absolute', top: 0, width: 28, height: 3, borderRadius: 2, backgroundColor: 'transparent' },
+        marker: { position: 'absolute', top: 0, width: 28, height: 3, borderRadius: Radius.pill, backgroundColor: colors.transparent },
         label: { fontSize: FontSize.xs, fontWeight: '700', color: colors.textMuted },
         labelActive: { color: colors.accent },
     });

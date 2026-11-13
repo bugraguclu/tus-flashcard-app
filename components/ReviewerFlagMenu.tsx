@@ -5,19 +5,21 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    TouchableOpacity,
     View,
     useWindowDimensions,
 } from 'react-native';
 import { Text } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { FLAG_COLORS, type CardFlag } from '../lib/models';
 import FlagGlyph from './FlagGlyph';
 import { usePopoverItemStyle } from './Popover';
+import { MenuItem } from './ui/Menu';
+import { Radius } from './ui/tokens';
 import { useI18n } from '../hooks/useI18n';
 import { cardFlagName } from '../lib/i18n';
 
+/** The reviewer's flag picker: an AnkiDroid-style panel at the right edge, one row per flag. */
 export default function ReviewerFlagMenu({
     visible,
     currentFlag,
@@ -55,34 +57,25 @@ export default function ReviewerFlagMenu({
                 />
                 <Animated.View style={[styles.panel, { width: panelWidth }, slideIn]} accessibilityViewIsModal>
                     <View style={styles.header}>
-                        <Text style={styles.title}>{l('Bayrak rengi', 'Flag color')}</Text>
+                        <Text style={styles.title} accessibilityRole="header">{l('Bayrak rengi', 'Flag color')}</Text>
                     </View>
                     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                        {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => {
-                            const label = flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag);
-                            const selected = currentFlag === flag;
-                            return (
-                                <TouchableOpacity
-                                    key={flag}
-                                    style={[styles.row, selected && styles.rowSelected]}
-                                    onPress={() => { onSelect(flag); onClose(); }}
-                                    accessibilityRole="radio"
-                                    accessibilityLabel={label}
-                                    accessibilityState={{ selected }}
-                                    aria-checked={selected}
-                                >
-                                    <View style={styles.swatch}>
-                                        <FlagGlyph
-                                            color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
-                                            size={18}
-                                            filled={flag !== 0}
-                                        />
-                                    </View>
-                                    <Text style={styles.label}>{label}</Text>
-                                    {selected ? <Text style={styles.check}>✓</Text> : null}
-                                </TouchableOpacity>
-                            );
-                        })}
+                        {([0, 1, 2, 3, 4, 5, 6, 7] as CardFlag[]).map((flag) => (
+                            <MenuItem
+                                key={flag}
+                                label={flag === 0 ? l('Bayrak yok', 'No flag') : cardFlagName(locale, flag)}
+                                icon={(
+                                    <FlagGlyph
+                                        color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
+                                        size={18}
+                                        filled={flag !== 0}
+                                    />
+                                )}
+                                checked={currentFlag === flag}
+                                exclusive
+                                onPress={() => { onSelect(flag); onClose(); }}
+                            />
+                        ))}
                     </ScrollView>
                 </Animated.View>
             </View>
@@ -93,12 +86,12 @@ export default function ReviewerFlagMenu({
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         overlay: { flex: 1, alignItems: 'flex-end' },
-        scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.22)' },
+        scrim: { ...StyleSheet.absoluteFill, backgroundColor: colors.scrimLight },
         panel: {
             maxHeight: '100%',
             backgroundColor: colors.bgCard,
-            borderTopLeftRadius: BorderRadius.sm,
-            borderBottomLeftRadius: BorderRadius.sm,
+            borderTopLeftRadius: Radius.inset,
+            borderBottomLeftRadius: Radius.inset,
             overflow: 'hidden',
             ...dropShadow({ x: -4, y: 4, blur: 10, opacity: 0.22, elevation: 16 }),
         },
@@ -111,16 +104,5 @@ function createStyles(colors: ColorScheme) {
         },
         title: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
         content: { paddingVertical: 4, paddingBottom: 6 },
-        row: {
-            minHeight: 52,
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: Spacing.md,
-            paddingVertical: 7,
-        },
-        rowSelected: { backgroundColor: colors.accentLight },
-        swatch: { width: 20, height: 20, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
-        label: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md, lineHeight: 20 },
-        check: { color: colors.accent, fontSize: 20, fontWeight: '800' },
     });
 }

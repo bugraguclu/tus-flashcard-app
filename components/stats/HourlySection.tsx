@@ -4,7 +4,7 @@ import type { HourBucket } from '../../lib/ankiStats';
 import { formatHour, formatHourRange } from '../../lib/statsPresentation';
 import { hourHighlights, type ChartPoint } from '../../lib/statsSeries';
 import StatsBarChart from './StatsBarChart';
-import StatsCard from './StatsCard';
+import { Card } from '../ui/Card';
 import StatsRateStrip from './StatsRateStrip';
 import StatsTiles from './StatsTiles';
 import { useStatsFormat } from './useStatsFormat';
@@ -35,9 +35,7 @@ export default function HourlySection({ hours, rangeTitle }: { hours: readonly H
     const answers = (value: number) => l(`${f.count(value)} cevap`, `${f.count(value)} ${value === 1 ? 'answer' : 'answers'}`);
 
     return (
-        <StatsCard
-            title={l('Saatlik dağılım', 'Hourly Breakdown')}
-        >
+        <Card padded title={l('Saatlik dağılım', 'Hourly Breakdown')}>
             <StatsBarChart
                 points={points}
                 series={[{ key: 'answers', label: l('Cevap', 'Answers'), color: colors.accent }]}
@@ -92,6 +90,6 @@ export default function HourlySection({ hours, rangeTitle }: { hours: readonly H
                     ]}
                 />
             )}
-        </StatsCard>
+        </Card>
     );
 }

@@ -29,16 +29,17 @@ vi.mock('./storage', async () => {
         saveSettingsDurably: store.saveSettingsDurably,
     };
 });
-vi.mock('react-native', () => ({
+vi.mock('react-native', async () => ({
+    // The shared parts animate (menus grow, buttons sink); here every animation ends at once.
+    ...(await import('../test/animatedMock')).animatedModules(),
     Platform: { OS: 'ios', select: (spec: Record<string, unknown>) => spec.ios ?? spec.default },
     Keyboard: { dismiss: () => {} },
     useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
     Linking: { openURL: async () => true },
     StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1, absoluteFill: {} },
-    ActivityIndicator: 'ActivityIndicator', Modal: 'Modal', Pressable: 'Pressable', ScrollView: 'ScrollView',
+    ActivityIndicator: 'ActivityIndicator', KeyboardAvoidingView: 'KeyboardAvoidingView', Modal: 'Modal', Pressable: 'Pressable', ScrollView: 'ScrollView',
     Switch: 'Switch', Text: 'Text', TextInput: 'TextInput', TouchableOpacity: 'TouchableOpacity',
     TouchableWithoutFeedback: 'TouchableWithoutFeedback', View: 'View',
-    Animated: { View: 'View' },
 }));
 vi.mock('react-native-safe-area-context', () => ({ SafeAreaView: 'SafeAreaView' }));
 vi.mock('expo-constants', () => ({ default: { expoConfig: { version: '1.0.0' } } }));
@@ -104,7 +105,6 @@ vi.mock('../components/HandTapGlyph', () => ({ default: () => null }));
 vi.mock('../components/AccessibilityGlyph', () => ({ default: () => null }));
 vi.mock('../components/ArchiveBoxGlyph', () => ({ default: () => null }));
 vi.mock('../components/InfoCircleGlyph', () => ({ default: () => null }));
-vi.mock('../components/HeaderBackIcon', () => ({ default: () => null }));
 
 import SettingsScreen from '../app/settings';
 import { DEFAULT_SETTINGS, loadSettings, saveCollectionDeckOptions, saveSettings } from './settingsStore';
@@ -140,7 +140,8 @@ function mount() {
     act(() => { renderer = TestRenderer.create(React.createElement(SettingsScreen)); });
 }
 
-const pressables = () => renderer!.root.findAll((node) => isHost(node, 'TouchableOpacity'));
+// Buttons and rows are TouchableOpacity; the segments of a segmented control are Pressable.
+const pressables = () => renderer!.root.findAll((node) => isHost(node, 'TouchableOpacity') || isHost(node, 'Pressable'));
 const byLabel = (label: string) => pressables().find((node) => node.props.accessibilityLabel === label);
 const byText = (text: string) => {
     const found = pressables().filter((node) => textOf(node).includes(text));

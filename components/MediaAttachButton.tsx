@@ -1,10 +1,9 @@
-import { forwardRef, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
-import { View, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, Keyboard, Pressable, Platform } from 'react-native';
-import { Text } from './AppText';
+import { forwardRef, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
+import { StyleSheet, ActivityIndicator, Keyboard, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
-import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Spacing, useThemeColors } from '../constants/theme';
 import { alert } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
 import { saveMediaFromUri } from '../lib/mediaStore';
@@ -15,7 +14,11 @@ import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './photo-editor/PhotoEditorModal';
 import DrawingPadModal from './drawing/DrawingPadModal';
 import { useI18n } from '../hooks/useI18n';
-import SwipeDismissSheet from './SwipeDismissSheet';
+import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Button, IconButton } from './ui/Button';
+import { Card } from './ui/Card';
+import { MenuItem } from './ui/Menu';
+import { AppSheet } from './ui/Sheet';
 import {
     CameraIcon,
     CropIcon,
@@ -65,23 +68,50 @@ type PickedFile = {
     kind: MediaReferenceKind;
 };
 
+/**
+ * iOS presents nothing new (a picker, the editor, the recorder) while a sheet's modal is still on
+ * screen, so what was chosen in a sheet runs from the sheet's onDismiss. For the attach menu a timer
+ * covers a dismissal that is not reported; the sheet's own exit gives up at 550 ms.
+ */
+const MENU_GONE_FALLBACK_MS = 700;
+
+/** The paperclip on each field's label row. */
+function PaperclipIcon({ color }: { color: string }) {
+    return (
+        <Svg width={23} height={23} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
+            <Path
+                d="M21.4 11.1l-9.2 9.1a6 6 0 01-8.5-8.5l9.2-9.1a4 4 0 015.7 5.6l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5"
+                fill="none"
+                stroke={color}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </Svg>
+    );
+}
+
 const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert, onBeforeOpen }, ref) {
     const { t, l, locale } = useI18n();
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
     const [menuVisible, setMenuVisible] = useState(false);
     const [busy, setBusy] = useState(false);
     const [showRecorder, setShowRecorder] = useState(false);
     const [photoToEdit, setPhotoToEdit] = useState<EditablePhoto | null>(null);
     // A picked photo waits here until the user says whether to insert it untouched or edit it.
     const [pickedPhoto, setPickedPhoto] = useState<PickedPhoto | null>(null);
+    // The photo sheet keeps showing the photo it was opened for while it slides away.
+    const shownPhotoRef = useRef<PickedPhoto | null>(null);
+    if (pickedPhoto) shownPhotoRef.current = pickedPhoto;
+    const shownPhoto = pickedPhoto ?? shownPhotoRef.current;
     // The blank drawing page opens straight away, on the paper the last drawing used.
     const [drawing, setDrawing] = useState(false);
 
     const pendingActionRef = useRef<(() => void) | null>(null);
     const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const handleMenuDismiss = () => {
+    /** Both sheets' onDismiss: whatever was chosen in the sheet that has just gone. */
+    const runPendingAction = () => {
         if (dismissTimerRef.current) {
             clearTimeout(dismissTimerRef.current);
             dismissTimerRef.current = null;
@@ -100,9 +130,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         if (Platform.OS === 'ios') {
             pendingActionRef.current = action;
             setMenuVisible(false);
-            dismissTimerRef.current = setTimeout(() => {
-                handleMenuDismiss();
-            }, 450);
+            dismissTimerRef.current = setTimeout(runPendingAction, MENU_GONE_FALLBACK_MS);
             return;
         }
         setMenuVisible(false);
@@ -239,6 +267,11 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         const photo = pickedPhoto;
         if (!photo) return;
         setPickedPhoto(null);
+        // The editor is a modal of its own: on iOS it opens once the photo sheet has gone.
+        if (Platform.OS === 'ios') {
+            pendingActionRef.current = () => setPhotoToEdit(photo);
+            return;
+        }
         setPhotoToEdit(photo);
     };
 
@@ -342,151 +375,86 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
         }
     };
 
-    const icon = colors.accent;
+    // A menu item's icon is drawn in the muted text colour, as in every action sheet.
+    const icon = colors.textMuted;
+    const originalSize = formatByteSize(shownPhoto?.byteLength, locale);
     const options: { icon: ReactNode; label: string; onPress: () => void }[] = [
-        { icon: <PhotoIcon color={icon} />, label: l('Galeriden fotoğraf seç', 'Choose Photo'), onPress: () => runAfterMenuClose(pickFromGallery) },
-        { icon: <CameraIcon color={icon} />, label: l('Fotoğraf çek', 'Take Photo'), onPress: () => runAfterMenuClose(captureFromCamera) },
-        { icon: <DrawIcon color={icon} />, label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => runAfterMenuClose(() => setDrawing(true)) },
-        { icon: <MicIcon color={icon} />, label: l('Ses kaydet', 'Record Audio'), onPress: () => runAfterMenuClose(() => setShowRecorder(true)) },
-        { icon: <MusicIcon color={icon} />, label: l('Ses klibi ekle', 'Attach Audio Clip'), onPress: () => runAfterMenuClose(pickAudioClip) },
-        { icon: <VideoIcon color={icon} />, label: l('Video klibi ekle', 'Attach Video Clip'), onPress: () => runAfterMenuClose(pickVideoClip) },
-        { icon: <DocumentIcon color={icon} />, label: l('Dosya ekle', 'Attach File'), onPress: () => runAfterMenuClose(pickFile) },
+        { icon: <PhotoIcon color={icon} size={22} />, label: l('Galeriden fotoğraf seç', 'Choose Photo'), onPress: () => runAfterMenuClose(pickFromGallery) },
+        { icon: <CameraIcon color={icon} size={22} />, label: l('Fotoğraf çek', 'Take Photo'), onPress: () => runAfterMenuClose(captureFromCamera) },
+        { icon: <DrawIcon color={icon} size={22} />, label: l('Boş tuvale çiz', 'Draw on Blank Canvas'), onPress: () => runAfterMenuClose(() => setDrawing(true)) },
+        { icon: <MicIcon color={icon} size={22} />, label: l('Ses kaydet', 'Record Audio'), onPress: () => runAfterMenuClose(() => setShowRecorder(true)) },
+        { icon: <MusicIcon color={icon} size={22} />, label: l('Ses klibi ekle', 'Attach Audio Clip'), onPress: () => runAfterMenuClose(pickAudioClip) },
+        { icon: <VideoIcon color={icon} size={22} />, label: l('Video klibi ekle', 'Attach Video Clip'), onPress: () => runAfterMenuClose(pickVideoClip) },
+        { icon: <DocumentIcon color={icon} size={22} />, label: l('Dosya ekle', 'Attach File'), onPress: () => runAfterMenuClose(pickFile) },
     ];
 
     return (
         <>
-            <TouchableOpacity
-                style={styles.addBtn}
-                onPress={openMenu}
-                accessibilityRole="button"
-                accessibilityLabel={l('Ek ekle', 'Add attachment')}
-                disabled={busy}
-            >
-                {busy ? (
-                    <ActivityIndicator size="small" color={colors.accent} />
-                ) : (
-                    <Svg width={23} height={23} viewBox="0 0 24 24">
-                        <Path
-                            d="M21.4 11.1l-9.2 9.1a6 6 0 01-8.5-8.5l9.2-9.1a4 4 0 015.7 5.6l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5"
-                            fill="none"
-                            stroke={colors.textMuted}
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </Svg>
-                )}
-            </TouchableOpacity>
+            <IconButton accessibilityLabel={l('Ek ekle', 'Add attachment')} onPress={openMenu} disabled={busy}>
+                {busy
+                    ? <ActivityIndicator size="small" color={colors.accent} />
+                    : <PaperclipIcon color={colors.textMuted} />}
+            </IconButton>
 
-            <Modal
+            <AppSheet
                 visible={menuVisible}
-                transparent
-                animationType="fade"
-                onRequestClose={closeMenu}
-                onDismiss={handleMenuDismiss}
+                onClose={closeMenu}
+                title={l('Ek ekle', 'Add Attachment')}
+                backdropLabel={l('Ek menüsünü kapat', 'Close attachment menu')}
+                onDismiss={runPendingAction}
             >
-                <View style={styles.overlay}>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={closeMenu} accessibilityLabel={l('Ek menüsünü kapat', 'Close attachment menu')} />
-                    <SwipeDismissSheet active={menuVisible} style={styles.sheet} onDismiss={closeMenu}>
-                        <Text style={styles.sheetTitle}>{l('Ek ekle', 'Add Attachment')}</Text>
-                        {options.map((opt) => (
-                            <TouchableOpacity
-                                key={opt.label}
-                                style={styles.optionRow}
-                                onPress={opt.onPress}
-                                accessibilityRole="button"
-                                accessibilityLabel={opt.label}
-                            >
-                                <View style={styles.menuIcon}>{opt.icon}</View>
-                                <Text style={styles.optionLabel}>{opt.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                        <TouchableOpacity style={styles.cancelRow} onPress={closeMenu}>
-                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </SwipeDismissSheet>
-                </View>
-            </Modal>
+                <Card divided>
+                    {options.map((opt) => (
+                        <MenuItem key={opt.label} label={opt.label} icon={opt.icon} onPress={opt.onPress} />
+                    ))}
+                </Card>
+                <Button label={t('common.cancel')} variant="plain" onPress={closeMenu} style={styles.cancel} />
+            </AppSheet>
 
-            <Modal
+            <AppSheet
                 visible={pickedPhoto !== null}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setPickedPhoto(null)}
+                onClose={() => setPickedPhoto(null)}
+                title={l('Fotoğrafı nasıl ekleyelim?', 'How should the photo be added?')}
+                backdropLabel={l('Fotoğraf seçimini kapat', 'Close photo options')}
+                onDismiss={runPendingAction}
             >
-                <View style={styles.overlay}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={() => setPickedPhoto(null)}
-                        accessibilityLabel={l('Fotoğraf seçimini kapat', 'Close photo options')}
+                <Card divided>
+                    <MenuItem
+                        label={l('Olduğu gibi ekle', 'Insert as is')}
+                        hint={`${l('Kırpılmadan, tam çözünürlükte eklenir.', 'Added uncropped, at full resolution.')}${originalSize ? ` (${originalSize})` : ''}`}
+                        icon={<PhotoIcon color={icon} size={22} />}
+                        onPress={insertPickedPhotoUnchanged}
+                        accessibilityLabel={l('Fotoğrafı olduğu gibi ekle', 'Insert the photo unchanged')}
                     />
-                    <SwipeDismissSheet active={pickedPhoto !== null} style={styles.sheet} onDismiss={() => setPickedPhoto(null)}>
-                        <Text style={styles.sheetTitle}>{l('Fotoğrafı nasıl ekleyelim?', 'How should the photo be added?')}</Text>
-                        <TouchableOpacity
-                            style={styles.optionRow}
-                            onPress={insertPickedPhotoUnchanged}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Fotoğrafı olduğu gibi ekle', 'Insert the photo unchanged')}
-                        >
-                            <View style={styles.menuIcon}><PhotoIcon color={icon} /></View>
-                            <View style={styles.optionCopy}>
-                                <Text style={styles.optionLabel}>{l('Olduğu gibi ekle', 'Insert as is')}</Text>
-                                <Text style={styles.optionCaption}>
-                                    {l('Kırpılmadan, tam çözünürlükte eklenir.', 'Added uncropped, at full resolution.')}
-                                    {formatByteSize(pickedPhoto?.byteLength, locale) ? ` (${formatByteSize(pickedPhoto?.byteLength, locale)})` : ''}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                        {/* Offered only when shrinking gains something; an efficient or transparent photo plans to keep. */}
-                        {pickedPhoto?.plan.action === 'recompress' ? (
-                            <TouchableOpacity
-                                style={styles.optionRow}
-                                onPress={insertPickedPhotoOptimised}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Fotoğrafı küçülterek ekle', 'Add a smaller copy of the photo')}
-                            >
-                                <View style={styles.menuIcon}><ShrinkIcon color={icon} /></View>
-                                <View style={styles.optionCopy}>
-                                    <Text style={styles.optionLabel}>{l('Küçültüp ekle', 'Add optimised')}</Text>
-                                    <Text style={styles.optionCaption}>
-                                        {formatByteSize(pickedPhoto.byteLength, locale)}
-                                        {' → ~'}
-                                        {formatByteSize(pickedPhoto.plan.estimatedBytes, locale)}
-                                        {' · '}
-                                        {pickedPhoto.plan.width}×{pickedPhoto.plan.height}
-                                    </Text>
-                                    <Text style={styles.optionCaption}>
-                                        {l(
-                                            'Ekranda görülebilir bir kalite kaybı olmadan. Sonuç küçülmezse orijinali eklenir.',
-                                            'No difference you can see on screen. The original is kept if it does not get smaller.',
-                                        )}
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
-                        ) : null}
-                        <TouchableOpacity
-                            style={styles.optionRow}
-                            onPress={editPickedPhoto}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Fotoğrafı kırp ve düzenle', 'Crop and edit the photo')}
-                        >
-                            <View style={styles.menuIcon}><CropIcon color={icon} /></View>
-                            <View style={styles.optionCopy}>
-                                <Text style={styles.optionLabel}>{l('Kırp ve düzenle', 'Crop & edit')}</Text>
-                                <Text style={styles.optionCaption}>
-                                    {l(
-                                        'Kırpma, döndürme, ışık ve renk ayarı; kalem, metin, ok ve örtme.',
-                                        'Crop, rotate, light and colour; pen, text, arrows and cover-ups.',
-                                    )}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.cancelRow} onPress={() => setPickedPhoto(null)}>
-                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                    </SwipeDismissSheet>
-                </View>
-            </Modal>
+                    {/* Offered only when shrinking gains something; an efficient or transparent photo plans to keep. */}
+                    {shownPhoto?.plan.action === 'recompress' ? (
+                        <MenuItem
+                            label={l('Küçültüp ekle', 'Add optimised')}
+                            hint={[
+                                `${formatByteSize(shownPhoto.byteLength, locale)} → ~${formatByteSize(shownPhoto.plan.estimatedBytes, locale)} · ${shownPhoto.plan.width}×${shownPhoto.plan.height}`,
+                                l(
+                                    'Ekranda görülebilir bir kalite kaybı olmadan. Sonuç küçülmezse orijinali eklenir.',
+                                    'No difference you can see on screen. The original is kept if it does not get smaller.',
+                                ),
+                            ].join('\n')}
+                            icon={<ShrinkIcon color={icon} size={22} />}
+                            onPress={insertPickedPhotoOptimised}
+                            accessibilityLabel={l('Fotoğrafı küçülterek ekle', 'Add a smaller copy of the photo')}
+                        />
+                    ) : null}
+                    <MenuItem
+                        label={l('Kırp ve düzenle', 'Crop & edit')}
+                        hint={l(
+                            'Kırpma, döndürme, ışık ve renk ayarı; kalem, metin, ok ve örtme.',
+                            'Crop, rotate, light and colour; pen, text, arrows and cover-ups.',
+                        )}
+                        icon={<CropIcon color={icon} size={22} />}
+                        onPress={editPickedPhoto}
+                        accessibilityLabel={l('Fotoğrafı kırp ve düzenle', 'Crop and edit the photo')}
+                    />
+                </Card>
+                <Button label={t('common.cancel')} variant="plain" onPress={() => setPickedPhoto(null)} style={styles.cancel} />
+            </AppSheet>
 
             <AudioRecordModal
                 visible={showRecorder}
@@ -508,51 +476,8 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
     );
 });
 
-function createStyles(colors: ColorScheme) {
-    return StyleSheet.create({
-        addBtn: {
-            width: 40,
-            height: 40,
-            borderRadius: BorderRadius.full,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        overlay: {
-            flex: 1,
-            backgroundColor: 'rgba(0, 0, 0, 0.35)',
-            justifyContent: 'flex-end',
-        },
-        sheet: {
-            backgroundColor: colors.bgCard,
-            borderTopLeftRadius: BorderRadius.lg,
-            borderTopRightRadius: BorderRadius.lg,
-            paddingHorizontal: Spacing.lg,
-            paddingTop: 44,
-            paddingBottom: 32,
-            ...Shadows.lg,
-        },
-        sheetTitle: {
-            fontSize: FontSize.md,
-            fontWeight: '700',
-            color: colors.textPrimary,
-            marginBottom: Spacing.sm,
-        },
-        optionRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: 52,
-            gap: Spacing.md,
-            paddingVertical: 10,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.borderLight,
-        },
-        menuIcon: { width: 28, alignItems: 'center' },
-        optionCopy: { flex: 1, gap: 2 },
-        optionLabel: { fontSize: FontSize.md, color: colors.textPrimary },
-        optionCaption: { fontSize: FontSize.xs, color: colors.textMuted },
-        cancelRow: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.xs },
-        cancelText: { color: colors.textMuted, fontWeight: '600' },
-    });
-}
+const styles = StyleSheet.create({
+    cancel: { marginTop: Spacing.sm },
+});
 
 export default MediaAttachButton;

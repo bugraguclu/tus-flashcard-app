@@ -10,11 +10,12 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Text, TextScaleProvider } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { KNOB_STRETCH, MotionSpring } from '../../constants/motion';
 import { useI18n } from '../../hooks/useI18n';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { areaPreservingStretch, keyframes, MotionCurve, rubberBandClamp } from '../../lib/motion';
+import { Radius, Type } from '../ui/tokens';
 import {
     normalizeTextSizeLevel,
     TEXT_SIZE_LEVELS,
@@ -206,7 +207,7 @@ export default function TextSizeSlider({ value, onChange }: Props) {
     const draftIndex = textSizeLevelIndex(draft);
 
     return (
-        <View style={styles.block}>
+        <View>
             <View style={styles.header}>
                 <Text style={styles.label}>{l('Uygulama metinleri', 'App text')}</Text>
                 <Text style={styles.value} numberOfLines={1}>{labels[draft]}</Text>
@@ -280,16 +281,15 @@ export default function TextSizeSlider({ value, onChange }: Props) {
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        block: { paddingTop: Spacing.xs, paddingBottom: Spacing.xs },
         header: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: Spacing.sm },
-        label: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary, lineHeight: 20 },
-        value: { flexShrink: 0, fontSize: FontSize.md, fontWeight: '800', color: colors.accent, lineHeight: 20 },
-        summary: { fontSize: FontSize.sm, color: colors.textMuted, lineHeight: 18, marginTop: 3 },
+        label: { ...Type.rowTitle, flexShrink: 1, color: colors.textPrimary, lineHeight: 20 },
+        value: { ...Type.bodyStrong, flexShrink: 0, color: colors.accent, lineHeight: 20 },
+        summary: { ...Type.caption, color: colors.textMuted, marginTop: 3 },
         preview: {
             marginTop: Spacing.md,
             paddingHorizontal: Spacing.md,
             paddingVertical: Spacing.md,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             borderWidth: 1,
             borderColor: colors.borderLight,
             backgroundColor: colors.bgSecondary,
@@ -302,7 +302,7 @@ function createStyles(colors: ColorScheme) {
         glyphSmall: { width: 18, textAlign: 'center', fontSize: 13, fontWeight: '700', color: colors.textMuted },
         glyphLarge: { width: 26, textAlign: 'center', fontSize: 24, fontWeight: '700', color: colors.textMuted },
         touchArea: { flex: 1, height: 48, justifyContent: 'center', paddingHorizontal: THUMB_SIZE / 2, cursor: 'pointer' },
-        track: { height: 4, borderRadius: BorderRadius.full, backgroundColor: colors.border, overflow: 'hidden' },
+        track: { height: 4, borderRadius: Radius.pill, backgroundColor: colors.border, overflow: 'hidden' },
         fill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.accent },
         tick: { position: 'absolute', top: 24 - 6, width: 2, height: 12, borderRadius: 1, backgroundColor: colors.border },
         tickReached: { backgroundColor: colors.accent },

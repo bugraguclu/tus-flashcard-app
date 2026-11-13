@@ -8,6 +8,7 @@ import CardsGlyph from '../CardsGlyph';
 import PencilGlyph from '../PencilGlyph';
 import DeckOverflowGlyph from '../DeckOverflowGlyph';
 import DisclosureChevron from '../DisclosureChevron';
+import { CloseIcon } from '../ui/icons';
 
 interface DeckListWelcomeProps {
     /** Offer the TUS pack: false once the full pack is installed. */
@@ -64,7 +65,7 @@ export default function DeckListWelcome({
                     accessibilityRole="button"
                     accessibilityLabel={l('Hoş geldiniz kartını kapat', 'Close the welcome card')}
                 >
-                    <Text style={styles.closeText}>✕</Text>
+                    <CloseIcon color={colors.textMuted} size={18} />
                 </Pressable>
             </View>
             <Text style={styles.text}>
@@ -126,7 +127,6 @@ function createStyles(colors: ColorScheme) {
         },
         title: { flex: 1, paddingTop: Spacing.xs, fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
         close: { width: 44, height: 44, marginTop: -Spacing.sm, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.full },
-        closeText: { fontSize: FontSize.md, color: colors.textMuted },
         text: {
             paddingHorizontal: Spacing.lg,
             fontSize: FontSize.sm,

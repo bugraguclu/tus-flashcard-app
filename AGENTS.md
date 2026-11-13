@@ -47,6 +47,12 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   `constants/motion.ts`; `hooks/useReduceMotion.ts`, `hooks/usePresence.ts` (keep a surface
   mounted while it leaves), `components/Popover.tsx` (menus that grow from their button) and
   `components/PressableScale.tsx` (buttons that sink under the finger).
+- Design system: `components/ui/` holds one part per UI job (buttons, icon buttons, rows, cards,
+  sections, chips, segmented controls, fields, steppers, notices, sheets, dialogs, menus, control
+  icons) on the tokens in `constants/theme.ts`; `components/ScreenHeader.tsx` is every routed
+  screen's header. `docs/DESIGN_SYSTEM.md` says which part does which job. Build UI from these
+  parts and extend a part for everyone instead of styling a copy in a screen;
+  `lib/designSystem.test.ts` rejects colour literals and text characters drawn as icons.
 
 ## Working in this repository
 

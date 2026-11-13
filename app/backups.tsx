@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
-    ActivityIndicator,
 } from 'react-native';
-import { Text, TextInput } from '../components/AppText';
+import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Button } from '../components/ui/Button';
+import { Section } from '../components/ui/Card';
+import { EmptyState, LoadingState, Notice } from '../components/ui/Feedback';
+import { TextField } from '../components/ui/Fields';
+import { Type } from '../components/ui/tokens';
+import { Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { confirm, alert } from '../lib/confirm';
 import { readOnlyTabMessage } from '../lib/db';
 import { useAppSettings, useCatalogStatus, useCollectionInvalidation } from '../contexts/AppContext';
@@ -210,84 +213,89 @@ export default function BackupsScreen() {
                 backAccessibilityLabel={l('Destelere dön', 'Back to decks')}
             />
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.label}>{l('YEDEK ADI', 'BACKUP NAME')}</Text>
-                <TextInput
-                    style={styles.nameInput}
-                    value={backupName}
-                    onChangeText={setBackupName}
-                    placeholder={defaultBackupName}
-                    placeholderTextColor={colors.textMuted}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    returnKeyType="done"
-                    onSubmitEditing={() => { void handleBackupNow(); }}
-                    accessibilityLabel={l('Yedek adı', 'Backup name')}
-                    editable={!busy}
-                />
+                <Section label={l('YEDEK ADI', 'BACKUP NAME')} padded>
+                    <TextField
+                        value={backupName}
+                        onChangeText={setBackupName}
+                        placeholder={defaultBackupName}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        returnKeyType="done"
+                        onSubmitEditing={() => { void handleBackupNow(); }}
+                        accessibilityLabel={l('Yedek adı', 'Backup name')}
+                        editable={!busy}
+                    />
+                    <Button label={l('Şimdi yedekle', 'Back Up Now')} onPress={handleBackupNow} disabled={busy} />
+                </Section>
 
-                <TouchableOpacity
-                    style={[styles.primaryBtn, busy && styles.btnDisabled]}
-                    onPress={handleBackupNow}
-                    disabled={busy}
-                >
-                    <Text style={styles.primaryBtnText}>{l('Şimdi yedekle', 'Back Up Now')}</Text>
-                </TouchableOpacity>
-
-                {loading && <ActivityIndicator style={{ marginTop: Spacing.lg }} color={colors.accent} />}
+                {loading && <LoadingState />}
 
                 {!loading && loadError && (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.empty}>{l('Yedekler yüklenemedi.', 'Backups could not be loaded.')}</Text>
-                        <TouchableOpacity style={styles.retryBtn} onPress={() => { void reload(); }} accessibilityRole="button" accessibilityLabel={l('Yedekleri tekrar yükle', 'Reload backups')}>
-                            <Text style={styles.retryText}>{t('common.retry')}</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <Notice
+                        tone="danger"
+                        action={(
+                            <Button
+                                label={t('common.retry')}
+                                variant="secondary"
+                                size="compact"
+                                onPress={() => { void reload(); }}
+                                accessibilityLabel={l('Yedekleri tekrar yükle', 'Reload backups')}
+                            />
+                        )}
+                    >
+                        {l('Yedekler yüklenemedi.', 'Backups could not be loaded.')}
+                    </Notice>
                 )}
 
                 {!loading && !loadError && backups.length === 0 && (
-                    <Text style={styles.empty}>{l('Henüz yedek yok.', 'No backups yet.')}</Text>
+                    <EmptyState title={l('Henüz yedek yok.', 'No backups yet.')} />
                 )}
 
-                {!loadError && backups.map((backup) => (
-                    <View key={backup.name} style={styles.row}>
-                        <View style={styles.rowText}>
-                            <Text style={styles.rowTitle}>
-                                {isPreRestoreBackup(backup.name)
-                                    ? l('↩️ Geri yükleme öncesi kopya', '↩️ Pre-restore snapshot')
-                                    : l('📦 Koleksiyon yedeği', '📦 Collection backup')}
-                            </Text>
-                            {!isPreRestoreBackup(backup.name) && (
-                                <Text style={styles.rowName} numberOfLines={1}>{displayBackupName(backup.name)}</Text>
-                            )}
-                            <Text style={styles.rowSub}>
-                                {formatDate(backup.createdAt, localeTag)} · {formatSize(backup.size)}
-                            </Text>
-                        </View>
-                        <View style={styles.rowActions}>
-                            <TouchableOpacity
-                                style={styles.actionBtn}
-                                onPress={() => handleRestore(backup.name)}
-                                disabled={busy}
-                            >
-                                <Text style={styles.actionText}>{l('Geri yükle', 'Restore')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.actionBtn}
-                                onPress={() => handleShare(backup.name)}
-                                disabled={busy}
-                            >
-                                <Text style={styles.actionText}>{l('Paylaş', 'Share')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.actionBtn}
-                                onPress={() => handleDelete(backup.name)}
-                                disabled={busy}
-                            >
-                                <Text style={[styles.actionText, styles.dangerText]}>{t('common.delete')}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                ))}
+                {!loadError && backups.length > 0 ? (
+                    <Section>
+                        {backups.map((backup) => (
+                            <View key={backup.name} style={styles.row}>
+                                <View>
+                                    <Text style={styles.rowTitle}>
+                                        {isPreRestoreBackup(backup.name)
+                                            ? l('↩️ Geri yükleme öncesi kopya', '↩️ Pre-restore snapshot')
+                                            : l('📦 Koleksiyon yedeği', '📦 Collection backup')}
+                                    </Text>
+                                    {!isPreRestoreBackup(backup.name) && (
+                                        <Text style={styles.rowName} numberOfLines={1}>{displayBackupName(backup.name)}</Text>
+                                    )}
+                                    <Text style={styles.rowSub}>
+                                        {formatDate(backup.createdAt, localeTag)} · {formatSize(backup.size)}
+                                    </Text>
+                                </View>
+                                <View style={styles.rowActions}>
+                                    <Button
+                                        label={l('Geri yükle', 'Restore')}
+                                        variant="secondary"
+                                        size="compact"
+                                        onPress={() => handleRestore(backup.name)}
+                                        disabled={busy}
+                                    />
+                                    <Button
+                                        label={l('Paylaş', 'Share')}
+                                        variant="secondary"
+                                        size="compact"
+                                        onPress={() => handleShare(backup.name)}
+                                        disabled={busy}
+                                    />
+                                    <Button
+                                        label={t('common.delete')}
+                                        variant="plain"
+                                        tone="danger"
+                                        size="compact"
+                                        onPress={() => handleDelete(backup.name)}
+                                        disabled={busy}
+                                    />
+                                </View>
+                            </View>
+                        ))}
+                    </Section>
+                ) : null}
 
                 <MediaCheckSection disabled={busy} />
             </ScrollView>
@@ -297,55 +305,12 @@ export default function BackupsScreen() {
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.bgPrimary },
-    content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
-    label: { fontSize: 11, fontWeight: '700', letterSpacing: 0.7, color: colors.textMuted, marginTop: Spacing.xs },
-    nameInput: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        backgroundColor: colors.bgInput,
-        color: colors.textPrimary,
-        fontSize: FontSize.md,
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-    },
-    primaryBtn: {
-        borderWidth: 1,
-        borderColor: colors.accent,
-        backgroundColor: colors.accentLight,
-        borderRadius: BorderRadius.sm,
-        paddingVertical: Spacing.md,
-        alignItems: 'center',
-    },
-    primaryBtnText: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
-    btnDisabled: { opacity: 0.5 },
-    empty: { fontSize: FontSize.md, color: colors.textMuted, textAlign: 'center', marginTop: Spacing.lg },
-    emptyState: { alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.lg },
-    retryBtn: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.sm },
-    retryText: { color: colors.accent, fontWeight: '600' },
-    row: {
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        padding: Spacing.md,
-        gap: Spacing.sm,
-    },
-    rowText: {},
-    rowTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
-    rowName: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: 3 },
-    rowSub: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
-    rowActions: { flexDirection: 'row', gap: Spacing.sm },
-    actionBtn: {
-        paddingHorizontal: Spacing.md,
-        paddingVertical: 6,
-        backgroundColor: colors.bgSecondary,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-    },
-    actionText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
-    dangerText: { color: colors.btnAgain },
+        container: { flex: 1, backgroundColor: colors.bgPrimary },
+        content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.lg },
+        row: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, gap: Spacing.sm },
+        rowTitle: { ...Type.rowTitle, color: colors.textPrimary },
+        rowName: { ...Type.caption, color: colors.textSecondary, marginTop: 3 },
+        rowSub: { ...Type.caption, color: colors.textMuted, marginTop: 2 },
+        rowActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.sm },
     });
 }

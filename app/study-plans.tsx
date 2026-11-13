@@ -5,9 +5,14 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect, useRouter } from 'expo-router';
 import ScreenHeader from '../components/ScreenHeader';
 import StudyPlanEditorSheet, { weekdayShortName } from '../components/stopwatch/StudyPlanEditorSheet';
-import { ToolSection } from '../components/stopwatch/StudyToolControls';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Button } from '../components/ui/Button';
+import { Card, Section, SectionLabel } from '../components/ui/Card';
+import { EmptyState, Notice } from '../components/ui/Feedback';
+import { ChevronDownIcon, ChevronUpIcon, DragHandleIcon, PlusIcon } from '../components/ui/icons';
+import { ListRow } from '../components/ui/Rows';
+import { Radius, Type } from '../components/ui/tokens';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
 import { goBackOr } from '../lib/backNavigation';
@@ -131,17 +136,18 @@ export default function StudyPlansScreen() {
         if (entry.type === 'single') {
             const { plan } = entry;
             return (
-                <TouchableOpacity
-                    key={plan.id}
-                    style={styles.card}
-                    onPress={() => setEditing({ plan, isNew: false })}
-                    onLongPress={() => remove([plan.id], l('Bu çalışma planı silinsin mi?', 'Delete this study plan?'))}
-                    accessibilityRole="button"
-                    accessibilityHint={l('Düzenlemek için dokunun, silmek için basılı tutun.', 'Tap to edit, hold to delete.')}
-                >
-                    <Text style={styles.title}>{plan.title}</Text>
-                    {planSummary(plan)}
-                </TouchableOpacity>
+                <Card key={plan.id}>
+                    <TouchableOpacity
+                        style={styles.cardBody}
+                        onPress={() => setEditing({ plan, isNew: false })}
+                        onLongPress={() => remove([plan.id], l('Bu çalışma planı silinsin mi?', 'Delete this study plan?'))}
+                        accessibilityRole="button"
+                        accessibilityHint={l('Düzenlemek için dokunun, silmek için basılı tutun.', 'Tap to edit, hold to delete.')}
+                    >
+                        <Text style={styles.title}>{plan.title}</Text>
+                        {planSummary(plan)}
+                    </TouchableOpacity>
+                </Card>
             );
         }
         const { blocks, groupId } = entry;
@@ -152,51 +158,57 @@ export default function StudyPlansScreen() {
         const first = blocks[0].fromYmd;
         const last = blocks[blocks.length - 1].fromYmd;
         return (
-            <View key={groupId} style={styles.card}>
-                <TouchableOpacity
-                    onPress={() => setExpanded((current) => {
-                        const next = new Set(current);
-                        if (next.has(groupId)) next.delete(groupId);
-                        else next.add(groupId);
-                        return next;
-                    })}
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: open }}
-                >
-                    <View style={styles.groupHeader}>
-                        <Text style={styles.title}>{l('Detaylı Plan', 'Detailed Plan')}</Text>
-                        <Text style={styles.chevron}>{open ? '⌃' : '⌄'}</Text>
-                    </View>
-                    <Text style={styles.meta}>
-                        {l(
-                            `${courses} ders · ${days} gün · ${formatStudyTotal(totalMinutes * 60_000, 'tr')}`,
-                            `${courses} courses · ${days} days · ${formatStudyTotal(totalMinutes * 60_000, 'en')}`,
-                        )}
-                    </Text>
-                    <Text style={styles.muted}>{`${dateLabel(first)} – ${dateLabel(last)}`}</Text>
-                </TouchableOpacity>
-                {open ? (
-                    <View style={styles.blocks}>
-                        {blocks.map((block) => (
-                            <TouchableOpacity
-                                key={block.id}
-                                style={styles.block}
-                                onPress={() => setEditing({ plan: block, isNew: false })}
-                                accessibilityRole="button"
-                            >
-                                {planSummary(block)}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                ) : null}
-                <TouchableOpacity
-                    style={styles.removeGroup}
-                    onPress={() => remove(blocks.map((block) => block.id), l('Detaylı plan silinsin mi?', 'Delete the detailed plan?'))}
-                    accessibilityRole="button"
-                >
-                    <Text style={styles.removeText}>{l('Planı Sil', 'Delete Plan')}</Text>
-                </TouchableOpacity>
-            </View>
+            <Card key={groupId}>
+                <View style={styles.cardBody}>
+                    {/* A disclosure header: the kit's rows carry no expanded state. */}
+                    <TouchableOpacity
+                        onPress={() => setExpanded((current) => {
+                            const next = new Set(current);
+                            if (next.has(groupId)) next.delete(groupId);
+                            else next.add(groupId);
+                            return next;
+                        })}
+                        accessibilityRole="button"
+                        accessibilityState={{ expanded: open }}
+                    >
+                        <View style={styles.groupHeader}>
+                            <Text style={styles.title}>{l('Detaylı Plan', 'Detailed Plan')}</Text>
+                            {open
+                                ? <ChevronUpIcon color={colors.textMuted} />
+                                : <ChevronDownIcon color={colors.textMuted} />}
+                        </View>
+                        <Text style={styles.meta}>
+                            {l(
+                                `${courses} ders · ${days} gün · ${formatStudyTotal(totalMinutes * 60_000, 'tr')}`,
+                                `${courses} courses · ${days} days · ${formatStudyTotal(totalMinutes * 60_000, 'en')}`,
+                            )}
+                        </Text>
+                        <Text style={styles.muted}>{`${dateLabel(first)} – ${dateLabel(last)}`}</Text>
+                    </TouchableOpacity>
+                    {open ? (
+                        <View style={styles.blocks}>
+                            {blocks.map((block) => (
+                                <TouchableOpacity
+                                    key={block.id}
+                                    style={styles.block}
+                                    onPress={() => setEditing({ plan: block, isNew: false })}
+                                    accessibilityRole="button"
+                                >
+                                    {planSummary(block)}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    ) : null}
+                    <Button
+                        variant="plain"
+                        tone="danger"
+                        size="compact"
+                        label={l('Planı Sil', 'Delete Plan')}
+                        onPress={() => remove(blocks.map((block) => block.id), l('Detaylı plan silinsin mi?', 'Delete the detailed plan?'))}
+                        style={styles.removeGroup}
+                    />
+                </View>
+            </Card>
         );
     };
 
@@ -208,50 +220,53 @@ export default function StudyPlansScreen() {
                 onBack={() => goBackOr(router)}
             />
             <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxl }]}>
-                <ToolSection
-                    footer={l(
+                <Section
+                    footnote={l(
                         'Ders, çalışma türü, tarih aralığı, haftanın günleri ve süreyi belirleyin. Planlarınız Kronometre’de ve çalışma takviminizde görünür.',
                         'Set the course, type, dates, weekdays and length. Your plans show in the stopwatch and the study calendar.',
                     )}
                 >
-                    <TouchableOpacity
-                        style={styles.action}
-                        disabled={!readable}
-                        onPress={() => setEditing({ plan: emptyStudyPlan(studyDayYmd(Date.now(), settings.dayRolloverHour)), isNew: true })}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.actionIcon}>＋</Text>
-                        <View style={styles.actionCopy}>
-                            <Text style={styles.actionTitle}>{l('Sade Plan', 'Simple Plan')}</Text>
-                            <Text style={styles.muted}>{l('Tek bir dersi belirli günlerde tekrarlayın.', 'Repeat one course on chosen days.')}</Text>
-                        </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.action, styles.actionLast]}
-                        disabled={!readable}
-                        onPress={() => router.push('/study-plan-wizard' as any)}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.actionIcon}>☰</Text>
-                        <View style={styles.actionCopy}>
-                            <Text style={styles.actionTitle}>{l('Detaylı Plan', 'Detailed Plan')}</Text>
-                            <Text style={styles.muted}>{l('Derslerinizi, sürelerinizi ve haftalık kapasitenizi girin; takvim hazırlansın.', 'Enter your courses, hours and weekly capacity to build a calendar.')}</Text>
-                        </View>
-                    </TouchableOpacity>
-                </ToolSection>
+                    {[
+                        {
+                            key: 'simple',
+                            icon: <PlusIcon color={colors.accent} />,
+                            title: l('Sade Plan', 'Simple Plan'),
+                            summary: l('Tek bir dersi belirli günlerde tekrarlayın.', 'Repeat one course on chosen days.'),
+                            onPress: () => setEditing({ plan: emptyStudyPlan(studyDayYmd(Date.now(), settings.dayRolloverHour)), isNew: true }),
+                        },
+                        {
+                            key: 'detailed',
+                            // Three lines, the list a detailed plan builds.
+                            icon: <DragHandleIcon color={colors.accent} size={22} />,
+                            title: l('Detaylı Plan', 'Detailed Plan'),
+                            summary: l('Derslerinizi, sürelerinizi ve haftalık kapasitenizi girin; takvim hazırlansın.', 'Enter your courses, hours and weekly capacity to build a calendar.'),
+                            onPress: () => router.push('/study-plan-wizard' as any),
+                        },
+                    ].map((action) => (
+                        <ListRow
+                            key={action.key}
+                            icon={action.icon}
+                            title={action.title}
+                            summary={action.summary}
+                            onPress={action.onPress}
+                            disabled={!readable}
+                            accessibilityLabel={`${action.title}. ${action.summary}`}
+                        />
+                    ))}
+                </Section>
 
                 {!readable ? (
-                    <Text style={styles.error}>
+                    <Notice tone="danger">
                         {l('Kaydedilen planlar okunamadı. Üzerlerine yazılmaması için düzenleme kapalı.', 'Saved plans could not be read. Editing is off so they are not overwritten.')}
-                    </Text>
+                    </Notice>
                 ) : entries.length === 0 ? (
-                    <View style={styles.empty}>
-                        <Text style={styles.emptyTitle}>{l('Çalışma planınız yok', 'No study plans')}</Text>
-                        <Text style={styles.muted}>{l('İlk planınızı oluşturup çalışma günlerinizi düzenleyin.', 'Create your first plan to organise your study days.')}</Text>
-                    </View>
+                    <EmptyState
+                        title={l('Çalışma planınız yok', 'No study plans')}
+                        body={l('İlk planınızı oluşturup çalışma günlerinizi düzenleyin.', 'Create your first plan to organise your study days.')}
+                    />
                 ) : (
                     <View style={styles.list}>
-                        <Text style={styles.listTitle} accessibilityRole="header">{l('Planlarınız', 'Your Plans')}</Text>
+                        <SectionLabel>{l('Planlarınız', 'Your Plans')}</SectionLabel>
                         {entries.map(renderEntry)}
                     </View>
                 )}
@@ -278,22 +293,12 @@ function createStyles(colors: ColorScheme) {
         container: { flex: 1, backgroundColor: colors.bgCard },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
         content: { padding: Spacing.lg, gap: Spacing.lg },
-        action: {
-            flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.md,
-            borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border,
-        },
-        actionLast: { borderBottomWidth: 0 },
-        actionIcon: { width: 32, textAlign: 'center', fontSize: 22, fontWeight: '800', color: colors.accent },
-        actionCopy: { flex: 1, gap: 2 },
-        actionTitle: { fontSize: FontSize.md, fontWeight: '800', color: colors.accent },
         list: { gap: Spacing.md },
-        listTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase', color: colors.textMuted },
-        card: { backgroundColor: colors.bgCard, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: colors.borderLight, padding: Spacing.md, gap: Spacing.sm },
-        title: { fontSize: FontSize.lg, fontWeight: '800', color: colors.accent },
+        cardBody: { padding: Spacing.lg, gap: Spacing.sm },
+        title: { ...Type.sectionTitle, fontWeight: '800', color: colors.accent },
         groupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-        chevron: { fontSize: FontSize.lg, color: colors.textMuted },
         planBody: { flexDirection: 'row', gap: Spacing.md },
-        tile: { width: 38, height: 38, borderRadius: 10, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },
+        tile: { width: 38, height: 38, borderRadius: Radius.inset, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },
         tileText: { fontSize: FontSize.md, fontWeight: '800', color: colors.accent },
         planCopy: { flex: 1, gap: 2 },
         subject: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
@@ -301,11 +306,7 @@ function createStyles(colors: ColorScheme) {
         muted: { fontSize: FontSize.xs, color: colors.textMuted },
         note: { fontSize: FontSize.sm, color: colors.textPrimary, marginTop: 2 },
         blocks: { gap: Spacing.sm, marginTop: Spacing.xs },
-        block: { padding: Spacing.sm, borderRadius: BorderRadius.sm, backgroundColor: colors.bgSecondary },
-        removeGroup: { alignSelf: 'flex-start', paddingVertical: Spacing.xs },
-        removeText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.btnAgain },
-        error: { fontSize: FontSize.sm, color: colors.btnAgain },
-        empty: { alignItems: 'center', gap: Spacing.xs, paddingVertical: Spacing.xl },
-        emptyTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textSecondary },
+        block: { padding: Spacing.sm, borderRadius: Radius.inset, backgroundColor: colors.bgSecondary },
+        removeGroup: { alignSelf: 'flex-start', marginLeft: -Spacing.md },
     });
 }

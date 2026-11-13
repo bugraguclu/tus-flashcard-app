@@ -1,8 +1,8 @@
-import type { Dispatch, SetStateAction } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet, Modal, Pressable, Switch } from 'react-native';
+import { useEffect, useRef, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { Platform, View, ScrollView, TouchableOpacity, type AccessibilityRole, type AccessibilityState } from 'react-native';
 import { Text } from '../AppText';
 import { useRouter } from 'expo-router';
-import type { ColorScheme } from '../../constants/theme';
+import { useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { StudyCard, AppSettings } from '../../lib/types';
 import { getSetDueDateDefault } from '../../lib/setDueDateDefaults';
 import { FLAG_COLORS, type CardFlag } from '../../lib/models';
@@ -10,15 +10,45 @@ import type { BrowserCardSortKey, BrowserTableMode } from '../../lib/studyReposi
 import { cardFlagName, type SupportedLocale } from '../../lib/i18n';
 import { deleteNotes, type CardDeckMoveSnapshot } from '../../lib/noteManager';
 import { setDbSetting } from '../../lib/storage';
-import SwipeDismissSheet from '../../components/SwipeDismissSheet';
 import GearGlyph from '../../components/GearGlyph';
 import FlagGlyph from '../../components/FlagGlyph';
+import StarGlyph from '../../components/StarGlyph';
+import CalendarGlyph from '../../components/CalendarGlyph';
+import CardsGlyph from '../../components/CardsGlyph';
+import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import { alert, choose, confirm } from '../../lib/confirm';
 import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { toggleSelectedBury, toggleSelectedSuspend } from '../../lib/browserSelection';
+import { AppDialog } from '../ui/Dialog';
+import { AppSheet } from '../ui/Sheet';
+import { Button } from '../ui/Button';
+import { Card, Divider } from '../ui/Card';
+import { Badge, Chip, SegmentedControl, SelectedMark } from '../ui/Choice';
+import { MenuItem, MenuSeparator, PopoverMenu } from '../ui/Menu';
+import { SwitchRow } from '../ui/Rows';
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, MinusIcon } from '../ui/icons';
+import { EyeIcon } from '../editor/EditorIcons';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
 import { ALL_CARD_FLAGS, BROWSER_SORT_KEYS } from './browserHelpers';
+import {
+    BuryIcon,
+    FilteredDeckIcon,
+    ResetIcon,
+    SelectAllIcon,
+    SelectionDeckIcon,
+    SelectionSuspendIcon,
+    SortIcon,
+    TagIcon,
+    TrashIcon,
+    UndoIcon,
+} from './BrowserIcons';
+
+// The ⋮ sits in the scope bar under the 56-point header; the menu hangs from the button's top.
+const OVERFLOW_MENU_TOP = 68;
+// The selection sheet slides out for 300 ms before its modal goes. iOS presents no second modal,
+// and pushes no screen, while one is still up, so what the sheet opens waits until it has gone.
+const SHEET_GONE_MS = 450;
 
 interface SelectionMenuModalProps {
     closeSelection: () => void;
@@ -48,7 +78,6 @@ interface SelectionMenuModalProps {
     setShowSelectionMenu: Dispatch<SetStateAction<boolean>>;
     settings: AppSettings;
     showSelectionMenu: boolean;
-    styles: BrowserStyles;
     t: BrowserI18n['t'];
     tableMode: BrowserTableMode;
 }
@@ -70,7 +99,6 @@ export function SelectionMenuModal({
     setDueInput,
     setPreviewAnswerVisible,
     setPreviewIndex,
-    setRepositionShiftExisting,
     setRepositionStart,
     setRepositionStep,
     setShowDeckPicker,
@@ -81,152 +109,192 @@ export function SelectionMenuModal({
     setShowSelectionMenu,
     settings,
     showSelectionMenu,
-    styles,
     t,
     tableMode,
 }: SelectionMenuModalProps) {
+    const colors = useThemeColors();
+    const iconColor = colors.textMuted;
+    const close = () => setShowSelectionMenu(false);
+    const nextStepRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => () => {
+        if (nextStepRef.current) clearTimeout(nextStepRef.current);
+    }, []);
+    /** Closes the sheet, then opens what was chosen once the sheet's modal has gone. */
+    const closeThen = (next: () => void) => {
+        close();
+        if (Platform.OS !== 'ios') {
+            next();
+            return;
+        }
+        if (nextStepRef.current) clearTimeout(nextStepRef.current);
+        nextStepRef.current = setTimeout(() => {
+            nextStepRef.current = null;
+            next();
+        }, SHEET_GONE_MS);
+    };
+    const catalogProtected = hasCatalogCardsSelected || hasCatalogNotesSelected;
+    const deleteSelectedNotes = () => {
+        if (catalogProtected) {
+            alert(
+                l('Katalog Korumalı', 'Catalog Protected'),
+                l('Dahili TUS kartları silinemez. Kataloğu kaldırmak için Ayarlar ekranını kullanabilirsiniz.', 'Built-in TUS cards cannot be deleted. Use Settings to remove the catalog.')
+            );
+            return;
+        }
+        close();
+        confirm(
+            l('Notları sil', 'Delete Notes'),
+            l(`${selectedNoteIds.length} not ve bu notlara bağlı tüm kartlar silinecek. Silme sonrasında geri alabilirsiniz.`, `${selectedNoteIds.length} notes and all cards belonging to them will be deleted. You can undo after deletion.`),
+            () => {
+                try {
+                    const deletion = deleteNotes(selectedNoteIds);
+                    closeSelection();
+                    refreshSelection();
+                    void choose(
+                        l('Silindi', 'Deleted'),
+                        l(`${deletion.cardCount} kart silindi.`, `${deletion.cardCount} cards deleted.`),
+                        l('Geri al', 'Undo'),
+                        l('Bitti', 'Done'),
+                    ).then((undo) => {
+                        if (!undo) return;
+                        try { deletion.undo(); refreshSelection(); }
+                        catch (error) { alert(t('common.error'), userFacingErrorMessage(error, l('Silme geri alınamadı.', 'Could not undo deletion.'))); }
+                    });
+                } catch (error) {
+                    console.warn('[Browser] delete selected notes failed:', error);
+                    alert(t('common.error'), l('Notlar silinemedi.', 'The notes could not be deleted.'));
+                }
+            },
+            { destructive: true },
+        );
+    };
     return (
-        <Modal visible={showSelectionMenu} transparent animationType="fade" onRequestClose={() => setShowSelectionMenu(false)}>
-            <View style={styles.selectionMenuOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowSelectionMenu(false)} />
-                <SwipeDismissSheet
-                    active={showSelectionMenu}
-                    style={styles.selectionMenuCard}
-                    onDismiss={() => setShowSelectionMenu(false)}
-                    accessibilityViewIsModal
-                >
-                    <View style={styles.selectionMenuHeader}>
-                        <Text style={styles.selectionMenuTitle}>
-                            {selectedCardIds.size} {tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}
-                        </Text>
-                        <TouchableOpacity style={styles.selectionMenuClose} onPress={() => setShowSelectionMenu(false)} accessibilityRole="button" accessibilityLabel={t('common.close')}>
-                            <Text style={styles.selectionMenuCloseText}>×</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => runSelectionAction(() => toggleSelectedSuspend(selectedActionCardIds, settings.dayRolloverHour))}>
-                            <Text style={styles.selectionMenuIcon}>⏸</Text><Text style={styles.selectionMenuText}>{l('Askıya al / askıdan çıkar', 'Toggle suspend')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => runSelectionAction(() => toggleSelectedBury(selectedActionCardIds, settings.dayRolloverHour))}>
-                            <Text style={styles.selectionMenuIcon}>💤</Text><Text style={styles.selectionMenuText}>{l('Göm / gömmeden çıkar', 'Toggle bury')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.selectionMenuItem} accessibilityRole="button"
-                            onPress={() => {
-                                if (hasCatalogNotesSelected || hasCatalogCardsSelected) {
-                                    alert(
-                                        l('Katalog Korumalı', 'Catalog Protected'),
-                                        l('Dahili TUS kartlarının not türü değiştirilemez.', 'Built-in TUS cards cannot have their note type changed.')
-                                    );
-                                    return;
-                                }
-                                setShowSelectionMenu(false);
-                                setShowNoteTypePicker(true);
-                            }}
-                        >
-                            <Text style={styles.selectionMenuIcon}>🗂</Text><Text style={styles.selectionMenuText}>{l('Not türünü değiştir', 'Change note type')}</Text><Text style={styles.overflowChevron}>›</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.selectionMenuItem} accessibilityRole="button"
-                            onPress={() => {
-                                if (hasCatalogCardsSelected || hasCatalogNotesSelected) {
-                                    alert(
-                                        l('Katalog Korumalı', 'Catalog Protected'),
-                                        l('Seçilen kartlar arasında dahili TUS kartları bulunuyor. Dahili TUS kartlarının destesi değiştirilemez.', 'The selection contains built-in TUS cards. Built-in catalog cards cannot be moved to another deck.')
-                                    );
-                                    return;
-                                }
-                                setShowSelectionMenu(false);
-                                setShowDeckPicker(true);
-                            }}
-                        >
-                            <Text style={styles.selectionMenuIcon}>▤</Text><Text style={styles.selectionMenuText}>{l('Desteyi değiştir', 'Change deck')}</Text><Text style={styles.overflowChevron}>›</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setRepositionStart('0'); setRepositionStep('1'); setShowRepositionDialog(true); }}>
-                            <Text style={styles.selectionMenuIcon}>↕</Text><Text style={styles.selectionMenuText}>{l('Yeniden konumlandır', 'Reposition')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setDueInput(getSetDueDateDefault('browser')); setShowDueDialog(true); }}>
-                            <Text style={styles.selectionMenuIcon}>📅</Text><Text style={styles.selectionMenuText}>{l('Vade tarihini ayarla', 'Set due date')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={openSelectionTags}>
-                            <Text style={styles.selectionMenuIcon}>🏷</Text><Text style={styles.selectionMenuText}>{l('Etiketleri düzenle', 'Edit tags')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setShowGradePicker(true); }}>
-                            <Text style={styles.selectionMenuIcon}>✓</Text><Text style={styles.selectionMenuText}>{l('Şimdi derecelendir', 'Grade now')}</Text><Text style={styles.overflowChevron}>›</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.selectionMenuItem} accessibilityRole="button"
-                            onPress={() => {
-                                setShowSelectionMenu(false);
-                                openResetDialog();
-                            }}
-                        >
-                            <Text style={styles.selectionMenuIcon}>↺</Text><Text style={styles.selectionMenuText}>{l('Kartları sıfırla…', 'Reset cards…')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.selectionMenuItem} accessibilityRole="button" onPress={() => { setShowSelectionMenu(false); setPreviewAnswerVisible(false); setPreviewIndex(0); }}>
-                            <Text style={styles.selectionMenuIcon}>👁</Text><Text style={styles.selectionMenuText}>{l('Önizle', 'Preview')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.selectionMenuItem} accessibilityRole="button"
-                            onPress={() => {
-                                if (hasCatalogCardsSelected || hasCatalogNotesSelected) {
-                                    alert(
-                                        l('Katalog Korumalı', 'Catalog Protected'),
-                                        l('Dahili TUS kartları telif korumalıdır ve dışa aktarılamaz.', 'Built-in TUS cards are protected and cannot be exported.')
-                                    );
-                                    return;
-                                }
-                                setDbSetting('browser_export_card_ids', JSON.stringify(selectedActionCardIds));
-                                setShowSelectionMenu(false);
-                                router.push('/export?selection=browser' as any);
-                            }}
-                        >
-                            <Text style={styles.selectionMenuIcon}>⇧</Text><Text style={styles.selectionMenuText}>{tableMode === 'notes' ? l('Notları dışa aktar', 'Export notes') : l('Kartları dışa aktar', 'Export cards')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.selectionMenuItem} accessibilityRole="button"
-                            onPress={() => {
-                                if (hasCatalogNotesSelected || hasCatalogCardsSelected) {
-                                    alert(
-                                        l('Katalog Korumalı', 'Catalog Protected'),
-                                        l('Dahili TUS kartları silinemez. Kataloğu kaldırmak için Ayarlar ekranını kullanabilirsiniz.', 'Built-in TUS cards cannot be deleted. Use Settings to remove the catalog.')
-                                    );
-                                    return;
-                                }
-                                setShowSelectionMenu(false);
-                                confirm(
-                                    l('Notları sil', 'Delete Notes'),
-                                    l(`${selectedNoteIds.length} not ve bu notlara bağlı tüm kartlar silinecek. Silme sonrasında geri alabilirsiniz.`, `${selectedNoteIds.length} notes and all cards belonging to them will be deleted. You can undo after deletion.`),
-                                    () => {
-                                        try {
-                                            const deletion = deleteNotes(selectedNoteIds);
-                                            closeSelection();
-                                            refreshSelection();
-                                            void choose(
-                                                l('Silindi', 'Deleted'),
-                                                l(`${deletion.cardCount} kart silindi.`, `${deletion.cardCount} cards deleted.`),
-                                                l('Geri al', 'Undo'),
-                                                l('Bitti', 'Done'),
-                                            ).then((undo) => {
-                                                if (!undo) return;
-                                                try { deletion.undo(); refreshSelection(); }
-                                                catch (error) { alert(t('common.error'), userFacingErrorMessage(error, l('Silme geri alınamadı.', 'Could not undo deletion.'))); }
-                                            });
-                                        } catch (error) {
-                                            console.warn('[Browser] delete selected notes failed:', error);
-                                            alert(t('common.error'), l('Notlar silinemedi.', 'The notes could not be deleted.'));
-                                        }
-                                    },
-                                    { destructive: true },
+        <AppSheet
+            visible={showSelectionMenu}
+            onClose={close}
+            title={`${selectedCardIds.size} ${tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}`}
+            closeButton
+        >
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <Card divided>
+                    <MenuItem
+                        icon={<SelectionSuspendIcon color={iconColor} />}
+                        label={l('Askıya al / askıdan çıkar', 'Toggle suspend')}
+                        onPress={() => runSelectionAction(() => toggleSelectedSuspend(selectedActionCardIds, settings.dayRolloverHour))}
+                    />
+                    <MenuItem
+                        icon={<BuryIcon color={iconColor} />}
+                        label={l('Göm / gömmeden çıkar', 'Toggle bury')}
+                        onPress={() => runSelectionAction(() => toggleSelectedBury(selectedActionCardIds, settings.dayRolloverHour))}
+                    />
+                    <MenuItem
+                        icon={<CardsGlyph color={iconColor} />}
+                        label={l('Not türünü değiştir', 'Change note type')}
+                        onPress={() => {
+                            if (catalogProtected) {
+                                alert(
+                                    l('Katalog Korumalı', 'Catalog Protected'),
+                                    l('Dahili TUS kartlarının not türü değiştirilemez.', 'Built-in TUS cards cannot have their note type changed.')
                                 );
-                            }}
-                        >
-                            <Text style={[styles.selectionMenuIcon, styles.selectionMenuDanger]}>⌫</Text><Text style={[styles.selectionMenuText, styles.selectionMenuDanger]}>{l('Notları sil', 'Delete notes')}</Text>
-                        </TouchableOpacity>
-                    </ScrollView>
-                </SwipeDismissSheet>
-            </View>
-        </Modal>
+                                return;
+                            }
+                            closeThen(() => setShowNoteTypePicker(true));
+                        }}
+                    />
+                    <MenuItem
+                        icon={<SelectionDeckIcon color={iconColor} />}
+                        label={l('Desteyi değiştir', 'Change deck')}
+                        onPress={() => {
+                            if (catalogProtected) {
+                                alert(
+                                    l('Katalog Korumalı', 'Catalog Protected'),
+                                    l('Seçilen kartlar arasında dahili TUS kartları bulunuyor. Dahili TUS kartlarının destesi değiştirilemez.', 'The selection contains built-in TUS cards. Built-in catalog cards cannot be moved to another deck.')
+                                );
+                                return;
+                            }
+                            closeThen(() => setShowDeckPicker(true));
+                        }}
+                    />
+                    <MenuItem
+                        icon={<SortIcon color={iconColor} />}
+                        label={l('Yeniden konumlandır', 'Reposition')}
+                        onPress={() => closeThen(() => { setRepositionStart('0'); setRepositionStep('1'); setShowRepositionDialog(true); })}
+                    />
+                    <MenuItem
+                        icon={<CalendarGlyph color={iconColor} />}
+                        label={l('Vade tarihini ayarla', 'Set due date')}
+                        onPress={() => closeThen(() => { setDueInput(getSetDueDateDefault('browser')); setShowDueDialog(true); })}
+                    />
+                    <MenuItem icon={<TagIcon color={iconColor} />} label={l('Etiketleri düzenle', 'Edit tags')} onPress={() => closeThen(openSelectionTags)} />
+                    <MenuItem
+                        icon={<CheckIcon color={iconColor} />}
+                        label={l('Şimdi derecelendir', 'Grade now')}
+                        onPress={() => closeThen(() => setShowGradePicker(true))}
+                    />
+                    <MenuItem
+                        icon={<ResetIcon color={iconColor} />}
+                        label={l('Kartları sıfırla…', 'Reset cards…')}
+                        onPress={() => closeThen(openResetDialog)}
+                    />
+                    <MenuItem
+                        icon={<EyeIcon color={iconColor} size={20} />}
+                        label={l('Önizle', 'Preview')}
+                        onPress={() => closeThen(() => { setPreviewAnswerVisible(false); setPreviewIndex(0); })}
+                    />
+                    <MenuItem
+                        icon={<DeckOverflowGlyph kind="export" color={iconColor} />}
+                        label={tableMode === 'notes' ? l('Notları dışa aktar', 'Export notes') : l('Kartları dışa aktar', 'Export cards')}
+                        onPress={() => {
+                            if (catalogProtected) {
+                                alert(
+                                    l('Katalog Korumalı', 'Catalog Protected'),
+                                    l('Dahili TUS kartları telif korumalıdır ve dışa aktarılamaz.', 'Built-in TUS cards are protected and cannot be exported.')
+                                );
+                                return;
+                            }
+                            setDbSetting('browser_export_card_ids', JSON.stringify(selectedActionCardIds));
+                            closeThen(() => router.push('/export?selection=browser' as any));
+                        }}
+                    />
+                    <MenuItem
+                        icon={<TrashIcon color={colors.danger} />}
+                        label={l('Notları sil', 'Delete notes')}
+                        destructive
+                        onPress={deleteSelectedNotes}
+                    />
+                </Card>
+            </ScrollView>
+        </AppSheet>
+    );
+}
+
+/**
+ * A ••• row with something at its end: a count, the flag filter's state and its disclosure
+ * chevron, or the mark of a tri-state checkbox. Drawn like the shared `MenuItem`, which has no
+ * place for these nor the `expanded` and `mixed` states they report.
+ */
+function AccessoryMenuItem({ styles, label, icon, accessory, onPress, accessibilityRole = 'menuitem', accessibilityState, ariaChecked }: {
+    styles: BrowserStyles;
+    label: string;
+    icon: ReactNode;
+    accessory?: ReactNode;
+    onPress: () => void;
+    accessibilityRole?: AccessibilityRole;
+    accessibilityState?: AccessibilityState;
+    ariaChecked?: boolean | 'mixed';
+}) {
+    return (
+        <TouchableOpacity
+            style={styles.menuItem}
+            onPress={onPress}
+            accessibilityRole={accessibilityRole}
+            accessibilityState={accessibilityState}
+            aria-checked={ariaChecked}
+        >
+            <View style={styles.menuItemIcon}>{icon}</View>
+            <Text style={styles.menuItemLabel}>{label}</Text>
+            {accessory}
+        </TouchableOpacity>
     );
 }
 
@@ -260,7 +328,7 @@ interface OverflowMenuModalProps {
     undoDeckMove: () => void;
 }
 
-/** The header's ••• menu: filters, selection, sorting and browser options. */
+/** The scope bar's ⋮ menu: filters, selection, sorting and browser options. */
 export function OverflowMenuModal({
     coloredFlagFilters,
     colors,
@@ -290,38 +358,54 @@ export function OverflowMenuModal({
     toggleFlagFilter,
     undoDeckMove,
 }: OverflowMenuModalProps) {
+    const iconColor = colors.textMuted;
+    const close = () => setShowOverflowMenu(false);
+    const allFlags = flagFilters.length === ALL_CARD_FLAGS.length;
+    const someFlags = flagFilters.length > 0;
+    const allFlagsState = allFlags ? true : someFlags ? 'mixed' as const : false;
     return (
-        <Modal visible={showOverflowMenu} transparent animationType="fade" onRequestClose={() => setShowOverflowMenu(false)}>
-            <View style={styles.overflowOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOverflowMenu(false)} />
-                <View style={styles.overflowMenu} accessibilityViewIsModal>
-                    <ScrollView bounces={false} showsVerticalScrollIndicator={showFlagFilterMenu}>
-                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setShowOverflowMenu(false); setShowSortPicker(true); }}>
-                        <Text style={styles.overflowItemIcon}>↕</Text>
-                        <Text style={styles.overflowItemText}>{l('Görüntüleme sırasını değiştir', 'Change display order')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setMarkedOnly((value) => !value); setShowOverflowMenu(false); }}>
-                        <Text style={styles.overflowItemIcon}>★</Text>
-                        <Text style={styles.overflowItemText}>{l('İşaretlileri filtrele', 'Filter marked')}</Text>
-                        {markedOnly && <Text style={styles.overflowCheck}>✓</Text>}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setSuspendedOnly((value) => !value); setShowOverflowMenu(false); }}>
-                        <Text style={styles.overflowItemIcon}>⏸</Text>
-                        <Text style={styles.overflowItemText}>{l('Askıdakileri filtrele', 'Filter suspended')}</Text>
-                        {suspendedOnly && <Text style={styles.overflowCheck}>✓</Text>}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setShowOverflowMenu(false); setShowTagFilter(true); }}>
-                        <Text style={styles.overflowItemIcon}>⌗</Text>
-                        <Text style={styles.overflowItemText}>{l('Etikete göre filtrele', 'Filter by tag')}</Text>
-                        {tagFilters.length > 0 && <Text style={styles.overflowBadge}>{tagFilters.length}</Text>}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} onPress={openFlagFilter} accessibilityRole="button" accessibilityState={{ expanded: showFlagFilterMenu }}>
-                        <Text style={styles.overflowItemIcon}>⚑</Text>
-                        <Text style={styles.overflowItemText}>{l('Bayrağa göre filtrele', 'Filter by flag')}</Text>
+        <PopoverMenu
+            visible={showOverflowMenu}
+            onClose={close}
+            anchor={{ top: OVERFLOW_MENU_TOP }}
+            accessibilityLabel={l('Diğer seçenekler', 'More options')}
+        >
+            <MenuItem
+                icon={<SortIcon color={iconColor} />}
+                label={l('Görüntüleme sırasını değiştir', 'Change display order')}
+                onPress={() => { close(); setShowSortPicker(true); }}
+            />
+            <MenuItem
+                icon={<StarGlyph color={iconColor} size={20} filled={false} />}
+                label={l('İşaretlileri filtrele', 'Filter marked')}
+                checked={markedOnly}
+                onPress={() => { setMarkedOnly((value) => !value); close(); }}
+            />
+            <MenuItem
+                icon={<SelectionSuspendIcon color={iconColor} />}
+                label={l('Askıdakileri filtrele', 'Filter suspended')}
+                checked={suspendedOnly}
+                onPress={() => { setSuspendedOnly((value) => !value); close(); }}
+            />
+            <AccessoryMenuItem
+                styles={styles}
+                icon={<TagIcon color={iconColor} />}
+                label={l('Etikete göre filtrele', 'Filter by tag')}
+                accessory={tagFilters.length > 0 ? <Badge label={String(tagFilters.length)} tone="accent" style={styles.menuBadge} /> : null}
+                onPress={() => { close(); setShowTagFilter(true); }}
+            />
+            <AccessoryMenuItem
+                styles={styles}
+                icon={<FlagGlyph color={iconColor} size={20} filled={false} />}
+                label={l('Bayrağa göre filtrele', 'Filter by flag')}
+                onPress={openFlagFilter}
+                accessibilityState={{ expanded: showFlagFilterMenu }}
+                accessory={(
+                    <>
                         {/* Mirrors the chips under the search field: "no flag" is a filter of its
                             own, so it shows its own ring instead of being counted as a colour.
                             Counting it made "no flag + red" read as two flags. */}
-                        {flagFilters.length !== ALL_CARD_FLAGS.length && (
+                        {!allFlags && (
                             <>
                                 {hasNoFlagFilter && (
                                     <View style={styles.flagIconContainer}>
@@ -334,112 +418,77 @@ export function OverflowMenuModal({
                                     </View>
                                 )}
                                 {coloredFlagFilters.length > 1 && (
-                                    <Text style={styles.overflowBadge}>{coloredFlagFilters.length}</Text>
+                                    <Badge label={String(coloredFlagFilters.length)} tone="accent" style={styles.menuBadge} />
                                 )}
                             </>
                         )}
-                        <Text style={styles.overflowChevron}>{showFlagFilterMenu ? '⌄' : '›'}</Text>
-                    </TouchableOpacity>
-                    {showFlagFilterMenu && (
-                        <View style={styles.overflowFlagPanel}>
-                            <TouchableOpacity
-                                style={[styles.overflowFlagRow, flagFilters.length === ALL_CARD_FLAGS.length && styles.overflowFlagRowActive]}
-                                onPress={toggleAllFlagFilters}
-                                accessibilityRole="checkbox"
-                                accessibilityState={{ checked: flagFilters.length === ALL_CARD_FLAGS.length ? true : flagFilters.length > 0 ? 'mixed' : false }}
-                                aria-checked={flagFilters.length === ALL_CARD_FLAGS.length ? true : flagFilters.length > 0 ? 'mixed' : false}
-                            >
-                                <View style={styles.flagIconContainer} />
-                                <Text style={[styles.overflowFlagText, flagFilters.length === ALL_CARD_FLAGS.length && styles.overflowFlagTextActive]}>
-                                    {l('Tümünü seç', 'Select all')}
-                                </Text>
-                                <View style={[
-                                    styles.checkbox,
-                                    flagFilters.length > 0 && styles.checkboxChecked,
-                                    flagFilters.length > 0 && flagFilters.length < ALL_CARD_FLAGS.length && styles.checkboxPartial,
-                                ]}>
-                                    {flagFilters.length > 0 && (
-                                        <Text style={styles.checkboxTick}>
-                                            {flagFilters.length === ALL_CARD_FLAGS.length ? '✓' : '−'}
-                                        </Text>
-                                    )}
-                                </View>
-                            </TouchableOpacity>
-                            {ALL_CARD_FLAGS.map((flag) => {
-                                const selected = flagFilters.includes(flag);
-                                return (
-                                    <TouchableOpacity
-                                        key={flag}
-                                        style={[styles.overflowFlagRow, selected && styles.overflowFlagRowActive]}
-                                        onPress={() => toggleFlagFilter(flag)}
-                                        accessibilityRole="checkbox"
-                                        accessibilityState={{ checked: selected }}
-                                        aria-checked={selected}
-                                        accessibilityLabel={cardFlagName(locale, flag)}
-                                    >
-                                        <View style={styles.flagIconContainer}>
-                                            <FlagGlyph
-                                                color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
-                                                size={18}
-                                                filled={flag !== 0}
-                                            />
-                                        </View>
-                                        <Text style={[styles.overflowFlagText, selected && styles.overflowFlagTextActive]}>
-                                            {cardFlagName(locale, flag)}
-                                        </Text>
-                                        <View style={[styles.checkbox, selected && styles.checkboxChecked]}>
-                                            {selected && <Text style={styles.checkboxTick}>✓</Text>}
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                            <View style={styles.overflowFlagFooter}>
-                                <Text style={styles.overflowFlagCount}>
-                                    {l(`${flagFilters.length} seçenek seçili`, `${flagFilters.length} selected`)}
-                                </Text>
-                            </View>
-                        </View>
-                    )}
-                    <View style={styles.overflowSeparator} />
-                    <TouchableOpacity
-                        style={[styles.overflowItem, lastDeckMove.length === 0 && styles.overflowItemDisabled]}
-                        disabled={lastDeckMove.length === 0}
-                        onPress={undoDeckMove}
-                        accessibilityRole="button"
-                        accessibilityState={{ disabled: lastDeckMove.length === 0 }}
-                    >
-                        <Text style={styles.overflowItemIcon}>↶</Text>
-                        <Text style={styles.overflowItemText}>{l('Geri al: Deste güncelleme', 'Undo Update Deck')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.overflowItem, filteredCards.length === 0 && styles.overflowItemDisabled]}
-                        disabled={filteredCards.length === 0}
-                        onPress={() => { setShowOverflowMenu(false); selectAllVisible(); }}
-                        accessibilityRole="button"
-                        accessibilityState={{ disabled: filteredCards.length === 0 }}
-                    >
-                        <Text style={styles.overflowItemIcon}>☑</Text>
-                        <Text style={styles.overflowItemText}>
-                            {hasMoreCards
-                                ? l(`Yüklenenleri seç (${filteredCards.length})`, `Select loaded (${filteredCards.length})`)
-                                : l('Tümünü seç', 'Select all')}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={() => { setShowOverflowMenu(false); setShowOptions(true); }}>
-                        <View style={{ width: 25, alignItems: 'center', justifyContent: 'center' }}>
-                            <GearGlyph color={styles.overflowItemIcon.color} size={18} />
-                        </View>
-                        <Text style={styles.overflowItemText}>{l('Seçenekler', 'Options')}</Text>
-                    </TouchableOpacity>
-                    <View style={styles.overflowSeparator} />
-                    <TouchableOpacity style={styles.overflowItem} accessibilityRole="button" onPress={openFilteredDeckDialog}>
-                        <Text style={styles.overflowItemIcon}>⧉</Text>
-                        <Text style={styles.overflowItemText}>{l('Filtrelenmiş deste oluştur', 'Create filtered deck')}</Text>
-                    </TouchableOpacity>
-                    </ScrollView>
+                        {showFlagFilterMenu
+                            ? <ChevronDownIcon color={colors.textMuted} size={16} />
+                            : <ChevronRightIcon color={colors.textMuted} size={16} />}
+                    </>
+                )}
+            />
+            {showFlagFilterMenu && (
+                <View style={styles.flagFilterPanel}>
+                    <AccessoryMenuItem
+                        styles={styles}
+                        icon={<View style={styles.flagIconContainer} />}
+                        label={l('Tümünü seç', 'Select all')}
+                        onPress={toggleAllFlagFilters}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: allFlagsState }}
+                        ariaChecked={allFlagsState}
+                        accessory={allFlags
+                            ? <CheckIcon color={colors.accent} size={18} />
+                            : someFlags ? <MinusIcon color={colors.accent} size={18} /> : null}
+                    />
+                    {ALL_CARD_FLAGS.map((flag) => (
+                        <MenuItem
+                            key={flag}
+                            icon={(
+                                <FlagGlyph
+                                    color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
+                                    size={18}
+                                    filled={flag !== 0}
+                                />
+                            )}
+                            label={cardFlagName(locale, flag)}
+                            checked={flagFilters.includes(flag)}
+                            onPress={() => toggleFlagFilter(flag)}
+                        />
+                    ))}
+                    <Text style={styles.flagFilterCount}>
+                        {l(`${flagFilters.length} seçenek seçili`, `${flagFilters.length} selected`)}
+                    </Text>
                 </View>
-            </View>
-        </Modal>
+            )}
+            <MenuSeparator />
+            <MenuItem
+                icon={<UndoIcon color={iconColor} />}
+                label={l('Geri al: Deste güncelleme', 'Undo Update Deck')}
+                disabled={lastDeckMove.length === 0}
+                onPress={undoDeckMove}
+            />
+            <MenuItem
+                icon={<SelectAllIcon color={iconColor} />}
+                label={hasMoreCards
+                    ? l(`Yüklenenleri seç (${filteredCards.length})`, `Select loaded (${filteredCards.length})`)
+                    : l('Tümünü seç', 'Select all')}
+                disabled={filteredCards.length === 0}
+                onPress={() => { close(); selectAllVisible(); }}
+            />
+            <MenuItem
+                icon={<GearGlyph color={iconColor} size={20} />}
+                label={l('Seçenekler', 'Options')}
+                onPress={() => { close(); setShowOptions(true); }}
+            />
+            <MenuSeparator />
+            <MenuItem
+                icon={<FilteredDeckIcon color={iconColor} />}
+                label={l('Filtrelenmiş deste oluştur', 'Create filtered deck')}
+                onPress={openFilteredDeckDialog}
+            />
+        </PopoverMenu>
     );
 }
 
@@ -469,46 +518,50 @@ export function SortPickerModal({
     updateSort,
     updateSortDirection,
 }: SortPickerModalProps) {
+    const colors = useThemeColors();
+    const close = () => setShowSortPicker(false);
+    const direction = (descending: boolean, label: string) => {
+        const selected = sortDescending === descending;
+        const tint = selected ? colors.accent : colors.textSecondary;
+        return (
+            <Chip
+                label={label}
+                icon={descending ? <ArrowDownIcon color={tint} size={14} /> : <ArrowUpIcon color={tint} size={14} />}
+                selected={selected}
+                onPress={() => updateSortDirection(descending)}
+            />
+        );
+    };
     return (
-        <Modal visible={showSortPicker} transparent animationType="fade" onRequestClose={() => setShowSortPicker(false)}>
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowSortPicker(false)} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Görüntüleme sırası', 'Display Order')}</Text>
-                    <View style={styles.directionRow}>
-                        <TouchableOpacity
-                            style={[styles.directionButton, !sortDescending && styles.directionButtonActive]}
-                            onPress={() => updateSortDirection(false)}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: !sortDescending }}
-                            aria-checked={!sortDescending}
-                        >
-                            <Text style={[styles.directionText, !sortDescending && styles.directionTextActive]}>↑ {l('Artan', 'Ascending')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.directionButton, sortDescending && styles.directionButtonActive]}
-                            onPress={() => updateSortDirection(true)}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: sortDescending }}
-                            aria-checked={sortDescending}
-                        >
-                            <Text style={[styles.directionText, sortDescending && styles.directionTextActive]}>↓ {l('Azalan', 'Descending')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView style={styles.pickerList}>
-                        {BROWSER_SORT_KEYS.map((key) => (
-                            <TouchableOpacity key={key} style={[styles.pickerRow, sortKey === key && styles.pickerRowActive]} onPress={() => updateSort(key)} accessibilityRole="radio" accessibilityState={{ checked: sortKey === key }} aria-checked={sortKey === key}>
-                                <Text style={[styles.pickerRowText, sortKey === key && styles.pickerRowTextActive]}>{sortLabels[key]}</Text>
-                                {sortKey === key && <Text style={styles.pickerCheck}>✓</Text>}
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                    <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowSortPicker(false)}>
-                        <Text style={styles.modalCloseText}>{t('common.close')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog
+            visible={showSortPicker}
+            onClose={close}
+            title={l('Görüntüleme sırası', 'Display Order')}
+            actions={<Button variant="plain" label={t('common.close')} onPress={close} />}
+        >
+            <View style={styles.directionRow}>
+                {direction(false, l('Artan', 'Ascending'))}
+                {direction(true, l('Azalan', 'Descending'))}
             </View>
-        </Modal>
+            <ScrollView style={styles.pickerList}>
+                {BROWSER_SORT_KEYS.map((key) => {
+                    const selected = sortKey === key;
+                    return (
+                        <TouchableOpacity
+                            key={key}
+                            style={[styles.pickerRow, selected && styles.pickerRowActive]}
+                            onPress={() => updateSort(key)}
+                            accessibilityRole="radio"
+                            accessibilityState={{ checked: selected }}
+                            aria-checked={selected}
+                        >
+                            <Text style={[styles.pickerRowText, selected && styles.pickerRowTextActive]}>{sortLabels[key]}</Text>
+                            <SelectedMark visible={selected} />
+                        </TouchableOpacity>
+                    );
+                })}
+            </ScrollView>
+        </AppDialog>
     );
 }
 
@@ -535,33 +588,33 @@ export function FlagPickerModal({
     tableMode,
 }: FlagPickerModalProps) {
     return (
-        <Modal visible={flagPickerMode !== null} transparent animationType="fade" onRequestClose={() => setFlagPickerMode(null)}>
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={() => setFlagPickerMode(null)} />
-                <View style={[styles.modalCard, styles.flagPickerCard]} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{tableMode === 'notes' ? l('Seçili notların kartlarını bayrakla', 'Flag Cards of Selected Notes') : l('Seçili kartları bayrakla', 'Flag Selected Cards')}</Text>
-                    {ALL_CARD_FLAGS.map((flag) => (
-                        <TouchableOpacity key={flag} style={styles.pickerRow} onPress={() => applyFlag(flag)} accessibilityRole="button" accessibilityLabel={cardFlagName(locale, flag)}>
-                            <View style={styles.flagIconContainer}>
-                                <FlagGlyph
-                                    color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
-                                    size={18}
-                                    filled={flag !== 0}
-                                />
-                            </View>
-                            <Text style={styles.pickerRowText}>
-                                {cardFlagName(locale, flag)}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+        <AppDialog
+            visible={flagPickerMode !== null}
+            onClose={() => setFlagPickerMode(null)}
+            title={tableMode === 'notes' ? l('Seçili notların kartlarını bayrakla', 'Flag Cards of Selected Notes') : l('Seçili kartları bayrakla', 'Flag Selected Cards')}
+            closeButton
+        >
+            <View>
+                {ALL_CARD_FLAGS.map((flag) => (
+                    <TouchableOpacity key={flag} style={styles.pickerRow} onPress={() => applyFlag(flag)} accessibilityRole="button" accessibilityLabel={cardFlagName(locale, flag)}>
+                        <View style={styles.flagIconContainer}>
+                            <FlagGlyph
+                                color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
+                                size={18}
+                                filled={flag !== 0}
+                            />
+                        </View>
+                        <Text style={styles.pickerRowText}>
+                            {cardFlagName(locale, flag)}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
             </View>
-        </Modal>
+        </AppDialog>
     );
 }
 
 interface BrowserOptionsModalProps {
-    colors: ColorScheme;
     l: BrowserI18n['l'];
     setShowOptions: Dispatch<SetStateAction<boolean>>;
     showAnswerSnippet: boolean;
@@ -576,7 +629,6 @@ interface BrowserOptionsModalProps {
 
 /** Table mode and the optional columns of the card list. */
 export function BrowserOptionsModal({
-    colors,
     l,
     setShowOptions,
     showAnswerSnippet,
@@ -588,53 +640,46 @@ export function BrowserOptionsModal({
     updateBrowserOption,
     updateTableMode,
 }: BrowserOptionsModalProps) {
+    const close = () => setShowOptions(false);
     return (
-        <Modal visible={showOptions} transparent animationType="fade" onRequestClose={() => setShowOptions(false)}>
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowOptions(false)} />
-                <View style={styles.modalCard} accessibilityViewIsModal>
-                    <Text style={styles.modalTitle}>{l('Kart tarayıcısı seçenekleri', 'Card Browser Options')}</Text>
-                    <Text style={styles.optionTitle}>{l('Görünüm', 'View')}</Text>
-                    <Text style={styles.optionCaption}>{l('Listede kartları veya her notu tek satır olarak göster.', 'Show cards, or show each note as a single row.')}</Text>
-                    <View style={styles.directionRow}>
-                        <TouchableOpacity
-                            style={[styles.directionButton, tableMode === 'cards' && styles.directionButtonActive]}
-                            onPress={() => updateTableMode('cards')}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: tableMode === 'cards' }}
-                            aria-checked={tableMode === 'cards'}
-                        >
-                            <Text style={[styles.directionText, tableMode === 'cards' && styles.directionTextActive]}>{l('Kartlar', 'Cards')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.directionButton, tableMode === 'notes' && styles.directionButtonActive]}
-                            onPress={() => updateTableMode('notes')}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: tableMode === 'notes' }}
-                            aria-checked={tableMode === 'notes'}
-                        >
-                            <Text style={[styles.directionText, tableMode === 'notes' && styles.directionTextActive]}>{l('Notlar', 'Notes')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={styles.optionRow}>
-                        <View style={styles.optionCopy}>
-                            <Text style={styles.optionTitle}>{l('Yanıt önizlemesini göster', 'Show answer preview')}</Text>
-                            <Text style={styles.optionCaption}>{l('Kart satırında cevabın kısa bir bölümünü gösterir.', 'Shows a short answer excerpt in each row.')}</Text>
-                        </View>
-                        <Switch value={showAnswerSnippet} onValueChange={(value) => updateBrowserOption('answer', value)} trackColor={{ false: colors.border, true: colors.accentLight }} thumbColor={showAnswerSnippet ? colors.accent : colors.textMuted} accessibilityLabel={l('Yanıt önizlemesini göster', 'Show answer preview')} />
-                    </View>
-                    <View style={styles.optionRow}>
-                        <View style={styles.optionCopy}>
-                            <Text style={styles.optionTitle}>{l('Zamanlama ayrıntıları', 'Scheduling details')}</Text>
-                            <Text style={styles.optionCaption}>{l('Son çalışma ve sonraki gösterim bilgisini gösterir.', 'Shows last review and next due information.')}</Text>
-                        </View>
-                        <Switch value={showScheduleDetails} onValueChange={(value) => updateBrowserOption('schedule', value)} trackColor={{ false: colors.border, true: colors.accentLight }} thumbColor={showScheduleDetails ? colors.accent : colors.textMuted} accessibilityLabel={l('Zamanlama ayrıntıları', 'Scheduling details')} />
-                    </View>
-                    <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowOptions(false)}>
-                        <Text style={styles.modalCloseText}>{t('common.close')}</Text>
-                    </TouchableOpacity>
-                </View>
+        <AppDialog
+            visible={showOptions}
+            onClose={close}
+            title={l('Kart tarayıcısı seçenekleri', 'Card Browser Options')}
+            actions={<Button variant="plain" label={t('common.close')} onPress={close} />}
+        >
+            <View style={styles.optionGroup}>
+                <Text style={styles.optionTitle}>{l('Görünüm', 'View')}</Text>
+                <Text style={styles.optionCaption}>{l('Listede kartları veya her notu tek satır olarak göster.', 'Show cards, or show each note as a single row.')}</Text>
+                <SegmentedControl
+                    options={[
+                        { value: 'cards', label: l('Kartlar', 'Cards') },
+                        { value: 'notes', label: l('Notlar', 'Notes') },
+                    ]}
+                    value={tableMode}
+                    onChange={updateTableMode}
+                    accessibilityLabel={l('Görünüm', 'View')}
+                    fill
+                />
             </View>
-        </Modal>
+            <View>
+                <Divider />
+                <SwitchRow
+                    title={l('Yanıt önizlemesini göster', 'Show answer preview')}
+                    summary={l('Kart satırında cevabın kısa bir bölümünü gösterir.', 'Shows a short answer excerpt in each row.')}
+                    value={showAnswerSnippet}
+                    onValueChange={(value) => updateBrowserOption('answer', value)}
+                    style={styles.dialogRow}
+                />
+                <Divider />
+                <SwitchRow
+                    title={l('Zamanlama ayrıntıları', 'Scheduling details')}
+                    summary={l('Son çalışma ve sonraki gösterim bilgisini gösterir.', 'Shows last review and next due information.')}
+                    value={showScheduleDetails}
+                    onValueChange={(value) => updateBrowserOption('schedule', value)}
+                    style={styles.dialogRow}
+                />
+            </View>
+        </AppDialog>
     );
 }

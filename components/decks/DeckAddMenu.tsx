@@ -1,14 +1,15 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import { Animated, Platform, StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
-import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
 import PressableScale from '../PressableScale';
 import { PopoverBackdrop, PopoverItem, PopoverModal, usePopoverProgress } from '../Popover';
+import DeckOverflowGlyph from '../DeckOverflowGlyph';
+import PencilGlyph from '../PencilGlyph';
+import { PlusIcon } from '../ui/icons';
 
 const FAB_SIZE = 56;
 export const DECK_ADD_MENU_LIST_INSET = FAB_SIZE + 2 * Spacing.md;
@@ -23,16 +24,7 @@ interface DeckAddMenuProps {
     onAddCard: () => void;
 }
 
-/** A plus drawn on the button's centre, so it can turn into × about that centre. */
-function PlusGlyph({ color }: { color: string }) {
-    return (
-        <Svg width={22} height={22} viewBox="0 0 22 22" {...DECORATIVE_SVG_PROPS}>
-            <Path d="M11 2.5v17M2.5 11h17" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
-        </Svg>
-    );
-}
-
-/** ＋ inside the open menu: it turns into × as the menu opens, and back as it closes. */
+/** ＋ inside the open menu: it turns into × about its centre as the menu opens, and back as it closes. */
 function MenuFab({ style, accent, open, glyphColor, onPress, label }: {
     style: StyleProp<ViewStyle>;
     accent: string;
@@ -57,9 +49,10 @@ function MenuFab({ style, accent, open, glyphColor, onPress, label }: {
             accessibilityRole="button"
             accessibilityLabel={label}
             accessibilityState={{ expanded: true }}
+            aria-expanded
         >
             <Animated.View style={{ transform: [{ rotate: turn }] }}>
-                <PlusGlyph color={glyphColor} />
+                <PlusIcon color={glyphColor} size={28} />
             </Animated.View>
         </PressableScale>
     );
@@ -67,7 +60,8 @@ function MenuFab({ style, accent, open, glyphColor, onPress, label }: {
 
 /**
  * The deck list's add actions as labelled buttons above ＋. They rise out of ＋ one after another
- * over a dimmed backdrop while ＋ turns into ×, and sink back into it when the menu closes.
+ * over the speed dial's strong dimming while ＋ turns into ×, and sink back into it when the menu
+ * closes. The labels sit directly on the dimming, as a speed dial's do.
  */
 export default function DeckAddMenu({
     bottom, visible, onOpen, onClose, onCreateFilteredDeck, onCreateDeck, onAddCard,
@@ -77,9 +71,24 @@ export default function DeckAddMenu({
     const insets = useSafeAreaInsets();
     const pendingAction = useRef<(() => void) | null>(null);
     const actions = [
-        { label: l('Filtrelenmiş deste oluştur', 'Create filtered deck'), glyph: '⧉', onPress: onCreateFilteredDeck },
-        { label: l('Deste oluştur', 'Create deck'), glyph: '▤', onPress: onCreateDeck },
-        { label: l('Kart ekle', 'Add note'), glyph: '✎', onPress: onAddCard },
+        {
+            key: 'filtered-deck',
+            label: l('Filtrelenmiş deste oluştur', 'Create filtered deck'),
+            icon: <DeckOverflowGlyph kind="filteredDeck" color={colors.onAccent} size={22} />,
+            onPress: onCreateFilteredDeck,
+        },
+        {
+            key: 'deck',
+            label: l('Deste oluştur', 'Create deck'),
+            icon: <DeckOverflowGlyph kind="deck" color={colors.onAccent} size={22} />,
+            onPress: onCreateDeck,
+        },
+        {
+            key: 'note',
+            label: l('Kart ekle', 'Add note'),
+            icon: <PencilGlyph color={colors.onAccent} size={22} />,
+            onPress: onAddCard,
+        },
     ];
 
     const selectAction = (action: () => void) => {
@@ -110,7 +119,7 @@ export default function DeckAddMenu({
                 accessibilityLabel={l('Ekle', 'Add')}
                 accessibilityState={{ expanded: false }}
             >
-                <PlusGlyph color={colors.white} />
+                <PlusIcon color={colors.onAccent} size={28} />
             </PressableScale>
             <PopoverModal
                 visible={visible}
@@ -120,7 +129,7 @@ export default function DeckAddMenu({
             >
                 <View style={styles.overlay}>
                     <PopoverBackdrop
-                        style={[StyleSheet.absoluteFill, styles.backdrop]}
+                        style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrimStrong }]}
                         onPress={onClose}
                         accessibilityRole="button"
                         accessibilityLabel={l('Kapat', 'Close')}
@@ -133,9 +142,9 @@ export default function DeckAddMenu({
                         }]}
                         pointerEvents="box-none"
                     >
-                        {actions.map(({ label, glyph, onPress }, index) => (
+                        {actions.map(({ key, label, icon, onPress }, index) => (
                             // The action nearest ＋ comes out first.
-                            <PopoverItem key={glyph} index={actions.length - 1 - index} origin="bottom right">
+                            <PopoverItem key={key} index={actions.length - 1 - index} origin="bottom right">
                                 <TouchableOpacity
                                     style={styles.actionRow}
                                     onPress={() => selectAction(onPress)}
@@ -143,10 +152,10 @@ export default function DeckAddMenu({
                                     accessibilityLabel={label}
                                 >
                                     <View style={styles.actionLabel}>
-                                        <Text style={[styles.actionLabelText, { color: colors.white }]}>{label}</Text>
+                                        <Text style={[styles.actionLabelText, { color: colors.onAccent }]}>{label}</Text>
                                     </View>
                                     <View style={[styles.actionButton, { backgroundColor: colors.accent }]}>
-                                        <Text style={[styles.actionIcon, { color: colors.white }]}>{glyph}</Text>
+                                        {icon}
                                     </View>
                                 </TouchableOpacity>
                             </PopoverItem>
@@ -156,7 +165,7 @@ export default function DeckAddMenu({
                         style={[styles.fab, { bottom }]}
                         accent={colors.accent}
                         open={colors.accentHover}
-                        glyphColor={colors.white}
+                        glyphColor={colors.onAccent}
                         onPress={onClose}
                         label={l('Ekleme menüsünü kapat', 'Close add menu')}
                     />
@@ -178,7 +187,6 @@ const styles = StyleSheet.create({
         ...Shadows.lg,
     },
     overlay: { flex: 1, justifyContent: 'flex-end' },
-    backdrop: { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
     actions: {
         gap: Spacing.md,
         alignItems: 'flex-end',
@@ -192,8 +200,6 @@ const styles = StyleSheet.create({
     },
     actionLabel: {
         maxWidth: 240,
-        borderRadius: 4,
-        backgroundColor: 'rgba(65, 65, 65, 0.82)',
         paddingHorizontal: 10,
         paddingVertical: 7,
     },
@@ -206,5 +212,4 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         ...Shadows.md,
     },
-    actionIcon: { fontSize: 21, fontWeight: '700' },
 });

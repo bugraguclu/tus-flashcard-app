@@ -22,6 +22,7 @@ const ROUTES: Record<StudyTool, string> = {
 };
 
 function ToolGlyph({ tool, color }: { tool: StudyTool; color: string }) {
+    const { onAccent } = useThemeColors();
     const stroke = { fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
     return (
         <Svg width={32} height={32} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
@@ -40,7 +41,7 @@ function ToolGlyph({ tool, color }: { tool: StudyTool; color: string }) {
                     <Rect x={4} y={3} width={14} height={18} rx={2} {...stroke} />
                     <Path d="M7 8l1.2 1.2L10.5 7M7 13l1.2 1.2 2.3-2.2M12.5 8.2H15M12.5 13.2H14" {...stroke} />
                     <Circle cx={17.5} cy={17.5} r={3.6} fill={color} />
-                    <Path d="M17.5 15.9v1.8l1.2.8" fill="none" stroke="#ffffff" strokeWidth={1.4} strokeLinecap="round" />
+                    <Path d="M17.5 15.9v1.8l1.2.8" fill="none" stroke={onAccent} strokeWidth={1.4} strokeLinecap="round" />
                 </>
             ) : (
                 <>
@@ -116,7 +117,7 @@ export default function StudyToolsMenu({ bottom }: StudyToolsMenuProps) {
             <PopoverModal visible={open} onRequestClose={() => setOpen(false)} itemCount={tools.length}>
                 <View style={styles.overlay}>
                     <PopoverBackdrop
-                        style={[StyleSheet.absoluteFill, styles.backdrop]}
+                        style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrimStrong }]}
                         onPress={() => setOpen(false)}
                         accessibilityRole="button"
                         accessibilityLabel={l('Kapat', 'Close')}
@@ -170,7 +171,6 @@ const styles = StyleSheet.create({
         ...Shadows.md,
     },
     overlay: { flex: 1, justifyContent: 'flex-end' },
-    backdrop: { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
     cards: { gap: Spacing.md },
     card: {
         flexDirection: 'row',

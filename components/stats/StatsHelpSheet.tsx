@@ -1,9 +1,8 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useThemeColors } from '../../constants/theme';
+import { Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
-import BottomSheetModal from '../BottomSheetModal';
+import { AppSheet } from '../ui/Sheet';
 
 /** Keep chart definitions available without repeating paragraphs throughout the page. */
 export default function StatsHelpSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -36,35 +35,28 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
         )],
     ];
     return (
-        <BottomSheetModal visible={visible} onClose={onClose} sheetStyle={[styles.sheet, { backgroundColor: colors.bgCard }]}>
-            <SafeAreaView edges={['bottom']} style={styles.sheetContent}>
-                <View style={styles.header}>
-                    <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">{l('İstatistikler hakkında', 'About statistics')}</Text>
-                    <Pressable onPress={onClose} style={styles.close} accessibilityRole="button" accessibilityLabel={l('Bilgiyi kapat', 'Close information')}>
-                        <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{l('Bitti', 'Done')}</Text>
-                    </Pressable>
-                </View>
-                <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-                    {sections.map(([title, body]) => (
-                        <View key={title} style={styles.section}>
-                            <Text style={[styles.heading, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text>
-                            <Text style={[styles.body, { color: colors.textPrimary }]}>{body}</Text>
-                        </View>
-                    ))}
-                </ScrollView>
-            </SafeAreaView>
-        </BottomSheetModal>
+        <AppSheet
+            visible={visible}
+            onClose={onClose}
+            title={l('İstatistikler hakkında', 'About statistics')}
+            closeButton
+            closeLabel={l('Bilgiyi kapat', 'Close information')}
+        >
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+                {sections.map(([title, body]) => (
+                    <View key={title} style={styles.section}>
+                        <Text style={[styles.heading, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text>
+                        <Text style={[styles.body, { color: colors.textPrimary }]}>{body}</Text>
+                    </View>
+                ))}
+            </ScrollView>
+        </AppSheet>
     );
 }
 
 const styles = StyleSheet.create({
-    sheet: { width: '100%', maxWidth: 680, height: '88%', alignSelf: 'center', paddingTop: 40, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
-    sheetContent: { flex: 1 },
-    scroll: { flex: 1 },
-    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 8 },
-    title: { flex: 1, fontSize: 18, fontWeight: '700' },
-    close: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-    content: { padding: 20, gap: 20 },
+    scroll: { flexShrink: 1 },
+    content: { paddingTop: Spacing.xs, paddingBottom: Spacing.lg, gap: Spacing.xl },
     section: { gap: 6 },
     heading: { fontSize: 15, fontWeight: '700' },
     body: { fontSize: 15, lineHeight: 22 },

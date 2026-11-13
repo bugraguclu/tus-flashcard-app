@@ -80,7 +80,6 @@ function createTimelineStyles(colors: ColorScheme) {
             justifyContent: 'center',
             ...Shadows.sm,
         },
-        sideButtonText: { fontSize: FontSize.xs, lineHeight: 12, fontWeight: '800', color: colors.textSecondary },
 
         column: { flex: 1, paddingRight: Spacing.lg, paddingVertical: Spacing.sm },
         card: {
@@ -111,7 +110,7 @@ function createTimelineStyles(colors: ColorScheme) {
             paddingHorizontal: 6,
             paddingVertical: 1,
         },
-        chipText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.badgeNew },
+        chipText: { fontSize: FontSize.xs + 1, fontWeight: '600', color: colors.badgeNew },
         metricsRow: { flexDirection: 'row' },
         metric: { flex: 1, gap: 2 },
         metricLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.btnGood },

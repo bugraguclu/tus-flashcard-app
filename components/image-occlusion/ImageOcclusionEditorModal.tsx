@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, TouchableOpacity, View } from 'react-native';
-import { Text, TextInput } from '../AppText';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Modal, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Ellipse, Path, Polygon, Rect } from 'react-native-svg';
 import { useThemeColors } from '../../constants/theme';
@@ -26,6 +26,13 @@ import {
     withOcclusionProperties,
     type OcclusionShape,
 } from '../../lib/imageOcclusion';
+import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
+import { RotateLeftGlyph, RotateRightGlyph } from '../photo-editor/photoEditorGlyphs';
+import ScreenHeader from '../ScreenHeader';
+import { Button, IconButton, type ButtonVariant } from '../ui/Button';
+import { AppDialog } from '../ui/Dialog';
+import { TextField } from '../ui/Fields';
+import { RedoIcon, UndoIcon } from '../ui/icons';
 import OcclusionCanvas from './OcclusionCanvas';
 import { createOcclusionEditorStyles } from './occlusionEditorStyles';
 import { LABEL_COLOURS, MASK_COLOURS, removePolygonCorner, snappedTurn, turnShape, type OcclusionTool, type Point, type Size } from './occlusionEditorModel';
@@ -44,7 +51,7 @@ interface Props {
 interface History { past: OcclusionShape[][]; future: OcclusionShape[][] }
 
 const TOOLS: OcclusionTool[] = ['select', 'rect', 'ellipse', 'polygon', 'text'];
-/** The turn the ↺ and ↻ buttons give, in degrees. */
+/** The turn the turn-left and turn-right buttons give, in degrees. */
 const TURN_STEP = 15;
 
 /**
@@ -242,18 +249,15 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={cancel}>
             <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity style={styles.headerButton} onPress={cancel} accessibilityRole="button" accessibilityLabel={l('İptal', 'Cancel')}>
-                        <Text style={styles.headerButtonText}>{l('İptal', 'Cancel')}</Text>
-                    </TouchableOpacity>
-                    <View style={styles.headerCenter}>
-                        <Text style={styles.title}>{l('Görüntü Örtme', 'Image Occlusion')}</Text>
-                        <Text style={styles.subtitle}>{l(`${masks.length} maske · ${cardCount} kart`, `${masks.length} masks · ${cardCount} cards`)}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.doneButton} onPress={finish} accessibilityRole="button" accessibilityLabel={l('Tamam', 'Done')}>
-                        <Text style={styles.doneButtonText}>{l('Tamam', 'Done')}</Text>
-                    </TouchableOpacity>
-                </View>
+                {/* × asks before changed masks are thrown away. */}
+                <ScreenHeader
+                    leading="close"
+                    onBack={cancel}
+                    backAccessibilityLabel={l('İptal', 'Cancel')}
+                    title={l('Görüntü Örtme', 'Image Occlusion')}
+                    subtitle={l(`${masks.length} maske · ${cardCount} kart`, `${masks.length} masks · ${cardCount} cards`)}
+                    actions={<Button label={l('Tamam', 'Done')} size="compact" onPress={finish} accessibilityLabel={l('Tamam', 'Done')} />}
+                />
 
                 <View style={styles.optionsRow}>
                     <View style={styles.modeSwitch} accessibilityRole="radiogroup">
@@ -262,6 +266,7 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                                 key={String(option)}
                                 style={[styles.modeOption, hideAll === option && styles.modeOptionActive]}
                                 onPress={() => changeMode(option)}
+                                hitSlop={{ top: 4, bottom: 4 }}
                                 accessibilityRole="radio"
                                 accessibilityState={{ selected: hideAll === option }}
                             >
@@ -271,11 +276,11 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                             </TouchableOpacity>
                         ))}
                     </View>
-                    <IconButton label={l('Geri al', 'Undo')} disabled={!history.past.length} onPress={() => step('undo')} styles={styles}>
-                        <Path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" stroke="#fff" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    <IconButton accessibilityLabel={l('Geri al', 'Undo')} disabled={!history.past.length} onPress={() => step('undo')}>
+                        <UndoIcon color={colors.textPrimary} size={22} />
                     </IconButton>
-                    <IconButton label={l('Yinele', 'Redo')} disabled={!history.future.length} onPress={() => step('redo')} styles={styles}>
-                        <Path d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" stroke="#fff" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    <IconButton accessibilityLabel={l('Yinele', 'Redo')} disabled={!history.future.length} onPress={() => step('redo')}>
+                        <RedoIcon color={colors.textPrimary} size={22} />
                     </IconButton>
                 </View>
 
@@ -290,7 +295,7 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                     activeCorner={activeCorner}
                     onActiveCornerChange={setActiveCorner}
                     accent={colors.accent}
-                    surface="#030712"
+                    surface={colors.bgPrimary}
                     onSelectionChange={setSelected}
                     onCreateBox={(kind, box) => {
                         const geometry = kind === 'rect'
@@ -316,9 +321,9 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                 {polygon.length > 0 ? (
                     <View style={styles.bar}>
                         <Text style={styles.barLabel}>{l(`${polygon.length} nokta`, `${polygon.length} points`)}</Text>
-                        <Chip label={l('Son noktayı sil', 'Remove last point')} onPress={() => setPolygon(polygon.slice(0, -1))} styles={styles} />
-                        <Chip label={l('Vazgeç', 'Discard')} onPress={() => setPolygon([])} styles={styles} />
-                        {polygon.length >= 3 && <Chip label={l('Bitir', 'Finish')} active onPress={() => finishPolygon(polygon)} styles={styles} />}
+                        <BarButton label={l('Son noktayı sil', 'Remove last point')} onPress={() => setPolygon(polygon.slice(0, -1))} />
+                        <BarButton label={l('Vazgeç', 'Discard')} variant="plain" onPress={() => setPolygon([])} />
+                        {polygon.length >= 3 && <BarButton label={l('Bitir', 'Finish')} variant="primary" onPress={() => finishPolygon(polygon)} />}
                     </View>
                 ) : selected.size > 0 ? (
                     <>
@@ -330,22 +335,27 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                                         ? l(`Soru ${[...selectedOrdinals][0]}`, `Question ${[...selectedOrdinals][0]}`)
                                         : l(`${selected.size} şekil`, `${selected.size} shapes`)}
                             </Text>
-                            {canGroup && <Chip label={l('Grupla', 'Group')} onPress={() => commit(groupOcclusionShapes(shapes, selected))} styles={styles} />}
-                            {canUngroup && <Chip label={l('Ayır', 'Ungroup')} onPress={() => commit(ungroupOcclusionShapes(shapes, selected))} styles={styles} />}
-                            <Chip label="↺" accessibilityLabel={l('Sola döndür', 'Turn left')} onPress={() => turnSelection(-TURN_STEP)} styles={styles} />
-                            <Chip label="↻" accessibilityLabel={l('Sağa döndür', 'Turn right')} onPress={() => turnSelection(TURN_STEP)} styles={styles} />
-                            {turnedSelection && <Chip label={l('Düzelt', 'Straighten')} onPress={straighten} styles={styles} />}
-                            <Chip label={l('Renk', 'Colour')} active={showColours} onPress={() => setShowColours(!showColours)} styles={styles} />
-                            {canRemoveCorner && <Chip label={l('Köşeyi sil', 'Remove corner')} onPress={removeCorner} styles={styles} />}
+                            {canGroup && <BarButton label={l('Grupla', 'Group')} onPress={() => commit(groupOcclusionShapes(shapes, selected))} />}
+                            {canUngroup && <BarButton label={l('Ayır', 'Ungroup')} onPress={() => commit(ungroupOcclusionShapes(shapes, selected))} />}
+                            <IconButton accessibilityLabel={l('Sola döndür', 'Turn left')} onPress={() => turnSelection(-TURN_STEP)}>
+                                <RotateLeftGlyph color={colors.textPrimary} size={22} />
+                            </IconButton>
+                            <IconButton accessibilityLabel={l('Sağa döndür', 'Turn right')} onPress={() => turnSelection(TURN_STEP)}>
+                                <RotateRightGlyph color={colors.textPrimary} size={22} />
+                            </IconButton>
+                            {turnedSelection && <BarButton label={l('Düzelt', 'Straighten')} onPress={straighten} />}
+                            {/* Filled while the colour row under the bar is open. */}
+                            <BarButton label={l('Renk', 'Colour')} variant={showColours ? 'primary' : 'secondary'} onPress={() => setShowColours(!showColours)} />
+                            {canRemoveCorner && <BarButton label={l('Köşeyi sil', 'Remove corner')} onPress={removeCorner} />}
                             {singleText >= 0 && (
                                 <>
-                                    <Chip label="A−" accessibilityLabel={l('Metni küçült', 'Smaller text')} onPress={() => scaleText(1 / 1.25)} styles={styles} />
-                                    <Chip label="A+" accessibilityLabel={l('Metni büyüt', 'Larger text')} onPress={() => scaleText(1.25)} styles={styles} />
-                                    <Chip label={l('Düzenle', 'Edit')} styles={styles}
+                                    <BarButton label="A−" accessibilityLabel={l('Metni küçült', 'Smaller text')} onPress={() => scaleText(1 / 1.25)} />
+                                    <BarButton label="A+" accessibilityLabel={l('Metni büyüt', 'Larger text')} onPress={() => scaleText(1.25)} />
+                                    <BarButton label={l('Düzenle', 'Edit')}
                                         onPress={() => setTextPrompt({ index: singleText, value: labelText(shapes[singleText]) })} />
                                 </>
                             )}
-                            <Chip label={l('Sil', 'Delete')} danger onPress={deleteSelection} styles={styles} />
+                            <BarButton label={l('Sil', 'Delete')} variant="destructive" onPress={deleteSelection} />
                         </View>
                         {showColours && (
                             <View style={styles.swatches} accessibilityRole="radiogroup"
@@ -354,8 +364,10 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                                     const chosen = currentFills.size === 1 && currentFills.has(fill);
                                     const shown = fill ?? (colouring === 'mask' ? OCCLUSION_DEFAULT_FILL : OCCLUSION_TEXT_DEFAULT_FILL);
                                     return (
+                                        // The masks' own colours: data the note keeps, not chrome.
                                         <TouchableOpacity key={fill ?? 'default'} onPress={() => colourSelection(fill)}
                                             style={[styles.swatch, chosen && { borderColor: colors.accent }]}
+                                            hitSlop={{ top: 4, right: 4, bottom: 4, left: 4 }}
                                             accessibilityRole="radio" accessibilityState={{ selected: chosen }}
                                             accessibilityLabel={l(...name)}>
                                             <View style={[styles.swatchFill, { backgroundColor: shown }]} />
@@ -382,7 +394,7 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                             accessibilityLabel={toolLabel[entry]}
                             accessibilityState={{ selected: tool === entry }}
                         >
-                            <ToolIcon tool={entry} color={tool === entry ? colors.accent : '#9ca3af'} />
+                            <ToolIcon tool={entry} color={tool === entry ? colors.accent : colors.textMuted} />
                             <Text style={[styles.toolText, tool === entry && styles.toolTextActive]}>{toolLabel[entry]}</Text>
                         </TouchableOpacity>
                     ))}
@@ -394,37 +406,35 @@ export default function ImageOcclusionEditorModal({ visible, uri, natural, occlu
                             accessibilityLabel={l('Çoklu seçim', 'Multiple selection')}
                             accessibilityState={{ checked: multiSelect }}
                         >
-                            <ToolIcon tool="multi" color={multiSelect ? colors.accent : '#9ca3af'} />
+                            <ToolIcon tool="multi" color={multiSelect ? colors.accent : colors.textMuted} />
                             <Text style={[styles.toolText, multiSelect && styles.toolTextActive]}>{l('Çoklu', 'Multi')}</Text>
                         </TouchableOpacity>
                     )}
                 </View>
 
-                <Modal visible={textPrompt !== null} transparent animationType="fade" onRequestClose={() => setTextPrompt(null)}>
-                    <KeyboardAvoidingView style={styles.promptBackdrop} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                        <View style={styles.prompt}>
-                            <Text style={styles.promptTitle}>{l('Etiket metni', 'Label text')}</Text>
-                            <TextInput
-                                style={styles.promptInput}
-                                value={textPrompt?.value ?? ''}
-                                onChangeText={(value) => setTextPrompt((current) => (current ? { ...current, value } : current))}
-                                multiline
-                                autoFocus
-                                accessibilityLabel={l('Etiket metni', 'Label text')}
-                                placeholder={l('Örn. Sol ventrikül', 'e.g. Left ventricle')}
-                                placeholderTextColor={colors.textMuted}
-                            />
-                            <View style={styles.promptActions}>
-                                <TouchableOpacity style={styles.promptButton} onPress={() => setTextPrompt(null)} accessibilityRole="button">
-                                    <Text style={styles.promptButtonText}>{l('İptal', 'Cancel')}</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={[styles.promptButton, styles.promptButtonPrimary]} onPress={saveText} accessibilityRole="button">
-                                    <Text style={[styles.promptButtonText, styles.promptButtonPrimaryText]}>{l('Tamam', 'Done')}</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </KeyboardAvoidingView>
-                </Modal>
+                {/* A tap outside does not close it: the typed label would be lost. */}
+                <AppDialog
+                    visible={textPrompt !== null}
+                    onClose={() => setTextPrompt(null)}
+                    title={l('Etiket metni', 'Label text')}
+                    dismissOnBackdrop={false}
+                    actions={(
+                        <>
+                            <Button label={l('İptal', 'Cancel')} variant="plain" onPress={() => setTextPrompt(null)} />
+                            <Button label={l('Tamam', 'Done')} onPress={saveText} />
+                        </>
+                    )}
+                >
+                    <TextField
+                        style={styles.promptInput}
+                        value={textPrompt?.value ?? ''}
+                        onChangeText={(value) => setTextPrompt((current) => (current ? { ...current, value } : current))}
+                        multiline
+                        autoFocus
+                        accessibilityLabel={l('Etiket metni', 'Label text')}
+                        placeholder={l('Örn. Sol ventrikül', 'e.g. Left ventricle')}
+                    />
+                </AppDialog>
             </SafeAreaView>
         </Modal>
     );
@@ -435,34 +445,18 @@ function labelText(shape: OcclusionShape | undefined): string {
     return geometry?.kind === 'text' ? geometry.text : '';
 }
 
-type Styles = ReturnType<typeof createOcclusionEditorStyles>;
-
-function Chip({ label, onPress, styles, active, danger, accessibilityLabel }: {
-    label: string; onPress: () => void; styles: Styles; active?: boolean; danger?: boolean; accessibilityLabel?: string;
+/** One action of the bar under the picture: outlined unless it finishes, discards or deletes. */
+function BarButton({ variant = 'secondary', ...props }: {
+    label: string; onPress: () => void; variant?: ButtonVariant; accessibilityLabel?: string;
 }) {
-    return (
-        <TouchableOpacity style={[styles.chip, active && styles.chipActive, danger && styles.chipDanger]} onPress={onPress}
-            accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label}>
-            <Text style={styles.chipText}>{label}</Text>
-        </TouchableOpacity>
-    );
+    return <Button size="compact" variant={variant} {...props} />;
 }
 
-function IconButton({ label, disabled, onPress, styles, children }: {
-    label: string; disabled: boolean; onPress: () => void; styles: Styles; children: ReactNode;
-}) {
-    return (
-        <TouchableOpacity style={[styles.iconButton, disabled && styles.iconButtonDisabled]} onPress={onPress} disabled={disabled}
-            accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }}>
-            <Svg width={22} height={22} viewBox="0 0 24 24">{children}</Svg>
-        </TouchableOpacity>
-    );
-}
-
+/** The tools' own glyphs: a pointer, the three mask shapes, a label and two stacked boxes. */
 function ToolIcon({ tool, color }: { tool: OcclusionTool | 'multi'; color: string }) {
     const paint = { stroke: color, strokeWidth: 2, fill: 'none', strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
     return (
-        <Svg width={24} height={24} viewBox="0 0 24 24">
+        <Svg width={24} height={24} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             {tool === 'select' && <Path d="M5 3l13 7-6 1.5L9.5 18z" {...paint} />}
             {tool === 'rect' && <Rect x={3} y={6} width={18} height={12} rx={1} {...paint} />}
             {tool === 'ellipse' && <Ellipse cx={12} cy={12} rx={9} ry={6.5} {...paint} />}

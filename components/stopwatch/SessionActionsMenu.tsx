@@ -28,7 +28,7 @@ export default function SessionActionsMenu({ visible, title, items, onClose }: S
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <Pressable style={styles.backdrop} onPress={onClose}>
+            <Pressable style={[styles.backdrop, { backgroundColor: colors.scrim }]} onPress={onClose}>
                 <AnimatedPressable style={[styles.card, { backgroundColor: colors.bgCard }, growIn]} onPress={() => undefined} accessibilityViewIsModal>
                     <Text style={[styles.title, { color: colors.textMuted }]} numberOfLines={1}>{title}</Text>
                     {items.map((item) => (
@@ -62,7 +62,6 @@ export default function SessionActionsMenu({ visible, title, items, onClose }: S
 const styles = StyleSheet.create({
     backdrop: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.35)',
         alignItems: 'center',
         justifyContent: 'center',
         padding: Spacing.xl,

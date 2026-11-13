@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { StatsDeckProgress } from '../../lib/screenSnapshots';
-import StatsCard from './StatsCard';
+import { Card } from '../ui/Card';
+import { ChevronRightIcon } from '../ui/icons';
 import { useStatsFormat } from './useStatsFormat';
 
 interface DeckProgressSectionProps {
@@ -24,7 +25,7 @@ export default function DeckProgressSection({ title, decks, onSelectDeck }: Deck
     if (decks.length === 0) return null;
 
     return (
-        <StatsCard title={title}>
+        <Card padded title={title}>
             <View>
             {decks.map((deck, index) => {
                 const parts = [
@@ -47,7 +48,7 @@ export default function DeckProgressSection({ title, decks, onSelectDeck }: Deck
                         <View style={styles.rowHeader}>
                             <Text style={styles.name} numberOfLines={1}>{deck.displayName}</Text>
                             <Text style={styles.pct} maxFontSizeMultiplier={1.3}>{f.percent(deck.pct)}</Text>
-                            <Text style={styles.chevron}>›</Text>
+                            <ChevronRightIcon color={colors.textMuted} size={16} />
                         </View>
                         <View style={styles.bar}>
                             {parts.length > 0 ? parts.map((part) => (
@@ -66,7 +67,7 @@ export default function DeckProgressSection({ title, decks, onSelectDeck }: Deck
                 );
             })}
             </View>
-        </StatsCard>
+        </Card>
     );
 }
 
@@ -78,7 +79,6 @@ function createStyles(colors: ColorScheme) {
         rowHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         name: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
         pct: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '800' },
-        chevron: { color: colors.textSecondary, fontSize: 22, lineHeight: 22 },
         bar: { flexDirection: 'row', height: 8, gap: 2, borderRadius: BorderRadius.full, overflow: 'hidden' },
         segment: { flexBasis: 0, minWidth: 2, height: '100%' },
         detail: { color: colors.textSecondary, fontSize: FontSize.sm },

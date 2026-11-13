@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useI18n } from '../hooks/useI18n';
 import { useReduceMotion } from '../hooks/useReduceMotion';
+import { useThemeColors } from '../constants/theme';
 import SwipeDismissSheet from './SwipeDismissSheet';
 
 // The browser has no native animation driver; asking for it only logs a fallback warning.
@@ -22,7 +23,6 @@ const NATIVE_DRIVER = Platform.OS !== 'web';
 const SHEET_EASING = Easing.bezier(0.32, 0.72, 0, 1);
 const ENTER_MS = 440;
 const EXIT_MS = 300;
-const DIM_COLOR = 'rgba(0, 0, 0, 0.4)';
 
 interface BottomSheetModalProps {
     visible: boolean;
@@ -43,6 +43,11 @@ interface BottomSheetModalProps {
     backdropHidden?: boolean;
     /** Drawn over the sheet inside the same modal (a picker on its own dimmed layer). */
     overlay?: React.ReactNode;
+    /**
+     * Runs once the sheet has slid away and its modal is gone, so what was chosen in it can present
+     * another modal: iOS will not show one while this one is still on screen.
+     */
+    onDismiss?: () => void;
 }
 
 /**
@@ -66,7 +71,9 @@ export default function BottomSheetModal({
     backdropLabel,
     backdropHidden = false,
     overlay,
+    onDismiss,
 }: BottomSheetModalProps) {
+    const colors = useThemeColors();
     const { l } = useI18n();
     const { height: windowHeight } = useWindowDimensions();
     const reduceMotion = useReduceMotion();
@@ -148,6 +155,7 @@ export default function BottomSheetModal({
             transparent
             animationType={reduceMotion ? 'fade' : 'none'}
             onRequestClose={onClose}
+            onDismiss={onDismiss}
         >
             <KeyboardAvoidingView
                 style={[styles.container, containerStyle, { pointerEvents: visible ? 'auto' : 'none' }]}
@@ -155,7 +163,7 @@ export default function BottomSheetModal({
                 enabled={avoidKeyboard}
             >
                 <Animated.View
-                    style={[StyleSheet.absoluteFill, styles.dim, { opacity: backdropOpacity, pointerEvents: 'none' }]}
+                    style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrim, opacity: backdropOpacity, pointerEvents: 'none' }]}
                 />
                 <Pressable
                     style={StyleSheet.absoluteFill}
@@ -184,5 +192,4 @@ export default function BottomSheetModal({
 
 const styles = StyleSheet.create({
     container: { flex: 1, justifyContent: 'flex-end' },
-    dim: { backgroundColor: DIM_COLOR },
 });

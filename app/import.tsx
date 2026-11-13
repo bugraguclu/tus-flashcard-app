@@ -12,8 +12,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
-import { Text } from '../components/AppText';
+import { Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
@@ -59,6 +58,9 @@ import ImportFilePrompt from '../components/import/ImportFilePrompt';
 import PackageImportOptions from '../components/import/PackageImportOptions';
 import TextImportOptions from '../components/import/TextImportOptions';
 import FieldMappingSection, { type ColumnMapping } from '../components/import/FieldMappingSection';
+import { Button } from '../components/ui/Button';
+import { Section } from '../components/ui/Card';
+import { ValueRow } from '../components/ui/Rows';
 
 const MAX_TEXT_CHARS = 50_000_000;
 const MAX_TEXT_BYTES = 50 * 1024 * 1024;
@@ -483,31 +485,24 @@ export default function ImportScreen() {
             />
             <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
                 {!file ? (
-                    <ImportFilePrompt styles={styles} l={l} onPick={pickFile} />
+                    <ImportFilePrompt l={l} onPick={pickFile} />
                 ) : null}
 
                 {file ? (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{l('DOSYA', 'FILE')}</Text>
-                        <View style={styles.fileRow}>
-                            <View style={styles.fileCopy}>
-                                <Text style={styles.fileName} numberOfLines={2}>{file.name}</Text>
-                                {packageImport ? null : (
-                                    <Text style={styles.fileMeta}>
-                                        {l(`${parsed?.rows.length ?? 0} not`, `${parsed?.rows.length ?? 0} notes`)}
-                                    </Text>
-                                )}
-                            </View>
-                            <TouchableOpacity
-                                style={styles.secondaryButton}
+                    <Section label={l('DOSYA', 'FILE')}>
+                        <ValueRow
+                            label={file.name}
+                            summary={packageImport ? undefined : l(`${parsed?.rows.length ?? 0} not`, `${parsed?.rows.length ?? 0} notes`)}
+                        >
+                            <Button
+                                label={l('Değiştir', 'Change')}
+                                variant="secondary"
+                                size="compact"
                                 onPress={pickFile}
-                                accessibilityRole="button"
                                 accessibilityLabel={l('Dosyayı değiştir', 'Change file')}
-                            >
-                                <Text style={styles.secondaryButtonText}>{l('Değiştir', 'Change')}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                            />
+                        </ValueRow>
+                    </Section>
                 ) : null}
 
                 {file && !packageImport && !outcome ? (
@@ -536,7 +531,6 @@ export default function ImportScreen() {
                             tagUpdatedNotes={tagUpdatedNotes}
                             setTagUpdatedNotes={setTagUpdatedNotes}
                             styles={styles}
-                            mutedColor={colors.textMuted}
                             cancelLabel={t('common.cancel')}
                             l={l}
                         />
@@ -552,7 +546,6 @@ export default function ImportScreen() {
                             mappingFor={mappingFor}
                             setColumnMappings={setColumnMappings}
                             styles={styles}
-                            accentColor={colors.accent}
                             cancelLabel={t('common.cancel')}
                             l={l}
                         />
@@ -571,7 +564,6 @@ export default function ImportScreen() {
                         updateNoteTypes={updateNoteTypes}
                         setUpdateNoteTypes={setUpdateNoteTypes}
                         styles={styles}
-                        mutedColor={colors.textMuted}
                         cancelLabel={t('common.cancel')}
                         l={l}
                     />
@@ -585,22 +577,10 @@ export default function ImportScreen() {
                             l={l}
                             extraLines={outcome.package ? packageExtraLines(outcome.package) : []}
                         />
-                        <TouchableOpacity style={styles.primaryButton} onPress={handleBack} accessibilityRole="button">
-                            <Text style={styles.primaryButtonText}>{t('common.completed')}</Text>
-                        </TouchableOpacity>
+                        <Button label={t('common.completed')} onPress={handleBack} />
                     </>
                 ) : file ? (
-                    <TouchableOpacity
-                        style={[styles.primaryButton, importing && styles.primaryButtonDisabled]}
-                        onPress={handleImport}
-                        disabled={importing}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('root.import')}
-                    >
-                        {importing
-                            ? <ActivityIndicator color={colors.white} />
-                            : <Text style={styles.primaryButtonText}>{t('root.import')}</Text>}
-                    </TouchableOpacity>
+                    <Button label={t('root.import')} onPress={handleImport} busy={importing} />
                 ) : null}
             </ScrollView>
 

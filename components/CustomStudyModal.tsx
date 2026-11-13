@@ -18,13 +18,16 @@ import {
     View,
 } from 'react-native';
 import { Text, TextInput } from './AppText';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
-import { useRepeatPress } from '../hooks/useRepeatPress';
 import { commitBoundedInteger, sanitizeSignedIntegerDraft, stepBoundedIntegerDraft } from '../lib/boundedNumber';
 import { alert } from '../lib/confirm';
-import HeaderBackIcon from './HeaderBackIcon';
+import { Button } from './ui/Button';
+import { Card, Divider, SectionLabel } from './ui/Card';
+import { Checkbox, SelectedMark } from './ui/Choice';
+import { AppSheet } from './ui/Sheet';
+import { Stepper } from './ui/Stepper';
+import { DISABLED_OPACITY, HIT_TARGET, Radius, Type } from './ui/tokens';
 import {
     CUSTOM_STUDY_CRAM_KINDS,
     CUSTOM_STUDY_MAX_TAGS,
@@ -53,7 +56,6 @@ import { getAllTags } from '../lib/noteManager';
 import { getFilteredDeckGatherCount } from '../lib/studyRepository';
 import { isValidSearchQuery } from '../lib/searchValidation';
 import type { AppSettings } from '../lib/types';
-import BottomSheetModal from './BottomSheetModal';
 
 interface CustomStudyModalProps {
     visible: boolean;
@@ -141,7 +143,6 @@ export default function CustomStudyModal({
     const { t, l, locale } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
-    const insets = useSafeAreaInsets();
 
     const [option, setOption] = useState<CustomStudyOption>('reviewLimit');
     const [valueDraft, setValueDraft] = useState('0');
@@ -191,9 +192,6 @@ export default function CustomStudyModal({
             stepBoundedIntegerDraft(draft, bounds.initial, delta, bounds.min, bounds.max),
         ));
     }, [bounds.initial, bounds.max, bounds.min]);
-
-    const decrementRepeat = useRepeatPress(() => stepValue(-1));
-    const incrementRepeat = useRepeatPress(() => stepValue(1));
 
     if (!deck) return null;
 
@@ -400,6 +398,24 @@ export default function CustomStudyModal({
     };
 
     /**
+     * One row of a single-choice list (Anki's radio buttons): the chosen row is tinted and ends in
+     * the tick every single-choice list in the app uses.
+     */
+    const renderChoiceRow = (key: string, label: string, selected: boolean, onPress: () => void) => (
+        <TouchableOpacity
+            key={key}
+            style={[styles.listRow, selected && styles.listRowActive]}
+            onPress={onPress}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            aria-checked={selected}
+        >
+            <Text style={[styles.listText, selected && styles.listTextActive]}>{label}</Text>
+            <SelectedMark visible={selected} />
+        </TouchableOpacity>
+    );
+
+    /**
      * One of Anki's two multi-select tag lists. The "require" list starts disabled and is enabled
      * by its checkbox, exactly as taglimit.ui wires `activeCheck.toggled` to `activeList`.
      */
@@ -409,39 +425,32 @@ export default function CustomStudyModal({
         accessibilityPrefix: string,
         disabled: boolean = false,
     ) => (
-        <ScrollView
-            style={[styles.panel, styles.tagScroll, disabled && styles.panelDisabled]}
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="handled"
-        >
-            {deckTags.map((tag, index) => {
-                const active = selected.includes(tag);
-                return (
-                    <TouchableOpacity
-                        key={`${accessibilityPrefix}-${tag}`}
-                        style={[
-                            styles.listRow,
-                            styles.tagRow,
-                            index === deckTags.length - 1 && styles.listRowLast,
-                            active && styles.listRowActive,
-                        ]}
-                        onPress={() => setSelected(active ? selected.filter((entry) => entry !== tag) : [...selected, tag])}
-                        disabled={disabled}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: active, disabled }}
-                        aria-checked={active}
-                        accessibilityLabel={`${accessibilityPrefix}: ${tagDisplayName(tag)}`}
-                    >
-                        <View style={[styles.checkbox, active && styles.checkboxActive]}>
-                            {active && <Text style={styles.checkboxMark}>✓</Text>}
-                        </View>
-                        <Text style={[styles.listText, active && styles.listTextActive]} numberOfLines={2}>
-                            {tagDisplayName(tag)}
-                        </Text>
-                    </TouchableOpacity>
-                );
-            })}
-        </ScrollView>
+        <Card style={disabled && styles.disabled}>
+            <ScrollView style={styles.tagScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                {deckTags.map((tag, index) => {
+                    const active = selected.includes(tag);
+                    return (
+                        <React.Fragment key={`${accessibilityPrefix}-${tag}`}>
+                            {index > 0 ? <Divider /> : null}
+                            <TouchableOpacity
+                                style={[styles.listRow, styles.tagRow, active && styles.listRowActive]}
+                                onPress={() => setSelected(active ? selected.filter((entry) => entry !== tag) : [...selected, tag])}
+                                disabled={disabled}
+                                accessibilityRole="checkbox"
+                                accessibilityState={{ checked: active, disabled }}
+                                aria-checked={active}
+                                accessibilityLabel={`${accessibilityPrefix}: ${tagDisplayName(tag)}`}
+                            >
+                                <Checkbox checked={active} />
+                                <Text style={[styles.listText, active && styles.listTextActive]} numberOfLines={2}>
+                                    {tagDisplayName(tag)}
+                                </Text>
+                            </TouchableOpacity>
+                        </React.Fragment>
+                    );
+                })}
+            </ScrollView>
+        </Card>
     );
 
     const renderTagSection = (
@@ -454,15 +463,15 @@ export default function CustomStudyModal({
         <>
             <View style={styles.sectionHeader}>
                 {options.leading}
-                <Text style={[styles.fieldLabel, options.disabled && styles.fieldLabelDisabled]}>{label}</Text>
+                <Text style={[styles.fieldLabel, styles.sectionLabel, options.disabled && styles.fieldLabelDisabled]}>{label}</Text>
                 {selected.length > 0 && (
-                    <TouchableOpacity
-                        onPress={() => setSelected([])}
-                        accessibilityRole="button"
+                    <Button
+                        label={l('Temizle', 'Clear')}
                         accessibilityLabel={l('Seçimi temizle', 'Clear selection')}
-                    >
-                        <Text style={styles.clearText}>{l('Temizle', 'Clear')}</Text>
-                    </TouchableOpacity>
+                        variant="plain"
+                        size="compact"
+                        onPress={() => setSelected([])}
+                    />
                 )}
             </View>
             {renderTagList(selected, setSelected, accessibilityPrefix, options.disabled)}
@@ -476,36 +485,17 @@ export default function CustomStudyModal({
         : t('common.ok');
 
     return (
-        <BottomSheetModal
+        <AppSheet
             visible={visible}
             onClose={onClose}
+            title={choosingTags ? l('Seçmeli çalışma', 'Selective Study') : t('anki.customStudy')}
+            subtitle={getDeckDisplayName(deck.name)}
+            closeButton
+            dividedHeader
             avoidKeyboard
+            maxHeight="92%"
             backdropLabel={t('common.close')}
-            sheetStyle={[styles.sheet, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}
         >
-            <View style={styles.header}>
-                {choosingTags && (
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => setChoosingTags(false)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Geri', 'Back')}
-                    >
-                        <HeaderBackIcon color={colors.accent} size={22} />
-                    </TouchableOpacity>
-                )}
-                <View style={styles.headerCopy}>
-                    <Text style={styles.eyebrow}>{l('ÇALIŞMA KAPSAMI', 'STUDY SCOPE')}</Text>
-                    <Text style={styles.title}>
-                        {choosingTags ? l('Seçmeli çalışma', 'Selective Study') : t('anki.customStudy')}
-                    </Text>
-                    <Text style={styles.subtitle} numberOfLines={2}>{getDeckDisplayName(deck.name)}</Text>
-                </View>
-                <TouchableOpacity style={styles.closeButton} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close')}>
-                    <Text style={styles.closeText}>×</Text>
-                </TouchableOpacity>
-            </View>
-
             <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.content}
@@ -513,6 +503,7 @@ export default function CustomStudyModal({
                 keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
                 showsVerticalScrollIndicator={false}
             >
+                <SectionLabel>{l('ÇALIŞMA KAPSAMI', 'STUDY SCOPE')}</SectionLabel>
                 {choosingTags ? (
                     <>
                         {renderTagSection(
@@ -524,14 +515,14 @@ export default function CustomStudyModal({
                                 disabled: !requireTags,
                                 leading: (
                                     <TouchableOpacity
-                                        style={[styles.checkbox, requireTags && styles.checkboxActive]}
+                                        style={styles.checkTarget}
                                         onPress={() => setRequireTags((previous) => !previous)}
                                         accessibilityRole="checkbox"
                                         accessibilityState={{ checked: requireTags }}
                                         aria-checked={requireTags}
                                         accessibilityLabel={l('Etiket zorunlu kıl', 'Require tags')}
                                     >
-                                        {requireTags && <Text style={styles.checkboxMark}>✓</Text>}
+                                        <Checkbox checked={requireTags} />
                                     </TouchableOpacity>
                                 ),
                             },
@@ -546,89 +537,55 @@ export default function CustomStudyModal({
                     </>
                 ) : (
                     <>
-                        <View style={styles.panel}>
-                            {OPTIONS.map((candidate, index) => (
-                                <TouchableOpacity
-                                    key={candidate}
-                                    style={[
-                                        styles.listRow,
-                                        index === OPTIONS.length - 1 && styles.listRowLast,
-                                        option === candidate && styles.listRowActive,
-                                    ]}
-                                    onPress={() => chooseOption(candidate)}
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ selected: option === candidate }}
-                                    aria-checked={option === candidate}
-                                >
-                                    <View style={[styles.radio, option === candidate && styles.radioActive]}>
-                                        {option === candidate && <View style={styles.radioDot} />}
-                                    </View>
-                                    <Text style={[styles.listText, option === candidate && styles.listTextActive]}>
-                                        {optionLabel(candidate)}
-                                    </Text>
-                                </TouchableOpacity>
+                        <Card divided>
+                            {OPTIONS.map((candidate) => renderChoiceRow(
+                                candidate,
+                                optionLabel(candidate),
+                                option === candidate,
+                                () => chooseOption(candidate),
                             ))}
-                        </View>
+                        </Card>
 
-                        <View style={styles.group}>
+                        <Card padded style={styles.group}>
                             {availabilityLabel && <Text style={styles.availability}>{availabilityLabel}</Text>}
 
-                            <Text style={styles.fieldLabel}>{preSpinLabel()}</Text>
-                            <View style={styles.spinnerRow}>
-                                <TouchableOpacity
-                                    style={styles.stepButton}
-                                    {...decrementRepeat}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Azalt', 'Decrease')}
-                                >
-                                    <Text style={styles.stepText}>−</Text>
-                                </TouchableOpacity>
-                                <TextInput
-                                    style={styles.spinnerInput}
-                                    value={valueDraft}
-                                    onChangeText={(next) => setValueDraft(sanitizeSignedIntegerDraft(next, 5))}
-                                    onBlur={() => setValueDraft(String(value))}
-                                    onSubmitEditing={() => setValueDraft(String(value))}
-                                    keyboardType={bounds.min < 0 ? 'numbers-and-punctuation' : 'number-pad'}
-                                    inputMode={bounds.min < 0 ? 'text' : 'numeric'}
-                                    maxLength={6}
-                                    accessibilityLabel={preSpinLabel()}
-                                />
-                                <TouchableOpacity
-                                    style={styles.stepButton}
-                                    {...incrementRepeat}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={l('Artır', 'Increase')}
-                                >
-                                    <Text style={styles.stepText}>+</Text>
-                                </TouchableOpacity>
-                                <Text style={styles.spinnerSuffix}>{postSpinLabel()}</Text>
+                            <View style={styles.spinnerBlock}>
+                                <Text style={styles.fieldLabel}>{preSpinLabel()}</Text>
+                                <View style={styles.spinnerRow}>
+                                    <Stepper
+                                        onDecrement={() => stepValue(-1)}
+                                        onIncrement={() => stepValue(1)}
+                                        decrementLabel={l('Azalt', 'Decrease')}
+                                        incrementLabel={l('Artır', 'Increase')}
+                                    >
+                                        <TextInput
+                                            style={[styles.spinnerInput, { color: colors.accent }]}
+                                            value={valueDraft}
+                                            onChangeText={(next) => setValueDraft(sanitizeSignedIntegerDraft(next, 5))}
+                                            onBlur={() => setValueDraft(String(value))}
+                                            onSubmitEditing={() => setValueDraft(String(value))}
+                                            keyboardType={bounds.min < 0 ? 'numbers-and-punctuation' : 'number-pad'}
+                                            inputMode={bounds.min < 0 ? 'text' : 'numeric'}
+                                            maxLength={6}
+                                            selectionColor={colors.accent}
+                                            accessibilityLabel={preSpinLabel()}
+                                        />
+                                    </Stepper>
+                                    <Text style={styles.spinnerSuffix}>{postSpinLabel()}</Text>
+                                </View>
                             </View>
 
                             {option === 'cram' && (
-                                <View style={[styles.panel, styles.cramList]}>
+                                <View style={styles.insetList}>
                                     {CUSTOM_STUDY_CRAM_KINDS.map((kind, index) => (
-                                        <TouchableOpacity
-                                            key={kind}
-                                            style={[
-                                                styles.listRow,
-                                                index === CUSTOM_STUDY_CRAM_KINDS.length - 1 && styles.listRowLast,
-                                                cramKind === kind && styles.listRowActive,
-                                            ]}
-                                            onPress={() => setCramKind(kind)}
-                                            accessibilityRole="radio"
-                                            accessibilityState={{ selected: cramKind === kind }}
-                                            aria-checked={cramKind === kind}
-                                        >
-                                            <Text style={[styles.listText, cramKind === kind && styles.listTextActive]}>
-                                                {cramKindLabel(kind)}
-                                            </Text>
-                                            {cramKind === kind && <Text style={styles.check}>✓</Text>}
-                                        </TouchableOpacity>
+                                        <React.Fragment key={kind}>
+                                            {index > 0 ? <Divider /> : null}
+                                            {renderChoiceRow(kind, cramKindLabel(kind), cramKind === kind, () => setCramKind(kind))}
+                                        </React.Fragment>
                                     ))}
                                 </View>
                             )}
-                        </View>
+                        </Card>
 
                         <Text style={styles.note}>
                             {l(
@@ -641,81 +598,34 @@ export default function CustomStudyModal({
             </ScrollView>
 
             <View style={styles.buttonBox}>
-                <TouchableOpacity
-                    style={styles.secondaryButton}
+                <Button
+                    label={choosingTags ? l('Geri', 'Back') : t('common.cancel')}
+                    variant="plain"
                     onPress={choosingTags ? () => setChoosingTags(false) : onClose}
-                    accessibilityRole="button"
-                >
-                    <Text style={styles.secondaryButtonText}>
-                        {choosingTags ? l('Geri', 'Back') : t('common.cancel')}
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.primaryButton, !choosingTags && submitDisabled && styles.primaryButtonDisabled]}
+                    style={styles.boxButton}
+                />
+                <Button
+                    label={okLabel}
                     onPress={choosingTags ? submitTags : submit}
                     disabled={!choosingTags && submitDisabled}
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: !choosingTags && submitDisabled }}
-                >
-                    <Text style={styles.primaryButtonText}>{okLabel}</Text>
-                </TouchableOpacity>
+                    style={styles.boxButton}
+                />
             </View>
-        </BottomSheetModal>
+        </AppSheet>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        sheet: {
-            width: '100%',
-            maxWidth: 680,
-            maxHeight: '92%',
-            alignSelf: 'center',
-            backgroundColor: colors.bgPrimary,
-            borderTopLeftRadius: BorderRadius.xl,
-            borderTopRightRadius: BorderRadius.xl,
-            overflow: 'hidden',
-            ...Shadows.lg,
-        },
-        header: {
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-            padding: Spacing.xl,
-            paddingTop: 48,
-            paddingBottom: Spacing.md,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-        },
-        backButton: { width: 34, height: 44, alignItems: 'center', justifyContent: 'center' },
-        headerCopy: { flex: 1, paddingRight: Spacing.md },
-        eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: colors.accent, marginBottom: 4 },
-        title: { fontSize: FontSize.xl, fontWeight: '800', color: colors.textPrimary },
-        subtitle: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 3 },
-        closeButton: {
-            width: 44,
-            height: 44,
-            borderRadius: BorderRadius.full,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.bgSecondary,
-        },
-        closeText: { fontSize: 28, lineHeight: 30, color: colors.textSecondary },
         // The sheet is sized by its content up to `maxHeight`; shrinking the scroller rather
         // than letting it grow keeps the button box on screen once the options run long.
         scroll: { flexShrink: 1 },
-        content: { padding: Spacing.lg, paddingBottom: Spacing.lg },
-        panel: {
-            backgroundColor: colors.bgCard,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.md,
-            overflow: 'hidden',
-        },
-        panelDisabled: { opacity: 0.45 },
+        content: { gap: Spacing.sm, paddingBottom: Spacing.lg },
+        disabled: { opacity: DISABLED_OPACITY },
         // Anki gives each tag list its own bounded, scrollable box so both stay reachable
         // however many tags the deck carries.
         tagScroll: { maxHeight: 260 },
-        tagRow: { minHeight: 42, paddingVertical: 6 },
+        tagRow: { minHeight: HIT_TARGET, paddingVertical: 6 },
         listRow: {
             flexDirection: 'row',
             alignItems: 'center',
@@ -723,107 +633,41 @@ function createStyles(colors: ColorScheme) {
             minHeight: 50,
             paddingHorizontal: Spacing.md,
             paddingVertical: Spacing.sm,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.borderLight,
         },
-        listRowLast: { borderBottomWidth: 0 },
         listRowActive: { backgroundColor: colors.accentLight },
         listText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
         listTextActive: { fontWeight: '700' },
-        radio: {
-            width: 22,
-            height: 22,
-            borderRadius: 11,
-            borderWidth: 2,
-            borderColor: colors.border,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        radioActive: { borderColor: colors.accent },
-        radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
-        checkbox: {
-            width: 22,
-            height: 22,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 2,
-            borderColor: colors.border,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        checkboxActive: { borderColor: colors.accent, backgroundColor: colors.accent },
-        checkboxMark: { fontSize: 13, lineHeight: 15, fontWeight: '900', color: colors.white },
+        // A full-size target around the 22-point box, which stays flush with the lists below it.
+        checkTarget: { width: HIT_TARGET, height: HIT_TARGET, marginLeft: -(HIT_TARGET - 22) / 2, alignItems: 'center', justifyContent: 'center' },
         // Anki's group box: the availability line, the spinner sentence and the card-state list.
-        group: {
-            marginTop: Spacing.lg,
-            padding: Spacing.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.bgSecondary,
-        },
-        availability: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textPrimary, marginBottom: Spacing.sm },
-        sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
-        sectionSpacer: { height: Spacing.lg },
-        fieldLabel: { flex: 1, fontSize: FontSize.sm, fontWeight: '700', color: colors.textSecondary },
+        group: { marginTop: Spacing.sm },
+        availability: { ...Type.caption, fontWeight: '700', color: colors.textPrimary },
+        sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minHeight: HIT_TARGET },
+        sectionLabel: { flex: 1 },
+        sectionSpacer: { height: Spacing.sm },
+        fieldLabel: { ...Type.caption, fontWeight: '700', color: colors.textSecondary },
         fieldLabelDisabled: { color: colors.textMuted },
-        clearText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
-        spinnerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm },
-        stepButton: {
-            width: 46,
-            height: 46,
-            borderRadius: BorderRadius.sm,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.bgCard,
-            borderWidth: 1,
-            borderColor: colors.border,
-        },
-        stepText: { fontSize: 24, lineHeight: 26, color: colors.textPrimary, fontWeight: '700' },
+        spinnerBlock: { gap: Spacing.sm },
+        spinnerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
         spinnerInput: {
-            width: 92,
-            minHeight: 46,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.sm,
-            backgroundColor: colors.bgInput,
-            paddingHorizontal: Spacing.md,
+            minWidth: 58,
+            paddingVertical: 0,
+            paddingHorizontal: Spacing.xs,
             textAlign: 'center',
-            fontSize: FontSize.md,
+            fontSize: FontSize.lg,
+            fontWeight: '700',
             fontVariant: ['tabular-nums'] as any,
-            color: colors.textPrimary,
         },
         spinnerSuffix: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary },
-        cramList: { marginTop: Spacing.md },
-        check: { fontSize: FontSize.md, color: colors.accent, fontWeight: '800' },
+        insetList: { borderWidth: 1, borderColor: colors.border, borderRadius: Radius.inset, overflow: 'hidden' },
+        note: { ...Type.caption, color: colors.textMuted, marginTop: Spacing.sm },
         buttonBox: {
             flexDirection: 'row',
             gap: Spacing.sm,
-            paddingHorizontal: Spacing.lg,
             paddingTop: Spacing.md,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.border,
         },
-        secondaryButton: {
-            flex: 1,
-            minHeight: 50,
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        secondaryButtonText: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
-        primaryButton: {
-            flex: 1,
-            minHeight: 50,
-            borderRadius: BorderRadius.sm,
-            backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        primaryButtonDisabled: { opacity: 0.45 },
-        primaryButtonText: { color: colors.white, fontSize: FontSize.md, fontWeight: '800' },
-        note: { fontSize: FontSize.xs, lineHeight: 18, color: colors.textMuted, marginTop: Spacing.md },
+        boxButton: { flex: 1 },
     });
 }

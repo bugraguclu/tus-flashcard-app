@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleShee
 import { Text, TextInput } from '../AppText';
 import type { useI18n } from '../../hooks/useI18n';
 import { getAllDeckConfigs, getDecksUsingConfig } from '../../lib/deckManager';
+import { MenuItem, PopoverMenu } from '../ui/Menu';
 import type { DeckOptionsStyles } from './deckOptionsStyles';
 import type { DeckConfig } from '../../lib/models';
 
@@ -20,11 +21,13 @@ export interface PresetAction {
  * remove. iOS drops an alert or a second modal presented while this menu is still dismissing, so
  * there the chosen action runs from `onDismiss`, once the menu has gone.
  */
-export function PresetActionsMenu({ visible, actions, onClose, styles }: {
+export function PresetActionsMenu({ visible, actions, onClose, anchor, accessibilityLabel }: {
     visible: boolean;
     actions: PresetAction[];
     onClose: () => void;
-    styles: DeckOptionsStyles;
+    /** Where the menu hangs, under the ••• button that opened it (see `PopoverMenu`). */
+    anchor?: { top?: number; right?: number };
+    accessibilityLabel?: string;
 }) {
     const pending = useRef<(() => void) | null>(null);
     const runPending = () => {
@@ -42,23 +45,22 @@ export function PresetActionsMenu({ visible, actions, onClose, styles }: {
         action();
     };
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onDismiss={runPending}>
-            <View style={styles.modalOverlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View style={styles.actionMenu} accessibilityViewIsModal>
-                    {actions.map((item) => (
-                        <TouchableOpacity
-                            key={item.label}
-                            style={styles.actionMenuRow}
-                            onPress={() => choose(item.action)}
-                            accessibilityRole="button"
-                        >
-                            <Text style={[styles.actionMenuText, item.destructive && styles.actionMenuDanger]}>{item.label}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
-        </Modal>
+        <PopoverMenu
+            visible={visible}
+            onClose={onClose}
+            onDismiss={runPending}
+            anchor={anchor}
+            accessibilityLabel={accessibilityLabel}
+        >
+            {actions.map((item) => (
+                <MenuItem
+                    key={item.label}
+                    label={item.label}
+                    onPress={() => choose(item.action)}
+                    destructive={item.destructive}
+                />
+            ))}
+        </PopoverMenu>
     );
 }
 

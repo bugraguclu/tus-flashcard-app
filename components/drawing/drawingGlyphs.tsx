@@ -24,32 +24,14 @@ export function EraserGlyph(props: GlyphProps) {
     return <LineGlyph {...props} d="M8.5 20 3.7 15.2a1.5 1.5 0 0 1 0-2.1l9.4-9.4a1.5 1.5 0 0 1 2.1 0l5.1 5.1a1.5 1.5 0 0 1 0 2.1L12 19.2M8.5 20H20M8 9l7 7" />;
 }
 
-export function UndoGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />;
-}
-
-export function RedoGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="m15 14 5-5-5-5m5 5H9.5a5.5 5.5 0 0 0 0 11H13" />;
-}
-
-export function ClearGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="M4 7h16M9.5 7V4.5h5V7M6 7l1 12a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8l1-12M10 11v6m4-6v6" />;
-}
-
-export function ChevronDownGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="m7 10 5 5 5-5" />;
-}
+/**
+ * The bin a selected label or picture is deleted with. The kit's `TrashIcon` draws it; the old name
+ * is kept for the selection frame. Undo and redo are the kit's `UndoIcon` and `RedoIcon`.
+ */
+export { TrashIcon as ClearGlyph } from '../ui/icons';
 
 export function TextGlyph(props: GlyphProps) {
     return <LineGlyph {...props} d="M5 6V4.5h14V6M12 4.5v15M9 19.5h6" />;
-}
-
-export function MoreGlyph({ color, size = 22 }: GlyphProps) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            <Path d="M6 12h.01M12 12h.01M18 12h.01" stroke={color} strokeWidth={3.2} strokeLinecap="round" />
-        </Svg>
-    );
 }
 
 export function ArrowGlyph(props: GlyphProps) {

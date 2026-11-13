@@ -5,12 +5,10 @@ import {
     FlatList,
     Keyboard,
     Platform,
-    Pressable,
     InteractionManager,
-    ActivityIndicator,
     useWindowDimensions,
 } from 'react-native';
-import { Text, TextInput } from '../components/AppText';
+import { Text } from '../components/AppText';
 import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -46,7 +44,11 @@ import { setDbSetting } from '../lib/storage';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
-import HeaderBackIcon from '../components/HeaderBackIcon';
+import ScreenHeader from '../components/ScreenHeader';
+import { Button, HelpButton, IconButton } from '../components/ui/Button';
+import { SearchField } from '../components/ui/Fields';
+import { EmptyState, LoadingState } from '../components/ui/Feedback';
+import { ChevronDownIcon, MoreVerticalIcon, PlusIcon } from '../components/ui/icons';
 import { alert } from '../lib/confirm';
 import { isCatalogCard, isCatalogDeck, isCatalogNote } from '../lib/catalogProtection';
 import { userFacingErrorMessage } from '../lib/userFacingError';
@@ -68,7 +70,6 @@ import {
     readBrowserTableMode,
 } from '../components/browser/browserHelpers';
 import { createBrowserStyles } from '../components/browser/browserStyles';
-import { SearchIcon } from '../components/browser/BrowserIcons';
 import { buildSearchHelpGroups } from '../components/browser/searchHelpGroups';
 import { BrowserCardRow } from '../components/browser/BrowserCardRow';
 import { FilterChips, SelectionBar } from '../components/browser/BrowserBars';
@@ -170,7 +171,6 @@ export default function BrowserScreen() {
     const pageGenerationRef = useRef(new LatestSnapshotGeneration());
     const pageTaskRef = useRef<{ cancel: () => void } | null>(null);
     const scopeRepositoryRef = useRef(new ScreenSnapshotRepository<BrowserScopeSnapshot>());
-    const searchInputRef = useRef<TextInput>(null);
 
     useFocusEffect(useCallback(() => {
         setSchedulingRevision(getSchedulingRevision());
@@ -832,39 +832,35 @@ export default function BrowserScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.screenHeader}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={handleBack}
-                    hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Geri', 'Back')}
-                >
-                    <HeaderBackIcon color={colors.accent} />
-                </TouchableOpacity>
-                <Text style={styles.screenTitle} numberOfLines={1}>{t('sidebar.myCards')}</Text>
-                <View style={styles.headerSpacer} />
-            </View>
+            <ScreenHeader
+                backAccessibilityLabel={l('Geri', 'Back')}
+                onBack={handleBack}
+                title={t('sidebar.myCards')}
+            />
 
             <View style={styles.scopeToolbar}>
                 <View style={styles.scopeBlock}>
                     <TouchableOpacity
                         style={styles.scopeSelector}
                         onPress={() => setDeckScopePickerVisible(true)}
+                        hitSlop={{ top: 7, bottom: 7 }}
                         accessibilityRole="button"
                         accessibilityLabel={l(`Kart destesi: ${scopeTitle}`, `Card deck: ${scopeTitle}`)}
                         accessibilityState={{ expanded: deckScopePickerVisible }}
                     >
                         <Text style={styles.scopeSelectorText} numberOfLines={1}>{scopeTitle}</Text>
-                        <Text style={styles.scopeSelectorCaret}>▾</Text>
+                        <ChevronDownIcon color={colors.accent} size={16} />
                     </TouchableOpacity>
                     <Text style={styles.scopeCount}>
                         {scopeCountText} {tableMode === 'notes' ? l('not', 'notes') : l('kart', 'cards')}
                     </Text>
                 </View>
                 {browserSnapshot && !scopeDeck?.isFiltered && (
-                    <TouchableOpacity
+                    <Button
+                        size="compact"
                         style={styles.addCardBtn}
+                        icon={<PlusIcon color={colors.onAccent} size={16} />}
+                        label={tableMode === 'notes' ? l('Yeni not', 'New Note') : l('Yeni kart', 'New Card')}
                         onPress={() => router.push({
                             pathname: '/editor',
                             params: {
@@ -873,71 +869,40 @@ export default function BrowserScreen() {
                                     : {}),
                             },
                         } as any)}
-                        accessibilityRole="button"
                         accessibilityLabel={tableMode === 'notes' ? l('Yeni not ekle', 'Add new note') : l('Yeni kart ekle', 'Add new card')}
-                    >
-                        <Text style={styles.addCardBtnText}>＋ {tableMode === 'notes' ? l('Yeni not', 'New Note') : l('Yeni kart', 'New Card')}</Text>
-                    </TouchableOpacity>
+                    />
                 )}
-                <TouchableOpacity
+                <IconButton
                     style={styles.moreButton}
                     onPress={() => setShowOverflowMenu(true)}
                     hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                    accessibilityRole="button"
                     accessibilityLabel={l('Diğer seçenekler', 'More options')}
-                    accessibilityState={{ expanded: showOverflowMenu }}
                 >
-                    <Text style={styles.moreButtonText}>⋮</Text>
-                </TouchableOpacity>
+                    <MoreVerticalIcon color={colors.textSecondary} />
+                </IconButton>
             </View>
 
             <View style={styles.searchContainer}>
-                <Pressable
-                    style={styles.searchField}
-                    onPress={() => searchInputRef.current?.focus()}
-                    accessible={false}
-                >
-                    <View style={[styles.searchIcon, { pointerEvents: 'none' }]}>
-                        <SearchIcon color={colors.textMuted} />
-                    </View>
-                    <TextInput
-                        ref={searchInputRef}
-                        style={styles.searchInput}
+                <View style={styles.searchRow}>
+                    <SearchField
+                        style={styles.searchField}
                         placeholder={tableMode === 'notes'
                             ? l('Not ara veya deck:tag:is:…', 'Search notes or deck:tag:is:…')
                             : l('Ara veya deck:tag:is:…', 'Search or deck:tag:is:…')}
-                        placeholderTextColor={colors.textMuted}
                         value={rawQuery}
+                        // Clearing comes through `handleSearch` too, so it goes through the same
+                        // debounce the typed query does and the list actually returns to every card.
                         onChangeText={handleSearch}
+                        clearLabel={l('Aramayı temizle', 'Clear search')}
                         accessibilityLabel={tableMode === 'notes'
                             ? l('Not ara veya deck:tag:is:…', 'Search notes or deck:tag:is:…')
                             : l('Kart ara veya deck:tag:is:…', 'Search cards or deck:tag:is:…')}
-                        returnKeyType="search"
                     />
-                    {rawQuery.length > 0 && (
-                        <TouchableOpacity
-                            style={styles.searchClearButton}
-                            // Through `handleSearch` rather than `setRawQuery`, so clearing goes
-                            // through the same debounce the typed query does and the list actually
-                            // returns to every card.
-                            onPress={() => handleSearch('')}
-                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                            accessibilityRole="button"
-                            accessibilityLabel={l('Aramayı temizle', 'Clear search')}
-                        >
-                            <Text style={styles.searchClearButtonText}>✕</Text>
-                        </TouchableOpacity>
-                    )}
-                    <TouchableOpacity
-                        style={styles.searchHelpButton}
-                        onPress={showSearchSyntaxHelp}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                        accessibilityRole="button"
+                    <HelpButton
                         accessibilityLabel={l('Arama sözdizimi yardımı', 'Search syntax help')}
-                    >
-                        <Text style={styles.searchHelpButtonText}>?</Text>
-                    </TouchableOpacity>
-                </Pressable>
+                        onPress={showSearchSyntaxHelp}
+                    />
+                </View>
                 {searchDraftInvalid && rawQuery.trim().length > 0 && (
                     <Text style={styles.searchDraftHint} accessibilityLiveRegion="polite">
                         {l('Arama henüz geçerli değil; son geçerli sonuçlar gösteriliyor.', 'Search is not valid yet; showing the last valid results.')}
@@ -985,34 +950,30 @@ export default function BrowserScreen() {
                 windowSize={7}
                 removeClippedSubviews={Platform.OS !== 'web'}
                 ListFooterComponent={loadingMore ? (
-                    <View style={styles.pageLoader}>
-                        <ActivityIndicator color={colors.accent} />
-                        <Text style={styles.pageLoaderText}>{tableMode === 'notes' ? l('Notlar yükleniyor…', 'Loading notes…') : l('Kartlar yükleniyor…', 'Loading cards…')}</Text>
-                    </View>
+                    <LoadingState
+                        label={tableMode === 'notes' ? l('Notlar yükleniyor…', 'Loading notes…') : l('Kartlar yükleniyor…', 'Loading cards…')}
+                    />
                 ) : null}
                 ListEmptyComponent={!loading ? (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyTitle}>
-                            {loadingError
-                                ? tableMode === 'notes' ? l('Notlar yüklenemedi', 'Notes could not be loaded') : l('Kartlar yüklenemedi', 'Cards could not be loaded')
-                                : tableMode === 'notes' ? l('Gösterilecek not yok', 'No notes to show') : l('Gösterilecek kart yok', 'No cards to show')}
-                        </Text>
-                        <Text style={styles.emptyText}>
-                            {loadingError
-                                ? loadingError
-                                : hasResultFilter
+                    <EmptyState
+                        style={styles.emptyState}
+                        title={loadingError
+                            ? tableMode === 'notes' ? l('Notlar yüklenemedi', 'Notes could not be loaded') : l('Kartlar yüklenemedi', 'Cards could not be loaded')
+                            : tableMode === 'notes' ? l('Gösterilecek not yok', 'No notes to show') : l('Gösterilecek kart yok', 'No cards to show')}
+                        body={loadingError
+                            ? loadingError
+                            : hasResultFilter
+                                ? tableMode === 'notes'
+                                    ? l('Arama veya filtrelerle eşleşen not bulunamadı.', 'No notes match the search or filters.')
+                                    : l('Arama veya filtrelerle eşleşen kart bulunamadı.', 'No cards match the search or filters.')
+                                : deckName
                                     ? tableMode === 'notes'
-                                        ? l('Arama veya filtrelerle eşleşen not bulunamadı.', 'No notes match the search or filters.')
-                                        : l('Arama veya filtrelerle eşleşen kart bulunamadı.', 'No cards match the search or filters.')
-                                    : deckName
-                                        ? tableMode === 'notes'
-                                            ? l('Bu destede henüz not yok. İlk notunuzu eklemek için Yeni not düğmesini kullanın.', 'This deck has no notes yet. Use New Note to add the first one.')
-                                            : l('Bu destede henüz kart yok. İlk kartınızı eklemek için Yeni kart düğmesini kullanın.', 'This deck has no cards yet. Use New Card to add the first one.')
-                                        : tableMode === 'notes'
-                                            ? l('Koleksiyonda henüz not yok. İlk notunuzu eklemek için Yeni not düğmesini kullanın.', 'There are no notes in the collection yet. Use New Note to add the first one.')
-                                            : l('Koleksiyonda henüz kart yok. İlk kartınızı eklemek için Yeni kart düğmesini kullanın.', 'There are no cards in the collection yet. Use New Card to add the first one.')}
-                        </Text>
-                    </View>
+                                        ? l('Bu destede henüz not yok. İlk notunuzu eklemek için Yeni not düğmesini kullanın.', 'This deck has no notes yet. Use New Note to add the first one.')
+                                        : l('Bu destede henüz kart yok. İlk kartınızı eklemek için Yeni kart düğmesini kullanın.', 'This deck has no cards yet. Use New Card to add the first one.')
+                                    : tableMode === 'notes'
+                                        ? l('Koleksiyonda henüz not yok. İlk notunuzu eklemek için Yeni not düğmesini kullanın.', 'There are no notes in the collection yet. Use New Note to add the first one.')
+                                        : l('Koleksiyonda henüz kart yok. İlk kartınızı eklemek için Yeni kart düğmesini kullanın.', 'There are no cards in the collection yet. Use New Card to add the first one.')}
+                    />
                 ) : null}
             />
 
@@ -1084,7 +1045,6 @@ export default function BrowserScreen() {
                 setShowSelectionMenu={setShowSelectionMenu}
                 settings={settings}
                 showSelectionMenu={showSelectionMenu}
-                styles={styles}
                 t={t}
                 tableMode={tableMode}
             />
@@ -1214,7 +1174,6 @@ export default function BrowserScreen() {
             />
 
             <DueDateModal
-                colors={colors}
                 dueInput={dueInput}
                 l={l}
                 runSelectionAction={runSelectionAction}
@@ -1223,7 +1182,6 @@ export default function BrowserScreen() {
                 setShowDueDialog={setShowDueDialog}
                 settings={settings}
                 showDueDialog={showDueDialog}
-                styles={styles}
                 t={t}
             />
 
@@ -1276,7 +1234,6 @@ export default function BrowserScreen() {
             />
 
             <BrowserOptionsModal
-                colors={colors}
                 l={l}
                 setShowOptions={setShowOptions}
                 showAnswerSnippet={showAnswerSnippet}

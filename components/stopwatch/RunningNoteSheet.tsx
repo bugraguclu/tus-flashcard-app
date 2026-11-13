@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
+import { Type } from '../ui/tokens';
 import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { MAX_STUDY_NOTE_LENGTH } from '../../lib/stopwatch';
@@ -57,7 +58,7 @@ export default function RunningNoteSheet({ visible, subject, note, onClose, onSa
                     accessibilityRole="button"
                     accessibilityLabel={l('Notu kaydet', 'Save the note')}
                 >
-                    <Text style={styles.saveText}>{l('Kaydet', 'Save')}</Text>
+                    <Text style={[styles.saveText, { color: colors.onAccent }]}>{l('Kaydet', 'Save')}</Text>
                 </TouchableOpacity>
             </View>
         </StopwatchSheet>
@@ -78,5 +79,5 @@ const styles = StyleSheet.create({
     },
     count: { alignSelf: 'flex-end', fontSize: FontSize.sm, fontVariant: ['tabular-nums'] },
     save: { minHeight: 50, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm },
-    saveText: { color: '#ffffff', fontSize: FontSize.xl, fontWeight: '700' },
+    saveText: { ...Type.button },
 });

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { Text, TextInput } from '../AppText';
+import { Type } from '../ui/tokens';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
@@ -130,7 +131,7 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                                 accessibilityRole="button"
                                 accessibilityLabel={l(`${typed} dersini seç`, `Choose ${typed}`)}
                             >
-                                <Text style={styles.customButtonText}>{l('Seç', 'Choose')}</Text>
+                                <Text style={[styles.customButtonText, { color: colors.onAccent }]}>{l('Seç', 'Choose')}</Text>
                             </TouchableOpacity>
                         ) : null}
                     </View>
@@ -140,7 +141,7 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                         accessibilityRole="button"
                         accessibilityLabel={l('Kapat', 'Close')}
                     >
-                        <Text style={styles.closeText}>{l('Kapat', 'Close')}</Text>
+                        <Text style={[styles.closeText, { color: colors.onAccent }]}>{l('Kapat', 'Close')}</Text>
                     </TouchableOpacity>
                 </ScrollView>
             </View>
@@ -232,7 +233,7 @@ export function StudyTypePicker({ kind, pass, onSelect, onClose }: StudyTypePick
                     accessibilityRole="button"
                     accessibilityLabel={l('Kapat', 'Close')}
                 >
-                    <Text style={styles.closeText}>{l('Kapat', 'Close')}</Text>
+                    <Text style={[styles.closeText, { color: colors.onAccent }]}>{l('Kapat', 'Close')}</Text>
                 </TouchableOpacity>
             </View>
         </>
@@ -283,9 +284,9 @@ const styles = StyleSheet.create({
     },
     customInput: { flex: 1, fontSize: FontSize.md, paddingVertical: Spacing.sm },
     customButton: { borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.md, paddingVertical: 7 },
-    customButtonText: { color: '#ffffff', fontSize: FontSize.md, fontWeight: '700' },
+    customButtonText: { ...Type.button },
     closeButton: { minWidth: 120, alignItems: 'center', borderRadius: BorderRadius.md, paddingVertical: 10, paddingHorizontal: Spacing.xl },
-    closeText: { color: '#ffffff', fontSize: FontSize.lg, fontWeight: '700' },
+    closeText: { ...Type.button },
     typeLayer: { flexShrink: 1, gap: Spacing.sm },
     search: {
         flexDirection: 'row',

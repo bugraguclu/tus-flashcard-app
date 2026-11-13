@@ -6,7 +6,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
     View,
-    TouchableOpacity,
     ScrollView,
     StyleSheet,
     Platform,
@@ -14,9 +13,9 @@ import {
 } from 'react-native';
 import { Text } from '../components/AppText';
 import { studyDataSettingsKey } from '../lib/studyDataSettings';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
-import { Spacing, BorderRadius, FontSize, Shadows, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     emptyFilteredDeck,
@@ -34,8 +33,15 @@ import { useI18n } from '../hooks/useI18n';
 import { filteredOrderLabel } from '../lib/i18n';
 import CustomStudyModal from '../components/CustomStudyModal';
 import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
-import HeaderBackIcon from '../components/HeaderBackIcon';
-import PressableScale from '../components/PressableScale';
+import DeckOverflowGlyph from '../components/DeckOverflowGlyph';
+import ScreenHeader from '../components/ScreenHeader';
+import { Button, IconButton } from '../components/ui/Button';
+import { Card, Section } from '../components/ui/Card';
+import { Badge } from '../components/ui/Choice';
+import { EmptyState, LoadingState } from '../components/ui/Feedback';
+import { MoreIcon, RefreshIcon } from '../components/ui/icons';
+import { ListRow } from '../components/ui/Rows';
+import { Type } from '../components/ui/tokens';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { getDeckOverviewSnapshot } from '../lib/screenSnapshots';
 
@@ -44,6 +50,7 @@ export default function DeckOverviewScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const params = useLocalSearchParams();
     const { settings } = useAppSettings();
     const dataSettingsKey = studyDataSettingsKey(settings);
@@ -85,32 +92,23 @@ export default function DeckOverviewScreen() {
 
     if (!deck) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.navBar}>
-                    <TouchableOpacity
-                        style={styles.navButton}
-                        onPress={() => goBackOr(router)}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('tabs.backToDecks')}
-                    >
-                        <HeaderBackIcon color={colors.accent} />
-                    </TouchableOpacity>
-                    <Text style={styles.navTitle} numberOfLines={1}>
-                        {deckName ? getDeckDisplayName(deckName) : l('Deste', 'Deck')}
-                    </Text>
-                    <View style={styles.navButton} />
-                </View>
-                <ScrollView contentContainerStyle={styles.content}>
-                    <View style={[styles.inlineLoadState, { pointerEvents: 'none' }]} accessible>
-                        <Text style={styles.inlineLoadIcon}>{overviewError ? '!' : '▤'}</Text>
-                        <Text style={styles.missing}>
-                            {loading
-                                ? t('common.loading')
-                                : overviewError
-                                    ? l('Deste özeti yüklenemedi.', 'Deck overview could not be loaded.')
-                                    : l('Deste bulunamadı.', 'Deck not found.')}
-                        </Text>
-                    </View>
+            <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+                <ScreenHeader
+                    title={deckName ? getDeckDisplayName(deckName) : l('Deste', 'Deck')}
+                    backAccessibilityLabel={t('tabs.backToDecks')}
+                    onBack={() => goBackOr(router)}
+                />
+                <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxxl }]}>
+                    {loading ? (
+                        <LoadingState label={t('common.loading')} />
+                    ) : (
+                        <EmptyState
+                            icon={overviewError ? undefined : <DeckOverflowGlyph kind="deck" color={colors.textMuted} size={32} />}
+                            title={overviewError
+                                ? l('Deste özeti yüklenemedi.', 'Deck overview could not be loaded.')
+                                : l('Deste bulunamadı.', 'Deck not found.')}
+                        />
+                    )}
                 </ScrollView>
             </SafeAreaView>
         );
@@ -166,46 +164,41 @@ export default function DeckOverviewScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.navBar}>
-                <TouchableOpacity
-                    style={styles.navButton}
-                    onPress={() => goBackOr(router)}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('tabs.backToDecks')}
-                >
-                    <HeaderBackIcon color={colors.accent} />
-                </TouchableOpacity>
-                <Text style={styles.navTitle} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
-                {!deck.isFiltered ? (
-                    <TouchableOpacity
-                        style={styles.navButton}
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+            <ScreenHeader
+                title={getDeckDisplayName(deck.name)}
+                backAccessibilityLabel={t('tabs.backToDecks')}
+                onBack={() => goBackOr(router)}
+                actions={!deck.isFiltered ? (
+                    <IconButton
                         onPress={() => router.push(`/deck-options?deckId=${deck.id}` as any)}
-                        accessibilityRole="button"
                         accessibilityLabel={l('Deste seçenekleri', 'Deck options')}
                     >
-                        <Text style={styles.navMoreText}>•••</Text>
-                    </TouchableOpacity>
-                ) : <View style={styles.navButton} />}
-            </View>
+                        <MoreIcon color={colors.textMuted} />
+                    </IconButton>
+                ) : undefined}
+            />
 
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxxl }]}>
                 <View style={styles.hero}>
                     <View style={[styles.deckIcon, deck.isFiltered && styles.deckIconFiltered]}>
-                        <Text style={styles.deckIconText}>{deck.isFiltered ? '⧉' : '▤'}</Text>
+                        <DeckOverflowGlyph
+                            kind={deck.isFiltered ? 'filteredDeck' : 'deck'}
+                            color={deck.isFiltered ? colors.info : colors.accent}
+                            size={26}
+                        />
                     </View>
                     <View style={styles.heroText}>
-                        <Text style={styles.heroEyebrow}>{deck.isFiltered ? t('anki.filteredDeck').toLocaleUpperCase() : l('BUGÜNKÜ ÇALIŞMA', 'TODAY’S STUDY')}</Text>
+                        <Text style={[Type.label, styles.heroEyebrow]}>{deck.isFiltered ? t('anki.filteredDeck').toLocaleUpperCase() : l('BUGÜNKÜ ÇALIŞMA', 'TODAY’S STUDY')}</Text>
                         <Text style={styles.deckTitle}>{getDeckDisplayName(deck.name)}</Text>
                         {deck.name.includes('::') && (
-                            <Text style={styles.deckPath}>{deck.name.replaceAll('::', ' › ')}</Text>
+                            <Text style={[Type.caption, styles.deckPath]}>{deck.name.replaceAll('::', ' › ')}</Text>
                         )}
                     </View>
                 </View>
 
                 {descriptionRuns.length > 0 ? (
-                    <View style={styles.descriptionCard}>
-                        <Text style={styles.descriptionLabel}>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</Text>
+                    <Section label={l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')} padded>
                         <Text style={styles.description}>
                             {descriptionRuns.map((run, index) => (
                                 <Text
@@ -223,67 +216,66 @@ export default function DeckOverviewScreen() {
                                 </Text>
                             ))}
                         </Text>
-                    </View>
+                    </Section>
                 ) : null}
 
-                <View style={styles.countsCard}>
-                    <View style={styles.countBox}>
-                        <Text style={[styles.countValue, { color: colors.badgeNew }]}>{queue?.stats.newCount ?? 0}</Text>
-                        <Text style={styles.countLabel}>{t('anki.new')}</Text>
+                <Card>
+                    <View style={styles.counts}>
+                        <View style={styles.countBox}>
+                            <Text style={[styles.countValue, { color: colors.badgeNew }]}>{queue?.stats.newCount ?? 0}</Text>
+                            <Text style={styles.countLabel}>{t('anki.new')}</Text>
+                        </View>
+                        <View style={styles.countBox}>
+                            <Text style={[styles.countValue, { color: colors.badgeLearn }]}>{queue?.stats.learningCount ?? 0}</Text>
+                            <Text style={styles.countLabel}>{t('anki.learn')}</Text>
+                        </View>
+                        <View style={styles.countBox}>
+                            <Text style={[styles.countValue, { color: colors.badgeReview }]}>{queue?.stats.reviewCount ?? 0}</Text>
+                            <Text style={styles.countLabel}>{t('anki.review')}</Text>
+                        </View>
                     </View>
-                    <View style={styles.countBox}>
-                        <Text style={[styles.countValue, { color: colors.badgeLearn }]}>{queue?.stats.learningCount ?? 0}</Text>
-                        <Text style={styles.countLabel}>{t('anki.learn')}</Text>
-                    </View>
-                    <View style={styles.countBox}>
-                        <Text style={[styles.countValue, { color: colors.badgeReview }]}>{queue?.stats.reviewCount ?? 0}</Text>
-                        <Text style={styles.countLabel}>{t('anki.review')}</Text>
-                    </View>
-                </View>
+                </Card>
 
                 {deck.isFiltered && (
-                    <View style={styles.filterCard}>
-                        <View style={styles.filterHeadingRow}>
-                            <Text style={styles.filterLabel}>{l('KAYITLI ARAMA', 'SAVED SEARCH')}</Text>
-                            <View style={styles.filterModePill}>
-                                <Text style={styles.filterModeText}>
-                                    {deck.reschedule === false ? l('Önizleme', 'Preview') : l('Yeniden zamanla', 'Reschedule')}
-                                </Text>
-                            </View>
+                    <Section label={l('KAYITLI ARAMA', 'SAVED SEARCH')} padded>
+                        <Badge
+                            label={deck.reschedule === false ? l('Önizleme', 'Preview') : l('Yeniden zamanla', 'Reschedule')}
+                            tone="accent"
+                        />
+                        <View style={styles.filterCopy}>
+                            <Text style={styles.filterQuery}>{deck.searchQuery || l('(boş arama)', '(empty search)')}</Text>
+                            <Text style={styles.filterMeta}>
+                                {filteredOrderLabel(locale, deck.searchOrder ?? FILTERED_SEARCH_ORDER.due)} · {l(`En fazla ${deck.searchLimit ?? 100} kart`, `Up to ${deck.searchLimit ?? 100} cards`)}
+                                {deck.filteredDeckEmpty ? l(' · Şu anda boş', ' · Currently empty') : ''}
+                            </Text>
                         </View>
-                        <Text style={styles.filterQuery}>{deck.searchQuery || l('(boş arama)', '(empty search)')}</Text>
-                        <Text style={styles.filterMeta}>
-                            {filteredOrderLabel(locale, deck.searchOrder ?? FILTERED_SEARCH_ORDER.due)} · {l(`En fazla ${deck.searchLimit ?? 100} kart`, `Up to ${deck.searchLimit ?? 100} cards`)}
-                            {deck.filteredDeckEmpty ? l(' · Şu anda boş', ' · Currently empty') : ''}
-                        </Text>
-                    </View>
+                    </Section>
                 )}
 
                 {buriedCount > 0 && (
-                    <TouchableOpacity style={styles.unburyBtn} onPress={() => { void handleUnbury(); }}>
-                        <Text style={styles.unburyText}>💤 {l(`${buriedCount} gömülü kartı şimdi aç`, `Unbury ${buriedCount} cards now`)}</Text>
-                    </TouchableOpacity>
+                    <Button
+                        label={`💤 ${l(`${buriedCount} gömülü kartı şimdi aç`, `Unbury ${buriedCount} cards now`)}`}
+                        variant="secondary"
+                        onPress={() => { void handleUnbury(); }}
+                    />
                 )}
 
-                <PressableScale
-                    style={[styles.studyBtn, totalReady === 0 && styles.studyBtnIdle, studyDisabled && styles.buttonDisabled]}
+                <Button
+                    label={studyDisabled
+                        ? l('Deste boş — yeniden oluşturun', 'Deck is empty — rebuild it')
+                        : totalReady > 0
+                            ? l(`Şimdi çalış · ${totalReady} kart`, `Study Now · ${totalReady} ${totalReady === 1 ? 'card' : 'cards'}`)
+                            : l('Çalışma ekranını aç', 'Open Study Screen')}
+                    // With nothing due the study screen is still one tap away, but no longer the call to action.
+                    variant={totalReady > 0 ? 'primary' : 'secondary'}
                     onPress={handleStudyNow}
                     disabled={studyDisabled}
-                    activeOpacity={0.85}
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: studyDisabled }}
-                >
-                    <Text style={styles.studyBtnText}>
-                        {studyDisabled
-                            ? l('Deste boş — yeniden oluşturun', 'Deck is empty — rebuild it')
-                            : totalReady > 0
-                                ? l(`Şimdi çalış · ${totalReady} kart`, `Study Now · ${totalReady} ${totalReady === 1 ? 'card' : 'cards'}`)
-                                : l('Çalışma ekranını aç', 'Open Study Screen')}
-                    </Text>
-                </PressableScale>
+                    // Study Now sinks under the finger, as the reviewer's grade buttons do.
+                    sink
+                />
 
                 {totalReady === 0 && (
-                    <Text style={styles.doneNote}>
+                    <Text style={[Type.caption, styles.doneNote]}>
                         {deck.filteredDeckEmpty
                             ? l('Filtre korunuyor. Kartları geri getirmek için “Yeniden oluştur”u kullanın.', 'The filter is preserved. Use Rebuild to gather the cards again.')
                             : l('Bugün için hazır kart yok. Sayaç ve limit ayrıntıları çalışma ekranında.', 'No cards are ready today. Open the study screen for timer and limit details.')}
@@ -292,55 +284,62 @@ export default function DeckOverviewScreen() {
 
                 {deck.isFiltered && (
                     <View style={styles.filteredActions}>
-                        <TouchableOpacity style={styles.lifecycleBtn} onPress={handleRebuild}>
-                            <Text style={styles.lifecycleBtnText}>↻ {l('Yeniden oluştur', 'Rebuild')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.lifecycleBtn, styles.lifecycleBtnDanger, totalReady === 0 && styles.buttonDisabled]}
+                        <Button
+                            label={l('Yeniden oluştur', 'Rebuild')}
+                            variant="secondary"
+                            icon={<RefreshIcon color={colors.textPrimary} size={18} />}
+                            onPress={handleRebuild}
+                            style={styles.filteredAction}
+                        />
+                        <Button
+                            label={l('Boşalt', 'Empty')}
+                            variant="destructive"
                             onPress={handleEmpty}
                             disabled={totalReady === 0}
-                        >
-                            <Text style={styles.lifecycleDangerText}>{l('Boşalt', 'Empty')}</Text>
-                        </TouchableOpacity>
+                            style={styles.filteredAction}
+                        />
                     </View>
                 )}
 
-                {deck.isFiltered && (
-                    <TouchableOpacity
-                        style={styles.secondaryBtn}
-                        onPress={() => setFilterOptionsOpen(true)}
-                    >
-                        <Text style={styles.secondaryText}>{l('Filtre seçenekleri', 'Filtered Deck Options')}</Text>
-                        <Text style={styles.secondaryCaption}>{l('Arama, limit, sıralama ve önizleme modu', 'Search, limit, order, and preview mode')}</Text>
-                    </TouchableOpacity>
-                )}
-
-                {!deck.isFiltered && (
-                    <>
-                        <TouchableOpacity
-                            style={styles.secondaryBtn}
+                {/* Each workflow is its own card, as the overview has always drawn them. */}
+                {deck.isFiltered ? (
+                    <Card>
+                        <ListRow
+                            title={l('Filtre seçenekleri', 'Filtered Deck Options')}
+                            summary={l('Arama, limit, sıralama ve önizleme modu', 'Search, limit, order, and preview mode')}
+                            accessibilityHint={l('Arama, limit, sıralama ve önizleme modu', 'Search, limit, order, and preview mode')}
+                            onPress={() => setFilterOptionsOpen(true)}
+                        />
+                    </Card>
+                ) : null}
+                {!deck.isFiltered ? (
+                    <Card>
+                        <ListRow
+                            title={t('anki.customStudy')}
+                            summary={l('Limit artırın, unutulanları seçin veya ileriye çalışın', 'Increase limits, review forgotten cards, or study ahead')}
+                            accessibilityHint={l('Limit artırın, unutulanları seçin veya ileriye çalışın', 'Increase limits, review forgotten cards, or study ahead')}
                             onPress={() => setCustomStudyOpen(true)}
-                        >
-                            <Text style={styles.secondaryText}>{t('anki.customStudy')}</Text>
-                            <Text style={styles.secondaryCaption}>{l('Limit artırın, unutulanları seçin veya ileriye çalışın', 'Increase limits, review forgotten cards, or study ahead')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.secondaryBtn}
+                        />
+                    </Card>
+                ) : null}
+                {!deck.isFiltered ? (
+                    <Card>
+                        <ListRow
+                            title={l('Deste seçenekleri', 'Deck Options')}
+                            summary={l('Limitler, sıralama, gömme ve ayar grubu', 'Limits, display order, burying, and preset')}
+                            accessibilityHint={l('Limitler, sıralama, gömme ve ayar grubu', 'Limits, display order, burying, and preset')}
                             onPress={() => router.push(`/deck-options?deckId=${deck.id}` as any)}
-                        >
-                            <Text style={styles.secondaryText}>{l('Deste seçenekleri', 'Deck Options')}</Text>
-                            <Text style={styles.secondaryCaption}>{l('Limitler, sıralama, gömme ve ayar grubu', 'Limits, display order, burying, and preset')}</Text>
-                        </TouchableOpacity>
-                    </>
-                )}
-
-                <TouchableOpacity
-                    style={styles.secondaryBtn}
-                    onPress={() => router.push(`/stats?deck=${encodeURIComponent(deck.name)}` as any)}
-                >
-                    <Text style={styles.secondaryText}>{l('Deste istatistikleri', 'Deck Statistics')}</Text>
-                    <Text style={styles.secondaryCaption}>{l('İlerlemeyi ve tekrar yükünü görüntüleyin', 'View progress and review workload')}</Text>
-                </TouchableOpacity>
+                        />
+                    </Card>
+                ) : null}
+                <Card>
+                    <ListRow
+                        title={l('Deste istatistikleri', 'Deck Statistics')}
+                        summary={l('İlerlemeyi ve tekrar yükünü görüntüleyin', 'View progress and review workload')}
+                        accessibilityHint={l('İlerlemeyi ve tekrar yükünü görüntüleyin', 'View progress and review workload')}
+                        onPress={() => router.push(`/stats?deck=${encodeURIComponent(deck.name)}` as any)}
+                    />
+                </Card>
             </ScrollView>
 
             {/* Kept mounted so the sheet can slide away after it closes. */}
@@ -375,31 +374,10 @@ export default function DeckOverviewScreen() {
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        container: { flex: 1, backgroundColor: colors.bgPrimary },
-        navBar: {
-            minHeight: 56,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingHorizontal: Spacing.sm,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-            backgroundColor: colors.bgPrimary,
-        },
-        navButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-        navMoreText: { fontSize: 16, color: colors.textMuted, fontWeight: '800', letterSpacing: -1 },
-        navTitle: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
-        content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.xl, gap: Spacing.md, alignItems: 'stretch', paddingBottom: Spacing.xxxl },
-        missing: { color: colors.textMuted, fontSize: FontSize.md },
-        inlineLoadState: {
-            minHeight: 120,
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: Spacing.sm,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.bgSecondary,
-        },
-        inlineLoadIcon: { color: colors.textMuted, fontSize: 28, fontWeight: '700' },
+        // The safe area above the header takes the header's colour; the page scrolls below it.
+        container: { flex: 1, backgroundColor: colors.bgCard },
+        scroll: { flex: 1, backgroundColor: colors.bgPrimary },
+        content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.xl, gap: Spacing.md, alignItems: 'stretch' },
         hero: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
         deckIcon: {
             width: 52,
@@ -411,101 +389,25 @@ function createStyles(colors: ColorScheme) {
             borderWidth: 1,
             borderColor: colors.border,
         },
-        deckIconFiltered: { backgroundColor: colors.badgeNewBg, borderColor: colors.badgeNew },
-        deckIconText: { fontSize: 24, color: colors.accent, fontWeight: '700' },
+        deckIconFiltered: { backgroundColor: colors.infoBg, borderColor: colors.info },
         heroText: { flex: 1 },
-        heroEyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2, color: colors.accent, marginBottom: 3 },
+        heroEyebrow: { color: colors.accent, marginBottom: 3 },
         deckTitle: { fontSize: FontSize.xxl, fontWeight: '800', color: colors.textPrimary },
-        deckPath: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
-        descriptionCard: {
-            backgroundColor: colors.bgSecondary,
-            borderRadius: BorderRadius.md,
-            padding: Spacing.md,
-            borderWidth: 1,
-            borderColor: colors.borderLight,
-        },
-        descriptionLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: colors.textMuted, marginBottom: 5 },
+        deckPath: { color: colors.textMuted, marginTop: 2 },
         description: { fontSize: FontSize.md, color: colors.textSecondary, lineHeight: 21 },
         descriptionBold: { fontWeight: '700' },
         descriptionItalic: { fontStyle: 'italic' },
         descriptionUnderline: { textDecorationLine: 'underline' },
         descriptionLink: { color: colors.accent },
-        countsCard: {
-            flexDirection: 'row',
-            justifyContent: 'space-around',
-            backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
-            borderWidth: 1,
-            borderColor: colors.border,
-            paddingVertical: Spacing.xl,
-            ...Shadows.sm,
-        },
+        counts: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: Spacing.xl },
         countBox: { flex: 1, alignItems: 'center', gap: 2 },
         countValue: { fontSize: 30, fontWeight: '800', fontVariant: ['tabular-nums'] },
         countLabel: { fontSize: FontSize.sm, color: colors.textMuted, fontWeight: '600' },
-        filterCard: {
-            padding: Spacing.md,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-            gap: 5,
-        },
-        filterHeadingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
-        filterLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1, color: colors.textMuted },
-        filterModePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: BorderRadius.full, backgroundColor: colors.accentLight },
-        filterModeText: { fontSize: 10, fontWeight: '700', color: colors.accent },
+        filterCopy: { gap: 5 },
         filterQuery: { fontSize: FontSize.sm, lineHeight: 19, color: colors.textPrimary, fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }) },
         filterMeta: { fontSize: FontSize.xs, color: colors.textMuted },
-        unburyBtn: {
-            alignItems: 'center',
-            minHeight: 48,
-            justifyContent: 'center',
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.btnHard,
-            backgroundColor: colors.btnHardBg,
-        },
-        unburyText: { color: colors.btnHard, fontWeight: '700' },
-        studyBtn: {
-            minHeight: 56,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: Spacing.md,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.accent,
-            ...Shadows.md,
-        },
-        studyBtnIdle: { opacity: 0.82 },
-        buttonDisabled: { opacity: 0.45 },
-        studyBtnText: { color: colors.white, fontWeight: '700', fontSize: FontSize.lg },
-        doneNote: { fontSize: FontSize.sm, lineHeight: 18, color: colors.textMuted, textAlign: 'center', paddingHorizontal: Spacing.sm },
+        doneNote: { color: colors.textMuted, textAlign: 'center', paddingHorizontal: Spacing.sm },
         filteredActions: { flexDirection: 'row', gap: Spacing.sm },
-        lifecycleBtn: {
-            flex: 1,
-            minHeight: 48,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: BorderRadius.sm,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        lifecycleBtnDanger: { borderColor: colors.btnAgain },
-        lifecycleBtnText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
-        lifecycleDangerText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.btnAgain },
-        secondaryBtn: {
-            minHeight: 58,
-            alignItems: 'flex-start',
-            justifyContent: 'center',
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.md,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        secondaryText: { color: colors.textPrimary, fontWeight: '700', fontSize: FontSize.md },
-        secondaryCaption: { color: colors.textMuted, fontSize: FontSize.xs, marginTop: 3 },
+        filteredAction: { flex: 1 },
     });
 }

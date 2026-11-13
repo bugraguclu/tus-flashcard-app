@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, type GestureResponderEvent } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { PHOTO_ADJUSTMENT_LIMIT, clampPhotoAdjustment } from '../../lib/photoAdjustments';
+import { DISABLED_OPACITY, Radius } from '../ui/tokens';
 import { tick } from './editorModel';
 
 interface AdjustmentSliderProps {
@@ -88,8 +89,11 @@ export function AdjustmentSlider({ label, value, onChange, onChangeEnd, disabled
                 style={styles.valueButton}
                 onPress={() => onChangeEnd(0)}
                 disabled={disabled || value === 0}
+                // The 32-point capsule reaches the 44-point target through its slop.
+                hitSlop={{ top: 6, bottom: 6 }}
                 accessibilityRole="button"
                 accessibilityLabel={l(`${label}: sıfırla`, `${label}: reset`)}
+                accessibilityState={{ disabled: disabled || value === 0 }}
             >
                 <Text style={[styles.value, value !== 0 && styles.valueChanged]}>{shown}</Text>
             </TouchableOpacity>
@@ -100,7 +104,7 @@ export function AdjustmentSlider({ label, value, onChange, onChangeEnd, disabled
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minHeight: 44 },
-        disabled: { opacity: 0.4 },
+        disabled: { opacity: DISABLED_OPACITY },
         touchArea: { flex: 1, height: 44, justifyContent: 'center', paddingHorizontal: THUMB / 2 },
         track: { height: 4, borderRadius: 2, backgroundColor: colors.border },
         fill: { position: 'absolute', top: 0, height: 4, borderRadius: 2, backgroundColor: colors.accent },
@@ -111,7 +115,7 @@ function createStyles(colors: ColorScheme) {
             width: THUMB,
             height: THUMB,
             marginLeft: -THUMB / 2,
-            borderRadius: THUMB / 2,
+            borderRadius: Radius.pill,
             backgroundColor: colors.white,
             borderWidth: 2,
             borderColor: colors.accent,
@@ -121,7 +125,7 @@ function createStyles(colors: ColorScheme) {
             minWidth: 48,
             height: 32,
             paddingHorizontal: Spacing.sm,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             backgroundColor: colors.bgInput,
             alignItems: 'center',
             justifyContent: 'center',

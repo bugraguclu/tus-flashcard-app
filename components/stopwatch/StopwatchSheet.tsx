@@ -67,7 +67,7 @@ export default function StopwatchSheet({
                 // Its own keyboard avoidance: an absolutely placed layer ignores the padding the
                 // sheet's container takes for the keyboard, so a picker's field would sit under it.
                 <KeyboardAvoidingView
-                    style={[StyleSheet.absoluteFill, styles.pickerLayer]}
+                    style={[StyleSheet.absoluteFill, styles.pickerLayer, { backgroundColor: colors.scrim }]}
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     accessibilityViewIsModal
                 >
@@ -129,5 +129,5 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     formTitle: { flex: 1, fontSize: FontSize.xl, fontWeight: '700' },
-    pickerLayer: { backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', paddingHorizontal: Spacing.lg },
+    pickerLayer: { justifyContent: 'center', paddingHorizontal: Spacing.lg },
 });

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
+import { Type } from '../ui/tokens';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BorderRadius, FontSize, Spacing, useIsDarkTheme, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
@@ -321,7 +322,7 @@ export default function SessionEditorSheet({
                     accessibilityState={{ disabled: Boolean(error) }}
                     accessibilityLabel={recordId !== null ? l('Değişiklikleri kaydet', 'Save changes') : l('Çalışma ekle', 'Add session')}
                 >
-                    <Text style={styles.saveText}>
+                    <Text style={[styles.saveText, { color: colors.onAccent }]}>
                         {recordId !== null ? l('Değişiklikleri Kaydet', 'Save Changes') : l('Çalışma Ekle', 'Add Session')}
                     </Text>
                 </TouchableOpacity>
@@ -348,6 +349,6 @@ const styles = StyleSheet.create({
     noteCount: { alignSelf: 'flex-end', fontSize: FontSize.sm, fontVariant: ['tabular-nums'] },
     saveButton: { minHeight: 50, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.md },
     saveDisabled: { opacity: 0.45 },
-    saveText: { color: '#ffffff', fontSize: FontSize.xl, fontWeight: '700' },
+    saveText: { ...Type.button },
     error: { marginTop: Spacing.sm, marginBottom: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', textAlign: 'center' },
 });

@@ -1,23 +1,74 @@
-import { useMemo, useRef } from 'react';
-import { Animated, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { useEffect, useMemo, useRef } from 'react';
+import { Animated, Modal, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
-import { Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { deckRowMenuLabel, type DeckRowMenuAction } from '../../lib/deckRowMenu';
 import { usePopoverItemStyle } from '../Popover';
+import { Type } from '../ui/tokens';
 
-/** A deck's ••• menu card: the deck path as its title and one row per action. */
-export default function DeckRowMenu({ deckName, actions, onSelect }: {
+interface DeckRowMenuProps {
+    visible: boolean;
     deckName: string;
     actions: DeckRowMenuAction[];
     onSelect: (action: DeckRowMenuAction) => void;
-}) {
-    const { l } = useI18n();
+    onClose: () => void;
+    /**
+     * Runs once the menu has been dismissed. iOS cannot present the route, dialog or sheet chosen
+     * in it until then, so the deck list holds the chosen action back until this is called.
+     */
+    onDismissed: () => void;
+    backdropLabel?: string;
+}
+
+/**
+ * A deck's ••• menu: a card centred over the dimmed deck list, with the deck path as its title and
+ * one row per action. Its text follows the app's type roles.
+ */
+export default function DeckRowMenu({ visible, deckName, actions, onSelect, onClose, onDismissed, backdropLabel }: DeckRowMenuProps) {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    return (
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+            <View style={styles.overlay}>
+                <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel={backdropLabel}
+                />
+                <DeckRowMenuCard deckName={deckName} actions={actions} onSelect={onSelect} styles={styles} />
+                <DismissedSignal onDismissed={onDismissed} />
+            </View>
+        </Modal>
+    );
+}
+
+/**
+ * Reports its own unmount. The modal's content stays mounted until the modal is gone (on iOS
+ * React Native keeps a closing modal's content until UIKit has dismissed it), so this is the
+ * moment the menu has left, on every platform.
+ */
+function DismissedSignal({ onDismissed }: { onDismissed: () => void }) {
+    const latest = useRef(onDismissed);
+    latest.current = onDismissed;
+    useEffect(() => () => latest.current(), []);
+    return null;
+}
+
+/**
+ * The card itself, mounted afresh each time the menu opens: it grows in from 95% while the Modal
+ * fades it in, and the scroll hint below is shown once per opening.
+ */
+function DeckRowMenuCard({ deckName, actions, onSelect, styles }: {
+    deckName: string;
+    actions: DeckRowMenuAction[];
+    onSelect: (action: DeckRowMenuAction) => void;
+    styles: ReturnType<typeof createStyles>;
+}) {
+    const { l } = useI18n();
     const scrollRef = useRef<ScrollView>(null);
     const heights = useRef({ viewport: 0, content: 0, flashed: false });
-    // The card grows in from 95% while the deck list's Modal fades it in.
     const growIn = usePopoverItemStyle();
 
     // On a short phone the last rows sit below the fold. Flashing the indicator once says the list
@@ -66,6 +117,13 @@ export default function DeckRowMenu({ deckName, actions, onSelect }: {
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
+        overlay: {
+            flex: 1,
+            backgroundColor: colors.scrim,
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: Spacing.xl,
+        },
         card: {
             width: '100%',
             maxWidth: 520,
@@ -80,16 +138,14 @@ function createStyles(colors: ColorScheme) {
         title: {
             paddingHorizontal: 30,
             paddingBottom: Spacing.sm,
-            fontSize: 20,
-            lineHeight: 27,
-            fontWeight: '500',
+            ...Type.title,
+            lineHeight: 24,
             color: colors.textPrimary,
         },
         scroll: { flexGrow: 0 },
         content: { paddingHorizontal: 30, paddingBottom: Spacing.xl },
-        // Twelve rows fit a 6.1" iPhone at the designed text size, and every row stays a full touch
-        // target; a larger text size grows the rows and the list scrolls.
-        item: { minHeight: 54, justifyContent: 'center' },
-        itemText: { fontSize: 17, lineHeight: 23, fontWeight: '400', color: colors.textPrimary },
+        // Every row stays a full touch target; a larger text size grows the rows and the list scrolls.
+        item: { minHeight: 48, justifyContent: 'center' },
+        itemText: { fontSize: FontSize.md, lineHeight: 20, fontWeight: '500', color: colors.textPrimary },
     });
 }

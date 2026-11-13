@@ -10,19 +10,21 @@ import { Text } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';
-import { HeaderBackIcon, HeaderForwardIcon } from '../components/HeaderBackIcon';
 import StudyDayBox, { formatWeekRange, mondayIndex, studyWeekdayLabels } from '../components/StudyDayBox';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
 import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
 import type { StudyChoice } from '../components/stopwatch/StudyStartSheet';
-import { AnalyticsIcon, StopwatchIcon } from '../components/stopwatch/StopwatchIcons';
+import { AnalyticsIcon, CalendarIcon, StopwatchIcon } from '../components/stopwatch/StopwatchIcons';
 import PlannedStudyCard from '../components/stopwatch/PlannedStudyCard';
 import StudySessionCard from '../components/stopwatch/StudySessionCard';
 import StudyToolsMenu, { STUDY_TOOLS_FAB_SIZE } from '../components/stopwatch/StudyToolsMenu';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { timelineStyles } from '../components/stopwatch/timelineStyles';
+import { IconButton } from '../components/ui/Button';
+import { SegmentedControl } from '../components/ui/Choice';
+import { EmptyState, LoadingState } from '../components/ui/Feedback';
+import { BackIcon, ForwardIcon } from '../components/ui/icons';
 import {
-    BorderRadius,
     FontSize,
     Shadows,
     Spacing,
@@ -425,47 +427,37 @@ export default function StudyCalendarScreen() {
             />
 
             <View style={styles.monthBar}>
-                <TouchableOpacity
+                <IconButton
                     style={styles.stepButton}
                     onPress={() => handleStep(-1)}
-                    hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                    accessibilityRole="button"
+                    hitSlop={STEP_SLOP}
                     accessibilityLabel={mode === 'month'
                         ? l('Önceki ay', 'Previous month')
                         : l('Önceki hafta', 'Previous week')}
                 >
-                    <HeaderBackIcon color={colors.textSecondary} size={20} />
-                </TouchableOpacity>
+                    <BackIcon color={colors.textSecondary} size={20} />
+                </IconButton>
                 <Text style={styles.rangeTitle} numberOfLines={1}>{rangeTitle}</Text>
-                <TouchableOpacity
+                <IconButton
                     style={styles.stepButton}
                     onPress={() => handleStep(1)}
-                    hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                    accessibilityRole="button"
+                    hitSlop={STEP_SLOP}
                     accessibilityLabel={mode === 'month'
                         ? l('Sonraki ay', 'Next month')
                         : l('Sonraki hafta', 'Next week')}
                 >
-                    <HeaderForwardIcon color={colors.textSecondary} size={20} />
-                </TouchableOpacity>
-                <View style={styles.segmentTrack}>
-                    {(['week', 'month'] as const).map((option) => {
-                        const selected = mode === option;
-                        return (
-                            <TouchableOpacity
-                                key={option}
-                                style={[styles.segment, selected && styles.segmentSelected]}
-                                onPress={() => handleSwitchMode(option)}
-                                accessibilityRole="button"
-                                accessibilityState={{ selected }}
-                            >
-                                <Text style={[styles.segmentText, selected && styles.segmentTextSelected]}>
-                                    {option === 'week' ? l('Haftalık', 'Weekly') : l('Aylık', 'Monthly')}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
+                    <ForwardIcon color={colors.textSecondary} size={20} />
+                </IconButton>
+                <SegmentedControl
+                    options={[
+                        { value: 'week', label: l('Haftalık', 'Weekly') },
+                        { value: 'month', label: l('Aylık', 'Monthly') },
+                    ]}
+                    value={mode}
+                    onChange={handleSwitchMode}
+                    accessibilityLabel={l('Görünüm', 'View')}
+                    style={styles.modeSwitch}
+                />
             </View>
 
             <View style={styles.weekdayRow}>
@@ -526,19 +518,17 @@ export default function StudyCalendarScreen() {
                 initialNumToRender={8}
                 windowSize={7}
                 onScrollToIndexFailed={() => undefined}
-                ListEmptyComponent={(
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>🗓️</Text>
-                        <Text style={styles.emptyText}>{emptyMessage}</Text>
-                        {!loading && !error && (
-                            <Text style={styles.emptyHint}>
-                                {l(
-                                    'Kart yanıtladığınızda ya da Kronometre ile çalıştığınızda oturumlarınız burada listelenir.',
-                                    'Your sessions appear here once you answer cards or study with the stopwatch.',
-                                )}
-                            </Text>
+                ListEmptyComponent={loading ? (
+                    <LoadingState label={emptyMessage} />
+                ) : (
+                    <EmptyState
+                        icon={<CalendarIcon color={colors.textMuted} size={34} />}
+                        title={emptyMessage}
+                        body={error ? undefined : l(
+                            'Kart yanıtladığınızda ya da Kronometre ile çalıştığınızda oturumlarınız burada listelenir.',
+                            'Your sessions appear here once you answer cards or study with the stopwatch.',
                         )}
-                    </View>
+                    />
                 )}
             />
 
@@ -549,7 +539,7 @@ export default function StudyCalendarScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={l('Kronometre', 'Stopwatch')}
             >
-                <StopwatchIcon color={colors.white} size={26} />
+                <StopwatchIcon color={colors.onAccent} size={26} />
             </TouchableOpacity>
 
             <StudyToolsMenu bottom={insets.bottom + Spacing.lg + STOPWATCH_BUTTON_SIZE + Spacing.md} />
@@ -583,6 +573,8 @@ interface StudyDaySection {
 /** The calendar only edits sessions; a new one would start as TUSBuddy's form does. */
 const NEW_SESSION_CHOICE: StudyChoice = { subject: 'Karışık', kind: 'pass', pass: 1 };
 const STOPWATCH_BUTTON_SIZE = 56;
+/** The month bar's arrows are drawn 32 points square; their slop makes a full target. */
+const STEP_SLOP = { top: 8, right: 8, bottom: 8, left: 8 };
 /** Tail padding that keeps the last card out from under the floating stopwatch and tools buttons. */
 const STOPWATCH_BUTTON_CLEARANCE = STOPWATCH_BUTTON_SIZE + STUDY_TOOLS_FAB_SIZE + Spacing.md + 2 * Spacing.lg;
 
@@ -598,19 +590,9 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
             paddingBottom: Spacing.sm,
             gap: Spacing.xs,
         },
-        stepButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.sm },
+        stepButton: { width: 32, height: 32 },
         rangeTitle: { flexShrink: 1, fontSize: isCompact ? FontSize.sm : FontSize.lg, fontWeight: '700', color: colors.textSecondary },
-        segmentTrack: {
-            marginLeft: 'auto',
-            flexDirection: 'row',
-            backgroundColor: colors.bgInput,
-            borderRadius: BorderRadius.full,
-            padding: 3,
-        },
-        segment: { paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full },
-        segmentSelected: { backgroundColor: colors.bgCard, ...Shadows.sm },
-        segmentText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textMuted },
-        segmentTextSelected: { color: colors.textPrimary },
+        modeSwitch: { marginLeft: 'auto' },
 
         weekdayRow: { flexDirection: 'row', paddingHorizontal: Spacing.sm, paddingBottom: Spacing.xs },
         weekdayLabel: {
@@ -645,10 +627,5 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
             justifyContent: 'center',
             ...Shadows.md,
         },
-
-        emptyState: { alignItems: 'center', paddingTop: Spacing.xxxl, paddingHorizontal: Spacing.xl, gap: Spacing.sm },
-        emptyIcon: { fontSize: 34 },
-        emptyText: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textSecondary, textAlign: 'center' },
-        emptyHint: { fontSize: FontSize.md, color: colors.textMuted, textAlign: 'center' },
     });
 }

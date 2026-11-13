@@ -10,6 +10,7 @@ import {
     type StudySession,
 } from '../../lib/studyCalendar';
 import { CheckIcon } from './StopwatchIcons';
+import { MoreIcon } from '../ui/icons';
 import { studyTypeLabel } from './StudyTypeChips';
 import { timelineStyles } from './timelineStyles';
 
@@ -51,7 +52,7 @@ function StudySessionCard({ session, onOpenMenu }: StudySessionCardProps) {
                             `Options for the ${session.subject} session`,
                         )}
                     >
-                        <Text style={styles.sideButtonText}>•••</Text>
+                        <MoreIcon color={colors.textSecondary} size={18} />
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>

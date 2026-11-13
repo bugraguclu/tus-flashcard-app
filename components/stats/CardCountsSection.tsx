@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { CardCountStats } from '../../lib/ankiStats';
-import StatsCard from './StatsCard';
+import { Card } from '../ui/Card';
 import StatsTiles from './StatsTiles';
 import { useStatsFormat } from './useStatsFormat';
 
@@ -22,7 +22,7 @@ export default function CardCountsSection({ counts }: { counts: CardCountStats }
     ];
 
     return (
-        <StatsCard title={l('Kart durumu', 'Card Counts')}>
+        <Card padded title={l('Kart durumu', 'Card Counts')}>
             <View
                 style={styles.bar}
                 accessible
@@ -55,7 +55,7 @@ export default function CardCountsSection({ counts }: { counts: CardCountStats }
                     },
                 ]}
             />
-        </StatsCard>
+        </Card>
     );
 }
 

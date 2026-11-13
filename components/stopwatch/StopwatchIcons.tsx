@@ -1,6 +1,7 @@
 import React from 'react';
 import Svg, { Circle, G, Line, Path, Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
+import { useThemeColors } from '../../constants/theme';
 
 /**
  * Line icons for the Kronometre and the study calendar, drawn on a 24-unit grid. They are
@@ -151,10 +152,11 @@ export function MinusIcon({ color, size }: IconProps) {
 }
 
 export function PlusCircleIcon({ color, size }: IconProps) {
+    const { onAccent } = useThemeColors();
     return (
         <IconFrame size={size}>
             <Circle cx={12} cy={12} r={9.4} fill={color} />
-            <Path d="M12 7.6v8.8M7.6 12h8.8" fill="none" stroke="#ffffff" strokeWidth={2.2} strokeLinecap="round" />
+            <Path d="M12 7.6v8.8M7.6 12h8.8" fill="none" stroke={onAccent} strokeWidth={2.2} strokeLinecap="round" />
         </IconFrame>
     );
 }

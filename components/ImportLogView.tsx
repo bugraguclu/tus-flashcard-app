@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from './AppText';
-import { BorderRadius, FontSize, Spacing, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, type ColorScheme } from '../constants/theme';
+import { Card } from './ui/Card';
+import { ChevronDownIcon, ChevronUpIcon } from './ui/icons';
+import { HIT_TARGET, Radius, Type } from './ui/tokens';
 import {
     IMPORT_LOG_STATUSES,
     importLogFailureCount,
@@ -127,12 +130,11 @@ export default function ImportLogView({ log, colors, l, extraLines = [] }: Impor
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>{l('İçe aktarma günlüğü', 'Import Log')}</Text>
-            <Text style={styles.found}>
-                {l(`Dosyada ${log.found} not bulundu.`, `${log.found} notes found in file.`)}
-            </Text>
-
+        <Card
+            padded
+            title={l('İçe aktarma günlüğü', 'Import Log')}
+            description={l(`Dosyada ${log.found} not bulundu.`, `${log.found} notes found in file.`)}
+        >
             <View style={styles.summaryBlock}>
                 {summary.map((line) => (
                     <Text key={line} style={styles.summaryLine}>{line}</Text>
@@ -153,6 +155,7 @@ export default function ImportLogView({ log, colors, l, extraLines = [] }: Impor
                 const tone = statusTone(status);
                 return (
                     <View key={status} style={styles.group}>
+                        {/* A disclosure header: the kit's rows carry no expanded state. */}
                         <TouchableOpacity
                             style={styles.groupHeader}
                             onPress={() => toggle(status)}
@@ -170,6 +173,9 @@ export default function ImportLogView({ log, colors, l, extraLines = [] }: Impor
                             <Text style={styles.groupTitle} numberOfLines={1}>{statusHeading(status, l)}</Text>
                             <Text style={styles.groupCount}>{counts[status]}</Text>
                             <Text style={styles.groupToggle}>{isOpen ? l('Gizle', 'Hide') : l('Göster', 'Show')}</Text>
+                            {isOpen
+                                ? <ChevronUpIcon color={colors.accent} size={14} />
+                                : <ChevronDownIcon color={colors.accent} size={14} />}
                         </TouchableOpacity>
                         {isOpen ? (
                             <View style={styles.groupBody}>
@@ -194,33 +200,23 @@ export default function ImportLogView({ log, colors, l, extraLines = [] }: Impor
                     </View>
                 );
             })}
-        </View>
+        </Card>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        container: {
-            gap: Spacing.sm,
-            padding: Spacing.md,
-            borderRadius: BorderRadius.md,
-            borderWidth: 1,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
-        },
-        title: { fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
-        found: { fontSize: FontSize.sm, color: colors.textMuted },
-        summaryBlock: { gap: 4, marginTop: 2 },
-        summaryLine: { fontSize: FontSize.md, lineHeight: 21, color: colors.textPrimary },
-        summaryWarning: { color: colors.btnHard },
+        summaryBlock: { gap: 4 },
+        summaryLine: { ...Type.body, lineHeight: 21, color: colors.textPrimary },
+        summaryWarning: { color: colors.warning },
         group: {
-            borderRadius: BorderRadius.sm,
+            borderRadius: Radius.inset,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: colors.border,
             overflow: 'hidden',
         },
         groupHeader: {
-            minHeight: 46,
+            minHeight: HIT_TARGET + 2,
             flexDirection: 'row',
             alignItems: 'center',
             gap: Spacing.sm,
@@ -228,8 +224,8 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgSecondary,
         },
         groupDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.textMuted },
-        groupDotGood: { backgroundColor: colors.btnGood },
-        groupDotBad: { backgroundColor: colors.btnAgain },
+        groupDotGood: { backgroundColor: colors.success },
+        groupDotBad: { backgroundColor: colors.danger },
         groupTitle: { flex: 1, fontSize: FontSize.sm, fontWeight: '700', color: colors.textPrimary },
         groupCount: { fontSize: FontSize.sm, fontWeight: '800', color: colors.textPrimary },
         groupToggle: { fontSize: FontSize.xs, fontWeight: '700', color: colors.accent },

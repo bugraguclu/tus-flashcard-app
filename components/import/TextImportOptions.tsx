@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { View } from 'react-native';
-import { Text } from '../AppText';
+import { Section } from '../ui/Card';
+import { ValueRow } from '../ui/Rows';
 import { ChoiceModal } from './ImportControls';
 import type { ImportStyles } from './importStyles';
 import { importCopy } from './importCopy';
@@ -34,7 +34,6 @@ export default function TextImportOptions(props: {
     tagUpdatedNotes: string;
     setTagUpdatedNotes: (value: string) => void;
     styles: ImportStyles;
-    mutedColor: string;
     cancelLabel: string;
     l: (tr: string, en: string) => string;
 }) {
@@ -42,25 +41,19 @@ export default function TextImportOptions(props: {
         separator, guessedSeparator, onSeparator, allowHtml, setAllowHtml, notetypeColumn, deckColumn,
         noteTypeName, deckName, onPickNoteType, onPickDeck, duplicateResolution, setDuplicateResolution,
         matchScope, setMatchScope, tagAllNotes, setTagAllNotes, tagUpdatedNotes, setTagUpdatedNotes,
-        styles, mutedColor, cancelLabel, l,
+        styles, cancelLabel, l,
     } = props;
     const [picker, setPicker] = useState<null | 'separator' | 'existing' | 'matchScope'>(null);
     const { existingNotesLabel, matchScopeLabel, separatorLabel } = importCopy(l);
-    const { renderOptionRow, renderToggleRow, renderTagRow } = importRowRenderers(styles, mutedColor);
+    const { renderOptionRow, renderToggleRow, renderTagRow } = importRowRenderers(styles);
     const fromFile = (label: string, column: number) => (
-        <View style={styles.optionRow}>
-            <Text style={styles.optionLabel}>{label}</Text>
-            <Text style={styles.optionValueMuted} numberOfLines={1}>
-                {l(`Dosyadan (sütun ${column})`, `From file (column ${column})`)}
-            </Text>
-        </View>
+        <ValueRow key={label} label={label} value={l(`Dosyadan (sütun ${column})`, `From file (column ${column})`)} />
     );
     const close = () => setPicker(null);
 
     return (
         <>
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}</Text>
+            <Section label={l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}>
                 {renderOptionRow(
                     separator
                         ? l('Alanları ayıran', 'Fields separated by')
@@ -105,12 +98,11 @@ export default function TextImportOptions(props: {
                     tagUpdatedNotes,
                     setTagUpdatedNotes,
                 )}
-            </View>
+            </Section>
 
             <ChoiceModal
                 visible={picker === 'separator'}
                 title={l('Alanları ayıran', 'Fields separated by')}
-                styles={styles}
                 cancelLabel={cancelLabel}
                 options={SEPARATOR_CHOICES.map((choice) => ({
                     value: choice.delimiter,
@@ -127,7 +119,6 @@ export default function TextImportOptions(props: {
             <ChoiceModal
                 visible={picker === 'existing'}
                 title={l('Mevcut notlar', 'Existing notes')}
-                styles={styles}
                 cancelLabel={cancelLabel}
                 options={(['update', 'preserve', 'duplicate'] as const).map((value) => ({
                     value,
@@ -149,7 +140,6 @@ export default function TextImportOptions(props: {
             <ChoiceModal
                 visible={picker === 'matchScope'}
                 title={l('Eşleşme kapsamı', 'Match scope')}
-                styles={styles}
                 cancelLabel={cancelLabel}
                 options={(['notetype', 'notetypeAndDeck'] as const).map((value) => ({
                     value,

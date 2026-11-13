@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { Text } from '../AppText';
+import { Section, SectionLabel } from '../ui/Card';
+import { Notice } from '../ui/Feedback';
 import { ChoiceModal } from './ImportControls';
 import type { ImportStyles } from './importStyles';
 import type { UpdateChoice } from './importCopy';
@@ -22,23 +23,21 @@ export default function PackageImportOptions(props: {
     updateNoteTypes: UpdateChoice;
     setUpdateNoteTypes: (value: UpdateChoice) => void;
     styles: ImportStyles;
-    mutedColor: string;
     cancelLabel: string;
     l: (tr: string, en: string) => string;
 }) {
     const {
         fileType, withScheduling, setWithScheduling, withDeckConfigs, setWithDeckConfigs,
-        updateNotes, setUpdateNotes, updateNoteTypes, setUpdateNoteTypes, styles, mutedColor, cancelLabel, l,
+        updateNotes, setUpdateNotes, updateNoteTypes, setUpdateNoteTypes, styles, cancelLabel, l,
     } = props;
     const [picker, setPicker] = useState<null | 'updateNotes' | 'updateNoteTypes'>(null);
     const { updateChoiceLabel } = importCopy(l);
-    const { renderOptionRow, renderToggleRow } = importRowRenderers(styles, mutedColor);
+    const { renderOptionRow, renderToggleRow } = importRowRenderers(styles);
     return (
         <>
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}</Text>
-                {fileType === 'apkg' ? (
-                    <>
+            {fileType === 'apkg' ? (
+                <>
+                    <Section label={l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}>
                         {renderToggleRow(
                             l('Çalışma ilerlemesini içe aktar', 'Import any learning progress'),
                             l(
@@ -54,7 +53,14 @@ export default function PackageImportOptions(props: {
                             withDeckConfigs,
                             () => setWithDeckConfigs((value) => !value),
                         )}
-                        <Text style={styles.subsectionTitle}>{l('GÜNCELLEMELER', 'UPDATES')}</Text>
+                    </Section>
+                    <Section
+                        label={l('GÜNCELLEMELER', 'UPDATES')}
+                        footnote={l(
+                            'Alanları ya da kart türleri değişmiş bir not türü birleştirilmez, ayrı bir kopya olarak eklenir.',
+                            'A note type whose fields or card types have changed is not merged; it is added as a separate copy.',
+                        )}
+                    >
                         {renderOptionRow(
                             l('Notları güncelle', 'Update notes'),
                             updateChoiceLabel(updateNotes),
@@ -65,28 +71,24 @@ export default function PackageImportOptions(props: {
                             updateChoiceLabel(updateNoteTypes),
                             () => setPicker('updateNoteTypes'),
                         )}
-                        <Text style={styles.optionHint}>
-                            {l(
-                                'Alanları ya da kart türleri değişmiş bir not türü birleştirilmez, ayrı bir kopya olarak eklenir.',
-                                'A note type whose fields or card types have changed is not merged; it is added as a separate copy.',
-                            )}
-                        </Text>
-                    </>
-                ) : (
-                    <Text style={styles.destructiveNotice}>
+                    </Section>
+                </>
+            ) : (
+                <View style={styles.labelled}>
+                    <SectionLabel>{l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}</SectionLabel>
+                    <Notice tone="danger">
                         {l(
                             '⚠️ Koleksiyonunuz, ayarları ve çalışma geçmişiyle birlikte paketteki koleksiyonla değiştirilir. Medya dosyaları silinmez.',
                             '⚠️ Your collection, with its settings and review history, is replaced by the one in the package. Media files are not deleted.',
                         )}
-                    </Text>
-                )}
-            </View>
+                    </Notice>
+                </View>
+            )}
             <ChoiceModal
                 visible={picker !== null}
                 title={picker === 'updateNoteTypes'
                     ? l('Not türlerini güncelle', 'Update note types')
                     : l('Notları güncelle', 'Update notes')}
-                styles={styles}
                 cancelLabel={cancelLabel}
                 options={(['ifNewer', 'always', 'never'] as const).map((value) => ({
                     value,

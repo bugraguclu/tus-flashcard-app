@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { AccessibilityInfo, Animated, Platform, StyleSheet } from 'react-native';
 import { Text } from './AppText';
+import { CheckIcon } from './ui/icons';
 import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 
 export interface TransientNoticeMessage {
@@ -45,7 +46,7 @@ export default function TransientNotice({ message }: { message: TransientNoticeM
             accessibilityLiveRegion="polite"
             accessibilityRole={Platform.OS === 'web' ? ('status' as never) : undefined}
         >
-            <Text style={styles.check}>✓</Text>
+            <CheckIcon color={colors.accent} size={18} />
             <Text style={styles.text} numberOfLines={2}>{message.text}</Text>
         </Animated.View>
     );
@@ -67,7 +68,6 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.textPrimary,
             ...dropShadow({ y: 4, blur: 14, opacity: 0.18, elevation: 6 }),
         },
-        check: { fontSize: FontSize.md, fontWeight: '800', color: colors.accent },
         text: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '600', color: colors.bgCard },
     });
 }

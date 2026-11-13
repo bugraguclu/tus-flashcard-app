@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useMemo, type ReactNode } from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
     BLANK_CANVAS_BACKGROUNDS,
@@ -11,7 +11,10 @@ import {
 } from '../../lib/blankCanvas';
 import type { BlankCanvasSetup } from '../../lib/blankCanvasSetup';
 import PaperSwatch, { pageColorLabel, paperLabel } from '../PaperSwatch';
-import SwipeDismissSheet from '../SwipeDismissSheet';
+import { Button } from '../ui/Button';
+import { SectionLabel } from '../ui/Card';
+import { AppSheet } from '../ui/Sheet';
+import { Radius } from '../ui/tokens';
 
 type Localize = (turkish: string, english: string) => string;
 
@@ -28,150 +31,106 @@ interface PageOptionsSheetProps {
     onClose: () => void;
 }
 
-/** Paper, page colour and shape, changed in place while the drawing stays on the page. */
+/**
+ * Paper, page colour and shape, changed in place while the drawing stays on the page. Each choice
+ * is a tile with a preview of the page it gives, which a chip cannot draw.
+ */
 export function PageOptionsSheet({ visible, setup, onChange, onClose }: PageOptionsSheetProps) {
     const { l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
 
+    const tile = (key: string, label: string, selected: boolean, onPress: () => void, preview: ReactNode) => (
+        <TouchableOpacity
+            key={key}
+            style={[styles.tile, selected && styles.tileActive]}
+            onPress={onPress}
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityState={{ selected }}
+        >
+            {preview}
+            <Text style={[styles.tileText, selected && styles.tileTextActive]}>{label}</Text>
+        </TouchableOpacity>
+    );
+
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <View style={styles.overlay}>
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={onClose}
-                    accessibilityLabel={l('Sayfa seçeneklerini kapat', 'Close page options')}
-                />
-                <SwipeDismissSheet active={visible} style={styles.sheet} onDismiss={onClose}>
-                    <Text style={styles.title}>{l('Sayfa', 'Page')}</Text>
-
-                    <Text style={styles.groupLabel}>{l('Kağıt', 'Paper')}</Text>
-                    <View style={styles.chipRow}>
-                        {BLANK_CANVAS_PAPERS.map((paper) => {
-                            const selected = setup.paper === paper;
-                            return (
-                                <TouchableOpacity
-                                    key={paper}
-                                    style={[styles.chip, selected && styles.chipActive]}
-                                    onPress={() => onChange({ ...setup, paper })}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={paperLabel(paper, l)}
-                                    accessibilityState={{ selected }}
-                                >
-                                    <PaperSwatch
-                                        paper={paper}
-                                        background={setup.background}
-                                        width={40}
-                                        height={30}
-                                        style={styles.chipSwatch}
-                                    />
-                                    <Text style={[styles.chipText, selected && styles.chipTextActive]}>
-                                        {paperLabel(paper, l)}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
+        <AppSheet
+            visible={visible}
+            onClose={onClose}
+            title={l('Sayfa', 'Page')}
+            backdropLabel={l('Sayfa seçeneklerini kapat', 'Close page options')}
+        >
+            <View style={styles.groups}>
+                <View style={styles.group}>
+                    <SectionLabel>{l('Kağıt', 'Paper')}</SectionLabel>
+                    <View style={styles.tileRow}>
+                        {BLANK_CANVAS_PAPERS.map((paper) => tile(
+                            paper,
+                            paperLabel(paper, l),
+                            setup.paper === paper,
+                            () => onChange({ ...setup, paper }),
+                            <PaperSwatch paper={paper} background={setup.background} width={40} height={30} style={styles.swatch} />,
+                        ))}
                     </View>
+                </View>
 
-                    <Text style={styles.groupLabel}>{l('Zemin', 'Page colour')}</Text>
-                    <View style={styles.chipRow}>
-                        {BLANK_CANVAS_BACKGROUNDS.map((option) => {
-                            const selected = setup.background === option.color;
-                            return (
-                                <TouchableOpacity
-                                    key={option.id}
-                                    style={[styles.chip, selected && styles.chipActive]}
-                                    onPress={() => onChange({ ...setup, background: option.color })}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={pageColorLabel(option.id, l)}
-                                    accessibilityState={{ selected }}
-                                >
-                                    <View style={[styles.chipSwatch, styles.colorSwatch, { backgroundColor: option.color }]} />
-                                    <Text style={[styles.chipText, selected && styles.chipTextActive]}>
-                                        {pageColorLabel(option.id, l)}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
+                <View style={styles.group}>
+                    <SectionLabel>{l('Zemin', 'Page colour')}</SectionLabel>
+                    <View style={styles.tileRow}>
+                        {BLANK_CANVAS_BACKGROUNDS.map((option) => tile(
+                            option.id,
+                            pageColorLabel(option.id, l),
+                            setup.background === option.color,
+                            () => onChange({ ...setup, background: option.color }),
+                            <View style={[styles.swatch, styles.colorSwatch, { backgroundColor: option.color }]} />,
+                        ))}
                     </View>
+                </View>
 
-                    <Text style={styles.groupLabel}>{l('Biçim', 'Shape')}</Text>
-                    <View style={styles.chipRow}>
+                <View style={styles.group}>
+                    <SectionLabel>{l('Biçim', 'Shape')}</SectionLabel>
+                    <View style={styles.tileRow}>
                         {BLANK_CANVAS_SHAPES.map((option) => {
                             const selected = setup.shape === option.id;
                             // The outline is the page's shape fitted into a 36 x 28 box.
                             const fit = Math.min(36 / option.width, 28 / option.height);
-                            return (
-                                <TouchableOpacity
-                                    key={option.id}
-                                    style={[styles.chip, selected && styles.chipActive]}
-                                    onPress={() => onChange({ ...setup, shape: option.id })}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={shapeLabel(option.id, l)}
-                                    accessibilityState={{ selected }}
-                                >
-                                    <View style={styles.shapeBox}>
-                                        <View
-                                            style={[
-                                                styles.shapeGlyph,
-                                                { width: option.width * fit, height: option.height * fit },
-                                                selected && { borderColor: colors.accent },
-                                            ]}
-                                        />
-                                    </View>
-                                    <Text style={[styles.chipText, selected && styles.chipTextActive]}>
-                                        {shapeLabel(option.id, l)}
-                                    </Text>
-                                </TouchableOpacity>
+                            return tile(
+                                option.id,
+                                shapeLabel(option.id, l),
+                                selected,
+                                () => onChange({ ...setup, shape: option.id }),
+                                <View style={styles.shapeBox}>
+                                    <View
+                                        style={[
+                                            styles.shapeGlyph,
+                                            { width: option.width * fit, height: option.height * fit },
+                                            selected && { borderColor: colors.accent },
+                                        ]}
+                                    />
+                                </View>,
                             );
                         })}
                     </View>
-
-                    <TouchableOpacity
-                        style={styles.doneButton}
-                        onPress={onClose}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Sayfa seçeneklerini kapat', 'Close page options')}
-                    >
-                        <Text style={styles.doneText}>{l('Tamam', 'Done')}</Text>
-                    </TouchableOpacity>
-                </SwipeDismissSheet>
+                </View>
             </View>
-        </Modal>
+
+            <Button
+                label={l('Tamam', 'Done')}
+                onPress={onClose}
+                accessibilityLabel={l('Sayfa seçeneklerini kapat', 'Close page options')}
+                style={styles.done}
+            />
+        </AppSheet>
     );
 }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        overlay: {
-            flex: 1,
-            backgroundColor: 'rgba(0, 0, 0, 0.35)',
-            justifyContent: 'flex-end',
-        },
-        sheet: {
-            backgroundColor: colors.bgCard,
-            borderTopLeftRadius: BorderRadius.lg,
-            borderTopRightRadius: BorderRadius.lg,
-            paddingHorizontal: Spacing.lg,
-            paddingTop: 44,
-            paddingBottom: 32,
-            ...Shadows.lg,
-        },
-        title: {
-            fontSize: FontSize.lg,
-            fontWeight: '700',
-            color: colors.textPrimary,
-            marginBottom: Spacing.xs,
-        },
-        groupLabel: {
-            fontSize: FontSize.sm,
-            fontWeight: '700',
-            color: colors.textSecondary,
-            marginTop: Spacing.md,
-            marginBottom: Spacing.sm,
-        },
-        chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-        chip: {
+        groups: { gap: Spacing.lg },
+        group: { gap: Spacing.sm },
+        tileRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+        tile: {
             minWidth: 72,
             flexGrow: 1,
             alignItems: 'center',
@@ -179,26 +138,19 @@ function createStyles(colors: ColorScheme) {
             gap: 6,
             paddingVertical: Spacing.sm,
             paddingHorizontal: Spacing.sm,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             borderWidth: 2,
-            borderColor: colors.borderLight,
-            backgroundColor: colors.bgInput,
+            borderColor: colors.border,
+            backgroundColor: colors.bgCard,
         },
-        chipActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-        chipSwatch: { borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+        tileActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
+        // The previews are small pictures of a page, so their corners are the page's, not a control's.
+        swatch: { borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
         colorSwatch: { width: 40, height: 30 },
-        chipText: { fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '600' },
-        chipTextActive: { color: colors.textPrimary },
+        tileText: { fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '600' },
+        tileTextActive: { color: colors.textPrimary },
         shapeBox: { width: 40, height: 30, alignItems: 'center', justifyContent: 'center' },
         shapeGlyph: { borderRadius: 3, borderWidth: 2, borderColor: colors.textMuted },
-        doneButton: {
-            marginTop: Spacing.xl,
-            minHeight: 50,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
-        doneText: { color: colors.white, fontWeight: '800', fontSize: FontSize.md },
+        done: { marginTop: Spacing.xl },
     });
 }

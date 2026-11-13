@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { Type } from '../ui/tokens';
+import { BorderRadius, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import type { StudyKind } from '../../lib/stopwatch';
 import { FormRow, FormSelector } from './FormControls';
@@ -98,7 +99,7 @@ export default function StudyStartSheet({ visible, initial, recentSubjects, pass
                     accessibilityLabel={l(`${choice.subject}, ${typeLabel}: kronometreyi başlat`, `Start the stopwatch: ${choice.subject}, ${typeLabel}`)}
                 >
                     <PlayIcon color={colors.white} size={22} />
-                    <Text style={styles.startText}>{l('Başla', 'Start')}</Text>
+                    <Text style={[styles.startText, { color: colors.onAccent }]}>{l('Başla', 'Start')}</Text>
                 </TouchableOpacity>
             </View>
         </StopwatchSheet>
@@ -116,5 +117,5 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: Spacing.sm,
     },
-    startText: { color: '#ffffff', fontSize: FontSize.xl, fontWeight: '700' },
+    startText: { ...Type.button },
 });
