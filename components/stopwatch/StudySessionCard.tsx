@@ -6,11 +6,11 @@ import { useI18n } from '../../hooks/useI18n';
 import {
     formatClockHhMm,
     formatSessionDuration,
-    studySubjectInitial,
     type StudySession,
 } from '../../lib/studyCalendar';
 import { CheckIcon } from './StopwatchIcons';
 import { MoreIcon } from '../ui/icons';
+import { SubjectTile } from './SubjectArt';
 import { studyTypeLabel } from './StudyTypeChips';
 import { timelineStyles } from './timelineStyles';
 
@@ -21,7 +21,7 @@ interface StudySessionCardProps {
 
 /**
  * One session on a study timeline, as the Kronometre and the study calendar both draw it, after
- * TUSBuddy: the options button and a tick on the line, then the subject, its type chip ("N.
+ * TUSBuddy: the options button and a tick on the line, then the course's picture, the subject, its type chip ("N.
  * Tekrar", "Soru Çözümü"...), the study and break time with the number of breaks, the learner's
  * note and the time of day it ran. Whether it was measured, entered by hand or answered on cards
  * is in its details.
@@ -63,9 +63,7 @@ function StudySessionCard({ session, onOpenMenu }: StudySessionCardProps) {
             </View>
             <View style={styles.column}>
                 <View style={styles.card}>
-                    <View style={styles.tile}>
-                        <Text style={styles.tileText}>{studySubjectInitial(session.subject)}</Text>
-                    </View>
+                    <SubjectTile subject={session.subject} />
                     <View style={styles.body}>
                         <View style={styles.titleRow}>
                             <Text style={styles.subject} numberOfLines={1}>{session.subject}</Text>

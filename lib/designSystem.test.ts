@@ -47,6 +47,7 @@ const COLOUR_LITERALS_ALLOWED: Record<string, string> = {
     'components/photo-editor/CropFrame.tsx': 'the crop frame is drawn over the photo itself',
     'components/photo-editor/PhotoEditorModal.tsx': 'the eraser ring and the compare badge are drawn over the photo itself',
     'components/stopwatch/SleepingPanda.tsx': 'an illustration',
+    'components/stopwatch/SubjectArt.tsx': 'the course illustrations',
     'components/stopwatch/StopwatchHero.tsx': 'translucent white drawn over the green Kronometre hero',
     'app/catalog.tsx': 'the catalog hero artwork',
 };

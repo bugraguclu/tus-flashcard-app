@@ -12,7 +12,7 @@ import NoStudyPlanCard from './NoStudyPlanCard';
 import PlannedStudyCard from './PlannedStudyCard';
 import SleepingPanda from './SleepingPanda';
 import StudySessionCard from './StudySessionCard';
-import { CalendarIcon, HourglassIcon, MinusIcon } from './StopwatchIcons';
+import { HourglassIcon, MinusIcon, TimelineListIcon } from './StopwatchIcons';
 import { TIMELINE_LINE_X, timelineStyles } from './timelineStyles';
 import { ChevronRightIcon } from '../ui/icons';
 
@@ -97,7 +97,7 @@ export default function StopwatchTimeline({
                 ? l(`Sınava ${examLabel}. Sınav tarihini değiştirin.`, `${examLabel} until the exam. Change the exam date.`)
                 : examLabel}
         >
-            <HourglassIcon color={colors.streak} size={15} />
+            <HourglassIcon color={colors.streak} sandColor={colors.streakBg} size={16} />
             <Text style={styles.examText}>{examLabel}</Text>
         </TouchableOpacity>
     );
@@ -177,13 +177,11 @@ export default function StopwatchTimeline({
                 style={styles.calendarCard}
                 onPress={onOpenCalendar}
                 accessibilityRole="button"
-                accessibilityLabel={l('Çalışma Takvimi. Tüm çalışmalarınızı takvimde görün.', 'Study Calendar. See all your sessions on the calendar.')}
+                accessibilityLabel={l('Çalışma Takviminiz. Tüm çalışmalarınızı takvimde görün.', 'Your Study Calendar. See all your sessions on the calendar.')}
             >
-                <View style={styles.calendarTile}>
-                    <CalendarIcon color={colors.streak} size={22} />
-                </View>
+                <TimelineListIcon color={colors.streak} size={30} />
                 <View style={styles.calendarCopy}>
-                    <Text style={styles.calendarTitle}>{l('Çalışma Takvimi', 'Study Calendar')}</Text>
+                    <Text style={styles.calendarTitle}>{l('Çalışma Takviminiz', 'Your Study Calendar')}</Text>
                     <Text style={styles.calendarHint}>{l('Tüm çalışmalarınızı takvimde görün', 'See all your sessions on the calendar')}</Text>
                 </View>
                 <ChevronRightIcon color={colors.textMuted} size={18} />
@@ -209,11 +207,13 @@ function createStyles(colors: ColorScheme) {
             gap: Spacing.xs,
             backgroundColor: colors.bgCard,
             borderRadius: BorderRadius.md,
-            paddingHorizontal: Spacing.md,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            paddingHorizontal: Spacing.sm,
             paddingVertical: 5,
             ...Shadows.sm,
         },
-        examText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+        examText: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
         todayEmpty: { alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.sm },
         todayEmptyText: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
         missedCard: { alignItems: 'center' },
@@ -223,22 +223,17 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             gap: Spacing.md,
             marginHorizontal: Spacing.lg,
-            marginTop: Spacing.lg,
+            marginTop: Spacing.xxl,
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
-            padding: Spacing.md,
+            borderRadius: BorderRadius.md,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            paddingHorizontal: Spacing.lg,
+            paddingVertical: Spacing.md,
             ...Shadows.sm,
         },
-        calendarTile: {
-            width: 40,
-            height: 40,
-            borderRadius: BorderRadius.md,
-            backgroundColor: colors.bgInput,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
         calendarCopy: { flex: 1, gap: 2 },
-        calendarTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+        calendarTitle: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
         calendarHint: { fontSize: FontSize.sm, color: colors.textSecondary },
     });
 }

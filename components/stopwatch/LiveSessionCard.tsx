@@ -1,11 +1,12 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { blockProgress, formatStopwatchClock, type StudyKind } from '../../lib/stopwatch';
-import { formatClockHhMm, formatSessionDuration, studySubjectInitial } from '../../lib/studyCalendar';
+import { formatClockHhMm, formatSessionDuration } from '../../lib/studyCalendar';
 import { BookIcon, CheckIcon } from './StopwatchIcons';
 import { studyTypeLabel } from './StudyTypeChips';
+import { SubjectTile } from './SubjectArt';
 import { timelineStyles } from './timelineStyles';
 
 const MINUTE_MS = 60_000;
@@ -34,9 +35,10 @@ interface LiveSessionCardProps {
 
 /**
  * The session the stopwatch is timing, at the top of today as TUSBuddy shows it: the book beside
- * it for the session's note, its study and break so far, "Oturum süreniz", the note (or "İyi
- * çalışmalar") and how far the current study block or break has gone against its length — "%60 ·
- * 20 dk kaldı", "%100 · 15 dk aşıldı" — with the start of its time range.
+ * it for the session's note, the course's picture, its study and break so far, "Oturum süreniz"
+ * (on a break, "Mola süreniz"), the note (or "İyi çalışmalar"; on a break, "Molanın keyfini
+ * çıkarın") and how far the current study block or break has gone against its length — "%60 · 20
+ * dk kaldı", "%100 · 15 dk aşıldı", "Mola aşımı: 3 dk" — with the start of its time range.
  */
 export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEditNote }: LiveSessionCardProps) {
     const { l, locale } = useI18n();
@@ -46,18 +48,21 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
     const type = studyTypeLabel(l, live.kind, live.pass);
     const barColor = live.onBreak ? colors.streak : colors.btnGood;
 
+    const overMinutes = progress ? Math.floor(progress.overMs / MINUTE_MS) : 0;
     const status = !progress
         ? null
-        : progress.overMs >= MINUTE_MS
-            ? l(`${Math.floor(progress.overMs / MINUTE_MS)} dk aşıldı`, `${Math.floor(progress.overMs / MINUTE_MS)} min over`)
+        : overMinutes >= 1
+            ? live.onBreak
+                ? l(`Mola aşımı: ${overMinutes} dk`, `Break over by ${overMinutes} min`)
+                : l(`${overMinutes} dk aşıldı`, `${overMinutes} min over`)
             : progress.remainingMs <= 0
-                ? l('Süre doldu', "Time's up")
+                ? l('Süresi doldu', "Time's up")
                 : l(`${Math.ceil(progress.remainingMs / MINUTE_MS)} dk kaldı`, `${Math.ceil(progress.remainingMs / MINUTE_MS)} min left`);
     const statusColor = progress && progress.remainingMs <= 0
         ? live.onBreak ? colors.btnAgain : colors.btnGood
         : colors.textSecondary;
     const message = live.onBreak
-        ? l('Moladasınız', 'On a break')
+        ? l('Molanın keyfini çıkarın', 'Enjoy your break')
         : live.note || l('İyi çalışmalar', 'Happy studying');
 
     return (
@@ -87,15 +92,18 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                 <View
                     style={[styles.card, local.card]}
                     accessible
-                    accessibilityLabel={l(
-                        `Şu an ${live.subject}, ${type}${live.onBreak ? ', molada' : ''}. Oturum süreniz ${formatStopwatchClock(live.studyMs)}.${status ? ` ${status}.` : ''}`,
-                        `Now ${live.subject}, ${type}${live.onBreak ? ', on a break' : ''}. Session time ${formatStopwatchClock(live.studyMs)}.${status ? ` ${status}.` : ''}`,
-                    )}
+                    accessibilityLabel={live.onBreak
+                        ? l(
+                            `Şu an ${live.subject}, ${type}, molada. Mola süreniz ${formatStopwatchClock(live.phaseMs)}.${status ? ` ${status}.` : ''}`,
+                            `Now ${live.subject}, ${type}, on a break. Break time ${formatStopwatchClock(live.phaseMs)}.${status ? ` ${status}.` : ''}`,
+                        )
+                        : l(
+                            `Şu an ${live.subject}, ${type}. Oturum süreniz ${formatStopwatchClock(live.studyMs)}.${status ? ` ${status}.` : ''}`,
+                            `Now ${live.subject}, ${type}. Session time ${formatStopwatchClock(live.studyMs)}.${status ? ` ${status}.` : ''}`,
+                        )}
                 >
                     <View style={local.top}>
-                        <View style={styles.tile}>
-                            <Text style={styles.tileText}>{studySubjectInitial(live.subject)}</Text>
-                        </View>
+                        <SubjectTile subject={live.subject} />
                         <View style={styles.body}>
                             <View style={styles.titleRow}>
                                 <Text style={styles.subject} numberOfLines={1}>{live.subject}</Text>
@@ -115,10 +123,17 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                             </View>
                         </View>
                     </View>
-                    <View style={[local.sessionPill, { backgroundColor: colors.accentLight, borderColor: colors.border }]}>
+                    <View
+                        style={[
+                            local.sessionPill,
+                            live.onBreak
+                                ? { backgroundColor: colors.streakBg, borderColor: colors.streak }
+                                : { backgroundColor: colors.accentLight, borderColor: colors.border },
+                        ]}
+                    >
                         <Text style={[local.sessionText, { color: colors.textPrimary }]}>
-                            {l('Oturum süreniz: ', 'Session time: ')}
-                            <Text style={local.sessionClock}>{formatStopwatchClock(live.studyMs)}</Text>
+                            {live.onBreak ? l('Mola süreniz: ', 'Break time: ') : l('Oturum süreniz: ', 'Session time: ')}
+                            <Text style={local.sessionClock}>{formatStopwatchClock(live.onBreak ? live.phaseMs : live.studyMs)}</Text>
                         </Text>
                     </View>
                     <View style={[local.rule, { backgroundColor: colors.borderLight }]} />
@@ -129,7 +144,9 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
                     >
-                        <BookIcon color={live.onBreak ? colors.streak : colors.btnGood} size={18} />
+                        <View style={[local.bookBadge, { backgroundColor: colors.bgCard, borderColor: colors.borderLight }]}>
+                            <BookIcon color={live.onBreak ? colors.streak : colors.btnGood} size={16} />
+                        </View>
                         <Text style={[local.message, { color: live.onBreak ? colors.streak : colors.textPrimary }]} numberOfLines={2}>{message}</Text>
                     </TouchableOpacity>
                     {progress ? (
@@ -168,6 +185,16 @@ const local = StyleSheet.create({
     sessionClock: { fontWeight: '800', fontVariant: ['tabular-nums'] },
     rule: { height: StyleSheet.hairlineWidth },
     messageRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    // The book in a small white circle, as TUSBuddy shows it before the note.
+    bookBadge: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        borderWidth: StyleSheet.hairlineWidth,
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...Shadows.sm,
+    },
     message: { flex: 1, fontSize: FontSize.md, fontWeight: '500' },
     progress: { gap: 4 },
     progressLabels: { flexDirection: 'row', justifyContent: 'space-between' },

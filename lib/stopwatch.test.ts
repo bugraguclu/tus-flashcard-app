@@ -21,6 +21,7 @@ import {
     manualSessionProblem,
     nextStopwatchAlert,
     normalizeStopwatchPrefs,
+    overlappingSession,
     normalizeStudyNote,
     normalizeSubjectName,
     parseRunningStopwatch,
@@ -30,6 +31,8 @@ import {
     startStopwatch,
     stepBlockMinutes,
     stepDailyGoal,
+    stopwatchAlertContent,
+    stopwatchAlerts,
     stopwatchElapsed,
     studySubjectKey,
     withStudySessionDefaults,
@@ -186,6 +189,45 @@ describe('hand entry', () => {
         expect(manualSessionProblem({ ...entry, breakMs: 90 * MINUTE }, NOW)).toBe('tooShort');
         expect(manualSessionProblem({ ...entry, breakMs: 89 * MINUTE }, NOW)).toBeNull();
     });
+
+    it('refuses a total break with no break counted, as TUSBuddy does', () => {
+        expect(manualSessionProblem({ ...entry, breakCount: 0 }, NOW)).toBe('breakCount');
+        expect(manualSessionProblem({ ...entry, breakCount: 0, breakMs: 0 }, NOW)).toBeNull();
+        expect(manualSessionProblem({ ...entry, breakCount: 0, breakMs: 30_000 }, NOW)).toBeNull();
+        // Left out, the count is not checked: the form leaves it out for an edited session whose
+        // breaks were saved before breaks were counted.
+        expect(manualSessionProblem({ startMs: entry.startMs, endMs: entry.endMs, breakMs: entry.breakMs }, NOW)).toBeNull();
+    });
+});
+
+describe('overlappingSession', () => {
+    const sessions = [
+        { id: 1, startMs: T0, endMs: T0 + 60 * MINUTE },
+        { id: 2, startMs: T0 + 120 * MINUTE, endMs: T0 + 150 * MINUTE },
+    ];
+
+    it('finds a session the span overlaps, starts inside or holds', () => {
+        expect(overlappingSession({ startMs: T0 + 30 * MINUTE, endMs: T0 + 90 * MINUTE }, sessions, null)?.id).toBe(1);
+        expect(overlappingSession({ startMs: T0 + 100 * MINUTE, endMs: T0 + 200 * MINUTE }, sessions, null)?.id).toBe(2);
+        expect(overlappingSession({ startMs: T0 + 10 * MINUTE, endMs: T0 + 20 * MINUTE }, sessions, null)?.id).toBe(1);
+        expect(overlappingSession({ startMs: T0 - MINUTE, endMs: T0 + 200 * MINUTE }, sessions, null)?.id).toBe(1);
+    });
+
+    it('lets sessions that only touch stand side by side', () => {
+        expect(overlappingSession({ startMs: T0 + 60 * MINUTE, endMs: T0 + 120 * MINUTE }, sessions, null)).toBeNull();
+        expect(overlappingSession({ startMs: T0 - 30 * MINUTE, endMs: T0 }, sessions, null)).toBeNull();
+    });
+
+    it('leaves out the session being edited', () => {
+        expect(overlappingSession({ startMs: T0 + 10 * MINUTE, endMs: T0 + 50 * MINUTE }, sessions, 1)).toBeNull();
+        expect(overlappingSession({ startMs: T0 + 10 * MINUTE, endMs: T0 + 130 * MINUTE }, sessions, 1)?.id).toBe(2);
+    });
+
+    it('counts a span without an id, the running stopwatch, as another session', () => {
+        const running = { id: null, startMs: T0 - MINUTE, endMs: T0 + 5 * MINUTE };
+        expect(overlappingSession({ startMs: T0, endMs: T0 + MINUTE }, [running], 7)).toBe(running);
+        expect(overlappingSession({ startMs: T0, endMs: T0 + MINUTE }, [running], null)).toBe(running);
+    });
 });
 
 describe('isValidStudySessionRecord', () => {
@@ -318,17 +360,45 @@ describe('block reminders', () => {
 
     it('falls due a study block after the current study phase began', () => {
         const state = startStopwatch('Anatomi', 1, T0);
-        expect(nextStopwatchAlert(state, prefs)).toEqual({ kind: 'focus', atMs: T0 + 50 * MINUTE });
+        expect(nextStopwatchAlert(state, prefs)).toEqual({ kind: 'focus', atMs: T0 + 50 * MINUTE, overMinutes: 0 });
     });
 
     it('falls due a break length after the break began', () => {
         const state = pauseStopwatch(startStopwatch('Anatomi', 1, T0), T0 + 50 * MINUTE);
-        expect(nextStopwatchAlert(state, prefs)).toEqual({ kind: 'break', atMs: T0 + 60 * MINUTE });
+        expect(nextStopwatchAlert(state, prefs)).toEqual({ kind: 'break', atMs: T0 + 60 * MINUTE, overMinutes: 0 });
     });
 
     it('is off for a phase whose length is zero', () => {
         const state = startStopwatch('Anatomi', 1, T0);
         expect(nextStopwatchAlert(state, { focusMinutes: 0, breakMinutes: 10 })).toBeNull();
+        expect(stopwatchAlerts(state, { focusMinutes: 0, breakMinutes: 10 })).toEqual([]);
+        expect(stopwatchAlerts(pauseStopwatch(state, T0 + MINUTE), { focusMinutes: 50, breakMinutes: 0 })).toEqual([]);
+    });
+
+    it('has one reminder in a study block', () => {
+        const state = startStopwatch('Anatomi', 1, T0);
+        expect(stopwatchAlerts(state, prefs)).toEqual([{ kind: 'focus', atMs: T0 + 50 * MINUTE, overMinutes: 0 }]);
+    });
+
+    it('reminds again one, three and five minutes past the end of a break, as TUSBuddy does', () => {
+        const state = pauseStopwatch(startStopwatch('Anatomi', 1, T0), T0 + 50 * MINUTE);
+        expect(stopwatchAlerts(state, prefs).map((alert) => [alert.kind, (alert.atMs - T0) / MINUTE, alert.overMinutes])).toEqual([
+            ['break', 60, 0],
+            ['breakOver', 61, 1],
+            ['breakOver', 63, 3],
+            ['breakOver', 65, 5],
+        ]);
+    });
+
+    it('words each reminder from the copy', () => {
+        const copy = {
+            focusTitle: 'F', focusBody: 'fb', breakTitle: 'B', breakBody: 'bb',
+            breakOverTitle: (minutes: number) => `Mola Süresini ${minutes} Dakika Aştınız!`, breakOverBody: 'ob',
+        };
+        expect(stopwatchAlertContent({ kind: 'focus', atMs: 0, overMinutes: 0 }, copy)).toEqual({ title: 'F', body: 'fb' });
+        expect(stopwatchAlertContent({ kind: 'break', atMs: 0, overMinutes: 0 }, copy)).toEqual({ title: 'B', body: 'bb' });
+        expect(stopwatchAlertContent({ kind: 'breakOver', atMs: 0, overMinutes: 3 }, copy))
+            .toEqual({ title: 'Mola Süresini 3 Dakika Aştınız!', body: 'ob' });
     });
 });
 

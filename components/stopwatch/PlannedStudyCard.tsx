@@ -1,13 +1,13 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
-import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { formatHeroDuration } from '../../lib/stopwatch';
-import { studySubjectInitial } from '../../lib/studyCalendar';
 import { formatPlanClock, type StudyPlanBlock } from '../../lib/studyPlans';
-import { ClockIcon, GearIcon, PlayIcon } from './StopwatchIcons';
+import { ClockIcon, GearIcon } from './StopwatchIcons';
 import { studyTypeLabel } from './StudyTypeChips';
+import { SubjectTile } from './SubjectArt';
 import { timelineStyles } from './timelineStyles';
 
 const MINUTE_MS = 60_000;
@@ -27,8 +27,10 @@ interface PlannedStudyCardProps {
 
 /**
  * A planned study block on a timeline, under the day's sessions, as TUSBuddy draws it: the plan's
- * gear and a clock on the line, then the subject and type and the time still to study ("Kalan: 8
- * saat"), the block's hours under the card. Today's blocks can start the stopwatch on the plan.
+ * gear and a clock on the line, then the course's picture, the subject and type and the time
+ * still to study ("Kalan: 8 Saat") — or on another day the time planned ("Planlanan: 8 Saat") —
+ * with the block's hours under the card. Today's blocks start the stopwatch on the plan from the
+ * small "Başlat" beside the time left.
  */
 function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCardProps) {
     const { l, locale } = useI18n();
@@ -37,11 +39,14 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
     const end = formatPlanClock(plan.startMinute + plan.durationMinutes);
     const type = studyTypeLabel(l, plan.kind, plan.pass);
     const done = remainingMs !== undefined && remainingMs <= 0;
+    const startable = Boolean(onStart) && !done;
     // A part of a minute still to go rounds up, so a block never reads "0 dk" before it is done.
     const left = remainingMs === undefined ? 0 : Math.ceil(remainingMs / MINUTE_MS) * MINUTE_MS;
-    const amount = formatHeroDuration(remainingMs === undefined ? plan.durationMinutes * MINUTE_MS : left, locale);
+    // Whole hours read "8 Saat", as TUSBuddy writes a plan's time.
+    const amount = formatHeroDuration(remainingMs === undefined ? plan.durationMinutes * MINUTE_MS : left, locale)
+        .replace(/ saat$/, ' Saat');
     const summary = remainingMs === undefined
-        ? l(`Süre: ${amount}`, `Length: ${amount}`)
+        ? l(`Planlanan: ${amount}`, `Planned: ${amount}`)
         : done ? l('Tamamlandı', 'Done') : l(`Kalan: ${amount}`, `Left: ${amount}`);
 
     return (
@@ -67,47 +72,69 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
             </View>
             <View style={styles.column}>
                 <View style={styles.card}>
-                    <TouchableOpacity
-                        style={local.open}
+                    {/* The card opens the plans from a layer behind its content, so "Başlat" is a
+                        button of its own beside it rather than one inside another. VoiceOver reads
+                        the card as one button and offers "Başlat" among its actions. */}
+                    <Pressable
+                        style={({ pressed }) => [StyleSheet.absoluteFill, local.press, pressed && { backgroundColor: colors.bgInput }]}
                         onPress={onOpen}
                         accessibilityRole="button"
                         accessibilityLabel={l(
                             `Planlanan çalışma: ${plan.subject}, ${type}, ${formatPlanClock(plan.startMinute)}–${end}. ${summary}`,
                             `Planned: ${plan.subject}, ${type}, ${formatPlanClock(plan.startMinute)}–${end}. ${summary}`,
                         )}
+                        accessibilityActions={startable ? [{ name: 'start', label: l('Başlat', 'Start') }] : undefined}
+                        onAccessibilityAction={(event) => {
+                            if (event.nativeEvent.actionName === 'start') onStart?.();
+                        }}
+                    />
+                    {/* box-none as a prop: the web build reads only the prop form of it. */}
+                    <View
+                        style={local.content}
+                        pointerEvents="box-none"
+                        accessibilityElementsHidden
+                        importantForAccessibility="no-hide-descendants"
                     >
-                        <View style={styles.tile}>
-                            <Text style={styles.tileText}>{studySubjectInitial(plan.subject)}</Text>
+                        <View style={{ pointerEvents: 'none' }}>
+                            <SubjectTile subject={plan.subject} />
                         </View>
-                        <View style={styles.body}>
-                            <View style={styles.titleRow}>
+                        <View style={styles.body} pointerEvents="box-none">
+                            <View style={[styles.titleRow, { pointerEvents: 'none' }]}>
                                 <Text style={styles.subject} numberOfLines={1}>{plan.subject}</Text>
                                 <View style={styles.chip}>
                                     <Text style={styles.chipText}>{type}</Text>
                                 </View>
                             </View>
-                            {done ? (
-                                <Text style={[local.left, { color: colors.btnGood }]}>{l('Tamamlandı ✓', 'Done ✓')}</Text>
-                            ) : (
-                                <Text style={[local.left, { color: colors.textPrimary }]}>
-                                    {remainingMs === undefined ? l('Süre: ', 'Length: ') : l('Kalan: ', 'Left: ')}
-                                    <Text style={{ color: colors.accent }}>{amount}</Text>
-                                </Text>
-                            )}
-                            {plan.note ? <Text style={styles.note}>{plan.note}</Text> : null}
+                            <View style={local.leftRow} pointerEvents="box-none">
+                                <View style={{ pointerEvents: 'none' }}>
+                                    {done ? (
+                                        <Text style={[local.left, { color: colors.btnGood }]}>{l('Tamamlandı ✓', 'Done ✓')}</Text>
+                                    ) : (
+                                        <Text style={[local.left, { color: colors.textPrimary }]}>
+                                            {remainingMs === undefined ? l('Planlanan: ', 'Planned: ') : l('Kalan: ', 'Left: ')}
+                                            <Text style={{ color: colors.accent }}>{amount}</Text>
+                                        </Text>
+                                    )}
+                                </View>
+                                {startable ? (
+                                    <TouchableOpacity
+                                        style={[local.start, { backgroundColor: colors.accent }]}
+                                        onPress={onStart}
+                                        hitSlop={{ top: 10, right: 8, bottom: 10, left: 8 }}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={l(`${plan.subject} çalışmasını başlat`, `Start ${plan.subject}`)}
+                                    >
+                                        <Text style={[local.startText, { color: colors.onAccent }]}>{l('Başlat', 'Start')}</Text>
+                                    </TouchableOpacity>
+                                ) : null}
+                            </View>
+                            {plan.note ? (
+                                <View style={{ pointerEvents: 'none' }}>
+                                    <Text style={styles.note}>{plan.note}</Text>
+                                </View>
+                            ) : null}
                         </View>
-                    </TouchableOpacity>
-                    {onStart ? (
-                        <TouchableOpacity
-                            style={[local.start, { backgroundColor: colors.accent }]}
-                            onPress={onStart}
-                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                            accessibilityRole="button"
-                            accessibilityLabel={l(`${plan.subject} çalışmasını başlat`, `Start ${plan.subject}`)}
-                        >
-                            <PlayIcon color={colors.white} size={16} />
-                        </TouchableOpacity>
-                    ) : null}
+                    </View>
                 </View>
                 <Text style={styles.timeRange}>
                     {l('Plan', 'Plan')} : {formatPlanClock(plan.startMinute)} - {end}
@@ -118,9 +145,13 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
 }
 
 const local = StyleSheet.create({
-    open: { flex: 1, flexDirection: 'row', gap: Spacing.md },
+    press: { borderRadius: BorderRadius.lg },
+    content: { flex: 1, flexDirection: 'row', gap: Spacing.md },
+    leftRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.md },
     left: { fontSize: FontSize.md, fontWeight: '500' },
-    start: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginLeft: Spacing.sm, alignSelf: 'center' },
+    // The small filled "Başlat" TUSBuddy puts after the time left.
+    start: { borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
+    startText: { fontSize: FontSize.sm, fontWeight: '700' },
 });
 
 export default React.memo(PlannedStudyCard);

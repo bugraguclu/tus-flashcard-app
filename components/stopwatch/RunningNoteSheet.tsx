@@ -52,13 +52,14 @@ export default function RunningNoteSheet({ visible, subject, note, onClose, onSa
                 <Text style={[styles.count, { color: colors.textMuted }]}>
                     {l(`Kalan: ${MAX_STUDY_NOTE_LENGTH - draft.length}`, `${MAX_STUDY_NOTE_LENGTH - draft.length} left`)}
                 </Text>
+                {/* TUSBuddy's words: "Not Ekle" for a first note, "Çalışma Notunu Güncelle" after. */}
                 <TouchableOpacity
                     style={[styles.save, { backgroundColor: colors.accent }]}
                     onPress={() => visible && onSave(draft)}
                     accessibilityRole="button"
-                    accessibilityLabel={l('Notu kaydet', 'Save the note')}
+                    accessibilityLabel={note ? l('Çalışma notunu güncelle', 'Update the study note') : l('Not ekle', 'Add the note')}
                 >
-                    <Text style={[styles.saveText, { color: colors.onAccent }]}>{l('Kaydet', 'Save')}</Text>
+                    <Text style={[styles.saveText, { color: colors.onAccent }]}>{note ? l('Çalışma Notunu Güncelle', 'Update Study Note') : l('Not Ekle', 'Add Note')}</Text>
                 </TouchableOpacity>
             </View>
         </StopwatchSheet>

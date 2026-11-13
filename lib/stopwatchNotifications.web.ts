@@ -1,4 +1,12 @@
-import { nextStopwatchAlert, type RunningStopwatch, type StopwatchPrefs } from './stopwatch';
+import {
+    stopwatchAlertContent,
+    stopwatchAlerts,
+    type RunningStopwatch,
+    type StopwatchAlertCopy,
+    type StopwatchPrefs,
+} from './stopwatch';
+
+export type { StopwatchAlertCopy } from './stopwatch';
 
 /**
  * Browser block reminders — the web counterpart of `stopwatchNotifications.ts`, with the same
@@ -7,13 +15,6 @@ import { nextStopwatchAlert, type RunningStopwatch, type StopwatchPrefs } from '
  */
 
 export const STOPWATCH_ALERT_KIND = 'tus-stopwatch-block';
-
-export interface StopwatchAlertCopy {
-    focusTitle: string;
-    focusBody: string;
-    breakTitle: string;
-    breakBody: string;
-}
 
 export interface StopwatchAlertPermission {
     state: 'granted' | 'denied' | 'undetermined' | 'unavailable';
@@ -90,13 +91,20 @@ export async function syncStopwatchAlert(
 ): Promise<void> {
     clearTimer();
     if (!running || !prefs.alertsEnabled || currentPermission().state !== 'granted') return;
-    const alert = nextStopwatchAlert(running, prefs);
-    if (!alert || alert.atMs <= nowMs + 1000) return;
-    const focus = alert.kind === 'focus';
-    alertTimer = setTimeout(() => {
-        alertTimer = null;
-        show(focus ? copy.focusTitle : copy.breakTitle, focus ? copy.focusBody : copy.breakBody);
-    }, Math.min(MAX_TIMER_DELAY_MS, alert.atMs - nowMs));
+    // One timer at a time: each reminder, when shown, arms the one after it (a break's overrun
+    // reminders follow its end).
+    const pending = stopwatchAlerts(running, prefs).filter((alert) => alert.atMs > nowMs + 1000);
+    const arm = (index: number, fromMs: number) => {
+        const alert = pending[index];
+        if (!alert) return;
+        alertTimer = setTimeout(() => {
+            alertTimer = null;
+            const { title, body } = stopwatchAlertContent(alert, copy);
+            show(title, body);
+            arm(index + 1, Date.now());
+        }, Math.min(MAX_TIMER_DELAY_MS, Math.max(0, alert.atMs - fromMs)));
+    };
+    arm(0, nowMs);
 }
 
 export async function cancelStopwatchAlert(): Promise<void> {

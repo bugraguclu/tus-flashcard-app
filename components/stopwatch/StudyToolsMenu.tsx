@@ -9,13 +9,13 @@ import { useI18n } from '../../hooks/useI18n';
 import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
 import PressableScale from '../PressableScale';
 import { PopoverBackdrop, PopoverItem, PopoverModal } from '../Popover';
-import { AnalyticsIcon } from './StopwatchIcons';
+import { AnalyticsIcon, TimelineListIcon } from './StopwatchIcons';
 
 export const STUDY_TOOLS_FAB_SIZE = 56;
 
-type StudyTool = 'analysis' | 'planning' | 'clear';
+type StudyTool = 'calendar' | 'analysis' | 'planning' | 'clear';
 
-const ROUTES: Record<StudyTool, string> = {
+const ROUTES: Record<Exclude<StudyTool, 'calendar'>, string> = {
     analysis: '/study-analysis',
     planning: '/study-plans',
     clear: '/study-clear',
@@ -24,6 +24,7 @@ const ROUTES: Record<StudyTool, string> = {
 function ToolGlyph({ tool, color }: { tool: StudyTool; color: string }) {
     const { onAccent } = useThemeColors();
     const stroke = { fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+    if (tool === 'calendar') return <TimelineListIcon color={color} size={32} />;
     return (
         <Svg width={32} height={32} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
             {tool === 'analysis' ? (
@@ -56,14 +57,20 @@ function ToolGlyph({ tool, color }: { tool: StudyTool; color: string }) {
 interface StudyToolsMenuProps {
     /** Distance of the button from the screen's bottom edge, above the home indicator. */
     bottom: number;
+    /**
+     * Opens the Study Calendar. Given on the Kronometre, whose menu lists "Çalışma Takvimi" first
+     * as TUSBuddy's stopwatch does; the calendar's own menu leaves it out.
+     */
+    onOpenCalendar?: () => void;
 }
 
 /**
- * The study tools button: a round orange button that opens three cards — "Çalışma Analiziniz",
- * "Çalışma Planlama" and "Çalışmaları Temizle" — over a dimmed screen, as TUSBuddy's calendar
- * does. Tapping outside the cards or the button again closes them.
+ * The study tools button: a round orange button that opens the study tools as orange cards —
+ * "Çalışma Takvimi" (on the Kronometre), "Çalışma Analiziniz", "Çalışma Planlama" and "Çalışmaları
+ * Temizle" — over a dimmed screen, as TUSBuddy does. Tapping outside the cards or the button again
+ * closes them.
  */
-export default function StudyToolsMenu({ bottom }: StudyToolsMenuProps) {
+export default function StudyToolsMenu({ bottom, onOpenCalendar }: StudyToolsMenuProps) {
     const { l } = useI18n();
     const colors = useThemeColors();
     const insets = useSafeAreaInsets();
@@ -72,6 +79,11 @@ export default function StudyToolsMenu({ bottom }: StudyToolsMenuProps) {
     const tint = colors.studyTool;
 
     const tools: { tool: StudyTool; title: string; subtitle: string }[] = [
+        ...(onOpenCalendar ? [{
+            tool: 'calendar' as const,
+            title: l('Çalışma Takvimi', 'Study Calendar'),
+            subtitle: l('Aylık ve haftalık çalışma takviminizi görüntüleyin.', 'See your monthly and weekly study calendar.'),
+        }] : []),
         {
             tool: 'analysis',
             title: l('Çalışma Analiziniz', 'Your Study Analysis'),
@@ -137,7 +149,8 @@ export default function StudyToolsMenu({ bottom }: StudyToolsMenuProps) {
                                     style={[styles.card, { backgroundColor: tint }]}
                                     onPress={() => {
                                         setOpen(false);
-                                        router.push(ROUTES[tool] as any);
+                                        if (tool === 'calendar') onOpenCalendar?.();
+                                        else router.push(ROUTES[tool] as any);
                                     }}
                                     activeOpacity={0.85}
                                     accessibilityRole="button"

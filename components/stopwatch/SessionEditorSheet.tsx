@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import { Type } from '../ui/tokens';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { BorderRadius, FontSize, Spacing, useIsDarkTheme, useThemeColors } from '../../constants/theme';
+import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { alert } from '../../lib/confirm';
 import {
     MAX_BREAK_COUNT,
     MAX_STUDY_NOTE_LENGTH,
@@ -12,16 +12,20 @@ import {
     draftFromManualEntry,
     formatGoalClock,
     manualSessionProblem,
+    overlappingSession,
     type ManualSessionProblem,
+    type SessionSpan,
     type StudyKind,
     type StudySessionDraft,
 } from '../../lib/stopwatch';
-import type { StudySession } from '../../lib/studyCalendar';
+import { fetchStudySessionsBetween, loadRunningStopwatch } from '../../lib/stopwatchStore';
+import { formatClockHhMm, type StudySession } from '../../lib/studyCalendar';
 import { CountStepper, FormDivider, FormInfoBox, FormRow, FormSelector } from './FormControls';
 import StopwatchSheet from './StopwatchSheet';
 import type { StudyChoice } from './StudyStartSheet';
 import { StudyTypePicker, SubjectGridPicker } from './StudyPickers';
 import { studyTypeLabel } from './StudyTypeChips';
+import TimePickerPanel from './TimePickerPanel';
 
 const MINUTE_MS = 60_000;
 /** Longest total break the form steps to: the longest a session may span. */
@@ -91,7 +95,6 @@ export default function SessionEditorSheet({
 }: SessionEditorSheetProps) {
     const { l, localeTag } = useI18n();
     const colors = useThemeColors();
-    const isDark = useIsDarkTheme();
     const [subject, setSubject] = useState('');
     const [kind, setKind] = useState<StudyKind>('pass');
     const [pass, setPass] = useState(1);
@@ -138,13 +141,17 @@ export default function SessionEditorSheet({
         }
     }, [visible]);
 
-    const problem = manualSessionProblem({ startMs, endMs, breakMs }, Date.now());
+    // A session saved before breaks were counted may hold break time with no count; correcting
+    // only its note or its subject must not be refused for that.
+    const breaksUntouched = original !== null && breakMs === original.breakMs && breakCount === original.breakCount;
+    const problem = manualSessionProblem({ startMs, endMs, breakMs, breakCount: breaksUntouched ? undefined : breakCount }, Date.now());
     const problemText = (value: ManualSessionProblem) => {
         switch (value) {
             case 'order': return l('Çalışma bitişi, başlangıcından sonra olmalı.', 'The session must end after it starts.');
             case 'future': return l('Çalışma gelecekte bitemez.', 'A session cannot end in the future.');
             case 'tooLong': return l('Bir çalışma 24 saatten uzun olamaz.', 'A session cannot be longer than 24 hours.');
             case 'break': return l('Mola süresi, başlangıç ile bitiş arasındaki süreyi aşamaz.', 'The breaks cannot be longer than the session.');
+            case 'breakCount': return l('Mola süresi girildiği için mola sayısı sıfırdan büyük olmalıdır.', 'A break time is entered, so the number of breaks must be above zero.');
             default: return l('Molalar düşüldükten sonra en az 1 dakika çalışma kalmalı.', 'At least a minute of study must be left after the breaks.');
         }
     };
@@ -161,11 +168,28 @@ export default function SessionEditorSheet({
         return `${date.toLocaleDateString(localeTag, { day: 'numeric', month: 'short' })} ${time}`;
     };
 
-    const changeField = (field: Field, value?: Date) => {
-        if (!value) return;
-        const ms = startOfMinute(value.getTime());
-        if (field === 'start') setStartMs(ms);
-        else setEndMs(ms);
+    const changeField = (field: Field, ms: number) => {
+        if (field === 'start') setStartMs(startOfMinute(ms));
+        else setEndMs(startOfMinute(ms));
+    };
+
+    /**
+     * Another stored session, or the stopwatch running now, whose time the entry overlaps. A session
+     * whose times are left as they were is not checked again, so sessions that overlapped before
+     * this check existed can still have their notes corrected.
+     */
+    const findOverlap = (): (SessionSpan & { subject: string; running: boolean }) | null => {
+        try {
+            const spans: (SessionSpan & { subject: string; running: boolean })[] = fetchStudySessionsBetween(startMs, endMs)
+                .map((session) => ({ id: session.id, startMs: session.startMs, endMs: session.endMs, subject: session.subject, running: false }));
+            const running = loadRunningStopwatch();
+            if (running) spans.push({ id: null, startMs: running.startedAtMs, endMs: Date.now(), subject: running.subject, running: true });
+            return overlappingSession({ startMs, endMs }, spans, recordId);
+        } catch (error) {
+            // The save that follows reads the same store and reports its own failure.
+            console.warn('[Stopwatch] overlap check failed:', error);
+            return null;
+        }
     };
 
     const save = () => {
@@ -176,6 +200,20 @@ export default function SessionEditorSheet({
         // than its span less its breaks; it is never reinterpreted by an edit of its note alone.
         const timesUnchanged = original !== null
             && startMs === original.startMs && endMs === original.endMs && breakMs === original.breakMs;
+        const spanUnchanged = original !== null && startMs === original.startMs && endMs === original.endMs;
+        const clash = spanUnchanged ? null : findOverlap();
+        if (clash) {
+            alert(
+                l('Çalışmalar çakışıyor', 'Sessions overlap'),
+                l(
+                    `${recordId === null
+                        ? 'Eklemek istediğiniz çalışmanın zaman aralığı var olan başka bir çalışma ile çakışıyor!'
+                        : 'Belirttiğiniz çalışma aralığı var olan başka bir çalışma ile çakışıyor!'}\n\n${clash.subject}: ${formatClockHhMm(clash.startMs)} – ${clash.running ? 'devam ediyor' : formatClockHhMm(clash.endMs)}`,
+                    `This session's time overlaps another session.\n\n${clash.subject}: ${formatClockHhMm(clash.startMs)} – ${clash.running ? 'running now' : formatClockHhMm(clash.endMs)}`,
+                ),
+            );
+            return;
+        }
         onSave(timesUnchanged ? { ...draft, studyMs: original.studyMs } : draft, recordId);
     };
 
@@ -203,33 +241,28 @@ export default function SessionEditorSheet({
             }}
             onClose={() => setPicker(null)}
         />
+    ) : openField ? (
+        <TimePickerPanel
+            value={openField === 'start' ? startMs : endMs}
+            label={openField === 'start' ? l('Çalışma Başlangıcı', 'Start') : l('Çalışma Bitişi', 'End')}
+            onCancel={() => setOpenField(null)}
+            onConfirm={(ms) => {
+                changeField(openField, ms);
+                setOpenField(null);
+            }}
+        />
     ) : null;
 
     const timeRow = (field: Field, label: string, ms: number) => (
-        <View>
-            <FormRow label={label}>
-                <FormSelector
-                    value={dateLabel(ms)}
-                    active={openField === field}
-                    onPress={() => setOpenField((current) => (current === field ? null : field))}
-                    accessibilityLabel={`${label}: ${dateLabel(ms)}`}
-                    accessibilityHint={l('Tarih ve saat seçiciyi açar veya kapatır', 'Opens or closes the date and time picker')}
-                />
-            </FormRow>
-            {openField === field ? (
-                <View style={styles.pickerWrap}>
-                    <DateTimePicker
-                        value={new Date(ms)}
-                        mode={Platform.OS === 'android' ? 'time' : 'datetime'}
-                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        maximumDate={new Date()}
-                        locale={localeTag}
-                        themeVariant={isDark ? 'dark' : 'light'}
-                        onChange={(_event, value) => changeField(field, value)}
-                    />
-                </View>
-            ) : null}
-        </View>
+        <FormRow label={label}>
+            <FormSelector
+                value={dateLabel(ms)}
+                active={openField === field}
+                onPress={() => setOpenField(field)}
+                accessibilityLabel={`${label}: ${dateLabel(ms)}`}
+                accessibilityHint={l('Tarih ve saat seçiciyi açar', 'Opens the date and time picker')}
+            />
+        </FormRow>
     );
 
     return (
@@ -238,6 +271,7 @@ export default function SessionEditorSheet({
             onClose={onClose}
             formHeader
             overlay={overlay}
+            overlayPlacement={openField ? 'bottom' : 'center'}
             title={recordId !== null ? l('Çalışmanızı Düzenleyin', 'Edit Your Session') : l('Geçmiş Çalışmanızı Ekleyin', 'Add a Past Session')}
         >
             <ScrollView style={styles.form} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -334,7 +368,6 @@ export default function SessionEditorSheet({
 
 const styles = StyleSheet.create({
     form: { flexShrink: 1 },
-    pickerWrap: { alignItems: 'center', paddingBottom: Spacing.sm },
     noteSection: { gap: Spacing.xs, paddingTop: Spacing.xs },
     noteLabel: { fontSize: FontSize.lg, fontWeight: '600' },
     noteInput: {

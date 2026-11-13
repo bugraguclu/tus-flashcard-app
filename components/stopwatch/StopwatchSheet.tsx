@@ -28,6 +28,8 @@ interface StopwatchSheetProps {
      * The sheet under it is hidden from VoiceOver while it is up.
      */
     overlay?: React.ReactNode;
+    /** Where the overlay sits: centred (the pickers) or at the bottom edge (the time wheels). */
+    overlayPlacement?: 'center' | 'bottom';
     children: React.ReactNode;
 }
 
@@ -43,6 +45,7 @@ export default function StopwatchSheet({
     onClose,
     formHeader = false,
     overlay,
+    overlayPlacement = 'center',
     children,
 }: StopwatchSheetProps) {
     const { l } = useI18n();
@@ -67,7 +70,7 @@ export default function StopwatchSheet({
                 // Its own keyboard avoidance: an absolutely placed layer ignores the padding the
                 // sheet's container takes for the keyboard, so a picker's field would sit under it.
                 <KeyboardAvoidingView
-                    style={[StyleSheet.absoluteFill, styles.pickerLayer, { backgroundColor: colors.scrim }]}
+                    style={[StyleSheet.absoluteFill, styles.pickerLayer, { backgroundColor: colors.scrim }, overlayPlacement === 'bottom' && styles.pickerLayerBottom]}
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     accessibilityViewIsModal
                 >
@@ -130,4 +133,5 @@ const styles = StyleSheet.create({
     },
     formTitle: { flex: 1, fontSize: FontSize.xl, fontWeight: '700' },
     pickerLayer: { justifyContent: 'center', paddingHorizontal: Spacing.lg },
+    pickerLayerBottom: { justifyContent: 'flex-end', paddingHorizontal: 0 },
 });

@@ -53,8 +53,8 @@ function NoStudyPlanCard({ hasPlans, onPress }: NoStudyPlanCardProps) {
                         {hasPlans
                             ? l('Planlarınıza bugün için bir çalışma ekleyebilirsiniz.', 'You can add a session for today to your plans.')
                             : l(
-                                'Çalışma planı oluşturun; hangi gün ne çalışacağınız burada görünsün.',
-                                'Create a study plan to see what to study each day right here.',
+                                'Çalışma planı oluşturun, hangi gün ne çalışacağınızı TusAnkiM söylesin.',
+                                'Create a study plan and let TusAnkiM tell you what to study each day.',
                             )}
                     </Text>
                 </View>
