@@ -6,7 +6,10 @@ vi.mock('react-native', () => ({
     Platform: { OS: 'ios', select: (spec: Record<string, unknown>) => spec.ios ?? spec.default },
     useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
     StyleSheet: { create: (styles: unknown) => styles, flatten: (style: unknown) => style, hairlineWidth: 1, absoluteFill: {} },
-    Modal: 'Modal', Pressable: 'Pressable', ScrollView: 'ScrollView', Text: 'Text', TextInput: 'TextInput',
+    // React Native mounts a modal's content only while it is visible, and on iOS unmounts it once
+    // UIKit reports the dismissal; the stand-in does the same.
+    Modal: ({ visible, children }: { visible: boolean; children?: React.ReactNode }) => (visible ? children : null),
+    Pressable: 'Pressable', ScrollView: 'ScrollView', Text: 'Text', TextInput: 'TextInput',
     TouchableOpacity: 'TouchableOpacity', View: 'View',
 }));
 vi.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }) }));
@@ -17,17 +20,6 @@ vi.mock('../constants/theme', () => {
     return { useThemeColors: () => colors, BorderRadius: sizes, FontSize: sizes, Spacing: sizes, Shadows: new Proxy({}, { get: () => ({}) }) };
 });
 vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ t: (key: string) => key, l: (tr: string) => tr }) }));
-// React Native keeps a sheet's content mounted while its modal is up and unmounts it once the
-// modal has been dismissed (on iOS, when UIKit reports the dismissal); the stand-in does the same.
-vi.mock('../components/ui/Sheet', async () => {
-    const { createElement } = await import('react');
-    return {
-        AppSheet: ({ visible, title, children }: { visible: boolean; title?: string; children?: React.ReactNode }) => (
-            visible ? createElement('AppSheet', { title }, children) : null
-        ),
-    };
-});
-
 import DeckRowMenu from '../components/decks/DeckRowMenu';
 import type { DeckRowMenuAction } from './deckRowMenu';
 
@@ -67,13 +59,13 @@ afterEach(() => {
     renderer = undefined;
 });
 
-describe('deck ••• action sheet', () => {
-    it('titles the sheet with the deck path and offers one row per action, Delete in red', () => {
+describe('deck ••• menu', () => {
+    it('titles the card with the deck path and offers one row per action', () => {
         show(true);
-        const sheet = renderer!.root.find((node) => (node.type as unknown) === 'AppSheet');
-        expect(sheet.props.title).toBe('TUS › Anatomi');
+        const texts = renderer!.root.findAll((node) => (node.type as unknown) === 'Text');
+        expect(texts[0].props.children).toBe('TUS › Anatomi');
         expect(rows().map((row) => row.props.accessibilityLabel)).toEqual(['Genel bakış', 'Desteyi yeniden adlandır', 'Desteyi sil']);
-        expect(rows().map(labelColor)).toEqual(['textPrimary', 'textPrimary', 'danger']);
+        expect(rows().map(labelColor)).toEqual(['textPrimary', 'textPrimary', 'textPrimary']);
     });
 
     it('hands the chosen action back to the deck list', () => {
@@ -82,7 +74,7 @@ describe('deck ••• action sheet', () => {
         expect(onSelect).toHaveBeenCalledExactlyOnceWith('rename');
     });
 
-    it('reports its dismissal once the sheet has gone, and only then', () => {
+    it('reports its dismissal once the menu has gone, and only then', () => {
         // The deck list holds a chosen route, dialog or sheet back until this call: iOS cannot
         // present one while the menu's modal is still on screen.
         show(true);
