@@ -94,14 +94,20 @@ export default function StopwatchScreen() {
         return () => setStatusBarStyle(isDark ? 'light' : 'dark');
     }, [isDark]));
 
+    // The reminders' words follow TUSBuddy's: the title says what is due, the body adds the subject.
     const buildAlertCopy = useCallback((state: RunningStopwatch, prefs: StopwatchPrefs) => ({
-        focusTitle: l('Ders süresi doldu', 'Study block is over'),
+        focusTitle: l('Çalışma süresi doldu, mola zamanı!', 'Study time is up, time for a break!'),
         focusBody: l(
             `${state.subject}: ${prefs.focusMinutes} dakikadır çalışıyorsunuz. Kısa bir mola verebilirsiniz.`,
             `${state.subject}: you have studied for ${prefs.focusMinutes} minutes. Time for a short break.`,
         ),
-        breakTitle: l('Mola bitti', 'Break is over'),
+        breakTitle: l('Mola süreniz bitti, çalışma zamanı!', 'Your break is over, time to study!'),
         breakBody: l(`${state.subject} çalışmanıza dönebilirsiniz.`, `You can get back to ${state.subject}.`),
+        breakOverTitle: (minutes: number) => l(
+            `Mola Süresini ${minutes} Dakika Aştınız!`,
+            minutes === 1 ? 'Your break ran 1 minute over!' : `Your break ran ${minutes} minutes over!`,
+        ),
+        breakOverBody: l(`${state.subject} çalışmanıza devam edin.`, `Get back to ${state.subject}.`),
     }), [l]);
 
     const stopwatch = useStopwatch(buildAlertCopy);
@@ -192,20 +198,26 @@ export default function StopwatchScreen() {
         if (draft.studyMs < MIN_SESSION_MS) {
             confirm(
                 l('Kısa çalışma', 'Short session'),
-                l('Bir dakikadan kısa çalışmalar kaydedilmez. Kronometre sıfırlansın mı?', 'Sessions shorter than a minute are not saved. Reset the stopwatch?'),
+                l(
+                    'Bir dakikadan kısa çalışmalar kayıt edilmemektedir. Çalışmayı silmek istiyor musunuz?',
+                    'Sessions shorter than a minute are not saved. Delete this session?',
+                ),
                 () => stopwatch.discard(),
+                { destructive: true, confirmLabel: l('Sil', 'Delete') },
             );
             return;
         }
+        // TUSBuddy's warning, then what will be saved.
         confirm(
-            l('Çalışmayı sonlandır', 'Finish the session'),
+            l('Çalışmayı Sonlandır', 'Finish the Session'),
             l(
-                `${running.subject}: ${formatSessionDuration(draft.studyMs, locale)} çalışma ve ${formatSessionDuration(draft.breakMs, locale)} mola kaydedilecek.`,
-                `${running.subject}: ${formatSessionDuration(draft.studyMs, locale)} of study and ${formatSessionDuration(draft.breakMs, locale)} of break will be saved.`,
+                `'${running.subject}' çalışmanız sonlandırılacak. Çalışmayı sonlandırdıktan sonra aynı çalışmayı devam ettiremezsiniz.\n\n${formatSessionDuration(draft.studyMs, locale)} çalışma ve ${formatSessionDuration(draft.breakMs, locale)} mola kaydedilecek.`,
+                `Your '${running.subject}' session will be finished. Once it is finished, it cannot be continued.\n\n${formatSessionDuration(draft.studyMs, locale)} of study and ${formatSessionDuration(draft.breakMs, locale)} of break will be saved.`,
             ),
             () => {
                 if (saveFinished()) lightHaptic();
             },
+            { confirmLabel: l('Sonlandır', 'Finish') },
         );
     };
 
@@ -364,11 +376,9 @@ export default function StopwatchScreen() {
                 )}
             />
 
-            <ScrollView
-                style={styles.scroll}
-                contentContainerStyle={{ paddingBottom: insets.bottom + STUDY_TOOLS_FAB_SIZE + Spacing.xxl }}
-                showsVerticalScrollIndicator={false}
-            >
+            {/* As in TUSBuddy, the hero and the section's title stay in place and only the
+                timeline scrolls under them. */}
+            <View style={styles.page}>
                 <StopwatchHero
                     todayStudyMs={todayStudyMs}
                     goalMinutes={prefs.dailyGoalMinutes}
@@ -395,38 +405,44 @@ export default function StopwatchScreen() {
                     </TouchableOpacity>
                 </View>
 
-                <StopwatchTimeline
-                    days={days}
-                    examDaysLeft={examDaysLeft(prefs.examDate, nowMs)}
-                    live={running && runningCountsToday && elapsed
-                        ? {
-                            subject: running.subject,
-                            kind: running.kind,
-                            pass: running.pass,
-                            startMs: running.startedAtMs,
-                            studyMs: elapsed.studyMs,
-                            breakMs: elapsed.breakMs,
-                            phaseMs: elapsed.phaseMs,
-                            onBreak: running.phase === 'break',
-                            note: running.note,
-                        }
-                        : null}
-                    focusMinutes={prefs.focusMinutes}
-                    breakMinutes={prefs.breakMinutes}
-                    onOpenExamSettings={() => setSettingsOpen(true)}
-                    onSessionMenu={setMenuSession}
-                    onEditLiveNote={() => setNoteOpen(true)}
-                    onOpenCalendar={openCalendar}
-                    todayPlans={todayPlans}
-                    planLeftMs={planLeftMs}
-                    hasStudyPlans={studyPlans.length > 0}
-                    onOpenPlans={() => router.push('/study-plans' as any)}
-                    onCreatePlan={() => router.push('/study-plan-wizard' as any)}
-                    onStartPlanned={handleStartPlanned}
-                />
-            </ScrollView>
+                <ScrollView
+                    style={styles.scroll}
+                    contentContainerStyle={{ paddingBottom: insets.bottom + STUDY_TOOLS_FAB_SIZE + Spacing.xxl }}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <StopwatchTimeline
+                        days={days}
+                        examDaysLeft={examDaysLeft(prefs.examDate, nowMs)}
+                        live={running && runningCountsToday && elapsed
+                            ? {
+                                subject: running.subject,
+                                kind: running.kind,
+                                pass: running.pass,
+                                startMs: running.startedAtMs,
+                                studyMs: elapsed.studyMs,
+                                breakMs: elapsed.breakMs,
+                                phaseMs: elapsed.phaseMs,
+                                onBreak: running.phase === 'break',
+                                note: running.note,
+                            }
+                            : null}
+                        focusMinutes={prefs.focusMinutes}
+                        breakMinutes={prefs.breakMinutes}
+                        onOpenExamSettings={() => setSettingsOpen(true)}
+                        onSessionMenu={setMenuSession}
+                        onEditLiveNote={() => setNoteOpen(true)}
+                        onOpenCalendar={openCalendar}
+                        todayPlans={todayPlans}
+                        planLeftMs={planLeftMs}
+                        hasStudyPlans={studyPlans.length > 0}
+                        onOpenPlans={() => router.push('/study-plans' as any)}
+                        onCreatePlan={() => router.push('/study-plan-wizard' as any)}
+                        onStartPlanned={handleStartPlanned}
+                    />
+                </ScrollView>
+            </View>
 
-            <StudyToolsMenu bottom={insets.bottom + Spacing.lg} />
+            <StudyToolsMenu bottom={insets.bottom + Spacing.lg} onOpenCalendar={openCalendar} />
 
             <StudyStartSheet
                 visible={startOpen}
@@ -483,15 +499,17 @@ export default function StopwatchScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1 },
-        scroll: { flex: 1, backgroundColor: colors.bgPrimary },
+        page: { flex: 1, backgroundColor: colors.bgPrimary },
+        scroll: { flex: 1 },
         sectionHeader: {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
             paddingHorizontal: Spacing.lg,
             paddingTop: Spacing.lg,
+            paddingBottom: Spacing.xs,
         },
-        sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+        sectionTitle: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
         addButton: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
         addText: { fontSize: FontSize.md, fontWeight: '700', color: colors.badgeNew },
     });

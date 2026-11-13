@@ -118,18 +118,36 @@ export function CalendarIcon({ color, size }: IconProps) {
     );
 }
 
-export function HourglassIcon({ color, size }: IconProps) {
+/** An hourglass with sand in both bulbs; `sandColor` tints the sand (the frame's colour if left out). */
+export function HourglassIcon({ color, size, sandColor = color }: IconProps & { sandColor?: string }) {
     return (
         <IconFrame size={size}>
-            <Path d="M6.5 3h11M6.5 21h11" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
+            <Path d="M8.6 7.4h6.8c-.6 1.3-1.8 2.4-3.4 3.6-1.6-1.2-2.8-2.3-3.4-3.6z" fill={sandColor} />
+            <Path d="M8.4 19.6c.5-1.9 1.7-3 3.6-4.2 1.9 1.2 3.1 2.3 3.6 4.2z" fill={sandColor} />
             <Path
-                d="M7.8 3v3.2c0 2 1.6 3.4 4.2 5.8 2.6-2.4 4.2-3.8 4.2-5.8V3M7.8 21v-3.2c0-2 1.6-3.4 4.2-5.8 2.6 2.4 4.2 3.8 4.2 5.8V21"
+                d="M7.8 3.4v2.8c0 2.2 1.6 3.6 4.2 5.8 2.6-2.2 4.2-3.6 4.2-5.8V3.4M7.8 20.6v-2.8c0-2.2 1.6-3.6 4.2-5.8 2.6 2.2 4.2 3.6 4.2 5.8v2.8"
                 fill="none"
                 stroke={color}
-                strokeWidth={1.8}
+                strokeWidth={1.6}
                 strokeLinejoin="round"
             />
-            <Path d="M9.6 19.6c.6-1.5 1.4-2.3 2.4-3 1 .7 1.8 1.5 2.4 3z" fill={color} />
+            <Path d="M6 3h12M6 21h12" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" />
+        </IconFrame>
+    );
+}
+
+/** A line with three rows beside it: the Study Calendar's timeline, in its menu card and its link. */
+export function TimelineListIcon({ color, size }: IconProps) {
+    return (
+        <IconFrame size={size}>
+            <Path d="M4.6 4v16" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
+            <Circle cx={4.6} cy={6.2} r={1.9} fill={color} />
+            <Circle cx={4.6} cy={12} r={1.9} fill={color} />
+            <Circle cx={4.6} cy={17.8} r={1.9} fill={color} />
+            <Rect x={8.6} y={3.8} width={12} height={4.8} rx={1.3} fill="none" stroke={color} strokeWidth={1.7} />
+            <Rect x={8.6} y={9.6} width={12} height={4.8} rx={1.3} fill="none" stroke={color} strokeWidth={1.7} />
+            <Rect x={8.6} y={15.4} width={12} height={4.8} rx={1.3} fill="none" stroke={color} strokeWidth={1.7} />
+            <Path d="M11.4 6.2h3.8M11.4 12h3.8M11.4 17.8h3.8" fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
         </IconFrame>
     );
 }
@@ -207,13 +225,13 @@ export function BookIcon({ color, size }: IconProps) {
     );
 }
 
-/** Three ascending bars: the study analytics button's glyph. */
+/** Three bars, the middle one tallest: the study tools button's glyph. */
 export function AnalyticsIcon({ color, size }: IconProps) {
     return (
         <IconFrame size={size}>
-            <Rect x={4} y={13} width={4.4} height={8} rx={1.4} fill={color} />
-            <Rect x={9.8} y={8} width={4.4} height={13} rx={1.4} fill={color} />
-            <Rect x={15.6} y={3.5} width={4.4} height={17.5} rx={1.4} fill={color} />
+            <Rect x={4} y={12} width={4.4} height={9} rx={1.4} fill={color} />
+            <Rect x={9.8} y={4} width={4.4} height={17} rx={1.4} fill={color} />
+            <Rect x={15.6} y={9} width={4.4} height={12} rx={1.4} fill={color} />
         </IconFrame>
     );
 }

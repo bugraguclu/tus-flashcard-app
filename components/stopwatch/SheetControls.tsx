@@ -40,6 +40,7 @@ export function Stepper({
             <TouchableOpacity
                 style={[
                     styles.button,
+                    hero && styles.buttonHero,
                     { backgroundColor: colors.accent },
                     !enabled && styles.disabled,
                 ]}
@@ -64,6 +65,7 @@ export function Stepper({
             {button(-1)}
             <Text
                 style={[styles.value, { color: colors.accent }, hero && styles.valueHero]}
+                numberOfLines={1}
                 accessibilityLiveRegion="polite"
             >
                 {value}
@@ -136,11 +138,13 @@ const styles = StyleSheet.create({
         borderRadius: BorderRadius.full,
         padding: 4,
     },
-    trackHero: { gap: Spacing.sm },
+    // The hero's stepper fills the width it is given, the value between its two round buttons.
+    trackHero: { gap: 4, padding: 3 },
     button: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+    buttonHero: { width: 28, height: 28, borderRadius: 14 },
     disabled: { opacity: 0.4 },
     value: { minWidth: 58, textAlign: 'center', fontSize: FontSize.lg, fontWeight: '700', fontVariant: ['tabular-nums'] },
-    valueHero: { minWidth: 60, fontSize: FontSize.lg },
+    valueHero: { flex: 1, minWidth: 0, fontSize: FontSize.lg, fontWeight: '800' },
     row: {
         flexDirection: 'row',
         alignItems: 'center',

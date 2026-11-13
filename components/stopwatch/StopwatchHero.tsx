@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { Text } from '../AppText';
+import { Text, useLayoutTextScale } from '../AppText';
 import { BorderRadius, FontSize, Shadows, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
@@ -45,10 +45,10 @@ interface StopwatchHeroProps {
 }
 
 /**
- * The top of the Kronometre, as TUSBuddy lays it out. Idle: today's study time on a ring that
- * fills towards the daily goal, the goal's − / + and "Başla". Running: today against the goal on a
- * bar, the subject, the session's study time as a large clock (and the break's while on one), and
- * "Sonlandır" and "Mola Ver" / "Devam Et".
+ * The top of the Kronometre, as TUSBuddy lays it out. Idle: two halves — today's study time on a
+ * ring that fills towards the daily goal, and the goal's − / + over "Başla", each centred in its
+ * half. Running: today against the goal on a bar, the subject, the session's study time as a
+ * large clock (and the break's while on one), and "Sonlandır" and "Mola Ver" / "Devam Et".
  */
 export default function StopwatchHero({
     todayStudyMs,
@@ -65,7 +65,12 @@ export default function StopwatchHero({
     const colors = useThemeColors();
     const heroColor = useStopwatchHeroColor();
     const { width } = useWindowDimensions();
-    const ringSize = Math.round(Math.min(156, Math.max(116, width * 0.34)));
+    const ringSize = Math.round(Math.min(140, Math.max(106, width * 0.29)));
+    const ringStroke = Math.round(ringSize * 0.075);
+    // The goal and "Başla" keep TUSBuddy's width at the designed text size and grow with larger
+    // text, up to the half of the hero they sit in.
+    const textScale = useLayoutTextScale();
+    const controlWidth = Math.round(Math.min((width - Spacing.lg * 2) / 2 - Spacing.xs, CONTROL_WIDTH * Math.max(1, textScale)));
     const styles = useMemo(() => createStyles(colors, heroColor), [colors, heroColor]);
     const total = formatHeroDuration(todayStudyMs, locale);
     const goal = formatHeroDuration(goalMinutes * MINUTE_MS, locale);
@@ -97,7 +102,8 @@ export default function StopwatchHero({
                     <Text style={styles.runningSubject} numberOfLines={1}>
                         {running.subject.toLocaleUpperCase(locale === 'tr' ? 'tr' : 'en')}
                     </Text>
-                    <Text style={styles.bigClock} numberOfLines={1}>{sessionClock}</Text>
+                    {/* Already large; capped so the largest text sizes still fit it on one line. */}
+                    <Text style={styles.bigClock} numberOfLines={1} maxFontSizeMultiplier={1.25}>{sessionClock}</Text>
                     {onBreak ? (
                         <Text style={styles.breakLine} accessibilityLiveRegion="polite">
                             {l('Mola: ', 'Break: ')}{formatStopwatchClock(elapsed?.phaseMs ?? 0)}
@@ -108,6 +114,7 @@ export default function StopwatchHero({
                     <TouchableOpacity
                         style={styles.pill}
                         onPress={onFinish}
+                        hitSlop={{ top: 4, bottom: 4 }}
                         accessibilityRole="button"
                         accessibilityLabel={l('Çalışmayı sonlandır ve kaydet', 'Finish and save the session')}
                     >
@@ -119,6 +126,7 @@ export default function StopwatchHero({
                     <TouchableOpacity
                         style={styles.pill}
                         onPress={onBreak ? onResume : onPause}
+                        hitSlop={{ top: 4, bottom: 4 }}
                         accessibilityRole="button"
                         accessibilityLabel={onBreak ? l('Moladan dön, devam et', 'End the break and resume') : l('Mola ver', 'Take a break')}
                     >
@@ -138,56 +146,66 @@ export default function StopwatchHero({
     return (
         <View style={styles.hero}>
             <View style={styles.row}>
-                <View
-                    accessible
-                    accessibilityRole="summary"
-                    accessibilityLabel={l(`Bugün toplam çalışma ${total}, hedef ${goal}.`, `Studied today: ${total} of a ${goal} goal.`)}
-                >
-                    <ProgressRing
-                        size={ringSize}
-                        strokeWidth={10}
-                        progress={progress}
-                        trackColor={RING_TRACK}
-                        progressColor={colors.white}
-                        knobColor={colors.white}
-                        knobDotColor={heroColor}
+                <View style={styles.half}>
+                    <View
+                        accessible
+                        accessibilityRole="summary"
+                        accessibilityLabel={l(`Bugün toplam çalışma ${total}, hedef ${goal}.`, `Studied today: ${total} of a ${goal} goal.`)}
                     >
-                        {/* The ring is drawn at a fixed size around this copy, which already fills its
-                            centre at the designed size, so it never grows past it. */}
-                        <View style={[styles.ringCenter, { maxWidth: ringSize * 0.66 }]}>
-                            <Text style={styles.ringLabel} maxFontSizeMultiplier={1}>{l('Toplam\nÇalışma Süresi', 'Total\nStudy Time')}</Text>
-                            <Text style={[styles.ringValue, { fontSize: totalFontSize }]} numberOfLines={1} maxFontSizeMultiplier={1}>{total}</Text>
-                        </View>
-                    </ProgressRing>
+                        <ProgressRing
+                            size={ringSize}
+                            strokeWidth={ringStroke}
+                            progress={progress}
+                            trackColor={RING_TRACK}
+                            progressColor={colors.white}
+                            knobColor={colors.white}
+                            knobDotColor={heroColor}
+                        >
+                            {/* The ring is drawn at a fixed size around this copy, which already fills its
+                                centre at the designed size, so it never grows past it. */}
+                            <View style={[styles.ringCenter, { maxWidth: ringSize - ringStroke * 2 - 8 }]}>
+                                <Text style={styles.ringLabel} maxFontSizeMultiplier={1}>{l('Toplam\nÇalışma Süresi', 'Total\nStudy Time')}</Text>
+                                <Text style={[styles.ringValue, { fontSize: totalFontSize }]} numberOfLines={1} maxFontSizeMultiplier={1}>{total}</Text>
+                            </View>
+                        </ProgressRing>
+                    </View>
                 </View>
 
-                <View style={styles.controls}>
-                    <Text style={styles.goalLabel}>{l('Günlük Hedef', 'Daily Goal')}</Text>
-                    <Stepper
-                        size="hero"
-                        value={formatGoalClock(goalMinutes)}
-                        onStep={onStepGoal}
-                        decreaseLabel={l('Günlük hedefi yarım saat azalt', 'Lower the daily goal by half an hour')}
-                        increaseLabel={l('Günlük hedefi yarım saat artır', 'Raise the daily goal by half an hour')}
-                        canDecrease={goalMinutes > MIN_GOAL_MINUTES}
-                        canIncrease={goalMinutes < MAX_GOAL_MINUTES}
-                    />
-                    <TouchableOpacity
-                        style={styles.startButton}
-                        onPress={onStart}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Kronometreyi başlat', 'Start the stopwatch')}
-                    >
-                        <View style={styles.iconCircle}>
-                            <PlayIcon color={colors.white} size={20} />
-                        </View>
-                        <Text style={styles.startText}>{l('Başla', 'Start')}</Text>
-                    </TouchableOpacity>
+                <View style={styles.half}>
+                    <View style={[styles.controls, { width: controlWidth }]}>
+                        <Text style={styles.goalLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                            {l('Günlük Hedef', 'Daily Goal')}
+                        </Text>
+                        <Stepper
+                            size="hero"
+                            value={formatGoalClock(goalMinutes)}
+                            onStep={onStepGoal}
+                            decreaseLabel={l('Günlük hedefi yarım saat azalt', 'Lower the daily goal by half an hour')}
+                            increaseLabel={l('Günlük hedefi yarım saat artır', 'Raise the daily goal by half an hour')}
+                            canDecrease={goalMinutes > MIN_GOAL_MINUTES}
+                            canIncrease={goalMinutes < MAX_GOAL_MINUTES}
+                        />
+                        <TouchableOpacity
+                            style={styles.startButton}
+                            onPress={onStart}
+                            hitSlop={{ top: 4, bottom: 4 }}
+                            accessibilityRole="button"
+                            accessibilityLabel={l('Kronometreyi başlat', 'Start the stopwatch')}
+                        >
+                            <View style={styles.iconCircle}>
+                                <PlayIcon color={colors.white} size={18} />
+                            </View>
+                            <Text style={styles.startText} numberOfLines={1}>{l('Başla', 'Start')}</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         </View>
     );
 }
+
+/** Width of the goal stepper and of "Başla" under it, which TUSBuddy draws the same width. */
+const CONTROL_WIDTH = 128;
 
 function createStyles(colors: ColorScheme, heroColor: string) {
     return StyleSheet.create({
@@ -196,58 +214,60 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             borderBottomLeftRadius: 28,
             borderBottomRightRadius: 28,
             paddingHorizontal: Spacing.lg,
-            paddingTop: Spacing.md,
-            paddingBottom: Spacing.lg,
+            paddingTop: Spacing.sm,
+            paddingBottom: Spacing.xl,
             gap: Spacing.md,
-            ...Shadows.sm,
+            // Above the list that scrolls under it, so its shadow falls on the list.
+            zIndex: 1,
+            ...Shadows.md,
         },
         heroRunning: { paddingTop: Spacing.xs, gap: Spacing.sm, paddingBottom: Spacing.lg },
-        row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.md },
+        row: { flexDirection: 'row', alignItems: 'center' },
+        half: { flex: 1, alignItems: 'center' },
         ringCenter: { alignItems: 'center', gap: 2 },
         ringLabel: { fontSize: FontSize.sm, color: ON_HERO_SOFT, textAlign: 'center', lineHeight: 16 },
         ringValue: { fontWeight: '800', color: colors.white, marginTop: 2 },
-        controls: { flex: 1, alignItems: 'center', gap: Spacing.sm },
-        goalLabel: { fontSize: FontSize.md, fontWeight: '700', color: colors.white },
+        controls: { alignItems: 'stretch', gap: Spacing.sm },
+        goalLabel: { fontSize: FontSize.lg, fontWeight: '700', color: colors.white, textAlign: 'center' },
         startButton: {
             flexDirection: 'row',
             alignItems: 'center',
-            gap: Spacing.sm,
-            width: '100%',
-            maxWidth: 188,
-            marginTop: Spacing.xs,
+            minHeight: 40,
+            marginTop: Spacing.sm,
             backgroundColor: colors.bgCard,
             borderRadius: BorderRadius.full,
-            padding: 4,
-            paddingRight: Spacing.lg,
+            paddingLeft: 4,
+            paddingRight: Spacing.md,
         },
         iconCircle: {
-            width: 34,
-            height: 34,
-            borderRadius: 17,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
             backgroundColor: colors.accent,
             alignItems: 'center',
             justifyContent: 'center',
         },
-        startText: { flex: 1, textAlign: 'center', fontSize: FontSize.xl, fontWeight: '800', color: colors.accent },
+        startText: { flex: 1, textAlign: 'center', fontSize: FontSize.xxl, fontWeight: '800', color: colors.accent },
         runningTop: { alignItems: 'center', gap: 6 },
         todayRow: { alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.xs },
         todayLabel: { fontSize: FontSize.md, color: ON_HERO_SOFT },
         todayValue: { color: colors.white, fontWeight: '700' },
         goalTrack: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: RING_TRACK, overflow: 'hidden' },
         goalFill: { height: 8, borderRadius: 4, backgroundColor: colors.white },
-        runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', letterSpacing: 0.6, color: colors.white },
-        bigClock: { fontSize: 44, lineHeight: 52, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
+        runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', letterSpacing: 0.8, color: colors.white },
+        bigClock: { fontSize: 54, lineHeight: 62, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
         breakLine: { fontSize: FontSize.md, fontWeight: '600', color: ON_HERO_SOFT, fontVariant: ['tabular-nums'] },
         runningButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.md },
         pill: {
             flexDirection: 'row',
             alignItems: 'center',
             gap: Spacing.sm,
-            minWidth: 132,
+            minWidth: 118,
+            minHeight: 36,
             backgroundColor: colors.bgCard,
             borderRadius: BorderRadius.full,
-            padding: 4,
-            paddingRight: Spacing.lg,
+            paddingLeft: 4,
+            paddingRight: Spacing.md,
         },
         pillIcon: {
             width: 28,

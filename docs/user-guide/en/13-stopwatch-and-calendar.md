@@ -37,9 +37,13 @@ the Stopwatch's header opens the Study Calendar.
   towards the goal, the subject, this session's study time as a large clock, and the **Finish** and
   **Break** buttons.
 - **Recent Study:** Today and yesterday, each day's latest session first. Earlier days are one tap
-  away on the **Study Calendar** card at the bottom of the list.
+  away on the **Your Study Calendar** card at the bottom of the list. The top of the screen and the
+  **Recent Study** heading stay in place; only the list scrolls.
+- Session and plan cards show a picture of the course (books for Karışık, a stethoscope for
+  Dahiliye and so on); a subject you typed yourself shows its first letter instead.
 - The header has a bell (reminders), a calendar (Study Calendar) and a gear (stopwatch settings);
-  the orange study tools button is at the bottom right.
+  the orange study tools button is at the bottom right. It opens the **Study Calendar**, **Your
+  Study Analysis**, **Study Planning** and **Clear Sessions** cards.
 
 Stopwatch sessions do not appear in the Statistics charts or in the **Time** of the
 **Today** card, but they do count for the **Study streak**. See
@@ -50,7 +54,9 @@ Stopwatch sessions do not appear in the Statistics charts or in the **Time** of 
 
 1. Tap **Start**.
 2. On **Start Studying**, tap **Subject**, pick the subject in the grid and tap **Close**. The grid
-   has Karışık (mixed) and the TUS courses, shown with their Turkish names, plus any other subject
+   shows each course with its picture and Turkish name: Karışık (mixed), Anatomi, Biyokimya,
+   Dahiliye, Farmakoloji, Fizyoloji, Mikrobiyoloji, Patoloji, Genel Cerrahi, Kadın Doğum, Pediatri,
+   Küçük Stajlar, then Histoloji ve Embriyoloji, Tıbbi Biyoloji ve Genetik and any other subject
    you have used. For a subject not in the list, type its name in the box under the grid and tap
    **Choose**.
 3. Tap **Type** and pick one: **Pass 1**–**Pass 8**, past TUS questions, question practice, prep
@@ -64,19 +70,22 @@ Choosing a subject continues its pass from that subject's latest "Pass N" sessio
   clock. **Resume** takes you back to studying.
 - The running session has its own card at the top of **Today**: its **Study** and **Break** times,
   **Session time** and how far the study block has gone, for example **60% · 20 min left**. Once
-  the block is over it says by how much (**15 min over**); on a break the same line counts the
-  break. The stopwatch never stops or pauses by itself.
-- **Study note:** The book button left of the running session's card adds a note (up to 100
-  characters). It shows on the card in place of "Happy studying" and is saved with the session.
+  the block is over it says by how much (**15 min over**). On a break the card shows **Break
+  time**, "Enjoy your break" and how far the break has gone; past its length it says, for example,
+  **Break over by 3 min**. The stopwatch never stops or pauses by itself.
+- **Study note:** The book button left of the running session's card opens **Study Note**; save a
+  note (up to 100 characters) with **Add Note**, and later with **Update Study Note**. It shows on
+  the card in place of "Happy studying" and is saved with the session.
 
 <a id="finish"></a>
 ## Finishing
 
-Tap **Finish** to see a confirmation with your study and break totals; **OK** saves the session,
-**Cancel** keeps the stopwatch running. The saved session appears under **Today** and in the Study
-Calendar, and counts for the daily goal and the **Study streak**.
+Tap **Finish** to see **Finish the Session**: it says the session will be finished, that a finished
+session cannot be continued, and the study and break totals that will be saved. **Finish** saves the
+session, **Cancel** keeps the stopwatch running. The saved session appears under **Today** and in
+the Study Calendar, and counts for the daily goal and the **Study streak**.
 
-Sessions shorter than a minute are not saved: on **Short session**, **OK** resets the stopwatch
+Sessions shorter than a minute are not saved: on **Short session**, **Delete** resets the stopwatch
 without saving. If you do not want to keep a longer session, finish it and then delete it (see
 [Sessions](#sessions)).
 
@@ -112,7 +121,8 @@ If you forgot to start the stopwatch, add the session afterwards:
 
 1. Tap **Add Session** next to the **Recent Study** heading; **Add a Past Session** opens.
 2. Choose the subject and type with **Subject** and **Type**, as when you start the stopwatch.
-3. Tap **Start** and **End** to pick the date and time. The end opens on now and the start an hour
+3. Tap **Start** and **End**: date and time wheels open at the bottom; **Done** takes the time you
+   chose and **Cancel** leaves the field as it was. The end opens on now and the start an hour
    earlier.
 4. Enter the **Breaks** and, minute by minute, the **Total Break**; add a **Study Note** if you like
    (up to 100 characters; the counter shows how many are left).
@@ -120,12 +130,15 @@ If you forgot to start the stopwatch, add the session afterwards:
 
 The study time is the time from start to end less the total break. A session cannot end in the
 future or be longer than 24 hours; its breaks cannot be longer than that span and must leave at
-least a minute of study. Anything wrong is shown under the button. A session added by hand counts
+least a minute of study. With a **Total Break** entered, **Breaks** cannot be zero. Anything wrong
+is shown under the button. If the session's time overlaps another stopwatch session or the running
+stopwatch, **Sessions overlap** names the other session and the session is not added, so the same
+time is never counted twice. Overlapping card sessions is allowed. A session added by hand counts
 that day for the **Study streak**.
 
 To change an existing session, use **•••** › **Edit**, which opens the same sheet (**Edit Your
 Session**). If you leave its start, end and breaks alone, the times it measured are kept to the
-second.
+second, and a session whose start and end you leave alone is not checked for overlaps again.
 
 <a id="daily-goal"></a>
 ## Daily goal and total time
@@ -150,15 +163,18 @@ under them showing your progress.
 
 The plans from **Study Planning** that fall on today appear as cards under today's sessions:
 
-- A card shows the subject, the type and the time **Left**: the planned time less what you have
-  studied of that subject today, a running stopwatch included. Once it is covered, it says
-  **Done ✓**. The plan's hours are under the card.
-- **▶** starts the stopwatch on the plan's subject and type. If another subject is running,
-  **Switch subject** asks first; **OK** saves the running session and starts the plan. While you
-  study the same subject, the button is hidden.
+- A card shows the subject, the type and the time **Left** (for example **Left: 8 h**): the planned
+  time less what you have studied of that subject today, a running stopwatch included. Once it is
+  covered, it says **Done ✓**. The plan's hours are under the card. In the Study Calendar, other
+  days' plan cards show the **Planned** time.
+- **Start**, next to the time left, starts the stopwatch on the plan's subject and type. If another
+  subject is running, **Switch subject** asks first; **OK** saves the running session and starts
+  the plan. While you study the same subject, the button is hidden. With VoiceOver, **Start** is
+  among the card's actions.
 - The gear left of the card, and the card itself, open **Study Planning**.
 
-With no plans at all, today shows **You have no study plan!**; **Create** opens the plan wizard.
+With no plans at all, today shows **You have no study plan!** ("Create a study plan and let
+TusAnkiM tell you what to study each day."); **Create** opens the plan wizard.
 With plans for other days only, the card says **Nothing planned for today!** and **Plans** opens
 them.
 
@@ -184,11 +200,14 @@ These lengths also drive the progress bar on the running session's card; with on
 is not shown.
 
 On the **Reminders** sheet (bell button), the **Study and break reminders** switch (on by default)
-controls notifications. While it is on, the iPhone shows "Study block is over" when a block ends and
-"Break is over" when a break ends; tapping the notification opens the Stopwatch.
+controls notifications. While it is on, the iPhone shows "Study time is up, time for a break!" when
+a block ends and "Your break is over, time to study!" when a break ends; tapping the notification
+opens the Stopwatch.
 
-- You get one notification per block, timed from when you started the block or came back from the
-  break. If you keep studying past the end, no second notification follows.
+- Times run from when you started the block or came back from the break. A study block ends with
+  one notification; if you keep studying past the end, no second one follows.
+- If you stay on a break, you are reminded again 1, 3 and 5 minutes after it ends ("Your break ran
+  1 minute over!"). **Resume** removes the reminders still pending.
 - Turning the switch on asks for notification permission. If notifications are turned off for the
   app, the sheet says so and shows **Open Settings**.
 - Even with reminders off, the running session's card tells you when a block is over.
@@ -213,8 +232,8 @@ counting too.
 ## Study Calendar
 <!-- In the app: the new ⓘ in the Study Calendar header (app/study-calendar.tsx:327-334), "Learn more" link of its info sheet → this section -->
 
-Open it with the calendar button in the Stopwatch's header, or the **Study Calendar** card under
-the timeline.
+Open it with the calendar button in the Stopwatch's header, the **Your Study Calendar** card under
+the timeline, or the **Study Calendar** card of the orange study tools button.
 
 - At the top are the **Weekly** / **Monthly** views and the previous and next arrows. Tap a day to
   scroll the list below to it; tap a dimmed day of the neighbouring month to switch to that month.

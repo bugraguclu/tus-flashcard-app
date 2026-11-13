@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
+import { capsulePath } from './svgShapes';
 
 interface ProgressRingProps {
     size: number;
@@ -18,8 +19,9 @@ interface ProgressRingProps {
 
 /**
  * The daily goal ring: a track, the share of the goal studied so far drawn clockwise from the top,
- * and a knob where that share ends. The arc is a computed path rather than a rotated dashed
- * circle, so it renders the same on iPhone and on the web without SVG transforms.
+ * and a knob where that share ends — a small pill lying along the ring with a dot at its trailing
+ * end, as TUSBuddy draws it. The arc and the pill are computed paths rather than rotated shapes,
+ * so they render the same on iPhone and on the web without SVG transforms.
  */
 export default function ProgressRing({
     size,
@@ -31,14 +33,21 @@ export default function ProgressRing({
     knobDotColor = progressColor,
     children,
 }: ProgressRingProps) {
-    const knobRadius = strokeWidth * 0.95;
+    const knobRadius = strokeWidth * 0.62;
+    const knobLength = strokeWidth * 2.4;
     const center = size / 2;
-    const radius = center - knobRadius - 1;
+    const radius = center - Math.max(strokeWidth / 2, knobRadius) - 1;
     const share = Math.max(0, Math.min(1, Number.isFinite(progress) ? progress : 0));
     const angle = -Math.PI / 2 + share * 2 * Math.PI;
     const endX = center + radius * Math.cos(angle);
     const endY = center + radius * Math.sin(angle);
     const arc = `M ${center} ${center - radius} A ${radius} ${radius} 0 ${share > 0.5 ? 1 : 0} 1 ${endX} ${endY}`;
+    // The pill follows the ring: its long side is the tangent at the end of the arc, and the dot
+    // sits at the end the arc comes from.
+    const tangentDeg = (angle * 180) / Math.PI + 90;
+    const trail = knobLength / 2 - knobRadius;
+    const dotX = endX - Math.cos(angle + Math.PI / 2) * trail;
+    const dotY = endY - Math.sin(angle + Math.PI / 2) * trail;
 
     return (
         <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -49,8 +58,8 @@ export default function ProgressRing({
                 ) : share > 0 ? (
                     <Path d={arc} stroke={progressColor} strokeWidth={strokeWidth} strokeLinecap="round" fill="none" />
                 ) : null}
-                <Circle cx={endX} cy={endY} r={knobRadius} fill={knobColor} stroke={trackColor} strokeWidth={1} />
-                <Circle cx={endX} cy={endY} r={knobRadius * 0.38} fill={knobDotColor} />
+                <Path d={capsulePath(endX, endY, knobLength, knobRadius, tangentDeg)} fill={knobColor} />
+                <Circle cx={dotX} cy={dotY} r={knobRadius * 0.5} fill={knobDotColor} />
             </Svg>
             {children}
         </View>

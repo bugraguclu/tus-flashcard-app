@@ -6,25 +6,41 @@ import {
     requestStudyNotificationPermission,
     type StudyNotificationPermission,
 } from './studyNotifications';
-import { nextStopwatchAlert, type RunningStopwatch, type StopwatchPrefs } from './stopwatch';
+import {
+    BREAK_OVERRUN_REMINDER_MINUTES,
+    stopwatchAlertContent,
+    stopwatchAlerts,
+    type RunningStopwatch,
+    type StopwatchAlert,
+    type StopwatchAlertCopy,
+    type StopwatchPrefs,
+} from './stopwatch';
+
+export type { StopwatchAlertCopy } from './stopwatch';
 
 /**
- * The Kronometre's block reminders on iPhone: one local notification when a study block is over
- * ("take a break") or a break is over ("back to work"). The web build has its own module with the
- * same exports (`stopwatchNotifications.web.ts`).
+ * The Kronometre's block reminders on iPhone: a local notification when a study block is over
+ * ("Çalışma süresi doldu, mola zamanı!") or a break is over ("Mola süreniz bitti, çalışma
+ * zamanı!"), and while a break runs on, one, three and five minutes past its end, as TUSBuddy
+ * reminds ("Mola Süresini 3 Dakika Aştınız!"). The web build has its own module with the same
+ * exports (`stopwatchNotifications.web.ts`).
  *
- * At most one reminder is ever pending, under a fixed identifier, so rescheduling is a plain
+ * At most four reminders are pending, each under a fixed identifier, so rescheduling is a plain
  * replace and the daily review reminders keep their share of iOS's 64 pending notifications.
  */
 
 export const STOPWATCH_ALERT_KIND = 'tus-stopwatch-block';
 const ALERT_IDENTIFIER = `${STOPWATCH_ALERT_KIND}.current`;
+const overrunIdentifier = (minutes: number) => `${STOPWATCH_ALERT_KIND}.over${minutes}`;
+const ALL_IDENTIFIERS = [ALERT_IDENTIFIER, ...BREAK_OVERRUN_REMINDER_MINUTES.map(overrunIdentifier)];
 
-export interface StopwatchAlertCopy {
-    focusTitle: string;
-    focusBody: string;
-    breakTitle: string;
-    breakBody: string;
+const identifierFor = (alert: StopwatchAlert) =>
+    alert.kind === 'breakOver' ? overrunIdentifier(alert.overMinutes) : ALERT_IDENTIFIER;
+
+async function cancelPending(): Promise<void> {
+    for (const identifier of ALL_IDENTIFIERS) {
+        await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => undefined);
+    }
 }
 
 export interface StopwatchAlertPermission {
@@ -65,8 +81,8 @@ export async function requestStopwatchAlertPermission(): Promise<StopwatchAlertP
 }
 
 /**
- * Replace the pending reminder with the one the stopwatch's current phase calls for: none when
- * nothing runs, the reminders are off, the phase has no length set or its end has already passed.
+ * Replace the pending reminders with the ones the stopwatch's current phase calls for: none when
+ * nothing runs, the reminders are off or the phase has no length set; only those still ahead.
  */
 export function syncStopwatchAlert(
     running: RunningStopwatch | null,
@@ -76,36 +92,38 @@ export function syncStopwatchAlert(
 ): Promise<void> {
     return serialize(async () => {
         if (Platform.OS !== 'ios') return;
-        await Notifications.cancelScheduledNotificationAsync(ALERT_IDENTIFIER).catch(() => undefined);
+        await cancelPending();
         if (!running || !prefs.alertsEnabled) return;
-        const alert = nextStopwatchAlert(running, prefs);
-        if (!alert || alert.atMs <= nowMs + 1000) return;
+        const alerts = stopwatchAlerts(running, prefs).filter((alert) => alert.atMs > nowMs + 1000);
+        if (alerts.length === 0) return;
         const permission = await getStudyNotificationPermission();
         if (permission.state !== 'granted' && permission.state !== 'limited') return;
 
         configureStudyNotificationHandler();
-        const focus = alert.kind === 'focus';
-        await Notifications.scheduleNotificationAsync({
-            identifier: ALERT_IDENTIFIER,
-            content: {
-                title: focus ? copy.focusTitle : copy.breakTitle,
-                body: focus ? copy.focusBody : copy.breakBody,
-                sound: 'default',
-                interruptionLevel: 'active',
-                data: { kind: STOPWATCH_ALERT_KIND, route: '/stopwatch' },
-            },
-            trigger: {
-                type: Notifications.SchedulableTriggerInputTypes.DATE,
-                date: new Date(alert.atMs),
-            },
-        });
+        for (const alert of alerts) {
+            const { title, body } = stopwatchAlertContent(alert, copy);
+            await Notifications.scheduleNotificationAsync({
+                identifier: identifierFor(alert),
+                content: {
+                    title,
+                    body,
+                    sound: 'default',
+                    interruptionLevel: 'active',
+                    data: { kind: STOPWATCH_ALERT_KIND, route: '/stopwatch' },
+                },
+                trigger: {
+                    type: Notifications.SchedulableTriggerInputTypes.DATE,
+                    date: new Date(alert.atMs),
+                },
+            });
+        }
     });
 }
 
 export function cancelStopwatchAlert(): Promise<void> {
     return serialize(async () => {
         if (Platform.OS !== 'ios') return;
-        await Notifications.cancelScheduledNotificationAsync(ALERT_IDENTIFIER).catch(() => undefined);
+        await cancelPending();
     });
 }
 

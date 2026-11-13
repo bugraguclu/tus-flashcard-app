@@ -327,16 +327,19 @@ export interface ManualSessionEntry {
 /**
  * `order`: it does not end after it starts. `future`: it ends later than now. `tooLong`: it spans
  * more than a day. `break`: the breaks are longer than the span. `tooShort`: less than a minute of
- * study is left once the breaks are taken out.
+ * study is left once the breaks are taken out. `breakCount`: a total break is entered with no
+ * break counted, which TUSBuddy refuses too ("Mola süresi girildiği için mola sayısı sıfırdan büyük
+ * olmalıdır.").
  */
-export type ManualSessionProblem = 'order' | 'future' | 'tooLong' | 'break' | 'tooShort';
+export type ManualSessionProblem = 'order' | 'future' | 'tooLong' | 'break' | 'tooShort' | 'breakCount';
 
 /**
  * What stops a hand entry from being saved, or null. The end may lie up to a minute past `nowMs`,
- * because the form's clocks show whole minutes and "now" is the minute that has just begun.
+ * because the form's clocks show whole minutes and "now" is the minute that has just begun. The
+ * break count is only checked when it is given.
  */
 export function manualSessionProblem(
-    entry: Pick<ManualSessionEntry, 'startMs' | 'endMs' | 'breakMs'>,
+    entry: Pick<ManualSessionEntry, 'startMs' | 'endMs' | 'breakMs'> & { breakCount?: number },
     nowMs: number,
 ): ManualSessionProblem | null {
     const spanMs = entry.endMs - entry.startMs;
@@ -345,6 +348,33 @@ export function manualSessionProblem(
     if (spanMs > MAX_MANUAL_SESSION_MS) return 'tooLong';
     if (!(entry.breakMs >= 0) || entry.breakMs > spanMs) return 'break';
     if (spanMs - entry.breakMs < MIN_SESSION_MS) return 'tooShort';
+    if (entry.breakCount !== undefined && entry.breakCount <= 0 && entry.breakMs >= MINUTE_MS) return 'breakCount';
+    return null;
+}
+
+/** A span of time a session takes up, with the id of the stored session it belongs to, if any. */
+export interface SessionSpan {
+    id: number | null;
+    startMs: number;
+    endMs: number;
+}
+
+/**
+ * The first of `sessions` whose time overlaps `[startMs, endMs)`, leaving out the session with
+ * `excludeId` (the one being edited), or null. Sessions that only touch — one ending the minute
+ * the other starts — do not overlap. A hand entry that overlaps another session would count the
+ * same time twice, so the form refuses it, as TUSBuddy does ("…var olan başka bir çalışma ile
+ * çakışıyor!").
+ */
+export function overlappingSession<T extends SessionSpan>(
+    span: Pick<SessionSpan, 'startMs' | 'endMs'>,
+    sessions: readonly T[],
+    excludeId: number | null,
+): T | null {
+    for (const session of sessions) {
+        if (excludeId !== null && session.id === excludeId) continue;
+        if (session.startMs < span.endMs && span.startMs < session.endMs) return session;
+    }
     return null;
 }
 
@@ -471,10 +501,18 @@ export function stepBlockMinutes(minutes: number, direction: 1 | -1, max: number
 // --- Block reminders ---
 
 export interface StopwatchAlert {
-    /** `focus`: the study block is over, take a break. `break`: the break is over. */
-    kind: 'focus' | 'break';
+    /**
+     * `focus`: the study block is over, take a break. `break`: the break is over. `breakOver`: the
+     * break has run `overMinutes` past its end ("Mola Süresini 3 Dakika Aştınız!").
+     */
+    kind: 'focus' | 'break' | 'breakOver';
     atMs: number;
+    /** Minutes past the break's end; 0 for the other kinds. */
+    overMinutes: number;
 }
+
+/** Minutes past a break's end at which TUSBuddy reminds the learner again, and so does TusAnkiM. */
+export const BREAK_OVERRUN_REMINDER_MINUTES: readonly number[] = [1, 3, 5];
 
 /** When the current phase's reminder is due, or null when that reminder is turned off. */
 export function nextStopwatchAlert(
@@ -486,7 +524,48 @@ export function nextStopwatchAlert(
     return {
         kind: state.phase === 'study' ? 'focus' : 'break',
         atMs: state.phaseStartedAtMs + minutes * MINUTE_MS,
+        overMinutes: 0,
     };
+}
+
+/** The words of the block reminders, in the learner's language; built by the Kronometre screen. */
+export interface StopwatchAlertCopy {
+    focusTitle: string;
+    focusBody: string;
+    breakTitle: string;
+    breakBody: string;
+    /** "Mola Süresini 3 Dakika Aştınız!" for a break `minutes` past its end. */
+    breakOverTitle: (minutes: number) => string;
+    breakOverBody: string;
+}
+
+/** The title and body a reminder is shown with. */
+export function stopwatchAlertContent(alert: StopwatchAlert, copy: StopwatchAlertCopy): { title: string; body: string } {
+    if (alert.kind === 'focus') return { title: copy.focusTitle, body: copy.focusBody };
+    if (alert.kind === 'break') return { title: copy.breakTitle, body: copy.breakBody };
+    return { title: copy.breakOverTitle(alert.overMinutes), body: copy.breakOverBody };
+}
+
+/**
+ * Every reminder the current phase calls for, earliest first: the end of the study block, or the
+ * end of the break followed by the reminders one, three and five minutes past it. Empty when the
+ * phase has no length set.
+ */
+export function stopwatchAlerts(
+    state: RunningStopwatch,
+    prefs: Pick<StopwatchPrefs, 'focusMinutes' | 'breakMinutes'>,
+): StopwatchAlert[] {
+    const first = nextStopwatchAlert(state, prefs);
+    if (!first) return [];
+    if (first.kind !== 'break') return [first];
+    return [
+        first,
+        ...BREAK_OVERRUN_REMINDER_MINUTES.map((minutes) => ({
+            kind: 'breakOver' as const,
+            atMs: first.atMs + minutes * MINUTE_MS,
+            overMinutes: minutes,
+        })),
+    ];
 }
 
 // --- Display ---

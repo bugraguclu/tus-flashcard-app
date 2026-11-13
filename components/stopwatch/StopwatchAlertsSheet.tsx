@@ -68,8 +68,8 @@ export default function StopwatchAlertsSheet({ visible, prefs, onChange, onClose
             <SettingRow
                 label={l('Ders ve mola hatırlatmaları', 'Study and break reminders')}
                 hint={l(
-                    `Ders süresi (${prefs.focusMinutes > 0 ? `${prefs.focusMinutes} dk` : 'kapalı'}) dolunca mola, mola süresi (${prefs.breakMinutes > 0 ? `${prefs.breakMinutes} dk` : 'kapalı'}) dolunca derse dönüş bildirimi gelir.`,
-                    `A notification when the study block (${prefs.focusMinutes > 0 ? `${prefs.focusMinutes} min` : 'off'}) or the break (${prefs.breakMinutes > 0 ? `${prefs.breakMinutes} min` : 'off'}) is over.`,
+                    `Ders süresi (${prefs.focusMinutes > 0 ? `${prefs.focusMinutes} dk` : 'kapalı'}) dolunca mola, mola süresi (${prefs.breakMinutes > 0 ? `${prefs.breakMinutes} dk` : 'kapalı'}) dolunca derse dönüş bildirimi gelir; moladan dönmezseniz 1, 3 ve 5 dakika sonra yeniden hatırlatılır.`,
+                    `A notification when the study block (${prefs.focusMinutes > 0 ? `${prefs.focusMinutes} min` : 'off'}) or the break (${prefs.breakMinutes > 0 ? `${prefs.breakMinutes} min` : 'off'}) is over; if you stay on the break, again 1, 3 and 5 minutes later.`,
                 )}
             >
                 <Switch

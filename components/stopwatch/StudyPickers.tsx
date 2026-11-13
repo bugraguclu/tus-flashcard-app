@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { Text, TextInput } from '../AppText';
+import { Text, TextInput, useLayoutTextScale } from '../AppText';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
@@ -14,9 +14,31 @@ import {
 } from '../../lib/stopwatch';
 import { CheckIcon, SearchIcon } from './StopwatchIcons';
 import { studyTypeLabel } from './StudyTypeChips';
+import { subjectArtName } from '../../lib/subjectArt';
+import { SubjectArt } from './SubjectArt';
 
-/** "Karışık" first, as TUSBuddy offers it, then the TUS courses in the exam's order. */
-const GRID_SUBJECTS: readonly string[] = ['Karışık', ...TUS_STUDY_SUBJECTS.filter((subject) => subject !== 'Karışık')];
+/**
+ * The courses in the order TUSBuddy's grid lists them, "Karışık" first; the courses TusAnkiM
+ * offers besides (histology, medical biology) follow, and then any other built-in subject.
+ */
+const TUSBUDDY_GRID_ORDER: readonly string[] = [
+    'Karışık',
+    'Anatomi',
+    'Biyokimya',
+    'Dahiliye',
+    'Farmakoloji',
+    'Fizyoloji',
+    'Mikrobiyoloji',
+    'Patoloji',
+    'Genel Cerrahi',
+    'Kadın Hastalıkları ve Doğum',
+    'Pediatri',
+    'Küçük Stajlar',
+];
+const GRID_SUBJECTS: readonly string[] = [
+    ...TUSBUDDY_GRID_ORDER.filter((subject) => TUS_STUDY_SUBJECTS.includes(subject)),
+    ...TUS_STUDY_SUBJECTS.filter((subject) => !TUSBUDDY_GRID_ORDER.includes(subject)),
+];
 /** A tile's caption where the course's full name does not fit; the subject keeps its full name. */
 const GRID_CAPTIONS: Readonly<Record<string, string>> = { 'Kadın Hastalıkları ve Doğum': 'Kadın Doğum' };
 
@@ -37,6 +59,9 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
     const { l } = useI18n();
     const colors = useThemeColors();
     const { height } = useWindowDimensions();
+    // Three columns as TUSBuddy draws them; at the larger text sizes two, so that a course's name
+    // ("Mikrobiyoloji") stays whole on its line instead of breaking inside the word.
+    const twoColumns = useLayoutTextScale() >= 1.2;
     const [custom, setCustom] = useState('');
     // While a new subject is typed the grid steps aside, so the field stays above the keyboard.
     const [typing, setTyping] = useState(false);
@@ -73,7 +98,9 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                 accessibilityLabel={l('Ders seçimini kapat', 'Close the subject picker')}
             />
             <View style={[styles.layer, styles.card, { backgroundColor: colors.bgCard, maxHeight: height * 0.86 }]}>
-                <ScrollView contentContainerStyle={styles.gridContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                {/* Two columns at the largest text sizes outgrow a small iPhone: the courses scroll
+                    and Kapat stays pinned under them, so closing never needs a scroll first. */}
+                <ScrollView style={styles.gridScroll} contentContainerStyle={styles.gridContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                     <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">{l('Ders Seçin', 'Choose a Subject')}</Text>
                     <View style={[styles.grid, typing && styles.hidden]} accessibilityRole="radiogroup" accessibilityLabel={l('Ders', 'Subject')}>
                         {subjects.map((subject) => {
@@ -83,6 +110,7 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                                     key={subject}
                                     style={[
                                         styles.tile,
+                                        twoColumns && styles.tileWide,
                                         isSelected
                                             ? { backgroundColor: colors.accentLight, borderColor: colors.accent }
                                             : { backgroundColor: colors.bgInput, borderColor: colors.border },
@@ -103,6 +131,13 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                                     >
                                         {isSelected ? <CheckIcon color={colors.white} size={10} /> : null}
                                     </View>
+                                    {subjectArtName(subject) ? (
+                                        <SubjectArt subject={subject} size={30} />
+                                    ) : (
+                                        <View style={[styles.initialDot, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
+                                            <Text style={[styles.initialText, { color: colors.accent }]}>{subject.charAt(0).toLocaleUpperCase('tr')}</Text>
+                                        </View>
+                                    )}
                                     <Text style={[styles.tileLabel, { color: colors.textPrimary }]} numberOfLines={2}>{GRID_CAPTIONS[subject] ?? subject}</Text>
                                 </TouchableOpacity>
                             );
@@ -134,6 +169,8 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                             </TouchableOpacity>
                         ) : null}
                     </View>
+                </ScrollView>
+                <View style={styles.gridFooter}>
                     <TouchableOpacity
                         style={[styles.closeButton, { backgroundColor: colors.accent }]}
                         onPress={onClose}
@@ -142,7 +179,7 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                     >
                         <Text style={styles.closeText}>{l('Kapat', 'Close')}</Text>
                     </TouchableOpacity>
-                </ScrollView>
+                </View>
             </View>
         </>
     );
@@ -244,12 +281,14 @@ const styles = StyleSheet.create({
     // Shrinks into the room the keyboard leaves; its content scrolls.
     card: { flexShrink: 1, borderRadius: BorderRadius.lg, ...Shadows.lg },
     hidden: { display: 'none' },
-    gridContent: { alignItems: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.lg, gap: Spacing.md },
+    gridScroll: { flexGrow: 0, flexShrink: 1 },
+    gridContent: { alignItems: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, gap: Spacing.md },
+    gridFooter: { alignItems: 'center', paddingTop: Spacing.md, paddingBottom: Spacing.lg },
     title: { fontSize: FontSize.lg, fontWeight: '700' },
     grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: Spacing.sm, alignSelf: 'stretch' },
     tile: {
         width: '31%',
-        minHeight: 56,
+        minHeight: 74,
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: BorderRadius.md,
@@ -257,8 +296,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
         paddingTop: Spacing.sm,
         paddingBottom: 6,
-        gap: 2,
+        gap: 4,
     },
+    tileWide: { width: '48%' },
+    initialDot: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        borderWidth: StyleSheet.hairlineWidth,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    initialText: { fontSize: FontSize.lg, fontWeight: '800' },
     radio: {
         position: 'absolute',
         top: 5,
