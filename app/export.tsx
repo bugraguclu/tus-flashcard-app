@@ -255,9 +255,9 @@ export default function ExportScreen() {
                 {recoveryArtifact ? <Notice tone="info">{l('Bu kopya hasarlı satırları kurtarma için saklar. Ham JSON dosyasını paylaşabilirsiniz; doğrudan geri yüklenemez.', 'This copy preserves damaged rows for recovery. You can share the raw JSON file; it cannot be restored directly.')}</Notice> : <>
                 <Section
                     label={l('Dışa aktarma biçimi', 'Export format')}
-                    footnote={choosesDecks ? undefined : selectionExport
+                    footnote={selectionExport && !choosesDecks
                         ? l(`${selectedCardIds?.length ?? 0} seçili kart dışa aktarılacak.`, `${selectedCardIds?.length ?? 0} selected cards will be exported.`)
-                        : l('Koleksiyonun tamamı, çalışma programıyla birlikte.', 'The whole collection, with its scheduling.')}
+                        : undefined}
                 >
                     {availableFormats.map((item) => (
                         // A single-choice row: the kit's rows carry no radio role or state.

@@ -299,31 +299,38 @@ export default function DeckOverviewScreen() {
                     </View>
                 )}
 
-                <Card divided>
-                    {deck.isFiltered ? (
+                {/* Each workflow is its own card, as the overview has always drawn them. */}
+                {deck.isFiltered ? (
+                    <Card>
                         <ListRow
                             title={l('Filtre seçenekleri', 'Filtered Deck Options')}
                             summary={l('Arama, limit, sıralama ve önizleme modu', 'Search, limit, order, and preview mode')}
                             accessibilityHint={l('Arama, limit, sıralama ve önizleme modu', 'Search, limit, order, and preview mode')}
                             onPress={() => setFilterOptionsOpen(true)}
                         />
-                    ) : null}
-                    {!deck.isFiltered ? (
+                    </Card>
+                ) : null}
+                {!deck.isFiltered ? (
+                    <Card>
                         <ListRow
                             title={t('anki.customStudy')}
                             summary={l('Limit artırın, unutulanları seçin veya ileriye çalışın', 'Increase limits, review forgotten cards, or study ahead')}
                             accessibilityHint={l('Limit artırın, unutulanları seçin veya ileriye çalışın', 'Increase limits, review forgotten cards, or study ahead')}
                             onPress={() => setCustomStudyOpen(true)}
                         />
-                    ) : null}
-                    {!deck.isFiltered ? (
+                    </Card>
+                ) : null}
+                {!deck.isFiltered ? (
+                    <Card>
                         <ListRow
                             title={l('Deste seçenekleri', 'Deck Options')}
                             summary={l('Limitler, sıralama, gömme ve ayar grubu', 'Limits, display order, burying, and preset')}
                             accessibilityHint={l('Limitler, sıralama, gömme ve ayar grubu', 'Limits, display order, burying, and preset')}
                             onPress={() => router.push(`/deck-options?deckId=${deck.id}` as any)}
                         />
-                    ) : null}
+                    </Card>
+                ) : null}
+                <Card>
                     <ListRow
                         title={l('Deste istatistikleri', 'Deck Statistics')}
                         summary={l('İlerlemeyi ve tekrar yükünü görüntüleyin', 'View progress and review workload')}
