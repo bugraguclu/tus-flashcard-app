@@ -1,11 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { FontSize, Shadows, Spacing, type ColorScheme } from '../../constants/theme';
-import { Radius } from '../ui/tokens';
-
-/**
- * The timeline both the Kronometre and the study calendar draw: the line, its day labels, nodes and
- * side buttons. The entries on it are `Card`s; their type is a `Badge`.
- */
+import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../../constants/theme';
 
 /** Width of the column left of the cards, which holds the timeline line, its nodes and buttons. */
 const TIMELINE_GUTTER = 80;
@@ -27,7 +21,7 @@ function createTimelineStyles(colors: ColorScheme) {
             minWidth: 68,
             alignItems: 'center',
             backgroundColor: colors.bgCard,
-            borderRadius: Radius.inset,
+            borderRadius: BorderRadius.md,
             paddingHorizontal: Spacing.md,
             paddingVertical: 5,
             ...Shadows.sm,
@@ -67,8 +61,9 @@ function createTimelineStyles(colors: ColorScheme) {
             ...Shadows.sm,
         },
         nodeDone: { backgroundColor: colors.accent },
-        nodePlanned: { backgroundColor: colors.info },
-        nodeMissed: { backgroundColor: colors.danger },
+        nodePlanned: { backgroundColor: colors.badgeNew },
+        nodeMissed: { backgroundColor: colors.btnAgain },
+        nodeText: { color: colors.white, fontSize: FontSize.xs, fontWeight: '800' },
         sideButtonSlot: {
             position: 'absolute',
             top: 0,
@@ -76,22 +71,29 @@ function createTimelineStyles(colors: ColorScheme) {
             left: Spacing.md,
             justifyContent: 'center',
         },
-        // Drawn 26 × 24 beside the line; `SIDE_BUTTON_SLOP` makes it a full 44-point target.
         sideButton: {
             width: 26,
             height: 24,
-            borderRadius: Radius.control,
+            borderRadius: BorderRadius.sm,
             backgroundColor: colors.bgCard,
+            alignItems: 'center',
+            justifyContent: 'center',
             ...Shadows.sm,
         },
 
         column: { flex: 1, paddingRight: Spacing.lg, paddingVertical: Spacing.sm },
-        /** The content of an entry's `Card`: the subject's tile beside its details. */
-        cardRow: { flexDirection: 'row', gap: Spacing.md },
+        card: {
+            flexDirection: 'row',
+            gap: Spacing.md,
+            backgroundColor: colors.bgCard,
+            borderRadius: BorderRadius.lg,
+            padding: Spacing.md,
+            ...Shadows.sm,
+        },
         tile: {
             width: 46,
             height: 46,
-            borderRadius: Radius.inset,
+            borderRadius: BorderRadius.md,
             backgroundColor: colors.bgInput,
             alignItems: 'center',
             justifyContent: 'center',
@@ -100,11 +102,18 @@ function createTimelineStyles(colors: ColorScheme) {
         body: { flex: 1, gap: Spacing.xs },
         titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         subject: { flex: 1, fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
-        /** The type ("1. Tekrar") beside the subject. */
-        typeBadge: { alignSelf: 'center' },
+        // The type ("1. Tekrar") as TUSBuddy outlines it.
+        chip: {
+            borderWidth: 1,
+            borderColor: colors.badgeNew,
+            borderRadius: BorderRadius.sm,
+            paddingHorizontal: 6,
+            paddingVertical: 1,
+        },
+        chipText: { fontSize: FontSize.xs + 1, fontWeight: '600', color: colors.badgeNew },
         metricsRow: { flexDirection: 'row' },
         metric: { flex: 1, gap: 2 },
-        metricLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.success },
+        metricLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.btnGood },
         metricLabelBreak: { fontSize: FontSize.sm, fontWeight: '600', color: colors.streak },
         metricValue: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
         metricAside: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textMuted },
@@ -123,9 +132,6 @@ function createTimelineStyles(colors: ColorScheme) {
         },
     });
 }
-
-/** Makes the 26 × 24 side button a 44-point target. */
-export const SIDE_BUTTON_SLOP = { top: 10, right: 9, bottom: 10, left: 9 };
 
 type TimelineStyles = ReturnType<typeof createTimelineStyles>;
 

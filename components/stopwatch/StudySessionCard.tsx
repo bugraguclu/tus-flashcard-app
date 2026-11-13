@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
@@ -9,12 +9,10 @@ import {
     studySubjectInitial,
     type StudySession,
 } from '../../lib/studyCalendar';
-import { IconButton } from '../ui/Button';
-import { Card } from '../ui/Card';
-import { Badge } from '../ui/Choice';
-import { CheckIcon, MoreIcon } from '../ui/icons';
+import { CheckIcon } from './StopwatchIcons';
+import { MoreIcon } from '../ui/icons';
 import { studyTypeLabel } from './StudyTypeChips';
-import { SIDE_BUTTON_SLOP, timelineStyles } from './timelineStyles';
+import { timelineStyles } from './timelineStyles';
 
 interface StudySessionCardProps {
     session: StudySession;
@@ -23,10 +21,10 @@ interface StudySessionCardProps {
 
 /**
  * One session on a study timeline, as the Kronometre and the study calendar both draw it, after
- * TUSBuddy: the options button and a tick on the line, then the subject, its type ("N. Tekrar",
- * "Soru Çözümü"...), the study and break time with the number of breaks, the learner's note and
- * the time of day it ran. Whether it was measured, entered by hand or answered on cards is in its
- * details.
+ * TUSBuddy: the options button and a tick on the line, then the subject, its type chip ("N.
+ * Tekrar", "Soru Çözümü"...), the study and break time with the number of breaks, the learner's
+ * note and the time of day it ran. Whether it was measured, entered by hand or answered on cards
+ * is in its details.
  */
 function StudySessionCard({ session, onOpenMenu }: StudySessionCardProps) {
     const { l, locale } = useI18n();
@@ -44,56 +42,57 @@ function StudySessionCard({ session, onOpenMenu }: StudySessionCardProps) {
             <View style={styles.gutter}>
                 <View style={styles.line} />
                 <View style={styles.sideButtonSlot}>
-                    <IconButton
+                    <TouchableOpacity
                         style={styles.sideButton}
                         onPress={() => onOpenMenu(session)}
-                        hitSlop={SIDE_BUTTON_SLOP}
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        accessibilityRole="button"
                         accessibilityLabel={l(
                             `${session.subject} oturumu için seçenekler`,
                             `Options for the ${session.subject} session`,
                         )}
                     >
-                        <MoreIcon color={colors.textSecondary} size={16} />
-                    </IconButton>
+                        <MoreIcon color={colors.textSecondary} size={18} />
+                    </TouchableOpacity>
                 </View>
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
                     <View style={[styles.node, styles.nodeDone]}>
-                        <CheckIcon color={colors.onAccent} size={13} />
+                        <CheckIcon color={colors.white} size={13} />
                     </View>
                 </View>
             </View>
             <View style={styles.column}>
-                <Card padded>
-                    <View style={styles.cardRow}>
-                        <View style={styles.tile}>
-                            <Text style={styles.tileText}>{studySubjectInitial(session.subject)}</Text>
-                        </View>
-                        <View style={styles.body}>
-                            <View style={styles.titleRow}>
-                                <Text style={styles.subject} numberOfLines={1}>{session.subject}</Text>
-                                <Badge label={repeatLabel} tone="info" style={styles.typeBadge} />
-                            </View>
-                            <View style={styles.metricsRow}>
-                                <View style={styles.metric}>
-                                    <Text style={styles.metricLabel}>{l('Çalışma', 'Study')}</Text>
-                                    <Text style={styles.metricValue}>{formatSessionDuration(session.studyMs, locale)}</Text>
-                                </View>
-                                <View style={styles.metric}>
-                                    <Text style={styles.metricLabelBreak}>{l('Mola', 'Break')}</Text>
-                                    <Text style={styles.metricValue}>
-                                        {formatSessionDuration(session.breakMs, locale)}
-                                        {breakCount > 0 ? (
-                                            <Text style={styles.metricAside}>
-                                                {' · '}{l(`${breakCount} mola`, breakCount === 1 ? '1 break' : `${breakCount} breaks`)}
-                                            </Text>
-                                        ) : null}
-                                    </Text>
-                                </View>
-                            </View>
-                            {session.note ? <Text style={styles.note}>{session.note}</Text> : null}
-                        </View>
+                <View style={styles.card}>
+                    <View style={styles.tile}>
+                        <Text style={styles.tileText}>{studySubjectInitial(session.subject)}</Text>
                     </View>
-                </Card>
+                    <View style={styles.body}>
+                        <View style={styles.titleRow}>
+                            <Text style={styles.subject} numberOfLines={1}>{session.subject}</Text>
+                            <View style={styles.chip}>
+                                <Text style={styles.chipText}>{repeatLabel}</Text>
+                            </View>
+                        </View>
+                        <View style={styles.metricsRow}>
+                            <View style={styles.metric}>
+                                <Text style={styles.metricLabel}>{l('Çalışma', 'Study')}</Text>
+                                <Text style={styles.metricValue}>{formatSessionDuration(session.studyMs, locale)}</Text>
+                            </View>
+                            <View style={styles.metric}>
+                                <Text style={styles.metricLabelBreak}>{l('Mola', 'Break')}</Text>
+                                <Text style={styles.metricValue}>
+                                    {formatSessionDuration(session.breakMs, locale)}
+                                    {breakCount > 0 ? (
+                                        <Text style={styles.metricAside}>
+                                            {' · '}{l(`${breakCount} mola`, breakCount === 1 ? '1 break' : `${breakCount} breaks`)}
+                                        </Text>
+                                    ) : null}
+                                </Text>
+                            </View>
+                        </View>
+                        {session.note ? <Text style={styles.note}>{session.note}</Text> : null}
+                    </View>
+                </View>
                 <Text style={styles.timeRange}>
                     {l('Zaman aralığı', 'Time range')} : {formatClockHhMm(session.startMs)} - {formatClockHhMm(session.endMs)}
                 </Text>

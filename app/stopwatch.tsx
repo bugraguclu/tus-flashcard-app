@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
@@ -17,9 +17,7 @@ import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatc
 import StudyToolsMenu, { STUDY_TOOLS_FAB_SIZE } from '../components/stopwatch/StudyToolsMenu';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { BellIcon, CalendarIcon, GearIcon, PlusCircleIcon } from '../components/stopwatch/StopwatchIcons';
-import { Button } from '../components/ui/Button';
-import { Type } from '../components/ui/tokens';
-import { Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { useI18n } from '../hooks/useI18n';
@@ -337,7 +335,7 @@ export default function StopwatchScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: heroColor }]} edges={['top', 'left', 'right']}>
             <ScreenHeader
                 title={l('Kronometre', 'Stopwatch')}
-                tint={{ background: heroColor, foreground: colors.onAccent }}
+                tint={{ background: heroColor, foreground: colors.white }}
                 backAccessibilityLabel={l('Geri dön', 'Go back')}
                 onBack={() => goBackOr(router)}
                 actions={(
@@ -348,19 +346,19 @@ export default function StopwatchScreen() {
                                 : l('Hatırlatmalar kapalı', 'Reminders off')}
                             onPress={() => setAlertsOpen(true)}
                         >
-                            <BellIcon color={colors.onAccent} size={24} muted={!prefs.alertsEnabled} />
+                            <BellIcon color={colors.white} size={24} muted={!prefs.alertsEnabled} />
                         </HeaderIconButton>
                         <HeaderIconButton
                             accessibilityLabel={l('Çalışma Takvimi', 'Study Calendar')}
                             onPress={openCalendar}
                         >
-                            <CalendarIcon color={colors.onAccent} size={23} />
+                            <CalendarIcon color={colors.white} size={23} />
                         </HeaderIconButton>
                         <HeaderIconButton
                             accessibilityLabel={l('Kronometre ayarları', 'Stopwatch settings')}
                             onPress={() => setSettingsOpen(true)}
                         >
-                            <GearIcon color={colors.onAccent} size={24} />
+                            <GearIcon color={colors.white} size={24} />
                         </HeaderIconButton>
                     </>
                 )}
@@ -385,14 +383,16 @@ export default function StopwatchScreen() {
 
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle} accessibilityRole="header">{l('Son Çalışmalarınız', 'Recent Study')}</Text>
-                    <Button
-                        variant="plain"
-                        label={l('Çalışma Ekle', 'Add Session')}
-                        icon={<PlusCircleIcon color={colors.accent} markColor={colors.onAccent} size={20} />}
-                        onPress={() => openEditor(null)}
-                        accessibilityLabel={l('Geçmiş çalışma ekle', 'Add a past session')}
+                    <TouchableOpacity
                         style={styles.addButton}
-                    />
+                        onPress={() => openEditor(null)}
+                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={l('Geçmiş çalışma ekle', 'Add a past session')}
+                    >
+                        <PlusCircleIcon color={colors.badgeNew} size={20} />
+                        <Text style={styles.addText}>{l('Çalışma Ekle', 'Add Session')}</Text>
+                    </TouchableOpacity>
                 </View>
 
                 <StopwatchTimeline
@@ -491,8 +491,8 @@ function createStyles(colors: ColorScheme) {
             paddingHorizontal: Spacing.lg,
             paddingTop: Spacing.lg,
         },
-        sectionTitle: { ...Type.sectionTitle, color: colors.textPrimary },
-        // The text button's own padding would push it in from the gutter.
-        addButton: { marginRight: -Spacing.md },
+        sectionTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+        addButton: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+        addText: { fontSize: FontSize.md, fontWeight: '700', color: colors.badgeNew },
     });
 }

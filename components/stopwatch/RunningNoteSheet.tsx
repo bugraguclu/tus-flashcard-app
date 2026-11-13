@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Text } from '../AppText';
-import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput } from '../AppText';
+import { Type } from '../ui/tokens';
+import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { MAX_STUDY_NOTE_LENGTH } from '../../lib/stopwatch';
-import { Button } from '../ui/Button';
-import { TextField } from '../ui/Fields';
-import { AppSheet } from '../ui/Sheet';
-import { Type } from '../ui/tokens';
+import StopwatchSheet from './StopwatchSheet';
 
 interface RunningNoteSheetProps {
     visible: boolean;
@@ -33,46 +31,53 @@ export default function RunningNoteSheet({ visible, subject, note, onClose, onSa
     }, [visible]);
 
     return (
-        <AppSheet
-            visible={visible}
-            onClose={onClose}
-            title={l('Çalışma Notu', 'Study Note')}
-            closeButton
-            dividedHeader
-            avoidKeyboard
-            maxHeight="92%"
-        >
+        <StopwatchSheet visible={visible} onClose={onClose} formHeader title={l('Çalışma Notu', 'Study Note')}>
             <View style={styles.body}>
-                <Text style={[Type.body, styles.hint, { color: colors.textSecondary }]}>
+                <Text style={[styles.hint, { color: colors.textSecondary }]}>
                     {l(`${subject} çalışmanıza not ekleyin; kronometreyi bitirdiğinizde çalışmayla birlikte kaydedilir.`,
                         `Add a note to your ${subject} session; it is saved with the session when you finish.`)}
                 </Text>
-                <TextField
+                <TextInput
+                    style={[styles.input, { backgroundColor: colors.bgInput, color: colors.textPrimary, borderColor: colors.border }]}
                     value={draft}
                     onChangeText={setDraft}
                     placeholder={l('Sayfa 120-140 arasını çalıştım, 30 soru çözdüm.', 'Studied pages 120-140, solved 30 questions.')}
+                    placeholderTextColor={colors.textMuted}
                     maxLength={MAX_STUDY_NOTE_LENGTH}
                     multiline
+                    textAlignVertical="top"
                     accessibilityLabel={l('Çalışma notu', 'Study note')}
                     accessibilityHint={l(`En fazla ${MAX_STUDY_NOTE_LENGTH} karakter`, `Up to ${MAX_STUDY_NOTE_LENGTH} characters`)}
                 />
                 <Text style={[styles.count, { color: colors.textMuted }]}>
                     {l(`Kalan: ${MAX_STUDY_NOTE_LENGTH - draft.length}`, `${MAX_STUDY_NOTE_LENGTH - draft.length} left`)}
                 </Text>
-                <Button
-                    label={l('Kaydet', 'Save')}
-                    onPress={() => { if (visible) onSave(draft); }}
+                <TouchableOpacity
+                    style={[styles.save, { backgroundColor: colors.accent }]}
+                    onPress={() => visible && onSave(draft)}
+                    accessibilityRole="button"
                     accessibilityLabel={l('Notu kaydet', 'Save the note')}
-                    style={styles.save}
-                />
+                >
+                    <Text style={[styles.saveText, { color: colors.onAccent }]}>{l('Kaydet', 'Save')}</Text>
+                </TouchableOpacity>
             </View>
-        </AppSheet>
+        </StopwatchSheet>
     );
 }
 
 const styles = StyleSheet.create({
     body: { gap: Spacing.sm, paddingTop: Spacing.xs, paddingBottom: Spacing.md },
-    hint: { lineHeight: 20 },
+    hint: { fontSize: FontSize.md, lineHeight: 20 },
+    input: {
+        minHeight: 88,
+        borderRadius: BorderRadius.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        paddingHorizontal: Spacing.md,
+        paddingTop: Spacing.sm,
+        paddingBottom: Spacing.sm,
+        fontSize: FontSize.md,
+    },
     count: { alignSelf: 'flex-end', fontSize: FontSize.sm, fontVariant: ['tabular-nums'] },
-    save: { marginTop: Spacing.sm },
+    save: { minHeight: 50, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm },
+    saveText: { ...Type.button },
 });

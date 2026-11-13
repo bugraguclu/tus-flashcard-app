@@ -1,6 +1,7 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Text } from '../AppText';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Spacing, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
     MAX_BREAK_MINUTES,
@@ -13,11 +14,8 @@ import {
     stepDailyGoal,
     type StopwatchPrefs,
 } from '../../lib/stopwatch';
-import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
-import { ValueRow } from '../ui/Rows';
-import { AppSheet } from '../ui/Sheet';
-import { Stepper } from '../ui/Stepper';
+import StopwatchSheet from './StopwatchSheet';
+import { SettingRow, SheetButton, Stepper } from './SheetControls';
 
 interface StopwatchSettingsSheetProps {
     visible: boolean;
@@ -39,90 +37,82 @@ export default function StopwatchSettingsSheet({ visible, prefs, onChange, onClo
     const today = new Date();
 
     return (
-        <AppSheet visible={visible} onClose={onClose} title={l('Kronometre ayarları', 'Stopwatch settings')} avoidKeyboard>
+        <StopwatchSheet visible={visible} onClose={onClose} title={l('Kronometre ayarları', 'Stopwatch settings')}>
             <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-                <Card divided>
-                    <ValueRow
-                        label={l('Sınav tarihi', 'Exam date')}
-                        summary={prefs.examDate
-                            ? l('Kalan gün zaman çizelgesinde gösterilir.', 'The days left appear on the timeline.')
-                            : l('Bir tarih seçince kalan gün gösterilir.', 'Pick a date to show the days left.')}
-                    >
-                        <View style={styles.dateControls}>
-                            <DateTimePicker
-                                value={prefs.examDate ? dateFromYmd(prefs.examDate) : today}
-                                mode="date"
-                                display="compact"
-                                minimumDate={today}
-                                locale={localeTag}
-                                accentColor={colors.accent}
-                                onChange={(_event, value) => value && onChange({ examDate: localYmd(value.getTime()) })}
-                            />
-                            {prefs.examDate ? (
-                                <Button
-                                    variant="plain"
-                                    tone="danger"
-                                    label={l('Kaldır', 'Remove')}
-                                    onPress={() => onChange({ examDate: null })}
-                                    accessibilityLabel={l('Sınav tarihini kaldır', 'Remove the exam date')}
-                                />
-                            ) : null}
-                        </View>
-                    </ValueRow>
-                    <ValueRow label={l('Günlük hedef', 'Daily goal')} summary={l('Saat:dakika', 'Hours:minutes')}>
-                        <Stepper
-                            value={formatGoalClock(prefs.dailyGoalMinutes)}
-                            onDecrement={() => onChange({ dailyGoalMinutes: stepDailyGoal(prefs.dailyGoalMinutes, -1) })}
-                            onIncrement={() => onChange({ dailyGoalMinutes: stepDailyGoal(prefs.dailyGoalMinutes, 1) })}
-                            decrementLabel={l('Hedefi yarım saat azalt', 'Lower the goal by half an hour')}
-                            incrementLabel={l('Hedefi yarım saat artır', 'Raise the goal by half an hour')}
-                            canDecrement={prefs.dailyGoalMinutes > MIN_GOAL_MINUTES}
-                            canIncrement={prefs.dailyGoalMinutes < MAX_GOAL_MINUTES}
-                            style={styles.stepper}
+                <SettingRow
+                    label={l('Sınav tarihi', 'Exam date')}
+                    hint={prefs.examDate
+                        ? l('Kalan gün zaman çizelgesinde gösterilir.', 'The days left appear on the timeline.')
+                        : l('Bir tarih seçince kalan gün gösterilir.', 'Pick a date to show the days left.')}
+                >
+                    <View style={styles.dateControls}>
+                        <DateTimePicker
+                            value={prefs.examDate ? dateFromYmd(prefs.examDate) : today}
+                            mode="date"
+                            display="compact"
+                            minimumDate={today}
+                            locale={localeTag}
+                            onChange={(_event, value) => value && onChange({ examDate: localYmd(value.getTime()) })}
                         />
-                    </ValueRow>
-                    <ValueRow
-                        label={l('Ders süresi', 'Study block')}
-                        summary={l('Bu süre dolunca mola vermeniz hatırlatılır.', 'You are reminded to take a break after this long.')}
-                    >
-                        <Stepper
-                            value={minuteLabel(prefs.focusMinutes)}
-                            onDecrement={() => onChange({ focusMinutes: stepBlockMinutes(prefs.focusMinutes, -1, MAX_FOCUS_MINUTES) })}
-                            onIncrement={() => onChange({ focusMinutes: stepBlockMinutes(prefs.focusMinutes, 1, MAX_FOCUS_MINUTES) })}
-                            decrementLabel={l('Ders süresini kısalt', 'Shorten the study block')}
-                            incrementLabel={l('Ders süresini uzat', 'Lengthen the study block')}
-                            canDecrement={prefs.focusMinutes > 0}
-                            canIncrement={prefs.focusMinutes < MAX_FOCUS_MINUTES}
-                            style={styles.stepper}
-                        />
-                    </ValueRow>
-                    <ValueRow
-                        label={l('Mola süresi', 'Break length')}
-                        summary={l('Mola bu süreyi aşınca derse dönmeniz hatırlatılır.', 'You are reminded to get back after a break this long.')}
-                    >
-                        <Stepper
-                            value={minuteLabel(prefs.breakMinutes)}
-                            onDecrement={() => onChange({ breakMinutes: stepBlockMinutes(prefs.breakMinutes, -1, MAX_BREAK_MINUTES) })}
-                            onIncrement={() => onChange({ breakMinutes: stepBlockMinutes(prefs.breakMinutes, 1, MAX_BREAK_MINUTES) })}
-                            decrementLabel={l('Mola süresini kısalt', 'Shorten the break')}
-                            incrementLabel={l('Mola süresini uzat', 'Lengthen the break')}
-                            canDecrement={prefs.breakMinutes > 0}
-                            canIncrement={prefs.breakMinutes < MAX_BREAK_MINUTES}
-                            style={styles.stepper}
-                        />
-                    </ValueRow>
-                </Card>
+                        {prefs.examDate ? (
+                            <TouchableOpacity
+                                onPress={() => onChange({ examDate: null })}
+                                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                                accessibilityRole="button"
+                                accessibilityLabel={l('Sınav tarihini kaldır', 'Remove the exam date')}
+                            >
+                                <Text style={[styles.clear, { color: colors.btnAgain }]}>{l('Kaldır', 'Remove')}</Text>
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
+                </SettingRow>
+                <SettingRow label={l('Günlük hedef', 'Daily goal')} hint={l('Saat:dakika', 'Hours:minutes')}>
+                    <Stepper
+                        value={formatGoalClock(prefs.dailyGoalMinutes)}
+                        onStep={(direction) => onChange({ dailyGoalMinutes: stepDailyGoal(prefs.dailyGoalMinutes, direction) })}
+                        decreaseLabel={l('Hedefi yarım saat azalt', 'Lower the goal by half an hour')}
+                        increaseLabel={l('Hedefi yarım saat artır', 'Raise the goal by half an hour')}
+                        canDecrease={prefs.dailyGoalMinutes > MIN_GOAL_MINUTES}
+                        canIncrease={prefs.dailyGoalMinutes < MAX_GOAL_MINUTES}
+                    />
+                </SettingRow>
+                <SettingRow
+                    label={l('Ders süresi', 'Study block')}
+                    hint={l('Bu süre dolunca mola vermeniz hatırlatılır.', 'You are reminded to take a break after this long.')}
+                >
+                    <Stepper
+                        value={minuteLabel(prefs.focusMinutes)}
+                        onStep={(direction) => onChange({ focusMinutes: stepBlockMinutes(prefs.focusMinutes, direction, MAX_FOCUS_MINUTES) })}
+                        decreaseLabel={l('Ders süresini kısalt', 'Shorten the study block')}
+                        increaseLabel={l('Ders süresini uzat', 'Lengthen the study block')}
+                        canDecrease={prefs.focusMinutes > 0}
+                        canIncrease={prefs.focusMinutes < MAX_FOCUS_MINUTES}
+                    />
+                </SettingRow>
+                <SettingRow
+                    label={l('Mola süresi', 'Break length')}
+                    hint={l('Mola bu süreyi aşınca derse dönmeniz hatırlatılır.', 'You are reminded to get back after a break this long.')}
+                >
+                    <Stepper
+                        value={minuteLabel(prefs.breakMinutes)}
+                        onStep={(direction) => onChange({ breakMinutes: stepBlockMinutes(prefs.breakMinutes, direction, MAX_BREAK_MINUTES) })}
+                        decreaseLabel={l('Mola süresini kısalt', 'Shorten the break')}
+                        increaseLabel={l('Mola süresini uzat', 'Lengthen the break')}
+                        canDecrease={prefs.breakMinutes > 0}
+                        canIncrease={prefs.breakMinutes < MAX_BREAK_MINUTES}
+                    />
+                </SettingRow>
                 <View style={styles.footer}>
-                    <Button label={l('Tamam', 'Done')} onPress={onClose} />
+                    <SheetButton label={l('Tamam', 'Done')} onPress={onClose} />
                 </View>
             </ScrollView>
-        </AppSheet>
+        </StopwatchSheet>
     );
 }
 
 const styles = StyleSheet.create({
     body: { flexShrink: 1 },
     dateControls: { alignItems: 'flex-end', gap: Spacing.xs },
-    stepper: { alignSelf: 'center' },
+    clear: { fontSize: FontSize.md, fontWeight: '700' },
     footer: { paddingTop: Spacing.lg, paddingBottom: Spacing.xs },
 });
