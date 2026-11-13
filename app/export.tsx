@@ -21,7 +21,7 @@ import { isCatalogDeck } from '../lib/catalogProtection';
 import DeckExportSelector from '../components/DeckExportSelector';
 import ScreenHeader from '../components/ScreenHeader';
 import { userFacingErrorMessage } from '../lib/userFacingError';
-import { readBackup } from '../lib/backup';
+import { displayBackupName, readBackup } from '../lib/backup';
 import { parseBackupExportSource } from '../lib/backupExport';
 
 /** Anki's export formats, in the order of its dialog. */
@@ -242,7 +242,7 @@ export default function ExportScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 {backupExport ? (
                     <Notice tone="info" title={l('Seçilen yedekten hazırlanıyor', 'Prepared from selected backup')}>
-                        <Text style={styles.backupName} numberOfLines={2}>{backupName}</Text>
+                        <Text style={styles.backupName} numberOfLines={2}>{backupName ? displayBackupName(backupName) : null}</Text>
                         <Text style={styles.noticeText}>{l(
                             'Seçenekler yalnızca bu anlık görüntüye uygulanır; mevcut koleksiyonunuz değiştirilmez. Oluşturulan dosya şifreli değildir, yalnızca güvendiğiniz yerlere gönderin.',
                             'The options apply only to this snapshot; your current collection is not changed. The generated file is not encrypted, so send it only to locations you trust.',

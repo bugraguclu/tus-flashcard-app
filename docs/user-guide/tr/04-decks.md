@@ -11,7 +11,7 @@ app_screens:
   - "Genel bakış — app/deck-overview.tsx"
   - "Deste seçici — components/DeckPickerModal.tsx"
   - "Kenar çubuğu (yalnızca geniş web penceresi) — components/Sidebar.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Desteler
@@ -145,8 +145,10 @@ Sağ üstteki **⋮** düğmesi koleksiyonun tamamıyla ilgili işlemleri açar:
 - **İçe aktar:** `.apkg`, `.colpkg` ve metin dosyalarını getirir.
   Bkz. [İçe ve dışa aktarma](14-import-export.md).
 - **Dışa aktar:** Desteleri veya koleksiyonu dosya olarak kaydeder.
-- **Yedek oluştur** ve **Yedekten geri yükle:** İkisi de **Yedekler** ekranını açar. Yedeği orada
-  adlandırıp alır veya bir yedeği geri yüklersiniz.
+- **Yedek oluştur:** Hemen bir yedek alır; çıkan mesajdaki **Yedeklerimi yönet** **Yedekler**
+  ekranını açar.
+- **Yedekten geri yükle:** **Yedekler** ekranını açar. Orada bir yedeği adlandırıp alır veya geri
+  yüklersiniz.
   Bkz. [Yedekler ve bakım](15-backups-and-maintenance.md).
 - **Yardım:** Bu kılavuzu açar.
   <!-- Önerilen giriş noktası: in-app/01-decks.md › help.decks.more.help. Uygulanmazsa bu maddeyi kaldırın. -->
@@ -160,7 +162,7 @@ yazar (örneğin "Farmakoloji › Antibiyotikler"). Hangi maddelerin görünece�
 | Madde | Ne yapar? | Nerede görünür? |
 | --- | --- | --- |
 | **Genel bakış** | Destenin özet ekranını açar. | Hepsi |
-| **Ekle** | Bu desteye kart ekleme ekranını açar. | Filtrelenmiş desteler hariç |
+| **Kart ekle** | Bu desteye kart ekleme ekranını açar. | Filtrelenmiş desteler hariç |
 | **Kartlara göz at** | **Kartlarım**'ı bu deste ve alt desteleriyle açar. | Hepsi |
 | **Desteyi yeniden adlandır** | Bkz. [Yeniden adlandırmak](#rename-and-move). | TUS Kartları hariç |
 | **Alt deste oluştur** | Bu destenin altına deste ekler. | Normal kendi desteleriniz |
@@ -225,8 +227,8 @@ Başka bir destede kardeş kartı olan notlar korunur. Tekrar geçmişiniz silin
   Bkz. [Filtrelenmiş desteyi silmek](11-filtered-decks.md#delete-filtered-deck).
 - **Varsayılan** destesi tamamen kaldırılamaz: kartları ve alt desteleri silinir, deste boş olarak
   **Default** adıyla kalır.
-- TUS Kartları desteleri silinemez. Paketi kaldırmak için bkz.
-  [TUS Kartları paketi](17-tus-card-pack.md).
+- TUS Kartları desteleri silinemez ve paket tek başına kaldırılamaz. Bkz.
+  [Paketi kaldırma](17-tus-card-pack.md#remove-the-pack).
 
 > **Dikkat:** Silmeden önce otomatik yedek alınmaz. Büyük bir desteyi silmeden önce
 > **⋮ › Yedek oluştur** ile bir yedek alın. Bkz. [Yedekler ve bakım](15-backups-and-maintenance.md).

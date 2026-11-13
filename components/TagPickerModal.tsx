@@ -259,7 +259,7 @@ export default function TagPickerModal({
                                 />
                             </View>
                             <Text style={[Type.caption, styles.addHelperText]}>
-                                {l('Birden fazla etiket eklemek için boşluk kullanın.', 'Separate multiple tags with spaces.')}
+                                {l('Birden fazla etiketi boşlukla ayırın. Alt etiket için :: kullanın (ör. farmakoloji::antibiyotik).', 'Separate several tags with spaces. Use :: for a sub-tag (e.g. pharmacology::antibiotics).')}
                             </Text>
                         </View>
                     )}

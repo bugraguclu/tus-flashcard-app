@@ -266,7 +266,7 @@ export default function StatsScreen() {
                 title={l('Deste seç', 'Select Deck')}
                 allDecksLabel={l('Tüm koleksiyon', 'Whole Collection')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                emptySearchLabel={l('Aramanızla eşleşen deste yok. Kelimelerin başını yazın; örneğin “farm”.', 'No decks match your search. Type the start of a word, for example “anat”.')}
                 cancelLabel={t('common.cancel')}
                 closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
                 searchAccessibilityLabel={l('Deste ara', 'Search decks')}

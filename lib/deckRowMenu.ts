@@ -55,7 +55,7 @@ export function deckRowMenuActions({ isFiltered, isCatalog, buriedCount }: DeckR
 export function deckRowMenuLabel(action: DeckRowMenuAction, l: (turkish: string, english: string) => string): string {
     switch (action) {
         case 'overview': return l('Genel bakış', 'Overview');
-        case 'add': return l('Ekle', 'Add');
+        case 'add': return l('Kart ekle', 'Add note');
         case 'browse': return l('Kartlara göz at', 'Browse cards');
         case 'rename': return l('Desteyi yeniden adlandır', 'Rename deck');
         case 'createSubdeck': return l('Alt deste oluştur', 'Create subdeck');

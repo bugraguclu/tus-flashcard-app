@@ -34,7 +34,7 @@ export default function NoteTypesScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.help}>{l('Not türlerini, alanlarını ve kart şablonlarını düzenleyin.', 'Edit note types, fields, and card templates.')}</Text>
+                <Text style={styles.help}>{l('Not türlerini, alanlarını ve kart şablonlarını düzenleyin. Yeni not türü Temel türün bir kopyası olarak başlar.', 'Edit note types, their fields and card templates. A new note type starts as a copy of Basic.')}</Text>
 
                 <Card divided>
                     {noteTypes.map((nt) => (

@@ -11,7 +11,7 @@ app_screens:
   - "Export — app/export.tsx, components/DeckExportSelector.tsx"
   - "File hand-off (Share › TusAnkiM) — app/_layout.tsx; web: components/WebAppIntegrations.tsx"
   - "Settings › Data Management › Import and export — app/settings.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Import and export
@@ -54,8 +54,8 @@ before every package import
 
 On iPhone you can send an `.apkg`, `.colpkg`, `.csv`, `.tsv` or `.txt` file straight to
 TusAnkiM: in the **Files** app, touch and hold the file (the same works for a Mail attachment or a
-file received with AirDrop), tap **Share** and choose **TusAnkiM** from the list. The **Import
-deck** screen opens with the file already chosen. Open a package with a `.zip` extension from
+file received with AirDrop), tap **Share** and choose **TusAnkiM** from the list. The **Import**
+screen opens with the file already chosen. Open a package with a `.zip` extension from
 inside the app with **Choose File**.
 
 > **In the web version:** Drag the file onto the browser window; **Drop to import** appears. If you
@@ -133,8 +133,8 @@ You can preset the options by putting lines that start with `#` at the top of th
 | --- | --- |
 | `#separator:tab` | Sets the separator: `tab`, `comma`, `semicolon`, `pipe`, `colon`, `space`, or the character itself. |
 | `#html:true` | Fields are read as HTML (bold text, images and so on). |
-| `#deck:Pharmacology` | If you have a deck with this name, it is preselected in the **Deck** row. |
-| `#notetype:Basic` | If you have a note type with this name, it is preselected. |
+| `#deck:Pharmacology` | Preselects this deck in the **Deck** row. If you don't have it, the row says **A new deck will be created: Pharmacology**; the deck is created only when you tap **Import**. You can still pick another deck. |
+| `#notetype:Basic` | If you have a note type with this name, it is preselected (upper/lower case does not matter). |
 | `#tags:mock-exam-1` | Adds a tag to every note. |
 | `#tags column:3` | Reads tags from column 3. |
 | `#deck column:4`, `#notetype column:5` | Reads each line's deck or note type from that column. Missing decks are created. |
@@ -161,7 +161,8 @@ Mechanism of action of atropine?	Muscarinic receptor antagonist	pharmacology
 - **Allow HTML in fields:** when off, text appears exactly as written and line breaks are kept.
   When on, tags such as `<b>` are read as formatting. It turns on by itself when the file contains
   HTML.
-- **Note type** and **Deck:** which note type the notes use and which deck they go into. You can
+- **Note type** and **Deck:** which note type the notes use and which deck they go into. If the
+  file has `#notetype:` and `#deck:` lines, these start on them, and you can change them. You can
   also create a new deck from the deck list. If the file gives these in a column, the row shows
   **From file (column N)**.
 - **Existing notes:** when you already have a note of the same note type with the same first field
@@ -326,8 +327,9 @@ be shared.
 | Text file | Up to 50 MB |
 | Preview and field mapping | First 5 lines; at most 24 columns |
 
-A file over a limit shows **The file exceeds the safe size limit.** and your collection is not
-changed. A file that contains cards from the TUS Cards pack cannot be imported; the pack is
+A file that is itself over its limit shows **The file is too large. Packages can be up to 400 MB
+and text files up to 50 MB.**; when a limit inside a package is passed, the alert says **The
+package, or a file in it, exceeds the safe size limit.** Either way your collection is not changed. A file that contains cards from the TUS Cards pack cannot be imported; the pack is
 installed only from inside the app (see [TUS card pack](17-tus-card-pack.md)). Backups on the
 **Backups** screen are restored there, not from this screen.
 

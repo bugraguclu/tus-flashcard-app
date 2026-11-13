@@ -39,6 +39,12 @@ export function escapeImportedField(value: string): string {
 export interface ImportOptions {
     noteType: NoteType;
     deckId: number;
+    /**
+     * The destination deck by name, used instead of `deckId`: the import screen sends a `#deck:`
+     * header's deck the collection does not have yet. Anki makes it only when the import runs, so
+     * it is created inside the import's transaction and never by a preview.
+     */
+    deckName?: string;
     delimiter?: string;
     /** Note field index → source column index. Defaults to identity (field i ← column i). */
     fieldColumns?: number[];
@@ -412,7 +418,8 @@ function prepareDelimitedImport(text: string, options: ImportOptions): PreparedD
         rows,
         delimiter: parsed.delimiter,
         totalRows: parsed.rows.length,
-        metadata: { ...parsed.metadata, deck: options.useFileDefaults ? parsed.metadata.deck : undefined },
+        // The destination deck by name, resolved (and created if missing) inside the transaction.
+        metadata: { ...parsed.metadata, deck: options.deckName?.trim() || (options.useFileDefaults ? parsed.metadata.deck : undefined) },
         noteType: globalNoteType,
         rowNoteTypes,
         fieldColumns,

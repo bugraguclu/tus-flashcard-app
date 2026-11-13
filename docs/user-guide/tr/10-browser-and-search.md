@@ -8,7 +8,7 @@ app_help: help?article=browser
 app_screens:
   - "Kartlarım — app/browser.tsx (parçaları components/browser/)"
   - "Kart bilgisi — app/card-info.tsx (çalışma ekranının ⋮ menüsünden)"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Kartlarım ve arama
@@ -293,7 +293,8 @@ Bkz. [Filtrelenmiş deste ve özel çalışma](11-filtered-decks.md).
 - Birden fazla kelime yazarsanız kartta hepsi bulunmalıdır. Kelimeleri yan yana aramak için tırnak
   kullanın: `"beta bloker"`.
 - Arama eksikse (örneğin `is:` yazıp devamını getirmediyseniz) kutunun altında **Arama henüz geçerli
-  değil; son geçerli sonuçlar gösteriliyor.** yazar ve liste değişmez.
+  değil; son geçerli sonuçlar gösteriliyor.** yazar ve liste değişmez. Aynı satır tırnak ve
+  parantezleri kapatmanızı, `deck:` gibi terimlerin değerini yazmanızı hatırlatır.
 - **?** sık kullanılan terimleri açar; bir terime dokunduğunuzda aramanıza eklenir. `deck:` gibi değer
   isteyen terimlerde kutuya dokunup değeri yazın.
 - Bir kelimenin ortasından biçimlendirme geçiyorsa (yalnızca birkaç harfi kalın gibi) kelime yalnızca

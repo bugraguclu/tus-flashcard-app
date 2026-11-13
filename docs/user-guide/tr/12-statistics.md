@@ -8,10 +8,9 @@ app_help: help?article=statistics
 app_screens:
   - "İstatistikler — app/stats.tsx"
   - "İstatistikler hakkında (Bilgi sayfası) — components/stats/StatsHelpSheet.tsx"
-  - "Zaman aralığı seçici — components/stats/StatsRangePicker.tsx"
+  - "Bölümler ve grafikler — components/stats/"
   - "Çalışma serisi hafta şeridi — components/WeekStreakStrip.tsx"
-  - "Tekrarlar, Saatlik dağılım, Eklenenler, Desteler bölümleri — components/stats/"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # İstatistikler
@@ -19,7 +18,8 @@ verified_against: master c6108e6 (2026-10-25)
 **İstatistikler** ekranı ne kadar çalıştığınızı, önümüzdeki günlerde kaç tekrarın beklediğini ve
 kartlarınızın şu anki durumunu gösterir. Açmak için **Desteler** ekranının alt çubuğundaki
 **İstatistik** düğmesine ya da bir destenin genel bakışındaki **Deste istatistikleri** düğmesine
-dokunun. Sağ üstteki **Bilgi** düğmesi grafiklerin kısa açıklamalarını açar.
+dokunun. Sağ üstteki **ⓘ** düğmesi (**İstatistikler hakkında**) grafiklerin kısa açıklamalarını
+açar.
 
 > **Web sürümünde:** Geniş bir tarayıcı penceresinde, çalışma ekranının yanındaki kenar çubuğunda
 > da **İstatistik** düğmesi bulunur; ekran o an çalıştığınız desteyle açılır.
@@ -40,9 +40,9 @@ Ekranın en üstünde iki seçici vardır:
 - **Deste seçici** (**Tüm koleksiyon** veya destenin adı): Bir deste seçtiğinizde bütün ekran o
   desteyi ve alt destelerini gösterir. Filtrelenmiş bir deste seçerseniz o an içinde bulunan
   kartlar sayılır. Deste değiştirmek seçtiğiniz dönemi değiştirmez.
-- **Zaman aralığı** (varsayılan **Son 1 yıl**): **Son hafta**, **Son ay**, **Son 3 ay**,
-  **Son 1 yıl** veya **Tüm zamanlar**. Kendi aralığınız için **Özel tarih aralığı** bölümünde
-  **Başlangıç** ve **Bitiş** tarihlerini seçip **Bu aralığı kullan**'a dokunun.
+- **Zaman aralığı** (varsayılan **Yıl**): **Hafta**, **Ay**, **3 Ay**, **Yıl** veya **Tümü**.
+  Grafiklerin üstünde seçilen dönemin adı yazar (**Son hafta**, **Son ay**, **Son 3 ay**,
+  **Son 1 yıl**, **Tüm zamanlar**).
 
 İstatistikler'i bir destenin genel bakışından açarsanız ekran o desteyle, Desteler ekranının alt
 çubuğundan açarsanız tüm koleksiyonla başlar.
@@ -68,16 +68,16 @@ Günler gece yarısında değil **Sonraki günün başlangıcı** saatinde deği
 **Bugün** kartı bu çalışma gününde verdiğiniz cevapları özetler. Deste seçiciye uyar, dönemden
 etkilenmez.
 
-- **Yanıtlanan:** Bugün verdiğiniz bütün cevaplar: yeni, öğrenme ve tekrar kartları ile
+- **Cevap:** Bugün verdiğiniz bütün cevaplar: yeni, öğrenme ve tekrar kartları ile
   filtrelenmiş destede verdiğiniz cevaplar. Geri aldığınız bir cevap sayıdan düşer.
 - **Doğruluk:** Bugünkü cevaplarınızın yüzde kaçında **Tekrar** dışında bir düğmeye bastığınız.
   Henüz cevap yoksa "—" görünür.
-- **Çalışma süresi:** Bugün cevaplara harcadığınız toplam süre. Bir kartta ne kadar beklerseniz
+- **Süre:** Bugün cevaplara harcadığınız toplam süre. Bir kartta ne kadar beklerseniz
   bekleyin, her cevap en fazla **En fazla cevap süresi** kadar sayılır (varsayılan 60 saniye;
   **Deste seçenekleri › Zamanlayıcılar**).
 - **Yeni kart:** Bugün ilk kez cevapladığınız kart sayısı.
 
-**Kronometre** ile ölçtüğünüz süre bu **Çalışma süresi**'ne eklenmez. Kart çalışmanızla
+**Kronometre** ile ölçtüğünüz süre bu **Süre**'ye eklenmez. Kart çalışmanızla
 Kronometre oturumlarınızın toplamını Kronometre ekranındaki halkada görürsünüz; bkz.
 [Günlük hedef ve toplam süre](13-stopwatch-and-calendar.md#daily-goal).
 
@@ -112,38 +112,42 @@ ekranının başlığında küçük bir alevle de görünür; o gün henüz çal
 öğrenmeyeceğinizi ve hiçbir kartı unutmayacağınızı varsayar; gerçek sayılar biraz daha yüksek
 olur.
 
-- **Bugünden itibaren** bugün ve sonrasında vadesi gelen kartları gösterir. **Gecikenlerle**
+- **Bugünden** bugün ve sonrasında vadesi gelen kartları gösterir. **Gecikenlerle**
   (varsayılan) bunlara vadesi geçmiş kartları da ekler; gecikenler kesik çizgili **Bugün**
   işaretinin solunda durur.
 - Sütunlar **Genç** ve **Olgun** kartlara bölünür. Bir kartın aralığı, son tekrarıyla bir sonraki
   tekrarı arasındaki gün sayısıdır; aralığı 21 günden kısa olan kart gençtir, 21 gün veya daha
   uzun olan olgundur.
-- Gri çizgi **Birikimli** toplamdır: o sütuna kadar vadesi gelecek bütün kartlar.
+- Hiçbir sütun seçili değilken grafiğin üstünde **Vadesi gelecek** kart sayısı yazar. Bir sütunu
+  seçince o sütunun sayısı ile **Birikimli** toplam görünür: o sütuna kadar vadesi gelecek bütün
+  kartlar.
 - Grafik seçtiğiniz dönem kadar ileriye bakar: **Son hafta** seçiliyken önümüzdeki haftayı,
   **Son 1 yıl** seçiliyken yaklaşık bir yılı gösterir; **Tüm zamanlar** en uzak vadeye kadar
-  gider. Uzun dönemlerde her sütun bir veya birkaç haftadır.
+  gider. Uzun dönemlerde her sütun bir hafta, iki hafta veya bir aydır.
 - Yeni kartlar ve askıya alınmış kartlar sayılmaz. Vadesi bugün veya daha önce olan gömülü
   kartlar da dışarıda kalır.
 
 | Kutu | Anlamı |
 | --- | --- |
-| **Toplam** | Grafikteki kart sayısı. |
 | **Günlük yük** | Her gün ortalama kaç tekrar geleceğinin tahmini. Kısa aralıklı kartlar bu sayıyı büyütür. |
 | **Yarın** | Yarın vadesi gelen kart sayısı. |
 | **Geciken** | Vadesi geçmiş kart sayısı; yalnızca **Gecikenlerle** seçiliyken görünür. |
 
 <a id="reviews"></a>
 ## Tekrarlar
-<!-- Uygulamada: İstatistikler › Bilgi › "Tekrarlar ve cevaplar" bölümü (StatsHelpSheet.tsx:20-23) → bu bölüm -->
+<!-- Uygulamada: İstatistikler › ⓘ › "Tekrarlar" bölümü (StatsHelpSheet.tsx) → bu bölüm -->
 
 Seçilen dönemde verdiğiniz cevapları gösterir. Üstteki **Cevap** / **Süre** düğmesiyle cevap
 sayısı ile cevaplara harcanan süre arasında geçiş yaparsınız.
 
 - Sütunlar **Son hafta** ve **Son ay** için günleri, **Son 3 ay** için haftaları, **Son 1 yıl**
-  için ayları gösterir.
+  için ayları gösterir. **Tüm zamanlar** geçmişin uzunluğuna göre gün, hafta, ay veya yıl
+  sütunları kullanır.
 - Renkler cevabın türüdür: **Olgun** ve **Genç** (tekrar kartları, 21 günlük aralığa göre),
-  **Yeniden öğrenme**, **Öğrenme** ve **Filtreli** (filtrelenmiş destede veya özel çalışmada
-  verilen cevaplar). Bkz. [Filtrelenmiş deste ve özel çalışma](11-filtered-decks.md).
+  **Yeniden öğrenme**, **Öğrenme** ve **Filtreli**. **Filtreli**, filtrelenmiş destede veya özel
+  çalışmada vadesinden önce tekrarlanan ya da önizlenen (yeniden zamanlanmadan çalışılan)
+  kartların cevaplarıdır; orada vadesi gelmiş bir karta verdiğiniz cevap kendi türünde sayılır.
+  Bkz. [Filtrelenmiş deste ve özel çalışma](11-filtered-decks.md).
 - Bir sütunu seçince grafiğin üstünde o günün veya haftanın değeri ile **Birikimli** toplam yazar.
 
 Grafiğin altındaki kutular:
@@ -176,8 +180,8 @@ gösterir. Her sütun **Öğrenme** (öğrenme, yeniden öğrenme ve filtrelenmi
 ## Saatlik dağılım
 <!-- Uygulamada: İstatistikler › Bilgi › "Saatlik dağılım" bölümü (StatsHelpSheet.tsx:24-27) → bu bölüm -->
 
-Cevaplarınızı günün saatine göre dağıtır (00–23, cihazınızın saati). Filtrelenmiş destelerde
-verdiğiniz cevaplar bu grafiğe girmez (Anki'deki gibi). **Son ay** seçiliyken son 30 gün sayılır.
+Cevaplarınızı günün saatine göre dağıtır (00–23, cihazınızın saati). **Filtreli** cevaplar
+(bkz. [Tekrarlar](#reviews)) bu grafiğe girmez. **Son ay** seçiliyken son 30 gün sayılır.
 
 - Altındaki **Doğru cevap oranı** çizgisi, her saatte **Tekrar** dışındaki cevapların payıdır.
   Farklar görünsün diye çizginin ölçeği %0'dan değil, en düşük saatin biraz altından başlar; soldaki
@@ -189,15 +193,14 @@ verdiğiniz cevaplar bu grafiğe girmez (Anki'deki gibi). **Son ay** seçiliyken
 
 <a id="intervals"></a>
 ## Tekrar aralıkları
-<!-- Uygulamada: İstatistikler › Bilgi › "Tekrar aralıkları" bölümü (StatsHelpSheet.tsx:28-31, güncellenecek) → bu bölüm -->
+<!-- Uygulamada: İstatistikler › ⓘ › "Tekrar aralıkları" bölümü (StatsHelpSheet.tsx) → bu bölüm -->
 
 Tekrar ve yeniden öğrenme aşamasındaki kartlarınızın şu anki aralıklarını gösterir. Sütun
-etiketleri gün sayısıdır.
+etiketleri gün sayısıdır (ör. `5g`, `1–7g`).
 
 - Dönem yalnızca grafiğin üst sınırını belirler: **Son 1 yıl** seçiliyken aralığı 365 günden uzun
-  kartlar grafikte görünmez, **Tüm zamanlar** hepsini gösterir.
-- Gri çizgi (**Bu aralığa kadar**) kartlarınızın yüzde kaçının o aralıkta veya daha kısa bir
-  aralıkta olduğunu gösterir.
+  kartlar grafikte görünmez, **Tüm zamanlar** hepsini gösterir. Grafiğin altında daha uzun
+  aralıktaki kartların sayısı yazar.
 - **Ortalama aralık** ve **En uzun aralık**, dönemden bağımsız olarak bütün tekrar kartlarınızı
   hesaba katar.
 
@@ -233,7 +236,8 @@ günlerine bölünmüş **Günlük ortalama**dır.
 
 - Bir kartın tarihi, oluşturulduğu gündür. İçe aktarılan kartlar özgün oluşturulma tarihini
   korur: bugün içe aktardığınız hazır bir deste, yazarının kartları eklediği günlere dağılır.
-- Dolu bir sütuna dokunmak **Kartlarım**'ı o günlerde eklenen kartlarla açar; arama kutusunda
+- Grafiğin üstünde **Kartları görmek için bir sütuna dokunun** yazar. Dolu bir sütuna dokunmak
+  **Kartlarım**'ı o günlerde eklenen kartlarla açar; arama kutusunda
   `added:` ile başlayan bir arama görürsünüz. Kartlar ortak bir destedeyse Kartlarım o desteyle,
   değilse İstatistikler'de seçili desteyle açılır. Geri döndüğünüzde deste ve dönem korunur.
 - Bir sütunu açmadan değerine bakmak için parmağınızı grafiğin üzerinde yana kaydırın.
@@ -255,15 +259,17 @@ almaz.
 
 <a id="chart-tips"></a>
 ## Grafikleri kullanma
-<!-- Uygulamada: İstatistikler › Bilgi › "Grafikleri kullanma" bölümü (StatsHelpSheet.tsx:32-35) → bu bölüm -->
+<!-- Uygulamada: İstatistikler › ⓘ › "Grafikleri kullanma" bölümü (StatsHelpSheet.tsx) → bu bölüm -->
 
-- **Gelecek vadeler**, **Cevap düğmeleri** ve **Tekrar aralıkları:** Bir sütuna dokunun; tam
-  sayıları gösteren küçük bir kutu açılır. Kapatmak için aynı sütuna yeniden dokunun.
-- **Tekrarlar**, **Saatlik dağılım** ve **Eklenenler:** Bir sütuna dokununca grafiğin üstündeki
-  satır o sütunun değerini gösterir. Parmağınızı yana kaydırarak sütunlar arasında gezinirsiniz;
-  bu sırada sayfa kaymaz ve iPhone her sütunda hafifçe titreşir. Yukarı-aşağı kaydırma sayfayı
+- **Tekrarlar**, **Gelecek vadeler**, **Tekrar aralıkları** ve **Saatlik dağılım:** Bir sütuna
+  dokununca grafiğin üstündeki satır o sütunun değerini gösterir; kapatmak için aynı sütuna
+  yeniden dokunun.
+- **Eklenenler**'de dolu bir sütuna dokunmak değerini göstermez, o kartları açar.
+- Bu beş grafikte parmağınızı yana kaydırarak sütundan sütuna geçer, değerleri okursunuz; bu
+  sırada sayfa kaymaz ve iPhone her sütunda hafifçe titreşir. Yukarı-aşağı kaydırma sayfayı
   kaydırır.
-- **VoiceOver:** Bu üç grafikte yukarı veya aşağı kaydırarak sütunlar arasında ilerlersiniz;
+- **Cevap düğmeleri** sayılarını her zaman gösterir; dokunmak gerekmez.
+- **VoiceOver:** Bu grafiklerde yukarı veya aşağı kaydırarak sütunlar arasında ilerlersiniz;
   **Eklenenler**'de seçili sütuna çift dokunmak kartları açar.
 - Bir grafik boşsa başka bir deste veya daha uzun bir dönem seçin.
 

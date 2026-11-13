@@ -125,10 +125,9 @@ export default function NoteTypePickerModal({
                             const isLast = index === availableNoteTypes.length - 1;
                             const fieldCount = noteType.fields.length;
                             const templateCount = noteType.templates.length;
-                            const subtitle = l(
-                                `${fieldCount} alan · ${templateCount} kart`,
-                                `${fieldCount} fields · ${templateCount} cards`,
-                            );
+                            const subtitle = isCloze
+                                ? l(`${fieldCount} alan · boşluk başına 1 kart`, `${fieldCount} fields · 1 card per cloze`)
+                                : l(`${fieldCount} alan · ${templateCount} kart`, `${fieldCount} fields · ${templateCount} ${templateCount === 1 ? 'card' : 'cards'}`);
                             const glyphColor = selected ? colors.accent : colors.textSecondary;
 
                             return (

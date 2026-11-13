@@ -8,7 +8,7 @@ app_help: help?article=anki
 app_screens:
   - "İçe aktar — app/import.tsx"
   - "Dışa aktar — app/export.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Anki ile birlikte kullanma
@@ -132,7 +132,7 @@ geliştirilir, ama her özelliği yoktur. Fark edeceğiniz başlıca yerler:
 | Yedekler | Uygulamanın kendi yedekleridir, Anki'de doğrudan açılmaz. Bir yedeği Anki'ye götürmek için **Yedekler › Paylaş** ile pakete çevirin. Bkz. [Yedekler ve bakım](15-backups-and-maintenance.md). |
 | İstatistikler | Anki'nin grafiklerinin bir bölümü vardır. Bkz. [İstatistikler](12-statistics.md). |
 | Klavye kısayolları | Çalışma ekranının temel tuşları vardır; bazı Anki tuşları yoktur. Bkz. [Çalışma ekranı](05-studying.md). |
-| **İlerlemeyi sıfırla** | Ayarlar'daki bu komut Anki'deki gibi tek tek kartları değil, koleksiyonun tamamını siler. Bkz. [Yedekler ve bakım](15-backups-and-maintenance.md#reset-progress). |
+| **Koleksiyonu sıfırla** | Ayarlar'daki bu komut Anki'deki gibi tek tek kartları değil, koleksiyonun tamamını siler. Bkz. [Yedekler ve bakım](15-backups-and-maintenance.md#reset-progress). |
 
 Yalnızca TusAnkiM'de olanlar: hazır [TUS Kartları paketi](17-tus-card-pack.md),
 [Kronometre ve çalışma takvimi](13-stopwatch-and-calendar.md), deste kısayolları ve

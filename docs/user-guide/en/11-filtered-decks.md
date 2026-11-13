@@ -9,7 +9,7 @@ app_screens:
   - "Filtered deck form (Create Filtered Deck from the deck list or Browse, and Filtered Deck Options) — components/FilteredDeckOptionsModal.tsx"
   - "Overview of a filtered deck — app/deck-overview.tsx"
   - "Custom Study — components/CustomStudyModal.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Filtered decks and Custom Study
@@ -80,10 +80,11 @@ field is empty. If a deck with the same name exists, "+" is added to the new dec
   | `tag:high-yield is:new` | New cards with this tag |
   | `prop:lapses>=3` | Cards you have forgotten at least 3 times |
 
-- The **⌕** button shows how many cards the search matches and the terms you can use.
+- The **⌕** button shows how many cards the search matches and a few example terms.
 - **Card limit:** the most cards the deck will take (1–99,999). It is 100 for a new deck and 20
   for the second filter. If you type 0, 100 is used. The order decides which cards fit the limit.
-- **Show any excluded cards:** explains why cards that match the search could not be gathered.
+- **Show any excluded cards:** shows how many cards match the search but cannot be gathered
+  because they are suspended or buried.
 
 <a id="order"></a>
 ## Cards selected by
@@ -147,8 +148,8 @@ Preview is handy close to an exam, to go over cards without disturbing your sche
 
 **Rebuild** sends the deck's cards back to their own decks, runs the search again and fills the
 deck with the current matches. Which cards you had finished in the previous gathering is
-forgotten; your answers stay on the cards. There is no confirmation. If no card matches, the deck
-stays empty.
+forgotten; your answers stay on the cards. There is no confirmation; the message that follows
+says how many cards were gathered. If no card matches, the deck stays empty.
 
 You find it at:
 
@@ -193,7 +194,8 @@ Filtered decks have no Custom Study.
 
 The session options create a filtered deck called **Custom Study Session** (when the app is in
 Turkish: **Özel Çalışma Oturumu**). Each new Custom Study run sets up this deck's contents and
-settings from scratch. To keep a session, rename it first.
+settings from scratch. To keep a session, rename it first. The window shows this warning only
+for the options that build a session.
 
 Once the session is built, its **Overview** opens if you came from Decks or from an Overview; if
 you came from the study screen, the session starts right there. If no card matches, the message

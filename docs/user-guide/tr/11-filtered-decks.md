@@ -9,7 +9,7 @@ app_screens:
   - "Filtrelenmiş deste formu (Desteler'den veya Kartlarım'dan oluşturma ve Filtre seçenekleri) — components/FilteredDeckOptionsModal.tsx"
   - "Genel bakış, filtrelenmiş deste — app/deck-overview.tsx"
   - "Özel çalışma — components/CustomStudyModal.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Filtrelenmiş deste ve özel çalışma
@@ -81,11 +81,11 @@ oluşturulmaz. Aynı adda bir deste varsa yeni destenin adına "+" eklenir.
   | `tag:yuksek-verim is:new` | Bu etiketi taşıyan yeni kartlar |
   | `prop:lapses>=3` | En az 3 kez unuttuğunuz kartlar |
 
-- **⌕** düğmesi aramanın kaç kartla eşleştiğini ve kullanabileceğiniz terimleri gösterir.
+- **⌕** düğmesi aramanın kaç kartla eşleştiğini ve birkaç örnek terim gösterir.
 - **Kart limiti:** Desteye alınacak en çok kart (1–99.999). Yeni destede 100, ikinci filtrede
   20'dir. 0 yazarsanız 100 kullanılır. Hangi kartların limite gireceğini sıralama belirler.
-- **Dahil edilemeyen kartları göster:** Aramaya uyduğu hâlde desteye alınamayan kartların
-  nedenini açıklar.
+- **Dahil edilemeyen kartları göster:** Aramaya uyduğu hâlde askıya alınmış veya gömülü olduğu
+  için desteye alınamayan kartların sayısını gösterir.
 
 <a id="order"></a>
 ## Kartların seçilme sırası
@@ -152,7 +152,8 @@ Kapalıyken deste **önizleme** modunda çalışır; Genel bakış'ta **Önizlem
 
 **Yeniden oluştur**, destedeki kartları kendi destelerine gönderir, aramayı yeniden çalıştırır ve
 desteyi güncel eşleşmelerle doldurur. Önceki toplamada hangi kartları bitirdiğiniz unutulur;
-cevaplarınız ise kartlarda kalır. Onay istenmez. Hiçbir kart eşleşmezse deste boş kalır.
+cevaplarınız ise kartlarda kalır. Onay istenmez; çıkan mesaj kaç kartın toplandığını söyler.
+Hiçbir kart eşleşmezse deste boş kalır.
 
 Bulunduğu yerler:
 
@@ -199,7 +200,8 @@ Filtrelenmiş destelerde Özel çalışma yoktur.
 
 Oturum seçenekleri **Özel Çalışma Oturumu** adlı bir filtrelenmiş deste oluşturur (uygulama
 İngilizceyse adı **Custom Study Session** olur). Her yeni Özel çalışma bu destenin içeriğini ve
-ayarlarını baştan kurar. Bir oturumu saklamak istiyorsanız önce adını değiştirin.
+ayarlarını baştan kurar. Bir oturumu saklamak istiyorsanız önce adını değiştirin. Pencere bu
+uyarıyı yalnızca oturum kuran seçeneklerde gösterir.
 
 Oturum kurulunca, Desteler'den veya Genel bakış'tan geldiyseniz oturumun **Genel bakış**'ı
 açılır; çalışma ekranından geldiyseniz oturum hemen orada başlar. Hiçbir kart uymazsa

@@ -39,7 +39,7 @@ describe('Anki SQLite import boundary', () => {
 
         expect(() => hardenAndValidateAnkiReader(reader({
             getAllSync: () => [{ name: 'notes', type: 'view' }, { name: 'cards', type: 'table' }],
-        }))).toThrow(/tablo yapısı/i);
+        }))).toThrow(/geçerli bir Anki koleksiyonu/i);
 
         expect(() => hardenAndValidateAnkiReader(reader({
             getFirstSync: (sql: string) => {
@@ -47,6 +47,6 @@ describe('Anki SQLite import boundary', () => {
                 if (sql.includes('FROM notes')) return { count: 1_000_001 };
                 return { count: 1 };
             },
-        }))).toThrow(/çok fazla kayıt/i);
+        }))).toThrow(/çok kayıt veya dosya/i);
     });
 });

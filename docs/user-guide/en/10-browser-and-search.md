@@ -8,7 +8,7 @@ app_help: help?article=browser
 app_screens:
   - "Card Browser — app/browser.tsx (pieces in components/browser/)"
   - "Card Info — app/card-info.tsx (from the study screen's ⋮ menu)"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Card Browser and search
@@ -295,7 +295,8 @@ new deck's **Overview**; closing the form with **×** leaves Card Browser as it 
 - With several words, a card must contain all of them. To find words side by side, use quotes:
   `"beta blocker"`.
 - While a search is incomplete (for example you typed `is:` and nothing more), **Search is not valid
-  yet; showing the last valid results.** appears under the box and the list stays as it was.
+  yet; showing the last valid results.** appears under the box and the list stays as it was. The
+  same line reminds you to close quotes and brackets and to give terms such as `deck:` a value.
 - **?** opens common terms; tapping one adds it to your search. For terms that need a value, such as
   `deck:`, tap the box and type the value.
 - If formatting runs through the middle of a word (only some letters bold, say), the word is found

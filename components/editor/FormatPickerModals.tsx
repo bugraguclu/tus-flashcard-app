@@ -6,6 +6,7 @@ import {
     calloutHtml,
     EDITOR_CALLOUTS,
     EDITOR_FONT_FAMILIES,
+    EDITOR_FONT_SIZE_LABELS,
     EDITOR_FONT_SIZES,
     EDITOR_LINE_SPACINGS,
     type EditorFontFamilyKey,
@@ -67,7 +68,7 @@ export function EditorFontSizeModal({ visible, currentSize, onChoose, onClose, s
     onChoose: (size: number) => void;
 }) {
     return (
-        <AppDialog visible={visible} onClose={onClose} title={l('Yazı boyutu', 'Font Size')} actions={cancelAction(t, onClose)}>
+        <AppDialog visible={visible} onClose={onClose} title={l('Düzenleyici yazı boyutu', 'Editor Text Size')} actions={cancelAction(t, onClose)}>
             <View>
                 {[12, 14, 16, 18, 20, 24, 28, 32].map((size) => (
                     <PickerOption
@@ -175,7 +176,7 @@ export function InlineFontSizePickerModal({ visible, currentSize, onChoose, onCl
         <AppDialog visible={visible} onClose={onClose} title={l('Yazı boyutu', 'Font Size')} actions={cancelAction(t, onClose)}>
             <View>
                 {EDITOR_FONT_SIZES.map((size) => (
-                    <PickerOption key={size} styles={styles} label={size} selected={currentSize === size} onPress={() => onChoose(size)} />
+                    <PickerOption key={size} styles={styles} label={l(...EDITOR_FONT_SIZE_LABELS[size])} selected={currentSize === size} onPress={() => onChoose(size)} />
                 ))}
             </View>
         </AppDialog>
@@ -300,8 +301,9 @@ export function ColorPickerModal({ visible, onCommand, onClose, colors, styles, 
     );
 }
 
-/** The active field's raw HTML; the screen sanitizes it before it is written back. */
-export function HtmlSourceModal({ visible, value, onChangeValue, onSave, onClose, l, t }: PickerBaseProps & {
+/** The active field's raw HTML. It is stored as written; card rendering sanitizes what it shows. */
+export function HtmlSourceModal({ visible, fieldName, value, onChangeValue, onSave, onClose, l, t }: PickerBaseProps & {
+    fieldName: string;
     value: string;
     onChangeValue: (value: string) => void;
     onSave: () => void;
@@ -311,7 +313,10 @@ export function HtmlSourceModal({ visible, value, onChangeValue, onSave, onClose
             visible={visible}
             onClose={onClose}
             title={l('HTML Kaynağını Düzenle', 'Edit HTML Source')}
-            message={l('Alanın ham HTML içeriğini doğrudan düzenleyin. Kaydedildiğinde güvenlik doğrulaması uygulanır.', 'Edit raw HTML content directly. Sanitization is applied upon saving.')}
+            message={l(
+                `${fieldName} alanının HTML kaynağı. Yazdığınız kaynak olduğu gibi saklanır; betikler ve güvenli olmayan öğeler kartta gösterilmez.`,
+                `HTML source of the ${fieldName} field. The source is stored as you write it; scripts and other unsafe parts are not shown on the card.`,
+            )}
             actions={(
                 <>
                     {cancelAction(t, onClose)}

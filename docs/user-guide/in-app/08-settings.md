@@ -29,7 +29,7 @@ Hakkında satırının alt satırına veya ayar listesine girmelidir.
 | help.settings.cat.controls | Kontroller, `:675` | alt satır | Dokunma ve kaydırma • Ekran kontrolü • Klavye | Taps and swipes • On-screen control • Keyboard | Mevcut — koru |
 | help.settings.cat.accessibility | Erişilebilirlik, `:676` | alt satır | Kart • Yanıt düğmeleri • Kart tarayıcısı | Card • Answer buttons • Card browser | Mevcut — koru |
 | help.settings.cat.data | Veri yönetimi, `:677` | alt satır | Yedekleme • İçe ve dışa aktar • Bakım | Backup • Import and export • Maintenance | Mevcut — koru |
-| help.settings.cat.about | Hakkında, `:678` | alt satır | Yardım • Gizlilik politikası • Koşullar • Destek | Help • Privacy Policy • Terms • Support | Mevcut — güncelle (eski metin: Gizlilik politikası • Destek / Privacy Policy • Support) |
+| help.settings.cat.about | Hakkında, `:678` | alt satır | Yardım • Gizlilik politikası • Koşullar • Destek | Help • Privacy Policy • Terms • Support | Bekliyor (2026-11-08: Yardım merkezi ve **Kullanım koşulları** satırı henüz yok; bugünkü alt satır "Gizlilik politikası • Destek" / "Privacy Policy • Support" Hakkında grubundaki iki satırı doğru sayıyor. İki satır eklenince bu metin uygulanır) |
 | help.settings.search | Arama kutusu, `:1673` | yer tutucu | Ara… | Search… | Mevcut — koru |
 | help.settings.noResults | Arama sonucu boşken | boş durum | Eşleşen ayar bulunamadı. Bir ayarın veya kategorinin adıyla arayın; örneğin “bildirim” veya “zaman kutusu”. | No matching settings found. Search by the name of a setting or a category, for example “notification” or “timebox”. | Mevcut — koru (arama ayar adlarını da bulur, `lib/settingsSearch.ts`) |
 
@@ -208,7 +208,7 @@ Bakım pencerelerinin (kontrol raporu, onarım onayı ve sonucu, sıfırlama) me
 | help.settings.autoBackup | **Otomatik yedekleme** alt satırı | alt satır | Değişiklik varsa yaklaşık {aralık} dakikada bir; {günlük} günlük, {haftalık} haftalık, {aylık} aylık kopya | About every {interval} minutes when there are changes; {daily} daily, {weekly} weekly, {monthly} monthly copies | Mevcut — koru (sayılar kayıtlı yedekleme politikasından okunur) |
 | help.settings.manageBackups | **Yedekleri yönet**, `:1556` | ayrıntı | (mevcut metin) | (existing) | Mevcut — koru |
 | help.settings.checkDb / repair | `:1571`, `:1580` | ayrıntı | (mevcut metinler) | (existing) | Mevcut — koru |
-| help.settings.resetProgress.detail | **İlerlemeyi sıfırla** satırı (şu an ayrıntısız), `:1585-1592` (`detail`) | ayrıntı | Bütün desteleri, kartları ve geçmişi siler; önce yedek alır | Deletes all decks, cards and history; backs up first | Yeni |
+| help.settings.resetProgress.detail | **Koleksiyonu sıfırla** satırı (2026-11-08'e kadar **İlerlemeyi sıfırla**) (şu an ayrıntısız), `:1585-1592` (`detail`) | ayrıntı | Bütün desteleri, kartları ve geçmişi siler; önce yedek alır | Deletes all decks, cards and history; backs up first | Yeni |
 | help.settings.resetProgress.confirm | Sıfırlama onayı, `:979` | onay | Bütün desteler, notlar, kartlar, not türleri, çalışma geçmişi ve Kronometre oturumları silinecek; uygulama ayarları da ilk değerlerine dönecek. Önce geri yüklenebilir bir güvenlik yedeği oluşturulur. | All decks, notes, cards, note types, study history and Stopwatch sessions will be deleted, and app settings will return to their starting values. A restorable safety backup is created first. | Mevcut — koru |
 
 ---
@@ -252,19 +252,19 @@ Hepsi `lib/permissions.ts:20-41` üzerinden açılır: iPhone'da **Ayarları Aç
 ## 11. Başlangıç hatası, çökme ekranı, bulunamayan sayfa
 
 ### help.shell.startupError — Başlangıç hatası ekranı
-- **Yer:** `app/(tabs)/_layout.tsx:403-410` (şu an yalnızca simge, başlık ve metin; düğme yok)
+- **Yer:** `app/(tabs)/_layout.tsx` `startupError` dalı (simge, başlık, metin ve tek düğme)
 - **Tetikleyici:** başlatma başarısız (`startupError === 'failed'`) veya 30 sn'yi aştı (`'timeout'`, `hooks/useAppStartup.ts:249-258`)
-- **Bileşen:** tam ekran durum; mevcut `retryStartup` ve `continueStartupWait` işlevlerine bağlanan düğmeler (`hooks/useAppStartup.ts:272-281`, bugün kullanılmıyor)
+- **Bileşen:** tam ekran durum; `retryStartup` ve `continueStartupWait` işlevlerine bağlı düğme (`hooks/useAppStartup.ts`). Beklemeye devam etmek ikinci bir başlatma çalıştırmaz; süre aşımından sonra da ilk başlatma bitince ekran kendiliğinden açılır
 - **Daha fazla bilgi:** — (SSS bölümü hazır olunca "Nasıl çözülür?" bağlantısı eklenebilir)
-- **Durum:** Mevcut — güncelle (eski metin, iki durumda da: Beklenmeyen Bir Hata Oluştu — Uygulama başlatılamadı. Uygulamayı kapatıp yeniden açın; sorun sürerse destek ekibiyle iletişime geçin.)
+- **Durum:** Mevcut — koru (2026-11-08; `app/(tabs)/_layout.tsx` iki durumu ayırır ve düğmeleri `continueStartupWait` / `retryStartup` işlevlerine bağlar; düğme işlem sürerken kapalıdır. Başarısız metni Ayarlar › Hakkında › Destek yolunu anmaz: bu ekran gezinmenin yerini alır, iPhone'da Ayarlar'a buradan gidilemez. Eski metin, iki durumda da: Beklenmeyen Bir Hata Oluştu — Uygulama başlatılamadı. Uygulamayı kapatıp yeniden açın; sorun sürerse destek ekibiyle iletişime geçin.)
 
 **TR**
 - Süre aşımı — Başlık: Başlatma uzun sürüyor · Metin: Verileriniz hazırlanıyor. Büyük bir koleksiyonda bu birkaç dakika sürebilir; uygulamayı kapatmayın. Hazır olunca kendiliğinden açılır. · Düğme: Beklemeye devam et
-- Başarısız — Başlık: Beklenmeyen Bir Hata Oluştu · Metin: Uygulama başlatılamadı. Verileriniz silinmedi. Tekrar deneyin; sorun sürerse uygulamayı kapatıp açın veya Ayarlar › Hakkında › Destek üzerinden bize yazın. · Düğme: Tekrar dene
+- Başarısız — Başlık: Beklenmeyen Bir Hata Oluştu · Metin: Uygulama başlatılamadı. Verileriniz silinmedi. Tekrar deneyin; sorun sürerse uygulamayı kapatıp yeniden açın veya destek ekibine yazın. · Düğme: Tekrar dene
 
 **EN**
 - Timeout — Title: Startup is taking longer than usual · Text: Your data is being prepared. With a large collection this can take a few minutes; keep the app open. It opens by itself when ready. · Button: Keep waiting
-- Failed — Title: Something went wrong · Text: The app could not start. Your data has not been deleted. Try again; if it keeps happening, close and reopen the app or write to us via Settings › About › Support. · Button: Try Again
+- Failed — Title: Something went wrong · Text: The app could not start. Your data has not been deleted. Try again; if it keeps happening, close and reopen the app or contact support. · Button: Try Again
 
 | ID | Yer | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
@@ -278,11 +278,11 @@ Hepsi `lib/permissions.ts:20-41` üzerinden açılır: iPhone'da **Ayarları Aç
 
 | ID | Yer | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.web.secondaryTab | İkinci sekmenin üst şeridi, `app/_layout.tsx:524-530` (`root.secondaryTab`) | şerit | ⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez. Diğer sekmeyi kapatıp bu sayfayı yeniden yükleyin. | ⚠️ The app is open in another tab — changes in this tab will not be saved. Close the other tab and reload this page. | Mevcut — güncelle (eski metin, ikinci cümle olmadan) |
+| help.web.secondaryTab | İkinci sekmenin üst şeridi, `app/_layout.tsx:524-530` (`root.secondaryTab`) | şerit | ⚠️ Uygulama başka bir sekmede açık — değişiklikler bu sekmede kaydedilmez. Diğer sekmeyi kapatınca bu sekme kendiliğinden yeniden yüklenir ve kaydetmeye başlar. | ⚠️ The app is open in another tab — changes in this tab will not be saved. When you close the other tab, this one reloads by itself and starts saving. | Mevcut — koru (2026-11-08; ikinci cümle düzeltildi: diğer sekme kapanınca bu sekme yazma kilidini alıp kendiliğinden yeniden yüklenir, `lib/webDb.ts` `electWriter`, elle yeniden yükleme gerekmez. Eski metin ikinci cümle olmadan) |
 | help.web.readOnlyAction | İkinci sekmede kaydetme denemesi, `lib/i18n.ts:69` (`root.readOnlyTabAction`) | uyarı | (mevcut metin) | (existing) | Mevcut — koru |
 | help.web.dbError | Web veritabanı açılamadı, `app/_layout.tsx:487-508` | tam ekran | Veritabanı başlatılamadı + `root.storageReadError` · Tekrar dene | Could not initialize the database + `root.storageReadError` · Try Again | Mevcut — koru |
 | help.web.dropOverlay | Dosya sürüklenirken, `components/WebAppIntegrations.tsx:108-116` | katman | İçe aktarmak için bırakın · .apkg · .colpkg · .csv · .tsv · .txt | Drop to import · .apkg · .colpkg · .csv · .tsv · .txt | Mevcut — koru |
-| help.web.unknownFile | Desteklenmeyen dosya bırakılınca, `WebAppIntegrations.tsx:88-94` | uyarı | Bilinmeyen dosya biçimi — Yalnızca .apkg, .colpkg, .zip, .csv, .tsv ve .txt dosyaları içe aktarılabilir. | Unknown file format — Only .apkg, .colpkg, .zip, .csv, .tsv and .txt files can be imported. | Mevcut — güncelle (eski metin `.zip` içermiyor; `.zip` kabul ediliyor, `lib/importFile.ts:30`) |
+| help.web.unknownFile | Desteklenmeyen dosya bırakılınca, `WebAppIntegrations.tsx:88-94` | uyarı | Bilinmeyen dosya biçimi — Yalnızca .apkg (veya .zip), .colpkg, .csv, .tsv ve .txt dosyaları içe aktarılabilir. | Unknown file format — Only .apkg (or .zip), .colpkg, .csv, .tsv and .txt files can be imported. | Mevcut — koru (2026-11-08; kod `.zip`'i zaten sayıyordu, metin olduğu gibi kaldı. Eski öneri: "Yalnızca .apkg, .colpkg, .zip, .csv, .tsv ve .txt …") |
 
 ---
 
@@ -306,4 +306,4 @@ Hepsi `lib/permissions.ts:20-41` üzerinden açılır: iPhone'da **Ayarları Aç
 | ID | Yer | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
 | help.automation.saved | Bağlantıyla açılan not kaydedilince, `app/editor.tsx:983-995` | uyarı | Tamamlandı — Not kaydedildi; N kart oluşturuldu. | Done — Note saved; N card(s) created. | Mevcut — koru |
-| help.decks.shortcutFailed | Kestirme eklenemedi, `app/(tabs)/decks.tsx:726-731` | uyarı | Kestirme eklenemedi — Kestirme şu an eklenemedi. Daha sonra yeniden deneyin. | Could not add shortcut — The shortcut could not be added right now. Try again later. | Mevcut — güncelle (eski metin Expo Go ve yeniden derlemeden söz ediyor: "Bu özellik Expo Go yerine TusAnkiM uygulama yapısında çalışır. Uygulamayı yeniden derleyip tekrar deneyin.") — 04-decks alanıyla eşgüdümlü |
+| help.decks.shortcutFailed | Kestirme eklenemedi, `app/(tabs)/decks.tsx:726-731` | uyarı | Kestirme eklenemedi — Kestirme eklenemedi. Lütfen tekrar deneyin. | Could not add shortcut — The shortcut could not be added. Please try again. | Mevcut — koru (2026-11-08; `in-app/01-decks.md` › `help.decks.shortcut.failed` metniyle uygulandı. Expo Go metni yalnızca geliştirme yapısında, `unavailable` durumunda kalır. Eski metin: "Bu özellik Expo Go yerine TusAnkiM uygulama yapısında çalışır. Uygulamayı yeniden derleyip tekrar deneyin.") |

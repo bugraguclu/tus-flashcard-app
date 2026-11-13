@@ -158,7 +158,7 @@ describe('BKA catalog installation', () => {
         expect(learnerRowsIntact(db)).toEqual({ noteType: true, deck: true, note: true, card: true, config: true });
 
         const lockedCatalogNote = getAllNotes().find((note) => note.catalogPack === 'bka-tus')!;
-        expect(() => saveNote(lockedCatalogNote)).toThrow(/satın alma/i);
+        expect(() => saveNote(lockedCatalogNote)).toThrow(/paket tam kurulmadan/i);
 
         const sampleCard = db.getFirstSync<{ id: number; data: string }>(
             'SELECT id, data FROM anki_cards WHERE id != ? ORDER BY id LIMIT 1', LEARNER.cardId,

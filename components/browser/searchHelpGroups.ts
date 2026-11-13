@@ -26,7 +26,7 @@ export function buildSearchHelpGroups(l: BrowserI18n['l']): SearchHelpGroup[] {
                 { term: 'is:review', hint: l('Tekrar aşamasındakiler', 'In the review stage') },
                 { term: 'is:suspended', hint: l('Askıya alınmış kartlar', 'Suspended cards') },
                 { term: 'is:buried', hint: l('Gömülmüş kartlar', 'Buried cards') },
-                { term: 'flag:1', hint: l('Bayrağa göre (0–7)', 'By flag colour (0–7)') },
+                { term: 'flag:1', hint: l('Kırmızı bayrak (0 bayraksız, 1 kırmızı, 2 turuncu, 3 yeşil, 4 mavi, 5 pembe, 6 turkuaz, 7 mor)', 'Red flag (0 none, 1 red, 2 orange, 3 green, 4 blue, 5 pink, 6 turquoise, 7 purple)') },
             ],
         },
         {
@@ -41,7 +41,7 @@ export function buildSearchHelpGroups(l: BrowserI18n['l']): SearchHelpGroup[] {
         {
             title: l('Kart özellikleri', 'Card properties'),
             items: [
-                { term: 'prop:ivl>=21', hint: l('Aralığı 21 günden uzun', 'Interval of 21 days or more') },
+                { term: 'prop:ivl>=21', hint: l('Aralığı 21 gün veya daha uzun', 'Interval of 21 days or more') },
                 { term: 'prop:lapses>=5', hint: l('5 kez veya daha çok unutulan', 'Forgotten five times or more') },
                 { term: 'prop:reps<10', hint: l('10 kereden az çalışılan', 'Reviewed fewer than 10 times') },
                 { term: 'prop:due<=3', hint: l('3 gün içinde gelecekler', 'Due within three days') },

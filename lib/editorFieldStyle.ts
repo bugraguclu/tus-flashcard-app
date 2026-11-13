@@ -37,3 +37,25 @@ export function editorFieldFontFamily(fieldFont: string | undefined): string | n
     if (!cleaned) return null;
     return `"${cleaned}", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
 }
+
+/**
+ * What a field is for, where that changes the hint the editor shows in it. Anki's optional
+ * reversed type makes its second card only when "Add Reverse" holds anything, and a template's
+ * `{{type:Field}}` turns that field into the answer the learner types while studying.
+ */
+export type EditorFieldRole = 'addReverse' | 'typedAnswer' | null;
+
+export function editorFieldRole(
+    noteType: { kind: string; templates: { qfmt: string }[] } | null | undefined,
+    fieldName: string,
+): EditorFieldRole {
+    if (!noteType || noteType.kind === 'cloze') return null;
+    if (fieldName === 'Add Reverse') return 'addReverse';
+    const typed = /\{\{\s*type:(?:nc:)?([^}]+?)\s*\}\}/g;
+    for (const template of noteType.templates) {
+        for (const match of template.qfmt.matchAll(typed)) {
+            if (match[1] === fieldName) return 'typedAnswer';
+        }
+    }
+    return null;
+}

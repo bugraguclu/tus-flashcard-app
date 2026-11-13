@@ -76,7 +76,7 @@ export function EditorOverflowMenu({
             )}
             {!contentReadOnly && <MenuSeparator />}
             <MenuItem
-                label={l('Yazı boyutu', 'Font size')}
+                label={l('Düzenleyici yazı boyutu', 'Editor text size')}
                 hint={String(preferences.fontSize)}
                 onPress={() => openAfterClose(onOpenFontSize)}
             />

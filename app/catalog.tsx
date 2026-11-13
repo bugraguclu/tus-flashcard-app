@@ -90,7 +90,10 @@ export default function CatalogScreen() {
                         ? l('Kartlar açılamadı', 'Cards could not be unlocked')
                         : l('Satın alma tamamlanamadı', 'Purchase could not be completed'),
                     purchaseSimulationEnabled
-                        ? l('Kartlar kurulamadı. Lütfen uygulamayı yeniden başlatıp tekrar deneyin.', 'The cards could not be installed. Restart the app and try again.')
+                        ? l(
+                            'Kartlar kurulamadı. Kendi desteleriniz ve kartlarınız değiştirilmedi. Uygulamayı kapatıp yeniden açın; kurulum kendiliğinden yeniden denenir.',
+                            'The cards could not be installed. Your own decks and cards were not changed. Close and reopen the app; the installation is tried again automatically.',
+                        )
                         : result.state.error
                             ? l('Mağazaya bağlanılamadı. Bağlantınızı kontrol edip yeniden deneyin.', 'Could not connect to the store. Check your connection and try again.')
                             : l('Mağaza yanıtı doğrulanamadı.', 'The store response could not be verified.'),
@@ -231,8 +234,8 @@ export default function CatalogScreen() {
                                 ? 'Tap Unlock cards for free to add every card to your deck list.'
                                 : 'The free trial includes the best 30 real cards from every subtopic; purchasing the pack unlocks every card.',
                         )} ${l(
-                        'Alt desteler, paketi hazırlayanın kendi etiketlerinden gelir; etiketsiz kartlar dersin kendi destesinde kalır.',
-                        'Subdecks come from the pack author’s own tags; untagged cards stay in the course deck itself.',
+                        'Alt desteler, paketi hazırlayanın konu etiketlerinden ve etiketsiz kartlarda kart metnindeki konu terimlerinden oluşur. Hiçbir konuya yerleşmeyen kartlar dersin kendi destesinde kalır ve ders çalışılırken gelir.',
+                        'Subdecks come from the pack author’s topic tags and, for untagged cards, from the subject terms in the card text. Cards that fit no topic stay in the course deck itself and come up when you study the course.',
                     )}`}
                 >
                     {BKA_MANIFEST.courses.map((course) => {
@@ -283,7 +286,7 @@ export default function CatalogScreen() {
                                                 >
                                                     {topic.deck
                                                         ? topic.name
-                                                        : l('Konu etiketi olmayan kartlar', 'Cards without a topic tag')}
+                                                        : l('Konuya ayrılmamış kartlar', 'Cards not sorted into a topic')}
                                                 </Text>
                                                 <Text style={styles.topicCount}>{number(topic.cards)}</Text>
                                             </View>

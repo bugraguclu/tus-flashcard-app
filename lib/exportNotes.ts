@@ -9,6 +9,7 @@ import { BUILTIN_NOTE_TYPES, type AnkiCard, type Deck, type Note, type NoteType 
 import { getDB } from './db';
 import { getAllDecks } from './deckManager';
 import { isCatalogDeck, isCatalogNote, PaidCatalogProtectionError } from './catalogProtection';
+import { translateActive } from './i18n';
 import { decodeEntitiesLikeAnki } from './noteChecksum';
 
 function escapeField(value: string): string {
@@ -113,10 +114,10 @@ export function buildExportTextFromData(
     const withNotetype = options.withNotetype !== false;
     const withGuid = options.withGuid !== false;
     if (deckName && data.decks.some((deck) => (deck.name === deckName || deck.name.startsWith(`${deckName}::`)) && isCatalogDeck(deck))) {
-        throw new PaidCatalogProtectionError('Ücretli katalog desteleri dışa aktarılamaz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.exportBlocked'));
     }
     if (selectedNoteIds && data.notes.some((note) => selectedNoteIds.has(note.id) && isCatalogNote(note))) {
-        throw new PaidCatalogProtectionError('Ücretli katalog kartları dışa aktarılamaz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.exportBlocked'));
     }
     const decks = new Map(data.decks.map((deck) => [deck.id, deck.name]));
     const scope = selectedNoteIds ?? (deckName
@@ -127,7 +128,7 @@ export function buildExportTextFromData(
         : null);
     const notes = data.notes.filter((note) => !isCatalogNote(note) && (!scope || scope.has(note.id)));
     if (notes.some((note) => isCatalogNote(note))) {
-        throw new PaidCatalogProtectionError('Ücretli katalog kartları dışa aktarılamaz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.exportBlocked'));
     }
     const cards = data.cards;
     const noteTypes = new Map(data.noteTypes.map((noteType) => [noteType.id, noteType]));

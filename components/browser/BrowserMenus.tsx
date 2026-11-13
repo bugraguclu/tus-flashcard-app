@@ -137,7 +137,7 @@ export function SelectionMenuModal({
         if (catalogProtected) {
             alert(
                 l('Katalog Korumalı', 'Catalog Protected'),
-                l('Dahili TUS kartları silinemez. Kataloğu kaldırmak için Ayarlar ekranını kullanabilirsiniz.', 'Built-in TUS cards cannot be deleted. Use Settings to remove the catalog.')
+                l('TUS Kartları paketindeki notlar silinemez. Çalışmak istemediğiniz kartları askıya alabilirsiniz.', 'Notes in the TUS Kartları pack cannot be deleted. You can suspend cards you don’t want to study.')
             );
             return;
         }
@@ -645,7 +645,7 @@ export function BrowserOptionsModal({
         <AppDialog
             visible={showOptions}
             onClose={close}
-            title={l('Kart tarayıcısı seçenekleri', 'Card Browser Options')}
+            title={l('Kartlarım seçenekleri', 'Card Browser Options')}
             actions={<Button variant="plain" label={t('common.close')} onPress={close} />}
         >
             <View style={styles.optionGroup}>

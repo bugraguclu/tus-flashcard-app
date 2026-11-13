@@ -610,7 +610,7 @@ ara veya deck:tag:is:…". "?" (aria "Arama sözdizimi yardımı") desteklenen t
   önerir. [FAQ](https://docs.ankiweb.net/faqs/resetting-progress-in-a-deck#resetting-cards-within-anki)
 - **TusAnkiM:** `deck:farmakoloji` → "Tümünü seç" → "Diğer" → "Kartları sıfırla…" → "Sıfırla".
 - **Geçer:** Ajan önce alternatifi söyler ve onay ister. Sonra kartlar "Yeni" olur, geçmiş kalır.
-  Ayarlar'daki "İlerlemeyi sıfırla" bütün koleksiyonu sıfırlar ve kataloğu kaldırır; ajan bunu
+  Ayarlar'daki "Koleksiyonu sıfırla" bütün koleksiyonu sıfırlar ve kataloğu kaldırır; ajan bunu
   kullanmamalı.
 
 #### BROWSE-16 · İstek · P3 · S2

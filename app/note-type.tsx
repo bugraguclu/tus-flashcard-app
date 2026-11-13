@@ -124,14 +124,14 @@ export default function NoteTypeScreen() {
 
     const handleRemoveField = (ord: number) => {
         if (isCloze) {
-            alert(l('Uyarı', 'Warning'), l('Kapama (Cloze) türünde alanlar yeniden düzenlenemez.', 'Fields cannot be reordered in a Cloze note type.'));
+            alert(l('Uyarı', 'Warning'), l('Boşluk doldurma türlerinde alan eklenemez, taşınamaz ve silinemez; alan adlarını değiştirebilirsiniz.', 'Fields of a cloze type cannot be added, moved or deleted; you can rename them.'));
             return;
         }
         if (nt.fields.length <= 1) {
             alert(l('Uyarı', 'Warning'), l('Bir not türünde en az bir alan bulunmalıdır.', 'A note type must have at least one field.'));
             return;
         }
-        confirm(l('Alanı sil', 'Delete Field'), l(`“${nt.fields[ord].name}” alanı ve tüm notlardaki değeri silinecek.`, `The “${nt.fields[ord].name}” field and its value in every note will be deleted.`), () =>
+        confirm(l('Alanı sil', 'Delete Field'), l(`“${nt.fields[ord].name}” alanı ve tüm notlardaki değeri silinecek. Bu işlem geri alınamaz.`, `The “${nt.fields[ord].name}” field and its value in every note will be deleted. This cannot be undone.`), () =>
             applyStructural(removeField(nt, ord)),
             { destructive: true },
         );
@@ -220,7 +220,7 @@ export default function NoteTypeScreen() {
                     </View>
                 ))}
                 {isCloze ? (
-                    <Text style={styles.help}>{l('Kapama (Cloze) türünde alanlar yeniden düzenlenemez.', 'Fields cannot be reordered in a Cloze note type.')}</Text>
+                    <Text style={styles.help}>{l('Boşluk doldurma türlerinde alan eklenemez, taşınamaz ve silinemez; alan adlarını değiştirebilirsiniz.', 'Fields of a cloze type cannot be added, moved or deleted; you can rename them.')}</Text>
                 ) : (
                     <Button
                         variant="secondary"

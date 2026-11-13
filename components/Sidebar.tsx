@@ -138,7 +138,7 @@ export function Sidebar(props: SidebarProps) {
                             // The row is 44 tall; the slop makes up the 32-wide column to a full target.
                             hitSlop={{ left: 6, right: 6, top: 1, bottom: 1 }}
                             accessibilityRole="button"
-                            accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
+                            accessibilityLabel={isExpanded ? t('sidebar.hideSubdecks') : t('sidebar.showSubdecks')}
                             accessibilityState={{ expanded: isExpanded }}
                         >
                             <DisclosureChevron

@@ -7,7 +7,7 @@ export default function ImportFilePrompt({ l, onPick }: {
     onPick: () => void;
 }) {
     return (
-        <Card padded title={l('İçe aktarılacak dosyayı seçin', 'Choose a file to import')} description=".apkg · .colpkg · .csv · .tsv · .txt">
+        <Card padded title={l('İçe aktarılacak dosyayı seçin', 'Choose a file to import')} description=".apkg / .zip · .colpkg · .csv · .tsv · .txt">
             <Button label={l('Dosya seç', 'Choose File')} onPress={onPick} accessibilityLabel={l('Dosya seç', 'Choose file')} />
         </Card>
     );

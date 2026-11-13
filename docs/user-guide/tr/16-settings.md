@@ -8,7 +8,7 @@ app_help: help?article=settings
 app_screens:
   - "Ayarlar — app/settings.tsx"
   - "Ayarlar › Kontroller › Klavye — components/settings/KeyboardSettingsSection.tsx"
-verified_against: settings-page-full-functionality (2026-10-30)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Ayarlar
@@ -140,7 +140,7 @@ geçerlidir.
 | **Ortaya hizala** | Kapalı | Kart içeriğini ekranın dikey ortasına yerleştirir. |
 | **Deste başlığını göster** | Açık | Çalıştığınız destenin adı üstte görünür. |
 | **Kalan süreyi göster** | Kapalı | O anki hızınıza göre bitişe ne kadar kaldığını tahmin eder. |
-| **Araç çubuğunu göster** | Açık | Geri düğmesini, deste seçiciyi, sayaçları ve kart işlemlerini gösterir. |
+| **Araç çubuğunu göster** | Açık | Geri düğmesini, deste seçiciyi, sayaçları ve kart işlemlerini gösterir. Kapalıyken menüleri kaydırma hareketleriyle veya **Yüzen Araçlar düğmesi**yle açarsınız; ikisini de **Kontroller**'de açabilirsiniz. |
 | **Araç çubuğu konumu** | **Üst** | Yeni ekranda araç çubuğunu ekranın altına (**Alt**) alabilirsiniz. |
 | **Yanıt düğmelerini göster** | Açık | Kapatırsanız kartları dokunma bölgeleri veya kaydırma ile cevaplarsınız. Kapatmadan önce **Kontroller** bölümünde bunlardan birinin açık olması gerekir. |
 | **Sonraki inceleme süresini göster** | Açık | Her düğmenin üstünde kartın ne zaman yeniden geleceği yazar. |
@@ -339,8 +339,8 @@ Bu sayfadaki komutlar **Kaydet** beklemeden çalışır.
   **Onar ve optimize et** önce bulduklarını gösterir, onayınızla yedek alıp onarır. Bkz.
   [Veritabanını kontrol etme](15-backups-and-maintenance.md#check-database) ve
   [Onarma](15-backups-and-maintenance.md#repair).
-- **İlerlemeyi sıfırla** kartlarınızı, destelerinizi ve çalışma geçmişinizin tamamını siler; önce
-  bir güvenlik yedeği alır. Bkz. [İlerlemeyi sıfırlama](15-backups-and-maintenance.md#reset-progress).
+- **Koleksiyonu sıfırla** kartlarınızı, destelerinizi ve çalışma geçmişinizin tamamını siler; önce
+  bir güvenlik yedeği alır. Bkz. [Koleksiyonu sıfırlama](15-backups-and-maintenance.md#reset-progress).
 
 <a id="about"></a>
 ## Hakkında

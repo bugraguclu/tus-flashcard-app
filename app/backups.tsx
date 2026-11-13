@@ -158,7 +158,10 @@ export default function BackupsScreen() {
     const confirmRestore = (contents: string) => {
         confirm(
             l('Yedeği geri yükle', 'Restore Backup'),
-            l('Bu yedek mevcut koleksiyonun yerini alacak. Geri yüklemeden önce mevcut durumun otomatik bir kopyası oluşturulur.', 'This backup will replace the current collection. A copy of the current state is created automatically before restoring.'),
+            l(
+                'Bu yedek mevcut koleksiyonun ve uygulama ayarlarının yerini alacak. Medya dosyalarına dokunulmaz. Geri yüklemeden önce mevcut durumun bir kopyası “Geri yükleme öncesi kopya” olarak saklanır.',
+                'This backup will replace the current collection and app settings. Media files are not touched. A copy of the current state is kept as a “Pre-restore snapshot” first.',
+            ),
             () =>
                 void withBusy(async () => {
                     try {
@@ -185,7 +188,7 @@ export default function BackupsScreen() {
     };
 
     const handleDelete = (name: string) => {
-        confirm(l('Yedeği sil', 'Delete Backup'), l(`${name} kalıcı olarak silinecek.`, `${name} will be permanently deleted.`), () =>
+        confirm(l('Yedeği sil', 'Delete Backup'), l(`${displayBackupName(name)} kalıcı olarak silinecek.`, `${displayBackupName(name)} will be permanently deleted.`), () =>
             void withBusy(async () => {
                 try {
                     await deleteBackup(name);

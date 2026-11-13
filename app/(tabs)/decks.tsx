@@ -35,6 +35,7 @@ import {
     renameDeck,
     moveDeckUnder,
     rebuildFilteredDeck,
+    filteredDeckBuiltCount,
     setDeckCollapsed,
     initializeDeckDisclosureDefaults,
     setDeckDescription,
@@ -408,7 +409,7 @@ export default function DecksScreen() {
             refresh();
         } catch (e) {
             console.warn('[Decks] createDeck failed:', e);
-            alert(t('common.error'), l('Deste oluşturulamadı.', 'Could not create the deck.'));
+            alert(t('common.error'), userFacingErrorMessage(e, l('Deste oluşturulamadı.', 'Could not create the deck.')));
         }
     };
 
@@ -655,12 +656,16 @@ export default function DecksScreen() {
 
                 if (status === 'cancelled') return;
 
+                // Only a development client lacks the native module; a store build reports
+                // `unavailable` only when it could not present the Shortcuts sheet just then.
                 setTimeout(() => alert(
                     l('Kestirme eklenemedi', 'Could not add shortcut'),
-                    l(
-                        'Bu özellik Expo Go yerine TusAnkiM uygulama yapısında çalışır. Uygulamayı yeniden derleyip tekrar deneyin.',
-                        'This feature works in a TusAnkiM app build rather than Expo Go. Rebuild the app and try again.',
-                    ),
+                    __DEV__ && status === 'unavailable'
+                        ? l(
+                            'Bu özellik Expo Go yerine TusAnkiM uygulama yapısında çalışır. Uygulamayı yeniden derleyip tekrar deneyin.',
+                            'This feature works in a TusAnkiM app build rather than Expo Go. Rebuild the app and try again.',
+                        )
+                        : l('Kestirme eklenemedi. Lütfen tekrar deneyin.', 'The shortcut could not be added. Please try again.'),
                 ), 300);
                 return;
             }
@@ -692,9 +697,13 @@ export default function DecksScreen() {
 
     const handleRebuildFilter = (deck: Deck) => {
         rebuildFilteredDeck(deck.id);
+        const gathered = filteredDeckBuiltCount(deck.id);
         setModal(null);
         refresh();
-        alert(l('Deste yeniden oluşturuldu', 'Deck rebuilt'), l('Kartlar kayıtlı arama ve sıralama kurallarıyla yeniden toplandı.', 'Cards were gathered again using the saved search and sort rules.'));
+        alert(l('Deste yeniden oluşturuldu', 'Deck rebuilt'), l(
+            `Kartlar kayıtlı arama ve sıralama kurallarıyla yeniden toplandı (${formatCount(gathered, locale)} kart).`,
+            `Cards were gathered again using the saved search and sort rules (${formatCount(gathered, locale)} ${gathered === 1 ? 'card' : 'cards'}).`,
+        ));
     };
 
     /** Custom study variants (forgotten / ahead / preview): build the session and offer to study. */
@@ -733,13 +742,15 @@ export default function DecksScreen() {
             l('Desteyi sil', 'Delete Deck'),
             deck.isFiltered
                 ? l(`"${getDeckDisplayName(deck.name)}" silinecek; kartlar ait oldukları destelere dönecek.`, `"${getDeckDisplayName(deck.name)}" will be deleted; its cards will return to their original decks.`)
-                : l(`"${getDeckDisplayName(deck.name)}" tüm alt desteleri ve içindeki kartlarla birlikte silinecek. Silme sonrasında geri alabilirsiniz.`, `"${getDeckDisplayName(deck.name)}" and all of its subdecks and cards will be deleted. You can undo after deletion.`),
+                : l(`“${getDeckDisplayName(deck.name)}”, tüm alt desteleri ve içindeki kartlarla birlikte silinecek. Başka destelerde kartı olan notlar ve tekrar geçmişiniz korunur. Hemen sonra çıkan pencerede Geri al ile geri getirebilirsiniz.`, `“${getDeckDisplayName(deck.name)}” and all of its subdecks and cards will be deleted. Notes with cards in other decks and your review history are kept. You can bring it back with Undo in the window that follows.`),
             () => {
                 try {
                     const deletion = deleteDeck(deck.id);
                     setModal(null);
                     refresh();
-                    if (deletion) void choose(l('Deste silindi', 'Deck deleted'), l(`${deletion.cardCount} kart etkilendi.`, `${deletion.cardCount} cards affected.`), l('Geri al', 'Undo'), l('Bitti', 'Done')).then((undo) => {
+                    if (deletion) void choose(l('Deste silindi', 'Deck deleted'), deck.isFiltered
+                        ? l('Kartlar kendi destelerine döndü.', 'Its cards are back in their own decks.')
+                        : l(`${deletion.cardCount} kart etkilendi.`, `${deletion.cardCount} cards affected.`), l('Geri al', 'Undo'), l('Bitti', 'Done')).then((undo) => {
                         if (!undo) return;
                         try { deletion.undo(); refresh(); }
                         catch (error) { alert(t('common.error'), userFacingErrorMessage(error, l('Silme geri alınamadı.', 'Could not undo deletion.'))); }
@@ -1693,7 +1704,7 @@ export default function DecksScreen() {
                     style={styles.bottomBtn}
                     onPress={() => router.push('/browser' as any)}
                     accessibilityRole="button"
-                    accessibilityLabel={l('Kartlarımı aç', 'Open Browse')}
+                    accessibilityLabel={l('Kartlarımı aç', 'Open Card Browser')}
                 >
                     <CardsGlyph color={colors.textSecondary} size={20} />
                     <Text style={styles.bottomBtnText} {...BOTTOM_LABEL_FIT}>{t('sidebar.myCards')}</Text>

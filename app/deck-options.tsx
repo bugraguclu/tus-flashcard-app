@@ -1240,7 +1240,7 @@ export default function DeckOptionsScreen() {
                         label={l('Limitler en üst desteden başlasın', 'Limits start from top')}
                         value={form.limitsStartFromTop}
                         onChange={(value) => set('limitsStartFromTop', value)}
-                        hint={l('Tüm ayar grupları için geçerlidir.', 'Applies to all presets.')}
+                        hint={l('Açıkken bir alt desteyi tek başına çalışsanız da üst destelerin tekrar limitleri uygulanır. Tüm ayar grupları için geçerlidir.', 'When on, parent decks’ review limits also apply when you study a subdeck on its own. Applies to all presets.')}
                     />
                 </OptionCard>
 
@@ -1250,7 +1250,7 @@ export default function DeckOptionsScreen() {
                     label={l('Öğrenme adımları', 'Learning steps')}
                     value={form.learningSteps}
                     onChange={(t) => set('learningSteps', t)}
-                    hint={l('Boşlukla ayırın: 1m 10m · birimler: s, m, h, d', 'Separate with spaces: 1m 10m · units: s, m, h, d')}
+                    hint={l('Boşlukla ayırın: 1m 10m · birimler: s, m, h, d · birimsiz sayı dakikadır', 'Separate with spaces: 1m 10m · units: s, m, h, d · a bare number is minutes')}
                     kind="steps"
                 />
                 <FieldAdvice field="learningSteps" />
@@ -1294,8 +1294,8 @@ export default function DeckOptionsScreen() {
                     value={form.leechThreshold}
                     onChange={(t) => set('leechThreshold', t)}
                     hint={l(
-                        'Kart bu sayıda unutulduğunda işaretlenir. Varsayılan: 8.',
-                        'The card is marked when it reaches this many lapses. Default: 8.',
+                        'Kart bu sayıda unutulunca “Sürekli Unutulan Kart” olarak işaretlenir, sonra her yarım eşikte yeniden. Varsayılan: 8.',
+                        'The card is marked as a Leech at this many lapses, then again every half that many. Default: 8.',
                     )}
                 />
                 <SelectSetting
@@ -1332,8 +1332,8 @@ export default function DeckOptionsScreen() {
                     />
                     <Text style={styles.fieldHint}>
                         {l(
-                            'FSRS her kart için hafıza gücünü (stability) ve zorluğunu izler; aralıkları kolaylık çarpanı yerine bu iki sayıdan hesaplar. Anahtar tüm koleksiyon için geçerlidir; aşağıdaki değerler bu ayar grubuna aittir.',
-                            'FSRS tracks each card’s memory strength and difficulty, and derives intervals from those instead of an ease multiplier. The switch is collection-wide; the values below belong to this preset.',
+                            'FSRS her kart için hafıza gücünü (stability) ve zorluğunu izler; aralıkları kolaylık çarpanı yerine bu iki sayıdan hesaplar. Anahtar tüm koleksiyon için geçerlidir; aşağıdaki değerler bu ayar grubuna aittir. FSRS’i açıp kaydettiğinizde kartların hafıza durumu tekrar geçmişinden hesaplanır; kapatıp kaydederseniz silinir.',
+                            'FSRS tracks each card’s memory strength and difficulty, and derives intervals from those instead of an ease multiplier. The switch is collection-wide; the values below belong to this preset. When you switch FSRS on and save, the cards’ memory states are calculated from the review history; switching it off and saving removes them.',
                         )}
                     </Text>
 
@@ -1636,7 +1636,7 @@ export default function DeckOptionsScreen() {
                         <Field field="easyBonus" kind="decimal" label={l('Kolay bonusu', 'Easy bonus')} value={form.easyBonus} onChange={(t) => set('easyBonus', t)} hint={l('1,00–5,00 arası. Varsayılan 1,30', 'Between 1.00 and 5.00. Default 1.30')} />
                         <Field field="hardIvl" kind="decimal" label={l('Zor aralık çarpanı', 'Hard interval multiplier')} value={form.hardIvl} onChange={(t) => set('hardIvl', t)} hint={l('0,50–1,30 arası. Varsayılan 1,20', 'Between 0.50 and 1.30. Default 1.20')} />
                         <Field field="ivlModifier" kind="decimal" label={l('Aralık düzenleyici', 'Interval modifier')} value={form.ivlModifier} onChange={(t) => set('ivlModifier', t)} hint={l('0,50–2,00 arası. Varsayılan 1,00', 'Between 0.50 and 2.00. Default 1.00')} />
-                        <Field field="newIvlPercent" label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = baştan başla', '0 = start over')} />
+                        <Field field="newIvlPercent" label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = en az aralıktan yeniden başlar', '0 = restart from the minimum interval')} />
                     </>
                 ) : (
                     <Text style={styles.fieldHint}>
@@ -1653,7 +1653,7 @@ export default function DeckOptionsScreen() {
                     style={[styles.input, styles.descriptionInput]}
                     value={form.description}
                     onChangeText={(t) => set('description', t)}
-                    placeholder={l('Bu deste hakkında not (çalışma ekranında görünür)', 'Notes about this deck (shown on the study screen)')}
+                    placeholder={l('Bu deste hakkında not (genel bakışta ve çalışma ekranında görünür)', 'Notes about this deck (shown on the overview and the study screen)')}
                     placeholderTextColor={colors.textMuted}
                     multiline
                     accessibilityLabel={l('Deste açıklaması', 'Deck description')}
@@ -1691,7 +1691,7 @@ export default function DeckOptionsScreen() {
                     title={l('Deste seç', 'Choose Deck')}
                     allDecksLabel={null}
                     searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                    emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                    emptySearchLabel={l('Aramanızla eşleşen deste yok. Kelimelerin başını yazın; örneğin “farm”.', 'No decks match your search. Type the start of a word, for example “anat”.')}
                     cancelLabel={t('common.cancel')}
                     closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
                     searchAccessibilityLabel={l('Deste ara', 'Search decks')}

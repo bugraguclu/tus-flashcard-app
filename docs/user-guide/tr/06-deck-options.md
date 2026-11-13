@@ -9,7 +9,7 @@ app_screens:
   - "Deste seçenekleri — app/deck-options.tsx"
   - "Ayar rehberi sayfaları (kartlardaki ? düğmeleri) — components/deck-options/SettingControls.tsx, components/deck-options/deckOptionsCopy.ts"
   - "Ayar grubu seçici, ad penceresi ve ••• menüsü — components/deck-options/PresetModals.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Deste seçenekleri

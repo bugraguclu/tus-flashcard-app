@@ -20,6 +20,7 @@ import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContex
 import {
     emptyFilteredDeck,
     rebuildFilteredDeck,
+    filteredDeckBuiltCount,
     unburyDeck,
     getBuriedKindsForDeck,
 } from '../lib/deckManager';
@@ -30,7 +31,7 @@ import { alert, confirm } from '../lib/confirm';
 import { chooseUnburyKind, type UnburyKind } from '../lib/unburyChoice';
 import { goBackOr } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
-import { filteredOrderLabel } from '../lib/i18n';
+import { filteredOrderLabel, formatCount } from '../lib/i18n';
 import CustomStudyModal from '../components/CustomStudyModal';
 import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
 import DeckOverflowGlyph from '../components/DeckOverflowGlyph';
@@ -129,9 +130,13 @@ export default function DeckOverviewScreen() {
 
     const handleRebuild = () => {
         rebuildFilteredDeck(deck.id);
+        const gathered = filteredDeckBuiltCount(deck.id);
         bumpDataVersion();
         setRefreshToken((value) => value + 1);
-        alert(l('Deste yeniden oluşturuldu', 'Deck Rebuilt'), l('Kartlar kayıtlı filtre kurallarıyla yeniden toplandı.', 'Cards were gathered again using the saved filter rules.'));
+        alert(l('Deste yeniden oluşturuldu', 'Deck rebuilt'), l(
+            `Kartlar kayıtlı arama ve sıralama kurallarıyla yeniden toplandı (${formatCount(gathered, locale)} kart).`,
+            `Cards were gathered again using the saved search and sort rules (${formatCount(gathered, locale)} ${gathered === 1 ? 'card' : 'cards'}).`,
+        ));
     };
 
     const handleEmpty = () => {

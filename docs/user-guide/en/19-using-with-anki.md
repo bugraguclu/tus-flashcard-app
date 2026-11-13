@@ -8,7 +8,7 @@ app_help: help?article=anki
 app_screens:
   - "Import — app/import.tsx"
   - "Export — app/export.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Using TusAnkiM with Anki
@@ -132,7 +132,7 @@ not have every feature. The main differences you will notice:
 | Backups | These are the app's own backups and do not open directly in Anki. To take a backup to Anki, turn it into a package with **Backups › Share**. See [Backups and maintenance](15-backups-and-maintenance.md). |
 | Statistics | Some of Anki's charts are available. See [Statistics](12-statistics.md). |
 | Keyboard shortcuts | The study screen has the basic keys; some Anki keys are missing. See [Studying](05-studying.md). |
-| **Reset progress** | This command in Settings does not reset individual cards as in Anki; it deletes the whole collection. See [Backups and maintenance](15-backups-and-maintenance.md#reset-progress). |
+| **Reset collection** | This command in Settings does not reset individual cards as in Anki; it deletes the whole collection. See [Backups and maintenance](15-backups-and-maintenance.md#reset-progress). |
 
 Only in TusAnkiM: the ready-made [TUS card pack](17-tus-card-pack.md), the
 [Stopwatch and study calendar](13-stopwatch-and-calendar.md), deck shortcuts and

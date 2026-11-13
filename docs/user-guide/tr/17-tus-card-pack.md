@@ -10,7 +10,7 @@ app_screens:
   - "TUS Kartları ekranı — app/catalog.tsx"
   - "Paket destelerinin ••• menüsü — app/(tabs)/decks.tsx (renderMenuModal)"
   - "Not düzenleme, paket notu — app/editor.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # TUS Kartları paketi
@@ -48,7 +48,7 @@ Paket 12 ders destesinden ve bunların altındaki 106 alt desteden oluşur. Büt
   konu terimlerine göre bir alt desteye yerleştirilir. Anatomi, FHE, Patoloji ve Farmakoloji'nin
   alt destelerinin hepsi bu ikinci yolla oluşur.
 - **Hiçbir konuya yerleşmeyen kartlar** (toplam 2.612 kart) doğrudan ders destesinde kalır.
-  **TUS Kartları** ekranında bir dersi açtığınızda bunlar **Konu etiketi olmayan kartlar** satırında
+  **TUS Kartları** ekranında bir dersi açtığınızda bunlar **Konuya ayrılmamış kartlar** satırında
   sayılır. Dersin destesini çalıştığınızda bu kartlar da gelir.
 - Alt destelerin adlarını ve kart sayılarını kurmadan önce görebilirsiniz: **TUS Kartları**
   ekranında bir derse dokunun.
@@ -206,7 +206,7 @@ Paketi tek başına kaldırmanın bir yolu yoktur; desteleri ve kartları siline
 istemediğiniz bölümleri kapalı tutabilir veya askıya alabilirsiniz
 (bkz. [Paketi çalışma](#studying-the-pack)).
 
-Paket yalnızca **Ayarlar › Veri yönetimi › İlerlemeyi sıfırla** ile kalkar. Bu komut paketle
+Paket yalnızca **Ayarlar › Veri yönetimi › Koleksiyonu sıfırla** ile kalkar. Bu komut paketle
 birlikte **koleksiyonunuzun tamamını** siler: kendi destelerinizi, kartlarınızı ve tekrar
 geçmişinizi. Silmeden önce geri yüklenebilir bir güvenlik yedeği alınır. Sıfırlamadan sonra
 **TUS Kartları** yeniden kilitli görünür; isterseniz **Kartları ücretsiz aç** ile tekrar

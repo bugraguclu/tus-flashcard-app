@@ -1,6 +1,7 @@
 import type JSZip from 'jszip';
 import type { JSZipObject } from 'jszip';
 import { Decompress, decompress } from 'fzstd';
+import { translateActive } from './i18n';
 
 // Entries are inflated one at a time, so these bound disk use and zip-bomb exposure rather than
 // memory; the compression-ratio and per-entry checks below still apply to every entry.
@@ -27,7 +28,7 @@ export function zipEntrySizes(entry: JSZipObject): ZipSizes {
 export function assertSafeAnkiArchive(zip: Pick<JSZip, 'files'>): void {
     const entries = Object.values(zip.files).filter((entry) => !entry.dir);
     if (entries.length > MAX_ARCHIVE_ENTRIES) {
-        throw new Error(`Paket çok fazla dosya içeriyor (en fazla ${MAX_ARCHIVE_ENTRIES.toLocaleString('tr-TR')}).`);
+        throw new Error(translateActive('import.tooManyRecords'));
     }
 
     let total = 0;
@@ -36,20 +37,21 @@ export function assertSafeAnkiArchive(zip: Pick<JSZip, 'files'>): void {
         // Newly-created in-memory JSZip instances do not expose these fields. Packages loaded
         // from user bytes do, and are the security boundary this preflight is designed for.
         if (uncompressed === undefined) continue;
-        if (uncompressed > MAX_ZIP_ENTRY_BYTES) throw new Error('Paket içinde aşırı büyük bir dosya var.');
+        if (uncompressed > MAX_ZIP_ENTRY_BYTES) throw new Error(translateActive('import.tooLarge'));
         total += uncompressed;
-        if (total > MAX_ARCHIVE_UNCOMPRESSED_BYTES) throw new Error('Paket açıldığında güvenli boyut sınırını aşıyor.');
+        if (total > MAX_ARCHIVE_UNCOMPRESSED_BYTES) throw new Error(translateActive('import.tooLarge'));
         if (compressed !== undefined && compressed > 0 && uncompressed > 1024 * 1024
             && uncompressed / compressed > MAX_COMPRESSION_RATIO) {
-            throw new Error('Paket olağan dışı sıkıştırma oranı nedeniyle güvenli değil.');
+            throw new Error(translateActive('import.unusualCompression'));
         }
     }
 }
 
-export function assertZipEntrySize(entry: JSZipObject, maxBytes: number, label: string): void {
+/** `_label` names the entry for callers; the learner sees one message for every size limit. */
+export function assertZipEntrySize(entry: JSZipObject, maxBytes: number, _label: string): void {
     const { uncompressed } = zipEntrySizes(entry);
     if (uncompressed !== undefined && uncompressed > maxBytes) {
-        throw new Error(`${label} güvenli boyut sınırını aşıyor.`);
+        throw new Error(translateActive('import.tooLarge'));
     }
 }
 
@@ -110,11 +112,11 @@ export function inspectZstdFrame(bytes: Uint8Array): ZstdFrameInfo {
 export function decompressZstdBounded(bytes: Uint8Array, maxBytes: number, label: string): Uint8Array {
     const frame = inspectZstdFrame(bytes);
     if (frame.contentSize > maxBytes || frame.windowSize > maxBytes) {
-        throw new Error(`${label} açıldığında güvenli boyut sınırını aşıyor.`);
+        throw new Error(translateActive('import.tooLarge'));
     }
     if (bytes.length > 0 && frame.contentSize > 1024 * 1024
         && frame.contentSize / bytes.length > MAX_COMPRESSION_RATIO) {
-        throw new Error(`${label} olağan dışı sıkıştırma oranına sahip.`);
+        throw new Error(translateActive('import.unusualCompression'));
     }
     if (frame.contentSize > 0) {
         const output = decompress(bytes, new Uint8Array(frame.contentSize));
@@ -129,7 +131,7 @@ export function decompressZstdBounded(bytes: Uint8Array, maxBytes: number, label
     let total = 0;
     const decoder = new Decompress((chunk) => {
         total += chunk.length;
-        if (total > maxBytes) throw new Error(`${label} açıldığında güvenli boyut sınırını aşıyor.`);
+        if (total > maxBytes) throw new Error(translateActive('import.tooLarge'));
         chunks.push(chunk.slice());
     });
     decoder.push(bytes, true);

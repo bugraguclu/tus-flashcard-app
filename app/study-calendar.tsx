@@ -322,7 +322,7 @@ export default function StudyCalendarScreen() {
         if (session.source === 'cards') {
             items.push({
                 key: 'deck',
-                label: l('Bu oturuma git', 'Go to this session'),
+                label: l('Bu desteye git', 'Go to this deck'),
                 hint: session.deckName,
                 onPress: () => {
                     close();

@@ -89,6 +89,12 @@ sayfaları, İstatistikler'deki **İstatistikler hakkında** sayfası, **Sürekl
 kutusu, Ayarlar › Kontroller yardımı) korunur; `in-app/` dosyalarında "Mevcut — koru" olarak
 işaretlidir ve yalnızca **Daha fazla bilgi** bağlantısı eklenir.
 
+`in-app/` tablolarının **Durum** sütunu şu değerleri alır: **Yeni** (uygulamada henüz yok),
+**Mevcut — koru** (bugünkü metin doğru; parantezdeki tarih metnin uygulandığı gündür),
+**Mevcut — genişlet**, **Mevcut — güncelle (eski metin: …)** (metin değişecek),
+**Bekliyor (tarih: neden)** (öneri, henüz olmayan bir şeye, çoğunlukla Yardım merkezine bağlı) ve
+**Atlandı (tarih: neden)** (öneri kodla karşılaştırılınca yanlış veya yanıltıcı bulundu).
+
 <a id="uygulamada-nerede"></a>
 ## 3. Uygulamada nerede? (ekran ekran)
 
@@ -109,7 +115,7 @@ sayfasının altındaki **Daha fazla bilgi** bağlantısı **Makale** sütununda
 | Not türleri, Not türünü düzenle — `app/note-types.tsx`, `app/note-type.tsx` | Başlık çubuğunda ⓘ (yeni) → `help.noteTypes.sheet`, `help.noteType.sheet` | `in-app/04-editing.md` | 09 |
 | Kartlarım — `app/browser.tsx` | Başlığın sağında ⓘ (yeni) → `help.browser.sheet`; arama kutusundaki **?** (mevcut, metni düzeltilecek) → `help.browser.searchHelp` | `in-app/05-browser.md` | 10 |
 | Kart bilgisi — `app/card-info.tsx` | Başlığın sağında ⓘ (yeni) → `help.cardInfo.sheet` | `in-app/05-browser.md` | 10 |
-| İstatistikler — `app/stats.tsx` | Sağ üstteki **Bilgi** (mevcut, genişletilecek) → `help.stats.sheet` | `in-app/06-progress.md` | 12 |
+| İstatistikler — `app/stats.tsx` | Sağ üstteki ⓘ, **İstatistikler hakkında** (mevcut, genişletilecek) → `help.stats.sheet` | `in-app/06-progress.md` | 12 |
 | Kronometre — `app/stopwatch.tsx` | Başlıkta zilin solunda ⓘ (yeni) → `help.stopwatch.sheet` | `in-app/06-progress.md` | 13 |
 | Çalışma Takvimi — `app/study-calendar.tsx` | Başlıkta **Çalışma analizleri**'nin solunda ⓘ (yeni) → `help.calendar.sheet` | `in-app/06-progress.md` | 13 |
 | İçe aktar — `app/import.tsx` | Başlıkta ⓘ (yeni) → `help.import.sheet` | `in-app/07-import-export-backups.md` | 14, 19 |

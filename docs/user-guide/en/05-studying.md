@@ -13,7 +13,7 @@ app_screens:
   - "Select Deck picker — components/DeckPickerModal.tsx"
   - "Whiteboard — components/WhiteboardOverlay.tsx"
   - "Card view: typed answers, audio, links — components/CardWebView.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Studying
@@ -45,6 +45,8 @@ Tap the deck name (the area with ▾) in the top bar; the **Select Deck** picker
 
 - Tap a deck to keep studying with that deck; the screen stays open and only the cards change.
 - **All Decks** studies all your decks together; the title then reads **Cards for Today**.
+- With **Settings › New study screen › Show deck title** off, the classic layout's title reads
+  **Select deck** instead of the deck name; tapping it opens the same picker.
 - Use 🔍 to filter decks and **＋** to create a new one; a new deck is selected at once.
 
 Switching decks resets the card on screen, the undo history and any whiteboard drawing.
@@ -69,8 +71,9 @@ both. The differences:
 
 The other options under **Settings › New study screen** (frame style, counts, deck title, remaining
 time, hiding the toolbar, answer buttons, auto advance) apply to both layouts. With **Show toolbar**
-off, the **‹**, **↶**, **⚑**, **⚙** and **⋮** buttons are hidden too; you then reach the menus with
-the floating Tools button or a swipe. See [Settings](16-settings.md).
+off, the **‹**, **↶**, **⚑**, **⚙** and **⋮** buttons are hidden too; you then open the menus with
+swipe gestures or the **floating Tools button**. Both are off by default; turn them on in
+**Settings › Controls**. See [Settings](16-settings.md).
 
 <a id="show-answer"></a>
 ## Seeing the question and revealing the answer
@@ -232,7 +235,7 @@ usually helps. For the setting, see [Deck options](06-deck-options.md#lapses).
   **Reset repetition and lapse counts** (off by default), then tap **Reset**. Your last choice is
   remembered.
 - **Delete note:** Asks for confirmation. In the **Note Deleted** dialog that follows, **Undo** brings
-  the note back; once you tap **Done**, the deletion is final. Notes from the TUS card pack do not
+  the note back; once you tap **Done**, the deletion is final. **↶** cannot undo this deletion. Notes from the TUS card pack do not
   have this item.
 
 <a id="audio-and-tts"></a>
@@ -409,8 +412,8 @@ no limit on new cards, it appears once the deck's new cards are done as well.
   filtered deck shows **This Filtered Deck Is Empty**.
 - A deck with no cards at all shows **This Deck is Empty** and **Add Card**.
 
-The **Today N cards were reviewed** line at the bottom counts the answers you gave today across all
-decks; several answers to the same card count separately.
+The **You gave N answers today across all decks** line at the bottom counts the answers you gave
+today across all decks; several answers to the same card count separately.
 
 ## Related topics
 

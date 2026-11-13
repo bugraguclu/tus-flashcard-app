@@ -11,7 +11,7 @@ app_screens:
   - "Yedeği dışa aktar — app/export.tsx (?backup=…)"
   - "Ayarlar › Veri yönetimi (Yedekleme, Bakım) — app/settings.tsx"
   - "Boş kartlar — app/empty-cards.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # Yedekler ve bakım
@@ -20,9 +20,10 @@ TusAnkiM koleksiyonunuzun yedeğini bu cihazda kendiliğinden alır. **Yedekler*
 görür, elle yedek alır, geri yükler veya bir yedeği dosya olarak dışa aktarırsınız. Bakım araçları
 koleksiyondaki tutarsızlıkları bulur ve onarır.
 
-**Yedekler** ekranını açmak için **Desteler** ekranında sağ üstteki **•••** › **Yedek oluştur** ya
-da **Yedekten geri yükle**'ye dokunun (ikisi de aynı ekranı açar) veya **Ayarlar › Veri yönetimi ›
-Yedekleri yönet** yolunu izleyin.
+**Yedekler** ekranını açmak için **Desteler** ekranında sağ üstteki **•••** › **Yedekten geri
+yükle**'ye dokunun veya **Ayarlar › Veri yönetimi › Yedekleri yönet** yolunu izleyin. Aynı menüdeki
+**Yedek oluştur** ekran açmadan hemen bir yedek alır; çıkan mesajdaki **Yedeklerimi yönet** de
+**Yedekler** ekranını açar.
 
 <a id="automatic-backups"></a>
 ## Otomatik yedekler
@@ -122,7 +123,7 @@ Koleksiyonu değiştiren bazı işlemler başlamadan önce kendiliğinden bir ye
 | Metin dosyası içe aktarma | Yalnızca var olan notları güncelleyecekse |
 | Yedeği geri yükleme | Evet, **Geri yükleme öncesi kopya** olarak |
 | **Onar ve optimize et** | Her zaman |
-| **İlerlemeyi sıfırla** | Her zaman |
+| **Koleksiyonu sıfırla** | Her zaman |
 | Kullanılmayan medyayı çöp kutusuna taşıma | Her zaman (koleksiyon yedeği) |
 | Boş kartları silme | Hayır |
 
@@ -130,7 +131,7 @@ Bu yedekler listede **Koleksiyon yedeği** olarak, işlemin saatiyle görünür 
 zamanla yenileriyle değiştirilir.
 
 Koleksiyonda okunamayan satırlar varsa uygulama geri yüklenebilir bir yedek alamaz. Bu durumda
-koleksiyon paketi içe aktarma ve **İlerlemeyi sıfırla** başlamadan durur ve **Önce onarın** uyarısı
+koleksiyon paketi içe aktarma ve **Koleksiyonu sıfırla** başlamadan durur ve **Önce onarın** uyarısı
 çıkar; **Şimdi yedekle** ise yalnızca bir **kurtarma kopyası** kaydeder. Kurtarma kopyası
 **Paylaş** ile ham dosya olarak dışa aktarılabilir ama geri yüklenemez. Önce
 [Onar ve optimize et](#repair)'i çalıştırın.
@@ -225,10 +226,12 @@ silinmiştir. **Desteler › ••• › Boş kartlar** ekranı bu kartları n
 > kartları silinir.
 
 <a id="reset-progress"></a>
-## İlerlemeyi sıfırla: koleksiyonu baştan başlatma
-<!-- Uygulamada: Ayarlar › Veri yönetimi › Bakım › İlerlemeyi sıfırla app/settings.tsx:1585-1591; onay 979; sonuç 991-1007 -->
+## Koleksiyonu sıfırla: baştan başlama
+<!-- Uygulamada: Ayarlar › Veri yönetimi › Bakım › Koleksiyonu sıfırla (`handleResetProgress`, app/settings.tsx) -->
 
-**İlerlemeyi sıfırla yalnızca çalışma ilerlemesini değil, bütün koleksiyonu siler.**
+**Koleksiyonu sıfırla yalnızca çalışma ilerlemesini değil, bütün koleksiyonu siler.** Onay
+sorusu da neyin silinip neyin kaldığını sayar ve önce koleksiyonu **.colpkg** olarak dışa
+aktarmanızı önerir.
 
 | Silinir | Kalır |
 | --- | --- |
@@ -246,16 +249,16 @@ Kullanmadan önce:
 2. Koleksiyonu **.colpkg** olarak dışa aktarıp cihaz dışına kaydedin
    (bkz. [Koleksiyonu yeni bir cihaza taşıma](14-import-export.md#move-to-new-device)).
 
-Sonra **Ayarlar › Veri yönetimi › İlerlemeyi sıfırla**'ya dokunun ve soruyu **Tamam** ile onaylayın.
-Uygulama önce geri yüklenebilir bir güvenlik yedeği alır; **İlerleme sıfırlandı** mesajı bu
-yedeğin adını söyler. Fikrinizi değiştirirseniz o yedeği **Yedekler** ekranından geri yükleyin.
+Sonra **Ayarlar › Veri yönetimi › Koleksiyonu sıfırla**'ya dokunun ve soruyu **Tamam** ile
+onaylayın. Uygulama önce geri yüklenebilir bir güvenlik yedeği alır; **Koleksiyon sıfırlandı**
+mesajı bu yedeğin adını söyler. Fikrinizi değiştirirseniz o yedeği **Yedekler** ekranından geri yükleyin.
 
 Yalnızca bazı kartları yeni kart hâline döndürmek istiyorsanız bu komutu kullanmayın: **Kartlarım**
 ekranında kartları seçip **Diğer** › **Kartları sıfırla…** komutunu kullanın
 (bkz. [Kartlarım ve arama](10-browser-and-search.md)).
 
 > **Anki'den farkı:** Anki'deki kart sıfırlama yalnızca seçtiğiniz kartları yeni kart yapar.
-> **İlerlemeyi sıfırla** ise bütün koleksiyonu siler.
+> **Koleksiyonu sıfırla** ise bütün koleksiyonu siler.
 
 <a id="delete-app-warning"></a>
 ## Uygulamayı silmeden önce

@@ -18,6 +18,7 @@ import { LATEST_PACKAGE_META, mediaEntriesProtobuf, zstdStoredFrame } from './an
 import { dayNumberToYmd, localDayNumber } from './ankiState';
 import { loadSettings } from './storage';
 import { isCatalogCard, isCatalogDeck, isCatalogNote, PaidCatalogProtectionError } from './catalogProtection';
+import { translateActive } from './i18n';
 import { stringifyAnkiJson } from './ankiJson';
 import { collectionConf, rememberedCollection, type AnkiCollectionMeta } from './ankiCollectionConfig';
 import type { AppSettings } from './types';
@@ -132,15 +133,15 @@ function scopedData(
     if (selectedCardIds) {
         const selected = new Set(selectedCardIds);
         picked = (card) => selected.has(card.id);
-        refuseCatalog(picked, 'Ücretli katalog kartları dışa aktarılamaz.');
+        refuseCatalog(picked, translateActive('catalog.exportBlocked'));
     } else if (selectedDeckIds || deckName) {
         const selected = new Set(selectedDeckIds
             ?? source.decks.filter((deck) => deck.name === deckName || deck.name.startsWith(`${deckName}::`)).map((deck) => deck.id));
         if (source.decks.some((deck) => selected.has(deck.id) && isCatalogDeck(deck))) {
-            throw new PaidCatalogProtectionError('Ücretli katalog desteleri dışa aktarılamaz.');
+            throw new PaidCatalogProtectionError(translateActive('catalog.exportBlocked'));
         }
         picked = (card) => selected.has(card.deckId);
-        refuseCatalog(picked, 'Ücretli katalog desteleri dışa aktarılamaz.');
+        refuseCatalog(picked, translateActive('catalog.exportBlocked'));
     }
     const noteIds = new Set(cards.filter(picked ?? (() => true)).map((card) => card.noteId));
     const scopedCards = cards.filter((card) => noteIds.has(card.noteId));
@@ -317,7 +318,7 @@ async function buildPackage(
             ankiData: withoutPackageSchedulingData(card.ankiData),
         }));
     if (notes.some(isCatalogNote) || exportedCards.some(isCatalogCard) || decks.some(isCatalogDeck)) {
-        throw new PaidCatalogProtectionError('Ücretli katalog kartları veya desteleri dışa aktarılamaz.');
+        throw new PaidCatalogProtectionError(translateActive('catalog.exportBlocked'));
     }
 
     const { db, cleanup } = await openExportDatabase();

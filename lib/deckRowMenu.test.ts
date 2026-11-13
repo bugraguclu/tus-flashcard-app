@@ -46,5 +46,8 @@ describe('deck list ••• menu', () => {
         expect(new Set(english).size).toBe(all.length);
         expect(deckRowMenuLabel('unbury', (tr) => tr)).toBe('Gömülüleri aç');
         expect(deckRowMenuLabel('unbury', (_tr, en) => en)).toBe('Unbury');
+        // The same words as the ＋ menu's entry, so the two Add rows read as one action.
+        expect(deckRowMenuLabel('add', (tr) => tr)).toBe('Kart ekle');
+        expect(deckRowMenuLabel('add', (_tr, en) => en)).toBe('Add note');
     });
 });

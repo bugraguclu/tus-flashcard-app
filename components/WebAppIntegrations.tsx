@@ -90,8 +90,8 @@ export default function WebAppIntegrations() {
             alert(
                 l('Bilinmeyen dosya biçimi', 'Unknown file format'),
                 l(
-                    'Yalnızca .apkg, .colpkg, .csv, .tsv ve .txt dosyaları içe aktarılabilir.',
-                    'Only .apkg, .colpkg, .csv, .tsv and .txt files can be imported.',
+                    'Yalnızca .apkg (veya .zip), .colpkg, .csv, .tsv ve .txt dosyaları içe aktarılabilir.',
+                    'Only .apkg (or .zip), .colpkg, .csv, .tsv and .txt files can be imported.',
                 ),
             );
         };
@@ -112,7 +112,7 @@ export default function WebAppIntegrations() {
         <View style={[styles.overlay, { pointerEvents: 'none' }]} accessibilityLiveRegion="polite">
             <View style={styles.card}>
                 <Text style={styles.title}>{l('İçe aktarmak için bırakın', 'Drop to import')}</Text>
-                <Text style={styles.body}>.apkg · .colpkg · .csv · .tsv · .txt</Text>
+                <Text style={styles.body}>.apkg / .zip · .colpkg · .csv · .tsv · .txt</Text>
             </View>
         </View>
     );

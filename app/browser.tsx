@@ -905,7 +905,7 @@ export default function BrowserScreen() {
                 </View>
                 {searchDraftInvalid && rawQuery.trim().length > 0 && (
                     <Text style={styles.searchDraftHint} accessibilityLiveRegion="polite">
-                        {l('Arama henüz geçerli değil; son geçerli sonuçlar gösteriliyor.', 'Search is not valid yet; showing the last valid results.')}
+                        {l('Arama henüz geçerli değil; son geçerli sonuçlar gösteriliyor. Tırnak ve parantezleri kapatın, deck: gibi terimlerin değerini yazın.', 'Search is not valid yet; showing the last valid results. Close quotes and brackets, and give terms such as deck: a value.')}
                     </Text>
                 )}
             </View>
@@ -966,6 +966,8 @@ export default function BrowserScreen() {
                                 ? tableMode === 'notes'
                                     ? l('Arama veya filtrelerle eşleşen not bulunamadı.', 'No notes match the search or filters.')
                                     : l('Arama veya filtrelerle eşleşen kart bulunamadı.', 'No cards match the search or filters.')
+                                : scopeDeck?.isFiltered
+                                    ? l('Bu filtrelenmiş destede şu anda kart yok.', 'This filtered deck has no cards right now.')
                                 : deckName
                                     ? tableMode === 'notes'
                                         ? l('Bu destede henüz not yok. İlk notunuzu eklemek için Yeni not düğmesini kullanın.', 'This deck has no notes yet. Use New Note to add the first one.')
@@ -1004,7 +1006,7 @@ export default function BrowserScreen() {
                 title={l('Deste seç', 'Select Deck')}
                 allDecksLabel={l('Tüm koleksiyon', 'Whole Collection')}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                emptySearchLabel={l('Aramanızla eşleşen deste yok. Kelimelerin başını yazın; örneğin “farm”.', 'No decks match your search. Type the start of a word, for example “anat”.')}
                 cancelLabel={t('common.cancel')}
                 closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
                 searchAccessibilityLabel={l('Deste ara', 'Search decks')}
@@ -1255,7 +1257,7 @@ export default function BrowserScreen() {
                 title={l('Seçili Kartların Destesi', 'Deck for Selected Cards')}
                 allDecksLabel={null}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                emptySearchLabel={l('Aramanızla eşleşen deste yok. Kelimelerin başını yazın; örneğin “farm”.', 'No decks match your search. Type the start of a word, for example “anat”.')}
                 cancelLabel={t('common.cancel')}
                 closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
                 searchAccessibilityLabel={l('Deste ara', 'Search decks')}

@@ -11,7 +11,7 @@ app_screens:
   - "Dışa aktar — app/export.tsx, components/DeckExportSelector.tsx"
   - "Dosya devri (Paylaş › TusAnkiM) — app/_layout.tsx; web: components/WebAppIntegrations.tsx"
   - "Ayarlar › Veri yönetimi › İçe ve dışa aktar — app/settings.tsx"
-verified_against: master c6108e6 (2026-10-25)
+verified_against: claude/zen-tu-bbdc99 (2026-11-08)
 ---
 
 # İçe ve dışa aktarma
@@ -54,8 +54,8 @@ aktarmasından önce otomatik bir güvenlik yedeği alınır
 
 iPhone'da bir `.apkg`, `.colpkg`, `.csv`, `.tsv` veya `.txt` dosyasını doğrudan TusAnkiM'e
 gönderebilirsiniz: **Dosyalar** uygulamasında dosyaya basılı tutun (Mail'de ekin, AirDrop'ta gelen
-dosyanın üzerinde de aynı) ve **Paylaş**'a dokunup listeden **TusAnkiM**'i seçin. **Deste içe
-aktar** ekranı dosya seçilmiş olarak açılır. `.zip` uzantılı bir paketi uygulamanın içinden
+dosyanın üzerinde de aynı) ve **Paylaş**'a dokunup listeden **TusAnkiM**'i seçin. **İçe aktar**
+ekranı dosya seçilmiş olarak açılır. `.zip` uzantılı bir paketi uygulamanın içinden
 **Dosya seç** ile açın.
 
 > **Web sürümünde:** Dosyayı tarayıcı penceresinin üzerine sürükleyip bırakın; **İçe aktarmak için
@@ -133,8 +133,8 @@ Dosyanın başına `#` ile başlayan satırlar yazarak seçenekleri önceden bel
 | --- | --- |
 | `#separator:tab` | Ayırıcıyı belirler: `tab`, `comma`, `semicolon`, `pipe`, `colon`, `space` veya karakterin kendisi. |
 | `#html:true` | Alanlar HTML olarak okunur (kalın yazı, resim gibi). |
-| `#deck:Farmakoloji` | Bu adda bir desteniz varsa **Deste** satırında seçili gelir. |
-| `#notetype:Basic` | Bu adda bir not türünüz varsa seçili gelir. **Temel** türünün dosyadaki adı `Basic`'tir. |
+| `#deck:Farmakoloji` | **Deste** satırında bu deste seçili gelir. Böyle bir desteniz yoksa satırın altında **Yeni deste oluşturulacak: Farmakoloji** yazar; deste ancak **İçe aktar**'a dokunduğunuzda oluşturulur. İsterseniz başka bir deste seçebilirsiniz. |
+| `#notetype:Basic` | Bu adda bir not türünüz varsa seçili gelir (büyük/küçük harf fark etmez). **Temel** türünün dosyadaki adı `Basic`'tir. |
 | `#tags:deneme-1` | Bütün notlara etiket ekler. |
 | `#tags column:3` | Etiketleri 3. sütundan okur. |
 | `#deck column:4`, `#notetype column:5` | Her satırın destesini veya not türünü o sütundan okur. Olmayan desteler oluşturulur. |
@@ -160,7 +160,8 @@ Atropinin etki mekanizması?	Muskarinik reseptör antagonisti	farmakoloji
   seçin. Metninizde iki nokta (`:`) veya noktalı virgül varsa tahmin yanılabilir.
 - **Alanlarda HTML'e izin ver:** Kapalıyken metin yazıldığı gibi görünür, satır sonları korunur.
   Açıkken `<b>` gibi etiketler biçimlendirme olarak okunur. Dosyada HTML varsa kendiliğinden açılır.
-- **Not türü** ve **Deste:** Notların hangi türle ve hangi desteye ekleneceği. Deste listesinden
+- **Not türü** ve **Deste:** Notların hangi türle ve hangi desteye ekleneceği. Dosyada `#notetype:`
+  ve `#deck:` satırları varsa bu seçimler onlarla başlar; değiştirebilirsiniz. Deste listesinden
   yeni bir deste de oluşturabilirsiniz. Dosya bunları bir sütundan veriyorsa satırda **Dosyadan
   (sütun N)** yazar.
 - **Mevcut notlar:** Aynı not türünde ilk alanı aynı olan bir not (dosyada kimlik sütunu varsa aynı
@@ -327,8 +328,9 @@ paylaşılamaz.
 | Metin dosyası | En fazla 50 MB |
 | Önizleme ve alan eşlemesi | İlk 5 satır; en fazla 24 sütun |
 
-Sınırı aşan bir dosya için **Dosya güvenli boyut sınırını aşıyor.** uyarısı çıkar ve
-koleksiyonunuz değişmez. TUS Kartları paketinden kart içeren bir dosya içe aktarılamaz; paket
+Dosyanın kendisi sınırı aşıyorsa **Dosya çok büyük. Paketler en fazla 400 MB, metin dosyaları en
+fazla 50 MB olabilir.** uyarısı çıkar; paketin içindeki bir sınır aşılırsa uyarı **Paket veya
+içindeki bir dosya güvenli boyut sınırını aşıyor.** der. İki durumda da koleksiyonunuz değişmez. TUS Kartları paketinden kart içeren bir dosya içe aktarılamaz; paket
 yalnızca uygulamanın içinden kurulur (bkz. [TUS Kartları paketi](17-tus-card-pack.md)). **Yedekler**
 ekranındaki yedekler bu ekrandan değil, kendi ekranlarından geri yüklenir.
 

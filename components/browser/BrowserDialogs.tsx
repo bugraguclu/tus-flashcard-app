@@ -197,7 +197,7 @@ export function DueDateModal({
             visible={showDueDialog}
             onClose={close}
             title={l('Vade tarihini ayarla', 'Set Due Date')}
-            message={l('Örnek: 5, 3-7 veya aralığı da değiştirmek için 3-7!', 'Examples: 5, 3-7, or 3-7! to also change the interval.')}
+            message={l('0 bugün, 1 yarındır. 3-7 her karta bu aralıkta rastgele bir gün verir. Sondaki ! aralığı da değiştirir (FSRS açıkken etkisizdir). Kartlar tekrar kartı olur.', '0 is today, 1 tomorrow. 3-7 gives each card a random day in that range. A trailing ! also changes the interval (no effect with FSRS). The cards become review cards.')}
             actions={(
                 <>
                     <Button variant="plain" label={t('common.cancel')} onPress={close} />
@@ -397,8 +397,8 @@ export function SearchHelpModal({
             onClose={close}
             title={l('Arama nasıl çalışır?', 'How search works')}
             message={l(
-                'Kelime yazınca kart metni, etiketler ve deste adı taranır. Aşağıdaki terimlerden birine dokunarak aramanıza ekleyebilirsiniz.',
-                'Plain words search the card text, its tags and its deck name. Tap any term below to add it to your search.',
+                'Kelimeler kartın alanlarındaki metinde aranır; etiket ve deste adı aranmaz, onlar için tag: ve deck: kullanın. ç, ğ, ö, ş, ü harflerini karttaki gibi yazın ya da kelimenin başına nc: ekleyin. Bir terime dokunarak aramanıza ekleyebilirsiniz.',
+                'Words are searched in the text of the card’s fields; tags and deck names are not, so use tag: and deck: for them. Type ç, ğ, ö, ş, ü as they appear in the card, or put nc: before the word. Tap a term to add it to your search.',
             )}
             actions={<Button variant="plain" label={t('common.close')} onPress={close} />}
         >

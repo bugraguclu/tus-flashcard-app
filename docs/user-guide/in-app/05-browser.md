@@ -29,14 +29,15 @@ pencere genişliği ≥768 px olduğunda (web, geniş pencere) vardır; iPhone'd
 - Points: (1) Tap a row to see its answer and scheduling. Touch and hold to start selecting, then move, suspend, flag and more from the bar at the bottom. (2) Filters, sorting and the Cards/Notes view are in the ⋮ menu. (3) Plain words search the card's fields; type `tag:` and `deck:` for tags and decks. Tap ? in the search box for the terms.
 - Note: In the Notes view, every action applies to all cards of the note.
 
-### help.browser.searchHelp — Arama nasıl çalışır? (Mevcut — güncelle)
+### help.browser.searchHelp — Arama nasıl çalışır? (Mevcut — koru)
 - **Yer:** Arama kutusundaki **?** (`app/browser.tsx:978-986`) → `SearchHelpModal`
   (`components/browser/BrowserDialogs.tsx:362-409`); terim grupları `app/browser.tsx:443-491`.
 - **Tetikleyici:** ?'e dokunma
 - **Bileşen:** mevcut ortalanmış pencere; satıra dokunmak terimi aramaya ekler (korunur).
 - **Daha fazla bilgi:** `tr/10-browser-and-search.md#search-syntax` — yeni bağlantı, **Kapat**
-  düğmesinin üstünde (`BrowserDialogs.tsx:402`).
-- **Durum:** Mevcut — güncelle. Başlık **Arama nasıl çalışır? / How search works** (`:376`) korunur.
+  düğmesinin üstünde (`BrowserDialogs.tsx:402`). Bekliyor (2026-11-08: Yardım merkezi yok; etkisiz bağlantı eklenmedi).
+- **Durum:** Mevcut — koru (2026-11-08; açıklama aşağıdaki metne geçti, uygulamada terimler ters tırnaksız yazılır;
+  `lib/cardSearchMatch.ts` `plainTextViews` düz kelimeyi yalnızca alanlarda arar). Başlık **Arama nasıl çalışır? / How search works** (`:376`) korunur.
   Açıklama yanlış (`:379-380`): eski metin "Kelime yazınca kart metni, etiketler ve deste adı
   taranır. Aşağıdaki terimlerden birine dokunarak aramanıza ekleyebilirsiniz." / "Plain words search
   the card text, its tags and its deck name. Tap any term below to add it to your search."
@@ -52,8 +53,8 @@ Words are searched in the text of the card's fields; tags and deck names are not
 
 | Grup | Terim | TR | EN | Durum |
 | --- | --- | --- | --- | --- |
-| Kart özellikleri | `prop:ivl>=21` | Aralığı 21 gün veya daha uzun | Interval of 21 days or more | Mevcut — güncelle (eski TR: "Aralığı 21 günden uzun") |
-| Kart durumu | `flag:1` | Kırmızı bayrak (0 bayraksız, 1 kırmızı, 2 turuncu, 3 yeşil, 4 mavi, 5 pembe, 6 turkuaz, 7 mor) | Red flag (0 none, 1 red, 2 orange, 3 green, 4 blue, 5 pink, 6 turquoise, 7 purple) | Mevcut — güncelle (eski: "Bayrağa göre (0–7)" / "By flag colour (0–7)") |
+| Kart özellikleri | `prop:ivl>=21` | Aralığı 21 gün veya daha uzun | Interval of 21 days or more | Mevcut — koru (2026-11-08; `components/browser/searchHelpGroups.ts`; eski TR: "Aralığı 21 günden uzun") |
+| Kart durumu | `flag:1` | Kırmızı bayrak (0 bayraksız, 1 kırmızı, 2 turuncu, 3 yeşil, 4 mavi, 5 pembe, 6 turkuaz, 7 mor) | Red flag (0 none, 1 red, 2 orange, 3 green, 4 blue, 5 pink, 6 turquoise, 7 purple) | Mevcut — koru (2026-11-08; eski: "Bayrağa göre (0–7)" / "By flag colour (0–7)") |
 | Metin (yeni grup: "Metin" / "Text") | `nc:` | Türkçe harf farkını yok say | Ignore Turkish letters and accents | Yeni |
 | Metin | `"…"` | Kelimeleri yan yana ara | Words side by side | Yeni |
 | Metin | `front:*…*` | Tek bir alanda ara (Ön alanı = front) | Search one field | Yeni |
@@ -66,22 +67,22 @@ Words are searched in the text of the card's fields; tags and deck names are not
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
 | help.browser.searchPlaceholder | Arama kutusu, `app/browser.tsx:953-961` | yer tutucu | Ara veya deck:tag:is:… | Search or deck:tag:is:… | Mevcut — koru |
-| help.browser.searchDraftHint | Arama kutusunun altı, geçersiz taslakta, `app/browser.tsx:988-992` | ipucu | Arama henüz geçerli değil; son geçerli sonuçlar gösteriliyor. Tırnak ve parantezleri kapatın, `deck:` gibi terimlerin değerini yazın. | Search is not valid yet; showing the last valid results. Close quotes and brackets, and give terms such as `deck:` a value. | Mevcut — güncelle (eski: yalnızca ilk cümle) |
+| help.browser.searchDraftHint | Arama kutusunun altı, geçersiz taslakta, `app/browser.tsx:988-992` | ipucu | Arama henüz geçerli değil; son geçerli sonuçlar gösteriliyor. Tırnak ve parantezleri kapatın, `deck:` gibi terimlerin değerini yazın. | Search is not valid yet; showing the last valid results. Close quotes and brackets, and give terms such as `deck:` a value. | Mevcut — koru (2026-11-08; uygulamada `deck:` ters tırnaksız; eski: yalnızca ilk cümle) |
 | help.browser.invalidSearch | Boş liste, geçersiz arama bağlantıyla geldiğinde, `app/browser.tsx:376` | hata | Geçersiz arama. Terimleri, tırnakları ve parantezleri kontrol edin. | Invalid search. Check the terms, quotes and parentheses. | Mevcut — koru |
 | help.browser.noResultsTip | Boş liste, arama açıkken, gövde metninin altı, `app/browser.tsx:1050-1053` | ipucu + bağlantı (`#search-turkish`) | İpucu: ç, ğ, ö, ş, ü harflerini karttaki gibi yazın ya da aramanın başına nc: ekleyin. | Tip: type ç, ğ, ö, ş, ü as they appear in the card, or start the search with nc:. | Yeni |
-| help.browser.emptyFilteredDeck | Boş liste, kapsam filtrelenmiş desteyken (yeni dal), `app/browser.tsx:1054-1057` | boş durum | Bu filtrelenmiş destede şu anda kart yok. | This filtered deck has no cards right now. | Mevcut — güncelle (eski: "Bu destede henüz kart yok. İlk kartınızı eklemek için Yeni kart düğmesini kullanın." — düğme burada gizli, `:912`) |
+| help.browser.emptyFilteredDeck | Boş liste, kapsam filtrelenmiş desteyken (yeni dal), `app/browser.tsx:1054-1057` | boş durum | Bu filtrelenmiş destede şu anda kart yok. | This filtered deck has no cards right now. | Mevcut — koru (2026-11-08; kart ve not görünümünde aynı metin, arama/filtre yokken; eski: "Bu destede henüz kart yok. İlk kartınızı eklemek için Yeni kart düğmesini kullanın." — düğme burada gizli, `:912`) |
 | help.browser.deckSelectorHint | Deste seçici, `app/browser.tsx:898-907` | erişilebilirlik ipucu | Alt desteler dahildir. Arama bu destenin içinde yapılır. | Subdecks are included. The search runs inside this deck. | Yeni |
 | help.browser.rowHint | Liste satırı, `components/browser/BrowserCardRow.tsx:110-124` | erişilebilirlik ipucu | Ayrıntılar için dokunun, seçmek için basılı tutun. | Tap for details, touch and hold to select. | Yeni |
 | help.browser.chipsAll | **Tümü** çipi, `components/browser/BrowserBars.tsx:64-69` | erişilebilirlik ipucu | Bütün filtreleri kaldırır; arama ve deste değişmez. | Removes all filters; the search and deck stay. | Yeni |
 | help.browser.flagFilterFooter | ⋮ › Bayrağa göre filtrele paneli, "N seçenek seçili" satırının altı, `components/browser/BrowserMenus.tsx:394-398` | ipucu | Seçtiğiniz bayraklardan herhangi biri olan kartlar gösterilir. | Cards with any of the ticked flags are shown. | Yeni |
 | help.browser.tagFilterCaption | **Etikete göre filtrele** penceresi başlığının altı (TagPickerModal'a açıklama alanı gerekir), `app/browser.tsx:1182-1193` | ipucu | Seçtiğiniz etiketlerden herhangi birini taşıyan notlar gösterilir; alt etiketler dahildir. | Notes with any of the chosen tags are shown; child tags are included. | Yeni |
 | help.browser.selectLoadedHint | ⋮ › **Yüklenenleri seç (N)**, `components/browser/BrowserMenus.tsx:410-421` | erişilebilirlik ipucu | Yalnızca yüklenmiş satırları seçer. Hepsi için listenin sonuna kaydırın. | Selects only rows loaded so far. Scroll to the end for all of them. | Yeni |
-| help.browser.optionsTitle | Seçenekler penceresi başlığı, `components/browser/BrowserMenus.tsx:584` | başlık | Kartlarım seçenekleri | Card Browser Options | Mevcut — güncelle (eski TR: "Kart tarayıcısı seçenekleri"; ekranın adı Kartlarım) |
+| help.browser.optionsTitle | Seçenekler penceresi başlığı, `components/browser/BrowserMenus.tsx:584` | başlık | Kartlarım seçenekleri | Card Browser Options | Mevcut — koru (2026-11-08; eski TR: "Kart tarayıcısı seçenekleri"; ekranın adı Kartlarım) |
 | help.browser.viewCaption | Seçenekler › Görünüm açıklaması, `components/browser/BrowserMenus.tsx:586` | açıklama | Listede kartları veya her notu tek satır olarak göster. Not görünümünde işlemler notun bütün kartlarına uygulanır. | Show cards, or show each note as a single row. In the Notes view, actions apply to all cards of the note. | Mevcut — genişlet |
 | help.browser.sortCaption | Görüntüleme sırası penceresi başlığının altı (yeni), `components/browser/BrowserMenus.tsx:471` | açıklama | Vade: önce yeni, sonra öğrenme, sonra tekrar kartları. Sıralama alanı çoğu not türünde ilk alandır. | Due: new, then learning, then review cards. The sort field is the first field for most note types. | Yeni |
 | help.browser.moreSheetLink | Seçim çubuğu › **Diğer** sayfasının sonu (`ScrollView` altı), `components/browser/BrowserMenus.tsx:224` | bağlantı → `tr/10-browser-and-search.md#selecting` | Daha fazla bilgi | Learn more | Yeni |
 | help.browser.catalogMove | Taşıma uyarısı, `app/browser.tsx:758-760`, `BrowserBars.tsx:194-197`, `BrowserMenus.tsx:131-134` | uyarı | Seçilen kartlar arasında dahili TUS kartları bulunuyor. Dahili TUS kartlarının destesi değiştirilemez. | The selection contains built-in TUS cards. Built-in catalog cards cannot be moved to another deck. | Mevcut — koru |
-| help.browser.decksA11y | Desteler sekmesi alt çubuğu **Kartlarım**, `app/(tabs)/decks.tsx:2507` | erişilebilirlik etiketi | Kartlarımı aç | Open Card Browser | Mevcut — güncelle (eski EN: "Open Browse") |
+| help.browser.decksA11y | Desteler sekmesi alt çubuğu **Kartlarım**, `app/(tabs)/decks.tsx:2507` | erişilebilirlik etiketi | Kartlarımı aç | Open Card Browser | Mevcut — koru (2026-11-08; eski EN: "Open Browse") |
 
 ## Kartlarım iletişim kutuları (`components/browser/`)
 
@@ -90,7 +91,7 @@ Ortalanmış pencereler; tutamaçlı sayfa eklenmez. Mevcut açıklama satırlar
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
 | help.browser.repositionCaption | **Yeniden Konumlandır** açıklaması, `components/browser/RepositionModal.tsx:89` | açıklama | Yalnızca seçili yeni kartlar etkilenir. Aynı notun kartları aynı konumu alır; kaydırma, diğer yeni kartları seçtiğiniz kart sayısı × adım kadar geriye iter. | Only selected new cards are affected. Cards of the same note share one position; shifting moves the other new cards back by the number of selected cards × the step. | Mevcut — genişlet (eski: ilk cümle) |
-| help.browser.dueDateCaption | **Vade tarihini ayarla** açıklaması, `components/browser/BrowserDialogs.tsx:204` | açıklama | 0 bugün, 1 yarındır. 3-7 her karta bu aralıkta rastgele bir gün verir. Sondaki ! aralığı da değiştirir (FSRS açıkken etkisizdir). Kartlar tekrar kartı olur. | 0 is today, 1 tomorrow. 3-7 gives each card a random day in that range. A trailing ! also changes the interval (no effect with FSRS). The cards become review cards. | Mevcut — güncelle (eski: "Örnek: 5, 3-7 veya aralığı da değiştirmek için 3-7!" / "Examples: 5, 3-7, or 3-7! to also change the interval.") |
+| help.browser.dueDateCaption | **Vade tarihini ayarla** açıklaması, `components/browser/BrowserDialogs.tsx:204` | açıklama | 0 bugün, 1 yarındır. 3-7 her karta bu aralıkta rastgele bir gün verir. Sondaki ! aralığı da değiştirir (FSRS açıkken etkisizdir). Kartlar tekrar kartı olur. | 0 is today, 1 tomorrow. 3-7 gives each card a random day in that range. A trailing ! also changes the interval (no effect with FSRS). The cards become review cards. | Mevcut — koru (2026-11-08; `lib/browserSelection.ts` `setSelectedDueDate`, `lib/schedulingIntervals.ts` `setDueDateInterval` ile doğrulandı; eski: "Örnek: 5, 3-7 veya aralığı da değiştirmek için 3-7!" / "Examples: 5, 3-7, or 3-7! to also change the interval.") |
 | help.browser.dueDateInvalid | Geçersiz giriş uyarısı, `BrowserDialogs.tsx:213` | uyarı | Tek bir gün veya 3-7 biçiminde bir aralık girin. | Enter one day or a range such as 3-7. | Mevcut — koru |
 | help.browser.resetCaption | **Kartları sıfırla** açıklaması, `BrowserDialogs.tsx:140-143` | açıklama | N kart Yeni durumuna döner. Aralık, kolaylık ve FSRS hafıza bilgisi silinir; tekrar geçmişi korunur. Bu işlem geri alınamaz. | N cards go back to New. Interval, ease and FSRS memory state are cleared; the review history is kept. This cannot be undone. | Mevcut — genişlet (eski: "N kart Yeni durumuna döner. Tekrar geçmişi korunur.") |
 | help.browser.gradeNowCaption | **Şimdi derecelendir** açıklaması, `BrowserDialogs.tsx:255` | açıklama | Seçili kartlar normal zamanlayıcı ve inceleme geçmişi kullanılarak derecelendirilir. Seçtiğiniz düğme hemen uygulanır ve geri alınamaz. | Selected cards are graded through the normal scheduler and review history. The button you tap applies at once and cannot be undone. | Mevcut — genişlet |

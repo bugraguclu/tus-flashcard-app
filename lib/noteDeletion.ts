@@ -3,6 +3,7 @@
  * affected row changes so an old deletion cannot overwrite an edit or resurrect half a note.
  */
 import { getDB } from './db';
+import { translateActive } from './i18n';
 type Row = Record<string, string | number | null>;
 type Table = 'decks' | 'notes' | 'anki_cards';
 export interface DeletionUndo { cardCount: number; undo(): void }
@@ -44,7 +45,7 @@ export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; c
         const graves = db.getAllSync<{ rowid: number }>('SELECT rowid FROM graves WHERE rowid > ?', graveStart);
         let used = false;
         return { cardCount: ids.cardIds?.length ?? 0, undo() {
-            if (used || getDB() !== db) throw new Error('This deletion can no longer be undone.');
+            if (used || getDB() !== db) throw new Error(translateActive('decks.deletionUndoExpired'));
             db.execSync('BEGIN TRANSACTION;');
             try {
                 const current = snapshot();

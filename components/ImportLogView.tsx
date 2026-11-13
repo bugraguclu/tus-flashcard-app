@@ -58,7 +58,7 @@ function statusDetail(status: ImportNoteStatus, l: ImportLogViewProps['l']): str
         case 'updated':
             return l('Not güncellendi; dosyadaki sürüm farklıydı', 'Note updated, file had a different version');
         case 'duplicate':
-            return l('Not atlandı; koleksiyonda güncel kopyası var', 'Note skipped, up-to-date copy in collection');
+            return l('Not atlandı; koleksiyonda zaten var', 'Note skipped, already in the collection');
         case 'firstFieldMatch':
             return l('İlk alan mevcut bir notla eşleşti', 'First field matched an existing note');
         case 'conflicting':
@@ -187,7 +187,15 @@ export default function ImportLogView({ log, colors, l, extraLines = [] }: Impor
                                         </Text>
                                     </View>
                                 ))}
-                                {counts[status] > rows.length ? (
+                                {rows.length === 0 ? (
+                                    // Package imports report figures only (`importLogFromCounts`).
+                                    <Text style={styles.entryMore}>
+                                        {l(
+                                            'Paket içe aktarmalarında yalnızca sayılar gösterilir; notlar tek tek listelenmez.',
+                                            'Package imports show counts only; individual notes are not listed.',
+                                        )}
+                                    </Text>
+                                ) : counts[status] > rows.length ? (
                                     <Text style={styles.entryMore}>
                                         {l(
                                             `… ve ${counts[status] - rows.length} not daha (ilk ${MAX_LOGGED_ROWS_PER_STATUS} tanesi listelendi).`,

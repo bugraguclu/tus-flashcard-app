@@ -28,7 +28,7 @@ import {
     isCatalogNote,
     PaidCatalogProtectionError,
 } from './catalogProtection';
-
+import { translateActive } from './i18n';
 
 /**
  * Note and card storage: reading and writing notes and cards, card generation, suspend, bury,
@@ -312,7 +312,7 @@ export function saveAnkiCard(card: AnkiCard, options: { replaceData?: boolean } 
             const existingCard = JSON.parse(existing.data) as AnkiCard;
             if (isCatalogCard(existingCard)) {
                 if (card.noteId !== existingCard.noteId) {
-                    throw new PaidCatalogProtectionError('Katalog kartlarının not bağlantısı değiştirilemez.');
+                    throw new PaidCatalogProtectionError(translateActive('catalog.cardNoteLinkLocked'));
                 }
                 if (card.deckId !== existingCard.deckId) {
                     let isTargetFiltered = false;
@@ -335,7 +335,7 @@ export function saveAnkiCard(card: AnkiCard, options: { replaceData?: boolean } 
                         && (!card.odid || card.odid === 0)
                     );
                     if (!isMovingToFiltered && !isReturningFromFiltered) {
-                        throw new PaidCatalogProtectionError('Ücretli katalog kartları başka bir desteye taşınamaz.');
+                        throw new PaidCatalogProtectionError(translateActive('catalog.cardsNotMovable'));
                     }
                 }
             }

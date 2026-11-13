@@ -365,20 +365,20 @@ export function renameDeck(id: number, newName: string): void {
     const newParentName = getParentDeckName(newName);
     if (newParentName) {
         if (deck.isFiltered) {
-            throw new Error('Filtrelenmiş bir deste alt deste olamaz.');
+            throw new Error(translateActive('decks.filteredCannotBeSubdeck'));
         }
         if (newParentName === deck.name || newParentName.startsWith(`${deck.name}::`)) {
-            throw new Error('Bir deste kendi altındaki bir desteye taşınamaz.');
+            throw new Error(translateActive('decks.cannotMoveIntoOwnSubdeck'));
         }
 
         let ancestorName: string | null = newParentName;
         while (ancestorName) {
             const ancestor = getDeckByName(ancestorName);
             if (ancestor?.isFiltered) {
-                throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
+                throw new Error(translateActive('decks.filteredCannotHaveSubdecks'));
             }
             if (ancestor && isCatalogDeck(ancestor)) {
-                throw new PaidCatalogProtectionError('Katalog desteleri altına başka deste taşınamaz.');
+                throw new PaidCatalogProtectionError(translateActive('decks.cannotNestUnderCatalog'));
             }
             ancestorName = getParentDeckName(ancestorName);
         }
@@ -441,7 +441,7 @@ export function createDeck(name: string, configId?: number): Deck {
     const parts = name.split('::');
     const paths = parts.map((_, index) => parts.slice(0, index + 1).join('::'));
     for (const path of paths.slice(0, -1)) {
-        if (byName.get(path)?.isFiltered) throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
+        if (byName.get(path)?.isFiltered) throw new Error(translateActive('decks.filteredCannotHaveSubdecks'));
     }
     let destination: Deck | undefined;
     for (const path of paths) {
@@ -529,16 +529,16 @@ export function moveDeckUnder(deckId: number, newParentName: string | null): str
     if (newParentName) {
         const parent = getDeckByName(newParentName);
         if (parent && isCatalogDeck(parent)) {
-            throw new PaidCatalogProtectionError('Katalog desteleri altına başka deste taşınamaz.');
+            throw new PaidCatalogProtectionError(translateActive('decks.cannotNestUnderCatalog'));
         }
         if (deck.isFiltered) {
-            throw new Error('Filtrelenmiş bir deste alt deste olamaz.');
+            throw new Error(translateActive('decks.filteredCannotBeSubdeck'));
         }
         if (newParentName === deck.name || newParentName.startsWith(`${deck.name}::`)) {
-            throw new Error('Bir deste kendi altındaki bir desteye taşınamaz.');
+            throw new Error(translateActive('decks.cannotMoveIntoOwnSubdeck'));
         }
-        if (!parent) throw new Error('Hedef deste bulunamadı.');
-        if (parent.isFiltered) throw new Error('Filtrelenmiş bir destenin alt destesi olamaz.');
+        if (!parent) throw new Error(translateActive('decks.targetNotFound'));
+        if (parent.isFiltered) throw new Error(translateActive('decks.filteredCannotHaveSubdecks'));
     }
 
     const leaf = getDeckDisplayName(deck.name);
@@ -562,15 +562,15 @@ export function reorderDeckRelative(
     assertCatalogDeckNotRenamable(targetDeckId);
     const deck = getDeck(deckId);
     const target = getDeck(targetDeckId);
-    if (!deck || !target) throw new Error('Deste bulunamadı.');
+    if (!deck || !target) throw new Error(translateActive('decks.notFound'));
     if (deck.id === target.id) return deck.name;
     if (target.name.startsWith(`${deck.name}::`)) {
-        throw new Error('Bir deste kendi altındaki bir destenin yanına taşınamaz.');
+        throw new Error(translateActive('decks.cannotPlaceBesideOwnSubdeck'));
     }
 
     const targetParent = getParentDeckName(target.name);
     if (deck.isFiltered && targetParent) {
-        throw new Error('Filtrelenmiş bir deste alt deste olamaz.');
+        throw new Error(translateActive('decks.filteredCannotBeSubdeck'));
     }
 
     const nextName = targetParent
@@ -579,12 +579,12 @@ export function reorderDeckRelative(
     if (nextName !== deck.name) moveDeckUnder(deck.id, targetParent);
 
     const moved = getDeck(deck.id);
-    if (!moved) throw new Error('Taşınan deste bulunamadı.');
+    if (!moved) throw new Error(translateActive('decks.notFound'));
     const siblings = getAllDecks()
         .filter((entry) => getParentDeckName(entry.name) === targetParent && entry.id !== moved.id)
         .sort(compareDeckDisplayOrder);
     const targetIndex = siblings.findIndex((entry) => entry.id === target.id);
-    if (targetIndex < 0) throw new Error('Hedef deste bulunamadı.');
+    if (targetIndex < 0) throw new Error(translateActive('decks.targetNotFound'));
 
     siblings.splice(placement === 'before' ? targetIndex : targetIndex + 1, 0, moved);
     const nowSec = Math.floor(Date.now() / 1000);

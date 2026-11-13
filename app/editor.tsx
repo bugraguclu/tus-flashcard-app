@@ -80,7 +80,7 @@ import { rememberedCurrentDeck } from '../lib/currentDeck';
 import { recomputeMemoryAfterDeckMove } from '../lib/fsrsMaintenance';
 import { editorDraftKey, hasEditorDraftChanged, isAddScreenFinished, type EditorDraftState } from '../lib/editorDraft';
 import TransientNotice, { type TransientNoticeMessage } from '../components/TransientNotice';
-import { editorFieldFontSize } from '../lib/editorFieldStyle';
+import { editorFieldFontSize, editorFieldRole } from '../lib/editorFieldStyle';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import {
     CUSTOM_TOOLBAR_PRESETS,
@@ -805,7 +805,7 @@ export default function EditorScreen() {
         setShowOverflowMenu(false);
         confirm(
             l('Alanları temizle', 'Clear Fields'),
-            l('Tüm alanlardaki içerik temizlensin mi?', 'Clear the contents of all fields?'),
+            l('Sabitlenenler dahil bütün alanlar temizlensin mi? Bu işlem geri alınamaz.', 'Clear every field, pinned ones included? This cannot be undone.'),
             () => {
                 setFieldValues(fieldsToRender.map(() => ''));
                 fieldEditorRefs.current[0]?.focus();
@@ -957,9 +957,9 @@ export default function EditorScreen() {
         try {
             if (selectedNoteType && needsClozeWarning(selectedNoteType, mockNote)) {
                 const keep = await confirmAsync(
-                    l('Kapama bulunamadı', 'No Cloze Deletion'),
-                    l('Bu notta kapama yok. Metin ve ilk kartı yine de kaydedilsin mi? Kapama eklemek için metni seçip […] düğmesine dokunabilirsiniz.',
-                        'This note has no cloze deletion. Save its text and first card anyway? To add a deletion, select text and tap […].'),
+                    l('Boşluk bulunamadı', 'No Cloze Deletion'),
+                    l('Bu notta boşluk yok. Metin ve ilk kartı yine de kaydedilsin mi? Boşluk eklemek için metni seçip […] düğmesine dokunun veya {{c1::…}} yazın.',
+                        'This note has no cloze deletion. Save its text and first card anyway? To add one, select text and tap […], or type {{c1::…}}.'),
                 );
                 if (!keep) return;
             }
@@ -1090,7 +1090,7 @@ export default function EditorScreen() {
                     // closing over a draft that no longer has anything to be saved into.
                     resetDraftBaseline(draftFromFields(fieldValuesRef.current));
                     bumpDataVersion();
-                    void choose(l('Silindi', 'Deleted'), l(`${deletion?.cardCount ?? siblingCount} kart silindi.`, `${deletion?.cardCount ?? siblingCount} cards deleted.`), l('Geri al', 'Undo'), l('Bitti', 'Done')).then((undo) => {
+                    void choose(l('Silindi', 'Deleted'), l(`${deletion?.cardCount ?? siblingCount} kart silindi. Geri almak için şimdi Geri al'a dokunun; bu pencere kapanınca geri alınamaz.`, `${deletion?.cardCount ?? siblingCount} cards deleted. Tap Undo now to restore them; once this window closes, it cannot be undone.`), l('Geri al', 'Undo'), l('Bitti', 'Done')).then((undo) => {
                         if (!undo) { goBackOr(router); return; }
                         try { deletion?.undo(); bumpDataVersion(); }
                         catch (error) { alert(t('common.error'), userFacingErrorMessage(error, l('Silme geri alınamadı.', 'Could not undo deletion.'))); }
@@ -1186,8 +1186,8 @@ export default function EditorScreen() {
                                 alert(
                                     l('Not türü değiştirilemez', 'Note Type Is Fixed'),
                                     l(
-                                        'Var olan bir notun türü bu ekrandan değiştirilemez. Yeni bir not eklerken tür seçebilirsiniz.',
-                                        'An existing note keeps the note type it was created with. Choose a type when you add a new note.',
+                                        "Var olan bir notun türü bu ekrandan değiştirilemez. Türü değiştirmek için Kartlarım'da notu seçip Diğer › Not türünü değiştir'i kullanın.",
+                                        'An existing note keeps its note type on this screen. To change it, select the note in the Card Browser and use More › Change note type.',
                                     ),
                                 );
                                 return;
@@ -1196,7 +1196,7 @@ export default function EditorScreen() {
                         }}
                         accessibilityRole="button"
                         accessibilityState={{ disabled: isEditing }}
-                        accessibilityLabel={l(`Kart türü: ${cardTypeLabel}`, `Note type: ${cardTypeLabel}`)}
+                        accessibilityLabel={l(`Not türü: ${cardTypeLabel}`, `Note type: ${cardTypeLabel}`)}
                     >
                         <Text style={styles.ankiSelectorLabel}>{l('Tür:', 'Type:')}</Text>
                         <Text style={styles.ankiSelectorValue} numberOfLines={1}>{cardTypeLabel}</Text>
@@ -1253,6 +1253,10 @@ export default function EditorScreen() {
                         ? l('Metni yazın, sonra gizlenecek bölümü seçip […] düğmesine dokunun…', 'Enter text, then select the part to hide and tap […]…')
                         : isCloze && index === 1
                         ? l('İsteğe bağlı ek arka metni…', 'Optional extra text for the back…')
+                        : editorFieldRole(selectedNoteType, field.name) === 'addReverse'
+                        ? l('Ters kart da istiyorsanız herhangi bir şey yazın…', 'Type anything to also make the reverse card…')
+                        : editorFieldRole(selectedNoteType, field.name) === 'typedAnswer'
+                        ? l('Çalışırken yazacağınız cevap…', 'The answer you will type when studying…')
                         : l(`${localizedName} yazın…`, `Enter ${localizedName}…`);
 
                     return (
@@ -1368,7 +1372,7 @@ export default function EditorScreen() {
                     onPress={openCardTemplates}
                     accessibilityRole="button"
                     accessibilityLabel={l('Kart şablonlarını düzenle', 'Edit card templates')}
-                    accessibilityHint={l('Seçili not türünün kart ve alan şablonlarını açar', 'Opens the card and field templates for the selected note type')}
+                    accessibilityHint={l('Seçili not türünün şablonlarını açar. Değişiklikler bu türdeki bütün notları etkiler.', 'Opens the templates of the selected note type. Changes affect every note of this type.')}
                 >
                     <Text style={styles.summaryLabel}>{l('Kartlar:', 'Cards:')}</Text>
                     <Text style={styles.summaryValue}>
@@ -1553,6 +1557,7 @@ export default function EditorScreen() {
 
             <HtmlSourceModal
                 visible={showHtmlEditor}
+                fieldName={localizeFieldName(locale, fieldsToRender[activeFieldIndex]?.name ?? '')}
                 value={htmlEditorValue}
                 onChangeValue={setHtmlEditorValue}
                 onSave={() => {
@@ -1613,7 +1618,7 @@ export default function EditorScreen() {
                 title={l('Hedef deste', 'Target Deck')}
                 allDecksLabel={null}
                 searchPlaceholder={l('Desteleri filtrele', 'Filter decks')}
-                emptySearchLabel={l('Aramanızla eşleşen deste yok.', 'No decks match your search.')}
+                emptySearchLabel={l('Aramanızla eşleşen deste yok. Kelimelerin başını yazın; örneğin “farm”.', 'No decks match your search. Type the start of a word, for example “anat”.')}
                 cancelLabel={t('common.cancel')}
                 closeAccessibilityLabel={l('Deste seçiciyi kapat', 'Close deck picker')}
                 searchAccessibilityLabel={l('Deste ara', 'Search decks')}
