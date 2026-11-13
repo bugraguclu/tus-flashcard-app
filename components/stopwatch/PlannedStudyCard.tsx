@@ -5,6 +5,7 @@ import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants
 import { useI18n } from '../../hooks/useI18n';
 import { formatHeroDuration } from '../../lib/stopwatch';
 import { formatPlanClock, type StudyPlanBlock } from '../../lib/studyPlans';
+import { CheckIcon } from '../ui/icons';
 import { ClockIcon, GearIcon } from './StopwatchIcons';
 import { studyTypeLabel } from './StudyTypeChips';
 import { SubjectTile } from './SubjectArt';
@@ -108,7 +109,10 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
                             <View style={local.leftRow} pointerEvents="box-none">
                                 <View style={{ pointerEvents: 'none' }}>
                                     {done ? (
-                                        <Text style={[local.left, { color: colors.btnGood }]}>{l('Tamamlandı ✓', 'Done ✓')}</Text>
+                                        <View style={local.done}>
+                                            <Text style={[local.left, { color: colors.btnGood }]}>{l('Tamamlandı', 'Done')}</Text>
+                                            <CheckIcon color={colors.btnGood} size={16} />
+                                        </View>
                                     ) : (
                                         <Text style={[local.left, { color: colors.textPrimary }]}>
                                             {remainingMs === undefined ? l('Planlanan: ', 'Planned: ') : l('Kalan: ', 'Left: ')}
@@ -149,6 +153,7 @@ const local = StyleSheet.create({
     content: { flex: 1, flexDirection: 'row', gap: Spacing.md },
     leftRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.md },
     left: { fontSize: FontSize.md, fontWeight: '500' },
+    done: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     // The small filled "Başlat" TUSBuddy puts after the time left.
     start: { borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
     startText: { fontSize: FontSize.sm, fontWeight: '700' },

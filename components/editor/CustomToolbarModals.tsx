@@ -11,6 +11,7 @@ import { TextField } from '../ui/Fields';
 import type { ToolbarButtonDraft } from './types';
 import type { EditorI18n } from './types';
 import type { EditorStyles } from './editorStyles';
+import LockGlyph from '../LockGlyph';
 
 interface CustomToolbarEditorModalProps extends EditorI18n {
     visible: boolean;
@@ -118,9 +119,12 @@ export function CustomToolbarEditorModal({
                         </Text>
                     </View>
                 </View>
-                <Text style={styles.customToolbarSecurityNote}>
-                    {l('🛡️ Güvenlik Korumalı: Komut dosyaları ve form etiketleri filtrelenir.', '🛡️ Security Protected: Scripts and forms are automatically filtered.')}
-                </Text>
+                <View style={local.securityRow}>
+                    <LockGlyph color={styles.customToolbarSecurityNote.color} size={13} />
+                    <Text style={[styles.customToolbarSecurityNote, local.securityNote]}>
+                        {l('Güvenlik Korumalı: Komut dosyaları ve form etiketleri filtrelenir.', 'Security Protected: Scripts and forms are automatically filtered.')}
+                    </Text>
+                </View>
             </View>
         </AppDialog>
     );
@@ -177,4 +181,6 @@ const local = StyleSheet.create({
     actionSpacer: { flex: 1 },
     // A finger's height, without making each template's heading row that tall.
     useButton: { marginVertical: -Spacing.sm },
+    securityRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    securityNote: { flex: 1 },
 });

@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import {
     ActivityIndicator,
     Appearance,
+    Image,
     Linking,
     Platform,
     View,
@@ -15,11 +16,10 @@ import {
 import { Text } from '../components/AppText';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
-import Svg, { Circle, Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from '../components/decorativeSvgProps';
 import { Button } from '../components/ui/Button';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '../components/ui/icons';
 import { Radius, Type } from '../components/ui/tokens';
+import { CopyGlyph, ShieldAlertGlyph } from '../components/UiGlyphs';
 import {
     Colors,
     DARK_MODE_UI_ENABLED,
@@ -46,6 +46,8 @@ import { userFacingErrorMessage } from '../lib/userFacingError';
 // Imported here, ahead of the router, so its `popstate` listener is added before the router's.
 import '../lib/webPopStateGuard';
 
+const APP_MARK = require('../assets/app-mark.png');
+
 // Hold the native splash until a real screen can paint. Without this it disappears the moment
 // the JS bundle mounts — long before migrations finish — so a cold launch shows the launch
 // image, then a blank frame, then a placeholder, before any content exists. Called in global
@@ -65,46 +67,6 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     const style = document.createElement('style');
     style.textContent = 'html, body, #root { height: 100%; } body { overflow: hidden; }';
     document.head.appendChild(style);
-}
-
-function ErrorAlertShieldIcon({ color, size = 40 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
-                fill="none"
-                stroke={color}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-            <Path d="M12 8v4" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
-            <Circle cx={12} cy={16} r={1.2} fill={color} />
-        </Svg>
-    );
-}
-
-function ErrorCopyIcon({ color, size = 15 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
-                fill="none"
-                stroke={color}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-            <Path
-                d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1Z"
-                fill="none"
-                stroke={color}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
 }
 
 class AppErrorBoundary extends React.Component<
@@ -198,7 +160,7 @@ function LocalizedErrorFallback({
         <View style={[errorStyles.container, { paddingTop: Math.max(insets.top, 24), paddingBottom: Math.max(insets.bottom, 24) }]}>
             <View style={errorStyles.card}>
                 <View style={errorStyles.iconBadge}>
-                    <ErrorAlertShieldIcon color={Colors.accent} size={38} />
+                    <ShieldAlertGlyph color={Colors.accent} size={38} />
                 </View>
                 <Text style={errorStyles.title}>{t('root.errorTitle')}</Text>
                 <Text style={errorStyles.message}>{safeMessage}</Text>
@@ -236,7 +198,7 @@ function LocalizedErrorFallback({
                                 label={copied ? t('root.errorCopied') : t('root.copyError')}
                                 icon={copied
                                     ? <CheckIcon color={Colors.accent} size={15} />
-                                    : <ErrorCopyIcon color={Colors.textSecondary} size={15} />}
+                                    : <CopyGlyph color={Colors.textSecondary} size={15} />}
                                 variant="plain"
                                 tone={copied ? 'accent' : 'muted'}
                                 size="compact"
@@ -281,6 +243,7 @@ const errorStyles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: Spacing.lg,
     },
+    appMark: { width: 72, height: 72 },
     title: {
         ...Type.title,
         color: Colors.textPrimary,
@@ -408,7 +371,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
             <View style={errorStyles.container}>
                 <View style={errorStyles.card}>
                     <View style={errorStyles.iconBadge}>
-                        <ErrorAlertShieldIcon color={Colors.accent} size={38} />
+                        <ShieldAlertGlyph color={Colors.accent} size={38} />
                     </View>
                     <Text style={errorStyles.title}>{t('root.databaseError')}</Text>
                     <Text style={errorStyles.message}>{safeMessage}</Text>
@@ -428,7 +391,7 @@ function WebDbGate({ children }: { children: React.ReactNode }) {
     if (!ready) {
         return (
             <View style={errorStyles.container}>
-                <Text style={{ fontSize: 40 }}>🧠</Text>
+                <Image source={APP_MARK} style={errorStyles.appMark} accessibilityIgnoresInvertColors />
                 {/* Locale discovery differs between static rendering and the user's browser.
                     Keep the hydration placeholder language-neutral so React can attach without
                     replacing the security-hardened server document. */}

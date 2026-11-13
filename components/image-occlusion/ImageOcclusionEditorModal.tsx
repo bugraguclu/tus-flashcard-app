@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Ellipse, Path, Polygon, Rect } from 'react-native-svg';
+import { Path } from 'react-native-svg';
 import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { confirmAsync } from '../../lib/confirm';
@@ -26,8 +26,9 @@ import {
     withOcclusionProperties,
     type OcclusionShape,
 } from '../../lib/imageOcclusion';
-import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
-import { RotateLeftGlyph, RotateRightGlyph } from '../photo-editor/photoEditorGlyphs';
+import { EllipseGlyph, RectGlyph, TextGlyph } from '../drawing/drawingGlyphs';
+import { IconFrame, iconStroke, outline } from '../icons/IconFrame';
+import { CopyGlyph, RotateLeftGlyph, RotateRightGlyph } from '../UiGlyphs';
 import ScreenHeader from '../ScreenHeader';
 import { Button, IconButton, type ButtonVariant } from '../ui/Button';
 import { AppDialog } from '../ui/Dialog';
@@ -452,22 +453,20 @@ function BarButton({ variant = 'secondary', ...props }: {
     return <Button size="compact" variant={variant} {...props} />;
 }
 
-/** The tools' own glyphs: a pointer, the three mask shapes, a label and two stacked boxes. */
+const TOOL_ICON_SIZE = 24;
+
+/** The tools' glyphs: a pointer, the three mask shapes, a label and two stacked boxes. */
 function ToolIcon({ tool, color }: { tool: OcclusionTool | 'multi'; color: string }) {
-    const paint = { stroke: color, strokeWidth: 2, fill: 'none', strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
+    const props = { color, size: TOOL_ICON_SIZE };
+    if (tool === 'rect') return <RectGlyph {...props} />;
+    if (tool === 'ellipse') return <EllipseGlyph {...props} />;
+    if (tool === 'text') return <TextGlyph {...props} />;
+    if (tool === 'multi') return <CopyGlyph {...props} />;
+    const line = outline(color, iconStroke(TOOL_ICON_SIZE));
     return (
-        <Svg width={24} height={24} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            {tool === 'select' && <Path d="M5 3l13 7-6 1.5L9.5 18z" {...paint} />}
-            {tool === 'rect' && <Rect x={3} y={6} width={18} height={12} rx={1} {...paint} />}
-            {tool === 'ellipse' && <Ellipse cx={12} cy={12} rx={9} ry={6.5} {...paint} />}
-            {tool === 'polygon' && <Polygon points="4,18 7,5 17,4 21,13 13,20" {...paint} />}
-            {tool === 'text' && <Path d="M5 6V4h14v2M12 4v16M9 20h6" {...paint} />}
-            {tool === 'multi' && (
-                <>
-                    <Rect x={3} y={3} width={11} height={11} rx={1} {...paint} />
-                    <Rect x={10} y={10} width={11} height={11} rx={1} {...paint} />
-                </>
-            )}
-        </Svg>
+        <IconFrame size={TOOL_ICON_SIZE}>
+            {tool === 'select' && <Path d="M5.75 3.75 18.5 10.6l-5.6 1.7-3.05 5.4Z" {...line} />}
+            {tool === 'polygon' && <Path d="M4.5 17.75 7.25 5.5l9.5-1.25 3.75 8.5-7.25 6.75Z" {...line} />}
+        </IconFrame>
     );
 }

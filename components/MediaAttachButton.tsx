@@ -2,7 +2,6 @@ import { forwardRef, useImperativeHandle, useRef, useState, type ReactNode } fro
 import { StyleSheet, ActivityIndicator, Keyboard, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import Svg, { Path } from 'react-native-svg';
 import { Spacing, useThemeColors } from '../constants/theme';
 import { alert } from '../lib/confirm';
 import { promptPermissionSettings } from '../lib/permissions';
@@ -14,8 +13,8 @@ import AudioRecordModal from './AudioRecordModal';
 import PhotoEditorModal, { type EditablePhoto } from './photo-editor/PhotoEditorModal';
 import DrawingPadModal from './drawing/DrawingPadModal';
 import { useI18n } from '../hooks/useI18n';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { Button, IconButton } from './ui/Button';
+import { PaperclipGlyph } from './UiGlyphs';
 import { Card } from './ui/Card';
 import { MenuItem } from './ui/Menu';
 import { AppSheet } from './ui/Sheet';
@@ -74,22 +73,6 @@ type PickedFile = {
  * covers a dismissal that is not reported; the sheet's own exit gives up at 550 ms.
  */
 const MENU_GONE_FALLBACK_MS = 700;
-
-/** The paperclip on each field's label row. */
-function PaperclipIcon({ color }: { color: string }) {
-    return (
-        <Svg width={23} height={23} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="M21.4 11.1l-9.2 9.1a6 6 0 01-8.5-8.5l9.2-9.1a4 4 0 015.7 5.6l-9.2 9.2a2 2 0 01-2.8-2.8l8.5-8.5"
-                fill="none"
-                stroke={color}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
-}
 
 const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonProps>(function MediaAttachButton({ onInsert, onBeforeOpen }, ref) {
     const { t, l, locale } = useI18n();
@@ -393,7 +376,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             <IconButton accessibilityLabel={l('Ek ekle', 'Add attachment')} onPress={openMenu} disabled={busy}>
                 {busy
                     ? <ActivityIndicator size="small" color={colors.accent} />
-                    : <PaperclipIcon color={colors.textMuted} />}
+                    : <PaperclipGlyph color={colors.textMuted} size={23} />}
             </IconButton>
 
             <AppSheet

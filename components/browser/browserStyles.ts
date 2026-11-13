@@ -53,7 +53,6 @@ export function createBrowserStyles(colors: ColorScheme) {
     cardSuspended: { backgroundColor: colors.rowSuspendedBg, borderColor: colors.streak },
     cardBuried: { backgroundColor: colors.rowBuriedBg },
     cardItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-    cardIcon: { fontSize: 17, marginTop: 1 },
     cardBody: { flex: 1, minWidth: 0 },
     cardQuestion: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, lineHeight: 18 },
     cardMeta: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },

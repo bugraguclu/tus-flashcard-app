@@ -113,6 +113,7 @@ import GearGlyph from '../../components/GearGlyph';
 import FlameGlyph from '../../components/FlameGlyph';
 import FlagGlyph from '../../components/FlagGlyph';
 import StarGlyph from '../../components/StarGlyph';
+import { CheckGlyph, DeckGlyph, HourglassGlyph } from '../../components/UiGlyphs';
 import {
     answerStudyCard,
     getDeckTotalCardCount,
@@ -2800,7 +2801,7 @@ export default function StudyScreen() {
             accessibilityRole="button"
             accessibilityLabel={l('TUS Kartları tam paketini ücretsiz aç', 'Unlock the full TUS Cards package for free')}
         >
-            <Text style={styles.catalogPurchaseBtnText}>🔓 {l('Tam paketi ücretsiz açın', 'Unlock the Full Pack for Free')}</Text>
+            <Text style={styles.catalogPurchaseBtnText}>{l('Tam paketi ücretsiz açın', 'Unlock the Full Pack for Free')}</Text>
             <Text style={styles.catalogPurchaseBtnHint}>
                 {l(
                     `Ödeme olmadan ${formatCount(BKA_MANIFEST.totals.cards, locale)} kartın tamamına erişin`,
@@ -2824,7 +2825,7 @@ export default function StudyScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Filtreli desteyi yeniden oluştur', 'Rebuild the filtered deck')}
                 >
-                    <Text style={styles.secondaryActionText}>🔄 {l('Yeniden oluştur', 'Rebuild')}</Text>
+                    <Text style={styles.secondaryActionText}>{l('Yeniden oluştur', 'Rebuild')}</Text>
                 </TouchableOpacity>
             ) : (
                 <TouchableOpacity
@@ -2833,7 +2834,7 @@ export default function StudyScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={l('Özel çalışma oturumu oluştur', 'Create a custom study session')}
                 >
-                    <Text style={styles.secondaryActionText}>🎯 {l('Özel çalışma', 'Custom Study')}</Text>
+                    <Text style={styles.secondaryActionText}>{l('Özel çalışma', 'Custom Study')}</Text>
                 </TouchableOpacity>
             )}
             {buriedInDeck > 0 ? (
@@ -2847,7 +2848,7 @@ export default function StudyScreen() {
                     )}
                 >
                     <Text style={styles.secondaryActionText}>
-                        💤 {l(
+                        {l(
                             `${buriedInDeck} gömülü kartı şimdi aç`,
                             `Unbury ${buriedInDeck} ${buriedInDeck === 1 ? 'card' : 'cards'} now`,
                         )}
@@ -2991,7 +2992,7 @@ export default function StudyScreen() {
                         <Text style={queueCountStyle('reviewCount', colors.badgeReview)}>{queueStats.reviewCount}</Text>
                     </View>
                 ) : settings.showDeckTitle === false ? (
-                    <Text style={styles.toolbarDeckFallback}>▦</Text>
+                    <DeckGlyph color={colors.textMuted} size={20} />
                 ) : null}
                 <ChevronDownIcon color={colors.textMuted} size={16} />
             </ReviewerDeckScope>
@@ -3139,7 +3140,7 @@ export default function StudyScreen() {
                 ]}
             >
             {!currentCard && deckDescription !== '' && (
-                <Text style={styles.deckDescription} numberOfLines={2}>📝 {deckDescription}</Text>
+                <Text style={styles.deckDescription} numberOfLines={2}>{deckDescription}</Text>
             )}
 
             {/* The stage is the reviewer content region. Wrapping it in WhiteboardProvider keeps
@@ -3311,7 +3312,9 @@ export default function StudyScreen() {
                         </View>
                     ) : nextLearningDue ? (
                         <View style={styles.emptyState}>
-                            <Text style={styles.emptyIcon}>⏳</Text>
+                            <View style={styles.emptyIcon}>
+                                <HourglassGlyph color={colors.accent} size={28} />
+                            </View>
                             <Text style={styles.emptyTitle}>{l('Şimdilik hepsi bu kadar!', 'That’s All for Now!')}</Text>
                             <Text style={styles.countdownText}>{countdown}</Text>
                             <Text style={styles.emptyDesc}>
@@ -3329,7 +3332,7 @@ export default function StudyScreen() {
                                 accessibilityLabel={l('Bekleme süresini atla ve hemen çalış', 'Skip the wait and study now')}
                                 {...webTitle(l('Zamanlayıcıyı beklemeden öğrenme kartlarını şimdi çalış', 'Study queued learning cards now without waiting for the timer'))}
                             >
-                                <Text style={styles.primaryActionText}>⚡ {l('Beklemeden çalış', 'Study Now')}</Text>
+                                <Text style={styles.primaryActionText}>{l('Beklemeden çalış', 'Study Now')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
@@ -3407,7 +3410,9 @@ export default function StudyScreen() {
                         </View>
                     ) : (
                         <View style={styles.emptyState}>
-                            <Text style={styles.emptyIcon}>🎉</Text>
+                            <View style={styles.emptyIcon}>
+                                <CheckGlyph color={colors.accent} size={30} strokeWidth={2.4} />
+                            </View>
                             <Text style={styles.emptyTitle}>{l('Tebrikler!', 'Congratulations!')}</Text>
                             {countdown && upcomingCardsCount > 0 ? (
                                 <Text style={styles.countdownText}>{countdown}</Text>
@@ -3433,15 +3438,15 @@ export default function StudyScreen() {
                             {heldBackReviewCount > 0 ? (
                                 <Text style={styles.emptyInfo}>
                                     {l(
-                                        `📋 Günlük tekrar limiti doldu — ${heldBackReviewCount} tekrar kartı süre dolunca gösterilecek. Devam etmek isterseniz limiti Deste Seçenekleri’nden artırabilirsiniz.`,
-                                        `📋 Today's review limit was reached — ${heldBackReviewCount} review cards will appear when time is up. To continue, increase the limit in Deck Options.`,
+                                        `Günlük tekrar limiti doldu — ${heldBackReviewCount} tekrar kartı süre dolunca gösterilecek. Devam etmek isterseniz limiti Deste Seçenekleri’nden artırabilirsiniz.`,
+                                        `Today's review limit was reached — ${heldBackReviewCount} review cards will appear when time is up. To continue, increase the limit in Deck Options.`,
                                     )}
                                 </Text>
                             ) : upcomingCardsCount > 0 ? (
                                 <Text style={styles.emptyInfo}>
                                     {l(
-                                        `⏳ ${upcomingCardsCount} kart süre dolunca gösterilecek.`,
-                                        `⏳ ${upcomingCardsCount} ${upcomingCardsCount === 1 ? 'card' : 'cards'} will appear when time is up.`,
+                                        `${upcomingCardsCount} kart süre dolunca gösterilecek.`,
+                                        `${upcomingCardsCount} ${upcomingCardsCount === 1 ? 'card' : 'cards'} will appear when time is up.`,
                                     )}
                                 </Text>
                             ) : null}
@@ -3672,7 +3677,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     },
     classicTitleButton: { flex: 1, minWidth: 0, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.xs },
     classicToolbarTitle: { flexShrink: 1, fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
-    toolbarDeckFallback: { fontSize: 19, color: colors.textMuted },
     toolbarActions: { flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' },
 
     streakChip: {
@@ -3895,7 +3899,15 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     queueCountCurrent: { textDecorationLine: 'underline' },
 
     emptyState: { alignItems: 'center', padding: 40 },
-    emptyIcon: { fontSize: 56, marginBottom: Spacing.md },
+    emptyIcon: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.accentLight,
+        marginBottom: Spacing.md,
+    },
     countdownText: {
         fontSize: 48,
         fontWeight: '700',

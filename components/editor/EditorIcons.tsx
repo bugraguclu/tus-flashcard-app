@@ -1,47 +1,31 @@
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
+import { IconFrame, iconStroke, outline } from '../icons/IconFrame';
+import { EyeGlyph, RedoGlyph, UndoGlyph } from '../UiGlyphs';
 
 export function EyeIcon({ color, size = 24 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="M2.3 12s3.7-6.1 9.7-6.1 9.7 6.1 9.7 6.1-3.7 6.1-9.7 6.1S2.3 12 2.3 12Z"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.9}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-            <Circle cx={12} cy={12} r={2.7} fill={color} />
-        </Svg>
-    );
+    return <EyeGlyph color={color} size={size} />;
 }
 
+/** Hide the keyboard: a keyboard above a downward chevron. */
 export function KeyboardDismissIcon({ color, size = 18 }: { color: string; size?: number }) {
+    const line = outline(color, iconStroke(size));
+    const key = Math.max(0.9, iconStroke(size) * 0.55);
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="M20 4H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 12H5c-.55 0-1-.45-1-1V7c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v8c0 .55-.45 1-1 1z"
-                fill={color}
-            />
-            <Path d="M6 8h2v2H6zm3 0h2v2H9zm3 0h2v2h-2zm3 0h2v2h-2zM6 11h2v2H6zm3 0h6v2H9zm7 0h2v2h-2z" fill={color} />
-            <Path d="m7 21 5 3 5-3z" fill={color} />
-        </Svg>
+        <IconFrame size={size}>
+            <Rect x={2.75} y={3.75} width={18.5} height={12} rx={2.75} {...line} />
+            {[6.75, 10.25, 13.75, 17.25].map((cx) => <Circle key={cx} cx={cx} cy={7.75} r={key} fill={color} />)}
+            <Path d="M8.5 11.75h7M9.5 19 12 21.25 14.5 19" {...line} />
+        </IconFrame>
     );
 }
 
+/** Keep the field's content for the next note: a push pin. */
 export function PinIcon({ color, size = 21 }: { color: string; size?: number }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="M8.2 3.5h7.6l-1.1 5.1 2.8 3.1v1.5H6.5v-1.5l2.8-3.1-1.1-5.1ZM12 13.2v7.3"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
+        <IconFrame size={size}>
+            <Path d="M9 3.75h6M10 3.75v5L7.25 12.1a.9.9 0 0 0 .7 1.4h8.1a.9.9 0 0 0 .7-1.4L14 8.75v-5M12 13.5v6.75" {...outline(color, iconStroke(size))} />
+        </IconFrame>
     );
 }
 
@@ -82,8 +66,59 @@ export type AnkiToolbarIconName =
     | 'changeCase'
     | 'lineSpacing';
 
+/**
+ * The formatting toolbar's icons. Letterform tools (bold, italic, sizes, case, ¶, Σ) keep their
+ * solid letters, as text controls do on iOS; every other tool is a line icon on the app's grid.
+ */
+const TOOLBAR_LINES: Partial<Record<AnkiToolbarIconName, string>> = {
+    listBullet: 'M9.5 6.5h10M9.5 12h10M9.5 17.5h10',
+    listNumber: 'M10 6.5h9.5M10 12h9.5M10 17.5h9.5',
+    rule: 'M3.5 12h17',
+    alignLeft: 'M4 6h16M4 10h10M4 14h16M4 18h10',
+    alignCenter: 'M4 6h16M7 10h10M4 14h16M7 18h10',
+    alignRight: 'M4 6h16M10 10h10M4 14h16M10 18h10',
+    alignJustify: 'M4 6h16M4 10h16M4 14h16M4 18h16',
+    indent: 'M4 5.25h16M11.5 9.75H20M11.5 14.25H20M4 18.75h16M4.5 9.25 7.5 12l-3 2.75',
+    outdent: 'M4 5.25h16M11.5 9.75H20M11.5 14.25H20M4 18.75h16M7.5 9.25 4.5 12l3 2.75',
+    lineSpacing: 'M11 6.5h9M11 12h9M11 17.5h9M6 4.5v15M3.5 7 6 4.5 8.5 7M3.5 17 6 19.5 8.5 17',
+    table: 'M6 4.5h12A2.5 2.5 0 0 1 20.5 7v10a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 17V7A2.5 2.5 0 0 1 6 4.5ZM3.5 9.5h17M3.5 14.5h17M9.25 9.5v10M14.75 9.5v10',
+    link: 'M10 13.75a3.75 3.75 0 0 0 5.3 0l3-3a3.75 3.75 0 0 0-5.3-5.3l-.85.85M14 10.25a3.75 3.75 0 0 0-5.3 0l-3 3a3.75 3.75 0 0 0 5.3 5.3l.85-.85',
+    code: 'M8.5 7.5 4 12l4.5 4.5M15.5 7.5 20 12l-4.5 4.5',
+    html: 'M8 7.5 3.5 12 8 16.5M16 7.5l4.5 4.5-4.5 4.5M13.25 5.5l-2.5 13',
+    callout: 'M4 7a2.5 2.5 0 0 1 2.5-2.5h11A2.5 2.5 0 0 1 20 7v7a2.5 2.5 0 0 1-2.5 2.5H11l-4 3.25V16.5h-.5A2.5 2.5 0 0 1 4 14ZM12 7.75v3.5',
+    color: 'M12 3.5a8.5 8.5 0 0 0 0 17c1.05 0 1.75-.7 1.75-1.6 0-.45-.17-.8-.43-1.1-.26-.3-.42-.66-.42-1.05 0-.85.68-1.5 1.55-1.5h1.85a4.2 4.2 0 0 0 4.2-4.2C20.5 6.9 16.7 3.5 12 3.5Z',
+    add: 'M7.25 3.75h9.5a3.5 3.5 0 0 1 3.5 3.5v9.5a3.5 3.5 0 0 1-3.5 3.5h-9.5a3.5 3.5 0 0 1-3.5-3.5v-9.5a3.5 3.5 0 0 1 3.5-3.5ZM12 8v8M8 12h8',
+};
+
+/** Small marks drawn as dots beside a line icon: list bullets, palette wells, the callout's point. */
+const TOOLBAR_DOTS: Partial<Record<AnkiToolbarIconName, [number, number][]>> = {
+    listBullet: [[5, 6.5], [5, 12], [5, 17.5]],
+    color: [[7.75, 12], [9.5, 7.75], [14.25, 7.5]],
+    callout: [[12, 13.6]],
+};
+
+/** The numbered list's 1, 2 and 3, drawn with a finer pen than the rules beside them. */
+const LIST_NUMERALS = 'M4.4 5.25 5.6 4.5v4M4.25 10.6a1.3 1.3 0 0 1 2.5.4c0 .45-.25.8-.6 1.15L4.3 14.1h2.6M4.3 15.8h2.45l-1.35 1.55a1.3 1.3 0 1 1-1.2 1.95';
+
 export function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarIconName; color: string; size?: number }) {
-    const paths: Record<Exclude<AnkiToolbarIconName, 'math'>, string> = {
+    if (name === 'undo') return <UndoGlyph color={color} size={size} />;
+    if (name === 'redo') return <RedoGlyph color={color} size={size} />;
+    const lines = TOOLBAR_LINES[name];
+    if (lines) {
+        const width = iconStroke(size);
+        return (
+            <IconFrame size={size}>
+                <Path d={lines} {...outline(color, width)} />
+                {(TOOLBAR_DOTS[name] ?? []).map(([cx, cy]) => <Circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={width * 0.7} fill={color} />)}
+                {name === 'listNumber' && <Path d={LIST_NUMERALS} {...outline(color, width * 0.72)} />}
+            </IconFrame>
+        );
+    }
+    return <LetterformIcon name={name} color={color} size={size} />;
+}
+
+function LetterformIcon({ name, color, size }: { name: AnkiToolbarIconName; color: string; size: number }) {
+    const paths: Partial<Record<AnkiToolbarIconName, string>> = {
         bold: 'M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42ZM10 6.5h3a1.5 1.5 0 0 1 0 3h-3v-3Zm3.5 9H10v-3h3.5a1.5 1.5 0 0 1 0 3Z',
         italic: 'M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4h-8Z',
         underline: 'M12 17a6 6 0 0 0 6-6V3h-2.5v8a3.5 3.5 0 1 1-7 0V3H6v8a6 6 0 0 0 6 6ZM5 19v2h14v-2H5Z',
@@ -91,10 +126,6 @@ export function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarI
         removeFormat: 'M4 4h10v2H9v12H7V6H4V4zm11 7l3 3-3 3 1.4 1.4 3-3 3 3 1.4-1.4-3-3 3-3-1.4-1.4-3 3-3-3L15 11z',
         subscript: 'M5 4l3.5 6L5 16h2.2l2.4-4.2 2.4 4.2h2.2l-3.5-6 3.5-6h-2.2L9.6 8.2 7.2 4H5zm14 13h4v1h-5v-1l3-3c.5-.5.7-.9.7-1.3 0-.6-.4-1-1-1s-1 .4-1 1h-1c0-1.1.9-2 2-2s2 .9 2 2c0 .6-.3 1.2-.8 1.7l-2.2 2.2V17h2.3z',
         superscript: 'M5 7l3.5 6L5 19h2.2l2.4-4.2 2.4 4.2h2.2l-3.5-6 3.5-6h-2.2L9.6 11.2 7.2 7H5zm14 3h4v1h-5v-1l3-3c.5-.5.7-.9.7-1.3 0-.6-.4-1-1-1s-1 .4-1 1h-1c0-1.1.9-2 2-2s2 .9 2 2c0 .6-.3 1.2-.8 1.7l-2.2 2.2V10h2.3z',
-        color: 'M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.17 19.38 10.53 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z',
-        listBullet: 'M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z',
-        listNumber: 'M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z',
-        rule: 'M2 11h20v2H2z',
         heading: 'M5 4v3h5.5v12h3V7H19V4H5Z',
         fontSize: 'M2.5 4v3h5v12h3V7h5V4h-13Zm19 5h-9v3h3v7h3v-7h3V9Z',
         // A serif "A" reads as "typeface" the way Word's font box does.
@@ -104,24 +135,8 @@ export function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarI
         shrinkFont: 'M1.5 18 6 6h2.2l4.5 12h-2.2l-1-2.9H4.7l-1 2.9H1.5Zm3.8-4.7h3.4L7 8.6l-1.7 4.7ZM17 18.5l-4.5-5h3v-7h3v7h3l-4.5 5Z',
         // Word's Change Case button is a capital and a lower-case A side by side.
         changeCase: 'M2 18 6.3 6h2.3L12.9 18h-2.2l-.95-2.8H5.15L4.2 18H2Zm3.75-4.6h3.3L7.4 8.5l-1.65 4.9Zm12.4 4.8c-1.9 0-3.15-1.05-3.15-2.6 0-1.6 1.2-2.5 3.4-2.65l1.9-.15v-.35c0-.85-.5-1.3-1.5-1.3-.9 0-1.45.4-1.6 1.05h-1.9c.2-1.6 1.5-2.6 3.55-2.6 2.2 0 3.4 1.05 3.4 2.95V18h-1.85l-.05-1.1c-.5.8-1.35 1.3-2.2 1.3Zm.6-1.5c1.05 0 1.85-.7 1.85-1.7v-.4l-1.6.15c-1 .1-1.5.45-1.5 1.05 0 .55.45.9 1.25.9Z',
-        // Stacked lines with a double-headed arrow, as in Word's line-spacing menu.
-        lineSpacing: 'M10 5h11v2H10V5Zm0 6h11v2H10v-2Zm0 6h11v2H10v-2ZM6 3 2.5 7h2.25v10H2.5L6 21l3.5-4H7.25V7H9.5L6 3Z',
-        html: 'M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z',
-        add: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2Z',
-        alignLeft: 'M3 3h18v2H3V3Zm0 4h12v2H3V7Zm0 4h18v2H3v-2Zm0 4h12v2H3v-2Zm0 4h18v2H3v-2Z',
-        alignCenter: 'M3 3h18v2H3V3Zm3 4h12v2H6V7Zm-3 4h18v2H3v-2Zm3 4h12v2H6v-2Zm-3 4h18v2H3v-2Z',
-        alignRight: 'M3 3h18v2H3V3Zm6 4h12v2H9V7Zm-6 4h18v2H3v-2Zm6 4h12v2H9v-2Zm-6 4h18v2H3v-2Z',
-        alignJustify: 'M3 3h18v2H3V3Zm0 4h18v2H3V7Zm0 4h18v2H3v-2Zm0 4h18v2H3v-2Zm0 4h18v2H3v-2Z',
-        indent: 'M3 3h18v2H3V3Zm8 4h10v2H11V7Zm0 4h10v2H11v-2Zm0 4h10v2H11v-2ZM3 19h18v2H3v-2ZM3 8l4 3.5L3 15V8Z',
-        outdent: 'M3 3h18v2H3V3Zm8 4h10v2H11V7Zm0 4h10v2H11v-2Zm0 4h10v2H11v-2ZM3 19h18v2H3v-2Zm4-11v7l-4-3.5L7 8Z',
-        table: 'M3 3h18a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm1 6v4h6V9H4Zm8 0v4h8V9h-8Zm-8 6v4h6v-4H4Zm8 0v4h8v-4h-8ZM4 5v2h16V5H4Z',
-        link: 'M3.9 12a3.1 3.1 0 0 1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7A3.1 3.1 0 0 1 3.9 12ZM8 13h8v-2H8v2Zm9-6h-4v1.9h4a3.1 3.1 0 0 1 0 6.2h-4V17h4a5 5 0 0 0 0-10Z',
         quote: 'M6 17h3l2-4V6H4v7h3l-1 4Zm9 0h3l2-4V6h-7v7h3l-1 4Z',
-        code: 'M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4Zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4Z',
-        callout: 'M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-9 4h2v6h-2V6Zm0 8h2v2h-2v-2Z',
         paragraph: 'M13 4H8a4 4 0 0 0 0 8h2v8h2V6h2v14h2V6h1V4h-4Z',
-        undo: 'M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62A7.98 7.98 0 0 1 12.5 11c2.98 0 5.5 1.94 6.4 4.62l2.37-.78A9.99 9.99 0 0 0 12.5 8Z',
-        redo: 'M18.4 10.6A9.94 9.94 0 0 0 11.5 8a9.99 9.99 0 0 0-8.77 6.84l2.37.78A7.98 7.98 0 0 1 11.5 11c2.05 0 3.92.77 5.35 2.02L13 16h9V7l-3.6 3.6Z',
     };
 
     if (name === 'math') {
@@ -141,7 +156,7 @@ export function AnkiToolbarIcon({ name, color, size = 24 }: { name: AnkiToolbarI
 
     return (
         <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path fill={color} d={paths[name]} />
+            <Path fill={color} d={paths[name] ?? ''} />
         </Svg>
     );
 }

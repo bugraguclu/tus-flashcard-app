@@ -8,8 +8,8 @@ import {
     View,
 } from 'react-native';
 import { Text } from './AppText';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Circle, Path, Rect } from 'react-native-svg';
+import { IconFrame, iconStroke, outline } from './icons/IconFrame';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
 import { getAllNoteTypes, getNoteType } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type NoteType } from '../lib/models';
@@ -38,26 +38,25 @@ type Props = {
     manageLabel?: string;
 };
 
-/** Two stacked cards — the shape of a standard note type that renders front/back templates. */
+/** A card split into front and back — the shape of a standard note type. */
 function StandardTypeIcon({ color, size = 21 }: { color: string; size?: number }) {
+    const line = outline(color, iconStroke(size));
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path d="M8 3.6h10.4a2 2 0 0 1 2 2V16" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" opacity={0.55} />
-            <Rect x={3.4} y={7} width={13.6} height={13.4} rx={2.4} fill="none" stroke={color} strokeWidth={1.8} />
-            <Path d="M6.8 11.4h6.8M6.8 15.2h4.2" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-        </Svg>
+        <IconFrame size={size}>
+            <Rect x={3.75} y={4.5} width={16.5} height={15} rx={3} {...line} />
+            <Path d="M3.75 12h16.5" {...line} />
+        </IconFrame>
     );
 }
 
 /** Brackets around a hidden run of text — the shape of a cloze deletion. */
 function ClozeTypeIcon({ color, size = 21 }: { color: string; size?: number }) {
+    const width = iconStroke(size);
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path d="M9 4.6H5.6v14.8H9M15 4.6h3.4v14.8H15" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-            <Circle cx={9.2} cy={12} r={1.15} fill={color} />
-            <Circle cx={12} cy={12} r={1.15} fill={color} />
-            <Circle cx={14.8} cy={12} r={1.15} fill={color} />
-        </Svg>
+        <IconFrame size={size}>
+            <Path d="M8.75 4.75H6.5v14.5h2.25M15.25 4.75h2.25v14.5h-2.25" {...outline(color, width)} />
+            {[9.25, 12, 14.75].map((cx) => <Circle key={cx} cx={cx} cy={12} r={width * 0.62} fill={color} />)}
+        </IconFrame>
     );
 }
 

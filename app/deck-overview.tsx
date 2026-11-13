@@ -280,7 +280,7 @@ export default function DeckOverviewScreen() {
 
                 {buriedCount > 0 && (
                     <Button
-                        label={`💤 ${l(`${buriedCount} gömülü kartı şimdi aç`, `Unbury ${buriedCount} cards now`)}`}
+                        label={l(`${buriedCount} gömülü kartı şimdi aç`, `Unbury ${buriedCount} cards now`)}
                         variant="secondary"
                         onPress={() => { void handleUnbury(); }}
                     />

@@ -1,5 +1,12 @@
-import Svg, { Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
+import { Path } from 'react-native-svg';
+import { IconFrame, iconStroke, outline } from '../icons/IconFrame';
+import {
+    CropGlyph as SharedCrop,
+    HistoryGlyph,
+    RotateLeftGlyph as SharedRotateLeft,
+    RotateRightGlyph as SharedRotateRight,
+    SlidersGlyph,
+} from '../UiGlyphs';
 
 type GlyphProps = { color: string; size?: number };
 
@@ -8,38 +15,40 @@ function circle(cx: number, cy: number, r: number): string {
     return `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0`;
 }
 
-/** One monochrome line icon on the 24-point grid the drawing pad's glyphs use. */
-function LineGlyph({ color, size = 22, d }: GlyphProps & { d: string }) {
+/** The photo editor's tools, on the app's shared grid and stroke; 22 points by default. */
+const SIZE = 22;
+
+function LineGlyph({ color, size = SIZE, d }: GlyphProps & { d: string }) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            <Path d={d} stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
+        <IconFrame size={size}>
+            <Path d={d} {...outline(color, iconStroke(size))} />
+        </IconFrame>
     );
 }
 
-export function CropGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="M6.5 2.5v13a2 2 0 0 0 2 2h13M2.5 6.5h13a2 2 0 0 1 2 2v13" />;
+export function CropGlyph({ color, size = SIZE }: GlyphProps) {
+    return <SharedCrop color={color} size={size} />;
 }
 
-export function AdjustGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d={`M3.5 7h7m5 0h5M3.5 17h3m5 0h9${circle(13, 7, 2.5)}${circle(9, 17, 2.5)}`} />;
+export function AdjustGlyph({ color, size = SIZE }: GlyphProps) {
+    return <SlidersGlyph color={color} size={size} />;
 }
 
-export function RotateLeftGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="M6.3 6.3A8 8 0 1 1 4 12M10.3 6.3h-4v-4" />;
+export function RotateLeftGlyph({ color, size = SIZE }: GlyphProps) {
+    return <SharedRotateLeft color={color} size={size} />;
 }
 
-export function RotateRightGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="M17.7 6.3A8 8 0 1 0 20 12M13.7 6.3h4v-4" />;
+export function RotateRightGlyph({ color, size = SIZE }: GlyphProps) {
+    return <SharedRotateRight color={color} size={size} />;
 }
 
 export function MirrorGlyph(props: GlyphProps) {
     return <LineGlyph {...props} d="M12 3v2.5m0 3v2.5m0 3v2.5m0 3V21M9 6.5v11H3.5ZM15 6.5v11h5.5Z" />;
 }
 
-/** Back to the photo as it was picked: a turn back around a clock face. */
-export function RevertGlyph(props: GlyphProps) {
-    return <LineGlyph {...props} d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6M4 4v4.6h4.6M12 8v4.2l2.8 1.8" />;
+/** Back to the photo as it was picked: a clock turned back. */
+export function RevertGlyph({ color, size = SIZE }: GlyphProps) {
+    return <HistoryGlyph color={color} size={size} />;
 }
 
 export function FiltersGlyph(props: GlyphProps) {
@@ -55,12 +64,12 @@ export function BrightnessGlyph(props: GlyphProps) {
     );
 }
 
-export function ContrastGlyph({ color, size = 22 }: GlyphProps) {
+export function ContrastGlyph({ color, size = SIZE }: GlyphProps) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            <Path d={circle(12, 12, 8.2)} stroke={color} strokeWidth={1.8} />
-            <Path d="M12 3.8a8.2 8.2 0 0 1 0 16.4Z" fill={color} />
-        </Svg>
+        <IconFrame size={size}>
+            <Path d={circle(12, 12, 8.5)} {...outline(color, iconStroke(size))} />
+            <Path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill={color} />
+        </IconFrame>
     );
 }
 

@@ -1,29 +1,22 @@
-import Svg, { Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Path } from 'react-native-svg';
+import { IconFrame, iconStroke, outline } from './icons/IconFrame';
 
 type Props = {
     color: string;
     size?: number;
+    strokeWidth?: number;
 };
 
-/** A clean Apple SF-style brain glyph for memory and review settings. */
-export default function BrainGlyph({ color, size = 20 }: Props) {
+/** Memory and reviewing: a brain seen from above, two lobed hemispheres and a fold in each. */
+export default function BrainGlyph({ color, size = 20, strokeWidth }: Props) {
+    const width = strokeWidth ?? iconStroke(size);
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
+        <IconFrame size={size}>
             <Path
-                d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                d="M12 5.25a3 3 0 0 0-5.6-1.1A3.25 3.25 0 0 0 4.5 9a3.5 3.5 0 0 0 .4 6.1 3.25 3.25 0 0 0 3.6 4.15A2.4 2.4 0 0 0 12 20.25M12 5.25a3 3 0 0 1 5.6-1.1A3.25 3.25 0 0 1 19.5 9a3.5 3.5 0 0 1-.4 6.1 3.25 3.25 0 0 1-3.6 4.15A2.4 2.4 0 0 1 12 20.25M12 5.25v15"
+                {...outline(color, width)}
             />
-            <Path
-                d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
+            <Path d="M4.9 9.1c1.6.15 2.85 1.2 3.1 2.65M19.1 9.1c-1.6.15-2.85 1.2-3.1 2.65M8.5 19.25c-.1-1.6.6-2.8 1.9-3.4M15.5 19.25c.1-1.6-.6-2.8-1.9-3.4" {...outline(color, width)} />
+        </IconFrame>
     );
 }

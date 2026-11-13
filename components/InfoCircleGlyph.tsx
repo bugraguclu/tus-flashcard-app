@@ -1,18 +1,20 @@
-import Svg, { Circle, Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Circle, Path } from 'react-native-svg';
+import { IconFrame, iconStroke, outline } from './icons/IconFrame';
 
 type Props = {
     color: string;
     size?: number;
+    strokeWidth?: number;
 };
 
-/** A clean Apple SF-style info.circle glyph. */
-export default function InfoCircleGlyph({ color, size = 15 }: Props) {
+/** Information: a lower-case i in a circle. */
+export default function InfoCircleGlyph({ color, size = 15, strokeWidth }: Props) {
+    const width = strokeWidth ?? iconStroke(size);
     return (
-        <Svg width={size} height={size} viewBox="0 0 20 20" {...DECORATIVE_SVG_PROPS}>
-            <Circle cx={10} cy={10} r={8.5} fill="none" stroke={color} strokeWidth={1.5} />
-            <Circle cx={10} cy={6.5} r={1} fill={color} />
-            <Path d="M10 9.5v4.5" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-        </Svg>
+        <IconFrame size={size}>
+            <Circle cx={12} cy={12} r={9} {...outline(color, width)} />
+            <Path d="M12 11.25v5.25" {...outline(color, width)} />
+            <Circle cx={12} cy={7.9} r={width * 0.62} fill={color} />
+        </IconFrame>
     );
 }

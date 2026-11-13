@@ -261,8 +261,8 @@ export default function BackupsScreen() {
                                 <View>
                                     <Text style={styles.rowTitle}>
                                         {isPreRestoreBackup(backup.name)
-                                            ? l('↩️ Geri yükleme öncesi kopya', '↩️ Pre-restore snapshot')
-                                            : l('📦 Koleksiyon yedeği', '📦 Collection backup')}
+                                            ? l('Geri yükleme öncesi kopya', 'Pre-restore snapshot')
+                                            : l('Koleksiyon yedeği', 'Collection backup')}
                                     </Text>
                                     {!isPreRestoreBackup(backup.name) && (
                                         <Text style={styles.rowName} numberOfLines={1}>{displayBackupName(backup.name)}</Text>

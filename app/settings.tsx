@@ -1373,8 +1373,8 @@ export default function SettingsScreen() {
                             value={settings.toolsOverlayPosition ?? 'right'}
                             onChange={(position) => updateSetting('toolsOverlayPosition', position)}
                             options={[
-                                { value: 'left', label: l('◧ Sol taraf', '◧ Left side') },
-                                { value: 'right', label: l('◨ Sağ taraf', '◨ Right side') },
+                                { value: 'left', label: l('Sol taraf', 'Left side') },
+                                { value: 'right', label: l('Sağ taraf', 'Right side') },
                             ]}
                         />
 

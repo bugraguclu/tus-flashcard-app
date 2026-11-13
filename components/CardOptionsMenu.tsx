@@ -12,8 +12,7 @@ import {
     useWindowDimensions,
 } from 'react-native';
 import { Text } from './AppText';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
 import { MotionSpring, NATIVE_DRIVER } from '../constants/motion';
@@ -21,6 +20,21 @@ import { confirm } from '../lib/confirm';
 import { getSetDueDateDefault } from '../lib/setDueDateDefaults';
 import { useI18n } from '../hooks/useI18n';
 import PencilGlyph from './PencilGlyph';
+import CalendarGlyph from './CalendarGlyph';
+import InfoCircleGlyph from './InfoCircleGlyph';
+import StarGlyph from './StarGlyph';
+import { EraserGlyph } from './drawing/drawingGlyphs';
+import { IconFrame, iconStroke, outline } from './icons/IconFrame';
+import {
+    BuryGlyph,
+    DownloadGlyph,
+    PauseCircleGlyph,
+    PlayCircleGlyph,
+    PlusGlyph,
+    SlidersGlyph,
+    SpeakerGlyph,
+    TagGlyph,
+} from './UiGlyphs';
 import { Button, IconButton } from './ui/Button';
 import { TextField } from './ui/Fields';
 import { BackIcon, RedoIcon, TrashIcon, UndoIcon } from './ui/icons';
@@ -505,64 +519,46 @@ const rowStyles = StyleSheet.create({
     switchLabel: { flex: 1, fontSize: 15, lineHeight: 20 },
 });
 
+/** The whiteboard: a board with a stroke drawn on it. */
+function WhiteboardGlyph({ color, size }: { color: string; size: number }) {
+    const line = outline(color, iconStroke(size));
+    return (
+        <IconFrame size={size}>
+            <Rect x={3} y={4.25} width={18} height={13.5} rx={2.75} {...line} />
+            <Path d="M7 13.5c1.4-2.6 2.4-4 3.3-4 1.3 0 .2 4 1.75 4 1.1 0 1.6-2.25 2.75-2.25.6 0 1.05.55 1.7 1.25M8.5 17.75 7.25 20.5M15.5 17.75l1.25 2.75" {...line} />
+        </IconFrame>
+    );
+}
+
+/** The 22 points a `MenuItem` gives its icon. */
+const MENU_ICON_SIZE = 22;
+
 /**
- * The menu's line icons, drawn at the 22 points a `MenuItem` gives its icon. Undo, redo and
- * delete are the app's own glyphs, so they read the same here as everywhere else.
+ * The menu's line icons, all from the app's icon system. Undo, redo and delete are the kit's
+ * control icons, so they read the same here as everywhere else.
  */
 function MenuIcon({ name, color }: { name: ReviewerMenuIcon; color: string }) {
-    if (name === 'edit' || name === 'stylus') return <PencilGlyph color={color} size={22} />;
-    if (name === 'undo') return <UndoIcon color={color} size={22} />;
-    if (name === 'redo') return <RedoIcon color={color} size={22} />;
-    if (name === 'delete') return <TrashIcon color={color} size={22} />;
-
-    const common = { fill: 'none', stroke: color, strokeWidth: 1.9, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-    return (
-        <Svg width={22} height={22} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            {name === 'whiteboard' && (
-                <>
-                    <Path d="M4 18c2-5 3-9 5-9 1.8 0-.2 7 2 7 1.4 0 1.8-4 3.2-4 1.2 0 .4 4 2 4 1.1 0 1.6-1 3.8-1" {...common} />
-                    <Path d="m15.2 4.3 4.5 4.5M14.3 5.2l1.8-1.8a1.3 1.3 0 0 1 1.8 0l2.7 2.7a1.3 1.3 0 0 1 0 1.8l-1.8 1.8" {...common} />
-                </>
-            )}
-            {name === 'clear' && <Path d="m5 9 3-5h8l3 5-4 11H9L5 9Zm1 0h12M10 12v5m4-5v5" {...common} />}
-            {name === 'save' && <Path d="M5 3h12l2 2v16H5V3Zm3 0v6h8V3M8 21v-7h8v7" {...common} />}
-            {name === 'add' && <Path d="M12 5v14M5 12h14" {...common} />}
-            {name === 'tag' && <Path d="M4 5h9l7 7-8 8-8-8V5Zm4 4h.01" {...common} />}
-            {name === 'bury' && (
-                <>
-                    <Rect x={4} y={6} width={16} height={14} rx={1.5} strokeDasharray="2.4 2.4" {...common} />
-                    <Path d="M12 3v10m-3-3 3 3 3-3" {...common} />
-                </>
-            )}
-            {name === 'suspend' && (
-                <>
-                    <Circle cx={12} cy={12} r={9} {...common} />
-                    <Path d="M9.5 9v6m5-6v6" {...common} />
-                </>
-            )}
-            {name === 'mark' && <Path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" {...common} />}
-            {name === 'reschedule' && (
-                <>
-                    <Circle cx={12} cy={12} r={8.5} {...common} />
-                    <Path d="M12 7v5l-3 2M4 5v4h4" {...common} />
-                </>
-            )}
-            {name === 'replay' && (
-                <>
-                    <Circle cx={12} cy={12} r={9} {...common} />
-                    <Path d="m10 8 6 4-6 4V8Z" {...common} />
-                </>
-            )}
-            {name === 'voice' && <Path d="M9 5a3 3 0 0 1 6 0v6a3 3 0 0 1-6 0V5Zm-3 6a6 6 0 0 0 12 0M12 17v4m-3 0h6" {...common} />}
-            {name === 'deck' && <Path d="M4 6h6m4 0h6M4 12h10m4 0h2M4 18h3m4 0h9M10 4v4m4 2v4m-7 2v4" {...common} />}
-            {name === 'info' && (
-                <>
-                    <Circle cx={12} cy={12} r={9} {...common} />
-                    <Path d="M12 16v-4m0-4h.01" {...common} />
-                </>
-            )}
-        </Svg>
-    );
+    const props = { color, size: MENU_ICON_SIZE };
+    switch (name) {
+        case 'edit':
+        case 'stylus': return <PencilGlyph {...props} />;
+        case 'undo': return <UndoIcon {...props} />;
+        case 'redo': return <RedoIcon {...props} />;
+        case 'delete': return <TrashIcon {...props} />;
+        case 'whiteboard': return <WhiteboardGlyph {...props} />;
+        case 'clear': return <EraserGlyph {...props} />;
+        case 'save': return <DownloadGlyph {...props} />;
+        case 'add': return <PlusGlyph {...props} />;
+        case 'tag': return <TagGlyph {...props} />;
+        case 'bury': return <BuryGlyph {...props} />;
+        case 'suspend': return <PauseCircleGlyph {...props} />;
+        case 'mark': return <StarGlyph {...props} filled={false} />;
+        case 'reschedule': return <CalendarGlyph {...props} />;
+        case 'replay': return <PlayCircleGlyph {...props} />;
+        case 'voice': return <SpeakerGlyph {...props} />;
+        case 'deck': return <SlidersGlyph {...props} />;
+        case 'info': return <InfoCircleGlyph {...props} />;
+    }
 }
 
 function createStyles(colors: ColorScheme) {

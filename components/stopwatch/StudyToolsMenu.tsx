@@ -3,11 +3,13 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { Path, Rect } from 'react-native-svg';
 import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
-import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
 import PressableScale from '../PressableScale';
+import StatsGlyph from '../StatsGlyph';
+import { IconFrame, iconStroke, outline } from '../icons/IconFrame';
+import { TrashGlyph } from '../UiGlyphs';
 import { PopoverBackdrop, PopoverItem, PopoverModal } from '../Popover';
 import { AnalyticsIcon, TimelineListIcon } from './StopwatchIcons';
 
@@ -21,37 +23,24 @@ const ROUTES: Record<Exclude<StudyTool, 'calendar'>, string> = {
     clear: '/study-clear',
 };
 
-function ToolGlyph({ tool, color }: { tool: StudyTool; color: string }) {
-    const { onAccent } = useThemeColors();
-    const stroke = { fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-    if (tool === 'calendar') return <TimelineListIcon color={color} size={32} />;
+const TOOL_GLYPH_SIZE = 32;
+
+/** A clipboard with two ticked rows: plan your study. */
+function PlanGlyph({ color, size }: { color: string; size: number }) {
+    const line = outline(color, iconStroke(size));
     return (
-        <Svg width={32} height={32} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            {tool === 'analysis' ? (
-                <>
-                    <Rect x={3.5} y={14} width={3.6} height={7} rx={0.8} fill={color} />
-                    <Rect x={10.2} y={11.5} width={3.6} height={9.5} rx={0.8} fill={color} />
-                    <Rect x={16.9} y={13} width={3.6} height={8} rx={0.8} fill={color} />
-                    <Path d="M5.3 8.4l6.7-3.2 6.7 3.4" {...stroke} />
-                    <Circle cx={5.3} cy={8.4} r={1.5} fill={color} />
-                    <Circle cx={12} cy={5.2} r={1.5} fill={color} />
-                    <Circle cx={18.7} cy={8.6} r={1.5} fill={color} />
-                </>
-            ) : tool === 'planning' ? (
-                <>
-                    <Rect x={4} y={3} width={14} height={18} rx={2} {...stroke} />
-                    <Path d="M7 8l1.2 1.2L10.5 7M7 13l1.2 1.2 2.3-2.2M12.5 8.2H15M12.5 13.2H14" {...stroke} />
-                    <Circle cx={17.5} cy={17.5} r={3.6} fill={color} />
-                    <Path d="M17.5 15.9v1.8l1.2.8" fill="none" stroke={onAccent} strokeWidth={1.4} strokeLinecap="round" />
-                </>
-            ) : (
-                <>
-                    <Path d="M4.5 6.5h15M9.5 6.5V4.5h5v2M6.5 6.5l1 14h9l1-14" {...stroke} />
-                    <Path d="M10 10v7.5M12 10v7.5M14 10v7.5" {...stroke} />
-                </>
-            )}
-        </Svg>
+        <IconFrame size={size}>
+            <Rect x={4.75} y={4.5} width={14.5} height={16.5} rx={2.75} {...line} />
+            <Path d="M9 4.5v-.25c0-.69.56-1.25 1.25-1.25h3.5c.69 0 1.25.56 1.25 1.25v.25M8.25 10.25l1.4 1.4 2.35-2.4M14 10.75h2M8.25 15.25l1.4 1.4 2.35-2.4M14 15.75h2" {...line} />
+        </IconFrame>
     );
+}
+
+function ToolGlyph({ tool, color }: { tool: StudyTool; color: string }) {
+    if (tool === 'calendar') return <TimelineListIcon color={color} size={TOOL_GLYPH_SIZE} />;
+    if (tool === 'analysis') return <StatsGlyph color={color} size={TOOL_GLYPH_SIZE} filled />;
+    if (tool === 'planning') return <PlanGlyph color={color} size={TOOL_GLYPH_SIZE} />;
+    return <TrashGlyph color={color} size={TOOL_GLYPH_SIZE} />;
 }
 
 interface StudyToolsMenuProps {

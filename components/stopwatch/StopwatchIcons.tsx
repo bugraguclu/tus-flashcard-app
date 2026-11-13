@@ -1,11 +1,29 @@
-import React from 'react';
-import Svg, { Circle, G, Line, Path, Rect } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
-import { useThemeColors } from '../../constants/theme';
+import { Circle, Path, Rect } from 'react-native-svg';
+import BellGlyph from '../BellGlyph';
+import { IconFrame } from '../icons/IconFrame';
+import GearGlyph from '../GearGlyph';
+import StatsGlyph from '../StatsGlyph';
+import {
+    BookGlyph,
+    CheckGlyph,
+    ChevronDownGlyph,
+    ClockGlyph,
+    CloseGlyph,
+    HourglassGlyph,
+    MinusGlyph,
+    PauseGlyph,
+    PlayGlyph,
+    PlusCircleGlyph,
+    PlusGlyph,
+    SearchGlyph,
+    StopGlyph,
+    StopwatchGlyph,
+} from '../UiGlyphs';
 
 /**
- * Line icons for the Kronometre and the study calendar, drawn on a 24-unit grid. They are
- * decorative: the control that holds one carries the accessibility label.
+ * The Kronometre's and the study calendar's icons. They are the app's shared glyphs under the
+ * names these screens already use, drawn at 22 points unless a size is given; the control that
+ * holds one carries the accessibility label.
  */
 
 interface IconProps {
@@ -13,102 +31,38 @@ interface IconProps {
     size?: number;
 }
 
-function IconFrame({ size = 22, children }: { size?: number; children: React.ReactNode }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            {children}
-        </Svg>
-    );
+const SIZE = 22;
+
+export function BellIcon({ color, size = SIZE, muted = false }: IconProps & { muted?: boolean }) {
+    return <BellGlyph color={color} size={size} muted={muted} />;
 }
 
-export function BellIcon({ color, size, muted = false }: IconProps & { muted?: boolean }) {
-    return (
-        <IconFrame size={size}>
-            <Path
-                d="M12 3.2c-3.2 0-5.6 2.5-5.6 5.8v4.3L4.6 16.6h14.8l-1.8-3.3V9c0-3.3-2.4-5.8-5.6-5.8z"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinejoin="round"
-            />
-            <Path d="M9.8 19.2a2.3 2.3 0 0 0 4.4 0" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-            {muted && <Line x1={4} y1={3.5} x2={20} y2={20.5} stroke={color} strokeWidth={1.8} strokeLinecap="round" />}
-        </IconFrame>
-    );
+export function GearIcon({ color, size = SIZE }: IconProps) {
+    return <GearGlyph color={color} size={size} />;
 }
 
-export function GearIcon({ color, size }: IconProps) {
-    const teeth = [0, 45, 90, 135, 180, 225, 270, 315];
-    return (
-        <IconFrame size={size}>
-            <G>
-                {teeth.map((angle) => {
-                    const radians = (angle * Math.PI) / 180;
-                    return (
-                        <Line
-                            key={angle}
-                            x1={12 + Math.cos(radians) * 6.6}
-                            y1={12 + Math.sin(radians) * 6.6}
-                            x2={12 + Math.cos(radians) * 9.4}
-                            y2={12 + Math.sin(radians) * 9.4}
-                            stroke={color}
-                            strokeWidth={3}
-                            strokeLinecap="round"
-                        />
-                    );
-                })}
-            </G>
-            <Circle cx={12} cy={12} r={6.2} fill="none" stroke={color} strokeWidth={1.8} />
-            <Circle cx={12} cy={12} r={2.4} fill="none" stroke={color} strokeWidth={1.8} />
-        </IconFrame>
-    );
+export function PlayIcon({ color, size = SIZE }: IconProps) {
+    return <PlayGlyph color={color} size={size} />;
 }
 
-export function PlayIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M8.5 5.8v12.4c0 .8.9 1.3 1.6.9l9.6-6.2a1 1 0 0 0 0-1.8L10.1 4.9c-.7-.4-1.6.1-1.6.9z" fill={color} />
-        </IconFrame>
-    );
+export function PauseIcon({ color, size = SIZE }: IconProps) {
+    return <PauseGlyph color={color} size={size} />;
 }
 
-export function PauseIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Rect x={6} y={5} width={4.2} height={14} rx={1.4} fill={color} />
-            <Rect x={13.8} y={5} width={4.2} height={14} rx={1.4} fill={color} />
-        </IconFrame>
-    );
+export function StopIcon({ color, size = SIZE }: IconProps) {
+    return <StopGlyph color={color} size={size} />;
 }
 
-export function StopIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Rect x={6} y={6} width={12} height={12} rx={2.4} fill={color} />
-        </IconFrame>
-    );
+export function ClockIcon({ color, size = SIZE }: IconProps) {
+    return <ClockGlyph color={color} size={size} />;
 }
 
-export function ClockIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Circle cx={12} cy={12} r={8.2} fill="none" stroke={color} strokeWidth={2} />
-            <Path d="M12 7.6V12l3 2.2" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        </IconFrame>
-    );
+export function StopwatchIcon({ color, size = SIZE }: IconProps) {
+    return <StopwatchGlyph color={color} size={size} />;
 }
 
-export function StopwatchIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Circle cx={12} cy={13.5} r={7.4} fill="none" stroke={color} strokeWidth={2} />
-            <Path d="M10 3h4M12 3v3M18.2 6.6l1.3-1.3" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
-            <Path d="M12 13.5V9.6" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function CalendarIcon({ color, size }: IconProps) {
+/** The Kronometre's own calendar: a page with two filled days, as it was drawn before. */
+export function CalendarIcon({ color, size = SIZE }: IconProps) {
     return (
         <IconFrame size={size}>
             <Rect x={3.8} y={5.2} width={16.4} height={15} rx={2.6} fill="none" stroke={color} strokeWidth={2} />
@@ -120,7 +74,7 @@ export function CalendarIcon({ color, size }: IconProps) {
 }
 
 /** An hourglass with sand in both bulbs; `sandColor` tints the sand (the frame's colour if left out). */
-export function HourglassIcon({ color, size, sandColor = color }: IconProps & { sandColor?: string }) {
+export function HourglassIcon({ color, size = SIZE, sandColor = color }: IconProps & { sandColor?: string }) {
     return (
         <IconFrame size={size}>
             <Path d="M8.6 7.4h6.8c-.6 1.3-1.8 2.4-3.4 3.6-1.6-1.2-2.8-2.3-3.4-3.6z" fill={sandColor} />
@@ -137,8 +91,53 @@ export function HourglassIcon({ color, size, sandColor = color }: IconProps & { 
     );
 }
 
+export function PlusIcon({ color, size = SIZE }: IconProps) {
+    return <PlusGlyph color={color} size={size} />;
+}
+
+export function MinusIcon({ color, size = SIZE }: IconProps) {
+    return <MinusGlyph color={color} size={size} />;
+}
+
+/** A solid disc with the plus cut out, so it reads on any background. */
+export function PlusCircleIcon({ color, size = SIZE }: IconProps) {
+    return <PlusCircleGlyph color={color} size={size} />;
+}
+
+export function CheckIcon({ color, size = SIZE }: IconProps) {
+    return <CheckGlyph color={color} size={size} />;
+}
+
+export function ChevronDownIcon({ color, size = SIZE }: IconProps) {
+    return <ChevronDownGlyph color={color} size={size} />;
+}
+
+export function CloseIcon({ color, size = SIZE }: IconProps) {
+    return <CloseGlyph color={color} size={size} />;
+}
+
+export function SearchIcon({ color, size = SIZE }: IconProps) {
+    return <SearchGlyph color={color} size={size} />;
+}
+
+/** An open book: the running session's note. */
+export function BookIcon({ color, size = SIZE }: IconProps) {
+    return <BookGlyph color={color} size={size} />;
+}
+
+/** Three bars, the middle one tallest: the study tools button's glyph. */
+export function AnalyticsIcon({ color, size = SIZE }: IconProps) {
+    return (
+        <IconFrame size={size}>
+            <Rect x={4} y={12} width={4.4} height={9} rx={1.4} fill={color} />
+            <Rect x={9.8} y={4} width={4.4} height={17} rx={1.4} fill={color} />
+            <Rect x={15.6} y={9} width={4.4} height={12} rx={1.4} fill={color} />
+        </IconFrame>
+    );
+}
+
 /** A line with three rows beside it: the Study Calendar's timeline, in its menu card and its link. */
-export function TimelineListIcon({ color, size }: IconProps) {
+export function TimelineListIcon({ color, size = SIZE }: IconProps) {
     return (
         <IconFrame size={size}>
             <Path d="M4.6 4v16" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
@@ -149,91 +148,6 @@ export function TimelineListIcon({ color, size }: IconProps) {
             <Rect x={8.6} y={9.6} width={12} height={4.8} rx={1.3} fill="none" stroke={color} strokeWidth={1.7} />
             <Rect x={8.6} y={15.4} width={12} height={4.8} rx={1.3} fill="none" stroke={color} strokeWidth={1.7} />
             <Path d="M11.4 6.2h3.8M11.4 12h3.8M11.4 17.8h3.8" fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function PlusIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M12 5v14M5 12h14" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function MinusIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M5 12h14" fill="none" stroke={color} strokeWidth={2.6} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function PlusCircleIcon({ color, size }: IconProps) {
-    const { onAccent } = useThemeColors();
-    return (
-        <IconFrame size={size}>
-            <Circle cx={12} cy={12} r={9.4} fill={color} />
-            <Path d="M12 7.6v8.8M7.6 12h8.8" fill="none" stroke={onAccent} strokeWidth={2.2} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function CheckIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M5.5 12.6l4.2 4.2 8.8-9.6" fill="none" stroke={color} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />
-        </IconFrame>
-    );
-}
-
-export function ChevronDownIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M6 9.5l6 6 6-6" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-        </IconFrame>
-    );
-}
-
-export function CloseIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path d="M6 6l12 12M18 6L6 18" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-export function SearchIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Circle cx={10.5} cy={10.5} r={6.2} fill="none" stroke={color} strokeWidth={2.2} />
-            <Path d="M15.2 15.2l4.6 4.6" fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round" />
-        </IconFrame>
-    );
-}
-
-/** An open book: the running session's note. */
-export function BookIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Path
-                d="M12 6.6C10.2 5.2 7.6 4.6 4 4.8v13c3.6-.2 6.2.4 8 1.8 1.8-1.4 4.4-2 8-1.8v-13c-3.6-.2-6.2.4-8 1.8zM12 6.6v13"
-                fill="none"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinejoin="round"
-            />
-        </IconFrame>
-    );
-}
-
-/** Three bars, the middle one tallest: the study tools button's glyph. */
-export function AnalyticsIcon({ color, size }: IconProps) {
-    return (
-        <IconFrame size={size}>
-            <Rect x={4} y={12} width={4.4} height={9} rx={1.4} fill={color} />
-            <Rect x={9.8} y={4} width={4.4} height={17} rx={1.4} fill={color} />
-            <Rect x={15.6} y={9} width={4.4} height={12} rx={1.4} fill={color} />
         </IconFrame>
     );
 }

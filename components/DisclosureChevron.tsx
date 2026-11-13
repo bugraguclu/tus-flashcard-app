@@ -1,5 +1,5 @@
-import Svg, { Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Path } from 'react-native-svg';
+import { IconFrame, iconStroke, outline } from './icons/IconFrame';
 
 type Props = {
     expanded: boolean;
@@ -10,15 +10,8 @@ type Props = {
 /** A geometrically centred disclosure arrow shared by deck trees. */
 export default function DisclosureChevron({ expanded, color, size = 20 }: Props) {
     return (
-        <Svg width={size} height={size} viewBox="0 0 20 20" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d={expanded ? 'M5.5 7.5 10 12l4.5-4.5' : 'M7.5 5.5 12 10l-4.5 4.5'}
-                fill="none"
-                stroke={color}
-                strokeWidth={2.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
+        <IconFrame size={size}>
+            <Path d={expanded ? 'M6.5 9.25 12 14.75l5.5-5.5' : 'M9.25 6.5 14.75 12l-5.5 5.5'} {...outline(color, iconStroke(size, 1.15))} />
+        </IconFrame>
     );
 }

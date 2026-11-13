@@ -27,7 +27,8 @@ import {
     useStudyPosition,
     useStudyScope,
 } from '../../contexts/AppContext';
-import { Sidebar, SIDEBAR_WIDTH, SidebarToggleIcon } from '../../components/Sidebar';
+import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
+import { HourglassGlyph, MenuGlyph, WarningGlyph } from '../../components/UiGlyphs';
 import { useI18n } from '../../hooks/useI18n';
 import { consumeSchedulingRevision } from '../../lib/deferredInvalidation';
 
@@ -360,7 +361,7 @@ export default function TabLayout() {
                         accessibilityLabel={sidebarOpen ? t('tabs.closeMenu') : t('tabs.openMenu')}
                         accessibilityState={{ expanded: sidebarOpen }}
                     >
-                        <SidebarToggleIcon color={colors.textPrimary} />
+                        <MenuGlyph color={colors.textPrimary} size={24} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }} />
                     <View style={{ width: 48 }} />
@@ -402,7 +403,11 @@ export default function TabLayout() {
                 <View style={[styles.mainContent, isWide && !isDeckScreen && styles.mainContentWithSidebar]}>
                     {startupError ? (
                         <View style={styles.startupErrorContainer}>
-                            <Text style={styles.startupErrorIcon}>📱</Text>
+                            <View style={styles.startupErrorIcon}>
+                                {startupError === 'timeout'
+                                    ? <HourglassGlyph color={colors.warning} size={30} />
+                                    : <WarningGlyph color={colors.warning} size={30} />}
+                            </View>
                             <Text style={styles.startupErrorTitle}>{t(startupError === 'timeout' ? 'root.startupSlowTitle' : 'root.errorTitle')}</Text>
                             <Text style={styles.startupErrorText}>
                                 {t(startupError === 'timeout' ? 'root.startupSlowMessage' : 'root.startupErrorMessage')}
@@ -481,7 +486,12 @@ function createStyles(colors: ColorScheme) {
         padding: Spacing.xl,
     },
     startupErrorIcon: {
-        fontSize: 48,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.warningBg,
         marginBottom: Spacing.md,
     },
     startupErrorTitle: {

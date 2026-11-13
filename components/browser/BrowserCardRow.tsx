@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { View, TouchableOpacity, Platform } from 'react-native';
+import { View, TouchableOpacity, Platform, StyleSheet } from 'react-native';
 import { Text } from '../AppText';
 import { useRouter } from 'expo-router';
 import { FontSize, type ColorScheme } from '../../constants/theme';
@@ -15,6 +15,8 @@ import { formatLastReview, formatNewPosition, formatNextDue, newQueuePosition } 
 import PencilGlyph from '../PencilGlyph';
 import FlagGlyph from '../FlagGlyph';
 import StarGlyph from '../StarGlyph';
+import CardsGlyph from '../CardsGlyph';
+import { ClockGlyph, NoteGlyph, PauseGlyph, PlayGlyph } from '../UiGlyphs';
 import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Choice';
 import { SelectionSuspendIcon } from './BrowserIcons';
@@ -136,7 +138,11 @@ export function BrowserCardRow({
         >
             <View style={styles.cardItemHeader}>
                 {selectionMode && <Checkbox checked={isSelected} />}
-                <Text style={styles.cardIcon}>{isNotesMode ? '📝' : (sub?.icon || '📝')}</Text>
+                <View style={local.cardIcon}>
+                    {isNotesMode
+                        ? <NoteGlyph color={colors.textSecondary} size={17} />
+                        : <CardsGlyph color={colors.textSecondary} size={17} />}
+                </View>
                 <View style={styles.cardBody}>
                     <Text
                         style={[
@@ -148,7 +154,7 @@ export function BrowserCardRow({
                         ]}
                         numberOfLines={isExpanded ? undefined : 1}
                     >
-                        {humanizeCardText(item.question, { showAudioFilenames: settings.showBrowserAudioFilenames }) || l('🃏 (boş)', '🃏 (empty)')}
+                        {humanizeCardText(item.question, { showAudioFilenames: settings.showBrowserAudioFilenames }) || l('(boş)', '(empty)')}
                     </Text>
                     <View style={[styles.cardMeta]}>
                         <Text style={[styles.cardTopic]} numberOfLines={1}>
@@ -176,17 +182,23 @@ export function BrowserCardRow({
                         </Text>
                     )}
                     {showScheduleDetails && (
-                        <Text
-                            style={[
-                                styles.scheduleMeta,
-                                { fontSize: 10 * browserFontScale, lineHeight: 13 * browserFontScale },
-                            ]}
-                            numberOfLines={1}
-                        >
+                        <View style={local.scheduleRow}>
                             {isNotesMode
-                                ? `▤ ${noteScheduleText}`
-                                : `⏱ ${l('Son:', 'Last:')} ${formatLastReview(item.state.lastReviewedAtMs, locale)} · ${l('Sonraki:', 'Next:')} ${formatNextDue(item.state, settings.dayRolloverHour, locale, newPosition)}`}
-                        </Text>
+                                ? <CardsGlyph color={styles.scheduleMeta.color} size={Math.round(11 * browserFontScale)} />
+                                : <ClockGlyph color={styles.scheduleMeta.color} size={Math.round(11 * browserFontScale)} />}
+                            <Text
+                                style={[
+                                    styles.scheduleMeta,
+                                    local.scheduleText,
+                                    { fontSize: 10 * browserFontScale, lineHeight: 13 * browserFontScale },
+                                ]}
+                                numberOfLines={1}
+                            >
+                                {isNotesMode
+                                    ? noteScheduleText
+                                    : `${l('Son:', 'Last:')} ${formatLastReview(item.state.lastReviewedAtMs, locale)} · ${l('Sonraki:', 'Next:')} ${formatNextDue(item.state, settings.dayRolloverHour, locale, newPosition)}`}
+                            </Text>
+                        </View>
                     )}
                 </View>
                 <View style={[styles.cardActions]}>
@@ -291,16 +303,25 @@ export function BrowserCardRow({
                                 toggleSuspend(item.cardId, item.state.suspended);
                             }
                         }}
+                        icon={item.state.suspended
+                            ? <PlayGlyph color={colors.textPrimary} size={14} />
+                            : <PauseGlyph color={colors.textPrimary} size={14} />}
                         label={isNotesMode
                             ? item.state.suspended
-                                ? l('▶️ Notun kartlarını askıdan çıkar', '▶️ Unsuspend Note Cards')
-                                : l('⏸️ Notun kartlarını askıya al', '⏸️ Suspend Note Cards')
+                                ? l('Notun kartlarını askıdan çıkar', 'Unsuspend Note Cards')
+                                : l('Notun kartlarını askıya al', 'Suspend Note Cards')
                             : item.state.suspended
-                                ? l('▶️ Askıdan çıkar', '▶️ Unsuspend')
-                                : `⏸️ ${t('anki.suspend')}`}
+                                ? l('Askıdan çıkar', 'Unsuspend')
+                                : t('anki.suspend')}
                     />
                 </View>
             )}
         </TouchableOpacity>
     );
 }
+
+const local = StyleSheet.create({
+    cardIcon: { marginTop: 1 },
+    scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
+    scheduleText: { flex: 1, minWidth: 0, marginTop: 0 },
+});

@@ -78,8 +78,8 @@ export default function PackageImportOptions(props: {
                     <SectionLabel>{l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}</SectionLabel>
                     <Notice tone="danger">
                         {l(
-                            '⚠️ Koleksiyonunuz, ayarları ve çalışma geçmişiyle birlikte paketteki koleksiyonla değiştirilir. Medya dosyaları silinmez.',
-                            '⚠️ Your collection, with its settings and review history, is replaced by the one in the package. Media files are not deleted.',
+                            'Koleksiyonunuz, ayarları ve çalışma geçmişiyle birlikte paketteki koleksiyonla değiştirilir. Medya dosyaları silinmez.',
+                            'Your collection, with its settings and review history, is replaced by the one in the package. Media files are not deleted.',
                         )}
                     </Notice>
                 </View>

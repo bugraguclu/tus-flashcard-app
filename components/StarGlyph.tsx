@@ -1,28 +1,26 @@
-import Svg, { Path } from 'react-native-svg';
+import { Path } from 'react-native-svg';
 import { useThemeColors } from '../constants/theme';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { IconFrame, iconStroke, outline, solid } from './icons/IconFrame';
+import { star } from './icons/iconGeometry';
 
 type Props = {
     /** The marked-note colour unless a caller tints it. */
     color?: string;
     size?: number;
     filled?: boolean;
+    strokeWidth?: number;
 };
 
-/** A clean Apple SF-style star glyph for marked cards. */
-export default function StarGlyph({ color, size = 16, filled = true }: Props) {
+const STAR = star(12, 12.85, 9.5, 4.6);
+
+/** A marked card: a five-point star with softened points. */
+export default function StarGlyph({ color: tint, size = 16, filled = true, strokeWidth }: Props) {
     const colors = useThemeColors();
-    const tint = color ?? colors.marked;
+    const color = tint ?? colors.marked;
+    const width = strokeWidth ?? iconStroke(size);
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"
-                fill={filled ? tint : 'none'}
-                stroke={tint}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
+        <IconFrame size={size}>
+            <Path d={STAR} {...(filled ? solid(color, width) : outline(color, width))} />
+        </IconFrame>
     );
 }

@@ -1,28 +1,28 @@
-import Svg, { Path } from 'react-native-svg';
+import { Path } from 'react-native-svg';
 import { useThemeColors } from '../constants/theme';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { IconFrame, iconStroke, outline, solid } from './icons/IconFrame';
 
 type Props = {
     /** The streak colour unless a caller tints it. */
     color?: string;
     size?: number;
     filled?: boolean;
+    strokeWidth?: number;
 };
 
-/** A clean Apple SF-style flame glyph for study streak. */
-export default function FlameGlyph({ color, size = 18, filled = true }: Props) {
+const OUTER = 'M12 21.25C8.6 21.25 5.75 18.6 5.75 15c0-2.4 1-4.4 2.25-5.9.6 1.5 1.6 2.3 2.6 2.5-.6-3.4.4-6.6 2.4-8.85 3.4 2.65 5.25 6.85 5.25 12 0 3.75-2.85 6.5-6.25 6.5Z';
+const INNER = 'M12 21.25c-1.75 0-3-1.2-3-2.85 0-1.9 1.55-3.05 3-4.9 1.45 1.85 3 3 3 4.9 0 1.65-1.25 2.85-3 2.85Z';
+
+/** The study streak: a flame with an inner tongue. */
+export default function FlameGlyph({ color: tint, size = 18, filled = true, strokeWidth }: Props) {
     const colors = useThemeColors();
-    const tint = color ?? colors.streak;
+    const color = tint ?? colors.streak;
+    const width = strokeWidth ?? iconStroke(size);
+    if (filled) return <IconFrame size={size}><Path d={OUTER} {...solid(color, width)} /></IconFrame>;
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d="M12 2c-.5 2.5-2 4.5-3.5 6.5C7 10.5 6 12.5 6 15a6 6 0 0 0 12 0c0-3.5-2-6-4-8.5-.5 2-2 3.5-3 4.5C11 9 11.5 5 12 2z"
-                fill={filled ? tint : 'none'}
-                stroke={tint}
-                strokeWidth={filled ? 0 : 1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
+        <IconFrame size={size}>
+            <Path d={OUTER} {...outline(color, width)} />
+            <Path d={INNER} {...outline(color, width)} />
+        </IconFrame>
     );
 }

@@ -1,5 +1,6 @@
-import Svg, { Path, Rect } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Path, Rect } from 'react-native-svg';
+import { IconFrame, iconStroke, outline } from './icons/IconFrame';
+import { DeckGlyph, DownloadGlyph, FilterGlyph, HISTORY_PATH, UploadGlyph } from './UiGlyphs';
 
 type Kind = 'emptyCards' | 'import' | 'export' | 'backup' | 'restore' | 'deck' | 'filteredDeck';
 
@@ -12,48 +13,21 @@ export default function DeckOverflowGlyph({ kind, color, size = 20 }: {
     color: string;
     size?: number;
 }) {
-    const line = { stroke: color, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-
+    if (kind === 'import') return <DownloadGlyph color={color} size={size} />;
+    if (kind === 'export') return <UploadGlyph color={color} size={size} />;
+    if (kind === 'deck') return <DeckGlyph color={color} size={size} />;
+    if (kind === 'filteredDeck') return <FilterGlyph color={color} size={size} />;
+    const line = outline(color, iconStroke(size));
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            {kind === 'emptyCards' && (
-                <>
-                    <Path d="M6 4h11a2 2 0 0 1 2 2v11" {...line} />
-                    <Rect x="3" y="7" width="13" height="14" rx="2" {...line} />
-                    <Path d="m7 12 5 5m0-5-5 5" {...line} />
-                </>
-            )}
-            {(kind === 'import' || kind === 'export') && (
-                <>
-                    <Path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" {...line} />
-                    {kind === 'import'
-                        ? <Path d="M12 3v13m-4-4 4 4 4-4" {...line} />
-                        : <Path d="M12 16V3m-4 4 4-4 4 4" {...line} />}
-                </>
-            )}
+        <IconFrame size={size}>
+            {kind === 'emptyCards' && <Rect x={5} y={3.5} width={14} height={17} rx={3} {...line} strokeDasharray="2.25 3.4" />}
             {kind === 'backup' && (
                 <>
-                    <Rect x="3" y="3" width="18" height="4" rx="1" {...line} />
-                    <Path d="M4 7v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7M12 10v7m-3.5-3.5h7" {...line} />
+                    <Rect x={3.5} y={4} width={17} height={4.75} rx={1.75} {...line} />
+                    <Path d="M5 8.75v9a2.75 2.75 0 0 0 2.75 2.75h8.5A2.75 2.75 0 0 0 19 17.75v-9M12 11.5v5.5m-2.75-2.75h5.5" {...line} />
                 </>
             )}
-            {kind === 'restore' && (
-                <>
-                    <Path d="M4 6v5h5M4.8 11a8 8 0 1 1 .6 5.2M12 8v4l3 2" {...line} />
-                </>
-            )}
-            {kind === 'deck' && (
-                <>
-                    <Rect x="3.5" y="3.5" width="17" height="17" rx="2.5" {...line} />
-                    <Path d="M7.5 9h9M7.5 12.5h9M7.5 16h5.5" {...line} />
-                </>
-            )}
-            {kind === 'filteredDeck' && (
-                <>
-                    <Rect x="3.5" y="3.5" width="11" height="11" rx="2" {...line} />
-                    <Rect x="9.5" y="9.5" width="11" height="11" rx="2" {...line} />
-                </>
-            )}
-        </Svg>
+            {kind === 'restore' && <Path d={HISTORY_PATH} {...line} />}
+        </IconFrame>
     );
 }

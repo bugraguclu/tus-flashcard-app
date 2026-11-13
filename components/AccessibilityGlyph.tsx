@@ -1,24 +1,20 @@
-import Svg, { Circle, Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Circle, Path } from 'react-native-svg';
+import { IconFrame, iconStroke, outline } from './icons/IconFrame';
 
 type Props = {
     color: string;
     size?: number;
+    strokeWidth?: number;
 };
 
-/** A clean Apple SF-style accessibility glyph. */
-export default function AccessibilityGlyph({ color, size = 20 }: Props) {
+/** Accessibility: the universal figure, arms open, in a circle. */
+export default function AccessibilityGlyph({ color, size = 20, strokeWidth }: Props) {
+    const width = strokeWidth ?? iconStroke(size);
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.8} />
-            <Circle cx="12" cy="8" r="1.5" fill={color} />
-            <Path
-                d="M7 11.5h10M12 11.5v4m-2 3.5 2-3.5 2 3.5"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
+        <IconFrame size={size}>
+            <Circle cx={12} cy={12} r={9} {...outline(color, width)} />
+            <Circle cx={12} cy={7.6} r={1.45} fill={color} />
+            <Path d="M7.75 10.25 12 11l4.25-.75M12 11v3.25m-2.5 3.75 2.5-3.75 2.5 3.75" {...outline(color, width)} />
+        </IconFrame>
     );
 }

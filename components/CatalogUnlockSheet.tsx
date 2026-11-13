@@ -12,6 +12,7 @@ import { Button } from './ui/Button';
 import { Notice } from './ui/Feedback';
 import { AppSheet } from './ui/Sheet';
 import { Radius, Type } from './ui/tokens';
+import { UnlockGlyph } from './UiGlyphs';
 
 type Props = {
     visible: boolean;
@@ -76,7 +77,7 @@ export default function CatalogUnlockSheet({ visible, onClose, onUnlocked }: Pro
         >
             <View style={styles.content}>
                 <View style={styles.iconWrap}>
-                    <Text style={styles.icon}>🔓</Text>
+                    <UnlockGlyph color={colors.accent} size={26} />
                 </View>
                 <Text style={[Type.title, styles.title]} accessibilityRole="header">{BKA_CATALOG_DEFAULT_ROOT_DECK}</Text>
                 <Text style={[Type.body, styles.description]}>
@@ -121,7 +122,6 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
             backgroundColor: colors.accentLight,
             marginBottom: Spacing.md,
         },
-        icon: { fontSize: 26 },
         title: { color: colors.textPrimary, textAlign: 'center' },
         description: {
             color: colors.textSecondary,

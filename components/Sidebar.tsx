@@ -8,7 +8,6 @@ import {
     Platform,
 } from 'react-native';
 import { Text } from './AppText';
-import Svg, { Path } from 'react-native-svg';
 import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../constants/theme';
 import type { Subject } from '../lib/types';
 import type { DeckTreeNode } from '../lib/deckManager';
@@ -20,10 +19,10 @@ import StatsGlyph from './StatsGlyph';
 import GearGlyph from './GearGlyph';
 import CalendarGlyph from './CalendarGlyph';
 import DisclosureChevron from './DisclosureChevron';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
 import { StopwatchIcon } from './stopwatch/StopwatchIcons';
 import { Button } from './ui/Button';
 import { HIT_TARGET } from './ui/tokens';
+import { BookGlyph, DeckGlyph, FolderGlyph } from './UiGlyphs';
 
 export const SIDEBAR_WIDTH = 292;
 
@@ -59,29 +58,7 @@ function webTitle(text: string): Record<string, string> {
 }
 
 function DeckFolderIcon({ color, root = false }: { color: string; root?: boolean }) {
-    return (
-        <Svg width={18} height={18} viewBox="0 0 24 24" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d={root
-                    ? 'M4 7.5h16v11H4zM7 4.5h7l2 3H7zM8 11h8M8 14.5h5'
-                    : 'M3.5 7h6l2-2h9v13.5h-17z'}
-                fill="none"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
-    );
-}
-
-/** The drawer's toggle (☰), for the layouts that open the sidebar from a header button. */
-export function SidebarToggleIcon({ color, size = 24 }: { color: string; size?: number }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            <Path d="M4.5 7h15M4.5 12h15M4.5 17h15" stroke={color} strokeWidth={2.2} strokeLinecap="round" />
-        </Svg>
-    );
+    return root ? <DeckGlyph color={color} size={18} /> : <FolderGlyph color={color} size={18} />;
 }
 
 export function Sidebar(props: SidebarProps) {
@@ -202,7 +179,7 @@ export function Sidebar(props: SidebarProps) {
                 accessibilityLabel={t('tabs.backToDecks')}
                 {...webTitle(t('tabs.backToDecks'))}
             >
-                <Text style={styles.sidebarTitle}>🧠 TusAnkiM</Text>
+                <Text style={styles.sidebarTitle}>TusAnkiM</Text>
                 <Text style={styles.sidebarSubtitle}>{t('sidebar.spacedRepetition')}</Text>
             </TouchableOpacity>
 
@@ -211,7 +188,7 @@ export function Sidebar(props: SidebarProps) {
                     style={[styles.subjectItem, !selectedSubject && !selectedTopic && styles.subjectItemActive]}
                     onPress={onAllPress}
                 >
-                    <Text style={styles.subjectIcon}>📚</Text>
+                    <View style={styles.subjectIconSlot}><CardsGlyph color={colors.textSecondary} size={16} /></View>
                     <Text style={[styles.subjectName, !selectedSubject && !selectedTopic && styles.subjectNameActive]}>
                         {t('sidebar.allCourses')}
                     </Text>
@@ -234,7 +211,7 @@ export function Sidebar(props: SidebarProps) {
                                     onPress={() => onSubjectPress(subject.id)}
                                     {...webTitle(`${subject.name} — ${t('common.study')}`)}
                                 >
-                                    <Text style={styles.subjectIcon}>{subject.icon}</Text>
+                                    <View style={styles.subjectIconSlot}><BookGlyph color={isSelected ? colors.accent : colors.textSecondary} size={16} /></View>
                                     <Text style={[styles.subjectName, isSelected && styles.subjectNameActive]}>
                                         {subject.name}
                                     </Text>
@@ -459,7 +436,7 @@ function createStyles(colors: ColorScheme) {
         alignItems: 'center',
         justifyContent: 'center',
     },
-    subjectIcon: { fontSize: 16, width: 26 },
+    subjectIconSlot: { width: 26, alignItems: 'flex-start', justifyContent: 'center' },
     subjectName: { flex: 1, fontSize: FontSize.md, color: colors.textSecondary, fontWeight: '500' },
     subjectNameActive: { color: colors.accent, fontWeight: '700' },
     subjectCount: {

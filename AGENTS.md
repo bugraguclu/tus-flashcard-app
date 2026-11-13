@@ -53,6 +53,10 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   screen's header. `docs/DESIGN_SYSTEM.md` says which part does which job. Build UI from these
   parts and extend a part for everyone instead of styling a copy in a screen;
   `lib/designSystem.test.ts` rejects colour literals and text characters drawn as icons.
+- Icons: `components/icons/IconFrame.tsx` sets the grid, stroke and paint every glyph uses; the
+  drawings are `components/UiGlyphs.tsx` and the `components/*Glyph.tsx` files. The kit's control
+  icons (`components/ui/icons.tsx`) and the feature icon files reuse them. Draw a missing icon
+  there; never use an emoji or a text symbol (✓ › × ☰) as one.
 
 ## Working in this repository
 

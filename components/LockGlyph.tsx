@@ -1,26 +1,21 @@
-import Svg, { Path, Rect } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Path, Rect } from 'react-native-svg';
+import { IconFrame, iconStroke, outline, solid } from './icons/IconFrame';
 
 type Props = {
     color: string;
     size?: number;
     /** Draws the shackle open, for content the learner has already unlocked. */
     open?: boolean;
+    strokeWidth?: number;
 };
 
 /** Padlock used wherever purchased content is shown before it is owned. */
-export default function LockGlyph({ color, size = 16, open = false }: Props) {
-    const scale = size / 16;
+export default function LockGlyph({ color, size = 16, open = false, strokeWidth }: Props) {
+    const width = strokeWidth ?? iconStroke(size);
     return (
-        <Svg width={size} height={size * 1.125} viewBox="0 0 16 18" {...DECORATIVE_SVG_PROPS}>
-            <Path
-                d={open ? 'M5 7V5a3 3 0 0 1 5.9-.75' : 'M5 7V5a3 3 0 0 1 6 0v2'}
-                fill="none"
-                stroke={color}
-                strokeWidth={1.6 / scale > 2.4 ? 2.4 : 1.6}
-                strokeLinecap="round"
-            />
-            <Rect x="2.5" y="7" width="11" height="8.5" rx="2" fill={color} />
-        </Svg>
+        <IconFrame size={size}>
+            <Path d={open ? 'M8 11V8a4 4 0 0 1 7.75-1.4' : 'M8 11V8a4 4 0 1 1 8 0v3'} {...outline(color, width)} />
+            <Rect x={5} y={11} width={14} height={9.5} rx={2.5} {...solid(color, width)} />
+        </IconFrame>
     );
 }

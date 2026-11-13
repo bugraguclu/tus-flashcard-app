@@ -1,11 +1,33 @@
-import React from 'react';
-import Svg, { Circle, Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
+import { Path } from 'react-native-svg';
+import { IconFrame, iconStroke, outline } from '../icons/IconFrame';
+import {
+    ArrowDownGlyph,
+    ArrowLeftGlyph,
+    ArrowRightGlyph,
+    ArrowUpGlyph,
+    CheckGlyph,
+    ChevronDownGlyph,
+    ChevronRightGlyph,
+    ChevronUpGlyph,
+    CloseGlyph,
+    ExternalLinkGlyph,
+    GripGlyph,
+    MinusGlyph,
+    MoreGlyph,
+    MoreVerticalGlyph,
+    PlusGlyph,
+    RedoGlyph,
+    RefreshGlyph,
+    SearchGlyph,
+    TrashGlyph,
+    UndoGlyph,
+} from '../UiGlyphs';
 
 /**
- * The app's control glyphs, drawn once on a 24-unit grid with round caps. Arrows and chevrons use
- * a 2.4 stroke, the close, check, plus and minus marks 2.2, so every screen draws the same mark
- * the same way instead of a text character (›, ×, ✓, ⌄, ⋮) at a size of its own. They are
+ * The design system's control glyphs, so every screen draws the same mark the same way instead of
+ * a text character (›, ×, ✓, ⌄, ⋮) at a size of its own. The drawings come from the app's one
+ * icon system (components/icons/IconFrame.tsx, components/UiGlyphs.tsx): a 24-unit grid, round
+ * caps and an optical stroke weight. These names and default sizes are the kit's API. They are
  * decorative: the control that holds one carries the accessibility label.
  */
 
@@ -14,145 +36,112 @@ export interface IconProps {
     size?: number;
 }
 
-function Frame({ size, children }: { size: number; children: React.ReactNode }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            {children}
-        </Svg>
-    );
-}
-
-const ROUND = { strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
-
-/** Back: the header's left arrow. */
+/** Back: the header's left arrow, a little heavier than the other glyphs, as iOS draws its own. */
 export function BackIcon({ color, size = 24 }: IconProps) {
-    return <Frame size={size}><Path d="M15.5 19 8.5 12l7-7" stroke={color} strokeWidth={2.4} {...ROUND} /></Frame>;
+    return (
+        <IconFrame size={size}>
+            <Path d="M15.5 4.75 8.25 12l7.25 7.25" {...outline(color, iconStroke(size, 1.15))} />
+        </IconFrame>
+    );
 }
 
 /** Forward: the mirror of `BackIcon`, for stepping through dates or pages. */
 export function ForwardIcon({ color, size = 24 }: IconProps) {
-    return <Frame size={size}><Path d="M8.5 19l7-7-7-7" stroke={color} strokeWidth={2.4} {...ROUND} /></Frame>;
+    return (
+        <IconFrame size={size}>
+            <Path d="M8.5 4.75 15.75 12 8.5 19.25" {...outline(color, iconStroke(size, 1.15))} />
+        </IconFrame>
+    );
 }
 
 /** The trailing chevron of a row that opens something. */
 export function ChevronRightIcon({ color, size = 18 }: IconProps) {
-    return <Frame size={size}><Path d="M9.5 6l6 6-6 6" stroke={color} strokeWidth={2.4} {...ROUND} /></Frame>;
+    return <ChevronRightGlyph color={color} size={size} />;
 }
 
 /** A value that opens a list to choose from, or a section that expands. */
 export function ChevronDownIcon({ color, size = 18 }: IconProps) {
-    return <Frame size={size}><Path d="M6 9.5l6 6 6-6" stroke={color} strokeWidth={2.4} {...ROUND} /></Frame>;
+    return <ChevronDownGlyph color={color} size={size} />;
 }
 
 export function ChevronUpIcon({ color, size = 18 }: IconProps) {
-    return <Frame size={size}><Path d="M6 14.5l6-6 6 6" stroke={color} strokeWidth={2.4} {...ROUND} /></Frame>;
+    return <ChevronUpGlyph color={color} size={size} />;
 }
 
 export function CloseIcon({ color, size = 22 }: IconProps) {
-    return <Frame size={size}><Path d="M6 6l12 12M18 6L6 18" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+    return <CloseGlyph color={color} size={size} />;
 }
 
 export function CheckIcon({ color, size = 20 }: IconProps) {
-    return <Frame size={size}><Path d="M5.5 12.6l4.2 4.2 8.8-9.6" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+    return <CheckGlyph color={color} size={size} />;
 }
 
 export function PlusIcon({ color, size = 22 }: IconProps) {
-    return <Frame size={size}><Path d="M12 5v14M5 12h14" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+    return <PlusGlyph color={color} size={size} />;
 }
 
 export function MinusIcon({ color, size = 22 }: IconProps) {
-    return <Frame size={size}><Path d="M5 12h14" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+    return <MinusGlyph color={color} size={size} />;
 }
 
 /** More actions (•••). */
 export function MoreIcon({ color, size = 24 }: IconProps) {
-    return (
-        <Frame size={size}>
-            <Circle cx={5.5} cy={12} r={1.8} fill={color} />
-            <Circle cx={12} cy={12} r={1.8} fill={color} />
-            <Circle cx={18.5} cy={12} r={1.8} fill={color} />
-        </Frame>
-    );
+    return <MoreGlyph color={color} size={size} />;
 }
 
 /** More actions (⋮), for a menu that hangs from the right edge of a header. */
 export function MoreVerticalIcon({ color, size = 24 }: IconProps) {
-    return (
-        <Frame size={size}>
-            <Circle cx={12} cy={5.5} r={1.8} fill={color} />
-            <Circle cx={12} cy={12} r={1.8} fill={color} />
-            <Circle cx={12} cy={18.5} r={1.8} fill={color} />
-        </Frame>
-    );
+    return <MoreVerticalGlyph color={color} size={size} />;
 }
 
 export function SearchIcon({ color, size = 18 }: IconProps) {
-    return (
-        <Frame size={size}>
-            <Circle cx={10.5} cy={10.5} r={6.2} stroke={color} strokeWidth={2} />
-            <Path d="M15.2 15.2l4.6 4.6" stroke={color} strokeWidth={2.2} {...ROUND} />
-        </Frame>
-    );
+    return <SearchGlyph color={color} size={size} />;
 }
 
 /** Reload what the screen shows. */
 export function RefreshIcon({ color, size = 22 }: IconProps) {
-    return (
-        <Frame size={size}>
-            <Path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" stroke={color} strokeWidth={2} {...ROUND} />
-            <Path d="M19.5 4.5v4.2h-4.2" stroke={color} strokeWidth={2} {...ROUND} />
-        </Frame>
-    );
+    return <RefreshGlyph color={color} size={size} />;
 }
 
 /** Move an item up in an ordered list. */
 export function ArrowUpIcon({ color, size = 20 }: IconProps) {
-    return <Frame size={size}><Path d="M12 19V5M6 11l6-6 6 6" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+    return <ArrowUpGlyph color={color} size={size} />;
 }
 
 /** Move an item down in an ordered list. */
 export function ArrowDownIcon({ color, size = 20 }: IconProps) {
-    return <Frame size={size}><Path d="M12 5v14M6 13l6 6 6-6" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+    return <ArrowDownGlyph color={color} size={size} />;
 }
 
 /** Point left (a direction, e.g. a swipe gesture). */
 export function ArrowLeftIcon({ color, size = 20 }: IconProps) {
-    return <Frame size={size}><Path d="M19 12H5M11 6l-6 6 6 6" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+    return <ArrowLeftGlyph color={color} size={size} />;
 }
 
 /** Point right (a direction, e.g. a swipe gesture). */
 export function ArrowRightIcon({ color, size = 20 }: IconProps) {
-    return <Frame size={size}><Path d="M5 12h14M13 6l6 6-6 6" stroke={color} strokeWidth={2.2} {...ROUND} /></Frame>;
+    return <ArrowRightGlyph color={color} size={size} />;
 }
 
 /** Delete or clear. */
 export function TrashIcon({ color, size = 20 }: IconProps) {
-    return (
-        <Frame size={size}>
-            <Path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 12a2 2 0 0 0 2 1.8h6a2 2 0 0 0 2-1.8l1-12M10 11v6m4-6v6" stroke={color} strokeWidth={2} {...ROUND} />
-        </Frame>
-    );
+    return <TrashGlyph color={color} size={size} />;
 }
 
 export function UndoIcon({ color, size = 22 }: IconProps) {
-    return <Frame size={size}><Path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" stroke={color} strokeWidth={2} {...ROUND} /></Frame>;
+    return <UndoGlyph color={color} size={size} />;
 }
 
 export function RedoIcon({ color, size = 22 }: IconProps) {
-    return <Frame size={size}><Path d="m15 14 5-5-5-5m5 5H9.5a5.5 5.5 0 0 0 0 11H13" stroke={color} strokeWidth={2} {...ROUND} /></Frame>;
+    return <RedoGlyph color={color} size={size} />;
 }
 
 /** Opens outside the app (a web page, the share sheet). */
 export function ExternalLinkIcon({ color, size = 18 }: IconProps) {
-    return (
-        <Frame size={size}>
-            <Path d="M14 5h5v5M19 5l-8 8" stroke={color} strokeWidth={2} {...ROUND} />
-            <Path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" stroke={color} strokeWidth={2} {...ROUND} />
-        </Frame>
-    );
+    return <ExternalLinkGlyph color={color} size={size} />;
 }
 
 /** The handle a row is dragged by. */
 export function DragHandleIcon({ color, size = 20 }: IconProps) {
-    return <Frame size={size}><Path d="M5 8h14M5 12h14M5 16h14" stroke={color} strokeWidth={2} {...ROUND} /></Frame>;
+    return <GripGlyph color={color} size={size} />;
 }

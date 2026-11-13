@@ -1,28 +1,23 @@
-import Svg, { Path } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from './decorativeSvgProps';
+import { Path } from 'react-native-svg';
+import { IconFrame, iconStroke, outline } from './icons/IconFrame';
+import { arc } from './icons/iconGeometry';
 
 type Props = {
     color: string;
     size?: number;
+    strokeWidth?: number;
 };
 
-/** A clean Apple SF-style hand.tap glyph for touch controls and gestures. */
-export default function HandTapGlyph({ color, size = 20 }: Props) {
+/** Touch controls and gestures: a pointing finger with the ripple of a tap above it. */
+export default function HandTapGlyph({ color, size = 20, strokeWidth }: Props) {
+    const width = strokeWidth ?? iconStroke(size);
     return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
+        <IconFrame size={size}>
             <Path
-                d="M12 3a4 4 0 0 1 4 4v4.5M8 7a4 4 0 0 1 4-4"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinecap="round"
+                d="M9.25 15V9.25a1.5 1.5 0 0 1 3 0v3.25a1.38 1.38 0 0 1 2.75 0 1.38 1.38 0 0 1 2.75 0V16c0 2.62-2.13 4.75-4.75 4.75h-1.5c-1.4 0-2.7-.7-3.5-1.85l-2.35-3.4a1.35 1.35 0 0 1 2.05-1.75Z"
+                {...outline(color, width)}
             />
-            <Path
-                d="M12 11.5V6a2 2 0 0 0-4 0v7.5l-2.1-1.3a1.8 1.8 0 0 0-2.4.6 1.8 1.8 0 0 0 .5 2.4L9 19.5a5 5 0 0 0 3.2.9h3.8a5 5 0 0 0 5-5v-4.5a2 2 0 0 0-4 0v.5a2 2 0 0 0-3 0v.5"
-                stroke={color}
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-        </Svg>
+            <Path d={arc(10.75, 9.25, 4.25, 205, 335)} {...outline(color, width)} />
+        </IconFrame>
     );
 }

@@ -1,140 +1,103 @@
-import type { ReactNode } from 'react';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
+import { Circle, Path, Rect } from 'react-native-svg';
+import PencilGlyph from '../PencilGlyph';
+import { IconFrame, iconStroke, outline } from '../icons/IconFrame';
+import { CropGlyph, MicGlyph, PauseGlyph, PhotoGlyph, PlayGlyph, RotateLeftGlyph } from '../UiGlyphs';
 
 type IconProps = { color: string; size?: number };
 
-/** One outline glyph on the 24-unit grid the editor's other icons use. */
-function OutlineIcon({ size = 24, children }: { size?: number; children: ReactNode }) {
-    return (
-        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...DECORATIVE_SVG_PROPS}>
-            {children}
-        </Svg>
-    );
+/** The editor's attachment icons, on the app's shared grid and stroke; 24 points by default. */
+
+const SIZE = 24;
+
+function line(color: string, size: number) {
+    return outline(color, iconStroke(size));
 }
 
-function line(color: string) {
-    return { stroke: color, strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
+export function PhotoIcon({ color, size = SIZE }: IconProps) {
+    return <PhotoGlyph color={color} size={size} />;
 }
 
-export function PhotoIcon({ color, size }: IconProps) {
+export function CameraIcon({ color, size = SIZE }: IconProps) {
     return (
-        <OutlineIcon size={size}>
-            <Rect x={3} y={5} width={18} height={14} rx={2.5} {...line(color)} />
-            <Path d="m3.6 16.6 4.9-5 3.7 3.7 2.4-2.4 5.6 5" {...line(color)} />
-            <Circle cx={15.6} cy={9.4} r={1.5} {...line(color)} />
-        </OutlineIcon>
-    );
-}
-
-export function CameraIcon({ color, size }: IconProps) {
-    return (
-        <OutlineIcon size={size}>
+        <IconFrame size={size}>
             <Path
-                d="M4.5 7.5h2.8l1.5-2.2h6.4l1.5 2.2h2.8A1.5 1.5 0 0 1 21 9v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V9a1.5 1.5 0 0 1 1.5-1.5Z"
-                {...line(color)}
+                d="M3 9a2.5 2.5 0 0 1 2.5-2.5h1.9l1.25-1.85A1.5 1.5 0 0 1 9.9 4h4.2a1.5 1.5 0 0 1 1.25.65l1.25 1.85h1.9A2.5 2.5 0 0 1 21 9v8.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5Z"
+                {...line(color, size)}
             />
-            <Circle cx={12} cy={13.2} r={3.5} {...line(color)} />
-        </OutlineIcon>
+            <Circle cx={12} cy={12.75} r={3.75} {...line(color, size)} />
+        </IconFrame>
     );
 }
 
-export function DrawIcon({ color, size }: IconProps) {
+export function DrawIcon({ color, size = SIZE }: IconProps) {
+    return <PencilGlyph color={color} size={size} />;
+}
+
+export function MicIcon({ color, size = SIZE }: IconProps) {
+    return <MicGlyph color={color} size={size} />;
+}
+
+export function MusicIcon({ color, size = SIZE }: IconProps) {
     return (
-        <OutlineIcon size={size}>
+        <IconFrame size={size}>
+            <Path d="M9 17.5V6.25l10.5-2.5V15" {...line(color, size)} />
+            <Circle cx={6.75} cy={17.5} r={2.25} {...line(color, size)} />
+            <Circle cx={17.25} cy={15} r={2.25} {...line(color, size)} />
+        </IconFrame>
+    );
+}
+
+export function VideoIcon({ color, size = SIZE }: IconProps) {
+    return (
+        <IconFrame size={size}>
+            <Rect x={2.75} y={6} width={13} height={12} rx={3} {...line(color, size)} />
+            <Path d="m15.75 10.25 4.1-2.45a.75.75 0 0 1 1.15.65v7.1a.75.75 0 0 1-1.15.65l-4.1-2.45" {...line(color, size)} />
+        </IconFrame>
+    );
+}
+
+export function DocumentIcon({ color, size = SIZE }: IconProps) {
+    return (
+        <IconFrame size={size}>
             <Path
-                d="m4 20 1.2-4.6L16.8 3.8a1.7 1.7 0 0 1 2.4 0l1 1a1.7 1.7 0 0 1 0 2.4L8.6 18.8 4 20Zm11.4-14.8 3.4 3.4"
-                {...line(color)}
+                d="M7.25 3h6.5L19 8.25v10.5A2.25 2.25 0 0 1 16.75 21h-9.5A2.25 2.25 0 0 1 5 18.75V5.25A2.25 2.25 0 0 1 7.25 3Z"
+                {...line(color, size)}
             />
-        </OutlineIcon>
+            <Path d="M13.5 3.25V7a1.5 1.5 0 0 0 1.5 1.5h3.75M8.75 13h6.5M8.75 16.5h4" {...line(color, size)} />
+        </IconFrame>
     );
 }
 
-export function MicIcon({ color, size }: IconProps) {
+/** Share: a tray with an arrow leaving it, as iOS draws it. */
+export function ShareIcon({ color, size = SIZE }: IconProps) {
     return (
-        <OutlineIcon size={size}>
-            <Rect x={9} y={3.2} width={6} height={11} rx={3} {...line(color)} />
-            <Path d="M5.8 11.2a6.2 6.2 0 0 0 12.4 0M12 17.4v3.3M9 20.7h6" {...line(color)} />
-        </OutlineIcon>
+        <IconFrame size={size}>
+            <Path d="M8.5 9.5H7.25A2.25 2.25 0 0 0 5 11.75v6.5a2.25 2.25 0 0 0 2.25 2.25h9.5A2.25 2.25 0 0 0 19 18.25v-6.5a2.25 2.25 0 0 0-2.25-2.25H15.5" {...line(color, size)} />
+            <Path d="M12 14.25V3.5M8.5 7 12 3.5 15.5 7" {...line(color, size)} />
+        </IconFrame>
     );
 }
 
-export function MusicIcon({ color, size }: IconProps) {
-    return (
-        <OutlineIcon size={size}>
-            <Path d="M9.2 17.4V5.6l10-2.1v11.8" {...line(color)} />
-            <Circle cx={6.7} cy={17.4} r={2.5} {...line(color)} />
-            <Circle cx={16.7} cy={15.3} r={2.5} {...line(color)} />
-        </OutlineIcon>
-    );
+export function RetakeIcon({ color, size = SIZE }: IconProps) {
+    return <RotateLeftGlyph color={color} size={size} />;
 }
 
-export function VideoIcon({ color, size }: IconProps) {
-    return (
-        <OutlineIcon size={size}>
-            <Rect x={2.8} y={6} width={13} height={12} rx={2.5} {...line(color)} />
-            <Path d="m15.8 10.6 5.2-3.1v9l-5.2-3.1" {...line(color)} />
-        </OutlineIcon>
-    );
+export function PauseIcon({ color, size = SIZE }: IconProps) {
+    return <PauseGlyph color={color} size={size} />;
 }
 
-export function DocumentIcon({ color, size }: IconProps) {
-    return (
-        <OutlineIcon size={size}>
-            <Path d="M7 3h7.2L19 7.8V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" {...line(color)} />
-            <Path d="M14 3.2V8h4.8M9 12.6h6M9 16.2h4.5" {...line(color)} />
-        </OutlineIcon>
-    );
+export function PlayIcon({ color, size = SIZE }: IconProps) {
+    return <PlayGlyph color={color} size={size} />;
 }
 
-export function ShareIcon({ color, size }: IconProps) {
-    return (
-        <OutlineIcon size={size}>
-            <Path d="M8.2 9.5H6.8A1.8 1.8 0 0 0 5 11.3v7.4a1.8 1.8 0 0 0 1.8 1.8h10.4a1.8 1.8 0 0 0 1.8-1.8v-7.4a1.8 1.8 0 0 0-1.8-1.8h-1.4" {...line(color)} />
-            <Path d="M12 14.2V3.6M8.6 6.9 12 3.5l3.4 3.4" {...line(color)} />
-        </OutlineIcon>
-    );
+export function CropIcon({ color, size = SIZE }: IconProps) {
+    return <CropGlyph color={color} size={size} />;
 }
 
-export function RetakeIcon({ color, size }: IconProps) {
+export function ShrinkIcon({ color, size = SIZE }: IconProps) {
     return (
-        <OutlineIcon size={size}>
-            <Path d="M4.6 12.4a7.4 7.4 0 1 0 2.3-5.6" {...line(color)} />
-            <Path d="M4.4 3.9v3.9h3.9" {...line(color)} />
-        </OutlineIcon>
-    );
-}
-
-export function PauseIcon({ color, size }: IconProps) {
-    return (
-        <OutlineIcon size={size}>
-            <Rect x={6.5} y={5} width={3.6} height={14} rx={1.2} fill={color} />
-            <Rect x={13.9} y={5} width={3.6} height={14} rx={1.2} fill={color} />
-        </OutlineIcon>
-    );
-}
-
-export function PlayIcon({ color, size }: IconProps) {
-    return (
-        <OutlineIcon size={size}>
-            <Path d="M8 5.6v12.8a1 1 0 0 0 1.5.9l10.2-6.4a1 1 0 0 0 0-1.8L9.5 4.7a1 1 0 0 0-1.5.9Z" fill={color} />
-        </OutlineIcon>
-    );
-}
-
-export function CropIcon({ color, size }: IconProps) {
-    return (
-        <OutlineIcon size={size}>
-            <Path d="M6.5 2.8v13.2a1.5 1.5 0 0 0 1.5 1.5h13.2" {...line(color)} />
-            <Path d="M2.8 6.5H16a1.5 1.5 0 0 1 1.5 1.5v13.2" {...line(color)} />
-        </OutlineIcon>
-    );
-}
-
-export function ShrinkIcon({ color, size }: IconProps) {
-    return (
-        <OutlineIcon size={size}>
-            <Path d="M4.5 14.2h5.3v5.3M19.5 9.8h-5.3V4.5M14.2 9.8l6.3-6.3M3.5 20.5l6.3-6.3" {...line(color)} />
-        </OutlineIcon>
+        <IconFrame size={size}>
+            <Path d="M4.5 14.25h5.25v5.25M19.5 9.75h-5.25V4.5M14.25 9.75 20.5 3.5M3.5 20.5l6.25-6.25" {...line(color, size)} />
+        </IconFrame>
     );
 }

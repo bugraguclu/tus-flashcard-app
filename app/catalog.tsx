@@ -31,6 +31,7 @@ import { CheckIcon } from '../components/ui/icons';
 import { Type } from '../components/ui/tokens';
 import { BKA_CATALOG_DEFAULT_ROOT_DECK, getBkaCatalogRootDeckName } from '../lib/bkaCatalog';
 import { getDeckByName } from '../lib/deckManager';
+import { studySubjectInitial } from '../lib/studyCalendar';
 
 /** Deep, near-black green: reads as premium in both themes and keeps the hero legible. */
 const HERO_TOP = '#0d3128';
@@ -256,7 +257,9 @@ export default function CatalogScreen() {
                                     <View style={styles.courseChevron}>
                                         <DisclosureChevron expanded={isOpen} color={colors.textMuted} size={16} />
                                     </View>
-                                    <Text style={styles.courseIcon}>{course.icon}</Text>
+                                    <View style={styles.courseIconTile}>
+                                        <Text style={styles.courseInitial}>{studySubjectInitial(course.name)}</Text>
+                                    </View>
                                     <View style={styles.courseCopy}>
                                         <Text style={styles.courseName} numberOfLines={1}>{course.name}</Text>
                                         <Text style={styles.courseMeta}>
@@ -459,7 +462,13 @@ function createStyles(colors: ColorScheme) {
         courseCard: { marginTop: Spacing.xl },
         courseRow: { flexDirection: 'row', alignItems: 'center', minHeight: 60, paddingHorizontal: Spacing.md },
         courseChevron: { width: 22, alignItems: 'center' },
-        courseIcon: { fontSize: 20, marginHorizontal: Spacing.sm },
+        courseIconTile: {
+            width: 28, height: 28, borderRadius: BorderRadius.md,
+            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: colors.accentLight,
+            marginHorizontal: Spacing.sm,
+        },
+        courseInitial: { color: colors.accent, fontSize: FontSize.md, fontWeight: '700' },
         courseCopy: { flex: 1 },
         courseName: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
         courseMeta: { color: colors.textMuted, fontSize: FontSize.sm, marginTop: 2 },
