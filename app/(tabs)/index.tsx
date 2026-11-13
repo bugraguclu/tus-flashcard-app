@@ -73,9 +73,8 @@ import { previewDelaySecondsForGrade } from '../../lib/filteredDeckOptions';
 import CardWebView from '../../components/CardWebView';
 import ReviewerDeckScope from '../../components/reviewer/ReviewerDeckScope';
 import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
-import { UndoReviewIcon } from '../../components/reviewer/ReviewerIcons';
 import { IconButton } from '../../components/ui/Button';
-import { BackIcon, ChevronDownIcon, ChevronRightIcon, CloseIcon, MoreVerticalIcon } from '../../components/ui/icons';
+import { BackIcon, ChevronDownIcon, ChevronRightIcon, CloseIcon, MoreVerticalIcon, UndoIcon } from '../../components/ui/icons';
 import { HIT_TARGET, Radius } from '../../components/ui/tokens';
 import { reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
 import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
@@ -2902,7 +2901,7 @@ export default function StudyScreen() {
                     ? l(`Geri al: ${undoOpLabel}`, `Undo: ${undoOpLabel}`)
                     : l('Geri alınacak işlem yok', 'Nothing to undo')}
             >
-                <UndoReviewIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} />
+                <UndoIcon color={canUndoReview(undoStack.length) ? colors.textSecondary : colors.textMuted} size={22} />
             </IconButton>
             <IconButton
                 onPress={openFlagMenu}
