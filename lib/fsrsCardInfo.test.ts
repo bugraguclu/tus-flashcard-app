@@ -12,7 +12,11 @@ vi.mock('./db', () => ({
     getDB: () => runtime.db, dbIndexAllCards: () => {},
     dbUpsertFtsCard: () => {},
 }));
-vi.mock('react-native', () => ({
+vi.mock('react-native', async () => ({
+    // The shared parts animate (menus grow, buttons sink); here every animation ends at once.
+    ...(await import('../test/animatedMock')).animatedModules(),
+    // The kit's buttons are built on Pressable (PressableScale), even where a test never presses one.
+    Pressable: 'Pressable',
     Platform: { OS: 'ios' }, StyleSheet: { create: (s: unknown) => s },
     View: 'View', Text: 'Text', ScrollView: 'ScrollView', TouchableOpacity: 'TouchableOpacity',
 }));

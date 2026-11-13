@@ -10,7 +10,11 @@ const { defaults, colors } = vi.hoisted(() => ({
     colors: { bgCard: '#fff', bgSecondary: '#eee', border: '#ccc', borderLight: '#ddd', textPrimary: '#111', textSecondary: '#222', textMuted: '#777', accent: '#080', accentLight: '#dfd' },
 }));
 
-vi.mock('react-native', () => ({
+vi.mock('react-native', async () => ({
+    // The shared parts animate (menus grow, buttons sink); here every animation ends at once.
+    ...(await import('../test/animatedMock')).animatedModules(),
+    // The kit's buttons are built on Pressable (PressableScale), even where a test never presses one.
+    Pressable: 'Pressable',
     Platform: { OS: 'ios' }, Keyboard: { dismiss: vi.fn() },
     StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
     Text: 'Text', View: 'View', TextInput: 'TextInput', TouchableOpacity: 'TouchableOpacity',

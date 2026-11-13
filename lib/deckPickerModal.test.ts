@@ -12,6 +12,8 @@ vi.mock('react-native', async () => {
         ListEmptyComponent?: React.ReactNode;
     };
     return {
+        // The shared parts animate (menus grow, buttons sink); here every animation ends at once.
+        ...(await import('../test/animatedMock')).animatedModules(),
         Platform: { OS: 'ios', select: (spec: Record<string, unknown>) => spec.ios ?? spec.default },
         Keyboard: { dismiss: () => {} },
         useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
