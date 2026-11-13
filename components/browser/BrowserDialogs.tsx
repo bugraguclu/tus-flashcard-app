@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { Modal, View, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
 import { useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { StudyCard, AppSettings } from '../../lib/types';
@@ -17,9 +18,9 @@ import {
     setSelectedDueDate,
 } from '../../lib/browserSelection';
 import { AppDialog } from '../ui/Dialog';
-import { Button } from '../ui/Button';
+import { Button, CloseButton } from '../ui/Button';
 import { SectionLabel } from '../ui/Card';
-import { CheckRow, SegmentedControl } from '../ui/Choice';
+import { CheckRow } from '../ui/Choice';
 import { TextField } from '../ui/Fields';
 import { BackIcon, ChevronRightIcon, ForwardIcon } from '../ui/icons';
 import type { BrowserI18n } from './types';
@@ -281,8 +282,6 @@ interface CardPreviewModalProps {
     windowHeight: number;
 }
 
-// Everything in the preview dialog but the card: padding, title, side toggle, Previous and Next.
-const PREVIEW_CHROME_HEIGHT = 200;
 
 /**
  * Previews the selected cards one at a time, question and answer. The card's box keeps one height
@@ -305,19 +304,48 @@ export function CardPreviewModal({
 }: CardPreviewModalProps) {
     const colors = useThemeColors();
     const index = previewIndex ?? 0;
-    const bodyHeight = Math.max(260, Math.min(520, Math.round(windowHeight * 0.86) - PREVIEW_CHROME_HEIGHT));
     const step = (delta: number) => {
         setPreviewAnswerVisible(false);
         setPreviewIndex((current) => Math.min(selectedCards.length - 1, Math.max(0, (current ?? 0) + delta)));
     };
+    // A native page sheet, as every routed utility screen on iPhone: pull it down to close.
     return (
-        <AppDialog
+        <Modal
             visible={previewIndex !== null}
-            onClose={() => setPreviewIndex(null)}
-            title={`${l('Önizleme', 'Preview')} · ${index + 1}/${selectedCards.length}`}
-            closeButton
-            actions={(
-                <>
+            animationType="slide"
+            presentationStyle="pageSheet"
+            allowSwipeDismissal
+            onRequestClose={() => setPreviewIndex(null)}
+        >
+            <SafeAreaView style={styles.previewContainer}>
+                <View style={[styles.previewGrabberArea, { pointerEvents: 'none' }]}>
+                    <View style={styles.previewGrabber} />
+                </View>
+                <View style={styles.previewHeader}>
+                    <CloseButton accessibilityLabel={l('Önizlemeyi kapat', 'Close preview')} onPress={() => setPreviewIndex(null)} />
+                    <Text style={styles.previewTitle} accessibilityRole="header">{l('Önizleme', 'Preview')} · {index + 1}/{selectedCards.length}</Text>
+                    <Button
+                        variant="plain"
+                        size="compact"
+                        label={previewAnswerVisible ? l('Soru', 'Question') : l('Cevap', 'Answer')}
+                        accessibilityLabel={previewAnswerVisible ? l('Soruyu göster', 'Show question') : l('Cevabı göster', 'Show answer')}
+                        onPress={() => setPreviewAnswerVisible((value) => !value)}
+                    />
+                </View>
+                <View style={styles.previewBody}>
+                    {previewNote && previewNoteType && previewRawCard ? (
+                        <CardWebView
+                            noteType={previewNoteType}
+                            note={previewNote}
+                            card={previewRawCard}
+                            deck={previewDeck}
+                            side={previewAnswerVisible ? 'answer' : 'question'}
+                            scrollMode="contained"
+                            maxHeight={Math.max(260, Math.min(520, windowHeight - 210))}
+                        />
+                    ) : <Text style={styles.dialogNote}>{tableMode === 'notes' ? l('Notun ilk kartı önizlenemedi.', "The note's first card could not be previewed.") : l('Kart önizlenemedi.', 'The card could not be previewed.')}</Text>}
+                </View>
+                <View style={styles.previewNavigation}>
                     <Button
                         variant="plain"
                         label={l('Önceki', 'Previous')}
@@ -330,39 +358,15 @@ export function CardPreviewModal({
                     <Button
                         variant="plain"
                         label={l('Sonraki', 'Next')}
-                        icon={<ForwardIcon color={colors.accent} size={18} />}
+                        trailingIcon={<ForwardIcon color={colors.accent} size={18} />}
                         disabled={index >= selectedCards.length - 1}
                         onPress={() => step(1)}
                         accessibilityLabel={l('Sonraki kart', 'Next card')}
                         style={styles.previewNavButton}
                     />
-                </>
-            )}
-        >
-            <SegmentedControl
-                options={[
-                    { value: 'question', label: l('Soru', 'Question'), accessibilityLabel: l('Soruyu göster', 'Show question') },
-                    { value: 'answer', label: l('Cevap', 'Answer'), accessibilityLabel: l('Cevabı göster', 'Show answer') },
-                ]}
-                value={previewAnswerVisible ? 'answer' : 'question'}
-                onChange={(side) => setPreviewAnswerVisible(side === 'answer')}
-                accessibilityLabel={l('Önizleme', 'Preview')}
-                fill
-            />
-            <View style={[styles.previewBody, { height: bodyHeight }]}>
-                {previewNote && previewNoteType && previewRawCard ? (
-                    <CardWebView
-                        noteType={previewNoteType}
-                        note={previewNote}
-                        card={previewRawCard}
-                        deck={previewDeck}
-                        side={previewAnswerVisible ? 'answer' : 'question'}
-                        scrollMode="contained"
-                        maxHeight={bodyHeight}
-                    />
-                ) : <Text style={styles.dialogNote}>{tableMode === 'notes' ? l('Notun ilk kartı önizlenemedi.', "The note's first card could not be previewed.") : l('Kart önizlenemedi.', 'The card could not be previewed.')}</Text>}
-            </View>
-        </AppDialog>
+                </View>
+            </SafeAreaView>
+        </Modal>
     );
 }
 

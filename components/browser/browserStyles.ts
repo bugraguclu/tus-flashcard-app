@@ -230,8 +230,15 @@ export function createBrowserStyles(colors: ColorScheme) {
     gradeRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderLight },
     gradeDot: { width: 12, height: 12, borderRadius: 6 },
     gradeText: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
-    previewBody: { justifyContent: 'center' },
-    // Previous and Next share the dialog's width.
+    // The card preview is a native page sheet: grabber, a header with × and the side switch, the
+    // card, and Previous / Next along the bottom.
+    previewContainer: { flex: 1, backgroundColor: colors.bgPrimary },
+    previewGrabberArea: { height: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bgCard },
+    previewGrabber: { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border },
+    previewHeader: { minHeight: 58, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, backgroundColor: colors.bgCard },
+    previewTitle: { flex: 1, textAlign: 'center', ...Type.title, color: colors.textPrimary },
+    previewBody: { flex: 1, justifyContent: 'center', padding: Spacing.lg },
+    previewNavigation: { minHeight: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, backgroundColor: colors.bgCard },
     previewNavButton: { flex: 1 },
     });
 }
