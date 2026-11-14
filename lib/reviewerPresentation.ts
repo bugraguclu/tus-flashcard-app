@@ -114,3 +114,37 @@ export function answerScrollTarget({
     if (maxScroll <= 0 || target <= 0) return null;
     return Math.min(target, maxScroll);
 }
+
+type Localize = (turkish: string, english: string) => string;
+
+export type ReviewerCounts = { newCount: number; learningCount: number; reviewCount: number };
+
+/** The three queue counts read out (the classic footer and the deck button). */
+export function reviewerCountsLabel(l: Localize, counts: ReviewerCounts): string {
+    return l(
+        `${counts.newCount} yeni, ${counts.learningCount} öğrenme, ${counts.reviewCount} tekrar kartı`,
+        `${counts.newCount} new, ${counts.learningCount} learning, ${counts.reviewCount} review cards`,
+    );
+}
+
+/** The study streak read out (the flame chip). */
+export function reviewerStreakLabel(l: Localize, days: number): string {
+    return l(`Günlük seri: ${days} gün`, `Daily streak: ${days} days`);
+}
+
+/**
+ * The deck button's accessibility label. VoiceOver reads a button by its label alone, never by what
+ * it holds, so the queue counts (redesigned toolbar) and the streak (classic toolbar) it shows go in
+ * the label; pass null for what the button does not show.
+ */
+export function reviewerDeckButtonLabel(l: Localize, input: {
+    deckTitle: string;
+    counts: ReviewerCounts | null;
+    streakDays: number | null;
+}): string {
+    return [
+        l(`Deste seç. Geçerli kapsam: ${input.deckTitle}`, `Select deck. Current scope: ${input.deckTitle}`),
+        ...(input.counts ? [reviewerCountsLabel(l, input.counts)] : []),
+        ...(input.streakDays !== null ? [reviewerStreakLabel(l, input.streakDays)] : []),
+    ].join('. ');
+}

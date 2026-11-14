@@ -25,6 +25,10 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
             'Saate göre cevap sayısı ve Tekrar dışındaki cevapların oranı. Oran çizgisi %0’dan değil, en düşük saatin biraz altından başlar. En başarılı saat için o saatte en az 10 cevap ve bütün cevapların en az %3’ü gerekir. Filtreli cevaplar sayılmaz.',
             'Answers by hour and the share that were not Again. The rate line starts just below the lowest hour, not at 0%. An hour needs at least 10 answers, and at least 3% of all answers, to be the strongest hour. Filtered answers are left out.',
         )],
+        [l('Gerçek Hatırlama', 'True Retention'), l(
+            'Bellek sınamalarının kaçının geçtiğini gösterir: Tekrar kaldı, Zor/İyi/Kolay geçti sayılır. Genç, cevaplandığı andaki aralığı 21 günden kısa; Olgun ise 21 gün ve üzeri kartlardır. Yeni kartların ilk öğrenme adımları ve elle ertelemeler sayılmaz. Çalışma günü sınırına göre bugün, dün, son 7, 30 ve 365 gün hesaplanır; seçilen dönemden bağımsızdır. Boş hücre — gösterir.',
+            'Shows how many memory tests passed: Again counts as failed, Hard/Good/Easy as passed. Young cards had an interval under 21 days when answered; Mature cards 21 days or more. First learning steps of new cards and manual rescheduling are not counted. Today, yesterday and the last 7, 30 and 365 days follow the study-day rollover and ignore the period above. An empty cell shows —.',
+        )],
         [l('Tekrar aralıkları', 'Review Intervals'), l(
             'Tekrar kartlarınızın şu anki aralıkları. Grafik seçilen dönemden uzun aralıkları göstermez, onların sayısını altına yazar; Ortalama aralık ve En uzun aralık ise bütün tekrar kartlarını sayar.',
             'The current intervals of your review cards. The chart leaves out intervals longer than the period and gives their count beneath it; Average interval and Longest interval count every review card.',

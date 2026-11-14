@@ -14,11 +14,23 @@ import {
  * A note's tags: setting, adding and removing them, the marked tag, and the tag list of a scope.
  */
 
-/** Compare two tag lists the way tags are matched everywhere else: NFC, case-insensitive. */
-function sameTagList(a: string[], b: string[]): boolean {
+/**
+ * Compare two tag lists the way tags are matched everywhere else: NFC, case-insensitive. With
+ * `caseSensitive` a change of spelling alone also counts.
+ */
+function sameTagList(a: string[], b: string[], caseSensitive = false): boolean {
     if (a.length !== b.length) return false;
-    return a.every((tag, index) => tag.normalize('NFC').toLocaleLowerCase()
-        === b[index].normalize('NFC').toLocaleLowerCase());
+    const key = (tag: string) => (caseSensitive ? tag.normalize('NFC') : tag.normalize('NFC').toLocaleLowerCase());
+    return a.every((tag, index) => key(tag) === key(b[index]));
+}
+
+export interface SetNoteTagsOptions {
+    /**
+     * Count a change of case alone as a change. Off by default: a tag keeps the spelling it
+     * already has, as Anki's tag list does, so re-typing "Marked" changes nothing. Rename Tag
+     * sets it, because correcting a tag's spelling is one reason to rename it.
+     */
+    caseSensitive?: boolean;
 }
 
 /**
@@ -33,7 +45,7 @@ function sameTagList(a: string[], b: string[]): boolean {
  *
  * Returns false when the note is gone or the tags already match.
  */
-export function setNoteTags(noteId: number, tags: string[]): boolean {
+export function setNoteTags(noteId: number, tags: string[], options: SetNoteTagsOptions = {}): boolean {
     const stored = getNote(noteId);
     if (!stored) return false;
 
@@ -47,7 +59,7 @@ export function setNoteTags(noteId: number, tags: string[]): boolean {
         seen.add(key);
         nextTags.push(tag);
     }
-    if (sameTagList(stored.tags, nextTags)) return false;
+    if (sameTagList(stored.tags, nextTags, options.caseSensitive)) return false;
 
     const next: Note = { ...stored, tags: nextTags, mod: Math.floor(Date.now() / 1000), usn: -1 };
     getDB().runSync(

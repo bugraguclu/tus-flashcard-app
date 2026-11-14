@@ -19,6 +19,13 @@ if (!config.resolver.assetExts.includes('tuspack')) {
   config.resolver.assetExts.push('tuspack');
 }
 
+// MathJax (assets/mathjax/tex-svg-full.js.txt) ships as text, not as app code: lib/mathjaxRuntime.ts
+// reads it and hands it to the card document, which is where it runs. A `.js` name would make
+// Metro bundle it into the app instead.
+if (!config.resolver.assetExts.includes('txt')) {
+  config.resolver.assetExts.push('txt');
+}
+
 // Agent worktrees of this repository live under `.claude/worktrees`, each with its own
 // node_modules. Metro must neither watch nor resolve into them: a node_modules swap inside one
 // crashed this checkout's file watcher and took the dev server down. The pattern starts at this

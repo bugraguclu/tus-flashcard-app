@@ -78,10 +78,12 @@ import PressableScale from '../../components/PressableScale';
 import { IconButton } from '../../components/ui/Button';
 import { BackIcon, ChevronDownIcon, ChevronRightIcon, CloseIcon, MoreVerticalIcon, UndoIcon } from '../../components/ui/icons';
 import { HIT_TARGET, Radius } from '../../components/ui/tokens';
-import { reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
+import { canReplayCardAudio, reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
 import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
+import { useReviewerAutoplay } from '../../lib/reviewerAutoplay';
 import { CarriedSoundGate } from '../../lib/reviewerCarriedSound';
 import { useCarriedCardSound } from '../../components/reviewer/useCarriedCardSound';
+import ReviewerLeechNotice, { type ReviewerLeechNoticeState } from '../../components/reviewer/ReviewerLeechNotice';
 import { CardOptionsMenu } from '../../components/CardOptionsMenu';
 import ReviewerFlagMenu from '../../components/ReviewerFlagMenu';
 import {
@@ -148,8 +150,9 @@ import { isCatalogCard, isCatalogNote } from '../../lib/catalogProtection';
 import { ActiveElapsedTimer } from '../../lib/activeElapsedTimer';
 import { useReviewerDwellTimer } from '../../lib/reviewerDwellTimer';
 import { beginStudyActivity } from '../../lib/backupWindow';
-import { TimeboxTracker } from '../../lib/timebox';
+import { TimeboxTracker, checkTimeboxAfterAnswer } from '../../lib/timebox';
 import {
+    cardTapOnlyHidesKeyboard,
     canGradeRevealedCard,
     DEFAULT_ANSWER_TAP_ACTIONS,
     DEFAULT_QUESTION_TAP_ACTIONS,
@@ -177,6 +180,9 @@ import {
     canUndoReview,
     isReviewerUndoKey,
     normalizeReviewerToolbarPosition,
+    reviewerCountsLabel,
+    reviewerDeckButtonLabel,
+    reviewerStreakLabel,
     reviewerUndoKeys,
     visibleReviewerGrades,
 } from '../../lib/reviewerPresentation';
@@ -184,8 +190,11 @@ import { MAX_TYPE_ANSWER_CHARS } from '../../lib/typeAnswerBridge';
 import {
     advanceQueueAfterAnswer,
     avoidImmediateRepeat,
+    cardKeptOnScreen,
     coordinatePostAnswerQueueRefresh,
+    countsAfterAnswer,
     keepSessionOrder,
+    queueCountBucket,
     queueWithFocusedCard,
     shouldRebuildAfterAnswer,
 } from '../../lib/reviewerQueueRefresh';
@@ -215,7 +224,7 @@ import {
 } from '../../lib/reviewerUndoSteps';
 import { parseDueRange, setSelectedDueDate } from '../../lib/browserSelection';
 import { canonifyTags, sameTagSet } from '../../lib/noteTags';
-import { parseNotePayload } from '../../lib/studyCardRows';
+import { parseNotePayload, studyCardHomeDeckId } from '../../lib/studyCardRows';
 
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
@@ -361,6 +370,8 @@ export default function StudyScreen() {
     const inkedCardIdRef = useRef<number | null>(null);
     const whiteboardActiveRef = useRef(whiteboardActive);
     whiteboardActiveRef.current = whiteboardActive;
+    const whiteboardHasContentRef = useRef(whiteboardHasContent);
+    whiteboardHasContentRef.current = whiteboardHasContent;
     const whiteboardStylusOnlyRef = useRef(whiteboardStylusOnly);
     whiteboardStylusOnlyRef.current = whiteboardStylusOnly;
     // AnkiDroid-compatible whole-card TTS. Explicit Anki TTS regions take precedence; otherwise
@@ -386,6 +397,8 @@ export default function StudyScreen() {
     const [showingAnswer, setShowingAnswer] = useState(false);
     const [typedAnswer, setTypedAnswer] = useState('');
     const [answerFeedback, setAnswerFeedback] = useState<{ nonce: number } | null>(null);
+    // Anki's "Card was a leech." after the answer that made the card a leech.
+    const [leechNotice, setLeechNotice] = useState<ReviewerLeechNoticeState | null>(null);
     const [undoStack, setUndoStack] = useState<UndoEntry[]>([]);
     const [redoStack, setRedoStack] = useState<UndoEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -650,19 +663,6 @@ export default function StudyScreen() {
             ? ordered
             : avoidImmediateRepeat(ordered, result.mainQueue, answeredCardId);
 
-        // Background refreshes must not yank the card the user is looking at (or hide the
-        // answer they are reading) — keep it in front and merge the fresh queue behind it.
-        const active = preserveCurrent ? currentCardRef.current : null;
-        const activeStillQueued = active != null
-            && sessionCards.some((card) => card.cardId === active.cardId);
-
-        // Ink on the whiteboard is unsaved work belonging to the card it was drawn over, so the
-        // 45-second background refresh must not swap that card out either — the fresh queue is
-        // merged behind it and the swap waits for the learner's next answer. Without this, a card
-        // that merely left the fresh queue (a learning step moving past the learn-ahead window,
-        // say) took the drawing with it.
-        const holdForDrawing = active != null && whiteboardActiveRef.current;
-
         // Undo brings the card it took back to the screen, as Anki's reviewer does, instead of
         // whatever the rebuilt queue happens to start with (CAL-4).
         const focusId = focusCardIdRef.current;
@@ -673,13 +673,29 @@ export default function StudyScreen() {
             () => getStudyCardById(focusId, scopeSettings),
         );
 
+        // Background refreshes must not yank the card the user is looking at (or hide the
+        // answer they are reading) — keep it in front, as the fresh build has it, and merge the
+        // fresh queue behind it. Ink on the whiteboard is unsaved work belonging to the card it was
+        // drawn over, so a card that merely left the fresh queue (a learning step moving past the
+        // learn-ahead window, say) stays too, while it still exists and can be studied.
+        const active = preserveCurrent ? currentCardRef.current : null;
+        const kept = focused ? null : cardKeptOnScreen({
+            current: active,
+            sessionCards,
+            whiteboardOn: whiteboardActiveRef.current,
+            hasInk: whiteboardHasContentRef.current,
+            reload: () => (active ? getStudyCardById(active.cardId, scopeSettings) : null),
+        });
+
         let nextQueue: StudyCard[];
         if (focused) {
             nextQueue = focused;
             setCurrentCard(focused[0]);
             setShowingAnswer(false);
-        } else if (activeStillQueued || holdForDrawing) {
-            nextQueue = [active!, ...sessionCards.filter((card) => card.cardId !== active!.cardId)];
+        } else if (kept) {
+            nextQueue = [kept, ...sessionCards.filter((card) => card.cardId !== kept.cardId)];
+            // The same card, so its revealed answer and its clocks stay as they are.
+            setCurrentCard(kept);
         } else {
             nextQueue = sessionCards;
             setCurrentCard(sessionCards.length > 0 ? sessionCards[0] : null);
@@ -817,10 +833,11 @@ export default function StudyScreen() {
 
     // Anki reads Timers, Auto Advance and the audio replay rule from the deck the card lives in,
     // not from the deck that was selected to study — a card drawn from a subdeck follows its own
-    // deck's preset.
+    // deck's preset, and one an imported filtered deck holds follows its home deck's.
+    const cardHomeDeckId = currentCard ? studyCardHomeDeckId(currentCard) : null;
     const cardDeckOptions = useMemo(() => {
-        const config = currentCard
-            ? getDeckConfigForDeck(currentCard.deckId, settings.dayRolloverHour)
+        const config = cardHomeDeckId !== null
+            ? getDeckConfigForDeck(cardHomeDeckId, settings.dayRolloverHour)
             : DEFAULT_DECK_CONFIG;
         return {
             autoPlayAudio: settings.autoPlayAudio && config.autoPlayAudio !== false,
@@ -836,7 +853,7 @@ export default function StudyScreen() {
             audioPlaybackRate: config.audioPlaybackRate ?? settings.audioPlaybackRate ?? 1.0,
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentCard?.deckId, settings.dayRolloverHour, settings.audioPlaybackRate, settings.autoPlayAudio, collectionVersion]);
+    }, [cardHomeDeckId, settings.dayRolloverHour, settings.audioPlaybackRate, settings.autoPlayAudio, collectionVersion]);
 
     // The on-screen timer counts the same foreground-only time the review log records, and stops
     // at the deck's maximum answer seconds, exactly as the manual describes. "Stop timer on
@@ -931,25 +948,6 @@ export default function StudyScreen() {
         return () => clearInterval(timer);
     }, [waitingTargetMs, currentCard, buildQueue, l]);
 
-    const statusToQueueBucket = (status: StudyCard['state']['status']): keyof QueueStats => {
-        if (status === 'new') return 'newCount';
-        if (status === 'learning') return 'learningCount';
-        return 'reviewCount';
-    };
-
-    const isCardDueNow = (card: StudyCard, nowMs: number): boolean => {
-        if (card.state.status === 'learning') {
-            return Boolean(card.state.dueTime && card.state.dueTime <= nowMs);
-        }
-
-        if (card.state.status === 'review') {
-            const today = todayLocalYMD(new Date(nowMs), settings.dayRolloverHour);
-            return card.state.dueDate <= today;
-        }
-
-        return true;
-    };
-
     const answerCard = useCallback(async (grade: Grade) => {
         if (!currentCard || isMutatingRef.current) return;
         const now = Date.now();
@@ -1012,6 +1010,8 @@ export default function StudyScreen() {
                     l('Yanıt kaydedilemedi. Lütfen tekrar deneyin.', 'Could not save the answer. Please try again.')));
                 return;
             }
+            // The leech action may have suspended the card, which then leaves the session: say so.
+            if (result.leeched) setLeechNotice({ nonce: Date.now(), suspended: result.suspended });
 
             // A preview answer that set a delay: when the card is due again.
             let previewRequeueAt: number | null = null;
@@ -1083,45 +1083,42 @@ export default function StudyScreen() {
 
             // Anki checks Timebox only after a repetition has completed. The answered card stays
             // on screen while the learner chooses, so the next card (and its audio) cannot start
-            // behind the checkpoint dialog.
-            timeboxTrackerRef.current.recordRepetition();
-            const checkpoint = timeboxTrackerRef.current.checkpoint(
-                settings.timeboxMinutes ?? 0,
-                Date.now(),
-            );
-            if (checkpoint) {
-                if (scheduledRefreshRef.current) {
-                    clearTimeout(scheduledRefreshRef.current);
-                    scheduledRefreshRef.current = null;
-                }
-                const shouldContinue = await choose(
-                    l('Zaman kutusu', 'Timebox'),
-                    l(
-                        `${checkpoint.minutes} dakikada ${checkpoint.cards} kart çalıştınız. Devam yeni bir süre başlatır; Bitir sizi deste listesine götürür.`,
-                        `You studied ${checkpoint.cards} ${checkpoint.cards === 1 ? 'card' : 'cards'} in ${checkpoint.minutes} ${checkpoint.minutes === 1 ? 'minute' : 'minutes'}. Continue starts a new block; Finish takes you to the deck list.`,
-                    ),
-                    l('Devam', 'Continue'),
-                    l('Bitir', 'Finish'),
-                );
-
-                if (!shouldContinue) {
-                    setShowingAnswer(false);
-                    router.dismissTo('/decks' as any);
-                    return;
-                }
-
-                timeboxTrackerRef.current.reset(Date.now());
+            // behind the checkpoint dialog. The answer's own bookkeeping is done first, so it holds
+            // when the learner finishes there.
+            const keepStudying = await checkTimeboxAfterAnswer({
+                tracker: timeboxTrackerRef.current,
+                limitMinutes: settings.timeboxMinutes ?? 0,
+                // A study-ahead id is a one-shot pass: once this card has been answered it must
+                // earn its way back onto the queue through its own (possibly still-running) timer,
+                // not keep resurfacing forever just because it was under the button's window. The
+                // pass outlives this screen, so Finish must not leave the id behind either.
+                completeRepetition: () => setStudyAheadCardIds((prev) => (
+                    prev.includes(currentCard.cardId) ? prev.filter((id) => id !== currentCard.cardId) : prev
+                )),
+                ask: (checkpoint) => {
+                    if (scheduledRefreshRef.current) {
+                        clearTimeout(scheduledRefreshRef.current);
+                        scheduledRefreshRef.current = null;
+                    }
+                    return choose(
+                        l('Zaman kutusu', 'Timebox'),
+                        l(
+                            `${checkpoint.minutes} dakikada ${checkpoint.cards} kart çalıştınız. Devam yeni bir süre başlatır; Bitir sizi deste listesine götürür.`,
+                            `You studied ${checkpoint.cards} ${checkpoint.cards === 1 ? 'card' : 'cards'} in ${checkpoint.minutes} ${checkpoint.minutes === 1 ? 'minute' : 'minutes'}. Continue starts a new block; Finish takes you to the deck list.`,
+                        ),
+                        l('Devam', 'Continue'),
+                        l('Bitir', 'Finish'),
+                    );
+                },
+            });
+            if (!keepStudying) {
+                setShowingAnswer(false);
+                router.dismissTo('/decks' as any);
+                return;
             }
 
             // Incremental queue update: pop current card, optionally reinsert if still due now.
             const nowMs = Date.now();
-
-            // A study-ahead id is a one-shot pass: once this card has been answered it must
-            // earn its way back onto the queue through its own (possibly still-running) timer,
-            // not keep resurfacing forever just because it was under the button's window.
-            setStudyAheadCardIds((prev) => (
-                prev.includes(currentCard.cardId) ? prev.filter((id) => id !== currentCard.cardId) : prev
-            ));
 
             // Computed outside a state updater: a setter called from inside one runs during the
             // next render, after (and over) whatever the immediate rebuild below just chose.
@@ -1157,26 +1154,16 @@ export default function StudyScreen() {
                 .filter((value): value is number => value !== null);
             learningComesDueAtRef.current = knownLearningDues.length > 0 ? Math.min(...knownLearningDues) : null;
 
-            setQueueStats((prev) => {
-                const next = { ...prev };
-                const currentBucket = statusToQueueBucket(currentCard.state.status);
-                next[currentBucket] = Math.max(0, next[currentBucket] - 1);
-
-                const updated = result.updatedCard;
-                if (updated.state.status === 'learning') {
-                    // Learning counts for the whole study day (Anki deck-list semantics):
-                    // a card waiting on its 10-minute step is still today's workload, so the
-                    // ÖĞRENİYOR counter must grow the moment a new card enters learning.
-                    const endOfDay = nextRolloverMs(nowMs, settings.dayRolloverHour);
-                    if (updated.state.dueTime === 0 || updated.state.dueTime < endOfDay) {
-                        next.learningCount += 1;
-                    }
-                } else if (isCardDueNow(updated, nowMs)) {
-                    next[statusToQueueBucket(updated.state.status)] += 1;
-                }
-
-                return next;
-            });
+            // Learning counts for the whole study day (Anki deck-list semantics): a card waiting on
+            // its 10-minute step is still today's workload; one moved to a day-long step is not.
+            const answeredStatus = currentCard.state.status;
+            setQueueStats((prev) => countsAfterAnswer(prev, {
+                answeredStatus,
+                updatedCard: result.updatedCard,
+                nowMs,
+                today: todayLocalYMD(new Date(nowMs), settings.dayRolloverHour),
+                endOfDayMs: nextRolloverMs(nowMs, settings.dayRolloverHour),
+            }));
 
             setShowingAnswer(false);
             setTypedAnswer('');
@@ -1230,6 +1217,12 @@ export default function StudyScreen() {
         const timer = setTimeout(() => setAnswerFeedback(null), ANSWER_FEEDBACK_MS);
         return () => clearTimeout(timer);
     }, [answerFeedback]);
+
+    useEffect(() => {
+        if (!leechNotice) return;
+        const timer = setTimeout(() => setLeechNotice(null), 3500);
+        return () => clearTimeout(timer);
+    }, [leechNotice]);
 
     /**
      * Step across a non-answer operation in either direction.
@@ -1371,6 +1364,7 @@ export default function StudyScreen() {
                 if (redo.preview) setFilteredPreviewDue(redo.preview.deckId, redo.cardId, redo.preview.previousDueMs);
             });
 
+            if (result.leeched) setLeechNotice({ nonce: Date.now(), suspended: result.suspended });
             setRedoStack((prev) => prev.slice(0, -1));
             setUndoStack((prev) => [
                 ...prev.slice(-29),
@@ -1657,8 +1651,9 @@ export default function StudyScreen() {
             };
         }
         // The labels have to be produced with the card's own preset: learning steps, maximum
-        // interval and the FSRS parameters all live there, not on the collection defaults.
-        const cardSettings = resolveSettingsForDeck(currentCard.deckId, settings);
+        // interval and the FSRS parameters all live there (its home deck's, for a card an imported
+        // filtered deck holds), not on the collection defaults.
+        const cardSettings = resolveSettingsForDeck(studyCardHomeDeckId(currentCard), settings);
         const scheduler = schedulerForSettings(cardSettings);
         // The load balancer can move a review day, so the labels ask it exactly as the answer will.
         const nowMs = Date.now();
@@ -1739,6 +1734,13 @@ export default function StudyScreen() {
         return html ? avPlaybackOrder(html, voicePlaybackEnabled && !explicit) : [];
     }, [explicitTtsSides, voicePlaybackEnabled]);
     const cardHasAudio = cardHasAttachedMedia || explicitTtsSides.question || explicitTtsSides.answer;
+    // Replay Audio also reads the side again while whole-card text to speech is on, so it is offered
+    // for a card with no audio of its own too; autoplay still goes by cardHasAudio.
+    const canReplayAudio = useMemo(() => canReplayCardAudio({
+        cardHasAudio,
+        wholeCardReading: voicePlaybackEnabled,
+        sideHtml: showingAnswer ? explicitTtsSides.answerHtml : explicitTtsSides.questionHtml,
+    }), [cardHasAudio, voicePlaybackEnabled, showingAnswer, explicitTtsSides]);
     // Whether the back's OWN content (FrontSide excluded) embeds audio/video — decides where
     // a play signal goes once the answer is shown, so the answer's sound is reachable even
     // when the question has one too.
@@ -1838,6 +1840,7 @@ export default function StudyScreen() {
     const handleUnburyDeck = useCallback(async () => {
         if (!emptyStateDeck) return;
         const kind = await chooseUnburyKind(getBuriedKindsForDeck(emptyStateDeck.id), l);
+        if (!kind) return;
         unburyDeck(emptyStateDeck.id, settings.dayRolloverHour, kind);
         invalidateCollection();
     }, [emptyStateDeck, settings.dayRolloverHour, invalidateCollection, l]);
@@ -2091,8 +2094,23 @@ export default function StudyScreen() {
         router,
     ]);
 
+    // The typed answer's box below the card: whether it has focus, and when it last lost it.
+    const typeAnswerFocusRef = useRef<{ focused: boolean; blurredAt: number | null }>({ focused: false, blurredAt: null });
     const handleCardTap = useCallback((xRatio: number, yRatio: number) => {
         if (!settings.ninePointTouchEnabled || !currentCard || whiteboardActive) return;
+        // The tap that puts the typed answer's keyboard away does only that (the in-card box has
+        // the same rule in lib/typeAnswerBridge.ts).
+        if (cardTapOnlyHidesKeyboard({
+            showingAnswer,
+            typeAnswerFocused: typeAnswerFocusRef.current.focused,
+            typeAnswerBlurredAt: typeAnswerFocusRef.current.blurredAt,
+            now: Date.now(),
+        })) {
+            // The blur this causes is ours, so it does not hold back the next tap.
+            typeAnswerFocusRef.current = { focused: false, blurredAt: null };
+            Keyboard.dismiss();
+            return;
+        }
         const zone = reviewTapZoneAt(xRatio, yRatio);
         const actions = showingAnswer
             ? settings.answerTapActions ?? DEFAULT_ANSWER_TAP_ACTIONS
@@ -2251,52 +2269,6 @@ export default function StudyScreen() {
         };
     }, [targetDeckId]);
 
-    // One automatic TTS owner covers both whole-card reading and explicit Anki template tags.
-    // The short debounce lets React discard superseded side/card effects before native speech is
-    // enqueued; the generation-safe queue then serializes stop -> speak across the native bridge.
-    useEffect(() => {
-        const sideHasExplicitTts = showingAnswer ? explicitTtsSides.answer : explicitTtsSides.question;
-        const shouldReadWholeCard = voicePlaybackEnabled;
-        const shouldAutoPlayExplicitTts = cardDeckOptions.autoPlayAudio && sideHasExplicitTts;
-        if (!reviewerFocused || !appForegrounded || (!shouldReadWholeCard && !shouldAutoPlayExplicitTts)) return;
-        // "Interrupt current audio when answering" off lets speech run on into the next side.
-        const cleanup = () => { if (settings.interruptAudioOnAnswer) stopSpeech(); };
-        const order = avOrderFor(showingAnswer);
-        const gate = carriedSoundGateRef.current;
-        if (cardDeckOptions.autoPlayAudio && order[0] === 'sound' && order.includes('tts')) {
-            // The side's sound files come first; speech starts once they have played.
-            const sequencer = avSequencerRef.current;
-            const release = gate.whenClear(() => sequencer.after('sound', () => speakSide(showingAnswer)));
-            return () => {
-                release();
-                sequencer.cancel();
-                cleanup();
-            };
-        }
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        // Speech follows a sound carried over from the side before, as Anki's audio queue does.
-        const release = gate.whenClear(() => {
-            timer = setTimeout(() => speakSide(showingAnswer), shouldReadWholeCard ? 120 : 450);
-        });
-        return () => {
-            release();
-            clearTimeout(timer);
-            cleanup();
-        };
-    }, [
-        avOrderFor,
-        settings.interruptAudioOnAnswer,
-        voicePlaybackEnabled,
-        reviewerFocused,
-        appForegrounded,
-        cardDeckOptions.autoPlayAudio,
-        showingAnswer,
-        currentCard?.cardId,
-        explicitTtsSides,
-        speakSide,
-        stopSpeech,
-    ]);
-
     useEffect(() => stopSpeech, [stopSpeech]);
     useEffect(() => {
         if (reviewerFocused && appForegrounded) return;
@@ -2322,34 +2294,30 @@ export default function StudyScreen() {
         }
     }, [currentCard?.cardId, showingAnswer, settings.interruptAudioOnAnswer, stopSpeech]);
 
-    useEffect(() => {
-        if (!reviewerFocused || !appForegrounded || !cardDeckOptions.autoPlayAudio || !cardHasAudio) return;
-        // Anki: flipping to the answer auto-plays only the answer side's own sounds.
-        if (showingAnswer && !answerSideHasAudio) return;
-        const playSounds = () => {
-            setAudioPlaybackScope(reviewerPlaybackScope(showingAnswer, false, true));
-            setAudioSignal((value) => value + 1);
-        };
-        const order = avOrderFor(showingAnswer);
-        const gate = carriedSoundGateRef.current;
-        if (order[0] === 'tts' && order.includes('sound')) {
-            // Speech leads on this side; the sound files wait until it has finished.
-            const sequencer = avSequencerRef.current;
-            const release = gate.whenClear(() => sequencer.after('tts', playSounds));
-            return () => {
-                release();
-                sequencer.cancel();
-            };
-        }
-        // Give the side's media a moment to resolve (web swaps blob URLs in asynchronously). A
-        // sound carried over from the side before finishes first.
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const release = gate.whenClear(() => { timer = setTimeout(playSounds, 450); });
-        return () => {
-            release();
-            clearTimeout(timer);
-        };
-    }, [currentCard?.cardId, showingAnswer, reviewerFocused, appForegrounded, cardDeckOptions.autoPlayAudio, cardHasAudio, answerSideHasAudio, avOrderFor]);
+    // A side's sound files and speech start once, when it is shown: a flag, a mark, a tag edit or
+    // coming back from Card Info, Deck Options or the editor leaves them alone.
+    const playSideSounds = useCallback((answerSide: boolean) => {
+        setAudioPlaybackScope(reviewerPlaybackScope(answerSide, false, true));
+        setAudioSignal((value) => value + 1);
+    }, []);
+    useReviewerAutoplay({
+        cardId: currentCard?.cardId,
+        answerSide: showingAnswer,
+        focused: reviewerFocused,
+        foregrounded: appForegrounded,
+        autoPlayAudio: cardDeckOptions.autoPlayAudio,
+        wholeCardReading: voicePlaybackEnabled,
+        interruptAudioOnAnswer: Boolean(settings.interruptAudioOnAnswer),
+        sideHasExplicitTts: showingAnswer ? explicitTtsSides.answer : explicitTtsSides.question,
+        cardHasAudio,
+        answerSideHasAudio,
+        order: avOrderFor(showingAnswer),
+        speak: speakSide,
+        stopSpeech,
+        playSounds: playSideSounds,
+        gate: carriedSoundGateRef.current,
+        sequencer: avSequencerRef.current,
+    });
 
     // Deck description (Anki shows it on the deck's study screen).
     const deckDescription = useMemo(() => {
@@ -2813,7 +2781,8 @@ export default function StudyScreen() {
 
     // Anki shows these around its congrats page (CongratsPage.svelte and the overview's bottom
     // bar in qt/aqt/overview.py): Custom Study for a regular deck, Rebuild for a filtered one, and
-    // Unbury when the deck has buried cards. A filtered deck gathers its cards by search and
+    // Unbury when the deck has buried cards. The page is the same while a learning card is still
+    // to come, so the waiting state shows them as well as the finished one. A filtered deck gathers its cards by search and
     // usually holds none itself, so the empty-deck state (Add Card) skips it and a filtered deck
     // that runs dry ends on the finished state with Rebuild.
     const finishedDeckActions = emptyStateDeck ? (
@@ -2860,16 +2829,13 @@ export default function StudyScreen() {
 
     const plainFrame = settings.studyFrameStyle === 'plain';
     // Anki underlines the count of the queue the card on screen was drawn from.
-    const currentQueueBucket = currentCard ? statusToQueueBucket(currentCard.state.status) : null;
+    const currentQueueBucket = currentCard ? queueCountBucket(currentCard.state.status) : null;
     const queueCountStyle = (bucket: keyof QueueStats, color: string) => [
         styles.queueCount,
         { color },
         currentQueueBucket === bucket && styles.queueCountCurrent,
     ];
-    const queueCountsLabel = l(
-        `${queueStats.newCount} yeni, ${queueStats.learningCount} öğrenme, ${queueStats.reviewCount} tekrar kartı`,
-        `${queueStats.newCount} new, ${queueStats.learningCount} learning, ${queueStats.reviewCount} review cards`,
-    );
+    const queueCountsLabel = reviewerCountsLabel(l, queueStats);
 
     // Tinted grade buttons: the grade's colour names the button, its pale tint fills it.
     const gradePresentation: Record<Grade, { label: string; time: string; color: string; background: string }> | null = preview ? {
@@ -2980,14 +2946,16 @@ export default function StudyScreen() {
                 compact={isCompact}
                 title={settings.showDeckTitle !== false ? reviewerDeckTitle : null}
                 onPress={openDeckPicker}
-                accessibilityLabel={l(
-                    `Deste seç. Geçerli kapsam: ${reviewerDeckTitle}`,
-                    `Select deck. Current scope: ${reviewerDeckTitle}`,
-                )}
+                // The counts sit inside the button, which VoiceOver reads by its label alone.
+                accessibilityLabel={reviewerDeckButtonLabel(l, {
+                    deckTitle: reviewerDeckTitle,
+                    counts: currentCard && settings.showRemainingCount ? queueStats : null,
+                    streakDays: null,
+                })}
                 tooltip={l('Çalışılacak desteyi seç', 'Choose which deck to study')}
             >
                 {currentCard && settings.showRemainingCount ? (
-                    <View style={styles.queueCounts} accessibilityLabel={queueCountsLabel}>
+                    <View style={styles.queueCounts}>
                         <Text style={queueCountStyle('newCount', colors.badgeNew)}>{queueStats.newCount}</Text>
                         <Text style={queueCountStyle('learningCount', colors.badgeLearn)}>{queueStats.learningCount}</Text>
                         <Text style={queueCountStyle('reviewCount', colors.badgeReview)}>{queueStats.reviewCount}</Text>
@@ -3038,8 +3006,16 @@ export default function StudyScreen() {
                         style={[styles.typeAnswerInput, typeAnswerFocused && styles.typeAnswerInputFocused]}
                         value={typedAnswer}
                         onChangeText={setTypedAnswer}
-                        onFocus={() => setTypeAnswerFocused(true)}
-                        onBlur={() => setTypeAnswerFocused(false)}
+                        onFocus={() => {
+                            typeAnswerFocusRef.current = { focused: true, blurredAt: null };
+                            setTypeAnswerFocused(true);
+                        }}
+                        onBlur={() => {
+                            // A blur the card tap asked for (focused already false) arms nothing.
+                            const lostFocus = typeAnswerFocusRef.current.focused;
+                            typeAnswerFocusRef.current = { focused: false, blurredAt: lostFocus ? Date.now() : null };
+                            setTypeAnswerFocused(false);
+                        }}
                         placeholder={l('Yanıtınızı yazın…', 'Type your answer…')}
                         placeholderTextColor={colors.textMuted}
                         autoCapitalize="none"
@@ -3093,7 +3069,12 @@ export default function StudyScreen() {
                 style={styles.classicTitleButton}
                 onPress={openDeckPicker}
                 accessibilityRole="button"
-                accessibilityLabel={l(`Deste seç. Geçerli kapsam: ${reviewerDeckTitle}`, `Select deck. Current scope: ${reviewerDeckTitle}`)}
+                // The streak chip sits inside the button, which VoiceOver reads by its label alone.
+                accessibilityLabel={reviewerDeckButtonLabel(l, {
+                    deckTitle: reviewerDeckTitle,
+                    counts: null,
+                    streakDays: streak.current > 0 ? streak.current : null,
+                })}
                 {...webTitle(l('Çalışılacak desteyi seç', 'Choose which deck to study'))}
             >
                 {/* Toolbar chrome between fixed icons: it grows less than content, as a navigation bar title does. */}
@@ -3132,6 +3113,8 @@ export default function StudyScreen() {
                     <CloseIcon color={colors.onAccent} size={26} />
                 </AnswerFeedbackBadge>
             ) : null}
+            {/* Above the redesigned reviewer's "×" feedback, which an Again that makes a leech also shows. */}
+            <ReviewerLeechNotice notice={leechNotice} bottom={feedbackBottom + (newStudyScreenEnabled ? 50 : 0)} />
             {newStudyScreenEnabled ? (toolbarPosition === 'top' ? reviewerToolbar : null) : classicToolbar}
 
             <View
@@ -3220,7 +3203,8 @@ export default function StudyScreen() {
                                 {newStudyScreenEnabled && streak.current > 0 ? (
                                     <View
                                         style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
-                                        accessibilityLabel={l(`Günlük seri: ${streak.current} gün`, `Daily streak: ${streak.current} days`)}
+                                        accessible
+                                        accessibilityLabel={reviewerStreakLabel(l, streak.current)}
                                     >
                                         <FlameGlyph size={12} />
                                         <Text style={styles.streakChipText}>{streak.current}</Text>
@@ -3335,6 +3319,8 @@ export default function StudyScreen() {
                             >
                                 <Text style={styles.primaryActionText}>{l('Beklemeden çalış', 'Study Now')}</Text>
                             </TouchableOpacity>
+                            {/* Anki's congrats page keeps these while a learning card is waiting too. */}
+                            {finishedDeckActions}
                             <TouchableOpacity
                                 style={styles.secondaryActionBtn}
                                 onPress={() => router.push('/settings')}
@@ -3530,7 +3516,7 @@ export default function StudyScreen() {
                 cardSuspended={currentCard ? currentCard.state.suspended : false}
                 noteMarked={currentNoteMarked}
                 hasSiblingCards={hasSiblingCards}
-                cardHasAudio={cardHasAudio}
+                canReplayAudio={canReplayAudio}
                 onReplayAudio={replayAudio}
                 onBuryCard={handleBury}
                 onSuspendCard={handleToggleSuspendCard}

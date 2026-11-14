@@ -1,11 +1,13 @@
+import { MATHJAX_SCRIPT_HASH_SOURCE } from './mathjax';
 import { RICH_TEXT_EDITOR_SCRIPT_HASH } from './richTextEditorScript';
 
 /**
  * Content-Security-Policy for the web app's own page (`app/+html.tsx`).
  *
- * Inline script is allowed only by hash, and exactly two inline scripts exist: Expo Router's
- * hydration flag, and the rich text field script. The field runs in a blank iframe, which
- * inherits this policy, so its hash has to be named here as well as in the field's own policy.
+ * Inline script is allowed only by hash, and exactly three inline scripts exist: Expo Router's
+ * hydration flag, the rich text field script and the vendored MathJax. The field runs in a blank
+ * iframe, which inherits this policy, so its hash has to be named here as well as in the field's
+ * own policy. MathJax runs in the page and typesets card frames from there (lib/mathjaxRuntime.web.ts).
  */
 
 /** Expo Router emits one fixed inline script: `globalThis.__EXPO_ROUTER_HYDRATE__=true;`. */
@@ -15,6 +17,7 @@ const PRODUCTION_SCRIPT_SRC = [
     "script-src 'self' 'wasm-unsafe-eval'",
     EXPO_ROUTER_HYDRATION_HASH,
     RICH_TEXT_EDITOR_SCRIPT_HASH,
+    MATHJAX_SCRIPT_HASH_SOURCE,
 ].join(' ');
 
 export const WEB_APP_PRODUCTION_CSP = [

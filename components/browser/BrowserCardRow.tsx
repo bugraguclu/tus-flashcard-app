@@ -13,6 +13,7 @@ import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
 import { formatLastReview, formatNewPosition, formatNextDue, newQueuePosition } from './browserHelpers';
 import PencilGlyph from '../PencilGlyph';
+import InfoCircleGlyph from '../InfoCircleGlyph';
 import FlagGlyph from '../FlagGlyph';
 import StarGlyph from '../StarGlyph';
 import CardsGlyph from '../CardsGlyph';
@@ -313,6 +314,15 @@ export function BrowserCardRow({
                             : item.state.suspended
                                 ? l('Askıdan çıkar', 'Unsuspend')
                                 : t('anki.suspend')}
+                    />
+                    <Button
+                        variant="secondary"
+                        size="compact"
+                        style={styles.cardInfoBtn}
+                        icon={<InfoCircleGlyph color={colors.textPrimary} size={14} />}
+                        label={l('Kart bilgisi', 'Card info')}
+                        accessibilityLabel={isNotesMode ? l('Notun ilk kartının bilgisi', "Info for the note's first card") : l('Kart bilgisi', 'Card info')}
+                        onPress={() => router.push(`/card-info?cardId=${item.cardId}`)}
                     />
                 </View>
             )}

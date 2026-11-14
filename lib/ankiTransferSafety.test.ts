@@ -19,8 +19,10 @@ import { BUILTIN_NOTE_TYPES, DEFAULT_DECK_CONFIG, checksumField, type AnkiCard }
 import { getAllNotes, getAllAnkiCards } from './noteManager';
 import { importDelimitedNotes, previewDelimitedNotes } from './importNotes';
 import { parseDelimited } from './importDelimited';
-import { getAllDeckConfigs, getAllDecks, saveDeck, saveDeckConfig } from './deckManager';
+import { deleteDeck, getAllDeckConfigs, getAllDecks, saveDeck, saveDeckConfig } from './deckManager';
 import { localDayNumber } from './ankiState';
+import { CATALOG_PACK_ID } from './catalogRows';
+import { PaidCatalogProtectionError } from './catalogProtection';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
 beforeEach(() => { h.db = createAppDb(SQL); h.media.clear(); Platform.OS = 'web'; });
@@ -225,4 +227,66 @@ it('does not mark a media-rename fixup as a local note edit that blocks the next
     const update = await pkg(data); h.media.set('heart.png', new Uint8Array([9]));
     expect(await importApkg(update, options)).toMatchObject({ updated: 1 });
     expect(getAllNotes()[0].fields[2]).toBe('Author update');
+});
+
+describe('paid catalog decks', () => {
+    // The tree an installed catalog leaves (lib/bkaCatalog.ts): every row carries the pack marker.
+    const ROOT = { id: 8_000_000_000_000, name: 'TUS Kartları' };
+    const ANATOMY = { id: 1_748_430_717_051, name: 'TUS Kartları::Anatomi' };
+    const catalogDeck = (deck: { id: number; name: string }, marked: boolean) => JSON.stringify({
+        ...deck, configId: 1, mod: 100, usn: -1, description: '', collapsed: true, isFiltered: false,
+        ...(marked ? { catalogPack: CATALOG_PACK_ID } : {}),
+    });
+    /** `strippedAnatomy`: the course deck as an import in an earlier build left it, without its marker. */
+    function seedCatalog(strippedAnatomy = false): void {
+        h.db.runSync("INSERT INTO settings (key, value) VALUES ('bka_tus_catalog_installed_v5', 'full')");
+        for (const deck of [ROOT, ANATOMY]) {
+            h.db.runSync('INSERT INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, 0, -1, 0)',
+                deck.id, deck.name, catalogDeck(deck, !(strippedAnatomy && deck === ANATOMY)));
+        }
+        h.db.runSync('INSERT INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone) VALUES (?, 1, ?, 0, ?, ?, 0, -1, 0)',
+            501, 'Brakiyal pleksus', '', JSON.stringify({ id: 501, guid: 'katalog-notu', noteTypeId: 1, mod: 100, usn: -1, tags: [], fields: ['Brakiyal pleksus', 'C5-T1'], sfld: 'Brakiyal pleksus', csum: 0, flags: 0, catalogPack: CATALOG_PACK_ID }));
+        h.db.runSync('INSERT INTO anki_cards (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags, data, updated_at, created_at, usn, tombstone) VALUES (?, 501, ?, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, ?, 0, 0, -1, 0)',
+            502, ANATOMY.id, JSON.stringify({ id: 502, noteId: 501, deckId: ANATOMY.id, ord: 0, mod: 100, usn: -1, type: 0, queue: 0, due: 1, ivl: 0, factor: 0, reps: 0, lapses: 0, left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0 }));
+    }
+    const deckRows = () => h.db.getAllSync('SELECT id, name, data FROM decks WHERE id IN (?, ?) ORDER BY id', ROOT.id, ANATOMY.id);
+
+    it.each([['TUS Kartları', 'TUS Kartları::Anatomi'], ['tus kartları', 'tus kartları::anatomi']])(
+        'imports a deck named like a catalog deck (%s) under a name of its own',
+        async (rootName, childName) => {
+            seedCatalog();
+            const catalogDecks = deckRows();
+            const data = source();
+            data.decks = [
+                { ...data.decks[0], id: 702, name: rootName, mod: 4_000_000_000 },
+                { ...data.decks[0], name: childName, mod: 4_000_000_000 },
+            ];
+            await importApkg(await pkg(data), options);
+
+            expect(deckRows()).toEqual(catalogDecks);
+            const imported = getAllAnkiCards().find((card) => card.noteId !== 501)!;
+            expect([ROOT.id, ANATOMY.id]).not.toContain(imported.deckId);
+            expect(getAllDecks().find((deck) => deck.id === imported.deckId)?.name)
+                .toBe(`${rootName} (Imported)::${childName.split('::')[1]}`);
+            expect(getAllDecks().filter((deck) => deck.catalogPack === CATALOG_PACK_ID)).toHaveLength(2);
+
+            // Importing it again finds the decks it made the first time.
+            await importApkg(await pkg(data), options);
+            expect(deckRows()).toEqual(catalogDecks);
+            expect(getAllDecks().map((deck) => deck.name).filter((name) => name.includes('(Imported)')).sort())
+                .toEqual([`${rootName} (Imported)`, `${rootName} (Imported)::${childName.split('::')[1]}`]);
+        },
+    );
+
+    it('refuses to delete a deck that holds catalog cards, even one an earlier build stripped of its marker', () => {
+        seedCatalog(true);
+        expect(() => deleteDeck(ANATOMY.id)).toThrow(PaidCatalogProtectionError);
+        // A parent without its marker cannot take a catalog subdeck with it either.
+        h.db.runSync('UPDATE decks SET data = ? WHERE id = ?', catalogDeck(ROOT, false), ROOT.id);
+        h.db.runSync('UPDATE decks SET data = ? WHERE id = ?', catalogDeck(ANATOMY, true), ANATOMY.id);
+        expect(() => deleteDeck(ROOT.id)).toThrow(PaidCatalogProtectionError);
+        expect(getAllNotes().map((note) => note.id)).toEqual([501]);
+        expect(getAllAnkiCards().map((card) => card.id)).toEqual([502]);
+        expect(deckRows()).toHaveLength(2);
+    });
 });

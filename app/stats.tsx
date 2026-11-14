@@ -20,6 +20,7 @@ import ReviewsSection from '../components/stats/ReviewsSection';
 import FutureDueSection from '../components/stats/FutureDueSection';
 import AnswerButtonsSection from '../components/stats/AnswerButtonsSection';
 import CardCountsSection from '../components/stats/CardCountsSection';
+import TrueRetentionSection from '../components/stats/TrueRetentionSection';
 import IntervalsSection from '../components/stats/IntervalsSection';
 import HourlySection from '../components/stats/HourlySection';
 import AddedSection from '../components/stats/AddedSection';
@@ -233,6 +234,7 @@ export default function StatsScreen() {
                         />
                         <FutureDueSection stats={snapshot.ankiStats} />
                         <AnswerButtonsSection buttons={snapshot.ankiStats.answerButtons} />
+                        <TrueRetentionSection table={snapshot.ankiStats.trueRetention} />
                         <CardCountsSection counts={snapshot.ankiStats.cardCounts} />
                         <IntervalsSection stats={snapshot.ankiStats} rangeTitle={rangeTitle} />
                         <HourlySection hours={snapshot.hours} rangeTitle={rangeTitle} />

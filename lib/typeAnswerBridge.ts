@@ -1,4 +1,9 @@
+import { KEYBOARD_DISMISS_TAP_WINDOW_MS } from './reviewerTouchControls';
+
 export const MAX_TYPE_ANSWER_CHARS = 4096;
+
+/** The card's own controls, which the card tap reporter (components/CardWebView.tsx) leaves alone. */
+const CARD_CONTROL_SELECTOR = 'a,button,input,textarea,select,label,audio,video,[contenteditable="true"],[role="button"],.tappable,[onclick]';
 
 const MESSAGE_SOURCE = 'tus-type-answer';
 
@@ -57,6 +62,23 @@ export function typeAnswerBridgeScript(token: string, autoFocus: boolean): strin
                 event.preventDefault();
                 post('submit');
             });
+            // A tap on the card that puts the keyboard away does only that: it never reaches the
+            // card's tap actions (Show Answer by default), which would grade a half-typed answer.
+            // Registered on window in the capture phase, so it runs before the tap reporter.
+            var blurredAt=0;
+            input.addEventListener('blur',function(){blurredAt=Date.now();});
+            window.addEventListener('click',function(event){
+                var target=event.target&&event.target.closest?event.target:null;
+                if(!target||target===input||target.closest(${JSON.stringify(CARD_CONTROL_SELECTOR)}))return;
+                var focused=document.activeElement===input;
+                if(!focused&&!(blurredAt&&Date.now()-blurredAt<${KEYBOARD_DISMISS_TAP_WINDOW_MS}))return;
+                // blur() fires the box's blur event at once; clearing the mark after it lets the
+                // next tap reach the card.
+                if(focused)input.blur();
+                blurredAt=0;
+                event.stopPropagation();
+                event.preventDefault();
+            },true);
         }
         ${autoFocus ? "setTimeout(function(){input.focus();},50);" : ''}
     })();

@@ -196,6 +196,12 @@ describe('typed-answer (type:Field)', () => {
         expect(html).toContain('id="typeans"');
         expect(html).toContain('data-tus-type-answer-token="runtime-token"');
         expect(html).toContain('Yanıtınızı &lt;yazın&gt;');
+        // iOS would otherwise autocorrect and capitalize the typed answer before it is compared,
+        // as the reviewer's own answer field (autoCorrect off) does not.
+        const input = html.match(/<input\b[^>]*>/)?.[0] ?? '';
+        expect(input).toContain('autocorrect="off"');
+        expect(input).toContain('autocapitalize="off"');
+        expect(input).toContain('spellcheck="false"');
         expect(html).not.toContain('Doğru cevap');
         expect(html).not.toContain('oninput=');
         expect(html).not.toContain('onkeydown=');

@@ -43,9 +43,29 @@ describe('non-destructive card generation', () => {
  it('keeps one card by default when every card of a note is empty', () => {
   const { note, cards } = noteOf(builtin(2), ['Front', 'Back']);
   saveNote({ ...note, fields: ['', ''] });
-  deleteAnkiCardsOnly(cards.map(c => c.id));
+  // The kept card is reported, so the screen can say why it is still there.
+  expect(deleteAnkiCardsOnly(cards.map(c => c.id))).toEqual({ deleted: [cards[1].id], kept: [cards[0].id], deletedNotes: [] });
   expect(getCardsForNote(note.id).map(c => c.ord)).toEqual([0]);
   expect(getNote(note.id)?.fields).toEqual(['', '']);
+ });
+ it('with Keep Notes off deletes the note with its last card, as Anki does, so Repair has nothing to bring back', () => {
+  const { note, cards } = noteOf(builtin(2), ['Front', 'Back']);
+  saveNote({ ...note, fields: ['', ''] });
+  expect(deleteAnkiCardsOnly(cards.map(c => c.id), { preserveNotes: false })).toEqual({
+   deleted: cards.map(c => c.id).sort((a, b) => a - b), kept: [], deletedNotes: [note.id],
+  });
+  expect(getNote(note.id)).toBeNull();
+  expect(getCardsForNote(note.id)).toEqual([]);
+  // No cardless note is left for Check Database to report and Repair to give an empty card again.
+  expect(db.getAllSync('SELECT n.id FROM notes n WHERE NOT EXISTS (SELECT 1 FROM anki_cards c WHERE c.noteId = n.id)')).toEqual([]);
+ });
+ it('never deletes a catalog note with Keep Notes off: it keeps its first card instead', () => {
+  // A bought catalog lets its cards change (a cloze edit), never its notes go.
+  db.runSync("INSERT OR REPLACE INTO settings (key, value) VALUES ('bka_tus_catalog_installed_v5', 'full')");
+  const { note, cards } = noteOf(builtin(2), ['Front', 'Back']);
+  saveNote({ ...note, fields: ['', ''], catalogPack: 'bka-tus' });
+  expect(deleteAnkiCardsOnly(cards.map(c => c.id), { preserveNotes: false })).toEqual({ deleted: [cards[1].id], kept: [cards[0].id], deletedNotes: [] });
+  expect(getNote(note.id)).not.toBeNull();
  });
  it('does not consume a source field twice when matching names before position', () => {
   const source = { ...builtin(1), id: 100, fields: [{ ...builtin(1).fields[0], name: 'A' }, { ...builtin(1).fields[1], name: 'Front' }] };

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
     canGradeRevealedCard,
     cardFrameTapRatios,
+    cardTapOnlyHidesKeyboard,
+    KEYBOARD_DISMISS_TAP_WINDOW_MS,
     DEFAULT_SWIPE_ACTIONS,
     matchingSwipePreset,
     resolveSwipeActions,
@@ -201,5 +203,24 @@ describe('reviewer back swipe', () => {
         expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: true, swipeRightAction: 'good', whiteboardActive: false })).toBe(false);
         expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: true, swipeRightAction: 'tools', whiteboardActive: false })).toBe(false);
         expect(reviewerAllowsFullScreenBackSwipe({ gesturesEnabled: false, whiteboardActive: true })).toBe(false);
+    });
+});
+
+describe('cardTapOnlyHidesKeyboard', () => {
+    const base = { showingAnswer: false, typeAnswerFocused: false, typeAnswerBlurredAt: null, now: 10_000 };
+
+    it('keeps the tap that hides the typed answer keyboard from showing the answer', () => {
+        expect(cardTapOnlyHidesKeyboard({ ...base, typeAnswerFocused: true })).toBe(true);
+    });
+
+    it('counts a tap that took the focus from the box an instant ago', () => {
+        expect(cardTapOnlyHidesKeyboard({ ...base, typeAnswerBlurredAt: 10_000 - 120 })).toBe(true);
+        expect(cardTapOnlyHidesKeyboard({ ...base, typeAnswerBlurredAt: 10_000 - KEYBOARD_DISMISS_TAP_WINDOW_MS })).toBe(false);
+    });
+
+    it('lets the next tap, a tap without the keyboard and any answer-side tap act as configured', () => {
+        expect(cardTapOnlyHidesKeyboard(base)).toBe(false);
+        expect(cardTapOnlyHidesKeyboard({ ...base, typeAnswerBlurredAt: 2_000 })).toBe(false);
+        expect(cardTapOnlyHidesKeyboard({ ...base, showingAnswer: true, typeAnswerFocused: true })).toBe(false);
     });
 });

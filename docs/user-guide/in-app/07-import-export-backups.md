@@ -197,8 +197,8 @@ beri `lib/i18n.ts` anahtarlarıdır (`translateActive`), İngilizce arayüzde İ
 
 | ID | Yer | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
-| help.emptyCards.intro | Ekranın üst açıklaması, `app/empty-cards.tsx:103-105` | açıklama | Mevcut metne ek: "Silme geri alınamaz ve öncesinde yedek alınmaz; gerekiyorsa önce **Yedekler**'den bir yedek alın." | Add: "Deleting cannot be undone and no backup is made first; make one on **Backups** if you need it." | Mevcut — genişlet |
-| help.emptyCards.keepNotesHint | **Geçerli kartı olmayan notları koru** anahtarının altı, `app/empty-cards.tsx:126-129` | ipucu | Kapalıyken notun bütün kartları silinir ama not metni kartsız kalır; **Onar ve optimize et** böyle notlara yeniden kart ekler. | When off, all of a note's cards are deleted but the note text stays without cards; **Repair and optimize** gives such notes a card again. | Yeni |
+| help.emptyCards.intro | Ekranın üst açıklaması, `app/empty-cards.tsx` | açıklama | Mevcut metne ek: "Silmeden önce geri yüklenebilir bir güvenlik yedeği alınır; geri almak için o yedeği **Yedekler**'den geri yükleyin." | Add: "A restorable safety backup is taken before deleting; to undo, restore it from **Backups**." | Mevcut — genişlet |
+| help.emptyCards.keepNotesHint | **Geçerli kartı olmayan notları koru** anahtarının altı, `app/empty-cards.tsx` | ipucu | Kapalıyken, Anki'deki gibi, bütün kartları boş olan not da kartlarıyla birlikte silinir. Katalog notları silinmez. | When off, as in Anki, a note whose cards are all empty is deleted with them. Catalog notes are never deleted. | Yeni |
 
 ## Ayarlar › Veri yönetimi (`app/settings.tsx`)
 

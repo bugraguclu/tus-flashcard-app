@@ -176,6 +176,20 @@ gösterir. Her sütun **Öğrenme** (öğrenme, yeniden öğrenme ve filtrelenmi
   kartlardaki oran, uzun aralıklı kartları ne kadar hatırladığınızın kaba bir göstergesidir.
 - **Son ay** seçiliyken bu grafik son 30 günü sayar (Anki'deki gibi).
 
+<a id="true-retention"></a>
+## Gerçek Hatırlama
+
+Bu tablo, aralığı en az bir gün olan kartlarda bellek sınamalarının kaçını geçtiğinizi gösterir
+(Anki 24.11 ve sonrasındaki **True Retention** tablosu). **Tekrar** "kaldı", **Zor**, **İyi** ve
+**Kolay** "geçti" sayılır; yeni kartların ilk öğrenme adımları sayılmaz. **Genç** kartların cevap
+verildiğindeki aralığı 21 günden kısa, **Olgun** kartlarınki 21 gün ve üzeridir.
+
+- Satırlar **Bugün**, **Dün**, **Geçen hafta**, **Geçen ay**, **Geçen yıl** ve **Tümü**'dür;
+  hafta, ay ve yıl bugünle biten 7, 30 ve 365 günü kapsar, bu yüzden bir cevap birden çok satırda
+  sayılabilir. Tablo seçili deste kapsamını izler, dönem seçimini izlemez.
+- **Basit** görünüm yüzdeleri, **Ayrıntılı** görünüm geçti/kaldı sayılarını da gösterir. Boş hücre
+  **—** ile gösterilir.
+
 <a id="hourly"></a>
 ## Saatlik dağılım
 <!-- Uygulamada: İstatistikler › Bilgi › "Saatlik dağılım" bölümü (StatsHelpSheet.tsx:24-27) → bu bölüm -->

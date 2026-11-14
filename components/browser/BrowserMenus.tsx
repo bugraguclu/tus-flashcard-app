@@ -28,8 +28,11 @@ import { MenuItem, MenuSeparator, PopoverMenu } from '../ui/Menu';
 import { SwitchRow } from '../ui/Rows';
 import { ArrowDownIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, MinusIcon } from '../ui/icons';
 import { EyeIcon } from '../editor/EditorIcons';
+import InfoCircleGlyph from '../InfoCircleGlyph';
+import { CopyGlyph, SearchGlyph } from '../UiGlyphs';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
+import type { BrowserNoteTool } from './BrowserNoteTools';
 import { ALL_CARD_FLAGS, BROWSER_SORT_KEYS } from './browserHelpers';
 import {
     BuryIcon,
@@ -55,6 +58,8 @@ interface SelectionMenuModalProps {
     hasCatalogCardsSelected: boolean;
     hasCatalogNotesSelected: boolean;
     l: BrowserI18n['l'];
+    /** Opens one of the note tools (Find and Replace…) over the browser. */
+    openNoteTool: (tool: BrowserNoteTool) => void;
     openSelectionTags: () => void;
     /** Opens Reset Cards with the options last used in the browser. */
     openResetDialog: () => void;
@@ -88,6 +93,7 @@ export function SelectionMenuModal({
     hasCatalogCardsSelected,
     hasCatalogNotesSelected,
     l,
+    openNoteTool,
     openSelectionTags,
     openResetDialog,
     refreshSelection,
@@ -227,6 +233,12 @@ export function SelectionMenuModal({
                     />
                     <MenuItem icon={<TagIcon color={iconColor} />} label={l('Etiketleri düzenle', 'Edit tags')} onPress={() => closeThen(openSelectionTags)} />
                     <MenuItem
+                        icon={<SearchGlyph color={iconColor} size={20} />}
+                        label={l('Bul ve değiştir…', 'Find and replace…')}
+                        accessibilityLabel={l('Seçili notlarda bul ve değiştir', 'Find and replace in the selected notes')}
+                        onPress={() => closeThen(() => openNoteTool({ kind: 'find-replace' }))}
+                    />
+                    <MenuItem
                         icon={<CheckIcon color={iconColor} />}
                         label={l('Şimdi derecelendir', 'Grade now')}
                         onPress={() => closeThen(() => setShowGradePicker(true))}
@@ -240,6 +252,19 @@ export function SelectionMenuModal({
                         icon={<EyeIcon color={iconColor} size={20} />}
                         label={l('Önizle', 'Preview')}
                         onPress={() => closeThen(() => { setPreviewAnswerVisible(false); setPreviewIndex(0); })}
+                    />
+                    {/* Anki's Info is about one card: in Notes mode, the note's first card. */}
+                    <MenuItem
+                        icon={<InfoCircleGlyph color={iconColor} size={20} />}
+                        label={selectedCardIds.size === 1
+                            ? l('Kart bilgisi', 'Card info')
+                            : tableMode === 'notes' ? l('Kart bilgisi (tek not seçin)', 'Card info (select one note)') : l('Kart bilgisi (tek kart seçin)', 'Card info (select one card)')}
+                        accessibilityLabel={tableMode === 'notes' ? l('Notun ilk kartının bilgisi', "Info for the note's first card") : l('Kart bilgisi', 'Card info')}
+                        disabled={selectedCardIds.size !== 1}
+                        onPress={() => {
+                            const [cardId] = [...selectedCardIds];
+                            closeThen(() => router.push(`/card-info?cardId=${cardId}` as any));
+                        }}
                     />
                     <MenuItem
                         icon={<DeckOverflowGlyph kind="export" color={iconColor} />}
@@ -311,6 +336,8 @@ interface OverflowMenuModalProps {
     markedOnly: boolean;
     openFilteredDeckDialog: () => void;
     openFlagFilter: () => void;
+    /** Opens one of the note tools (Find and Replace…) over the browser. */
+    openNoteTool: (tool: BrowserNoteTool) => void;
     selectAllVisible: () => void;
     setMarkedOnly: Dispatch<SetStateAction<boolean>>;
     setShowOptions: Dispatch<SetStateAction<boolean>>;
@@ -342,6 +369,7 @@ export function OverflowMenuModal({
     markedOnly,
     openFilteredDeckDialog,
     openFlagFilter,
+    openNoteTool,
     selectAllVisible,
     setMarkedOnly,
     setShowOptions,
@@ -481,6 +509,19 @@ export function OverflowMenuModal({
                 icon={<GearGlyph color={iconColor} size={20} />}
                 label={l('Seçenekler', 'Options')}
                 onPress={() => { close(); setShowOptions(true); }}
+            />
+            <MenuSeparator />
+            <MenuItem
+                icon={<SearchGlyph color={iconColor} size={20} />}
+                label={l('Bul ve değiştir…', 'Find and replace…')}
+                accessibilityLabel={l('Notlarda bul ve değiştir', 'Find and replace in notes')}
+                onPress={() => { close(); openNoteTool({ kind: 'find-replace' }); }}
+            />
+            <MenuItem
+                icon={<CopyGlyph color={iconColor} size={20} />}
+                label={l('Yinelenenleri bul…', 'Find duplicates…')}
+                accessibilityLabel={l('Yinelenen notları bul', 'Find duplicate notes')}
+                onPress={() => { close(); openNoteTool({ kind: 'find-duplicates' }); }}
             />
             <MenuSeparator />
             <MenuItem

@@ -43,6 +43,8 @@ export interface NoteType {
     sourcePackageId?: string;
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
+    /** A catalog row's id in the package, when a learner row held it (lib/catalogIds.ts). */
+    catalogSourceId?: number;
 }
 
 export const LEGACY_TUS_NOTE_TYPE_IDS = [4, 5, 6] as const;
@@ -191,6 +193,12 @@ export interface Note {
     catalogTopic?: string;
     /** Learner-edited fields survive a bundled catalog package refresh. */
     catalogFieldsEdited?: boolean;
+    /**
+     * The tags the bundled catalog package gave this note when it was installed. A package
+     * refresh compares the note's tags with them to tell the learner's own tag changes, which it
+     * keeps, from the package's (lib/catalogLearnerState.ts).
+     */
+    catalogPackageTags?: string[];
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
 }
@@ -288,6 +296,8 @@ export interface Deck {
     filteredBuildAt?: number;
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
+    /** A catalog row's id in the package, when a learner row held it (lib/catalogIds.ts). */
+    catalogSourceId?: number;
 }
 
 export interface DeckConfig {
@@ -381,6 +391,8 @@ export interface DeckConfig {
 
     /** Set on rows installed by a purchasable content pack (lib/bkaCatalog.ts). */
     catalogPack?: string;
+    /** A catalog row's id in the package, when a learner row held it (lib/catalogIds.ts). */
+    catalogSourceId?: number;
 }
 
 export const DEFAULT_DECK_CONFIG: DeckConfig = {

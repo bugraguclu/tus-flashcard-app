@@ -14,6 +14,7 @@ import {
 import { Text } from './AppText';
 import { FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { getAllTags } from '../lib/noteManager';
+import { filterTagsForSearch, searchNamesKnownTag } from '../lib/tagPickerFilter';
 import { useI18n } from '../hooks/useI18n';
 import { Button, CloseButton, IconButton } from './ui/Button';
 import { Divider } from './ui/Card';
@@ -33,8 +34,11 @@ interface TagPickerModalProps {
     title?: string;
     /** Browser filters load only tags reachable from the active deck/card scope. */
     loadTags?: () => string[];
+    /** Offered where tags can be renamed (the browser's tag filter): holding a row asks for it. */
+    onRenameTag?: (tag: string) => void;
 }
 
+/** Which entries are the same tag. The search field matches by its own, looser rules (lib/tagPickerFilter.ts). */
 function tagKey(tag: string): string {
     return tag.normalize('NFC').toLowerCase();
 }
@@ -71,6 +75,7 @@ export default function TagPickerModal({
     allowCreate = true,
     title,
     loadTags = getAllTags,
+    onRenameTag,
 }: TagPickerModalProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
@@ -112,16 +117,15 @@ export default function TagPickerModal({
 
     const selectedKeys = useMemo(() => new Set(draftTags.map(tagKey)), [draftTags]);
     const trimmedQuery = searchText.trim();
-    const normalizedQuery = tagKey(trimmedQuery);
-    const filteredTags = useMemo(() => {
-        if (!normalizedQuery) return knownTags;
-        return knownTags.filter((tag) => tagKey(tag).includes(normalizedQuery));
-    }, [knownTags, normalizedQuery]);
+    const filteredTags = useMemo(
+        () => filterTagsForSearch(knownTags, trimmedQuery),
+        [knownTags, trimmedQuery],
+    );
 
-    const hasExactMatch = useMemo(() => {
-        if (!normalizedQuery) return true;
-        return knownTags.some((tag) => tagKey(tag) === normalizedQuery);
-    }, [knownTags, normalizedQuery]);
+    const hasExactMatch = useMemo(
+        () => searchNamesKnownTag(knownTags, trimmedQuery),
+        [knownTags, trimmedQuery],
+    );
 
     const allVisibleSelected = filteredTags.length > 0
         && filteredTags.every((tag) => selectedKeys.has(tagKey(tag)));
@@ -234,6 +238,11 @@ export default function TagPickerModal({
                             clearLabel={l('Aramayı temizle', 'Clear search')}
                             accessibilityLabel={l('Etiketlerde ara', 'Search tags')}
                         />
+                        {onRenameTag && (
+                            <Text style={styles.renameHint}>
+                                {l('Yeniden adlandırmak için bir etikete basılı tutun.', 'Hold a tag to rename it.')}
+                            </Text>
+                        )}
                     </View>
 
                     {allowCreate && addVisible && (
@@ -312,10 +321,15 @@ export default function TagPickerModal({
                                             { paddingLeft: Spacing.lg + Math.min(depth, 8) * 18 },
                                         ]}
                                         onPress={() => toggleTag(tag)}
+                                        onLongPress={onRenameTag ? () => onRenameTag(tag) : undefined}
                                         accessibilityRole="checkbox"
                                         accessibilityState={{ checked: selected }}
                                         aria-checked={selected}
                                         accessibilityLabel={tag.replaceAll('::', ' › ')}
+                                        accessibilityActions={onRenameTag ? [{ name: 'rename', label: l('Yeniden adlandır', 'Rename') }] : undefined}
+                                        onAccessibilityAction={onRenameTag
+                                            ? (event) => { if (event.nativeEvent.actionName === 'rename') onRenameTag(tag); }
+                                            : undefined}
                                     >
                                         <Text style={[styles.tagText, selected && styles.tagTextSelected]} numberOfLines={2}>
                                             {tag.replaceAll('::', ' › ')}
@@ -380,6 +394,7 @@ function createStyles(colors: ColorScheme) {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
+        renameHint: { marginTop: Spacing.xs, color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
         addPanel: {
             paddingHorizontal: Spacing.lg,
             paddingVertical: Spacing.md,

@@ -4,3 +4,4 @@
 package-lock.json
 assets/catalog/bka-manifest.json
 docs/catalog-corrections/*.json
+assets/mathjax/tex-svg-full.js.txt

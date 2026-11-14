@@ -21,6 +21,7 @@ import { deckNameKey } from './deckNames';
 import { checksumFieldText } from './noteChecksum';
 import { translateActive } from './i18n';
 import { CATALOG_LEARNER_DATA_KEY } from './backupCatalogLearnerData';
+import { isCatalogPackRow } from './catalogRows';
 import { QUEUE_BOOKKEEPING_PREFIXES } from './backupSnapshot';
 import {
     FIELD_SEPARATOR,
@@ -140,22 +141,26 @@ export function importAnkiReaderLossless(
             rememberCollection({ crt: meta.crt, conf: meta.conf });
         }
         const reservedTypeNames = new Set(existingNoteTypes.map((row) => row.name));
+        // A note type of the paid catalog is never matched: an import neither updates it nor adds
+        // notes to it. A package note type under a catalog type's id (AnKing's, which the catalog
+        // uses) arrives as a type of its own, with a free id and an "(Imported)" name.
+        const matchableNoteTypes = existingNoteTypes.filter((row) => !isCatalogPackRow(row.data));
         const writtenNoteTypeIds = new Set<number>();
         for (const [sourceKey, raw] of Object.entries(meta.models)) {
             const sourceId = numberValue(raw.id, numberValue(sourceKey));
-            const samePackage = existingNoteTypes.find((row) => {
+            const samePackage = matchableNoteTypes.find((row) => {
                 try { return (JSON.parse(row.data) as NoteType).sourcePackageId === packageId && numberValue((JSON.parse(row.data) as NoteType).ankiRaw?.id) === sourceId; }
                 catch { return false; }
             });
             const candidate = importedNoteType(raw, sourceId, packageId);
-            const sameOrigin = existingNoteTypes.find(row => {
+            const sameOrigin = matchableNoteTypes.find(row => {
                 try {
                     const type = JSON.parse(row.data) as NoteType;
                     const original = type.ankiRaw?.originalId ?? type.ankiRaw?.original_id;
                     return Number(original) === sourceId && sameImportedNoteShape(type, candidate);
                 } catch { return false; }
             });
-            const sameIdentity = sameOrigin ?? existingNoteTypes.find((row) => row.id === sourceId);
+            const sameIdentity = sameOrigin ?? matchableNoteTypes.find((row) => row.id === sourceId);
             let targetId = samePackage?.id ?? sameIdentity?.id ?? nextFreeId('note_types', sourceId, reservedTypes);
             const existing = samePackage ?? sameIdentity;
             if (!existing) {
@@ -260,6 +265,13 @@ export function importAnkiReaderLossless(
             knownDeckNames.add(name);
             if (!foldedDeckNames.has(deckNameKey(name))) foldedDeckNames.set(deckNameKey(name), name);
         };
+        // A deck of the paid catalog is never matched, by id or by name: an import neither
+        // rewrites one (which dropped its marker and with it the Rename/Delete/Export locks) nor
+        // puts the learner's cards in it. A package deck under a catalog deck's name takes an
+        // "(Imported)" name at that level instead, as one that clashes with a filtered deck does,
+        // and its subdecks go with it.
+        const catalogDeckKeys = new Set(existingDecks.filter((row) => isCatalogPackRow(row.data)).map((row) => deckNameKey(row.name)));
+        const learnerDecks = existingDecks.filter((row) => !isCatalogPackRow(row.data));
         const renamedDeckPaths = new Map<string, string>();
         const resolveDeckPath = (raw: string): string => {
             const parts = raw.split('::');
@@ -267,7 +279,15 @@ export function importAnkiReaderLossless(
             for (const part of parts) {
                 const candidate = path ? `${path}::${part}` : part;
                 const renamed = renamedDeckPaths.get(candidate);
-                path = renamed ?? (knownDeckNames.has(candidate) ? candidate : foldedDeckNames.get(deckNameKey(candidate)) ?? candidate);
+                if (renamed) {
+                    path = renamed;
+                    continue;
+                }
+                path = knownDeckNames.has(candidate) ? candidate : foldedDeckNames.get(deckNameKey(candidate)) ?? candidate;
+                if (!catalogDeckKeys.has(deckNameKey(path))) continue;
+                const own = `${candidate} (Imported)`;
+                path = knownDeckNames.has(own) ? own : foldedDeckNames.get(deckNameKey(own)) ?? own;
+                renamedDeckPaths.set(candidate, path);
             }
             return path;
         };
@@ -283,15 +303,15 @@ export function importAnkiReaderLossless(
                 try { return (JSON.parse(row.data) as Deck).isFiltered === sourceFiltered; }
                 catch { return false; }
             };
-            const samePackage = existingDecks.find((row) => {
+            const samePackage = learnerDecks.find((row) => {
                 try {
                     const parsed = JSON.parse(row.data) as Deck;
                     return parsed.sourcePackageId === packageId && numberValue(parsed.ankiRaw?.id) === sourceId && compatible(row);
                 } catch { return false; }
             });
-            const sameIdentity = existingDecks.find((row) => row.id === sourceId && row.name === sourceName && compatible(row));
-            const sameName = existingDecks.find((row) => row.name === sourceName && compatible(row));
-            const incompatibleName = existingDecks.find((row) => row.name === sourceName && !compatible(row));
+            const sameIdentity = learnerDecks.find((row) => row.id === sourceId && row.name === sourceName && compatible(row));
+            const sameName = learnerDecks.find((row) => row.name === sourceName && compatible(row));
+            const incompatibleName = learnerDecks.find((row) => row.name === sourceName && !compatible(row));
             let name = sourceName;
             if (incompatibleName) {
                 const base = `${sourceName} (Imported)`;

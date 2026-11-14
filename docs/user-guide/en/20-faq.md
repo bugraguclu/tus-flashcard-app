@@ -104,7 +104,7 @@ which files are missing, use the **Check Media** button on the **Backups** scree
 ### Cards from a shared deck do not look the way they do in Anki
 
 The templates of some shared decks contain JavaScript code. For safety, TusAnkiM does not run this
-code; the card may look plainer. Math formulas (MathJax/LaTeX) are not shown rendered either. See
+code; the card may look plainer. MathJax formulas are drawn, but `[latex]` image formulas are not. See
 [Using TusAnkiM with Anki](19-using-with-anki.md#differences).
 
 <a id="text-size"></a>

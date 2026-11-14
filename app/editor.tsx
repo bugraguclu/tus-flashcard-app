@@ -80,8 +80,10 @@ import { rememberedCurrentDeck } from '../lib/currentDeck';
 import { recomputeMemoryAfterDeckMove } from '../lib/fsrsMaintenance';
 import { editorDraftKey, hasEditorDraftChanged, isAddScreenFinished, type EditorDraftState } from '../lib/editorDraft';
 import TransientNotice, { type TransientNoticeMessage } from '../components/TransientNotice';
+import { remapFieldPositions, remapFieldValues, sameFieldLayout } from '../lib/editorFieldLayout';
 import { editorFieldFontSize, editorFieldRole } from '../lib/editorFieldStyle';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
+import { registerTakeoverDraft, takeTakeoverDraft, type TakeoverDraft } from '../lib/webTakeoverDraft';
 import {
     CUSTOM_TOOLBAR_PRESETS,
     loadCustomToolbarButtons,
@@ -454,6 +456,61 @@ export default function EditorScreen() {
         });
     }, [routeCardId]);
 
+    // Web: a read-only tab reloads to become the writer once the other tab closes. A draft typed
+    // here before that reload comes back (lib/webTakeoverDraft.ts). Declared after the load above,
+    // so for an edited note it lands over the stored fields and still counts as unsaved.
+    useEffect(() => {
+        if (Platform.OS !== 'web') return;
+        const draft = takeTakeoverDraft();
+        if (!draft) return;
+        // Fields follow their note type's layout; a draft typed for another type keeps tags and deck.
+        if (draft.cardTypeId === cardTypeId) setFieldValues(draft.fields);
+        setNoteTags(draft.tags);
+        if (draft.deckId !== null) setTargetDeckId(draft.deckId);
+        // The app's dialog host registers after this screen's first effects on a fresh page load;
+        // a tick later the notice is the app's own dialog rather than the browser's alert.
+        setTimeout(() => alert(
+            l('Taslak geri yüklendi', 'Draft Restored'),
+            l(
+                'Diğer sekme kapandığı için sayfa yenilendi; kaydedilmemiş notunuz geri getirildi. Artık kaydedebilirsiniz.',
+                'The page reloaded because the other tab closed; your unsaved note was brought back. You can save it now.',
+            ),
+        ), 0);
+        // Taken once, when the editor opens after the reload.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // The field names `fieldValues` is laid out for, and of which note type. The note type screen
+    // can add, remove or move this type's fields while the editor is open beneath it, migrating
+    // the stored notes at once; the values and pins here then follow their fields, or Save would
+    // write each value into whichever field now sits where it used to.
+    const fieldLayoutRef = useRef<{ typeId: number; names: string[] } | null>(null);
+    useEffect(() => {
+        if (!selectedNoteType) return;
+        const names = selectedNoteType.fields.map((field) => field.name);
+        const previous = fieldLayoutRef.current;
+        fieldLayoutRef.current = { typeId: selectedNoteType.id, names };
+        // Choosing another note type lays its fields out itself (handleSelectNoteType).
+        if (!previous || previous.typeId !== selectedNoteType.id || sameFieldLayout(previous.names, names)) return;
+        const card = routeCardId ? getAnkiCard(routeCardId) : null;
+        const stored = card ? getNote(card.noteId)?.fields ?? null : null;
+        const baseline = initialDraftRef.current;
+        setFieldValues(remapFieldValues(previous.names, names, fieldValuesRef.current, baseline?.fields ?? null, stored));
+        setPinnedFields((pins) => remapFieldPositions(previous.names, names, pins));
+        if (baseline) {
+            const fields = stored
+                ? names.map((_, index) => stored[index] ?? '')
+                : remapFieldValues(previous.names, names, baseline.fields ?? [], null, null);
+            resetDraftBaseline({
+                ...baseline,
+                fields,
+                question: fields[0] ?? '',
+                answer: fields[1] ?? '',
+                reverseAnswer: baseline.cardTypeId === 7 ? fields[2] ?? '' : '',
+            });
+        }
+    }, [selectedNoteType]);
+
     useEffect(() => {
         if (routeCardId || targetDeckId !== null) return;
         if (loadSettings().newCardDeckMode === 'default') {
@@ -501,6 +558,12 @@ export default function EditorScreen() {
         [fieldValues, cardTypeId, targetDeckId, noteTags],
     );
     const isDirty = hasEditorDraftChanged(initialDraftKey, currentDraft, isEditing);
+    // What a web takeover reload would lose (lib/webTakeoverDraft.ts): read when it happens.
+    const takeoverDraftRef = useRef<TakeoverDraft | null>(null);
+    takeoverDraftRef.current = isDirty
+        ? { fields: fieldValuesRef.current, tags: noteTags, deckId: targetDeckId, cardTypeId }
+        : null;
+    useEffect(() => registerTakeoverDraft(() => takeoverDraftRef.current), []);
     useUnsavedChangesGuard(isDirty, {
         title: l('Değişiklikler atılsın mı?', 'Discard Changes?'),
         message: isEditing
@@ -1032,7 +1095,10 @@ export default function EditorScreen() {
                 // it keeps the single acknowledgement and hands control straight back.
                 if (externalSuccessUrl) {
                     alert(t('common.completed'), savedMessage, () => {
-                        void Linking.openURL(externalSuccessUrl).catch(() => goBackOr(router));
+                        // The caller has its note: leave, so coming back neither shows the saved
+                        // text nor lets ✓ add it a second time.
+                        goBackOr(router);
+                        void Linking.openURL(externalSuccessUrl).catch(() => undefined);
                     });
                     return;
                 }

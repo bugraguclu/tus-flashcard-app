@@ -27,9 +27,11 @@ export {
     findDuplicateNote,
     deleteAnkiCardOnly,
     deleteAnkiCardsOnly,
+    planCardOnlyDeletion,
 } from './noteStore';
 export type {
     CardDeckMoveSnapshot,
+    CardOnlyDeletion,
     SearchIndexCard,
 } from './noteStore';
 export {

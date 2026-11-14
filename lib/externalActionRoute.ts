@@ -1,30 +1,69 @@
-import type { ExternalAppAction } from './externalLinking';
+import type { ExternalAppAction, ExternalLinkRejection } from './externalLinking';
 import { getAllNoteTypes } from './noteManager';
-import { getDeckByName } from './deckManager';
+import { getDeck, getDeckByName } from './deckManager';
+import { isCatalogDeck } from './catalogProtection';
+import { localizeFieldName, localizeNoteTypeName } from './i18n';
 
 export interface ExternalActionRoute {
     pathname: '/browser' | '/editor';
     params: Record<string, string>;
 }
 
+/** The screen an x-callback action opens, or why the collection cannot serve it. */
+export type ExternalActionResult = ExternalActionRoute | { rejected: ExternalLinkRejection };
+
+const nameKey = (name: string) => name.normalize('NFC').trim().toLocaleLowerCase();
+
 /**
  * The screen an x-callback action opens: a browser search, or the editor filled with the note's
- * fields. Null when an add-note request names a note type or deck the collection does not have —
- * the request is then ignored rather than filed somewhere else. Shared by the iPhone URL handler
- * (`app/_layout.tsx`) and the web route (`app/x-callback-url.tsx`).
+ * fields. An add-note request that names a note type or deck the collection does not have, a
+ * filtered or catalog deck (the editor would quietly file the note in another deck), or none of
+ * the note type's fields is refused with its reason, so the learner can be told rather than left
+ * with nothing or with an empty editor. Shared by the iPhone URL handler (`app/_layout.tsx`) and
+ * the web route (`app/x-callback-url.tsx`).
+ *
+ * A note type or field is found by its name as written, or failing that in another case or by
+ * the Turkish label the app shows for a built-in one (`type=Temel`, `fldÖn`); `deck=Default`
+ * names the default deck, as in Anki.
  */
-export function externalActionRoute(action: ExternalAppAction): ExternalActionRoute | null {
+export function externalActionRoute(action: ExternalAppAction): ExternalActionResult {
     if (action.kind === 'search') {
         return { pathname: '/browser', params: { initialSearch: action.query } };
     }
-    const wantedType = action.noteTypeName.normalize('NFC').toLocaleLowerCase();
-    const noteType = getAllNoteTypes().find((entry) => entry.name.normalize('NFC').toLocaleLowerCase() === wantedType);
-    const deck = getDeckByName(action.deckName);
-    if (!noteType || !deck || deck.isFiltered) {
-        console.warn('[Linking] add-note target not found:', action.noteTypeName, action.deckName);
-        return null;
+    const wantedType = nameKey(action.noteTypeName);
+    const noteTypes = getAllNoteTypes();
+    const noteType = noteTypes.find((entry) => nameKey(entry.name) === wantedType)
+        ?? noteTypes.find((entry) => nameKey(localizeNoteTypeName('tr', entry.name)) === wantedType);
+    if (!noteType) return { rejected: { reason: 'noteTypeNotFound', noteTypeName: action.noteTypeName } };
+    // Anki's default deck is "Default" (id 1); this app shows and stores it as "Varsayılan", so a
+    // Shortcut written for Anki still finds it.
+    const deck = getDeckByName(action.deckName) ?? (nameKey(action.deckName) === 'default' ? getDeck(1) : null);
+    if (!deck) return { rejected: { reason: 'deckNotFound', deckName: action.deckName } };
+    if (deck.isFiltered) return { rejected: { reason: 'filteredDeck', deckName: deck.name } };
+    if (isCatalogDeck(deck)) return { rejected: { reason: 'catalogDeck', deckName: deck.name } };
+
+    const given = Object.entries(action.fields);
+    let matched = 0;
+    const fieldValues = noteType.fields.map((field) => {
+        if (Object.prototype.hasOwnProperty.call(action.fields, field.name)) {
+            matched++;
+            return action.fields[field.name];
+        }
+        const names = new Set([nameKey(field.name), nameKey(localizeFieldName('tr', field.name))]);
+        const entry = given.find(([key]) => names.has(nameKey(key)));
+        if (!entry) return '';
+        matched++;
+        return entry[1];
+    });
+    if (matched === 0) {
+        return {
+            rejected: {
+                reason: 'noMatchingFields',
+                noteTypeName: noteType.name,
+                fieldNames: noteType.fields.map((field) => field.name),
+            },
+        };
     }
-    const fieldValues = noteType.fields.map((field) => action.fields[field.name] ?? '');
     return {
         pathname: '/editor',
         params: {

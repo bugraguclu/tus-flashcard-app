@@ -176,6 +176,27 @@ describe('BKA catalog access', () => {
         });
     });
 
+    it('reports a purchase waiting for approval (Ask to Buy) as pending, not as a store failure', async () => {
+        process.env.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED = 'true';
+        process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY = 'appl_public_test';
+        // What RevenueCat rejects with: PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR.
+        fixture.purchases.purchasePackage.mockRejectedValue({
+            code: '20',
+            message: 'The payment is pending.',
+            readableErrorCode: 'PAYMENT_PENDING_ERROR',
+            userInfo: { readableErrorCode: 'PAYMENT_PENDING_ERROR' },
+            underlyingErrorMessage: '',
+            userCancelled: false,
+        });
+        const { loadCatalogAccess, purchaseBkaCatalog } = await import('./catalogPurchases');
+        await loadCatalogAccess();
+
+        const result = await purchaseBkaCatalog();
+        expect(result).toMatchObject({ hasAccess: false, cancelled: false, pending: true });
+        expect(result.state).toMatchObject({ status: 'ready', hasAccess: false, productAvailable: true });
+        expect(result.state.error).toBeUndefined();
+    });
+
     it('restores the lifetime entitlement from the current store account', async () => {
         process.env.EXPO_PUBLIC_BKA_CATALOG_PAYMENT_REQUIRED = 'true';
         process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY = 'appl_public_test';

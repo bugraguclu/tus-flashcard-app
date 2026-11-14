@@ -32,6 +32,7 @@ import {
     checkDatabase,
     emptyRepairResult,
     optimizeDatabase,
+    repairChangedRows,
     repairDatabase,
     repairableDefectCount,
     totalDefectCount,
@@ -445,6 +446,33 @@ describe('collection maintenance (real SQLite)', () => {
             expect(() => repairDatabase()).toThrow();
             expect(ids('anki_cards')).toEqual([10, 11]);
             expect(ids('notes')).toEqual([100, 101]);
+        });
+    });
+
+    describe('repairChangedRows', () => {
+        // Settings refreshes the open screens (deck counts, the queue) only when this says rows
+        // changed; on web, or when the search rebuild fails, nothing else tells it to.
+        it.each([
+            ['a runaway new-card position', () => addCard(10, 100, 1, { type: 0, queue: 0, due: 2_000_001 })],
+            ['a due past the end of the calendar', () => addCard(10, 100, 1, { type: 2, queue: 2, due: 9_000_000 })],
+            ['an out-of-range template ordinal', () => addCard(10, 100, 1, { ord: 40_000 })],
+            ['a stale pre-filter due', () => addCard(10, 100, 1, { type: 2, queue: 2, due: 20_000, odue: 12 })],
+            ['an orphaned card', () => { addCard(10, 100, 1); addCard(11, 999, 1); }],
+            ['an invalid interval', () => addCard(10, 100, 1, { type: 2, queue: 2, due: 20_000, ivl: -3 })],
+        ])('says rows changed after fixing only %s', (_defect, addDefect) => {
+            addDeck(1, 'Mikrobiyoloji');
+            addNote(100);
+            addDefect();
+
+            const result = repairDatabase();
+
+            expect(repairChangedRows(result)).toBe(true);
+            expect(checkDatabase()).toMatchObject({ highPositionNewCards: 0, invalidDueCards: 0, invalidOrdinalCards: 0, orphanedOriginalDueCards: 0 });
+        });
+
+        it('says nothing changed when the repair only reported rows it left alone', () => {
+            expect(repairChangedRows(emptyRepairResult())).toBe(false);
+            expect(repairChangedRows({ ...emptyRepairResult(), protectedRowsKept: 3, unreadableNotes: 2 })).toBe(false);
         });
     });
 

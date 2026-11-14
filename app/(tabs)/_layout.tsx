@@ -14,7 +14,7 @@ import {
 import { Text } from '../../components/AppText';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
+import { useThemeColors, type ColorScheme, Spacing } from '../../constants/theme';
 import { getNavigationCardCounts } from '../../lib/noteManager';
 import { getAllSubjects, getSubjectsForDeck } from '../../lib/subjects';
 import { buildDeckTree, getAllDecks, getCardCountsByDeck } from '../../lib/deckManager';
@@ -28,7 +28,8 @@ import {
     useStudyScope,
 } from '../../contexts/AppContext';
 import { Sidebar, SIDEBAR_WIDTH } from '../../components/Sidebar';
-import { HourglassGlyph, MenuGlyph, WarningGlyph } from '../../components/UiGlyphs';
+import { MenuGlyph } from '../../components/UiGlyphs';
+import StartupIssueScreen from '../../components/StartupIssueScreen';
 import { useI18n } from '../../hooks/useI18n';
 import { consumeSchedulingRevision } from '../../lib/deferredInvalidation';
 
@@ -41,7 +42,7 @@ export default function TabLayout() {
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { settings } = useAppSettings();
     const { collectionVersion, getSchedulingRevision } = useCollectionInvalidation();
-    const { startupError, isLoading, startupActionPending, continueStartupWait, retryStartup } = useStartupStatus();
+    const { startupError, isLoading } = useStartupStatus();
     const studyPosition = useStudyPosition();
     const {
         selectedSubject,
@@ -155,20 +156,26 @@ export default function TabLayout() {
         return () => sub?.remove();
     }, []);
 
+    // The drawer's counts, courses and deck tree are read only while it can be seen. On a narrow
+    // screen it opens only from Android's edge swipe: the hamburger needs a tab other than the
+    // deck list and the reviewer, which this layout never shows, and the iPhone app is
+    // portrait-only, so it is never 768 pt wide. iPhone used to run these queries anyway, on every
+    // collection change and on every move between the deck list and the reviewer.
+    const sidebarVisible = isWide || sidebarOpen;
     const navigationCounts = useMemo(() => {
-        if (isLoading) return [];
+        if (isLoading || !sidebarVisible) return [];
         try {
             return getNavigationCardCounts();
         } catch (e) {
             console.warn('[Layout] navigation counts failed:', e);
             return [];
         }
-    }, [collectionVersion, visibleSchedulingRevision, isLoading]);
+    }, [collectionVersion, visibleSchedulingRevision, isLoading, sidebarVisible]);
 
     // Courses are deck-specific: the sidebar lists only the active deck's own courses
     // (an empty deck lists none). Without a deck context the full list stays visible.
     const subjects = useMemo(() => {
-        if (isLoading) return [];
+        if (isLoading || !sidebarVisible) return [];
         try {
             const list = activeDeckName ? getSubjectsForDeck(activeDeckName) : getAllSubjects();
             if (selectedSubject) {
@@ -183,13 +190,13 @@ export default function TabLayout() {
             console.warn('[Layout] subject list failed:', e);
             return [];
         }
-    }, [collectionVersion, activeDeckName, selectedSubject, isLoading]);
+    }, [collectionVersion, activeDeckName, selectedSubject, isLoading, sidebarVisible]);
 
     // The reviewer menu is a deck navigator while a deck is active. A selected subdeck is a
     // highlight inside its top-level tree, not a new tree root: otherwise opening the hamburger
     // from `Parent::Child` would make every parent and sibling disappear.
     const sidebarDeckTree = useMemo(() => {
-        if (isLoading || !activeDeckName) return [];
+        if (isLoading || !activeDeckName || !sidebarVisible) return [];
         try {
             const rootDeckName = getRootDeckName(activeDeckName);
             if (!rootDeckName) return [];
@@ -208,7 +215,7 @@ export default function TabLayout() {
             console.warn('[Layout] sidebar deck tree failed:', e);
             return [];
         }
-    }, [activeDeckName, collectionVersion, visibleSchedulingRevision, isLoading, settings.dayRolloverHour, settings.learnAheadMinutes, settings.limitsStartFromTop]);
+    }, [activeDeckName, collectionVersion, visibleSchedulingRevision, isLoading, sidebarVisible, settings.dayRolloverHour, settings.learnAheadMinutes, settings.limitsStartFromTop]);
 
     // Reveal only the selected deck's ancestor chain. Opening every parent in a large catalog
     // would flood the drawer with unrelated branches; manual expansion of siblings is preserved.
@@ -402,27 +409,7 @@ export default function TabLayout() {
 
                 <View style={[styles.mainContent, isWide && !isDeckScreen && styles.mainContentWithSidebar]}>
                     {startupError ? (
-                        <View style={styles.startupErrorContainer}>
-                            <View style={styles.startupErrorIcon}>
-                                {startupError === 'timeout'
-                                    ? <HourglassGlyph color={colors.warning} size={30} />
-                                    : <WarningGlyph color={colors.warning} size={30} />}
-                            </View>
-                            <Text style={styles.startupErrorTitle}>{t(startupError === 'timeout' ? 'root.startupSlowTitle' : 'root.errorTitle')}</Text>
-                            <Text style={styles.startupErrorText}>
-                                {t(startupError === 'timeout' ? 'root.startupSlowMessage' : 'root.startupErrorMessage')}
-                            </Text>
-                            {/* Waiting again never starts a second migration; retrying runs only after a failure. */}
-                            <TouchableOpacity
-                                style={[styles.startupErrorButton, startupActionPending && styles.startupErrorButtonBusy]}
-                                onPress={startupError === 'timeout' ? continueStartupWait : retryStartup}
-                                disabled={startupActionPending}
-                                accessibilityRole="button"
-                                accessibilityState={{ disabled: startupActionPending, busy: startupActionPending }}
-                            >
-                                <Text style={styles.startupErrorButtonText}>{t(startupError === 'timeout' ? 'root.startupKeepWaiting' : 'common.retry')}</Text>
-                            </TouchableOpacity>
-                        </View>
+                        <StartupIssueScreen />
                     ) : (
                         <Stack
                             initialRouteName="decks"
@@ -478,47 +465,5 @@ function createStyles(colors: ColorScheme) {
 
     mainContent: { flex: 1 },
     mainContentWithSidebar: { marginLeft: SIDEBAR_WIDTH },
-
-    startupErrorContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: Spacing.xl,
-    },
-    startupErrorIcon: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.warningBg,
-        marginBottom: Spacing.md,
-    },
-    startupErrorTitle: {
-        fontSize: FontSize.lg,
-        fontWeight: '600',
-        color: colors.textPrimary,
-        textAlign: 'center',
-        marginBottom: Spacing.sm,
-    },
-    startupErrorText: {
-        fontSize: FontSize.md,
-        color: colors.textMuted,
-        textAlign: 'center',
-    },
-    startupErrorButton: {
-        marginTop: Spacing.lg,
-        paddingHorizontal: Spacing.xl,
-        paddingVertical: Spacing.md,
-        borderRadius: 12,
-        backgroundColor: colors.accent,
-    },
-    startupErrorButtonBusy: { opacity: 0.6 },
-    startupErrorButtonText: {
-        fontSize: FontSize.md,
-        fontWeight: '600',
-        color: colors.white,
-        textAlign: 'center',
-    },
     });
 }

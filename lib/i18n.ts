@@ -104,6 +104,7 @@ const tr = {
     'catalog.contentLocked': 'TUS Kartları paketinin bu içeriği, paket tam kurulmadan değiştirilemez.',
     'catalog.cardsNotMovable': 'TUS Kartları paketindeki kartlar başka bir desteye taşınamaz.',
     'catalog.cannotMoveIntoPack': 'TUS Kartları destelerine başka kart taşınamaz.',
+    'decks.holdsCatalogCards': 'Bu destede katalog kartları var, bu yüzden silinemez.',
 
     'settings.title': '⚙️ Ayarlar',
     'settings.learnAheadOn': 'Süresinin dolmasına {{minutes}} dakikadan az kalan öğrenme kartları, sırada başka kart kalmadığında gösterilir.',
@@ -225,6 +226,7 @@ const en: Record<TranslationKey, string> = {
     'catalog.contentLocked': 'This TUS Kartları content cannot be changed until the full pack is installed.',
     'catalog.cardsNotMovable': 'Cards from the TUS Kartları pack cannot be moved to another deck.',
     'catalog.cannotMoveIntoPack': 'Other cards cannot be moved into TUS Kartları decks.',
+    'decks.holdsCatalogCards': 'This deck holds catalog cards, so it can’t be deleted.',
 
     'settings.title': '⚙️ Settings',
     'settings.learnAheadOn': 'Learning cards due in less than {{minutes}} minutes are shown when no other cards remain.',

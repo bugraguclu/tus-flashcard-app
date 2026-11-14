@@ -105,8 +105,8 @@ kullanın. Bkz. [İçe ve dışa aktarma](14-import-export.md) ve
 ### Paylaşılan bir destenin kartları Anki'deki gibi görünmüyor
 
 Bazı paylaşılan destelerin şablonlarında JavaScript kodu bulunur. TusAnkiM güvenlik için bu kodu
-çalıştırmaz; kart sade hâlde görünebilir. Matematik formülleri (MathJax/LaTeX) de işlenmiş hâlde
-gösterilmez. Bkz. [Anki ile birlikte kullanma](19-using-with-anki.md#differences).
+çalıştırmaz; kart sade hâlde görünebilir. MathJax formülleri çizilir, ama `[latex]` görüntü
+formülleri gösterilmez. Bkz. [Anki ile birlikte kullanma](19-using-with-anki.md#differences).
 
 <a id="text-size"></a>
 ### Kart yazıları çok küçük veya çok büyük

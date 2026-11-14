@@ -35,6 +35,125 @@
       "useFor": ["empty card detection", "blank front card generation", "safe card-only deletion", "preserving notes and sibling cards"]
     },
     {
+      "id": "anki-manual-browsing-find-replace",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://docs.ankiweb.net/browsing.html#find-and-replace",
+      "useFor": ["Find and Replace: In field/tags, selected notes only, ignore case, regular expressions"]
+    },
+    {
+      "id": "anki-manual-browsing-find-duplicates",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://docs.ankiweb.net/browsing.html#finding-duplicates",
+      "useFor": ["Find Duplicates by field with an optional search; Tag Duplicates"]
+    },
+    {
+      "id": "anki-source-find-replace",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/findreplace.rs",
+      "useFor": ["literal vs regex find, replacement expansion, per-field and tag replacement (with tags/findreplace.rs)"]
+    },
+    {
+      "id": "anki-source-find-dupes",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://github.com/ankitects/anki/blob/main/pylib/anki/collection.py",
+      "useFor": ["find_dupes grouping by stripped field text; write_dupe in rslib/src/search/sqlwriter.rs"]
+    },
+    {
+      "id": "anki-source-tag-rename",
+      "priority": 2,
+      "platform": "cross-platform browser note tools",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/tags/rename.rs",
+      "useFor": ["rename a tag and its children case-insensitively; renaming onto an existing tag merges (with tags/matcher.rs)"]
+    },
+    {
+      "id": "anki-manual-mathjax",
+      "priority": 2,
+      "platform": "card rendering",
+      "url": "https://docs.ankiweb.net/math.html#mathjax",
+      "useFor": ["MathJax delimiters \\(…\\) and \\[…\\], chemistry with mhchem"]
+    },
+    {
+      "id": "anki-source-mathjax-config",
+      "priority": 2,
+      "platform": "card rendering",
+      "url": "https://github.com/ankitects/anki/blob/26.09.3/ts/mathjax/index.ts",
+      "useFor": ["MathJax options: delimiters, packages, textmacros off"]
+    },
+    {
+      "id": "anki-source-reviewer-mathjax",
+      "priority": 2,
+      "platform": "card rendering",
+      "url": "https://github.com/ankitects/anki/blob/26.09.3/ts/reviewer/index.ts",
+      "useFor": ["MathJax typeset only when a side holds a delimiter, card hidden until typeset"]
+    },
+    {
+      "id": "anki-source-cloze-mathjax",
+      "priority": 2,
+      "platform": "card rendering",
+      "url": "https://github.com/ankitects/anki/blob/26.09.3/rslib/src/cloze.rs",
+      "useFor": ["strip_html_inside_mathjax after cloze reveal"]
+    },
+    {
+      "id": "anki-pr-4612-cloze-mathjax",
+      "priority": 2,
+      "platform": "card rendering",
+      "url": "https://github.com/ankitects/anki/pull/4612",
+      "useFor": ["future: }} inside MathJax no longer closes a cloze opened outside it"]
+    },
+    {
+      "id": "mathjax-3.2.2-package",
+      "priority": 2,
+      "platform": "card rendering",
+      "url": "https://www.npmjs.com/package/mathjax/v/3.2.2",
+      "useFor": ["vendored es5/tex-svg-full.js, Apache-2.0"]
+    },
+    {
+      "id": "anki-26.09.3-fsrs-evaluate-oracle",
+      "priority": 2,
+      "platform": "cross-platform FSRS",
+      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/scheduler/fsrs/params.rs",
+      "useFor": ["evaluate_params_legacy (AGPL, behaviour only; outputs from scripts/anki-oracle/gen_evaluate.py)", "lib/fsrsEvaluate.test.ts"]
+    },
+    {
+      "id": "anki-26.09.3-fsrs-simulator",
+      "priority": 2,
+      "platform": "cross-platform FSRS",
+      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/scheduler/fsrs/simulator.rs",
+      "useFor": ["simulator inputs, defaults and card conversion, with ts/routes/deck-options/SimulatorModal.svelte (AGPL, behaviour only; outputs from scripts/anki-oracle/gen_simulate.py)", "lib/fsrsSimulator.test.ts"]
+    },
+    {
+      "id": "fsrs-rs-6.6.2-evaluate-simulate",
+      "priority": 3,
+      "platform": "FSRS reference implementation",
+      "url": "https://github.com/open-spaced-repetition/fsrs-rs/blob/v6.6.2/src/inference.rs",
+      "useFor": ["RMSE(bins) (with src/dataset.rs)", "simulator learner defaults (src/simulation.rs); BSD-3-Clause"]
+    },
+    {
+      "id": "anki-source-true-retention",
+      "priority": 2,
+      "platform": "cross-platform statistics",
+      "url": "https://github.com/ankitects/anki/blob/main/rslib/src/stats/graphs/retention.rs",
+      "useFor": ["True Retention table: which answers count, young/mature at 21 days, today/yesterday/week/month/year/all-time windows from the next day start"]
+    },
+    {
+      "id": "anki-manual-manage-note-types",
+      "priority": 1,
+      "platform": "cross-platform note type management",
+      "url": "https://docs.ankiweb.net/editing.html#adding-a-note-type",
+      "useFor": ["Add Note Type offers stock types and clones of existing types, then asks for a name", "Delete removes a note type with all its notes and cards", "cloze note types can add, remove and reorder fields"]
+    },
+    {
+      "id": "anki-source-empty-cards-orphaned-notes",
+      "priority": 2,
+      "platform": "cross-platform card generation and maintenance behavior",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/emptycards.py",
+      "useFor": ["Empty Cards with Keep Notes off removes the notes left without cards (remove_cards_and_orphaned_notes)", "Keep Notes on leaves a note's first card"]
+    },
+    {
       "id": "anki-manual-check-database",
       "priority": 1,
       "platform": "cross-platform collection maintenance behavior",

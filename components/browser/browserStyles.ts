@@ -97,6 +97,8 @@ export function createBrowserStyles(colors: ColorScheme) {
     detailLabel: { fontSize: FontSize.sm, color: colors.textMuted },
     detailValue: { fontSize: FontSize.sm, color: colors.textPrimary, fontWeight: '500' },
 
+    cardInfoBtn: { marginTop: Spacing.sm },
+
     selectionBar: {
         minHeight: 68,
         flexDirection: 'row',

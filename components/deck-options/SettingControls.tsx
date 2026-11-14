@@ -115,7 +115,7 @@ export function TextBlockSetting({ label, value, onChange, styles, colors, hint,
     );
 }
 
-function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'integer', error, inputRef, placeholder }: {
+export function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'integer', error, inputRef, placeholder }: {
     label: string;
     value: string;
     onChange: (value: string) => void;
@@ -203,7 +203,7 @@ function NumberSetting({ label, value, onChange, styles, suffix, hint, kind = 'i
     );
 }
 
-function ToggleSetting({ label, value, onChange, styles, colors, hint }: {
+export function ToggleSetting({ label, value, onChange, styles, colors, hint }: {
     label: string;
     value: boolean;
     onChange: (value: boolean) => void;

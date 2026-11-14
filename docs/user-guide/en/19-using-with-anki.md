@@ -124,7 +124,7 @@ not have every feature. The main differences you will notice:
 | Sync (AnkiWeb) | None. You move things with a `.colpkg` / `.apkg` file. |
 | Profiles | There is a single collection. |
 | Daily limit for new cards | None: you can study as many new cards as you like. Review cards have a daily limit. See [Deck options](06-deck-options.md#daily-limits). |
-| Math (MathJax/LaTeX) | Formulas are not shown rendered; the source text in the fields is kept. |
+| Math (MathJax/LaTeX) | MathJax formulas are drawn offline; `[latex]` image formulas are not, and their source text is kept. |
 | Image Occlusion | Notes are made and edited with the app's mask editor and open in Anki with the same masks, including their turn and colour; colours here come from a short palette, and any colour set in Anki is kept. |
 | Add-ons | Not supported. |
 | JavaScript in card templates | Not run, for safety. |

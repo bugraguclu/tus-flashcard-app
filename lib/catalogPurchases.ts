@@ -28,11 +28,19 @@ export interface CatalogAccessState {
     price: string;
     productAvailable: boolean;
     error?: string;
+    /**
+     * The store granted the pack but installing its cards failed, and why. Kept apart from
+     * `error`, which is about the store: the buyer is told the purchase went through and is
+     * offered the installation again (lib/catalogReconciliation.ts).
+     */
+    installError?: string;
 }
 
 export interface CatalogPurchaseResult {
     hasAccess: boolean;
     cancelled: boolean;
+    /** The purchase waits for approval (Ask to Buy) or for the buyer to finish paying. */
+    pending?: boolean;
     state: CatalogAccessState;
 }
 
@@ -121,6 +129,23 @@ function formatError(error: unknown): string {
 
 function isCancelled(error: unknown): boolean {
     return Boolean(error && typeof error === 'object' && 'userCancelled' in error && error.userCancelled);
+}
+
+/**
+ * RevenueCat's PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR: the purchase waits for a parent's
+ * approval (Ask to Buy) or for the buyer to finish paying. Nothing failed; the store delivers
+ * the purchase once it goes through.
+ */
+function isPaymentPending(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const { code, readableErrorCode, userInfo } = error as {
+        code?: unknown;
+        readableErrorCode?: unknown;
+        userInfo?: { readableErrorCode?: unknown } | null;
+    };
+    return String(code) === '20'
+        || readableErrorCode === 'PAYMENT_PENDING_ERROR'
+        || userInfo?.readableErrorCode === 'PAYMENT_PENDING_ERROR';
 }
 
 function unconfiguredState(): CatalogAccessState {
@@ -223,6 +248,10 @@ export async function purchaseBkaCatalog(): Promise<CatalogPurchaseResult> {
         if (isCancelled(error)) {
             const state = await loadCatalogAccess();
             return { hasAccess: state.hasAccess, cancelled: true, state };
+        }
+        if (isPaymentPending(error)) {
+            const state = await loadCatalogAccess();
+            return { hasAccess: state.hasAccess, cancelled: false, pending: true, state };
         }
         const state: CatalogAccessState = {
             status: 'error',

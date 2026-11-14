@@ -114,6 +114,18 @@ aradan bir ay geçince uygulama yeniden optimize etmenizi önerir.
 boşlukla ayırarak yapıştırabilirsiniz. Alanı boşaltırsanız varsayılanlara dönülür. İzin verilen
 sınırların dışındaki sayılar kaydedilirken sınıra çekilir.
 
+<a id="evaluate-and-simulate"></a>
+## Parametreleri değerlendirmek ve simülatör
+
+**Parametreleri değerlendir** (FSRS bölümü), alandaki parametrelerin tekrar geçmişinize ne kadar
+uyduğunu **log loss** ve **RMSE(bins)** ile gösterir; küçük değer daha iyi uyum demektir. Optimize
+etmenin kullandığı geçmişin aynısına bakar. Çalışırken ikinci dokunuş durdurur.
+
+**FSRS simülatörü**, seçtiğiniz gün sayısı ve sınırlarla günlük tekrar sayısını, çalışma süresini ve
+ezberlenen kart sayısını tahmin eder; sonuç haftalık veya aylık çubuklar ve toplamlar olarak görünür.
+Yeni kartlar için günlük sınır olmadığından simülatör, ayar grubunda kayıtlı değeri (varsayılan 20)
+tahmin için kullanır. İkisi de hiçbir ayarı ya da kartı değiştirmez.
+
 <a id="reschedule"></a>
 ## Kartları yeniden zamanlamak
 
@@ -166,8 +178,8 @@ satır eklenir. Bu işlem kendiliğinden geri alınamaz; çok sayıda kartı etk
 ## Anki'den farklı olanlar
 
 > **Anki'den farkı:**
-> - Hedef hatırlama oranını seçmenize yardım eden bir simülatör ve İstatistikler'de FSRS'e özel
->   hatırlama grafikleri yoktur.
+> - İstatistikler'de FSRS'e özel hatırlama grafikleri yoktur. Simülatörde Anki'deki "Karar vermeme
+>   yardım et" düğmesi ve birden çok sonucu üst üste gösterme yoktur.
 > - Ayar gruplarını tek tek optimize edersiniz; hepsini birden optimize eden bir komut yoktur.
 > - FSRS, yeni kartların günlük sınırını değiştirmez: TusAnkiM'de yeni kartlar için günlük sınır
 >   yoktur. Bkz. [Deste seçenekleri](06-deck-options.md#daily-limits).

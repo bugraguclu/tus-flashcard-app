@@ -13,11 +13,12 @@ import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useCatalogStatus } from '../contexts/AppContext';
 import { BKA_PRODUCT, isCatalogPurchaseSimulationEnabled } from '../lib/catalogPurchases';
+import { catalogPurchaseOutcome } from '../lib/catalogReconciliation';
 import { BKA_MANIFEST } from '../lib/bkaManifest';
 import { formatCount } from '../lib/i18n';
 import { alert } from '../lib/confirm';
 import { readOnlyTabMessage } from '../lib/db';
-import { goBackOr } from '../lib/backNavigation';
+import { goBackOr, returnToDeckList } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
 import DisclosureChevron from '../components/DisclosureChevron';
 import LockGlyph from '../components/LockGlyph';
@@ -48,7 +49,9 @@ export default function CatalogScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { l, locale } = useI18n();
-    const { catalogAccess, catalogInstalling, purchaseCatalog, restoreCatalogPurchase } = useCatalogStatus();
+    const {
+        catalogAccess, catalogInstalling, purchaseCatalog, restoreCatalogPurchase, refreshCatalogAccess,
+    } = useCatalogStatus();
     const [busy, setBusy] = useState<'purchase' | 'restore' | null>(null);
     const [expanded, setExpanded] = useState<string | null>(null);
     // The gradient is painted at an explicit pixel size: a percentage-sized SVG keeps the height
@@ -56,12 +59,32 @@ export default function CatalogScreen() {
     const [heroSize, setHeroSize] = useState({ width: 0, height: 0 });
 
     const owned = catalogAccess.hasAccess;
+    // The store granted the pack (or the free unlock ran) but the cards did not install: the
+    // buyer is not asked to pay again, only to install again.
+    const installFailed = !owned && Boolean(catalogAccess.installError);
     const price = catalogAccess.price || BKA_PRODUCT.fallbackPrice;
     const purchaseSimulationEnabled = isCatalogPurchaseSimulationEnabled();
     const canBuy = (catalogAccess.configured && catalogAccess.productAvailable) || purchaseSimulationEnabled;
     const number = (value: number) => formatCount(value, locale);
     const trialDeckName = getBkaCatalogRootDeckName();
     const trialAvailable = !owned && Boolean(getDeckByName(trialDeckName));
+    const installFailedText = purchaseSimulationEnabled
+        ? l('Kartlar kurulamadı. Kurulumu yeniden deneyebilirsiniz.', 'The cards could not be installed. You can retry the installation.')
+        : l(
+            'Satın alma tamamlandı ama kartlar kurulamadı. Kurulumu yeniden denemek ücretsizdir.',
+            'Your purchase went through, but the cards could not be installed. Retrying the installation is free.',
+        );
+
+    // The cards are the point of the purchase, so acknowledging it is also the way to them: OK
+    // closes this screen onto the deck list that now holds the pack.
+    const announceUnlocked = () => alert(
+        l('Paket açıldı', 'Package unlocked'),
+        l(
+            `${number(BKA_MANIFEST.totals.cards)} kartın tamamı deste listenize eklendi.`,
+            `All ${number(BKA_MANIFEST.totals.cards)} cards were added to your deck list.`,
+        ),
+        () => goBackOr(router),
+    );
 
     const buy = async () => {
         if (busy || owned || !canBuy) return;
@@ -73,18 +96,20 @@ export default function CatalogScreen() {
         setBusy('purchase');
         try {
             const result = await purchaseCatalog();
-            if (result.cancelled) return;
-            if (result.hasAccess) {
-                // The cards are the point of the purchase, so acknowledging it is also the way to
-                // them: OK closes this screen onto the deck list that now holds the pack.
+            const outcome = catalogPurchaseOutcome(result);
+            if (outcome === 'cancelled') return;
+            if (outcome === 'unlocked') {
+                announceUnlocked();
+            } else if (outcome === 'pending') {
                 alert(
-                    l('Paket açıldı', 'Package unlocked'),
+                    l('Onay bekleniyor', 'Waiting for approval'),
                     l(
-                        `${number(BKA_MANIFEST.totals.cards)} kartın tamamı deste listenize eklendi.`,
-                        `All ${number(BKA_MANIFEST.totals.cards)} cards were added to your deck list.`,
+                        'Satın alma onay bekliyor. Onaylandıktan sonra uygulamayı yeniden açın ya da Satın almayı geri yükle’ye dokunun.',
+                        'The purchase is waiting for approval. Once it is approved, reopen the app or tap Restore purchase.',
                     ),
-                    () => goBackOr(router),
                 );
+            } else if (outcome === 'installFailed') {
+                alert(l('Kartlar kurulamadı', 'Cards could not be installed'), installFailedText);
             } else {
                 alert(
                     purchaseSimulationEnabled
@@ -95,9 +120,42 @@ export default function CatalogScreen() {
                             'Kartlar kurulamadı. Kendi desteleriniz ve kartlarınız değiştirilmedi. Uygulamayı kapatıp yeniden açın; kurulum kendiliğinden yeniden denenir.',
                             'The cards could not be installed. Your own decks and cards were not changed. Close and reopen the app; the installation is tried again automatically.',
                         )
-                        : result.state.error
+                        : outcome === 'storeError'
                             ? l('Mağazaya bağlanılamadı. Bağlantınızı kontrol edip yeniden deneyin.', 'Could not connect to the store. Check your connection and try again.')
                             : l('Mağaza yanıtı doğrulanamadı.', 'The store response could not be verified.'),
+                );
+            }
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    /** Install the cards again for a purchase that went through; nothing is bought again. */
+    const retryInstall = async () => {
+        if (busy) return;
+        const readOnly = readOnlyTabMessage();
+        if (readOnly) {
+            alert(l('Kartlar kurulamadı', 'Cards could not be installed'), readOnly);
+            return;
+        }
+        setBusy('purchase');
+        try {
+            const next = await refreshCatalogAccess();
+            if (next.hasAccess) announceUnlocked();
+            else if (next.installError) {
+                alert(
+                    l('Kartlar kurulamadı', 'Cards could not be installed'),
+                    l(
+                        'Kurulum yine tamamlanamadı. Cihazda boş yer olduğundan emin olup tekrar deneyin.',
+                        'The installation failed again. Make sure the device has free space and try again.',
+                    ),
+                );
+            } else {
+                alert(
+                    l('Kartlar kurulamadı', 'Cards could not be installed'),
+                    next.status === 'error'
+                        ? l('Mağazaya bağlanılamadı. Bağlantınızı kontrol edip yeniden deneyin.', 'Could not connect to the store. Check your connection and try again.')
+                        : l('Bu Apple hesabında uygun bir satın alma bulunamadı.', 'No eligible purchase was found for this Apple account.'),
                 );
             }
         } finally {
@@ -110,11 +168,22 @@ export default function CatalogScreen() {
         setBusy('restore');
         try {
             const result = await restoreCatalogPurchase();
+            const outcome = catalogPurchaseOutcome(result);
+            if (outcome === 'installFailed') {
+                alert(
+                    l('Kartlar kurulamadı', 'Cards could not be installed'),
+                    l(
+                        'Satın almanız bulundu ama kartlar kurulamadı. Kurulumu yeniden deneyin.',
+                        'Your purchase was found, but the cards could not be installed. Retry the installation.',
+                    ),
+                );
+                return;
+            }
             alert(
-                result.hasAccess ? l('Satın alma geri yüklendi', 'Purchase restored') : l('Satın alma bulunamadı', 'No purchase found'),
-                result.hasAccess
+                outcome === 'unlocked' ? l('Satın alma geri yüklendi', 'Purchase restored') : l('Satın alma bulunamadı', 'No purchase found'),
+                outcome === 'unlocked'
                     ? l('Kartlara erişiminiz yeniden açıldı.', 'Your access to the cards has been restored.')
-                    : (result.state.error
+                    : (outcome === 'storeError'
                         ? l('Satın alma bilgileri alınamadı. Lütfen yeniden deneyin.', 'Could not retrieve purchase information. Please try again.')
                         : l('Bu Apple hesabında uygun bir satın alma bulunamadı.', 'No eligible purchase was found for this Apple account.')),
             );
@@ -125,6 +194,7 @@ export default function CatalogScreen() {
 
     const primaryLabel = () => {
         if (owned) return l('Destelerime git', 'Go to my decks');
+        if (installFailed) return l('Kurulumu yeniden dene', 'Retry installation');
         if (purchaseSimulationEnabled) return l('Kartları ücretsiz aç', 'Unlock cards for free');
         if (!canBuy) return l('Mağaza hazırlanıyor', 'Store not ready');
         return l(`${price} · Satın al`, `${price} · Buy`);
@@ -211,7 +281,7 @@ export default function CatalogScreen() {
                         ))}
                     </View>
 
-                    {!owned && !purchaseSimulationEnabled && (
+                    {!owned && !installFailed && !purchaseSimulationEnabled && (
                         <View style={styles.heroPriceRow}>
                             <Text style={styles.heroPrice}>{price}</Text>
                             <Text style={styles.heroPriceNote}>
@@ -349,6 +419,9 @@ export default function CatalogScreen() {
             </ScrollView>
 
             <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Spacing.md) }]}>
+                {installFailed && (
+                    <Notice tone="danger" style={styles.footerNotice}>{installFailedText}</Notice>
+                )}
                 {!purchaseSimulationEnabled && catalogAccess.status === 'error' && !!catalogAccess.error && (
                     <Notice tone="danger" style={styles.footerNotice}>{l(
                         'Mağazaya bağlanılamadı. Bağlantınızı kontrol edip yeniden deneyin.',
@@ -363,11 +436,11 @@ export default function CatalogScreen() {
 
                 <Button
                     label={primaryLabel()}
-                    onPress={owned ? () => router.replace('/decks' as any) : buy}
+                    onPress={owned ? () => returnToDeckList(router) : installFailed ? retryInstall : buy}
                     // The purchase's own spinner shows on the button; anything else under way disables it.
                     // An owner's way to the decks never waits on a store refresh.
                     busy={busy === 'purchase' || (!owned && catalogAccess.status === 'loading')}
-                    disabled={(!canBuy && !owned) || (Boolean(busy) && busy !== 'purchase') || catalogInstalling}
+                    disabled={(!canBuy && !owned && !installFailed) || (Boolean(busy) && busy !== 'purchase') || catalogInstalling}
                 />
 
                 {!owned && !purchaseSimulationEnabled && (

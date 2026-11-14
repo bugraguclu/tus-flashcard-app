@@ -6,7 +6,7 @@ import { getDeckByName } from './deckStore';
 import { getDeckConfigForDeck } from './deckLimits';
 import { answeredSinceBuild, serveFilteredDeckCards } from './filteredDeckServing';
 import { parseAnkiCardData } from './fsrsCardData';
-import { filteredDeckMemberIds, gatherFilteredDeckMemberIds } from './filteredDeckMembership';
+import { filteredDeckMemberIds, gatherFilteredDeckMemberIds, storedFilteredDeckMemberIds } from './filteredDeckMembership';
 export { gatherFilteredTermCardIds } from './filteredDeckGather';
 import { isCatalogNote, isCatalogStudyAvailable } from './catalogProtection';
 import type { StudyQueueResult } from './studyQueue';
@@ -50,8 +50,40 @@ type FilteredDeckQueueDefinition = { id?: number } & Pick<Deck,
     | 'reschedule'
 >;
 
-export function buildFilteredDeckQueue(deck: FilteredDeckQueueDefinition, settings: AppSettings, nowMs: number): StudyQueueResult {
-    return queueForMembers(deck, filteredDeckMemberIds(deck, settings, nowMs), settings, nowMs);
+/** `studyAheadIds`: the reviewer's "Beklemeden çalış" pass (`extraLearningCardIds`). */
+export function buildFilteredDeckQueue(
+    deck: FilteredDeckQueueDefinition,
+    settings: AppSettings,
+    nowMs: number,
+    studyAheadIds?: readonly number[],
+): StudyQueueResult {
+    return queueForMembers(deck, filteredDeckMemberIds(deck, settings, nowMs), settings, nowMs, studyAheadIds);
+}
+
+/**
+ * The cards of the deck's build still waiting on a learning step or a preview delay, soonest first:
+ * what "Beklemeden çalış" deals now. The regular study scope cannot find them, since it leaves out
+ * every card a filtered deck has reserved, this deck's own included. A learning card the build
+ * gathered and nobody has answered yet is dealt at once anyway; listing it changes nothing.
+ */
+export function filteredDeckWaitingCards(deck: FilteredDeckQueueDefinition, nowMs: number): Array<{ cardId: number; due: number }> {
+    if (deck.filteredDeckEmpty) return [];
+    const completed = new Set(deck.filteredDoneCardIds ?? []);
+    const memberIds = (storedFilteredDeckMemberIds(deck) ?? []).filter((id) => !completed.has(id));
+    if (memberIds.length === 0) return [];
+    const rows = getDB().getAllSync<{ id: number; queue: number; due: number }>(
+        'SELECT id, queue, due FROM anki_cards WHERE id IN (SELECT value FROM json_each(?))',
+        JSON.stringify(memberIds),
+    );
+    const preview = deck.reschedule === false;
+    return rows.flatMap((row) => {
+        const cardId = Number(row.id);
+        if (row.queue < 0) return [];
+        // As the serving reads them: a preview delay first, then a learning step's due time.
+        const previewDue = deck.filteredPreviewDue?.[String(cardId)];
+        if (previewDue !== undefined) return previewDue > nowMs ? [{ cardId, due: previewDue }] : [];
+        return !preview && row.queue === 1 && row.due > nowMs ? [{ cardId, due: Number(row.due) }] : [];
+    }).sort((a, b) => a.due - b.due || a.cardId - b.cardId);
 }
 
 function queueForMembers(
@@ -59,6 +91,7 @@ function queueForMembers(
     memberIds: readonly number[],
     settings: AppSettings,
     nowMs: number,
+    studyAheadIds?: readonly number[],
 ): StudyQueueResult {
     if (deck.filteredDeckEmpty) {
         return {
@@ -99,6 +132,7 @@ function queueForMembers(
             return config;
         },
         modOf: (card) => Number(card.rawCard?.mod) || 0,
+        studyAheadIds: studyAheadIds && studyAheadIds.length > 0 ? new Set(studyAheadIds) : undefined,
     });
 
     return {

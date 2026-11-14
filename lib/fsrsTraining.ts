@@ -206,15 +206,22 @@ export async function computeFsrsParameters(items: readonly FsrsOptimizerItem[],
     return [...smoothed, ...trained.slice(4)];
 }
 
-/** FSRS 6.6.2 evaluate: sequential f32 BCE/weight sums, without the trainer's probability clamp. */
-export function fsrsLogLoss(params: readonly number[], items: readonly FsrsTrainingItem[]): number {
+/** The f32 model `fsrsLogLoss` predicts with: the parameters normalized and clipped as FSRS::new clips them. */
+export function fsrsEvaluationModel(params: readonly number[]): FsrsTrainingModel {
+    return new FsrsTrainingModel(clampFsrsParameters(normalizeFsrsParameters(params)).map(f32));
+}
+
+/**
+ * The weighted log loss of raw predictions, one per item in the items' order: the sequential
+ * f32 BCE and weight sums of FSRS 6.6.2 evaluate, with recency weights and no probability clamp.
+ */
+export function fsrsLogLossOfPredictions(predictions: ArrayLike<number>, items: readonly FsrsTrainingItem[]): number {
     if (!items.length) throw new Error('NotEnoughData');
-    const model = new FsrsTrainingModel(clampFsrsParameters(normalizeFsrsParameters(params)).map(f32));
     const weights = recencyWeights(items.length);
     let loss = 0;
     let weightSum = 0;
     for (let index = 0; index < items.length; index++) {
-        const r = model.predict(items[index]);
+        const r = predictions[index];
         const label = items[index].reviews[items[index].length - 1].rating > 1 ? 1 : 0;
         const term = f32(f32(f32(label * f32(Math.log(r))) + f32((1 - label) * f32(Math.log(f32(1 - r))))) * weights[index]);
         loss = f32(loss + term);
@@ -223,6 +230,13 @@ export function fsrsLogLoss(params: readonly number[], items: readonly FsrsTrain
     const result = f32(-loss / weightSum);
     if (!Number.isFinite(result)) throw new Error('InvalidInput');
     return result;
+}
+
+/** FSRS 6.6.2 evaluate: sequential f32 BCE/weight sums, without the trainer's probability clamp. */
+export function fsrsLogLoss(params: readonly number[], items: readonly FsrsTrainingItem[]): number {
+    if (!items.length) throw new Error('NotEnoughData');
+    const model = fsrsEvaluationModel(params);
+    return fsrsLogLossOfPredictions(items.map((item) => model.predict(item)), items);
 }
 /** A stored parameter list `FSRS::new` accepts: 0, 17, 19 or 21 finite values. */
 function schedulerAccepts(params: readonly number[]): boolean {

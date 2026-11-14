@@ -32,6 +32,7 @@ import {
     applyCatalogProgress,
     encodeCatalogProgress,
     hasStudyProgress,
+    isCatalogPackRow,
     parseCatalogProgress,
     type CatalogProgress,
 } from './catalogRows';
@@ -41,6 +42,8 @@ import { catalogPackKey } from './catalogPackKey';
 import { BKA_MANIFEST } from './bkaManifest';
 import { humanizeCardText } from './displayText';
 import { preserveCatalogNoteEdits } from './catalogNoteEdits';
+import { carryCatalogLearnerState, readInstalledCatalogState } from './catalogLearnerState';
+import { withCatalogIds } from './catalogIds';
 import { applyPendingCatalogLearnerData } from './backupCatalogLearnerData';
 
 /** Marks every row this module owns, so removal can never reach the learner's own content. */
@@ -783,63 +786,95 @@ export function scoreBkaTrialCard(card: AnkiCard, note: Note, noteType?: NoteTyp
     return score;
 }
 
-function writeCatalog(snapshot: BkaCatalogSnapshot): { restoredProgress: number } {
+/** Run `work` as one transaction: everything it writes lands together, or none of it does. */
+function inTransaction<T>(work: () => T): T {
+    const db = getDB();
+    db.execSync('BEGIN TRANSACTION;');
+    try {
+        const result = work();
+        db.execSync('COMMIT;');
+        return result;
+    } catch (error) {
+        // SQLite rolls some failures (a full disk) back on its own; the original error is the one
+        // worth reporting either way.
+        try { db.execSync('ROLLBACK;'); } catch { /* no transaction left to roll back */ }
+        throw error;
+    }
+}
+
+/**
+ * The rows below are written with INSERT OR REPLACE, which must only ever replace the catalog's
+ * own rows. lib/catalogIds.ts already moved the snapshot off any id a learner row holds; this is
+ * the last check before writing, and it fails the whole transaction.
+ */
+function assertOnlyCatalogRowsReplaced(table: 'note_types' | 'deck_configs' | 'decks', ids: number[]): void {
+    for (const id of ids) {
+        const row = getDB().getFirstSync<{ data: string }>(`SELECT data FROM ${table} WHERE id = ?`, id);
+        if (row && !isCatalogPackRow(row.data)) {
+            throw new Error(`BKA kurulumu kendi kaydınızın (${table} ${id}) üzerine yazacaktı. Koleksiyon değiştirilmedi.`);
+        }
+    }
+}
+
+/**
+ * Write the snapshot's rows. Runs inside the caller's transaction. A card whose state was carried
+ * from the installed rows keeps it; any other card gets progress stashed by an earlier removal.
+ */
+function writeCatalogRows(snapshot: BkaCatalogSnapshot, carriedCardIds: ReadonlySet<number>): { restoredProgress: number } {
     const db = getDB();
     const now = Date.now();
     const stashed = readStashedProgress();
     let restoredProgress = 0;
 
-    db.execSync('BEGIN TRANSACTION;');
-    try {
-        for (const config of snapshot.deckConfigs) {
-            db.runSync('INSERT OR REPLACE INTO deck_configs (id, data) VALUES (?, ?)', config.id, JSON.stringify(config));
-        }
-        for (const deck of snapshot.decks) {
-            db.runSync(
-                `INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone)
-                 VALUES (?, ?, ?, ?, ?, 0)`,
-                deck.id, deck.name, JSON.stringify(deck), now, deck.usn,
-            );
-        }
-        for (const noteType of snapshot.noteTypes) {
-            db.runSync(
-                `INSERT OR REPLACE INTO note_types (id, name, data, updated_at, usn, tombstone)
-                 VALUES (?, ?, ?, ?, -1, 0)`,
-                noteType.id, noteType.name, JSON.stringify(noteType), now,
-            );
-        }
-        for (const note of snapshot.notes) {
-            db.runSync(
-                `INSERT OR REPLACE INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-                note.id,
-                note.noteTypeId,
-                note.sfld,
-                note.csum,
-                note.tags.length ? ` ${note.tags.join(' ')} ` : '',
-                JSON.stringify(note),
-                now,
-                note.usn,
-            );
-        }
-        for (const sourceCard of snapshot.cards) {
-            const stored = stashed[String(sourceCard.id)];
-            if (stored) restoredProgress++;
-            const card = applyCatalogProgress(sourceCard, stored);
-            db.runSync(
-                `INSERT OR REPLACE INTO anki_cards
-                 (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags,
-                  data, updated_at, created_at, usn, tombstone)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-                card.id, card.noteId, card.deckId, card.ord, card.type, card.queue, card.due,
-                card.ivl, card.factor, card.reps, card.lapses, card.left, card.flags,
-                JSON.stringify(card), now, now, card.usn,
-            );
-        }
-        db.execSync('COMMIT;');
-    } catch (error) {
-        db.execSync('ROLLBACK;');
-        throw error;
+    assertOnlyCatalogRowsReplaced('deck_configs', snapshot.deckConfigs.map((config) => config.id));
+    assertOnlyCatalogRowsReplaced('decks', snapshot.decks.map((deck) => deck.id));
+    assertOnlyCatalogRowsReplaced('note_types', snapshot.noteTypes.map((noteType) => noteType.id));
+
+    for (const config of snapshot.deckConfigs) {
+        db.runSync('INSERT OR REPLACE INTO deck_configs (id, data) VALUES (?, ?)', config.id, JSON.stringify(config));
+    }
+    for (const deck of snapshot.decks) {
+        db.runSync(
+            `INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone)
+             VALUES (?, ?, ?, ?, ?, 0)`,
+            deck.id, deck.name, JSON.stringify(deck), now, deck.usn,
+        );
+    }
+    for (const noteType of snapshot.noteTypes) {
+        db.runSync(
+            `INSERT OR REPLACE INTO note_types (id, name, data, updated_at, usn, tombstone)
+             VALUES (?, ?, ?, ?, -1, 0)`,
+            noteType.id, noteType.name, JSON.stringify(noteType), now,
+        );
+    }
+    for (const note of snapshot.notes) {
+        db.runSync(
+            `INSERT OR REPLACE INTO notes (id, noteTypeId, sfld, csum, tags, data, updated_at, usn, tombstone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+            note.id,
+            note.noteTypeId,
+            note.sfld,
+            note.csum,
+            note.tags.length ? ` ${note.tags.join(' ')} ` : '',
+            JSON.stringify(note),
+            now,
+            note.usn,
+        );
+    }
+    for (const sourceCard of snapshot.cards) {
+        const carried = carriedCardIds.has(sourceCard.id);
+        const stored = carried ? undefined : stashed[String(sourceCard.id)];
+        const card = applyCatalogProgress(sourceCard, stored);
+        if (stored || (carried && hasStudyProgress(card))) restoredProgress++;
+        db.runSync(
+            `INSERT OR REPLACE INTO anki_cards
+             (id, noteId, deckId, ord, type, queue, due, ivl, factor, reps, lapses, "left", flags,
+              data, updated_at, created_at, usn, tombstone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+            card.id, card.noteId, card.deckId, card.ord, card.type, card.queue, card.due,
+            card.ivl, card.factor, card.reps, card.lapses, card.left, card.flags,
+            JSON.stringify(card), now, now, card.usn,
+        );
     }
     return { restoredProgress };
 }
@@ -856,6 +891,52 @@ function assertInstalledDatabase(snapshot: BkaCatalogSnapshot): void {
             + `${storedCards}/${snapshot.cards.length} kart. Kurulum yeniden denenecek.`,
         );
     }
+}
+
+/**
+ * Swap whatever catalog is installed for `source`, in one transaction. Nothing in here waits:
+ * the package was read and its media copied before this runs, so a failure — or the app being
+ * closed — at any point leaves either the catalog that was installed or the new one, never a
+ * collection without either. Learner rows are never removed; learner cards that sit in a catalog
+ * deck move to a learner deck, and progress on the old rows is stashed for the new ones.
+ */
+function replaceInstalledCatalog(
+    source: BkaCatalogSnapshot,
+    tier: BkaCatalogTier,
+    currentTier: BkaCatalogTier | null,
+): { snapshot: BkaCatalogSnapshot; restoredProgress: number; replaced: boolean } {
+    // Package ids a learner row holds are given up for fresh ones, never written over.
+    const edited: BkaCatalogSnapshot = withCatalogIds(source);
+    const learnerState = readInstalledCatalogState();
+    if (currentTier === 'full' && tier === 'full') {
+        // Fields the learner edited, and the cards their edits generated, replace the package's.
+        const editedNoteIds = new Set(learnerState.editedNotes.map((note) => note.id));
+        const editedCards = [...learnerState.cards.values()].filter((card) => editedNoteIds.has(card.noteId));
+        preserveCatalogNoteEdits(edited, learnerState.editedNotes, editedCards);
+    }
+    // Everything else the learner made of the installed rows: scheduling and card data, positions,
+    // tags, and on the same tier the presets and deck settings.
+    const { snapshot, carriedCardIds } = carryCatalogLearnerState(edited, learnerState, currentTier === tier);
+    const installed = findInstalledCatalogRows();
+
+    return inTransaction(() => {
+        if (installed) {
+            removeCatalogRows(installed);
+            removeCatalogSubjects();
+        }
+        const { restoredProgress } = writeCatalogRows(snapshot, carriedCardIds);
+        assertInstalledDatabase(snapshot);
+        writeCatalogSubjects(snapshot.subjects);
+        writeSetting(ROOT_DECK_NAME_KEY, snapshot.rootDeckName);
+        writeSetting(BKA_CATALOG_INSTALL_KEY, tier);
+        writeSetting(PACKAGE_VERSION_KEY, BKA_MANIFEST.sha256);
+        if (tier === 'trial') writeSetting(SEPARATE_TRIAL_LAYOUT_KEY, 'true');
+        else {
+            getDB().runSync('DELETE FROM settings WHERE key = ?', PROGRESS_KEY);
+            getDB().runSync('DELETE FROM settings WHERE key = ?', SEPARATE_TRIAL_LAYOUT_KEY);
+        }
+        return { snapshot, restoredProgress, replaced: installed !== null };
+    });
 }
 
 /**
@@ -890,33 +971,16 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     // Installation is the first thing a buyer sees after paying, so each phase is timed and
     // reported once: a support question about a slow install has an answer in the log.
     const startedAt = Date.now();
-    // The package is loaded and unpacked before the installed catalog is touched. The web build
-    // downloads it, and a download that fails must leave the learner the catalog they had.
+    // Everything that waits or can fail on its own — loading the package (the web build downloads
+    // it), opening and checking it, copying its media — happens before the installed catalog is
+    // touched, so a failure there leaves the learner the catalog they had.
     const zip = await loadBundledPackage();
     const collectionBytes = await extractCollectionFromZip(zip);
-
-    const editedNotes = currentTier === 'full' && tier === 'full'
-        ? parseRows<Note>('notes').map((row) => row.value).filter((note) => isCatalogRow(note) && note.catalogFieldsEdited)
-        : [];
-    const editedNoteIds = new Set(editedNotes.map((note) => note.id));
-    const editedCards = editedNotes.length > 0
-        ? getDB().getAllSync<{ noteId: number; data: string }>('SELECT noteId, data FROM anki_cards')
-            .filter((row) => editedNoteIds.has(Number(row.noteId)))
-            .map((row) => JSON.parse(row.data) as AnkiCard)
-        : [];
-
-    // Tier replacement removes only catalog-marked rows and stashes scheduling progress. User
-    // decks remain untouched, and matching card ids recover their progress in the new tier.
-    if (currentTier !== null || parseRows<Deck>('decks').some((row) => isCatalogRow(row.value))) {
-        uninstallBkaCatalog();
-    }
-
     const reader = await openAnkiReader(collectionBytes);
-    let snapshot: BkaCatalogSnapshot;
+    let source: BkaCatalogSnapshot;
     try {
         const full = readBkaCatalog(reader, chooseRootDeckName());
-        snapshot = tier === 'full' ? full : buildBkaTrialCatalog(full, chooseTrialRootDeckName());
-        preserveCatalogNoteEdits(snapshot, editedNotes, editedCards);
+        source = tier === 'full' ? full : buildBkaTrialCatalog(full, chooseTrialRootDeckName());
     } finally {
         reader.close();
     }
@@ -934,18 +998,11 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
 
     const mediaAt = Date.now();
 
-    const { restoredProgress } = writeCatalog(snapshot);
+    const { snapshot, restoredProgress, replaced } = replaceInstalledCatalog(source, tier, currentTier);
     const writtenAt = Date.now();
-    assertInstalledDatabase(snapshot);
-    writeCatalogSubjects(snapshot.subjects);
-    writeSetting(ROOT_DECK_NAME_KEY, snapshot.rootDeckName);
-    writeSetting(BKA_CATALOG_INSTALL_KEY, tier);
-    writeSetting(PACKAGE_VERSION_KEY, BKA_MANIFEST.sha256);
-    if (tier === 'trial') writeSetting(SEPARATE_TRIAL_LAYOUT_KEY, 'true');
-    else {
-        getDB().runSync('DELETE FROM settings WHERE key = ?', PROGRESS_KEY);
-        getDB().runSync('DELETE FROM settings WHERE key = ?', SEPARATE_TRIAL_LAYOUT_KEY);
-    }
+    // The write-ahead log and free pages the swap left behind are reclaimed only now, after the
+    // commit, never between taking the old rows out and putting the new ones in.
+    if (replaced) compactDatabase();
     // A restored backup's tags and card data for the pack go back on as soon as the pack is
     // installed, wherever the installation was started (startup, purchase, restore), so a later
     // study session can never be rolled back by an overlay still waiting to be applied.
@@ -1008,32 +1065,40 @@ export function ensureBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     return promise;
 }
 
+interface InstalledCatalogRows {
+    noteIds: Set<number>;
+    cardIds: Set<number>;
+    deckIds: Set<number>;
+    configIds: number[];
+    noteTypeIds: number[];
+}
+
+/** The rows the installer owns, found by their marker; null when none are left. */
+function findInstalledCatalogRows(): InstalledCatalogRows | null {
+    const noteIds = new Set(parseRows<Note>('notes').filter((row) => isCatalogRow(row.value)).map((row) => row.id));
+    const deckIds = new Set(parseRows<Deck>('decks').filter((row) => isCatalogRow(row.value)).map((row) => row.id));
+    if (noteIds.size === 0 && deckIds.size === 0) return null;
+    return {
+        noteIds,
+        cardIds: new Set(
+            getDB().getAllSync<{ id: number; noteId: number }>('SELECT id, noteId FROM anki_cards')
+                .filter((row) => noteIds.has(Number(row.noteId)))
+                .map((row) => Number(row.id)),
+        ),
+        deckIds,
+        configIds: parseRows<DeckConfig>('deck_configs').filter((row) => isCatalogRow(row.value)).map((row) => row.id),
+        noteTypeIds: parseRows<NoteType>('note_types').filter((row) => isCatalogRow(row.value)).map((row) => row.id),
+    };
+}
+
 /**
- * Remove catalog content when the store reports the entitlement is gone (refund, family sharing
- * change, a different Apple ID). Only rows this module installed are touched, and the learner's
- * scheduling progress on those cards is stashed so a restore brings it back.
+ * Delete the installed catalog rows. Runs inside the caller's transaction, so a removal on its
+ * own (a revoke) and the removal half of a refresh both land in full or not at all.
  */
-export function uninstallBkaCatalog(): BkaCatalogRemovalResult {
+function removeCatalogRows(installed: InstalledCatalogRows): number {
     const db = getDB();
-    const catalogNotes = parseRows<Note>('notes').filter((row) => isCatalogRow(row.value));
-    const catalogDecks = parseRows<Deck>('decks').filter((row) => isCatalogRow(row.value));
-    const catalogConfigs = parseRows<DeckConfig>('deck_configs').filter((row) => isCatalogRow(row.value));
-    const catalogNoteTypes = parseRows<NoteType>('note_types').filter((row) => isCatalogRow(row.value));
-    const noteIds = new Set(catalogNotes.map((row) => row.id));
-    const catalogDeckIds = new Set(catalogDecks.map((row) => row.id));
-    const catalogCardIds = new Set(
-        db.getAllSync<{ id: number; noteId: number }>('SELECT id, noteId FROM anki_cards')
-            .filter((row) => noteIds.has(Number(row.noteId)))
-            .map((row) => Number(row.id)),
-    );
-
-    if (noteIds.size === 0 && catalogDecks.length === 0) {
-        db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
-        db.runSync('DELETE FROM settings WHERE key = ?', PACKAGE_VERSION_KEY);
-        return { removed: false, notes: 0, cards: 0, decks: 0, storedProgress: 0 };
-    }
-
-    const storedProgress = stashCatalogProgress(catalogCardIds);
+    const { noteIds, deckIds: catalogDeckIds } = installed;
+    const storedProgress = stashCatalogProgress(installed.cardIds);
 
     // A purchased deck behaves normally, so a learner may have moved their own cards into it.
     // Revoking the catalog must never delete or orphan those cards: move them to an existing
@@ -1055,67 +1120,80 @@ export function uninstallBkaCatalog(): BkaCatalogRemovalResult {
         'SELECT id, noteId, deckId, data FROM anki_cards',
     ).filter((row) => catalogDeckIds.has(Number(row.deckId)) && !noteIds.has(Number(row.noteId)));
 
-    db.execSync('BEGIN TRANSACTION;');
-    try {
-        if (!learnerDecks.length && learnerCardsInCatalogDecks.length > 0) {
-            db.runSync(
-                'INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, -1, 0)',
-                fallbackDeck.id, fallbackDeck.name, JSON.stringify(fallbackDeck), Date.now(),
-            );
+    if (!learnerDecks.length && learnerCardsInCatalogDecks.length > 0) {
+        db.runSync(
+            'INSERT OR REPLACE INTO decks (id, name, data, updated_at, usn, tombstone) VALUES (?, ?, ?, ?, -1, 0)',
+            fallbackDeck.id, fallbackDeck.name, JSON.stringify(fallbackDeck), Date.now(),
+        );
+    }
+    for (const row of learnerCardsInCatalogDecks) {
+        try {
+            const card = { ...(JSON.parse(row.data) as AnkiCard), deckId: fallbackDeck.id, mod: Math.floor(Date.now() / 1000), usn: -1 };
+            db.runSync('UPDATE anki_cards SET deckId = ?, data = ?, updated_at = ?, usn = -1 WHERE id = ?',
+                fallbackDeck.id, JSON.stringify(card), Date.now(), row.id);
+        } catch {
+            // Preserve even a malformed learner row; the normalized column is enough to keep
+            // it out of the catalog-deck deletion and later repair tools can rebuild the blob.
+            db.runSync('UPDATE anki_cards SET deckId = ?, updated_at = ?, usn = -1 WHERE id = ?',
+                fallbackDeck.id, Date.now(), row.id);
         }
-        for (const row of learnerCardsInCatalogDecks) {
-            try {
-                const card = { ...(JSON.parse(row.data) as AnkiCard), deckId: fallbackDeck.id, mod: Math.floor(Date.now() / 1000), usn: -1 };
-                db.runSync('UPDATE anki_cards SET deckId = ?, data = ?, updated_at = ?, usn = -1 WHERE id = ?',
-                    fallbackDeck.id, JSON.stringify(card), Date.now(), row.id);
-            } catch {
-                // Preserve even a malformed learner row; the normalized column is enough to keep
-                // it out of the catalog-deck deletion and later repair tools can rebuild the blob.
-                db.runSync('UPDATE anki_cards SET deckId = ?, updated_at = ?, usn = -1 WHERE id = ?',
-                    fallbackDeck.id, Date.now(), row.id);
-            }
-        }
-        const cardIds = [...catalogCardIds];
-        deleteByIds('DELETE FROM anki_cards WHERE id IN', cardIds);
-        // cards_fts.card_id is TEXT, so it must be matched with string ids, not numbers.
-        deleteByIds('DELETE FROM cards_fts WHERE card_id IN', cardIds.map(String));
-        deleteByIds('DELETE FROM notes WHERE id IN', [...noteIds]);
-        deleteByIds('DELETE FROM decks WHERE id IN', catalogDecks.map((row) => row.id));
-        const referencedConfigIds = new Set(
-            parseRows<Deck>('decks')
-                .filter((row) => !catalogDeckIds.has(row.id))
-                .map((row) => Number(row.value.configId)),
-        );
-        deleteByIds(
-            'DELETE FROM deck_configs WHERE id IN',
-            catalogConfigs.map((row) => row.id).filter((id) => !referencedConfigIds.has(id)),
-        );
-        // Note types are only removed when nothing else references them; a learner may have
-        // authored their own notes on the AnKing cloze type while the catalog was unlocked.
-        const referenced = new Set(
-            db.getAllSync<{ noteTypeId: number }>('SELECT DISTINCT noteTypeId FROM notes').map((row) => Number(row.noteTypeId)),
-        );
-        deleteByIds(
-            'DELETE FROM note_types WHERE id IN',
-            catalogNoteTypes.map((row) => row.id).filter((id) => !referenced.has(id)),
-        );
-        db.execSync('COMMIT;');
-    } catch (error) {
-        db.execSync('ROLLBACK;');
-        throw error;
+    }
+    const cardIds = [...installed.cardIds];
+    deleteByIds('DELETE FROM anki_cards WHERE id IN', cardIds);
+    // cards_fts.card_id is TEXT, so it must be matched with string ids, not numbers.
+    deleteByIds('DELETE FROM cards_fts WHERE card_id IN', cardIds.map(String));
+    deleteByIds('DELETE FROM notes WHERE id IN', [...noteIds]);
+    deleteByIds('DELETE FROM decks WHERE id IN', [...catalogDeckIds]);
+    const referencedConfigIds = new Set(
+        parseRows<Deck>('decks')
+            .filter((row) => !catalogDeckIds.has(row.id))
+            .map((row) => Number(row.value.configId)),
+    );
+    deleteByIds(
+        'DELETE FROM deck_configs WHERE id IN',
+        installed.configIds.filter((id) => !referencedConfigIds.has(id)),
+    );
+    // Note types are only removed when nothing else references them; a learner may have
+    // authored their own notes on the AnKing cloze type while the catalog was unlocked.
+    const referenced = new Set(
+        db.getAllSync<{ noteTypeId: number }>('SELECT DISTINCT noteTypeId FROM notes').map((row) => Number(row.noteTypeId)),
+    );
+    deleteByIds(
+        'DELETE FROM note_types WHERE id IN',
+        installed.noteTypeIds.filter((id) => !referenced.has(id)),
+    );
+    return storedProgress;
+}
+
+/**
+ * Remove catalog content when the store reports the entitlement is gone (refund, family sharing
+ * change, a different Apple ID). Only rows this module installed are touched, and the learner's
+ * scheduling progress on those cards is stashed so a restore brings it back.
+ */
+export function uninstallBkaCatalog(): BkaCatalogRemovalResult {
+    const db = getDB();
+    const installed = findInstalledCatalogRows();
+    if (!installed) {
+        db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
+        db.runSync('DELETE FROM settings WHERE key = ?', PACKAGE_VERSION_KEY);
+        return { removed: false, notes: 0, cards: 0, decks: 0, storedProgress: 0 };
     }
 
-    removeCatalogSubjects();
-    db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
-    db.runSync('DELETE FROM settings WHERE key = ?', PACKAGE_VERSION_KEY);
-    db.runSync('DELETE FROM settings WHERE key = ?', ROOT_DECK_NAME_KEY);
+    const storedProgress = inTransaction(() => {
+        const stored = removeCatalogRows(installed);
+        removeCatalogSubjects();
+        db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
+        db.runSync('DELETE FROM settings WHERE key = ?', PACKAGE_VERSION_KEY);
+        db.runSync('DELETE FROM settings WHERE key = ?', ROOT_DECK_NAME_KEY);
+        return stored;
+    });
     compactDatabase();
 
     return {
         removed: true,
-        notes: noteIds.size,
-        cards: catalogCardIds.size,
-        decks: catalogDecks.length,
+        notes: installed.noteIds.size,
+        cards: installed.cardIds.size,
+        decks: installed.deckIds.size,
         storedProgress,
     };
 }

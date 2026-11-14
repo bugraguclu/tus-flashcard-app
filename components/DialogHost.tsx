@@ -68,6 +68,7 @@ export function DialogHost() {
 
     const isConfirm = request.kind === 'confirm';
     const isChoice = request.kind === 'choice';
+    const isOptions = request.kind === 'options';
     const close = () => setRequest(null);
     const accept = () => {
         close();
@@ -77,7 +78,11 @@ export function DialogHost() {
         close();
         request.onCancel?.();
     };
-    const dismiss = isChoice ? undefined : isConfirm ? cancel : accept;
+    const pick = (index: number) => {
+        close();
+        request.onOption?.(index);
+    };
+    const dismiss = isChoice ? undefined : isConfirm || isOptions ? cancel : accept;
 
     // Alerts have a single button, so dismissing (Escape / back) must still run the
     // callback — e.g. a success alert that navigates back. Confirms treat dismiss as cancel.
@@ -116,18 +121,25 @@ export function DialogHost() {
                         <Text style={styles.message}>{request.message}</Text>
                     </ScrollView>
                     <View style={[styles.actions, request.stacked && styles.stackedActions]}>
-                        {(isConfirm || isChoice) && (
+                        {isOptions && (request.options ?? []).map((label, index) => (
+                            <View key={label} ref={index === 0 ? acceptButtonRef : undefined} style={[styles.buttonSlot, styles.stackedSlot]}>
+                                <Button label={label} variant="primary" onPress={() => pick(index)} />
+                            </View>
+                        ))}
+                        {(isConfirm || isChoice || isOptions) && (
                             <View ref={cancelButtonRef} style={[styles.buttonSlot, request.stacked && styles.stackedSlot]}>
                                 <Button label={request.cancelLabel ?? t('common.cancel')} variant="secondary" onPress={cancel} />
                             </View>
                         )}
-                        <View ref={acceptButtonRef} style={[styles.buttonSlot, request.stacked && styles.stackedSlot]}>
-                            <Button
-                                label={request.acceptLabel ?? t('common.ok')}
-                                variant={request.destructive ? 'destructive' : 'primary'}
-                                onPress={accept}
-                            />
-                        </View>
+                        {!isOptions && (
+                            <View ref={acceptButtonRef} style={[styles.buttonSlot, request.stacked && styles.stackedSlot]}>
+                                <Button
+                                    label={request.acceptLabel ?? t('common.ok')}
+                                    variant={request.destructive ? 'destructive' : 'primary'}
+                                    onPress={accept}
+                                />
+                            </View>
+                        )}
                     </View>
                 </Pressable>
             </Pressable>

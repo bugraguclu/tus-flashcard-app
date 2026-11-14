@@ -34,6 +34,11 @@ export function restoreFilteredDeckMembershipRow(id: number, value: string): voi
     getDB().runSync('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', key(id), value);
 }
 
+/** The cards the deck's current build holds, or null when it has none stored. Gathers nothing. */
+export function storedFilteredDeckMemberIds(deck: Definition): number[] | null {
+    return read(deck)?.ids ?? null;
+}
+
 /** Reservations from persisted builds; completed slots stay empty until Rebuild. */
 export function reservedFilteredCardIds(exceptDeckId?: number): number[] {
     const ids = new Set<number>();

@@ -81,3 +81,37 @@ describe('leech tag case', () => {
         expect(getAnkiCard(1010)!.queue).toBe(2);
     });
 });
+
+// Anki tells the learner when an answer made the card a leech ("Card was a leech."), adding "It
+// has been suspended." when the leech action took it out of study.
+describe('leech report', () => {
+    const lapsingReview = () => {
+        const today = localDayNumber(Date.now(), settings.dayRolloverHour);
+        saveAnkiCard(makeCard(1010, 101, 7, { type: 2, queue: 2, due: today, ivl: 10, factor: 2500, reps: 5 }));
+    };
+
+    it('reports a leech the action suspended, and the card it returns is suspended', () => {
+        saveDeckConfig({ ...deckConfig, leechThreshold: 1, leechAction: 'suspend' });
+        lapsingReview();
+        const result = answerStudyCard(1010, 1, settings, 100);
+        expect(result).toMatchObject({ leeched: true, suspended: true });
+        expect(result.updatedCard.state.suspended).toBe(true);
+        expect(getAnkiCard(1010)!.queue).toBe(-1);
+    });
+
+    it('reports a leech that was only tagged', () => {
+        saveDeckConfig({ ...deckConfig, leechThreshold: 1, leechAction: 'tag' });
+        lapsingReview();
+        const result = answerStudyCard(1010, 1, settings, 100);
+        expect(result).toMatchObject({ leeched: true, suspended: false });
+        expect(result.updatedCard.state.suspended).toBe(false);
+        expect(getNote(101)!.tags).toContain('leech');
+    });
+
+    it('reports nothing for an answer that did not make a leech', () => {
+        saveDeckConfig({ ...deckConfig, leechThreshold: 8, leechAction: 'suspend' });
+        lapsingReview();
+        expect(answerStudyCard(1010, 1, settings, 100)).toMatchObject({ leeched: false, suspended: false });
+        expect(answerStudyCard(1010, 3, settings, 100)).toMatchObject({ leeched: false, suspended: false });
+    });
+});

@@ -1,6 +1,6 @@
 import { Alert, Platform } from 'react-native';
 import { translateActive } from './i18n';
-import { userFacingErrorMessage } from './userFacingError';
+import { userFacingDialogText } from './userFacingError';
 
 export interface ConfirmOptions {
     /** Style the confirm action as destructive (red) — for delete/overwrite actions. */
@@ -11,7 +11,7 @@ export interface ConfirmOptions {
 
 /** A dialog request handed to the web DialogHost (see components/DialogHost.tsx). */
 export interface DialogRequest {
-    kind: 'confirm' | 'alert' | 'choice';
+    kind: 'confirm' | 'alert' | 'choice' | 'options';
     title: string;
     message: string;
     destructive: boolean;
@@ -21,8 +21,12 @@ export interface DialogRequest {
     stacked?: boolean;
     /** Runs when the user confirms (confirm) or dismisses (alert). */
     onAccept?: () => void;
-    /** Runs when the user selects the alternate action in a choice dialog. */
+    /** Runs when the user selects the alternate action in a choice dialog, or cancels. */
     onCancel?: () => void;
+    /** An options dialog's actions, in order; Cancel follows them. */
+    options?: string[];
+    /** Runs with the index of the action chosen in an options dialog. */
+    onOption?: (index: number) => void;
 }
 
 type DialogHandler = (request: DialogRequest) => void;
@@ -41,7 +45,8 @@ export function registerDialogHost(handler: DialogHandler): () => void {
 
 /**
  * Cross-platform confirm dialog. Web uses the mounted app-styled host; iPhone uses the native,
- * accessible Apple alert surface. Both paths receive sanitized text.
+ * accessible Apple alert surface. Both paths receive sanitized text: diagnostics are replaced,
+ * but a long message the app wrote is shown whole (`userFacingDialogText`).
  */
 export function confirm(
     title: string,
@@ -49,7 +54,7 @@ export function confirm(
     onConfirm: () => void,
     options: ConfirmOptions = {},
 ): void {
-    const safeMessage = userFacingErrorMessage(message);
+    const safeMessage = userFacingDialogText(message);
     if (webHandler) {
         webHandler({ kind: 'confirm', title, message: safeMessage, destructive: !!options.destructive, acceptLabel: options.confirmLabel, onAccept: onConfirm });
         return;
@@ -74,7 +79,7 @@ export function confirmAsync(
     message: string,
     options: ConfirmOptions = {},
 ): Promise<boolean> {
-    const safeMessage = userFacingErrorMessage(message);
+    const safeMessage = userFacingDialogText(message);
     return new Promise((resolve) => {
         let settled = false;
         const finish = (accepted: boolean) => {
@@ -113,9 +118,54 @@ export function confirmAsync(
     });
 }
 
+/**
+ * Cross-platform dialog with several labelled actions and Cancel, like Anki's askUserDialog with
+ * a Cancel button. Resolves to the chosen action's index, or null for Cancel or a dismissal.
+ */
+export function chooseOption(title: string, message: string, options: readonly string[]): Promise<number | null> {
+    const safeMessage = userFacingDialogText(message);
+    return new Promise((resolve) => {
+        let settled = false;
+        const finish = (choice: number | null) => {
+            if (settled) return;
+            settled = true;
+            resolve(choice);
+        };
+
+        if (webHandler) {
+            webHandler({
+                kind: 'options',
+                title,
+                message: safeMessage,
+                destructive: false,
+                options: [...options],
+                stacked: true,
+                onOption: finish,
+                onCancel: () => finish(null),
+            });
+            return;
+        }
+
+        if (Platform.OS === 'web') {
+            finish(window.confirm(`${title}\n${safeMessage}\n\n${options[0] ?? ''}`) ? 0 : null);
+            return;
+        }
+
+        Alert.alert(
+            title,
+            safeMessage,
+            [
+                ...options.map((text, index) => ({ text, onPress: () => finish(index) })),
+                { text: translateActive('common.cancel'), style: 'cancel' as const, onPress: () => finish(null) },
+            ],
+            { cancelable: true, onDismiss: () => finish(null) },
+        );
+    });
+}
+
 /** Cross-platform alert (info only, no yes/no). */
 export function alert(title: string, message: string, onDismiss?: () => void): void {
-    const safeMessage = userFacingErrorMessage(message);
+    const safeMessage = userFacingDialogText(message);
     if (webHandler) {
         webHandler({ kind: 'alert', title, message: safeMessage, destructive: false, onAccept: onDismiss });
         return;
@@ -142,7 +192,7 @@ export function choose(
     alternateLabel: string,
     options: { stacked?: boolean } = {},
 ): Promise<boolean> {
-    const safeMessage = userFacingErrorMessage(message);
+    const safeMessage = userFacingDialogText(message);
 
     return new Promise((resolve) => {
         if (webHandler) {

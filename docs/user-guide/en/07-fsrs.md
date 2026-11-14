@@ -112,6 +112,18 @@ You can paste 17, 19 or 21 numbers from elsewhere into the **FSRS parameters** f
 commas or spaces. Empty the field to return to the defaults. Numbers outside the allowed bounds are
 brought to the bound when you save.
 
+<a id="evaluate-and-simulate"></a>
+## Evaluating parameters and the simulator
+
+**Evaluate parameters** (FSRS section) shows how well the parameters in the field fit your review
+history, as **log loss** and **RMSE(bins)**; smaller is better. It reads the same history Optimize
+trains on. A second tap stops it while it runs.
+
+The **FSRS simulator** estimates daily reviews, study time and memorized cards for the days and
+limits you choose, as weekly or monthly bars and totals. As there is no daily limit for new cards,
+it uses the value stored in the preset (20 by default) for the estimate. Neither changes any
+setting or card.
+
 <a id="reschedule"></a>
 ## Rescheduling cards
 
@@ -164,8 +176,8 @@ Both schedulers study your cards with spaced repetition; which one you choose is
 ## What differs from Anki
 
 > **Different from Anki:**
-> - There is no simulator that helps you choose a desired retention, and Statistics has no
->   FSRS-specific retention charts.
+> - Statistics has no FSRS-specific retention charts. The simulator has no "Help me decide" button
+>   and shows one run at a time.
 > - You optimize presets one at a time; there is no command that optimizes them all at once.
 > - FSRS does not change the daily limit for new cards: TusAnkiM has no daily limit for new cards.
 >   See [Deck options](06-deck-options.md#daily-limits).

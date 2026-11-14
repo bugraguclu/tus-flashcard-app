@@ -107,6 +107,38 @@ export function queueWithFocusedCard<T extends { cardId: number; state: { suspen
     return [focused, ...queue.filter((card) => card.cardId !== cardId)];
 }
 
+/**
+ * The card a background rebuild keeps on screen, or null to show the rebuilt queue's first card.
+ *
+ * A refresh must not yank the card the learner is looking at (or hide the answer they are reading),
+ * so it stays in front. It is shown as the fresh build has it: the object the screen holds was read
+ * before the change, so after a Deck Options step change, say, its answer buttons used the old steps.
+ * A card that left the queue (a learning step moved past the learn-ahead window, or the editor moved,
+ * suspended or deleted it) is kept only for ink on the whiteboard, which is unsaved work belonging
+ * to it, and only while it still exists and can be studied: a deleted card showed its raw text and
+ * could not be graded.
+ */
+export function cardKeptOnScreen<T extends { cardId: number; state: { suspended: boolean; buried: boolean } }>(input: {
+    /** The card on screen, when the rebuild keeps it (`preserveCurrent`). */
+    current: T | null;
+    /** The rebuilt queue. */
+    sessionCards: readonly T[];
+    /** The whiteboard is open over the card. */
+    whiteboardOn: boolean;
+    /** It holds ink. */
+    hasInk: boolean;
+    /** The card as it is stored now; null once it is deleted. */
+    reload: () => T | null;
+}): T | null {
+    const { current } = input;
+    if (!current) return null;
+    const fresh = input.sessionCards.find((card) => card.cardId === current.cardId);
+    if (fresh) return fresh;
+    if (!input.whiteboardOn || !input.hasInk) return null;
+    const stored = input.reload();
+    return stored && !stored.state.suspended && !stored.state.buried ? stored : null;
+}
+
 export type PostAnswerQueueInput = {
     /** The reviewer's queue as it stood when the card was answered, answered card included. */
     queue: StudyCard[];
@@ -151,17 +183,19 @@ function isCardDueNow(card: StudyCard, nowMs: number, today: string): boolean {
 export function advanceQueueAfterAnswer(input: PostAnswerQueueInput): PostAnswerQueueStep {
     const { updatedCard, nowMs } = input;
     const withoutAnswered = input.queue.filter((card) => card.cardId !== input.answeredCardId);
+    // A card the leech action suspended has left the session.
+    const stillStudied = !updatedCard.state.suspended;
     const learnAhead = withoutAnswered.length === 0
         && updatedCard.state.status === 'learning'
         && updatedCard.state.dueTime > 0
         && updatedCard.state.dueTime <= nowMs + Math.max(0, input.learnAheadMs);
-    const reinsert = !input.preview && (learnAhead || isCardDueNow(updatedCard, nowMs, input.today));
+    const reinsert = !input.preview && stillStudied && (learnAhead || isCardDueNow(updatedCard, nowMs, input.today));
     const queue = reinsert ? [...withoutAnswered, updatedCard] : withoutAnswered;
 
     const futureLearningDue = queue
         .filter((card) => card.state.status === 'learning' && card.state.dueTime > nowMs)
         .map((card) => card.state.dueTime);
-    if (updatedCard.state.status === 'learning' && updatedCard.state.dueTime > nowMs) {
+    if (stillStudied && updatedCard.state.status === 'learning' && updatedCard.state.dueTime > nowMs) {
         futureLearningDue.push(updatedCard.state.dueTime);
     }
 
@@ -170,6 +204,47 @@ export function advanceQueueAfterAnswer(input: PostAnswerQueueInput): PostAnswer
         currentCard: queue[0] ?? null,
         nextLearningDue: futureLearningDue.length > 0 ? Math.min(...futureLearningDue) : null,
     };
+}
+
+export type ReviewerQueueCounts = { newCount: number; learningCount: number; reviewCount: number };
+
+/** The count a card on screen is drawn from (Anki underlines it). */
+export function queueCountBucket(status: StudyCard['state']['status']): keyof ReviewerQueueCounts {
+    if (status === 'new') return 'newCount';
+    if (status === 'learning') return 'learningCount';
+    return 'reviewCount';
+}
+
+/**
+ * The counts straight after an answer, until the next rebuild reads them again: the answered card
+ * leaves the count it was drawn from and joins the one it is due in today.
+ *
+ * A card on an intraday step counts as learning for the rest of the study day, so ÖĞRENİYOR grows
+ * the moment a new card enters learning. A day-long step (`dueTime` 0, as Anki's interday learning
+ * is stored) is due on a later day after any answer, so it is not today's work, and a card the leech
+ * action suspended has left the session.
+ */
+export function countsAfterAnswer(counts: ReviewerQueueCounts, input: {
+    answeredStatus: StudyCard['state']['status'];
+    /** The answered card with its new schedule. */
+    updatedCard: StudyCard;
+    nowMs: number;
+    /** Local study day (YYYY-MM-DD) at `nowMs`, for review cards. */
+    today: string;
+    /** When the study day ends (the next rollover). */
+    endOfDayMs: number;
+}): ReviewerQueueCounts {
+    const next = { ...counts };
+    const answeredBucket = queueCountBucket(input.answeredStatus);
+    next[answeredBucket] = Math.max(0, next[answeredBucket] - 1);
+    const updated = input.updatedCard;
+    if (updated.state.suspended) return next;
+    if (updated.state.status === 'learning') {
+        if (updated.state.dueTime > 0 && updated.state.dueTime < input.endOfDayMs) next.learningCount += 1;
+    } else if (isCardDueNow(updated, input.nowMs, input.today)) {
+        next[queueCountBucket(updated.state.status)] += 1;
+    }
+    return next;
 }
 
 /**

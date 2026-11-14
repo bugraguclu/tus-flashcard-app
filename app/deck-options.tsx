@@ -105,6 +105,8 @@ import { PresetActionsMenu, PresetPickerModal, RenamePresetModal } from '../comp
 import { keepNonPresetEdits } from '../components/deck-options/nonPresetFields';
 import { usePresetStaging } from '../components/deck-options/usePresetStaging';
 import type { SelectOption } from '../components/deck-options/types';
+import FsrsEvaluateButton from '../components/deck-options/FsrsEvaluateButton';
+import FsrsSimulatorSheet from '../components/deck-options/FsrsSimulatorSheet';
 
 const DAY_FACTORS = [1, 0.5, 0] as const;
 
@@ -176,6 +178,8 @@ export default function DeckOptionsScreen() {
     // Share of the training done, while "Optimize" runs; pressing it again stops the run.
     const [optimizeProgress, setOptimizeProgress] = useState(0);
     const stopOptimizingRef = useRef(false);
+    // Evaluate and Optimize take turns, as on Anki's screen.
+    const [evaluatingFsrs, setEvaluatingFsrs] = useState(false);
     const [saveMessage, setSaveMessage] = useState('');
     const [deckPickerOpen, setDeckPickerOpen] = useState(false);
     const [presetPickerOpen, setPresetPickerOpen] = useState(false);
@@ -1381,8 +1385,9 @@ export default function DeckOptionsScreen() {
                             </Text>
 
                             <TouchableOpacity
-                                style={[styles.optimizeButton, optimizing && styles.optimizeButtonBusy]}
+                                style={[styles.optimizeButton, (optimizing || evaluatingFsrs) && styles.optimizeButtonBusy]}
                                 onPress={handleOptimizeFsrs}
+                                disabled={evaluatingFsrs}
                                 accessibilityRole="button"
                                 accessibilityHint={optimizing ? l('Durdurmak için dokunun', 'Tap to stop') : undefined}
                             >
@@ -1398,6 +1403,15 @@ export default function DeckOptionsScreen() {
                                     'Refits the 21 parameters from the history of this preset\'s unsuspended cards, the way Anki trains them. The result is written to the field only when it predicts better than the current one.',
                                 )}
                             </Text>
+                            <FsrsEvaluateButton
+                                presetId={configId}
+                                settings={settings}
+                                paramsText={form.fsrsParams}
+                                ignoreRevlogsBeforeMs={parseFsrsCutoffDate(form.ignoreRevlogsBefore, cutoffLatest) ?? 0}
+                                otherBusy={optimizing}
+                                onBusyChange={setEvaluatingFsrs}
+                                styles={styles}
+                            />
 
                             <TextBlockSetting
                                 label={l('FSRS parametreleri', 'FSRS parameters')}
@@ -1427,6 +1441,15 @@ export default function DeckOptionsScreen() {
                                 value={form.ignoreRevlogsBefore}
                                 onChange={(value) => set('ignoreRevlogsBefore', clampFsrsCutoffDate(value, cutoffLatest))}
                                 hint={l('YYYY-AA-GG. Boş bırakılırsa tüm geçmiş kullanılır.', 'YYYY-MM-DD. Leave empty to use the whole history.')}
+                            />
+                            <FsrsSimulatorSheet
+                                presetId={configId}
+                                settings={settings}
+                                preset={formToSave}
+                                storedParamsText={formatFsrsParameterText(initialConfig.fsrsParams)}
+                                ignoreRevlogsBeforeMs={parseFsrsCutoffDate(form.ignoreRevlogsBefore, cutoffLatest) ?? 0}
+                                styles={styles}
+                                colors={colors}
                             />
                         </>
                     )}

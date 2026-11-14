@@ -87,7 +87,8 @@ Restoring replaces the whole collection: decks, notes, cards, review history and
 
 Right before restoring, a copy of the current state is added to the list as a **Pre-restore
 snapshot**. If you picked the wrong backup, restore that snapshot to go back. The newest three of
-these snapshots are kept.
+these snapshots are kept. When you try several backups in a row (less than a day apart), the
+first snapshot of that run is kept too: only it holds your own work.
 
 If a backup cannot be restored, **Could not restore the backup.** appears and your collection is not
 changed. This can happen when the backup was made by a newer version of the app or the file is
@@ -214,14 +215,12 @@ reason.
 
 - To delete one card, tap **✕** on its row; to delete them all, tap **Delete All (N)**.
 - **Keep notes with no valid cards** (on): if every card of a note is empty, its first card is
-  kept so that the note is not left without cards. When off, all the cards are deleted but the
-  note's text stays without cards; **Check database** then shows such notes as **Notes without
-  cards**, and **Repair and optimize** gives them a card again.
-- Review history is kept. Deleting cannot be undone and no backup is made first; make
-  [a backup yourself](#back-up-now) before you start.
-
-> **Different from Anki:** With **Keep notes with no valid cards** off, notes are not deleted; only
-> their cards are.
+  kept so that the note is not left without cards. When off, as in Anki, a note whose cards are
+  all empty is deleted together with them; the confirmation and the result say how many notes go.
+  Notes of the purchased TUS catalog are never deleted: their first card stays.
+- Review history is kept. Before deleting, the app takes a restorable safety backup; if it cannot
+  be taken, nothing is deleted. To undo the deletion, restore the backup the result message names
+  from the **Backups** screen.
 
 <a id="reset-progress"></a>
 ## Reset collection: starting over

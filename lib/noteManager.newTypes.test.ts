@@ -15,6 +15,7 @@ vi.mock('./db', () => ({
 
 import {
     changeNotesType,
+    createNote,
     createTusCard,
     deleteAnkiCardOnly,
     findEmptyCards,
@@ -257,3 +258,19 @@ describe('browser bulk note operations', () => {
         expect(getNote(first.id)?.tags).not.toContain('anatomy');
     });
 });
+
+describe('updateTusCardByCardId: the note keeps its type\'s field count', () => {
+    it('saves a one-field note type\'s note with one field', () => {
+        const oneField = {
+            id: 500, name: 'Tek alan', kind: 'standard' as const, css: '', sortFieldIdx: 0, mod: 0,
+            fields: [{ name: 'Front', ord: 0, sticky: false, rtl: false }],
+            templates: [{ name: 'Card 1', ord: 0, qfmt: '{{Front}}', afmt: '{{FrontSide}}' }],
+        };
+        saveNoteType(oneField);
+        const { note, cards } = createNote(oneField, ['Kalp'], 1);
+        const saved = updateTusCardByCardId(cards[0].id, { question: 'Damar', answer: '', fieldValues: ['Damar'] });
+        expect(saved?.note.fields).toEqual(['Damar']);
+        expect(getNote(note.id)?.fields).toEqual(['Damar']);
+    });
+});
+

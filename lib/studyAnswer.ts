@@ -61,6 +61,10 @@ export interface ReviewResult {
     wasNewCard: boolean;
     reviewLogId: number;
     sideEffects: AnswerSideEffects;
+    /** This answer made the card a leech: the lapse reached the deck's leech threshold. */
+    leeched: boolean;
+    /** The leech action suspended the card, so it has left today's study. */
+    suspended: boolean;
     /**
      * Preview answers only: when the card is shown again (epoch ms, with Anki's learning-step
      * fuzz), or null when the answer finished its preview.
@@ -382,6 +386,7 @@ export function answerStudyCard(
     // Rows this answer changes besides the card and its revlog entry. Filled inside the
     // transaction so an undo can put every one of them back exactly.
     const sideEffects: AnswerSideEffects = { buriedSiblings: [] };
+    let leeched = false;
 
     db.execSync('BEGIN TRANSACTION;');
     try {
@@ -410,6 +415,7 @@ export function answerStudyCard(
         // `answer_again` sets `leeched`); checking on every answer would keep re-suspending an
         // unsuspended leech that still sits on a threshold multiple.
         if (updatedAnkiCard.lapses > currentAnkiCard.lapses && isLeech(updatedAnkiCard, deckConfig.leechThreshold)) {
+            leeched = true;
             // `note` was read before any write in this transaction, so its tags are the
             // pre-answer set: record the note only when this answer is what adds the tag.
             const addsLeechTag = !hasLeechTag(note.tags);
@@ -434,6 +440,8 @@ export function answerStudyCard(
     }
     recordLoadBalancedAnswer(updatedAnkiCard, rolloverHour, nowMs);
 
+    // As Anki's reviewer does, the stored card says whether the leech action suspended it.
+    const suspended = leeched && getAnkiCard(updatedAnkiCard.id)?.queue === -1;
     const updatedStudyCard = makeStudyCard(
         updatedAnkiCard,
         note,
@@ -441,7 +449,7 @@ export function answerStudyCard(
         cardSettings,
         nowMs,
         true,
-        nextState,
+        suspended ? { ...nextState, suspended: true } : nextState,
     );
 
     return {
@@ -450,6 +458,8 @@ export function answerStudyCard(
         wasNewCard: currentState.status === 'new',
         reviewLogId,
         sideEffects,
+        leeched,
+        suspended,
     };
 }
 
@@ -528,6 +538,9 @@ function answerInPreview(
         wasNewCard: false,
         reviewLogId,
         sideEffects,
+        // A preview answer schedules nothing, so it never lapses a card.
+        leeched: false,
+        suspended: false,
         previewDueMs,
     };
 }

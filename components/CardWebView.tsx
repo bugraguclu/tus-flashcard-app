@@ -26,6 +26,8 @@ import {
 } from '../lib/embeddedWebViewScroll';
 import { defaultCardTextCss, nightModeCardCss } from '../lib/cardPageDefaults';
 import { hiddenAudioChromeCss } from '../lib/cardAudioChrome';
+import { MATHJAX_TYPESET_EVENT, MATHJAX_TYPESET_PROMISE, containsMathDelimiters } from '../lib/mathjax';
+import { typesetCardDocument, useMathJaxRuntime } from '../lib/mathjaxRuntime';
 import WebHtmlFrame from './WebHtmlFrame';
 import { useAttachmentViewer } from './AttachmentViewer';
 
@@ -109,6 +111,7 @@ const HEIGHT_REPORTER = `(function(){
     }
     report();
     window.addEventListener('load', report);
+    document.addEventListener('${MATHJAX_TYPESET_EVENT}', report);
     // A revealed hint changes the card's height, so re-measure after the reveal runs.
     document.addEventListener('click', function(){ setTimeout(report, 0); });
     window.addEventListener('resize', report);
@@ -129,9 +132,10 @@ true;`;
  * reviewer brings the element with `id=answer` to the top of the view once the side's images
  * have loaded, which is why the reveal waits for them here too. The stock templates put that id
  * on the `<hr>` between the question and the answer; a template without one is not scrolled.
+ * Typeset formulas change the height above it too, so a side with math waits for MathJax first.
  * https://docs.ankiweb.net/templates/styling.html#fading-and-scrolling
  */
-const ANSWER_ANCHOR_REPORTER = `(function(){
+const ANSWER_ANCHOR_REPORTER = `(window.${MATHJAX_TYPESET_PROMISE} || Promise.resolve()).then(function(){
     function post(){
         var anchor = document.getElementById('answer');
         if (!anchor || !window.ReactNativeWebView) return;
@@ -146,7 +150,7 @@ const ANSWER_ANCHOR_REPORTER = `(function(){
         image.addEventListener('load', settle);
         image.addEventListener('error', settle);
     });
-})();`;
+});`;
 
 interface CardWebViewProps {
     noteType: NoteType;
@@ -288,6 +292,8 @@ export default function CardWebView({
         nightMode: isDark,
         platformClasses: ankiPlatformClasses(),
     });
+    // MathJax is loaded only for a side that has a formula; an ordinary card gets nothing.
+    const mathJax = useMathJaxRuntime(containsMathDelimiters(renderedHtml));
     // The base template caps media at 60vh. Inside a self-sizing frame that unit would feed back
     // into measurement, so media is capped against the stable screen/contained-frame budget.
     const mediaCap = Math.round((scrollMode === 'contained' ? frameHeight : windowHeight) * 0.7);
@@ -351,7 +357,7 @@ export default function CardWebView({
     // Anki's do. Preference CSS goes last so user-selected accessibility/display settings override
     // imported note-type CSS without mutating the note template itself.
     const themeTextCss = `<style>${defaultCardTextCss(colors.textPrimary)}${nightModeCardCss(colors.textPrimary)}</style>`;
-    const html = `${viewportMeta}${themeTextCss}${renderedHtml}${preferenceCss}`;
+    const html = `${viewportMeta}${themeTextCss}${renderedHtml}${preferenceCss}${mathJax.css}`;
     const nativeHtml = `${CARD_CONTENT_CSP_META}${html}`;
     // Card media is named by bare filename, so the card is a document in the media folder: on
     // iPhone a file loaded with read access to the folder, which a device needs to show the
@@ -595,12 +601,13 @@ export default function CardWebView({
                             }
                         });
                     });
-                    doc.querySelectorAll('a[href]:not(.hint)').forEach((link) => {
-                        link.addEventListener('click', (event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            openExternalLink(link.getAttribute('href') ?? '');
-                        });
+                    // Delegated, so a link MathJax draws after load (`\href`) is handled the same way.
+                    doc.addEventListener('click', (event) => {
+                        const link = (event.target as Element | null)?.closest?.('a[href]:not(.hint)');
+                        if (!link) return;
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openExternalLink(link.getAttribute('href') ?? '');
                     });
                     if (typeAnswerInCard && side === 'question') {
                         const input = Array.from(doc.querySelectorAll<HTMLInputElement>('input[data-tus-type-answer-token]'))
@@ -694,9 +701,12 @@ export default function CardWebView({
                             wrap.appendChild(btn);
                         }
                     });
-                    if (scrollMode === 'intrinsic') {
-                        setContentHeight((current) => stableMeasuredHeight(current, doc.body.scrollHeight, minHeight));
-                    }
+                    const measure = () => {
+                        if (scrollMode === 'intrinsic') setContentHeight((current) => stableMeasuredHeight(current, doc.body.scrollHeight, minHeight));
+                    };
+                    measure();
+                    // The frame runs no script, so the page typesets its formulas, then it is measured again.
+                    if (mathJax.css) void typesetCardDocument(doc).then(measure);
                 }}
                 style={{
                     border: 'none',
@@ -737,6 +747,8 @@ export default function CardWebView({
                 dataDetectorTypes="none"
                 style={[styles.webView, { height: frameHeight }]}
                 injectedJavaScript={`${sizingScript}${anchorScript}${tapReporter}${typedAnswerBinder}${audioSpeedScript}${MEDIA_PLAYBACK_REPORTER}true;`}
+                // MathJax runs as the app's own script; the card's CSP still refuses the card's.
+                injectedJavaScriptBeforeContentLoaded={mathJax.script ?? undefined}
                 onMessage={(event) => {
                     const data = String(event.nativeEvent.data);
                     if (data.startsWith('AUDIO:')) {

@@ -66,8 +66,10 @@ function trashDir(mediaDir: string): string {
 /**
  * Move the given files to the media trash. Only names the latest check reported as unused are
  * moved, and only if they are still unused now (a note added since the check keeps its file).
+ * One file that cannot be moved does not stop the others: each is counted as moved or failed, so
+ * the learner is told what actually happened. Setting up the trash itself still throws.
  */
-export async function moveUnusedMediaToTrash(names: readonly string[]): Promise<{ moved: number; trashFolder: string }> {
+export async function moveUnusedMediaToTrash(names: readonly string[]): Promise<{ moved: number; failed: number; trashFolder: string }> {
     if (!canTrashMedia()) throw new Error('Media trash is not available on this platform.');
     const stillUsed = referencedMediaFilenames();
     const mediaDir = await ensureMediaDir();
@@ -75,34 +77,48 @@ export async function moveUnusedMediaToTrash(names: readonly string[]): Promise<
     const folder = `${trashDir(mediaDir)}${new Date().toISOString().replace(/[:.]/g, '-')}/`;
     await fs.makeDirectoryAsync(folder, { intermediates: true });
     let moved = 0;
+    let failed = 0;
     for (const name of names) {
         if (stillUsed.has(name) || name.startsWith('_') || name.includes('/') || name.startsWith('.')) continue;
         const from = `${mediaDir}${name}`;
-        const info = await fs.getInfoAsync(from);
-        if (!info.exists || info.isDirectory) continue;
-        await fs.moveAsync({ from, to: `${folder}${name}` });
-        moved++;
+        try {
+            const info = await fs.getInfoAsync(from);
+            if (!info.exists || info.isDirectory) continue;
+            await fs.moveAsync({ from, to: `${folder}${name}` });
+            moved++;
+        } catch (error) {
+            console.warn('[Media] could not move to the trash:', name, error);
+            failed++;
+        }
     }
-    return { moved, trashFolder: folder };
+    return { moved, failed, trashFolder: folder };
 }
 
-/** Put every file in the media trash back, unless a file of that name has appeared since. */
-export async function restoreMediaTrash(): Promise<{ restored: number; skipped: number }> {
-    if (!canTrashMedia()) return { restored: 0, skipped: 0 };
+/**
+ * Put every file in the media trash back, unless a file of that name has appeared since. A file
+ * that cannot be put back stays in the trash and is counted, without stopping the rest.
+ */
+export async function restoreMediaTrash(): Promise<{ restored: number; skipped: number; failed: number }> {
+    if (!canTrashMedia()) return { restored: 0, skipped: 0, failed: 0 };
     const mediaDir = await ensureMediaDir();
     const fs = getLegacyFileSystem();
     const root = trashDir(mediaDir);
     const rootInfo = await fs.getInfoAsync(root);
-    if (!rootInfo.exists) return { restored: 0, skipped: 0 };
-    let restored = 0; let skipped = 0;
+    if (!rootInfo.exists) return { restored: 0, skipped: 0, failed: 0 };
+    let restored = 0; let skipped = 0; let failed = 0;
     for (const folder of await fs.readDirectoryAsync(root)) {
         const dir = `${root}${folder}/`;
         for (const name of await fs.readDirectoryAsync(dir)) {
             const target = `${mediaDir}${name}`;
-            if ((await fs.getInfoAsync(target)).exists) { skipped++; continue; }
-            await fs.moveAsync({ from: `${dir}${name}`, to: target });
-            restored++;
+            try {
+                if ((await fs.getInfoAsync(target)).exists) { skipped++; continue; }
+                await fs.moveAsync({ from: `${dir}${name}`, to: target });
+                restored++;
+            } catch (error) {
+                console.warn('[Media] could not restore from the trash:', name, error);
+                failed++;
+            }
         }
     }
-    return { restored, skipped };
+    return { restored, skipped, failed };
 }

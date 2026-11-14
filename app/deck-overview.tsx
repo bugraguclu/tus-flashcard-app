@@ -116,7 +116,12 @@ export default function DeckOverviewScreen() {
         );
     }
 
+    // Cards the reviewer can deal now. The new part of `cards` stops at the queue's new-card window
+    // while the tiles above (and the reviewer's own header) count the whole backlog, so the button
+    // states the same total as the tiles.
     const totalReady = queue ? queue.cards.length : 0;
+    const totalDue = queue ? queue.stats.newCount + queue.stats.learningCount + queue.stats.reviewCount : 0;
+    const studyNowCount = Math.max(totalDue, totalReady);
 
     const unburyKind = (kind: UnburyKind) => {
         const count = unburyDeck(deck.id, settings.dayRolloverHour, kind);
@@ -126,7 +131,8 @@ export default function DeckOverviewScreen() {
     };
 
     const handleUnbury = async () => {
-        unburyKind(await chooseUnburyKind(getBuriedKindsForDeck(deck.id), l));
+        const kind = await chooseUnburyKind(getBuriedKindsForDeck(deck.id), l);
+        if (kind) unburyKind(kind);
     };
 
     const handleRebuild = () => {
@@ -290,7 +296,7 @@ export default function DeckOverviewScreen() {
                     label={studyDisabled
                         ? l('Deste boş — yeniden oluşturun', 'Deck is empty — rebuild it')
                         : totalReady > 0
-                            ? l(`Şimdi çalış · ${totalReady} kart`, `Study Now · ${totalReady} ${totalReady === 1 ? 'card' : 'cards'}`)
+                            ? l(`Şimdi çalış · ${studyNowCount} kart`, `Study Now · ${studyNowCount} ${studyNowCount === 1 ? 'card' : 'cards'}`)
                             : l('Çalışma ekranını aç', 'Open Study Screen')}
                     // With nothing due the study screen is still one tap away, but no longer the call to action.
                     variant={totalReady > 0 ? 'primary' : 'secondary'}
@@ -317,11 +323,14 @@ export default function DeckOverviewScreen() {
                             onPress={handleRebuild}
                             style={styles.filteredAction}
                         />
+                        {/* Members waiting past the learn-ahead limit, or on a day-long step, are
+                            still held out of their home decks, so Empty stays available, as in
+                            Anki, until the deck has been emptied. */}
                         <Button
                             label={l('Boşalt', 'Empty')}
                             variant="destructive"
                             onPress={handleEmpty}
-                            disabled={totalReady === 0}
+                            disabled={Boolean(deck.filteredDeckEmpty)}
                             style={styles.filteredAction}
                         />
                     </View>

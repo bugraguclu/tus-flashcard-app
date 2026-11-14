@@ -3,6 +3,7 @@ import { withOcclusionMasks } from './imageOcclusionMasks';
 import { sanitizeUntrustedHtml as normalizeFieldHtml, scrubCss } from './templateSecurity';
 export { sanitizeUntrustedHtml } from './templateSecurity';
 import { escapeHtml } from './templateEscaping';
+import { stripHtmlInsideMath } from './mathjax';
 import { typeAnswerPlainText, renderTypeAnswerDiff } from './templateTypedAnswer';
 export { getTypeAnswerField, typeAnswerPlainText, renderTypeAnswerDiff } from './templateTypedAnswer';
 // ============================================================
@@ -489,8 +490,9 @@ function applyTemplateFilter(
             // The question side is rendered before any front side exists; its presence is what
             // tells this pass it is now building the answer.
             const side = ctx.side ?? (ctx.frontSide ? 'answer' : 'question');
+            // A deletion inside a formula reaches MathJax as plain TeX, as in Anki (lib/mathjax.ts).
             return name === 'cloze'
-                ? renderClozeChildren(parseClozeNodes(value), ctx.clozeOrd, side)
+                ? stripHtmlInsideMath(renderClozeChildren(parseClozeNodes(value), ctx.clozeOrd, side))
                 : renderClozeOnly(value, ctx.clozeOrd, side);
         }
         case 'hint': {
@@ -535,7 +537,9 @@ function applyTemplateFilter(
                     const inputHtml = `<input id="typeans" class="tus-type-answer-input" type="text"`
                         + ` data-tus-type-answer-token="${token}" maxlength="${MAX_TYPE_ANSWER_CHARS}"`
                         + ` placeholder="${placeholder}" aria-label="${placeholder}"`
-                        + ' autocomplete="off" autocapitalize="none" spellcheck="false" enterkeyhint="done">';
+                        // iOS autocorrects and capitalizes text fields unless told not to; the typed
+                        // answer is compared as typed, as the native answer field (autoCorrect off) is.
+                        + ' autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">';
                     return inputHtml;
                 }
                 return '';

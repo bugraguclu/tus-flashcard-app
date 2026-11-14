@@ -143,8 +143,24 @@ Askı, gömme, bayrak ve etiket değişikliklerini aynı işlemi tersine yaparak
 tarihini ayarla**, **Kartları sıfırla** ve **Şimdi derecelendir** geri alınamaz.
 
 > **Anki'den farkı:** Kartlarım'da genel bir geri alma komutu yoktur; yalnızca yukarıdaki işlemler
-> geri alınır. Masaüstü Anki'deki sütun seçimi, bul ve değiştir, kopyaları bulma ve kayıtlı
-> aramalar bulunmaz. Kart bilgisini çalışma ekranından açarsınız.
+> geri alınır. **Bul ve değiştir** ile **Etiketi yeniden adlandır** önce bir yedek alır; geri almak
+> için o yedeği **Yedekler**'den geri yükleyin. Masaüstü Anki'deki sütun seçimi ve kayıtlı aramalar
+> bulunmaz.
+
+<a id="note-tools"></a>
+## Bul ve değiştir, yinelenenler, etiketi yeniden adlandırma
+
+- **Bul ve değiştir** (⋮ veya Diğer): **Bul**, **Şununla değiştir** ve **Konum**'u (tüm alanlar,
+  etiketler veya bir alan) seçin. Not seçiliyse yalnızca seçili notlar, değilse bütün koleksiyon
+  değişir. **Büyük/küçük harfi yok say** açık, **Düzenli ifade** kapalı başlar. Onay penceresi kaç
+  notun değişeceğini söyler; değişiklik önce alınan yedekle, tek seferde yapılır. Geçersiz bir
+  düzenli ifade hiçbir şeyi değiştirmez. Kilitli TUS kataloğu notları atlanır.
+- **Yinelenenleri bul** (⋮): bir alan seçin, isterseniz aramayla daraltın; aynı metni taşıyan notlar
+  gruplanır. Bir gruba dokunmak o notları listede gösterir; **Yinelenenleri etiketle** onlara
+  `duplicate` etiketini ekler (önce sorar).
+- **Etiketi yeniden adlandırma:** **Etikete göre filtrele** listesinde etikete basılı tutun.
+  Alt etiketler de değişir; var olan bir adı verirseniz iki etiket birleşir. Boşluk içeren ad
+  kabul edilmez. Onay penceresi kaç notun değişeceğini söyler ve önce yedek alınır.
 
 <a id="change-deck"></a>
 ## Desteyi değiştirme
@@ -411,7 +427,9 @@ konu adı (ör. "Genel") aranamaz.
 
 Kart bilgisi, çalışırken ekrandaki kartın bütün ayrıntılarını gösterir. Çalışma ekranında üstteki
 **⋮** düğmesine (ayarlarınıza göre dişli **Araçlar** düğmesine) dokunun ve **Kart bilgisi**'ni seçin.
-Kartlarım'dan açılmaz. Kapatmak için aşağı kaydırın veya **Geri**'ye dokunun.
+Kartlarım'da tek kart seçip **Diğer › Kart bilgisi**'ne veya açılmış bir satırdaki **ⓘ Kart
+bilgisi**'ne dokunarak da açılır (not görünümünde notun ilk kartı). Kapatmak için aşağı kaydırın
+veya **Geri**'ye dokunun.
 
 | Bölüm | Gösterdikleri |
 | --- | --- |

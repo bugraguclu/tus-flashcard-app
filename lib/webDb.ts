@@ -18,6 +18,7 @@
  */
 
 import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js';
+import { stashTakeoverDraft } from './webTakeoverDraft';
 
 // Persistence — IndexedDB snapshot store
 
@@ -236,6 +237,8 @@ function electWriter(): Promise<void> {
     locks.request(WRITER_LOCK, () => {
         if (!_isPrimary) {
             _writerTakeoverReload = true;
+            // An unsaved note in this tab's editor comes back after the reload (lib/webTakeoverDraft.ts).
+            stashTakeoverDraft();
             window.location.reload();
         }
         return new Promise<void>(() => {});

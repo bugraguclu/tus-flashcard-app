@@ -18,6 +18,30 @@ export function goBackOr(router: BackNavigator, fallback: string = '/decks'): vo
     router.replace(fallback);
 }
 
+/** The part of Expo Router's router that closes screens back down to one beneath them. */
+export interface DeckListReturner {
+    canDismiss: () => boolean;
+    dismissAll: () => void;
+    dismissTo: (href: any) => void;
+}
+
+/**
+ * Show the deck list the app already has, closing everything above it: a study reminder, the
+ * "Sayfa bulunamadı" page and an automation request that opens nothing all end there.
+ *
+ * `router.replace('/decks')` stacked a copy instead. Over the reviewer it swapped the reviewer for
+ * a second deck list, which a back swipe then revealed; over a screen outside the tabs (Browser,
+ * Statistics, a deck overview) it put a whole second tab layout on the stack. A lone
+ * `dismissTo('/decks')` from such a screen still pushes a deck list when the reviewer is under it,
+ * so the screens above the tabs are closed first and the tabs then pop back to their deck list.
+ * A screen with nothing beneath it, such as a reloaded web address, is swapped for the deck list,
+ * so neither Back nor a back swipe returns to it.
+ */
+export function returnToDeckList(router: DeckListReturner): void {
+    if (router.canDismiss()) router.dismissAll();
+    router.dismissTo('/decks');
+}
+
 /** The part of a navigation object that tells which screens lie beneath the current one. */
 export interface StackStateReader {
     getState: () => { index: number; routes: { name: string }[] } | undefined;

@@ -235,6 +235,36 @@ export class FsrsTrainingModel {
         return this.curve(item.reviews[item.length - 1].deltaDays, state.s).r;
     }
 
+    /**
+     * One review applied to a memory state, on these weights: the first answer of a card with no
+     * state (`first`) starts from the initial stability and difficulty, a same-day answer takes
+     * the short-term rule and a later one the spaced rule. The same equations as `fsrsStep` in
+     * lib/fsrs.ts, with the weights prepared once, for callers that step many cards
+     * (lib/fsrsSimulator.ts).
+     */
+    step(stability: number, difficulty: number, days: number, rating: number, first: boolean): { stability: number; difficulty: number } {
+        const [next] = this.forward(first ? { s: 0, d: 0 } : { s: stability, d: difficulty }, days, rating, first ? 0 : 1);
+        return { stability: next.s, difficulty: next.d };
+    }
+
+    /**
+     * `predict` for several prefixes of one review list, from a single pass over it: the state
+     * after the first k reviews does not depend on how long the prefix is, so each value is the
+     * one `predict` returns for an item of that length (the card-grouped evaluation of fsrs-rs
+     * 6.6.2's `evaluate_with_card_ids` relies on the same identity).
+     */
+    predictPrefixes(reviews: FsrsTrainingItem['reviews'], lengths: readonly number[]): number[] {
+        const longest = lengths.reduce((max, length) => Math.max(max, length), 0);
+        const stability: number[] = [0];
+        let state: State = { s: 0, d: 0 };
+        for (let index = 0; index < longest - 1; index++) {
+            const review = reviews[index];
+            [state] = this.forward(state, review.deltaDays, review.rating, index);
+            stability.push(state.s);
+        }
+        return lengths.map((length) => this.curve(reviews[length - 1].deltaDays, stability[length - 1]).r);
+    }
+
     /** A card's prefixes share one recurrence and one reverse traversal. */
     cardGradient(items: readonly WeightedTrainingItem[], gradients: Float64Array): void {
         const longest = items[items.length - 1].item;

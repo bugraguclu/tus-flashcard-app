@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,10 +9,12 @@ import { Card } from '../components/ui/Card';
 import { ListRow } from '../components/ui/Rows';
 import { PlusIcon } from '../components/ui/icons';
 import { useCollectionInvalidation } from '../contexts/AppContext';
-import { getAllNoteTypes, getNoteType, saveNoteType } from '../lib/noteManager';
-import { uniqueId, BUILTIN_NOTE_TYPES, isLegacyTusNoteType } from '../lib/models';
+import { getAllNoteTypes } from '../lib/noteManager';
+import { isLegacyTusNoteType, type NoteType } from '../lib/models';
+import { noteCountsByType } from '../lib/noteTypeManage';
 import { useI18n } from '../hooks/useI18n';
 import { localizeNoteTypeName } from '../lib/i18n';
+import AddNoteTypeSheet from '../components/note-types/AddNoteTypeSheet';
 
 export default function NoteTypesScreen() {
     const { l, locale } = useI18n();
@@ -21,42 +23,53 @@ export default function NoteTypesScreen() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const noteTypes = useMemo(() => getAllNoteTypes().filter((noteType) => !isLegacyTusNoteType(noteType)), [dataVersion]);
+    const noteCounts = useMemo(() => noteCountsByType(), [dataVersion]);
+    const [adding, setAdding] = useState(false);
 
-    const createNoteType = () => {
-        const base = getNoteType(1) ?? BUILTIN_NOTE_TYPES.find((nt) => nt.id === 1)!;
-        const id = uniqueId();
-        saveNoteType({ ...base, id, name: l('Yeni not türü', 'New Note Type'), mod: Math.floor(Date.now() / 1000) });
+    // Anki's Add: the learner picks what to start from and names it first (AddNoteTypeSheet).
+    const handleCreated = (noteType: NoteType) => {
+        setAdding(false);
         // A note type without notes has no cards, so a study session keeps its queue.
         bumpDataVersion({ keepsStudyQueue: true });
-        router.push(`/note-type?id=${id}`);
+        router.push(`/note-type?id=${noteType.id}`);
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.help}>{l('Not türlerini, alanlarını ve kart şablonlarını düzenleyin. Yeni not türü Temel türün bir kopyası olarak başlar.', 'Edit note types, their fields and card templates. A new note type starts as a copy of Basic.')}</Text>
+                <Text style={styles.help}>{l('Not türlerini, alanlarını ve kart şablonlarını düzenleyin. Yeni not türü hazır bir türle başlar ya da kendi türlerinizden birinin kopyasıdır.', 'Edit note types, their fields and card templates. A new note type starts from a stock type or as a copy of one of yours.')}</Text>
 
                 <Card divided>
-                    {noteTypes.map((nt) => (
-                        <ListRow
-                            key={nt.id}
-                            title={localizeNoteTypeName(locale, nt.name)}
-                            // A plain string, so the row speaks it after the name.
-                            summary={`${l(`${nt.fields.length} alan`, `${nt.fields.length} fields`)} · ${l(`${nt.templates.length} şablon`, `${nt.templates.length} templates`)} · ${
-                                nt.kind === 'cloze' ? l('boşluk doldurma', 'cloze') : l('standart', 'standard')}`}
-                            onPress={() => router.push(`/note-type?id=${nt.id}`)}
-                        />
-                    ))}
+                    {noteTypes.map((nt) => {
+                        const notes = noteCounts.get(nt.id) ?? 0;
+                        // A plain string, so the row speaks it after the name.
+                        const summary = [
+                            l(`${notes} not`, `${notes} ${notes === 1 ? 'note' : 'notes'}`),
+                            l(`${nt.fields.length} alan`, `${nt.fields.length} fields`),
+                            l(`${nt.templates.length} şablon`, `${nt.templates.length} templates`),
+                            nt.kind === 'cloze' ? l('boşluk doldurma', 'cloze') : l('standart', 'standard'),
+                        ].join(' · ');
+                        return (
+                            <ListRow
+                                key={nt.id}
+                                title={localizeNoteTypeName(locale, nt.name)}
+                                summary={summary}
+                                onPress={() => router.push(`/note-type?id=${nt.id}`)}
+                            />
+                        );
+                    })}
                 </Card>
 
                 <Button
                     variant="secondary"
                     icon={<PlusIcon color={colors.textPrimary} size={18} />}
                     label={l('Yeni not türü', 'New Note Type')}
-                    onPress={createNoteType}
+                    accessibilityLabel={l('Yeni not türü ekle', 'Add a note type')}
+                    onPress={() => setAdding(true)}
                     style={styles.addButton}
                 />
             </ScrollView>
+            <AddNoteTypeSheet visible={adding} onClose={() => setAdding(false)} onCreated={handleCreated} />
         </SafeAreaView>
     );
 }

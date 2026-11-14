@@ -333,11 +333,20 @@ describe('web writer election', () => {
         const { webDb, reload } = await loadWebDb({ indexedDB: createFakeIndexedDb().indexedDB, locks });
         await webDb.initWebDatabase();
 
+        // A note typed in this tab's editor is kept for the reload (lib/webTakeoverDraft.ts).
+        const saved = new Map<string, string>();
+        vi.stubGlobal('sessionStorage', { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => { saved.set(key, value); }, removeItem: (key: string) => { saved.delete(key); } });
+        const { registerTakeoverDraft, takeTakeoverDraft } = await import('./webTakeoverDraft');
+        const unregister = registerTakeoverDraft(() => ({ fields: ['Kalp', ''], tags: [], deckId: null, cardTypeId: 1 }));
+        reload.mockImplementation(() => { expect(saved.size).toBe(1); });
+
         closeWriterTab();
         await settle();
 
         expect(reload).toHaveBeenCalledTimes(1);
         expect(webDb.isWriterTakeoverReloading()).toBe(true);
+        expect(takeTakeoverDraft('')?.fields).toEqual(['Kalp', '']);
+        unregister();
     });
 });
 

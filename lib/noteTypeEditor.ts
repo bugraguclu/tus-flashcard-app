@@ -16,7 +16,7 @@ import {
     type NoteTypeTemplate,
 } from './models';
 import { getCardsForNote, saveNote, saveNoteType, searchIndexCardFromNote } from './noteManager';
-import { fieldNameSyntaxError, type FieldNameSyntaxError } from './noteTypeValidation';
+import { fieldNameSyntaxError, templateSideFieldUse, type FieldNameSyntaxError } from './noteTypeValidation';
 import { sortFieldText } from './noteChecksum';
 
 function reindex<T extends { ord: number }>(items: T[]): T[] {
@@ -159,6 +159,47 @@ export function addField(nt: NoteType, name: string): FieldEdit {
     };
 }
 
+/**
+ * A front that loses the last field it showed would render blank on every card of the type, and
+ * Add would refuse new notes of it. As Anki does, a removal that leaves a front without a field
+ * gives it the first remaining field; a cloze type needs a cloze replacement on both sides.
+ */
+function keepTemplatesShowingAField(templates: NoteTypeTemplate[], fields: NoteTypeField[], kind: NoteType['kind']): NoteTypeTemplate[] {
+    const first = fields[0]?.name;
+    if (!first) return templates;
+    const names = fields.map((field) => field.name);
+    const cloze = kind === 'cloze';
+    const replacement = cloze ? `{{cloze:${first}}}` : `{{${first}}}`;
+    return templates.map((template) => {
+        const front = templateSideFieldUse(template.qfmt, names);
+        const fixFront = cloze ? !front.hasCloze : !front.usesField;
+        const fixBack = cloze && !templateSideFieldUse(template.afmt, names).hasCloze;
+        if (!fixFront && !fixBack) return template;
+        return {
+            ...template,
+            qfmt: fixFront ? `${template.qfmt}${replacement}` : template.qfmt,
+            afmt: fixBack ? `${template.afmt}${replacement}` : template.afmt,
+        };
+    });
+}
+
+/**
+ * Whether a cloze type's cards come from `fieldName`: a template side reads it through the cloze
+ * filter (`{{cloze:Text}}`, `{{type:cloze:Text}}`). Removing that field leaves the cards empty.
+ */
+export function isClozeSourceField(nt: NoteType, fieldName: string): boolean {
+    if (nt.kind !== 'cloze') return false;
+    const escaped = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\{\\{[^{}]*\\bcloze:\\s*${escaped}\\s*\\}\\}`);
+    return nt.templates.some((template) => pattern.test(template.qfmt) || pattern.test(template.afmt));
+}
+
+/** The notes of a type the learner still has, for the question before a field is removed. */
+export function countNotesOfType(noteTypeId: number): number {
+    const row = getDB().getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM notes WHERE noteTypeId = ? AND tombstone = 0', noteTypeId);
+    return row?.n ?? 0;
+}
+
 export function removeField(nt: NoteType, ord: number): FieldEdit {
     // A note type must always keep at least one field.
     if (nt.fields.length <= 1 || ord < 0 || ord >= nt.fields.length) return identityEdit(nt);
@@ -167,10 +208,11 @@ export function removeField(nt: NoteType, ord: number): FieldEdit {
     if (sortFieldIdx === ord) sortFieldIdx = 0;
     else if (sortFieldIdx > ord) sortFieldIdx -= 1;
 
+    const fields = reindex(nt.fields.filter((f) => f.ord !== ord));
     return {
         noteType: touch(nt, {
-            fields: reindex(nt.fields.filter((f) => f.ord !== ord)),
-            templates: rewriteFieldReferences(nt, nt.fields[ord].name, null),
+            fields,
+            templates: keepTemplatesShowingAField(rewriteFieldReferences(nt, nt.fields[ord].name, null), fields, nt.kind),
             sortFieldIdx,
             ...withRawFieldOrder(nt, (raw) => raw.filter((_, i) => i !== ord)),
         }),
@@ -199,6 +241,22 @@ export function moveField(nt: NoteType, fromOrd: number, toOrd: number): FieldEd
         noteType: touch(nt, { fields: reindex(reorder(nt.fields)), sortFieldIdx, ...withRawFieldOrder(nt, reorder) }),
         migrate: (values) => reorder(values),
     };
+}
+
+/**
+ * A structural field edit made while the note type screen may hold an unsaved name, template or
+ * styling edit. What is persisted is the change made to the saved note type, so the unsaved edit is
+ * neither written unchecked nor marked as saved; the draft on screen gets the same change. Null
+ * when the edit changes nothing.
+ */
+export function structuralEditOverDraft(
+    saved: NoteType,
+    draft: NoteType,
+    makeEdit: (base: NoteType) => FieldEdit,
+): { persist: FieldEdit; draft: NoteType } | null {
+    const persist = makeEdit(saved);
+    if (persist.noteType === saved) return null;
+    return { persist, draft: { ...makeEdit(draft).noteType, mod: persist.noteType.mod } };
 }
 
 /** Persist a field edit and rewrite every note of the type in one transaction. Returns notes migrated. */

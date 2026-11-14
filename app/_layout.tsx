@@ -36,13 +36,15 @@ import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppCo
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { onStudyReminderOpened } from '../lib/studyNotifications';
 import { onStopwatchAlertOpened } from '../lib/stopwatchNotifications';
-import { inferImportFileType } from '../lib/importFile';
-import { parseExternalAppUrl } from '../lib/externalLinking';
 import { externalActionRoute } from '../lib/externalActionRoute';
+import { attachIncomingUrlHandler, incomingUrlNavigation, startIncomingUrls } from '../lib/incomingUrl';
+import { externalLinkRejectionText } from '../lib/externalLinkRejection';
+import { alert as showAlert } from '../lib/confirm';
 import WebAppIntegrations from '../components/WebAppIntegrations';
 import { TextScaleProvider } from '../components/AppText';
 import { textSizeMultiplier } from '../lib/textScale';
 import { userFacingErrorMessage } from '../lib/userFacingError';
+import { returnToDeckList } from '../lib/backNavigation';
 // Imported here, ahead of the router, so its `popstate` listener is added before the router's.
 import '../lib/webPopStateGuard';
 
@@ -54,6 +56,12 @@ const APP_MARK = require('../assets/app-mark.png');
 // scope (not an effect) because by the first render the splash may already be gone.
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 SplashScreen.setOptions({ duration: 250, fade: true });
+
+// Files handed over by Files and x-callback requests are subscribed to here, once, rather than
+// when the navigator mounts: one that arrives during startup or behind the crash screen waits in
+// lib/incomingUrl.ts, and the launch URL is read once, so a remount cannot open it again.
+// AppStack opens them once startup has succeeded. The web build takes files in WebAppIntegrations.
+if (Platform.OS !== 'web') startIncomingUrls(Linking);
 
 // Startup is normally over well inside this budget and the handover is a single fade. A first
 // install or a large migration can outlast it; rather than hold a frozen launch image, hand off
@@ -138,7 +146,9 @@ function LocalizedErrorFallback({
             // Nothing was stacked above the tabs.
         }
         try {
-            globalRouter.replace('/decks' as never);
+            // Pops the tabs back to their deck list; `replace` swapped the reviewer for a second
+            // one, which a back swipe then showed. With no deck list on the stack it replaces.
+            globalRouter.dismissTo('/decks' as never);
         } catch {
             // The navigator never mounted; clearing the boundary is all that is left.
         }
@@ -459,6 +469,11 @@ function AppStack() {
     const colors = useThemeColors();
     const isDarkTheme = useIsDarkTheme();
     const { t, locale } = useI18n();
+    const navigationRef = useNavigationContainerRef();
+    const { isLoading, startupError } = useStartupStatus();
+    // This stack also mounts when startup fails or times out, to show the startup screen; until
+    // the collection is open nothing may be opened over that screen (or write beside a migration).
+    const startupSucceeded = !isLoading && !startupError;
 
     // The page's own chrome — scroll bars, native date and time inputs, the mobile address bar and
     // an installed app's title bar — follows the app's Light/Dark/System choice, as UIKit does on
@@ -479,40 +494,32 @@ function AppStack() {
     }, [locale]);
 
     // The only handler for file hand-offs and x-callback actions: `app/+native-intent.tsx` keeps
-    // Expo Router from also reading these URLs as screen addresses.
+    // Expo Router from also reading these URLs as screen addresses. The queue catches a failing
+    // collection lookup, so a bad request cannot take the app down.
     useEffect(() => {
-        if (Platform.OS === 'web') return;
-        let active = true;
-        const openIncomingUrl = (url: string | null) => {
-            if (!active || !url) return;
-            const externalAction = parseExternalAppUrl(url);
-            if (externalAction) {
-                const route = externalActionRoute(externalAction);
-                if (route) router.push(route as any);
+        if (Platform.OS === 'web' || !startupSucceeded) return undefined;
+        return attachIncomingUrlHandler((url) => {
+            const current = navigationRef.getCurrentRoute() as { name?: string } | undefined;
+            const navigation = incomingUrlNavigation(url, current?.name, externalActionRoute);
+            if (!navigation) return;
+            if (navigation.method === 'reject') {
+                // A request that cannot be carried out says why instead of doing nothing.
+                const { title, message } = externalLinkRejectionText(locale, navigation.rejection);
+                showAlert(title, message);
                 return;
             }
-            if (!inferImportFileType(url)) return;
-            router.push({ pathname: '/import', params: { incomingUri: url } } as any);
-        };
-
-        void Linking.getInitialURL()
-            .then(openIncomingUrl)
-            .catch((error) => console.warn('[Linking] initial URL failed:', error));
-        const subscription = Linking.addEventListener('url', ({ url }) => openIncomingUrl(url));
-        return () => {
-            active = false;
-            subscription.remove();
-        };
-    }, [router]);
+            if (navigation.method === 'replace') router.replace(navigation.href as any);
+            else router.push(navigation.href as any);
+        });
+    }, [navigationRef, router, startupSucceeded, locale]);
 
     // The web build takes reminder clicks in WebAppIntegrations, which is mounted below.
     useEffect(() => {
         if (Platform.OS !== 'ios') return undefined;
-        return onStudyReminderOpened(() => router.replace('/decks' as any));
+        return onStudyReminderOpened(() => returnToDeckList(router));
     }, [router]);
 
     // A Kronometre block reminder brings the stopwatch to the front, unless it already is.
-    const navigationRef = useNavigationContainerRef();
     useEffect(() => onStopwatchAlertOpened(() => {
         const current = navigationRef.getCurrentRoute() as { name?: string } | undefined;
         if (current?.name !== 'stopwatch') router.push('/stopwatch' as any);

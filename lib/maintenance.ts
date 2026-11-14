@@ -354,13 +354,23 @@ export function emptyRepairResult(): DatabaseRepairResult {
     };
 }
 
-/** True when the repair actually rewrote something, so callers know to refresh the collection. */
+/**
+ * True when the repair actually rewrote something, so callers know to refresh the collection.
+ * Every counter of a rewritten row belongs here: on web, or when the search rebuild fails, this is
+ * the only signal that deck counts and the queue are stale. `protectedRowsKept` and
+ * `unreadableNotes` count rows left alone.
+ */
 export function repairChangedRows(result: DatabaseRepairResult): boolean {
     return result.orphanCardsDeleted > 0
+        || result.orphanNotesDeleted > 0
         || result.orphanNotesRecovered > 0
         || result.strandedCardsRehomed > 0
         || result.filteredLeftoversCleared > 0
         || result.intervalsClamped > 0
+        || result.newCardPositionsWrapped > 0
+        || result.duesRepaired > 0
+        || result.ordinalsClamped > 0
+        || result.originalDuesCleared > 0
         || result.lastReviewTimesRepaired > 0;
 }
 

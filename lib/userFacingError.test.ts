@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { setActiveLocale } from './i18n';
-import { isTechnicalErrorMessage, userFacingErrorMessage } from './userFacingError';
+import { isTechnicalErrorMessage, userFacingDialogText, userFacingErrorMessage } from './userFacingError';
 
 describe('user-facing error boundary', () => {
     beforeEach(() => setActiveLocale('tr'));
@@ -41,6 +41,16 @@ http://192.168.1.103:8081/node_modules/jszip/dist/jszip.min.bundle?platform=ios
             .toBe('Bu adda bir deste zaten var.');
         expect(userFacingErrorMessage('Dosya çok büyük (en fazla 200 MB).'))
             .toBe('Dosya çok büyük (en fazla 200 MB).');
+    });
+
+    it('caps the length of a raw error, never of dialog text the app wrote', () => {
+        const findings = `Bulunanlar:\n${'Sahipsiz kart: 1\n'.repeat(40)}`.trim();
+        expect(findings.length).toBeGreaterThan(600);
+
+        expect(userFacingErrorMessage(new Error(findings))).toBe('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
+        expect(userFacingDialogText(findings)).toBe(findings);
+        expect(userFacingDialogText('SQLITE_BUSY: database is locked')).toBe('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
+        expect(userFacingDialogText('  ')).toBe('İşlem tamamlanamadı. Lütfen tekrar deneyin.');
     });
 
     it('uses a caller-provided contextual fallback', () => {

@@ -140,6 +140,27 @@ export function assertCatalogDeckNotDeletable(value: Deck | number): void {
     }
 }
 
+/**
+ * Deleting a deck takes its subdecks, their cards and the notes left without cards. Refuse when
+ * any of those belongs to the catalog, even when the deck itself has no marker: an import in an
+ * earlier build could rewrite a catalog deck without it.
+ */
+export function assertDeckDeletionSparesCatalog(deckIds: readonly number[], noteIds: readonly number[]): void {
+    // Only the marker and the GUID come out of SQLite, not every note's fields.
+    const owners = (table: 'decks' | 'notes', ids: readonly number[]) => (ids.length === 0 ? [] : getDB().getAllSync<{
+        pack: unknown; guid: unknown;
+    }>(
+        `SELECT CASE WHEN json_valid(data) THEN json_extract(data, '$.catalogPack') END AS pack,
+                CASE WHEN json_valid(data) THEN json_extract(data, '$.guid') END AS guid
+         FROM ${table} WHERE id IN (SELECT value FROM json_each(?))`,
+        JSON.stringify([...new Set(ids)]),
+    ));
+    if (owners('decks', deckIds).some((row) => row.pack === CATALOG_PACK_ID)
+        || owners('notes', noteIds).some((row) => row.pack === CATALOG_PACK_ID || isProtectedCatalogGuid(row.guid))) {
+        throw new PaidCatalogProtectionError(translateActive('decks.holdsCatalogCards'));
+    }
+}
+
 export function assertCatalogDeckNotRenamable(value: Deck | number): void {
     if (isCatalogDeck(value)) {
         throw new PaidCatalogProtectionError(translateActive('catalog.deckNotRenamable'));

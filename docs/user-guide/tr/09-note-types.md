@@ -27,10 +27,21 @@ Ekranı açmak için kart ekleme ekranında **Tür:** satırına dokunun ve **No
 seçin. Seçili türün kendi düzenleyicisine doğrudan gitmek için aynı ekrandaki **Kartlar:** satırına
 dokunun.
 
-Her satırda türün adı, alan sayısı, şablon sayısı ve türü (standart veya boşluk doldurma) yazar.
-Bir satıra dokunarak **Not türünü düzenle** ekranını açarsınız. **+ Yeni not türü**, **Temel**
-türün bir kopyasını **Yeni not türü** adıyla oluşturur ve hemen düzenlemeye açar. iPhone'da ekranı
+Her satırda türün adı, not sayısı, alan sayısı, şablon sayısı ve türü (standart veya boşluk
+doldurma) yazar. Bir satıra dokunarak **Not türünü düzenle** ekranını açarsınız. iPhone'da ekranı
 aşağı kaydırarak kapatırsınız.
+
+<a id="add-note-type"></a>
+**+ Yeni not türü**, Anki'deki gibi neyden başlayacağınızı sorar: **Ekle: Temel**, **Ekle:
+Boşluklu** gibi hazır bir tür (uygulamayla geldiği hâliyle) ya da **Kopyala: …** ile kendi
+türlerinizden biri (alanları, şablonları ve stiliyle). Ardından yeni türe bir ad verin ve
+**Oluştur**'a dokunun; aynı adda bir tür varsa ad kabul edilmez. Yeni tür hemen düzenlemeye açılır.
+
+<a id="delete-note-type"></a>
+Kendi oluşturduğunuz veya içe aktardığınız bir türü, düzenleyicinin en altındaki **Not türünü sil**
+ile silersiniz. Onay penceresi türle birlikte kaç notun ve kartın silineceğini söyler; tekrar
+geçmişi korunur. Silmeden önce geri yüklenebilir bir güvenlik yedeği alınır; geri almak için onu
+**Yedekler**'den geri yükleyin. Hazır türler ve TUS Kartları paketinin türleri silinemez.
 
 <a id="stock-types"></a>
 ## Hazır not türleri
@@ -59,7 +70,10 @@ düzenleyicisi bu gerçek adları gösterir.
   nottaki içeriği de silinir; önce onay istenir.
 - **Kurallar:** Ad `#`, `^` veya `/` ile başlayamaz; `:`, `{`, `}` veya `"` içeremez. İki alan
   (büyük/küçük harf farkı gözetilmeden) aynı adı taşıyamaz. Her türde en az bir alan bulunur.
-- **Boşluklu türler:** Alan eklenemez, taşınamaz, silinemez; adları değiştirilebilir.
+- **Boşluklu türler:** Anki'deki gibi alan eklenir, taşınır ve silinir. Kartlar, şablonun `cloze:`
+  ile okuduğu alandaki boşluklardan oluşur; o alanı silerseniz onay penceresi kartların boş
+  kalacağını söyler.
+- **Görüntü Örtme ve TUS Kartları paketinin türleri:** Alan eklenemez, taşınamaz, silinemez.
 
 Bir alanın her yeni notta son değerini korumasını istiyorsanız kart ekleme ekranındaki 📌 düğmesini
 kullanın (bkz. [Sabitlenen alanlar](08-adding-and-editing.md#sticky-fields)).
@@ -206,14 +220,12 @@ Boşluk doldurma türüne geçerken bütün kartlar korunur. Bitince gelen pence
 ## Bu sürümde olmayanlar
 
 - Bir türe kart türü (şablon) eklemek, silmek veya adını değiştirmek.
-- Bir not türünü silmek veya istediğiniz bir türü kopyalamak; yeni tür her zaman **Temel**'den
-  başlar, bu yüzden yeni bir boşluk doldurma türü oluşturulamaz.
 - Sıralama alanını ve alan seçeneklerini (yazı tipi, boyut, sağdan sola, açıklama) değiştirmek.
   İçe aktarılan türlerin yazı tipi, boyut ve sağdan sola ayarı kart ekleme ekranında kullanılır.
 - Şablona tanımlanmış farklı deste (deste geçersiz kılma): yeni kartlar seçtiğiniz desteye gider.
 
 > **Anki'den farkı:** Şablonlardaki betikler (JavaScript) güvenlik için çalıştırılmaz; bu tür
-> kartlar sade görünebilir. MathJax formülleri işlenmiş hâlde gösterilmez; kaynak metin görünür.
+> kartlar sade görünebilir; MathJax'i kart içi betikle özelleştirmek de bu yüzden çalışmaz.
 > Görüntü örtme (Image Occlusion) maskelerinin renkleri kısa bir paletten seçilir. Eklentilere ait süzgeçler yok sayılır.
 
 ## İlgili konular

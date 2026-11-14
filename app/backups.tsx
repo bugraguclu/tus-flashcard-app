@@ -33,9 +33,12 @@ import { useI18n } from '../hooks/useI18n';
 import ScreenHeader from '../components/ScreenHeader';
 import MediaCheckSection from '../components/backups/MediaCheckSection';
 
-function formatSize(bytes: number): string {
-    if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+/** A size in the language's own separators: 12,3 MB in Turkish, 12.3 MB in English. */
+function formatSize(bytes: number, localeTag: string): string {
+    if (bytes >= 1024 * 1024) {
+        return `${new Intl.NumberFormat(localeTag, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(bytes / 1024 / 1024)} MB`;
+    }
+    return `${new Intl.NumberFormat(localeTag).format(Math.max(1, Math.round(bytes / 1024)))} KB`;
 }
 
 function formatDate(epochMs: number, localeTag: string): string {
@@ -187,11 +190,19 @@ export default function BackupsScreen() {
         );
     };
 
-    const handleDelete = (name: string) => {
-        confirm(l('Yedeği sil', 'Delete Backup'), l(`${displayBackupName(name)} kalıcı olarak silinecek.`, `${displayBackupName(name)} will be permanently deleted.`), () =>
+    /** A backup as its row shows it: its name (or kind) and date, never the private file name. */
+    const backupTitle = (backup: BackupInfo) => isPreRestoreBackup(backup.name)
+        ? l('Geri yükleme öncesi kopya', 'Pre-restore snapshot')
+        : `“${displayBackupName(backup.name)}”`;
+    const backupLabel = (backup: BackupInfo) => [backupTitle(backup), formatDate(backup.createdAt, localeTag)].filter(Boolean).join(', ');
+
+    const handleDelete = (backup: BackupInfo) => {
+        const date = formatDate(backup.createdAt, localeTag);
+        const shown = date ? `${backupTitle(backup)} (${date})` : backupTitle(backup);
+        confirm(l('Yedeği sil', 'Delete Backup'), l(`${shown} kalıcı olarak silinecek.`, `${shown} will be permanently deleted.`), () =>
             void withBusy(async () => {
                 try {
-                    await deleteBackup(name);
+                    await deleteBackup(backup.name);
                     await reload();
                 } catch (e) {
                     console.warn('[Backups] delete failed:', e);
@@ -268,7 +279,7 @@ export default function BackupsScreen() {
                                         <Text style={styles.rowName} numberOfLines={1}>{displayBackupName(backup.name)}</Text>
                                     )}
                                     <Text style={styles.rowSub}>
-                                        {formatDate(backup.createdAt, localeTag)} · {formatSize(backup.size)}
+                                        {formatDate(backup.createdAt, localeTag)} · {formatSize(backup.size, localeTag)}
                                     </Text>
                                 </View>
                                 <View style={styles.rowActions}>
@@ -278,6 +289,7 @@ export default function BackupsScreen() {
                                         size="compact"
                                         onPress={() => handleRestore(backup.name)}
                                         disabled={busy}
+                                        accessibilityLabel={l(`Geri yükle: ${backupLabel(backup)}`, `Restore: ${backupLabel(backup)}`)}
                                     />
                                     <Button
                                         label={l('Paylaş', 'Share')}
@@ -285,14 +297,16 @@ export default function BackupsScreen() {
                                         size="compact"
                                         onPress={() => handleShare(backup.name)}
                                         disabled={busy}
+                                        accessibilityLabel={l(`Paylaş: ${backupLabel(backup)}`, `Share: ${backupLabel(backup)}`)}
                                     />
                                     <Button
                                         label={t('common.delete')}
                                         variant="plain"
                                         tone="danger"
                                         size="compact"
-                                        onPress={() => handleDelete(backup.name)}
+                                        onPress={() => handleDelete(backup)}
                                         disabled={busy}
+                                        accessibilityLabel={l(`Sil: ${backupLabel(backup)}`, `Delete: ${backupLabel(backup)}`)}
                                     />
                                 </View>
                             </View>

@@ -23,7 +23,7 @@ import {
     type DailyLimitUsage,
 } from './reviewLogger';
 import { resolveSettingsFromConfig } from './settingsResolver';
-import { buildFilteredDeckQueue } from './filteredDeckQueue';
+import { buildFilteredDeckQueue, filteredDeckWaitingCards } from './filteredDeckQueue';
 import { filteredDeckMemberIds } from './filteredDeckMembership';
 import { rebuildLoadBalancer } from './loadBalancerSession';
 import {
@@ -358,7 +358,7 @@ export function getStudyQueue(params: StudyQueueParams): StudyQueueResult {
     if (params.selectedDeckName) {
         const selectedDeck = getDeckByName(params.selectedDeckName);
         if (selectedDeck?.isFiltered) {
-            return buildFilteredDeckQueue(selectedDeck, params.settings, nowMs);
+            return buildFilteredDeckQueue(selectedDeck, params.settings, nowMs, params.extraLearningCardIds);
         }
     }
 
@@ -679,10 +679,19 @@ export function getWaitingLearningCardIds(params: {
     cutoffMs?: number | null;
     limit?: number;
 }): number[] {
-    const db = getDB();
-    const scope = buildScopeClause(params.selectedSubject, params.selectedTopic, params.selectedDeckName);
     const hasCutoff = Number.isFinite(params.cutoffMs ?? undefined);
     const hasLimit = Number.isFinite(params.limit) && (params.limit as number) > 0;
+
+    const filteredDeck = params.selectedDeckName ? getDeckByName(params.selectedDeckName) : null;
+    if (filteredDeck?.isFiltered) {
+        // The scope below leaves out every reserved card, so a filtered deck reads its own build.
+        const waiting = filteredDeckWaitingCards(filteredDeck, Date.now())
+            .filter((card) => !hasCutoff || card.due <= (params.cutoffMs as number));
+        return (hasLimit ? waiting.slice(0, Math.floor(params.limit as number)) : waiting).map((card) => card.cardId);
+    }
+
+    const db = getDB();
+    const scope = buildScopeClause(params.selectedSubject, params.selectedTopic, params.selectedDeckName);
 
     const rows = db.getAllSync<{ cardId: number }>(
         `SELECT c.id AS cardId

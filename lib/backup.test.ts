@@ -1,4 +1,48 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+/**
+ * The parts of expo-file-system/legacy the native backup store calls, kept in memory. Like the
+ * real module, appending to a file that does not exist creates it.
+ */
+const disk = vi.hoisted(() => {
+    const files = new Map<string, { contents: string; modified: number }>();
+    const hooks = { beforeAppend: null as null | ((path: string) => Promise<void> | void) };
+    const childNames = (dir: string) => [...new Set([...files.keys()]
+        .filter((path) => path.startsWith(dir))
+        .map((path) => path.slice(dir.length).split('/')[0]))];
+    const fs = {
+        documentDirectory: 'file:///docs/',
+        async getInfoAsync(path: string) {
+            const file = files.get(path);
+            if (file) return { exists: true, isDirectory: false, size: file.contents.length, modificationTime: file.modified };
+            return path.endsWith('/') ? { exists: true, isDirectory: true } : { exists: false, isDirectory: false };
+        },
+        async makeDirectoryAsync() {},
+        async readDirectoryAsync(dir: string) { return childNames(dir); },
+        async readAsStringAsync(path: string) {
+            const file = files.get(path);
+            if (!file) throw new Error(`no file at ${path}`);
+            return file.contents;
+        },
+        async writeAsStringAsync(path: string, contents: string, options?: { append?: boolean }) {
+            if (options?.append) {
+                await hooks.beforeAppend?.(path);
+                files.set(path, { contents: (files.get(path)?.contents ?? '') + contents, modified: Date.now() / 1000 });
+                return;
+            }
+            files.set(path, { contents, modified: Date.now() / 1000 });
+        },
+        async moveAsync({ from, to }: { from: string; to: string }) {
+            const file = files.get(from);
+            if (!file) throw new Error(`no file at ${from}`);
+            files.set(to, file);
+            files.delete(from);
+        },
+        async deleteAsync(path: string) { files.delete(path); },
+    };
+    return { files, hooks, fs };
+});
+vi.mock('./files', () => ({ getLegacyFileSystem: () => disk.fs }));
 
 // backup.ts pulls in native-only modules for its default deps; every test here
 // injects fakes, so the real implementations can be stubbed out entirely.
@@ -29,6 +73,8 @@ import {
     normalizeManualBackupName,
     readBackup,
     restoreBackup,
+    RESTORE_SERIES_GAP_MS,
+    retainedPreRestoreNames,
     runAutoBackupIfDue,
     validateBackupContents,
     type BackupDeps,
@@ -145,11 +191,11 @@ describe('runAutoBackupIfDue', () => {
         expect(h.files.size).toBe(2);
     });
 
-    it('uses the Anki rollover day in the timestamped filename', async () => {
+    it('names a backup after the calendar date it was taken on, also before the day rolls over', async () => {
         const h = makeHarness('2026-07-06T03:00:00');
         const result = await runAutoBackupIfDue(h.deps);
 
-        expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-05-030000000.json' });
+        expect(result).toEqual({ didRun: true, fileName: 'tus-backup-2026-07-06-030000000.json' });
     });
 
     it('keeps only the newest seven collection snapshots', async () => {
@@ -333,17 +379,37 @@ describe('restoreBackup', () => {
         expect(h.imports).toHaveLength(0);
     });
 
-    it('keeps only the 3 newest pre-restore snapshots', async () => {
+    it('keeps the 3 newest pre-restore snapshots and the first of a series of restores', async () => {
         const h = makeHarness();
         const { fileName } = await createBackupNow(h.deps);
+        // The learner's own collection, which only the first restore's copy holds.
+        const own = JSON.parse(h.files.get(fileName)!.contents);
+        own.own = 'work since the last backup';
+        h.setExported(JSON.stringify(own));
 
+        const names: string[] = [];
         for (let i = 0; i < 5; i++) {
             h.setNow(`2026-07-05T12:0${i + 1}:00`);
-            await restoreBackup(fileName, h.deps);
+            names.push((await restoreBackup(fileName, h.deps)).preRestoreName!);
+            h.setExported(h.files.get(fileName)!.contents);
         }
 
-        const preRestores = [...h.files.keys()].filter((n) => n.startsWith('tus-prerestore-'));
-        expect(preRestores).toHaveLength(3);
+        const preRestores = [...h.files.keys()].filter((n) => n.startsWith('tus-prerestore-')).sort();
+        expect(preRestores).toEqual([names[0], ...names.slice(2)].sort());
+        expect(h.files.get(names[0])?.contents).toContain('"own":"work since the last backup"');
+    });
+
+    it('lets the first copy of an earlier series go once a later series starts', () => {
+        const at = (iso: string) => `tus-prerestore-${new Date(iso).getTime()}.json`;
+        const earlier = ['2026-07-01T09:00:00', '2026-07-01T09:05:00', '2026-07-01T09:10:00', '2026-07-01T09:15:00'].map(at);
+        const later = ['2026-07-04T18:00:00', '2026-07-04T18:02:00'].map(at);
+
+        expect(retainedPreRestoreNames(earlier)).toEqual(new Set(earlier));
+        // The later series' first copy is among the newest three; the earlier series' first is not.
+        expect(retainedPreRestoreNames([...earlier, ...later])).toEqual(new Set([...later, earlier[3]]));
+        // Restores a day and more apart are separate series.
+        expect(RESTORE_SERIES_GAP_MS).toBe(24 * 60 * 60 * 1000);
+        expect(retainedPreRestoreNames([])).toEqual(new Set());
     });
 
     it('rejects filenames this module did not generate', async () => {
@@ -383,6 +449,99 @@ describe('listBackups / readBackup / deleteBackup', () => {
     });
 });
 
+describe('native backup folder', () => {
+    const DIR = 'file:///docs/tus-backups/';
+    const CHUNKS = [
+        '{"version":6,"canonical":true,"tables":{"note_types":[],"notes":[],',
+        '"anki_cards":[],"decks":[],"deck_configs":[],',
+        '"revlog":[],"graves":[],"session_stats":[]}}',
+    ];
+
+    /** The real native store over the in-memory disk; every other dependency is a fake. */
+    function nativeDeps(startIso: string, onExport: () => void = () => {}): BackupDeps {
+        let guard: string | null = null;
+        return {
+            now: () => new Date(startIso),
+            exportSnapshot: async () => { onExport(); return { chunks: [...CHUNKS], restorable: true }; },
+            importData: async () => true,
+            getLastBackupAt: () => guard,
+            setLastBackupAt: (timestamp) => { guard = timestamp; },
+            rolloverHour: () => 4,
+            isWriter: () => true,
+            autoBackupEnabled: () => true,
+            intervalMinutes: () => 30,
+            maxCopies: () => 7,
+        };
+    }
+
+    /** Hold the next chunked write after its first chunk, until `release` is called. */
+    function pauseNextAppend() {
+        let release!: () => void;
+        const released = new Promise<void>((resolve) => { release = resolve; });
+        let reached!: () => void;
+        const paused = new Promise<void>((resolve) => { reached = resolve; });
+        disk.hooks.beforeAppend = async () => {
+            disk.hooks.beforeAppend = null;
+            reached();
+            await released;
+        };
+        return { paused, release };
+    }
+
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    beforeEach(() => {
+        disk.files.clear();
+        disk.hooks.beforeAppend = null;
+    });
+
+    it('publishes the whole snapshot when the Backups screen lists the folder mid-write', async () => {
+        const deps = nativeDeps('2026-07-05T12:00:00');
+        const { paused, release } = pauseNextAppend();
+
+        const writing = createBackupNow(deps);
+        await paused;
+        // Backups › reload() while the snapshot is still being appended to its temporary file.
+        await listBackups(deps);
+        release();
+        const { fileName } = await writing;
+
+        expect(disk.files.get(`${DIR}${fileName}`)?.contents).toBe(CHUNKS.join(''));
+        expect(validateBackupContents(disk.files.get(`${DIR}${fileName}`)!.contents)).toEqual({ valid: true });
+    });
+
+    it('writes a second backup only after the one in progress, both whole', async () => {
+        const events: string[] = [];
+        const automatic = nativeDeps('2026-07-05T12:00:00', () => events.push('export automatic'));
+        const manual = nativeDeps('2026-07-05T12:00:00', () => events.push('export manual'));
+        const { paused, release } = pauseNextAppend();
+
+        // The 5-minute poll's snapshot is being written when the learner taps Back Up Now.
+        const first = createBackupNow(automatic);
+        await paused;
+        const second = createBackupNow(manual, { name: 'Before exam' });
+        await settle();
+        events.push('first write released');
+        release();
+        const [a, b] = await Promise.all([first, second]);
+
+        expect(events).toEqual(['export automatic', 'first write released', 'export manual']);
+        expect(disk.files.get(`${DIR}${a.fileName}`)?.contents).toBe(CHUNKS.join(''));
+        expect(disk.files.get(`${DIR}${b.fileName}`)?.contents).toBe(CHUNKS.join(''));
+    });
+
+    it('still clears a temporary file that an interrupted write left behind', async () => {
+        const deps = nativeDeps('2026-07-05T12:00:00');
+        disk.files.set(`${DIR}.tus-backup-2026-07-04-120000000.json.1751600000000.tmp`, { contents: '{"version":6,', modified: 0 });
+        disk.files.set(`${DIR}tus-backup-2026-07-04-120000000.json`, { contents: CHUNKS.join(''), modified: 1 });
+
+        const listed = await listBackups(deps);
+
+        expect(listed.map((info) => info.name)).toEqual(['tus-backup-2026-07-04-120000000.json']);
+        expect([...disk.files.keys()]).toEqual([`${DIR}tus-backup-2026-07-04-120000000.json`]);
+    });
+});
+
 describe('isBackupFileName', () => {
     it('accepts only generated names', () => {
         expect(isBackupFileName('tus-backup-2026-07-05.json')).toBe(true);
@@ -399,7 +558,7 @@ describe('isBackupFileName', () => {
 
 describe('backup name validation', () => {
     it('keeps the automatic default format and normalizes the optional extension', () => {
-        expect(getDefaultBackupFileName(new Date('2026-07-05T12:00:00'), 4))
+        expect(getDefaultBackupFileName(new Date('2026-07-05T12:00:00')))
             .toBe('tus-backup-2026-07-05-120000000.json');
         expect(normalizeManualBackupName(' My recovery ')).toEqual({
             fileName: 'tus-backup-custom-My recovery.json',

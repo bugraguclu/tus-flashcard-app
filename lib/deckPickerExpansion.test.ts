@@ -5,6 +5,7 @@ import {
     initialExpandedDeckNames,
     prioritizeDeckTree,
     resolveTargetDeckPath,
+    searchOpensEveryBranch,
 } from './deckPickerExpansion';
 import type { DeckTreeNode } from './deckManager';
 import type { Deck } from './models';
@@ -388,5 +389,52 @@ describe('deck picker expansion', () => {
             expect(names[2]).toBe('TUS Deneme::Dahiliye::Kardiyoloji');
             expect(names).not.toContain('TUS Deneme::Anatomi::Kaslar');
         });
+    });
+});
+
+describe('deck picker disclosure state', () => {
+    const expandedByName = (rows: ReturnType<typeof flattenVisibleDeckPicker>) => (
+        Object.fromEntries(rows.map((row) => [row.node.deck.name, row.expanded]))
+    );
+
+    it('reports on each row whether its subdecks are drawn beneath it', () => {
+        const rows = flattenVisibleDeckPicker(makeTree(SAMPLE), new Set(['TUS Kartları']), false);
+        const expanded = expandedByName(rows);
+
+        expect(expanded['TUS Kartları']).toBe(true);
+        // Has subdecks, but they are not drawn.
+        expect(expanded['TUS Kartları::Anatomi']).toBe(false);
+        // No subdecks to draw.
+        expect(expanded['Varsayılan']).toBe(false);
+        expect(expanded['TUS Kartları::Biyokimya']).toBe(false);
+    });
+
+    it('keeps the branches as they were while the search field is open but empty', () => {
+        for (const query of ['', '   ']) {
+            const opensAll = searchOpensEveryBranch(true, query);
+            expect(opensAll).toBe(false);
+            const rows = flattenVisibleDeckPicker(filterDeckTree(makeTree(SAMPLE), query.trim()), new Set(['TUS Kartları']), opensAll);
+            const expanded = expandedByName(rows);
+
+            expect(expanded['TUS Kartları']).toBe(true);
+            expect(expanded['TUS Kartları::Anatomi']).toBe(false);
+            expect(rows.map((row) => row.node.deck.name)).not.toContain('TUS Kartları::Anatomi::Kaslar');
+        }
+    });
+
+    it('opens every branch of the matches once something is typed', () => {
+        expect(searchOpensEveryBranch(true, 'kl')).toBe(true);
+        expect(searchOpensEveryBranch(false, 'kl')).toBe(false);
+
+        const rows = flattenVisibleDeckPicker(
+            filterDeckTree(makeTree(SAMPLE), 'klinik'),
+            new Set(),
+            searchOpensEveryBranch(true, 'klinik'),
+        );
+        expect(rows.map((row) => [row.node.deck.name, row.expanded])).toEqual([
+            ['TUS Kartları', true],
+            ['TUS Kartları::Deneme ve Soru', true],
+            ['TUS Kartları::Deneme ve Soru::Klinik', false],
+        ]);
     });
 });

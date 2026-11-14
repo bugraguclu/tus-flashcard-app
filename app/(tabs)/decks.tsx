@@ -793,6 +793,7 @@ export default function DecksScreen() {
             void (async () => {
                 try {
                     const kind = await chooseUnburyKind(getBuriedKindsForDeck(deck.id), l);
+                    if (!kind) return;
                     const count = unburyDeck(deck.id, settings.dayRolloverHour, kind);
                     refresh();
                     alert(

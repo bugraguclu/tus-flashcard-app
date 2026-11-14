@@ -87,7 +87,8 @@ ayarları (dil ve tema dahil) yedekteki hâline döner. Medya dosyalarına dokun
 
 Geri yüklemeden hemen önce o anki durumun bir kopyası listeye **Geri yükleme öncesi kopya** olarak
 eklenir. Yanlış yedeği seçtiyseniz o kopyayı geri yükleyerek eski hâle dönersiniz. Bu kopyalardan
-en yeni üçü saklanır.
+en yeni üçü saklanır. Art arda birkaç yedek denediğinizde (aralarında bir günden az varken) serinin
+ilk kopyası da saklanır: kendi çalışmanızı yalnızca o tutar.
 
 Bir yedek geri yüklenemiyorsa **Yedek geri yüklenemedi.** mesajı çıkar ve koleksiyonunuz değişmez.
 Bu, yedek uygulamanın daha yeni bir sürümüyle alındığında veya dosya bozulduğunda olabilir.
@@ -216,14 +217,12 @@ silinmiştir. **Desteler › ••• › Boş kartlar** ekranı bu kartları n
 
 - Tek bir kartı silmek için satırdaki **✕**'e, hepsini silmek için **Tümünü sil (N)**'e dokunun.
 - **Geçerli kartı olmayan notları koru** (açık): Bir notun bütün kartları boşsa ilk kartı silinmez,
-  böylece not kartsız kalmaz. Kapalıyken bütün kartlar silinir ama notun metni kartsız olarak
-  durur; **Veritabanını kontrol et** bu notları **Kartsız not** olarak gösterir ve
-  **Onar ve optimize et** onlara yeniden bir kart verir.
-- Tekrar geçmişi korunur. Silme geri alınamaz ve öncesinde yedek alınmaz; önce
-  [elle bir yedek](#back-up-now) alın.
-
-> **Anki'den farkı:** **Geçerli kartı olmayan notları koru** kapalıyken notlar silinmez; yalnızca
-> kartları silinir.
+  böylece not kartsız kalmaz. Kapalıyken, Anki'de olduğu gibi, bütün kartları boş olan not da
+  kartlarıyla birlikte silinir; onay penceresi ve sonuç mesajı kaç notun silineceğini söyler.
+  Satın alınan TUS kataloğunun notları hiç silinmez: ilk kartları kalır.
+- Tekrar geçmişi korunur. Silmeden önce uygulama geri yüklenebilir bir güvenlik yedeği alır; yedek
+  alınamazsa hiçbir şey silinmez. Silmeyi geri almak için sonuç mesajında adı geçen yedeği
+  **Yedekler** ekranından geri yükleyin.
 
 <a id="reset-progress"></a>
 ## Koleksiyonu sıfırla: baştan başlama

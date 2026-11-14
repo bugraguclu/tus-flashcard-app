@@ -26,9 +26,20 @@ they look (see [Key concepts](02-key-concepts.md#note-types)). You manage note t
 To open it, tap the **Type:** row on the Add note screen and choose **Manage note types…**. To go
 straight to the editor of the selected type, tap the **Cards:** row on the same screen.
 
-Each row shows the type's name, its number of fields and templates, and its kind (standard or cloze).
-Tap a row to open **Edit Note Type**. **+ New Note Type** creates a copy of **Basic** named
-**New Note Type** and opens it for editing. On iPhone, swipe the screen down to close it.
+Each row shows the type's name, its number of notes, fields and templates, and its kind (standard or
+cloze). Tap a row to open **Edit Note Type**. On iPhone, swipe the screen down to close it.
+
+<a id="add-note-type"></a>
+**+ New Note Type** asks what to start from, as Anki does: a stock type such as **Add: Basic** or
+**Add: Cloze** (as the app ships it), or one of your own with **Clone: …** (its fields, templates and
+styling). Then name the new type and tap **Create**; a name another type already has is refused.
+The new type opens for editing straight away.
+
+<a id="delete-note-type"></a>
+To delete a type you created or imported, tap **Delete Note Type** at the bottom of its editor. The
+confirmation says how many notes and cards go with it; review history is kept. A restorable safety
+backup is taken first; restore it from **Backups** to undo. The stock types and the TUS card pack's
+types cannot be deleted.
 
 <a id="stock-types"></a>
 ## Built-in note types
@@ -56,7 +67,10 @@ The **FIELDS** section lists each field's name, ↑ ↓ to reorder it and ✕ to
   deletes its content in every note; you are asked to confirm first.
 - **Rules:** a name cannot start with `#`, `^` or `/`, and cannot contain `:`, `{`, `}` or `"`. Two
   fields cannot share a name (ignoring upper and lower case). Every type keeps at least one field.
-- **Cloze types:** fields cannot be added, moved or deleted; their names can be changed.
+- **Cloze types:** as in Anki, fields can be added, moved and deleted. Cards come from the clozes in
+  the field the template reads through `cloze:`; deleting that field, the confirmation says the
+  cards will be empty.
+- **Image Occlusion and the TUS card pack's types:** fields cannot be added, moved or deleted.
 
 To keep a field's last value for every new note, use the 📌 on the Add note screen (see
 [Pinned fields](08-adding-and-editing.md#sticky-fields)).
@@ -204,14 +218,12 @@ change type.
 ## Not available in this version
 
 - Adding, deleting or renaming card types (templates).
-- Deleting a note type or copying a type of your choice; a new type always starts from **Basic**, so a
-  new cloze type cannot be created.
 - Changing the sort field or field options (font, size, right-to-left, description). The font, size
   and right-to-left settings of imported types are used on the Add note screen.
 - A different deck set on a template (deck override): new cards go to the deck you choose.
 
 > **Different from Anki:** Scripts (JavaScript) in templates are not run, for security; such cards may
-> look plain. MathJax formulas are not rendered; the source text is shown. Image Occlusion mask
+> look plain, and a card script cannot customise MathJax either. Image Occlusion mask
 > colours come from a short palette. Filters that belong to add-ons are ignored.
 
 ## Related topics

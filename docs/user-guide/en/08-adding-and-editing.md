@@ -97,8 +97,11 @@ stored exactly as you write it. A ◈ sign in a field marks something the editor
 With a hardware keyboard, using Cmd (or Ctrl): B bold, I italic, U underline, Z undo, Shift+Z redo,
 Shift+7 and Shift+8 lists, L/E/R/J alignment, Alt+1…3 headings. Shift+F3 changes case.
 
-> **Different from Anki:** The MathJax button inserts `\( … \)` markers, but TusAnkiM does not render
-> formulas yet; the card shows the source text (Anki renders it after export). For an Image Occlusion note,
+> **Formulas:** the MathJax button inserts `\( … \)` (inline) or `\[ … \]` (display). Cards draw the
+> formulas offline with MathJax in the card's text colour; `\ce{…}` works for chemistry. A formula with
+> an error shows its source. `[latex]` image formulas are not supported.
+>
+> **Different from Anki:** For an Image Occlusion note,
 > choose the Image Occlusion type and draw masks over a picture; colours come from a short palette rather than a colour picker. Scripts (JavaScript), SVG, MathML and form elements in fields and templates are
 > neither run nor shown on cards. Shortcuts follow word processors rather than Anki, and there is no
 > cloze shortcut.

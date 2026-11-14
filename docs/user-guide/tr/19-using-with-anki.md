@@ -124,7 +124,7 @@ geliştirilir, ama her özelliği yoktur. Fark edeceğiniz başlıca yerler:
 | Eşitleme (AnkiWeb) | Yok. Taşıma `.colpkg` / `.apkg` dosyasıyla yapılır. |
 | Profiller | Tek koleksiyon vardır. |
 | Yeni kart günlük sınırı | Yok: istediğiniz kadar yeni kart çalışabilirsiniz. Tekrar kartlarının günlük sınırı vardır. Bkz. [Deste seçenekleri](06-deck-options.md#daily-limits). |
-| Matematik (MathJax/LaTeX) | Formüller işlenmiş hâlde gösterilmez; alanlardaki kaynak metin korunur. |
+| Matematik (MathJax/LaTeX) | MathJax formülleri internet olmadan çizilir; `[latex]` görüntü formülleri çizilmez, kaynak metin korunur. |
 | Görüntü örtme (Image Occlusion) | Notlar uygulamanın maske düzenleyicisiyle yapılır ve düzenlenir, Anki'de dönüşleri ve renkleriyle aynı maskelerle açılır; burada renkler kısa bir paletten seçilir, Anki'de verilen her renk korunur. |
 | Eklentiler (add-on) | Desteklenmez. |
 | Kart şablonlarındaki JavaScript | Güvenlik için çalıştırılmaz. |

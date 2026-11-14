@@ -1,0 +1,68 @@
+{
+ "meta": {
+  "ankiVersion": "26.9.3",
+  "fsrsVersion": "6.6.2",
+  "timezone": "Europe/Istanbul",
+  "rolloverHour": 4,
+  "source": "test/fixtures/anki-26.09-optimize.json",
+  "generator": "scripts/anki-oracle/gen_evaluate.py"
+ },
+ "collections": [
+  {
+   "name": "cards-40",
+   "fsrsItems": 112,
+   "evaluate": {
+    "default": {
+     "logLoss": 0.43105781078338623,
+     "rmseBins": 0.1299465149641037
+    },
+    "result": {
+     "logLoss": 0.4312826991081238,
+     "rmseBins": 0.13027653098106384
+    }
+   }
+  },
+  {
+   "name": "cards-150",
+   "fsrsItems": 731,
+   "evaluate": {
+    "default": {
+     "logLoss": 0.4407181441783905,
+     "rmseBins": 0.061819639056921005
+    },
+    "result": {
+     "logLoss": 0.427989661693573,
+     "rmseBins": 0.058237556368112564
+    }
+   }
+  },
+  {
+   "name": "cards-400",
+   "fsrsItems": 1668,
+   "evaluate": {
+    "default": {
+     "logLoss": 0.4783686697483063,
+     "rmseBins": 0.07063509523868561
+    },
+    "result": {
+     "logLoss": 0.4686625599861145,
+     "rmseBins": 0.059838585555553436
+    }
+   }
+  },
+  {
+   "name": "long-history",
+   "fsrsItems": 664,
+   "evaluate": {
+    "default": {
+     "logLoss": 0.4113907814025879,
+     "rmseBins": 0.09981811791658401
+    },
+    "result": {
+     "logLoss": 0.39895719289779663,
+     "rmseBins": 0.07965213805437088
+    }
+   }
+  }
+ ]
+}

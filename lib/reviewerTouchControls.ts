@@ -62,6 +62,34 @@ export function normalizeReviewTapActions(
     }, {} as ReviewTapActionMap);
 }
 
+/**
+ * How long after the typed answer's box lost focus a tap on the card still counts as the tap that
+ * put the keyboard away. Tapping web content can take the focus from the box before the tap itself
+ * is reported.
+ */
+export const KEYBOARD_DISMISS_TAP_WINDOW_MS = 500;
+
+/**
+ * Whether a tap on the card only puts the typed answer's keyboard away. iPhone users tap the card
+ * to hide the keyboard, and on a `{{type:}}` card that tap used to run the question's tap action
+ * (Show Answer by default) and grade a half-typed answer. The first tap while the answer box has
+ * focus, or that took the focus from it an instant ago, now only hides the keyboard; the next one
+ * acts as configured.
+ */
+export function cardTapOnlyHidesKeyboard(state: {
+    showingAnswer: boolean;
+    typeAnswerFocused: boolean;
+    /** When the answer box last lost focus (ms), or null. */
+    typeAnswerBlurredAt: number | null;
+    now: number;
+}): boolean {
+    if (state.showingAnswer) return false;
+    if (state.typeAnswerFocused) return true;
+    if (state.typeAnswerBlurredAt === null) return false;
+    const since = state.now - state.typeAnswerBlurredAt;
+    return since >= 0 && since < KEYBOARD_DISMISS_TAP_WINDOW_MS;
+}
+
 /** Resolve a normalized card-surface point to one of AnkiMobile's 3×3 tap zones. */
 export function reviewTapZoneAt(xRatio: number, yRatio: number): ReviewTapZone {
     const column = Math.min(2, Math.max(0, Math.floor(Math.max(0, Math.min(0.999999, xRatio)) * 3)));

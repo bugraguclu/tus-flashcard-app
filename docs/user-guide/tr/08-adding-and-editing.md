@@ -102,8 +102,11 @@ Donanım klavyesinde Cmd (veya Ctrl) ile: B kalın, I italik, U altı çizili, Z
 yinele, Shift+7 ve Shift+8 listeler, L/E/R/J hizalama, Alt+1…3 başlıklar. Shift+F3 büyük/küçük
 harfi değiştirir.
 
-> **Anki'den farkı:** MathJax düğmesi `\( … \)` işaretlerini ekler, ama TusAnkiM formülleri henüz
-> işlenmiş hâlde göstermez; kartta kaynak metin görünür (Anki'ye aktarınca işlenir). Görüntü örtme
+> **Formüller:** MathJax düğmesi `\( … \)` (satır içi) veya `\[ … \]` (ayrı satır) ekler. Kartta
+> formüller internet olmadan MathJax ile çizilir ve kartın yazı rengini alır; kimya için `\ce{…}`
+> kullanılabilir. Hatalı bir formül kaynak metniyle görünür. `[latex]` görüntü formülleri desteklenmez.
+>
+> **Anki'den farkı:** Görüntü örtme
 > (Image Occlusion) notu için Görüntü Örtme türünü seçip resmin üzerine maske çizin; renkler renk
 > seçici yerine kısa bir paletten seçilir. Alanlardaki ve şablonlardaki betikler (JavaScript), SVG,
 > MathML ve form öğeleri kartta çalıştırılmaz ve gösterilmez. Kısayollar Anki'nin değil, kelime

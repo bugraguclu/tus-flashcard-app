@@ -58,6 +58,10 @@ export function noteTypeJson(type: NoteType, exportedDeckIds: ReadonlySet<number
         usn: raw.usn ?? -1, sortf: type.sortFieldIdx, css: type.css,
         flds: type.fields.map((field, index) => ({
             ...(rawFields[index] ?? { font: 'Arial', size: 20 }),
+            // Anki refuses a field without `font` and `size`; a field added here to an imported
+            // type carries source options without them.
+            ...(rawFields[index] && rawFields[index].font === undefined ? { font: 'Arial' } : {}),
+            ...(rawFields[index] && rawFields[index].size === undefined ? { size: 20 } : {}),
             name: field.name, ord: field.ord, sticky: field.sticky, rtl: field.rtl,
             ...(field.font !== undefined ? { font: field.font } : {}),
             ...(field.fontSize !== undefined ? { size: field.fontSize } : {}),

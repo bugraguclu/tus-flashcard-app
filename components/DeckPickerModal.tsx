@@ -30,6 +30,7 @@ import {
     flattenVisibleDeckPicker,
     initialExpandedDeckNames,
     prioritizeDeckTree,
+    searchOpensEveryBranch,
 } from '../lib/deckPickerExpansion';
 
 type Props = {
@@ -118,7 +119,7 @@ export default function DeckPickerModal({
         [prioritizedTree, query],
     );
     const rows = useMemo(
-        () => flattenVisibleDeckPicker(filteredTree, expanded, searching && query.trim().length > 0),
+        () => flattenVisibleDeckPicker(filteredTree, expanded, searchOpensEveryBranch(searching, query)),
         [filteredTree, expanded, searching, query],
     );
 
@@ -294,9 +295,9 @@ export default function DeckPickerModal({
                                 {selectedDeckName === null && <SelectedMark />}
                             </TouchableOpacity>
                         ) : null}
-                        renderItem={({ item: { node, depth }, index }) => {
+                        renderItem={({ item: { node, depth, expanded: isExpanded }, index }) => {
                             const hasChildren = node.children.length > 0;
-                            const isExpanded = searching || expanded.has(node.deck.name);
+                            const displayName = getDeckDisplayName(node.deck.name);
                             const active = selectedDeckName === node.deck.name;
                             const isLast = index === rows.length - 1;
                             return (
@@ -316,6 +317,9 @@ export default function DeckPickerModal({
                                             // The slop makes the 38-wide column a full target, into the row's inset.
                                             hitSlop={{ left: 6 }}
                                             accessibilityRole="button"
+                                            accessibilityLabel={isExpanded
+                                                ? l(`${displayName} alt destelerini gizle`, `Hide ${displayName} subdecks`)
+                                                : l(`${displayName} alt destelerini göster`, `Show ${displayName} subdecks`)}
                                             accessibilityState={{ expanded: isExpanded }}
                                         >
                                             <DisclosureChevron expanded={isExpanded} color={colors.textPrimary} />
@@ -331,7 +335,7 @@ export default function DeckPickerModal({
                                         accessibilityLabel={node.deck.name.replaceAll('::', ' › ')}
                                     >
                                         <Text style={[styles.rowText, active && styles.rowTextActive]} numberOfLines={1}>
-                                            {getDeckDisplayName(node.deck.name)}
+                                            {displayName}
                                         </Text>
                                         {active && <SelectedMark />}
                                     </TouchableOpacity>

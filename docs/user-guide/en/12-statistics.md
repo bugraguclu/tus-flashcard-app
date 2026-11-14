@@ -166,6 +166,20 @@ split into **Learning** (learning, relearning and filtered-deck answers), **Youn
   mature figure is a rough sign of how well you keep long-interval cards.
 - With **Last month** selected, this chart counts the last 30 days (as Anki does).
 
+<a id="true-retention"></a>
+## True Retention
+
+This table shows how many of your memory tests on cards with an interval of at least a day you
+passed (the **True Retention** table of Anki 24.11 and later). **Again** counts as failed; **Hard**,
+**Good** and **Easy** count as passed; the first learning steps of new cards are left out. **Young**
+cards had an interval under 21 days when answered, **Mature** cards 21 days or more.
+
+- The rows are **Today**, **Yesterday**, **Last week**, **Last month**, **Last year** and **All
+  time**; week, month and year cover the 7, 30 and 365 days ending today, so one answer can count in
+  several rows. The table follows the chosen deck scope, not the period.
+- **Simple** shows the percentages; **Detailed** also shows the passed and failed counts. An empty
+  cell shows **—**.
+
 <a id="hourly"></a>
 ## Hourly Breakdown
 <!-- In the app: Statistics › Info › "Hourly Breakdown" section (StatsHelpSheet.tsx:24-27) → this section -->
