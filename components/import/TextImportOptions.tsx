@@ -56,7 +56,7 @@ export default function TextImportOptions(props: {
 
     return (
         <>
-            <Section label={l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}>
+            <Section label={l('İçe aktarma seçenekleri', 'Import options')}>
                 {renderOptionRow(
                     separator
                         ? l('Alanları ayıran', 'Fields separated by')

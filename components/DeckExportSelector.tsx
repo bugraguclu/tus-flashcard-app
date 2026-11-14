@@ -182,7 +182,7 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.accent,
         },
         rowCopy: { flex: 1, minWidth: 0, paddingVertical: 7 },
-        deckName: { color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
+        deckName: { color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '500' },
         deckNameActive: { color: colors.accent },
         subdeckCount: { marginTop: 2, color: colors.textMuted, fontSize: FontSize.xs },
         emptyText: { ...Type.caption, padding: Spacing.lg, color: colors.textMuted, textAlign: 'center' },

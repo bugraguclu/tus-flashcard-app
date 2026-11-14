@@ -79,8 +79,8 @@ export function deckOptionsWarningText(id: DeckOptionsWarningId, l: Localize): s
 /** The guide behind each option card's "?" button, in this app's two languages. */
 export function buildOptionHelp(l: Localize) {
     const helpChrome = {
-        eyebrow: l('AYAR REHBERİ', 'SETTING GUIDE'),
-        noteLabel: l('NOT', 'NOTE'),
+        eyebrow: l('Ayar rehberi', 'Setting guide'),
+        noteLabel: l('Not', 'Note'),
         dismissLabel: l('Anladım', 'Got it'),
     };
     return {

@@ -156,10 +156,10 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgCard,
         },
         styleTileActive: { borderColor: colors.accent, backgroundColor: colors.accentLight },
-        styleLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
+        styleLabel: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textSecondary },
         styleLabelActive: { color: colors.accent },
         samplePlate: { borderRadius: 5, paddingHorizontal: 4, paddingVertical: 1 },
-        sampleText: { fontSize: FontSize.md, fontWeight: '800' },
+        sampleText: { fontSize: FontSize.md, fontWeight: '600' },
         actions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: Spacing.sm },
     });
 }

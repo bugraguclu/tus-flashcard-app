@@ -194,7 +194,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
         flexShrink: 1,
         textAlign: 'center',
         fontSize: isCompact ? FontSize.sm : FontSize.lg,
-        fontWeight: '700',
+        fontWeight: '600',
         color: highContrast ? colors.textPrimary : colors.textSecondary,
     },
     daysRow: {
@@ -209,10 +209,9 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
     },
     dayLabel: {
         fontSize: FontSize.xs,
-        fontWeight: '600',
+        fontWeight: '500',
         color: highContrast ? colors.textPrimary : colors.textMuted,
-        textTransform: 'uppercase',
     },
-    dayLabelToday: { color: highContrast ? colors.textPrimary : colors.streak, fontWeight: '700' },
+    dayLabelToday: { color: highContrast ? colors.textPrimary : colors.streak, fontWeight: '600' },
     });
 }

@@ -62,12 +62,12 @@ afterEach(() => {
 });
 
 describe('deck ••• menu', () => {
-    it('titles the card with the deck path and offers one row per action', () => {
+    it('titles the card with the deck path and offers one row per action, Delete in red', () => {
         show(true);
         const texts = renderer!.root.findAll((node) => (node.type as unknown) === 'Text');
         expect(texts[0].props.children).toBe('TUS › Anatomi');
         expect(rows().map((row) => row.props.accessibilityLabel)).toEqual(['Genel bakış', 'Desteyi yeniden adlandır', 'Desteyi sil']);
-        expect(rows().map(labelColor)).toEqual(['textPrimary', 'textPrimary', 'textPrimary']);
+        expect(rows().map(labelColor)).toEqual(['textPrimary', 'textPrimary', 'danger']);
     });
 
     it('hands the chosen action back to the deck list', () => {

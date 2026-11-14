@@ -265,7 +265,7 @@ export function SelectSetting({ label, value, options, onChange, styles, colors,
                                     accessibilityState={{ checked: option.key === value }}
                                     aria-checked={option.key === value}
                                 >
-                                    <Text style={[styles.selectOptionText, option.key === value && { color: colors.accent, fontWeight: '700' }]}>
+                                    <Text style={[styles.selectOptionText, option.key === value && { color: colors.accent, fontWeight: '600' }]}>
                                         {option.label}
                                     </Text>
                                     {option.key === value ? <CheckIcon color={colors.accent} size={18} /> : null}

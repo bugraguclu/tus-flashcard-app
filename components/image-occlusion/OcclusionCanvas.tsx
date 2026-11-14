@@ -381,5 +381,5 @@ const styles = StyleSheet.create({
         width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
         backgroundColor: 'rgba(0,0,0,0.55)',
     },
-    zoomText: { color: '#ffffff', fontSize: 22, fontWeight: '600', lineHeight: 26 },
+    zoomText: { color: '#ffffff', fontSize: 22, fontWeight: '500', lineHeight: 26 },
 });

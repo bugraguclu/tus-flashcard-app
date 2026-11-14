@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.lg,
         paddingVertical: Spacing.sm,
         fontSize: FontSize.sm,
-        fontWeight: '700',
+        fontWeight: '600',
     },
     item: {
         paddingHorizontal: Spacing.lg,
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
         borderTopWidth: StyleSheet.hairlineWidth,
         gap: 2,
     },
-    itemText: { fontSize: FontSize.lg, fontWeight: '600' },
+    itemText: { fontSize: FontSize.lg, fontWeight: '500' },
     itemHint: { fontSize: FontSize.sm },
     cancel: {
         paddingHorizontal: Spacing.lg,
@@ -94,5 +94,5 @@ const styles = StyleSheet.create({
         borderTopWidth: StyleSheet.hairlineWidth,
         alignItems: 'center',
     },
-    cancelText: { fontSize: FontSize.lg, fontWeight: '700' },
+    cancelText: { fontSize: FontSize.lg, fontWeight: '600' },
 });

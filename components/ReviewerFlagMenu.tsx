@@ -102,7 +102,7 @@ function createStyles(colors: ColorScheme) {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
-        title: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
+        title: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
         content: { paddingVertical: 4, paddingBottom: 6 },
     });
 }

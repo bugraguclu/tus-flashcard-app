@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     noticeWithIcon: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
     noticeIcon: { paddingTop: 1 },
     noticeBody: { flex: 1, minWidth: 0, gap: Spacing.xs },
-    noticeTitle: { fontSize: FontSize.sm, fontWeight: '800' },
+    noticeTitle: { fontSize: FontSize.sm, fontWeight: '600' },
     noticeAction: { marginTop: Spacing.sm, alignItems: 'flex-start' },
     track: { height: 6, borderRadius: 3, overflow: 'hidden' },
     fill: { height: '100%', borderRadius: 3 },

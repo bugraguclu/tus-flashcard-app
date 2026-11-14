@@ -201,7 +201,7 @@ function createStyles(colors: ColorScheme) {
         content: { padding: Spacing.lg, gap: Spacing.lg },
         buttonRow: { padding: Spacing.lg },
         previewRow: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2, gap: 2 },
-        previewTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+        previewTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
         previewMeta: { fontSize: FontSize.xs, color: colors.textMuted },
     });
 }

@@ -82,7 +82,7 @@ function createStyles(colors: ColorScheme) {
         lead: {
             fontSize: FontSize.sm,
             lineHeight: 19,
-            fontWeight: '600',
+            fontWeight: '500',
             color: colors.textPrimary,
         },
         list: { gap: 4 },
@@ -111,7 +111,7 @@ function createStyles(colors: ColorScheme) {
         recommendationText: {
             fontSize: FontSize.sm,
             lineHeight: 20,
-            fontWeight: '600',
+            fontWeight: '500',
             color: colors.textPrimary,
         },
     });

@@ -16,7 +16,7 @@ export function createBrowserStyles(colors: ColorScheme) {
     },
     scopeBlock: { flex: 1, minWidth: 0 },
     scopeSelector: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 30, maxWidth: '100%' },
-    scopeSelectorText: { flexShrink: 1, color: colors.accent, fontSize: FontSize.lg, fontWeight: '800' },
+    scopeSelectorText: { flexShrink: 1, color: colors.accent, fontSize: FontSize.lg, fontWeight: '600' },
     scopeCount: { color: colors.textMuted, fontSize: FontSize.xs, marginTop: 1 },
     addCardBtn: { flexShrink: 0 },
     // The ⋮ keeps its dots where they were, a little into the gutter.
@@ -54,11 +54,11 @@ export function createBrowserStyles(colors: ColorScheme) {
     cardBuried: { backgroundColor: colors.rowBuriedBg },
     cardItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
     cardBody: { flex: 1, minWidth: 0 },
-    cardQuestion: { fontSize: 13, fontWeight: '600', color: colors.textPrimary, lineHeight: 18 },
+    cardQuestion: { fontSize: 13, fontWeight: '500', color: colors.textPrimary, lineHeight: 18 },
     cardMeta: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
     cardTopic: { flex: 1, minWidth: 0, fontSize: 11, lineHeight: 14, color: colors.textMuted },
     statusDot: { flexShrink: 0, paddingHorizontal: 6, paddingVertical: 1, borderRadius: Radius.pill },
-    statusDotText: { fontSize: 9, fontWeight: '600' },
+    statusDotText: { fontSize: 9, fontWeight: '500' },
     scheduleMeta: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 1 },
     answerSnippet: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
     cardActions: {
@@ -85,7 +85,7 @@ export function createBrowserStyles(colors: ColorScheme) {
     },
     answerLabel: {
         fontSize: 9,
-        fontWeight: '700',
+        fontWeight: '600',
         letterSpacing: 1,
         color: colors.accent,
         marginBottom: 4,
@@ -127,7 +127,7 @@ export function createBrowserStyles(colors: ColorScheme) {
         flex: 1,
         color: colors.textPrimary,
         fontSize: FontSize.sm,
-        fontWeight: '700',
+        fontWeight: '600',
     },
     selectionActionsGroup: {
         flexDirection: 'row',
@@ -151,7 +151,7 @@ export function createBrowserStyles(colors: ColorScheme) {
     selectionActionText: {
         color: colors.textSecondary,
         fontSize: 11,
-        fontWeight: '600',
+        fontWeight: '500',
         marginTop: 3,
         textAlign: 'center',
     },
@@ -190,7 +190,7 @@ export function createBrowserStyles(colors: ColorScheme) {
     dialogField: { gap: Spacing.xs },
     // A checkbox or switch row inside a dialog: the dialog's own padding is its inset.
     dialogRow: { paddingHorizontal: 0 },
-    fieldLabel: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '700' },
+    fieldLabel: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
     searchHelpList: { maxHeight: 420 },
     searchHelpGroupTitle: { marginTop: Spacing.md, marginBottom: 4 },
     searchHelpRow: {
@@ -205,7 +205,7 @@ export function createBrowserStyles(colors: ColorScheme) {
     searchHelpTerm: {
         color: colors.accent,
         fontSize: FontSize.sm,
-        fontWeight: '700',
+        fontWeight: '600',
         fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     },
     searchHelpHint: { flex: 1, color: colors.textSecondary, fontSize: FontSize.xs, textAlign: 'right' },
@@ -222,13 +222,13 @@ export function createBrowserStyles(colors: ColorScheme) {
     },
     pickerRowActive: { backgroundColor: colors.accentLight },
     pickerRowText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md },
-    pickerRowTextActive: { color: colors.accent, fontWeight: '800' },
+    pickerRowTextActive: { color: colors.accent, fontWeight: '600' },
     optionGroup: { gap: Spacing.sm },
     optionTitle: { ...Type.rowTitle, color: colors.textPrimary },
     optionCaption: { ...Type.caption, color: colors.textMuted },
     gradeRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderLight },
     gradeDot: { width: 12, height: 12, borderRadius: 6 },
-    gradeText: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
+    gradeText: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
     // The card preview is a native page sheet: grabber, a header with × and the side switch, the
     // card, and Previous / Next along the bottom.
     previewContainer: { flex: 1, backgroundColor: colors.bgPrimary },

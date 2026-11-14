@@ -234,9 +234,9 @@ function createStyles(colors: ColorScheme) {
         groupDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.textMuted },
         groupDotGood: { backgroundColor: colors.success },
         groupDotBad: { backgroundColor: colors.danger },
-        groupTitle: { flex: 1, fontSize: FontSize.sm, fontWeight: '700', color: colors.textPrimary },
-        groupCount: { fontSize: FontSize.sm, fontWeight: '800', color: colors.textPrimary },
-        groupToggle: { fontSize: FontSize.xs, fontWeight: '700', color: colors.accent },
+        groupTitle: { flex: 1, fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
+        groupCount: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
+        groupToggle: { fontSize: FontSize.xs, fontWeight: '600', color: colors.accent },
         groupBody: { padding: Spacing.md, gap: 6 },
         groupDetail: { fontSize: FontSize.xs, color: colors.textMuted, marginBottom: 2 },
         entryRow: {

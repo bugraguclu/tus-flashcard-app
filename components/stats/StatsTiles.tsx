@@ -65,11 +65,11 @@ function createStyles(colors: ColorScheme) {
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.borderLight,
         },
-        title: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', marginBottom: -Spacing.xs },
+        title: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '500', marginBottom: -Spacing.xs },
         row: { flexDirection: 'row', gap: Spacing.md },
         tile: { flex: 1, minWidth: 0, justifyContent: 'flex-start' },
-        value: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
+        value: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '600' },
         label: { color: colors.textSecondary, fontSize: FontSize.sm, lineHeight: 16, marginTop: 2 },
-        detail: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '600', marginTop: 2 },
+        detail: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '500', marginTop: 2 },
     });
 }

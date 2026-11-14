@@ -496,7 +496,7 @@ function createStyles(colors: ColorScheme) {
     },
     startupErrorTitle: {
         fontSize: FontSize.lg,
-        fontWeight: '700',
+        fontWeight: '600',
         color: colors.textPrimary,
         textAlign: 'center',
         marginBottom: Spacing.sm,
@@ -516,7 +516,7 @@ function createStyles(colors: ColorScheme) {
     startupErrorButtonBusy: { opacity: 0.6 },
     startupErrorButtonText: {
         fontSize: FontSize.md,
-        fontWeight: '700',
+        fontWeight: '600',
         color: colors.white,
         textAlign: 'center',
     },

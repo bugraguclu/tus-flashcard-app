@@ -130,6 +130,6 @@ export default function StatsRateStrip({
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         wrap: { marginTop: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
-        title: { color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '700', marginBottom: 2 },
+        title: { color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', marginBottom: 2 },
     });
 }

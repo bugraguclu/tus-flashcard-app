@@ -1197,9 +1197,8 @@ export default function DecksScreen() {
                     </TouchableOpacity>
                 ) : (
                     <View style={styles.expandBtn}>
-                        {deck.isFiltered
-                            ? <DeckOverflowGlyph kind="filteredDeck" color={colors.border} size={12} />
-                            : <View style={styles.leafDot} />}
+                        {/* A filtered deck is told apart by its blue italic name, not an icon. */}
+                        <View style={styles.leafDot} />
                     </View>
                 )}
 
@@ -1416,7 +1415,7 @@ export default function DecksScreen() {
     const descriptionFields = (
         <>
             <View style={styles.dialogField}>
-                <SectionLabel>{l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')}</SectionLabel>
+                <SectionLabel>{l('Deste açıklaması', 'Deck description')}</SectionLabel>
                 <TextField
                     style={styles.descriptionInput}
                     value={descriptionText}
@@ -1792,18 +1791,20 @@ export default function DecksScreen() {
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.bgPrimary },
+    // The deck list is one white table under a white header, like a printed contents page:
+    // separators and the count colours carry the structure, not tinted panels.
+    container: { flex: 1, backgroundColor: colors.bgCard },
 
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.borderLight,
+        paddingLeft: Spacing.lg,
+        paddingRight: Spacing.sm,
+        paddingVertical: Spacing.sm,
+        backgroundColor: colors.bgCard,
     },
-    title: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.textPrimary },
+    title: { fontSize: FontSize.xxl, fontWeight: '600', color: colors.textPrimary },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 
     listWrap: { flex: 1, position: 'relative' },
@@ -1814,40 +1815,43 @@ function createStyles(colors: ColorScheme) {
         // Every control is 44 pt tall, so this is centring for a one-line row; when the counts
         // wrap under a long name, the chevron and buttons stay level with the name.
         alignItems: 'flex-start',
-        paddingVertical: 10,
-        paddingRight: Spacing.sm,
+        paddingVertical: 4,
+        paddingRight: Spacing.xs,
+        backgroundColor: colors.bgCard,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
+        borderBottomColor: colors.border,
     },
     deckNameRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0 },
     lockedDeckCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: Spacing.sm,
+        // Tight enough that "9.575 kart · 12 ders · 106 alt deste" stays on one line at 390 pt.
+        marginHorizontal: Spacing.md,
+        marginTop: Spacing.md,
+        marginBottom: Spacing.sm,
         paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.md,
         backgroundColor: colors.bgCard,
         borderWidth: 1,
-        borderColor: colors.accent,
-        borderStyle: 'dashed',
-        borderRadius: BorderRadius.md,
+        borderColor: colors.border,
+        borderRadius: BorderRadius.lg,
         minHeight: 72,
         ...Shadows.sm,
     },
     lockedDeckIcon: {
-        width: 40, height: 40, borderRadius: BorderRadius.sm,
+        width: 36, height: 36, borderRadius: BorderRadius.md,
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: colors.accentLight,
     },
-    lockedDeckCopy: { flex: 1, marginHorizontal: Spacing.md },
-    lockedDeckName: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+    lockedDeckCopy: { flex: 1, marginHorizontal: Spacing.sm },
+    lockedDeckName: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
     lockedDeckMeta: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
     lockedDeckPricePill: {
         paddingHorizontal: 12, paddingVertical: 7,
         borderRadius: BorderRadius.full,
         backgroundColor: colors.accent,
     },
-    lockedDeckPriceText: { color: colors.onAccent, fontSize: FontSize.sm, fontWeight: '800' },
+    lockedDeckPriceText: { color: colors.onAccent, fontSize: FontSize.sm, fontWeight: '600' },
     deckRowDragging: { opacity: 0.22, transform: [{ scale: 0.99 }] },
     deckRowDropTarget: {
         backgroundColor: colors.accentLight,
@@ -1871,7 +1875,7 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.accent,
         color: colors.onAccent,
         fontSize: 11,
-        fontWeight: '800',
+        fontWeight: '600',
     },
     deckInsideDropBadge: {
         position: 'absolute',
@@ -1890,9 +1894,9 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.accent,
         color: colors.onAccent,
         fontSize: 11,
-        fontWeight: '800',
+        fontWeight: '600',
     },
-    expandBtn: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+    expandBtn: { width: 34, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
     leafDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.border },
     // The name and its counts share a wrapping line: a name that does not fit beside the
     // counts gets the whole width (a word is never broken) and the counts move under it.
@@ -1901,7 +1905,7 @@ function createStyles(colors: ColorScheme) {
     deckMain: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
     // Padding rather than margin: the browser adds a margin on top of maxWidth.
     deckNameTouchable: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', maxWidth: '100%', paddingLeft: 2, minHeight: 44, justifyContent: 'center' },
-    deckName: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+    deckName: { flexShrink: 1, fontSize: 15, fontWeight: '500', color: colors.textPrimary },
     deckNameFiltered: { color: colors.info, fontStyle: 'italic' },
     // A line of its own under the name and counts: the wrapping row puts a full-width child below.
     deckHint: { width: '100%', paddingLeft: 2, paddingBottom: 2, fontSize: FontSize.sm, color: colors.textMuted },
@@ -1939,7 +1943,7 @@ function createStyles(colors: ColorScheme) {
         transform: [{ scale: 1.015 }],
     },
     rootDropZoneLabel: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-    rootDropZoneText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '800' },
+    rootDropZoneText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '600' },
     rootDropZoneTextActive: { color: colors.onAccent },
     mobileDragPreview: {
         position: 'absolute',
@@ -1958,27 +1962,27 @@ function createStyles(colors: ColorScheme) {
         ...Shadows.lg,
     },
     mobileDragPreviewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs + 2 },
-    mobileDragPreviewTitle: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '800' },
+    mobileDragPreviewTitle: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
     mobileDragPreviewHint: {
         marginTop: 4,
         color: colors.accent,
         fontSize: 12,
-        fontWeight: '800',
+        fontWeight: '600',
     },
     mobileDragPreviewHintOrder: { color: colors.textSecondary },
 
     bottomBar: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        minHeight: 66,
-        paddingVertical: 6,
+        minHeight: 60,
+        paddingTop: 4,
+        paddingBottom: 2,
         backgroundColor: colors.bgCard,
-        borderTopWidth: 1,
+        borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
-        ...Shadows.md,
     },
     bottomBtn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 },
-    bottomBtnText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2, textAlign: 'center' },
+    bottomBtnText: { fontSize: 11, fontWeight: '500', color: colors.textSecondary, marginTop: 2, textAlign: 'center' },
 
     dragBanner: {
         position: 'absolute',
@@ -1991,11 +1995,11 @@ function createStyles(colors: ColorScheme) {
         paddingHorizontal: Spacing.lg,
         ...Shadows.md,
     },
-    dragBannerText: { color: colors.onAccent, fontWeight: '600', textAlign: 'center' },
+    dragBannerText: { color: colors.onAccent, fontWeight: '500', textAlign: 'center' },
 
     // The deck dialogs and the description sheet.
     dialogField: { gap: Spacing.xs },
-    dialogFieldLabel: { ...Type.caption, fontWeight: '600', color: colors.textSecondary },
+    dialogFieldLabel: { ...Type.caption, fontWeight: '500', color: colors.textSecondary },
     descriptionInput: { minHeight: 150 },
     // A switch row set in a dialog or a sheet lines up with the fields there, not a card's inset.
     inlineRow: { paddingHorizontal: 0 },

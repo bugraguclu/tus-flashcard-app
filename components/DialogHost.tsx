@@ -78,7 +78,6 @@ export function DialogHost() {
         request.onCancel?.();
     };
     const dismiss = isChoice ? undefined : isConfirm ? cancel : accept;
-    const icon = request.destructive ? '!' : isConfirm ? '?' : 'i';
 
     // Alerts have a single button, so dismissing (Escape / back) must still run the
     // callback — e.g. a success alert that navigates back. Confirms treat dismiss as cancel.
@@ -106,9 +105,7 @@ export function DialogHost() {
                     accessibilityViewIsModal
                     accessibilityRole="alert"
                 >
-                    <View style={[styles.iconCircle, request.destructive && styles.iconCircleDestructive]}>
-                        <Text style={[styles.iconText, request.destructive && styles.iconTextDestructive]}>{icon}</Text>
-                    </View>
+                    {/* No icon: as in an iOS alert, the title and the button's tone carry the meaning. */}
                     <Text style={styles.title}>{request.title}</Text>
                     <ScrollView
                         style={styles.messageScroll}
@@ -158,18 +155,6 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             ...Shadows.lg,
         },
-        iconCircle: {
-            width: 44,
-            height: 44,
-            borderRadius: Radius.pill,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.accentLight,
-            marginBottom: Spacing.lg,
-        },
-        iconCircleDestructive: { backgroundColor: colors.dangerBg },
-        iconText: { fontSize: FontSize.xl, fontWeight: '800', color: colors.accent },
-        iconTextDestructive: { color: colors.danger },
         title: {
             ...Type.title,
             color: colors.textPrimary,

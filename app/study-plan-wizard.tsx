@@ -124,7 +124,7 @@ function createStyles(colors: ColorScheme) {
         container: { flex: 1, backgroundColor: colors.bgCard },
         progressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
         progressTrack: { flex: 1 },
-        progressText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textSecondary },
+        progressText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
         content: { padding: Spacing.lg, gap: Spacing.lg },
         inputRow: { padding: Spacing.lg },

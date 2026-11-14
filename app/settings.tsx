@@ -1626,7 +1626,7 @@ export default function SettingsScreen() {
                         contentContainerStyle={styles.helpContent}
                         showsVerticalScrollIndicator={false}
                     >
-                        <SectionLabel>{l('ÇALIŞMA KONTROLLERİ', 'REVIEWER CONTROLS')}</SectionLabel>
+                        <SectionLabel>{l('Çalışma kontrolleri', 'Reviewer controls')}</SectionLabel>
                         <Text style={styles.helpIntro}>
                             {l(
                                 'Kartın dokuz bölgesini ve dört kaydırma yönünü en sık kullandığınız işlemlere bağlayabilirsiniz. Seçimleriniz yalnızca çalışma ekranında geçerlidir.',

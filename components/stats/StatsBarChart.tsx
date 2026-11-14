@@ -378,9 +378,9 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         caption: { marginBottom: Spacing.xs },
         captionRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
-        captionTitle: { flex: 1, color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
-        captionTitleActive: { color: colors.textPrimary, fontWeight: '700' },
-        captionValue: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '800' },
+        captionTitle: { flex: 1, color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '500' },
+        captionTitleActive: { color: colors.textPrimary, fontWeight: '600' },
+        captionValue: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '600' },
         captionNote: { color: colors.textSecondary, fontSize: FontSize.sm, lineHeight: 18, marginTop: 1 },
         empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl },
         emptyGlyph: {
@@ -394,11 +394,11 @@ function createStyles(colors: ColorScheme) {
             marginBottom: Spacing.sm,
         },
         emptyBar: { width: 8, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: colors.borderLight },
-        emptyTitle: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '700', textAlign: 'center' },
+        emptyTitle: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
         legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: Spacing.md, rowGap: 6, marginTop: Spacing.sm },
         legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
         legendSwatch: { width: 10, height: 10, borderRadius: 3 },
         legendLabel: { color: colors.textSecondary, fontSize: FontSize.xs },
-        legendValue: { color: colors.textPrimary, fontSize: FontSize.xs, fontWeight: '700' },
+        legendValue: { color: colors.textPrimary, fontSize: FontSize.xs, fontWeight: '600' },
     });
 }

@@ -106,7 +106,7 @@ function DeckRowMenuCard({ deckName, actions, onSelect, styles }: {
                             accessibilityRole="button"
                             accessibilityLabel={label}
                         >
-                            <Text style={styles.itemText}>{label}</Text>
+                            <Text style={[styles.itemText, action === 'delete' && styles.itemTextDestructive]}>{label}</Text>
                         </TouchableOpacity>
                     );
                 })}
@@ -147,5 +147,6 @@ function createStyles(colors: ColorScheme) {
         // Every row stays a full touch target; a larger text size grows the rows and the list scrolls.
         item: { minHeight: 48, justifyContent: 'center' },
         itemText: { fontSize: FontSize.md, lineHeight: 20, fontWeight: '500', color: colors.textPrimary },
+        itemTextDestructive: { color: colors.danger },
     });
 }

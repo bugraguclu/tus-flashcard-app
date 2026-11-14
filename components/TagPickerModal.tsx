@@ -415,7 +415,7 @@ function createStyles(colors: ColorScheme) {
             flex: 1,
             color: colors.accent,
             fontSize: FontSize.lg,
-            fontWeight: '700',
+            fontWeight: '600',
         },
         list: { flex: 1 },
         loadingState: { flex: 1 },
@@ -429,7 +429,7 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgCard,
         },
         tagText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md + 1 },
-        tagTextSelected: { color: colors.accent, fontWeight: '700' },
+        tagTextSelected: { color: colors.accent, fontWeight: '600' },
         footer: {
             minHeight: 68,
             flexDirection: 'row',

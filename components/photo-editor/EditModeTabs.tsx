@@ -71,7 +71,7 @@ function createStyles(colors: ColorScheme) {
         },
         tab: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', gap: 2 },
         marker: { position: 'absolute', top: 0, width: 28, height: 3, borderRadius: Radius.pill, backgroundColor: colors.transparent },
-        label: { fontSize: FontSize.xs, fontWeight: '700', color: colors.textMuted },
+        label: { fontSize: FontSize.xs, fontWeight: '600', color: colors.textMuted },
         labelActive: { color: colors.accent },
     });
 }

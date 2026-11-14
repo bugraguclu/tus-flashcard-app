@@ -397,8 +397,8 @@ function createStyles(colors: ColorScheme) {
         disclosureButton: { width: 38, height: 54, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
         disclosureSpacer: { width: 38 },
         rowMain: { flex: 1, minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-        rowText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '600' },
-        rowTextActive: { color: colors.accent, fontWeight: '800' },
+        rowText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '500' },
+        rowTextActive: { color: colors.accent, fontWeight: '600' },
         createBody: { flex: 1, padding: Spacing.xl, gap: Spacing.sm, backgroundColor: colors.bgCard },
         createDescription: { color: colors.textSecondary, lineHeight: 22, marginBottom: Spacing.sm },
         footer: {

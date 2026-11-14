@@ -215,7 +215,7 @@ export default function DeckOverviewScreen() {
                         />
                     </View>
                     <View style={styles.heroText}>
-                        <Text style={[Type.label, styles.heroEyebrow]}>{deck.isFiltered ? t('anki.filteredDeck').toLocaleUpperCase() : l('BUGÜNKÜ ÇALIŞMA', 'TODAY’S STUDY')}</Text>
+                        <Text style={[Type.label, styles.heroEyebrow]}>{deck.isFiltered ? t('anki.filteredDeck') : l('Bugünkü çalışma', 'Today’s study')}</Text>
                         <Text style={styles.deckTitle}>{getDeckDisplayName(deck.name)}</Text>
                         {deck.name.includes('::') && (
                             <Text style={[Type.caption, styles.deckPath]}>{deck.name.replaceAll('::', ' › ')}</Text>
@@ -224,7 +224,7 @@ export default function DeckOverviewScreen() {
                 </View>
 
                 {descriptionRuns.length > 0 ? (
-                    <Section label={l('DESTE AÇIKLAMASI', 'DECK DESCRIPTION')} padded>
+                    <Section label={l('Deste açıklaması', 'Deck description')} padded>
                         <Text style={styles.description}>
                             {descriptionRuns.map((run, index) => (
                                 <Text
@@ -263,7 +263,7 @@ export default function DeckOverviewScreen() {
                 </Card>
 
                 {deck.isFiltered && (
-                    <Section label={l('KAYITLI ARAMA', 'SAVED SEARCH')} padded>
+                    <Section label={l('Kayıtlı arama', 'Saved search')} padded>
                         <Badge
                             label={deck.reschedule === false ? l('Önizleme', 'Preview') : l('Yeniden zamanla', 'Reschedule')}
                             tone="accent"
@@ -418,17 +418,17 @@ function createStyles(colors: ColorScheme) {
         deckIconFiltered: { backgroundColor: colors.infoBg, borderColor: colors.info },
         heroText: { flex: 1 },
         heroEyebrow: { color: colors.accent, marginBottom: 3 },
-        deckTitle: { fontSize: FontSize.xxl, fontWeight: '800', color: colors.textPrimary },
+        deckTitle: { fontSize: FontSize.xxl, fontWeight: '600', color: colors.textPrimary },
         deckPath: { color: colors.textMuted, marginTop: 2 },
         description: { fontSize: FontSize.md, color: colors.textSecondary, lineHeight: 21 },
-        descriptionBold: { fontWeight: '700' },
+        descriptionBold: { fontWeight: '600' },
         descriptionItalic: { fontStyle: 'italic' },
         descriptionUnderline: { textDecorationLine: 'underline' },
         descriptionLink: { color: colors.accent },
         counts: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: Spacing.xl },
         countBox: { flex: 1, alignItems: 'center', gap: 2 },
-        countValue: { fontSize: 30, fontWeight: '800', fontVariant: ['tabular-nums'] },
-        countLabel: { fontSize: FontSize.sm, color: colors.textMuted, fontWeight: '600' },
+        countValue: { fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] },
+        countLabel: { fontSize: FontSize.sm, color: colors.textMuted, fontWeight: '500' },
         filterCopy: { gap: 5 },
         filterQuery: { fontSize: FontSize.sm, lineHeight: 19, color: colors.textPrimary, fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }) },
         filterMeta: { fontSize: FontSize.xs, color: colors.textMuted },

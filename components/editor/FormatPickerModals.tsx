@@ -345,6 +345,6 @@ const local = StyleSheet.create({
     swatchGroup: { gap: Spacing.sm },
     swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
     swatch: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.inset },
-    swatchText: { fontWeight: '600' },
+    swatchText: { fontWeight: '500' },
     htmlSource: { minHeight: 140, maxHeight: 260, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 13 },
 });

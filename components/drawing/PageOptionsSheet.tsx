@@ -147,7 +147,7 @@ function createStyles(colors: ColorScheme) {
         // The previews are small pictures of a page, so their corners are the page's, not a control's.
         swatch: { borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
         colorSwatch: { width: 40, height: 30 },
-        tileText: { fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '600' },
+        tileText: { fontSize: FontSize.sm, color: colors.textSecondary, fontWeight: '500' },
         tileTextActive: { color: colors.textPrimary },
         shapeBox: { width: 40, height: 30, alignItems: 'center', justifyContent: 'center' },
         shapeGlyph: { borderRadius: 3, borderWidth: 2, borderColor: colors.textMuted },

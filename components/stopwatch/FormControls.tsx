@@ -115,7 +115,7 @@ export function FormInfoBox({ lines }: { lines: string[] }) {
 
 const styles = StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, minHeight: CONTROL_HEIGHT, paddingVertical: 6 },
-    rowLabel: { flex: 1, fontSize: FontSize.lg, fontWeight: '600' },
+    rowLabel: { flex: 1, fontSize: FontSize.lg, fontWeight: '500' },
     control: { width: CONTROL_WIDTH },
     divider: { height: StyleSheet.hairlineWidth, marginVertical: Spacing.sm, marginHorizontal: Spacing.sm },
     box: {
@@ -128,10 +128,10 @@ const styles = StyleSheet.create({
         paddingRight: Spacing.sm,
         gap: Spacing.xs,
     },
-    boxValue: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '600' },
+    boxValue: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '500' },
     stepper: { paddingLeft: 0, paddingRight: 0, gap: 0 },
     stepButton: { width: 42, height: CONTROL_HEIGHT, alignItems: 'center', justifyContent: 'center' },
-    stepValue: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '600', fontVariant: ['tabular-nums'] },
+    stepValue: { flex: 1, textAlign: 'center', fontSize: FontSize.md, fontWeight: '500', fontVariant: ['tabular-nums'] },
     disabled: { opacity: 0.35 },
     info: { borderWidth: 1, borderRadius: BorderRadius.md, padding: Spacing.sm, gap: 2, marginVertical: Spacing.xs },
     infoText: { fontSize: FontSize.sm, lineHeight: 17 },

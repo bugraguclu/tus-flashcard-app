@@ -345,7 +345,7 @@ function createStyles(colors: ColorScheme) {
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
-    sidebarTitle: { fontSize: FontSize.lg, fontWeight: '700', color: colors.accent },
+    sidebarTitle: { fontSize: FontSize.lg, fontWeight: '600', color: colors.accent },
     sidebarSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, letterSpacing: 0.5, marginTop: 2 },
     subjectList: { flex: 1, paddingVertical: Spacing.sm },
     subjectRow: {
@@ -414,10 +414,10 @@ function createStyles(colors: ColorScheme) {
         marginRight: Spacing.sm,
         fontSize: FontSize.md,
         color: colors.textSecondary,
-        fontWeight: '600',
+        fontWeight: '500',
     },
-    deckRootName: { color: colors.textPrimary, fontWeight: '700' },
-    deckNameActive: { color: colors.accent, fontWeight: '700' },
+    deckRootName: { color: colors.textPrimary, fontWeight: '600' },
+    deckNameActive: { color: colors.accent, fontWeight: '600' },
     deckCount: {
         minWidth: 38,
         paddingHorizontal: 7,
@@ -427,7 +427,7 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.bgInput,
     },
     deckCountActive: { backgroundColor: colors.accent },
-    deckCountText: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '700' },
+    deckCountText: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '600' },
     deckCountTextActive: { color: colors.onAccent },
     subjectItemActive: { backgroundColor: colors.accentLight },
     expandBtn: {
@@ -438,7 +438,7 @@ function createStyles(colors: ColorScheme) {
     },
     subjectIconSlot: { width: 26, alignItems: 'flex-start', justifyContent: 'center' },
     subjectName: { flex: 1, fontSize: FontSize.md, color: colors.textSecondary, fontWeight: '500' },
-    subjectNameActive: { color: colors.accent, fontWeight: '700' },
+    subjectNameActive: { color: colors.accent, fontWeight: '600' },
     subjectCount: {
         backgroundColor: colors.bgInput,
         paddingHorizontal: 8,
@@ -448,7 +448,7 @@ function createStyles(colors: ColorScheme) {
         alignItems: 'center',
     },
     subjectCountActive: { backgroundColor: colors.accent },
-    subjectCountText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.textMuted },
+    subjectCountText: { fontSize: FontSize.xs, fontWeight: '500', color: colors.textMuted },
     subjectCountTextActive: { color: colors.onAccent },
     topicItem: {
         flexDirection: 'row',
@@ -471,9 +471,9 @@ function createStyles(colors: ColorScheme) {
     },
     topicDotActive: { backgroundColor: colors.accent },
     topicName: { flex: 1, fontSize: FontSize.sm, color: colors.textMuted, fontWeight: '500' },
-    topicNameActive: { color: colors.accent, fontWeight: '600' },
+    topicNameActive: { color: colors.accent, fontWeight: '500' },
     topicCount: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '500' },
-    topicCountActive: { color: colors.accent, fontWeight: '700' },
+    topicCountActive: { color: colors.accent, fontWeight: '600' },
     sidebarActions: {
         paddingHorizontal: Spacing.md,
         paddingVertical: Spacing.md,
@@ -491,10 +491,10 @@ function createStyles(colors: ColorScheme) {
         borderRadius: BorderRadius.sm,
         gap: 2,
     },
-    actionText: { fontSize: 9, fontWeight: '600', color: colors.textSecondary },
+    actionText: { fontSize: 9, fontWeight: '500', color: colors.textSecondary },
     settingsBtn: { marginBottom: Spacing.sm },
     creditContainer: { alignItems: 'center', paddingVertical: 6 },
     creditText: { fontSize: 10, color: colors.textMuted, letterSpacing: 0.3 },
-    creditName: { fontWeight: '700', color: colors.accent },
+    creditName: { fontWeight: '600', color: colors.accent },
     });
 }

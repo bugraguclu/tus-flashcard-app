@@ -64,5 +64,5 @@ const styles = StyleSheet.create({
     list: { flexGrow: 0 },
     option: { minHeight: HIT_TARGET + 4, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
     optionCopy: { flex: 1, minWidth: 0, gap: 2 },
-    optionSelected: { fontWeight: '700' },
+    optionSelected: { fontWeight: '600' },
 });

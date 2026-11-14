@@ -27,7 +27,7 @@ export function createOcclusionEditorStyles(colors: ColorScheme) {
             paddingHorizontal: 4,
         },
         modeOptionActive: { backgroundColor: colors.segmentSelected, ...Shadows.sm },
-        modeText: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '700', textAlign: 'center' },
+        modeText: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
         modeTextActive: { color: colors.textPrimary },
         bar: {
             flexDirection: 'row',
@@ -71,7 +71,7 @@ export function createOcclusionEditorStyles(colors: ColorScheme) {
         },
         tool: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.inset, gap: 2 },
         toolActive: { backgroundColor: colors.bgInput },
-        toolText: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '700' },
+        toolText: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '600' },
         toolTextActive: { color: colors.textPrimary },
         hint: { ...Type.caption, color: colors.textMuted, textAlign: 'center', paddingHorizontal: Spacing.md, paddingBottom: Spacing.xs },
         promptInput: { minHeight: 80 },

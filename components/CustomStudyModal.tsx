@@ -503,7 +503,7 @@ export default function CustomStudyModal({
                 keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
                 showsVerticalScrollIndicator={false}
             >
-                <SectionLabel>{l('ÇALIŞMA KAPSAMI', 'STUDY SCOPE')}</SectionLabel>
+                <SectionLabel>{l('Çalışma kapsamı', 'Study scope')}</SectionLabel>
                 {choosingTags ? (
                     <>
                         {renderTagSection(
@@ -638,16 +638,16 @@ function createStyles(colors: ColorScheme) {
         },
         listRowActive: { backgroundColor: colors.accentLight },
         listText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-        listTextActive: { fontWeight: '700' },
+        listTextActive: { fontWeight: '600' },
         // A full-size target around the 22-point box, which stays flush with the lists below it.
         checkTarget: { width: HIT_TARGET, height: HIT_TARGET, marginLeft: -(HIT_TARGET - 22) / 2, alignItems: 'center', justifyContent: 'center' },
         // Anki's group box: the availability line, the spinner sentence and the card-state list.
         group: { marginTop: Spacing.sm },
-        availability: { ...Type.caption, fontWeight: '700', color: colors.textPrimary },
+        availability: { ...Type.caption, fontWeight: '600', color: colors.textPrimary },
         sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minHeight: HIT_TARGET },
         sectionLabel: { flex: 1 },
         sectionSpacer: { height: Spacing.sm },
-        fieldLabel: { ...Type.caption, fontWeight: '700', color: colors.textSecondary },
+        fieldLabel: { ...Type.caption, fontWeight: '600', color: colors.textSecondary },
         fieldLabelDisabled: { color: colors.textMuted },
         spinnerBlock: { gap: Spacing.sm },
         spinnerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
@@ -657,7 +657,7 @@ function createStyles(colors: ColorScheme) {
             paddingHorizontal: Spacing.xs,
             textAlign: 'center',
             fontSize: FontSize.lg,
-            fontWeight: '700',
+            fontWeight: '600',
             fontVariant: ['tabular-nums'] as any,
         },
         spinnerSuffix: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary },

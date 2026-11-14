@@ -29,7 +29,7 @@ export function createEditorStyles(colors: ColorScheme) {
         paddingHorizontal: Spacing.sm,
     },
     ankiSelectorRowLast: { borderBottomWidth: StyleSheet.hairlineWidth },
-    ankiSelectorLabel: { width: 72, fontSize: FontSize.md, fontWeight: '800', color: colors.textPrimary },
+    ankiSelectorLabel: { width: 72, fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
     ankiSelectorValue: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
     ankiSelectorChevron: { width: 28, height: 40, alignItems: 'center', justifyContent: 'center' },
     formatToolbar: {
@@ -38,7 +38,7 @@ export function createEditorStyles(colors: ColorScheme) {
         borderTopColor: colors.border,
         minHeight: 44,
     },
-    blockStyleButtonText: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+    blockStyleButtonText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
     blockStyleButtonTextActive: { color: colors.accent },
     calloutOption: { borderLeftWidth: 4, borderRadius: Radius.control },
     toolbarTabsRow: {
@@ -64,7 +64,7 @@ export function createEditorStyles(colors: ColorScheme) {
     },
     keyboardDismissText: {
         fontSize: FontSize.xs,
-        fontWeight: '700',
+        fontWeight: '600',
         color: colors.accent,
     },
     standaloneKeyboardDismissBar: {
@@ -89,7 +89,7 @@ export function createEditorStyles(colors: ColorScheme) {
         borderRadius: Radius.pill,
     },
     toolbarTabActive: { backgroundColor: colors.accentLight },
-    toolbarTabText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textMuted },
+    toolbarTabText: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textMuted },
     toolbarTabTextActive: { color: colors.accent },
     formatToolbarScroll: { width: '100%' },
     formatToolbarContent: {
@@ -138,7 +138,7 @@ export function createEditorStyles(colors: ColorScheme) {
         borderRadius: Radius.control,
         marginTop: 5,
     },
-    summaryLabel: { fontSize: FontSize.sm, fontWeight: '800', color: colors.textPrimary },
+    summaryLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
     summaryValue: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary },
     fontSizeSample: { color: colors.textPrimary },
     pickerOptionActive: { backgroundColor: colors.accentLight },
@@ -166,7 +166,7 @@ export function createEditorStyles(colors: ColorScheme) {
     },
     customToolbarPreviewLabel: {
         fontSize: FontSize.xs,
-        fontWeight: '700',
+        fontWeight: '600',
         color: colors.textSecondary,
     },
     customToolbarPreviewRow: {
@@ -186,7 +186,7 @@ export function createEditorStyles(colors: ColorScheme) {
     },
     customToolbarButtonPreviewText: {
         fontSize: FontSize.sm,
-        fontWeight: '700',
+        fontWeight: '600',
         color: colors.textPrimary,
     },
     customToolbarInput: { marginTop: Spacing.sm, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
@@ -232,7 +232,7 @@ export function createEditorStyles(colors: ColorScheme) {
         borderColor: colors.border,
         gap: Spacing.xs,
     },
-    customToolbarTemplateTitle: { fontSize: FontSize.sm, fontWeight: '800', color: colors.textPrimary },
+    customToolbarTemplateTitle: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
     customToolbarCode: {
         fontSize: FontSize.sm,
         lineHeight: 20,

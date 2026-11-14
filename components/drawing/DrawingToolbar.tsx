@@ -236,7 +236,7 @@ const segmentStyles = StyleSheet.create({
         justifyContent: 'center',
         gap: 2,
     },
-    label: { fontSize: FontSize.xs, fontWeight: '600' },
+    label: { fontSize: FontSize.xs, fontWeight: '500' },
     disabled: { opacity: DISABLED_OPACITY },
 });
 
@@ -282,7 +282,7 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        sizeLetter: { fontWeight: '700' },
+        sizeLetter: { fontWeight: '600' },
         sizeBox: { borderWidth: 1.6, borderRadius: 2 },
     });
 }

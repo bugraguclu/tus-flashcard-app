@@ -6,7 +6,6 @@ import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../const
 import { dayNumberToYmd } from '../../lib/ankiState';
 import { openOrDismissTo } from '../../lib/backNavigation';
 import type { StudyStreak, TodayAnswerStats } from '../../lib/reviewLogger';
-import FlameGlyph from '../FlameGlyph';
 import WeekStreakStrip from '../WeekStreakStrip';
 import { Card } from '../ui/Card';
 import { ChevronRightIcon } from '../ui/icons';
@@ -58,7 +57,6 @@ export default function TodaySection({ today, streak, rolloverHour, dataVersion,
                     accessibilityLabel={l(`Çalışma serisi: ${days(streak.current)}`, `Study streak: ${days(streak.current)}`)}
                     accessibilityHint={l('Kronometreyi açar', 'Opens the stopwatch')}
                 >
-                    <FlameGlyph size={13} />
                     <Text style={[styles.streakText, streak.current === 0 && styles.streakTextIdle]}>{days(streak.current)}</Text>
                     <ChevronRightIcon color={streak.current === 0 ? colors.textSecondary : colors.streak} size={16} />
                 </TouchableOpacity>
@@ -104,11 +102,11 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.streakBg,
         },
         streakPillIdle: { backgroundColor: colors.bgInput },
-        streakText: { color: colors.streak, fontSize: FontSize.sm, fontWeight: '700' },
+        streakText: { color: colors.streak, fontSize: FontSize.sm, fontWeight: '600' },
         streakTextIdle: { color: colors.textSecondary },
         figures: { flexDirection: 'row', gap: Spacing.sm },
         figure: { flex: 1, minWidth: 0 },
-        value: { color: colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '700' },
+        value: { color: colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '600' },
         label: { color: colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
         week: {
             gap: Spacing.sm,

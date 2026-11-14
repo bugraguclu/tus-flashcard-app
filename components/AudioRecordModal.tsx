@@ -617,7 +617,7 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
         },
         resumeDot: { width: 18, height: 18, borderRadius: Radius.pill, backgroundColor: record },
-        secondaryLabel: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '600' },
+        secondaryLabel: { fontSize: FontSize.xs, color: colors.textMuted, fontWeight: '500' },
         add: { marginTop: Spacing.xl },
     });
 }

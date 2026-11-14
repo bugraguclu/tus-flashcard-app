@@ -181,7 +181,8 @@ const styles = StyleSheet.create({
         right: Spacing.lg,
         width: FAB_SIZE,
         height: FAB_SIZE,
-        borderRadius: BorderRadius.lg,
+        // A rounded square, not a circle (the owner chose it over a round button).
+        borderRadius: BorderRadius.xl,
         alignItems: 'center',
         justifyContent: 'center',
         ...Shadows.lg,
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 7,
     },
-    actionLabelText: { fontSize: FontSize.sm, fontWeight: '600' },
+    actionLabelText: { fontSize: FontSize.sm, fontWeight: '500' },
     actionButton: {
         width: 46,
         height: 46,

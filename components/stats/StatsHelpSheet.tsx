@@ -58,6 +58,6 @@ const styles = StyleSheet.create({
     scroll: { flexShrink: 1 },
     content: { paddingTop: Spacing.xs, paddingBottom: Spacing.lg, gap: Spacing.xl },
     section: { gap: 6 },
-    heading: { fontSize: 15, fontWeight: '700' },
+    heading: { fontSize: 15, fontWeight: '600' },
     body: { fontSize: 15, lineHeight: 22 },
 });

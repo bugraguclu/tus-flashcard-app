@@ -79,10 +79,10 @@ function createStyles(colors: ColorScheme) {
         empty: { color: colors.textSecondary, fontSize: FontSize.sm, textAlign: 'center', paddingVertical: Spacing.lg },
         rows: { gap: Spacing.sm },
         row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minHeight: 24 },
-        label: { width: 52, color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
+        label: { width: 52, color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '500' },
         track: { flex: 1, height: 10, borderRadius: BorderRadius.full, backgroundColor: colors.bgInput, overflow: 'hidden' },
         fill: { height: '100%', minWidth: 3, borderRadius: BorderRadius.full },
-        count: { width: 56, textAlign: 'right', color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
+        count: { width: 56, textAlign: 'right', color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
         share: { width: 44, textAlign: 'right', color: colors.textSecondary, fontSize: FontSize.sm },
     });
 }

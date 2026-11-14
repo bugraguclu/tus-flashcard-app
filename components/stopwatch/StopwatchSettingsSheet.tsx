@@ -113,6 +113,6 @@ export default function StopwatchSettingsSheet({ visible, prefs, onChange, onClo
 const styles = StyleSheet.create({
     body: { flexShrink: 1 },
     dateControls: { alignItems: 'flex-end', gap: Spacing.xs },
-    clear: { fontSize: FontSize.md, fontWeight: '700' },
+    clear: { fontSize: FontSize.md, fontWeight: '600' },
     footer: { paddingTop: Spacing.lg, paddingBottom: Spacing.xs },
 });

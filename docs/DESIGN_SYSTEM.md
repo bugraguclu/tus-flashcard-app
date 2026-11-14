@@ -6,9 +6,11 @@ sheet, a dialog, a close button) has exactly one look and one behaviour, and it 
 Do not style a new button, row, card, sheet or dialog in a screen: use the part, or extend the part
 for everyone.
 
-The look is the app's current one (mint accent, white cards on the pale page, the reviewer's grade
-colours). The parts take their measurements from the variant the app already used most for each
-job, recorded in the design-language audit of 5 November 2026.
+The look is calm and neutral: white cards with hairlines on a light grey page, the app icon's teal
+for actions, orange for streaks and the Kronometre tools, and the grade colours as pale tints. The
+owner chose it change by change on 13 November 2026 (TUSBuddy was the reference). The parts take
+their measurements from the variant the app already used most for each job, recorded in the
+design-language audit of 5 November 2026.
 
 ## Tokens
 
@@ -23,10 +25,10 @@ job, recorded in the design-language audit of 5 November 2026.
 | Dimming behind a speed-dial menu | `colors.scrimStrong` | black 60% |
 | Marked-note star | `colors.marked` | amber |
 | Chosen segment | `colors.segmentSelected` | white (dark: border tone) |
-| Corners | `Radius.control` 6 · `inset` 10 · `card` 16 · `sheet` 20 · `pill` | buttons and fields · menus, segmented track, boxes inside a card · cards and dialogs · sheet top · chips and badges |
+| Corners | `Radius.control` 6 · `inset` 8 · `card` 12 · `sheet` 16 · `pill` | buttons and fields · menus, segmented track, boxes inside a card · cards and dialogs · sheet top · chips and badges |
 | Touch target | `HIT_TARGET` | 44 pt minimum for anything tappable |
 | Disabled | `DISABLED_OPACITY` | 0.45 on the whole control |
-| Text | `Type.title` 18/800 · `sectionTitle` 16/700 · `rowTitle` 14/600 · `body` 14/400 · `bodyStrong` 14/700 · `button` 14/800 · `textButton` 14/700 · `caption` 12/18 · `label` 11/800 caps | screen, sheet and dialog titles · card headings · row titles · body · values · filled buttons · text buttons · summaries and footnotes · group labels |
+| Text | `Type.title` 18/600 · `sectionTitle` 16/600 · `rowTitle` 14/500 · `body` 14/400 · `bodyStrong` 14/600 · `button` 14/600 · `textButton` 14/600 · `caption` 12/18 · `label` 12/500 sentence case | screen, sheet and dialog titles · card headings · row titles · body · values · filled buttons · text buttons · summaries and footnotes · group labels |
 
 Spacing stays on the 4-point grid of `Spacing`; screens keep a 16-point side gutter.
 

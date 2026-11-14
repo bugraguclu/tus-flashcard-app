@@ -254,5 +254,5 @@ const styles = StyleSheet.create({
     copy: { flex: 1, minWidth: 0, gap: 2 },
     value: { maxWidth: '45%', fontSize: FontSize.md, textAlign: 'right' },
     tabular: { fontVariant: ['tabular-nums'], textAlign: 'right' },
-    selectValue: { maxWidth: '55%', fontSize: FontSize.md, fontWeight: '600', textAlign: 'right' },
+    selectValue: { maxWidth: '55%', fontSize: FontSize.md, fontWeight: '500', textAlign: 'right' },
 });

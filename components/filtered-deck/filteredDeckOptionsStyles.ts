@@ -29,7 +29,7 @@ export function createFilteredDeckOptionsStyles(colors: ColorScheme) {
             paddingVertical: Spacing.sm + 2,
             gap: Spacing.xs,
         },
-        fieldLabel: { ...Type.caption, fontWeight: '600', color: colors.textSecondary },
+        fieldLabel: { ...Type.caption, fontWeight: '500', color: colors.textSecondary },
         fieldDescription: { ...Type.caption, color: colors.textMuted },
         searchRow: {
             flexDirection: 'row',

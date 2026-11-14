@@ -179,14 +179,14 @@ export default function NoteTypeScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
-                <SectionLabel style={styles.label}>{l('AD', 'NAME')}</SectionLabel>
+                <SectionLabel style={styles.label}>{l('Ad', 'Name')}</SectionLabel>
                 <TextField
                     value={nt.name}
                     onChangeText={(text) => setNt(renameNoteType(nt, text))}
                     placeholder={l('Not türü adı', 'Note type name')}
                 />
 
-                <SectionLabel style={styles.label}>{l('ALANLAR', 'FIELDS')}</SectionLabel>
+                <SectionLabel style={styles.label}>{l('Alanlar', 'Fields')}</SectionLabel>
                 {nt.fields.map((field, i) => (
                     <View key={field.ord} style={styles.fieldRow}>
                         <FieldNameInput
@@ -233,7 +233,7 @@ export default function NoteTypeScreen() {
 
                 {nt.templates.length > 1 && (
                     <>
-                        <SectionLabel style={styles.label}>{l('KART TÜRLERİ', 'CARD TYPES')}</SectionLabel>
+                        <SectionLabel style={styles.label}>{l('Kart türleri', 'Card types')}</SectionLabel>
                         <View style={styles.templateTabs} accessibilityRole="tablist">
                             {nt.templates.map((entry, index) => (
                                 <Chip
@@ -277,7 +277,7 @@ export default function NoteTypeScreen() {
                     autoCapitalize="none"
                 />
 
-                <SectionLabel style={styles.label}>{l('ÖNİZLEME', 'PREVIEW')}</SectionLabel>
+                <SectionLabel style={styles.label}>{l('Önizleme', 'Preview')}</SectionLabel>
                 <Card padded>
                     <SectionLabel>{l('Soru', 'Question')}</SectionLabel>
                     <CardWebView noteType={nt} note={preview.note} card={preview.card} side="question" scrollMode="intrinsic" />

@@ -61,14 +61,14 @@ function createStyles(colors: ColorScheme, compact: boolean) {
         timer: {
             flexShrink: 0,
             fontSize: FontSize.sm,
-            fontWeight: '700',
+            fontWeight: '600',
             color: colors.textSecondary,
             fontVariant: ['tabular-nums'],
         },
         reminder: {
             flexShrink: 0,
             fontSize: FontSize.xs,
-            fontWeight: '700',
+            fontWeight: '600',
             color: colors.warning,
             backgroundColor: colors.warningBg,
             borderRadius: Radius.pill,

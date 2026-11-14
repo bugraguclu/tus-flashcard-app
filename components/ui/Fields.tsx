@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     },
     multiline: { minHeight: 120, textAlignVertical: 'top', paddingTop: Spacing.md },
     labelled: { gap: Spacing.xs + 2 },
-    label: { fontSize: FontSize.sm, fontWeight: '700' },
+    label: { fontSize: FontSize.sm, fontWeight: '600' },
     search: {
         minHeight: HIT_TARGET,
         flexDirection: 'row',

@@ -59,7 +59,7 @@ export default function FieldMappingSection(props: {
     return (
         <>
             <Section
-                label={l('ALAN EŞLEMESİ', 'FIELD MAPPING')}
+                label={l('Alan eşlemesi', 'Field mapping')}
                 footnote={!perRowNoteTypes && columnCount > visibleColumnCount ? l(
                     `Yalnızca ilk ${visibleColumnCount} sütun gösteriliyor; kalan sütunlar yok sayılır.`,
                     `Only the first ${visibleColumnCount} columns are shown; the rest are ignored.`,

@@ -67,7 +67,7 @@ function createStyles(colors: ColorScheme) {
         legendRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         swatch: { width: 10, height: 10, borderRadius: 3 },
         legendLabel: { flex: 1, color: colors.textPrimary, fontSize: FontSize.sm },
-        legendValue: { color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '700' },
+        legendValue: { color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
         legendShare: { width: 48, textAlign: 'right', color: colors.textSecondary, fontSize: FontSize.sm },
     });
 }

@@ -125,7 +125,7 @@ function createStyles(colors: ColorScheme) {
             paddingLeft: Spacing.lg,
             paddingRight: Spacing.xs,
         },
-        title: { flex: 1, paddingTop: Spacing.xs, fontSize: FontSize.lg, fontWeight: '800', color: colors.textPrimary },
+        title: { flex: 1, paddingTop: Spacing.xs, fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
         close: { width: 44, height: 44, marginTop: -Spacing.sm, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.full },
         text: {
             paddingHorizontal: Spacing.lg,
@@ -156,7 +156,7 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.accentLight,
         },
         actionCopy: { flex: 1, marginHorizontal: Spacing.md },
-        actionTitle: { fontSize: FontSize.md, fontWeight: '700', color: colors.textPrimary },
+        actionTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
         actionSubtitle: { marginTop: 1, fontSize: FontSize.sm, color: colors.textMuted },
     });
 }

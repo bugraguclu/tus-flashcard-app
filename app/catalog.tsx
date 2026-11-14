@@ -468,9 +468,9 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.accentLight,
             marginHorizontal: Spacing.sm,
         },
-        courseInitial: { color: colors.accent, fontSize: FontSize.md, fontWeight: '700' },
+        courseInitial: { color: colors.accent, fontSize: FontSize.md, fontWeight: '600' },
         courseCopy: { flex: 1 },
-        courseName: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '700' },
+        courseName: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
         courseMeta: { color: colors.textMuted, fontSize: FontSize.sm, marginTop: 2 },
         courseLock: { marginLeft: Spacing.sm, opacity: 0.6 },
 
@@ -488,7 +488,7 @@ function createStyles(colors: ColorScheme) {
         topicBulletPlain: { opacity: 0.25 },
         topicName: { flex: 1, color: colors.textSecondary, fontSize: FontSize.md },
         topicNamePlain: { color: colors.textMuted, fontStyle: 'italic' },
-        topicCount: { color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '700' },
+        topicCount: { color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '600' },
 
         infoCard: { marginTop: Spacing.xl },
         infoRow: { flexDirection: 'row', alignItems: 'flex-start' },

@@ -593,7 +593,7 @@ function createStyles(colors: ColorScheme) {
             flex: 1,
             textAlign: 'center',
             fontSize: FontSize.md,
-            fontWeight: '700',
+            fontWeight: '600',
             color: colors.textPrimary,
         },
         // Balances the back button so the title stays centred.

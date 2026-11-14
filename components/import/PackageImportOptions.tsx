@@ -37,7 +37,7 @@ export default function PackageImportOptions(props: {
         <>
             {fileType === 'apkg' ? (
                 <>
-                    <Section label={l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}>
+                    <Section label={l('İçe aktarma seçenekleri', 'Import options')}>
                         {renderToggleRow(
                             l('Çalışma ilerlemesini içe aktar', 'Import any learning progress'),
                             l(
@@ -55,7 +55,7 @@ export default function PackageImportOptions(props: {
                         )}
                     </Section>
                     <Section
-                        label={l('GÜNCELLEMELER', 'UPDATES')}
+                        label={l('Güncellemeler', 'Updates')}
                         footnote={l(
                             'Alanları ya da kart türleri değişmiş bir not türü birleştirilmez, ayrı bir kopya olarak eklenir.',
                             'A note type whose fields or card types have changed is not merged; it is added as a separate copy.',
@@ -75,7 +75,7 @@ export default function PackageImportOptions(props: {
                 </>
             ) : (
                 <View style={styles.labelled}>
-                    <SectionLabel>{l('İÇE AKTARMA SEÇENEKLERİ', 'IMPORT OPTIONS')}</SectionLabel>
+                    <SectionLabel>{l('İçe aktarma seçenekleri', 'Import options')}</SectionLabel>
                     <Notice tone="danger">
                         {l(
                             'Koleksiyonunuz, ayarları ve çalışma geçmişiyle birlikte paketteki koleksiyonla değiştirilir. Medya dosyaları silinmez.',

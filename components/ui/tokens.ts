@@ -30,19 +30,19 @@ export const DISABLED_OPACITY = 0.45;
 /** Text roles: each pairs a size with a weight, so the same job reads the same everywhere. */
 export const Type = {
     /** Screen, sheet and dialog titles. */
-    title: { fontSize: FontSize.xl, fontWeight: '800' },
+    title: { fontSize: FontSize.xl, fontWeight: '600' },
     /** A card's heading. */
-    sectionTitle: { fontSize: FontSize.lg, fontWeight: '700' },
+    sectionTitle: { fontSize: FontSize.lg, fontWeight: '600' },
     /** The title of a list row or setting. */
-    rowTitle: { fontSize: FontSize.md, fontWeight: '600' },
+    rowTitle: { fontSize: FontSize.md, fontWeight: '500' },
     body: { fontSize: FontSize.md, fontWeight: '400' },
-    bodyStrong: { fontSize: FontSize.md, fontWeight: '700' },
+    bodyStrong: { fontSize: FontSize.md, fontWeight: '600' },
     /** Labels on filled and outlined buttons. */
-    button: { fontSize: FontSize.md, fontWeight: '800' },
+    button: { fontSize: FontSize.md, fontWeight: '600' },
     /** Labels on text-only buttons. */
-    textButton: { fontSize: FontSize.md, fontWeight: '700' },
+    textButton: { fontSize: FontSize.md, fontWeight: '600' },
     /** Summaries, hints and footnotes under a title. */
     caption: { fontSize: FontSize.sm, fontWeight: '400', lineHeight: 18 },
-    /** A small all-caps label that names a group above its card. */
-    label: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
+    /** A small sentence-case label that names a group above its card. */
+    label: { fontSize: FontSize.sm, fontWeight: '500' },
 } as const satisfies Record<string, TextStyle>;

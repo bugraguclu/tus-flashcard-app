@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../../constants/theme';
-import { DISABLED_OPACITY, Type } from '../ui/tokens';
+import { DISABLED_OPACITY, Radius, Type } from '../ui/tokens';
 
 /**
  * Styles for the deck options screen, its setting controls and its dialogs. The form keeps its own
@@ -94,7 +94,7 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
         saveStatusSuccess: { backgroundColor: colors.successBg, borderColor: colors.success },
         saveStatusError: { backgroundColor: colors.dangerBg, borderColor: colors.danger },
         saveStatusDot: { width: 8, height: 8, borderRadius: 4, marginRight: Spacing.sm },
-        saveStatusText: { flex: 1, ...Type.caption, fontWeight: '600', color: colors.textSecondary },
+        saveStatusText: { flex: 1, ...Type.caption, fontWeight: '500', color: colors.textSecondary },
         saveStatusHidden: { opacity: 0, borderWidth: 0, backgroundColor: 'transparent' },
 
         optionCard: {
@@ -135,7 +135,7 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
             borderColor: colors.accent,
             backgroundColor: colors.accentLight,
         },
-        helpBadgeText: { fontSize: 13, lineHeight: 16, fontWeight: '800', color: colors.accent },
+        helpBadgeText: { fontSize: 13, lineHeight: 16, fontWeight: '600', color: colors.accent },
         // The help sheet's body; the sheet itself is the shared AppSheet.
         helpScroll: { flexShrink: 1 },
         helpContent: { gap: Spacing.lg, paddingBottom: Spacing.md },
@@ -171,7 +171,7 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
         numberInput: { flex: 1, minWidth: 70, paddingVertical: 7, paddingHorizontal: 10, textAlign: 'right', color: colors.textPrimary, fontSize: FontSize.md, fontVariant: ['tabular-nums'] as any },
         numberInputInvalid: { color: colors.danger, backgroundColor: colors.dangerBg },
         inputSuffix: { paddingRight: 9, color: colors.textMuted, fontSize: FontSize.sm },
-        fieldError: { ...Type.caption, fontWeight: '600', color: colors.danger, marginTop: 3 },
+        fieldError: { ...Type.caption, fontWeight: '500', color: colors.danger, marginTop: 3 },
         selectControl: {
             width: 190,
             minHeight: 38,
@@ -190,11 +190,12 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
         selectOption: { minHeight: 44, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.borderLight },
         selectOptionActive: { backgroundColor: colors.accentLight },
         selectOptionText: { flex: 1, ...Type.body, color: colors.textPrimary },
-        limitTabs: { flexDirection: 'row', alignSelf: 'flex-end', marginTop: 7, borderWidth: 1, borderColor: colors.border, borderRadius: BorderRadius.sm, overflow: 'hidden' },
-        limitTab: { paddingVertical: 5, paddingHorizontal: 9, backgroundColor: colors.bgInput },
-        limitTabActive: { backgroundColor: colors.accent },
-        limitTabText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textMuted },
-        limitTabTextActive: { color: colors.onAccent },
+        // The kit's segmented look: a grey track with the chosen scope lifted onto a white segment.
+        limitTabs: { flexDirection: 'row', alignSelf: 'flex-end', marginTop: 7, padding: 2, borderRadius: Radius.inset, backgroundColor: colors.bgInput },
+        limitTab: { paddingVertical: 5, paddingHorizontal: 10, borderRadius: Radius.inset - 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'transparent' },
+        limitTabActive: { backgroundColor: colors.segmentSelected, borderColor: colors.border },
+        limitTabText: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textSecondary },
+        limitTabTextActive: { color: colors.accent, fontWeight: '600' },
         warningBox: { backgroundColor: colors.warningBg, borderWidth: 1, borderColor: colors.warning, borderRadius: BorderRadius.sm, padding: Spacing.sm, marginTop: Spacing.sm },
         warningText: { ...Type.caption, color: colors.warning },
         warningBoxDanger: { backgroundColor: colors.dangerBg, borderColor: colors.danger },
@@ -248,7 +249,7 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
         },
         easyDayReduced: { backgroundColor: colors.warningBg, borderColor: colors.warning },
         easyDayOff: { backgroundColor: colors.dangerBg, borderColor: colors.danger },
-        easyDayLabel: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textPrimary },
+        easyDayLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
         easyDayFactor: { fontSize: FontSize.xs + 1, color: colors.textMuted },
 
         saveBtnSmall: {
@@ -286,7 +287,7 @@ export function createDeckOptionsStyles(colors: ColorScheme) {
         },
         presetOptionText: { ...Type.body, color: colors.textPrimary },
         presetOptionMeta: { ...Type.caption, marginTop: 2, color: colors.textMuted },
-        presetOptionActive: { color: colors.accent, fontWeight: '700' },
+        presetOptionActive: { color: colors.accent, fontWeight: '600' },
     });
 }
 

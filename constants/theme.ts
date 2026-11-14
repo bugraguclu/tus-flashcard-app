@@ -8,48 +8,48 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 export const DARK_MODE_UI_ENABLED = true;
 
 const LightColors = {
-    bgPrimary: '#e8f5f0',
-    bgSecondary: '#f4faf7',
+    bgPrimary: '#f3f5f6',
+    bgSecondary: '#f8f9fa',
     bgCard: '#ffffff',
-    bgSidebar: '#dff0ea',
-    bgInput: '#f0f7f4',
-    border: '#c4ddd4',
-    borderLight: '#d8ebe4',
+    bgSidebar: '#ffffff',
+    bgInput: '#f1f3f4',
+    border: '#dde1e4',
+    borderLight: '#e9ecee',
 
-    textPrimary: '#2c3e36',
-    textSecondary: '#556b62',
-    textMuted: '#7f9a8f',
+    textPrimary: '#24292c',
+    textSecondary: '#596166',
+    textMuted: '#858d92',
 
-    accent: '#3a9e78',
-    accentLight: '#e0f3ec',
-    accentHover: '#2e8264',
+    accent: '#14998a',
+    accentLight: '#e4f4f1',
+    accentHover: '#0e8275',
 
-    btnAgain: '#c0392b',
-    btnAgainBg: '#fdecea',
-    btnHard: '#d68910',
-    btnHardBg: '#fef5e7',
-    btnGood: '#27864e',
-    btnGoodBg: '#e8f6ee',
-    btnEasy: '#2874a6',
-    btnEasyBg: '#eaf2f8',
+    btnAgain: '#c94139',
+    btnAgainBg: '#fcecea',
+    btnHard: '#b8680f',
+    btnHardBg: '#fcf1e3',
+    btnGood: '#1f8a52',
+    btnGoodBg: '#e6f4ec',
+    btnEasy: '#2b6eab',
+    btnEasyBg: '#e8f0f8',
 
-    badgeNew: '#2874a6',
-    badgeNewBg: '#ddeaf5',
-    badgeLearn: '#d68910',
-    badgeLearnBg: '#fef5e7',
-    badgeReview: '#27864e',
-    badgeReviewBg: '#e0f3ec',
+    badgeNew: '#2b6eab',
+    badgeNewBg: '#e3edf7',
+    badgeLearn: '#c0650f',
+    badgeLearnBg: '#fcf1e3',
+    badgeReview: '#1f8a52',
+    badgeReviewBg: '#e4f3ea',
 
-    streak: '#ef8a1d',
-    streakBg: '#fdeedd',
+    streak: '#e8761a',
+    streakBg: '#fdf0e4',
     // The Kronometre's study tools button and cards: an orange dark enough for white text.
-    studyTool: '#c9631e',
+    studyTool: '#d9661a',
 
     // Browser row states. Anki tints the row rather than fading it, so the text of a suspended
     // card stays as readable as any other — the row says "this one is not coming up", not
     // "this one is less important".
     rowSuspendedBg: '#fcf1cf',
-    rowBuriedBg: '#e6ebe9',
+    rowBuriedBg: '#e8ebed',
 
     // Statistics charts. Card states keep the colours Anki gives them (new blue, learning orange,
     // relearning red, young and mature green), stepped per theme and checked as a set: every pair
@@ -63,10 +63,9 @@ const LightColors = {
     chartFiltered: '#8a63c9',
     chartGood: '#27864e',
 
-    // The reviewer's card panel. A tint of the page rather than white: the card reads as a
-    // surface without a bright slab behind the question.
-    reviewerCard: '#ddefe7',
-    reviewerCardBorder: '#c8e0d6',
+    // The reviewer's card panel: a white card on the grey page, as every other card is.
+    reviewerCard: '#ffffff',
+    reviewerCardBorder: '#e1e5e8',
     // Cloze deletions: the blue catalog cards use, which sits with the green palette, and the
     // tint that marks a deletion still hidden on the question side of any cloze card.
     clozeText: '#1d5fa6',
@@ -74,14 +73,14 @@ const LightColors = {
 
     // Roles for chrome that is not a grade or a card state. They keep the values screens used to
     // borrow from the answer buttons and badges, so a Delete stays red if Again ever changes.
-    danger: '#c0392b',
-    dangerBg: '#fdecea',
-    warning: '#d68910',
-    warningBg: '#fef5e7',
-    success: '#27864e',
-    successBg: '#e8f6ee',
-    info: '#2874a6',
-    infoBg: '#ddeaf5',
+    danger: '#c94139',
+    dangerBg: '#fcecea',
+    warning: '#b8680f',
+    warningBg: '#fcf1e3',
+    success: '#1f8a52',
+    successBg: '#e6f4ec',
+    info: '#2b6eab',
+    infoBg: '#e3edf7',
     /** Text and icons drawn on an accent or danger fill. */
     onAccent: '#ffffff',
     /** The marked-note star. */
@@ -101,43 +100,43 @@ const LightColors = {
 
 const DarkColors: ColorScheme = {
     bgPrimary: '#000000',
-    bgSecondary: '#0b0d0c',
-    bgCard: '#151816',
-    bgSidebar: '#080a09',
-    bgInput: '#1c211e',
-    border: '#343b37',
-    borderLight: '#292f2c',
+    bgSecondary: '#0c0e0f',
+    bgCard: '#161a1c',
+    bgSidebar: '#0c0e0f',
+    bgInput: '#1e2326',
+    border: '#30373b',
+    borderLight: '#262c2f',
 
-    textPrimary: '#f1f6f3',
-    textSecondary: '#bac7c0',
-    textMuted: '#87948e',
+    textPrimary: '#eef1f2',
+    textSecondary: '#b3bbbf',
+    textMuted: '#858e93',
 
-    accent: '#4db88a',
-    accentLight: '#173126',
-    accentHover: '#5ccf9c',
+    accent: '#2db3a3',
+    accentLight: '#10302c',
+    accentHover: '#45c5b6',
 
-    btnAgain: '#e05545',
-    btnAgainBg: '#321d1d',
-    btnHard: '#e8a020',
-    btnHardBg: '#322916',
-    btnGood: '#3aad60',
-    btnGoodBg: '#17301f',
-    btnEasy: '#4a9ad0',
-    btnEasyBg: '#17283a',
+    btnAgain: '#e5574d',
+    btnAgainBg: '#3a1d1b',
+    btnHard: '#e3953a',
+    btnHardBg: '#382916',
+    btnGood: '#3cb874',
+    btnGoodBg: '#163222',
+    btnEasy: '#5aa2e0',
+    btnEasyBg: '#172a3d',
 
-    badgeNew: '#4a9ad0',
-    badgeNewBg: '#253040',
-    badgeLearn: '#e8a020',
-    badgeLearnBg: '#3a3020',
-    badgeReview: '#3aad60',
-    badgeReviewBg: '#253828',
+    badgeNew: '#5aa2e0',
+    badgeNewBg: '#1a2b3d',
+    badgeLearn: '#e3953a',
+    badgeLearnBg: '#382916',
+    badgeReview: '#3cb874',
+    badgeReviewBg: '#163222',
 
-    streak: '#f2994a',
-    streakBg: '#3d2f1f',
-    studyTool: '#c9631e',
+    streak: '#f0904a',
+    streakBg: '#382617',
+    studyTool: '#d9661a',
 
     rowSuspendedBg: '#3b3218',
-    rowBuriedBg: '#232826',
+    rowBuriedBg: '#24292c',
 
     chartNew: '#3a84ca',
     chartLearn: '#d08000',
@@ -147,24 +146,24 @@ const DarkColors: ColorScheme = {
     chartFiltered: '#9470cd',
     chartGood: '#1d7d3e',
 
-    reviewerCard: '#121513',
-    reviewerCardBorder: '#252b28',
+    reviewerCard: '#121618',
+    reviewerCardBorder: '#262c30',
     clozeText: '#5aa9f0',
     clozeTint: 'rgba(90, 169, 240, 0.16)',
 
-    danger: '#e05545',
-    dangerBg: '#321d1d',
-    warning: '#e8a020',
-    warningBg: '#322916',
-    success: '#3aad60',
-    successBg: '#17301f',
-    info: '#4a9ad0',
-    infoBg: '#253040',
+    danger: '#e5574d',
+    dangerBg: '#3a1d1b',
+    warning: '#e3953a',
+    warningBg: '#382916',
+    success: '#3cb874',
+    successBg: '#163222',
+    info: '#5aa2e0',
+    infoBg: '#1a2b3d',
     onAccent: '#ffffff',
     marked: '#f59e0b',
     // On a dark track the card colour is darker than the track itself; the border tone lifts the
     // chosen segment instead of sinking it.
-    segmentSelected: '#343b37',
+    segmentSelected: '#30373b',
     scrim: 'rgba(0, 0, 0, 0.4)',
     scrimLight: 'rgba(0, 0, 0, 0.22)',
     scrimStrong: 'rgba(0, 0, 0, 0.6)',
@@ -231,9 +230,9 @@ export const Spacing = {
 
 export const BorderRadius = {
     sm: 6,
-    md: 10,
-    lg: 16,
-    xl: 20,
+    md: 8,
+    lg: 12,
+    xl: 16,
     full: 9999,
 };
 
@@ -278,8 +277,10 @@ export function dropShadow({ x = 0, y, blur, opacity, elevation }: DropShadow) {
     });
 }
 
+// Shadows only lift what floats (menus, sheets, the FAB) or separate a white card from the
+// grey page; they stay soft enough that a hairline border does most of the work.
 export const Shadows = {
-    sm: dropShadow({ y: 1, blur: 3, opacity: 0.06, elevation: 1 }),
-    md: dropShadow({ y: 2, blur: 8, opacity: 0.07, elevation: 3 }),
-    lg: dropShadow({ y: 4, blur: 16, opacity: 0.08, elevation: 5 }),
+    sm: dropShadow({ y: 1, blur: 2, opacity: 0.05, elevation: 1 }),
+    md: dropShadow({ y: 2, blur: 6, opacity: 0.06, elevation: 3 }),
+    lg: dropShadow({ y: 6, blur: 18, opacity: 0.1, elevation: 6 }),
 };

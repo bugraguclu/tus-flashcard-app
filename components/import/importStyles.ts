@@ -32,7 +32,7 @@ export function createImportStyles(colors: ColorScheme) {
         previewHeaderRow: { flexDirection: 'row' },
         previewRow: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
         previewCell: { width: 150, paddingVertical: 8, paddingRight: Spacing.md },
-        previewHeaderText: { fontSize: FontSize.xs, fontWeight: '800', color: colors.textMuted, textTransform: 'uppercase' },
+        previewHeaderText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.textMuted },
         previewCellText: { fontSize: FontSize.sm, lineHeight: 18, color: colors.textPrimary },
     });
 }

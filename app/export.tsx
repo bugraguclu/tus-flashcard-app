@@ -340,7 +340,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgPrimary },
         scrollContent: { flexGrow: 1, width: '100%', maxWidth: 760, alignSelf: 'center', justifyContent: 'flex-start', padding: Spacing.lg, paddingBottom: 100, gap: Spacing.lg },
-        backupName: { ...Type.caption, fontWeight: '600', color: colors.textPrimary },
+        backupName: { ...Type.caption, fontWeight: '500', color: colors.textPrimary },
         noticeText: { ...Type.caption, color: colors.textSecondary },
         formatRow: {
             minHeight: 48,
@@ -351,7 +351,7 @@ function createStyles(colors: ColorScheme) {
             paddingVertical: Spacing.sm + 2,
         },
         formatText: { ...Type.body, flex: 1, color: colors.textPrimary },
-        formatTextSelected: { fontWeight: '700', color: colors.accent },
+        formatTextSelected: { fontWeight: '600', color: colors.accent },
         actions: { gap: Spacing.md },
         summaryBlock: { gap: 2 },
         summaryLine: { ...Type.caption, color: colors.textSecondary, textAlign: 'center' },

@@ -24,7 +24,7 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
         label: { ...Type.rowTitle, color: colors.textPrimary },
         summary: { ...Type.caption, color: colors.textMuted },
         // A gesture's action, under its direction.
-        actionValue: { color: colors.accent, fontWeight: '700' },
+        actionValue: { color: colors.accent, fontWeight: '600' },
 
         inlineStepperLayout: {
             flexDirection: stackControls ? 'column' : 'row',
@@ -39,8 +39,8 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
 
         tapGrid: { flexDirection: 'row', flexWrap: 'wrap', overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderRadius: Radius.inset, backgroundColor: colors.bgSecondary },
         tapGridCell: { width: '33.3333%', minHeight: 78, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, paddingVertical: Spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderLight },
-        tapGridZone: { fontSize: 11, lineHeight: 15, fontWeight: '800', color: colors.textSecondary, textAlign: 'center' },
-        tapGridAction: { marginTop: 4, fontSize: 11, lineHeight: 15, fontWeight: '700', color: colors.accent, textAlign: 'center' },
+        tapGridZone: { fontSize: 11, lineHeight: 15, fontWeight: '600', color: colors.textSecondary, textAlign: 'center' },
+        tapGridAction: { marginTop: 4, fontSize: 11, lineHeight: 15, fontWeight: '600', color: colors.accent, textAlign: 'center' },
 
         // ↺: the kit's refresh arrow, turned the other way.
         mirrored: { transform: [{ scaleX: -1 }] },
@@ -54,7 +54,7 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
 
         notificationTimeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0, gap: Spacing.xs },
         notificationTimeInput: { minWidth: 56 },
-        timeSeparator: { fontSize: FontSize.xxl, fontWeight: '800', color: colors.textPrimary },
+        timeSeparator: { fontSize: FontSize.xxl, fontWeight: '600', color: colors.textPrimary },
 
         // A miniature reviewer that shows where the floating Tools button sits.
         overlayPreviewWrap: {
@@ -116,12 +116,12 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
         helpStatus: { minHeight: 42, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.md, borderRadius: Radius.inset, backgroundColor: colors.bgSecondary },
         helpStatusDot: { width: 10, height: 10, marginRight: Spacing.sm, borderRadius: 5, backgroundColor: colors.textMuted },
         helpStatusDotOn: { backgroundColor: colors.success },
-        helpStatusText: { flex: 1, fontSize: FontSize.sm, lineHeight: 19, fontWeight: '700', color: colors.textPrimary },
+        helpStatusText: { flex: 1, fontSize: FontSize.sm, lineHeight: 19, fontWeight: '600', color: colors.textPrimary },
         helpSectionTitle: { ...Type.bodyStrong, color: colors.textPrimary },
         helpBulletRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: Spacing.xs },
-        helpBullet: { width: 18, fontSize: FontSize.md, lineHeight: 20, fontWeight: '900', color: colors.accent },
+        helpBullet: { width: 18, fontSize: FontSize.md, lineHeight: 20, fontWeight: '700', color: colors.accent },
         helpBulletText: { ...Type.caption, flex: 1, lineHeight: 20, color: colors.textSecondary },
-        helpStrong: { fontWeight: '800', color: colors.textPrimary },
+        helpStrong: { fontWeight: '600', color: colors.textPrimary },
 
         pickerList: { flexShrink: 1 },
         // A list row inside a dialog: the dialog's own padding is its inset.

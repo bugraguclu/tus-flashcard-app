@@ -107,7 +107,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
         boxToday: { borderColor: colors.streak, backgroundColor: colors.streakBg },
         boxSelected: { borderColor: colors.accent, borderWidth: 2 },
         boxDimmed: { opacity: 0.45 },
-        date: { color: highContrast ? colors.textPrimary : colors.textSecondary, fontSize: FontSize.sm, fontWeight: '800' },
+        date: { color: highContrast ? colors.textPrimary : colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
         dateStudied: { color: colors.onAccent },
         dateDimmed: { color: highContrast ? colors.textPrimary : colors.textMuted },
         dot: { position: 'absolute', bottom: 3, width: 3, height: 3, borderRadius: 2, backgroundColor: colors.onAccent },

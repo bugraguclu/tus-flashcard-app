@@ -312,7 +312,7 @@ export default function CardInfoScreen() {
                         return (
                             <View key={rev.id} style={[styles.tableRow, index % 2 === 0 && styles.tableRowEven]}>
                                 <Text style={[styles.td, { flex: 2 }]}>{formatDateTime(date)}</Text>
-                                <Text style={[styles.td, { flex: 1, color: ease.color, fontWeight: '700' }]}>{ease.text}</Text>
+                                <Text style={[styles.td, { flex: 1, color: ease.color, fontWeight: '600' }]}>{ease.text}</Text>
                                 <Text style={[styles.td, { flex: 1 }]}>{formatIvl(rev.ivl)}</Text>
                                 <Text style={[styles.td, { flex: 1 }]}>{(rev.factor / 10).toFixed(0)}%</Text>
                                 <Text style={[styles.td, { flex: 1 }]}>{formatTime(rev.time)}</Text>
@@ -366,7 +366,7 @@ function createInfoStyles(colors: ColorScheme) {
     label: { fontSize: FontSize.sm, color: colors.textMuted, flexShrink: 0 },
     valueGroup: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
     valueDot: { width: 10, height: 10, borderRadius: 5 },
-    value: { flexShrink: 1, textAlign: 'right', fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
+    value: { flexShrink: 1, textAlign: 'right', fontSize: FontSize.sm, fontWeight: '500', color: colors.textPrimary },
     // A lapse count above zero is the figure that says the card is in trouble.
     valueHighlight: { color: colors.danger },
     });
@@ -389,10 +389,8 @@ function createStyles(colors: ColorScheme) {
     },
     th: {
         fontSize: FontSize.xs,
-        fontWeight: '700',
+        fontWeight: '600',
         color: colors.textMuted,
-        letterSpacing: 0.3,
-        textTransform: 'uppercase',
     },
     tableRow: { flexDirection: 'row', paddingVertical: 6 },
     tableRowEven: { backgroundColor: colors.bgSecondary },

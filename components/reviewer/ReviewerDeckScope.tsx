@@ -47,7 +47,7 @@ function createStyles(colors: ColorScheme, compact: boolean) {
             maxWidth: compact ? '100%' : 220,
             flexShrink: 1,
             fontSize: FontSize.sm,
-            fontWeight: '700',
+            fontWeight: '600',
             color: colors.textSecondary,
         },
         details: { flexDirection: 'row', alignItems: 'center', gap: compact ? 7 : 10 },

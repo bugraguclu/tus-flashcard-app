@@ -80,7 +80,7 @@ export default function MediaCheckSection({ disabled }: { disabled: boolean }) {
     const listed = (names: string[]) => names.slice(0, LISTED_NAMES).join('\n') + (names.length > LISTED_NAMES ? `\n… +${names.length - LISTED_NAMES}` : '');
 
     return (
-        <Section label={l('MEDYA', 'MEDIA')} padded>
+        <Section label={l('Medya', 'Media')} padded>
             <Button label={l('Medyayı denetle', 'Check Media')} variant="secondary" onPress={handleCheck} disabled={locked} />
             {working && <LoadingState />}
             {result && (
@@ -124,7 +124,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         result: { gap: Spacing.sm },
         summary: { ...Type.body, color: colors.textPrimary },
-        heading: { ...Type.caption, fontWeight: '700', color: colors.textSecondary },
+        heading: { ...Type.caption, fontWeight: '600', color: colors.textSecondary },
         names: { ...Type.caption, color: colors.textMuted },
     });
 }

@@ -2747,21 +2747,21 @@ export default function StudyScreen() {
         : [];
     const answerScale = (settings.answerButtonScalePercent ?? 100) / 100;
     // The grade buttons sink under the finger, so a grade is felt the moment it lands.
-    const gradeButton = (grade: Grade, label: string, time: string, color: string) => (
+    const gradeButton = (grade: Grade, label: string, time: string, color: string, background: string) => (
         <PressableScale
             key={grade}
             style={[
                 styles.answerBtn,
                 settings.twoRowAnswerButtons && styles.answerBtnTwoRow,
-                { backgroundColor: color, borderColor: color, minHeight: 56 * answerScale },
+                { backgroundColor: background, borderColor: background, minHeight: 56 * answerScale },
             ]}
             onPress={() => answerCard(grade)}
             activeOpacity={0.78}
             accessibilityRole="button"
             accessibilityLabel={l(`${label}, sonraki gösterim ${time}`, `${label}, next review ${time}`)}
         >
-            {settings.showNextReviewTimes && <Text numberOfLines={1} style={[styles.btnTime, { fontSize: FontSize.sm * answerScale }]}>{time}</Text>}
-            <Text numberOfLines={1} style={[styles.btnLabel, { fontSize: (isCompact ? 15 : 16) * answerScale }]}>{label}</Text>
+            {settings.showNextReviewTimes && <Text numberOfLines={1} style={[styles.btnTime, { color, fontSize: FontSize.sm * answerScale }]}>{time}</Text>}
+            <Text numberOfLines={1} style={[styles.btnLabel, { color, fontSize: (isCompact ? 15 : 16) * answerScale }]}>{label}</Text>
         </PressableScale>
     );
     // Reserve the measured compact toolbar (and its optional palette) above the question. The
@@ -2871,11 +2871,12 @@ export default function StudyScreen() {
         `${queueStats.newCount} new, ${queueStats.learningCount} learning, ${queueStats.reviewCount} review cards`,
     );
 
-    const gradePresentation: Record<Grade, { label: string; time: string; color: string }> | null = preview ? {
-        1: { label: t('anki.again'), time: preview.again, color: colors.btnAgain },
-        2: { label: t('anki.hard'), time: preview.hard, color: colors.btnHard },
-        3: { label: t('anki.good'), time: preview.good, color: colors.btnGood },
-        4: { label: t('anki.easy'), time: preview.easy, color: colors.btnEasy },
+    // Tinted grade buttons: the grade's colour names the button, its pale tint fills it.
+    const gradePresentation: Record<Grade, { label: string; time: string; color: string; background: string }> | null = preview ? {
+        1: { label: t('anki.again'), time: preview.again, color: colors.btnAgain, background: colors.btnAgainBg },
+        2: { label: t('anki.hard'), time: preview.hard, color: colors.btnHard, background: colors.btnHardBg },
+        3: { label: t('anki.good'), time: preview.good, color: colors.btnGood, background: colors.btnGoodBg },
+        4: { label: t('anki.easy'), time: preview.easy, color: colors.btnEasy, background: colors.btnEasyBg },
     } : null;
     // Hidden answer buttons need a tap zone or swipe that grades; settings stored without one (an
     // older build, a restored backup) still get the buttons, so a revealed card can be answered.
@@ -2896,7 +2897,7 @@ export default function StudyScreen() {
     const toolsOnLeft = settings.toolsOverlayPosition === 'left';
     const gradeButtons = gradePresentation ? visibleReviewerGrades(Boolean(settings.hideHardAndEasy)).map((grade) => {
         const presentation = gradePresentation[grade];
-        return gradeButton(grade, presentation.label, presentation.time, presentation.color);
+        return gradeButton(grade, presentation.label, presentation.time, presentation.color, presentation.background);
     }) : null;
     const answerButtons = showingAnswer && gradePresentation && answerButtonsShown ? (
         <View style={styles.answerButtons}>
@@ -3212,7 +3213,7 @@ export default function StudyScreen() {
                                     ) : null}
                                     {previewMode ? (
                                         <View style={styles.previewBadge}>
-                                            <Text style={styles.previewBadgeText}>{l('ÖNİZLEME', 'PREVIEW')}</Text>
+                                            <Text style={styles.previewBadgeText}>{l('Önizleme', 'Preview')}</Text>
                                         </View>
                                     ) : null}
                                 </View>
@@ -3315,7 +3316,7 @@ export default function StudyScreen() {
                             <View style={styles.emptyIcon}>
                                 <HourglassGlyph color={colors.accent} size={28} />
                             </View>
-                            <Text style={styles.emptyTitle}>{l('Şimdilik hepsi bu kadar!', 'That’s All for Now!')}</Text>
+                            <Text style={styles.emptyTitle}>{l('Şimdilik hepsi bu kadar', 'That’s All for Now')}</Text>
                             <Text style={styles.countdownText}>{countdown}</Text>
                             <Text style={styles.emptyDesc}>
                                 {l('Şu anda hazır olan tüm kartları tamamladınız. ', 'You’ve completed every card currently available. ')}
@@ -3345,7 +3346,7 @@ export default function StudyScreen() {
                             </TouchableOpacity>
                             {trialPurchaseAction}
                             <Text style={styles.emptySub}>
-                                {l('Bugün tüm destelerde', 'You gave')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('cevap verdiniz.', sessionStats.reviewed === 1 ? 'answer today across all decks.' : 'answers today across all decks.')}
+                                {l('Bugün tüm destelerde', 'You gave')} <Text style={{ fontWeight: '600' }}>{sessionStats.reviewed}</Text> {l('cevap verdiniz.', sessionStats.reviewed === 1 ? 'answer today across all decks.' : 'answers today across all decks.')}
                             </Text>
                         </View>
                     ) : emptyStateDeck?.isFiltered && emptyStateDeck.filteredDeckEmpty ? (
@@ -3372,8 +3373,7 @@ export default function StudyScreen() {
                                 accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                                 {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
                             >
-                                <BackIcon color={colors.textSecondary} size={16} />
-                                <Text style={styles.secondaryActionText}>{l('Destelere Dön', 'Back to Decks')}</Text>
+                                <Text style={styles.secondaryActionText}>{l('Destelere dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
                         </View>
                     ) : totalDeckCards === 0 && !emptyStateDeck?.isFiltered ? (
@@ -3403,8 +3403,7 @@ export default function StudyScreen() {
                                 accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                                 {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
                             >
-                                <BackIcon color={colors.textSecondary} size={16} />
-                                <Text style={styles.secondaryActionText}>{l('Destelere Dön', 'Back to Decks')}</Text>
+                                <Text style={styles.secondaryActionText}>{l('Destelere dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
                             {trialPurchaseAction}
                         </View>
@@ -3413,7 +3412,7 @@ export default function StudyScreen() {
                             <View style={styles.emptyIcon}>
                                 <CheckGlyph color={colors.accent} size={30} strokeWidth={2.4} />
                             </View>
-                            <Text style={styles.emptyTitle}>{l('Tebrikler!', 'Congratulations!')}</Text>
+                            <Text style={styles.emptyTitle}>{l('Bugünlük bitti', 'All Done for Today')}</Text>
                             {countdown && upcomingCardsCount > 0 ? (
                                 <Text style={styles.countdownText}>{countdown}</Text>
                             ) : null}
@@ -3469,11 +3468,10 @@ export default function StudyScreen() {
                                 accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
                                 {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
                             >
-                                <BackIcon color={colors.textSecondary} size={16} />
-                                <Text style={styles.secondaryActionText}>{l('Destelere Dön', 'Back to Decks')}</Text>
+                                <Text style={styles.secondaryActionText}>{l('Destelere dön', 'Back to Decks')}</Text>
                             </TouchableOpacity>
                             <Text style={styles.emptySub}>
-                                {l('Bugün tüm destelerde', 'You gave')} <Text style={{ fontWeight: '700' }}>{sessionStats.reviewed}</Text> {l('cevap verdiniz.', sessionStats.reviewed === 1 ? 'answer today across all decks.' : 'answers today across all decks.')}
+                                {l('Bugün tüm destelerde', 'You gave')} <Text style={{ fontWeight: '600' }}>{sessionStats.reviewed}</Text> {l('cevap verdiniz.', sessionStats.reviewed === 1 ? 'answer today across all decks.' : 'answers today across all decks.')}
                             </Text>
                             {trialPurchaseAction}
                         </View>
@@ -3676,7 +3674,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderBottomColor: colors.borderLight,
     },
     classicTitleButton: { flex: 1, minWidth: 0, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.xs },
-    classicToolbarTitle: { flexShrink: 1, fontSize: FontSize.lg, fontWeight: '700', color: colors.textPrimary },
+    classicToolbarTitle: { flexShrink: 1, fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
     toolbarActions: { flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' },
 
     streakChip: {
@@ -3688,7 +3686,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderRadius: Radius.pill,
     },
     streakChipIdle: { opacity: 0.55 },
-    streakChipText: { fontSize: FontSize.sm, fontWeight: '700', color: colors.streak },
+    streakChipText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.streak },
 
     contentArea: { flex: 1, position: 'relative', overflow: 'hidden' },
     cardContext: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -3712,7 +3710,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         marginBottom: Spacing.sm,
     },
 
-    cardSubject: { flexShrink: 0, maxWidth: isCompact ? '55%' : 260, fontSize: FontSize.sm, fontWeight: '700', color: colors.accent },
+    cardSubject: { flexShrink: 0, maxWidth: isCompact ? '55%' : 260, fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
     cardTopic: { flex: 1, minWidth: 0, fontSize: FontSize.sm, color: colors.textMuted },
     previewBadge: {
         flexShrink: 0,
@@ -3721,7 +3719,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderRadius: Radius.pill,
         backgroundColor: colors.infoBg,
     },
-    previewBadgeText: { fontSize: 10, fontWeight: '700', color: colors.info, letterSpacing: 0.5 },
+    previewBadgeText: { fontSize: 10, fontWeight: '600', color: colors.info, letterSpacing: 0.5 },
     deckDescription: {
         fontSize: FontSize.sm,
         color: colors.textMuted,
@@ -3813,7 +3811,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         justifyContent: 'center',
         ...Shadows.sm,
     },
-    showAnswerText: { fontSize: 17, fontWeight: '700', color: colors.onAccent, letterSpacing: 0.2 },
+    showAnswerText: { fontSize: 17, fontWeight: '600', color: colors.onAccent, letterSpacing: 0.2 },
 
     answerBar: {
         width: '100%',
@@ -3872,7 +3870,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     },
     reviewerToolsGradeLabel: {
         fontSize: FontSize.xs,
-        fontWeight: '700',
+        fontWeight: '600',
         color: colors.textMuted,
     },
     answerButtons: { width: '100%', flexDirection: 'row', gap: isCompact ? 8 : 10 },
@@ -3888,17 +3886,16 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderRadius: Radius.card,
         borderWidth: 1,
         gap: 1,
-        ...Shadows.sm,
     },
     answerBtnTwoRow: { flexBasis: '47%', flexGrow: 1 },
-    btnTime: { color: colors.onAccent, opacity: 0.85, fontSize: FontSize.sm, fontWeight: '700', fontVariant: ['tabular-nums'] as any },
-    btnLabel: { color: colors.onAccent, fontSize: isCompact ? 15 : 16, fontWeight: '800' },
+    btnTime: { opacity: 0.8, fontSize: FontSize.sm, fontWeight: '600', fontVariant: ['tabular-nums'] as any },
+    btnLabel: { fontSize: isCompact ? 15 : 16, fontWeight: '600' },
 
     queueCounts: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: isCompact ? 7 : 9 },
-    queueCount: { fontSize: FontSize.md, fontWeight: '800', fontVariant: ['tabular-nums'] as any },
+    queueCount: { fontSize: FontSize.md, fontWeight: '600', fontVariant: ['tabular-nums'] as any },
     queueCountCurrent: { textDecorationLine: 'underline' },
 
-    emptyState: { alignItems: 'center', padding: 40 },
+    emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 40 },
     emptyIcon: {
         width: 64,
         height: 64,
@@ -3909,52 +3906,55 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         marginBottom: Spacing.md,
     },
     countdownText: {
-        fontSize: 48,
-        fontWeight: '700',
-        color: colors.accent,
+        fontSize: 44,
+        fontWeight: '600',
+        color: colors.textPrimary,
         marginBottom: Spacing.md,
         fontVariant: ['tabular-nums'] as any,
     },
-    emptyTitle: { fontSize: FontSize.xxl, fontWeight: '700', color: colors.accent, marginBottom: Spacing.sm },
-    emptyDesc: { fontSize: FontSize.lg, color: colors.textSecondary, textAlign: 'center', maxWidth: 520 },
+    emptyTitle: { fontSize: FontSize.xxl, fontWeight: '600', color: colors.textPrimary, marginBottom: Spacing.sm, textAlign: 'center' },
+    emptyDesc: { fontSize: 15, lineHeight: 22, color: colors.textSecondary, textAlign: 'center', maxWidth: 520 },
     emptyInfo: {
         fontSize: FontSize.md,
-        fontWeight: '600',
-        color: colors.warning,
+        lineHeight: 20,
+        color: colors.textSecondary,
         textAlign: 'center',
-        marginTop: Spacing.md,
+        marginTop: Spacing.lg,
         maxWidth: 520,
-        backgroundColor: colors.warningBg,
-        borderWidth: 1,
-        borderColor: colors.warning,
-        borderRadius: Radius.inset,
-        paddingVertical: Spacing.sm,
+        backgroundColor: colors.bgCard,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors.border,
+        borderRadius: Radius.card,
+        paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.lg,
         overflow: 'hidden',
     },
     primaryActionBtn: {
+        minWidth: 220,
+        alignItems: 'center',
         marginTop: Spacing.xl,
         backgroundColor: colors.accent,
         paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.xxl,
-        borderRadius: Radius.control,
+        borderRadius: Radius.card,
     },
-    primaryActionText: { fontSize: FontSize.lg, fontWeight: '700', color: colors.onAccent },
+    primaryActionText: { fontSize: 16, fontWeight: '600', color: colors.onAccent },
     secondaryActionBtn: {
+        minWidth: 220,
         minHeight: HIT_TARGET,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: Spacing.xs,
-        marginTop: Spacing.md,
-        backgroundColor: colors.bgInput,
+        gap: Spacing.sm,
+        marginTop: Spacing.sm,
+        backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
-        paddingVertical: Spacing.sm,
+        paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.xl,
-        borderRadius: Radius.control,
+        borderRadius: Radius.card,
     },
-    secondaryActionText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textSecondary },
+    secondaryActionText: { fontSize: 15, fontWeight: '500', color: colors.textPrimary },
     catalogPurchaseBtn: {
         width: '100%',
         maxWidth: 420,
@@ -3965,7 +3965,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         backgroundColor: colors.accent,
         alignItems: 'center',
     },
-    catalogPurchaseBtnText: { color: colors.onAccent, fontSize: FontSize.md, fontWeight: '800' },
+    catalogPurchaseBtnText: { color: colors.onAccent, fontSize: FontSize.md, fontWeight: '600' },
     catalogPurchaseBtnHint: { color: colors.onAccent, opacity: 0.82, fontSize: FontSize.xs, marginTop: 3 },
     catalogOfferBtn: { flexDirection: 'column', gap: 1 },
     catalogOfferHint: { fontSize: FontSize.sm, color: colors.textMuted, textAlign: 'center' },

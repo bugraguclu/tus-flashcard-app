@@ -246,5 +246,5 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    helpMark: { fontSize: 13, lineHeight: 16, fontWeight: '800' },
+    helpMark: { fontSize: 13, lineHeight: 16, fontWeight: '600' },
 });

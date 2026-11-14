@@ -68,6 +68,6 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.textPrimary,
             ...dropShadow({ y: 4, blur: 14, opacity: 0.18, elevation: 6 }),
         },
-        text: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '600', color: colors.bgCard },
+        text: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '500', color: colors.bgCard },
     });
 }

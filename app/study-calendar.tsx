@@ -593,7 +593,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
             gap: Spacing.xs,
         },
         stepButton: { width: 32, height: 32 },
-        rangeTitle: { flexShrink: 1, fontSize: isCompact ? FontSize.sm : FontSize.lg, fontWeight: '700', color: colors.textSecondary },
+        rangeTitle: { flexShrink: 1, fontSize: isCompact ? FontSize.sm : FontSize.lg, fontWeight: '600', color: colors.textSecondary },
         modeSwitch: { marginLeft: 'auto' },
 
         weekdayRow: { flexDirection: 'row', paddingHorizontal: Spacing.sm, paddingBottom: Spacing.xs },
@@ -601,11 +601,10 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
             flex: 1,
             textAlign: 'center',
             fontSize: FontSize.xs,
-            fontWeight: '600',
+            fontWeight: '500',
             color: colors.textMuted,
-            textTransform: 'uppercase',
         },
-        weekdayLabelToday: { color: colors.streak, fontWeight: '700' },
+        weekdayLabelToday: { color: colors.streak, fontWeight: '600' },
 
         grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: Spacing.sm },
         cell: {
@@ -613,7 +612,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
             alignItems: 'center',
             paddingVertical: 3,
         },
-        dayTotal: { marginTop: 2, fontSize: FontSize.xs, fontWeight: '600', color: colors.textSecondary, minHeight: 13 },
+        dayTotal: { marginTop: 2, fontSize: FontSize.xs, fontWeight: '500', color: colors.textSecondary, minHeight: 13 },
 
         timeline: { flex: 1, marginTop: Spacing.sm, backgroundColor: colors.bgPrimary },
         timelineContent: {},

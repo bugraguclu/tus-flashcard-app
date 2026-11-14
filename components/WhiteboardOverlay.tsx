@@ -697,7 +697,7 @@ function createStyles(colors: ColorScheme) {
             borderTopWidth: 1,
             borderTopColor: colors.borderLight,
         },
-        paletteLabel: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '700', marginHorizontal: 3 },
+        paletteLabel: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '600', marginHorizontal: 3 },
         swatchButton: {
             width: 32,
             height: 32,

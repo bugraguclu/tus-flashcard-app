@@ -495,7 +495,7 @@ export default function ImportScreen() {
                 ) : null}
 
                 {file ? (
-                    <Section label={l('DOSYA', 'FILE')}>
+                    <Section label={l('Dosya', 'File')}>
                         <ValueRow
                             label={file.name}
                             summary={packageImport ? undefined : l(`${parsed?.rows.length ?? 0} not`, `${parsed?.rows.length ?? 0} notes`)}

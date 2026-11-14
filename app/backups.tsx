@@ -216,7 +216,7 @@ export default function BackupsScreen() {
                 backAccessibilityLabel={l('Destelere dön', 'Back to decks')}
             />
             <ScrollView contentContainerStyle={styles.content}>
-                <Section label={l('YEDEK ADI', 'BACKUP NAME')} padded>
+                <Section label={l('Yedek adı', 'Backup name')} padded>
                     <TextField
                         value={backupName}
                         onChangeText={setBackupName}

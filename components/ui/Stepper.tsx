@@ -86,5 +86,5 @@ const styles = StyleSheet.create({
     },
     button: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
     disabled: { opacity: DISABLED_OPACITY },
-    value: { minWidth: 58, textAlign: 'center', fontSize: FontSize.lg, fontWeight: '700', fontVariant: ['tabular-nums'] },
+    value: { minWidth: 58, textAlign: 'center', fontSize: FontSize.lg, fontWeight: '600', fontVariant: ['tabular-nums'] },
 });

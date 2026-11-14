@@ -130,7 +130,7 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        value: { fontSize: FontSize.sm, fontWeight: '700', color: colors.textMuted, fontVariant: ['tabular-nums'] },
+        value: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textMuted, fontVariant: ['tabular-nums'] },
         valueChanged: { color: colors.accent },
     });
 }

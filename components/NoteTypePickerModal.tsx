@@ -240,7 +240,7 @@ function createStyles(colors: ColorScheme) {
         },
         rowGlyphActive: { backgroundColor: colors.bgCard, borderColor: colors.accent },
         rowText: { flex: 1, minWidth: 0, gap: 3 },
-        rowTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '700' },
+        rowTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '600' },
         rowTitleActive: { color: colors.accent },
         rowMetaLine: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         rowSubtitle: { flexShrink: 1, color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '500' },

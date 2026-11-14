@@ -291,12 +291,12 @@ const styles = StyleSheet.create({
     },
     chipBody: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.md, minHeight: 32, flexShrink: 1 },
     chipText: { fontSize: FontSize.sm, fontWeight: '500' },
-    chipTextSelected: { fontWeight: '700' },
+    chipTextSelected: { fontWeight: '600' },
     chipRemove: { minHeight: 32, paddingRight: Spacing.sm + 2, paddingLeft: 0, justifyContent: 'center' },
     // A badge mostly sits in a row beside a title, where the row centres it; a column that should
     // not stretch it passes alignSelf.
     badge: { paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: Radius.pill },
-    badgeText: { fontSize: FontSize.xs + 1, fontWeight: '700' },
+    badgeText: { fontSize: FontSize.xs + 1, fontWeight: '600' },
     track: { flexDirection: 'row', alignSelf: 'flex-start', padding: 2, borderRadius: Radius.inset },
     trackFill: { alignSelf: 'stretch' },
     segment: { minHeight: 30, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.inset - 2 },
@@ -305,8 +305,8 @@ const styles = StyleSheet.create({
     // Drawn under the labels once the segments are measured.
     segmentPill: { position: 'absolute', top: 2, bottom: 2, borderRadius: Radius.inset - 2, ...Shadows.sm },
     segmentPressed: { opacity: 0.6 },
-    segmentText: { fontSize: FontSize.sm, fontWeight: '600' },
-    segmentTextSelected: { fontWeight: '700' },
+    segmentText: { fontSize: FontSize.sm, fontWeight: '500' },
+    segmentTextSelected: { fontWeight: '600' },
     boxTarget: { minWidth: HIT_TARGET, minHeight: HIT_TARGET, alignItems: 'center', justifyContent: 'center' },
     box: { width: 22, height: 22, borderRadius: 4, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
     checkRow: {

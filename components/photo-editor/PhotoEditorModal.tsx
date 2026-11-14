@@ -707,6 +707,6 @@ function createStyles(colors: ColorScheme) {
             borderRadius: BorderRadius.full,
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
         },
-        compareText: { color: '#ffffff', fontSize: FontSize.xs, fontWeight: '700' },
+        compareText: { color: '#ffffff', fontSize: FontSize.xs, fontWeight: '600' },
     });
 }
