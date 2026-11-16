@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef, type ComponentProps } from 'react';
+import { Fragment, useState, useEffect, useCallback, useMemo, useRef, type ComponentProps } from 'react';
 import {
     View,
     ActivityIndicator,
@@ -75,6 +75,7 @@ import ReviewerDeckScope from '../../components/reviewer/ReviewerDeckScope';
 import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
 import AnswerFeedbackBadge from '../../components/reviewer/AnswerFeedbackBadge';
 import PressableScale from '../../components/PressableScale';
+import CardContextCrumb from '../../components/reviewer/CardContextCrumb';
 import { IconButton } from '../../components/ui/Button';
 import { BackIcon, ChevronDownIcon, ChevronRightIcon, CloseIcon, MoreVerticalIcon, UndoIcon } from '../../components/ui/icons';
 import { HIT_TARGET, Radius } from '../../components/ui/tokens';
@@ -173,7 +174,14 @@ import {
     shouldRunAutoAdvance,
 } from '../../lib/reviewerTimers';
 import { useRouteDeckScope } from '../../hooks/useRouteDeckScope';
-import { deckDescriptionText, deckPathBelowScope, hasExplicitStudyScope } from '../../lib/deckNavigation';
+import {
+    type CardContextCrumb as ContextCrumb,
+    deckContextCrumbs,
+    deckDescriptionText,
+    getDeckOverviewPath,
+    hasExplicitStudyScope,
+    subjectContextDecks,
+} from '../../lib/deckNavigation';
 import { isCatalogPurchaseSimulationEnabled } from '../../lib/catalogPurchases';
 import {
     answerScrollTarget,
@@ -2718,9 +2726,21 @@ export default function StudyScreen() {
     const preview = getPreview();
     const subject = currentCard ? findSubject(cardContext?.subject ?? currentCard.subject) : null;
     const topic = currentCard ? (cardContext?.topic ?? currentCard.topic) : '';
-    const contextDeckPath = !subject && renderPayload?.homeDeck
-        ? deckPathBelowScope(renderPayload.homeDeck.name, selectedDeckName)
-        : [];
+    // The line above the card names where the card lives, and each part opens that deck's
+    // overview over the reviewer: a distinct screen, so it is pushed and the back swipe returns
+    // to the card. A course card names its course and topic; any other card its subdeck path.
+    const homeDeckName = renderPayload?.homeDeck?.name ?? null;
+    const contextCrumbs: ContextCrumb[] = [];
+    if (subject) {
+        const subjectDeckId = resolveSubjectDeckId(subject.id);
+        const decks = subjectContextDecks(homeDeckName, subjectDeckId === 1 ? null : getDeck(subjectDeckId)?.name);
+        contextCrumbs.push({ label: `${subject.icon} ${subject.name}`, deckName: decks.subject });
+        if (topic) contextCrumbs.push({ label: localizeTopicName(locale, topic), deckName: decks.topic });
+    } else if (homeDeckName) {
+        // A card of no course names its subdeck rather than a stray "📝 › General".
+        contextCrumbs.push(...deckContextCrumbs(homeDeckName, selectedDeckName));
+    }
+    const openContextDeck = (deckName: string) => router.push(getDeckOverviewPath(deckName) as any);
     const answerScale = (settings.answerButtonScalePercent ?? 100) / 100;
     // The grade buttons sink under the finger, so a grade is felt the moment it lands.
     const gradeButton = (grade: Grade, label: string, time: string, color: string, background: string) => (
@@ -3182,26 +3202,24 @@ export default function StudyScreen() {
                         >
                             <View style={styles.cardMetaRow}>
                                 <View style={styles.cardContext}>
-                                    {subject ? (
-                                        <>
-                                            <Text style={styles.cardSubject} numberOfLines={1}>
-                                                {`${subject.icon} ${subject.name}`}
-                                            </Text>
-                                            {topic ? <ChevronRightIcon color={colors.textMuted} size={16} /> : null}
-                                            {topic ? (
-                                                <Text style={styles.cardTopic} numberOfLines={1}>{localizeTopicName(locale, topic)}</Text>
-                                            ) : null}
-                                        </>
-                                    ) : contextDeckPath.length > 0 ? (
-                                        // A card of no course names its subdeck rather than a stray "📝 › General".
-                                        <>
-                                            <Text style={styles.cardSubject} numberOfLines={1}>{contextDeckPath[0]}</Text>
-                                            {contextDeckPath.length > 1 ? <ChevronRightIcon color={colors.textMuted} size={16} /> : null}
-                                            {contextDeckPath.length > 1 ? (
-                                                <Text style={styles.cardTopic} numberOfLines={1}>{contextDeckPath.slice(1).join(' › ')}</Text>
-                                            ) : null}
-                                        </>
-                                    ) : null}
+                                    {contextCrumbs.map((crumb, index) => {
+                                        const deckName = crumb.deckName;
+                                        return (
+                                            <Fragment key={index}>
+                                                {index > 0 ? <ChevronRightIcon color={colors.textMuted} size={16} /> : null}
+                                                <CardContextCrumb
+                                                    label={crumb.label}
+                                                    style={index === 0 ? styles.cardSubjectCrumb : styles.cardTopicCrumb}
+                                                    textStyle={index === 0 ? styles.cardSubject : styles.cardTopic}
+                                                    onPress={deckName ? () => openContextDeck(deckName) : undefined}
+                                                    accessibilityLabel={l(
+                                                        `${crumb.label}, deste özetini aç`,
+                                                        `${crumb.label}, open deck overview`,
+                                                    )}
+                                                />
+                                            </Fragment>
+                                        );
+                                    })}
                                     {previewMode ? (
                                         <View style={styles.previewBadge}>
                                             <Text style={styles.previewBadgeText}>{l('Önizleme', 'Preview')}</Text>
@@ -3704,8 +3722,11 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         marginBottom: Spacing.sm,
     },
 
-    cardSubject: { flexShrink: 0, maxWidth: isCompact ? '55%' : 260, fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
-    cardTopic: { flex: 1, minWidth: 0, fontSize: FontSize.sm, color: colors.textMuted },
+    // The parts hug their text, so a tap on the empty rest of the line opens nothing.
+    cardSubjectCrumb: { flexShrink: 0, maxWidth: isCompact ? '55%' : 260 },
+    cardTopicCrumb: { flexShrink: 1, minWidth: 0 },
+    cardSubject: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
+    cardTopic: { fontSize: FontSize.sm, color: colors.textMuted },
     previewBadge: {
         flexShrink: 0,
         paddingHorizontal: 8,

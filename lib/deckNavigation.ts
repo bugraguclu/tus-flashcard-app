@@ -37,6 +37,48 @@ export function deckPathBelowScope(deckName: string, scopeDeckName: string | nul
     return below.split('::').filter(Boolean);
 }
 
+/** One tappable part of the study screen's card context line and the deck its tap opens. */
+export interface CardContextCrumb {
+    label: string;
+    deckName: string | null;
+}
+
+/**
+ * The card's deck path below the studied deck as at most two parts: its first level, then every
+ * deeper level joined into one. Each part opens the deck it names, the second one the card's own.
+ */
+export function deckContextCrumbs(deckName: string, scopeDeckName: string | null | undefined): CardContextCrumb[] {
+    const levels = deckPathBelowScope(deckName, scopeDeckName);
+    if (levels.length === 0) return [];
+    const all = deckName.split('::').filter(Boolean);
+    const firstDeck = all.slice(0, all.length - levels.length + 1).join('::');
+    const crumbs: CardContextCrumb[] = [{ label: levels[0], deckName: firstDeck }];
+    if (levels.length > 1) crumbs.push({ label: levels.slice(1).join(' › '), deckName: all.join('::') });
+    return crumbs;
+}
+
+/**
+ * The decks a course card's context line opens. The course name opens the course's deck when the
+ * card lives in it, otherwise the card's own deck (a course tag on a card filed elsewhere must not
+ * open a deck the card is not in). A topic is a tag, not a deck, so it opens the card's own deck:
+ * the subdeck that holds it, or the course's deck again.
+ */
+export function subjectContextDecks(
+    homeDeckName: string | null | undefined,
+    subjectDeckName: string | null | undefined,
+): { subject: string | null; topic: string | null } {
+    const home = homeDeckName || null;
+    const course = subjectDeckName || null;
+    const inCourse = Boolean(course && home && (home === course || home.startsWith(`${course}::`)));
+    const subject = home ? (inCourse ? course : home) : course;
+    return { subject, topic: home ?? subject };
+}
+
+/** The deck overview of a deck, as the route the deck list opens. */
+export function getDeckOverviewPath(deckName: string): string {
+    return `/deck-overview?deck=${encodeURIComponent(deckName)}`;
+}
+
 /** Browser inherits the exact deck/subdeck the learner is currently studying. */
 export function getScopedBrowserPath(deckName: string | null | undefined): string {
     return deckName ? `/browser?deck=${encodeURIComponent(deckName)}` : '/browser';
