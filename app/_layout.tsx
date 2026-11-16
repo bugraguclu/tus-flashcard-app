@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, router as globalRouter, useNavigationContainerRef, useRouter } from 'expo-router';
-import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import {
@@ -37,6 +36,7 @@ import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { onStudyReminderOpened } from '../lib/studyNotifications';
 import { onStopwatchAlertOpened } from '../lib/stopwatchNotifications';
 import { externalActionRoute } from '../lib/externalActionRoute';
+import PageTitle, { PageTitleLocaleContext, usePageTitleLocale } from '../components/PageTitle';
 import { attachIncomingUrlHandler, incomingUrlNavigation, startIncomingUrls } from '../lib/incomingUrl';
 import { externalLinkRejectionText } from '../lib/externalLinkRejection';
 import { alert as showAlert } from '../lib/confirm';
@@ -469,6 +469,7 @@ function AppStack() {
     const colors = useThemeColors();
     const isDarkTheme = useIsDarkTheme();
     const { t, locale } = useI18n();
+    usePageTitleLocale(locale);
     const navigationRef = useNavigationContainerRef();
     const { isLoading, startupError } = useStartupStatus();
     // This stack also mounts when startup fails or times out, to show the startup screen; until
@@ -715,22 +716,21 @@ function AppStack() {
 }
 
 export default function RootLayout() {
+    const [titleLocale, setTitleLocale] = useState<'tr' | 'en'>('tr');
     return (
         <SafeAreaProvider>
-            {/* The browser tab and shared links name the app; the static pages carry it as well. */}
-            {Platform.OS === 'web' ? (
-                <Head>
-                    <title>TusAnkiM</title>
-                </Head>
-            ) : null}
+            {/* The browser tab and shared links name the screen; the static pages carry it as well. */}
+            <PageTitle locale={titleLocale} />
             <AppErrorBoundary>
                 <WebDbGate>
                     <AppProvider>
-                        <ThemeGate>
-                            <StartupGate>
-                                <AppStack />
-                            </StartupGate>
-                        </ThemeGate>
+                        <PageTitleLocaleContext.Provider value={setTitleLocale}>
+                            <ThemeGate>
+                                <StartupGate>
+                                    <AppStack />
+                                </StartupGate>
+                            </ThemeGate>
+                        </PageTitleLocaleContext.Provider>
                     </AppProvider>
                 </WebDbGate>
             </AppErrorBoundary>

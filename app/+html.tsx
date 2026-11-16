@@ -12,6 +12,12 @@ export default function Root({ children }: { children: React.ReactNode }) {
                 <meta name="referrer" content="no-referrer" />
                 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
                 <meta name="description" content="Aralıklı tekrarla çalışılan, çevrimdışı kullanılabilen TUS kartları." />
+                {/* What a chat app or social site shows for a shared link; `og:title` comes per page from PageTitle. */}
+                <meta property="og:site_name" content="TusAnkiM" />
+                <meta property="og:type" content="website" />
+                <meta property="og:description" content="Aralıklı tekrarla çalışılan, çevrimdışı kullanılabilen TUS kartları." />
+                <meta property="og:image" content="/icons/icon-512.png" />
+                <meta name="twitter:card" content="summary" />
                 {/* Installable like the iPhone app: home-screen icon, standalone window, theme bar. */}
                 <link rel="manifest" href="/manifest.webmanifest" />
                 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />

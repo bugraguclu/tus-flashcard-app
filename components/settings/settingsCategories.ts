@@ -10,13 +10,14 @@ export type SettingsSectionId =
     | 'data'
     | 'about';
 
-const SECTION_IDS: readonly SettingsSectionId[] = [
+/** Every Settings category, in list order; the web build writes one page for each. */
+export const SETTINGS_SECTION_IDS: readonly SettingsSectionId[] = [
     'general', 'newStudy', 'reviewing', 'notifications', 'controls', 'accessibility', 'data', 'about',
 ];
 
 /** Whether a route parameter names a Settings category. */
 export function isSettingsSectionId(value: unknown): value is SettingsSectionId {
-    return SECTION_IDS.includes(value as SettingsSectionId);
+    return SETTINGS_SECTION_IDS.includes(value as SettingsSectionId);
 }
 
 /**

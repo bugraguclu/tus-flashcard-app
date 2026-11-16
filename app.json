@@ -99,7 +99,12 @@
     "scheme": "tusankim",
     "plugins": [
       "expo-sqlite",
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "sitemap": false
+        }
+      ],
       [
         "expo-splash-screen",
         {
