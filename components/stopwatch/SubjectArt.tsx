@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, G, Line, Path, Rect } from 'react-native-svg';
 import { Text } from '../AppText';
 import { useIsDarkTheme, useThemeColors } from '../../constants/theme';
 import { studySubjectInitial } from '../../lib/studyCalendar';
@@ -31,6 +31,8 @@ const TILE_TINTS: Record<SubjectArtName, string> = {
     minor: '#e6f3f1',
     histology: '#f8eef6',
     genetics: '#eaf1fb',
+    fhe: '#f9edf0',
+    practice: '#e6f3f1',
 };
 
 const RED = '#e05a5a';
@@ -286,6 +288,31 @@ function Helix() {
     );
 }
 
+function FheArt() {
+    return (
+        <>
+            <G transform="translate(0 1) scale(0.8)">
+                <Heart />
+            </G>
+            <G transform="translate(19 16) scale(0.6)">
+                <Cells />
+            </G>
+        </>
+    );
+}
+
+function PracticeSheet() {
+    return (
+        <>
+            <Rect x={10} y={8} width={28} height={35} rx={4} fill="#2f8f83" />
+            <Rect x={13} y={11} width={22} height={29} rx={2} fill="#f2faf7" />
+            <Rect x={18} y={5} width={12} height={8} rx={3} fill={DARK_STEEL} />
+            <Path d="M17 20 L19 22 L23 18" fill="none" stroke="#2f8f83" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M26 21 H30 M17 28 H30 M17 34 H30" fill="none" stroke={STEEL} strokeWidth={2} strokeLinecap="round" />
+        </>
+    );
+}
+
 const ART: Record<SubjectArtName, React.ComponentType> = {
     mixed: Books,
     anatomy: Bone,
@@ -301,6 +328,8 @@ const ART: Record<SubjectArtName, React.ComponentType> = {
     minor: DoctorBag,
     histology: Cells,
     genetics: Helix,
+    fhe: FheArt,
+    practice: PracticeSheet,
 };
 
 /** A course's picture on its own, `size` points square; nothing for a subject without one. */

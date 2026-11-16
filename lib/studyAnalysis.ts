@@ -22,7 +22,7 @@ const fold = (value: string) => value.toLocaleLowerCase('tr').trim();
 
 const BASIC_SCIENCES = new Set([
     'Anatomi', 'Fizyoloji', 'Histoloji ve Embriyoloji', 'Biyokimya', 'Mikrobiyoloji', 'Patoloji', 'Farmakoloji',
-    'Tıbbi Biyoloji ve Genetik', 'Histoloji', 'Tıbbi Biyoloji',
+    'Tıbbi Biyoloji ve Genetik', 'Histoloji', 'Tıbbi Biyoloji', 'FHE',
 ].map(fold));
 const CLINICAL_SCIENCES = new Set([
     'Dahiliye', 'Pediatri', 'Genel Cerrahi', 'Kadın Hastalıkları ve Doğum', 'Kadın Doğum', 'Küçük Stajlar',

@@ -19,7 +19,9 @@ export type SubjectArtName =
     | 'pediatrics'
     | 'minor'
     | 'histology'
-    | 'genetics';
+    | 'genetics'
+    | 'fhe'
+    | 'practice';
 
 /**
  * Names a subject's key may contain, checked in this order; the first that matches wins. Longer
@@ -27,6 +29,8 @@ export type SubjectArtName =
  */
 const ART_ALIASES: readonly (readonly [string, SubjectArtName])[] = [
     ['karışık', 'mixed'],
+    ['fhe', 'fhe'],
+    ['deneme ve soru', 'practice'],
     ['histoloji', 'histology'],
     ['embriyoloji', 'histology'],
     ['tıbbi biyoloji', 'genetics'],

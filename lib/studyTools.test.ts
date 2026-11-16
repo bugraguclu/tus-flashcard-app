@@ -230,6 +230,8 @@ describe('study analysis', () => {
         expect(groups[0].subjects[0]).toMatchObject({ studyMs: 90 * MINUTE, days: 1, lastStartMs: at('2026-10-26', 14) });
         expect(studyScienceGroup('Kadın Hastalıkları ve Doğum')).toBe('clinical');
         expect(studyScienceGroup('Soru Çözümü')).toBe('other');
+        expect(studyScienceGroup('FHE')).toBe('basic');
+        expect(studyScienceGroup('Deneme ve Soru')).toBe('other');
     });
 });
 

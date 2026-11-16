@@ -21,8 +21,8 @@ import { subjectArtName } from '../../lib/subjectArt';
 import { SubjectArt } from './SubjectArt';
 
 /**
- * The courses in the order TUSBuddy's grid lists them, "Karışık" first; the courses TusAnkiM
- * offers besides (histology, medical biology) follow, and then any other built-in subject.
+ * The grid starts with the TUSBuddy courses, "Karışık" first. Histology and medical biology
+ * follow, then the extra TUS Kartları decks in the order defined by TUS_STUDY_SUBJECTS.
  */
 const TUSBUDDY_GRID_ORDER: readonly string[] = [
     'Karışık',
@@ -127,6 +127,9 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                                     accessibilityState={{ checked: isSelected }}
                                     aria-checked={isSelected}
                                     accessibilityLabel={subject}
+                                    accessibilityHint={subject === 'FHE'
+                                        ? l('Fizyoloji, Histoloji ve Embriyoloji', 'Physiology, Histology and Embryology')
+                                        : undefined}
                                 >
                                     <View
                                         style={[

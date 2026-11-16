@@ -674,11 +674,9 @@ export function examDaysLeft(examYmd: string | null, nowMs: number): number | nu
 }
 
 /**
- * The TUS courses offered when a subject is picked, in the order of the exam's two tests, followed
- * by "Karışık" for study that spans several courses, such as a mock exam. What the time is spent on
- * (question practice, a mock exam) is the session's type, not its subject, so neither is listed
- * here; sessions recorded under those names before types existed keep them and still appear among
- * the recent subjects.
+ * The subject picker offers the exam's courses, "Karışık" for study spanning several courses,
+ * and the extra deck names from TUS Kartları. FHE covers Fizyoloji, Histoloji ve Embriyoloji.
+ * "Deneme ve Soru" is the deck name; question practice and mock exams are session types.
  */
 export const TUS_STUDY_SUBJECTS: readonly string[] = [
     'Anatomi',
@@ -695,4 +693,6 @@ export const TUS_STUDY_SUBJECTS: readonly string[] = [
     'Kadın Hastalıkları ve Doğum',
     'Küçük Stajlar',
     'Karışık',
+    'FHE',
+    'Deneme ve Soru',
 ];

@@ -284,7 +284,15 @@ describe('normalizeStudyNote', () => {
 });
 
 describe('TUS_STUDY_SUBJECTS', () => {
-    it('offers Karışık rather than subjects that are now study types', () => {
+    it('appends the two TUS Kartları deck names to the existing subjects', () => {
+        expect(TUS_STUDY_SUBJECTS.slice(-2)).toEqual(['FHE', 'Deneme ve Soru']);
+        expect(TUS_STUDY_SUBJECTS).toEqual(expect.arrayContaining([
+            'Fizyoloji', 'Histoloji ve Embriyoloji', 'Tıbbi Biyoloji ve Genetik',
+        ]));
+        expect(TUS_STUDY_SUBJECTS).toHaveLength(16);
+    });
+
+    it('offers Karışık and keeps question practice and mock exams as distinct study types', () => {
         expect(TUS_STUDY_SUBJECTS).toContain('Karışık');
         // Question practice and mock exams are types; listing them as subjects too would let a
         // session read "Soru Çözümü" twice, or file a mock exam under two different headings.
