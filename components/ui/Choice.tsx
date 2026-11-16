@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, type LayoutRectangle, Pressable, type StyleProp, StyleSheet, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
-import { MotionDuration, MotionEasing } from '../../constants/motion';
+import { MotionDuration, MotionEasing, NATIVE_DRIVER } from '../../constants/motion';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { CheckIcon, CloseIcon, MinusIcon } from './icons';
 import { DISABLED_OPACITY, HIT_TARGET, Radius } from './tokens';
@@ -133,14 +133,14 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
             pillWidth.setValue(chosen.width);
             return undefined;
         }
-        // Left and width are layout, which the native driver cannot animate; the control is small.
-        const animation = Animated.parallel([pillX, pillWidth].map((position, index) => Animated.timing(position, {
-            toValue: index === 0 ? chosen.x : chosen.width,
-            duration: MotionDuration.move,
-            easing: MotionEasing.inOut,
-            useNativeDriver: false,
-            isInteraction: false,
-        })));
+        // The slide is a transform on the native driver: a choice that starts a long read (the
+        // Statistics period) keeps the pill moving while JavaScript is busy. Width is layout, which
+        // only JavaScript can animate; it changes only between labels of different lengths.
+        const timing = { duration: MotionDuration.move, easing: MotionEasing.inOut, isInteraction: false };
+        const animation = Animated.parallel([
+            Animated.timing(pillX, { ...timing, toValue: chosen.x, useNativeDriver: NATIVE_DRIVER }),
+            Animated.timing(pillWidth, { ...timing, toValue: chosen.width, useNativeDriver: false }),
+        ]);
         animation.start();
         return () => animation.stop();
     }, [chosen?.x, chosen?.width, value, reduceMotion, pillX, pillWidth]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -152,9 +152,11 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
             accessibilityLabel={accessibilityLabel}
         >
             {chosen ? (
-                <Animated.View
-                    style={[styles.segmentPill, { left: pillX, width: pillWidth, backgroundColor: colors.segmentSelected, pointerEvents: 'none' }]}
-                />
+                // The slot slides; the pill inside it takes the width. A view's values are driven by
+                // one side only, so the native slide and the JavaScript width need a view each.
+                <Animated.View style={[styles.segmentPillSlot, { transform: [{ translateX: pillX }], pointerEvents: 'none' }]}>
+                    <Animated.View style={[styles.segmentPill, { width: pillWidth, backgroundColor: colors.segmentSelected }]} />
+                </Animated.View>
             ) : null}
             {options.map((option) => {
                 const selected = option.value === value;
@@ -303,7 +305,8 @@ const styles = StyleSheet.create({
     segmentFill: { flex: 1, paddingHorizontal: 4 },
     segmentSelected: Shadows.sm,
     // Drawn under the labels once the segments are measured.
-    segmentPill: { position: 'absolute', top: 2, bottom: 2, borderRadius: Radius.inset - 2, ...Shadows.sm },
+    segmentPillSlot: { position: 'absolute', left: 0, top: 2, bottom: 2 },
+    segmentPill: { flex: 1, borderRadius: Radius.inset - 2, ...Shadows.sm },
     segmentPressed: { opacity: 0.6 },
     segmentText: { fontSize: FontSize.sm, fontWeight: '500' },
     segmentTextSelected: { fontWeight: '600' },
