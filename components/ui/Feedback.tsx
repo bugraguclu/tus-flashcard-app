@@ -1,7 +1,9 @@
-import React from 'react';
-import { ActivityIndicator, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { ActivityIndicator, Animated, Easing, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { MotionDuration, NATIVE_DRIVER } from '../../constants/motion';
+import { easedWindow } from '../../lib/motion';
 import { Radius, Type } from './tokens';
 
 interface EmptyStateProps {
@@ -28,14 +30,67 @@ export function EmptyState({ title, body, icon, action, style }: EmptyStateProps
     );
 }
 
+/**
+ * How long a `delayed` loading state stays blank. Most waits it covers end sooner, and their
+ * content then appears straight away: a spinner flashed on every visit would only be noise.
+ */
+export const LOADING_STATE_DELAY_MS = 300;
+
+interface LoadingStateProps {
+    label?: string;
+    /**
+     * Stay blank for `LOADING_STATE_DELAY_MS`, then fade in. For a wait most visits never notice,
+     * such as Statistics reading the review log.
+     */
+    delayed?: boolean;
+    style?: StyleProp<ViewStyle>;
+}
+
 /** A small spinner, with what is loading when it takes a while. */
-export function LoadingState({ label, style }: { label?: string; style?: StyleProp<ViewStyle> }) {
+export function LoadingState({ label, delayed = false, style }: LoadingStateProps) {
     const colors = useThemeColors();
-    return (
-        <View style={[styles.loading, style]} accessibilityRole="progressbar" accessibilityLabel={label}>
+    const content = (
+        <>
             <ActivityIndicator color={colors.accent} />
             {label ? <Text style={[Type.caption, styles.center, { color: colors.textMuted }]}>{label}</Text> : null}
+        </>
+    );
+    const containerStyle = [styles.loading, style];
+    if (delayed) return <DelayedLoading style={containerStyle} label={label}>{content}</DelayedLoading>;
+    return (
+        <View style={containerStyle} accessibilityRole="progressbar" accessibilityLabel={label}>
+            {content}
         </View>
+    );
+}
+
+/**
+ * The wait and the fade are one animation on the native driver. What is being waited for usually
+ * keeps JavaScript busy (a synchronous read) for exactly as long as the spinner is needed, so a
+ * JavaScript timer would fire only once the wait is over.
+ */
+function DelayedLoading({ style, label, children }: { style: StyleProp<ViewStyle>; label?: string; children: React.ReactNode }) {
+    const clock = useRef(new Animated.Value(0)).current;
+    const total = LOADING_STATE_DELAY_MS + MotionDuration.fade;
+    const opacity = useMemo(
+        () => clock.interpolate({ ...easedWindow(LOADING_STATE_DELAY_MS / total, 1), extrapolate: 'clamp' }),
+        [clock, total],
+    );
+    useEffect(() => {
+        const animation = Animated.timing(clock, {
+            toValue: 1,
+            duration: total,
+            easing: Easing.linear,
+            useNativeDriver: NATIVE_DRIVER,
+            isInteraction: false,
+        });
+        animation.start();
+        return () => animation.stop();
+    }, [clock, total]);
+    return (
+        <Animated.View style={[style, { opacity }]} accessibilityRole="progressbar" accessibilityLabel={label}>
+            {children}
+        </Animated.View>
     );
 }
 

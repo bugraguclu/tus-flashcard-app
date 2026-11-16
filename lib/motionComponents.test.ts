@@ -1,6 +1,7 @@
 // The shared motion components: a popover modal stays up while its menu leaves and then goes,
 // press-scale buttons sink and come back, a "Saved" label pulses once, the study screen's answer
-// badge fits its entrance, hold and exit into its lifetime, and a segmented control's pill slides.
+// badge fits its entrance, hold and exit into its lifetime, a segmented control's pill slides and a
+// delayed loading state waits before it fades in.
 import React from 'react';
 import TestRenderer, { act, type ReactTestInstance } from 'react-test-renderer';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -60,6 +61,7 @@ vi.mock('react-native', () => {
                 : (style as Record<string, unknown>) ?? {}),
         },
         View: 'View',
+        ActivityIndicator: 'ActivityIndicator',
         Modal: 'Modal',
         Pressable: 'Pressable',
         Easing: { bezier: () => (t: number) => t, linear: (t: number) => t },
@@ -105,6 +107,7 @@ vi.mock('../constants/theme', () => ({
 
 import { PopoverBackdrop, PopoverItem, PopoverModal } from '../components/Popover';
 import { SegmentedControl } from '../components/ui/Choice';
+import { LoadingState } from '../components/ui/Feedback';
 import PressableScale from '../components/PressableScale';
 import AnswerFeedbackBadge from '../components/reviewer/AnswerFeedbackBadge';
 import { useSuccessPulse } from '../hooks/useSuccessPulse';
@@ -379,5 +382,29 @@ describe('SegmentedControl', () => {
         act(() => renderer!.update(control('month')));
         expect(motion.timings).toHaveLength(0);
         expect(pill().left.value).toBe(62);
+    });
+});
+
+describe('LoadingState', () => {
+    it('shows at once unless it is delayed', () => {
+        act(() => { renderer = TestRenderer.create(React.createElement(LoadingState, { label: 'Yükleniyor…' })); });
+        expect(find('AnimatedView')).toHaveLength(0);
+        expect(find('ActivityIndicator')).toHaveLength(1);
+        expect(motion.timings).toHaveLength(0);
+    });
+
+    it('stays blank for 300 ms, then fades in, all on one native clock', () => {
+        act(() => { renderer = TestRenderer.create(React.createElement(LoadingState, { label: 'Yükleniyor…', delayed: true })); });
+        // A synchronous read keeps JavaScript busy while the spinner is needed: a JS timer would
+        // fire only after it, so the wait is part of the native animation.
+        expect(motion.timings).toHaveLength(1);
+        const [clock] = motion.timings;
+        expect(clock).toMatchObject({ toValue: 1, duration: 300 + 220, useNativeDriver: true });
+        const opacity = flat(find('AnimatedView')[0]).opacity as { inputRange: number[]; outputRange: number[] };
+        expect(opacity.inputRange[0]).toBeCloseTo(300 / 520);
+        expect(opacity.outputRange[0]).toBe(0);
+        expect(opacity.inputRange.at(-1)).toBe(1);
+        expect(opacity.outputRange.at(-1)).toBe(1);
+        expect(find('ActivityIndicator')).toHaveLength(1);
     });
 });

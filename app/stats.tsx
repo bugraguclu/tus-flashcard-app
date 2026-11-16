@@ -118,7 +118,10 @@ export default function StatsScreen() {
         settings,
         localeTag,
     }), [deckScope, statsRange, settings, localeTag]);
-    const { snapshot, loading, error } = useDeferredScreenSnapshot(statsSnapshotKey, loadStatsSnapshot);
+    // Reading a long review log takes a moment: the screen opens on its loading state first.
+    const { snapshot, loading, error } = useDeferredScreenSnapshot(statsSnapshotKey, loadStatsSnapshot, {
+        showLoadingFirst: true,
+    });
     const pull = usePullToRefresh({
         scrollRef,
         busy: loading,
@@ -249,7 +252,7 @@ export default function StatsScreen() {
                 {!snapshot ? (
                     error
                         ? <Notice tone="danger">{l('İstatistikler yüklenemedi.', 'Statistics could not be loaded.')}</Notice>
-                        : <LoadingState style={styles.loadState} label={t('common.loading')} />
+                        : <LoadingState delayed style={styles.loadState} label={t('common.loading')} />
                 ) : (
                     <Animated.View style={[styles.body, { opacity }]} accessibilityState={{ busy: loading }}>
                         <TodaySection

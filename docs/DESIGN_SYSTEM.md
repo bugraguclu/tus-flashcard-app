@@ -52,7 +52,7 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | Switch | `AppSwitch` | `components/ui/Rows.tsx` |
 | Chips, badges, segmented control, checkboxes, chosen-row tick | `Chip` (`role` button, radio or checkbox), `Badge`, `SegmentedControl`, `Checkbox` / `CheckRow` (`mixed` for a partly ticked group), `SelectedMark` | `components/ui/Choice.tsx` |
 | Text entry | `TextField` (`label` for a caption above it, `monospace` for code), `SearchField` | `components/ui/Fields.tsx` |
-| Empty, loading, notices, progress | `EmptyState`, `LoadingState`, `Notice` (`info`, `warning`, `danger`, `success`), `ProgressBar` | `components/ui/Feedback.tsx` |
+| Empty, loading, notices, progress | `EmptyState`, `LoadingState` (`delayed` stays blank for 300 ms, then fades in), `Notice` (`info`, `warning`, `danger`, `success`), `ProgressBar` | `components/ui/Feedback.tsx` |
 | Bottom sheet | `AppSheet` (title and subtitle centred under the grabber, keyboard lift, overlay picker), `SheetScrollView` for its scrolling body, `SheetNoDrag` around a multi-line field | `components/ui/Sheet.tsx` |
 | Centred form, picker or explanation | `AppDialog` | `components/ui/Dialog.tsx` |
 | ••• menu | `PopoverMenu` + `MenuItem` | `components/ui/Menu.tsx` |
