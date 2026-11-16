@@ -66,9 +66,35 @@ describe('terms the context cannot answer', () => {
         expect(matches('prop:s>5', card({ memoryState: { stability: 9, difficulty: 5 } }))).toBe(true);
     });
 
-    it('rejects an empty or invalid term, including under negation', () => {
-        expect(() => matches('-deck:', card())).toThrow();
+    it('validates incomplete scope values and rejects invalid states and flags', () => {
+        for (const scope of ['deck:', 'tag:', 'note:']) {
+            expect(matches(scope, card())).toBe(false);
+            expect(matches('-' + scope, card())).toBe(true);
+        }
+        expect(() => matches('is:DUE', card())).toThrow();
+        expect(() => matches('is:relearn', card())).toThrow();
         expect(() => matches('-flag:9', card())).toThrow();
         expect(() => matches('flag:9', card())).toThrow();
+    });
+});
+
+describe('is:due', () => {
+    const cutoff = OPTIONS.nowMs + 20 * 60_000;
+
+    it('includes learning and imported preview repeats through the learn-ahead cutoff', () => {
+        expect(matches('is:due', card({ queue: 1, due: cutoff }))).toBe(true);
+        expect(matches('is:due', card({ queue: 4, due: cutoff / 1000 }))).toBe(true);
+        expect(matches('is:due', card({ queue: 4, due: cutoff }))).toBe(true);
+        expect(matches('is:due', card({ queue: 1, due: cutoff + 1 }))).toBe(false);
+        expect(matches('is:due', card({ queue: 4, due: cutoff / 1000 + 1 }))).toBe(false);
+        expect(matches('is:due', card({ queue: -1, due: 0 }))).toBe(false);
+    });
+
+    it('keeps temporary due and original due distinct for filtered cards', () => {
+        const filtered = card({ queue: 2, due: 0, originalDue: 10 });
+        expect(matches('is:due', filtered)).toBe(true);
+        expect(matches('prop:due<=3', filtered)).toBe(false);
+        const previewDue = cutoff / 1000;
+        expect(matches('prop:due=0', card({ queue: 4, due: previewDue }))).toBe(true);
     });
 });

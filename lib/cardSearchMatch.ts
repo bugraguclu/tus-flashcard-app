@@ -6,10 +6,10 @@
 
 import { fsrsRetrievabilityAfterSeconds, fsrsSecondsSinceLastReview, type FsrsMemoryState } from './fsrs';
 import { foldSearchNode, parseSearchQuery, SearchSyntaxError } from './searchQuery';
-import { localizeNoteTypeName } from './i18n';
 import { checksumFieldText } from './noteChecksum';
+import { ankiRegex } from './ankiRegex';
 import {
-    firstUnescapedColon, globMatcher, hierarchicalGlobMatcher, searchRegex, stripHtmlForSearch,
+    firstUnescapedColon, globMatcher, hierarchicalGlobMatcher, stripHtmlForSearch,
     stripSearchQuotes, unescapeSearchText, withoutClozeMarkup, wordMatcher,
 } from './searchGlob';
 
@@ -25,6 +25,8 @@ export interface CardSearchContext {
     queue: number;
     type: number;
     due: number;
+    /** Home due value retained by a physically filtered card (in local storage units). */
+    originalDue?: number;
     ivl: number;
     factor: number;
     reps: number;
@@ -83,8 +85,10 @@ export interface CardMatcherOptions {
      * rescheduled, for `prop:rated`, `prop:resched` and `resched:`.
      */
     revlogDayOffsets?: (cardId: number, kind: RevlogLookupKind) => readonly number[];
-    /** The deck `deck:current` means; null or absent reads as the whole collection. */
+    /** The collection's current deck, if there is one. */
     currentDeckName?: string | null;
+    /** Allow local state terms already persisted by older app versions. */
+    allowLegacyStateTerms?: boolean;
 }
 
 /**
@@ -102,6 +106,8 @@ export interface CardSearchNeeds {
     noteEdited: boolean;
     /** The card's data blob (memory state, decay, review time, custom data), for `prop:s/d/r/cd*`. */
     cardData: boolean;
+    /** Scheduling properties that compare a filtered card's original due or position. */
+    originalDue?: boolean;
     /** Filtered-deck membership, home decks and presets, for `deck:` and `preset:`. */
     decks?: boolean;
 }
@@ -152,13 +158,12 @@ function rawFields(card: CardSearchContext): string[] {
 function plainTextViews(card: CardSearchContext): string[] {
     const fields = rawFields(card);
     const sort = card.fieldList ? card.fieldList[card.sortFieldIndex ?? 0] : undefined;
-    return sort === undefined ? [fields.join('\x1f')] : [fields.join('\x1f'), stripHtmlForSearch(sort)];
+    return sort === undefined ? [fields.join('\x1f')] : [fields.join('\x1f'), checksumFieldText(sort)];
 }
 
 function textPredicate(rawValue: string, view: 'plain' | 'nc' | 'sc' = 'plain'): TermTest {
     const value = stripSearchQuotes(rawValue);
-    if (!value) throw new SearchSyntaxError('empty text term');
-    const matches = globMatcher(value, { anchored: false, noCombining: view === 'nc' });
+    const matches = globMatcher(value, { anchored: false, noCombining: view === 'nc', asciiCase: true });
     if (view === 'sc') {
         return (card) => {
             const fields = rawFields(card).map(withoutClozeMarkup);
@@ -168,14 +173,19 @@ function textPredicate(rawValue: string, view: 'plain' | 'nc' | 'sc' = 'plain'):
     return (card) => plainTextViews(card).some(matches);
 }
 
+function timeDueMs(queue: number, due: number): number {
+    // Package imports have historically kept preview repeats in epoch seconds, unlike queue 1.
+    return queue === 4 && due >= 1_000_000_000 && due < 100_000_000_000 ? due * 1000 : due;
+}
+
 function statePredicate(state: string, options: CardMatcherOptions): TermTest | null {
     switch (state) {
-        // new/learn/review/relearn read the card's type, so a suspended or buried card still
+        // new/learn/review read the card's type, so a suspended or buried card still
         // reports the state it is in; only the queue-based states read the queue.
         case 'new': return (card) => card.type === 0;
         case 'learn': return (card) => card.type === 1 || card.type === 3;
         case 'review': return (card) => card.type === 2 || card.type === 3;
-        case 'relearn': return (card) => card.type === 3;
+        case 'relearn': return options.allowLegacyStateTerms ? (card) => card.type === 3 : null;
         case 'suspended': return (card) => card.queue === -1;
         case 'buried': return (card) => card.queue === -2 || card.queue === -3;
         case 'buried-sibling': return (card) => card.queue === -2;
@@ -184,7 +194,7 @@ function statePredicate(state: string, options: CardMatcherOptions): TermTest | 
             const learnAheadCutoff = options.nowMs + options.learnAheadMinutes * 60_000;
             return (card) => (
                 ((card.queue === 2 || card.queue === 3) && card.due <= options.today)
-                || (card.queue === 1 && card.due <= learnAheadCutoff)
+                || ((card.queue === 1 || card.queue === 4) && timeDueMs(card.queue, card.due) <= learnAheadCutoff)
             );
         }
         default: return null;
@@ -279,11 +289,16 @@ function propPredicate(body: string, options: CardMatcherOptions, needs: CardSea
             // Review and day-learning cards compare their due day with today. An intraday learning
             // (or preview) card's due time is read as whole days from the next rollover, truncated
             // toward zero as Anki's SQL division does, so a learning card due today is day 0 (FLT-9).
+            needs.originalDue = true;
             const compare = numericComparison(op, Math.trunc(value));
             const nextDayAtSecs = Math.floor((options.dayCutoffMs + DAY_MS) / 1000);
             return (card) => {
-                if (card.queue === 2 || card.queue === 3) return compare(card.due - options.today);
-                if (card.queue === 1 || card.queue === 4) return compare(Math.trunc((Math.floor(card.due / 1000) - nextDayAtSecs) / 86_400));
+                const due = card.originalDue || card.due;
+                if (card.queue === 2 || card.queue === 3) return compare(due - options.today);
+                if (card.queue === 1 || card.queue === 4) {
+                    const dueSecs = Math.floor(timeDueMs(card.queue, due) / 1000);
+                    return compare(Math.trunc((dueSecs - nextDayAtSecs) / 86_400));
+                }
                 return false;
             };
         }
@@ -293,9 +308,9 @@ function propPredicate(body: string, options: CardMatcherOptions, needs: CardSea
             return (card) => compare(card.factor);
         }
         case 'pos': {
-            // Only new cards carry a position; for them `due` *is* the queue position.
+            needs.originalDue = true;
             const compare = numericComparison(op, Math.trunc(value));
-            return (card) => card.type === 0 && compare(card.due);
+            return (card) => card.type === 0 && compare(card.originalDue || card.due);
         }
         default: {
             const compare = numericComparison(op, Math.trunc(value));
@@ -334,18 +349,19 @@ function daysArgument(term: string, raw: string): number {
 
 /** `deck:` — the deck itself, everything under it, and the filtered decks the card is in. */
 function deckPredicate(body: string, options: CardMatcherOptions, needs: CardSearchNeeds): TermTest {
-    if (!body) throw new SearchSyntaxError('empty search value');
+    if (!body) return () => false;
     if (body === '*') return () => true;
     needs.decks = true;
-    const keyword = body.toLowerCase();
-    if (keyword === 'filtered') {
+    if (body === 'filtered') {
         return (card) => (card.filteredDeckNames === undefined ? undefined : card.filteredDeckNames.length > 0);
     }
-    if (keyword === 'current') {
+    if (body === 'current') {
         const current = options.currentDeckName;
-        if (!current) return () => true;
+        if (!current) return () => false;
         const matches = hierarchicalGlobMatcher(current.replace(/[\\*_"]/g, '\\$&'));
-        return (card) => matches(card.deckName) || (card.homeDeckName !== undefined && matches(card.homeDeckName));
+        return (card) => matches(card.deckName)
+            || (card.homeDeckName !== undefined && matches(card.homeDeckName))
+            || (card.filteredDeckNames ?? []).some(matches);
     }
     const matches = hierarchicalGlobMatcher(body);
     return (card) => matches(card.deckName)
@@ -354,17 +370,20 @@ function deckPredicate(body: string, options: CardMatcherOptions, needs: CardSea
 }
 
 function tagPredicate(term: string, body: string, needs: CardSearchNeeds): TermTest {
-    if (!body) throw new SearchSyntaxError('empty search value');
-    needs.tags = true;
-    const keyword = body.toLowerCase();
-    if (keyword === 'none') return (card) => card.tags.length === 0;
     if (body === '*') return () => true;
-    if (keyword.startsWith('re:')) {
+    if (!body) return () => false;
+    needs.tags = true;
+    if (body.startsWith('re:')) {
         let regex: RegExp;
-        try { regex = searchRegex(unescapeRegexValue(body.slice(3))); } catch { return invalidTerm(term); }
+        try { regex = ankiRegex(unescapeRegexValue(body.slice(3))); } catch { return invalidTerm(term); }
         return (card) => card.tags.some((tag) => regex.test(tag));
     }
-    const matches = hierarchicalGlobMatcher(body);
+    const noCombining = body.startsWith('nc:');
+    const name = noCombining ? body.slice(3) : body;
+    if (name === 'none') return (card) => card.tags.length === 0;
+    if (name === '*') return () => true;
+    if (!name || name.includes(' ')) return () => false;
+    const matches = hierarchicalGlobMatcher(name, noCombining);
     return (card) => card.tags.some(matches);
 }
 
@@ -382,12 +401,12 @@ function fieldPredicate(term: string, name: string, rawValue: string, needs: Car
     let test: (field: string) => boolean;
     if (lower.startsWith('re:')) {
         let regex: RegExp;
-        try { regex = searchRegex(unescapeRegexValue(value.slice(3))); } catch { return invalidTerm(term); }
+        try { regex = ankiRegex(unescapeRegexValue(value.slice(3))); } catch { return invalidTerm(term); }
         test = (field) => regex.test(field);
     } else if (lower.startsWith('nc:')) {
-        test = globMatcher(value.slice(3), { anchored: true, noCombining: true });
+        test = globMatcher(value.slice(3), { anchored: true, noCombining: true, asciiCase: true });
     } else {
-        test = globMatcher(value, { anchored: true });
+        test = globMatcher(value, { anchored: true, asciiCase: name !== '*' && name !== '_*' && name !== '*_' });
     }
     return (card) => {
         if (!card.fields) return undefined;
@@ -428,7 +447,7 @@ function predicateForTerm(rawTerm: string, options: CardMatcherOptions, needs: C
             return (card) => (card.presetName === undefined ? undefined : matches(card.presetName));
         }
         case 'is':
-            return statePredicate(body.toLowerCase(), options) ?? invalidTerm(term);
+            return statePredicate(body, options) ?? invalidTerm(term);
         case 'flag': {
             const value = Number(body);
             if (!/^\d$/.test(body) || value < 0 || value > 7) return invalidTerm(term);
@@ -464,13 +483,9 @@ function predicateForTerm(rawTerm: string, options: CardMatcherOptions, needs: C
             needs.noteEdited = true;
             return dayWindowPredicate(body, options, (card) => card.noteEditedAtMs) ?? invalidTerm(term);
         case 'note': {
-            if (!body) throw new SearchSyntaxError('empty search value');
+            if (!body) return () => false;
             const matches = globMatcher(body, { anchored: true });
-            // The stock note types are shown by their Turkish names ("Temel" for "Basic"), so the
-            // name on screen finds them too; the stored name keeps working as in Anki.
-            return (card) => (card.noteTypeName === undefined
-                ? undefined
-                : matches(card.noteTypeName) || matches(localizeNoteTypeName('tr', card.noteTypeName)));
+            return (card) => (card.noteTypeName === undefined ? undefined : matches(card.noteTypeName));
         }
         case 'card': {
             if (!body) throw new SearchSyntaxError('empty search value');
@@ -530,17 +545,17 @@ function predicateForTerm(rawTerm: string, options: CardMatcherOptions, needs: C
             needs.fields = true;
             let regex: RegExp;
             try {
-                regex = searchRegex(unescapeRegexValue(body));
+                regex = ankiRegex(unescapeRegexValue(body));
             } catch {
                 return invalidTerm(term);
             }
-            return (card) => regex.test(rawFields(card).join('\x1f'));
+            return (card) => regex.test(rawFields(card).join('\x1f').normalize('NFC'));
         }
         case 'w': {
+            if (!body) return () => true;
             needs.fields = true;
-            if (!body) throw new SearchSyntaxError('empty search value');
             const matches = wordMatcher(body);
-            return (card) => rawFields(card).some(matches);
+            return (card) => matches(rawFields(card).join('\x1f'));
         }
         case 'nc':
             needs.fields = true;

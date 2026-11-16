@@ -58,6 +58,30 @@ describe('parsing', () => {
         expect(() => show('a )')).toThrow();
     });
 
+    it('joins adjacent quoted terms and normalizes whitespace, as Anki 26.09.3 does', () => {
+        expect(show('foo"bar"')).toBe('(foo AND "bar")');
+        expect(show('"foo""bar"')).toBe('("foo" AND "bar")');
+        expect(show('deck:"A"foo')).toBe('(deck:"A" AND foo)');
+        expect(show('deck:"Kadın\tDoğum" a\u00a0b')).toBe('(deck:"Kadın Doğum" AND a AND b)');
+        expect(show('-')).toBe('-');
+    });
+
+    it('keeps valid escapes in plain text and raw patterns in regular expressions', () => {
+        expect(show('a\\_b a\\*b a\\:b a\\\\b')).toBe('(a\\_b AND a\\*b AND a\\:b AND a\\\\b)');
+        expect(show('"re:^\\d+ \\s$"')).toBe('"re:^\\d+ \\s$"');
+        expect(show('Front:"re:^\\d+$"')).toBe('Front:"re:^\\d+$"');
+        expect(show('"Front:re:^\\d+$"')).toBe('"Front:re:^\\d+$"');
+        expect(show('tag:"re:\\d"')).toBe('tag:"re:\\d"');
+        expect(show('front:nc:\\q')).toBe('front:nc:\\q');
+    });
+
+    it.each([
+        '""', 'deck:""', ':foo', '":foo"', 'a\\q', 'a\\%', 'a\\', 'deck:\\q',
+        're:abc\\', 're:a\\ b', 'Front:re:"^\\d+$"', 'tag:re:"\\d"',
+    ])('rejects Anki-invalid search syntax in %j', (query) => {
+        expect(() => show(query)).toThrow();
+    });
+
     it('returns null for an empty search', () => {
         expect(parseSearchQuery('')).toBeNull();
         expect(parseSearchQuery('   ')).toBeNull();
@@ -88,5 +112,7 @@ describe('folding', () => {
 });
 it('can tokenize an unfinished picker query while the complete evaluator still rejects it', () => {
     expect(tokenizeSearch('deck:"unfinished')).toEqual(['deck:"unfinished']);
+    expect(tokenizeSearch('deck:"" foo"bar"')).toEqual(['deck:""', 'foo"bar"']);
+    expect(tokenizeSearch('tag:' + '\\')).toEqual(['tag:' + '\\']);
     expect(() => parseSearchQuery('deck:"unfinished')).toThrow();
 });

@@ -1,14 +1,15 @@
 // Anki's search language, term by term. Behaviour reference (independently implemented):
 // https://docs.ankiweb.net/searching.html
 import initSqlJs from 'sql.js';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppDb } from '../test/sqljsHarness';
 import { compileCardMatcher, type CardMatcherOptions, type CardSearchContext } from './cardSearchMatch';
 import { SearchSyntaxError } from './searchQuery';
 
 const h = vi.hoisted(() => ({ db: null as any }));
 vi.mock('./db', () => ({ getDB: () => h.db, dbUpsertFtsCard: () => {} }));
-import { matchingCollectionCardIds, setSearchCurrentDeckName } from './collectionCardSearch';
+import { matchingCollectionCardIds } from './collectionCardSearch';
+import { rememberCurrentDeck } from './currentDeck';
 
 const OPTIONS: CardMatcherOptions = {
     today: 100,
@@ -31,26 +32,24 @@ function card(overrides: Partial<CardSearchContext> = {}): CardSearchContext {
 const matches = (query: string, target: CardSearchContext) => compileCardMatcher(query, OPTIONS)!(target);
 
 describe('case folding', () => {
-    it('folds English and Turkish i forms together in names', () => {
+    it('uses Unicode case matching in names without conflating the Turkish i forms', () => {
         expect(matches('deck:immunology', card({ deckName: 'Immunology' }))).toBe(true);
         expect(matches('deck:IMMUNOLOGY', card({ deckName: 'immunology' }))).toBe(true);
-        expect(matches('deck:isi', card({ deckName: 'Isı' }))).toBe(true);
-        expect(matches('deck:ısı', card({ deckName: 'İSİ' }))).toBe(true);
+        expect(matches('deck:isi', card({ deckName: 'Isı' }))).toBe(false);
+        expect(matches('deck:ısı', card({ deckName: 'İSİ' }))).toBe(false);
         expect(matches('tag:info', card({ tags: ['Info::Sub'] }))).toBe(true);
-        expect(matches('tag:ünite', card({ tags: ['ÜNİTE'] }))).toBe(true);
+        expect(matches('tag:ünite', card({ tags: ['ÜNİTE'] }))).toBe(false);
+        expect(matches('tag:ÜNITE', card({ tags: ['Ünite'] }))).toBe(true);
         expect(matches('image:x', card({ fields: { Image: 'x' }, fieldList: ['x'] }))).toBe(true);
         expect(matches('note:basic', card({ noteTypeName: 'BASIC' }))).toBe(true);
     });
 
-    it('finds a stock note type by the Turkish name the app shows for it', () => {
-        expect(matches('note:Temel', card({ noteTypeName: 'Basic' }))).toBe(true);
-        expect(matches('note:temel', card({ noteTypeName: 'Basic' }))).toBe(true);
-        expect(matches('"note:Temel (ve ters kart)"', card({ noteTypeName: 'Basic (and reversed card)' }))).toBe(true);
-        expect(matches('note:Boşluklu', card({ noteTypeName: 'Cloze' }))).toBe(true);
-        expect(matches('note:Temel', card({ noteTypeName: 'Basic (and reversed card)' }))).toBe(false);
-        expect(matches('note:Temel*', card({ noteTypeName: 'Basic (optional reversed card)' }))).toBe(true);
-        expect(matches('note:Basic', card({ noteTypeName: 'Basic' }))).toBe(true);
-        expect(matches('note:Temel', card({ noteTypeName: 'Farmakoloji (TUS)' }))).toBe(false);
+    it('matches the stored note type name, including names with spaces and wildcards', () => {
+        expect(matches('note:Temel', card({ noteTypeName: 'Basic' }))).toBe(false);
+        expect(matches('note:Temel', card({ noteTypeName: 'Temel' }))).toBe(true);
+        expect(matches('"note:Basic (and reversed card)"', card({ noteTypeName: 'Basic (and reversed card)' }))).toBe(true);
+        expect(matches('note:Basic', card({ noteTypeName: 'Basic (and reversed card)' }))).toBe(false);
+        expect(matches('note:Basic*', card({ noteTypeName: 'Basic (optional reversed card)' }))).toBe(true);
     });
 
     it('keeps accents: only nc: ignores them, as in Anki', () => {
@@ -60,9 +59,19 @@ describe('case folding', () => {
         expect(matches('front:nc:cografya', card({ fields: { Front: 'Coğrafya' } }))).toBe(true);
     });
 
-    it('folds case in plain text for every script', () => {
+    it('folds ASCII case in plain text and folds Turkish letters with nc:', () => {
         expect(matches('KALP', card({ fieldList: ['kalp kası'] }))).toBe(true);
-        expect(matches('ığdır', card({ fieldList: ['IĞDIR'] }))).toBe(true);
+        expect(matches('ığdır', card({ fieldList: ['IĞDIR'] }))).toBe(false);
+        expect(matches('вода', card({ fieldList: ['ВОДА'] }))).toBe(false);
+        expect(matches('nc:igdir', card({ fieldList: ['IĞDIR'] }))).toBe(true);
+    });
+
+    it('folds combining marks, compatibility characters and special letters with nc:', () => {
+        const target = card({ fieldList: ['Straße Oﬃce ① œuvre はばぱ'] });
+        for (const query of ['nc:strase', 'nc:office', 'nc:1', 'nc:oeuvre', 'nc:は']) {
+            expect(matches(query, target), query).toBe(true);
+        }
+        expect(matches('nc:strasse', target)).toBe(false);
     });
 });
 
@@ -139,6 +148,13 @@ describe('tags and decks', () => {
         expect(matches('tag:*', card({ tags: [] }))).toBe(true);
         expect(matches('tag:les_on-18', tagged)).toBe(true);
     });
+    it('reserves lowercase tag:none and supports accent-insensitive tag names', () => {
+        expect(matches('tag:none', card({ tags: [] }))).toBe(true);
+        expect(matches('tag:NONE', card({ tags: [] }))).toBe(false);
+        expect(matches('tag:none', card({ tags: ['None'] }))).toBe(false);
+        expect(matches('tag:NONE', card({ tags: ['None'] }))).toBe(true);
+        expect(matches('tag:nc:unite', card({ tags: ['ÜNİTE::A'] }))).toBe(true);
+    });
     it('reads deck wildcards, deck:* and filtered membership', () => {
         expect(matches('deck:*', card())).toBe(true);
         expect(matches('deck:imm_nology', card())).toBe(true);
@@ -205,7 +221,6 @@ describe('collection scan', () => {
         }));
         db.runSync('INSERT INTO revlog (id, cardId, ease, ivl, lastIvl, factor, time, type) VALUES (?, ?, 0, 0, 0, 0, 0, 4)', NOW - 500, NOW - 1000);
     });
-    afterEach(() => setSearchCurrentDeckName(null));
     const ids = (query: string) => matchingCollectionCardIds(query).sort((a, b) => a - b);
     const first = () => NOW - 40 * 86_400_000;
 
@@ -230,9 +245,9 @@ describe('collection scan', () => {
         expect(ids('edited:15')).toEqual([first()]);
     });
 
-    it('reads deck:current from the screen that owns the deck selection', () => {
-        expect(ids('deck:current')).toHaveLength(3);
-        setSearchCurrentDeckName('Other');
+    it('reads deck:current from the collection, with the default deck as fallback', () => {
+        expect(ids('deck:current')).toEqual(ids('deck:Home'));
+        rememberCurrentDeck('Other');
         expect(ids('deck:current')).toEqual([NOW - 1000]);
     });
 
@@ -240,6 +255,15 @@ describe('collection scan', () => {
         h.db.runSync('UPDATE anki_cards SET type = 1, queue = 1, due = ? WHERE id = 77', Date.now() + 60_000);
         expect(ids('prop:due<=0')).toEqual([77]);
         expect(ids('prop:due<=0 is:learn')).toEqual([77]);
+    });
+
+    it('uses an imported preview repeat’s timestamp for is:due and its home due for prop:due', () => {
+        const future = Math.floor(Date.now() / 1000) + 600;
+        h.db.runSync("UPDATE anki_cards SET type = 2, queue = 4, due = ?, data = json_set(data, '$.odue', 3) WHERE id = 77", future);
+        expect(ids('is:due')).toEqual([]);
+        h.db.runSync("INSERT INTO settings (key, value) VALUES ('tus_app_settings_meta_v1', ?)", JSON.stringify({ learnAheadMinutes: 20 }));
+        expect(ids('is:due')).toEqual([77]);
+        expect(ids('prop:due<=0')).toEqual([77]);
     });
 
     it('finds manual reschedules', () => {

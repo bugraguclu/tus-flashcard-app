@@ -55,6 +55,15 @@ describe('browser listing', () => {
         expect(getDeckTotalCardCount('TUS')).toBe(1);
     });
 
+    it('selects tags named like search operators without invoking those operators', () => {
+        for (const [id, tag] of [[1, 'none'], [2, 'nc::anatomi']] as const) {
+            h.db.runSync("UPDATE notes SET tags = ?, data = json_set(data, '$.tags', json(?)) WHERE id = ?", ` ${tag} `, JSON.stringify([tag]), id);
+        }
+        expect(getBrowserRowIdsMatchingText({ tags: ['none'] }, 'n*')).toEqual([1]);
+        expect(getBrowserRowIdsMatchingText({ tags: ['nc::anatomi'] }, 'n*')).toEqual([2]);
+        expect(getBrowserRowIdsMatchingText({}, 'tag:none')).toEqual([3]);
+    });
+
     it('binds a large id scope as one parameter', () => {
         const cardIds = Array.from({ length: 40_000 }, (_, index) => index + 1);
         expect(getBrowserCardCount({ cardIds })).toBe(3);

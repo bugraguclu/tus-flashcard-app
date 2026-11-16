@@ -1,6 +1,6 @@
 import { matchingCollectionCardIdsForAll } from './collectionCardSearch';
 import { turkishSortKeySql } from './turkishSortSql';
-import { escapeSearchValue } from './searchQuery';
+import { literalSearchNameTerm } from './searchQuery';
 import { getDB } from './db';
 import { ankiCardRetrievability, compareSqlAscending } from './ankiSortKeys';
 import type { AppSettings, StudyCard } from './types';
@@ -54,7 +54,7 @@ function browserFilterSearches(query: BrowserCardQuery): string[] {
     if (query.markedOnly) searches.push('tag:marked');
     if (query.cardState && query.cardState !== 'all') searches.push(`is:${query.cardState}`);
     const selectedTags = (query.tags ?? []).map(tag => tag.trim()).filter(Boolean);
-    if (selectedTags.length) searches.push(selectedTags.map(tag => `tag:${escapeSearchValue(tag)}`).join(' or '));
+    if (selectedTags.length) searches.push(selectedTags.map(tag => literalSearchNameTerm('tag:', tag)).join(' or '));
     return searches;
 }
 

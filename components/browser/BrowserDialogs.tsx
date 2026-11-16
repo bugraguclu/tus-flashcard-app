@@ -19,7 +19,6 @@ import {
 } from '../../lib/browserSelection';
 import { AppDialog } from '../ui/Dialog';
 import { Button, CloseButton } from '../ui/Button';
-import { SectionLabel } from '../ui/Card';
 import { CheckRow } from '../ui/Choice';
 import { TextField } from '../ui/Fields';
 import { BackIcon, ChevronRightIcon, ForwardIcon } from '../ui/icons';
@@ -382,60 +381,5 @@ export function CardPreviewModal({
                 </View>
             </SafeAreaView>
         </Modal>
-    );
-}
-
-interface SearchHelpModalProps {
-    appendSearchTerm: (term: string) => void;
-    l: BrowserI18n['l'];
-    searchHelpGroups: { title: string; items: { term: string; hint: string; }[]; }[];
-    setShowSearchHelp: Dispatch<SetStateAction<boolean>>;
-    showSearchHelp: boolean;
-    styles: BrowserStyles;
-    t: BrowserI18n['t'];
-}
-
-/** The search syntax cheat sheet; a row appends its term to the search. */
-export function SearchHelpModal({
-    appendSearchTerm,
-    l,
-    searchHelpGroups,
-    setShowSearchHelp,
-    showSearchHelp,
-    styles,
-    t,
-}: SearchHelpModalProps) {
-    const close = () => setShowSearchHelp(false);
-    return (
-        <AppDialog
-            visible={showSearchHelp}
-            onClose={close}
-            title={l('Arama nasıl çalışır?', 'How search works')}
-            message={l(
-                'Kelimeler kartın alanlarındaki metinde aranır; etiket ve deste adı aranmaz, onlar için tag: ve deck: kullanın. ç, ğ, ö, ş, ü harflerini karttaki gibi yazın ya da kelimenin başına nc: ekleyin. Bir terime dokunarak aramanıza ekleyebilirsiniz.',
-                'Words are searched in the text of the card’s fields; tags and deck names are not, so use tag: and deck: for them. Type ç, ğ, ö, ş, ü as they appear in the card, or put nc: before the word. Tap a term to add it to your search.',
-            )}
-            actions={<Button variant="plain" label={t('common.close')} onPress={close} />}
-        >
-            <ScrollView style={styles.searchHelpList} showsVerticalScrollIndicator={false}>
-                {searchHelpGroups.map((group) => (
-                    <View key={group.title}>
-                        <SectionLabel style={styles.searchHelpGroupTitle}>{group.title}</SectionLabel>
-                        {group.items.map((item) => (
-                            <TouchableOpacity
-                                key={item.term}
-                                style={styles.searchHelpRow}
-                                onPress={() => appendSearchTerm(item.term)}
-                                accessibilityRole="button"
-                                accessibilityLabel={l(`${item.term} terimini aramaya ekle`, `Add the term ${item.term} to the search`)}
-                            >
-                                <Text style={styles.searchHelpTerm}>{item.term}</Text>
-                                <Text style={styles.searchHelpHint} numberOfLines={2}>{item.hint}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                ))}
-            </ScrollView>
-        </AppDialog>
     );
 }

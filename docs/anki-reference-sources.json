@@ -1456,7 +1456,7 @@
         "field searches match the whole field; * and _ wildcards and their backslash escapes; front:, front:_*, front:*, fr*:, field:re:, field:nc:",
         "plain text reads stored field HTML plus the formatting-free sort field; entities searched as written",
         "tag:re:, tag:*, w: with wildcards, sc:, deck:*, deck:filtered, preset:, has-cd:, prop:cdn/cds, prop:rated, prop:resched; lib/searchSyntax.test.ts",
-        "deliberate superset: full Unicode case folding with the Turkish i forms folded together; accents still need nc:"
+        "ASCII case folding for plain and named field text searches, Unicode matching for names and regex, explicit nc: for diacritics"
       ]
     },
     {
@@ -1466,6 +1466,19 @@
       "url": "https://github.com/ankitects/anki/blob/main/rslib/src/search/sqlwriter.rs",
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["deck: matches home and filtered decks", "tag:* matches every note", "added: reads the card id", "edited: reads the note mod", "dupe:, mid:, did:, resched:"]
+    },
+    {
+      "id": "anki-26.09.3-search-oracle",
+      "priority": 3,
+      "platform": "cross-platform search evaluation",
+      "url": "https://github.com/ankitects/anki/tree/26.09.3/rslib/src/search",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": [
+        "Anki 26.09.3 result IDs and errors, recorded in test/fixtures/anki-26.09-search.json by scripts/anki-oracle/search_parity.py",
+        "Boolean grammar, plain and regex text, case folding and name scopes, due and preview-repeat states, original due for prop:due",
+        "Ctrl/Cmd-click joins a browser filter to the whole current query; https://docs.ankiweb.net/browsing.html#search-tool",
+        "AnkiMobile browsing/filter interactions; https://docs.ankimobile.net/editing.html#browsing"
+      ]
     },
     {
       "id": "anki-source-sort-cards",

@@ -304,35 +304,32 @@ new deck's **Overview**; closing the form with **×** leaves Card Browser as it 
 ## Search basics
 
 - Plain words are searched in the **text of the note's fields** (question, answer and any other
-  field). Part of a word matches too: `heart` also finds "hearts". Upper and lower case do not
-  matter.
+  field). Part of a word matches too: `heart` also finds "hearts". Plain searches are case-insensitive for ASCII letters.
 - Tags, deck names and topics are not searched by plain words; use `tag:` and `deck:` for those.
 - With several words, a card must contain all of them. To find words side by side, use quotes:
   `"beta blocker"`.
-- While a search is incomplete (for example you typed `is:` and nothing more), **Search is not valid
-  yet; showing the last valid results.** appears under the box and the list stays as it was. The
-  same line reminds you to close quotes and brackets and to give terms such as `deck:` a value.
+- While a search is incomplete (for example you typed `is:` and nothing more), **Showing the last valid results.** appears under the box and the list stays as it was.
 - **?** opens common terms; tapping one adds it to your search. For terms that need a value, such as
-  `deck:`, tap the box and type the value.
+  `deck:`, enter the name in the dialog and choose **Add to search**. The filter applies to every alternative in the existing query.
 - If formatting runs through the middle of a word (only some letters bold, say), the word is found
   only in the note's sort field.
 
 <a id="search-syntax"></a>
 ## Search terms
-<!-- In the app: Card Browser › ? in the search box (app/browser.tsx:978-986) → "How search works" (components/browser/BrowserDialogs.tsx:376) → "Learn more" (new) this section -->
+<!-- In the app: Card Browser › ? in the search box (app/browser.tsx:978-986) → "How search works" (components/browser/SearchHelpModal.tsx) → "Learn more" (new) this section -->
 
 | Term | Meaning | Example |
 | --- | --- | --- |
 | `deck:name` | The deck and its subdecks; quote names with spaces, write subdecks with `::` | `deck:"Pharmacology::Autonomic"` |
-| `deck:current` | The deck chosen in the deck selector | `deck:current is:due` |
+| `deck:current` | The deck last selected for study | `deck:current is:due` |
 | `deck:filtered` | Cards that are in a filtered deck | `-deck:filtered` |
 | `tag:name` | The tag and its child tags | `tag:pharmacology` |
 | `tag:none` | Notes without tags | `tag:none` |
 | `note:name` | Note type (by its stored name, see below) | `note:Basic` |
 | `card:n` | Which card of the note it is | `card:2` |
 | `preset:name` | The deck's options preset | `preset:"TUS Kartları"` |
-| `is:new` / `is:learn` / `is:review` | New / learning (relearning included) / review cards | `is:learn` |
-| `is:due` | Cards due today or overdue | `is:due` |
+| `is:new` / `is:learn` / `is:review` | New / learning / review cards. Relearning counts as both learning and review. | `is:learn` |
+| `is:due` | Due reviews and learning cards within the learn-ahead window | `is:due` |
 | `is:suspended` / `is:buried` | Suspended / buried cards | `-is:suspended` |
 | `flag:n` | Flag number (0 no flag, 1–7) | `flag:1` |
 | `added:n` | Cards added in the last n days | `added:7` |
@@ -382,8 +379,7 @@ and finds nothing, without a warning.
 ## Turkish letters
 <!-- In the app: Card Browser no-results tip help.browser.noResultsTip (new, app/browser.tsx:1050-1053) → this section -->
 
-- Case does not matter, and the four forms of i (I, ı, İ, i) count as the same letter: `isi` finds
-  "Isı" and "İSİ".
+- Plain searches distinguish the case of accented Turkish characters. For example, `BÖBREK` and `böbrek` differ, and `nc:bobrek` finds both.
 - **ç, ğ, ö, ş, ü** must be typed as they are in the card: `cografya` does not find "Coğrafya". To
   ignore the difference, put `nc:` before the word: `nc:cografya`. In a field search:
   `front:nc:*cografya*`. The same goes for accents in other languages (`nc:resume` finds "résumé").
@@ -412,15 +408,9 @@ shown in the Card Browser (for example "General") cannot be searched.
 ## How search differs from Anki
 
 > **Different from Anki:**
-> - Case is ignored in every term for every alphabet, and the four forms of i count as one; Anki
->   folds only Latin letters in plain text.
 > - There is no "ignore accents in search" setting; use `nc:`.
-> - `nc:` removes accent marks only; letters such as `ß` do not count as `ss`.
-> - Regular expressions follow JavaScript syntax; of the inline flags, only a leading `(?-i)`
->   (case-sensitive) is accepted.
+> - Regular expressions support common Anki classes and leading `i`, `m` and `s` flags. Advanced Rust regex syntax can differ.
 > - `dupe:` compares the first field, without formatting, exactly.
-> - `deck:current` means the deck in the Card Browser's deck selector, and the whole collection
->   elsewhere.
 > - The note type and field names shown in the Turkish interface are not searchable; use the stored
 >   names.
 

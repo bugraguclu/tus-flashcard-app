@@ -5,6 +5,7 @@ import { localDayNumber, nextRolloverMs } from './ankiState';
 import { memoryStateFromCardData, parseAnkiCardData } from './fsrsCardData';
 import type { Note, NoteType } from './models';
 import { searchDeckInfo, type SearchDeckInfo } from './searchDeckInfo';
+import { rememberedCurrentDeck } from './currentDeck';
 
 type SearchDb = ReturnType<typeof getDB>;
 
@@ -28,22 +29,13 @@ interface ScanRow {
     deckId: number;
     cardData?: string | null;
     odid?: number | null;
+    odue?: number | null;
 }
 
 interface NotePayload {
     note: Note;
     fields: Record<string, string> | undefined;
     text: string;
-}
-
-let currentDeckName: string | null = null;
-
-/**
- * The deck `deck:current` means. The app has no stored "current deck" the way Anki's collection
- * config does; the screen that owns the deck selection (the browser) reports it here.
- */
-export function setSearchCurrentDeckName(name: string | null): void {
-    currentDeckName = name;
 }
 
 const DAY_MS = 86_400_000;
@@ -61,7 +53,7 @@ export function noteEditedMs(note: Pick<Note, 'mod'> | null | undefined, updated
     return Number.isFinite(mod) && mod > 0 ? mod * 1000 : (updatedAt || 0);
 }
 
-function matcherOptions(db: SearchDb, nowMs: number): CardMatcherOptions {
+function matcherOptions(db: SearchDb, nowMs: number, allowLegacyStateTerms: boolean): CardMatcherOptions {
     const { rolloverHour, learnAheadMinutes } = collectionSearchSettings();
     const logCache = new Map<string, Set<number>>();
     const dayCutoffMs = nextRolloverMs(nowMs, rolloverHour) - DAY_MS;
@@ -69,7 +61,12 @@ function matcherOptions(db: SearchDb, nowMs: number): CardMatcherOptions {
     return {
         today: localDayNumber(nowMs, rolloverHour), nowMs, learnAheadMinutes,
         dayCutoffMs,
-        currentDeckName,
+        allowLegacyStateTerms,
+        get currentDeckName() {
+            const remembered = rememberedCurrentDeck();
+            if (remembered && db.getFirstSync('SELECT id FROM decks WHERE name = ?', remembered)) return remembered;
+            return db.getFirstSync<{ name: string }>('SELECT name FROM decks WHERE id = 1')?.name ?? null;
+        },
         revlogDayOffsets: (cardId, kind) => {
             let byCard = dayCache.get(kind);
             if (!byCard) {
@@ -121,6 +118,7 @@ function scanRows(db: SearchDb, needs: CardSearchNeeds, readsNotes: boolean): Sc
             c.lapses AS lapses, c.flags AS flags, c.created_at AS createdAt, n.updated_at AS noteEditedAt,
             d.name AS deckName, c.deckId AS deckId${needs.cardData ? ', c.data AS cardData' : ''}
             ${needs.decks ? ", CASE WHEN json_valid(c.data) THEN json_extract(c.data, '$.odid') END AS odid" : ''}
+            ${needs.originalDue ? ", CASE WHEN json_valid(c.data) THEN json_extract(c.data, '$.odue') END AS odue" : ''}
         FROM anki_cards c JOIN notes n ON n.id = c.noteId JOIN note_types nt ON nt.id = n.noteTypeId JOIN decks d ON d.id = c.deckId
         ${noteReadable}`);
 }
@@ -143,9 +141,9 @@ function customDataOf(ankiData: unknown): Record<string, unknown> | null {
 }
 
 /** Card ids matching every query: one pass over the cards however many filters are combined. */
-export function matchingCollectionCardIdsForAll(queries: readonly string[]): number[] {
+export function matchingCollectionCardIdsForAll(queries: readonly string[], { allowLegacyStateTerms = false } = {}): number[] {
     const db = getDB(); const nowMs = Date.now();
-    const options = matcherOptions(db, nowMs);
+    const options = matcherOptions(db, nowMs, allowLegacyStateTerms);
     const compiled = queries.map((query) => compileCardSearch(query, options));
     const matchers = compiled.flatMap(({ matcher }) => (matcher ? [matcher] : []));
     const needs: CardSearchNeeds = {
@@ -153,6 +151,7 @@ export function matchingCollectionCardIdsForAll(queries: readonly string[]): num
         tags: compiled.some(({ needs }) => needs.tags),
         noteEdited: compiled.some(({ needs }) => needs.noteEdited),
         cardData: compiled.some(({ needs }) => needs.cardData),
+        originalDue: compiled.some(({ needs }) => needs.originalDue),
         decks: compiled.some(({ needs }) => needs.decks),
     };
     const decks: SearchDeckInfo | null = needs.decks ? searchDeckInfo(db) : null;
@@ -200,6 +199,7 @@ export function matchingCollectionCardIdsForAll(queries: readonly string[]): num
             fieldList: needs.fields ? payload?.note.fields : undefined,
             sortFieldIndex: Number.isInteger(type.sortFieldIdx) ? type.sortFieldIdx : 0,
             noteTypeId: row.noteTypeId, deckId: row.deckId,
+            originalDue: row.odue ?? undefined,
             createdAtMs: cardAddedMs(row.id, row.createdAt, nowMs),
             noteEditedAtMs: payload ? noteEditedMs(payload.note, row.noteEditedAt) : (row.noteEditedAt || 0),
         };
@@ -219,6 +219,6 @@ export function matchingCollectionCardIdsForAll(queries: readonly string[]): num
 }
 
 /** The only complete collection evaluator, shared by browser and saved/filtered searches. */
-export function matchingCollectionCardIds(query: string): number[] {
-    return matchingCollectionCardIdsForAll([query]);
+export function matchingCollectionCardIds(query: string, options?: { allowLegacyStateTerms: boolean }): number[] {
+    return matchingCollectionCardIdsForAll([query], options);
 }

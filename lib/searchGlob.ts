@@ -3,25 +3,28 @@
 //
 // Behaviour reference: https://docs.ankiweb.net/searching.html (simple searches, wildcards,
 // matching special characters, formatting). Independently implemented and pinned by
-// lib/searchGlob.test.ts and lib/searchSyntax.test.ts.
+// lib/ankiSearchParity.test.ts and lib/searchSyntax.test.ts.
 
-/**
- * Comparison key for search text.
- *
- * Anki folds case for every name (decks, tags, note types, fields) and for field searches and
- * regexes; plain text folds Latin letters only. Turkish content would then miss "Ünite" for
- * "ünite", so every term here folds full Unicode case — a deliberate superset of Anki recorded in
- * docs/ANKI_COMPATIBILITY_NOTES.md. The four Turkish i's fold together, so `deck:immunology`
- * still finds "Immunology" and `deck:isi` finds "Isı" and "İSİ", whichever keyboard typed them.
- * Accents are kept: "cografya" does not find "Coğrafya" unless the search says `nc:`, as in Anki.
- */
-export function foldCase(value: string): string {
-    return value.normalize('NFC').replace(/[İIı]/g, 'i').toLowerCase();
+import { ankiRegex } from './ankiRegex';
+
+function foldAsciiCase(value: string): string {
+    return value.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
 }
 
-/** Anki's `nc:` view: no combining marks (and the Turkish dotless i is already folded by case). */
+// One-character and ligature equivalences observed in Anki's nc search beyond Unicode NFKD.
+// https://github.com/ankitects/anki/blob/26.09.3/rslib/src/text.rs#L367-L418
+const EXTRA_ACCENT_EQUIVALENCES = new Map(Object.entries({
+    A: 'ɑ', AE: 'Æ', ae: 'æ', D: 'ÐĐ', d: 'ðđ', E: '€Ə', e: 'ǝ', H: 'Ħ', h: 'ħ',
+    i: 'ı', k: 'ĸ', L: 'Ł', l: 'ł', N: 'Ŋ', n: 'ŋ', O: 'Ø', o: 'ø', OE: 'Œ', oe: 'œ',
+    s: 'ß', T: 'Ŧ', t: 'ŧ', TH: 'Þ', th: 'þ',
+}).flatMap(([replacement, characters]) => [...characters].map((character) => [character, replacement] as const)));
+
 export function withoutCombining(value: string): string {
-    return value.normalize('NFD').replace(/\p{M}/gu, '').normalize('NFC');
+    let result = '';
+    for (const character of value.normalize('NFKD').replace(/\p{M}/gu, '')) {
+        result += EXTRA_ACCENT_EQUIVALENCES.get(character) ?? character;
+    }
+    return result;
 }
 
 /** The term's value without the quotes that kept a phrase together; escapes are left in place. */
@@ -38,16 +41,16 @@ function escapeRegExp(value: string): string {
  * the next character literal (`\*`, `\_`, `\\`, `\"`, `\:`, `\(`, `\)`, `\-`). A lone trailing
  * backslash stays a literal backslash.
  */
-export function globRegexSource(value: string, any = '.', run = '.*'): string {
+function globRegexSource(value: string): string {
     let source = '';
     for (let i = 0; i < value.length; i++) {
         const ch = value[i];
         if (ch === '\\' && i + 1 < value.length) {
             source += escapeRegExp(value[++i]);
         } else if (ch === '*') {
-            source += run;
+            source += '.*';
         } else if (ch === '_') {
-            source += any;
+            source += '.';
         } else {
             source += escapeRegExp(ch);
         }
@@ -74,43 +77,39 @@ export interface GlobOptions {
     anchored: boolean;
     /** Compare without combining marks, for `nc:`. */
     noCombining?: boolean;
+    /** Anki's SQL LIKE folds only ASCII, unlike regex-backed name searches. */
+    asciiCase?: boolean;
 }
 
 /** A folded `*`/`_` matcher over one value. The pattern keeps its escapes (see globRegexSource). */
 export function globMatcher(pattern: string, options: GlobOptions): (value: string) => boolean {
-    const fold = options.noCombining ? (text: string) => foldCase(withoutCombining(text)) : foldCase;
-    const source = globRegexSource(fold(pattern));
-    const regex = new RegExp(options.anchored ? `^(?:${source})$` : source, 'su');
-    return (value) => regex.test(fold(value));
+    const normalize = (text: string) => {
+        const normalized = options.noCombining ? withoutCombining(text) : text.normalize('NFC');
+        return options.asciiCase ? foldAsciiCase(normalized) : normalized;
+    };
+    const source = globRegexSource(normalize(pattern));
+    const regex = new RegExp(options.anchored ? `^(?:${source})$` : source, options.asciiCase ? 'su' : 'isu');
+    return (value) => regex.test(normalize(value));
 }
 
 /**
  * `deck:X` and `tag:X` match the name itself and every name nested under it. The wildcard may
  * cross `::`, as Anki's does, so `deck:a*` also finds "ab::c".
  */
-export function hierarchicalGlobMatcher(pattern: string): (value: string) => boolean {
-    const source = globRegexSource(foldCase(pattern));
-    const regex = new RegExp(`^(?:${source})(?:::.*)?$`, 'su');
+export function hierarchicalGlobMatcher(pattern: string, noCombining = false): (value: string) => boolean {
+    const normalize = noCombining ? withoutCombining : (text: string) => text.normalize('NFC');
+    const source = globRegexSource(normalize(pattern));
+    const regex = new RegExp(`^(?:${source})(?:::.*)?$`, 'isu');
     // Deck and tag names repeat across every card of a scan; each distinct name is folded once.
     const verdicts = new Map<string, boolean>();
     return (value) => {
         let verdict = verdicts.get(value);
         if (verdict === undefined) {
-            verdict = regex.test(foldCase(value));
+            verdict = regex.test(normalize(value));
             if (verdicts.size < 50_000) verdicts.set(value, verdict);
         }
         return verdict;
     };
-}
-
-/**
- * A `re:` pattern. Anki's regexes ignore case unless they start with `(?-i)`; JavaScript has no
- * inline flag, so that one prefix is read here. Throws on an invalid pattern.
- */
-export function searchRegex(pattern: string): RegExp {
-    const caseSensitive = pattern.startsWith('(?-i)');
-    const source = caseSensitive ? pattern.slice(5) : pattern;
-    return new RegExp(source, caseSensitive ? 's' : 'is');
 }
 
 const HTML_ENTITIES: Record<string, string> = { nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
@@ -145,15 +144,11 @@ export function withoutClozeMarkup(value: string): string {
     return text;
 }
 
-/** Letters, digits and underscore: the characters a `w:` word is made of. */
-const WORD = '[\\p{L}\\p{N}\\p{M}_]';
-
 /**
- * `w:dog` finds "dog" as a whole word, `w:dog*` words starting with it; `_` is one word character.
- * Formatting tags break words, so `w:exam` finds `<b>exam</b>ple`.
+ * `w:` puts word boundaries around the entire wildcard expression. A wildcard can span spaces
+ * and field separators, so `w:kalp*böbrek` can match text from two fields of the same note.
  */
 export function wordMatcher(pattern: string): (value: string) => boolean {
-    const source = globRegexSource(foldCase(pattern), WORD, `${WORD}*`);
-    const regex = new RegExp(`(?:^|[^\\p{L}\\p{N}\\p{M}_])(?:${source})(?![\\p{L}\\p{N}\\p{M}_])`, 'su');
-    return (value) => regex.test(foldCase(value));
+    const regex = ankiRegex(`\\b${globRegexSource(pattern)}\\b`);
+    return (value) => regex.test(value.normalize('NFC'));
 }

@@ -208,6 +208,7 @@ export function createBrowserStyles(colors: ColorScheme) {
         borderBottomColor: colors.borderLight,
     },
     searchHelpTerm: {
+        flexShrink: 1,
         color: colors.accent,
         fontSize: FontSize.sm,
         fontWeight: '600',

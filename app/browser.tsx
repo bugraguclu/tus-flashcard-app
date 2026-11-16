@@ -15,10 +15,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
-import { SearchSyntaxError, escapeSearchValue } from '../lib/searchQuery';
+import { groupSearchAlternatives, literalSearchNameTerm, SearchSyntaxError } from '../lib/searchQuery';
 import { formatCount } from '../lib/i18n';
 import { isValidSearchQuery } from '../lib/searchValidation';
-import { setSearchCurrentDeckName } from '../lib/collectionCardSearch';
 import { flagForSelection } from '../lib/browserFlags';
 import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../contexts/AppContext';
 import type { CollectionChange } from '../lib/deferredInvalidation';
@@ -72,7 +71,8 @@ import {
     readBrowserTableMode,
 } from '../components/browser/browserHelpers';
 import { createBrowserStyles } from '../components/browser/browserStyles';
-import { buildSearchHelpGroups } from '../components/browser/searchHelpGroups';
+import { appendBrowserSearchTerm } from '../components/browser/searchHelpGroups';
+import { SearchHelpModal } from '../components/browser/SearchHelpModal';
 import { BrowserCardRow } from '../components/browser/BrowserCardRow';
 import { FilterChips, SelectionBar } from '../components/browser/BrowserBars';
 import {
@@ -89,7 +89,6 @@ import {
     GradeNowModal,
     RepositionModal,
     ResetCardsModal,
-    SearchHelpModal,
 } from '../components/browser/BrowserDialogs';
 import { BrowserNoteTools, type BrowserNoteTool } from '../components/browser/BrowserNoteTools';
 import { renameTagFilters } from '../lib/tagRename';
@@ -476,9 +475,6 @@ export default function BrowserScreen() {
         setShowSearchHelp(true);
     }, []);
 
-    const searchHelpGroups = useMemo(() => buildSearchHelpGroups(l), [l]);
-
-
     const handleSearch = useCallback((text: string) => {
         setRawQuery(text);
         if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -489,16 +485,10 @@ export default function BrowserScreen() {
         }, 200);
     }, []);
 
-    useEffect(() => {
-        setSearchCurrentDeckName(deckName);
-        return () => setSearchCurrentDeckName(null);
-    }, [deckName]);
-
     /** Append a term tapped in the help sheet to whatever is already in the search box. */
     const appendSearchTerm = useCallback((term: string) => {
         setShowSearchHelp(false);
-        const current = rawQuery.trim();
-        handleSearch(current ? `${current} ${term}` : term);
+        handleSearch(appendBrowserSearchTerm(rawQuery, term));
     }, [rawQuery, handleSearch]);
 
     const filteredCards = useMemo(() => {
@@ -799,16 +789,16 @@ export default function BrowserScreen() {
     const browserSearch = useMemo(() => {
         const terms: string[] = [];
         if (scopeDeck?.isFiltered) {
-            if (scopeDeck.searchQuery?.trim()) terms.push(scopeDeck.searchQuery.trim());
+            if (scopeDeck.searchQuery?.trim()) terms.push(groupSearchAlternatives(scopeDeck.searchQuery));
         } else if (scopeDeck) {
-            terms.push(`deck:${escapeSearchValue(scopeDeck.name)}`);
+            terms.push(literalSearchNameTerm('deck:', scopeDeck.name));
         }
         if (markedOnly) terms.push('tag:marked');
         if (suspendedOnly) terms.push('is:suspended');
         if (tagFilters.length === 1) {
-            terms.push(`tag:${escapeSearchValue(tagFilters[0])}`);
+            terms.push(literalSearchNameTerm('tag:', tagFilters[0]));
         } else if (tagFilters.length > 1) {
-            terms.push(`(${tagFilters.map((tag) => `tag:${escapeSearchValue(tag)}`).join(' OR ')})`);
+            terms.push(`(${tagFilters.map((tag) => literalSearchNameTerm('tag:', tag)).join(' OR ')})`);
         }
         if (flagFilters.length === 0) {
             terms.push(`-(${ALL_CARD_FLAGS.map((flag) => `flag:${flag}`).join(' OR ')})`);
@@ -816,7 +806,7 @@ export default function BrowserScreen() {
             const flags = flagFilters.map((flag) => `flag:${flag}`);
             terms.push(flags.length === 1 ? flags[0] : `(${flags.join(' OR ')})`);
         }
-        if (searchQuery.trim()) terms.push(searchQuery.trim());
+        if (searchQuery.trim()) terms.push(terms.length ? groupSearchAlternatives(searchQuery) : searchQuery.trim());
         return terms.join(' ');
     }, [scopeDeck, markedOnly, suspendedOnly, tagFilters, flagFilters, searchQuery]);
 
@@ -951,16 +941,17 @@ export default function BrowserScreen() {
                     <SearchField
                         style={styles.searchField}
                         placeholder={tableMode === 'notes'
-                            ? l('Not ara veya deck:tag:is:…', 'Search notes or deck:tag:is:…')
-                            : l('Ara veya deck:tag:is:…', 'Search or deck:tag:is:…')}
+                            ? l('Notlarda ara', 'Search notes')
+                            : l('Kartlarda ara', 'Search cards')}
+                        autoCapitalize="none"
                         value={rawQuery}
                         // Clearing comes through `handleSearch` too, so it goes through the same
                         // debounce the typed query does and the list actually returns to every card.
                         onChangeText={handleSearch}
                         clearLabel={l('Aramayı temizle', 'Clear search')}
                         accessibilityLabel={tableMode === 'notes'
-                            ? l('Not ara veya deck:tag:is:…', 'Search notes or deck:tag:is:…')
-                            : l('Kart ara veya deck:tag:is:…', 'Search cards or deck:tag:is:…')}
+                            ? l('Notlarda ara', 'Search notes')
+                            : l('Kartlarda ara', 'Search cards')}
                     />
                     <HelpButton
                         accessibilityLabel={l('Arama sözdizimi yardımı', 'Search syntax help')}
@@ -969,7 +960,7 @@ export default function BrowserScreen() {
                 </View>
                 {searchDraftInvalid && rawQuery.trim().length > 0 && (
                     <Text style={styles.searchDraftHint} accessibilityLiveRegion="polite">
-                        {l('Arama henüz geçerli değil; son geçerli sonuçlar gösteriliyor. Tırnak ve parantezleri kapatın, deck: gibi terimlerin değerini yazın.', 'Search is not valid yet; showing the last valid results. Close quotes and brackets, and give terms such as deck: a value.')}
+                        {l('Son geçerli sonuçlar gösteriliyor. Sorgudaki terimleri, tırnakları ve parantezleri kontrol edin.', 'Showing the last valid results. Check the search terms, quotes, and parentheses.')}
                     </Text>
                 )}
             </View>
@@ -1316,13 +1307,11 @@ export default function BrowserScreen() {
             />
 
             <SearchHelpModal
-                appendSearchTerm={appendSearchTerm}
                 l={l}
-                searchHelpGroups={searchHelpGroups}
-                setShowSearchHelp={setShowSearchHelp}
-                showSearchHelp={showSearchHelp}
+                onAdd={appendSearchTerm}
+                onClose={() => setShowSearchHelp(false)}
                 styles={styles}
-                t={t}
+                visible={showSearchHelp}
             />
 
             <BrowserOptionsModal

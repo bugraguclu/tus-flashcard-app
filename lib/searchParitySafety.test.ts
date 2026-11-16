@@ -36,7 +36,8 @@ it.each(['is:suspend', 'flag:9', 'prop:rated=x', 're:"("', 'rated:0', 'dog or', 
     expect(sqlSearch(query)).toEqual([]);
 });
 it('filters Unicode hierarchical tags without ICU and matches marked tags case-insensitively', () => {
-    expect(getBrowserCardCount({ tags: ['ünite::immünoloji'] })).toBe(1);
+    expect(getBrowserCardCount({ tags: ['ünite::İMMÜNOLOJi'] })).toBe(1);
+    expect(getBrowserCardCount({ tags: ['ünite::immünoloji'] })).toBe(0);
     expect(getBrowserCardCount({ markedOnly: true })).toBe(1);
 });
 it.each(['%', '+'])('never expands punctuation %s to all cards', (query) => {

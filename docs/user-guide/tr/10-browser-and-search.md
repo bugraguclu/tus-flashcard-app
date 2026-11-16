@@ -304,34 +304,32 @@ Bkz. [Filtrelenmiş deste ve özel çalışma](11-filtered-decks.md).
 ## Arama: temel kullanım
 
 - Düz kelimeler notun **alanlarındaki metinde** aranır (soru, cevap ve diğer alanlar). Kelimenin
-  parçası da eşleşir: `kalp`, "kalpte"yi de bulur. Büyük/küçük harf fark etmez.
+  parçası da eşleşir: `kalp`, "kalpte"yi de bulur. Düz aramada ASCII harfler büyük/küçük harften bağımsız eşleşir.
 - Etiketler, deste adları ve konu düz kelimeyle aranmaz; bunlar için `tag:` ve `deck:` kullanın.
 - Birden fazla kelime yazarsanız kartta hepsi bulunmalıdır. Kelimeleri yan yana aramak için tırnak
   kullanın: `"beta bloker"`.
-- Arama eksikse (örneğin `is:` yazıp devamını getirmediyseniz) kutunun altında **Arama henüz geçerli
-  değil; son geçerli sonuçlar gösteriliyor.** yazar ve liste değişmez. Aynı satır tırnak ve
-  parantezleri kapatmanızı, `deck:` gibi terimlerin değerini yazmanızı hatırlatır.
+- Arama eksikse (örneğin `is:` yazıp devamını getirmediyseniz) kutunun altında **Son geçerli sonuçlar gösteriliyor.** yazar ve liste değişmez.
 - **?** sık kullanılan terimleri açar; bir terime dokunduğunuzda aramanıza eklenir. `deck:` gibi değer
-  isteyen terimlerde kutuya dokunup değeri yazın.
+  isteyen terimlerde açılan kutuya adı yazıp **Aramaya ekle**’ye dokunun. Filtre, mevcut aramadaki bütün alternatiflere uygulanır.
 - Bir kelimenin ortasından biçimlendirme geçiyorsa (yalnızca birkaç harfi kalın gibi) kelime yalnızca
   notun sıralama alanında bulunur.
 
 <a id="search-syntax"></a>
 ## Arama terimleri
-<!-- Uygulamada: Kartlarım › arama kutusundaki ? (app/browser.tsx:978-986) → "Arama nasıl çalışır?" (components/browser/BrowserDialogs.tsx:376) → "Daha fazla bilgi" (yeni) bu bölüm -->
+<!-- Uygulamada: Kartlarım › arama kutusundaki ? (app/browser.tsx:978-986) → "Arama nasıl çalışır?" (components/browser/SearchHelpModal.tsx) → "Daha fazla bilgi" (yeni) bu bölüm -->
 
 | Terim | Anlamı | Örnek |
 | --- | --- | --- |
 | `deck:ad` | Deste ve alt desteleri; boşluklu adı tırnağa alın, alt desteyi `::` ile yazın | `deck:"Farmakoloji::Otonom"` |
-| `deck:current` | Deste seçicide seçili deste | `deck:current is:due` |
+| `deck:current` | Son çalışmak için seçilen deste | `deck:current is:due` |
 | `deck:filtered` | Bir filtrelenmiş destede bulunan kartlar | `-deck:filtered` |
 | `tag:ad` | Etiket ve alt etiketleri | `tag:farmakoloji` |
 | `tag:none` | Etiketi olmayan notlar | `tag:none` |
 | `note:ad` | Not türü (kayıtlı adıyla, bkz. aşağısı) | `note:Basic` |
 | `card:n` | Notun kaçıncı kartı | `card:2` |
 | `preset:ad` | Destenin ayar grubu | `preset:"TUS Kartları"` |
-| `is:new` / `is:learn` / `is:review` | Yeni / öğrenme (yeniden öğrenme dahil) / tekrar kartları | `is:learn` |
-| `is:due` | Bugün vadesi gelmiş veya gecikmiş kartlar | `is:due` |
+| `is:new` / `is:learn` / `is:review` | Yeni durumundaki / öğrenme / tekrar kartları. Yeniden öğrenme son ikisine de girer. | `is:learn` |
+| `is:due` | Vadesi gelmiş tekrarlar ve önden gösterim süresine giren öğrenme kartları | `is:due` |
 | `is:suspended` / `is:buried` | Askıdaki / gömülü kartlar | `-is:suspended` |
 | `flag:n` | Bayrak numarası (0 bayraksız, 1–7) | `flag:1` |
 | `added:n` | Son n günde eklenen kartlar | `added:7` |
@@ -383,8 +381,7 @@ alan adı sayılır ve uyarı vermeden sonuçsuz kalır.
 ## Türkçe harfler
 <!-- Uygulamada: Kartlarım boş sonuç ipucu help.browser.noResultsTip (yeni, app/browser.tsx:1050-1053) → bu bölüm -->
 
-- Büyük/küçük harf fark etmez ve dört i biçimi (I, ı, İ, i) aynı sayılır: `isi`, "Isı" ve "İSİ"yi
-  bulur.
+- Düz aramada Türkçe karakterleri büyük/küçük harfiyle yazın. Örneğin `BÖBREK` ile `böbrek` farklıdır. `nc:bobrek` her ikisini de bulur.
 - **ç, ğ, ö, ş, ü** karttaki gibi yazılmalıdır: `cografya`, "Coğrafya"yı bulmaz. Harf farkını yok
   saymak için kelimenin başına `nc:` ekleyin: `nc:cografya`. Alan aramasında: `front:nc:*cografya*`.
 - Deste seçicideki **Desteleri filtrele** kutusu farklı çalışır: bu harfleri kendiliğinden yok sayar
@@ -411,14 +408,9 @@ konu adı (ör. "Genel") aranamaz.
 ## Aramanın Anki'den farkları
 
 > **Anki'den farkı:**
-> - Büyük/küçük harf her terimde bütün alfabelerde yok sayılır ve dört i biçimi aynı sayılır; Anki
->   düz metinde yalnızca Latin harflerini katlar.
 > - "Aramada aksanları yok say" ayarı yoktur; `nc:` kullanın.
-> - `nc:` yalnızca aksan işaretlerini kaldırır; `ß` gibi harfler `ss` sayılmaz.
-> - Düzenli ifadeler JavaScript söz dizimini izler; satır içi bayraklardan yalnızca baştaki `(?-i)`
->   (büyük/küçük harfe duyarlı) kabul edilir.
+> - Düzenli ifadeler yaygın Anki sınıflarını ve baştaki `i`, `m`, `s` bayraklarını destekler. Rust’ın ileri düzey ifade özelliklerinde farklar vardır.
 > - `dupe:` ilk alanı biçimlendirmesiz hâliyle tam olarak karşılaştırır.
-> - `deck:current` Kartlarım'da deste seçicideki desteyi, başka yerlerde bütün koleksiyonu anlatır.
 > - Türkçe arayüzde gördüğünüz not türü ve alan adları aranmaz; kayıtlı adları kullanın.
 
 <a id="card-info"></a>

@@ -168,9 +168,9 @@ describe('browser filters', () => {
     it('evaluates marked, state and tag filters together in one pass over the cards', () => {
         // The browser's sorted listing reads the card blob in SQL, which needs it to be valid JSON.
         db.runSync('UPDATE anki_cards SET data = ? WHERE id = 105', '{}');
-        const query = { markedOnly: true, cardState: 'due' as const, tags: ['fizik', 'ünite::immünoloji'] };
+        const query = { markedOnly: true, cardState: 'due' as const, tags: ['fizik', 'Ünite::İmmünoloji'] };
         const expected = referenceIds('tag:marked').filter((id) => referenceIds('is:due').includes(id)
-            && referenceIds('tag:fizik or tag:ünite::immünoloji').includes(id));
+            && referenceIds('tag:fizik or tag:Ünite::İmmünoloji').includes(id));
         const bound = cardCount() + noteCount() + 20;
         rowsRead = 0;
         expect(getBrowserCardCount(query)).toBe(expected.length);

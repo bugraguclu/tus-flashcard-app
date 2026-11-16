@@ -41,7 +41,7 @@ export function buildFilteredSearchClause(searchQuery: string): { clauses: strin
     if (!searchQuery.trim()) return { clauses: [], params: [] };
     let ids: number[];
     try {
-        ids = matchingCollectionCardIds(searchQuery);
+        ids = matchingCollectionCardIds(searchQuery, { allowLegacyStateTerms: true });
     } catch (error) {
         if (!(error instanceof SearchSyntaxError)) throw error;
         ids = [];

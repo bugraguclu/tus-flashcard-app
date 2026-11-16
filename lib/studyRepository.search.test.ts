@@ -296,7 +296,9 @@ describe('is: reads the card type, not the queue', () => {
         saveAnkiCard(makeCard(13, 3, 1, { type: 3, queue: 1, due: Date.now() - 1000 }));
         expect(search('is:learn')).toBe(1);
         expect(search('is:review')).toBe(1);
-        expect(search('is:relearn')).toBe(1);
+        expect(search('is:learn is:review')).toBe(1);
+        expect(search('is:relearn')).toBe(1); // An existing local filtered deck can still read its saved query.
+        expect(isValidSearchQuery('is:relearn')).toBe(false);
         expect(search('is:new')).toBe(0);
     });
 

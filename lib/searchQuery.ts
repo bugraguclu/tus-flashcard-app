@@ -5,6 +5,8 @@
 // left to the caller: the filtered-deck builder turns terms into SQL, while the browser evaluates
 // them against cards it has already loaded. See lib/studyRepository.ts and lib/cardSearchMatch.ts.
 
+import { firstUnescapedColon } from './searchGlob';
+
 export type SearchNode =
     | { kind: 'term'; text: string }
     | { kind: 'not'; child: SearchNode }
@@ -20,26 +22,65 @@ export class SearchSyntaxError extends Error {
     constructor(detail: string) { super(`Invalid search: ${detail}`); this.name = 'SearchSyntaxError'; }
 }
 
-function searchTokens(query: string, strictQuotes: boolean): string[] {
-    const tokens: string[] = []; let token = ''; let quoted = false;
-    const flush = () => { if (token) tokens.push(token); token = ''; };
+function searchTokens(query: string, strict: boolean): string[] {
+    const tokens: string[] = [];
+    let token = '';
+    let quoteStart = -1;
+    const flush = () => {
+        if (token) tokens.push(token);
+        token = '';
+    };
+
+    if (strict) query = query.replace(/\p{White_Space}/gu, ' ');
     for (let i = 0; i < query.length; i++) {
         const ch = query[i];
-        if (ch === '\\' && i + 1 < query.length) { token += ch + query[++i]; continue; }
-        if (ch === '"') { quoted = !quoted; token += ch; continue; }
-        if (!quoted && /\s/.test(ch)) { flush(); continue; }
+        const quoted = quoteStart >= 0;
+        if (ch === '\\') {
+            if (strict && (i + 1 === query.length || (!quoted && query[i + 1] === ' '))) {
+                throw new SearchSyntaxError('invalid escape');
+            }
+            if (i + 1 < query.length) {
+                token += ch + query[++i];
+                continue;
+            }
+        }
+        if (ch === '"') {
+            if (quoted) {
+                if (strict && i === quoteStart + 1) throw new SearchSyntaxError('empty quotes');
+                token += ch;
+                quoteStart = -1;
+                if (strict) flush();
+            } else {
+                // A quote can start a new term or be the value directly after a term's first colon.
+                const startsValue = token.endsWith(':') && firstUnescapedColon(token) === token.length - 1;
+                if (strict && token !== '-' && !startsValue) flush();
+                token += ch;
+                quoteStart = i;
+            }
+            continue;
+        }
+        if (!quoted && (strict ? ch === ' ' : /\s/.test(ch))) {
+            flush();
+            continue;
+        }
         if (!quoted && (ch === '(' || ch === ')')) {
-            if (ch === '(' && token === '-') { tokens.push('-('); token = ''; }
-            else { flush(); tokens.push(ch); }
+            if (ch === '(' && token === '-') {
+                tokens.push('-(');
+                token = '';
+            } else {
+                flush();
+                tokens.push(ch);
+            }
             continue;
         }
         token += ch;
     }
-    if (quoted && strictQuotes) throw new SearchSyntaxError('unclosed quote');
-    flush(); return tokens;
+    if (quoteStart >= 0 && strict) throw new SearchSyntaxError('unclosed quote');
+    flush();
+    return tokens;
 }
 
-/** Picker helpers also tokenize drafts; only a complete query enforces balanced quotes. */
+/** Picker helpers also tokenize drafts; the complete parser validates the syntax. */
 export function tokenizeSearch(query: string): string[] { return searchTokens(query, false); }
 
 /**
@@ -74,6 +115,14 @@ export function escapeSearchValue(value: string): string {
     return needsQuoting(value) ? `"${escaped}"` : escaped;
 }
 
+/** Serialize a stored name as a term without interpreting Anki's case-sensitive keywords. */
+export function literalSearchNameTerm(prefix: string, name: string): string {
+    const reservedTag = prefix === 'tag:' && (name === 'none' || name.startsWith('re:') || name.startsWith('nc:'));
+    const reservedDeck = prefix === 'deck:' && (name === 'current' || name === 'filtered');
+    const literalName = reservedTag || reservedDeck ? name[0].toUpperCase() + name.slice(1) : name;
+    return `${prefix}${escapeSearchValue(literalName)}`;
+}
+
 /** Values a bare term could not carry, or would carry as something other than plain text. */
 function needsQuoting(value: string): boolean {
     return value === ''
@@ -98,17 +147,56 @@ export function isQuotedTerm(value: string): boolean {
     return value.startsWith('"') && value.endsWith('"') && value.length >= 2;
 }
 
+// These keys use their own argument grammar. Other qualified terms name a note field and may
+// have a raw pattern in the value. Anki 26.09.3 applies the exceptions below before decoding
+// ordinary search escapes. See https://github.com/ankitects/anki/blob/26.09.3/rslib/src/search/parser.rs.
+const NON_FIELD_KEYS = new Set([
+    'added', 'card', 'cid', 'deck', 'did', 'dupe', 'edited', 'flag', 'has-cd', 'introduced',
+    'is', 'mid', 'nc', 'nid', 'note', 'preset', 'prop', 'rated', 're', 'resched', 'sc', 'tag', 'w',
+]);
+
+function validateEscapes(value: string): void {
+    for (const [, escaped] of value.matchAll(/\\(.)/gs)) {
+        if (!'\\"*_:()-'.includes(escaped)) throw new SearchSyntaxError('invalid escape');
+    }
+}
+
+function validateSearchTerm(term: string): void {
+    const content = isQuotedTerm(term) ? term.slice(1, -1) : term;
+    const colon = firstUnescapedColon(content);
+    if (colon === 0) throw new SearchSyntaxError('missing search key before colon');
+    if (colon < 0) {
+        validateEscapes(content);
+        return;
+    }
+
+    const key = content.slice(0, colon);
+    const prefix = key.toLowerCase();
+    const rawValue = content.slice(colon + 1);
+    const value = isQuotedTerm(rawValue) ? rawValue.slice(1, -1) : rawValue;
+    validateEscapes(key);
+    const usesRawValue = prefix === 're' || prefix === 'dupe' || prefix === 'preset'
+        || (prefix === 'tag' && value.startsWith('re:'))
+        || (!NON_FIELD_KEYS.has(prefix) && /^(re|nc):/.test(value));
+    if (!usesRawValue) validateEscapes(value);
+}
+
 function parseExpression(tokens: string[], cursor: { index: number }): SearchNode | null {
     const primary = (): SearchNode => {
         const token = tokens[cursor.index++];
-        if (!token || token === ')' || /^(and|or)$/i.test(token) || token === '-') throw new SearchSyntaxError('expected a search term');
-        const negated = token.startsWith('-'); const body = negated ? token.slice(1) : token;
+        if (!token || token === ')' || /^(and|or)$/i.test(token)) throw new SearchSyntaxError('expected a search term');
+        const negated = token.length > 1 && token.startsWith('-');
+        const body = negated ? token.slice(1) : token;
+        if (negated && /^(and|or)$/i.test(body)) throw new SearchSyntaxError('expected a search term');
         let node: SearchNode;
         if (body === '(') {
             const group = or();
             if (tokens[cursor.index++] !== ')') throw new SearchSyntaxError('unclosed group');
             node = group;
-        } else node = { kind: 'term', text: body };
+        } else {
+            validateSearchTerm(body);
+            node = { kind: 'term', text: body };
+        }
         return negated ? { kind: 'not', child: node } : node;
     };
     const and = (): SearchNode => {
@@ -137,6 +225,18 @@ export function parseSearchQuery(query: string): SearchNode | null {
     const parsed = parseExpression(tokens, cursor);
     if (cursor.index !== tokens.length) throw new SearchSyntaxError('unexpected closing group');
     return parsed;
+}
+
+/** Keep top-level alternatives together when combining this search with other filters. */
+export function groupSearchAlternatives(query: string): string {
+    const text = query.trim();
+    try {
+        return parseSearchQuery(text)?.kind === 'or' ? `(${text})` : text;
+    } catch (error) {
+        // Unfinished drafts stay editable in the search box.
+        if (!(error instanceof SearchSyntaxError)) throw error;
+        return text;
+    }
 }
 
 /**
