@@ -14,6 +14,7 @@ import { type ColorScheme } from '../../constants/theme';
 import { sanitizeNumericDraft } from '../../lib/deckOptionsForm';
 import { Button } from '../ui/Button';
 import { Notice } from '../ui/Feedback';
+import { fieldRowProps } from '../ui/fieldRow';
 import { CheckIcon, ChevronDownIcon } from '../ui/icons';
 import { AppSheet } from '../ui/Sheet';
 import { SheetScrollView } from '../SwipeDismissSheet';
@@ -160,7 +161,7 @@ export function NumberSetting({ label, value, onChange, styles, suffix, hint, ki
         <View style={styles.settingBlock} collapsable={false}>
             <View style={styles.settingRow}>
                 <Text style={styles.settingLabel}>{label}</Text>
-                <View style={styles.numberControl}>
+                <View style={styles.numberControl} {...fieldRowProps}>
                     <TextInput
                         ref={inputRef}
                         style={[styles.numberInput, error && styles.numberInputInvalid]}

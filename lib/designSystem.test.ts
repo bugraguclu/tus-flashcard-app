@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { FIELD_ROW_FOCUS_CSS } from './fieldRowFocus';
 
 const ROOTS = ['app', 'components'];
 
@@ -88,6 +89,26 @@ describe('screens draw from the design system', () => {
         // Use BackIcon, ChevronRightIcon, ChevronDownIcon, CloseIcon, CheckIcon, PlusIcon,
         // MoreIcon, MoreVerticalIcon, RefreshIcon, SearchIcon or DragHandleIcon from components/ui/icons.
         expect(offenders).toEqual([]);
+    });
+
+    it('leaves the browser focus ring of a field to the field-row rule', () => {
+        const offenders: string[] = [];
+        for (const file of files) {
+            const lines = withoutComments(fs.readFileSync(file, 'utf8')).split('\n');
+            lines.forEach((line, index) => {
+                if (/outline(Style|Width|Color|Offset)\b/.test(line)) offenders.push(`${file}:${index + 1}: ${line.trim()}`);
+            });
+        }
+        // An input inside a drawn box spreads `fieldRowProps` (components/ui/fieldRow.ts) on that
+        // box: hiding the ring by hand leaves keyboard focus invisible, and leaving it on the
+        // input draws a second frame inside the field.
+        expect(offenders).toEqual([]);
+        expect(fs.readFileSync('app/+html.tsx', 'utf8')).toContain('FIELD_ROW_FOCUS_CSS');
+        expect(FIELD_ROW_FOCUS_CSS).toBe(
+            '[data-field-row] input,[data-field-row] textarea{outline:none}'
+            + '[data-field-row]:has(input:focus-visible,textarea:focus-visible)'
+            + '{outline:Highlight auto 1px;outline:-webkit-focus-ring-color auto 1px}',
+        );
     });
 
     it('lists only files that still exist among the colour exceptions', () => {

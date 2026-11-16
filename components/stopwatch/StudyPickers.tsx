@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { Text, TextInput, useLayoutTextScale } from '../AppText';
+import { fieldRowProps } from '../ui/fieldRow';
 import { Type } from '../ui/tokens';
 import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
 import {
     LISTED_STUDY_PASSES,
     MAX_SUBJECT_LENGTH,
@@ -64,8 +66,12 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
     // ("Mikrobiyoloji") stays whole on its line instead of breaking inside the word.
     const twoColumns = useLayoutTextScale() >= 1.2;
     const [custom, setCustom] = useState('');
-    // While a new subject is typed the grid steps aside, so the field stays above the keyboard.
-    const [typing, setTyping] = useState(false);
+    // While a new subject is typed on the software keyboard the grid steps aside, so the field stays
+    // above it. Without a keyboard on screen (a browser, a hardware keyboard) the grid stays: taking
+    // it away and bringing it back as focus moves would slide Kapat and Seç from under the pointer
+    // that pressed them, and a browser then drops the click.
+    const [fieldFocused, setFieldFocused] = useState(false);
+    const typing = useKeyboardVisible() && fieldFocused;
     const typed = normalizeSubjectName(custom);
 
     const subjects = useMemo(() => {
@@ -144,7 +150,7 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                             );
                         })}
                     </View>
-                    <View style={[styles.customRow, { borderColor: colors.border, backgroundColor: colors.bgInput }]}>
+                    <View style={[styles.customRow, { borderColor: colors.border, backgroundColor: colors.bgInput }]} {...fieldRowProps}>
                         <TextInput
                             style={[styles.customInput, { color: colors.textPrimary }]}
                             value={custom}
@@ -154,8 +160,8 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                             maxLength={MAX_SUBJECT_LENGTH}
                             autoCorrect={false}
                             returnKeyType="done"
-                            onFocus={() => setTyping(true)}
-                            onBlur={() => setTyping(false)}
+                            onFocus={() => setFieldFocused(true)}
+                            onBlur={() => setFieldFocused(false)}
                             onSubmitEditing={addTyped}
                             accessibilityLabel={l('Yeni ders adı', 'New subject name')}
                         />
@@ -226,7 +232,7 @@ export function StudyTypePicker({ kind, pass, onSelect, onClose }: StudyTypePick
                 accessibilityLabel={l('Tür seçimini kapat', 'Close the type picker')}
             />
             <View style={[styles.layer, styles.typeLayer, { maxHeight: height * 0.9 }]}>
-                <View style={[styles.search, { backgroundColor: colors.bgCard }]}>
+                <View style={[styles.search, { backgroundColor: colors.bgCard }]} {...fieldRowProps}>
                     <SearchIcon color={colors.textMuted} size={20} />
                     <TextInput
                         style={[styles.searchInput, { color: colors.textPrimary }]}

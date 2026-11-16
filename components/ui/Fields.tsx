@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react';
 import { Platform, type StyleProp, StyleSheet, type TextInputProps, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { fieldRowProps } from './fieldRow';
 import { CloseIcon, SearchIcon } from './icons';
 import { HIT_TARGET, Radius } from './tokens';
 
@@ -64,7 +65,7 @@ export const SearchField = forwardRef<TextInput, SearchFieldProps>(function Sear
     // iOS draws its own clear button inside the field; elsewhere the field draws one.
     const ownClear = Platform.OS !== 'ios' && value.length > 0;
     return (
-        <View style={[styles.search, { backgroundColor: colors.bgInput, borderColor: colors.border }, style]}>
+        <View style={[styles.search, { backgroundColor: colors.bgInput, borderColor: colors.border }, style]} {...fieldRowProps}>
             <SearchIcon color={colors.textMuted} />
             <TextInput
                 ref={ref}

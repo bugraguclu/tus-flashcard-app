@@ -3,6 +3,7 @@ import { type StyleProp, StyleSheet, TouchableOpacity, View, type ViewStyle } fr
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useRepeatPress } from '../../hooks/useRepeatPress';
+import { fieldRowProps } from './fieldRow';
 import { MinusIcon, PlusIcon } from './icons';
 import { DISABLED_OPACITY, Radius } from './tokens';
 
@@ -63,7 +64,11 @@ export function Stepper({
     };
 
     return (
-        <View style={[styles.track, { backgroundColor: onSurface === 'tinted' ? colors.bgCard : colors.bgInput }, style]}>
+        // An editable value is a field whose box is the track.
+        <View
+            style={[styles.track, { backgroundColor: onSurface === 'tinted' ? colors.bgCard : colors.bgInput }, style]}
+            {...(children ? fieldRowProps : null)}
+        >
             {button('decrement')}
             {children ?? (
                 <Text style={[styles.value, { color: colors.accent }]} accessibilityLiveRegion="polite" numberOfLines={1}>

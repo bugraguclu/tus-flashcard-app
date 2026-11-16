@@ -1,7 +1,8 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Text, TextInput, useLayoutTextScale } from './AppText';
 import { FontSize, Spacing, useThemeColors } from '../constants/theme';
+import { fieldRowProps } from './ui/fieldRow';
 import { HIT_TARGET, Radius } from './ui/tokens';
 import {
     commitBoundedInteger,
@@ -123,6 +124,8 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
             style={[styles.container, bare && styles.bareContainer, style]}
             // A bare value is as tall as the stepper's buttons; its slop makes up the touch target.
             hitSlop={bare ? { top: (HIT_TARGET - 32) / 2, bottom: (HIT_TARGET - 32) / 2 } : undefined}
+            // A bare value's box is the Stepper around it, which marks itself.
+            {...(bare ? null : fieldRowProps)}
         >
             <TextInput
                 ref={textInputRef}
@@ -203,7 +206,6 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
             fontVariant: ['tabular-nums'] as any,
             color: colors.accent,
             flexShrink: 0,
-            ...(Platform.OS === 'web' ? { outlineStyle: 'none' as any } : null),
         },
         // The kit Stepper's value: one size down from the boxed field.
         bareInput: { fontSize: FontSize.lg, fontWeight: '600' },

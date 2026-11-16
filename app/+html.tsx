@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollViewStyleReset } from 'expo-router/html';
+import { FIELD_ROW_FOCUS_CSS } from '../lib/fieldRowFocus';
 import { WEB_APP_DEVELOPMENT_CSP, WEB_APP_PRODUCTION_CSP } from '../lib/webAppContentSecurityPolicy';
 
 export default function Root({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,8 @@ export default function Root({ children }: { children: React.ReactNode }) {
                 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#e8f5f0" />
                 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
                 <ScrollViewStyleReset />
+                {/* A field drawn as a row wears its focus ring on the row, not inside it. */}
+                <style dangerouslySetInnerHTML={{ __html: FIELD_ROW_FOCUS_CSS }} />
             </head>
             <body>{children}</body>
         </html>

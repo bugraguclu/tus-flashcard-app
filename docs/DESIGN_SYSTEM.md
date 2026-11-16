@@ -94,3 +94,10 @@ The screens used to carry their own small kits. They map onto the parts like thi
   selected, expanded, busy) is passed both as `accessibilityState` and as the matching `aria-*`
   prop: react-native-web reads only the `aria-*` props, iOS reads both.
 - Everything tappable is at least 44 × 44 points (hit slop may make up a compact control's height).
+- A field whose box holds more than its input (`SearchField`, a `Stepper` with an editable value,
+  a name and its button) spreads `fieldRowProps` (`components/ui/fieldRow.ts`) on that box. In a
+  browser the focus ring is then drawn around the box, as around a `TextField`, instead of as a
+  second frame inside it; never style `outline*` by hand.
+- Do not show or hide content on a field's focus alone: in a browser the press that moves focus
+  away then lands on whatever slid under the pointer. Follow the software keyboard instead
+  (`useKeyboardVisible`), as the Kronometre's course picker does.

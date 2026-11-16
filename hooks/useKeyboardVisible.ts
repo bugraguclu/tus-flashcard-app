@@ -6,7 +6,9 @@ import { Keyboard, Platform } from 'react-native';
  * keyboard show or hide re-renders that small piece rather than the whole screen above it.
  */
 export function useKeyboardVisible(): boolean {
-    const [visible, setVisible] = useState(false);
+    // A component that mounts under a keyboard already on screen (a picker opened from a focused
+    // field) hears no "show" event for it.
+    const [visible, setVisible] = useState(() => Keyboard.isVisible());
 
     useEffect(() => {
         const showSub = Keyboard.addListener(
