@@ -18,7 +18,7 @@ import InfoCircleGlyph from '../InfoCircleGlyph';
 import FlagGlyph from '../FlagGlyph';
 import StarGlyph from '../StarGlyph';
 import CardsGlyph from '../CardsGlyph';
-import { ClockGlyph, NoteGlyph, PauseGlyph, PlayGlyph } from '../UiGlyphs';
+import { ClockGlyph, PauseGlyph, PlayGlyph } from '../UiGlyphs';
 import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Choice';
 import { SelectionSuspendIcon } from './BrowserIcons';
@@ -141,11 +141,6 @@ export function BrowserCardRow({
         >
             <View style={styles.cardItemHeader}>
                 {selectionMode && <View style={styles.selectionMark}><Checkbox checked={isSelected} /></View>}
-                <View style={local.cardIcon}>
-                    {isNotesMode
-                        ? <NoteGlyph color={colors.textSecondary} size={17} />
-                        : <CardsGlyph color={colors.textSecondary} size={17} />}
-                </View>
                 <View style={styles.cardBody}>
                     <Text
                         style={[
@@ -333,7 +328,6 @@ export function BrowserCardRow({
 }
 
 const local = StyleSheet.create({
-    cardIcon: { marginTop: 1 },
     scheduleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
     scheduleText: { flex: 1, minWidth: 0, marginTop: 0 },
 });
