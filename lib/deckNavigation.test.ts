@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
     commonDeckAncestor,
+    deckContextCrumbs,
     deckPathBelowScope,
+    getDeckOverviewPath,
     getDeckPathNames,
     getRootDeckName,
     getScopedBrowserPath,
     hasExplicitStudyScope,
+    subjectContextDecks,
 } from './deckNavigation';
 
 describe('deckPathBelowScope', () => {
@@ -22,6 +25,69 @@ describe('deckPathBelowScope', () => {
         expect(deckPathBelowScope('TUS Örnek::Kardiyoloji', 'Tekrar Oturumu')).toEqual(['TUS Örnek', 'Kardiyoloji']);
         // A deck whose name only starts like the scope is not below it.
         expect(deckPathBelowScope('Farmakoloji 2', 'Farmakoloji')).toEqual(['Farmakoloji 2']);
+    });
+});
+
+describe('deckContextCrumbs', () => {
+    it('has nothing to open for a card in the studied deck itself', () => {
+        expect(deckContextCrumbs('Varsayılan', 'Varsayılan')).toEqual([]);
+    });
+
+    it('opens the first level below the studied deck, then the card\'s own deck', () => {
+        expect(deckContextCrumbs('TUS Örnek::Farmakoloji', 'TUS Örnek')).toEqual([
+            { label: 'Farmakoloji', deckName: 'TUS Örnek::Farmakoloji' },
+        ]);
+        expect(deckContextCrumbs('TUS Örnek::Farmakoloji::Otonom::Kolinerjik', 'TUS Örnek')).toEqual([
+            { label: 'Farmakoloji', deckName: 'TUS Örnek::Farmakoloji' },
+            { label: 'Otonom › Kolinerjik', deckName: 'TUS Örnek::Farmakoloji::Otonom::Kolinerjik' },
+        ]);
+    });
+
+    it('opens the root and the card\'s deck when the card comes from outside the studied deck', () => {
+        expect(deckContextCrumbs('TUS Örnek::Kardiyoloji', null)).toEqual([
+            { label: 'TUS Örnek', deckName: 'TUS Örnek' },
+            { label: 'Kardiyoloji', deckName: 'TUS Örnek::Kardiyoloji' },
+        ]);
+        expect(deckContextCrumbs('TUS Örnek::Kardiyoloji', 'Tekrar Oturumu')[0].deckName).toBe('TUS Örnek');
+    });
+});
+
+describe('subjectContextDecks', () => {
+    it('opens the course deck from the course name and the card\'s subdeck from the topic', () => {
+        expect(subjectContextDecks('TUS::Farmakoloji::Otonom', 'TUS::Farmakoloji')).toEqual({
+            subject: 'TUS::Farmakoloji',
+            topic: 'TUS::Farmakoloji::Otonom',
+        });
+        expect(subjectContextDecks('TUS::Farmakoloji', 'TUS::Farmakoloji')).toEqual({
+            subject: 'TUS::Farmakoloji',
+            topic: 'TUS::Farmakoloji',
+        });
+    });
+
+    it('opens the card\'s own deck when the card is not filed in the course deck', () => {
+        expect(subjectContextDecks('İçe Aktarılan', 'TUS::Farmakoloji')).toEqual({
+            subject: 'İçe Aktarılan',
+            topic: 'İçe Aktarılan',
+        });
+        // A deck whose name only starts like the course's is not inside it.
+        expect(subjectContextDecks('TUS::Farmakoloji 2', 'TUS::Farmakoloji').subject).toBe('TUS::Farmakoloji 2');
+        expect(subjectContextDecks('Varsayılan', null)).toEqual({ subject: 'Varsayılan', topic: 'Varsayılan' });
+    });
+
+    it('has nothing to open when neither deck is known', () => {
+        expect(subjectContextDecks(null, null)).toEqual({ subject: null, topic: null });
+        expect(subjectContextDecks(null, 'TUS::Farmakoloji')).toEqual({
+            subject: 'TUS::Farmakoloji',
+            topic: 'TUS::Farmakoloji',
+        });
+    });
+});
+
+describe('getDeckOverviewPath', () => {
+    it('encodes the deck path', () => {
+        expect(getDeckOverviewPath('TUS Örnek::Farmakoloji')).toBe(
+            `/deck-overview?deck=${encodeURIComponent('TUS Örnek::Farmakoloji')}`,
+        );
     });
 });
 
