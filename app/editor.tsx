@@ -1271,7 +1271,8 @@ export default function EditorScreen() {
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             >
-                <View style={styles.selectorGroup}>
+                {/* The header's own bottom line already sets the form off; a second line here doubled it. */}
+                <>
                     {/*
                       * The note type is fixed once a note exists, as it is in Anki's edit dialog.
                       * The row still answers a press: a tap that does nothing and says nothing
@@ -1326,7 +1327,7 @@ export default function EditorScreen() {
                             {!isCatalog && <ChevronDownIcon color={colors.textMuted} />}
                         </View>
                     </TouchableOpacity>
-                </View>
+                </>
 
                 {fieldsToRender.map((field, index) => {
                     if (occlusionFields && index === occlusionFields.image) return null;

@@ -16,10 +16,6 @@ export function createEditorStyles(colors: ColorScheme) {
         paddingTop: 5,
         paddingBottom: Spacing.xxl,
     },
-    selectorGroup: {
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.border,
-    },
     ankiSelectorRow: {
         minHeight: 50,
         flexDirection: 'row',
