@@ -1,8 +1,8 @@
 import React from 'react';
 import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
-import { Shadows, Spacing, useThemeColors } from '../../constants/theme';
-import { Radius, Type } from './tokens';
+import { Spacing, useThemeColors } from '../../constants/theme';
+import { Radius, Type, Shadow } from './tokens';
 
 /** A hairline between two rows of a card or list. */
 export function Divider({ style }: { style?: StyleProp<ViewStyle> }) {
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     card: {
         borderRadius: Radius.card,
         borderWidth: 1,
-        ...Shadows.sm,
+        ...Shadow.card,
     },
     clip: { borderRadius: Radius.card - 1, overflow: 'hidden' },
     padded: { padding: Spacing.lg, gap: Spacing.md },

@@ -1,17 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
-import { FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useI18n } from '../hooks/useI18n';
 import { buildDeckTree, type DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';
 import { initialExpandedDeckNames, prioritizeDeckTree } from '../lib/deckPickerExpansion';
 import DisclosureChevron from './DisclosureChevron';
-import { Button } from './ui/Button';
+import { Button, IconButton } from './ui/Button';
 import { Card } from './ui/Card';
-import { Checkbox } from './ui/Choice';
-import { MinusIcon } from './ui/icons';
-import { Type } from './ui/tokens';
+import { CheckRow } from './ui/Choice';
+import { HIT_TARGET, Type } from './ui/tokens';
 
 interface DeckExportSelectorProps {
     decks: Deck[];
@@ -74,57 +73,35 @@ export default function DeckExportSelector({
         const mixed = selectedCount > 0 && !checked;
         const hasChildren = node.children.length > 0;
         const isExpanded = expanded.has(node.deck.name);
-        const accessibilityChecked: boolean | 'mixed' = mixed ? 'mixed' : checked;
 
         return (
             <React.Fragment key={node.deck.id}>
-                <View style={[styles.row, { paddingLeft: Spacing.sm + Math.min(node.depth, 8) * 18 }]}>
+                <View style={[styles.row, { paddingLeft: Math.min(node.depth, 8) * 18 }]}>
                     {hasChildren ? (
-                        <TouchableOpacity
-                            style={styles.disclosureButton}
+                        <IconButton
                             onPress={() => toggleExpanded(node.deck.name)}
-                            // Drawn 34 points wide beside the checkbox; the slop on its free side
-                            // makes a full target.
-                            hitSlop={{ left: 10 }}
-                            accessibilityRole="button"
-                            accessibilityState={{ expanded: isExpanded }}
+                            expanded={isExpanded}
                             accessibilityLabel={isExpanded
                                 ? l('Alt desteleri gizle', 'Hide subdecks')
                                 : l('Alt desteleri göster', 'Show subdecks')}
                         >
                             <DisclosureChevron expanded={isExpanded} color={colors.textSecondary} />
-                        </TouchableOpacity>
+                        </IconButton>
                     ) : (
                         <View style={styles.disclosureSpacer} />
                     )}
-                    <TouchableOpacity
+                    <CheckRow
                         style={styles.rowMain}
-                        onPress={() => toggleBranch(node)}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: accessibilityChecked }}
-                        aria-checked={accessibilityChecked}
+                        label={getDeckDisplayName(node.deck.name)}
+                        summary={hasChildren ? l(`${ids.length - 1} alt deste`, `${ids.length - 1} subdecks`) : undefined}
+                        checked={checked}
+                        mixed={mixed}
+                        onChange={() => toggleBranch(node)}
                         accessibilityLabel={l(
                             `${getDeckDisplayName(node.deck.name)} destesini dışa aktar`,
                             `Export ${getDeckDisplayName(node.deck.name)} deck`,
                         )}
-                    >
-                        {mixed ? (
-                            // The kit's checkbox has no mixed state: a branch partly chosen shows a dash.
-                            <View style={styles.mixedBox}>
-                                <MinusIcon color={colors.onAccent} size={16} />
-                            </View>
-                        ) : <Checkbox checked={checked} />}
-                        <View style={styles.rowCopy}>
-                            <Text style={[styles.deckName, (checked || mixed) && styles.deckNameActive]} numberOfLines={1}>
-                                {getDeckDisplayName(node.deck.name)}
-                            </Text>
-                            {hasChildren && (
-                                <Text style={styles.subdeckCount}>
-                                    {l(`${ids.length - 1} alt deste`, `${ids.length - 1} subdecks`)}
-                                </Text>
-                            )}
-                        </View>
-                    </TouchableOpacity>
+                    />
                 </View>
                 {hasChildren && isExpanded ? node.children.map(renderNode) : null}
             </React.Fragment>
@@ -159,32 +136,16 @@ export default function DeckExportSelector({
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         selectAll: { marginVertical: -Spacing.sm, marginRight: -Spacing.sm },
+        // A deck of the tree: its disclosure button (or its place), then the kit's checkbox row.
         row: {
-            minHeight: 54,
             flexDirection: 'row',
             alignItems: 'center',
-            paddingRight: Spacing.sm,
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
-        disclosureButton: { width: 34, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-        disclosureSpacer: { width: 34 },
-        rowMain: { flex: 1, minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-        // Drawn as the kit's checked box (22 points, 2-point edge), with a dash for a partial branch.
-        mixedBox: {
-            width: 22,
-            height: 22,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 2,
-            borderRadius: 4,
-            borderColor: colors.accent,
-            backgroundColor: colors.accent,
-        },
-        rowCopy: { flex: 1, minWidth: 0, paddingVertical: 7 },
-        deckName: { color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '500' },
-        deckNameActive: { color: colors.accent },
-        subdeckCount: { marginTop: 2, color: colors.textMuted, fontSize: FontSize.xs },
+        disclosureSpacer: { width: HIT_TARGET },
+        // The disclosure column is the row's leading inset.
+        rowMain: { flex: 1, paddingLeft: 0 },
         emptyText: { ...Type.caption, padding: Spacing.lg, color: colors.textMuted, textAlign: 'center' },
     });
 }

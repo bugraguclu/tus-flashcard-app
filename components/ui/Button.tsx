@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     base: {
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: Radius.control,
+        borderRadius: Radius.button,
     },
     regular: { minHeight: 50, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
     compact: { minHeight: 40, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
@@ -246,5 +246,5 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    helpMark: { fontSize: 13, lineHeight: 16, fontWeight: '600' },
+    helpMark: { fontSize: FontSize.sm, lineHeight: 16, fontWeight: '600' },
 });

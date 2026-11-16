@@ -57,8 +57,8 @@ export function Stepper({
                 aria-disabled={!enabled}
             >
                 {kind === 'increment'
-                    ? <PlusIcon color={colors.onAccent} size={18} />
-                    : <MinusIcon color={colors.onAccent} size={18} />}
+                    ? <PlusIcon color={colors.onAccent} size={20} />
+                    : <MinusIcon color={colors.onAccent} size={20} />}
             </TouchableOpacity>
         );
     };

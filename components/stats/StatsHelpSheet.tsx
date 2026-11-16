@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { Spacing, useThemeColors } from '../../constants/theme';
+import { Spacing, useThemeColors, FontSize } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { SheetScrollView } from '../SwipeDismissSheet';
 import { AppSheet } from '../ui/Sheet';
@@ -60,7 +60,7 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
 const styles = StyleSheet.create({
     scroll: { flexShrink: 1 },
     content: { paddingTop: Spacing.xs, paddingBottom: Spacing.lg, gap: Spacing.xl },
-    section: { gap: 6 },
-    heading: { fontSize: 15, fontWeight: '600' },
-    body: { fontSize: 15, lineHeight: 22 },
+    section: { gap: Spacing.s6 },
+    heading: { fontSize: FontSize.md, fontWeight: '600' },
+    body: { fontSize: FontSize.md, lineHeight: 22 },
 });

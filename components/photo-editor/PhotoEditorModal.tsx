@@ -13,7 +13,8 @@ import { Text } from '../AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Shadow, Radius } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import { alert, confirm } from '../../lib/confirm';
 import { attachmentMediaFilename } from '../../lib/mediaFilename';
@@ -683,9 +684,9 @@ function createStyles(colors: ColorScheme) {
         panelHidden: { opacity: 0 },
         cropCanvas: { position: 'absolute' },
         // The shadow sits on a wrapper: iOS clips a shadow drawn by a view that clips its content.
-        pageShadow: { borderRadius: BorderRadius.sm, backgroundColor: colors.bgCard, ...Shadows.md },
+        pageShadow: { borderRadius: Radius.control, backgroundColor: colors.bgCard, ...Shadow.card },
         page: {
-            borderRadius: BorderRadius.sm,
+            borderRadius: Radius.control,
             overflow: 'hidden',
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: colors.border,
@@ -704,7 +705,7 @@ function createStyles(colors: ColorScheme) {
             left: Spacing.sm,
             paddingHorizontal: Spacing.sm,
             paddingVertical: 3,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             backgroundColor: 'rgba(0, 0, 0, 0.6)',
         },
         compareText: { color: '#ffffff', fontSize: FontSize.xs, fontWeight: '600' },

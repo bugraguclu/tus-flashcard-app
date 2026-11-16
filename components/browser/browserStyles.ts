@@ -1,6 +1,6 @@
 import { StyleSheet, Platform } from 'react-native';
-import { Spacing, FontSize, Shadows, type ColorScheme } from '../../constants/theme';
-import { DISABLED_OPACITY, Radius, Type } from '../ui/tokens';
+import { Spacing, FontSize, type ColorScheme } from '../../constants/theme';
+import { Radius, Shadow, Type } from '../ui/tokens';
 
 /** Styles for the card browser, its rows, bars, menus and dialogs. */
 export function createBrowserStyles(colors: ColorScheme) {
@@ -30,7 +30,7 @@ export function createBrowserStyles(colors: ColorScheme) {
     // flexGrow: 0 + centered content pin the chips to their natural size; otherwise the
     // row stretches into leftover space when the list below is short, inflating the chips.
     filterScroll: { minHeight: 42, maxHeight: 42, flexGrow: 0 },
-    filterContent: { paddingHorizontal: Spacing.lg, gap: 6, alignItems: 'center' },
+    filterContent: { paddingHorizontal: Spacing.lg, gap: Spacing.s6, alignItems: 'center' },
 
     list: { flex: 1 },
     listContent: { flexGrow: 1, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: 3 },
@@ -45,7 +45,7 @@ export function createBrowserStyles(colors: ColorScheme) {
         borderCurve: 'continuous',
         paddingVertical: 4,
         paddingHorizontal: Spacing.md - 2,
-        ...Shadows.sm,
+        ...Shadow.card,
     },
     cardItemSelected: { borderColor: colors.accent, backgroundColor: colors.accentLight },
     // Anki tints the row instead of fading it: a suspended card is out of the queue, not less
@@ -57,25 +57,21 @@ export function createBrowserStyles(colors: ColorScheme) {
     // keeps its text top-aligned, but the box marks the whole row rather than its first line.
     selectionMark: { alignSelf: 'center' },
     cardBody: { flex: 1, minWidth: 0 },
-    cardQuestion: { fontSize: 13, fontWeight: '500', color: colors.textPrimary, lineHeight: 18 },
-    cardMeta: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
-    cardTopic: { flex: 1, minWidth: 0, fontSize: 11, lineHeight: 14, color: colors.textMuted },
-    statusDot: { flexShrink: 0, paddingHorizontal: 6, paddingVertical: 1, borderRadius: Radius.pill },
-    statusDotText: { fontSize: 9, fontWeight: '500' },
+    cardQuestion: { ...Type.rowTitle, color: colors.textPrimary, lineHeight: 20 },
+    cardMeta: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: Spacing.s6, marginTop: Spacing.xxs },
+    cardTopic: { flex: 1, minWidth: 0, fontSize: FontSize.xs, lineHeight: 14, color: colors.textMuted },
+    statusDot: { flexShrink: 0, paddingHorizontal: Spacing.s6, paddingVertical: 1, borderRadius: Radius.pill },
+    statusDotText: { fontSize: FontSize.xs, fontWeight: '500' },
     scheduleMeta: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 1 },
-    answerSnippet: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: 2, lineHeight: 18 },
+    answerSnippet: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: Spacing.xxs, lineHeight: 18 },
     cardActions: {
         width: 24,
         flexShrink: 0,
         alignItems: 'center',
-        gap: 2,
+        gap: Spacing.xxs,
     },
-    editBtn: {
-        width: 24,
-        height: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
+    // The 44-point icon button, pulled in to the 24 points the pencil is given in the row.
+    editBtn: { margin: -10 },
     // The marked star, the flag and the suspended mark at the row's end.
     statusIcon: { width: 24, height: 18, alignItems: 'center', justifyContent: 'center' },
 
@@ -87,7 +83,7 @@ export function createBrowserStyles(colors: ColorScheme) {
         marginBottom: Spacing.md,
     },
     answerLabel: {
-        fontSize: 9,
+        fontSize: FontSize.xs,
         fontWeight: '600',
         letterSpacing: 1,
         color: colors.accent,
@@ -102,25 +98,16 @@ export function createBrowserStyles(colors: ColorScheme) {
 
     cardInfoBtn: { marginTop: Spacing.sm },
 
-    selectionBar: {
-        minHeight: 68,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.sm,
-        paddingBottom: Spacing.xs,
-        backgroundColor: colors.bgCard,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.border,
-        ...Shadows.lg,
-    },
+    // The selection bar's leading control: the count of what is selected, which closes selection.
+    // It takes twice an action's share of the bar, so the count stays readable.
     selectionBarCount: {
-        flex: 1,
+        flex: 2,
         minWidth: 80,
-        height: 52,
+        minHeight: 52,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: Spacing.xs,
+        gap: Spacing.s6,
+        paddingLeft: Spacing.md,
     },
     selectionBarCloseBox: {
         width: 24,
@@ -134,44 +121,7 @@ export function createBrowserStyles(colors: ColorScheme) {
         fontSize: FontSize.sm,
         fontWeight: '600',
     },
-    selectionActionsGroup: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 2,
-    },
-    selectionAction: {
-        width: 60,
-        height: 52,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: Radius.control,
-    },
-    selectionActionDisabled: { opacity: DISABLED_OPACITY },
-    selectionActionIconBox: {
-        width: 24,
-        height: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    selectionActionText: {
-        color: colors.textSecondary,
-        fontSize: 11,
-        fontWeight: '500',
-        marginTop: 3,
-        textAlign: 'center',
-    },
 
-    // A Browse ••• row with something at its end: laid out as the shared `MenuItem` is.
-    menuItem: {
-        minHeight: 48,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.md,
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.sm,
-    },
-    menuItemIcon: { width: 22, alignItems: 'center' },
-    menuItemLabel: { flex: 1, minWidth: 0, color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '500' },
     menuBadge: { alignSelf: 'center' },
     flagIconContainer: {
         width: 18,
@@ -203,7 +153,7 @@ export function createBrowserStyles(colors: ColorScheme) {
         flexDirection: 'row',
         alignItems: 'center',
         gap: Spacing.sm,
-        paddingVertical: 6,
+        paddingVertical: Spacing.s6,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.borderLight,
     },
@@ -217,18 +167,6 @@ export function createBrowserStyles(colors: ColorScheme) {
     searchHelpHint: { flex: 1, color: colors.textSecondary, fontSize: FontSize.xs, textAlign: 'right' },
     directionRow: { flexDirection: 'row', gap: Spacing.sm },
     pickerList: { maxHeight: 430 },
-    pickerRow: {
-        minHeight: 48,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-        paddingHorizontal: Spacing.md,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    pickerRowActive: { backgroundColor: colors.accentLight },
-    pickerRowText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md },
-    pickerRowTextActive: { color: colors.accent, fontWeight: '600' },
     optionGroup: { gap: Spacing.sm },
     optionTitle: { ...Type.rowTitle, color: colors.textPrimary },
     optionCaption: { ...Type.caption, color: colors.textMuted },

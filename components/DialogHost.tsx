@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Shadow } from './ui/tokens';
 import { registerDialogHost, type DialogRequest } from '../lib/confirm';
 import { useI18n } from '../hooks/useI18n';
 import { Button } from './ui/Button';
@@ -165,7 +166,7 @@ function createStyles(colors: ColorScheme) {
             borderColor: colors.borderLight,
             padding: Spacing.xxl,
             alignItems: 'center',
-            ...Shadows.lg,
+            ...Shadow.floating,
         },
         title: {
             ...Type.title,

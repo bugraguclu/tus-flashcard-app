@@ -9,6 +9,7 @@ import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import ScreenHeader from '../components/ScreenHeader';
 import { Button, IconButton } from '../components/ui/Button';
 import { Card, SectionLabel } from '../components/ui/Card';
 import { Chip } from '../components/ui/Choice';
@@ -103,9 +104,19 @@ export default function NoteTypeScreen() {
         [nt, l, shownTemplateIndex],
     );
 
+    // The same header as every routed screen; the unsaved-changes guard still asks before leaving.
+    const header = (
+        <ScreenHeader
+            title={t('root.editNoteType')}
+            onBack={() => goBackOr(router, '/note-types')}
+            backAccessibilityLabel={l('Not türlerine dön', 'Back to note types')}
+        />
+    );
+
     if (!nt || !preview) {
         return (
             <SafeAreaView style={styles.container}>
+                {header}
                 <EmptyState title={l('Not türü bulunamadı.', 'Note type not found.')} />
             </SafeAreaView>
         );
@@ -290,6 +301,7 @@ export default function NoteTypeScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
+            {header}
             <ScrollView
                 contentContainerStyle={styles.content}
                 // Without the keyboard's inset the back template and the styling sit under the
@@ -347,7 +359,7 @@ export default function NoteTypeScreen() {
                     <Button
                         variant="secondary"
                         size="compact"
-                        icon={<PlusIcon color={colors.textPrimary} size={18} />}
+                        icon={<PlusIcon color={colors.textPrimary} size={20} />}
                         label={l('Alan ekle', 'Add Field')}
                         onPress={() => applyStructural((base) => addField(base, l('Yeni alan', 'New Field')))}
                     />

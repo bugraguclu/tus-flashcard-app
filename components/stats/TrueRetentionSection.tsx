@@ -112,7 +112,7 @@ export default function TrueRetentionSection({ table }: { table: TrueRetentionTa
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        table: { gap: 2 },
+        table: { gap: Spacing.xxs },
         row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
         bodyRow: {
             minHeight: 40,
@@ -122,7 +122,7 @@ function createStyles(colors: ColorScheme) {
         },
         rowLabel: { flex: 1.3, minWidth: 0, color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '500' },
         headCell: { flex: 1, minWidth: 0, textAlign: 'center', color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600' },
-        cell: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', gap: 2 },
+        cell: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', gap: Spacing.xxs },
         value: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
         detail: { color: colors.textSecondary, fontSize: FontSize.xs, textAlign: 'center' },
     });

@@ -8,8 +8,9 @@ import { cardFlagName, type SupportedLocale } from '../../lib/i18n';
 import FlagGlyph from '../../components/FlagGlyph';
 import StarGlyph from '../../components/StarGlyph';
 import { alert } from '../../lib/confirm';
+import { BottomBar, BottomBarItem } from '../ui/Bars';
 import { Chip } from '../ui/Choice';
-import { CloseIcon, MoreVerticalIcon } from '../ui/icons';
+import { CloseIcon, MoreIcon } from '../ui/icons';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
 import {
@@ -90,7 +91,7 @@ export function FilterChips({
             />
             <Chip
                 label={l('İşaretli', 'Marked')}
-                icon={<StarGlyph color={colors.marked} size={14} />}
+                icon={<StarGlyph color={colors.marked} size={16} />}
                 selected={markedOnly}
                 onPress={() => setMarkedOnly((prev) => !prev)}
                 accessibilityLabel={l('Yalnızca işaretli notları göster', 'Show marked notes only')}
@@ -99,13 +100,13 @@ export function FilterChips({
                 l('Askıda', 'Suspended'),
                 l('Askıda filtresini kaldır', 'Remove suspended filter'),
                 () => setSuspendedOnly(false),
-                <SelectionSuspendIcon color={colors.accent} size={14} />,
+                <SelectionSuspendIcon color={colors.accent} size={16} />,
             )}
             {tagFilters.length > 0 && removable(
                 l(`${tagFilters.length} etiket`, `${tagFilters.length} tags`),
                 l(`${tagFilters.length} etiketlik filtreyi kaldır`, `Remove the filter for ${tagFilters.length} tags`),
                 () => setTagFilters([]),
-                <TagIcon color={colors.accent} size={14} />,
+                <TagIcon color={colors.accent} size={16} />,
             )}
             {flagFilters.length < ALL_CARD_FLAGS.length && (
                 <>
@@ -118,7 +119,7 @@ export function FilterChips({
                         l('Bayrak yok', 'No flag'),
                         l('Bayrak yok filtresini kaldır', 'Remove no flag filter'),
                         clearNoFlagFilter,
-                        <FlagGlyph color={colors.textMuted} size={14} filled={false} />,
+                        <FlagGlyph color={colors.textMuted} size={16} filled={false} />,
                     )}
                     {coloredFlagFilters.length > 0 && removable(
                         coloredFlagFilters.length === 1
@@ -127,7 +128,7 @@ export function FilterChips({
                         colorFlagLabel,
                         clearColoredFlagFilters,
                         coloredFlagFilters.length === 1
-                            ? <FlagGlyph color={FLAG_COLORS[coloredFlagFilters[0]].color} size={14} filled />
+                            ? <FlagGlyph color={FLAG_COLORS[coloredFlagFilters[0]].color} size={16} filled />
                             : undefined,
                     )}
                 </>
@@ -152,7 +153,10 @@ interface SelectionBarProps {
     toggleSelectionSuspended: () => void;
 }
 
-/** The bar that replaces the list footer while cards are selected. */
+/**
+ * The bar that replaces the list footer while cards are selected: the kit's bottom bar, led by the
+ * count of what is selected, which also leaves selection.
+ */
 export function SelectionBar({
     closeSelection,
     colors,
@@ -169,27 +173,8 @@ export function SelectionBar({
     toggleSelectionSuspended,
 }: SelectionBarProps) {
     const empty = selectedCardIds.size === 0;
-    const action = (
-        label: string,
-        caption: string,
-        icon: ReactNode,
-        onPress: () => void,
-        expanded?: boolean,
-    ) => (
-        <TouchableOpacity
-            style={[styles.selectionAction, empty && styles.selectionActionDisabled]}
-            disabled={empty}
-            onPress={onPress}
-            accessibilityRole="button"
-            accessibilityLabel={label}
-            accessibilityState={expanded === undefined ? { disabled: empty } : { expanded, disabled: empty }}
-        >
-            <View style={styles.selectionActionIconBox}>{icon}</View>
-            <Text style={styles.selectionActionText}>{caption}</Text>
-        </TouchableOpacity>
-    );
     return (
-        <View style={styles.selectionBar}>
+        <BottomBar>
             <TouchableOpacity
                 style={styles.selectionBarCount}
                 onPress={closeSelection}
@@ -203,8 +188,12 @@ export function SelectionBar({
                     {selectedCardIds.size} {tableMode === 'notes' ? l('not seçili', 'notes selected') : l('kart seçili', 'cards selected')}
                 </Text>
             </TouchableOpacity>
-            <View style={styles.selectionActionsGroup}>
-                {action(l('Desteyi değiştir', 'Change deck'), l('Deste', 'Deck'), <SelectionDeckIcon color={colors.accent} />, () => {
+            <BottomBarItem
+                label={l('Deste', 'Deck')}
+                accessibilityLabel={l('Desteyi değiştir', 'Change deck')}
+                icon={<SelectionDeckIcon color={colors.accent} />}
+                disabled={empty}
+                onPress={() => {
                     if (hasCatalogCardsSelected || hasCatalogNotesSelected) {
                         alert(
                             l('Katalog Korumalı', 'Catalog Protected'),
@@ -213,17 +202,30 @@ export function SelectionBar({
                         return;
                     }
                     setShowDeckPicker(true);
-                })}
-                {action(l('Askıya al / askıdan çıkar', 'Toggle suspend'), l('Askı', 'Suspend'), <SelectionSuspendIcon color={colors.accent} />, toggleSelectionSuspended)}
-                {action(l('Bayrak koy', 'Flag'), l('Bayrak', 'Flag'), <SelectionFlagIcon color={colors.accent} />, () => setFlagPickerMode('selection'))}
-                {action(
-                    l('Diğer kart işlemleri', 'More card actions'),
-                    l('Diğer', 'More'),
-                    <MoreVerticalIcon color={colors.accent} size={20} />,
-                    () => setShowSelectionMenu(true),
-                    showSelectionMenu,
-                )}
-            </View>
-        </View>
+                }}
+            />
+            <BottomBarItem
+                label={l('Askı', 'Suspend')}
+                accessibilityLabel={l('Askıya al / askıdan çıkar', 'Toggle suspend')}
+                icon={<SelectionSuspendIcon color={colors.accent} />}
+                disabled={empty}
+                onPress={toggleSelectionSuspended}
+            />
+            <BottomBarItem
+                label={l('Bayrak', 'Flag')}
+                accessibilityLabel={l('Bayrak koy', 'Flag')}
+                icon={<SelectionFlagIcon color={colors.accent} />}
+                disabled={empty}
+                onPress={() => setFlagPickerMode('selection')}
+            />
+            <BottomBarItem
+                label={l('Diğer', 'More')}
+                accessibilityLabel={l('Diğer kart işlemleri', 'More card actions')}
+                icon={<MoreIcon color={colors.accent} size={20} />}
+                disabled={empty}
+                expanded={showSelectionMenu}
+                onPress={() => setShowSelectionMenu(true)}
+            />
+        </BottomBar>
     );
 }

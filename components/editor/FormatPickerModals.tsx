@@ -1,7 +1,7 @@
-import type { Dispatch, SetStateAction } from 'react';
-import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { type Dispatch, type SetStateAction } from 'react';
+import { Platform, type StyleProp, StyleSheet, type TextStyle, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
-import { Spacing, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, type ColorScheme } from '../../constants/theme';
 import {
     calloutHtml,
     EDITOR_CALLOUTS,
@@ -17,8 +17,9 @@ import type { EditorFormatState } from '../../lib/editorFormatState';
 import type { RichTextCommand } from '../RichTextEditor';
 import { AppDialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
-import { SelectedMark } from '../ui/Choice';
+import { Divider } from '../ui/Card';
 import { TextField } from '../ui/Fields';
+import { ListRow } from '../ui/Rows';
 import { Radius } from '../ui/tokens';
 import type { EditorI18n } from './types';
 import type { EditorStyles } from './editorStyles';
@@ -35,67 +36,78 @@ function cancelAction(t: EditorI18n['t'], onClose: () => void) {
     return <Button variant="plain" label={t('common.cancel')} onPress={onClose} />;
 }
 
-/** One option of a picker; the chosen one is tinted and ends in a tick. */
-function PickerOption({ styles, label, labelStyle, selected, onPress, accessibilityRole = 'button', accessibilityLabel, extraStyle }: {
-    styles: EditorStyles;
+/**
+ * One option of a picker: the kit's list row inside the dialog. With `selected` it is an option of
+ * a single-choice list and the chosen one ends in a tick; without it, it is an action.
+ */
+function PickerOption({ label, labelStyle, selected, onPress, accessibilityLabel, extraStyle }: {
     label: string;
-    labelStyle?: object | null;
+    /** Draws the label as what it names: a typeface in its own face, a size in its own size. */
+    labelStyle?: StyleProp<TextStyle>;
     /** Left out for a list without a current value, such as the table sizes. */
     selected?: boolean;
     onPress: () => void;
-    accessibilityRole?: 'button' | 'radio';
     accessibilityLabel?: string;
-    extraStyle?: object;
+    extraStyle?: StyleProp<ViewStyle>;
 }) {
     return (
-        <TouchableOpacity
-            style={[styles.formatPickerOption, local.option, selected && styles.pickerOptionActive, extraStyle]}
+        <ListRow
+            title={label}
+            titleStyle={labelStyle}
+            selected={selected}
+            chevron={false}
             onPress={onPress}
-            accessibilityRole={accessibilityRole}
             accessibilityLabel={accessibilityLabel}
-            accessibilityState={selected === undefined ? undefined : { selected }}
-            aria-checked={accessibilityRole === 'radio' ? selected : undefined}
-        >
-            <Text style={[styles.formatPickerOptionText, local.optionText, labelStyle]}>{label}</Text>
-            {selected !== undefined ? <SelectedMark visible={selected} /> : null}
-        </TouchableOpacity>
+            style={[local.option, extraStyle]}
+        />
+    );
+}
+
+/** The options of a picker, with the kit's hairline between them. */
+function PickerOptions({ children }: { children: React.ReactNode }) {
+    return (
+        <View>
+            {React.Children.toArray(children).map((child, index) => (
+                <React.Fragment key={(child as React.ReactElement).key ?? index}>
+                    {index > 0 ? <Divider /> : null}
+                    {child}
+                </React.Fragment>
+            ))}
+        </View>
     );
 }
 
 /** The editor's default field text size, chosen from the overflow menu. */
-export function EditorFontSizeModal({ visible, currentSize, onChoose, onClose, styles, l, t }: PickerBaseProps & {
+export function EditorFontSizeModal({ visible, currentSize, onChoose, onClose, l, t }: PickerBaseProps & {
     currentSize: number;
     onChoose: (size: number) => void;
 }) {
     return (
         <AppDialog visible={visible} onClose={onClose} title={l('Düzenleyici yazı boyutu', 'Editor Text Size')} actions={cancelAction(t, onClose)}>
-            <View>
+            <PickerOptions>
                 {[12, 14, 16, 18, 20, 24, 28, 32].map((size) => (
                     <PickerOption
                         key={size}
-                        styles={styles}
                         label={String(size)}
-                        labelStyle={[styles.fontSizeSample, { fontSize: size }]}
+                        labelStyle={{ fontSize: size }}
                         selected={currentSize === size}
                         onPress={() => onChoose(size)}
-                        accessibilityRole="radio"
                     />
                 ))}
-            </View>
+            </PickerOptions>
         </AppDialog>
     );
 }
 
-export function TablePickerModal({ visible, onInsertTable, onClose, styles, l, t }: PickerBaseProps & {
+export function TablePickerModal({ visible, onInsertTable, onClose, l, t }: PickerBaseProps & {
     onInsertTable: (rows: number, columns: number) => void;
 }) {
     return (
         <AppDialog visible={visible} onClose={onClose} title={l('Tablo ekle', 'Insert Table')} actions={cancelAction(t, onClose)}>
-            <View>
+            <PickerOptions>
                 {[[2, 2], [3, 3], [3, 2], [4, 4]].map(([rows, columns]) => (
                     <PickerOption
                         key={`${rows}x${columns}`}
-                        styles={styles}
                         label={`${rows} × ${columns}`}
                         onPress={() => onInsertTable(rows, columns)}
                         accessibilityLabel={l(
@@ -104,34 +116,33 @@ export function TablePickerModal({ visible, onInsertTable, onClose, styles, l, t
                         )}
                     />
                 ))}
-            </View>
+            </PickerOptions>
         </AppDialog>
     );
 }
 
-export function CalloutPickerModal({ visible, onInsertCallout, onClose, styles, l, t }: PickerBaseProps & {
+export function CalloutPickerModal({ visible, onInsertCallout, onClose, l, t }: PickerBaseProps & {
     onInsertCallout: (tone: Parameters<typeof calloutHtml>[0]) => void;
 }) {
     return (
         <AppDialog visible={visible} onClose={onClose} title={l('Bilgi kutusu ekle', 'Insert Callout')} actions={cancelAction(t, onClose)}>
-            <View>
+            <PickerOptions>
                 {EDITOR_CALLOUTS.map((tone) => (
                     <PickerOption
                         key={tone.key}
-                        styles={styles}
                         label={l(tone.tr, tone.en)}
                         // The tone's own border colour is the card content the callout inserts.
-                        extraStyle={[styles.calloutOption, { borderLeftColor: tone.border }]}
+                        extraStyle={[local.callout, { borderLeftColor: tone.border }]}
                         onPress={() => onInsertCallout(tone.key)}
                         accessibilityLabel={l(tone.tr, tone.en)}
                     />
                 ))}
-            </View>
+            </PickerOptions>
         </AppDialog>
     );
 }
 
-export function LinkEditorModal({ visible, draft, onDraftChange, onConfirm, onClose, styles, l, t }: PickerBaseProps & {
+export function LinkEditorModal({ visible, draft, onDraftChange, onConfirm, onClose, l, t }: PickerBaseProps & {
     draft: { url: string; label: string };
     onDraftChange: Dispatch<SetStateAction<{ url: string; label: string }>>;
     onConfirm: () => void;
@@ -168,32 +179,31 @@ export function LinkEditorModal({ visible, draft, onDraftChange, onConfirm, onCl
 }
 
 /** A size for the selected text, as opposed to the editor-wide default above. */
-export function InlineFontSizePickerModal({ visible, currentSize, onChoose, onClose, styles, l, t }: PickerBaseProps & {
+export function InlineFontSizePickerModal({ visible, currentSize, onChoose, onClose, l, t }: PickerBaseProps & {
     currentSize: EditorFormatState['fontSize'];
     onChoose: (size: EditorFontSize) => void;
 }) {
     return (
         <AppDialog visible={visible} onClose={onClose} title={l('Yazı boyutu', 'Font Size')} actions={cancelAction(t, onClose)}>
-            <View>
+            <PickerOptions>
                 {EDITOR_FONT_SIZES.map((size) => (
-                    <PickerOption key={size} styles={styles} label={l(...EDITOR_FONT_SIZE_LABELS[size])} selected={currentSize === size} onPress={() => onChoose(size)} />
+                    <PickerOption key={size} label={l(...EDITOR_FONT_SIZE_LABELS[size])} selected={currentSize === size} onPress={() => onChoose(size)} />
                 ))}
-            </View>
+            </PickerOptions>
         </AppDialog>
     );
 }
 
-export function FontFamilyPickerModal({ visible, currentFamily, onChoose, onClose, styles, l, t }: PickerBaseProps & {
+export function FontFamilyPickerModal({ visible, currentFamily, onChoose, onClose, l, t }: PickerBaseProps & {
     currentFamily: EditorFormatState['fontFamily'];
     onChoose: (family: EditorFontFamilyKey) => void;
 }) {
     return (
         <AppDialog visible={visible} onClose={onClose} title={l('Yazı tipi', 'Font')} actions={cancelAction(t, onClose)}>
-            <View>
+            <PickerOptions>
                 {EDITOR_FONT_FAMILIES.map((entry) => (
                     <PickerOption
                         key={entry.key}
-                        styles={styles}
                         label={l(entry.tr, entry.en)}
                         // Each row is drawn in its own face, the way Word's font list previews itself.
                         labelStyle={entry.css ? { fontFamily: entry.css.split(',')[0]!.trim().replace(/^["']|["']$/g, '') } : null}
@@ -201,41 +211,40 @@ export function FontFamilyPickerModal({ visible, currentFamily, onChoose, onClos
                         onPress={() => onChoose(entry.key)}
                     />
                 ))}
-            </View>
+            </PickerOptions>
         </AppDialog>
     );
 }
 
-export function LineSpacingPickerModal({ visible, currentSpacing, onChoose, onClose, styles, l, t }: PickerBaseProps & {
+export function LineSpacingPickerModal({ visible, currentSpacing, onChoose, onClose, l, t }: PickerBaseProps & {
     currentSpacing: EditorFormatState['lineSpacing'];
     onChoose: (spacing: EditorLineSpacing) => void;
 }) {
     return (
         <AppDialog visible={visible} onClose={onClose} title={l('Satır aralığı', 'Line spacing')} actions={cancelAction(t, onClose)}>
-            <View>
+            <PickerOptions>
                 {EDITOR_LINE_SPACINGS.map((spacing) => (
                     <PickerOption
                         key={spacing}
-                        styles={styles}
                         label={spacing.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}
                         selected={currentSpacing === spacing}
                         onPress={() => onChoose(spacing)}
                     />
                 ))}
-            </View>
+            </PickerOptions>
         </AppDialog>
     );
 }
 
-export function MathPickerModal({ visible, onWrap, onClose, styles, l, t }: PickerBaseProps & {
+export function MathPickerModal({ visible, onWrap, onClose, l, t }: PickerBaseProps & {
     onWrap: (prefix: string, suffix: string) => void;
 }) {
     return (
         <AppDialog visible={visible} onClose={onClose} title={l('MathJax ekle', 'Insert MathJax')} actions={cancelAction(t, onClose)}>
-            <View>
-                <PickerOption styles={styles} label={l('Blok denklem', 'Block equation')} onPress={() => onWrap('\\[', '\\]')} />
-                <PickerOption styles={styles} label={l('Kimya denklemi', 'Chemistry equation')} onPress={() => onWrap('\\( \\ce{', '} \\)')} />
-            </View>
+            <PickerOptions>
+                <PickerOption label={l('Blok denklem', 'Block equation')} onPress={() => onWrap('\\[', '\\]')} />
+                <PickerOption label={l('Kimya denklemi', 'Chemistry equation')} onPress={() => onWrap('\\( \\ce{', '} \\)')} />
+            </PickerOptions>
         </AppDialog>
     );
 }
@@ -294,9 +303,9 @@ export function ColorPickerModal({ visible, onCommand, onClose, colors, styles, 
                     ))}
                 </View>
             </View>
-            <View>
-                <PickerOption styles={styles} label={l('Biçimlendirmeyi temizle', 'Clear formatting')} onPress={() => onCommand('removeFormat')} />
-            </View>
+            <PickerOptions>
+                <PickerOption label={l('Biçimlendirmeyi temizle', 'Clear formatting')} onPress={() => onCommand('removeFormat')} />
+            </PickerOptions>
         </AppDialog>
     );
 }
@@ -340,11 +349,12 @@ export function HtmlSourceModal({ visible, fieldName, value, onChangeValue, onSa
 const SWATCH_SLOP = { top: 5, bottom: 5 };
 
 const local = StyleSheet.create({
-    option: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-    optionText: { flex: 1 },
+    // The dialog's own padding is the rows' inset.
+    option: { paddingHorizontal: 0 },
+    callout: { borderLeftWidth: 4, paddingLeft: Spacing.md },
     swatchGroup: { gap: Spacing.sm },
     swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
     swatch: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.inset },
     swatchText: { fontWeight: '500' },
-    htmlSource: { minHeight: 140, maxHeight: 260, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 13 },
+    htmlSource: { minHeight: 140, maxHeight: 260, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: FontSize.sm },
 });

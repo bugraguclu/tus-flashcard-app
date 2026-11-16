@@ -106,7 +106,7 @@ function createStyles(colors: ColorScheme) {
             justifyContent: 'center',
             backgroundColor: colors.accentLight,
         },
-        numberText: { color: colors.accent, fontWeight: '700' },
+        numberText: { color: colors.accent, fontWeight: '600' },
         stepCopy: { flex: 1, gap: 3 },
         stepTitle: { ...Type.caption, fontWeight: '600', color: colors.textPrimary },
         stepBody: { ...Type.caption, lineHeight: 20, color: colors.textSecondary },

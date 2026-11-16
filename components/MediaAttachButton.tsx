@@ -396,7 +396,7 @@ const MediaAttachButton = forwardRef<MediaAttachButtonHandle, MediaAttachButtonP
             <IconButton accessibilityLabel={l('Ek ekle', 'Add attachment')} onPress={openMenu} disabled={busy}>
                 {busy
                     ? <ActivityIndicator size="small" color={colors.accent} />
-                    : <PaperclipGlyph color={colors.textMuted} size={23} />}
+                    : <PaperclipGlyph color={colors.textMuted} size={24} />}
             </IconButton>
 
             <AppSheet

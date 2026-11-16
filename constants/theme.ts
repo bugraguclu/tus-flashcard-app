@@ -219,7 +219,11 @@ export function useIsDarkTheme(): boolean {
 }
 
 export const Spacing = {
+    /** A hairline gap: between an icon and its caption, or two stacked lines of one label. */
+    xxs: 2,
     xs: 4,
+    /** Six points: the tight inner padding of chips, badges and toolbar cells. */
+    s6: 6,
     sm: 8,
     md: 12,
     lg: 16,
@@ -228,16 +232,17 @@ export const Spacing = {
     xxxl: 32,
 };
 
+/** The corner scale. Screens use the roles built on it (`Radius` in components/ui/tokens). */
 export const BorderRadius = {
-    sm: 6,
-    md: 8,
-    lg: 12,
-    xl: 16,
+    sm: 8,
+    md: 12,
+    lg: 16,
     full: 9999,
 };
 
 export const FontSize = {
-    xs: 10,
+    /** The smallest text the app draws; nothing on iPhone goes under 11 points. */
+    xs: 11,
     sm: 12,
     md: 14,
     lg: 16,

@@ -69,7 +69,7 @@ function createStyles(colors: ColorScheme) {
         row: { flexDirection: 'row', gap: Spacing.md },
         tile: { flex: 1, minWidth: 0, justifyContent: 'flex-start' },
         value: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '600' },
-        label: { color: colors.textSecondary, fontSize: FontSize.sm, lineHeight: 16, marginTop: 2 },
-        detail: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '500', marginTop: 2 },
+        label: { color: colors.textSecondary, fontSize: FontSize.sm, lineHeight: 16, marginTop: Spacing.xxs },
+        detail: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '500', marginTop: Spacing.xxs },
     });
 }

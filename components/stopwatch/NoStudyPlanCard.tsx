@@ -1,10 +1,11 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { ClockIcon } from './StopwatchIcons';
 import { timelineStyles } from './timelineStyles';
+import { Radius } from '../ui/tokens';
 
 interface NoStudyPlanCardProps {
     /** Whether the learner has plans for other days; then today only has none. */
@@ -29,7 +30,7 @@ function NoStudyPlanCard({ hasPlans, onPress }: NoStudyPlanCardProps) {
                 <View style={styles.line} />
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
                     <View style={[styles.node, styles.nodeMissed]}>
-                        <ClockIcon color={colors.white} size={13} />
+                        <ClockIcon color={colors.white} size={16} />
                     </View>
                 </View>
             </View>
@@ -42,7 +43,7 @@ function NoStudyPlanCard({ hasPlans, onPress }: NoStudyPlanCardProps) {
                         <TouchableOpacity
                             style={[local.button, { backgroundColor: colors.accent }]}
                             onPress={onPress}
-                            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                            hitSlop={{ top: 12, right: 8, bottom: 12, left: 8 }}
                             accessibilityRole="button"
                             accessibilityLabel={hasPlans ? l('Çalışma planlarını aç', 'Open the study plans') : l('Çalışma planı oluştur', 'Create a study plan')}
                         >
@@ -66,9 +67,9 @@ function NoStudyPlanCard({ hasPlans, onPress }: NoStudyPlanCardProps) {
 const local = StyleSheet.create({
     card: { flexDirection: 'column', gap: Spacing.xs },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-    title: { flex: 1, fontSize: FontSize.md, fontWeight: '700' },
-    button: { borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
-    buttonText: { fontSize: FontSize.sm, fontWeight: '700' },
+    title: { flex: 1, fontSize: FontSize.md, fontWeight: '600' },
+    button: { borderRadius: Radius.control, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
+    buttonText: { fontSize: FontSize.sm, fontWeight: '600' },
     hint: { fontSize: FontSize.sm, lineHeight: 18 },
 });
 

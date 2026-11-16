@@ -14,7 +14,6 @@ import {
     GripGlyph,
     MinusGlyph,
     MoreGlyph,
-    MoreVerticalGlyph,
     PlusGlyph,
     RedoGlyph,
     RefreshGlyph,
@@ -87,11 +86,6 @@ export function MinusIcon({ color, size = 22 }: IconProps) {
 /** More actions (•••). */
 export function MoreIcon({ color, size = 24 }: IconProps) {
     return <MoreGlyph color={color} size={size} />;
-}
-
-/** More actions (⋮), for a menu that hangs from the right edge of a header. */
-export function MoreVerticalIcon({ color, size = 24 }: IconProps) {
-    return <MoreVerticalGlyph color={color} size={size} />;
 }
 
 export function SearchIcon({ color, size = 18 }: IconProps) {

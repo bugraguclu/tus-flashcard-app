@@ -1,6 +1,6 @@
 import { Platform, StyleSheet } from 'react-native';
 import { FontSize, Spacing, type ColorScheme } from '../../constants/theme';
-import { DISABLED_OPACITY, Radius } from '../ui/tokens';
+import { Radius } from '../ui/tokens';
 
 /** Styles for the note editor screen and the content of the dialogs it opens. */
 export function createEditorStyles(colors: ColorScheme) {
@@ -12,22 +12,10 @@ export function createEditorStyles(colors: ColorScheme) {
         width: '100%',
         maxWidth: 720,
         alignSelf: 'center',
-        paddingHorizontal: 6,
+        paddingHorizontal: Spacing.s6,
         paddingTop: 5,
         paddingBottom: Spacing.xxl,
     },
-    ankiSelectorRow: {
-        minHeight: 50,
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.border,
-        paddingHorizontal: Spacing.sm,
-    },
-    ankiSelectorRowLast: { borderBottomWidth: StyleSheet.hairlineWidth },
-    ankiSelectorLabel: { width: 72, fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
-    ankiSelectorValue: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-    ankiSelectorChevron: { width: 28, height: 40, alignItems: 'center', justifyContent: 'center' },
     formatToolbar: {
         backgroundColor: colors.bgCard,
         borderTopWidth: 1,
@@ -36,18 +24,12 @@ export function createEditorStyles(colors: ColorScheme) {
     },
     blockStyleButtonText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
     blockStyleButtonTextActive: { color: colors.accent },
-    calloutOption: { borderLeftWidth: 4, borderRadius: Radius.control },
     toolbarTabsRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: Spacing.sm,
         paddingTop: 4,
-    },
-    toolbarTabs: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.xs,
     },
     keyboardDismissButton: {
         flexDirection: 'row',
@@ -77,16 +59,6 @@ export function createEditorStyles(colors: ColorScheme) {
         height: 100,
         width: '100%',
     },
-    toolbarTab: {
-        paddingHorizontal: Spacing.md,
-        minHeight: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: Radius.pill,
-    },
-    toolbarTabActive: { backgroundColor: colors.accentLight },
-    toolbarTabText: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textMuted },
-    toolbarTabTextActive: { color: colors.accent },
     formatToolbarScroll: { width: '100%' },
     formatToolbarContent: {
         flexGrow: 1,
@@ -102,18 +74,6 @@ export function createEditorStyles(colors: ColorScheme) {
         justifyContent: 'center',
         paddingHorizontal: 0,
     },
-    formatButton: {
-        width: 44,
-        height: 44,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: Radius.control,
-    },
-    formatButtonActive: {
-        backgroundColor: colors.accentLight,
-    },
-    // A tool that cannot apply is greyed rather than silently swallowing the press.
-    formatButtonDisabled: { opacity: DISABLED_OPACITY },
     blockStyleButtonTextDisabled: { color: colors.textMuted },
     customFormatButtonText: {
         maxWidth: 38,
@@ -122,34 +82,10 @@ export function createEditorStyles(colors: ColorScheme) {
         color: colors.textPrimary,
         textAlign: 'center',
     },
-    summaryRow: {
-        minHeight: 48,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-        paddingHorizontal: Spacing.md,
-        backgroundColor: colors.bgSecondary,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: Radius.control,
-        marginTop: 5,
-    },
-    summaryLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
-    summaryValue: { flex: 1, fontSize: FontSize.sm, color: colors.textSecondary },
-    fontSizeSample: { color: colors.textPrimary },
-    pickerOptionActive: { backgroundColor: colors.accentLight },
-    formatPickerOption: {
-        minHeight: 48,
-        justifyContent: 'center',
-        paddingHorizontal: Spacing.sm,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.borderLight,
-    },
-    formatPickerOptionText: { fontSize: FontSize.md, color: colors.textPrimary },
     customToolbarPresetScroll: {
         flexDirection: 'row',
         gap: Spacing.xs,
-        paddingVertical: 2,
+        paddingVertical: Spacing.xxs,
     },
     customToolbarPreviewCard: {
         marginTop: Spacing.sm,
@@ -158,7 +94,7 @@ export function createEditorStyles(colors: ColorScheme) {
         backgroundColor: colors.bgSecondary,
         borderWidth: 1,
         borderColor: colors.borderLight,
-        gap: 6,
+        gap: Spacing.s6,
     },
     customToolbarPreviewLabel: {
         fontSize: FontSize.xs,
@@ -196,12 +132,12 @@ export function createEditorStyles(colors: ColorScheme) {
         borderColor: colors.borderLight,
     },
     customToolbarHtmlPreviewCode: {
-        fontSize: 11,
+        fontSize: FontSize.xs,
         fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
         color: colors.accent,
     },
     customToolbarSecurityNote: {
-        fontSize: 11,
+        fontSize: FontSize.xs,
         color: colors.textMuted,
         lineHeight: 15,
     },
@@ -212,7 +148,7 @@ export function createEditorStyles(colors: ColorScheme) {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 2,
+        marginBottom: Spacing.xxs,
     },
     customToolbarPresetDesc: {
         fontSize: FontSize.xs,
@@ -246,8 +182,6 @@ export function createEditorStyles(colors: ColorScheme) {
     fieldLabelRow: { minHeight: 40, marginTop: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     fieldName: { flex: 1, fontSize: FontSize.sm, fontWeight: '500', color: colors.textPrimary },
     fieldActions: { flexDirection: 'row', alignItems: 'center' },
-    fieldAction: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-    fieldActionDisabled: { opacity: DISABLED_OPACITY },
     duplicateWarning: { marginTop: Spacing.xs },
     });
 }

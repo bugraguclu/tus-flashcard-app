@@ -27,6 +27,7 @@ import {
     stableMeasuredHeight,
     type EmbeddedWebViewScrollMode,
 } from '../lib/embeddedWebViewScroll';
+import { Spacing } from '../constants/theme';
 
 export type RichTextCommand =
     | 'bold'
@@ -648,7 +649,7 @@ const styles = StyleSheet.create({
     },
     fallbackInput: {
         width: '100%',
-        paddingHorizontal: 2,
+        paddingHorizontal: Spacing.xxs,
         paddingVertical: 8,
         textAlignVertical: 'top',
     },

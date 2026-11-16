@@ -387,9 +387,9 @@ function InfoRow({ label, value, highlight, dotColor }: {
 
 function createInfoStyles(colors: ColorScheme) {
     return StyleSheet.create({
-    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.md, paddingVertical: 6 },
+    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.s6 },
     label: { fontSize: FontSize.sm, color: colors.textMuted, flexShrink: 0 },
-    valueGroup: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 },
+    valueGroup: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.s6 },
     valueDot: { width: 10, height: 10, borderRadius: 5 },
     value: { flexShrink: 1, textAlign: 'right', fontSize: FontSize.sm, fontWeight: '500', color: colors.textPrimary },
     // A lapse count above zero is the figure that says the card is in trouble.
@@ -402,13 +402,13 @@ function createStyles(colors: ColorScheme) {
     container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { flex: 1, width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg },
 
-    tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.s6 },
 
-    emptyHint: { fontSize: FontSize.sm, color: colors.textMuted, paddingVertical: 6 },
+    emptyHint: { fontSize: FontSize.sm, color: colors.textMuted, paddingVertical: Spacing.s6 },
 
     tableHeader: {
         flexDirection: 'row',
-        paddingVertical: 6,
+        paddingVertical: Spacing.s6,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
@@ -417,7 +417,7 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '600',
         color: colors.textMuted,
     },
-    tableRow: { flexDirection: 'row', paddingVertical: 6 },
+    tableRow: { flexDirection: 'row', paddingVertical: Spacing.s6 },
     tableRowEven: { backgroundColor: colors.bgSecondary },
     td: { fontSize: FontSize.xs, color: colors.textSecondary },
 

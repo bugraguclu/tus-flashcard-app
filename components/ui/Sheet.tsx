@@ -2,8 +2,8 @@ import React from 'react';
 import { KeyboardAvoidingView, Platform, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetModal from '../BottomSheetModal';
-import { Shadows, Spacing, useThemeColors } from '../../constants/theme';
-import { Radius } from './tokens';
+import { Spacing, useThemeColors } from '../../constants/theme';
+import { Radius, Shadow } from './tokens';
 
 interface AppSheetProps {
     visible: boolean;
@@ -27,6 +27,8 @@ interface AppSheetProps {
      * VoiceOver and cannot be pulled down while it is up.
      */
     overlay?: React.ReactNode;
+    /** Where the overlay sits: centred (a picker card) or at the bottom edge (date and time wheels). */
+    overlayPlacement?: 'center' | 'bottom';
     /** The sheet's height limit; 88% of the screen by default. */
     maxHeight?: `${number}%`;
     /** Extra style for the sheet surface, e.g. a fixed height for a long list. */
@@ -62,6 +64,7 @@ export function AppSheet({
     avoidKeyboard = false,
     swipeEnabled = true,
     overlay,
+    overlayPlacement = 'center',
     maxHeight = '88%',
     sheetStyle,
     backdropLabel,
@@ -96,7 +99,7 @@ export function AppSheet({
                 // Its own keyboard avoidance: an absolutely placed layer ignores the padding the
                 // sheet's container takes for the keyboard, so a picker's field would sit under it.
                 <KeyboardAvoidingView
-                    style={[StyleSheet.absoluteFill, styles.overlay, { backgroundColor: colors.scrim }]}
+                    style={[StyleSheet.absoluteFill, styles.overlay, { backgroundColor: colors.scrim }, overlayPlacement === 'bottom' && styles.overlayBottom]}
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                     accessibilityViewIsModal
                 >
@@ -123,8 +126,9 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: Radius.sheet,
         borderTopRightRadius: Radius.sheet,
         paddingHorizontal: Spacing.lg,
-        ...Shadows.lg,
+        ...Shadow.floating,
     },
     content: { flexShrink: 1 },
     overlay: { justifyContent: 'center', paddingHorizontal: Spacing.lg },
+    overlayBottom: { justifyContent: 'flex-end', paddingHorizontal: 0 },
 });

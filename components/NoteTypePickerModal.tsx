@@ -1,23 +1,17 @@
-import { useMemo } from 'react';
-import {
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { Text } from './AppText';
+import React, { useMemo } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 import { Circle, Path, Rect } from 'react-native-svg';
 import { IconFrame, iconStroke, outline } from './icons/IconFrame';
-import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
+import type { ColorScheme } from '../constants/theme';
 import { getAllNoteTypes, getNoteType } from '../lib/noteManager';
 import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type NoteType } from '../lib/models';
 import { localizeNoteTypeName } from '../lib/i18n';
 import { useI18n } from '../hooks/useI18n';
-import { Button, CloseButton } from './ui/Button';
-import { Badge, SelectedMark } from './ui/Choice';
-import { Radius, Type } from './ui/tokens';
+import { Button } from './ui/Button';
+import { Divider } from './ui/Card';
+import { Badge } from './ui/Choice';
+import { AppDialog } from './ui/Dialog';
+import { ListRow } from './ui/Rows';
 
 type Props = {
     visible: boolean;
@@ -39,7 +33,7 @@ type Props = {
 };
 
 /** A card split into front and back — the shape of a standard note type. */
-function StandardTypeIcon({ color, size = 21 }: { color: string; size?: number }) {
+function StandardTypeIcon({ color, size = 22 }: { color: string; size?: number }) {
     const line = outline(color, iconStroke(size));
     return (
         <IconFrame size={size}>
@@ -50,7 +44,7 @@ function StandardTypeIcon({ color, size = 21 }: { color: string; size?: number }
 }
 
 /** Brackets around a hidden run of text — the shape of a cloze deletion. */
-function ClozeTypeIcon({ color, size = 21 }: { color: string; size?: number }) {
+function ClozeTypeIcon({ color, size = 22 }: { color: string; size?: number }) {
     const width = iconStroke(size);
     return (
         <IconFrame size={size}>
@@ -84,178 +78,71 @@ export default function NoteTypePickerModal({
         return list;
     }, [noteTypes, visible, selectedId]);
 
-    const styles = useMemo(() => createStyles(colors), [colors]);
-
     if (!visible) return null;
 
     return (
-        <Modal
+        <AppDialog
             visible={visible}
-            transparent
-            animationType="fade"
-            presentationStyle="overFullScreen"
-            onRequestClose={onClose}
+            onClose={onClose}
+            title={title ?? l('Not türü', 'Note Type')}
+            closeButton
+            actions={(
+                <>
+                    {onManage ? (
+                        <Button
+                            label={manageLabel ?? l('Not türlerini yönet…', 'Manage note types…')}
+                            accessibilityLabel={manageLabel ?? l('Not türlerini yönet', 'Manage note types')}
+                            variant="plain"
+                            tone="muted"
+                            numberOfLines={1}
+                            onPress={onManage}
+                            style={styles.manage}
+                        />
+                    ) : null}
+                    <Button label={cancelLabel ?? t('common.cancel')} variant="plain" onPress={onClose} />
+                </>
+            )}
         >
-            <View style={[styles.layer, { backgroundColor: colors.scrim }]}>
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={onClose}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Kapat', 'Close')}
-                />
-                <View style={styles.card} accessibilityViewIsModal>
-                    <View style={styles.header}>
-                        <Text style={[Type.title, styles.title]} numberOfLines={1} accessibilityRole="header">
-                            {title ?? l('Not türü', 'Note Type')}
-                        </Text>
-                        <CloseButton accessibilityLabel={l('Kapat', 'Close')} onPress={onClose} />
-                    </View>
-
-                    <ScrollView
-                        style={styles.list}
-                        contentContainerStyle={styles.listContent}
-                        keyboardShouldPersistTaps="handled"
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {availableNoteTypes.map((noteType, index) => {
-                            const label = localizeNoteTypeName(locale, noteType.name);
-                            const selected = selectedId === noteType.id;
-                            const isCloze = noteType.kind === 'cloze';
-                            const isLast = index === availableNoteTypes.length - 1;
-                            const fieldCount = noteType.fields.length;
-                            const templateCount = noteType.templates.length;
-                            const subtitle = isCloze
-                                ? l(`${fieldCount} alan · boşluk başına 1 kart`, `${fieldCount} fields · 1 card per cloze`)
-                                : l(`${fieldCount} alan · ${templateCount} kart`, `${fieldCount} fields · ${templateCount} ${templateCount === 1 ? 'card' : 'cards'}`);
-                            const glyphColor = selected ? colors.accent : colors.textSecondary;
-
-                            return (
-                                <TouchableOpacity
-                                    key={noteType.id}
-                                    style={[styles.row, isLast && styles.rowLast, selected && styles.rowActive]}
-                                    onPress={() => {
-                                        onSelect(noteType.id);
-                                        onClose();
-                                    }}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ selected }}
-                                    accessibilityLabel={`${label}, ${subtitle}`}
-                                >
-                                    <View style={[styles.rowGlyph, selected && styles.rowGlyphActive]}>
-                                        {isCloze
-                                            ? <ClozeTypeIcon color={glyphColor} />
-                                            : <StandardTypeIcon color={glyphColor} />}
-                                    </View>
-                                    <View style={styles.rowText}>
-                                        <Text style={[styles.rowTitle, selected && styles.rowTitleActive]} numberOfLines={1}>
-                                            {label}
-                                        </Text>
-                                        <View style={styles.rowMetaLine}>
-                                            <Text style={styles.rowSubtitle} numberOfLines={1}>{subtitle}</Text>
-                                            {isCloze && <Badge label={l('Boşluk doldurma', 'Cloze')} tone="warning" />}
-                                        </View>
-                                    </View>
-                                    <SelectedMark visible={selected} />
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-
-                    <View style={styles.footer}>
-                        {onManage ? (
-                            <Button
-                                label={manageLabel ?? l('Not türlerini yönet…', 'Manage note types…')}
-                                accessibilityLabel={manageLabel ?? l('Not türlerini yönet', 'Manage note types')}
-                                variant="plain"
-                                tone="muted"
-                                numberOfLines={1}
-                                onPress={onManage}
-                                style={styles.manageButton}
+            {/* flexShrink lets a long list give way to the title and the actions inside the card. */}
+            <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                {availableNoteTypes.map((noteType, index) => {
+                    const label = localizeNoteTypeName(locale, noteType.name);
+                    const selected = selectedId === noteType.id;
+                    const isCloze = noteType.kind === 'cloze';
+                    const fieldCount = noteType.fields.length;
+                    const templateCount = noteType.templates.length;
+                    const subtitle = isCloze
+                        ? l(`${fieldCount} alan · boşluk başına 1 kart`, `${fieldCount} fields · 1 card per cloze`)
+                        : l(`${fieldCount} alan · ${templateCount} kart`, `${fieldCount} fields · ${templateCount} ${templateCount === 1 ? 'card' : 'cards'}`);
+                    const glyphColor = selected ? colors.accent : colors.textSecondary;
+                    return (
+                        <React.Fragment key={noteType.id}>
+                            {index > 0 ? <Divider /> : null}
+                            <ListRow
+                                title={label}
+                                summary={subtitle}
+                                icon={isCloze ? <ClozeTypeIcon color={glyphColor} /> : <StandardTypeIcon color={glyphColor} />}
+                                accessory={isCloze ? <Badge label={l('Boşluk doldurma', 'Cloze')} tone="warning" /> : undefined}
+                                selected={selected}
+                                onPress={() => {
+                                    onSelect(noteType.id);
+                                    onClose();
+                                }}
+                                accessibilityLabel={`${label}, ${subtitle}`}
+                                style={styles.row}
                             />
-                        ) : (
-                            <View style={styles.footerSpacer} />
-                        )}
-                        <Button label={cancelLabel ?? t('common.cancel')} variant="plain" onPress={onClose} />
-                    </View>
-                </View>
-            </View>
-        </Modal>
+                        </React.Fragment>
+                    );
+                })}
+            </ScrollView>
+        </AppDialog>
     );
 }
 
-function createStyles(colors: ColorScheme) {
-    return StyleSheet.create({
-        layer: {
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: Spacing.xl,
-        },
-        card: {
-            width: '100%',
-            maxWidth: 420,
-            maxHeight: '80%',
-            overflow: 'hidden',
-            backgroundColor: colors.bgCard,
-            borderRadius: Radius.card,
-            ...Shadows.lg,
-        },
-        // A white header inside the card, as every picker and dialog draws it.
-        header: {
-            minHeight: 58,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            paddingLeft: Spacing.lg,
-            paddingRight: Spacing.xs,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.border,
-        },
-        title: { flex: 1, color: colors.textPrimary },
-        // flexGrow: 0 lets the card hug a short list; flexShrink: 1 makes a long one give way to
-        // the header and footer instead of pushing them past the card's max height.
-        list: { flexGrow: 0, flexShrink: 1, backgroundColor: colors.bgCard },
-        listContent: { paddingVertical: Spacing.xs },
-        row: {
-            minHeight: 66,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.md,
-            paddingVertical: Spacing.sm,
-            paddingHorizontal: Spacing.md,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.borderLight,
-        },
-        rowLast: { borderBottomWidth: 0 },
-        rowActive: { backgroundColor: colors.accentLight },
-        rowGlyph: {
-            width: 40,
-            height: 40,
-            borderRadius: BorderRadius.md,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.bgInput,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-        },
-        rowGlyphActive: { backgroundColor: colors.bgCard, borderColor: colors.accent },
-        rowText: { flex: 1, minWidth: 0, gap: 3 },
-        rowTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '600' },
-        rowTitleActive: { color: colors.accent },
-        rowMetaLine: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-        rowSubtitle: { flexShrink: 1, color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '500' },
-        footer: {
-            minHeight: 54,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: Spacing.sm,
-            paddingHorizontal: Spacing.xs,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: colors.borderLight,
-            backgroundColor: colors.bgCard,
-        },
-        manageButton: { flexShrink: 1 },
-        footerSpacer: { flex: 1 },
-    });
-}
+const styles = StyleSheet.create({
+    list: { flexGrow: 0, flexShrink: 1 },
+    // The dialog's own padding is the rows' inset.
+    row: { paddingHorizontal: 0 },
+    // Pushes Cancel to the far end; a long label gives way before it does.
+    manage: { flexShrink: 1, marginRight: 'auto' },
+});

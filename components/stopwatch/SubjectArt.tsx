@@ -377,5 +377,5 @@ export function SubjectTile({ subject, width = 46, height = 56, style }: Subject
 
 const styles = StyleSheet.create({
     tile: { borderRadius: 10, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-    initial: { fontSize: 20, fontWeight: '800' },
+    initial: { fontSize: 20, fontWeight: '600' },
 });

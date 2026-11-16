@@ -13,7 +13,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Platform,
     StyleSheet,
-    TouchableOpacity,
     View,
 } from 'react-native';
 import { Text, TextInput } from './AppText';
@@ -23,8 +22,9 @@ import { commitBoundedInteger, sanitizeSignedIntegerDraft, stepBoundedIntegerDra
 import { alert } from '../lib/confirm';
 import { Button } from './ui/Button';
 import { Card, Divider, SectionLabel } from './ui/Card';
-import { Checkbox, SelectedMark } from './ui/Choice';
+import { CheckRow, Checkbox } from './ui/Choice';
 import { SheetScrollView } from './SwipeDismissSheet';
+import { ListRow } from './ui/Rows';
 import { AppSheet } from './ui/Sheet';
 import { Stepper } from './ui/Stepper';
 import { DISABLED_OPACITY, HIT_TARGET, Radius, Type } from './ui/tokens';
@@ -397,22 +397,9 @@ export default function CustomStudyModal({
         });
     };
 
-    /**
-     * One row of a single-choice list (Anki's radio buttons): the chosen row is tinted and ends in
-     * the tick every single-choice list in the app uses.
-     */
+    /** One row of a single-choice list (Anki's radio buttons): the kit's row, ticked when chosen. */
     const renderChoiceRow = (key: string, label: string, selected: boolean, onPress: () => void) => (
-        <TouchableOpacity
-            key={key}
-            style={[styles.listRow, selected && styles.listRowActive]}
-            onPress={onPress}
-            accessibilityRole="radio"
-            accessibilityState={{ selected }}
-            aria-checked={selected}
-        >
-            <Text style={[styles.listText, selected && styles.listTextActive]}>{label}</Text>
-            <SelectedMark visible={selected} />
-        </TouchableOpacity>
+        <ListRow key={key} title={label} selected={selected} onPress={onPress} />
     );
 
     /**
@@ -432,20 +419,13 @@ export default function CustomStudyModal({
                     return (
                         <React.Fragment key={`${accessibilityPrefix}-${tag}`}>
                             {index > 0 ? <Divider /> : null}
-                            <TouchableOpacity
-                                style={[styles.listRow, styles.tagRow, active && styles.listRowActive]}
-                                onPress={() => setSelected(active ? selected.filter((entry) => entry !== tag) : [...selected, tag])}
+                            <CheckRow
+                                label={tagDisplayName(tag)}
+                                checked={active}
+                                onChange={() => setSelected(active ? selected.filter((entry) => entry !== tag) : [...selected, tag])}
                                 disabled={disabled}
-                                accessibilityRole="checkbox"
-                                accessibilityState={{ checked: active, disabled }}
-                                aria-checked={active}
                                 accessibilityLabel={`${accessibilityPrefix}: ${tagDisplayName(tag)}`}
-                            >
-                                <Checkbox checked={active} />
-                                <Text style={[styles.listText, active && styles.listTextActive]} numberOfLines={2}>
-                                    {tagDisplayName(tag)}
-                                </Text>
-                            </TouchableOpacity>
+                            />
                         </React.Fragment>
                     );
                 })}
@@ -512,16 +492,13 @@ export default function CustomStudyModal({
                             {
                                 disabled: !requireTags,
                                 leading: (
-                                    <TouchableOpacity
-                                        style={styles.checkTarget}
-                                        onPress={() => setRequireTags((previous) => !previous)}
-                                        accessibilityRole="checkbox"
-                                        accessibilityState={{ checked: requireTags }}
-                                        aria-checked={requireTags}
-                                        accessibilityLabel={l('Etiket zorunlu kıl', 'Require tags')}
-                                    >
-                                        <Checkbox checked={requireTags} />
-                                    </TouchableOpacity>
+                                    <View style={styles.checkTarget}>
+                                        <Checkbox
+                                            checked={requireTags}
+                                            onChange={() => setRequireTags((previous) => !previous)}
+                                            accessibilityLabel={l('Etiket zorunlu kıl', 'Require tags')}
+                                        />
+                                    </View>
                                 ),
                             },
                         )}
@@ -625,20 +602,8 @@ function createStyles(colors: ColorScheme) {
         // Anki gives each tag list its own bounded, scrollable box so both stay reachable
         // however many tags the deck carries.
         tagScroll: { maxHeight: 260 },
-        tagRow: { minHeight: HIT_TARGET, paddingVertical: 6 },
-        listRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.md,
-            minHeight: 50,
-            paddingHorizontal: Spacing.md,
-            paddingVertical: Spacing.sm,
-        },
-        listRowActive: { backgroundColor: colors.accentLight },
-        listText: { flex: 1, fontSize: FontSize.md, color: colors.textPrimary },
-        listTextActive: { fontWeight: '600' },
         // A full-size target around the 22-point box, which stays flush with the lists below it.
-        checkTarget: { width: HIT_TARGET, height: HIT_TARGET, marginLeft: -(HIT_TARGET - 22) / 2, alignItems: 'center', justifyContent: 'center' },
+        checkTarget: { marginLeft: -(HIT_TARGET - 22) / 2 },
         // Anki's group box: the availability line, the spinner sentence and the card-state list.
         group: { marginTop: Spacing.sm },
         availability: { ...Type.caption, fontWeight: '600', color: colors.textPrimary },

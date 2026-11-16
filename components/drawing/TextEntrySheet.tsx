@@ -66,7 +66,7 @@ export function TextEntrySheet({
     // The samples show the label as it will be drawn on the photo, so they keep the photo's colours.
     const styleSample = (style: PhotoTextStyle) => {
         if (style === 'badge') {
-            const plate = photoTextColors({ id: 'sample', type: 'text', text: 'Aa', point: { x: 0.5, y: 0.5 }, fontSize: 16, bgStyle: 'badge', color, width: 1, opacity: 1 });
+            const plate = photoTextColors({ id: 'sample', type: 'text', text: 'Aa', point: { x: 0.5, y: 0.5 }, fontSize: FontSize.lg, bgStyle: 'badge', color, width: 1, opacity: 1 });
             return (
                 <View style={[styles.samplePlate, { backgroundColor: plate.background }]}>
                     <Text style={[styles.sampleText, { color: plate.text }]}>Aa</Text>

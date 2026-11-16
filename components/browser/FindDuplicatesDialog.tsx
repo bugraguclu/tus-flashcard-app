@@ -182,7 +182,6 @@ export function FindDuplicatesDialog({
                 </>
             )}
         >
-            <Text style={styles.fieldLabel}>{l('Alan', 'Field')}</Text>
             <ChoiceSelect
                 disabled={busy !== null}
                 expanded={fieldOpen}

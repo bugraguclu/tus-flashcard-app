@@ -19,7 +19,7 @@ import FlagGlyph from '../FlagGlyph';
 import StarGlyph from '../StarGlyph';
 import CardsGlyph from '../CardsGlyph';
 import { ClockGlyph, NoteGlyph, PauseGlyph, PlayGlyph } from '../UiGlyphs';
-import { Button } from '../ui/Button';
+import { Button, IconButton } from '../ui/Button';
 import { Checkbox } from '../ui/Choice';
 import { SelectionSuspendIcon } from './BrowserIcons';
 
@@ -143,16 +143,16 @@ export function BrowserCardRow({
                 {selectionMode && <View style={styles.selectionMark}><Checkbox checked={isSelected} /></View>}
                 <View style={local.cardIcon}>
                     {isNotesMode
-                        ? <NoteGlyph color={colors.textSecondary} size={17} />
-                        : <CardsGlyph color={colors.textSecondary} size={17} />}
+                        ? <NoteGlyph color={colors.textSecondary} size={20} />
+                        : <CardsGlyph color={colors.textSecondary} size={20} />}
                 </View>
                 <View style={styles.cardBody}>
                     <Text
                         style={[
                             styles.cardQuestion,
                             {
-                                fontSize: 13 * browserFontScale,
-                                lineHeight: 18 * browserFontScale,
+                                fontSize: FontSize.md * browserFontScale,
+                                lineHeight: 20 * browserFontScale,
                             },
                         ]}
                         numberOfLines={isExpanded ? undefined : 1}
@@ -193,7 +193,7 @@ export function BrowserCardRow({
                                 style={[
                                     styles.scheduleMeta,
                                     local.scheduleText,
-                                    { fontSize: 10 * browserFontScale, lineHeight: 13 * browserFontScale },
+                                    { fontSize: FontSize.xs * browserFontScale, lineHeight: 14 * browserFontScale },
                                 ]}
                                 numberOfLines={1}
                             >
@@ -206,20 +206,19 @@ export function BrowserCardRow({
                 </View>
                 <View style={[styles.cardActions]}>
                     {!selectionMode && (
-                        <TouchableOpacity
-                            style={[styles.editBtn]}
+                        // A full 44-point button; its negative margin keeps the pencil where
+                        // it sat, so the row stays compact.
+                        <IconButton
+                            style={styles.editBtn}
                             onPress={() => router.push(`/editor?cardId=${item.cardId}`)}
-                            // The pencil is drawn small to keep the row compact; the slop is a finger's target.
-                            hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-                            accessibilityRole="button"
                             accessibilityLabel={isNotesMode ? l('Notu düzenle', 'Edit note') : l('Kartı düzenle', 'Edit card')}
                         >
-                            <PencilGlyph color={colors.textSecondary} size={18} />
-                        </TouchableOpacity>
+                            <PencilGlyph color={colors.textSecondary} size={20} />
+                        </IconButton>
                     )}
                     {item.noteMarked && (
                         <View style={styles.statusIcon} accessible accessibilityLabel={l('Not işaretli', 'Note is marked')}>
-                            <StarGlyph color={colors.marked} size={14} />
+                            <StarGlyph color={colors.marked} size={16} />
                         </View>
                     )}
                     {!isNotesMode && flag > 0 && (
@@ -228,12 +227,12 @@ export function BrowserCardRow({
                             accessible
                             accessibilityLabel={l(`Bayrak: ${cardFlagName(locale, flag)}`, `Flag: ${cardFlagName(locale, flag)}`)}
                         >
-                            <FlagGlyph color={FLAG_COLORS[flag].color} size={14} filled />
+                            <FlagGlyph color={FLAG_COLORS[flag].color} size={16} filled />
                         </View>
                     )}
                     {!isNotesMode && item.state.suspended && (
                         <View style={styles.statusIcon} accessible accessibilityLabel={l('Askıda', 'Suspended')}>
-                            <SelectionSuspendIcon color={colors.warning} size={14} />
+                            <SelectionSuspendIcon color={colors.warning} size={16} />
                         </View>
                     )}
                 </View>
@@ -307,8 +306,8 @@ export function BrowserCardRow({
                             }
                         }}
                         icon={item.state.suspended
-                            ? <PlayGlyph color={colors.textPrimary} size={14} />
-                            : <PauseGlyph color={colors.textPrimary} size={14} />}
+                            ? <PlayGlyph color={colors.textPrimary} size={16} />
+                            : <PauseGlyph color={colors.textPrimary} size={16} />}
                         label={isNotesMode
                             ? item.state.suspended
                                 ? l('Notun kartlarını askıdan çıkar', 'Unsuspend Note Cards')
@@ -321,7 +320,7 @@ export function BrowserCardRow({
                         variant="secondary"
                         size="compact"
                         style={styles.cardInfoBtn}
-                        icon={<InfoCircleGlyph color={colors.textPrimary} size={14} />}
+                        icon={<InfoCircleGlyph color={colors.textPrimary} size={16} />}
                         label={l('Kart bilgisi', 'Card info')}
                         accessibilityLabel={isNotesMode ? l('Notun ilk kartının bilgisi', "Info for the note's first card") : l('Kart bilgisi', 'Card info')}
                         onPress={() => router.push(`/card-info?cardId=${item.cardId}`)}

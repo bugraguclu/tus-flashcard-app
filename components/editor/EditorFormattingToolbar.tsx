@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Text } from '../AppText';
 import { Spacing, type ColorScheme } from '../../constants/theme';
 import {
@@ -12,6 +12,8 @@ import {
 import { isEditorToolActive, isEditorToolDisabled, type EditorFormatState } from '../../lib/editorFormatState';
 import type { CustomToolbarButton } from '../../lib/customToolbar';
 import { longPressHaptic } from '../../lib/haptics';
+import { ToolButton } from '../ui/Bars';
+import { SegmentedControl } from '../ui/Choice';
 import { AnkiToolbarIcon } from './EditorIcons';
 import { ToolbarKeyboardDoneButton } from './KeyboardDoneButton';
 import type { FormattingTool } from './editorTools';
@@ -82,18 +84,17 @@ export function EditorFormattingToolbar({
     const renderFormattingToolbarItems = () => (
         <>
             {showsClozeTool && (
-                <TouchableOpacity
-                    style={[styles.formatButton, buttonWidthStyle]}
+                <ToolButton
+                    style={buttonWidthStyle}
                     onPress={() => onCloze(false)}
                     onLongPress={() => { longPressHaptic(); onCloze(true); }}
-                    accessibilityRole="button"
                     accessibilityLabel={l('Boşluk ekle', 'Add cloze deletion')}
                     accessibilityHint={l('Seçimi bir sonraki boşluk numarasıyla kapatır; basılı tutunca aynı numarayı kullanır', 'Wraps the selection in the next cloze number; press and hold to reuse the same number')}
                     accessibilityActions={[{ name: 'longpress', label: l('Aynı numarayla boşluk ekle', 'Add cloze with the same number') }]}
                     onAccessibilityAction={(event) => { if (event.nativeEvent.actionName === 'longpress') onCloze(true); }}
                 >
                     <Text style={styles.customFormatButtonText}>[…]</Text>
-                </TouchableOpacity>
+                </ToolButton>
             )}
             {toolbarToolKeys.map((key) => {
                 const tool = tools[key];
@@ -101,21 +102,16 @@ export function EditorFormattingToolbar({
                 const isDisabled = isEditorToolDisabled(key, formatState);
                 const tint = isDisabled ? colors.textMuted : isActive ? colors.accent : colors.textPrimary;
                 return (
-                    <TouchableOpacity
+                    <ToolButton
                         key={key}
-                        style={[
-                            styles.formatButton,
-                            buttonWidthStyle,
-                            isActive && !isDisabled && styles.formatButtonActive,
-                            isDisabled && styles.formatButtonDisabled,
-                        ]}
+                        style={buttonWidthStyle}
+                        selected={isActive}
+                        // A tool that cannot apply is greyed rather than silently swallowing the press.
+                        disabled={isDisabled}
                         onPress={tool.onPress}
                         onLongPress={tool.onLongPress ? () => { longPressHaptic(); tool.onLongPress?.(); } : undefined}
                         delayLongPress={450}
-                        disabled={isDisabled}
-                        accessibilityRole="button"
                         accessibilityLabel={tool.label}
-                        accessibilityState={{ selected: isActive, disabled: isDisabled }}
                         accessibilityHint={tool.hint}
                     >
                         {tool.text
@@ -129,34 +125,32 @@ export function EditorFormattingToolbar({
                                 </Text>
                             )
                             : <AnkiToolbarIcon name={tool.icon} color={tint} />}
-                    </TouchableOpacity>
+                    </ToolButton>
                 );
             })}
             {showsInsertExtras && customButtons.map((button, index) => (
-                <TouchableOpacity
+                <ToolButton
                     key={button.id}
-                    style={[styles.formatButton, buttonWidthStyle]}
+                    style={buttonWidthStyle}
                     onPress={() => onCustomButtonPress(button)}
                     onLongPress={() => { longPressHaptic(); onCustomButtonLongPress(button); }}
                     delayLongPress={450}
-                    accessibilityRole="button"
                     accessibilityLabel={button.buttonText || String(index + 1)}
                     accessibilityHint={l('Basılı tutarak düzenleyin veya kaldırın', 'Long press to edit or remove')}
                 >
                     <Text style={styles.customFormatButtonText} numberOfLines={1} adjustsFontSizeToFit>
                         {button.buttonText || String(index + 1)}
                     </Text>
-                </TouchableOpacity>
+                </ToolButton>
             ))}
             {showsInsertExtras && (
-                <TouchableOpacity
-                    style={[styles.formatButton, buttonWidthStyle]}
+                <ToolButton
+                    style={buttonWidthStyle}
                     onPress={onCreateCustomButton}
-                    accessibilityRole="button"
                     accessibilityLabel={l('Araç çubuğu öğesi oluştur', 'Create toolbar item')}
                 >
                     <AnkiToolbarIcon name="add" color={colors.textPrimary} />
-                </TouchableOpacity>
+                </ToolButton>
             )}
         </>
     );
@@ -164,28 +158,12 @@ export function EditorFormattingToolbar({
     return (
         <View style={styles.formatToolbar}>
             <View style={styles.toolbarTabsRow}>
-                <View style={styles.toolbarTabs} accessibilityRole="tablist">
-                    {EDITOR_TOOLBAR_TABS.map((tab) => {
-                        const selected = toolbarTab === tab.id;
-                        return (
-                            <TouchableOpacity
-                                key={tab.id}
-                                style={[styles.toolbarTab, selected && styles.toolbarTabActive]}
-                                onPress={() => onSelectTab(tab.id)}
-                                // The pill is short so the toolbar stays compact; the slop is what
-                                // gives it the 44pt target a thumb needs.
-                                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-                                accessibilityRole="tab"
-                                accessibilityState={{ selected }}
-                                accessibilityLabel={l(tab.tr, tab.en)}
-                            >
-                                <Text style={[styles.toolbarTabText, selected && styles.toolbarTabTextActive]}>
-                                    {l(tab.tr, tab.en)}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
+                <SegmentedControl
+                    options={EDITOR_TOOLBAR_TABS.map((tab) => ({ value: tab.id, label: l(tab.tr, tab.en) }))}
+                    value={toolbarTab}
+                    onChange={onSelectTab}
+                    accessibilityLabel={l('Araç sekmesi', 'Tool tab')}
+                />
                 <ToolbarKeyboardDoneButton
                     onPress={onDismissKeyboard}
                     colors={colors}

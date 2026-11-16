@@ -1,11 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, type LayoutRectangle, Pressable, type StyleProp, StyleSheet, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import {
+    type AccessibilityActionEvent,
+    type AccessibilityActionInfo,
+    Animated,
+    type LayoutRectangle,
+    Pressable,
+    type StyleProp,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+    type ViewStyle,
+} from 'react-native';
 import { Text } from '../AppText';
-import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { MotionDuration, MotionEasing, NATIVE_DRIVER } from '../../constants/motion';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { CheckIcon, CloseIcon, MinusIcon } from './icons';
-import { DISABLED_OPACITY, HIT_TARGET, Radius } from './tokens';
+import { DISABLED_OPACITY, HIT_TARGET, Radius, Shadow, Type } from './tokens';
 
 /**
  * Picking among options: chips, the segmented control, checkboxes and the tick that marks the
@@ -27,19 +38,27 @@ interface ChipProps {
      * chosen, or a `checkbox` of a set where any may be.
      */
     role?: 'button' | 'radio' | 'checkbox';
+    /**
+     * What a selected chip says besides "on": `warning` for a value that is cut back, `danger` for
+     * one that is switched off. The accent by default.
+     */
+    tone?: 'accent' | 'warning' | 'danger';
     accessibilityLabel?: string;
     style?: StyleProp<ViewStyle>;
 }
 
 /** A capsule that filters a list or picks one of a few short options. */
-export function Chip({ label, selected = false, onPress, onRemove, removeLabel, icon, disabled = false, role = 'button', accessibilityLabel, style }: ChipProps) {
+export function Chip({ label, selected = false, onPress, onRemove, removeLabel, icon, disabled = false, role = 'button', tone = 'accent', accessibilityLabel, style }: ChipProps) {
     const colors = useThemeColors();
-    const tint = selected ? colors.accent : colors.textSecondary;
+    const [ink, fill] = tone === 'warning' ? [colors.warning, colors.warningBg]
+        : tone === 'danger' ? [colors.danger, colors.dangerBg]
+            : [colors.accent, colors.accentLight];
+    const tint = selected ? ink : colors.textSecondary;
     return (
         <View
             style={[
                 styles.chip,
-                { borderColor: selected ? colors.accent : colors.border, backgroundColor: selected ? colors.accentLight : colors.bgCard },
+                { borderColor: selected ? ink : colors.border, backgroundColor: selected ? fill : colors.bgCard },
                 disabled && styles.disabled,
                 style,
             ]}
@@ -67,7 +86,7 @@ export function Chip({ label, selected = false, onPress, onRemove, removeLabel, 
                     accessibilityRole="button"
                     accessibilityLabel={removeLabel ?? label}
                 >
-                    <CloseIcon color={tint} size={14} />
+                    <CloseIcon color={tint} size={16} />
                 </TouchableOpacity>
             ) : null}
         </View>
@@ -250,19 +269,31 @@ interface CheckRowProps {
     mixed?: boolean;
     onChange: (checked: boolean) => void;
     disabled?: boolean;
+    /** Spoken instead of the label, e.g. a path read with its separators. */
+    accessibilityLabel?: string;
+    /** A second action on the row, e.g. renaming what it stands for. */
+    onLongPress?: () => void;
+    accessibilityActions?: readonly AccessibilityActionInfo[];
+    onAccessibilityAction?: (event: AccessibilityActionEvent) => void;
     style?: StyleProp<ViewStyle>;
 }
 
 /** A row with a checkbox; the whole row ticks it. */
-export function CheckRow({ label, summary, checked, mixed = false, onChange, disabled = false, style }: CheckRowProps) {
+export function CheckRow({
+    label, summary, checked, mixed = false, onChange, disabled = false,
+    accessibilityLabel, onLongPress, accessibilityActions, onAccessibilityAction, style,
+}: CheckRowProps) {
     const colors = useThemeColors();
     return (
         <TouchableOpacity
             style={[styles.checkRow, disabled && styles.disabled, style]}
             onPress={() => onChange(!checked)}
+            onLongPress={onLongPress}
             disabled={disabled}
             accessibilityRole="checkbox"
-            accessibilityLabel={label}
+            accessibilityLabel={accessibilityLabel ?? label}
+            accessibilityActions={accessibilityActions}
+            onAccessibilityAction={onAccessibilityAction}
             accessibilityState={{ checked: checked ? true : mixed ? 'mixed' : false, disabled }}
             aria-checked={checked ? true : mixed ? 'mixed' : false}
             aria-disabled={disabled}
@@ -297,16 +328,16 @@ const styles = StyleSheet.create({
     chipRemove: { minHeight: 32, paddingRight: Spacing.sm + 2, paddingLeft: 0, justifyContent: 'center' },
     // A badge mostly sits in a row beside a title, where the row centres it; a column that should
     // not stretch it passes alignSelf.
-    badge: { paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: Radius.pill },
-    badgeText: { fontSize: FontSize.xs + 1, fontWeight: '600' },
-    track: { flexDirection: 'row', alignSelf: 'flex-start', padding: 2, borderRadius: Radius.inset },
+    badge: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xxs, borderRadius: Radius.pill },
+    badgeText: Type.micro,
+    track: { flexDirection: 'row', alignSelf: 'flex-start', padding: Spacing.xxs, borderRadius: Radius.inset },
     trackFill: { alignSelf: 'stretch' },
     segment: { minHeight: 30, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.inset - 2 },
     segmentFill: { flex: 1, paddingHorizontal: 4 },
-    segmentSelected: Shadows.sm,
+    segmentSelected: Shadow.card,
     // Drawn under the labels once the segments are measured.
     segmentPillSlot: { position: 'absolute', left: 0, top: 2, bottom: 2 },
-    segmentPill: { flex: 1, borderRadius: Radius.inset - 2, ...Shadows.sm },
+    segmentPill: { flex: 1, borderRadius: Radius.inset - 2, ...Shadow.card },
     segmentPressed: { opacity: 0.6 },
     segmentText: { fontSize: FontSize.sm, fontWeight: '500' },
     segmentTextSelected: { fontWeight: '600' },
@@ -320,7 +351,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.lg,
         paddingVertical: Spacing.sm + 2,
     },
-    checkCopy: { flex: 1, minWidth: 0, gap: 2 },
+    checkCopy: { flex: 1, minWidth: 0, gap: Spacing.xxs },
     checkLabel: { fontSize: FontSize.md },
     checkSummary: { fontSize: FontSize.sm, lineHeight: 18 },
     mark: { width: 24, alignItems: 'center', justifyContent: 'center' },

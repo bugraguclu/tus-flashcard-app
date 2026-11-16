@@ -26,7 +26,7 @@ export function createImportStyles(colors: ColorScheme) {
         hint: { ...Type.caption, color: colors.textMuted, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
 
         /** A tag field's row: its label over the field. */
-        fieldRow: { gap: 6, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2 },
+        fieldRow: { gap: Spacing.s6, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2 },
         fieldLabel: { ...Type.body, color: colors.textPrimary },
 
         previewHeaderRow: { flexDirection: 'row' },

@@ -5,14 +5,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
-    TouchableOpacity,
     ScrollView,
     Keyboard,
     Platform,
+    StyleSheet,
     useWindowDimensions,
-    ActivityIndicator,
 } from 'react-native';
-import { Text, TextInput } from '../components/AppText';
+import { Text, type TextInput } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Spacing, useThemeColors } from '../constants/theme';
@@ -38,7 +37,13 @@ import {
 } from '../lib/deckManager';
 import DeckPickerModal from '../components/DeckPickerModal';
 import ScreenHeader from '../components/ScreenHeader';
-import { ChevronDownIcon, MoreIcon } from '../components/ui/icons';
+import { Button, IconButton } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Chip } from '../components/ui/Choice';
+import { TextField } from '../components/ui/Fields';
+import { MoreIcon } from '../components/ui/icons';
+import { SelectRow, SwitchRow } from '../components/ui/Rows';
+import { Type } from '../components/ui/tokens';
 import { DEFAULT_DECK_CONFIG, getDeckDisplayName, type DeckConfig } from '../lib/models';
 import type { AutoAdvanceAnswerAction, NewCardGatherOrder, NewCardSortOrder, ReviewSortOrder } from '../lib/types';
 import { normalizeNewCardGatherOrder } from '../lib/queueBuild';
@@ -83,7 +88,6 @@ import { useI18n } from '../hooks/useI18n';
 import { getDB } from '../lib/db';
 import { hasSnapshotChanged, stableSnapshot } from '../lib/dirtyState';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
-import { createDeckOptionsStyles } from '../components/deck-options/deckOptionsStyles';
 import { DeckOptionsContext } from '../components/deck-options/DeckOptionsContext';
 import { MULTIPLIER_BOUNDS, untouchedLegacyMultiplier } from '../components/deck-options/multiplierBounds';
 import { applyDeckOptionsToSubdecks } from '../lib/deckSubdeckOptions';
@@ -98,7 +102,8 @@ import {
     LimitTabs,
     OptionCard,
     SelectSetting,
-    SwitchRow,
+    SettingBlock,
+    SettingHint,
     TextBlockSetting,
 } from '../components/deck-options/SettingControls';
 import { buildOptionHelp, deckOptionsWarningText } from '../components/deck-options/deckOptionsCopy';
@@ -119,7 +124,6 @@ export default function DeckOptionsScreen() {
     const dayLabels = l('Pzt,Sal,Çar,Per,Cum,Cmt,Paz', 'Mon,Tue,Wed,Thu,Fri,Sat,Sun').split(',');
     const factorLabel = (factor: number) => factor === 1 ? l('Normal', 'Normal') : factor === 0.5 ? l('Azaltılmış', 'Reduced') : l('Yok', 'None');
     const colors = useThemeColors();
-    const styles = useMemo(() => createDeckOptionsStyles(colors), [colors]);
     const { width } = useWindowDimensions();
     const useTwoColumns = width >= 900;
     const router = useRouter();
@@ -410,8 +414,8 @@ export default function DeckOptionsScreen() {
 
     if (!deck) {
         return (
-            <SafeAreaView style={styles.container}>
-                <Text style={styles.missing}>{l('Deste bulunamadı.', 'Deck not found.')}</Text>
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.bgPrimary }]}>
+                <Text style={[Type.body, styles.missing, { color: colors.textMuted }]}>{l('Deste bulunamadı.', 'Deck not found.')}</Text>
             </SafeAreaView>
         );
     }
@@ -1095,6 +1099,9 @@ export default function DeckOptionsScreen() {
             `${Object.keys(validation.errors).length} fields need attention.`,
         )
         : saveMessage || (isDirty ? l('Kaydedilmemiş değişiklikler var.', 'There are unsaved changes.') : '');
+    const statusColor = (hasValidationErrors && isDirty) || saveState === 'error'
+        ? colors.danger
+        : saveState === 'saved' ? colors.success : colors.warning;
     const openPresetActions = () => {
         const button = presetMenuButtonRef.current;
         if (!button) {
@@ -1110,23 +1117,42 @@ export default function DeckOptionsScreen() {
         });
     };
     const deckOptionsContextValue = useMemo(() => ({
-        styles,
-        colors,
         errors: validation.errors,
         warnings: warningsByField,
         warningText,
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }), [styles, colors, validation.errors, warningsByField, l]);
+    }), [validation.errors, warningsByField, l]);
 
     return (
         <DeckOptionsContext.Provider value={deckOptionsContextValue}>
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.bgPrimary }]}>
             <ScreenHeader
                 title={l('Deste seçenekleri', 'Deck Options')}
                 subtitle={deck.name.replaceAll('::', ' › ')}
                 // The deck list, the overview and the study screen all open this screen.
-                backAccessibilityLabel={l('Geri', 'Back')}
+                backAccessibilityLabel={l('Geri dön', 'Go back')}
                 onBack={() => goBackOr(router)}
+                actions={(
+                    <>
+                        <Button
+                            label={saveLabel}
+                            size="compact"
+                            onPress={handleSave}
+                            disabled={saveDisabled}
+                            busy={saveState === 'saving'}
+                        />
+                        {/* The menu hangs under this button, so its place on screen is measured. */}
+                        <View ref={presetMenuButtonRef} collapsable={false}>
+                            <IconButton
+                                onPress={openPresetActions}
+                                accessibilityLabel={l('Ayar grubu işlemleri', 'Preset actions')}
+                                expanded={presetActionsOpen}
+                            >
+                                <MoreIcon color={colors.accent} />
+                            </IconButton>
+                        </View>
+                    </>
+                )}
             />
 
             <ScrollView
@@ -1142,96 +1168,55 @@ export default function DeckOptionsScreen() {
                 showsVerticalScrollIndicator={false}
             >
 
-                <View style={styles.presetToolbar}>
-                    <TouchableOpacity
-                        style={styles.presetSelector}
+                {/* What the form edits: the deck, and the preset it shares with other decks. */}
+                <Card divided style={styles.fullWidth}>
+                    <SelectRow
+                        label={l('Deste', 'Deck')}
+                        value={getDeckDisplayName(deck.name)}
                         onPress={() => { Keyboard.dismiss(); setDeckPickerOpen(true); }}
-                        accessibilityRole="button"
                         accessibilityLabel={l(`Deste: ${deck.name.replaceAll('::', ' › ')}`, `Deck: ${deck.name.replaceAll('::', ' › ')}`)}
-                    >
-                        <View style={styles.presetSelectorTextWrap}>
-                            <Text style={styles.presetSelectorLabel}>{l('Deste', 'Deck')}</Text>
-                            <Text style={styles.presetSelectorName} numberOfLines={1}>{getDeckDisplayName(deck.name)}</Text>
-                        </View>
-                        <View style={styles.presetSelectorChevron}>
-                            <ChevronDownIcon color={colors.textMuted} size={16} />
-                        </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.savePrimary, saveDisabled && styles.saveControlDisabled]}
-                        onPress={handleSave}
-                        accessibilityRole="button"
-                        accessibilityState={{ disabled: saveDisabled }}
-                        aria-disabled={saveDisabled}
-                        disabled={saveDisabled}
-                    >
-                        {saveState === 'saving'
-                            ? <ActivityIndicator size="small" color={colors.onAccent} />
-                            : <Text style={styles.savePrimaryText}>{saveLabel}</Text>}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        ref={presetMenuButtonRef}
-                        style={styles.presetMoreButton}
-                        onPress={openPresetActions}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Ayar grubu işlemleri', 'Preset actions')}
-                        accessibilityState={{ expanded: presetActionsOpen }}
-                        aria-expanded={presetActionsOpen}
-                    >
-                        <MoreIcon color={colors.textSecondary} size={22} />
-                    </TouchableOpacity>
-                </View>
+                    />
+                    <SelectRow
+                        label={l('Ayar grubu', 'Preset')}
+                        summary={l(`${usedBy} deste`, `${usedBy} decks`)}
+                        value={presetName}
+                        onPress={() => { Keyboard.dismiss(); setPresetPickerOpen(true); }}
+                        accessibilityLabel={l(
+                            `Ayar grubu: ${presetName}, ${usedBy} destede kullanılıyor. Değiştirmek için dokunun.`,
+                            `Preset: ${presetName}, used by ${usedBy} decks. Tap to change.`,
+                        )}
+                    />
+                </Card>
 
-                <TouchableOpacity
-                    style={styles.presetRow}
-                    onPress={() => { Keyboard.dismiss(); setPresetPickerOpen(true); }}
-                    accessibilityRole="button"
-                    accessibilityLabel={l(
-                        `Ayar grubu: ${presetName}, ${usedBy} destede kullanılıyor. Değiştirmek için dokunun.`,
-                        `Preset: ${presetName}, used by ${usedBy} decks. Tap to change.`,
-                    )}
-                >
-                    <View style={styles.presetSelectorTextWrap}>
-                        <Text style={styles.presetSelectorLabel}>{l('Ayar grubu', 'Preset')}</Text>
-                        <Text style={styles.presetSelectorName} numberOfLines={1}>{presetName}</Text>
-                    </View>
-                    <Text style={styles.presetSelectorMeta} numberOfLines={1}>
-                        {l(`${usedBy} deste`, `${usedBy} decks`)}
-                    </Text>
-                    <View style={styles.presetSelectorChevron}>
-                        <ChevronDownIcon color={colors.textMuted} size={16} />
-                    </View>
-                </TouchableOpacity>
-
+                {/* One caption line, kept in the layout while it has nothing to say, so the form
+                    under it does not jump as the first change is typed. */}
                 <View
                     style={[
+                        styles.fullWidth,
                         styles.saveStatus,
                         !currentStatusMessage && styles.saveStatusHidden,
-                        (hasValidationErrors && isDirty) || saveState === 'error'
-                            ? styles.saveStatusError
-                            : saveState === 'saved'
-                                ? styles.saveStatusSuccess
-                                : styles.saveStatusPending,
                         { pointerEvents: currentStatusMessage ? 'auto' : 'none' },
                     ]}
                     accessibilityLiveRegion="polite"
                 >
-                    <View style={[
-                        styles.saveStatusDot,
-                        (hasValidationErrors && isDirty) || saveState === 'error'
-                            ? { backgroundColor: colors.btnAgain }
-                            : saveState === 'saved'
-                                ? { backgroundColor: colors.btnGood }
-                                : { backgroundColor: colors.btnHard },
-                    ]} />
-                    <Text style={styles.saveStatusText}>{currentStatusMessage || ' '}</Text>
+                    <View style={[styles.saveStatusDot, { backgroundColor: statusColor }]} />
+                    <Text style={[Type.caption, styles.saveStatusText, { color: statusColor }]}>{currentStatusMessage || ' '}</Text>
                 </View>
 
-                <OptionCard wide={useTwoColumns} title={l('Günlük limitler', 'Daily Limits')} styles={styles} help={optionHelp.dailyLimits}>
-                    <Text style={styles.settingHint}>
-                        {l('Yeni kartlar için günlük sınır yoktur.', 'New cards have no daily limit.')}
-                    </Text>
-                    <LimitTabs value={reviewLimitScope} onChange={chooseReviewLimitScope} styles={styles} labels={limitLabels} />
+                <OptionCard
+                    wide={useTwoColumns}
+                    title={l('Günlük limitler', 'Daily Limits')}
+                    description={l('Yeni kartlar için günlük sınır yoktur.', 'New cards have no daily limit.')}
+                    help={optionHelp.dailyLimits}
+                >
+                    {/* The tabs say whose limit the field under them edits: one row. */}
+                    <View>
+                    <LimitTabs
+                        value={reviewLimitScope}
+                        onChange={chooseReviewLimitScope}
+                        labels={limitLabels}
+                        accessibilityLabel={l('Günlük en fazla tekrar kimin için', 'Maximum reviews/day applies to')}
+                    />
                     <Field
                         field={reviewLimitScope === 'preset' ? 'maxReviewsPerDay' : reviewLimitScope === 'deck' ? 'deckReviewLimit' : 'todayReviewLimit'}
                         label={l('Günlük en fazla tekrar', 'Maximum reviews/day')}
@@ -1239,17 +1224,18 @@ export default function DeckOptionsScreen() {
                         placeholder={scopedReviewPlaceholder}
                         onChange={setScopedReviewValue}
                         inputRef={reviewLimitInputRef}
+                        advice="maxReviewsPerDay"
                     />
-                    <FieldAdvice field="maxReviewsPerDay" />
+                    </View>
                     <SwitchRow
-                        label={l('Limitler en üst desteden başlasın', 'Limits start from top')}
+                        title={l('Limitler en üst desteden başlasın', 'Limits start from top')}
                         value={form.limitsStartFromTop}
-                        onChange={(value) => set('limitsStartFromTop', value)}
-                        hint={l('Açıkken bir alt desteyi tek başına çalışsanız da üst destelerin tekrar limitleri uygulanır. Tüm ayar grupları için geçerlidir.', 'When on, parent decks’ review limits also apply when you study a subdeck on its own. Applies to all presets.')}
+                        onValueChange={(value) => set('limitsStartFromTop', value)}
+                        summary={l('Açıkken bir alt desteyi tek başına çalışsanız da üst destelerin tekrar limitleri uygulanır. Tüm ayar grupları için geçerlidir.', 'When on, parent decks’ review limits also apply when you study a subdeck on its own. Applies to all presets.')}
                     />
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Yeni kartlar', 'New Cards')} styles={styles} help={optionHelp.newCards}>
+                <OptionCard wide={useTwoColumns} title={l('Yeni kartlar', 'New Cards')} help={optionHelp.newCards}>
                 <Field
                     field="learningSteps"
                     label={l('Öğrenme adımları', 'Learning steps')}
@@ -1257,15 +1243,14 @@ export default function DeckOptionsScreen() {
                     onChange={(t) => set('learningSteps', t)}
                     hint={l('Boşlukla ayırın: 1m 10m · birimler: s, m, h, d · birimsiz sayı dakikadır', 'Separate with spaces: 1m 10m · units: s, m, h, d · a bare number is minutes')}
                     kind="steps"
+                    advice="learningSteps"
                 />
-                <FieldAdvice field="learningSteps" />
                 {/* FSRS derives the first day-scale interval from the card's own memory state,
                     so these two are hidden while it is on, exactly as Anki hides them. */}
                 {!form.fsrsEnabled ? (
                     <>
                         <Field field="graduatingIvl" label={l('Mezuniyet aralığı (gün)', 'Graduating interval (days)')} value={form.graduatingIvl} onChange={(t) => set('graduatingIvl', t)} />
-                        <Field field="easyIvl" label={l('Kolay aralığı (gün)', 'Easy interval (days)')} value={form.easyIvl} onChange={(t) => set('easyIvl', t)} />
-                        <FieldAdvice field="easyIvl" />
+                        <Field field="easyIvl" label={l('Kolay aralığı (gün)', 'Easy interval (days)')} value={form.easyIvl} onChange={(t) => set('easyIvl', t)} advice="easyIvl" />
                     </>
                 ) : null}
                 <SelectSetting
@@ -1273,14 +1258,12 @@ export default function DeckOptionsScreen() {
                     value={form.insertionOrder}
                     options={[{ key: 'sequential', label: l('Sıralı', 'Sequential') }, { key: 'random', label: l('Rastgele', 'Random') }]}
                     onChange={(key) => set('insertionOrder', key as 'sequential' | 'random')}
-                    styles={styles}
-                    colors={colors}
                     cancelLabel={cancelLabel}
+                    advice="insertionOrder"
                 />
-                <FieldAdvice field="insertionOrder" />
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Unutmalar', 'Lapses')} styles={styles} help={optionHelp.lapses}>
+                <OptionCard wide={useTwoColumns} title={l('Unutmalar', 'Lapses')} help={optionHelp.lapses}>
                 <Field
                     field="relearningSteps"
                     label={l('Yeniden öğrenme adımları', 'Relearning steps')}
@@ -1288,8 +1271,8 @@ export default function DeckOptionsScreen() {
                     onChange={(t) => set('relearningSteps', t)}
                     hint={l('Boş bırakılırsa kart yeniden öğrenmeye girmez.', 'Leave empty to skip relearning.')}
                     kind="steps"
+                    advice="relearningSteps"
                 />
-                <FieldAdvice field="relearningSteps" />
                 {!form.fsrsEnabled ? (
                     <Field field="minIvl" label={l('En az aralık (gün)', 'Minimum interval (days)')} value={form.minIvl} onChange={(t) => set('minIvl', t)} />
                 ) : null}
@@ -1311,17 +1294,19 @@ export default function DeckOptionsScreen() {
                         { key: 'tag', label: l('Yalnızca etiketle', 'Tag Only') },
                     ]}
                     onChange={(key) => set('leechAction', key as 'suspend' | 'tag')}
-                    styles={styles}
-                    colors={colors}
                     cancelLabel={cancelLabel}
                 />
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title="FSRS" styles={styles} help={optionHelp.fsrs}>
+                <OptionCard wide={useTwoColumns} title="FSRS" help={optionHelp.fsrs}>
                     <SwitchRow
-                        label={l('FSRS zamanlayıcısını kullan', 'Use the FSRS scheduler')}
+                        title={l('FSRS zamanlayıcısını kullan', 'Use the FSRS scheduler')}
+                        summary={l(
+                            'FSRS her kart için hafıza gücünü (stability) ve zorluğunu izler; aralıkları kolaylık çarpanı yerine bu iki sayıdan hesaplar. Anahtar tüm koleksiyon için geçerlidir; aşağıdaki değerler bu ayar grubuna aittir. FSRS’i açıp kaydettiğinizde kartların hafıza durumu tekrar geçmişinden hesaplanır; kapatıp kaydederseniz silinir.',
+                            'FSRS tracks each card’s memory strength and difficulty, and derives intervals from those instead of an ease multiplier. The switch is collection-wide; the values below belong to this preset. When you switch FSRS on and save, the cards’ memory states are calculated from the review history; switching it off and saving removes them.',
+                        )}
                         value={form.fsrsEnabled}
-                        onChange={(value) => {
+                        onValueChange={(value) => {
                             setSaveState('idle');
                             setSaveMessage('');
                             // Switching the scheduler off takes away the column a retrievability
@@ -1335,21 +1320,16 @@ export default function DeckOptionsScreen() {
                             if (!value) setRescheduleOnSave(false);
                         }}
                     />
-                    <Text style={styles.fieldHint}>
-                        {l(
-                            'FSRS her kart için hafıza gücünü (stability) ve zorluğunu izler; aralıkları kolaylık çarpanı yerine bu iki sayıdan hesaplar. Anahtar tüm koleksiyon için geçerlidir; aşağıdaki değerler bu ayar grubuna aittir. FSRS’i açıp kaydettiğinizde kartların hafıza durumu tekrar geçmişinden hesaplanır; kapatıp kaydederseniz silinir.',
-                            'FSRS tracks each card’s memory strength and difficulty, and derives intervals from those instead of an ease multiplier. The switch is collection-wide; the values below belong to this preset. When you switch FSRS on and save, the cards’ memory states are calculated from the review history; switching it off and saving removes them.',
-                        )}
-                    </Text>
 
                     {form.fsrsEnabled && (
                         <>
+                            <View>
                             <LimitTabs
                                 value={retentionScope}
                                 onChange={chooseRetentionScope}
-                                styles={styles}
                                 labels={limitLabels}
                                 keys={RETENTION_SCOPES}
+                                accessibilityLabel={l('Hedeflenen hatırlama oranı kimin için', 'Desired retention applies to')}
                             />
                             <Field
                                 field={retentionScope === 'preset' ? 'desiredRetention' : 'deckDesiredRetention'}
@@ -1367,43 +1347,40 @@ export default function DeckOptionsScreen() {
                                         'Yalnızca bu deste için; boş bırakılırsa ayar grubunun değeri geçerli olur.',
                                         'For this deck only; leave it empty to use the preset’s value.',
                                     )}
+                                advice="desiredRetention"
                             />
-                            <FieldAdvice field="desiredRetention" />
+                            </View>
                             <SwitchRow
-                                label={l('Değişiklikte kartları yeniden zamanla', 'Reschedule cards on change')}
+                                title={l('Değişiklikte kartları yeniden zamanla', 'Reschedule cards on change')}
+                                summary={l(
+                                    'Kapalıyken yeni ayarlar yalnızca bundan sonraki cevapları etkiler; açıkken mevcut vade tarihleri de yeniden hesaplanır. Bu seçim tek bir kayda aittir ve ekran her açıldığında kapalı başlar.',
+                                    'While off, new settings affect only future answers; while on, existing due dates are recomputed as well. The choice belongs to one save: it starts off every time this screen opens.',
+                                )}
                                 value={rescheduleOnSave}
-                                onChange={(value) => {
+                                onValueChange={(value) => {
                                     setSaveState('idle');
                                     setSaveMessage('');
                                     setRescheduleOnSave(value);
                                 }}
                             />
-                            <Text style={styles.fieldHint}>
-                                {l(
-                                    'Kapalıyken yeni ayarlar yalnızca bundan sonraki cevapları etkiler; açıkken mevcut vade tarihleri de yeniden hesaplanır. Bu seçim tek bir kayda aittir ve ekran her açıldığında kapalı başlar.',
-                                    'While off, new settings affect only future answers; while on, existing due dates are recomputed as well. The choice belongs to one save: it starts off every time this screen opens.',
-                                )}
-                            </Text>
 
-                            <TouchableOpacity
-                                style={[styles.optimizeButton, (optimizing || evaluatingFsrs) && styles.optimizeButtonBusy]}
-                                onPress={handleOptimizeFsrs}
-                                disabled={evaluatingFsrs}
-                                accessibilityRole="button"
-                                accessibilityHint={optimizing ? l('Durdurmak için dokunun', 'Tap to stop') : undefined}
-                            >
-                                <Text style={styles.optimizeButtonText}>
-                                    {optimizing
+                            <SettingBlock>
+                                <Button
+                                    variant="secondary"
+                                    label={optimizing
                                         ? l(`Hesaplanıyor… %${Math.round(optimizeProgress * 100)} (durdur)`, `Optimizing… ${Math.round(optimizeProgress * 100)}% (stop)`)
                                         : l('Parametreleri optimize et', 'Optimize parameters')}
-                                </Text>
-                            </TouchableOpacity>
-                            <Text style={styles.fieldHint}>
-                                {l(
-                                    'Bu ayar grubunun askıda olmayan kartlarının geçmişinden 21 parametreyi Anki\'nin eğitimiyle yeniden hesaplar. Sonuç yalnızca mevcut parametrelerden daha iyi tahmin ediyorsa alana yazılır.',
-                                    'Refits the 21 parameters from the history of this preset\'s unsuspended cards, the way Anki trains them. The result is written to the field only when it predicts better than the current one.',
-                                )}
-                            </Text>
+                                    onPress={handleOptimizeFsrs}
+                                    disabled={evaluatingFsrs}
+                                    accessibilityHint={optimizing ? l('Durdurmak için dokunun', 'Tap to stop') : undefined}
+                                />
+                                <SettingHint>
+                                    {l(
+                                        'Bu ayar grubunun askıda olmayan kartlarının geçmişinden 21 parametreyi Anki\'nin eğitimiyle yeniden hesaplar. Sonuç yalnızca mevcut parametrelerden daha iyi tahmin ediyorsa alana yazılır.',
+                                        'Refits the 21 parameters from the history of this preset\'s unsuspended cards, the way Anki trains them. The result is written to the field only when it predicts better than the current one.',
+                                    )}
+                                </SettingHint>
+                            </SettingBlock>
                             <FsrsEvaluateButton
                                 presetId={configId}
                                 settings={settings}
@@ -1411,19 +1388,16 @@ export default function DeckOptionsScreen() {
                                 ignoreRevlogsBeforeMs={parseFsrsCutoffDate(form.ignoreRevlogsBefore, cutoffLatest) ?? 0}
                                 otherBusy={optimizing}
                                 onBusyChange={setEvaluatingFsrs}
-                                styles={styles}
                             />
 
                             <TextBlockSetting
                                 label={l('FSRS parametreleri', 'FSRS parameters')}
                                 value={form.fsrsParams}
                                 onChange={(value) => set('fsrsParams', value)}
-                                styles={styles}
-                                colors={colors}
                                 error={validation.errors.fsrsParams}
                                 hint={optimizedAtHint}
+                                advice="fsrsParams"
                             />
-                            <FieldAdvice field="fsrsParams" />
                             <Field
                                 field="historicalRetention"
                                 kind="decimal"
@@ -1449,14 +1423,12 @@ export default function DeckOptionsScreen() {
                                 preset={formToSave}
                                 storedParamsText={formatFsrsParameterText(initialConfig.fsrsParams)}
                                 ignoreRevlogsBeforeMs={parseFsrsCutoffDate(form.ignoreRevlogsBefore, cutoffLatest) ?? 0}
-                                styles={styles}
-                                colors={colors}
                             />
                         </>
                     )}
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Görüntüleme sırası', 'Display Order')} styles={styles} help={optionHelp.displayOrder}>
+                <OptionCard wide={useTwoColumns} title={l('Görüntüleme sırası', 'Display Order')} help={optionHelp.displayOrder}>
                 <SelectSetting
                     label={l('Yeni kart toplama sırası', 'New card gather order')}
                     value={form.newCardGatherOrder}
@@ -1469,8 +1441,6 @@ export default function DeckOptionsScreen() {
                         { key: 'randomCards', label: l('Rastgele kartlar', 'Random cards') },
                     ]}
                     onChange={(key) => set('newCardGatherOrder', key as NewCardGatherOrder)}
-                    styles={styles}
-                    colors={colors}
                     cancelLabel={cancelLabel}
                 />
                 <SelectSetting
@@ -1484,8 +1454,6 @@ export default function DeckOptionsScreen() {
                         { key: 'randomCard', label: l('Rastgele kart', 'Random card') },
                     ]}
                     onChange={(key) => set('newCardSortOrder', key as NewCardSortOrder)}
-                    styles={styles}
-                    colors={colors}
                     cancelLabel={cancelLabel}
                 />
                 <SelectSetting
@@ -1497,8 +1465,6 @@ export default function DeckOptionsScreen() {
                         { key: 'after', label: l('Tekrarlardan sonra göster', 'Show after reviews') },
                     ]}
                     onChange={(key) => set('newReviewOrder', key as 'mix' | 'before' | 'after')}
-                    styles={styles}
-                    colors={colors}
                     cancelLabel={cancelLabel}
                 />
                 <SelectSetting
@@ -1510,8 +1476,6 @@ export default function DeckOptionsScreen() {
                         { key: 'after', label: l('Tekrarlardan sonra göster', 'Show after reviews') },
                     ]}
                     onChange={(key) => set('interdayLearningMix', key as 'mix' | 'before' | 'after')}
-                    styles={styles}
-                    colors={colors}
                     cancelLabel={cancelLabel}
                 />
                 <SelectSetting
@@ -1519,24 +1483,22 @@ export default function DeckOptionsScreen() {
                     value={form.reviewSortOrder}
                     options={reviewOrderOptions}
                     onChange={(key) => set('reviewSortOrder', key as ReviewSortOrder)}
-                    styles={styles}
-                    colors={colors}
                     cancelLabel={cancelLabel}
                 />
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Gömme', 'Burying')} styles={styles} help={optionHelp.burying}>
-                <SwitchRow label={l('Yeni kardeş kartları göm', 'Bury new siblings')} value={form.buryNewSiblings} onChange={(v) => set('buryNewSiblings', v)} />
-                <SwitchRow label={l('Tekrar kardeş kartları göm', 'Bury review siblings')} value={form.buryReviewSiblings} onChange={(v) => set('buryReviewSiblings', v)} />
+                <OptionCard wide={useTwoColumns} title={l('Gömme', 'Burying')} help={optionHelp.burying}>
+                <SwitchRow title={l('Yeni kardeş kartları göm', 'Bury new siblings')} value={form.buryNewSiblings} onValueChange={(v) => set('buryNewSiblings', v)} />
+                <SwitchRow title={l('Tekrar kardeş kartları göm', 'Bury review siblings')} value={form.buryReviewSiblings} onValueChange={(v) => set('buryReviewSiblings', v)} />
                 <SwitchRow
-                    label={l('Gün aşan öğrenme kardeşlerini göm', 'Bury interday learning siblings')}
+                    title={l('Gün aşan öğrenme kardeşlerini göm', 'Bury interday learning siblings')}
                     value={form.buryInterdayLearningSiblings}
-                    onChange={(v) => set('buryInterdayLearningSiblings', v)}
+                    onValueChange={(v) => set('buryInterdayLearningSiblings', v)}
                 />
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Ses', 'Audio')} styles={styles} help={optionHelp.audio}>
-                <SwitchRow label={l('Sesi otomatik oynat', 'Automatically play audio')} value={form.autoPlayAudio} onChange={(v) => set('autoPlayAudio', v)} />
+                <OptionCard wide={useTwoColumns} title={l('Ses', 'Audio')} help={optionHelp.audio}>
+                <SwitchRow title={l('Sesi otomatik oynat', 'Automatically play audio')} value={form.autoPlayAudio} onValueChange={(v) => set('autoPlayAudio', v)} />
                 <SelectSetting
                     label={l('Ses oynatma hızı', 'Audio playback speed')}
                     value={form.audioPlaybackRate}
@@ -1548,29 +1510,26 @@ export default function DeckOptionsScreen() {
                         { key: '2', label: '2.0x' },
                     ]}
                     onChange={(v) => set('audioPlaybackRate', v)}
-                    styles={styles}
-                    colors={colors}
                     cancelLabel={cancelLabel}
                 />
                 <SwitchRow
-                    label={l('Cevabı yeniden oynatırken soruyu atla', 'Skip question when replaying answer')}
+                    title={l('Cevabı yeniden oynatırken soruyu atla', 'Skip question when replaying answer')}
                     value={form.skipQuestionWhenReplayingAnswer}
-                    onChange={(value) => set('skipQuestionWhenReplayingAnswer', value)}
+                    onValueChange={(value) => set('skipQuestionWhenReplayingAnswer', value)}
                 />
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Zamanlayıcılar', 'Timers')} styles={styles} help={optionHelp.timers}>
-                    <Field field="maxAnswerSecs" label={l('En fazla cevap süresi', 'Maximum answer time')} value={form.maxAnswerSecs} onChange={(value) => set('maxAnswerSecs', value)} suffix={l('sn', 'sec')} />
-                    <FieldAdvice field="maxAnswerSecs" />
-                    <SwitchRow label={l('Ekran zamanlayıcısını göster', 'Show on-screen timer')} value={form.showTimer} onChange={(value) => set('showTimer', value)} />
+                <OptionCard wide={useTwoColumns} title={l('Zamanlayıcılar', 'Timers')} help={optionHelp.timers}>
+                    <Field field="maxAnswerSecs" label={l('En fazla cevap süresi', 'Maximum answer time')} value={form.maxAnswerSecs} onChange={(value) => set('maxAnswerSecs', value)} suffix={l('sn', 'sec')} advice="maxAnswerSecs" />
+                    <SwitchRow title={l('Ekran zamanlayıcısını göster', 'Show on-screen timer')} value={form.showTimer} onValueChange={(value) => set('showTimer', value)} />
                     <SwitchRow
-                        label={l('Cevap gösterilince ekran zamanlayıcısını durdur', 'Stop on-screen timer on answer')}
+                        title={l('Cevap gösterilince ekran zamanlayıcısını durdur', 'Stop on-screen timer on answer')}
                         value={form.stopTimerOnAnswer}
-                        onChange={(value) => set('stopTimerOnAnswer', value)}
+                        onValueChange={(value) => set('stopTimerOnAnswer', value)}
                     />
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Otomatik ilerleme', 'Auto Advance')} styles={styles} help={optionHelp.autoAdvance}>
+                <OptionCard wide={useTwoColumns} title={l('Otomatik ilerleme', 'Auto Advance')} help={optionHelp.autoAdvance}>
                     <Field
                         field="secondsToShowQuestion"
                         kind="decimal"
@@ -1597,8 +1556,6 @@ export default function DeckOptionsScreen() {
                             { key: 'showReminder', label: l('Yalnızca süre uyarısı göster', 'Show reminder only') },
                         ]}
                         onChange={(key) => set('questionAction', key as 'showAnswer' | 'showReminder')}
-                        styles={styles}
-                        colors={colors}
                         cancelLabel={cancelLabel}
                     />
                     <SelectSetting
@@ -1612,46 +1569,41 @@ export default function DeckOptionsScreen() {
                             { key: 'showReminder', label: l('Yalnızca süre uyarısı göster', 'Show reminder only') },
                         ]}
                         onChange={(key) => set('answerAction', key as AutoAdvanceAnswerAction)}
-                        styles={styles}
-                        colors={colors}
                         cancelLabel={cancelLabel}
                     />
                     <SwitchRow
-                        label={l('Sesin bitmesini bekle', 'Wait for audio')}
+                        title={l('Sesin bitmesini bekle', 'Wait for audio')}
                         value={form.waitForAudio}
-                        onChange={(value) => set('waitForAudio', value)}
+                        onValueChange={(value) => set('waitForAudio', value)}
                     />
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Kolay günler', 'Easy Days')} styles={styles} help={optionHelp.easyDays}>
-                <Text style={styles.fieldHint}>{l('Değiştirmek için güne dokunun: Normal → Azaltılmış → Yok. Tekrarlar o günlerden kaydırılır.', 'Tap a day to cycle: Normal → Reduced → None. Reviews are shifted away from those days.')}</Text>
-                <View style={styles.easyDaysRow}>
-                    {dayLabels.map((label, index) => {
-                        const factor = form.easyDays[index];
-                        return (
-                            <TouchableOpacity
-                                key={label}
-                                style={[
-                                    styles.easyDay,
-                                    factor === 0.5 && styles.easyDayReduced,
-                                    factor === 0 && styles.easyDayOff,
-                                ]}
-                                onPress={() => cycleEasyDay(index)}
-                                accessibilityRole="button"
-                                accessibilityLabel={`${label}: ${factorLabel(factor)}`}
-                            >
-                                <Text style={styles.easyDayLabel}>{label}</Text>
-                                <Text style={styles.easyDayFactor}>{factorLabel(factor)}</Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-                <FieldAdvice field="easyDays" />
+                <OptionCard wide={useTwoColumns} title={l('Kolay günler', 'Easy Days')} help={optionHelp.easyDays}>
+                <SettingBlock>
+                    <SettingHint>{l('Değiştirmek için güne dokunun: Normal → Azaltılmış → Yok. Tekrarlar o günlerden kaydırılır.', 'Tap a day to cycle: Normal → Reduced → None. Reviews are shifted away from those days.')}</SettingHint>
+                    <View style={styles.easyDays}>
+                        {dayLabels.map((label, index) => {
+                            const factor = form.easyDays[index];
+                            return (
+                                <Chip
+                                    key={label}
+                                    label={`${label} · ${factorLabel(factor)}`}
+                                    // A day whose load is cut stands out from the normal ones:
+                                    // orange when reduced, red when it takes no reviews.
+                                    selected={factor !== 1}
+                                    tone={factor === 0 ? 'danger' : 'warning'}
+                                    onPress={() => cycleEasyDay(index)}
+                                    accessibilityLabel={`${label}: ${factorLabel(factor)}`}
+                                />
+                            );
+                        })}
+                    </View>
+                    <FieldAdvice field="easyDays" inset={false} />
+                </SettingBlock>
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Gelişmiş', 'Advanced')} styles={styles} help={optionHelp.advanced}>
-                <Field field="maxIvl" label={l('En fazla aralık (gün)', 'Maximum interval (days)')} value={form.maxIvl} onChange={(t) => set('maxIvl', t)} />
-                <FieldAdvice field="maxIvl" />
+                <OptionCard wide={useTwoColumns} title={l('Gelişmiş', 'Advanced')} help={optionHelp.advanced}>
+                <Field field="maxIvl" label={l('En fazla aralık (gün)', 'Maximum interval (days)')} value={form.maxIvl} onChange={(t) => set('maxIvl', t)} advice="maxIvl" />
                 {/* The ease multipliers are the classic scheduler's whole arithmetic; FSRS never
                     reads one, so Anki hides them rather than leaving dials that turn nothing. */}
                 {!form.fsrsEnabled ? (
@@ -1663,25 +1615,27 @@ export default function DeckOptionsScreen() {
                         <Field field="newIvlPercent" label={l('Yeni aralık (%) — unutma sonrası', 'New interval (%) after lapse')} value={form.newIvlPercent} onChange={(t) => set('newIvlPercent', t)} hint={l('0 = en az aralıktan yeniden başlar', '0 = restart from the minimum interval')} />
                     </>
                 ) : (
-                    <Text style={styles.fieldHint}>
-                        {l(
-                            'FSRS açıkken kolaylık çarpanları kullanılmaz; aralıkları kartın hafıza durumu belirler. Hedeflenen hatırlama oranı ve parametreler FSRS bölümündedir.',
-                            'With FSRS on the ease multipliers are unused: intervals come from each card’s memory state. Desired retention and the parameters live in the FSRS section.',
-                        )}
-                    </Text>
+                    <SettingBlock>
+                        <SettingHint>
+                            {l(
+                                'FSRS açıkken kolaylık çarpanları kullanılmaz; aralıkları kartın hafıza durumu belirler. Hedeflenen hatırlama oranı ve parametreler FSRS bölümündedir.',
+                                'With FSRS on the ease multipliers are unused: intervals come from each card’s memory state. Desired retention and the parameters live in the FSRS section.',
+                            )}
+                        </SettingHint>
+                    </SettingBlock>
                 )}
                 </OptionCard>
 
-                <OptionCard wide={useTwoColumns} title={l('Deste açıklaması', 'Deck Description')} styles={styles}>
-                <TextInput
-                    style={[styles.input, styles.descriptionInput]}
-                    value={form.description}
-                    onChangeText={(t) => set('description', t)}
-                    placeholder={l('Bu deste hakkında not (genel bakışta ve çalışma ekranında görünür)', 'Notes about this deck (shown on the overview and the study screen)')}
-                    placeholderTextColor={colors.textMuted}
-                    multiline
-                    accessibilityLabel={l('Deste açıklaması', 'Deck description')}
-                />
+                <OptionCard wide={useTwoColumns} title={l('Deste açıklaması', 'Deck Description')}>
+                <SettingBlock>
+                    <TextField
+                        value={form.description}
+                        onChangeText={(t) => set('description', t)}
+                        placeholder={l('Bu deste hakkında not (genel bakışta ve çalışma ekranında görünür)', 'Notes about this deck (shown on the overview and the study screen)')}
+                        multiline
+                        accessibilityLabel={l('Deste açıklaması', 'Deck description')}
+                    />
+                </SettingBlock>
                 </OptionCard>
 
             </ScrollView>
@@ -1749,7 +1703,6 @@ export default function DeckOptionsScreen() {
                     currentDeckId={deck.id}
                     onPick={switchPreset}
                     onClose={() => setPresetPickerOpen(false)}
-                    styles={styles}
                     l={l}
                     t={t}
                 />
@@ -1762,7 +1715,6 @@ export default function DeckOptionsScreen() {
                     onChangeValue={setNewPresetName}
                     onSave={createNamedPreset}
                     onClose={() => setNewPresetOpen(null)}
-                    styles={styles}
                     l={l}
                     t={t}
                 />
@@ -1783,7 +1735,6 @@ export default function DeckOptionsScreen() {
                         setRenameOpen(false);
                     }}
                     onClose={() => setRenameOpen(false)}
-                    styles={styles}
                     l={l}
                     t={t}
                 />
@@ -1792,3 +1743,27 @@ export default function DeckOptionsScreen() {
         </DeckOptionsContext.Provider>
     );
 }
+
+const styles = StyleSheet.create({
+    container: { flex: 1 },
+    missing: { margin: Spacing.xl },
+    // One column on a phone; cards sit two abreast in a wide window.
+    content: {
+        width: '100%',
+        maxWidth: 1180,
+        alignSelf: 'center',
+        padding: Spacing.lg,
+        gap: Spacing.md,
+        paddingBottom: 72,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'flex-start',
+    },
+    fullWidth: { width: '100%' },
+    // Pulled into the gap between the two cards, so the empty line leaves no hole.
+    saveStatus: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minHeight: 18, marginVertical: -Spacing.xs, paddingHorizontal: Spacing.xs },
+    saveStatusHidden: { opacity: 0 },
+    saveStatusDot: { width: 8, height: 8, borderRadius: 4 },
+    saveStatusText: { flex: 1 },
+    easyDays: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+});

@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { FontSize, Shadows, Spacing, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, type ColorScheme } from '../../constants/theme';
+import { Shadow } from '../ui/tokens';
 import { Radius, Type } from '../ui/tokens';
 
 /**
@@ -20,7 +21,7 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
 
         // A card's content that is not a row of its own, padded like the kit's rows.
         block: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, gap: Spacing.sm },
-        blockCopy: { gap: 2 },
+        blockCopy: { gap: Spacing.xxs },
         label: { ...Type.rowTitle, color: colors.textPrimary },
         summary: { ...Type.caption, color: colors.textMuted },
         // A gesture's action, under its direction.
@@ -31,7 +32,7 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
             alignItems: stackControls ? 'stretch' : 'center',
             gap: stackControls ? Spacing.sm : Spacing.md,
         },
-        inlineStepperCopy: stackControls ? { gap: 2 } : { flex: 1, minWidth: 0, gap: 2 },
+        inlineStepperCopy: stackControls ? { gap: Spacing.xxs } : { flex: 1, minWidth: 0, gap: Spacing.xxs },
         inlineStepper: { alignSelf: stackControls ? 'flex-end' : 'center', flexShrink: 0 },
         stackedStepperLayout: { gap: Spacing.sm },
         // Under its label, a stepper keeps its own width instead of stretching across the card.
@@ -39,8 +40,8 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
 
         tapGrid: { flexDirection: 'row', flexWrap: 'wrap', overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderRadius: Radius.inset, backgroundColor: colors.bgSecondary },
         tapGridCell: { width: '33.3333%', minHeight: 78, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, paddingVertical: Spacing.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderLight },
-        tapGridZone: { fontSize: 11, lineHeight: 15, fontWeight: '600', color: colors.textSecondary, textAlign: 'center' },
-        tapGridAction: { marginTop: 4, fontSize: 11, lineHeight: 15, fontWeight: '600', color: colors.accent, textAlign: 'center' },
+        tapGridZone: { fontSize: FontSize.xs, lineHeight: 15, fontWeight: '600', color: colors.textSecondary, textAlign: 'center' },
+        tapGridAction: { marginTop: 4, fontSize: FontSize.xs, lineHeight: 15, fontWeight: '600', color: colors.accent, textAlign: 'center' },
 
         // ↺: the kit's refresh arrow, turned the other way.
         mirrored: { transform: [{ scaleX: -1 }] },
@@ -50,7 +51,7 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
         swipeSliderTouchTarget: { height: 46, justifyContent: 'center', paddingHorizontal: 10 },
         swipeSliderTrack: { height: 6, borderRadius: Radius.pill, backgroundColor: colors.border, overflow: 'visible' },
         swipeSliderFill: { height: 6, borderRadius: Radius.pill, backgroundColor: colors.accent },
-        swipeSliderThumb: { position: 'absolute', top: -7, width: 20, height: 20, marginLeft: -10, borderRadius: 10, borderWidth: 2, borderColor: colors.bgCard, backgroundColor: colors.accent, ...Shadows.sm },
+        swipeSliderThumb: { position: 'absolute', top: -7, width: 20, height: 20, marginLeft: -10, borderRadius: 10, borderWidth: 2, borderColor: colors.bgCard, backgroundColor: colors.accent, ...Shadow.card },
 
         notificationTimeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0, gap: Spacing.xs },
         notificationTimeInput: { minWidth: 56 },
@@ -76,9 +77,9 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
             position: 'relative',
             padding: 8,
             justifyContent: 'space-between',
-            ...Shadows.sm,
+            ...Shadow.card,
         },
-        overlayPreviewTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2, opacity: 0.5 },
+        overlayPreviewTopBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.xxs, opacity: 0.5 },
         overlayPreviewDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.textMuted },
         overlayPreviewHeaderLine: { width: 44, height: 4, borderRadius: 2, backgroundColor: colors.textMuted },
         overlayPreviewCard: {
@@ -102,7 +103,7 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
             backgroundColor: colors.accent,
             alignItems: 'center',
             justifyContent: 'center',
-            ...Shadows.sm,
+            ...Shadow.card,
             borderWidth: 2,
             borderColor: colors.bgCard,
         },
@@ -119,7 +120,7 @@ export function createSettingsStyles(colors: ColorScheme, textScale = 1, width =
         helpStatusText: { flex: 1, fontSize: FontSize.sm, lineHeight: 19, fontWeight: '600', color: colors.textPrimary },
         helpSectionTitle: { ...Type.bodyStrong, color: colors.textPrimary },
         helpBulletRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: Spacing.xs },
-        helpBullet: { width: 18, fontSize: FontSize.md, lineHeight: 20, fontWeight: '700', color: colors.accent },
+        helpBullet: { width: 18, fontSize: FontSize.md, lineHeight: 20, fontWeight: '600', color: colors.accent },
         helpBulletText: { ...Type.caption, flex: 1, lineHeight: 20, color: colors.textSecondary },
         helpStrong: { fontWeight: '600', color: colors.textPrimary },
 

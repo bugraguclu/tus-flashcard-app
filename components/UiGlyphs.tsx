@@ -75,11 +75,6 @@ export function MoreGlyph(props: GlyphProps) {
     return <Dots {...props} r={1.6} points={[[5.25, 12], [12, 12], [18.75, 12]]} />;
 }
 
-/** Three dots in a column: the "more" menu of a toolbar that reads top to bottom. */
-export function MoreVerticalGlyph(props: GlyphProps) {
-    return <Dots {...props} r={1.6} points={[[12, 5.25], [12, 12], [12, 18.75]]} />;
-}
-
 /** Six dots: the handle a row is dragged by. */
 export function GripGlyph(props: GlyphProps) {
     return <Dots {...props} r={1.35} points={[[9, 6], [15, 6], [9, 12], [15, 12], [9, 18], [15, 18]]} />;

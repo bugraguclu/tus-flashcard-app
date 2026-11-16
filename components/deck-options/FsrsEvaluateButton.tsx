@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Keyboard, TouchableOpacity, View } from 'react-native';
+import { AccessibilityInfo, Keyboard } from 'react-native';
 import { Text } from '../AppText';
+import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { getDecksUsingConfig } from '../../lib/deckManager';
 import { parseFsrsParameterText } from '../../lib/fsrs';
 import { evaluateFsrsPreset, fsrsEvaluationFigures } from '../../lib/fsrsEvaluate';
 import type { AppSettings } from '../../lib/types';
-import type { DeckOptionsStyles } from './deckOptionsStyles';
+import { Button } from '../ui/Button';
+import { Notice } from '../ui/Feedback';
+import { Type } from '../ui/tokens';
+import { SettingBlock, SettingHint } from './SettingControls';
 
 /**
  * Anki's "Evaluate" button beside Optimize: the log loss and RMSE(bins) of the parameters in the
@@ -14,7 +18,7 @@ import type { DeckOptionsStyles } from './deckOptionsStyles';
  * give the screen back between them, shows how far it is, and a second tap stops it, as Optimize
  * does. It reads the collection only; the preset, its parameters and every card stay as they are.
  */
-export default function FsrsEvaluateButton({ presetId, settings, paramsText, ignoreRevlogsBeforeMs, otherBusy, onBusyChange, styles }: {
+export default function FsrsEvaluateButton({ presetId, settings, paramsText, ignoreRevlogsBeforeMs, otherBusy, onBusyChange }: {
     presetId: number;
     settings: AppSettings;
     /** The parameter field as typed; an empty field means the default parameters. */
@@ -23,9 +27,9 @@ export default function FsrsEvaluateButton({ presetId, settings, paramsText, ign
     /** Optimize is running: Evaluate waits, as Anki's button does. */
     otherBusy: boolean;
     onBusyChange?: (busy: boolean) => void;
-    styles: DeckOptionsStyles;
 }) {
     const { l } = useI18n();
+    const colors = useThemeColors();
     const [running, setRunning] = useState(false);
     const [progress, setProgress] = useState(0);
     // A result belongs to the inputs it was measured on; editing them hides it.
@@ -110,41 +114,31 @@ export default function FsrsEvaluateButton({ presetId, settings, paramsText, ign
     const disabled = otherBusy && !running;
 
     return (
-        <View>
-            <TouchableOpacity
-                style={[styles.optimizeButton, (running || disabled) && styles.optimizeButtonBusy]}
+        <SettingBlock>
+            <Button
+                variant="secondary"
+                label={running
+                    ? l(`Değerlendiriliyor… %${percent} (durdur)`, `Evaluating… ${percent}% (stop)`)
+                    : l('Parametreleri değerlendir', 'Evaluate parameters')}
                 onPress={evaluate}
                 disabled={disabled}
-                accessibilityRole="button"
                 accessibilityLabel={running
                     ? l(`Değerlendiriliyor, yüzde ${percent}`, `Evaluating, ${percent} percent`)
                     : l('Parametreleri değerlendir', 'Evaluate parameters')}
                 accessibilityHint={running
                     ? l('Durdurmak için dokunun', 'Tap to stop')
                     : l('Log loss ve RMSE(bins) değerlerini hesaplar; hiçbir şeyi değiştirmez', 'Computes log loss and RMSE(bins); changes nothing')}
-                // `disabled` already reaches VoiceOver through the touchable itself.
-                accessibilityState={{ busy: running }}
-            >
-                <Text style={styles.optimizeButtonText}>
-                    {running
-                        ? l(`Değerlendiriliyor… %${percent} (durdur)`, `Evaluating… ${percent}% (stop)`)
-                        : l('Parametreleri değerlendir', 'Evaluate parameters')}
-                </Text>
-            </TouchableOpacity>
+            />
             {shown ? (
-                <View style={[styles.warningBox, styles.warningBoxInfo]} accessibilityLiveRegion="polite">
-                    <Text style={[styles.warningText, styles.warningTextInfo]} selectable>
-                        {shown}
-                    </Text>
-                </View>
+                <Notice><Text style={[Type.caption, { color: colors.textSecondary }]} selectable>{shown}</Text></Notice>
             ) : (
-                <Text style={styles.fieldHint}>
+                <SettingHint>
                     {l(
                         'Alandaki parametrelerin bu ayar grubunun geçmişini ne kadar iyi açıkladığını Anki gibi ölçer (log loss ve RMSE). Hiçbir şeyi değiştirmez.',
                         'Measures, as Anki does, how well the parameters in the field explain this preset\'s history (log loss and RMSE). It changes nothing.',
                     )}
-                </Text>
+                </SettingHint>
             )}
-        </View>
+        </SettingBlock>
     );
 }

@@ -19,16 +19,16 @@ import type { StudyChoice } from '../components/stopwatch/StudyStartSheet';
 import { AnalyticsIcon, CalendarIcon, StopwatchIcon } from '../components/stopwatch/StopwatchIcons';
 import PlannedStudyCard from '../components/stopwatch/PlannedStudyCard';
 import StudySessionCard from '../components/stopwatch/StudySessionCard';
-import StudyToolsMenu, { STUDY_TOOLS_FAB_SIZE } from '../components/stopwatch/StudyToolsMenu';
+import StudyToolsMenu from '../components/stopwatch/StudyToolsMenu';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { timelineStyles } from '../components/stopwatch/timelineStyles';
 import { IconButton } from '../components/ui/Button';
+import { FAB_SIZE, Fab } from '../components/ui/Fab';
 import { SegmentedControl } from '../components/ui/Choice';
 import { EmptyState, LoadingState } from '../components/ui/Feedback';
 import { BackIcon, ForwardIcon } from '../components/ui/icons';
 import {
     FontSize,
-    Shadows,
     Spacing,
     useThemeColors,
     type ColorScheme,
@@ -448,9 +448,7 @@ export default function StudyCalendarScreen() {
 
             <View style={styles.monthBar}>
                 <IconButton
-                    style={styles.stepButton}
                     onPress={() => handleStep(-1)}
-                    hitSlop={STEP_SLOP}
                     accessibilityLabel={mode === 'month'
                         ? l('Önceki ay', 'Previous month')
                         : l('Önceki hafta', 'Previous week')}
@@ -459,9 +457,7 @@ export default function StudyCalendarScreen() {
                 </IconButton>
                 <Text style={styles.rangeTitle} numberOfLines={1}>{rangeTitle}</Text>
                 <IconButton
-                    style={styles.stepButton}
                     onPress={() => handleStep(1)}
-                    hitSlop={STEP_SLOP}
                     accessibilityLabel={mode === 'month'
                         ? l('Sonraki ay', 'Next month')
                         : l('Sonraki hafta', 'Next week')}
@@ -556,17 +552,18 @@ export default function StudyCalendarScreen() {
             <PullToRefreshIndicator binding={pull} />
             </View>
 
-            <TouchableOpacity
+            {/* The same floating button as the study tools above it. */}
+            <Fab
+                shape="round"
+                color={colors.studyTool}
                 style={[styles.stopwatchButton, { bottom: insets.bottom + Spacing.lg }]}
                 onPress={() => openOrReturnTo(router, navigation, 'stopwatch', '/stopwatch')}
-                activeOpacity={0.85}
-                accessibilityRole="button"
                 accessibilityLabel={l('Kronometre', 'Stopwatch')}
             >
                 <StopwatchIcon color={colors.onAccent} size={26} />
-            </TouchableOpacity>
+            </Fab>
 
-            <StudyToolsMenu bottom={insets.bottom + Spacing.lg + STOPWATCH_BUTTON_SIZE + Spacing.md} />
+            <StudyToolsMenu bottom={insets.bottom + Spacing.lg + FAB_SIZE + Spacing.md} />
 
             <SessionActionsMenu
                 visible={menuSession !== null}
@@ -596,11 +593,8 @@ interface StudyDaySection {
 
 /** The calendar only edits sessions; a new one would start as TUSBuddy's form does. */
 const NEW_SESSION_CHOICE: StudyChoice = { subject: 'Karışık', kind: 'pass', pass: 1 };
-const STOPWATCH_BUTTON_SIZE = 56;
-/** The month bar's arrows are drawn 32 points square; their slop makes a full target. */
-const STEP_SLOP = { top: 8, right: 8, bottom: 8, left: 8 };
 /** Tail padding that keeps the last card out from under the floating stopwatch and tools buttons. */
-const STOPWATCH_BUTTON_CLEARANCE = STOPWATCH_BUTTON_SIZE + STUDY_TOOLS_FAB_SIZE + Spacing.md + 2 * Spacing.lg;
+const STOPWATCH_BUTTON_CLEARANCE = 2 * FAB_SIZE + Spacing.md + 2 * Spacing.lg;
 
 function createStyles(colors: ColorScheme, isCompact: boolean) {
     return StyleSheet.create({
@@ -609,12 +603,12 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         monthBar: {
             flexDirection: 'row',
             alignItems: 'center',
-            paddingHorizontal: Spacing.lg,
-            paddingTop: Spacing.md,
-            paddingBottom: Spacing.sm,
-            gap: Spacing.xs,
+            // The arrows are full 44-point icon buttons; their icons line up with the 16-point gutter.
+            paddingLeft: Spacing.xs,
+            paddingRight: Spacing.lg,
+            paddingTop: Spacing.sm,
+            paddingBottom: Spacing.xs,
         },
-        stepButton: { width: 32, height: 32 },
         rangeTitle: { flexShrink: 1, fontSize: isCompact ? FontSize.sm : FontSize.lg, fontWeight: '600', color: colors.textSecondary },
         modeSwitch: { marginLeft: 'auto' },
 
@@ -634,22 +628,12 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
             alignItems: 'center',
             paddingVertical: 3,
         },
-        dayTotal: { marginTop: 2, fontSize: FontSize.xs, fontWeight: '500', color: colors.textSecondary, minHeight: 13 },
+        dayTotal: { marginTop: Spacing.xxs, fontSize: FontSize.xs, fontWeight: '500', color: colors.textSecondary, minHeight: 13 },
 
         timelineFrame: { flex: 1, marginTop: Spacing.sm },
         timeline: { flex: 1, backgroundColor: colors.bgPrimary },
         timelineContent: {},
 
-        stopwatchButton: {
-            position: 'absolute',
-            right: Spacing.lg,
-            width: STOPWATCH_BUTTON_SIZE,
-            height: STOPWATCH_BUTTON_SIZE,
-            borderRadius: STOPWATCH_BUTTON_SIZE / 2,
-            backgroundColor: colors.streak,
-            alignItems: 'center',
-            justifyContent: 'center',
-            ...Shadows.md,
-        },
+        stopwatchButton: { position: 'absolute', right: Spacing.lg },
     });
 }

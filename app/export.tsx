@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { Button } from '../components/ui/Button';
 import { Section } from '../components/ui/Card';
-import { CheckRow, SelectedMark } from '../components/ui/Choice';
+import { CheckRow } from '../components/ui/Choice';
+import { ListRow } from '../components/ui/Rows';
 import { LoadingState, Notice } from '../components/ui/Feedback';
 import { Type } from '../components/ui/tokens';
 import { Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
@@ -257,18 +258,12 @@ export default function ExportScreen() {
                         : undefined}
                 >
                     {availableFormats.map((item) => (
-                        // A single-choice row: the kit's rows carry no radio role or state.
-                        <TouchableOpacity
+                        <ListRow
                             key={item.id}
-                            style={styles.formatRow}
+                            title={l(item.tr, item.en)}
+                            selected={item.id === format}
                             onPress={() => setFormat(item.id)}
-                            accessibilityRole="radio"
-                            accessibilityState={{ selected: item.id === format }}
-                            aria-checked={item.id === format}
-                        >
-                            <Text style={[styles.formatText, item.id === format && styles.formatTextSelected]}>{l(item.tr, item.en)}</Text>
-                            <SelectedMark visible={item.id === format} />
-                        </TouchableOpacity>
+                        />
                     ))}
                 </Section>
 
@@ -339,18 +334,8 @@ function createStyles(colors: ColorScheme) {
         scrollContent: { flexGrow: 1, width: '100%', maxWidth: 760, alignSelf: 'center', justifyContent: 'flex-start', padding: Spacing.lg, paddingBottom: 100, gap: Spacing.lg },
         backupName: { ...Type.caption, fontWeight: '500', color: colors.textPrimary },
         noticeText: { ...Type.caption, color: colors.textSecondary },
-        formatRow: {
-            minHeight: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.md,
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.sm + 2,
-        },
-        formatText: { ...Type.body, flex: 1, color: colors.textPrimary },
-        formatTextSelected: { fontWeight: '600', color: colors.accent },
         actions: { gap: Spacing.md },
-        summaryBlock: { gap: 2 },
+        summaryBlock: { gap: Spacing.xxs },
         summaryLine: { ...Type.caption, color: colors.textSecondary, textAlign: 'center' },
     });
 }

@@ -69,7 +69,11 @@ vi.mock('../components/BottomSheetModal', async () => {
     };
 });
 vi.mock('../components/stats/StatsBarChart', () => ({ default: (props: unknown) => { h.chart = props; return null; } }));
-vi.mock('../components/ui/Choice', () => ({ SegmentedControl: () => null }));
+// The form draws its chips from the same file; only the segmented control is left out.
+vi.mock('../components/ui/Choice', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../components/ui/Choice')>()),
+    SegmentedControl: () => null,
+}));
 vi.mock('../components/stats/StatsTiles', async () => {
     const { createElement, Fragment } = await import('react');
     return {

@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Text, TextScaleProvider } from '../AppText';
-import { FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Shadow } from '../ui/tokens';
 import { KNOB_STRETCH, MotionSpring } from '../../constants/motion';
 import { useI18n } from '../../hooks/useI18n';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
@@ -316,7 +317,7 @@ function createStyles(colors: ColorScheme) {
             borderWidth: 2,
             borderColor: colors.accent,
             backgroundColor: colors.bgCard,
-            ...Shadows.md,
+            ...Shadow.card,
         },
     });
 }

@@ -253,7 +253,6 @@ export function FindReplaceDialog({
                     autoCorrect={false}
                     accessibilityLabel={l('Yerine yazılacak metin', 'Replacement text')}
                 />
-                <Text style={styles.fieldLabel}>{l('Konum', 'In')}</Text>
                 <ChoiceSelect
                     disabled={!editable}
                     expanded={targetOpen}

@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { AnswerButtonPoint } from '../../lib/ankiStats';
 import { Card } from '../ui/Card';
 import StatsTiles from './StatsTiles';
 import { useStatsFormat } from './useStatsFormat';
+import { Radius } from '../ui/tokens';
 
 /**
  * Anki's Answer Buttons graph as four plain bars, one per button, and Anki's "correct" figure — the
@@ -80,8 +81,8 @@ function createStyles(colors: ColorScheme) {
         rows: { gap: Spacing.sm },
         row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, minHeight: 24 },
         label: { width: 52, color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '500' },
-        track: { flex: 1, height: 10, borderRadius: BorderRadius.full, backgroundColor: colors.bgInput, overflow: 'hidden' },
-        fill: { height: '100%', minWidth: 3, borderRadius: BorderRadius.full },
+        track: { flex: 1, height: 10, borderRadius: Radius.pill, backgroundColor: colors.bgInput, overflow: 'hidden' },
+        fill: { height: '100%', minWidth: 3, borderRadius: Radius.pill },
         count: { width: 56, textAlign: 'right', color: colors.textPrimary, fontSize: FontSize.sm, fontWeight: '600' },
         share: { width: 44, textAlign: 'right', color: colors.textSecondary, fontSize: FontSize.sm },
     });

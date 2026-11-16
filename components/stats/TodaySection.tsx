@@ -107,7 +107,7 @@ function createStyles(colors: ColorScheme) {
         figures: { flexDirection: 'row', gap: Spacing.sm },
         figure: { flex: 1, minWidth: 0 },
         value: { color: colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '600' },
-        label: { color: colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
+        label: { color: colors.textSecondary, fontSize: FontSize.sm, marginTop: Spacing.xxs },
         week: {
             gap: Spacing.sm,
             paddingTop: Spacing.md,

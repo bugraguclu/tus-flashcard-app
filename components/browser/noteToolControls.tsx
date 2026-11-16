@@ -1,8 +1,8 @@
-import { ScrollView, TouchableOpacity, View } from 'react-native';
-import { Text } from '../AppText';
-import { useThemeColors } from '../../constants/theme';
-import { CheckRow, SelectedMark } from '../ui/Choice';
-import { ChevronDownIcon, ChevronUpIcon } from '../ui/icons';
+import { Fragment } from 'react';
+import { ScrollView, View } from 'react-native';
+import { Divider } from '../ui/Card';
+import { CheckRow } from '../ui/Choice';
+import { ListRow, SelectRow } from '../ui/Rows';
 import type { NoteToolStyles } from './noteToolStyles';
 
 interface ToolCheckboxProps {
@@ -35,8 +35,8 @@ interface ChoiceSelectProps {
 }
 
 /**
- * A compact single choice: the current value, which opens the options in place. A dialog keeps
- * its other controls where they are instead of covering them with a second popup.
+ * A single choice inside a dialog: the kit's select row, which opens its options in place under
+ * it. A dialog keeps its other controls where they are instead of covering them with a second popup.
  */
 export function ChoiceSelect({
     disabled = false,
@@ -48,42 +48,30 @@ export function ChoiceSelect({
     selectedKey,
     toolStyles,
 }: ChoiceSelectProps) {
-    const colors = useThemeColors();
     const selected = options.find((option) => option.key === selectedKey) ?? options[0];
     return (
         <View>
-            <TouchableOpacity
-                style={[toolStyles.selectButton, disabled && toolStyles.disabled]}
+            <SelectRow
+                label={label}
+                value={selected?.label ?? ''}
                 onPress={onToggle}
                 disabled={disabled}
-                accessibilityRole="button"
+                expanded={expanded}
                 accessibilityLabel={`${label}: ${selected?.label ?? ''}`}
-                accessibilityState={{ expanded, disabled }}
-            >
-                <Text style={toolStyles.selectButtonText} numberOfLines={1}>{selected?.label ?? ''}</Text>
-                {expanded ? <ChevronUpIcon color={colors.textMuted} /> : <ChevronDownIcon color={colors.textMuted} />}
-            </TouchableOpacity>
+                style={toolStyles.selectRow}
+            />
             {expanded && (
                 <ScrollView style={toolStyles.selectList} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-                    {options.map((option) => {
-                        const active = option.key === selected?.key;
-                        return (
-                            <TouchableOpacity
-                                key={option.key}
-                                style={[toolStyles.selectRow, active && toolStyles.selectRowActive]}
+                    {options.map((option, index) => (
+                        <Fragment key={option.key}>
+                            {index > 0 ? <Divider /> : null}
+                            <ListRow
+                                title={option.label}
+                                selected={option.key === selected?.key}
                                 onPress={() => onSelect(option.key)}
-                                accessibilityRole="radio"
-                                accessibilityLabel={option.label}
-                                accessibilityState={{ checked: active }}
-                                aria-checked={active}
-                            >
-                                <Text style={[toolStyles.selectRowText, active && toolStyles.selectRowTextActive]} numberOfLines={2}>
-                                    {option.label}
-                                </Text>
-                                {active && <SelectedMark />}
-                            </TouchableOpacity>
-                        );
-                    })}
+                            />
+                        </Fragment>
+                    ))}
                 </ScrollView>
             )}
         </View>

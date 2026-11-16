@@ -3,7 +3,8 @@ import { Platform, Pressable, StyleSheet, TouchableOpacity, View } from 'react-n
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useIsDarkTheme, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useIsDarkTheme, useThemeColors } from '../../constants/theme';
+import { Shadow, Radius } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 
 const MINUTE_MS = 60_000;
@@ -80,10 +81,10 @@ export default function TimePickerPanel({ value, label, onCancel, onConfirm }: T
 
 const styles = StyleSheet.create({
     panel: {
-        borderTopLeftRadius: BorderRadius.lg,
-        borderTopRightRadius: BorderRadius.lg,
+        borderTopLeftRadius: Radius.card,
+        borderTopRightRadius: Radius.card,
         paddingTop: Spacing.sm,
-        ...Shadows.lg,
+        ...Shadow.floating,
     },
     header: {
         flexDirection: 'row',
@@ -94,6 +95,6 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     cancel: { fontSize: FontSize.lg, fontWeight: '600' },
-    done: { fontSize: FontSize.lg, fontWeight: '700' },
+    done: { fontSize: FontSize.lg, fontWeight: '600' },
     wheels: { alignItems: 'center', paddingVertical: Spacing.sm },
 });

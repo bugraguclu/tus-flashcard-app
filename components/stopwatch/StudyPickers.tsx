@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { Text, TextInput, useLayoutTextScale } from '../AppText';
 import { fieldRowProps } from '../ui/fieldRow';
-import { Type } from '../ui/tokens';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
+import { Shadow, Type, Radius } from '../ui/tokens';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { useKeyboardVisible } from '../../hooks/useKeyboardVisible';
 import {
@@ -139,7 +139,7 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                                                 : { borderColor: colors.border },
                                         ]}
                                     >
-                                        {isSelected ? <CheckIcon color={colors.white} size={10} /> : null}
+                                        {isSelected ? <CheckIcon color={colors.white} size={16} /> : null}
                                     </View>
                                     {subjectArtName(subject) ? (
                                         <SubjectArt subject={subject} size={30} />
@@ -264,7 +264,7 @@ export function StudyTypePicker({ kind, pass, onSelect, onClose }: StudyTypePick
                                     <Text style={[styles.typeText, { color: isSelected ? colors.accent : colors.textSecondary }, isSelected && styles.typeTextSelected]}>
                                         {option.label}
                                     </Text>
-                                    {isSelected ? <CheckIcon color={colors.accent} size={18} /> : null}
+                                    {isSelected ? <CheckIcon color={colors.accent} size={20} /> : null}
                                 </TouchableOpacity>
                             );
                         })}
@@ -289,23 +289,23 @@ export function StudyTypePicker({ kind, pass, onSelect, onClose }: StudyTypePick
 const styles = StyleSheet.create({
     layer: { width: '100%', maxWidth: 480, alignSelf: 'center' },
     // Shrinks into the room the keyboard leaves; its content scrolls.
-    card: { flexShrink: 1, borderRadius: BorderRadius.lg, ...Shadows.lg },
+    card: { flexShrink: 1, borderRadius: Radius.card, ...Shadow.floating },
     hidden: { display: 'none' },
     gridScroll: { flexGrow: 0, flexShrink: 1 },
     gridContent: { alignItems: 'center', paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, gap: Spacing.md },
     gridFooter: { alignItems: 'center', paddingTop: Spacing.md, paddingBottom: Spacing.lg },
-    title: { fontSize: FontSize.lg, fontWeight: '700' },
+    title: { fontSize: FontSize.lg, fontWeight: '600' },
     grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: Spacing.sm, alignSelf: 'stretch' },
     tile: {
         width: '31%',
         minHeight: 74,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: BorderRadius.md,
+        borderRadius: Radius.inset,
         borderWidth: 1,
         paddingHorizontal: 4,
         paddingTop: Spacing.sm,
-        paddingBottom: 6,
+        paddingBottom: Spacing.s6,
         gap: 4,
     },
     tileWide: { width: '48%' },
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    initialText: { fontSize: FontSize.lg, fontWeight: '800' },
+    initialText: { fontSize: FontSize.lg, fontWeight: '600' },
     radio: {
         position: 'absolute',
         top: 5,
@@ -335,15 +335,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: StyleSheet.hairlineWidth,
-        borderRadius: BorderRadius.md,
+        borderRadius: Radius.inset,
         paddingLeft: Spacing.md,
         paddingRight: 4,
         minHeight: 44,
     },
     customInput: { flex: 1, fontSize: FontSize.md, paddingVertical: Spacing.sm },
-    customButton: { borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.md, paddingVertical: 7 },
+    customButton: { borderRadius: Radius.control, paddingHorizontal: Spacing.md, paddingVertical: 7 },
     customButtonText: { ...Type.button },
-    closeButton: { minWidth: 120, alignItems: 'center', borderRadius: BorderRadius.md, paddingVertical: 10, paddingHorizontal: Spacing.xl },
+    closeButton: { minWidth: 120, alignItems: 'center', borderRadius: Radius.inset, paddingVertical: 10, paddingHorizontal: Spacing.xl },
     closeText: { ...Type.button },
     typeLayer: { flexShrink: 1, gap: Spacing.sm },
     search: {
@@ -351,11 +351,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: Spacing.sm,
         minHeight: 48,
-        borderRadius: BorderRadius.md,
+        borderRadius: Radius.inset,
         paddingHorizontal: Spacing.md,
     },
     searchInput: { flex: 1, fontSize: FontSize.lg, paddingVertical: Spacing.sm },
-    listCard: { flexShrink: 1, borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
+    listCard: { flexShrink: 1, borderRadius: Radius.inset, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
     typeRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
     typeText: { flex: 1, fontSize: FontSize.lg },
-    typeTextSelected: { fontWeight: '700' },
+    typeTextSelected: { fontWeight: '600' },
     empty: { textAlign: 'center', paddingVertical: Spacing.lg, fontSize: FontSize.md },
-    closeWide: { alignItems: 'center', borderRadius: BorderRadius.md, paddingVertical: 12 },
+    closeWide: { alignItems: 'center', borderRadius: Radius.inset, paddingVertical: 12 },
 });

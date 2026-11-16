@@ -1,14 +1,15 @@
 import { useMemo, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { formatCount } from '../../lib/i18n';
 import CardsGlyph from '../CardsGlyph';
 import PencilGlyph from '../PencilGlyph';
 import DeckOverflowGlyph from '../DeckOverflowGlyph';
-import DisclosureChevron from '../DisclosureChevron';
 import { CloseIcon } from '../ui/icons';
+import { ListRow } from '../ui/Rows';
+import { Shadow, Radius } from '../ui/tokens';
 
 interface DeckListWelcomeProps {
     /** Offer the TUS pack: false once the full pack is installed. */
@@ -38,20 +39,7 @@ export default function DeckListWelcome({
     const cards = formatCount(catalogCardCount, locale);
 
     const action = (key: string, glyph: ReactNode, title: string, subtitle: string, onPress: () => void) => (
-        <Pressable
-            key={key}
-            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
-            onPress={onPress}
-            accessibilityRole="button"
-            accessibilityLabel={`${title}, ${subtitle}`}
-        >
-            <View style={styles.actionIcon}>{glyph}</View>
-            <View style={styles.actionCopy}>
-                <Text style={styles.actionTitle}>{title}</Text>
-                <Text style={styles.actionSubtitle}>{subtitle}</Text>
-            </View>
-            <DisclosureChevron expanded={false} color={colors.textMuted} size={16} />
-        </Pressable>
+        <ListRow key={key} icon={glyph} title={title} summary={subtitle} onPress={onPress} />
     );
 
     return (
@@ -59,13 +47,13 @@ export default function DeckListWelcome({
             <View style={styles.header}>
                 <Text style={styles.title} accessibilityRole="header">{l('Hoş geldiniz', 'Welcome')}</Text>
                 <Pressable
-                    style={({ pressed }) => [styles.close, pressed && styles.actionPressed]}
+                    style={({ pressed }) => [styles.close, pressed && styles.closePressed]}
                     onPress={onDismiss}
                     hitSlop={4}
                     accessibilityRole="button"
                     accessibilityLabel={l('Hoş geldiniz kartını kapat', 'Close the welcome card')}
                 >
-                    <CloseIcon color={colors.textMuted} size={18} />
+                    <CloseIcon color={colors.textMuted} size={20} />
                 </Pressable>
             </View>
             <Text style={styles.text}>
@@ -82,21 +70,21 @@ export default function DeckListWelcome({
             <View style={styles.actions}>
                 {showCatalog ? action(
                     'catalog',
-                    <CardsGlyph color={colors.accent} size={20} />,
+                    <CardsGlyph color={colors.accent} size={22} />,
                     l('TUS paketini aç', 'Unlock the TUS pack'),
                     l(`${cards} hazır kart, ücretsiz`, `${cards} ready-made cards, free`),
                     onOpenCatalog,
                 ) : null}
                 {action(
                     'add',
-                    <PencilGlyph color={colors.accent} size={20} />,
+                    <PencilGlyph color={colors.accent} size={22} />,
                     l('Kart ekle', 'Add note'),
                     l('Kendi kartınızı yazın', 'Write your own card'),
                     onAddCard,
                 )}
                 {action(
                     'import',
-                    <DeckOverflowGlyph kind="import" color={colors.accent} size={20} />,
+                    <DeckOverflowGlyph kind="import" color={colors.accent} size={22} />,
                     l('İçe aktar', 'Import'),
                     l('.apkg, .colpkg veya metin dosyası', '.apkg, .colpkg or text file'),
                     onImport,
@@ -116,8 +104,8 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgCard,
             borderWidth: 1,
             borderColor: colors.borderLight,
-            borderRadius: BorderRadius.md,
-            ...Shadows.sm,
+            borderRadius: Radius.inset,
+            ...Shadow.card,
         },
         header: {
             flexDirection: 'row',
@@ -126,7 +114,7 @@ function createStyles(colors: ColorScheme) {
             paddingRight: Spacing.xs,
         },
         title: { flex: 1, paddingTop: Spacing.xs, fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
-        close: { width: 44, height: 44, marginTop: -Spacing.sm, alignItems: 'center', justifyContent: 'center', borderRadius: BorderRadius.full },
+        close: { width: 44, height: 44, marginTop: -Spacing.sm, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.pill },
         text: {
             paddingHorizontal: Spacing.lg,
             fontSize: FontSize.sm,
@@ -138,25 +126,6 @@ function createStyles(colors: ColorScheme) {
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.borderLight,
         },
-        action: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: 56,
-            paddingVertical: Spacing.sm,
-            paddingLeft: Spacing.lg,
-            paddingRight: Spacing.md,
-        },
-        actionPressed: { backgroundColor: colors.accentLight },
-        actionIcon: {
-            width: 36,
-            height: 36,
-            borderRadius: BorderRadius.sm,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.accentLight,
-        },
-        actionCopy: { flex: 1, marginHorizontal: Spacing.md },
-        actionTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
-        actionSubtitle: { marginTop: 1, fontSize: FontSize.sm, color: colors.textMuted },
+        closePressed: { backgroundColor: colors.accentLight },
     });
 }

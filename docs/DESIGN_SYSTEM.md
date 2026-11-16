@@ -10,7 +10,12 @@ The look is calm and neutral: white cards with hairlines on a light grey page, t
 for actions, orange for streaks and the Kronometre tools, and the grade colours as pale tints. The
 owner chose it change by change on 13 November 2026 (TUSBuddy was the reference). The parts take
 their measurements from the variant the app already used most for each job, recorded in the
-design-language audit of 5 November 2026.
+design-language audit of 5 November 2026. On 16 November 2026 the owner went through the audit of
+the live build look by look: what was still drawn outside the kit was either pulled onto a part,
+added to the kit as a part of its own, or kept as a named exception (listed below).
+On 17 November 2026 the owner's answers set the corners to 8 · 12 · 16, made the centred menu
+card neutral, put the editor's tool tabs on the segmented control, and named the 11-point text
+role, the 2- and 6-point spacing steps and the three icon sizes.
 
 ## Tokens
 
@@ -25,12 +30,23 @@ design-language audit of 5 November 2026.
 | Dimming behind a speed-dial menu | `colors.scrimStrong` | black 60% |
 | Marked-note star | `colors.marked` | amber |
 | Chosen segment | `colors.segmentSelected` | white (dark: border tone) |
-| Corners | `Radius.control` 6 · `inset` 8 · `card` 12 · `sheet` 16 · `pill` | buttons and fields · menus, segmented track, boxes inside a card · cards and dialogs · sheet top · chips and badges |
+| Corners | `Radius.control` 8 · `inset` 8 · `button` 12 · `card` 16 · `sheet` 16 · `pill` | small controls (tool buttons, steppers, boxed chips) · menus, segmented track, boxes inside a card · buttons and text fields · cards and dialogs · sheet top · chips and badges. Screens name a role; `BorderRadius` is only the scale the roles are built on. |
+| Shadows | `Shadow.card` · `Shadow.floating` | a white surface resting on the page · anything that hovers above it (menus, dialogs, sheets, the floating button, a dragged row). No other shadow value belongs in a screen. |
 | Touch target | `HIT_TARGET` | 44 pt minimum for anything tappable |
 | Disabled | `DISABLED_OPACITY` | 0.45 on the whole control |
-| Text | `Type.title` 18/600 · `sectionTitle` 16/600 · `rowTitle` 14/500 · `body` 14/400 · `bodyStrong` 14/600 · `button` 14/600 · `textButton` 14/600 · `caption` 12/18 · `label` 12/500 sentence case | screen, sheet and dialog titles · card headings · row titles · body · values · filled buttons · text buttons · summaries and footnotes · group labels |
+| Text | `Type.title` 18/600 · `sectionTitle` 16/600 · `rowTitle` 14/500 · `body` 14/400 · `bodyStrong` 14/600 · `button` 14/600 · `textButton` 14/600 · `caption` 12/18 · `label` 12/500 sentence case · `micro` 11/500 | screen, sheet and dialog titles · card headings · row titles · body · values · filled buttons · text buttons · summaries and footnotes · group labels · badges, bar captions, count columns and chart axes |
 
-Spacing stays on the 4-point grid of `Spacing`; screens keep a 16-point side gutter.
+Spacing stays on the 4-point grid of `Spacing`; screens keep a 16-point side gutter. Two off-grid
+steps have names so they are not typed as numbers: `Spacing.xxs` (2) and `Spacing.s6` (6).
+
+Text sizes come from `FontSize` (11 · 12 · 14 · 16 · 18 · 22 · 28 · 32). Nothing is drawn under
+11 points, and 13 and 15 are not sizes: a row title is 14. Weights stop at 600; the Kronometre's
+running clocks are the only heavier text.
+
+Icons come in three sizes: 20 inside a row or a chip, 22 in an icon button or a toolbar, 24 in a
+header. Larger drawings are the floating button's own icon (26–28) and the picture of an empty or
+error state (30 and up). A small mark (a disclosure chevron inside a button, the tick in a check
+box, a badge's glyph) is 16; no icon is drawn smaller.
 
 No colour literal belongs in a screen. Exceptions: user-chosen ink and highlight swatches (drawing
 pad, photo editor, editor colour pickers), image content (the sleeping panda), card templates, and
@@ -44,7 +60,7 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | Header icon action | `IconButton` / `HeaderIconButton` | `components/ui/Button.tsx` |
 | Any filled, outlined or text action | `Button` (`primary`, `secondary`, `destructive`, `plain`; `regular` 50 pt or `compact` 40 pt) | `components/ui/Button.tsx` |
 | Close and help controls | `CloseButton` (SVG ×), `HelpButton` (round ?) | `components/ui/Button.tsx` |
-| Control glyphs | `BackIcon`, `ForwardIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `ChevronUpIcon`, `CloseIcon`, `CheckIcon`, `PlusIcon`, `MinusIcon`, `MoreIcon` (•••), `MoreVerticalIcon` (⋮), `SearchIcon`, `RefreshIcon`, `ArrowUpIcon`, `ArrowDownIcon`, `ArrowLeftIcon`, `ArrowRightIcon`, `TrashIcon`, `UndoIcon`, `RedoIcon`, `ExternalLinkIcon`, `DragHandleIcon` | `components/ui/icons.tsx` |
+| Control glyphs | `BackIcon`, `ForwardIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `ChevronUpIcon`, `CloseIcon`, `CheckIcon`, `PlusIcon`, `MinusIcon`, `MoreIcon` (•••, the one "more" icon everywhere), `SearchIcon`, `RefreshIcon`, `ArrowUpIcon`, `ArrowDownIcon`, `ArrowLeftIcon`, `ArrowRightIcon`, `TrashIcon`, `UndoIcon`, `RedoIcon`, `ExternalLinkIcon`, `DragHandleIcon` | `components/ui/icons.tsx` |
 | − value + | `Stepper` (holding repeats; `children` for an editable value) | `components/ui/Stepper.tsx` |
 | A surface for rows, charts or fields | `Card` (`divided` for rows, `padded` for free content; `title`, `description`, `accessory` draw its heading inside), `CardHeader` | `components/ui/Card.tsx` |
 | A labelled group of rows | `Section` (`SectionLabel` + `Card` + `SectionFootnote`) | `components/ui/Card.tsx` |
@@ -55,7 +71,12 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | Empty, loading, notices, progress | `EmptyState`, `LoadingState` (`delayed` stays blank for 300 ms, then fades in), `Notice` (`info`, `warning`, `danger`, `success`), `ProgressBar` | `components/ui/Feedback.tsx` |
 | Bottom sheet | `AppSheet` (title and subtitle centred under the grabber, keyboard lift, overlay picker), `SheetScrollView` for its scrolling body, `SheetNoDrag` around a multi-line field | `components/ui/Sheet.tsx` |
 | Centred form, picker or explanation | `AppDialog` | `components/ui/Dialog.tsx` |
-| ••• menu | `PopoverMenu` + `MenuItem` | `components/ui/Menu.tsx` |
+| ••• menu | `PopoverMenu` + `MenuItem` (`chevron` for a row that opens a submenu) | `components/ui/Menu.tsx` |
+| A long action menu centred over the screen (the deck row's •••) | `MenuDialog` + `MenuItem` | `components/ui/Menu.tsx` |
+| Floating button | `Fab` (`rounded`: the deck list's ＋; `round` with `colors.studyTool`: the Kronometre's tools and the calendar's stopwatch) | `components/ui/Fab.tsx` |
+| Floating button that opens actions above itself | `SpeedDial` + `SpeedDialAction` (a label and a small button) or `SpeedDialCard` (a filled card with a title and what it does) | `components/ui/Fab.tsx` |
+| Bar of shortcuts or bulk actions along the bottom edge | `BottomBar` + `BottomBarItem` (icon over a caption) | `components/ui/Bars.tsx` |
+| One tool of a formatting or drawing toolbar | `ToolButton` (44 pt square, `selected` tint, optional `label` under the icon) | `components/ui/Bars.tsx` |
 | Confirmation | `lib/confirm` (system alert on iPhone, `DialogHost` on web) | `lib/confirm.ts` |
 
 Import each part from its own file (`components/ui/Button`), not through a barrel: screen tests mock
@@ -71,11 +92,31 @@ The screens used to carry their own small kits. They map onto the parts like thi
 | Kronometre sheets `StopwatchSheet`, `SettingRow`, `SheetButton`, `Stepper` | `AppSheet` (form header → its centred `title`), rows in a `divided` `Card`, `Button`, `ui/Stepper` |
 | Statistics `StatsSegmented`, `StatsCard` | `SegmentedControl`, `Card padded` + `CardHeader` |
 | Settings groups, `ToggleRow`, `ChoiceRow`, `StepperRow`, data rows | `Card padded`/`divided` + `CardHeader` (+ `HelpButton`), `SwitchRow`, `SegmentedControl`, `Stepper`, `ListRow` |
-| Deck options `OptionCard`, toggles, selects, `FieldAdvice` | `Card` + `CardHeader` + `HelpButton`, `SwitchRow`, `SelectRow`, `Notice` |
+| Deck options `OptionCard`, toggles, selects, number boxes, limit tabs, `FieldAdvice`, preset windows | `Card` + `CardHeader` + `HelpButton`, `SwitchRow`, `SelectRow` (options in an `AppDialog` of `ListRow selected`), `ValueRow` + `TextField`, `SegmentedControl`, `Notice`, `AppDialog`; Save and ••• sit in the `ScreenHeader` actions |
 | Accent-coloured picker toolbars (deck, note type, tag) | A white header inside the dialog card: `Type.title`, `CloseButton`; the chosen row ends in `SelectedMark` |
 | Per-screen popovers (deck list, Browse, editor •••) | `PopoverMenu` + `MenuItem` |
 | Per-screen dimming (18% … 60% black, tinted blacks) | `colors.scrim`, `scrimLight`, `scrimStrong` |
 | Text glyphs ›, ⌄, ⌃, ×, ✕, ✓, ⋮, •••, ＋, ↻, ↑, ↓, ← as icons | `components/ui/icons` |
+| Per-screen floating buttons and their menus (deck list ＋, study tools, calendar stopwatch) | `Fab`, `SpeedDial` |
+| The deck list's shortcut bar and Browse's selection bar | `BottomBar` + `BottomBarItem` |
+| Editor, whiteboard and drawing-pad tool buttons (44, 38, 46 and 36 pt) | `ToolButton` |
+| Filled or accent-text rows marking the chosen option (pickers, sort, export format, fonts) | `ListRow selected` / `CheckRow`: a tick, no fill |
+| Note-type and tag pickers, the reviewer's flag panel | `AppDialog` with `ListRow` / `CheckRow`; `PopoverMenu` + `MenuItem` |
+| The note-type screen's native stack header | `ScreenHeader` |
+| `Shadows.sm` / `md` / `lg` spread through screens | `Shadow.card` / `Shadow.floating` |
+
+## Feature parts and exceptions
+
+The owner kept these looks on 16 November 2026. They are not kit parts, and nothing else should
+copy them; change them only on the owner's word.
+
+| Where | What stays its own |
+|---|---|
+| Reviewer (`app/(tabs)/index.tsx`) | The toolbar whose title is the deck selector (16/600 with a down chevron), "Cevabı göster" and the four grade buttons (corner 12, 54–56 pt), and the card panel (corner 20, `reviewerCardBorder`). |
+| Deck list | The large "Desteler" title and the TUS Kartları strip. |
+| Deck picker (`components/DeckPickerModal.tsx`) | Its own window and 54 pt rows; the chosen deck ends in the kit's tick. Every screen that picks a deck opens this one picker. |
+| Browse | The card row (`BrowserCardRow`: its own boxed row with two detail lines), the deck scope selector under the header, and the search-help example rows. |
+| Kronometre | The green header and hero, "Başla", the plan card's "Oluştur", "Sınav tarihi ekle", "Geçmiş çalışma ekle", the session card's ••• and the sleeping-panda empty state. Its sheets, selectors, steppers and fields are kit parts. |
 
 ## Rules
 
@@ -90,6 +131,11 @@ The screens used to carry their own small kits. They map onto the parts like thi
 - Sheets are `AppSheet` over `BottomSheetModal`; dialogs are `AppDialog`; neither draws its own
   backdrop colour. A sheet has no close button: its grabber, a pull-down from anywhere outside
   what scrolls or edits text, and the backdrop close it. Dialogs keep their `CloseButton`.
+- A header's back control is spoken as "Geri dön" / "Go back", or names the one place it returns
+  to ("Destelere dön", "Ayarlara dön"). One meaning has one wording.
+- Left raw on purpose: the number inside a stepper, a time box and the keyboard-shortcut field
+  (`TextInput`), and the system `ActivityIndicator` inside an icon button or beside a label. A
+  whole-screen wait is `LoadingState`.
 - Disabled controls fade with `DISABLED_OPACITY`. Every state a control has (disabled, checked,
   selected, expanded, busy) is passed both as `accessibilityState` and as the matching `aria-*`
   prop: react-native-web reads only the `aria-*` props, iOS reads both.
@@ -101,3 +147,8 @@ The screens used to carry their own small kits. They map onto the parts like thi
 - Do not show or hide content on a field's focus alone: in a browser the press that moves focus
   away then lands on whatever slid under the pointer. Follow the software keyboard instead
   (`useKeyboardVisible`), as the Kronometre's course picker does.
+- `lib/designSystem.test.ts` counts what each file outside the kit still builds by hand: raw
+  touchables, touchables with no 44-point target it can see, `Modal`, `TextInput` and `Switch`.
+  `lib/designSystemAllowlist.json` holds today's counts; a file may lower them, never raise them,
+  and a new screen starts at zero. After moving something onto the kit, lower the numbers with
+  `UPDATE_DESIGN_ALLOWLIST=1 npx vitest run lib/designSystem.test.ts`.

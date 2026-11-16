@@ -12,7 +12,8 @@ import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-ha
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg from 'react-native-svg';
 import { captureRef } from 'react-native-view-shot';
-import { BorderRadius, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Shadow, Radius } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import { useModalHandoff } from '../../hooks/useModalHandoff';
 import { alert, confirm } from '../../lib/confirm';
@@ -521,7 +522,7 @@ export default function DrawingPadModal({ visible, onClose, onSaved }: DrawingPa
                         label={pageSummary}
                         variant="plain"
                         size="compact"
-                        trailingIcon={<ChevronDownIcon color={colors.accent} size={14} />}
+                        trailingIcon={<ChevronDownIcon color={colors.accent} size={16} />}
                         onPress={() => setPageSheet(true)}
                         numberOfLines={1}
                         accessibilityLabel={l(`Sayfa seçenekleri: ${pageSummary}`, `Page options: ${pageSummary}`)}
@@ -654,12 +655,12 @@ function createStyles(colors: ColorScheme) {
         },
         // Pulled to the gutter by the text button's own padding, and pushed left of the history.
         pageButton: { flexShrink: 1, marginLeft: -Spacing.md, marginRight: 'auto' },
-        historyButton: { backgroundColor: colors.bgCard, ...Shadows.sm },
+        historyButton: { backgroundColor: colors.bgCard, ...Shadow.card },
         stage: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
         // The shadow sits on a wrapper: iOS clips a shadow drawn by a view that clips its content.
-        pageShadow: { borderRadius: BorderRadius.sm, backgroundColor: colors.bgCard, ...Shadows.md },
+        pageShadow: { borderRadius: Radius.control, backgroundColor: colors.bgCard, ...Shadow.card },
         page: {
-            borderRadius: BorderRadius.sm,
+            borderRadius: Radius.control,
             overflow: 'hidden',
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: colors.border,

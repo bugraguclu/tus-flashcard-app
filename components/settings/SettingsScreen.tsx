@@ -956,7 +956,7 @@ export default function SettingsScreen({ section: activeSection }: { section: Se
             ) : null}
             <Button
                 variant="secondary"
-                icon={<RestoreIcon color={colors.textPrimary} size={18} styles={styles} />}
+                icon={<RestoreIcon color={colors.textPrimary} size={20} styles={styles} />}
                 label={l('Varsayılan ayarlara dön', 'Restore default settings')}
                 onPress={handleResetSettings}
             />
@@ -1316,7 +1316,7 @@ export default function SettingsScreen({ section: activeSection }: { section: Se
                                             : styles.overlayPreviewFloatingBtnRight,
                                     ]}
                                 >
-                                    <GearGlyph color={colors.onAccent} size={13} />
+                                    <GearGlyph color={colors.onAccent} size={16} />
                                 </View>
                             </Pressable>
                             <Text style={styles.overlayPreviewCaption}>
@@ -1454,7 +1454,7 @@ export default function SettingsScreen({ section: activeSection }: { section: Se
                         <Button
                             size="compact"
                             variant={showSaved ? 'secondary' : 'primary'}
-                            icon={showSaved ? <CheckIcon color={colors.success} size={14} /> : undefined}
+                            icon={showSaved ? <CheckIcon color={colors.success} size={16} /> : undefined}
                             label={showSaved ? l('Kaydedildi', 'Saved') : l('Kaydet', 'Save')}
                             numberOfLines={1}
                             onPress={handleSaveSettings}

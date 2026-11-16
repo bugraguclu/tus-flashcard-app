@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text } from '../AppText';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Path, Rect } from 'react-native-svg';
-import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
+import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { useModalHandoff } from '../../hooks/useModalHandoff';
-import PressableScale from '../PressableScale';
 import StatsGlyph from '../StatsGlyph';
 import { IconFrame, iconStroke, outline } from '../icons/IconFrame';
 import { TrashGlyph } from '../UiGlyphs';
-import { PopoverBackdrop, PopoverItem, PopoverModal } from '../Popover';
+import { FAB_SIZE, SpeedDial, SpeedDialCard } from '../ui/Fab';
 import { AnalyticsIcon, TimelineListIcon } from './StopwatchIcons';
 
-export const STUDY_TOOLS_FAB_SIZE = 56;
+export const STUDY_TOOLS_FAB_SIZE = FAB_SIZE;
 
 type StudyTool = 'calendar' | 'analysis' | 'planning' | 'clear';
 
@@ -55,15 +51,14 @@ interface StudyToolsMenuProps {
 }
 
 /**
- * The study tools button: a round orange button that opens the study tools as orange cards —
- * "Çalışma Takvimi" (on the Kronometre), "Çalışma Analiziniz", "Çalışma Planlama" and "Çalışmaları
- * Temizle" — over a dimmed screen, as TUSBuddy does. Tapping outside the cards or the button again
- * closes them.
+ * The study tools button: the kit's speed dial as a round orange button that opens the study tools
+ * as orange cards — "Çalışma Takvimi" (on the Kronometre), "Çalışma Analiziniz", "Çalışma Planlama"
+ * and "Çalışmaları Temizle" — over a dimmed screen, as TUSBuddy does. Tapping outside the cards or
+ * the button again closes them.
  */
 export default function StudyToolsMenu({ bottom, onOpenCalendar }: StudyToolsMenuProps) {
     const { l } = useI18n();
     const colors = useThemeColors();
-    const insets = useSafeAreaInsets();
     const router = useRouter();
     const [open, setOpen] = useState(false);
     // A chosen tool's screen shows at once instead of after the cards sink back (useModalHandoff).
@@ -102,93 +97,35 @@ export default function StudyToolsMenu({ bottom, onOpenCalendar }: StudyToolsMen
         },
     ];
 
-    const button = (onPress: () => void, label: string) => (
-        <PressableScale
-            style={[styles.fab, { bottom, backgroundColor: tint }]}
-            onPress={onPress}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel={label}
-        >
-            <AnalyticsIcon color={colors.white} size={26} />
-        </PressableScale>
-    );
-
     return (
-        <>
-            {button(() => setOpen(true), l('Çalışma araçları', 'Study tools'))}
-            {/* The cards rise out of the button one after another and sink back into it. */}
-            <PopoverModal visible={open} onRequestClose={() => setOpen(false)} closeAtOnce={handoff.closeAtOnce} itemCount={tools.length}>
-                <View style={styles.overlay}>
-                    <PopoverBackdrop
-                        style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrimStrong }]}
-                        onPress={() => setOpen(false)}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Kapat', 'Close')}
-                    />
-                    {/* The prop, not the style: react-native-web drops a 'box-none' style. */}
-                    <View
-                        style={[styles.cards, {
-                            paddingBottom: bottom + STUDY_TOOLS_FAB_SIZE + Spacing.lg,
-                            paddingLeft: Spacing.lg + insets.left,
-                            paddingRight: Spacing.lg + insets.right,
-                        }]}
-                        pointerEvents="box-none"
-                    >
-                        {tools.map(({ tool, title, subtitle }, index) => (
-                            <PopoverItem key={tool} index={tools.length - 1 - index} origin="bottom right">
-                                <TouchableOpacity
-                                    style={[styles.card, { backgroundColor: tint }]}
-                                    onPress={() => handoff.handOff(() => {
-                                        setOpen(false);
-                                        if (tool === 'calendar') onOpenCalendar?.();
-                                        else router.push(ROUTES[tool] as any);
-                                    })}
-                                    activeOpacity={0.85}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`${title}. ${subtitle}`}
-                                >
-                                    <View style={styles.glyph}><ToolGlyph tool={tool} color={colors.white} /></View>
-                                    <View style={styles.copy}>
-                                        <Text style={[styles.title, { color: colors.white }]}>{title}</Text>
-                                        <Text style={[styles.subtitle, { color: colors.white }]}>{subtitle}</Text>
-                                    </View>
-                                </TouchableOpacity>
-                            </PopoverItem>
-                        ))}
-                    </View>
-                    {button(() => setOpen(false), l('Çalışma araçlarını kapat', 'Close study tools'))}
-                </View>
-            </PopoverModal>
-        </>
+        // The cards rise out of the button one after another and sink back into it.
+        <SpeedDial
+            visible={open}
+            onOpen={() => setOpen(true)}
+            onClose={() => setOpen(false)}
+            closeAtOnce={handoff.closeAtOnce}
+            bottom={bottom}
+            shape="round"
+            color={tint}
+            icon={<AnalyticsIcon color={colors.onAccent} size={26} />}
+            openLabel={l('Çalışma araçları', 'Study tools')}
+            closeLabel={l('Çalışma araçlarını kapat', 'Close study tools')}
+            stretch
+        >
+            {tools.map(({ tool, title, subtitle }) => (
+                <SpeedDialCard
+                    key={tool}
+                    title={title}
+                    subtitle={subtitle}
+                    color={tint}
+                    icon={<ToolGlyph tool={tool} color={colors.onAccent} />}
+                    onPress={() => handoff.handOff(() => {
+                        setOpen(false);
+                        if (tool === 'calendar') onOpenCalendar?.();
+                        else router.push(ROUTES[tool] as any);
+                    })}
+                />
+            ))}
+        </SpeedDial>
     );
 }
-
-const styles = StyleSheet.create({
-    fab: {
-        position: 'absolute',
-        right: Spacing.lg,
-        width: STUDY_TOOLS_FAB_SIZE,
-        height: STUDY_TOOLS_FAB_SIZE,
-        borderRadius: STUDY_TOOLS_FAB_SIZE / 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...Shadows.md,
-    },
-    overlay: { flex: 1, justifyContent: 'flex-end' },
-    cards: { gap: Spacing.md },
-    card: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.md,
-        minHeight: 76,
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.md,
-        borderRadius: 12,
-        ...Shadows.md,
-    },
-    glyph: { width: 36, alignItems: 'center' },
-    copy: { flex: 1, gap: 3 },
-    title: { fontSize: FontSize.lg, fontWeight: '800' },
-    subtitle: { fontSize: FontSize.sm, lineHeight: 18 },
-});

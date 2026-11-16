@@ -108,8 +108,11 @@ describe('deck picker', () => {
     it('selects a deck from its row and marks the chosen one', () => {
         render();
         const chosen = byLabel('Fizyoloji')[0];
-        expect(chosen.props.accessibilityState).toEqual({ selected: true });
-        expect(byLabel('Anatomi')[0].props.accessibilityState).toEqual({ selected: false });
+        // A single-choice list: each deck is a radio button and the chosen one is checked.
+        expect(chosen.props.accessibilityRole).toBe('radio');
+        expect(chosen.props.accessibilityState).toEqual({ checked: true });
+        expect(chosen.props['aria-checked']).toBe(true);
+        expect(byLabel('Anatomi')[0].props.accessibilityState).toEqual({ checked: false });
         press('Anatomi');
         expect(onSelect).toHaveBeenCalledExactlyOnceWith('Anatomi');
     });

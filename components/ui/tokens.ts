@@ -1,5 +1,5 @@
 import type { TextStyle } from 'react-native';
-import { BorderRadius, FontSize } from '../../constants/theme';
+import { BorderRadius, FontSize, Shadows } from '../../constants/theme';
 
 /**
  * The design system's roles, built on the scales in `constants/theme`. Components in this folder
@@ -7,18 +7,29 @@ import { BorderRadius, FontSize } from '../../constants/theme';
  * screen. See docs/DESIGN_SYSTEM.md.
  */
 
-/** Corner radius by kind of surface. */
+/** Corner radius by kind of surface: 8 for small controls, 12 for buttons and fields, 16 for cards. */
 export const Radius = {
-    /** Buttons, text fields, steppers and other controls. */
+    /** Small controls: toolbar buttons, steppers, chips drawn as boxes, check boxes. */
     control: BorderRadius.sm,
     /** Popover menus, segmented tracks and boxes set inside a card. */
-    inset: BorderRadius.md,
+    inset: BorderRadius.sm,
+    /** Buttons and text fields. */
+    button: BorderRadius.md,
     /** Cards and dialogs. */
     card: BorderRadius.lg,
     /** The top corners of a bottom sheet. */
-    sheet: BorderRadius.xl,
+    sheet: BorderRadius.lg,
     /** Chips, badges and anything drawn as a capsule. */
     pill: BorderRadius.full,
+} as const;
+
+/**
+ * The two shadows. `card` separates a white surface from the grey page; `floating` lifts what
+ * hovers above the screen: menus, dialogs, sheets, the floating button, a dragged row.
+ */
+export const Shadow = {
+    card: Shadows.sm,
+    floating: Shadows.lg,
 } as const;
 
 /** The smallest touch target, in points, for anything the user taps. */
@@ -45,4 +56,6 @@ export const Type = {
     caption: { fontSize: FontSize.sm, fontWeight: '400', lineHeight: 18 },
     /** A small sentence-case label that names a group above its card. */
     label: { fontSize: FontSize.sm, fontWeight: '500' },
+    /** The smallest text: badges, bar captions, count columns, chart axes. */
+    micro: { fontSize: FontSize.xs, fontWeight: '500' },
 } as const satisfies Record<string, TextStyle>;

@@ -1,12 +1,12 @@
-import React from 'react';
-import { ScrollView, type StyleProp, StyleSheet, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Modal, Pressable, ScrollView, type StyleProp, StyleSheet, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
-import { FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
-import { PopoverBackdrop, PopoverItem, PopoverModal } from '../Popover';
+import { PopoverBackdrop, PopoverItem, PopoverModal, usePopoverItemStyle } from '../Popover';
 import { CheckIcon, ChevronDownIcon, ChevronRightIcon, ChevronUpIcon, MinusIcon } from './icons';
-import { DISABLED_OPACITY, Radius } from './tokens';
+import { DISABLED_OPACITY, Radius, Shadow, Type } from './tokens';
 
 interface PopoverMenuProps {
     visible: boolean;
@@ -139,13 +139,111 @@ export function MenuItem({
                 {hint ? <Text style={[styles.hint, { color: colors.textMuted }]}>{hint}</Text> : null}
             </View>
             {accessory}
-            {checked === true ? <CheckIcon color={colors.accent} size={18} /> : null}
-            {checked === 'mixed' ? <MinusIcon color={colors.accent} size={18} /> : null}
+            {checked === true ? <CheckIcon color={colors.accent} size={20} /> : null}
+            {checked === 'mixed' ? <MinusIcon color={colors.accent} size={20} /> : null}
             {expanded === undefined
                 ? null
                 : expanded ? <ChevronUpIcon color={colors.textMuted} size={16} /> : <ChevronDownIcon color={colors.textMuted} size={16} />}
             {chevron ? <ChevronRightIcon color={colors.textMuted} size={16} /> : null}
         </TouchableOpacity>
+    );
+}
+
+interface MenuDialogProps {
+    visible: boolean;
+    /** What the menu acts on, e.g. the deck's path. */
+    title: string;
+    onClose: () => void;
+    /**
+     * Runs once the menu has left the screen. iOS cannot present a route, dialog or sheet chosen
+     * in it until then, so the caller holds the chosen action back until this is called.
+     */
+    onDismissed?: () => void;
+    /** Leaves without its fade (`useModalHandoff`). */
+    closeAtOnce?: boolean;
+    /** Spoken for the dimmed backdrop that closes the menu. */
+    closeLabel?: string;
+    /** `MenuItem`s. */
+    children: React.ReactNode;
+}
+
+/**
+ * A long action menu as a card centred over the dimmed screen, titled with what it acts on: the
+ * deck row's ••• menu, whose thirteen actions would not fit a popover. Its actions open alerts,
+ * sheets and routes at once, so it fades with a native `Modal` and only grows its card in. A short
+ * menu is a `PopoverMenu`.
+ */
+export function MenuDialog({ visible, title, onClose, onDismissed, closeAtOnce = false, closeLabel, children }: MenuDialogProps) {
+    const colors = useThemeColors();
+    const { l } = useI18n();
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType={closeAtOnce && !visible ? 'none' : 'fade'}
+            onRequestClose={onClose}
+            statusBarTranslucent
+        >
+            <View style={[styles.dialogLayer, { backgroundColor: colors.scrim }]}>
+                <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel={closeLabel ?? l('Menüyü kapat', 'Close menu')}
+                />
+                <MenuDialogCard title={title}>{children}</MenuDialogCard>
+                {onDismissed ? <DismissedSignal onDismissed={onDismissed} /> : null}
+            </View>
+        </Modal>
+    );
+}
+
+/**
+ * Reports its own unmount. A closing modal's content stays mounted until the modal is gone (on
+ * iOS until UIKit has dismissed it), so this is the moment the menu has left, on every platform.
+ */
+function DismissedSignal({ onDismissed }: { onDismissed: () => void }) {
+    const latest = useRef(onDismissed);
+    latest.current = onDismissed;
+    useEffect(() => () => latest.current(), []);
+    return null;
+}
+
+/** The card, mounted afresh each time the menu opens: it grows in from 95% while the modal fades. */
+function MenuDialogCard({ title, children }: { title: string; children: React.ReactNode }) {
+    const colors = useThemeColors();
+    const scrollRef = useRef<ScrollView>(null);
+    const heights = useRef({ viewport: 0, content: 0, flashed: false });
+    const growIn = usePopoverItemStyle();
+
+    // On a short phone the last rows sit below the fold. Flashing the indicator once says the list
+    // goes on; a row cut off at the card's edge alone left the last action looking absent.
+    const flashWhenScrollable = () => {
+        const { viewport, content, flashed } = heights.current;
+        if (flashed || viewport === 0 || content <= viewport + 1) return;
+        heights.current.flashed = true;
+        scrollRef.current?.flashScrollIndicators();
+    };
+
+    return (
+        <Animated.View style={[styles.dialogCard, { backgroundColor: colors.bgCard }, growIn]} accessibilityViewIsModal>
+            <Text style={[Type.title, styles.dialogTitle, { color: colors.textPrimary }]}>{title}</Text>
+            <ScrollView
+                ref={scrollRef}
+                style={styles.dialogScroll}
+                contentContainerStyle={styles.dialogContent}
+                onLayout={(event) => {
+                    heights.current.viewport = event.nativeEvent.layout.height;
+                    flashWhenScrollable();
+                }}
+                onContentSizeChange={(_, height) => {
+                    heights.current.content = height;
+                    flashWhenScrollable();
+                }}
+            >
+                {children}
+            </ScrollView>
+        </Animated.View>
     );
 }
 
@@ -163,7 +261,7 @@ const styles = StyleSheet.create({
         maxWidth: 320,
         borderRadius: Radius.inset,
         borderWidth: 1,
-        ...Shadows.lg,
+        ...Shadow.floating,
     },
     menuContent: { paddingVertical: Spacing.xs },
     item: {
@@ -176,8 +274,23 @@ const styles = StyleSheet.create({
     },
     disabled: { opacity: DISABLED_OPACITY },
     icon: { width: 22, alignItems: 'center' },
-    copy: { flex: 1, minWidth: 0, gap: 2 },
+    copy: { flex: 1, minWidth: 0, gap: Spacing.xxs },
     label: { fontSize: FontSize.md, fontWeight: '500' },
     hint: { fontSize: FontSize.sm, lineHeight: 17 },
     separator: { height: StyleSheet.hairlineWidth, marginVertical: Spacing.xs },
+    dialogLayer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl },
+    dialogCard: {
+        width: '100%',
+        maxWidth: 520,
+        maxHeight: '88%',
+        zIndex: 1,
+        overflow: 'hidden',
+        borderRadius: 28,
+        paddingTop: Spacing.xl,
+        ...Shadow.floating,
+    },
+    dialogTitle: { paddingHorizontal: 30, paddingBottom: Spacing.sm, lineHeight: 24 },
+    dialogScroll: { flexGrow: 0 },
+    // With a menu item's own 16-point inset the labels line up with the title, 30 points in.
+    dialogContent: { paddingHorizontal: 14, paddingBottom: Spacing.xl },
 });

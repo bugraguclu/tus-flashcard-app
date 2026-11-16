@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
@@ -21,10 +21,10 @@ import {
 } from '../../lib/studyPlans';
 import { Button, IconButton } from '../ui/Button';
 import { Section } from '../ui/Card';
-import { ArrowDownIcon, ArrowUpIcon, ChevronDownIcon, ChevronUpIcon } from '../ui/icons';
-import { ValueRow } from '../ui/Rows';
+import { ArrowDownIcon, ArrowUpIcon } from '../ui/icons';
+import { ListRow, ValueRow } from '../ui/Rows';
 import { Stepper } from '../ui/Stepper';
-import { Radius, Type } from '../ui/tokens';
+import { Radius } from '../ui/tokens';
 
 const CAPACITY_STEP = 30;
 const PREVIEW_DAY_LIMIT = 120;
@@ -205,25 +205,14 @@ export function CapacityStep({ draft, onChange, preview, weekdayName }: Capacity
                     const capacity = detailedPlanCapacity(draft, day);
                     return (
                         <View key={day}>
-                            {/* A disclosure row: the kit's rows carry no expanded state. */}
-                            <TouchableOpacity
-                                style={styles.dayHeader}
+                            <ListRow
+                                title={dayLabel(day)}
+                                summary={blocks.length > 0
+                                    ? blocks.map((block) => `${block.subject} ${formatStudyTotal(block.durationMinutes * 60_000, locale)}`).join(' · ')
+                                    : capacity === 0 ? l('Dinlenme günü', 'Rest day') : l('Plan yok', 'Nothing planned')}
+                                expanded={open}
                                 onPress={() => setOpenDay(open ? null : day)}
-                                accessibilityRole="button"
-                                accessibilityState={{ expanded: open }}
-                            >
-                                <View style={styles.dayCopy}>
-                                    <Text style={[Type.rowTitle, { color: colors.textPrimary }]}>{dayLabel(day)}</Text>
-                                    <Text style={[Type.caption, { color: colors.textMuted }]}>
-                                        {blocks.length > 0
-                                            ? blocks.map((block) => `${block.subject} ${formatStudyTotal(block.durationMinutes * 60_000, locale)}`).join(' · ')
-                                            : capacity === 0 ? l('Dinlenme günü', 'Rest day') : l('Plan yok', 'Nothing planned')}
-                                    </Text>
-                                </View>
-                                {open
-                                    ? <ChevronUpIcon color={colors.textMuted} size={16} />
-                                    : <ChevronDownIcon color={colors.textMuted} size={16} />}
-                            </TouchableOpacity>
+                            />
                             {open ? (
                                 <ValueRow label={l('Bu günün kapasitesi', 'This day’s capacity')}>
                                     {capacityStepper(capacity, (minutes) => onChange({ dayOverrides: { ...draft.dayOverrides, [day]: minutes } }), dayLabel(day))}
@@ -246,13 +235,4 @@ const styles = StyleSheet.create({
     stepper: { alignSelf: 'center' },
     linkRow: { paddingVertical: Spacing.xs },
     link: { alignSelf: 'flex-start', marginLeft: Spacing.xs },
-    dayHeader: {
-        minHeight: 48,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.md,
-        paddingHorizontal: Spacing.lg,
-        paddingVertical: Spacing.sm + 2,
-    },
-    dayCopy: { flex: 1, gap: 2 },
 });

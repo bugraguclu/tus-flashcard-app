@@ -351,7 +351,7 @@ function createStyles(colors: ColorScheme) {
         row: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, gap: Spacing.sm },
         rowTitle: { ...Type.rowTitle, color: colors.textPrimary },
         rowName: { ...Type.caption, color: colors.textSecondary, marginTop: 3 },
-        rowSub: { ...Type.caption, color: colors.textMuted, marginTop: 2 },
+        rowSub: { ...Type.caption, color: colors.textMuted, marginTop: Spacing.xxs },
         rowActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.sm },
     });
 }

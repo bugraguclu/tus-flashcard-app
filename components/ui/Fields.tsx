@@ -87,7 +87,7 @@ export const SearchField = forwardRef<TextInput, SearchFieldProps>(function Sear
                     accessibilityLabel={clearLabel}
                 >
                     <View style={[styles.clearCircle, { backgroundColor: colors.borderLight }]}>
-                        <CloseIcon color={colors.textSecondary} size={12} />
+                        <CloseIcon color={colors.textSecondary} size={16} />
                     </View>
                 </TouchableOpacity>
             ) : null}
@@ -98,7 +98,7 @@ export const SearchField = forwardRef<TextInput, SearchFieldProps>(function Sear
 const styles = StyleSheet.create({
     field: {
         minHeight: HIT_TARGET,
-        borderRadius: Radius.control,
+        borderRadius: Radius.button,
         borderWidth: 1,
         paddingHorizontal: Spacing.md,
         paddingVertical: Spacing.sm + 2,
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: Spacing.sm,
         paddingLeft: Spacing.md,
-        borderRadius: Radius.control,
+        borderRadius: Radius.button,
         borderWidth: 1,
     },
     searchInput: { flex: 1, minHeight: HIT_TARGET - 2, paddingVertical: 0, paddingRight: Spacing.md, fontSize: FontSize.md },

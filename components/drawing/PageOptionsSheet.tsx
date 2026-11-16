@@ -11,7 +11,6 @@ import {
 } from '../../lib/blankCanvas';
 import type { BlankCanvasSetup } from '../../lib/blankCanvasSetup';
 import PaperSwatch, { pageColorLabel, paperLabel } from '../PaperSwatch';
-import { Button } from '../ui/Button';
 import { SectionLabel } from '../ui/Card';
 import { AppSheet } from '../ui/Sheet';
 import { Radius } from '../ui/tokens';
@@ -115,12 +114,6 @@ export function PageOptionsSheet({ visible, setup, onChange, onClose }: PageOpti
                 </View>
             </View>
 
-            <Button
-                label={l('Tamam', 'Done')}
-                onPress={onClose}
-                accessibilityLabel={l('Sayfa seçeneklerini kapat', 'Close page options')}
-                style={styles.done}
-            />
         </AppSheet>
     );
 }
@@ -135,7 +128,7 @@ function createStyles(colors: ColorScheme) {
             flexGrow: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 6,
+            gap: Spacing.s6,
             paddingVertical: Spacing.sm,
             paddingHorizontal: Spacing.sm,
             borderRadius: Radius.inset,
@@ -151,6 +144,5 @@ function createStyles(colors: ColorScheme) {
         tileTextActive: { color: colors.textPrimary },
         shapeBox: { width: 40, height: 30, alignItems: 'center', justifyContent: 'center' },
         shapeGlyph: { borderRadius: 3, borderWidth: 2, borderColor: colors.textMuted },
-        done: { marginTop: Spacing.xl },
     });
 }

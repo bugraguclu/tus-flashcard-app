@@ -1,11 +1,17 @@
-import { useRef } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Text, TextInput } from '../AppText';
+import React, { useRef } from 'react';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../AppText';
+import { Spacing, useThemeColors } from '../../constants/theme';
 import type { useI18n } from '../../hooks/useI18n';
 import { useModalHandoff } from '../../hooks/useModalHandoff';
 import { getAllDeckConfigs, getDecksUsingConfig, presetDisplayName } from '../../lib/deckManager';
+import { Button } from '../ui/Button';
+import { Divider } from '../ui/Card';
+import { AppDialog } from '../ui/Dialog';
+import { TextField } from '../ui/Fields';
 import { MenuItem, PopoverMenu } from '../ui/Menu';
-import type { DeckOptionsStyles } from './deckOptionsStyles';
+import { ListRow } from '../ui/Rows';
+import { Type } from '../ui/tokens';
 import type { DeckConfig } from '../../lib/models';
 
 type I18n = Pick<ReturnType<typeof useI18n>, 'l' | 't'>;
@@ -69,7 +75,7 @@ export function PresetActionsMenu({ visible, actions, onClose, anchor, accessibi
 }
 
 /** Every preset in the collection, with how many decks use it and one of them by name. */
-export function PresetPickerModal({ presets, activePresetId, currentDeckId, hiddenPresetIds = [], onPick, onClose, styles, l, t }: I18n & {
+export function PresetPickerModal({ presets, activePresetId, currentDeckId, hiddenPresetIds = [], onPick, onClose, l, t }: I18n & {
     /** The presets as the screen shows them, staged additions and renames included. */
     presets?: DeckConfig[];
     activePresetId: number;
@@ -79,95 +85,85 @@ export function PresetPickerModal({ presets, activePresetId, currentDeckId, hidd
     hiddenPresetIds?: number[];
     onPick: (presetId: number) => void;
     onClose: () => void;
-    styles: DeckOptionsStyles;
 }) {
+    const shown = (presets ?? getAllDeckConfigs()).filter((preset) => !hiddenPresetIds.includes(preset.id));
     return (
-        <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={onClose}
-                    accessibilityLabel={l('Ayar grubu seçiciyi kapat', 'Close preset picker')}
-                />
-                <View style={styles.modalCard}>
-                    <Text style={styles.modalTitle}>{l('Ayar grubu seç', 'Choose Preset')}</Text>
-                    <ScrollView style={{ maxHeight: 320 }}>
-                        {(presets ?? getAllDeckConfigs()).filter((preset) => !hiddenPresetIds.includes(preset.id)).map((preset) => {
-                            const presetDecks = getDecksUsingConfig(preset.id).filter((deck) => deck.id !== currentDeckId);
-                            const used = presetDecks.length + (currentDeckId !== undefined && preset.id === activePresetId ? 1 : 0);
-                            const representative = presetDecks[0];
-                            return (
-                                <TouchableOpacity
-                                    key={preset.id}
-                                    style={styles.presetOption}
-                                    onPress={() => onPick(preset.id)}
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ checked: preset.id === activePresetId }}
-                                >
-                                    <Text style={[styles.presetOptionText, preset.id === activePresetId && styles.presetOptionActive]}>
-                                        {presetDisplayName(preset, l)} · {l(`${used} deste`, `${used} decks`)}
-                                    </Text>
-                                    {representative ? (
-                                        <Text style={styles.presetOptionMeta} numberOfLines={1}>
-                                            {representative.name.replaceAll('::', ' › ')}
-                                        </Text>
-                                    ) : null}
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-                    <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-                        <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
+        <AppDialog
+            visible
+            onClose={onClose}
+            title={l('Ayar grubu seç', 'Choose Preset')}
+            closeLabel={l('Ayar grubu seçiciyi kapat', 'Close preset picker')}
+            actions={<Button label={t('common.cancel')} variant="plain" tone="muted" onPress={onClose} />}
+        >
+            <ScrollView style={styles.list} accessibilityRole="radiogroup">
+                {shown.map((preset, index) => {
+                    const presetDecks = getDecksUsingConfig(preset.id).filter((deck) => deck.id !== currentDeckId);
+                    const used = presetDecks.length + (currentDeckId !== undefined && preset.id === activePresetId ? 1 : 0);
+                    const representative = presetDecks[0];
+                    return (
+                        <React.Fragment key={preset.id}>
+                            {index > 0 ? <Divider /> : null}
+                            <ListRow
+                                title={presetDisplayName(preset, l)}
+                                summary={representative ? representative.name.replaceAll('::', ' › ') : undefined}
+                                value={l(`${used} deste`, `${used} decks`)}
+                                selected={preset.id === activePresetId}
+                                onPress={() => onPick(preset.id)}
+                                style={styles.row}
+                            />
+                        </React.Fragment>
+                    );
+                })}
+            </ScrollView>
+        </AppDialog>
     );
 }
 
-export function RenamePresetModal({ title, value, onChangeValue, onSave, onClose, styles, l, t }: I18n & {
+/** The preset's name, asked the way the deck list asks for a deck's: a field, Cancel and Save. */
+export function RenamePresetModal({ title, value, onChangeValue, onSave, onClose, l, t }: I18n & {
     /** Defaults to the rename title; Add Preset reuses the dialog to ask for a name. */
     title?: string;
     value: string;
     onChangeValue: (value: string) => void;
     onSave: () => void;
     onClose: () => void;
-    styles: DeckOptionsStyles;
 }) {
+    const colors = useThemeColors();
+    const fieldLabel = l('Ayar grubu adı', 'Preset name');
     return (
-        <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-            <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <Pressable
-                    style={StyleSheet.absoluteFill}
-                    onPress={onClose}
-                    accessibilityLabel={l('Yeniden adlandırma penceresini kapat', 'Close rename dialog')}
+        <AppDialog
+            visible
+            onClose={onClose}
+            title={title ?? l('Ayar grubunu yeniden adlandır', 'Rename Preset')}
+            closeLabel={l('Yeniden adlandırma penceresini kapat', 'Close rename dialog')}
+            actions={(
+                <>
+                    <Button label={t('common.cancel')} variant="plain" onPress={onClose} />
+                    <Button label={t('common.save')} onPress={onSave} />
+                </>
+            )}
+        >
+            <View style={styles.field}>
+                <Text style={[Type.caption, styles.fieldLabel, { color: colors.textSecondary }]}>{fieldLabel}</Text>
+                {/* Return saves, as Anki's name prompt does on Enter. */}
+                <TextField
+                    value={value}
+                    onChangeText={onChangeValue}
+                    autoFocus
+                    returnKeyType="done"
+                    onSubmitEditing={onSave}
+                    accessibilityLabel={fieldLabel}
                 />
-                <View style={styles.modalCard}>
-                    <Text style={styles.modalTitle}>{title ?? l('Ayar grubunu yeniden adlandır', 'Rename Preset')}</Text>
-                    {/* Return saves, as Anki's name prompt does on Enter. */}
-                    <TextInput
-                        style={styles.input}
-                        value={value}
-                        onChangeText={onChangeValue}
-                        autoFocus
-                        returnKeyType="done"
-                        onSubmitEditing={onSave}
-                        accessibilityLabel={l('Ayar grubu adı', 'Preset name')}
-                    />
-                    <View style={styles.modalActions}>
-                        <TouchableOpacity style={styles.cancelBtn} onPress={onClose} accessibilityRole="button">
-                            <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.saveBtnSmall}
-                            onPress={onSave}
-                            accessibilityRole="button"
-                        >
-                            <Text style={styles.saveBtnText}>{t('common.save')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </KeyboardAvoidingView>
-        </Modal>
+            </View>
+        </AppDialog>
     );
 }
+
+const styles = StyleSheet.create({
+    list: { flexShrink: 1 },
+    // A row set in a dialog lines up with the dialog's title, not a card's inset.
+    row: { paddingHorizontal: 0 },
+    // The deck dialogs' name field: its label sits above it.
+    field: { gap: Spacing.xs },
+    fieldLabel: { fontWeight: '500' },
+});

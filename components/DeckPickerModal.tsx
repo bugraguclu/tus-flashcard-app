@@ -11,7 +11,7 @@ import {
     View,
 } from 'react-native';
 import { Text } from './AppText';
-import { FontSize, Shadows, Spacing, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, type ColorScheme } from '../constants/theme';
 import { buildDeckTree } from '../lib/deckManager';
 import { getDeckDisplayName, type Deck } from '../lib/models';
 import { useI18n } from '../hooks/useI18n';
@@ -23,7 +23,7 @@ import { SelectedMark } from './ui/Choice';
 import { EmptyState, Notice } from './ui/Feedback';
 import { SearchField, TextField } from './ui/Fields';
 import { BackIcon, PlusIcon, SearchIcon } from './ui/icons';
-import { Radius, Type } from './ui/tokens';
+import { Radius, Shadow, Type } from './ui/tokens';
 
 import {
     filterDeckTree,
@@ -278,21 +278,19 @@ export default function DeckPickerModal({
                         windowSize={7}
                         removeClippedSubviews={Platform.OS !== 'web'}
                         ListHeaderComponent={!query.trim() && allDecksLabel !== null ? (
+                            // The chosen row of this single-choice list ends in the kit's tick.
                             <TouchableOpacity
-                                style={[
-                                    styles.row,
-                                    rows.length === 0 && styles.rowLast,
-                                    selectedDeckName === null && styles.rowActive,
-                                ]}
+                                style={[styles.row, rows.length === 0 && styles.rowLast]}
                                 onPress={() => onSelect(null)}
-                                accessibilityRole="button"
-                                accessibilityState={{ selected: selectedDeckName === null }}
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: selectedDeckName === null }}
+                                aria-checked={selectedDeckName === null}
                             >
                                 <View style={styles.allIcon}>
                                     <CardsGlyph color={colors.textMuted} size={20} />
                                 </View>
-                                <Text style={[styles.rowText, selectedDeckName === null && styles.rowTextActive]}>{allDecksLabel}</Text>
-                                {selectedDeckName === null && <SelectedMark />}
+                                <Text style={styles.rowText}>{allDecksLabel}</Text>
+                                <SelectedMark visible={selectedDeckName === null} />
                             </TouchableOpacity>
                         ) : null}
                         renderItem={({ item: { node, depth, expanded: isExpanded }, index }) => {
@@ -306,7 +304,6 @@ export default function DeckPickerModal({
                                     style={[
                                         styles.row,
                                         isLast && styles.rowLast,
-                                        active && styles.rowActive,
                                         { paddingLeft: Spacing.md + Math.min(depth, 8) * 20 },
                                     ]}
                                 >
@@ -330,14 +327,15 @@ export default function DeckPickerModal({
                                     <TouchableOpacity
                                         style={styles.rowMain}
                                         onPress={() => onSelect(node.deck.name)}
-                                        accessibilityRole="button"
-                                        accessibilityState={{ selected: active }}
+                                        accessibilityRole="radio"
+                                        accessibilityState={{ checked: active }}
+                                        aria-checked={active}
                                         accessibilityLabel={node.deck.name.replaceAll('::', ' › ')}
                                     >
-                                        <Text style={[styles.rowText, active && styles.rowTextActive]} numberOfLines={1}>
+                                        <Text style={styles.rowText} numberOfLines={1}>
                                             {displayName}
                                         </Text>
-                                        {active && <SelectedMark />}
+                                        <SelectedMark visible={active} />
                                     </TouchableOpacity>
                                 </View>
                             );
@@ -370,7 +368,7 @@ function createStyles(colors: ColorScheme) {
             overflow: 'hidden',
             backgroundColor: colors.bgCard,
             borderRadius: Radius.card,
-            ...Shadows.lg,
+            ...Shadow.floating,
         },
         // A white header inside the card: the title, or the field of the step the picker is in.
         header: {
@@ -396,13 +394,11 @@ function createStyles(colors: ColorScheme) {
             borderBottomColor: colors.borderLight,
         },
         rowLast: { borderBottomWidth: 0 },
-        rowActive: { backgroundColor: colors.accentLight },
         allIcon: { width: 38, alignItems: 'center' },
         disclosureButton: { width: 38, height: 54, flexShrink: 0, alignItems: 'center', justifyContent: 'center' },
         disclosureSpacer: { width: 38 },
         rowMain: { flex: 1, minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-        rowText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: '500' },
-        rowTextActive: { color: colors.accent, fontWeight: '600' },
+        rowText: { flex: 1, color: colors.textPrimary, ...Type.rowTitle },
         createBody: { flex: 1, padding: Spacing.xl, gap: Spacing.sm, backgroundColor: colors.bgCard },
         createDescription: { color: colors.textSecondary, lineHeight: 22, marginBottom: Spacing.sm },
         footer: {

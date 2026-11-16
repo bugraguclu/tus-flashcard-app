@@ -62,7 +62,7 @@ export default function NoteTypesScreen() {
 
                 <Button
                     variant="secondary"
-                    icon={<PlusIcon color={colors.textPrimary} size={18} />}
+                    icon={<PlusIcon color={colors.textPrimary} size={20} />}
                     label={l('Yeni not türü', 'New Note Type')}
                     accessibilityLabel={l('Yeni not türü ekle', 'Add a note type')}
                     onPress={() => setAdding(true)}

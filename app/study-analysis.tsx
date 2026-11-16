@@ -160,14 +160,14 @@ export default function StudyAnalysisScreen() {
                         onPress={() => setAnchorYmd(shiftAnalysisAnchor(period, anchorYmd, -1))}
                         accessibilityLabel={l('Önceki dönem', 'Previous period')}
                     >
-                        <BackIcon color={colors.textPrimary} size={18} />
+                        <BackIcon color={colors.textPrimary} size={20} />
                     </IconButton>
                     <Text style={styles.periodTitle} numberOfLines={1}>{title}</Text>
                     <IconButton
                         onPress={() => setAnchorYmd(shiftAnalysisAnchor(period, anchorYmd, 1))}
                         accessibilityLabel={l('Sonraki dönem', 'Next period')}
                     >
-                        <ForwardIcon color={colors.textPrimary} size={18} />
+                        <ForwardIcon color={colors.textPrimary} size={20} />
                     </IconButton>
                 </View>
                 {!includesToday ? (
@@ -288,10 +288,10 @@ function createStyles(colors: ColorScheme) {
         courseRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
         tile: { width: 36, height: 36, borderRadius: Radius.inset, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },
         tileText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
-        courseCopy: { flex: 1, gap: 2 },
+        courseCopy: { flex: 1, gap: Spacing.xxs },
         courseName: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
         courseMeta: { fontSize: FontSize.xs, color: colors.textMuted },
-        courseNumbers: { alignItems: 'flex-end', gap: 2 },
+        courseNumbers: { alignItems: 'flex-end', gap: Spacing.xxs },
         courseTime: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
         periodBar: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         periodTitle: { flex: 1, textAlign: 'center', ...Type.bodyStrong, color: colors.textPrimary },
@@ -302,12 +302,12 @@ function createStyles(colors: ColorScheme) {
         metricBody: { alignItems: 'center', justifyContent: 'center', gap: 4 },
         metricValue: { fontSize: FontSize.lg, fontWeight: '600', color: colors.accent, fontVariant: ['tabular-nums'] },
         metricLabel: { fontSize: FontSize.xs, color: colors.textMuted },
-        chart: { flexDirection: 'row', alignItems: 'flex-end', height: 170, gap: 2 },
+        chart: { flexDirection: 'row', alignItems: 'flex-end', height: 170, gap: Spacing.xxs },
         barSlot: { flex: 1, height: '100%', alignItems: 'center' },
         barArea: { flex: 1, width: '100%', justifyContent: 'flex-end', alignItems: 'center' },
         bar: { width: '70%', maxWidth: 22, borderTopLeftRadius: 4, borderTopRightRadius: 4, backgroundColor: colors.accent },
         barToday: { backgroundColor: colors.studyTool },
-        barLabel: { fontSize: 10, color: colors.textMuted, marginTop: 4, height: 14 },
+        barLabel: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 4, height: 14 },
         chartEmpty: { fontSize: FontSize.sm, color: colors.textMuted },
         shareRow: { gap: 5 },
         shareHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.sm },

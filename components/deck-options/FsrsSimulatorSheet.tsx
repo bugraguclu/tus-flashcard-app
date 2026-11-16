@@ -1,10 +1,10 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Keyboard, TouchableOpacity, View } from 'react-native';
-import { Text } from '../AppText';
+import { AccessibilityInfo, ActivityIndicator, Keyboard, StyleSheet, View } from 'react-native';
 import { SheetScrollView } from '../SwipeDismissSheet';
+import { Button } from '../ui/Button';
+import { Notice } from '../ui/Feedback';
+import { ListRow, SwitchRow } from '../ui/Rows';
 import { AppSheet } from '../ui/Sheet';
-import { ChevronDownIcon, ChevronUpIcon } from '../ui/icons';
-import type { ColorScheme } from '../../constants/theme';
 import { Spacing } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { localDayNumber } from '../../lib/ankiState';
@@ -24,8 +24,7 @@ import {
     type SimulatorPresetValues,
 } from '../../lib/fsrsSimulatorView';
 import type { AppSettings, ReviewSortOrder } from '../../lib/types';
-import { NumberSetting, ToggleSetting } from './SettingControls';
-import type { DeckOptionsStyles } from './deckOptionsStyles';
+import { NumberSetting, SettingBlock, SettingHint, SettingsCard } from './SettingControls';
 
 /** The deck-options values the simulator reads, as the form holds them. */
 export interface SimulatorPresetForm extends SimulatorPresetValues {
@@ -56,15 +55,13 @@ interface Outcome {
  * ones, simulated day by day with the inputs below (lib/fsrsSimulator.ts). It reads the collection
  * only; none of its inputs is saved to the preset.
  */
-export default function FsrsSimulatorSheet({ presetId, settings, preset, storedParamsText, ignoreRevlogsBeforeMs, styles, colors }: {
+export default function FsrsSimulatorSheet({ presetId, settings, preset, storedParamsText, ignoreRevlogsBeforeMs }: {
     presetId: number;
     settings: AppSettings;
     preset: SimulatorPresetForm;
     /** The parameter text the preset was loaded with: the cards' stored states belong to it. */
     storedParamsText: string;
     ignoreRevlogsBeforeMs: number;
-    styles: DeckOptionsStyles;
-    colors: ColorScheme;
 }) {
     const { l } = useI18n();
     const [open, setOpen] = useState(false);
@@ -204,7 +201,6 @@ export default function FsrsSimulatorSheet({ presetId, settings, preset, storedP
             label={label}
             value={draft[field]}
             onChange={(value) => update(field, value)}
-            styles={styles}
             kind={kind}
             hint={hint}
             error={issueText(field, parsed.errors[field])}
@@ -213,22 +209,19 @@ export default function FsrsSimulatorSheet({ presetId, settings, preset, storedP
     const percent = Math.round(progress * 100);
 
     return (
-        <View>
-            <TouchableOpacity
-                style={styles.optimizeButton}
+        <SettingBlock>
+            <Button
+                variant="secondary"
+                label={l('FSRS simülatörü', 'FSRS simulator')}
                 onPress={openSheet}
-                accessibilityRole="button"
-                accessibilityLabel={l('FSRS simülatörü', 'FSRS simulator')}
                 accessibilityHint={l('Bu ayar grubuyla önümüzdeki günlerin iş yükünü tahmin eder; hiçbir şeyi değiştirmez', 'Estimates the coming workload with this preset; changes nothing')}
-            >
-                <Text style={styles.optimizeButtonText}>{l('FSRS simülatörü', 'FSRS simulator')}</Text>
-            </TouchableOpacity>
-            <Text style={styles.fieldHint}>
+            />
+            <SettingHint>
                 {l(
                     'Bu ayar grubunun kartlarıyla günlük tekrar sayısını, süreyi ve ezberlenen kart sayısını tahmin eder. Ayarları değiştirmez.',
                     'Estimates daily reviews, study time and memorized cards with this preset\'s cards. It changes no setting.',
                 )}
-            </Text>
+            </SettingHint>
 
             <AppSheet
                 visible={open}
@@ -240,103 +233,90 @@ export default function FsrsSimulatorSheet({ presetId, settings, preset, storedP
                 maxHeight="92%"
             >
                 <SheetScrollView
-                    style={styles.helpScroll}
-                    contentContainerStyle={styles.helpContent}
+                    style={styles.scroll}
+                    contentContainerStyle={styles.content}
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode="on-drag"
                 >
-                    {numberRow('days', l('Simüle edilecek gün', 'Days to simulate'))}
-                    {numberRow('additionalNewCards', l('Simüle edilecek ek yeni kart', 'Additional new cards to simulate'))}
-                    {numberRow('desiredRetention', l('Hedeflenen hatırlama oranı', 'Desired retention'), 'decimal')}
-                    {numberRow('newPerDay', l('Günlük yeni kart', 'New cards/day'), 'integer', l(
-                        'Uygulamada yeni kartlar için günlük sınır yok; burada günde kaç yeni kart öğrenmeyi düşündüğünüzü girin.',
-                        'The app sets no daily limit on new cards; enter how many new cards a day you plan to learn.',
-                    ))}
-                    {numberRow('reviewsPerDay', l('Günlük en fazla tekrar', 'Maximum reviews/day'))}
-                    <TouchableOpacity
-                        style={styles.settingBlock}
-                        onPress={() => setAdvanced((value) => !value)}
-                        accessibilityRole="button"
-                        accessibilityState={{ expanded: advanced }}
-                        accessibilityLabel={l('Gelişmiş ayarlar', 'Advanced settings')}
-                    >
-                        <View style={styles.settingRow}>
-                            <Text style={styles.settingLabel}>{l('Gelişmiş ayarlar', 'Advanced settings')}</Text>
-                            {advanced
-                                ? <ChevronUpIcon color={colors.textMuted} />
-                                : <ChevronDownIcon color={colors.textMuted} />}
-                        </View>
-                    </TouchableOpacity>
-                    {advanced ? (
-                        <>
-                            {numberRow('maxInterval', l('En fazla aralık (gün)', 'Maximum interval (days)'))}
-                            <ToggleSetting
-                                label={l('Yeni kartlar tekrar sınırını yok sayar', 'New cards ignore review limit')}
-                                value={draft.newCardsIgnoreReviewLimit}
-                                onChange={(value) => update('newCardsIgnoreReviewLimit', value)}
-                                styles={styles}
-                                colors={colors}
-                            />
-                            <ToggleSetting
-                                label={l('Sürekli unutulan kartları askıya al', 'Suspend leeches')}
-                                value={draft.suspendLeeches}
-                                onChange={(value) => update('suspendLeeches', value)}
-                                styles={styles}
-                                colors={colors}
-                            />
-                            {draft.suspendLeeches ? numberRow('leechThreshold', l('Sürekli unutulan kart eşiği', 'Leech threshold (lapses)')) : null}
-                            <Text style={styles.fieldHint}>
-                                {l(
-                                    'Tekrar sırası, Kolay günler ve öğrenme adımları ayar grubundaki gibidir.',
-                                    'The review order, Easy Days and learning steps are the preset\'s.',
-                                )}
-                            </Text>
-                        </>
-                    ) : null}
+                    <SettingsCard>
+                        {numberRow('days', l('Simüle edilecek gün', 'Days to simulate'))}
+                        {numberRow('additionalNewCards', l('Simüle edilecek ek yeni kart', 'Additional new cards to simulate'))}
+                        {numberRow('desiredRetention', l('Hedeflenen hatırlama oranı', 'Desired retention'), 'decimal')}
+                        {numberRow('newPerDay', l('Günlük yeni kart', 'New cards/day'), 'integer', l(
+                            'Uygulamada yeni kartlar için günlük sınır yok; burada günde kaç yeni kart öğrenmeyi düşündüğünüzü girin.',
+                            'The app sets no daily limit on new cards; enter how many new cards a day you plan to learn.',
+                        ))}
+                        {numberRow('reviewsPerDay', l('Günlük en fazla tekrar', 'Maximum reviews/day'))}
+                        <ListRow
+                            title={l('Gelişmiş ayarlar', 'Advanced settings')}
+                            expanded={advanced}
+                            onPress={() => setAdvanced((value) => !value)}
+                        />
+                        {advanced ? (
+                            <>
+                                {numberRow('maxInterval', l('En fazla aralık (gün)', 'Maximum interval (days)'))}
+                                <SwitchRow
+                                    title={l('Yeni kartlar tekrar sınırını yok sayar', 'New cards ignore review limit')}
+                                    value={draft.newCardsIgnoreReviewLimit}
+                                    onValueChange={(value) => update('newCardsIgnoreReviewLimit', value)}
+                                />
+                                <SwitchRow
+                                    title={l('Sürekli unutulan kartları askıya al', 'Suspend leeches')}
+                                    value={draft.suspendLeeches}
+                                    onValueChange={(value) => update('suspendLeeches', value)}
+                                />
+                                {draft.suspendLeeches ? numberRow('leechThreshold', l('Sürekli unutulan kart eşiği', 'Leech threshold (lapses)')) : null}
+                                <SettingBlock>
+                                    <SettingHint>
+                                        {l(
+                                            'Tekrar sırası, Kolay günler ve öğrenme adımları ayar grubundaki gibidir.',
+                                            'The review order, Easy Days and learning steps are the preset\'s.',
+                                        )}
+                                    </SettingHint>
+                                </SettingBlock>
+                            </>
+                        ) : null}
+                    </SettingsCard>
 
-                    <TouchableOpacity
-                        style={[styles.savePrimary, { marginTop: Spacing.md }, running && styles.optimizeButtonBusy]}
+                    <Button
+                        label={running ? l(`Simüle ediliyor… %${percent} (durdur)`, `Simulating… ${percent}% (stop)`) : l('Simüle et', 'Simulate')}
                         onPress={simulate}
-                        accessibilityRole="button"
                         accessibilityLabel={running
                             ? l(`Simüle ediliyor, yüzde ${percent}`, `Simulating, ${percent} percent`)
                             : l('Simüle et', 'Simulate')}
                         accessibilityHint={running ? l('Durdurmak için dokunun', 'Tap to stop') : undefined}
-                        accessibilityState={{ busy: running }}
-                    >
-                        <Text style={styles.savePrimaryText}>
-                            {running ? l(`Simüle ediliyor… %${percent} (durdur)`, `Simulating… ${percent}% (stop)`) : l('Simüle et', 'Simulate')}
-                        </Text>
-                    </TouchableOpacity>
-                    {message ? (
-                        <View style={[styles.warningBox, styles.warningBoxInfo]} accessibilityLiveRegion="polite">
-                            <Text style={[styles.warningText, styles.warningTextInfo]}>{message}</Text>
-                        </View>
-                    ) : null}
+                    />
+                    {message ? <Notice>{message}</Notice> : null}
 
                     {outcome ? (
-                        <View style={{ marginTop: Spacing.lg }}>
+                        <View style={styles.results}>
                             <Suspense fallback={<ActivityIndicator accessibilityLabel={l('Grafik yükleniyor', 'Loading the chart')} />}>
-                                <SimulatorResults result={outcome.result} today={outcome.today} timeAvailable={outcome.timeAvailable} styles={styles} />
+                                <SimulatorResults result={outcome.result} today={outcome.today} timeAvailable={outcome.timeAvailable} />
                             </Suspense>
                             {outcome.skipped > 0 ? (
-                                <Text style={styles.fieldHint}>
+                                <SettingHint>
                                     {l(
                                         `Hafıza durumu bulunamayan ${outcome.skipped} kart simülasyona katılmadı.`,
                                         `${outcome.skipped} cards without a memory state were left out.`,
                                     )}
-                                </Text>
+                                </SettingHint>
                             ) : null}
                         </View>
                     ) : null}
-                    <Text style={[styles.fieldHint, { marginTop: Spacing.md }]}>
+                    <SettingHint>
                         {l(
                             'Tahmin, ayar grubunun parametreleri ve geçmişinizdeki cevap alışkanlıklarıyla her gün çalıştığınızı varsayar. Aynı ayarlar her seferinde aynı sonucu verir; hiçbir kart ya da ayar değişmez.',
                             'The estimate assumes you study every day, with this preset\'s parameters and the answer habits in your history. The same inputs always give the same result; no card or setting changes.',
                         )}
-                    </Text>
+                    </SettingHint>
                 </SheetScrollView>
             </AppSheet>
-        </View>
+        </SettingBlock>
     );
 }
+
+const styles = StyleSheet.create({
+    scroll: { flexShrink: 1 },
+    content: { gap: Spacing.md, paddingBottom: Spacing.md },
+    results: { gap: Spacing.sm },
+});

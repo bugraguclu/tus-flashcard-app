@@ -37,6 +37,7 @@ vi.mock('../constants/theme', () => ({
     // The kit's type and radius tokens (components/ui/tokens) are built from these.
     BorderRadius: new Proxy({}, { get: () => 8 }),
     FontSize: new Proxy({}, { get: () => 14 }),
+    Shadows: new Proxy({}, { get: () => ({}) }),
     Spacing: new Proxy({}, { get: () => 8 }),
     useThemeColors: () => ({ border: '#ccc', textPrimary: '#000', textMuted: '#666' }),
 }));

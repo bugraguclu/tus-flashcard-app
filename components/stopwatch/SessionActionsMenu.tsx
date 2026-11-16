@@ -1,6 +1,7 @@
 import { Modal, Pressable, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { Shadow, Radius } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import { useModalHandoff } from '../../hooks/useModalHandoff';
 import { AnimatedPressable, usePopoverItemStyle } from '../Popover';
@@ -42,7 +43,7 @@ export default function SessionActionsMenu({ visible, title, items, onClose }: S
                             onPress={() => handoff.handOff(item.onPress)}
                             accessibilityRole="button"
                         >
-                            <Text style={[styles.itemText, { color: item.destructive ? colors.btnAgain : colors.textPrimary }]}>
+                            <Text style={[styles.itemText, { color: item.destructive ? colors.danger : colors.textPrimary }]}>
                                 {item.label}
                             </Text>
                             {item.hint ? (
@@ -73,9 +74,9 @@ const styles = StyleSheet.create({
     card: {
         width: '100%',
         maxWidth: 380,
-        borderRadius: BorderRadius.lg,
+        borderRadius: Radius.card,
         paddingVertical: Spacing.sm,
-        ...Shadows.md,
+        ...Shadow.floating,
     },
     title: {
         paddingHorizontal: Spacing.lg,
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.lg,
         paddingVertical: Spacing.md,
         borderTopWidth: StyleSheet.hairlineWidth,
-        gap: 2,
+        gap: Spacing.xxs,
     },
     itemText: { fontSize: FontSize.lg, fontWeight: '500' },
     itemHint: { fontSize: FontSize.sm },

@@ -8,7 +8,7 @@ import {
     Platform,
 } from 'react-native';
 import { Text } from './AppText';
-import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize } from '../constants/theme';
+import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../constants/theme';
 import type { Subject } from '../lib/types';
 import type { DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName } from '../lib/models';
@@ -21,7 +21,7 @@ import CalendarGlyph from './CalendarGlyph';
 import DisclosureChevron from './DisclosureChevron';
 import { StopwatchIcon } from './stopwatch/StopwatchIcons';
 import { Button } from './ui/Button';
-import { HIT_TARGET } from './ui/tokens';
+import { HIT_TARGET, Radius } from './ui/tokens';
 import { BookGlyph, DeckGlyph, FolderGlyph } from './UiGlyphs';
 
 export const SIDEBAR_WIDTH = 292;
@@ -58,7 +58,7 @@ function webTitle(text: string): Record<string, string> {
 }
 
 function DeckFolderIcon({ color, root = false }: { color: string; root?: boolean }) {
-    return root ? <DeckGlyph color={color} size={18} /> : <FolderGlyph color={color} size={18} />;
+    return root ? <DeckGlyph color={color} size={20} /> : <FolderGlyph color={color} size={20} />;
 }
 
 export function Sidebar(props: SidebarProps) {
@@ -263,11 +263,11 @@ export function Sidebar(props: SidebarProps) {
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
-                        <CardsGlyph color={colors.textSecondary} size={18} />
+                        <CardsGlyph color={colors.textSecondary} size={20} />
                         <Text style={styles.actionText}>{t('sidebar.myCards')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))}>
-                        <StatsGlyph color={colors.textSecondary} size={18} />
+                        <StatsGlyph color={colors.textSecondary} size={20} />
                         <Text style={styles.actionText}>{t('tabs.statistics')}</Text>
                     </TouchableOpacity>
                 </View>
@@ -346,12 +346,12 @@ function createStyles(colors: ColorScheme) {
         borderBottomColor: colors.border,
     },
     sidebarTitle: { fontSize: FontSize.lg, fontWeight: '600', color: colors.accent },
-    sidebarSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, letterSpacing: 0.5, marginTop: 2 },
+    sidebarSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, letterSpacing: 0.5, marginTop: Spacing.xxs },
     subjectList: { flex: 1, paddingVertical: Spacing.sm },
     subjectRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: BorderRadius.sm,
+        borderRadius: Radius.control,
         marginHorizontal: Spacing.sm,
         marginVertical: 1,
     },
@@ -369,7 +369,7 @@ function createStyles(colors: ColorScheme) {
         alignItems: 'center',
         minWidth: 0,
         minHeight: 42,
-        paddingVertical: 6,
+        paddingVertical: Spacing.s6,
         paddingRight: Spacing.sm,
     },
     deckRow: {
@@ -378,7 +378,7 @@ function createStyles(colors: ColorScheme) {
         alignItems: 'center',
         marginHorizontal: Spacing.sm,
         marginVertical: 1,
-        borderRadius: BorderRadius.md,
+        borderRadius: Radius.inset,
         overflow: 'hidden',
     },
     deckRootRow: {
@@ -401,7 +401,7 @@ function createStyles(colors: ColorScheme) {
         width: 30,
         height: 30,
         marginRight: Spacing.sm,
-        borderRadius: BorderRadius.sm,
+        borderRadius: Radius.control,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.accentLight,
@@ -422,7 +422,7 @@ function createStyles(colors: ColorScheme) {
         minWidth: 38,
         paddingHorizontal: 7,
         paddingVertical: 3,
-        borderRadius: BorderRadius.full,
+        borderRadius: Radius.pill,
         alignItems: 'center',
         backgroundColor: colors.bgInput,
     },
@@ -442,7 +442,7 @@ function createStyles(colors: ColorScheme) {
     subjectCount: {
         backgroundColor: colors.bgInput,
         paddingHorizontal: 8,
-        paddingVertical: 2,
+        paddingVertical: Spacing.xxs,
         borderRadius: 10,
         minWidth: 28,
         alignItems: 'center',
@@ -458,7 +458,7 @@ function createStyles(colors: ColorScheme) {
         paddingLeft: 52,
         paddingRight: Spacing.lg,
         marginHorizontal: Spacing.sm,
-        borderRadius: BorderRadius.sm,
+        borderRadius: Radius.control,
         marginVertical: 1,
     },
     topicItemActive: { backgroundColor: colors.accentLight },
@@ -480,7 +480,7 @@ function createStyles(colors: ColorScheme) {
         borderTopWidth: 1,
         borderTopColor: colors.border,
     },
-    actionRow: { flexDirection: 'row', gap: 6, marginBottom: Spacing.sm },
+    actionRow: { flexDirection: 'row', gap: Spacing.s6, marginBottom: Spacing.sm },
     actionBtn: {
         flex: 1,
         alignItems: 'center',
@@ -488,13 +488,13 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
-        borderRadius: BorderRadius.sm,
-        gap: 2,
+        borderRadius: Radius.control,
+        gap: Spacing.xxs,
     },
-    actionText: { fontSize: 9, fontWeight: '500', color: colors.textSecondary },
+    actionText: { fontSize: FontSize.xs, fontWeight: '500', color: colors.textSecondary },
     settingsBtn: { marginBottom: Spacing.sm },
-    creditContainer: { alignItems: 'center', paddingVertical: 6 },
-    creditText: { fontSize: 10, color: colors.textMuted, letterSpacing: 0.3 },
+    creditContainer: { alignItems: 'center', paddingVertical: Spacing.s6 },
+    creditText: { fontSize: FontSize.xs, color: colors.textMuted, letterSpacing: 0.3 },
     creditName: { fontWeight: '600', color: colors.accent },
     });
 }

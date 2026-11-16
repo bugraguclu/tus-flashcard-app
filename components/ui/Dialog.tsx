@@ -1,10 +1,10 @@
 import React from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
-import { Shadows, Spacing, useThemeColors } from '../../constants/theme';
+import { Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { CloseButton } from './Button';
-import { Radius, Type } from './tokens';
+import { Radius, Type, Shadow } from './tokens';
 
 interface AppDialogProps {
     visible: boolean;
@@ -15,6 +15,8 @@ interface AppDialogProps {
     message?: string;
     /** Puts a close button beside the title (pickers and help without a Cancel action). */
     closeButton?: boolean;
+    /** Controls beside the title, before the close button: a picker's add or select-all. */
+    headerAccessory?: React.ReactNode;
     /** Whether a tap on the backdrop closes it; off while a form would lose typed text. */
     dismissOnBackdrop?: boolean;
     /** Buttons at the bottom, right-aligned: a plain Cancel, then the primary action. */
@@ -42,6 +44,7 @@ export function AppDialog({
     title,
     message,
     closeButton = false,
+    headerAccessory,
     dismissOnBackdrop = true,
     actions,
     closeLabel,
@@ -77,6 +80,7 @@ export function AppDialog({
                         <Text style={[Type.title, styles.title, { color: colors.textPrimary }]} accessibilityRole="header">
                             {title}
                         </Text>
+                        {headerAccessory ? <View style={styles.accessory}>{headerAccessory}</View> : null}
                         {closeButton ? (
                             <View style={styles.close}><CloseButton accessibilityLabel={spokenClose} onPress={onClose} /></View>
                         ) : null}
@@ -99,11 +103,12 @@ const styles = StyleSheet.create({
         borderRadius: Radius.card,
         padding: Spacing.xl,
         gap: Spacing.md,
-        ...Shadows.lg,
+        ...Shadow.floating,
     },
     header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
     title: { flex: 1 },
     close: { marginVertical: -Spacing.sm, marginRight: -Spacing.sm },
+    accessory: { flexDirection: 'row', alignItems: 'center', marginVertical: -Spacing.sm },
     message: { lineHeight: 20 },
     actions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.xs },
 });

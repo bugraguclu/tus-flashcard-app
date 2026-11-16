@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { BorderRadius, FontSize, Spacing, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, type ColorScheme } from '../../constants/theme';
+import { Radius } from '../ui/tokens';
 
 /**
  * Styles the browser's note tools add inside the kit's dialog (components/ui/Dialog.tsx): the
@@ -8,41 +9,17 @@ import { BorderRadius, FontSize, Spacing, type ColorScheme } from '../../constan
 export function createNoteToolStyles(colors: ColorScheme) {
     return StyleSheet.create({
         body: { flexGrow: 0, flexShrink: 1 },
-        selectButton: {
-            minHeight: 48,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            paddingHorizontal: Spacing.md,
-            backgroundColor: colors.bgSecondary,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: BorderRadius.sm,
-        },
-        selectButtonText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md },
+        // The select row sits in the dialog's own padding, not a card's inset.
+        selectRow: { paddingHorizontal: 0 },
         selectList: {
             maxHeight: 220,
-            marginTop: Spacing.xs,
             backgroundColor: colors.bgSecondary,
             borderWidth: 1,
             borderColor: colors.border,
-            borderRadius: BorderRadius.sm,
+            borderRadius: Radius.inset,
         },
-        selectRow: {
-            minHeight: 44,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.sm,
-            paddingHorizontal: Spacing.md,
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: colors.borderLight,
-        },
-        selectRowActive: { backgroundColor: colors.accentLight },
-        selectRowText: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md },
-        selectRowTextActive: { color: colors.accent, fontWeight: '600' },
-        disabled: { opacity: 0.45 },
         notice: { marginTop: Spacing.sm, color: colors.textSecondary, fontSize: FontSize.sm, lineHeight: 19 },
-        noticeError: { color: colors.btnAgain },
+        noticeError: { color: colors.danger },
         hint: { marginTop: Spacing.xs, color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 17 },
         busyRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.md },
         busyText: { flex: 1, color: colors.textSecondary, fontSize: FontSize.sm },
@@ -67,7 +44,7 @@ export function createNoteToolStyles(colors: ColorScheme) {
             textAlign: 'center',
             color: colors.accent,
             backgroundColor: colors.accentLight,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             fontSize: FontSize.xs,
             fontWeight: '600',
         },

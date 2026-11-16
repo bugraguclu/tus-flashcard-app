@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { FontSize, Shadows, Spacing, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, type ColorScheme } from '../../constants/theme';
+import { Shadow } from '../ui/tokens';
 import { Radius, Type } from '../ui/tokens';
 
 /**
@@ -26,7 +27,7 @@ export function createOcclusionEditorStyles(colors: ColorScheme) {
             justifyContent: 'center',
             paddingHorizontal: 4,
         },
-        modeOptionActive: { backgroundColor: colors.segmentSelected, ...Shadows.sm },
+        modeOptionActive: { backgroundColor: colors.segmentSelected, ...Shadow.card },
         modeText: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
         modeTextActive: { color: colors.textPrimary },
         bar: {
@@ -69,7 +70,7 @@ export function createOcclusionEditorStyles(colors: ColorScheme) {
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.border,
         },
-        tool: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.inset, gap: 2 },
+        tool: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.inset, gap: Spacing.xxs },
         toolActive: { backgroundColor: colors.bgInput },
         toolText: { color: colors.textMuted, fontSize: FontSize.xs, fontWeight: '600' },
         toolTextActive: { color: colors.textPrimary },

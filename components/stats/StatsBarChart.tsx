@@ -141,7 +141,7 @@ export default function StatsBarChart({
         [totals, plotHeight, integerAxis],
     );
     const geometry = useMemo(
-        () => barGeometry(points.length, plotLeft, plotWidth, { minWidth: 1, maxWidth: 24, gap: 2 }),
+        () => barGeometry(points.length, plotLeft, plotWidth, { minWidth: 1, maxWidth: 24, gap: Spacing.xxs }),
         [points.length, plotLeft, plotWidth],
     );
     const ticks = useMemo(
@@ -245,7 +245,7 @@ export default function StatsBarChart({
                                             x={plotLeft - 6}
                                             y={y + 3.5}
                                             fill={colors.textSecondary}
-                                            fontSize={10}
+                                            fontSize={FontSize.xs}
                                             textAnchor="end"
                                         >
                                             {formatAxisValue(tick)}
@@ -280,7 +280,7 @@ export default function StatsBarChart({
                                         x={plotLeft + marker.index * geometry.step + 4}
                                         y={PLOT_TOP + 9}
                                         fill={colors.textSecondary}
-                                        fontSize={10}
+                                        fontSize={FontSize.xs}
                                         fontWeight="600"
                                     >
                                         {marker.label}
@@ -333,7 +333,7 @@ export default function StatsBarChart({
                                         x={x}
                                         y={plotBottom + 14}
                                         fill={selected === index ? colors.textPrimary : colors.textSecondary}
-                                        fontSize={10}
+                                        fontSize={FontSize.xs}
                                         fontWeight={selected === index ? '700' : '400'}
                                         textAnchor="middle"
                                     >
@@ -388,14 +388,14 @@ function createStyles(colors: ColorScheme) {
             flexDirection: 'row',
             alignItems: 'flex-end',
             gap: 4,
-            paddingHorizontal: 6,
+            paddingHorizontal: Spacing.s6,
             borderBottomWidth: 1,
             borderBottomColor: colors.borderLight,
             marginBottom: Spacing.sm,
         },
         emptyBar: { width: 8, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: colors.borderLight },
         emptyTitle: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600', textAlign: 'center' },
-        legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: Spacing.md, rowGap: 6, marginTop: Spacing.sm },
+        legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: Spacing.md, rowGap: Spacing.s6, marginTop: Spacing.sm },
         legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
         legendSwatch: { width: 10, height: 10, borderRadius: 3 },
         legendLabel: { color: colors.textSecondary, fontSize: FontSize.xs },

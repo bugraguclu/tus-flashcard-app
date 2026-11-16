@@ -1,7 +1,7 @@
 import { useMemo, type ReactElement, type ReactNode } from 'react';
-import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
-import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import {
     DRAWING_MORE_TOOLS,
@@ -14,29 +14,23 @@ import {
     type DrawingTool,
 } from '../../lib/drawingPad';
 import { blankCanvasLuminance } from '../../lib/blankCanvas';
+import { ToolButton } from '../ui/Bars';
 import { MoreIcon } from '../ui/icons';
-import { DISABLED_OPACITY, Radius } from '../ui/tokens';
-import { ROW_LABEL_FIT } from '../photo-editor/editorModel';
+import { Radius } from '../ui/tokens';
 import { DRAWING_TOOL_GLYPHS, drawingInkName, drawingToolLabel } from './drawingTools';
 
 type Glyph = (props: { color: string; size?: number }) => ReactElement;
 
 /**
- * The grey track the editors' icon tabs and actions sit on: the drawing tools here, and the photo
- * editor's adjust tabs and crop actions. The segments carry glyphs, which `SegmentedControl` does
- * not draw, so they share this one look instead.
+ * The row the editors' icon tabs and actions sit in: the drawing tools here, and the photo
+ * editor's adjust tabs and crop actions. Its tools are the kit's `ToolButton`s.
  */
 export function ToolTrack({ children, accessibilityRole, style }: {
     children: ReactNode;
     accessibilityRole?: 'tablist';
     style?: StyleProp<ViewStyle>;
 }) {
-    const colors = useThemeColors();
-    return (
-        <View style={[segmentStyles.track, { backgroundColor: colors.bgInput }, style]} accessibilityRole={accessibilityRole}>
-            {children}
-        </View>
-    );
+    return <View style={[segmentStyles.track, style]} accessibilityRole={accessibilityRole}>{children}</View>;
 }
 
 interface ToolSegmentProps {
@@ -53,29 +47,22 @@ interface ToolSegmentProps {
     badge?: ReactNode;
 }
 
-/** One icon-and-label segment of a `ToolTrack`; the chosen one is raised and edged in the accent. */
+/** One icon-and-label tool of a `ToolTrack`: a labelled `ToolButton` that takes an equal share of the row. */
 export function ToolSegment({ label, glyph: SegmentGlyph, onPress, role, selected, disabled = false, accessibilityLabel, badge }: ToolSegmentProps) {
     const colors = useThemeColors();
-    const tint = selected ? colors.accent : colors.textSecondary;
     return (
-        <TouchableOpacity
-            style={[
-                segmentStyles.segment,
-                selected
-                    ? { backgroundColor: colors.segmentSelected, borderColor: colors.accent }
-                    : { borderColor: colors.transparent },
-                disabled && segmentStyles.disabled,
-            ]}
+        <ToolButton
+            style={segmentStyles.segment}
+            label={label}
             onPress={onPress}
+            selected={selected}
             disabled={disabled}
             accessibilityRole={role}
             accessibilityLabel={accessibilityLabel ?? label}
-            accessibilityState={selected === undefined ? { disabled } : { selected, disabled }}
         >
-            <SegmentGlyph color={tint} size={20} />
-            <Text style={[segmentStyles.label, { color: tint }]} {...ROW_LABEL_FIT}>{label}</Text>
+            <SegmentGlyph color={selected ? colors.accent : colors.textSecondary} size={22} />
             {badge}
-        </TouchableOpacity>
+        </ToolButton>
     );
 }
 
@@ -94,12 +81,6 @@ interface DrawingToolbarProps {
 }
 
 const BAR_TOOLS: DrawingBarTool[] = ['pen', 'highlighter', 'eraser', 'text'];
-/**
- * The 36-point swatches and size buttons reach the 44-point height through their slop, and spread
- * sideways into the gaps between them without reaching a neighbour.
- */
-const SWATCH_SLOP = { top: 4, bottom: 4, left: 2, right: 2 };
-const SIZE_SLOP = { top: 4, bottom: 4, left: 1, right: 1 };
 
 /** The pad's two rows: what to draw with, then its colour and size. */
 export function DrawingToolbar({
@@ -140,7 +121,7 @@ export function DrawingToolbar({
             const edge = 10 + option * 6;
             return <View style={[styles.sizeBox, { width: edge, height: edge * 0.75, borderColor: previewColor }]} />;
         }
-        // A dot as wide as the stroke, kept inside the 36-point button.
+        // A dot as wide as the stroke, kept inside the button.
         const width = drawingToolWidth(tool, option);
         const dot = tool === 'pen' || tool === 'arrow' || tool === 'rect' || tool === 'ellipse'
             ? 5 + width * 1.6
@@ -180,17 +161,15 @@ export function DrawingToolbar({
                     {inks.map((ink) => {
                         const selected = ink === color;
                         return (
-                            <TouchableOpacity
+                            <ToolButton
                                 key={ink}
-                                style={[styles.swatchRing, { borderColor: selected ? colors.accent : colors.transparent }]}
+                                style={styles.compactTool}
+                                selected={selected}
                                 onPress={() => onColorChange(ink)}
-                                hitSlop={SWATCH_SLOP}
-                                accessibilityRole="button"
                                 accessibilityLabel={drawingInkName(ink, l)}
-                                accessibilityState={{ selected }}
                             >
                                 <View style={[styles.swatch, { backgroundColor: ink }]} />
-                            </TouchableOpacity>
+                            </ToolButton>
                         );
                     })}
                 </View>
@@ -199,22 +178,14 @@ export function DrawingToolbar({
                         {DRAWING_SIZES.map((option) => {
                             const selected = option === size;
                             return (
-                                <TouchableOpacity
+                                <ToolButton
                                     key={option}
-                                    style={[
-                                        styles.sizeButton,
-                                        selected
-                                            ? { backgroundColor: colors.segmentSelected, borderColor: colors.accent }
-                                            : { borderColor: colors.transparent },
-                                    ]}
+                                    selected={selected}
                                     onPress={() => onSizeChange(option)}
-                                    hitSlop={SIZE_SLOP}
-                                    accessibilityRole="button"
                                     accessibilityLabel={sizeLabels[option]}
-                                    accessibilityState={{ selected }}
                                 >
                                     {sizePreview(option)}
-                                </TouchableOpacity>
+                                </ToolButton>
                             );
                         })}
                     </ToolTrack>
@@ -225,19 +196,8 @@ export function DrawingToolbar({
 }
 
 const segmentStyles = StyleSheet.create({
-    track: { flexDirection: 'row', borderRadius: Radius.inset, padding: 3, gap: 2 },
-    segment: {
-        flex: 1,
-        minHeight: 46,
-        paddingHorizontal: 2,
-        borderRadius: Radius.inset - 2,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 2,
-    },
-    label: { fontSize: FontSize.xs, fontWeight: '500' },
-    disabled: { opacity: DISABLED_OPACITY },
+    track: { flexDirection: 'row', gap: Spacing.xxs },
+    segment: { flex: 1 },
 });
 
 function createStyles(colors: ColorScheme) {
@@ -257,15 +217,9 @@ function createStyles(colors: ColorScheme) {
             gap: Spacing.sm,
             minHeight: 44,
         },
-        swatches: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
-        swatchRing: {
-            width: 36,
-            height: 36,
-            borderRadius: Radius.pill,
-            borderWidth: 2,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
+        swatches: { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
+        // Five inks beside three sizes: on a narrow phone the swatches give way evenly.
+        compactTool: { flexShrink: 1 },
         swatch: {
             width: 26,
             height: 26,
@@ -274,14 +228,6 @@ function createStyles(colors: ColorScheme) {
             borderColor: colors.border,
         },
         sizes: { alignItems: 'center', marginLeft: 'auto' },
-        sizeButton: {
-            width: 36,
-            height: 36,
-            borderRadius: Radius.inset - 2,
-            borderWidth: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
         sizeLetter: { fontWeight: '600' },
         sizeBox: { borderWidth: 1.6, borderRadius: 2 },
     });

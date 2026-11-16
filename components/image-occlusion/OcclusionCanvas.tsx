@@ -28,6 +28,7 @@ import {
     type Size,
     type View as CanvasView,
 } from './occlusionEditorModel';
+import { FontSize } from '../../constants/theme';
 
 const TAP_POINTS = 6;
 
@@ -381,5 +382,5 @@ const styles = StyleSheet.create({
         width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
         backgroundColor: 'rgba(0,0,0,0.55)',
     },
-    zoomText: { color: '#ffffff', fontSize: 22, fontWeight: '500', lineHeight: 26 },
+    zoomText: { color: '#ffffff', fontSize: FontSize.xxl, fontWeight: '500', lineHeight: 26 },
 });

@@ -3,7 +3,6 @@ import { getEditorNoteType, rememberEditorNoteType } from '../lib/editorNoteType
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     View,
-    TouchableOpacity,
     ScrollView,
     KeyboardAvoidingView,
     Keyboard,
@@ -100,9 +99,10 @@ import { EyeIcon, PinIcon } from '../components/editor/EditorIcons';
 import ScreenHeader from '../components/ScreenHeader';
 import { IconButton } from '../components/ui/Button';
 import { Notice } from '../components/ui/Feedback';
-import { CheckIcon, ChevronDownIcon, ChevronRightIcon, MoreVerticalIcon } from '../components/ui/icons';
+import { CheckIcon, MoreIcon } from '../components/ui/icons';
 import { buildEditorTools } from '../components/editor/editorTools';
 import { EditorFormattingToolbar } from '../components/editor/EditorFormattingToolbar';
+import { EditorSummaryRows, EditorTargetRows } from '../components/editor/EditorRows';
 import { StandaloneKeyboardDoneBar } from '../components/editor/KeyboardDoneButton';
 import { EditorOverflowMenu } from '../components/editor/EditorOverflowMenu';
 import { EditorPreviewModal } from '../components/editor/EditorPreviewModal';
@@ -1251,7 +1251,7 @@ export default function EditorScreen() {
                             <EyeIcon color={colors.accent} />
                         </IconButton>
                         <IconButton onPress={() => setShowOverflowMenu(true)} accessibilityLabel={l('Diğer seçenekler', 'More options')}>
-                            <MoreVerticalIcon color={colors.accent} />
+                            <MoreIcon color={colors.accent} />
                         </IconButton>
                     </>
                 )}
@@ -1271,63 +1271,42 @@ export default function EditorScreen() {
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             >
-                {/* The header's own bottom line already sets the form off; a second line here doubled it. */}
-                <>
-                    {/*
-                      * The note type is fixed once a note exists, as it is in Anki's edit dialog.
-                      * The row still answers a press: a tap that does nothing and says nothing
-                      * reads as a broken control rather than a locked one.
-                      */}
-                    <TouchableOpacity
-                        style={styles.ankiSelectorRow}
-                        onPress={() => {
-                            if (isCatalog) {
-                                alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartlarının not türü değiştirilemez.', 'Note type of built-in TUS cards cannot be changed.'));
-                                return;
-                            }
-                            if (isEditing) {
-                                alert(
-                                    l('Not türü değiştirilemez', 'Note Type Is Fixed'),
-                                    l(
-                                        "Var olan bir notun türü bu ekrandan değiştirilemez. Türü değiştirmek için Kartlarım'da notu seçip Diğer › Not türünü değiştir'i kullanın.",
-                                        'An existing note keeps its note type on this screen. To change it, select the note in the Card Browser and use More › Change note type.',
-                                    ),
-                                );
-                                return;
-                            }
-                            setShowCardTypePicker(true);
-                        }}
-                        accessibilityRole="button"
-                        accessibilityState={{ disabled: isEditing }}
-                        accessibilityLabel={l(`Not türü: ${cardTypeLabel}`, `Note type: ${cardTypeLabel}`)}
-                    >
-                        <Text style={styles.ankiSelectorLabel}>{l('Tür:', 'Type:')}</Text>
-                        <Text style={styles.ankiSelectorValue} numberOfLines={1}>{cardTypeLabel}</Text>
-                        <View style={styles.ankiSelectorChevron}>
-                            {!isEditing && !isCatalog && <ChevronDownIcon color={colors.textMuted} />}
-                        </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.ankiSelectorRow, styles.ankiSelectorRowLast]}
-                        onPress={() => {
-                            if (isCatalog) {
-                                alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartları başka bir desteye taşınamaz.', 'Built-in TUS cards cannot be moved to another deck.'));
-                                return;
-                            }
-                            setShowDeckPicker(true);
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={l('Hedef desteyi seç', 'Select target deck')}
-                    >
-                        <Text style={styles.ankiSelectorLabel}>{l('Deste:', 'Deck:')}</Text>
-                        <Text style={styles.ankiSelectorValue} numberOfLines={1}>
-                            {targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
-                        </Text>
-                        <View style={styles.ankiSelectorChevron}>
-                            {!isCatalog && <ChevronDownIcon color={colors.textMuted} />}
-                        </View>
-                    </TouchableOpacity>
-                </>
+                {/*
+                  * The note type is fixed once a note exists, as it is in Anki's edit dialog.
+                  * The row still answers a press: a tap that does nothing and says nothing
+                  * reads as a broken control rather than a locked one.
+                  */}
+                <EditorTargetRows
+                    typeLabel={cardTypeLabel}
+                    typeLocked={isEditing || isCatalog}
+                    onPressType={() => {
+                        if (isCatalog) {
+                            alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartlarının not türü değiştirilemez.', 'Note type of built-in TUS cards cannot be changed.'));
+                            return;
+                        }
+                        if (isEditing) {
+                            alert(
+                                l('Not türü değiştirilemez', 'Note Type Is Fixed'),
+                                l(
+                                    "Var olan bir notun türü bu ekrandan değiştirilemez. Türü değiştirmek için Kartlarım'da notu seçip Diğer › Not türünü değiştir'i kullanın.",
+                                    'An existing note keeps its note type on this screen. To change it, select the note in the Card Browser and use More › Change note type.',
+                                ),
+                            );
+                            return;
+                        }
+                        setShowCardTypePicker(true);
+                    }}
+                    deckLabel={targetDeck?.name.replaceAll('::', ' › ') ?? '—'}
+                    deckLocked={isCatalog}
+                    onPressDeck={() => {
+                        if (isCatalog) {
+                            alert(l('Korumalı Kart', 'Protected Card'), l('Dahili TUS kartları başka bir desteye taşınamaz.', 'Built-in TUS cards cannot be moved to another deck.'));
+                            return;
+                        }
+                        setShowDeckPicker(true);
+                    }}
+                    l={l}
+                />
 
                 {fieldsToRender.map((field, index) => {
                     if (occlusionFields && index === occlusionFields.image) return null;
@@ -1368,19 +1347,16 @@ export default function EditorScreen() {
                                 <Text style={styles.fieldName}>{localizedName}</Text>
                                 {!isContentReadOnly && (
                                     <View style={styles.fieldActions}>
-                                        <TouchableOpacity
-                                            style={[styles.fieldAction, isEditing && styles.fieldActionDisabled]}
+                                        <IconButton
                                             onPress={() => togglePinnedField(field.ord)}
                                             disabled={isEditing}
-                                            hitSlop={{ top: 2, right: 2, bottom: 2, left: 2 }}
-                                            accessibilityRole="button"
+                                            selected={isPinned}
                                             accessibilityLabel={isPinned
                                                 ? l(`${localizedName} alanının sabitlemesini kaldır`, `Unpin ${localizedName} field`)
                                                 : l(`${localizedName} alanını sabitle`, `Pin ${localizedName} field`)}
-                                            accessibilityState={{ selected: isPinned, disabled: isEditing }}
                                         >
                                             <PinIcon color={isPinned ? colors.accent : colors.textMuted} />
-                                        </TouchableOpacity>
+                                        </IconButton>
                                         <MediaAttachButton
                                             onBeforeOpen={dismissEditorKeyboard}
                                             // The attachment goes in at the caret with the keyboard left down.
@@ -1458,35 +1434,16 @@ export default function EditorScreen() {
                     );
                 })}
 
-                <TouchableOpacity
-                    style={styles.summaryRow}
-                    onPress={() => {
+                <EditorSummaryRows
+                    tags={noteTags}
+                    cards={selectedNoteType?.templates.map((template) => localizeCardTemplateName(locale, template.name)) ?? []}
+                    onPressTags={() => {
                         Keyboard.dismiss();
                         setShowTagPicker(true);
                     }}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Etiketleri düzenle', 'Edit tags')}
-                    accessibilityHint={l('Etiket aramak, eklemek veya seçmek için açar', 'Opens tag search, creation and selection')}
-                >
-                    <Text style={styles.summaryLabel}>{l('Etiketler:', 'Tags:')}</Text>
-                    <Text style={styles.summaryValue} numberOfLines={1}>
-                        {noteTags.join(' · ') || '—'}
-                    </Text>
-                    <ChevronRightIcon color={colors.textMuted} size={16} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.summaryRow}
-                    onPress={openCardTemplates}
-                    accessibilityRole="button"
-                    accessibilityLabel={l('Kart şablonlarını düzenle', 'Edit card templates')}
-                    accessibilityHint={l('Seçili not türünün şablonlarını açar. Değişiklikler bu türdeki bütün notları etkiler.', 'Opens the templates of the selected note type. Changes affect every note of this type.')}
-                >
-                    <Text style={styles.summaryLabel}>{l('Kartlar:', 'Cards:')}</Text>
-                    <Text style={styles.summaryValue}>
-                        {selectedNoteType?.templates.map((template) => localizeCardTemplateName(locale, template.name)).join(' · ') || '—'}
-                    </Text>
-                    <ChevronRightIcon color={colors.textMuted} size={16} />
-                </TouchableOpacity>
+                    onPressCards={openCardTemplates}
+                    l={l}
+                />
                 <Pressable
                     style={styles.scrollBottomDismissArea}
                     onPress={dismissEditorKeyboard}

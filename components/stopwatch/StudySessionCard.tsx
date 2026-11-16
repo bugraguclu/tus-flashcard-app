@@ -45,19 +45,19 @@ function StudySessionCard({ session, onOpenMenu }: StudySessionCardProps) {
                     <TouchableOpacity
                         style={styles.sideButton}
                         onPress={() => onOpenMenu(session)}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        hitSlop={{ top: 10, right: 9, bottom: 10, left: 9 }}
                         accessibilityRole="button"
                         accessibilityLabel={l(
                             `${session.subject} oturumu için seçenekler`,
                             `Options for the ${session.subject} session`,
                         )}
                     >
-                        <MoreIcon color={colors.textSecondary} size={18} />
+                        <MoreIcon color={colors.textSecondary} size={20} />
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
                     <View style={[styles.node, styles.nodeDone]}>
-                        <CheckIcon color={colors.white} size={13} />
+                        <CheckIcon color={colors.white} size={16} />
                     </View>
                 </View>
             </View>

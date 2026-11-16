@@ -124,7 +124,7 @@ export function CustomToolbarEditorModal({
                     </View>
                 </View>
                 <View style={local.securityRow}>
-                    <LockGlyph color={styles.customToolbarSecurityNote.color} size={13} />
+                    <LockGlyph color={styles.customToolbarSecurityNote.color} size={16} />
                     <Text style={[styles.customToolbarSecurityNote, local.securityNote]}>
                         {l('Güvenlik Korumalı: Komut dosyaları ve form etiketleri filtrelenir.', 'Security Protected: Scripts and forms are automatically filtered.')}
                     </Text>

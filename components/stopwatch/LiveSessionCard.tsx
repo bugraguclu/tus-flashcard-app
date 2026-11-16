@@ -1,6 +1,7 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { Shadow, Radius } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import { blockProgress, formatStopwatchClock, type StudyKind } from '../../lib/stopwatch';
 import { formatClockHhMm, formatSessionDuration } from '../../lib/studyCalendar';
@@ -46,7 +47,7 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
     const styles = timelineStyles(colors);
     const progress = blockProgress(live.phaseMs, live.onBreak ? breakMinutes : focusMinutes);
     const type = studyTypeLabel(l, live.kind, live.pass);
-    const barColor = live.onBreak ? colors.streak : colors.btnGood;
+    const barColor = live.onBreak ? colors.streak : colors.success;
 
     const overMinutes = progress ? Math.floor(progress.overMs / MINUTE_MS) : 0;
     const status = !progress
@@ -59,7 +60,7 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                 ? l('Süresi doldu', "Time's up")
                 : l(`${Math.ceil(progress.remainingMs / MINUTE_MS)} dk kaldı`, `${Math.ceil(progress.remainingMs / MINUTE_MS)} min left`);
     const statusColor = progress && progress.remainingMs <= 0
-        ? live.onBreak ? colors.btnAgain : colors.btnGood
+        ? live.onBreak ? colors.danger : colors.success
         : colors.textSecondary;
     const message = live.onBreak
         ? l('Molanın keyfini çıkarın', 'Enjoy your break')
@@ -79,12 +80,12 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                             ? l(`Çalışma notunu düzenle: ${live.note}`, `Edit the study note: ${live.note}`)
                             : l('Çalışmaya not ekle', 'Add a note to the session')}
                     >
-                        <BookIcon color={colors.btnGood} size={16} />
+                        <BookIcon color={colors.success} size={16} />
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
                     <View style={[styles.node, styles.nodeDone]}>
-                        <CheckIcon color={colors.white} size={13} />
+                        <CheckIcon color={colors.white} size={16} />
                     </View>
                 </View>
             </View>
@@ -145,7 +146,7 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                         importantForAccessibility="no-hide-descendants"
                     >
                         <View style={[local.bookBadge, { backgroundColor: colors.bgCard, borderColor: colors.borderLight }]}>
-                            <BookIcon color={live.onBreak ? colors.streak : colors.btnGood} size={16} />
+                            <BookIcon color={live.onBreak ? colors.streak : colors.success} size={16} />
                         </View>
                         <Text style={[local.message, { color: live.onBreak ? colors.streak : colors.textPrimary }]} numberOfLines={2}>{message}</Text>
                     </TouchableOpacity>
@@ -176,7 +177,7 @@ const local = StyleSheet.create({
     top: { flexDirection: 'row', gap: Spacing.md },
     sessionPill: {
         alignItems: 'center',
-        borderRadius: BorderRadius.full,
+        borderRadius: Radius.pill,
         borderWidth: StyleSheet.hairlineWidth,
         paddingVertical: 5,
         paddingHorizontal: Spacing.md,
@@ -193,7 +194,7 @@ const local = StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
         alignItems: 'center',
         justifyContent: 'center',
-        ...Shadows.sm,
+        ...Shadow.card,
     },
     message: { flex: 1, fontSize: FontSize.md, fontWeight: '500' },
     progress: { gap: 4 },

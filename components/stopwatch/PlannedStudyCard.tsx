@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { formatHeroDuration } from '../../lib/stopwatch';
 import { formatPlanClock, type StudyPlanBlock } from '../../lib/studyPlans';
@@ -10,6 +10,7 @@ import { ClockIcon, GearIcon } from './StopwatchIcons';
 import { studyTypeLabel } from './StudyTypeChips';
 import { SubjectTile } from './SubjectArt';
 import { timelineStyles } from './timelineStyles';
+import { Radius } from '../ui/tokens';
 
 const MINUTE_MS = 60_000;
 
@@ -62,12 +63,12 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
                         accessibilityRole="button"
                         accessibilityLabel={l('Çalışma planlarını aç', 'Open the study plans')}
                     >
-                        <GearIcon color={colors.textSecondary} size={15} />
+                        <GearIcon color={colors.textSecondary} size={16} />
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
                     <View style={[styles.node, done ? styles.nodeDone : styles.nodePlanned]}>
-                        <ClockIcon color={colors.white} size={13} />
+                        <ClockIcon color={colors.white} size={16} />
                     </View>
                 </View>
             </View>
@@ -110,8 +111,8 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
                                 <View style={{ pointerEvents: 'none' }}>
                                     {done ? (
                                         <View style={local.done}>
-                                            <Text style={[local.left, { color: colors.btnGood }]}>{l('Tamamlandı', 'Done')}</Text>
-                                            <CheckIcon color={colors.btnGood} size={16} />
+                                            <Text style={[local.left, { color: colors.success }]}>{l('Tamamlandı', 'Done')}</Text>
+                                            <CheckIcon color={colors.success} size={16} />
                                         </View>
                                     ) : (
                                         <Text style={[local.left, { color: colors.textPrimary }]}>
@@ -149,14 +150,14 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
 }
 
 const local = StyleSheet.create({
-    press: { borderRadius: BorderRadius.lg },
+    press: { borderRadius: Radius.card },
     content: { flex: 1, flexDirection: 'row', gap: Spacing.md },
     leftRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.md },
     left: { fontSize: FontSize.md, fontWeight: '500' },
     done: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     // The small filled "Başlat" TUSBuddy puts after the time left.
-    start: { borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
-    startText: { fontSize: FontSize.sm, fontWeight: '700' },
+    start: { borderRadius: Radius.control, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
+    startText: { fontSize: FontSize.sm, fontWeight: '600' },
 });
 
 export default React.memo(PlannedStudyCard);

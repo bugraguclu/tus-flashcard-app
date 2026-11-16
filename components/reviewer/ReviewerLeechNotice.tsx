@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Shadow, Radius } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 
 /** The answer that made a card a leech; `nonce` tells two such answers apart. */
@@ -50,11 +51,11 @@ function createStyles(colors: ColorScheme) {
             maxWidth: 420,
             paddingVertical: Spacing.sm,
             paddingHorizontal: Spacing.md,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             borderWidth: 1,
-            borderColor: colors.btnHard,
-            backgroundColor: colors.btnHardBg,
-            ...Shadows.md,
+            borderColor: colors.warning,
+            backgroundColor: colors.warningBg,
+            ...Shadow.floating,
         },
         text: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textPrimary, textAlign: 'center' },
     });

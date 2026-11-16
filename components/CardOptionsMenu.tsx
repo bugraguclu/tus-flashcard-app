@@ -540,7 +540,7 @@ const rowStyles = StyleSheet.create({
         marginBottom: Spacing.sm,
         gap: Spacing.sm,
     },
-    switchLabel: { flex: 1, fontSize: 15, lineHeight: 20 },
+    switchLabel: { flex: 1, fontSize: FontSize.md, lineHeight: 20 },
 });
 
 /** The whiteboard: a board with a stroke drawn on it. */
@@ -622,7 +622,7 @@ function createStyles(colors: ColorScheme) {
         },
         // Balances the back button so the title stays centred.
         headerSpacer: { width: HIT_TARGET, height: HIT_TARGET },
-        sheetContent: { paddingVertical: 4, paddingBottom: 6 },
+        sheetContent: { paddingVertical: 4, paddingBottom: Spacing.s6 },
         formContent: { paddingTop: Spacing.md },
         subDesc: { color: colors.textSecondary, fontSize: FontSize.sm, paddingHorizontal: Spacing.md, marginBottom: Spacing.sm },
         field: { marginHorizontal: Spacing.md, marginBottom: Spacing.md },

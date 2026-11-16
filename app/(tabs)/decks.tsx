@@ -24,7 +24,7 @@ import { PullToRefreshIndicator, usePullToRefresh } from '../../components/PullT
 import { Text } from '../../components/AppText';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors, type ColorScheme, Spacing, BorderRadius, FontSize, Shadows } from '../../constants/theme';
+import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
 import { exitDuration, MotionSpring, NATIVE_DRIVER } from '../../constants/motion';
 import {
     getAllDecks,
@@ -66,7 +66,6 @@ import { deckNameAfterRename } from '../../lib/currentDeck';
 import { createBackupNow } from '../../lib/backup';
 import CustomStudyModal from '../../components/CustomStudyModal';
 import FilteredDeckOptionsModal from '../../components/FilteredDeckOptionsModal';
-import DisclosureChevron from '../../components/DisclosureChevron';
 import LockGlyph from '../../components/LockGlyph';
 import CardsGlyph from '../../components/CardsGlyph';
 import StatsGlyph from '../../components/StatsGlyph';
@@ -83,12 +82,13 @@ import { SectionLabel } from '../../components/ui/Card';
 import { AppDialog } from '../../components/ui/Dialog';
 import { EmptyState, LoadingState } from '../../components/ui/Feedback';
 import { TextField } from '../../components/ui/Fields';
-import { ArrowUpIcon, DragHandleIcon, MoreIcon, MoreVerticalIcon, PlusIcon, RefreshIcon } from '../../components/ui/icons';
+import { BottomBar, BottomBarItem } from '../../components/ui/Bars';
+import { ArrowUpIcon, ChevronDownIcon, ChevronRightIcon, DragHandleIcon, MoreIcon, PlusIcon, RefreshIcon } from '../../components/ui/icons';
 import { MenuItem, PopoverMenu } from '../../components/ui/Menu';
 import { SwitchRow } from '../../components/ui/Rows';
 import { AppSheet } from '../../components/ui/Sheet';
 import { SheetNoDrag } from '../../components/SwipeDismissSheet';
-import { DISABLED_OPACITY, HIT_TARGET, Type } from '../../components/ui/tokens';
+import { DISABLED_OPACITY, HIT_TARGET, Shadow, Type, Radius } from '../../components/ui/tokens';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import {
@@ -147,8 +147,6 @@ const DECK_TREE_LAYOUT_MS = 190;
 
 // Four labels share the bottom bar, like a tab bar's: one line each, growing less than content,
 // and on iPhone shrinking to fit rather than breaking a word on the smallest phones.
-const BOTTOM_LABEL_FIT = { numberOfLines: 1, maxFontSizeMultiplier: 1.15, adjustsFontSizeToFit: true, minimumFontScale: 0.8 } as const;
-
 /** Keep disclosure state attached to the same decks after an Anki-style subtree rename. */
 function remapExpandedDeckPaths(
     paths: Set<string>,
@@ -1226,20 +1224,19 @@ export default function DecksScreen() {
                     </View>
                 )}
                 {hasChildren ? (
-                    <TouchableOpacity
+                    <IconButton
+                        // The row's first column is narrower than an icon button; the slop makes
+                        // it a full target.
                         style={styles.expandBtn}
                         onPress={() => toggleExpand(deck)}
-                        // The slop makes the 36-wide column a full target.
-                        hitSlop={{ left: 4, right: 4 }}
-                        accessibilityRole="button"
+                        hitSlop={{ left: 5, right: 5 }}
                         accessibilityLabel={isExpanded ? l('Alt desteleri gizle', 'Hide subdecks') : l('Alt desteleri göster', 'Show subdecks')}
-                        accessibilityState={{ expanded: isExpanded }}
+                        expanded={isExpanded}
                     >
-                        <DisclosureChevron
-                            expanded={isExpanded}
-                            color={colors.textPrimary}
-                        />
-                    </TouchableOpacity>
+                        {isExpanded
+                            ? <ChevronDownIcon color={colors.textPrimary} size={20} />
+                            : <ChevronRightIcon color={colors.textPrimary} size={20} />}
+                    </IconButton>
                 ) : (
                     <View style={styles.expandBtn}>
                         {/* A filtered deck is told apart by its blue italic name, not an icon. */}
@@ -1354,7 +1351,7 @@ export default function DecksScreen() {
             <View style={styles.lockedDeckIcon}>
                 {catalogInstalling
                     ? <ActivityIndicator size="small" color={colors.accent} />
-                    : <LockGlyph color={colors.accent} size={18} />}
+                    : <LockGlyph color={colors.accent} size={20} />}
             </View>
             <View style={styles.lockedDeckCopy}>
                 <Text style={styles.lockedDeckName} numberOfLines={1}>{BKA_CATALOG_DEFAULT_ROOT_DECK}</Text>
@@ -1563,7 +1560,7 @@ export default function DecksScreen() {
                         accessibilityLabel={l('Diğer seçenekler', 'More options')}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <MoreVerticalIcon color={colors.textSecondary} />
+                        <MoreIcon color={colors.textSecondary} />
                     </IconButton>
                 </View>
             </View>
@@ -1715,7 +1712,7 @@ export default function DecksScreen() {
                         ]}
                     >
                         <View style={styles.mobileDragPreviewTitleRow}>
-                            <DragHandleIcon color={colors.textMuted} size={18} />
+                            <DragHandleIcon color={colors.textMuted} size={20} />
                             <Text style={styles.mobileDragPreviewTitle} numberOfLines={1}>
                                 {draggingDeck.replaceAll('::', ' › ')}
                             </Text>
@@ -1745,44 +1742,32 @@ export default function DecksScreen() {
                 onAddCard={openAddCard}
             />
 
-            <View style={styles.bottomBar} onLayout={(event) => setBottomBarHeight(event.nativeEvent.layout.height)}>
-                <TouchableOpacity
-                    style={styles.bottomBtn}
-                    onPress={() => router.push('/browser' as any)}
-                    accessibilityRole="button"
+            <BottomBar onLayout={(event) => setBottomBarHeight(event.nativeEvent.layout.height)}>
+                <BottomBarItem
+                    label={t('sidebar.myCards')}
                     accessibilityLabel={l('Kartlarımı aç', 'Open Card Browser')}
-                >
-                    <CardsGlyph color={colors.textSecondary} size={20} />
-                    <Text style={styles.bottomBtnText} {...BOTTOM_LABEL_FIT}>{t('sidebar.myCards')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.bottomBtn}
-                    onPress={() => router.push('/stopwatch' as any)}
-                    accessibilityRole="button"
+                    icon={<CardsGlyph color={colors.textSecondary} size={20} />}
+                    onPress={() => router.push('/browser' as any)}
+                />
+                <BottomBarItem
+                    label={l('Kronometre', 'Stopwatch')}
                     accessibilityLabel={l('Kronometreyi aç', 'Open stopwatch')}
-                >
-                    <StopwatchIcon color={colors.textSecondary} size={20} />
-                    <Text style={styles.bottomBtnText} {...BOTTOM_LABEL_FIT}>{l('Kronometre', 'Stopwatch')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.bottomBtn}
-                    onPress={() => router.push('/stats' as any)}
-                    accessibilityRole="button"
+                    icon={<StopwatchIcon color={colors.textSecondary} size={20} />}
+                    onPress={() => router.push('/stopwatch' as any)}
+                />
+                <BottomBarItem
+                    label={t('tabs.statistics')}
                     accessibilityLabel={l('İstatistikleri aç', 'Open statistics')}
-                >
-                    <StatsGlyph color={colors.textSecondary} size={20} />
-                    <Text style={styles.bottomBtnText} {...BOTTOM_LABEL_FIT}>{t('tabs.statistics')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.bottomBtn}
-                    onPress={() => router.push('/settings' as any)}
-                    accessibilityRole="button"
+                    icon={<StatsGlyph color={colors.textSecondary} size={20} />}
+                    onPress={() => router.push('/stats' as any)}
+                />
+                <BottomBarItem
+                    label={t('tabs.settings')}
                     accessibilityLabel={l('Ayarları aç', 'Open settings')}
-                >
-                    <GearGlyph color={colors.textSecondary} size={20} />
-                    <Text style={styles.bottomBtnText} {...BOTTOM_LABEL_FIT}>{t('tabs.settings')}</Text>
-                </TouchableOpacity>
-            </View>
+                    icon={<GearGlyph color={colors.textSecondary} size={20} />}
+                    onPress={() => router.push('/settings' as any)}
+                />
+            </BottomBar>
 
             {isDesktopWeb && draggingDeck && (
                 <View style={styles.dragBanner}>
@@ -1882,21 +1867,21 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
-        borderRadius: BorderRadius.lg,
+        borderRadius: Radius.card,
         minHeight: 72,
-        ...Shadows.sm,
+        ...Shadow.card,
     },
     lockedDeckIcon: {
-        width: 36, height: 36, borderRadius: BorderRadius.md,
+        width: 36, height: 36, borderRadius: Radius.inset,
         alignItems: 'center', justifyContent: 'center',
         backgroundColor: colors.accentLight,
     },
     lockedDeckCopy: { flex: 1, marginHorizontal: Spacing.sm },
-    lockedDeckName: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-    lockedDeckMeta: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: 2 },
+    lockedDeckName: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+    lockedDeckMeta: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: Spacing.xxs },
     lockedDeckPricePill: {
         paddingHorizontal: 12, paddingVertical: 7,
-        borderRadius: BorderRadius.full,
+        borderRadius: Radius.pill,
         backgroundColor: colors.accent,
     },
     lockedDeckPriceText: { color: colors.onAccent, fontSize: FontSize.sm, fontWeight: '600' },
@@ -1919,10 +1904,10 @@ function createStyles(colors: ColorScheme) {
         overflow: 'hidden',
         paddingHorizontal: 9,
         paddingVertical: 4,
-        borderRadius: BorderRadius.sm,
+        borderRadius: Radius.control,
         backgroundColor: colors.accent,
         color: colors.onAccent,
-        fontSize: 11,
+        fontSize: FontSize.xs,
         fontWeight: '600',
     },
     deckInsideDropBadge: {
@@ -1938,13 +1923,13 @@ function createStyles(colors: ColorScheme) {
         overflow: 'hidden',
         paddingHorizontal: 9,
         paddingVertical: 4,
-        borderRadius: BorderRadius.sm,
+        borderRadius: Radius.control,
         backgroundColor: colors.accent,
         color: colors.onAccent,
-        fontSize: 11,
+        fontSize: FontSize.xs,
         fontWeight: '600',
     },
-    expandBtn: { width: 34, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+    expandBtn: { width: 34, height: undefined, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
     leafDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.border },
     // The name and its counts share a wrapping line: a name that does not fit beside the
     // counts gets the whole width (a word is never broken) and the counts move under it.
@@ -1952,15 +1937,15 @@ function createStyles(colors: ColorScheme) {
     // words on iPhone; maxWidth keeps a name longer than the row inside it instead.
     deckMain: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
     // Padding rather than margin: the browser adds a margin on top of maxWidth.
-    deckNameTouchable: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', maxWidth: '100%', paddingLeft: 2, minHeight: 44, justifyContent: 'center' },
-    deckName: { flexShrink: 1, fontSize: 15, fontWeight: '500', color: colors.textPrimary },
+    deckNameTouchable: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', maxWidth: '100%', paddingLeft: Spacing.xxs, minHeight: 44, justifyContent: 'center' },
+    deckName: { flexShrink: 1, fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
     deckNameFiltered: { color: colors.info, fontStyle: 'italic' },
     // A line of its own under the name and counts: the wrapping row puts a full-width child below.
-    deckHint: { width: '100%', paddingLeft: 2, paddingBottom: 2, fontSize: FontSize.sm, color: colors.textMuted },
+    deckHint: { width: '100%', paddingLeft: Spacing.xxs, paddingBottom: Spacing.xxs, fontSize: FontSize.sm, color: colors.textMuted },
     dragHandle: {
         width: 44,
         height: 44,
-        borderRadius: BorderRadius.sm,
+        borderRadius: Radius.control,
         alignItems: 'center',
         justifyContent: 'center',
         // A phone browser would otherwise claim the drag as a page scroll before the row moves.
@@ -1981,9 +1966,9 @@ function createStyles(colors: ColorScheme) {
         borderWidth: 1.5,
         borderStyle: 'dashed',
         borderColor: colors.accent,
-        borderRadius: BorderRadius.md,
+        borderRadius: Radius.inset,
         backgroundColor: colors.bgCard,
-        ...Shadows.md,
+        ...Shadow.floating,
     },
     rootDropZoneActive: {
         borderStyle: 'solid',
@@ -2006,31 +1991,18 @@ function createStyles(colors: ColorScheme) {
         backgroundColor: colors.bgCard,
         borderWidth: 2,
         borderColor: colors.accent,
-        borderRadius: BorderRadius.md,
-        ...Shadows.lg,
+        borderRadius: Radius.inset,
+        ...Shadow.floating,
     },
     mobileDragPreviewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs + 2 },
     mobileDragPreviewTitle: { flex: 1, color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
     mobileDragPreviewHint: {
         marginTop: 4,
         color: colors.accent,
-        fontSize: 12,
+        fontSize: FontSize.sm,
         fontWeight: '600',
     },
     mobileDragPreviewHintOrder: { color: colors.textSecondary },
-
-    bottomBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        minHeight: 60,
-        paddingTop: 4,
-        paddingBottom: 2,
-        backgroundColor: colors.bgCard,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: colors.border,
-    },
-    bottomBtn: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6, paddingVertical: 4 },
-    bottomBtnText: { fontSize: 11, fontWeight: '500', color: colors.textSecondary, marginTop: 2, textAlign: 'center' },
 
     dragBanner: {
         position: 'absolute',
@@ -2038,10 +2010,10 @@ function createStyles(colors: ColorScheme) {
         left: 16,
         right: 16,
         backgroundColor: colors.accent,
-        borderRadius: BorderRadius.md,
+        borderRadius: Radius.inset,
         paddingVertical: Spacing.sm,
         paddingHorizontal: Spacing.lg,
-        ...Shadows.md,
+        ...Shadow.floating,
     },
     dragBannerText: { color: colors.onAccent, fontWeight: '500', textAlign: 'center' },
 

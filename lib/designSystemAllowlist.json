@@ -1,0 +1,214 @@
+{
+  "app/(tabs)/_layout.tsx": {
+    "touch": 2,
+    "smallTouch": 1
+  },
+  "app/(tabs)/decks.tsx": {
+    "touch": 1
+  },
+  "app/(tabs)/index.tsx": {
+    "touch": 8,
+    "smallTouch": 5,
+    "input": 2
+  },
+  "app/browser.tsx": {
+    "touch": 1
+  },
+  "app/editor.tsx": {
+    "touch": 1
+  },
+  "app/stopwatch.tsx": {
+    "touch": 1
+  },
+  "app/study-calendar.tsx": {
+    "touch": 1,
+    "smallTouch": 1
+  },
+  "app/study-plans.tsx": {
+    "touch": 3,
+    "smallTouch": 3
+  },
+  "components/AttachmentViewer.tsx": {
+    "touch": 1,
+    "smallTouch": 1
+  },
+  "components/AudioRecordModal.tsx": {
+    "touch": 3,
+    "smallTouch": 1
+  },
+  "components/BottomSheetModal.tsx": {
+    "touch": 1,
+    "smallTouch": 1,
+    "modal": 1
+  },
+  "components/BoundedIntegerInput.tsx": {
+    "touch": 1,
+    "input": 1
+  },
+  "components/CardOptionsMenu.tsx": {
+    "touch": 1,
+    "smallTouch": 1,
+    "modal": 1
+  },
+  "components/CustomStudyModal.tsx": {
+    "input": 1
+  },
+  "components/DeckPickerModal.tsx": {
+    "touch": 4,
+    "smallTouch": 1,
+    "modal": 1
+  },
+  "components/DialogHost.tsx": {
+    "touch": 2,
+    "smallTouch": 2,
+    "modal": 1
+  },
+  "components/FilteredDeckOptionsModal.tsx": {
+    "modal": 1
+  },
+  "components/ImportLogView.tsx": {
+    "touch": 1
+  },
+  "components/Popover.tsx": {
+    "modal": 1
+  },
+  "components/RichTextEditor.tsx": {
+    "input": 1
+  },
+  "components/Sidebar.tsx": {
+    "touch": 10,
+    "smallTouch": 4
+  },
+  "components/StartupIssueScreen.tsx": {
+    "touch": 1,
+    "smallTouch": 1
+  },
+  "components/SwipeDismissSheet.tsx": {
+    "touch": 1,
+    "smallTouch": 1
+  },
+  "components/WeekStreakStrip.tsx": {
+    "touch": 1
+  },
+  "components/browser/BrowserBars.tsx": {
+    "touch": 1
+  },
+  "components/browser/BrowserCardRow.tsx": {
+    "touch": 1,
+    "smallTouch": 1
+  },
+  "components/browser/BrowserDialogs.tsx": {
+    "touch": 2,
+    "smallTouch": 1,
+    "modal": 1
+  },
+  "components/browser/FindDuplicatesDialog.tsx": {
+    "touch": 1
+  },
+  "components/browser/SearchHelpModal.tsx": {
+    "touch": 1
+  },
+  "components/decks/DeckListWelcome.tsx": {
+    "touch": 1
+  },
+  "components/decks/DeckNameButton.tsx": {
+    "touch": 1,
+    "smallTouch": 1
+  },
+  "components/drawing/DrawingPadModal.tsx": {
+    "modal": 1
+  },
+  "components/drawing/PageOptionsSheet.tsx": {
+    "touch": 1,
+    "smallTouch": 1
+  },
+  "components/drawing/SelectionFrame.tsx": {
+    "touch": 1
+  },
+  "components/drawing/TextEntrySheet.tsx": {
+    "touch": 1
+  },
+  "components/editor/FormatPickerModals.tsx": {
+    "touch": 2
+  },
+  "components/editor/KeyboardDoneButton.tsx": {
+    "touch": 1
+  },
+  "components/image-occlusion/ImageOcclusionEditorModal.tsx": {
+    "touch": 4,
+    "modal": 1
+  },
+  "components/image-occlusion/ImageOcclusionFieldPanel.tsx": {
+    "touch": 1
+  },
+  "components/image-occlusion/OcclusionCanvas.tsx": {
+    "touch": 1,
+    "smallTouch": 1
+  },
+  "components/import/ImportControls.tsx": {
+    "touch": 1
+  },
+  "components/photo-editor/AdjustmentSlider.tsx": {
+    "touch": 1
+  },
+  "components/photo-editor/EditModeTabs.tsx": {
+    "touch": 1
+  },
+  "components/photo-editor/PhotoEditorModal.tsx": {
+    "modal": 1
+  },
+  "components/reviewer/ReviewerDeckScope.tsx": {
+    "touch": 1
+  },
+  "components/settings/KeyboardSettingsSection.tsx": {
+    "input": 1
+  },
+  "components/settings/SettingsScreen.tsx": {
+    "touch": 3,
+    "smallTouch": 1
+  },
+  "components/stats/DeckProgressSection.tsx": {
+    "touch": 1,
+    "smallTouch": 1
+  },
+  "components/stats/TodaySection.tsx": {
+    "touch": 1
+  },
+  "components/stopwatch/HeroStepper.tsx": {
+    "touch": 1
+  },
+  "components/stopwatch/LiveSessionCard.tsx": {
+    "touch": 2,
+    "smallTouch": 1
+  },
+  "components/stopwatch/NoStudyPlanCard.tsx": {
+    "touch": 1
+  },
+  "components/stopwatch/PlannedStudyCard.tsx": {
+    "touch": 3,
+    "smallTouch": 1
+  },
+  "components/stopwatch/SessionActionsMenu.tsx": {
+    "touch": 3,
+    "smallTouch": 3,
+    "modal": 1
+  },
+  "components/stopwatch/StopwatchHero.tsx": {
+    "touch": 3
+  },
+  "components/stopwatch/StopwatchTimeline.tsx": {
+    "touch": 1
+  },
+  "components/stopwatch/StudyPickers.tsx": {
+    "touch": 7,
+    "smallTouch": 5,
+    "input": 2
+  },
+  "components/stopwatch/StudySessionCard.tsx": {
+    "touch": 1
+  },
+  "components/stopwatch/TimePickerPanel.tsx": {
+    "touch": 3,
+    "smallTouch": 1
+  }
+}

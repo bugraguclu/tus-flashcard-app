@@ -422,7 +422,7 @@ export default function StopwatchScreen() {
                             accessibilityLabel={l('Çalışma Takvimi', 'Study Calendar')}
                             onPress={openCalendar}
                         >
-                            <CalendarIcon color={colors.white} size={23} />
+                            <CalendarIcon color={colors.white} size={24} />
                         </HeaderIconButton>
                         <HeaderIconButton
                             accessibilityLabel={l('Kronometre ayarları', 'Stopwatch settings')}
@@ -454,11 +454,11 @@ export default function StopwatchScreen() {
                     <TouchableOpacity
                         style={styles.addButton}
                         onPress={() => openEditor(null)}
-                        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                        hitSlop={{ top: 12, right: 8, bottom: 12, left: 8 }}
                         accessibilityRole="button"
                         accessibilityLabel={l('Geçmiş çalışma ekle', 'Add a past session')}
                     >
-                        <PlusCircleIcon color={colors.badgeNew} size={20} />
+                        <PlusCircleIcon color={colors.info} size={20} />
                         <Text style={styles.addText}>{l('Çalışma Ekle', 'Add Session')}</Text>
                     </TouchableOpacity>
                 </View>
@@ -575,6 +575,6 @@ function createStyles(colors: ColorScheme) {
         },
         sectionTitle: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
         addButton: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
-        addText: { fontSize: FontSize.md, fontWeight: '700', color: colors.badgeNew },
+        addText: { fontSize: FontSize.md, fontWeight: '600', color: colors.info },
     });
 }

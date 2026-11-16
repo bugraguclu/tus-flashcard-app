@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { CardCountStats } from '../../lib/ankiStats';
 import { Card } from '../ui/Card';
 import StatsTiles from './StatsTiles';
 import { useStatsFormat } from './useStatsFormat';
+import { Radius } from '../ui/tokens';
 
 /** Anki's Card Counts: every card in the scope by its current state, as one split bar. */
 export default function CardCountsSection({ counts }: { counts: CardCountStats }) {
@@ -61,9 +62,9 @@ export default function CardCountsSection({ counts }: { counts: CardCountStats }
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
-        bar: { flexDirection: 'row', height: 12, gap: 2, borderRadius: BorderRadius.full, overflow: 'hidden' },
+        bar: { flexDirection: 'row', height: 12, gap: Spacing.xxs, borderRadius: Radius.pill, overflow: 'hidden' },
         segment: { flexBasis: 0, minWidth: 3, height: '100%' },
-        legend: { gap: 6 },
+        legend: { gap: Spacing.s6 },
         legendRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         swatch: { width: 10, height: 10, borderRadius: 3 },
         legendLabel: { flex: 1, color: colors.textPrimary, fontSize: FontSize.sm },

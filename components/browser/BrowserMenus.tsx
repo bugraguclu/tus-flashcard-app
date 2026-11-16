@@ -1,5 +1,5 @@
-import { useEffect, useRef, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import { Platform, View, ScrollView, TouchableOpacity, type AccessibilityRole, type AccessibilityState } from 'react-native';
+import { Fragment, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
+import { Platform, View, ScrollView } from 'react-native';
 import { Text } from '../AppText';
 import { useRouter } from 'expo-router';
 import { useThemeColors, type ColorScheme } from '../../constants/theme';
@@ -24,10 +24,10 @@ import { AppSheet } from '../ui/Sheet';
 import { SheetScrollView } from '../SwipeDismissSheet';
 import { Button } from '../ui/Button';
 import { Card, Divider } from '../ui/Card';
-import { Badge, Chip, SegmentedControl, SelectedMark } from '../ui/Choice';
+import { Badge, Chip, SegmentedControl } from '../ui/Choice';
 import { MenuItem, MenuSeparator, PopoverMenu } from '../ui/Menu';
-import { SwitchRow } from '../ui/Rows';
-import { ArrowDownIcon, ArrowUpIcon, CheckIcon, ChevronDownIcon, ChevronRightIcon, MinusIcon } from '../ui/icons';
+import { ListRow, SwitchRow } from '../ui/Rows';
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from '../ui/icons';
 import { EyeIcon } from '../editor/EditorIcons';
 import { useModalHandoff } from '../../hooks/useModalHandoff';
 import InfoCircleGlyph from '../InfoCircleGlyph';
@@ -305,36 +305,6 @@ export function SelectionMenuModal({
     );
 }
 
-/**
- * A ••• row with something at its end: a count, the flag filter's state and its disclosure
- * chevron, or the mark of a tri-state checkbox. Drawn like the shared `MenuItem`, which has no
- * place for these nor the `expanded` and `mixed` states they report.
- */
-function AccessoryMenuItem({ styles, label, icon, accessory, onPress, accessibilityRole = 'menuitem', accessibilityState, ariaChecked }: {
-    styles: BrowserStyles;
-    label: string;
-    icon: ReactNode;
-    accessory?: ReactNode;
-    onPress: () => void;
-    accessibilityRole?: AccessibilityRole;
-    accessibilityState?: AccessibilityState;
-    ariaChecked?: boolean | 'mixed';
-}) {
-    return (
-        <TouchableOpacity
-            style={styles.menuItem}
-            onPress={onPress}
-            accessibilityRole={accessibilityRole}
-            accessibilityState={accessibilityState}
-            aria-checked={ariaChecked}
-        >
-            <View style={styles.menuItemIcon}>{icon}</View>
-            <Text style={styles.menuItemLabel}>{label}</Text>
-            {accessory}
-        </TouchableOpacity>
-    );
-}
-
 interface OverflowMenuModalProps {
     coloredFlagFilters: CardFlag[];
     colors: ColorScheme;
@@ -432,60 +402,45 @@ export function OverflowMenuModal({
                 checked={suspendedOnly}
                 onPress={() => { setSuspendedOnly((value) => !value); close(); }}
             />
-            <AccessoryMenuItem
-                styles={styles}
+            <MenuItem
                 icon={<TagIcon color={iconColor} />}
                 label={l('Etikete göre filtrele', 'Filter by tag')}
                 accessory={tagFilters.length > 0 ? <Badge label={String(tagFilters.length)} tone="accent" style={styles.menuBadge} /> : null}
                 onPress={() => closeInto(() => setShowTagFilter(true))}
             />
-            <AccessoryMenuItem
-                styles={styles}
+            <MenuItem
                 icon={<FlagGlyph color={iconColor} size={20} filled={false} />}
                 label={l('Bayrağa göre filtrele', 'Filter by flag')}
                 onPress={openFlagFilter}
-                accessibilityState={{ expanded: showFlagFilterMenu }}
-                accessory={(
+                expanded={showFlagFilterMenu}
+                accessory={allFlags ? null : (
                     <>
                         {/* Mirrors the chips under the search field: "no flag" is a filter of its
                             own, so it shows its own ring instead of being counted as a colour.
                             Counting it made "no flag + red" read as two flags. */}
-                        {!allFlags && (
-                            <>
-                                {hasNoFlagFilter && (
-                                    <View style={styles.flagIconContainer}>
-                                        <FlagGlyph color={colors.textMuted} size={14} filled={false} />
-                                    </View>
-                                )}
-                                {coloredFlagFilters.length === 1 && (
-                                    <View style={styles.flagIconContainer}>
-                                        <FlagGlyph color={FLAG_COLORS[coloredFlagFilters[0]].color} size={14} filled />
-                                    </View>
-                                )}
-                                {coloredFlagFilters.length > 1 && (
-                                    <Badge label={String(coloredFlagFilters.length)} tone="accent" style={styles.menuBadge} />
-                                )}
-                            </>
+                        {hasNoFlagFilter && (
+                            <View style={styles.flagIconContainer}>
+                                <FlagGlyph color={colors.textMuted} size={16} filled={false} />
+                            </View>
                         )}
-                        {showFlagFilterMenu
-                            ? <ChevronDownIcon color={colors.textMuted} size={16} />
-                            : <ChevronRightIcon color={colors.textMuted} size={16} />}
+                        {coloredFlagFilters.length === 1 && (
+                            <View style={styles.flagIconContainer}>
+                                <FlagGlyph color={FLAG_COLORS[coloredFlagFilters[0]].color} size={16} filled />
+                            </View>
+                        )}
+                        {coloredFlagFilters.length > 1 && (
+                            <Badge label={String(coloredFlagFilters.length)} tone="accent" style={styles.menuBadge} />
+                        )}
                     </>
                 )}
             />
             {showFlagFilterMenu && (
                 <View style={styles.flagFilterPanel}>
-                    <AccessoryMenuItem
-                        styles={styles}
+                    <MenuItem
                         icon={<View style={styles.flagIconContainer} />}
                         label={l('Tümünü seç', 'Select all')}
                         onPress={toggleAllFlagFilters}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: allFlagsState }}
-                        ariaChecked={allFlagsState}
-                        accessory={allFlags
-                            ? <CheckIcon color={colors.accent} size={18} />
-                            : someFlags ? <MinusIcon color={colors.accent} size={18} /> : null}
+                        checked={allFlagsState}
                     />
                     {ALL_CARD_FLAGS.map((flag) => (
                         <MenuItem
@@ -493,7 +448,7 @@ export function OverflowMenuModal({
                             icon={(
                                 <FlagGlyph
                                     color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
-                                    size={18}
+                                    size={20}
                                     filled={flag !== 0}
                                 />
                             )}
@@ -584,7 +539,7 @@ export function SortPickerModal({
         return (
             <Chip
                 label={label}
-                icon={descending ? <ArrowDownIcon color={tint} size={14} /> : <ArrowUpIcon color={tint} size={14} />}
+                icon={descending ? <ArrowDownIcon color={tint} size={16} /> : <ArrowUpIcon color={tint} size={16} />}
                 selected={selected}
                 onPress={() => updateSortDirection(descending)}
             />
@@ -602,22 +557,17 @@ export function SortPickerModal({
                 {direction(true, l('Azalan', 'Descending'))}
             </View>
             <ScrollView style={styles.pickerList}>
-                {BROWSER_SORT_KEYS.map((key) => {
-                    const selected = sortKey === key;
-                    return (
-                        <TouchableOpacity
-                            key={key}
-                            style={[styles.pickerRow, selected && styles.pickerRowActive]}
+                {BROWSER_SORT_KEYS.map((key, index) => (
+                    <Fragment key={key}>
+                        {index > 0 ? <Divider /> : null}
+                        <ListRow
+                            title={sortLabels[key]}
+                            selected={sortKey === key}
+                            style={styles.dialogRow}
                             onPress={() => updateSort(key)}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: selected }}
-                            aria-checked={selected}
-                        >
-                            <Text style={[styles.pickerRowText, selected && styles.pickerRowTextActive]}>{sortLabels[key]}</Text>
-                            <SelectedMark visible={selected} />
-                        </TouchableOpacity>
-                    );
-                })}
+                        />
+                    </Fragment>
+                ))}
             </ScrollView>
         </AppDialog>
     );
@@ -653,19 +603,23 @@ export function FlagPickerModal({
             closeButton
         >
             <View>
-                {ALL_CARD_FLAGS.map((flag) => (
-                    <TouchableOpacity key={flag} style={styles.pickerRow} onPress={() => applyFlag(flag)} accessibilityRole="button" accessibilityLabel={cardFlagName(locale, flag)}>
-                        <View style={styles.flagIconContainer}>
-                            <FlagGlyph
-                                color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
-                                size={18}
-                                filled={flag !== 0}
-                            />
-                        </View>
-                        <Text style={styles.pickerRowText}>
-                            {cardFlagName(locale, flag)}
-                        </Text>
-                    </TouchableOpacity>
+                {ALL_CARD_FLAGS.map((flag, index) => (
+                    <Fragment key={flag}>
+                        {index > 0 ? <Divider /> : null}
+                        <ListRow
+                            title={cardFlagName(locale, flag)}
+                            icon={(
+                                <FlagGlyph
+                                    color={flag === 0 ? colors.textMuted : FLAG_COLORS[flag].color}
+                                    size={20}
+                                    filled={flag !== 0}
+                                />
+                            )}
+                            chevron={false}
+                            style={styles.dialogRow}
+                            onPress={() => applyFlag(flag)}
+                        />
+                    </Fragment>
                 ))}
             </View>
         </AppDialog>

@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { Text, useLayoutTextScale } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Shadow, Radius } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import {
     MAX_GOAL_MINUTES,
@@ -14,7 +15,7 @@ import {
     type StopwatchElapsed,
 } from '../../lib/stopwatch';
 import ProgressRing from './ProgressRing';
-import { Stepper } from './SheetControls';
+import { HeroStepper } from './HeroStepper';
 import { PauseIcon, PlayIcon, StopIcon } from './StopwatchIcons';
 
 const MINUTE_MS = 60_000;
@@ -119,7 +120,7 @@ export default function StopwatchHero({
                         accessibilityLabel={l('Çalışmayı sonlandır ve kaydet', 'Finish and save the session')}
                     >
                         <View style={styles.pillIcon}>
-                            <StopIcon color={colors.white} size={12} />
+                            <StopIcon color={colors.white} size={16} />
                         </View>
                         <Text style={styles.pillText}>{l('Sonlandır', 'Finish')}</Text>
                     </TouchableOpacity>
@@ -131,7 +132,7 @@ export default function StopwatchHero({
                         accessibilityLabel={onBreak ? l('Moladan dön, devam et', 'End the break and resume') : l('Mola ver', 'Take a break')}
                     >
                         <View style={styles.pillIcon}>
-                            {onBreak ? <PlayIcon color={colors.white} size={14} /> : <PauseIcon color={colors.white} size={13} />}
+                            {onBreak ? <PlayIcon color={colors.white} size={16} /> : <PauseIcon color={colors.white} size={16} />}
                         </View>
                         <Text style={styles.pillText}>{onBreak ? l('Devam Et', 'Resume') : l('Mola Ver', 'Break')}</Text>
                     </TouchableOpacity>
@@ -176,8 +177,7 @@ export default function StopwatchHero({
                         <Text style={styles.goalLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                             {l('Günlük Hedef', 'Daily Goal')}
                         </Text>
-                        <Stepper
-                            size="hero"
+                        <HeroStepper
                             value={formatGoalClock(goalMinutes)}
                             onStep={onStepGoal}
                             decreaseLabel={l('Günlük hedefi yarım saat azalt', 'Lower the daily goal by half an hour')}
@@ -193,7 +193,7 @@ export default function StopwatchHero({
                             accessibilityLabel={l('Kronometreyi başlat', 'Start the stopwatch')}
                         >
                             <View style={styles.iconCircle}>
-                                <PlayIcon color={colors.white} size={18} />
+                                <PlayIcon color={colors.white} size={20} />
                             </View>
                             <Text style={styles.startText} numberOfLines={1}>{l('Başla', 'Start')}</Text>
                         </TouchableOpacity>
@@ -219,23 +219,23 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             gap: Spacing.md,
             // Above the list that scrolls under it, so its shadow falls on the list.
             zIndex: 1,
-            ...Shadows.md,
+            ...Shadow.floating,
         },
         heroRunning: { paddingTop: Spacing.xs, gap: Spacing.sm, paddingBottom: Spacing.lg },
         row: { flexDirection: 'row', alignItems: 'center' },
         half: { flex: 1, alignItems: 'center' },
-        ringCenter: { alignItems: 'center', gap: 2 },
+        ringCenter: { alignItems: 'center', gap: Spacing.xxs },
         ringLabel: { fontSize: FontSize.sm, color: ON_HERO_SOFT, textAlign: 'center', lineHeight: 16 },
-        ringValue: { fontWeight: '800', color: colors.white, marginTop: 2 },
+        ringValue: { fontWeight: '800', color: colors.white, marginTop: Spacing.xxs },
         controls: { alignItems: 'stretch', gap: Spacing.sm },
-        goalLabel: { fontSize: FontSize.lg, fontWeight: '700', color: colors.white, textAlign: 'center' },
+        goalLabel: { fontSize: FontSize.lg, fontWeight: '600', color: colors.white, textAlign: 'center' },
         startButton: {
             flexDirection: 'row',
             alignItems: 'center',
             minHeight: 40,
             marginTop: Spacing.sm,
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             paddingLeft: 4,
             paddingRight: Spacing.md,
         },
@@ -247,11 +247,11 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        startText: { flex: 1, textAlign: 'center', fontSize: FontSize.xxl, fontWeight: '800', color: colors.accent },
-        runningTop: { alignItems: 'center', gap: 6 },
+        startText: { flex: 1, textAlign: 'center', fontSize: FontSize.xxl, fontWeight: '600', color: colors.accent },
+        runningTop: { alignItems: 'center', gap: Spacing.s6 },
         todayRow: { alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.xs },
         todayLabel: { fontSize: FontSize.md, color: ON_HERO_SOFT },
-        todayValue: { color: colors.white, fontWeight: '700' },
+        todayValue: { color: colors.white, fontWeight: '600' },
         goalTrack: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: RING_TRACK, overflow: 'hidden' },
         goalFill: { height: 8, borderRadius: 4, backgroundColor: colors.white },
         runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', letterSpacing: 0.8, color: colors.white },
@@ -265,7 +265,7 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             minWidth: 118,
             minHeight: 36,
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             paddingLeft: 4,
             paddingRight: Spacing.md,
         },
@@ -277,6 +277,6 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        pillText: { fontSize: FontSize.lg, fontWeight: '800', color: colors.accent },
+        pillText: { fontSize: FontSize.lg, fontWeight: '600', color: colors.accent },
     });
 }

@@ -174,8 +174,8 @@ export default function ImportLogView({ log, colors, l, extraLines = [] }: Impor
                             <Text style={styles.groupCount}>{counts[status]}</Text>
                             <Text style={styles.groupToggle}>{isOpen ? l('Gizle', 'Hide') : l('Göster', 'Show')}</Text>
                             {isOpen
-                                ? <ChevronUpIcon color={colors.accent} size={14} />
-                                : <ChevronDownIcon color={colors.accent} size={14} />}
+                                ? <ChevronUpIcon color={colors.accent} size={16} />
+                                : <ChevronDownIcon color={colors.accent} size={16} />}
                         </TouchableOpacity>
                         {isOpen ? (
                             <View style={styles.groupBody}>
@@ -237,10 +237,10 @@ function createStyles(colors: ColorScheme) {
         groupTitle: { flex: 1, fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
         groupCount: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textPrimary },
         groupToggle: { fontSize: FontSize.xs, fontWeight: '600', color: colors.accent },
-        groupBody: { padding: Spacing.md, gap: 6 },
-        groupDetail: { fontSize: FontSize.xs, color: colors.textMuted, marginBottom: 2 },
+        groupBody: { padding: Spacing.md, gap: Spacing.s6 },
+        groupDetail: { fontSize: FontSize.xs, color: colors.textMuted, marginBottom: Spacing.xxs },
         entryRow: {
-            paddingVertical: 6,
+            paddingVertical: Spacing.s6,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.borderLight,
         },

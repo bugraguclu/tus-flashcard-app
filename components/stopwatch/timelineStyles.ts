@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, type ColorScheme } from '../../constants/theme';
+import { Shadow, Radius } from '../ui/tokens';
 
 /** Width of the column left of the cards, which holds the timeline line, its nodes and buttons. */
 const TIMELINE_GUTTER = 80;
@@ -22,12 +23,12 @@ function createTimelineStyles(colors: ColorScheme) {
             minWidth: 68,
             alignItems: 'center',
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: colors.border,
             paddingHorizontal: Spacing.md,
             paddingVertical: 5,
-            ...Shadows.sm,
+            ...Shadow.card,
         },
         dayChipText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
         dayHeaderAccessory: { marginLeft: 'auto' },
@@ -61,12 +62,12 @@ function createTimelineStyles(colors: ColorScheme) {
             borderColor: colors.bgCard,
             alignItems: 'center',
             justifyContent: 'center',
-            ...Shadows.sm,
+            ...Shadow.card,
         },
         nodeDone: { backgroundColor: colors.accent },
-        nodePlanned: { backgroundColor: colors.badgeNew },
-        nodeMissed: { backgroundColor: colors.btnAgain },
-        nodeText: { color: colors.white, fontSize: FontSize.xs, fontWeight: '800' },
+        nodePlanned: { backgroundColor: colors.info },
+        nodeMissed: { backgroundColor: colors.danger },
+        nodeText: { color: colors.white, fontSize: FontSize.xs, fontWeight: '600' },
         sideButtonSlot: {
             position: 'absolute',
             top: 0,
@@ -77,11 +78,11 @@ function createTimelineStyles(colors: ColorScheme) {
         sideButton: {
             width: 26,
             height: 24,
-            borderRadius: BorderRadius.sm,
+            borderRadius: Radius.control,
             backgroundColor: colors.bgCard,
             alignItems: 'center',
             justifyContent: 'center',
-            ...Shadows.sm,
+            ...Shadow.card,
         },
 
         column: { flex: 1, paddingRight: Spacing.lg, paddingVertical: Spacing.sm },
@@ -89,25 +90,25 @@ function createTimelineStyles(colors: ColorScheme) {
             flexDirection: 'row',
             gap: Spacing.md,
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.lg,
+            borderRadius: Radius.card,
             padding: Spacing.md,
-            ...Shadows.sm,
+            ...Shadow.card,
         },
         body: { flex: 1, gap: Spacing.xs },
         titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-        subject: { flex: 1, fontSize: FontSize.md, fontWeight: '700', color: colors.accent },
+        subject: { flex: 1, fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
         // The type ("1. Tekrar") as TUSBuddy outlines it.
         chip: {
             borderWidth: 1,
-            borderColor: colors.badgeNew,
-            borderRadius: BorderRadius.sm,
-            paddingHorizontal: 6,
+            borderColor: colors.info,
+            borderRadius: Radius.control,
+            paddingHorizontal: Spacing.s6,
             paddingVertical: 1,
         },
-        chipText: { fontSize: FontSize.xs + 1, fontWeight: '600', color: colors.badgeNew },
+        chipText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.info },
         metricsRow: { flexDirection: 'row' },
-        metric: { flex: 1, gap: 2 },
-        metricLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.btnGood },
+        metric: { flex: 1, gap: Spacing.xxs },
+        metricLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.success },
         metricLabelBreak: { fontSize: FontSize.sm, fontWeight: '600', color: colors.streak },
         metricValue: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
         metricAside: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textMuted },

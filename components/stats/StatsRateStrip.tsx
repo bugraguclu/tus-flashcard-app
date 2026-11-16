@@ -42,7 +42,7 @@ export default function StatsRateStrip({
     const floor = present.length > 0 ? Math.max(0, Math.floor((Math.min(...present) - 5) / 10) * 10) : 0;
     const plotLeft = CHART_AXIS_WIDTH;
     const plotWidth = Math.max(1, width - CHART_RIGHT_GUTTER - plotLeft);
-    const geometry = barGeometry(rates.length, plotLeft, plotWidth, { minWidth: 1, maxWidth: 24, gap: 2 });
+    const geometry = barGeometry(rates.length, plotLeft, plotWidth, { minWidth: 1, maxWidth: 24, gap: Spacing.xxs });
     const yFor = (rate: number) => BOTTOM - ((rate - floor) / Math.max(1, 100 - floor)) * (BOTTOM - TOP);
 
     let path = '';
@@ -87,7 +87,7 @@ export default function StatsRateStrip({
                                         stroke={colors.borderLight}
                                         strokeWidth={0.75}
                                     />
-                                    <SvgText x={plotLeft - 6} y={yFor(tick) + 3.5} fill={colors.textSecondary} fontSize={10} textAnchor="end">
+                                    <SvgText x={plotLeft - 6} y={yFor(tick) + 3.5} fill={colors.textSecondary} fontSize={FontSize.xs} textAnchor="end">
                                         {formatRate(tick)}
                                     </SvgText>
                                 </G>
@@ -130,6 +130,6 @@ export default function StatsRateStrip({
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         wrap: { marginTop: Spacing.sm, paddingTop: Spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderLight },
-        title: { color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', marginBottom: 2 },
+        title: { color: colors.textSecondary, fontSize: FontSize.xs, fontWeight: '600', marginBottom: Spacing.xxs },
     });
 }

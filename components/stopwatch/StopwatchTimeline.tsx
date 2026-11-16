@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
-import { BorderRadius, FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { dayNumberToYmd } from '../../lib/ankiState';
 import { studySubjectKey } from '../../lib/stopwatch';
@@ -14,7 +14,9 @@ import SleepingPanda from './SleepingPanda';
 import StudySessionCard from './StudySessionCard';
 import { HourglassIcon, MinusIcon, TimelineListIcon } from './StopwatchIcons';
 import { TIMELINE_LINE_X, timelineStyles } from './timelineStyles';
-import { ChevronRightIcon } from '../ui/icons';
+import { Card } from '../ui/Card';
+import { ListRow } from '../ui/Rows';
+import { Shadow, Radius } from '../ui/tokens';
 
 export interface TimelineDay {
     dayNumber: number;
@@ -92,6 +94,8 @@ export default function StopwatchTimeline({
         <TouchableOpacity
             style={styles.examChip}
             onPress={onOpenExamSettings}
+            // The chip stays 29 points tall; the slop completes its 44-point target.
+            hitSlop={{ top: 8, bottom: 8 }}
             accessibilityRole="button"
             accessibilityLabel={examDaysLeft !== null && examDaysLeft >= 0
                 ? l(`Sınava ${examLabel}. Sınav tarihini değiştirin.`, `${examLabel} until the exam. Change the exam date.`)
@@ -120,7 +124,7 @@ export default function StopwatchTimeline({
                         <View style={shared.row}>
                             <View style={shared.gutter}><View style={shared.line} /></View>
                             <View style={[shared.column, styles.todayEmpty]}>
-                                <SleepingPanda width={84} snoreColor={colors.badgeNew} />
+                                <SleepingPanda width={84} snoreColor={colors.info} />
                                 <Text style={styles.todayEmptyText}>{l('Henüz çalışmanız yok', 'No study yet today')}</Text>
                             </View>
                         </View>
@@ -158,13 +162,13 @@ export default function StopwatchTimeline({
                                 <View style={shared.line} />
                                 <View style={[shared.nodeSlot, { pointerEvents: 'none' }]}>
                                     <View style={[shared.node, shared.nodeMissed]}>
-                                        <MinusIcon color={colors.white} size={13} />
+                                        <MinusIcon color={colors.white} size={16} />
                                     </View>
                                 </View>
                             </View>
                             <View style={shared.column}>
                                 <View style={[shared.card, styles.missedCard]}>
-                                    <SleepingPanda width={50} snoreColor={colors.badgeNew} />
+                                    <SleepingPanda width={50} snoreColor={colors.info} />
                                     <Text style={styles.missedText}>{l('Hiç çalışmanız yok!', 'No study this day!')}</Text>
                                 </View>
                             </View>
@@ -173,19 +177,15 @@ export default function StopwatchTimeline({
                 </View>
             ))}
 
-            <TouchableOpacity
-                style={styles.calendarCard}
-                onPress={onOpenCalendar}
-                accessibilityRole="button"
-                accessibilityLabel={l('Çalışma Takviminiz. Tüm çalışmalarınızı takvimde görün.', 'Your Study Calendar. See all your sessions on the calendar.')}
-            >
-                <TimelineListIcon color={colors.streak} size={30} />
-                <View style={styles.calendarCopy}>
-                    <Text style={styles.calendarTitle}>{l('Çalışma Takviminiz', 'Your Study Calendar')}</Text>
-                    <Text style={styles.calendarHint}>{l('Tüm çalışmalarınızı takvimde görün', 'See all your sessions on the calendar')}</Text>
-                </View>
-                <ChevronRightIcon color={colors.textMuted} size={18} />
-            </TouchableOpacity>
+            <Card style={styles.calendarCard}>
+                <ListRow
+                    icon={<TimelineListIcon color={colors.streak} size={24} />}
+                    title={l('Çalışma Takviminiz', 'Your Study Calendar')}
+                    summary={l('Tüm çalışmalarınızı takvimde görün', 'See all your sessions on the calendar')}
+                    onPress={onOpenCalendar}
+                    accessibilityLabel={l('Çalışma Takviminiz. Tüm çalışmalarınızı takvimde görün.', 'Your Study Calendar. See all your sessions on the calendar.')}
+                />
+            </Card>
         </View>
     );
 }
@@ -206,34 +206,18 @@ function createStyles(colors: ColorScheme) {
             alignItems: 'center',
             gap: Spacing.xs,
             backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             borderWidth: StyleSheet.hairlineWidth,
             borderColor: colors.border,
             paddingHorizontal: Spacing.sm,
             paddingVertical: 5,
-            ...Shadows.sm,
+            ...Shadow.card,
         },
         examText: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
         todayEmpty: { alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.sm },
         todayEmptyText: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
         missedCard: { alignItems: 'center' },
         missedText: { flex: 1, fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
-        calendarCard: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: Spacing.md,
-            marginHorizontal: Spacing.lg,
-            marginTop: Spacing.xxl,
-            backgroundColor: colors.bgCard,
-            borderRadius: BorderRadius.md,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            paddingHorizontal: Spacing.lg,
-            paddingVertical: Spacing.md,
-            ...Shadows.sm,
-        },
-        calendarCopy: { flex: 1, gap: 2 },
-        calendarTitle: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
-        calendarHint: { fontSize: FontSize.sm, color: colors.textSecondary },
+        calendarCard: { marginHorizontal: Spacing.lg, marginTop: Spacing.xxl },
     });
 }

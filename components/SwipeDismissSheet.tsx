@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     side: { width: 76, justifyContent: 'center' },
     sideStart: { alignItems: 'flex-start' },
     sideEnd: { alignItems: 'flex-end' },
-    headerCopy: { flex: 1, minWidth: 0, alignItems: 'center', gap: 2 },
+    headerCopy: { flex: 1, minWidth: 0, alignItems: 'center', gap: Spacing.xxs },
     title: { ...Type.sectionTitle, lineHeight: 22, textAlign: 'center' },
     subtitle: { ...Type.caption, textAlign: 'center' },
     // A ScrollView's own flex, moved to the area around it so the sheet lays out as before.

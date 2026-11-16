@@ -23,7 +23,7 @@ function DoneButton({ onPress, colors, styles, l }: KeyboardDoneProps) {
             // The pill is drawn short to keep the toolbar compact; the slop makes it 44 points tall.
             hitSlop={{ top: 9, bottom: 9, left: 8, right: 8 }}
         >
-            <KeyboardDismissIcon color={colors.accent} size={17} />
+            <KeyboardDismissIcon color={colors.accent} size={20} />
             <Text style={styles.keyboardDismissText}>{l('Kapat', 'Done')}</Text>
         </TouchableOpacity>
     );

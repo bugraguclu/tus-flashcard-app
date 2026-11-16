@@ -568,7 +568,7 @@ function createStyles(colors: ColorScheme) {
             color: colors.textPrimary,
             fontVariant: ['tabular-nums'],
         },
-        statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 20 },
+        statusRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s6, minHeight: 20 },
         liveDot: { width: 8, height: 8, borderRadius: Radius.pill, backgroundColor: record },
         status: { flexShrink: 1, fontSize: FontSize.sm, color: colors.textMuted, textAlign: 'center' },
         meter: {
@@ -607,7 +607,7 @@ function createStyles(colors: ColorScheme) {
         playButton: { borderWidth: 0, backgroundColor: colors.accent },
         recordDot: { width: 56, height: 56, borderRadius: Radius.pill, backgroundColor: record },
         stopSquare: { width: 28, height: 28, borderRadius: Radius.control, backgroundColor: record },
-        secondaryButton: { alignItems: 'center', gap: 6 },
+        secondaryButton: { alignItems: 'center', gap: Spacing.s6 },
         secondaryCircle: {
             width: 48,
             height: 48,

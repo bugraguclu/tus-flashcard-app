@@ -164,6 +164,8 @@ export default function WeekStreakStrip({
                                 <TouchableOpacity
                                     onPress={() => onSelectDay(day.dayNumber)}
                                     activeOpacity={0.7}
+                                    // The box stays 32 points; the slop completes its 44-point height.
+                                    hitSlop={{ top: 6, bottom: 6 }}
                                     accessibilityRole="button"
                                     accessibilityLabel={label}
                                     accessibilityHint={l('Bu günü Çalışma Takvimi\'nde açar', 'Opens this day in the Study Calendar')}

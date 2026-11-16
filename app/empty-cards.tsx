@@ -204,7 +204,7 @@ export default function EmptyCardsScreen() {
                         </Card>
                         <Button
                             variant="destructive"
-                            icon={<TrashIcon color={colors.onAccent} size={18} />}
+                            icon={<TrashIcon color={colors.onAccent} size={20} />}
                             label={`${l('Tümünü sil', 'Delete All')} (${deletable.length})`}
                             onPress={deleteAll}
                             busy={busy}

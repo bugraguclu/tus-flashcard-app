@@ -50,7 +50,7 @@ import ScreenHeader from '../components/ScreenHeader';
 import { Button, HelpButton, IconButton } from '../components/ui/Button';
 import { SearchField } from '../components/ui/Fields';
 import { EmptyState, LoadingState } from '../components/ui/Feedback';
-import { ChevronDownIcon, MoreVerticalIcon, PlusIcon } from '../components/ui/icons';
+import { ChevronDownIcon, PlusIcon, MoreIcon } from '../components/ui/icons';
 import { alert } from '../lib/confirm';
 import { isCatalogCard, isCatalogDeck, isCatalogNote } from '../lib/catalogProtection';
 import { userFacingErrorMessage } from '../lib/userFacingError';
@@ -887,7 +887,7 @@ export default function BrowserScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScreenHeader
-                backAccessibilityLabel={l('Geri', 'Back')}
+                backAccessibilityLabel={l('Geri dön', 'Go back')}
                 onBack={handleBack}
                 title={t('sidebar.myCards')}
             />
@@ -932,7 +932,7 @@ export default function BrowserScreen() {
                     hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
                     accessibilityLabel={l('Diğer seçenekler', 'More options')}
                 >
-                    <MoreVerticalIcon color={colors.textSecondary} />
+                    <MoreIcon color={colors.textSecondary} />
                 </IconButton>
             </View>
 

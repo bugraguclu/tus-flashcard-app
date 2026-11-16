@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { AccessibilityInfo, Animated, Platform, StyleSheet } from 'react-native';
 import { Text } from './AppText';
 import { CheckIcon } from './ui/icons';
-import { BorderRadius, FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, dropShadow, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Radius } from './ui/tokens';
 
 export interface TransientNoticeMessage {
     /** A new id shows the notice again, even with the same text. */
@@ -46,7 +47,7 @@ export default function TransientNotice({ message }: { message: TransientNoticeM
             accessibilityLiveRegion="polite"
             accessibilityRole={Platform.OS === 'web' ? ('status' as never) : undefined}
         >
-            <CheckIcon color={colors.accent} size={18} />
+            <CheckIcon color={colors.accent} size={20} />
             <Text style={styles.text} numberOfLines={2}>{message.text}</Text>
         </Animated.View>
     );
@@ -64,7 +65,7 @@ function createStyles(colors: ColorScheme) {
             gap: Spacing.sm,
             paddingVertical: Spacing.sm,
             paddingHorizontal: Spacing.lg,
-            borderRadius: BorderRadius.full,
+            borderRadius: Radius.pill,
             backgroundColor: colors.textPrimary,
             ...dropShadow({ y: 4, blur: 14, opacity: 0.18, elevation: 6 }),
         },

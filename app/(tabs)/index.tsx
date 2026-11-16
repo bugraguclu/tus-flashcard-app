@@ -23,7 +23,7 @@ import * as Speech from 'expo-speech';
 import { useKeepAwake } from 'expo-keep-awake';
 import { Redirect, useFocusEffect, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Spacing, FontSize, Shadows, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Spacing, FontSize, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { findSubject, resolveSubjectDeckId } from '../../lib/subjects';
 import { rememberSetDueDateInput } from '../../lib/setDueDateDefaults';
 import { schedulerForSettings, withClassicReviewContext, todayLocalYMD } from '../../lib/scheduler';
@@ -76,9 +76,10 @@ import ReviewerStatusItems from '../../components/reviewer/ReviewerStatusItems';
 import AnswerFeedbackBadge from '../../components/reviewer/AnswerFeedbackBadge';
 import PressableScale from '../../components/PressableScale';
 import CardContextCrumb from '../../components/reviewer/CardContextCrumb';
-import { IconButton } from '../../components/ui/Button';
-import { BackIcon, ChevronDownIcon, ChevronRightIcon, CloseIcon, MoreVerticalIcon, UndoIcon } from '../../components/ui/icons';
-import { HIT_TARGET, Radius } from '../../components/ui/tokens';
+import { Button, IconButton } from '../../components/ui/Button';
+import { BackIcon, ChevronDownIcon, ChevronRightIcon, CloseIcon, UndoIcon, MoreIcon } from '../../components/ui/icons';
+import { EmptyState } from '../../components/ui/Feedback';
+import { Radius, Shadow } from '../../components/ui/tokens';
 import { canReplayCardAudio, reviewerPlaybackScope, type ReviewerPlaybackScope } from '../../lib/reviewerAudio';
 import { AvSequencer, avPlaybackOrder } from '../../lib/reviewerAvSequence';
 import { useReviewerAutoplay } from '../../lib/reviewerAutoplay';
@@ -2772,23 +2773,24 @@ export default function StudyScreen() {
     // installs over this screen and opens on the pack (CatalogUnlockSheet's onUnlocked).
     // Two short centred lines: the whole sentence wrapped on a phone and left "ekleyin" alone.
     const emptyDeckCatalogOffer = isCatalogPurchaseSimulationEnabled() && catalogTier !== 'full' ? (
-        <TouchableOpacity
-            style={[styles.secondaryActionBtn, styles.catalogOfferBtn]}
-            onPress={() => setCatalogUnlockVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel={l(
-                `Hazır ${formatCount(BKA_MANIFEST.totals.cards, 'tr')} TUS kartını ücretsiz ekleyin`,
-                `Add ${formatCount(BKA_MANIFEST.totals.cards, 'en')} ready-made TUS cards for free`,
-            )}
-        >
-            <Text style={styles.secondaryActionText}>{l('Hazır TUS kartlarını ekleyin', 'Add ready-made TUS cards')}</Text>
+        <View style={styles.catalogOffer}>
+            <Button
+                variant="secondary"
+                style={styles.emptyActionWidth}
+                label={l('Hazır TUS kartlarını ekleyin', 'Add ready-made TUS cards')}
+                onPress={() => setCatalogUnlockVisible(true)}
+                accessibilityLabel={l(
+                    `Hazır ${formatCount(BKA_MANIFEST.totals.cards, 'tr')} TUS kartını ücretsiz ekleyin`,
+                    `Add ${formatCount(BKA_MANIFEST.totals.cards, 'en')} ready-made TUS cards for free`,
+                )}
+            />
             <Text style={styles.catalogOfferHint}>
                 {l(
                     `${formatCount(BKA_MANIFEST.totals.cards, 'tr')} kart · ücretsiz`,
                     `${formatCount(BKA_MANIFEST.totals.cards, 'en')} cards · free`,
                 )}
             </Text>
-        </TouchableOpacity>
+        </View>
     ) : null;
     const trialPurchaseAction = isTrialCatalogScope ? (
         <TouchableOpacity
@@ -2816,41 +2818,32 @@ export default function StudyScreen() {
     const finishedDeckActions = emptyStateDeck ? (
         <>
             {emptyStateDeck.isFiltered ? (
-                <TouchableOpacity
+                <Button
+                    variant="secondary"
                     style={styles.secondaryActionBtn}
+                    label={l('Yeniden oluştur', 'Rebuild')}
                     onPress={handleRebuildFilteredDeck}
-                    accessibilityRole="button"
                     accessibilityLabel={l('Filtreli desteyi yeniden oluştur', 'Rebuild the filtered deck')}
-                >
-                    <Text style={styles.secondaryActionText}>{l('Yeniden oluştur', 'Rebuild')}</Text>
-                </TouchableOpacity>
+                />
             ) : (
-                <TouchableOpacity
+                <Button
+                    variant="secondary"
                     style={styles.secondaryActionBtn}
+                    label={l('Özel çalışma', 'Custom Study')}
                     onPress={() => setCustomStudyOpen(true)}
-                    accessibilityRole="button"
                     accessibilityLabel={l('Özel çalışma oturumu oluştur', 'Create a custom study session')}
-                >
-                    <Text style={styles.secondaryActionText}>{l('Özel çalışma', 'Custom Study')}</Text>
-                </TouchableOpacity>
+                />
             )}
             {buriedInDeck > 0 ? (
-                <TouchableOpacity
+                <Button
+                    variant="secondary"
                     style={styles.secondaryActionBtn}
-                    onPress={() => { void handleUnburyDeck(); }}
-                    accessibilityRole="button"
-                    accessibilityLabel={l(
+                    label={l(
                         `${buriedInDeck} gömülü kartı şimdi aç`,
                         `Unbury ${buriedInDeck} ${buriedInDeck === 1 ? 'card' : 'cards'} now`,
                     )}
-                >
-                    <Text style={styles.secondaryActionText}>
-                        {l(
-                            `${buriedInDeck} gömülü kartı şimdi aç`,
-                            `Unbury ${buriedInDeck} ${buriedInDeck === 1 ? 'card' : 'cards'} now`,
-                        )}
-                    </Text>
-                </TouchableOpacity>
+                    onPress={() => { void handleUnburyDeck(); }}
+                />
             ) : null}
         </>
     ) : null;
@@ -2945,10 +2938,10 @@ export default function StudyScreen() {
                 />
             </IconButton>
             <IconButton onPress={handleDeckOptions} accessibilityLabel={l('Deste ayarları', 'Deck settings')}>
-                <GearGlyph color={colors.textSecondary} size={21} />
+                <GearGlyph color={colors.textSecondary} size={22} />
             </IconButton>
             <IconButton onPress={openMoreMenu} accessibilityLabel={l('Kart ve not seçenekleri', 'Card and note options')}>
-                <MoreVerticalIcon color={colors.textSecondary} />
+                <MoreIcon color={colors.textSecondary} />
             </IconButton>
         </View>
     );
@@ -2965,7 +2958,7 @@ export default function StudyScreen() {
             <IconButton
                 onPress={handleReturnToDecks}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                accessibilityLabel={l('Destelere dön', 'Back to decks')}
             >
                 <BackIcon color={colors.textSecondary} size={22} />
             </IconButton>
@@ -3089,7 +3082,7 @@ export default function StudyScreen() {
             <IconButton
                 onPress={handleReturnToDecks}
                 hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
+                accessibilityLabel={l('Destelere dön', 'Back to decks')}
             >
                 <BackIcon color={colors.textSecondary} size={22} />
             </IconButton>
@@ -3112,7 +3105,7 @@ export default function StudyScreen() {
                 <ChevronDownIcon color={colors.textMuted} size={16} />
                 {streak.current > 0 ? (
                     <View style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}>
-                        <FlameGlyph size={12} />
+                        <FlameGlyph size={16} />
                         <Text style={styles.streakChipText}>{streak.current}</Text>
                     </View>
                 ) : null}
@@ -3232,7 +3225,7 @@ export default function StudyScreen() {
                                         accessible
                                         accessibilityLabel={reviewerStreakLabel(l, streak.current)}
                                     >
-                                        <FlameGlyph size={12} />
+                                        <FlameGlyph size={16} />
                                         <Text style={styles.streakChipText}>{streak.current}</Text>
                                     </View>
                                 ) : null}
@@ -3336,89 +3329,82 @@ export default function StudyScreen() {
                                 )}
                                 {l(' İsterseniz beklemeden devam edebilirsiniz.', ' You can also continue without waiting.')}
                             </Text>
-                            <TouchableOpacity
+                            <Button
                                 style={styles.primaryActionBtn}
+                                label={l('Beklemeden çalış', 'Study Now')}
                                 onPress={handleStudyAhead}
-                                accessibilityRole="button"
                                 accessibilityLabel={l('Bekleme süresini atla ve hemen çalış', 'Skip the wait and study now')}
-                                {...webTitle(l('Zamanlayıcıyı beklemeden öğrenme kartlarını şimdi çalış', 'Study queued learning cards now without waiting for the timer'))}
-                            >
-                                <Text style={styles.primaryActionText}>{l('Beklemeden çalış', 'Study Now')}</Text>
-                            </TouchableOpacity>
+                                accessibilityHint={l('Zamanlayıcıyı beklemeden öğrenme kartlarını şimdi çalışır', 'Studies queued learning cards now without waiting for the timer')}
+                            />
                             {/* Anki's congrats page keeps these while a learning card is waiting too. */}
                             {finishedDeckActions}
-                            <TouchableOpacity
+                            <Button
+                                variant="secondary"
                                 style={styles.secondaryActionBtn}
+                                icon={<GearGlyph color={colors.textSecondary} size={16} />}
+                                label={l('Bekleme ayarları', 'Learn-ahead settings')}
                                 onPress={() => router.push('/settings')}
-                                accessibilityRole="button"
                                 accessibilityLabel={l('Ayarları aç', 'Open settings')}
-                            >
-                                <GearGlyph color={colors.textSecondary} size={15} />
-                                <Text style={styles.secondaryActionText}>{l('Bekleme ayarları', 'Learn-ahead settings')}</Text>
-                            </TouchableOpacity>
+                            />
                             {trialPurchaseAction}
                             <Text style={styles.emptySub}>
                                 {l('Bugün tüm destelerde', 'You gave')} <Text style={{ fontWeight: '600' }}>{sessionStats.reviewed}</Text> {l('cevap verdiniz.', sessionStats.reviewed === 1 ? 'answer today across all decks.' : 'answers today across all decks.')}
                             </Text>
                         </View>
                     ) : emptyStateDeck?.isFiltered && emptyStateDeck.filteredDeckEmpty ? (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyTitle}>{l('Filtreli deste boş', 'This Filtered Deck Is Empty')}</Text>
-                            <Text style={styles.emptyDesc}>
-                                {l(
-                                    'Kartlar ait oldukları destelere döndü. Deste, kayıtlı filtre kurallarıyla yeniden oluşturulabilir.',
-                                    'Its cards are back in their home decks. Rebuild it to gather cards again with its saved filter rules.',
-                                )}
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.primaryActionBtn}
-                                onPress={handleRebuildFilteredDeck}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Filtreli desteyi yeniden oluştur', 'Rebuild the filtered deck')}
-                            >
-                                <Text style={styles.primaryActionText}>{l('Yeniden oluştur', 'Rebuild')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.secondaryActionBtn}
-                                onPress={handleReturnToDecks}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
-                                {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
-                            >
-                                <Text style={styles.secondaryActionText}>{l('Destelere dön', 'Back to Decks')}</Text>
-                            </TouchableOpacity>
-                        </View>
+                        <EmptyState
+                            title={l('Filtreli deste boş', 'This Filtered Deck Is Empty')}
+                            body={l(
+                                'Kartlar ait oldukları destelere döndü. Deste, kayıtlı filtre kurallarıyla yeniden oluşturulabilir.',
+                                'Its cards are back in their home decks. Rebuild it to gather cards again with its saved filter rules.',
+                            )}
+                            action={(
+                                <View style={styles.emptyActions}>
+                                    <Button
+                                        style={styles.emptyActionWidth}
+                                        label={l('Yeniden oluştur', 'Rebuild')}
+                                        onPress={handleRebuildFilteredDeck}
+                                        accessibilityLabel={l('Filtreli desteyi yeniden oluştur', 'Rebuild the filtered deck')}
+                                    />
+                                    <Button
+                                        variant="secondary"
+                                        style={styles.emptyActionWidth}
+                                        label={l('Destelere dön', 'Back to Decks')}
+                                        onPress={handleReturnToDecks}
+                                        accessibilityLabel={l('Destelere dön', 'Back to decks')}
+                                    />
+                                </View>
+                            )}
+                        />
                     ) : totalDeckCards === 0 && !emptyStateDeck?.isFiltered ? (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyTitle}>{l('Bu Deste Henüz Boş', 'This Deck is Empty')}</Text>
-                            <Text style={styles.emptyDesc}>
-                                {selectedDeckName
-                                    ? l(
-                                        `“${reviewerDeckTitle}” destesinde henüz kart bulunmuyor. Yeni kart ekleyerek çalışmaya başlayabilirsiniz.`,
-                                        `There are no cards in “${reviewerDeckTitle}” yet. Add cards to start studying.`,
-                                    )
-                                    : l('Bu kapsamda henüz kart bulunmuyor.', 'There are no cards in this scope yet.')}
-                            </Text>
-                            <TouchableOpacity
-                                style={styles.primaryActionBtn}
-                                onPress={handleAddNote}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Yeni kart ekle', 'Add new card')}
-                            >
-                                <Text style={styles.primaryActionText}>{l('Kart Ekle', 'Add Card')}</Text>
-                            </TouchableOpacity>
-                            {emptyDeckCatalogOffer}
-                            <TouchableOpacity
-                                style={styles.secondaryActionBtn}
-                                onPress={handleReturnToDecks}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
-                                {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
-                            >
-                                <Text style={styles.secondaryActionText}>{l('Destelere dön', 'Back to Decks')}</Text>
-                            </TouchableOpacity>
-                            {trialPurchaseAction}
-                        </View>
+                        <EmptyState
+                            title={l('Bu Deste Henüz Boş', 'This Deck is Empty')}
+                            body={selectedDeckName
+                                ? l(
+                                    `“${reviewerDeckTitle}” destesinde henüz kart bulunmuyor. Yeni kart ekleyerek çalışmaya başlayabilirsiniz.`,
+                                    `There are no cards in “${reviewerDeckTitle}” yet. Add cards to start studying.`,
+                                )
+                                : l('Bu kapsamda henüz kart bulunmuyor.', 'There are no cards in this scope yet.')}
+                            action={(
+                                <View style={styles.emptyActions}>
+                                    <Button
+                                        style={styles.emptyActionWidth}
+                                        label={l('Kart Ekle', 'Add Card')}
+                                        onPress={handleAddNote}
+                                        accessibilityLabel={l('Yeni kart ekle', 'Add new card')}
+                                    />
+                                    {emptyDeckCatalogOffer}
+                                    <Button
+                                        variant="secondary"
+                                        style={styles.emptyActionWidth}
+                                        label={l('Destelere dön', 'Back to Decks')}
+                                        onPress={handleReturnToDecks}
+                                        accessibilityLabel={l('Destelere dön', 'Back to decks')}
+                                    />
+                                    {trialPurchaseAction}
+                                </View>
+                            )}
+                        />
                     ) : (
                         <View style={styles.emptyState}>
                             <View style={styles.emptyIcon}>
@@ -3462,26 +3448,23 @@ export default function StudyScreen() {
                                 </Text>
                             ) : null}
                             {heldBackReviewCount > 0 && (
-                                <TouchableOpacity
+                                <Button
+                                    variant="secondary"
                                     style={styles.secondaryActionBtn}
+                                    icon={<GearGlyph color={colors.textSecondary} size={16} />}
+                                    label={l('Tekrar limitini artır', 'Increase Review Limit')}
                                     onPress={() => router.push(`/deck-options?deckId=${targetDeckId}&focus=reviewLimit&scope=deck` as any)}
-                                    accessibilityRole="button"
                                     accessibilityLabel={l('Deste seçeneklerinden tekrar limitini artır', 'Increase review limit in deck options')}
-                                >
-                                    <GearGlyph color={colors.textSecondary} size={15} />
-                                    <Text style={styles.secondaryActionText}>{l('Tekrar limitini artır', 'Increase Review Limit')}</Text>
-                                </TouchableOpacity>
+                                />
                             )}
                             {finishedDeckActions}
-                            <TouchableOpacity
+                            <Button
+                                variant="secondary"
                                 style={styles.secondaryActionBtn}
+                                label={l('Destelere dön', 'Back to Decks')}
                                 onPress={handleReturnToDecks}
-                                accessibilityRole="button"
-                                accessibilityLabel={l('Deste listesine dön', 'Back to deck list')}
-                                {...webTitle(l('Deste listesine dön', 'Back to deck list'))}
-                            >
-                                <Text style={styles.secondaryActionText}>{l('Destelere dön', 'Back to Decks')}</Text>
-                            </TouchableOpacity>
+                                accessibilityLabel={l('Destelere dön', 'Back to decks')}
+                            />
                             <Text style={styles.emptySub}>
                                 {l('Bugün tüm destelerde', 'You gave')} <Text style={{ fontWeight: '600' }}>{sessionStats.reviewed}</Text> {l('cevap verdiniz.', sessionStats.reviewed === 1 ? 'answer today across all decks.' : 'answers today across all decks.')}
                             </Text>
@@ -3658,7 +3641,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderRadius: Radius.pill,
         alignItems: 'center',
         justifyContent: 'center',
-        ...Shadows.md,
+        ...Shadow.floating,
     },
     answerFeedbackLeft: { left: Spacing.lg },
     answerFeedbackAgain: { backgroundColor: colors.btnAgain },
@@ -3701,7 +3684,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     streakChipText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.streak },
 
     contentArea: { flex: 1, position: 'relative', overflow: 'hidden' },
-    cardContext: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
+    cardContext: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: Spacing.s6 },
     cardStage: { flex: 1, minHeight: 0 },
     cardScroll: { flex: 1, minHeight: 0 },
     cardArea: {
@@ -3730,16 +3713,16 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     previewBadge: {
         flexShrink: 0,
         paddingHorizontal: 8,
-        paddingVertical: 2,
+        paddingVertical: Spacing.xxs,
         borderRadius: Radius.pill,
         backgroundColor: colors.infoBg,
     },
-    previewBadgeText: { fontSize: 10, fontWeight: '600', color: colors.info, letterSpacing: 0.5 },
+    previewBadgeText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.info, letterSpacing: 0.5 },
     deckDescription: {
         fontSize: FontSize.sm,
         color: colors.textMuted,
         paddingHorizontal: isCompact ? Spacing.md : Spacing.xxl,
-        paddingVertical: 6,
+        paddingVertical: Spacing.s6,
         backgroundColor: colors.bgSecondary,
         borderBottomWidth: 1,
         borderBottomColor: colors.borderLight,
@@ -3774,14 +3757,14 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-    questionText: { fontSize: 22, fontWeight: '500', lineHeight: 32, color: colors.textPrimary },
+    questionText: { fontSize: FontSize.xxl, fontWeight: '500', lineHeight: 32, color: colors.textPrimary },
 
     typeAnswerInput: {
         width: '100%',
         minHeight: 50,
         borderWidth: 1.5,
         borderColor: colors.border,
-        borderRadius: Radius.card,
+        borderRadius: Radius.button,
         backgroundColor: colors.bgInput,
         paddingHorizontal: Spacing.lg,
         paddingVertical: Spacing.md,
@@ -3800,7 +3783,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         backgroundColor: colors.bgCard,
         borderWidth: 1,
         borderColor: colors.border,
-        ...Shadows.md,
+        ...Shadow.floating,
     },
     toolsOverlayLeft: { left: Spacing.md },
     toolsOverlayRight: { right: Spacing.md },
@@ -3821,10 +3804,10 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.xl,
         backgroundColor: colors.accent,
-        borderRadius: Radius.card,
+        borderRadius: Radius.button,
         alignItems: 'center',
         justifyContent: 'center',
-        ...Shadows.sm,
+        ...Shadow.card,
     },
     showAnswerText: { fontSize: 17, fontWeight: '600', color: colors.onAccent, letterSpacing: 0.2 },
 
@@ -3843,7 +3826,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
+        gap: Spacing.s6,
     },
     queueFooterSeparator: { fontSize: FontSize.sm, color: colors.textMuted },
     reviewerAnswerRow: {
@@ -3859,13 +3842,13 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     reviewerToolsInlineBtn: {
         width: 54,
         height: 54,
-        borderRadius: Radius.card,
+        borderRadius: Radius.button,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.bgSecondary,
         borderWidth: 1,
         borderColor: colors.border,
-        ...Shadows.sm,
+        ...Shadow.card,
     },
     // Not built on answerBtn: its `flex: 1` overridden by `flex: 0` becomes CSS `flex: 0` (a 0%
     // basis) on web, which squeezed the button to its padding. The row stretches it to the grades' height.
@@ -3876,12 +3859,12 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         justifyContent: 'center',
         paddingVertical: Spacing.sm,
         paddingHorizontal: 4,
-        borderRadius: Radius.card,
+        borderRadius: Radius.button,
         borderWidth: 1,
         gap: 1,
         backgroundColor: colors.bgSecondary,
         borderColor: colors.border,
-        ...Shadows.sm,
+        ...Shadow.card,
     },
     reviewerToolsGradeLabel: {
         fontSize: FontSize.xs,
@@ -3898,13 +3881,13 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         minHeight: 56,
         paddingVertical: Spacing.sm,
         paddingHorizontal: 4,
-        borderRadius: Radius.card,
+        borderRadius: Radius.button,
         borderWidth: 1,
         gap: 1,
     },
     answerBtnTwoRow: { flexBasis: '47%', flexGrow: 1 },
     btnTime: { opacity: 0.8, fontSize: FontSize.sm, fontWeight: '600', fontVariant: ['tabular-nums'] as any },
-    btnLabel: { fontSize: isCompact ? 15 : 16, fontWeight: '600' },
+    btnLabel: { fontSize: isCompact ? FontSize.md : FontSize.lg, fontWeight: '600' },
 
     queueCounts: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: isCompact ? 7 : 9 },
     queueCount: { fontSize: FontSize.md, fontWeight: '600', fontVariant: ['tabular-nums'] as any },
@@ -3928,7 +3911,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         fontVariant: ['tabular-nums'] as any,
     },
     emptyTitle: { fontSize: FontSize.xxl, fontWeight: '600', color: colors.textPrimary, marginBottom: Spacing.sm, textAlign: 'center' },
-    emptyDesc: { fontSize: 15, lineHeight: 22, color: colors.textSecondary, textAlign: 'center', maxWidth: 520 },
+    emptyDesc: { fontSize: FontSize.md, lineHeight: 22, color: colors.textSecondary, textAlign: 'center', maxWidth: 520 },
     emptyInfo: {
         fontSize: FontSize.md,
         lineHeight: 20,
@@ -3944,45 +3927,24 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         paddingHorizontal: Spacing.lg,
         overflow: 'hidden',
     },
-    primaryActionBtn: {
-        minWidth: 220,
-        alignItems: 'center',
-        marginTop: Spacing.xl,
-        backgroundColor: colors.accent,
-        paddingVertical: Spacing.md,
-        paddingHorizontal: Spacing.xxl,
-        borderRadius: Radius.card,
-    },
-    primaryActionText: { fontSize: 16, fontWeight: '600', color: colors.onAccent },
-    secondaryActionBtn: {
-        minWidth: 220,
-        minHeight: HIT_TARGET,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: Spacing.sm,
-        marginTop: Spacing.sm,
-        backgroundColor: colors.bgCard,
-        borderWidth: 1,
-        borderColor: colors.border,
-        paddingVertical: Spacing.md,
-        paddingHorizontal: Spacing.xl,
-        borderRadius: Radius.card,
-    },
-    secondaryActionText: { fontSize: 15, fontWeight: '500', color: colors.textPrimary },
+    // Layout only: the buttons are the kit's.
+    primaryActionBtn: { minWidth: 220, marginTop: Spacing.xl },
+    secondaryActionBtn: { minWidth: 220, marginTop: Spacing.sm },
+    emptyActions: { alignItems: 'center', gap: Spacing.sm },
+    emptyActionWidth: { minWidth: 220 },
     catalogPurchaseBtn: {
         width: '100%',
         maxWidth: 420,
         marginTop: Spacing.lg,
         paddingVertical: Spacing.md,
         paddingHorizontal: Spacing.lg,
-        borderRadius: Radius.control,
+        borderRadius: Radius.button,
         backgroundColor: colors.accent,
         alignItems: 'center',
     },
     catalogPurchaseBtnText: { color: colors.onAccent, fontSize: FontSize.md, fontWeight: '600' },
     catalogPurchaseBtnHint: { color: colors.onAccent, opacity: 0.82, fontSize: FontSize.xs, marginTop: 3 },
-    catalogOfferBtn: { flexDirection: 'column', gap: 1 },
+    catalogOffer: { alignItems: 'center', gap: Spacing.xs },
     catalogOfferHint: { fontSize: FontSize.sm, color: colors.textMuted, textAlign: 'center' },
     emptySub: { fontSize: FontSize.md, color: colors.textSecondary, marginTop: Spacing.lg },
     });

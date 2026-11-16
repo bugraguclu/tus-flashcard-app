@@ -1,5 +1,6 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Shadows, useThemeColors } from '../../constants/theme';
+import { useThemeColors } from '../../constants/theme';
+import { Shadow } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import { calculatePhotoTextBounds, photoImageBounds, type PhotoImage, type PhotoText } from '../../lib/photoEditor';
 import { ClearGlyph } from './drawingGlyphs';
@@ -43,7 +44,7 @@ export function SelectionFrame({ object, canvas, onDelete }: SelectionFrameProps
                 accessibilityRole="button"
                 accessibilityLabel={object.type === 'text' ? l('Metni sil', 'Delete text') : l('Görseli sil', 'Delete picture')}
             >
-                <ClearGlyph color={colors.btnAgain} size={16} />
+                <ClearGlyph color={colors.danger} size={16} />
             </TouchableOpacity>
         </>
     );
@@ -59,6 +60,6 @@ const styles = StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
         alignItems: 'center',
         justifyContent: 'center',
-        ...Shadows.md,
+        ...Shadow.floating,
     },
 });

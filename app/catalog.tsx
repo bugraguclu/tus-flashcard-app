@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
     ActivityIndicator,
-    Pressable,
     ScrollView,
     StyleSheet,
     View,
@@ -10,7 +9,7 @@ import { Text } from '../components/AppText';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { BorderRadius, FontSize, Shadows, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
+import { FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useCatalogStatus } from '../contexts/AppContext';
 import { BKA_PRODUCT, isCatalogPurchaseSimulationEnabled } from '../lib/catalogPurchases';
 import { catalogPurchaseOutcome } from '../lib/catalogReconciliation';
@@ -20,7 +19,6 @@ import { alert } from '../lib/confirm';
 import { readOnlyTabMessage } from '../lib/db';
 import { goBackOr, returnToDeckList } from '../lib/backNavigation';
 import { useI18n } from '../hooks/useI18n';
-import DisclosureChevron from '../components/DisclosureChevron';
 import LockGlyph from '../components/LockGlyph';
 import ScreenHeader from '../components/ScreenHeader';
 import { Button } from '../components/ui/Button';
@@ -29,7 +27,8 @@ import { Badge } from '../components/ui/Choice';
 import { AppDialog } from '../components/ui/Dialog';
 import { Notice } from '../components/ui/Feedback';
 import { CheckIcon } from '../components/ui/icons';
-import { Type } from '../components/ui/tokens';
+import { ListRow } from '../components/ui/Rows';
+import { Radius, Shadow, Type } from '../components/ui/tokens';
 import { BKA_CATALOG_DEFAULT_ROOT_DECK, getBkaCatalogRootDeckName } from '../lib/bkaCatalog';
 import { getDeckByName } from '../lib/deckManager';
 import { studySubjectInitial } from '../lib/studyCalendar';
@@ -314,39 +313,31 @@ export default function CatalogScreen() {
                         const subdeckCount = course.topics.filter((topic) => topic.deck).length;
                         return (
                             <View key={course.id}>
-                                <Pressable
-                                    style={({ pressed }) => [styles.courseRow, pressed && styles.pressed]}
+                                <ListRow
+                                    title={course.name}
+                                    summary={subdeckCount > 0
+                                        ? l(
+                                            `${number(course.cards)} kart · ${subdeckCount} alt deste`,
+                                            `${number(course.cards)} cards · ${subdeckCount} subdecks`,
+                                        )
+                                        : l(`${number(course.cards)} kart`, `${number(course.cards)} cards`)}
+                                    icon={(
+                                        <View style={styles.courseIconTile}>
+                                            <Text style={styles.courseInitial}>{studySubjectInitial(course.name)}</Text>
+                                        </View>
+                                    )}
+                                    accessory={owned ? undefined : (
+                                        <View style={styles.courseLock}>
+                                            <LockGlyph color={colors.textMuted} size={16} />
+                                        </View>
+                                    )}
+                                    expanded={isOpen}
                                     onPress={() => setExpanded(isOpen ? null : course.id)}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ expanded: isOpen }}
                                     accessibilityLabel={l(
                                         `${course.name}, ${course.cards} kart, ${subdeckCount} alt deste`,
                                         `${course.name}, ${course.cards} cards, ${subdeckCount} subdecks`,
                                     )}
-                                >
-                                    <View style={styles.courseChevron}>
-                                        <DisclosureChevron expanded={isOpen} color={colors.textMuted} size={16} />
-                                    </View>
-                                    <View style={styles.courseIconTile}>
-                                        <Text style={styles.courseInitial}>{studySubjectInitial(course.name)}</Text>
-                                    </View>
-                                    <View style={styles.courseCopy}>
-                                        <Text style={styles.courseName} numberOfLines={1}>{course.name}</Text>
-                                        <Text style={styles.courseMeta}>
-                                            {subdeckCount > 0
-                                                ? l(
-                                                    `${number(course.cards)} kart · ${subdeckCount} alt deste`,
-                                                    `${number(course.cards)} cards · ${subdeckCount} subdecks`,
-                                                )
-                                                : l(`${number(course.cards)} kart`, `${number(course.cards)} cards`)}
-                                        </Text>
-                                    </View>
-                                    {!owned && (
-                                        <View style={styles.courseLock}>
-                                            <LockGlyph color={colors.textMuted} size={13} />
-                                        </View>
-                                    )}
-                                </Pressable>
+                                />
 
                                 {isOpen && (
                                     <View style={styles.topicWell}>
@@ -395,7 +386,7 @@ export default function CatalogScreen() {
                     ].map((item) => (
                         <View key={item.title} style={styles.infoRow}>
                             <View style={styles.infoCheck}>
-                                <CheckIcon color={colors.accent} size={18} />
+                                <CheckIcon color={colors.accent} size={20} />
                             </View>
                             <View style={styles.infoCopy}>
                                 <Text style={[Type.bodyStrong, { color: colors.textPrimary }]}>{item.title}</Text>
@@ -488,14 +479,13 @@ export default function CatalogScreen() {
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         screen: { flex: 1, backgroundColor: colors.bgPrimary },
-        pressed: { opacity: 0.72 },
 
         // The safe area above the header takes the header's colour.
         headerWrap: { backgroundColor: colors.bgCard },
         statusBadge: { paddingRight: Spacing.sm },
 
         scroll: { flex: 1 },
-        content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: Spacing.md },
+        content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: Spacing.lg },
 
         hero: {
             borderRadius: 24,
@@ -503,18 +493,18 @@ function createStyles(colors: ColorScheme) {
             overflow: 'hidden',
             // Solid ground under the gradient, so the hero is never half-painted mid-layout.
             backgroundColor: HERO_TOP,
-            ...Shadows.md,
+            ...Shadow.card,
         },
         heroBadge: {
             alignSelf: 'flex-start',
-            paddingHorizontal: 10, paddingVertical: 6,
-            borderRadius: BorderRadius.full,
+            paddingHorizontal: 10, paddingVertical: Spacing.s6,
+            borderRadius: Radius.pill,
             backgroundColor: 'rgba(125,220,174,0.16)',
             borderWidth: 1, borderColor: 'rgba(125,220,174,0.4)',
         },
-        heroBadgeText: { color: HERO_ACCENT, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+        heroBadgeText: { color: HERO_ACCENT, fontSize: FontSize.xs, fontWeight: '600', letterSpacing: 1 },
         heroTitle: {
-            color: HERO_TEXT, fontSize: 32, lineHeight: 38, fontWeight: '900',
+            color: HERO_TEXT, fontSize: FontSize.title, lineHeight: 38, fontWeight: '600',
             letterSpacing: -0.8, marginTop: Spacing.lg,
         },
         heroSubtitle: { color: HERO_MUTED, fontSize: FontSize.md, lineHeight: 21, marginTop: Spacing.sm },
@@ -526,30 +516,26 @@ function createStyles(colors: ColorScheme) {
             borderTopColor: HERO_RULE,
         },
         heroStat: { flex: 1 },
-        heroStatValue: { color: HERO_TEXT, fontSize: FontSize.xl, fontWeight: '900' },
-        heroStatLabel: { color: HERO_MUTED, fontSize: FontSize.xs, fontWeight: '600', marginTop: 2 },
+        heroStatValue: { color: HERO_TEXT, fontSize: FontSize.xl, fontWeight: '600' },
+        heroStatLabel: { color: HERO_MUTED, fontSize: FontSize.xs, fontWeight: '600', marginTop: Spacing.xxs },
         heroPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm, marginTop: Spacing.lg },
-        heroPrice: { color: HERO_TEXT, fontSize: 30, fontWeight: '900', letterSpacing: -0.8 },
+        heroPrice: { color: HERO_TEXT, fontSize: 30, fontWeight: '600', letterSpacing: -0.8 },
         heroPriceNote: { color: HERO_MUTED, fontSize: FontSize.sm, fontWeight: '600', flexShrink: 1 },
 
         courseCard: { marginTop: Spacing.xl },
-        courseRow: { flexDirection: 'row', alignItems: 'center', minHeight: 60, paddingHorizontal: Spacing.md },
-        courseChevron: { width: 22, alignItems: 'center' },
+        // The course's initial, in the row's icon column.
         courseIconTile: {
-            width: 28, height: 28, borderRadius: BorderRadius.md,
+            width: 28, height: 28, borderRadius: Radius.inset,
             alignItems: 'center', justifyContent: 'center',
             backgroundColor: colors.accentLight,
-            marginHorizontal: Spacing.sm,
         },
         courseInitial: { color: colors.accent, fontSize: FontSize.md, fontWeight: '600' },
-        courseCopy: { flex: 1 },
-        courseName: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: '600' },
-        courseMeta: { color: colors.textMuted, fontSize: FontSize.sm, marginTop: 2 },
-        courseLock: { marginLeft: Spacing.sm, opacity: 0.6 },
+        courseLock: { opacity: 0.6 },
 
         topicWell: {
-            paddingLeft: Spacing.xxxl + Spacing.sm,
-            paddingRight: Spacing.md,
+            // Under the course's name: past the row's inset, its icon column and the gap after it.
+            paddingLeft: Spacing.lg + 24 + Spacing.md,
+            paddingRight: Spacing.lg,
             paddingBottom: Spacing.sm,
             backgroundColor: colors.bgSecondary,
         },
@@ -567,7 +553,7 @@ function createStyles(colors: ColorScheme) {
         infoRow: { flexDirection: 'row', alignItems: 'flex-start' },
         infoCheck: { width: 26, paddingTop: 1 },
         infoCopy: { flex: 1 },
-        infoText: { ...Type.caption, lineHeight: 19, color: colors.textMuted, marginTop: 2 },
+        infoText: { ...Type.caption, lineHeight: 19, color: colors.textMuted, marginTop: Spacing.xxs },
 
         legal: {
             color: colors.textMuted, fontSize: FontSize.xs, lineHeight: 16,
@@ -575,7 +561,7 @@ function createStyles(colors: ColorScheme) {
         },
 
         footer: {
-            paddingHorizontal: Spacing.md,
+            paddingHorizontal: Spacing.lg,
             paddingTop: Spacing.md,
             backgroundColor: colors.bgSecondary,
             borderTopWidth: StyleSheet.hairlineWidth,

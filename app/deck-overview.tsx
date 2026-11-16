@@ -16,7 +16,7 @@ import { Text } from '../components/AppText';
 import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
-import { Spacing, BorderRadius, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
+import { Spacing, FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import {
     emptyFilteredDeck,
@@ -45,7 +45,7 @@ import { Badge } from '../components/ui/Choice';
 import { EmptyState, LoadingState } from '../components/ui/Feedback';
 import { MoreIcon, RefreshIcon } from '../components/ui/icons';
 import { ListRow } from '../components/ui/Rows';
-import { Type } from '../components/ui/tokens';
+import { Type, Radius } from '../components/ui/tokens';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { getDeckOverviewSnapshot } from '../lib/screenSnapshots';
 
@@ -335,7 +335,7 @@ export default function DeckOverviewScreen() {
                         <Button
                             label={l('Yeniden oluştur', 'Rebuild')}
                             variant="secondary"
-                            icon={<RefreshIcon color={colors.textPrimary} size={18} />}
+                            icon={<RefreshIcon color={colors.textPrimary} size={20} />}
                             onPress={handleRebuild}
                             style={styles.filteredAction}
                         />
@@ -436,7 +436,7 @@ function createStyles(colors: ColorScheme) {
         deckIcon: {
             width: 52,
             height: 52,
-            borderRadius: BorderRadius.md,
+            borderRadius: Radius.inset,
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: colors.accentLight,
@@ -447,14 +447,14 @@ function createStyles(colors: ColorScheme) {
         heroText: { flex: 1 },
         heroEyebrow: { color: colors.accent, marginBottom: 3 },
         deckTitle: { fontSize: FontSize.xxl, fontWeight: '600', color: colors.textPrimary },
-        deckPath: { color: colors.textMuted, marginTop: 2 },
+        deckPath: { color: colors.textMuted, marginTop: Spacing.xxs },
         description: { fontSize: FontSize.md, color: colors.textSecondary, lineHeight: 21 },
         descriptionBold: { fontWeight: '600' },
         descriptionItalic: { fontStyle: 'italic' },
         descriptionUnderline: { textDecorationLine: 'underline' },
         descriptionLink: { color: colors.accent },
         counts: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: Spacing.xl },
-        countBox: { flex: 1, alignItems: 'center', gap: 2 },
+        countBox: { flex: 1, alignItems: 'center', gap: Spacing.xxs },
         countValue: { fontSize: 30, fontWeight: '600', fontVariant: ['tabular-nums'] },
         countLabel: { fontSize: FontSize.sm, color: colors.textMuted, fontWeight: '500' },
         filterCopy: { gap: 5 },

@@ -447,7 +447,7 @@ export default function FilteredDeckOptionsModal({
                         label={l('Dahil edilemeyen kartları göster', 'Show any excluded cards')}
                         variant="plain"
                         tone="muted"
-                        icon={<InfoCircleGlyph color={colors.textSecondary} size={15} />}
+                        icon={<InfoCircleGlyph color={colors.textSecondary} size={16} />}
                         onPress={showExcluded}
                         style={styles.excludedButton}
                     />

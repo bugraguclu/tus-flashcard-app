@@ -10,7 +10,7 @@ import StatsBarChart from '../stats/StatsBarChart';
 import { SegmentedControl } from '../ui/Choice';
 import StatsTiles, { type StatTile } from '../stats/StatsTiles';
 import { useStatsFormat } from '../stats/useStatsFormat';
-import type { DeckOptionsStyles } from './deckOptionsStyles';
+import { Type } from '../ui/tokens';
 
 type Mode = 'count' | 'time' | 'memorized';
 
@@ -19,13 +19,12 @@ type Mode = 'count' | 'time' | 'memorized';
  * as Anki's simulator graphs them, one bar per day, week or month depending on the span, and the
  * totals underneath.
  */
-export default function FsrsSimulatorResults({ result, today, timeAvailable, styles }: {
+export default function FsrsSimulatorResults({ result, today, timeAvailable }: {
     result: FsrsSimulationResult;
     /** Study-day number of the first simulated day. */
     today: number;
     /** False when no answer in the history has a usable time: study time would only be a guess. */
     timeAvailable: boolean;
-    styles: DeckOptionsStyles;
 }) {
     const colors = useThemeColors();
     const f = useStatsFormat();
@@ -119,7 +118,7 @@ export default function FsrsSimulatorResults({ result, today, timeAvailable, sty
             />
             <StatsTiles tiles={tiles} title={l(`${f.count(days)} günde`, `Over ${f.count(days)} days`)} />
             {!timeAvailable ? (
-                <Text style={styles.fieldHint}>
+                <Text style={[Type.caption, { color: colors.textMuted }]}>
                     {l(
                         'Geçmişte süresi kaydedilmiş cevap olmadığı için çalışma süresi gösterilmiyor.',
                         'Study time is not shown: no answer in the history has a recorded time.',

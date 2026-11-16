@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Stack, router as globalRouter, useNavigationContainerRef, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -11,6 +11,7 @@ import {
     View,
     StyleSheet,
     ScrollView,
+    useColorScheme,
 } from 'react-native';
 import { Text } from '../components/AppText';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,15 +21,18 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from '../components/ui/icon
 import { Radius, Type } from '../components/ui/tokens';
 import { CopyGlyph, ShieldAlertGlyph } from '../components/UiGlyphs';
 import {
+    type ColorScheme,
     Colors,
     DARK_MODE_UI_ENABLED,
     FontSize,
-    Shadows,
+    resolveThemeColors,
     Spacing,
     ThemeColorsProvider,
+    type ThemeMode,
     useIsDarkTheme,
     useThemeColors,
 } from '../constants/theme';
+import { Shadow } from '../components/ui/tokens';
 import { initWebDb, isPrimaryTab, isStorageReadError } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppContext';
@@ -100,11 +104,13 @@ class AppErrorBoundary extends React.Component<
     render() {
         if (this.state.hasError) {
             return (
-                <LocalizedErrorFallback
-                    message={this.state.error}
-                    componentStack={this.state.componentStack}
-                    onRetry={() => this.setState({ hasError: false, error: '', componentStack: '' })}
-                />
+                <FallbackTheme>
+                    <LocalizedErrorFallback
+                        message={this.state.error}
+                        componentStack={this.state.componentStack}
+                        onRetry={() => this.setState({ hasError: false, error: '', componentStack: '' })}
+                    />
+                </FallbackTheme>
             );
         }
         return this.props.children;
@@ -122,6 +128,7 @@ function LocalizedErrorFallback({
 }) {
     const { t, l } = useSystemI18n();
     const insets = useSafeAreaInsets();
+    const { colors, styles: errorStyles } = useFallbackErrorStyles();
     const [showDetails, setShowDetails] = useState(false);
     const [copied, setCopied] = useState(false);
     const safeMessage = userFacingErrorMessage(message, t('root.errorDescription'));
@@ -170,7 +177,7 @@ function LocalizedErrorFallback({
         <View style={[errorStyles.container, { paddingTop: Math.max(insets.top, 24), paddingBottom: Math.max(insets.bottom, 24) }]}>
             <View style={errorStyles.card}>
                 <View style={errorStyles.iconBadge}>
-                    <ShieldAlertGlyph color={Colors.accent} size={38} />
+                    <ShieldAlertGlyph color={colors.accent} size={38} />
                 </View>
                 <Text style={errorStyles.title}>{t('root.errorTitle')}</Text>
                 <Text style={errorStyles.message}>{safeMessage}</Text>
@@ -185,8 +192,8 @@ function LocalizedErrorFallback({
                         ? l('Teknik detayları gizle', 'Hide technical details')
                         : l('Teknik detayları göster', 'Show technical details')}
                     icon={showDetails
-                        ? <ChevronUpIcon color={Colors.textMuted} size={14} />
-                        : <ChevronDownIcon color={Colors.textMuted} size={14} />}
+                        ? <ChevronUpIcon color={colors.textMuted} size={16} />
+                        : <ChevronDownIcon color={colors.textMuted} size={16} />}
                     variant="plain"
                     tone="muted"
                     size="compact"
@@ -207,8 +214,8 @@ function LocalizedErrorFallback({
                             <Button
                                 label={copied ? t('root.errorCopied') : t('root.copyError')}
                                 icon={copied
-                                    ? <CheckIcon color={Colors.accent} size={15} />
-                                    : <CopyGlyph color={Colors.textSecondary} size={15} />}
+                                    ? <CheckIcon color={colors.accent} size={16} />
+                                    : <CopyGlyph color={colors.textSecondary} size={16} />}
                                 variant="plain"
                                 tone={copied ? 'accent' : 'muted'}
                                 size="compact"
@@ -223,32 +230,45 @@ function LocalizedErrorFallback({
     );
 }
 
-// The error screens sit outside the theme provider (they must survive a crash in it), so they draw
-// with the static light palette; the shared Button reads that same palette there.
-const errorStyles = StyleSheet.create({
+// The crash screen sits outside the app's theme provider (it must survive a crash in it), so it
+// cannot know the theme chosen in Settings. It follows the phone's own light or dark appearance
+// instead and hands that palette to the kit parts it draws (`FallbackTheme`).
+const FALLBACK_THEME_MODE: ThemeMode = DARK_MODE_UI_ENABLED ? 'system' : 'light';
+
+function useFallbackErrorStyles() {
+    const colors = resolveThemeColors(FALLBACK_THEME_MODE, useColorScheme()).colors;
+    const styles = useMemo(() => makeErrorStyles(colors), [colors]);
+    return { colors, styles };
+}
+
+function FallbackTheme({ children }: { children: React.ReactNode }) {
+    return <ThemeColorsProvider mode={FALLBACK_THEME_MODE}>{children}</ThemeColorsProvider>;
+}
+
+const makeErrorStyles = (colors: ColorScheme) => StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: Colors.bgPrimary,
+        backgroundColor: colors.bgPrimary,
         paddingHorizontal: Spacing.xl,
     },
     card: {
         width: '100%',
         maxWidth: 420,
-        backgroundColor: Colors.bgCard,
+        backgroundColor: colors.bgCard,
         borderRadius: Radius.card,
         padding: Spacing.xxl,
         alignItems: 'center',
-        ...Shadows.md,
+        ...Shadow.card,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: Colors.border,
+        borderColor: colors.border,
     },
     iconBadge: {
         width: 72,
         height: 72,
         borderRadius: Radius.pill,
-        backgroundColor: Colors.infoBg,
+        backgroundColor: colors.infoBg,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: Spacing.lg,
@@ -256,7 +276,7 @@ const errorStyles = StyleSheet.create({
     appMark: { width: 72, height: 72 },
     title: {
         ...Type.title,
-        color: Colors.textPrimary,
+        color: colors.textPrimary,
         textAlign: 'center',
         marginBottom: Spacing.sm,
         letterSpacing: -0.3,
@@ -264,7 +284,7 @@ const errorStyles = StyleSheet.create({
     message: {
         fontSize: FontSize.md,
         lineHeight: 22,
-        color: Colors.textMuted,
+        color: colors.textMuted,
         textAlign: 'center',
         marginBottom: Spacing.xl,
     },
@@ -278,10 +298,10 @@ const errorStyles = StyleSheet.create({
     detailsBox: {
         width: '100%',
         marginTop: Spacing.md,
-        backgroundColor: Colors.bgSecondary,
+        backgroundColor: colors.bgSecondary,
         borderRadius: Radius.inset,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: Colors.border,
+        borderColor: colors.border,
         padding: Spacing.md,
     },
     detailsScroll: {
@@ -290,18 +310,23 @@ const errorStyles = StyleSheet.create({
     detailsText: {
         fontSize: FontSize.xs,
         fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-        color: Colors.textSecondary,
+        color: colors.textSecondary,
         lineHeight: 18,
     },
     copyRow: {
         alignItems: 'center',
         marginTop: Spacing.sm,
         borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: Colors.border,
+        borderTopColor: colors.border,
     },
-    secondaryBar: { backgroundColor: Colors.infoBg, paddingVertical: 6, paddingHorizontal: 12 },
-    secondaryBarText: { ...Type.caption, color: Colors.info, textAlign: 'center' },
+    secondaryBar: { backgroundColor: colors.infoBg, paddingVertical: Spacing.s6, paddingHorizontal: 12 },
+    secondaryBarText: { ...Type.caption, color: colors.info, textAlign: 'center' },
 });
+
+// The web-only startup gate (`WebDbGate`) is rendered into the static document, where the server
+// cannot know the visitor's appearance; a themed placeholder would not match on hydration. It and
+// the second-tab bar stay on the light palette.
+const errorStyles = makeErrorStyles(Colors);
 
 // Routed utility screens behave as native iPhone sheets: UIKit owns the grabber, rounded
 // surface and pull-down dismissal. Other platforms keep their existing modal presentation.
@@ -703,10 +728,9 @@ function AppStack() {
                 <Stack.Screen
                     name="note-type"
                     options={{
-                        headerShown: true,
+                        // The screen draws the shared ScreenHeader, as every routed screen does.
+                        headerShown: false,
                         title: t('root.editNoteType'),
-                        headerStyle: { backgroundColor: colors.bgSecondary },
-                        headerTintColor: colors.accent,
                     }}
                 />
             </Stack>

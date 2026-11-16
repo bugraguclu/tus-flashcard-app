@@ -1,5 +1,5 @@
 import React from 'react';
-import { type StyleProp, StyleSheet, Switch, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import { type StyleProp, StyleSheet, Switch, type TextStyle, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { SelectedMark } from './Choice';
@@ -37,16 +37,17 @@ function spokenLabel(title: string, value?: string, summary?: React.ReactNode): 
     return [title, value, typeof summary === 'string' ? summary : undefined].filter(Boolean).join(', ');
 }
 
-function RowText({ title, summary, destructive, titleLines = 2 }: {
+function RowText({ title, summary, destructive, titleLines = 2, titleStyle }: {
     title: string;
     summary?: React.ReactNode;
     destructive?: boolean;
     titleLines?: number;
+    titleStyle?: StyleProp<TextStyle>;
 }) {
     const colors = useThemeColors();
     return (
         <View style={styles.copy}>
-            <Text style={[Type.rowTitle, { color: destructive ? colors.danger : colors.textPrimary }]} numberOfLines={titleLines}>
+            <Text style={[Type.rowTitle, { color: destructive ? colors.danger : colors.textPrimary }, titleStyle]} numberOfLines={titleLines}>
                 {title}
             </Text>
             {summary ? <Text style={[Type.caption, { color: colors.textMuted }]}>{summary}</Text> : null}
@@ -79,6 +80,8 @@ interface ListRowProps {
     accessibilityHint?: string;
     /** `link` for a row that leaves the app (a web page); `button` otherwise. */
     accessibilityRole?: 'button' | 'link';
+    /** For a row that previews what it names: a typeface drawn in its own face, a size in its own size. */
+    titleStyle?: StyleProp<TextStyle>;
     style?: StyleProp<ViewStyle>;
 }
 
@@ -98,6 +101,7 @@ export function ListRow({
     accessibilityLabel,
     accessibilityHint,
     accessibilityRole,
+    titleStyle,
     style,
 }: ListRowProps) {
     const colors = useThemeColors();
@@ -107,7 +111,7 @@ export function ListRow({
     const content = (
         <>
             {icon ? <View style={styles.icon}>{icon}</View> : null}
-            <RowText title={title} summary={summary} destructive={destructive} />
+            <RowText title={title} summary={summary} destructive={destructive} titleStyle={titleStyle} />
             {value ? <Text style={[styles.value, { color: colors.textMuted }]} numberOfLines={1}>{value}</Text> : null}
             {accessory}
             {choice ? <SelectedMark visible={selected} /> : null}
@@ -251,7 +255,7 @@ const styles = StyleSheet.create({
     disabled: { opacity: DISABLED_OPACITY },
     passive: { pointerEvents: 'none' },
     icon: { width: 24, alignItems: 'center', justifyContent: 'center' },
-    copy: { flex: 1, minWidth: 0, gap: 2 },
+    copy: { flex: 1, minWidth: 0, gap: Spacing.xxs },
     value: { maxWidth: '45%', fontSize: FontSize.md, textAlign: 'right' },
     tabular: { fontVariant: ['tabular-nums'], textAlign: 'right' },
     selectValue: { maxWidth: '55%', fontSize: FontSize.md, fontWeight: '500', textAlign: 'right' },

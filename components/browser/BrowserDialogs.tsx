@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { Fragment, type Dispatch, type SetStateAction } from 'react';
 import { Modal, Platform, View, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
@@ -19,9 +19,11 @@ import {
 } from '../../lib/browserSelection';
 import { AppDialog } from '../ui/Dialog';
 import { Button, CloseButton } from '../ui/Button';
+import { Divider, SectionLabel } from '../ui/Card';
 import { CheckRow } from '../ui/Choice';
 import { TextField } from '../ui/Fields';
-import { BackIcon, ChevronRightIcon, ForwardIcon } from '../ui/icons';
+import { ListRow } from '../ui/Rows';
+import { BackIcon, ForwardIcon } from '../ui/icons';
 import type { BrowserI18n } from './types';
 import type { BrowserStyles } from './browserStyles';
 
@@ -52,7 +54,6 @@ export function ChangeNoteTypeModal({
     styles,
     t,
 }: ChangeNoteTypeModalProps) {
-    const colors = useThemeColors();
     const close = () => setShowNoteTypePicker(false);
     return (
         <AppDialog
@@ -63,36 +64,35 @@ export function ChangeNoteTypeModal({
             actions={<Button variant="plain" label={t('common.cancel')} onPress={close} />}
         >
             <ScrollView style={styles.pickerList}>
-                {selectableNoteTypes.map((noteType) => (
-                    <TouchableOpacity
-                        key={noteType.id}
-                        style={styles.pickerRow}
-                        accessibilityRole="button"
-                        onPress={() => {
-                            close();
-                            changeNoteTypeWithConfirmation(selectedNoteIds, noteType.id, {
-                                run: runSelectionAction,
-                                confirmCardRemoval: (cardCount, onConfirm) => {
-                                    const prompt = noteTypeChangeRemovalPrompt(cardCount, l, locale);
-                                    confirm(prompt.title, prompt.message, onConfirm, { destructive: true });
-                                },
-                                offerUndo: (result) => {
-                                    void choose(
-                                        l('Not türü değiştirildi', 'Note Type Changed'),
-                                        l(`${result.changed} not dönüştürüldü.`, result.changed === 1 ? '1 note converted.' : `${result.changed} notes converted.`),
-                                        l('Geri al', 'Undo'),
-                                        l('Bitti', 'Done'),
-                                    ).then((undo) => {
-                                        // The selection runner refreshes and reports a refused undo.
-                                        if (undo) runSelectionAction(() => result.undo());
-                                    });
-                                },
-                            });
-                        }}
-                    >
-                        <Text style={styles.pickerRowText}>{localizeNoteTypeName(locale, noteType.name)}</Text>
-                        <ChevronRightIcon color={colors.textMuted} size={16} />
-                    </TouchableOpacity>
+                {selectableNoteTypes.map((noteType, index) => (
+                    <Fragment key={noteType.id}>
+                        {index > 0 ? <Divider /> : null}
+                        <ListRow
+                            title={localizeNoteTypeName(locale, noteType.name)}
+                            style={styles.dialogRow}
+                            onPress={() => {
+                                close();
+                                changeNoteTypeWithConfirmation(selectedNoteIds, noteType.id, {
+                                    run: runSelectionAction,
+                                    confirmCardRemoval: (cardCount, onConfirm) => {
+                                        const prompt = noteTypeChangeRemovalPrompt(cardCount, l, locale);
+                                        confirm(prompt.title, prompt.message, onConfirm, { destructive: true });
+                                    },
+                                    offerUndo: (result) => {
+                                        void choose(
+                                            l('Not türü değiştirildi', 'Note Type Changed'),
+                                            l(`${result.changed} not dönüştürüldü.`, result.changed === 1 ? '1 note converted.' : `${result.changed} notes converted.`),
+                                            l('Geri al', 'Undo'),
+                                            l('Bitti', 'Done'),
+                                        ).then((undo) => {
+                                            // The selection runner refreshes and reports a refused undo.
+                                            if (undo) runSelectionAction(() => result.undo());
+                                        });
+                                    },
+                                });
+                            }}
+                        />
+                    </Fragment>
                 ))}
             </ScrollView>
         </AppDialog>
@@ -363,7 +363,7 @@ export function CardPreviewModal({
                     <Button
                         variant="plain"
                         label={l('Önceki', 'Previous')}
-                        icon={<BackIcon color={colors.accent} size={18} />}
+                        icon={<BackIcon color={colors.accent} size={20} />}
                         disabled={index <= 0}
                         onPress={() => step(-1)}
                         accessibilityLabel={l('Önceki kart', 'Previous card')}
@@ -372,7 +372,7 @@ export function CardPreviewModal({
                     <Button
                         variant="plain"
                         label={l('Sonraki', 'Next')}
-                        trailingIcon={<ForwardIcon color={colors.accent} size={18} />}
+                        trailingIcon={<ForwardIcon color={colors.accent} size={20} />}
                         disabled={index >= selectedCards.length - 1}
                         onPress={() => step(1)}
                         accessibilityLabel={l('Sonraki kart', 'Next card')}

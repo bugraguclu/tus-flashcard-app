@@ -69,7 +69,7 @@ function createStyles(colors: ColorScheme) {
             borderTopColor: colors.border,
             paddingHorizontal: Spacing.md,
         },
-        tab: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', gap: 2 },
+        tab: { flex: 1, minHeight: 52, alignItems: 'center', justifyContent: 'center', gap: Spacing.xxs },
         marker: { position: 'absolute', top: 0, width: 28, height: 3, borderRadius: Radius.pill, backgroundColor: colors.transparent },
         label: { fontSize: FontSize.xs, fontWeight: '600', color: colors.textMuted },
         labelActive: { color: colors.accent },

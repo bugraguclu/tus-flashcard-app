@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View, type GestureResponderEvent } from 'react-native';
 import { Text } from '../AppText';
-import { FontSize, Shadows, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Shadow } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import { PHOTO_ADJUSTMENT_LIMIT, clampPhotoAdjustment } from '../../lib/photoAdjustments';
 import { DISABLED_OPACITY, Radius } from '../ui/tokens';
@@ -119,7 +120,7 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.white,
             borderWidth: 2,
             borderColor: colors.accent,
-            ...Shadows.sm,
+            ...Shadow.card,
         },
         valueButton: {
             minWidth: 48,

@@ -63,6 +63,6 @@ export function ChoiceModal({ visible, title, cancelLabel, options, onSelect, on
 const styles = StyleSheet.create({
     list: { flexGrow: 0 },
     option: { minHeight: HIT_TARGET + 4, flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
-    optionCopy: { flex: 1, minWidth: 0, gap: 2 },
+    optionCopy: { flex: 1, minWidth: 0, gap: Spacing.xxs },
     optionSelected: { fontWeight: '600' },
 });

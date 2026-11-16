@@ -32,7 +32,7 @@ export default function LeechExplainer({ context }: LeechExplainerProps) {
     return (
         <Notice
             tone="warning"
-            icon={<LightbulbGlyph color={colors.warning} size={18} />}
+            icon={<LightbulbGlyph color={colors.warning} size={20} />}
             title={l('Sürekli Unutulan Kart nedir?', 'What is a Leech?')}
             style={styles.notice}
         >
@@ -103,7 +103,7 @@ function createStyles(colors: ColorScheme) {
             color: colors.textSecondary,
         },
         recommendation: {
-            marginTop: 2,
+            marginTop: Spacing.xxs,
             paddingTop: Spacing.sm,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.warning,
