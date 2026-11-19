@@ -18,15 +18,17 @@ import {
  *   replaces. react-native-web's Modal already closes on Escape and returns focus to the opener.
  * - Arrow keys, Home and End move through a menu's items and a row of tabs (a segmented
  *   control); a tab is chosen as focus reaches it, as a segmented control is chosen by a tap.
- * - App-wide shortcuts (see `appShortcutFor`), handed to `onShortcut`.
+ * - App-wide shortcuts (see `appShortcutFor`), handed to `onShortcut`; without one (the welcome
+ *   sign-in, which stands in for the navigator) the letters stay plain keys.
  *
- * Mounted once, by `WebAppIntegrations`, on web only.
+ * Mounted once, on web only: by `WebAppIntegrations`, or by `AccountFirstRunGate` while the
+ * welcome sign-in replaces the navigator.
  */
 export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
     ringColor: string;
     /** The band between the ring and the control: the card colour. */
     haloColor: string;
-    onShortcut: (shortcut: AppShortcut) => void;
+    onShortcut?: (shortcut: AppShortcut) => void;
 }): void {
     const onShortcutRef = useRef(onShortcut);
     onShortcutRef.current = onShortcut;
@@ -64,11 +66,16 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
                 event.preventDefault();
                 return;
             }
-            if (modal || isEditable(event.target)) return;
+            if (event.key === 'Enter' && pressTextLink(event.target)) {
+                event.preventDefault();
+                return;
+            }
+            const runShortcut = onShortcutRef.current;
+            if (!runShortcut || modal || isEditable(event.target)) return;
             const shortcut = appShortcutFor(event, isMac);
             if (!shortcut) return;
             event.preventDefault();
-            onShortcutRef.current(shortcut);
+            runShortcut(shortcut);
         };
 
         // A dialog, sheet or menu renders into a portal under <body>, which react-native-web keeps
@@ -308,6 +315,18 @@ function moveWithinGroup(key: string, modal: HTMLElement | null): boolean {
 function pressWithSpace(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement) || target.tagName === 'BUTTON' || isEditable(target) || isDisabled(target)) return false;
     if (!SPACE_PRESS_ROLES.has(target.getAttribute('role') ?? '')) return false;
+    target.click();
+    return true;
+}
+
+/**
+ * Follows a link drawn as text inside a sentence (`<Text onPress accessibilityRole="link">`), as
+ * Enter follows any link. react-native-web renders it as a focusable `<span>` that only answers a
+ * click; a pressable link is an `<a>` or `<button>` and already takes Enter.
+ */
+function pressTextLink(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement) || target.tagName !== 'SPAN' || target.getAttribute('role') !== 'link') return false;
+    if (isDisabled(target)) return false;
     target.click();
     return true;
 }

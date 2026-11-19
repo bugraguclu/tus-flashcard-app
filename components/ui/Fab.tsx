@@ -140,6 +140,7 @@ export function SpeedDial({
                         ]}
                         pointerEvents="box-none"
                         accessibilityRole="menu"
+                        accessibilityLabel={openLabel}
                     >
                         {items.map((item, index) => (
                             // The action nearest the button comes out first.

@@ -1,8 +1,17 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { useIsDarkTheme } from '../../constants/theme';
+import { Platform } from 'react-native';
+import { useIsDarkTheme, useThemeColors } from '../../constants/theme';
 import { useAccount } from '../../contexts/AccountContext';
+import { useWebKeyboardNavigation } from '../../hooks/useWebKeyboardNavigation';
 import SignInScreen from './SignInScreen';
+
+/** The web build's focus ring and keyboard handling, which `WebAppIntegrations` gives the navigator. */
+function WebKeyboardSupport() {
+    const colors = useThemeColors();
+    useWebKeyboardNavigation({ ringColor: colors.textPrimary, haloColor: colors.bgCard });
+    return null;
+}
 
 /**
  * On a new installation, the welcome sign-in screen comes before the deck list, once. It stands in
@@ -17,6 +26,7 @@ export default function AccountFirstRunGate({ children }: { children: React.Reac
     return (
         <>
             <StatusBar style={isDark ? 'light' : 'dark'} />
+            {Platform.OS === 'web' ? <WebKeyboardSupport /> : null}
             <SignInScreen variant="welcome" onClose={resolveFirstRunPrompt} onFinished={resolveFirstRunPrompt} />
         </>
     );
