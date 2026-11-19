@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AccountErrorCode, AccountFieldIssue, AccountFieldName } from './accountContract';
-import { accountErrorMessage, accountFieldMessage, formatWait, passwordStrengthLabel } from './accountMessages';
+import { accountErrorMessage, accountFieldMessage, formatWait } from './accountMessages';
 
 const turkish = (tr: string) => tr;
 const english = (_tr: string, en: string) => en;
@@ -9,7 +9,7 @@ const ERROR_CODES: AccountErrorCode[] = [
     'invalid_input', 'invalid_credentials', 'email_taken', 'registration_closed', 'unverified',
     'email_unavailable', 'code_invalid', 'code_expired', 'wrong_password', 'unauthorized',
     'rate_limited', 'not_found', 'payload_too_large', 'server_error', 'offline', 'timeout',
-    'not_configured',
+    'not_configured', 'google_failed',
 ];
 const FIELD_ISSUES: AccountFieldIssue[] = [
     'required', 'too_long', 'email_invalid', 'password_too_short', 'password_too_long',
@@ -42,10 +42,5 @@ describe('account wording', () => {
         expect(formatWait(45, turkish)).toBe('45 sn');
         expect(formatWait(65, english)).toBe('1 min 05 s');
         expect(accountErrorMessage('rate_limited', turkish, 65)).toContain('1 dk 05 sn');
-    });
-
-    it('labels every strength step', () => {
-        expect([0, 1, 2, 3, 4].map((score) => passwordStrengthLabel(score as 0, turkish)))
-            .toEqual(['En az 8 karakter', 'Zayıf', 'Orta', 'İyi', 'Güçlü']);
     });
 });

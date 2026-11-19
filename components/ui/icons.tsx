@@ -11,6 +11,8 @@ import {
     ChevronUpGlyph,
     CloseGlyph,
     ExternalLinkGlyph,
+    EyeGlyph,
+    EyeOffGlyph,
     GripGlyph,
     MinusGlyph,
     MoreGlyph,
@@ -138,4 +140,14 @@ export function ExternalLinkIcon({ color, size = 18 }: IconProps) {
 /** The handle a row is dragged by. */
 export function DragHandleIcon({ color, size = 20 }: IconProps) {
     return <GripGlyph color={color} size={size} />;
+}
+
+/** Show a hidden password. */
+export function EyeIcon({ color, size = 20 }: IconProps) {
+    return <EyeGlyph color={color} size={size} />;
+}
+
+/** Hide a password that is shown. */
+export function EyeOffIcon({ color, size = 20 }: IconProps) {
+    return <EyeOffGlyph color={color} size={size} />;
 }

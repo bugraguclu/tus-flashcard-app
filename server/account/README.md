@@ -38,6 +38,7 @@ yayın derlemesinde hesap özellikleri tamamen gizlenir ve uygulama bugünkü gi
 | GET | `/v1/session` | Sunucu ayarları; belirteç varsa kullanıcı (geçersiz belirteç → 401) |
 | POST | `/v1/register` | Hesap açar, koşul kabulünü kaydeder; oturum açar ya da kod ister |
 | POST | `/v1/login` | Giriş; doğrulama zorunluysa ve adres doğrulanmamışsa kod gönderip 403 `unverified` |
+| POST | `/v1/google` | Google ile giriş: `idToken` doğrulanır; hesap yoksa (onayla) şifresiz açılır, aynı e-postalı hesap varsa ona bağlanır |
 | POST | `/v1/logout` | Bu oturumu kapatır |
 | POST | `/v1/email/verify` | Doğrulama kodu gönderir |
 | POST | `/v1/email/verify/confirm` | Kodu doğrular (oturum yoksa oturum da açar) |
@@ -45,12 +46,22 @@ yayın derlemesinde hesap özellikleri tamamen gizlenir ve uygulama bugünkü gi
 | POST | `/v1/password/reset/confirm` | Kod + yeni şifre; tüm eski oturumları kapatır, yenisini açar |
 | POST | `/v1/password` | Şifre değiştirir; diğer cihazlardaki oturumları kapatır |
 | PATCH | `/v1/account` | Adı günceller |
-| DELETE | `/v1/account` | Şifreyle onaylanan kalıcı hesap silme (App Store 5.1.1(v)) |
+| DELETE | `/v1/account` | Şifreyle (Google hesabında yeni bir Google belirteciyle) onaylanan kalıcı hesap silme (App Store 5.1.1(v)) |
 | GET | `/v1/account/activity` | Son 20 hesap olayı |
 
 Hata gövdesi her zaman `{ "error": { "code", "message", "fields?", "retryAfter?" } }` biçimindedir;
 uygulama metni koda göre kendi dilinde gösterir. Ortak kurallar ve tipler
 `lib/accountContract.ts` dosyasındadır; uygulama ve sunucu aynı doğrulamayı çalıştırır.
+
+## Google ile giriş
+
+`GOOGLE_CLIENT_IDS` boşsa Google ile giriş kapalıdır ve uygulama düğmeyi göstermez. Açmak için
+Google Cloud Console'da bir **iOS** ve bir **Web** OAuth istemcisi oluşturun, ikisinin kimliğini
+virgülle bu değişkene yazın; uygulamanın derlemesine de `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` ve
+`EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` verin. Sunucu kimlik belirtecini Google'ın yayımladığı
+anahtarlarla kendisi doğrular (RS256, yayıncı, hedef kitle, süre; `google.ts`), yalnızca Google'ın
+doğruladığı e-postaları kabul eder. App Store 4.8 gereği Google ile giriş sunan bir uygulama
+**Sign in with Apple** da sunmalıdır; o eklenmeden Google'ı canlı derlemede açmayın.
 
 ## Güvenlik
 

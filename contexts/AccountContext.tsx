@@ -57,7 +57,10 @@ interface AccountContextValue {
     confirmPasswordReset: (input: { email: string; code: string; password: string }) => Promise<void>;
     changePassword: (input: { currentPassword: string; password: string }) => Promise<void>;
     updateName: (name: string) => Promise<void>;
-    deleteAccount: (password: string) => Promise<void>;
+    /** Signs in with an ID token from Google, making the account on first use. */
+    signInWithGoogle: (idToken: string) => Promise<{ created: boolean }>;
+    /** Confirmed with the password, or with a fresh Google token for an account without one. */
+    deleteAccount: (proof: { password: string } | { googleIdToken: string }) => Promise<void>;
     signOut: () => Promise<void>;
     loadActivity: () => Promise<AccountEvent[]>;
 }
@@ -74,6 +77,7 @@ const AccountContext = createContext<AccountContextValue>({
     refresh: async () => { },
     signIn: notConfigured,
     register: notConfigured,
+    signInWithGoogle: notConfigured,
     requestVerification: notConfigured,
     confirmVerification: notConfigured,
     requestPasswordReset: notConfigured,
@@ -246,6 +250,17 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         }));
     }, [adoptGrant, client]);
 
+    const signInWithGoogle = useCallback(async (idToken: string) => {
+        const grant = await client.signInWithGoogle({
+            idToken,
+            consent: true,
+            policyVersion: ACCOUNT_POLICY_VERSION,
+            locale: localeRef.current,
+        });
+        await adoptGrant(grant);
+        return { created: grant.created };
+    }, [adoptGrant, client]);
+
     const register = useCallback(async (input: { name: string; email: string; password: string }): Promise<RegisterOutcome> => {
         const result = await client.register({
             name: normalizeName(input.name),
@@ -299,8 +314,8 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         await keepUser(await guard(() => client.updateProfile(requireToken(), { name: normalizeName(name) })));
     }, [client, guard, keepUser, requireToken]);
 
-    const deleteAccount = useCallback(async (password: string) => {
-        await guard(() => client.deleteAccount(requireToken(), { password }));
+    const deleteAccount = useCallback(async (proof: { password: string } | { googleIdToken: string }) => {
+        await guard(() => client.deleteAccount(requireToken(), proof));
         await forgetSession();
     }, [client, forgetSession, guard, requireToken]);
 
@@ -326,6 +341,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         refresh,
         signIn,
         register,
+        signInWithGoogle,
         requestVerification,
         confirmVerification,
         requestPasswordReset,
@@ -338,7 +354,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     }), [
         status, user, config, firstRunPrompt, resolveFirstRunPrompt, refresh, signIn, register,
         requestVerification, confirmVerification, requestPasswordReset, confirmPasswordReset,
-        changePassword, updateName, deleteAccount, signOut, loadActivity,
+        changePassword, updateName, deleteAccount, signOut, loadActivity, signInWithGoogle,
     ]);
 
     return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;

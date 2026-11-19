@@ -161,6 +161,16 @@ export function EyeGlyph(props: GlyphProps) {
     );
 }
 
+/** The eye struck through: hide what the eye shows (a password). */
+export function EyeOffGlyph(props: GlyphProps) {
+    return (
+        <IconFrame size={props.size ?? DEFAULT_SIZE}>
+            <Path d="M9.9 6.05A9.6 9.6 0 0 1 12 5.75c4 0 7.4 2.35 9.25 6.25a11.7 11.7 0 0 1-2.6 3.55M6.6 7.6A11.4 11.4 0 0 0 2.75 12C4.6 15.9 8 18.25 12 18.25c1.75 0 3.4-.45 4.85-1.3" {...paint(props)} />
+            <Path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3.5 3.5l17 17" {...paint(props)} />
+        </IconFrame>
+    );
+}
+
 /** A pause sign in a circle: suspend. */
 export function PauseCircleGlyph(props: GlyphProps) {
     return (

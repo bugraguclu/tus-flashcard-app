@@ -51,6 +51,7 @@ const COLOUR_LITERALS_ALLOWED: Record<string, string> = {
     'components/stopwatch/SubjectArt.tsx': 'the course illustrations',
     'components/stopwatch/StopwatchHero.tsx': 'translucent white drawn over the green Kronometre hero',
     'app/catalog.tsx': 'the catalog hero artwork',
+    'components/GoogleGlyph.tsx': 'Google’s trademark, in the colours its branding guidelines require',
 };
 
 /** Characters that screens once drew as icons; components/ui/icons draws them now. */

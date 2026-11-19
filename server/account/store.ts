@@ -15,10 +15,13 @@ export interface UserRow {
     id: string;
     email: string;
     name: string;
+    /** Empty for an account made with Google that never set a password. */
     passwordHash: string;
     emailVerifiedAt: number | null;
     createdAt: number;
     updatedAt: number;
+    /** Google's account ID (`sub`) once the account has signed in with Google. */
+    googleSub: string | null;
 }
 
 export interface SessionRow {
@@ -99,10 +102,15 @@ const MIGRATIONS = [
     );
     CREATE INDEX account_events_by_user ON account_events(user_id, id);
     `,
+    // 2: Sign in with Google.
+    `
+    ALTER TABLE users ADD COLUMN google_sub TEXT;
+    CREATE UNIQUE INDEX users_by_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL;
+    `,
 ];
 
 const USER_COLUMNS = `id, email, name, password_hash AS passwordHash, email_verified_at AS emailVerifiedAt,
-    created_at AS createdAt, updated_at AS updatedAt`;
+    created_at AS createdAt, updated_at AS updatedAt, google_sub AS googleSub`;
 const SESSION_COLUMNS = `token_hash AS tokenHash, user_id AS userId, created_at AS createdAt,
     last_used_at AS lastUsedAt, expires_at AS expiresAt, client`;
 const CODE_COLUMNS = `id, email, purpose, code_hash AS codeHash, attempts, created_at AS createdAt, expires_at AS expiresAt`;
@@ -189,12 +197,20 @@ export class AccountStore {
         return this.one<UserRow>(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`, id);
     }
 
+    findUserByGoogleSub(sub: string): UserRow | undefined {
+        return this.one<UserRow>(`SELECT ${USER_COLUMNS} FROM users WHERE google_sub = ?`, sub);
+    }
+
     insertUser(user: UserRow): void {
         this.run(
-            `INSERT INTO users (id, email, name, password_hash, email_verified_at, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            user.id, user.email, user.name, user.passwordHash, user.emailVerifiedAt, user.createdAt, user.updatedAt,
+            `INSERT INTO users (id, email, name, password_hash, email_verified_at, created_at, updated_at, google_sub)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            user.id, user.email, user.name, user.passwordHash, user.emailVerifiedAt, user.createdAt, user.updatedAt, user.googleSub,
         );
+    }
+
+    setGoogleSub(userId: string, sub: string, now: number): void {
+        this.run('UPDATE users SET google_sub = ?, updated_at = ? WHERE id = ?', sub, now, userId);
     }
 
     setPassword(userId: string, passwordHash: string, now: number): void {

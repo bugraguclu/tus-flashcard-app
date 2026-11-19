@@ -37,6 +37,7 @@ function routesFor(service: AccountService): Map<string, Partial<Record<Method, 
         ['/v1/session', { GET: ({ token }) => ({ body: service.sessionInfo(token) }) }],
         ['/v1/register', { POST: async ({ body, context }) => ({ status: 201, body: await service.register(body, context) }) }],
         ['/v1/login', { POST: async ({ body, context }) => ({ body: await service.login(body, context) }) }],
+        ['/v1/google', { POST: async ({ body, context }) => ({ body: await service.googleSignIn(body, context) }) }],
         ['/v1/logout', { POST: ({ token }) => ({ body: service.logout(token) }) }],
         ['/v1/email/verify', {
             POST: async ({ body, token, context }) => ({ body: await service.requestVerification(body, token, context) }),

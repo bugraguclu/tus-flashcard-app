@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     accountInitials,
+    nameFromEmail,
     parseCodeSent,
     parseEvents,
     parseServiceConfig,
@@ -8,7 +9,7 @@ import {
     shouldOfferFirstRunPrompt,
 } from './accountSession';
 
-const user = { id: 'u1', name: 'Ayşe Yılmaz', email: 'ayse@example.com', emailVerified: true, createdAt: '2026-11-08T10:00:00.000Z' };
+const user = { id: 'u1', name: 'Ayşe Yılmaz', email: 'ayse@example.com', emailVerified: true, createdAt: '2026-11-08T10:00:00.000Z', hasPassword: true, google: false };
 
 describe('stored session', () => {
     it('round-trips a session and drops anything malformed', () => {
@@ -26,6 +27,7 @@ describe('server replies', () => {
             registrationOpen: true,
             emailReady: false,
             emailVerificationRequired: false,
+            googleSignIn: false,
             policyVersion: '',
             operatorName: '',
             contactEmail: '',
@@ -69,5 +71,19 @@ describe('first-run welcome', () => {
         expect(shouldOfferFirstRunPrompt({ ...base, collectionHasNotes: true })).toBe(false);
         expect(shouldOfferFirstRunPrompt({ ...base, signedIn: true })).toBe(false);
         expect(shouldOfferFirstRunPrompt({ ...base, enabled: false })).toBe(false);
+    });
+});
+
+describe('name from email', () => {
+    it('turns the local part into words', () => {
+        expect(nameFromEmail('ayse.yilmaz@example.com')).toBe('Ayse Yilmaz');
+        expect(nameFromEmail('  mehmet_kaya+tus@example.com ')).toBe('Mehmet Kaya Tus');
+        expect(nameFromEmail('ilker@example.com')).toBe('İlker');
+    });
+
+    it('never returns an empty or overlong name', () => {
+        expect(nameFromEmail('..@example.com')).toBe('TusAnkiM');
+        expect(nameFromEmail('')).toBe('TusAnkiM');
+        expect(nameFromEmail(`${'a'.repeat(200)}@example.com`).length).toBeLessThanOrEqual(80);
     });
 });

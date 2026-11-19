@@ -32,3 +32,21 @@ export function accountApiUrl(): string | null {
     // Expo inlines EXPO_PUBLIC_ variables only when read with this exact member expression.
     return resolveAccountApiUrl(process.env.EXPO_PUBLIC_ACCOUNT_API_URL, development);
 }
+
+/** A Google OAuth client ID, or null for anything else (an empty or mistyped setting). */
+export function googleClientId(value: string | undefined): string | null {
+    const id = value?.trim() ?? '';
+    return /^[\w.-]+\.apps\.googleusercontent\.com$/.test(id) ? id : null;
+}
+
+/**
+ * The Google OAuth clients this build signs in with: the iOS client opens Google's sheet on
+ * iPhone, the web client names the account server as the token's audience (and serves the web
+ * preview). Without them the Google button is not drawn.
+ */
+export function googleClientIds(): { ios: string | null; web: string | null } {
+    return {
+        ios: googleClientId(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID),
+        web: googleClientId(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID),
+    };
+}

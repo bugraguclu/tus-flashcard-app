@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AccountRequestError, createAccountClient } from './accountApi';
 
-const user = { id: 'u1', name: 'Ayşe Yılmaz', email: 'ayse@example.com', emailVerified: false, createdAt: '2026-11-08T10:00:00.000Z' };
+const user = { id: 'u1', name: 'Ayşe Yılmaz', email: 'ayse@example.com', emailVerified: false, createdAt: '2026-11-08T10:00:00.000Z', hasPassword: true, google: false };
 const grant = { user, token: 't'.repeat(43), expiresAt: '2027-01-07T10:00:00.000Z' };
 const config = {
     registrationOpen: true,
     emailReady: true,
     emailVerificationRequired: false,
+    googleSignIn: false,
     policyVersion: '2026-11-08',
     operatorName: 'TusAnkiM',
     contactEmail: 'destek@example.com',

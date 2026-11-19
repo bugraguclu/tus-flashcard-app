@@ -49,7 +49,7 @@ export function createClock(start = Date.UTC(2026, 10, 8, 9, 0, 0)): { now: () =
 
 export type HarnessConfig = AccountServiceDeps['config'];
 
-export function createHarness(config: Partial<HarnessConfig> = {}) {
+export function createHarness(config: Partial<HarnessConfig> = {}, extra: Pick<AccountServiceDeps, 'googleKeys'> = {}) {
     const clock = createClock();
     const store = new AccountStore(':memory:');
     const mailer = new FakeMailer();
@@ -70,6 +70,7 @@ export function createHarness(config: Partial<HarnessConfig> = {}) {
         limiter,
         now: clock.now,
         hasher: new PasswordHasher(FAST_COST),
+        ...extra,
     });
     const context: RequestContext = { ip: '203.0.113.7', client: 'TusAnkiM test' };
     return { clock, store, mailer, settings, limiter, service, context };

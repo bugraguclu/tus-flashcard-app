@@ -59,6 +59,8 @@ export function accountErrorMessage(code: AccountErrorCode, l: Localize, retryAf
             );
         case 'wrong_password':
             return l('Şifre hatalı.', 'The password is incorrect.');
+        case 'google_failed':
+            return l('Google ile giriş tamamlanamadı. Yeniden deneyin.', 'Signing in with Google didn’t finish. Try again.');
         case 'unauthorized':
             return l('Oturumunuzun süresi doldu. Yeniden giriş yapın.', 'Your session has ended. Sign in again.');
         case 'rate_limited':
@@ -122,15 +124,5 @@ export function accountFieldMessage(field: AccountFieldName, issue: AccountField
             );
         default:
             return l('Bu alanı kontrol edin.', 'Check this field.');
-    }
-}
-
-export function passwordStrengthLabel(score: 0 | 1 | 2 | 3 | 4, l: Localize): string {
-    switch (score) {
-        case 1: return l('Zayıf', 'Weak');
-        case 2: return l('Orta', 'Fair');
-        case 3: return l('İyi', 'Good');
-        case 4: return l('Güçlü', 'Strong');
-        default: return l(`En az ${PASSWORD_MIN_LENGTH} karakter`, `At least ${PASSWORD_MIN_LENGTH} characters`);
     }
 }

@@ -27,7 +27,7 @@ const KNOWN_CODES = new Set<AccountErrorCode>([
     'invalid_input', 'invalid_credentials', 'email_taken', 'registration_closed', 'unverified',
     'email_unavailable', 'code_invalid', 'code_expired', 'wrong_password', 'unauthorized',
     'rate_limited', 'not_found', 'payload_too_large', 'server_error', 'offline', 'timeout',
-    'not_configured',
+    'not_configured', 'google_failed',
 ]);
 
 const FIELD_NAMES = new Set(['name', 'email', 'password', 'currentPassword', 'code', 'consent']);
@@ -207,6 +207,17 @@ export function createAccountClient(options: AccountClientOptions) {
             return { ...grantFrom(reply), verificationSent: payload.verificationSent === true };
         },
 
+        /** Signs in, or creates the account, with an ID token from Google's sign-in sheet. */
+        async signInWithGoogle(input: {
+            idToken: string;
+            consent: boolean;
+            policyVersion: string;
+            locale: AccountLocale;
+        }): Promise<AccountSessionGrant & { created: boolean }> {
+            const reply = await request('POST', '/v1/google', { body: input });
+            return { ...grantFrom(reply), created: (reply.payload as { created?: unknown }).created === true };
+        },
+
         async login(input: { email: string; password: string; locale: AccountLocale }): Promise<AccountSessionGrant> {
             return grantFrom(await request('POST', '/v1/login', { body: input }));
         },
@@ -245,7 +256,8 @@ export function createAccountClient(options: AccountClientOptions) {
             return userFrom(await request('PATCH', '/v1/account', { token, body: input }));
         },
 
-        async deleteAccount(token: string, input: { password: string }): Promise<void> {
+        /** Confirmed with the password, or with a fresh Google token for an account without one. */
+        async deleteAccount(token: string, input: { password: string } | { googleIdToken: string }): Promise<void> {
             await request('DELETE', '/v1/account', { token, body: input });
         },
 

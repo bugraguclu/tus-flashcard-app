@@ -29,6 +29,8 @@ import type {
     AccountUser,
 } from '../../lib/accountContract.ts';
 import type { ServerConfig } from './config.ts';
+import { GoogleKeys, GoogleTokenError, verifyGoogleIdToken } from './google.ts';
+import type { GoogleIdentity, GoogleKeySource } from './google.ts';
 import { codeMail } from './mailer.ts';
 import type { Logger, Mailer } from './mailer.ts';
 import { PasswordHasher } from './passwords.ts';
@@ -62,6 +64,7 @@ export const ERROR_MESSAGES: Record<AccountErrorCode, string> = {
     offline: 'Hesap sunucusuna ulaşılamıyor.',
     timeout: 'Hesap sunucusu zamanında yanıt vermedi.',
     not_configured: 'Hesap hizmeti yapılandırılmamış.',
+    google_failed: 'Google ile giriş doğrulanamadı. Yeniden deneyin.',
 };
 
 export interface AccountErrorDetails {
@@ -97,8 +100,13 @@ export interface AccountServiceDeps {
     config: Pick<
         ServerConfig,
         'secret' | 'registrationOpen' | 'emailVerificationRequired' | 'operatorName' | 'contactEmail' | 'sessionDays'
-    >;
+    > & {
+        /** OAuth client IDs whose Google ID tokens are accepted; none turns Google sign-in off. */
+        googleClientIds?: readonly string[];
+    };
     mailer: Mailer;
+    /** Google's public keys; tests pass their own. */
+    googleKeys?: GoogleKeySource;
     hasher?: PasswordHasher;
     limiter?: RateLimiter;
     now?: Clock;
@@ -144,6 +152,7 @@ export class AccountService {
     private readonly limiter: RateLimiter;
     private readonly now: Clock;
     private readonly log: Logger;
+    private readonly googleKeys: GoogleKeySource;
 
     constructor(deps: AccountServiceDeps) {
         this.store = deps.store;
@@ -153,6 +162,11 @@ export class AccountService {
         this.hasher = deps.hasher ?? new PasswordHasher();
         this.limiter = deps.limiter ?? new RateLimiter(this.now);
         this.log = deps.log ?? SILENT_LOG;
+        this.googleKeys = deps.googleKeys ?? new GoogleKeys(undefined, this.now);
+    }
+
+    private get googleClientIds(): readonly string[] {
+        return this.config.googleClientIds ?? [];
     }
 
     private get sessionMs(): number {
@@ -166,6 +180,7 @@ export class AccountService {
             registrationOpen: this.config.registrationOpen && (!this.config.emailVerificationRequired || this.mailer.ready),
             emailReady: this.mailer.ready,
             emailVerificationRequired: this.config.emailVerificationRequired,
+            googleSignIn: this.googleClientIds.length > 0,
             policyVersion: ACCOUNT_POLICY_VERSION,
             operatorName: this.config.operatorName,
             contactEmail: this.config.contactEmail,
@@ -205,6 +220,7 @@ export class AccountService {
             emailVerifiedAt: null,
             createdAt: now,
             updatedAt: now,
+            googleSub: null,
         };
         const requestedPolicy = field(body, 'policyVersion');
         const policyVersion = POLICY_VERSION_PATTERN.test(requestedPolicy) ? requestedPolicy : ACCOUNT_POLICY_VERSION;
@@ -265,7 +281,8 @@ export class AccountService {
         const email = normalizeEmail(input.email);
         this.limit(`login-address:${email}`, 10, 15 * MINUTE);
         const user = this.store.findUserByEmail(email);
-        const valid = user
+        // An account made with Google has no password: it fails like an unknown address, in the same time.
+        const valid = user && user.passwordHash
             ? await this.hasher.verify(input.password, user.passwordHash)
             : await this.hasher.verifyAgainstNothing(input.password);
         if (!user || !valid) throw new AccountError('invalid_credentials', 401);
@@ -290,6 +307,63 @@ export class AccountService {
         }
 
         return this.openSession(user, context, 'email');
+    }
+
+    /**
+     * Sign in with Google, creating the account on first use. Google has verified the address, so
+     * an existing account with that address is the learner's own: it is linked and marked
+     * verified. A new account needs the same consent as a sign-up and no password.
+     */
+    async googleSignIn(body: RequestBody, context: RequestContext): Promise<AccountSessionGrant & { created: boolean }> {
+        this.limit(`google:${context.ip}`, 30, 15 * MINUTE);
+        const identity = await this.googleIdentity(field(body, 'idToken'));
+        const email = normalizeEmail(identity.email);
+        const now = this.now();
+
+        const known = this.store.findUserByGoogleSub(identity.subject) ?? this.store.findUserByEmail(email);
+        if (known) {
+            if (known.googleSub === null || known.emailVerifiedAt === null) {
+                this.store.transaction(() => {
+                    if (known.googleSub === null) this.store.setGoogleSub(known.id, identity.subject, now);
+                    if (known.emailVerifiedAt === null) {
+                        this.store.markVerified(known.id, now);
+                        this.store.insertEvent(known.id, 'email_verified', 'google', now);
+                    }
+                });
+            }
+            const user = this.store.findUserById(known.id) ?? known;
+            return { ...this.openSession(user, context, 'google'), created: false };
+        }
+
+        if (!this.config.registrationOpen) throw new AccountError('registration_closed', 403);
+        if (body.consent !== true) throw invalidInput({ consent: 'consent_required' });
+        const fallbackName = email.split('@')[0] ?? '';
+        const name = normalizeName(identity.name) || normalizeName(fallbackName) || 'TusAnkiM';
+        const user: UserRow = {
+            id: newId(),
+            email,
+            name: Array.from(name).slice(0, 80).join(''),
+            passwordHash: '',
+            emailVerifiedAt: now,
+            createdAt: now,
+            updatedAt: now,
+            googleSub: identity.subject,
+        };
+        const requestedPolicy = field(body, 'policyVersion');
+        const policyVersion = POLICY_VERSION_PATTERN.test(requestedPolicy) ? requestedPolicy : ACCOUNT_POLICY_VERSION;
+        try {
+            this.store.transaction(() => {
+                this.store.insertUser(user);
+                this.store.insertConsent(user.id, policyVersion, now);
+                this.store.insertEvent(user.id, 'account_created', 'google', now);
+            });
+        } catch (error) {
+            // A second tap that raced the first: sign in to the account it made.
+            const existing = this.store.findUserByGoogleSub(identity.subject);
+            if (existing) return { ...this.openSession(existing, context, 'google'), created: false };
+            throw error;
+        }
+        return { ...this.openSession(user, context, 'google'), created: true };
     }
 
     logout(token: string | null): Record<string, never> {
@@ -454,10 +528,17 @@ export class AccountService {
     async deleteAccount(token: string | null, body: RequestBody): Promise<Record<string, never>> {
         const user = this.authenticate(token);
         this.limit(`password:${user.id}`, 10, HOUR);
-        const password = field(body, 'password');
-        if (!password) throw invalidInput({ password: 'required' });
-        if (!(await this.hasher.verify(password, user.passwordHash))) {
-            throw new AccountError('wrong_password', 400, undefined, { fields: { password: 'password_wrong' } });
+        const googleToken = field(body, 'googleIdToken');
+        if (googleToken && user.googleSub !== null) {
+            // Proving it is still the same Google account stands in for a password.
+            const identity = await this.googleIdentity(googleToken);
+            if (identity.subject !== user.googleSub) throw new AccountError('google_failed', 400);
+        } else {
+            const password = field(body, 'password');
+            if (!password) throw invalidInput({ password: 'required' });
+            if (!user.passwordHash || !(await this.hasher.verify(password, user.passwordHash))) {
+                throw new AccountError('wrong_password', 400, undefined, { fields: { password: 'password_wrong' } });
+            }
         }
         this.store.transaction(() => {
             this.store.deleteCodes(user.email);
@@ -486,7 +567,25 @@ export class AccountService {
             email: row.email,
             emailVerified: row.emailVerifiedAt !== null,
             createdAt: iso(row.createdAt),
+            hasPassword: row.passwordHash !== '',
+            google: row.googleSub !== null,
         };
+    }
+
+    /** A checked Google identity with a verified address, or `google_failed`. */
+    private async googleIdentity(idToken: string): Promise<GoogleIdentity> {
+        if (this.googleClientIds.length === 0) throw new AccountError('not_found', 404);
+        if (!idToken) throw new AccountError('google_failed', 400);
+        let identity: GoogleIdentity;
+        try {
+            identity = await verifyGoogleIdToken(idToken, { clientIds: this.googleClientIds, keys: this.googleKeys, now: this.now() });
+        } catch (error) {
+            if (error instanceof GoogleTokenError) this.log.warn(`[account] a Google token was refused: ${error.message}`);
+            else this.log.warn(`[account] a Google token could not be checked: ${describe(error)}`);
+            throw new AccountError('google_failed', 400);
+        }
+        if (!identity.emailVerified) throw new AccountError('google_failed', 400);
+        return identity;
     }
 
     private limit(key: string, limit: number, windowMs: number): void {

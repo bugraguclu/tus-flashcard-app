@@ -1,7 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { StyleSheet, View, type TextInput as NativeTextInput } from 'react-native';
 import { Text } from '../AppText';
+import { Spacing, useThemeColors } from '../../constants/theme';
 import {
+    PASSWORD_MAX_LENGTH,
+    PASSWORD_MIN_LENGTH,
     hasIssues,
     validateName,
     validatePasswordChange,
@@ -13,9 +16,11 @@ import { isAccountRequestError, AccountRequestError } from '../../lib/accountApi
 import { accountErrorMessage, accountFieldMessage } from '../../lib/accountMessages';
 import { useAccount } from '../../contexts/AccountContext';
 import { useI18n } from '../../hooks/useI18n';
-import { AuthTextField, PasswordField } from './AuthFields';
-import { AuthButton, AuthNotice, TextLink } from './AuthControls';
-import { useAccountPalette } from './accountPalette';
+import { requestGoogleIdToken } from '../../lib/googleSignIn';
+import { Button } from '../ui/Button';
+import { PasswordField, TextField } from '../ui/Fields';
+import { Notice } from '../ui/Feedback';
+import { Type } from '../ui/tokens';
 
 /*
  * The account page's three inline forms. Each opens in place under its row and closes itself on
@@ -71,8 +76,8 @@ export function EditNamePanel({ user, onDone }: { user: AccountUser; onDone: () 
 
     return (
         <PanelFrame>
-            {form.error ? <AuthNotice tone="error" text={form.error} /> : null}
-            <AuthTextField
+            {form.error ? <Notice tone="danger">{form.error}</Notice> : null}
+            <TextField
                 label={l('Ad soyad', 'Full name')}
                 value={name}
                 onChangeText={setName}
@@ -114,8 +119,10 @@ export function ChangePasswordPanel({ user, onDone }: { user: AccountUser; onDon
 
     return (
         <PanelFrame>
-            {form.error ? <AuthNotice tone="error" text={form.error} /> : null}
+            {form.error ? <Notice tone="danger">{form.error}</Notice> : null}
             <PasswordField
+                showLabel={l('Şifreyi göster', 'Show password')}
+                hideLabel={l('Şifreyi gizle', 'Hide password')}
                 label={l('Mevcut şifre', 'Current password')}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
@@ -130,9 +137,11 @@ export function ChangePasswordPanel({ user, onDone }: { user: AccountUser; onDon
                 onChangeText={setPassword}
                 error={form.fieldError('password')}
                 isNew
-                strengthContext={{ email: user.email, name: user.name }}
-                placeholder={l('Yeni bir şifre belirleyin', 'Choose a new password')}
-                inputRef={nextRef}
+                hint={l(`En az ${PASSWORD_MIN_LENGTH} karakter`, `At least ${PASSWORD_MIN_LENGTH} characters`)}
+                passwordRules={`minlength: ${PASSWORD_MIN_LENGTH}; maxlength: ${PASSWORD_MAX_LENGTH};`}
+                showLabel={l('Şifreyi göster', 'Show password')}
+                hideLabel={l('Şifreyi gizle', 'Hide password')}
+                ref={nextRef}
                 returnKeyType="done"
                 onSubmitEditing={save}
                 editable={!form.busy}
@@ -148,20 +157,31 @@ export function ChangePasswordPanel({ user, onDone }: { user: AccountUser; onDon
     );
 }
 
-export function DeleteAccountPanel({ onCancel, onDeleted }: { onCancel: () => void; onDeleted: () => void }) {
+export function DeleteAccountPanel({ user, onCancel, onDeleted }: { user: AccountUser; onCancel: () => void; onDeleted: () => void }) {
     const account = useAccount();
     const form = useFormState();
     const { l } = form;
     const [password, setPassword] = useState('');
     const styles = usePanelStyles();
+    // An account made with Google has no password; Google's sheet confirms it is still its owner.
+    const withGoogle = !user.hasPassword;
 
     const remove = () => {
+        if (withGoogle) {
+            void form.run(async () => {
+                const googleIdToken = await requestGoogleIdToken();
+                if (!googleIdToken) return;
+                await account.deleteAccount({ googleIdToken });
+                onDeleted();
+            });
+            return;
+        }
         if (!password) {
             form.setFields({ password: 'required' });
             return;
         }
         void form.run(async () => {
-            await account.deleteAccount(password);
+            await account.deleteAccount({ password });
             onDeleted();
         });
     };
@@ -170,27 +190,33 @@ export function DeleteAccountPanel({ onCancel, onDeleted }: { onCancel: () => vo
         <PanelFrame>
             <Text style={styles.warning}>
                 {l(
-                    'Hesabınız, adınız, e-postanız ve hesap etkinliğiniz sunucudan kalıcı olarak silinir. Bu işlem geri alınamaz. Kartlarınız, desteleriniz ve çalışma geçmişiniz bu cihazda kalır.',
-                    'Your account, name, email and account activity are permanently deleted from the server. This cannot be undone. Your cards, decks and study history stay on this device.',
+                    'Hesabınız sunucudan kalıcı olarak silinir; bu geri alınamaz. Kartlarınız bu cihazda kalır.',
+                    'Your account is permanently deleted from the server; this can’t be undone. Your cards stay on this device.',
                 )}
             </Text>
-            {form.error ? <AuthNotice tone="error" text={form.error} /> : null}
-            <PasswordField
-                label={l('Onaylamak için şifrenizi yazın', 'Enter your password to confirm')}
-                value={password}
-                onChangeText={setPassword}
-                error={form.fieldError('password')}
-                returnKeyType="done"
-                onSubmitEditing={remove}
-                editable={!form.busy}
-            />
-            <AuthButton
-                label={l('Hesabımı kalıcı olarak sil', 'Delete my account permanently')}
+            {form.error ? <Notice tone="danger">{form.error}</Notice> : null}
+            {withGoogle ? null : (
+                <PasswordField
+                    showLabel={l('Şifreyi göster', 'Show password')}
+                    hideLabel={l('Şifreyi gizle', 'Hide password')}
+                    label={l('Onaylamak için şifrenizi yazın', 'Enter your password to confirm')}
+                    value={password}
+                    onChangeText={setPassword}
+                    error={form.fieldError('password')}
+                    returnKeyType="done"
+                    onSubmitEditing={remove}
+                    editable={!form.busy}
+                />
+            )}
+            <Button
+                label={withGoogle
+                    ? l('Google ile onayla ve sil', 'Confirm with Google and delete')
+                    : l('Hesabımı kalıcı olarak sil', 'Delete my account permanently')}
                 onPress={remove}
-                variant="danger"
+                variant="destructive"
                 busy={form.busy}
             />
-            <TextLink label={l('Vazgeç', 'Cancel')} onPress={onCancel} disabled={form.busy} tone="muted" />
+            <Button variant="plain" tone="muted" label={l('Vazgeç', 'Cancel')} onPress={onCancel} disabled={form.busy} />
         </PanelFrame>
     );
 }
@@ -205,18 +231,23 @@ function PanelActions({ busy, saveLabel, onSave, onCancel }: { busy: boolean; sa
     const styles = usePanelStyles();
     return (
         <View style={styles.actions}>
-            <AuthButton label={saveLabel} onPress={onSave} busy={busy} />
-            <TextLink label={l('Vazgeç', 'Cancel')} onPress={onCancel} disabled={busy} tone="muted" />
+            <Button label={saveLabel} onPress={onSave} busy={busy} />
+            <Button variant="plain" tone="muted" label={l('Vazgeç', 'Cancel')} onPress={onCancel} disabled={busy} />
         </View>
     );
 }
 
 function usePanelStyles() {
-    const palette = useAccountPalette();
-    return useMemo(() => StyleSheet.create({
-        frame: { gap: 16, paddingTop: 4, paddingBottom: 8 },
-        actions: { gap: 4 },
-        note: { fontSize: 13, lineHeight: 18, color: palette.inkSecondary },
-        warning: { fontSize: 14, lineHeight: 21, color: palette.ink },
-    }), [palette]);
+    const colors = useThemeColors();
+    return {
+        frame: panelStyles.frame,
+        actions: panelStyles.actions,
+        note: [Type.caption, { color: colors.textSecondary }],
+        warning: [Type.body, { color: colors.textPrimary }],
+    };
 }
+
+const panelStyles = StyleSheet.create({
+    frame: { gap: Spacing.lg },
+    actions: { gap: Spacing.xs },
+});

@@ -60,14 +60,14 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | Header icon action | `IconButton` / `HeaderIconButton` | `components/ui/Button.tsx` |
 | Any filled, outlined or text action | `Button` (`primary`, `secondary`, `destructive`, `plain`; `regular` 50 pt or `compact` 40 pt) | `components/ui/Button.tsx` |
 | Close and help controls | `CloseButton` (SVG ×), `HelpButton` (round ?) | `components/ui/Button.tsx` |
-| Control glyphs | `BackIcon`, `ForwardIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `ChevronUpIcon`, `CloseIcon`, `CheckIcon`, `PlusIcon`, `MinusIcon`, `MoreIcon` (•••, the one "more" icon everywhere), `SearchIcon`, `RefreshIcon`, `ArrowUpIcon`, `ArrowDownIcon`, `ArrowLeftIcon`, `ArrowRightIcon`, `TrashIcon`, `UndoIcon`, `RedoIcon`, `ExternalLinkIcon`, `DragHandleIcon` | `components/ui/icons.tsx` |
+| Control glyphs | `BackIcon`, `ForwardIcon`, `ChevronRightIcon`, `ChevronDownIcon`, `ChevronUpIcon`, `CloseIcon`, `CheckIcon`, `PlusIcon`, `MinusIcon`, `MoreIcon` (•••, the one "more" icon everywhere), `SearchIcon`, `RefreshIcon`, `ArrowUpIcon`, `ArrowDownIcon`, `ArrowLeftIcon`, `ArrowRightIcon`, `TrashIcon`, `UndoIcon`, `RedoIcon`, `ExternalLinkIcon`, `DragHandleIcon`, `EyeIcon`, `EyeOffIcon` | `components/ui/icons.tsx` |
 | − value + | `Stepper` (holding repeats; `children` for an editable value) | `components/ui/Stepper.tsx` |
 | A surface for rows, charts or fields | `Card` (`divided` for rows, `padded` for free content; `title`, `description`, `accessory` draw its heading inside), `CardHeader` | `components/ui/Card.tsx` |
 | A labelled group of rows | `Section` (`SectionLabel` + `Card` + `SectionFootnote`) | `components/ui/Card.tsx` |
 | Rows | `ListRow` (opens something; `selected` makes it an option of a single-choice list, `expanded` a disclosure), `SwitchRow`, `ValueRow` (label and value or control), `SelectRow` (label and chosen option) | `components/ui/Rows.tsx` |
 | Switch | `AppSwitch` | `components/ui/Rows.tsx` |
 | Chips, badges, segmented control, checkboxes, chosen-row tick | `Chip` (`role` button, radio or checkbox), `Badge`, `SegmentedControl`, `Checkbox` / `CheckRow` (`mixed` for a partly ticked group), `SelectedMark` | `components/ui/Choice.tsx` |
-| Text entry | `TextField` (`label` for a caption above it, `monospace` for code), `SearchField` | `components/ui/Fields.tsx` |
+| Text entry | `TextField` (`label` for a caption above it, `error` / `hint` for a line under it, `accessory` for a control inside its right edge, `monospace` for code), `PasswordField` (show/hide button, iOS Password AutoFill; `isNew` for a password being chosen), `SearchField` | `components/ui/Fields.tsx` |
 | Empty, loading, notices, progress | `EmptyState`, `LoadingState` (`delayed` stays blank for 300 ms, then fades in), `Notice` (`info`, `warning`, `danger`, `success`), `ProgressBar` | `components/ui/Feedback.tsx` |
 | Bottom sheet | `AppSheet` (title and subtitle centred under the grabber, keyboard lift, overlay picker), `SheetScrollView` for its scrolling body, `SheetNoDrag` around a multi-line field | `components/ui/Sheet.tsx` |
 | Centred form, picker or explanation | `AppDialog` | `components/ui/Dialog.tsx` |

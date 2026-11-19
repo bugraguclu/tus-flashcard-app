@@ -260,6 +260,7 @@ describe('sign-in and sessions', () => {
             registrationOpen: true,
             emailReady: true,
             emailVerificationRequired: false,
+            googleSignIn: false,
             policyVersion: ACCOUNT_POLICY_VERSION,
             operatorName: 'TusAnkiM Test',
             contactEmail: 'help@example.com',

@@ -6,6 +6,7 @@ import type {
     AccountSessionGrant,
     AccountUser,
 } from './accountContract';
+import { NAME_MAX_LENGTH } from './accountContract';
 
 /*
  * Pure checks for everything that crosses the device boundary: server replies and the session
@@ -34,7 +35,16 @@ export function parseUser(value: unknown): AccountUser | null {
     const email = boundedString(value.email, 320);
     const createdAt = boundedString(value.createdAt, 40);
     if (!id || name === null || !email || !createdAt || typeof value.emailVerified !== 'boolean') return null;
-    return { id, name, email, emailVerified: value.emailVerified, createdAt };
+    return {
+        id,
+        name,
+        email,
+        emailVerified: value.emailVerified,
+        createdAt,
+        // Servers from before Google sign-in send neither: every such account has a password.
+        hasPassword: value.hasPassword !== false,
+        google: value.google === true,
+    };
 }
 
 export function parseGrant(value: unknown): AccountSessionGrant | null {
@@ -54,6 +64,7 @@ export function parseServiceConfig(value: unknown): AccountServiceConfig | null 
         registrationOpen: value.registrationOpen as boolean,
         emailReady: value.emailReady as boolean,
         emailVerificationRequired: value.emailVerificationRequired as boolean,
+        googleSignIn: value.googleSignIn === true,
         policyVersion: boundedString(value.policyVersion, 40) ?? '',
         operatorName: boundedString(value.operatorName, 200) ?? '',
         contactEmail: boundedString(value.contactEmail, 320) ?? '',
@@ -110,6 +121,22 @@ export function accountInitials(user: Pick<AccountUser, 'name' | 'email'>): stri
 // --- First run -------------------------------------------------------------------------------
 
 /** Settings-table keys (lib/dbSettings) that remember the account screen's own state. */
+/**
+ * The name a new account starts with, so sign-up asks only for an address and a password: the
+ * address's local part as words (`ayse.yilmaz` → `Ayse Yilmaz`). The learner can change it on the
+ * account page. Never empty and never longer than the server accepts.
+ */
+export function nameFromEmail(email: string): string {
+    const local = email.trim().split('@')[0] ?? '';
+    const words = local
+        .split(/[._+\-\s]+/)
+        .map((word) => word.replace(/[^\p{L}\p{N}]/gu, ''))
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toLocaleUpperCase('tr-TR') + word.slice(1));
+    const name = words.join(' ').slice(0, NAME_MAX_LENGTH).trim();
+    return name || 'TusAnkiM';
+}
+
 export const ACCOUNT_PROMPT_RESOLVED_KEY = 'account_prompt_resolved_v1';
 export const ACCOUNT_INSTALL_MARKER_KEY = 'account_install_marker_v1';
 

@@ -14,6 +14,8 @@ import {
 } from '../../lib/accountContract';
 import { AccountRequestError, isAccountRequestError } from '../../lib/accountApi';
 import { accountErrorMessage } from '../../lib/accountMessages';
+import { nameFromEmail } from '../../lib/accountSession';
+import { requestGoogleIdToken } from '../../lib/googleSignIn';
 import { useAccount } from '../../contexts/AccountContext';
 import { useI18n } from '../../hooks/useI18n';
 
@@ -26,11 +28,9 @@ import { useI18n } from '../../hooks/useI18n';
 export type SignInMode = 'login' | 'register' | 'forgot' | 'reset' | 'verify';
 
 export interface SignInValues {
-    name: string;
     email: string;
     password: string;
     code: string;
-    consent: boolean;
 }
 
 export interface SignInNotice {
@@ -38,7 +38,7 @@ export interface SignInNotice {
     text: string;
 }
 
-const FIELD_ORDER: AccountFieldName[] = ['name', 'email', 'code', 'password', 'consent'];
+const FIELD_ORDER: AccountFieldName[] = ['email', 'code', 'password'];
 
 /** Whole seconds left until `until`, ticking once a second while there are any. */
 function useCountdown(until: number): number {
@@ -63,6 +63,15 @@ function feedback(kind: 'success' | 'error'): void {
     ).catch(() => undefined);
 }
 
+/**
+ * Sign-up asks for an address and a password only: the name starts from the address (the account
+ * page renames it), and pressing "Create account" under the sentence naming the terms is the
+ * agreement, so there is no checkbox to tick.
+ */
+function registration(values: SignInValues) {
+    return { ...values, name: nameFromEmail(values.email), consent: true };
+}
+
 export function useSignInFlow({
     initialMode,
     sendCodeOnOpen = false,
@@ -77,11 +86,9 @@ export function useSignInFlow({
     const { l } = useI18n();
     const [mode, setMode] = useState<SignInMode>(initialMode);
     const [values, setValues] = useState<SignInValues>({
-        name: '',
         email: account.user?.email ?? '',
         password: '',
         code: '',
-        consent: false,
     });
     const [fields, setFields] = useState<AccountFieldIssues>({});
     const [notice, setNoticeState] = useState<SignInNotice | null>(null);
@@ -90,7 +97,6 @@ export function useSignInFlow({
     const resendIn = useCountdown(resendUntil);
     const busyRef = useRef(false);
 
-    const nameRef = useRef<NativeTextInput | null>(null);
     const emailRef = useRef<NativeTextInput | null>(null);
     const passwordRef = useRef<NativeTextInput | null>(null);
     const codeRef = useRef<NativeTextInput | null>(null);
@@ -112,8 +118,7 @@ export function useSignInFlow({
 
     const focusFirst = useCallback((issues: AccountFieldIssues) => {
         const first = FIELD_ORDER.find((field) => issues[field]);
-        const target = first === 'name' ? nameRef
-            : first === 'email' ? emailRef
+        const target = first === 'email' ? emailRef
                 : first === 'password' ? passwordRef
                     : first === 'code' ? codeRef
                         : null;
@@ -173,7 +178,7 @@ export function useSignInFlow({
     const validate = useCallback((current: SignInValues): AccountFieldIssues => {
         switch (mode) {
             case 'login': return validateSignIn(current);
-            case 'register': return validateRegistration(current);
+            case 'register': return validateRegistration(registration(current));
             case 'forgot': return validateEmailOnly(current);
             case 'reset': return validatePasswordReset(current);
             case 'verify': return validateCode(current);
@@ -200,7 +205,7 @@ export function useSignInFlow({
                     finish();
                     return;
                 case 'register': {
-                    const outcome = await account.register(current);
+                    const outcome = await account.register(registration(current));
                     if (outcome.verification === 'none') {
                         finish();
                         return;
@@ -241,6 +246,18 @@ export function useSignInFlow({
             }
         });
     }, [account, finish, focusFirst, l, mode, run, setNotice, startCooldown, update, validate, values]);
+
+    /** Google's own sheet, then the account server; closing the sheet changes nothing. */
+    const continueWithGoogle = useCallback(() => {
+        void run(async () => {
+            setFields({});
+            setNotice(null);
+            const idToken = await requestGoogleIdToken();
+            if (!idToken) return;
+            await account.signInWithGoogle(idToken);
+            finish();
+        });
+    }, [account, finish, run, setNotice]);
 
     const resend = useCallback(() => {
         if (resendIn > 0) return;
@@ -298,10 +315,11 @@ export function useSignInFlow({
         notice,
         busy,
         resendIn,
-        refs: { nameRef, emailRef, passwordRef, codeRef },
+        refs: { emailRef, passwordRef, codeRef },
         update,
         switchMode,
         submit,
         resend,
+        continueWithGoogle,
     };
 }

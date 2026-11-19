@@ -45,6 +45,8 @@ export interface ServerConfig {
     /** Behind a reverse proxy: take the client address from X-Forwarded-For. */
     trustProxy: boolean;
     sessionDays: number;
+    /** OAuth client IDs (iOS and web) whose Google ID tokens are accepted; empty turns Google off. */
+    googleClientIds: string[];
     smtp: SmtpConfig | null;
     /** Things worth saying once at startup. */
     warnings: string[];
@@ -134,6 +136,14 @@ function smtp(env: Environment): SmtpConfig | null {
     };
 }
 
+/** `GOOGLE_CLIENT_IDS`: comma-separated OAuth client IDs, each ending in .apps.googleusercontent.com. */
+function googleClientIds(env: Environment): string[] {
+    const ids = text(env, 'GOOGLE_CLIENT_IDS').split(',').map((id) => id.trim()).filter(Boolean);
+    const invalid = ids.find((id) => !/^[\w.-]+\.apps\.googleusercontent\.com$/.test(id));
+    if (invalid) throw new ConfigError(`GOOGLE_CLIENT_IDS has an entry that is not a Google OAuth client ID: ${invalid}`);
+    return ids;
+}
+
 export function loadConfig(env: Environment = process.env): ServerConfig {
     const production = text(env, 'NODE_ENV') === 'production';
     const dev = flag(env, 'ACCOUNT_DEV', false);
@@ -178,6 +188,7 @@ export function loadConfig(env: Environment = process.env): ServerConfig {
         allowLocalOrigins: dev,
         trustProxy: flag(env, 'TRUST_PROXY', false),
         sessionDays: integer(env, 'ACCOUNT_SESSION_DAYS', 60, 1, 365),
+        googleClientIds: googleClientIds(env),
         smtp: mail,
         warnings,
     };

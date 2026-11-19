@@ -56,7 +56,9 @@ export type AccountErrorCode =
     | 'server_error'
     | 'offline'
     | 'timeout'
-    | 'not_configured';
+    | 'not_configured'
+    /** Google's sign-in did not finish or its token was not accepted. */
+    | 'google_failed';
 
 export interface AccountUser {
     id: string;
@@ -64,6 +66,10 @@ export interface AccountUser {
     email: string;
     emailVerified: boolean;
     createdAt: string;
+    /** False for an account made with Google that never set a password. */
+    hasPassword: boolean;
+    /** Signs in with Google as well (or only). */
+    google: boolean;
 }
 
 /** What the server tells a signed-out app about itself, so screens offer only what works. */
@@ -72,6 +78,8 @@ export interface AccountServiceConfig {
     /** Codes can be e-mailed (verification and password reset). */
     emailReady: boolean;
     emailVerificationRequired: boolean;
+    /** The server accepts "Sign in with Google". */
+    googleSignIn: boolean;
     policyVersion: string;
     operatorName: string;
     contactEmail: string;
