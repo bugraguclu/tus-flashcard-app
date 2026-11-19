@@ -335,6 +335,7 @@ export default function StudyScreen() {
     const insets = useSafeAreaInsets();
     const { width, height: windowHeight } = useWindowDimensions();
     const isCompact = width < 600;
+    const isNarrowToolbar = width < 360;
     const routeSelectedDeckName = typeof params.deck === 'string' ? params.deck : null;
     // The URL/deep link chooses the initial study scope. Switching decks from the reviewer is a
     // queue-scope change on this screen, not a new navigation entry.
@@ -3099,7 +3100,12 @@ export default function StudyScreen() {
                 {...webTitle(l('Çalışılacak desteyi seç', 'Choose which deck to study'))}
             >
                 {/* Toolbar chrome between fixed icons: it grows less than content, as a navigation bar title does. */}
-                <Text style={styles.classicToolbarTitle} numberOfLines={1} maxFontSizeMultiplier={1.15}>
+                {/* On the narrowest phones the four actions leave the title ~45 pt: two smaller lines keep the deck readable. */}
+                <Text
+                    style={[styles.classicToolbarTitle, isNarrowToolbar && styles.classicToolbarTitleNarrow]}
+                    numberOfLines={isNarrowToolbar ? 2 : 1}
+                    maxFontSizeMultiplier={1.15}
+                >
                     {settings.showDeckTitle !== false ? reviewerDeckTitle : l('Deste seç', 'Select deck')}
                 </Text>
                 <ChevronDownIcon color={colors.textMuted} size={16} />
@@ -3672,6 +3678,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     },
     classicTitleButton: { flex: 1, minWidth: 0, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.xs },
     classicToolbarTitle: { flexShrink: 1, fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary },
+    classicToolbarTitleNarrow: { fontSize: FontSize.md, lineHeight: 17 },
     toolbarActions: { flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' },
 
     streakChip: {
