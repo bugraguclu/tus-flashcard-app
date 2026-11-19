@@ -29,7 +29,7 @@ type LaunchQueue = { setConsumer(consumer: (params: LaunchParams) => void): void
  * - The service worker that lets the installed web app start offline.
  * - Keyboard use: focus rings, focus inside dialogs and menus, arrow keys, app-wide shortcuts and
  *   their list (`?`). See `hooks/useWebKeyboardNavigation.ts`.
- * - Hover feedback under a mouse pointer, which a touch screen never needs.
+ * - Hover feedback and thin scroll bars under a mouse pointer, which a touch screen never needs.
  *
  * Mounted once, by the root stack, on web only.
  */
@@ -74,7 +74,10 @@ export default function WebAppIntegrations() {
         registerWebServiceWorker();
     }, []);
 
-    useEffect(() => installWebHover(document, colors.hoverOverlay), [colors.hoverOverlay]);
+    useEffect(
+        () => installWebHover(document, colors.hoverOverlay, colors.textMuted),
+        [colors.hoverOverlay, colors.textMuted],
+    );
 
     useEffect(() => onStudyReminderOpened(() => returnToDeckList(router)), [router]);
 

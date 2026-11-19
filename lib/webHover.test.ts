@@ -116,4 +116,11 @@ describe('installWebHover', () => {
     it('only tints under a fine pointer that can hover', () => {
         expect(hoverStyleSheet('red')).toContain('@media (hover: hover) and (pointer: fine)');
     });
+
+    it('brings thin scroll bars back for a mouse when given their colour', () => {
+        expect(hoverStyleSheet('red')).not.toContain('scrollbar-width');
+        const sheet = hoverStyleSheet('red', 'gray');
+        expect(sheet).toContain('[class*="r-scrollbarWidth-"] { scrollbar-width: thin !important; scrollbar-color: gray transparent !important; }');
+        expect(sheet.indexOf('scrollbar-width')).toBeLessThan(sheet.lastIndexOf('}'));
+    });
 });
