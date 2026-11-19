@@ -101,17 +101,16 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
         if (next !== value) onChange(next);
     }, [format, max, min, onChange, value]);
 
-    useImperativeHandle(ref, () => ({
-        stepBy: (delta: number) => {
-            const next = stepBoundedIntegerDraft(draftRef.current, valueRef.current, delta, min, max, wrap);
-            steppedTargetRef.current = next;
-            const formatted = format(next);
-            draftRef.current = formatted;
-            valueRef.current = next;
-            setDraft(formatted);
-            if (next !== value) onChange(next);
-        },
-    }), [format, max, min, onChange, value, wrap]);
+    const stepBy = useCallback((delta: number) => {
+        const next = stepBoundedIntegerDraft(draftRef.current, valueRef.current, delta, min, max, wrap);
+        steppedTargetRef.current = next;
+        const formatted = format(next);
+        draftRef.current = formatted;
+        valueRef.current = next;
+        setDraft(formatted);
+        if (next !== value) onChange(next);
+    }, [format, max, min, onChange, value, wrap]);
+    useImperativeHandle(ref, () => ({ stepBy }), [stepBy]);
 
     const textScale = useLayoutTextScale();
     const charCount = Math.max(draft.length, minimumDigits, 1);
@@ -121,6 +120,8 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
     return (
         <Pressable
             onPress={() => textInputRef.current?.focus()}
+            // It only hands a tap to the field; on the web the field is the one Tab stop.
+            tabIndex={-1}
             style={[styles.container, bare && styles.bareContainer, style]}
             // A bare value is as tall as the stepper's buttons; its slop makes up the touch target.
             hitSlop={bare ? { top: (HIT_TARGET - 32) / 2, bottom: (HIT_TARGET - 32) / 2 } : undefined}
@@ -159,6 +160,13 @@ const BoundedIntegerInput = forwardRef<BoundedIntegerInputHandle, Props>(functio
                 }}
                 onBlur={commit}
                 onSubmitEditing={commit}
+                // Up and Down step the value from a hardware keyboard, as a number field does.
+                onKeyPress={(event) => {
+                    const key = event.nativeEvent.key;
+                    if (key !== 'ArrowUp' && key !== 'ArrowDown') return;
+                    (event as unknown as { preventDefault?: () => void }).preventDefault?.();
+                    stepBy(key === 'ArrowUp' ? 1 : -1);
+                }}
                 keyboardType={isSigned ? 'numbers-and-punctuation' : 'number-pad'}
                 inputMode={isSigned ? 'text' : 'numeric'}
                 showSoftInputOnFocus

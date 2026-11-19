@@ -212,6 +212,18 @@ export function SlidersGlyph(props: GlyphProps) {
     );
 }
 
+/** A keyboard: two rows of keys over a space bar. Keyboard shortcuts. */
+export function KeyboardGlyph(props: GlyphProps) {
+    return (
+        <IconFrame size={props.size ?? DEFAULT_SIZE}>
+            <Rect x={2.75} y={5.75} width={18.5} height={12.5} rx={2.75} {...paint(props)} />
+            {[7.25, 10.25, 13.25, 16.25].map((cx) => <Circle key={`t${cx}`} cx={cx} cy={9.5} r={0.95} fill={props.color} />)}
+            {[8.75, 11.75, 14.75].map((cx) => <Circle key={`m${cx}`} cx={cx} cy={12.25} r={0.95} fill={props.color} />)}
+            <Path d="M8.5 15.25h7" {...paint(props)} />
+        </IconFrame>
+    );
+}
+
 /** A microphone on its stand: record or play a voice. */
 export function MicGlyph(props: GlyphProps) {
     return (

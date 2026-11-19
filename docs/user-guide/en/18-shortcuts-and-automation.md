@@ -172,6 +172,33 @@ last action. In the web version Ctrl/Cmd+Z undoes and Ctrl/Cmd+1–7 sets a flag
 - Full list: [Studying](05-studying.md#keyboard-shortcuts).
 - Changing the keys: [Settings › Controls › Keyboard](16-settings.md#keyboard).
 
+<a id="web-keyboard"></a>
+### Using the web version with a keyboard
+
+The web version works without a mouse. Tab and Shift+Tab move between controls, and Enter or Space
+uses the focused one; a frame shows which control has focus while you move with the keyboard.
+Up and Down move through a menu, Left and Right through a group of tabs (such as the period in
+Statistics); Esc closes a menu or dialog and takes you back to the button that opened it.
+
+When you are not typing in a field, these keys work on every screen:
+
+| Key | Opens |
+|---|---|
+| D | Decks |
+| A | Add cards |
+| B | Card Browser |
+| T | Statistics |
+| K | Stopwatch |
+| Ctrl+, (Cmd+, on a Mac) | Settings |
+| / | The screen's search field |
+| ? | The list of every shortcut |
+
+**Add note** puts the caret in the first field, and Ctrl+Enter (Cmd+Enter on a Mac) saves the
+note. The list is also under **Decks › ••• › Keyboard shortcuts**.
+
+To move a deck without dragging, Tab to the move handle on its row and press Up or Down; the deck
+moves one place among its siblings. In a number field, Up and Down step the value by one.
+
 ## Related topics
 
 - [Decks](04-decks.md)

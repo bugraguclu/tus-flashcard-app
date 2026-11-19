@@ -33,15 +33,23 @@ export default function SessionActionsMenu({ visible, title, items, onClose }: S
 
     return (
         <Modal visible={visible} transparent animationType={handoff.animationType} onRequestClose={onClose}>
-            <Pressable style={[styles.backdrop, { backgroundColor: colors.scrim }]} onPress={onClose}>
-                <AnimatedPressable style={[styles.card, { backgroundColor: colors.bgCard }, growIn]} onPress={() => undefined} accessibilityViewIsModal>
-                    <Text style={[styles.title, { color: colors.textMuted }]} numberOfLines={1}>{title}</Text>
+            {/* Neither layer is a Tab stop on the web: Escape closes the menu, and the card only
+                keeps a tap on it from reaching the backdrop. */}
+            <Pressable style={[styles.backdrop, { backgroundColor: colors.scrim }]} onPress={onClose} tabIndex={-1}>
+                <AnimatedPressable
+                    style={[styles.card, { backgroundColor: colors.bgCard }, growIn]}
+                    onPress={() => undefined}
+                    tabIndex={-1}
+                    accessibilityViewIsModal
+                    accessibilityRole="menu"
+                >
+                    <Text style={[styles.title, { color: colors.textMuted }]} numberOfLines={1} accessibilityRole="header">{title}</Text>
                     {items.map((item) => (
                         <TouchableOpacity
                             key={item.key}
                             style={[styles.item, { borderTopColor: colors.borderLight }]}
                             onPress={() => handoff.handOff(item.onPress)}
-                            accessibilityRole="button"
+                            accessibilityRole="menuitem"
                         >
                             <Text style={[styles.itemText, { color: item.destructive ? colors.danger : colors.textPrimary }]}>
                                 {item.label}

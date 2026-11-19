@@ -615,6 +615,14 @@ Readable cardless notes are rescued by creating card 1 in the recovery deck; the
 
 **Next compatibility gate:** Verify binding, Save/reopen, reset and reviewer use with a physical iPhone keyboard and Dynamic Type. Anki's other study keys (`e` edit, `=` bury note, `!` suspend note, `o` options) are not bound yet
 
+## Web keyboard navigation and main-window shortcuts
+
+**Status:** Implemented (web)
+
+**Evidence:** The web build answers Anki desktop's main-window letters ([manual](https://docs.ankiweb.net/studying.html)): D decks, A add, B browse, T statistics; K opens the Kronometre, Ctrl/Cmd+, Settings, `/` the screen's search field and `?` a list of every shortcut (also in the deck list's ••• menu on web). Letters act only outside text fields and open dialogs, and the study screen's own keys come first (`appShortcutFor`, `lib/webKeyboardNavigation.test.ts`). The Add screen puts the caret in the first field and saves with Ctrl/Cmd+Enter, as Anki's Add window does, from inside a field's frame or anywhere else on the page. Focus follows the WAI-ARIA Authoring Practices patterns (registry `w3c-aria-apg`): a visible two-tone ring shown only while the keyboard moves focus; dialogs, sheets and menus take focus as they open (a menu on its first item, a form on its first field), keep Tab inside without stopping on the dimmed backdrop, close on Escape and hand focus back to the control that opened them; Up/Down/Home/End move through menu items and Left/Right/Home/End through a segmented control, which is one Tab stop; Space ticks switches and checkboxes and chooses tabs and menu items; Up/Down step a number field (`hooks/useWebKeyboardNavigation.ts`). A deck moves one place among its siblings with Up/Down on its focused drag handle, and with the Move up/Move down actions in VoiceOver on iPhone (`deckStep`, `lib/deckKeyboardReorder.test.ts`). An automated pass over 17 web screens (2026-11-19) found no control without a name and no focusable element hidden from assistive technology; a read of the accessibility tree that screen readers get, on the deck list, study screen, card browser, menus and dialogs, then named every dialog and menu after its title, marked the deck being studied (`aria-current`), named the card frame, gave the sidebar's courses, topics and tiles button roles, and made a card browser row's question area a button with its expanded state (the move handle's VoiceOver actions: `lib/deckDragHandle.render.test.ts`).
+
+**Next compatibility gate:** A listening pass with VoiceOver on macOS Safari of the same flows.
+
 ## iPhone study notifications
 
 **Status:** Implemented

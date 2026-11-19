@@ -397,6 +397,12 @@ ${PASTED_HTML_FILTER_SCRIPT}
       post({ type: 'shortcut', shortcut: 'changeCase' });
       return;
     }
+    // Cmd/Ctrl+Enter saves the note, as Add does in Anki; the screen owns the save.
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key === 'Enter') {
+      event.preventDefault();
+      post({ type: 'shortcut', shortcut: 'save' });
+      return;
+    }
     const shortcut = bridge.resolveShortcut(event);
     if (shortcut) {
       event.preventDefault();

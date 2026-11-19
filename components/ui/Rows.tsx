@@ -1,5 +1,5 @@
-import React from 'react';
-import { type StyleProp, StyleSheet, Switch, type TextStyle, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Platform, type StyleProp, StyleSheet, Switch, type TextStyle, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { SelectedMark } from './Choice';
@@ -12,15 +12,23 @@ import { DISABLED_OPACITY, Type } from './tokens';
  */
 
 /** The app's switch: accent when on, the border tone when off. */
-export function AppSwitch({ value, onValueChange, disabled, accessibilityLabel }: {
+export function AppSwitch({ value, onValueChange, disabled, accessibilityLabel, passive = false }: {
     value: boolean;
     onValueChange: (value: boolean) => void;
     disabled?: boolean;
     accessibilityLabel?: string;
+    /** Drawn inside a row that takes the press: on the web its checkbox is no Tab stop of its own. */
+    passive?: boolean;
 }) {
     const colors = useThemeColors();
+    const control = useRef<unknown>(null);
+    useEffect(() => {
+        // react-native-web draws the switch over a checkbox and passes no tabIndex down to it.
+        if (Platform.OS === 'web' && passive && control.current instanceof HTMLElement) control.current.tabIndex = -1;
+    }, [passive]);
     return (
         <Switch
+            ref={control as React.Ref<Switch>}
             value={value}
             onValueChange={onValueChange}
             disabled={disabled}
@@ -170,7 +178,7 @@ export function SwitchRow({ title, summary, value, onValueChange, disabled = fal
             <RowText title={title} summary={summary} />
             {/* The row takes the tap: a switch that also took it would toggle twice on web. */}
             <View style={styles.passive} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-                <AppSwitch value={value} onValueChange={onValueChange} disabled={disabled} />
+                <AppSwitch value={value} onValueChange={onValueChange} disabled={disabled} passive />
             </View>
         </TouchableOpacity>
     );

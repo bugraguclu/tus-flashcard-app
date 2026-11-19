@@ -152,3 +152,11 @@ copy them; change them only on the owner's word.
   `lib/designSystemAllowlist.json` holds today's counts; a file may lower them, never raise them,
   and a new screen starts at zero. After moving something onto the kit, lower the numbers with
   `UPDATE_DESIGN_ALLOWLIST=1 npx vitest run lib/designSystem.test.ts`.
+- On the web, the keyboard reaches everything (`hooks/useWebKeyboardNavigation.ts`, mounted by
+  `WebAppIntegrations`): it draws the focus ring, puts focus inside a dialog, sheet or menu as it
+  opens and moves through menus and segmented controls with the arrow keys. A part works with it
+  by its roles: a menu's container is `accessibilityRole="menu"` and its rows `MenuItem`s (or
+  `menuitem`), a choice of views is a `SegmentedControl` (one Tab stop, chosen with ← →), and a
+  backdrop is a pressable that covers the layer. Never draw a focus outline in a screen; never
+  put a focusable control inside a row that takes the press (`AppSwitch passive` does this for
+  `SwitchRow`).

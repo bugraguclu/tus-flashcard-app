@@ -3241,6 +3241,8 @@ export default function StudyScreen() {
                                 onPress={handleCardFramePress}
                                 disabled={!settings.ninePointTouchEnabled || !renderPayload}
                                 accessible={false}
+                                // Tap zones are for touch; the keyboard has its own keys for them.
+                                tabIndex={-1}
                             >
                                 {currentNoteMarked || currentFlag > 0 ? (
                                     <View

@@ -13,7 +13,7 @@ import { keyBindingRecordingResult } from '../../lib/hardwareKeyboard';
 import { DEFAULT_KEY_BINDINGS } from '../../lib/storage';
 import type { KeyBindings } from '../../lib/types';
 
-const KEY_ROWS: Array<{ field: keyof KeyBindings; tr: string; en: string }> = [
+export const KEY_ROWS: Array<{ field: keyof KeyBindings; tr: string; en: string }> = [
     { field: 'showAnswer', tr: 'Cevabı göster', en: 'Show answer' },
     { field: 'again', tr: 'Tekrar', en: 'Answer again' },
     { field: 'hard', tr: 'Zor', en: 'Answer hard' },
@@ -25,7 +25,7 @@ const KEY_ROWS: Array<{ field: keyof KeyBindings; tr: string; en: string }> = [
     { field: 'markNote', tr: 'Notu işaretle', en: 'Mark note' },
 ];
 
-function formatKeyLabel(key: string): string {
+export function formatKeyLabel(key: string): string {
     if (key === ' ') return 'Space';
     return key.length === 1 ? key.toUpperCase() : key;
 }

@@ -52,6 +52,11 @@ type SidebarProps = {
     statsPath?: string;
 };
 
+/** Marks the deck, course or topic being studied for screen readers on the web. */
+function currentProps(current: boolean): object {
+    return current ? { 'aria-current': 'true' } : {};
+}
+
 /** Web-only tooltip via HTML title attribute */
 function webTitle(text: string): Record<string, string> {
     return Platform.OS === 'web' ? { title: text } : {};
@@ -117,6 +122,7 @@ export function Sidebar(props: SidebarProps) {
                             accessibilityRole="button"
                             accessibilityLabel={isExpanded ? t('sidebar.hideSubdecks') : t('sidebar.showSubdecks')}
                             accessibilityState={{ expanded: isExpanded }}
+                            aria-expanded={isExpanded}
                         >
                             <DisclosureChevron
                                 color={isExpanded || isSelected ? colors.accent : colors.textMuted}
@@ -134,6 +140,8 @@ export function Sidebar(props: SidebarProps) {
                         onPress={() => onDeckPress?.(deck.name)}
                         accessibilityRole="button"
                         accessibilityLabel={deck.name.replaceAll('::', ' › ')}
+                        accessibilityState={{ selected: isSelected }}
+                        {...currentProps(isSelected)}
                     >
                         <View style={[
                             styles.deckIcon,
@@ -210,6 +218,10 @@ export function Sidebar(props: SidebarProps) {
                                     style={styles.subjectItem}
                                     onPress={() => onSubjectPress(subject.id)}
                                     {...webTitle(`${subject.name} — ${t('common.study')}`)}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`${subject.name}, ${getSubjectCount(subject.id)}`}
+                                    accessibilityState={{ selected: isSelected }}
+                                    {...currentProps(isSelected)}
                                 >
                                     <View style={styles.subjectIconSlot}><BookGlyph color={isSelected ? colors.accent : colors.textSecondary} size={16} /></View>
                                     <Text style={[styles.subjectName, isSelected && styles.subjectNameActive]}>
@@ -227,6 +239,7 @@ export function Sidebar(props: SidebarProps) {
                                     accessibilityRole="button"
                                     accessibilityLabel={isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics')}
                                     accessibilityState={{ expanded: isExpanded }}
+                                    aria-expanded={isExpanded}
                                     {...webTitle(isExpanded ? t('sidebar.hideTopics') : t('sidebar.showTopics'))}
                                 >
                                     <DisclosureChevron
@@ -244,6 +257,10 @@ export function Sidebar(props: SidebarProps) {
                                         key={topic}
                                         style={[styles.topicItem, isTopicSelected && styles.topicItemActive]}
                                         onPress={() => onTopicPress(subject.id, topic)}
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`${localizeTopicName(locale, topic)}, ${getTopicCount(subject.id, topic)}`}
+                                        accessibilityState={{ selected: isTopicSelected }}
+                                        {...currentProps(isTopicSelected)}
                                     >
                                         <View style={[styles.topicDot, isTopicSelected && styles.topicDotActive]} />
                                         <Text style={[styles.topicName, isTopicSelected && styles.topicNameActive]}>
@@ -262,11 +279,11 @@ export function Sidebar(props: SidebarProps) {
 
             <View style={styles.sidebarActions}>
                 <View style={styles.actionRow}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))} accessibilityRole="button" accessibilityLabel={t('sidebar.myCards')}>
                         <CardsGlyph color={colors.textSecondary} size={20} />
                         <Text style={styles.actionText}>{t('sidebar.myCards')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => navigate(statsPath)} {...webTitle(t('common.statistics'))} accessibilityRole="button" accessibilityLabel={t('common.statistics')}>
                         <StatsGlyph color={colors.textSecondary} size={20} />
                         <Text style={styles.actionText}>{t('tabs.statistics')}</Text>
                     </TouchableOpacity>
@@ -312,6 +329,8 @@ export function Sidebar(props: SidebarProps) {
                     style={styles.creditContainer}
                     onPress={() => Linking.openURL('https://www.instagram.com/kursatguclu1/')}
                     hitSlop={{ top: 10, bottom: 10 }}
+                    accessibilityRole="link"
+                    accessibilityLabel="Powered by Kürşad Güçlü (Instagram)"
                 >
                     <Text style={styles.creditText}>
                         Powered by <Text style={styles.creditName}>Kürşad Güçlü</Text>

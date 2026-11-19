@@ -17,6 +17,7 @@ export {
     setDeckDescription,
     moveDeckUnder,
     reorderDeckRelative,
+    compareDeckDisplayOrder,
     setDeckCollapsed,
     getBuriedCountForDeck,
     unburyDeck,

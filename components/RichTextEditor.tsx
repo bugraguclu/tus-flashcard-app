@@ -104,6 +104,8 @@ interface RichTextEditorProps {
     mountDelayMs?: number;
     /** When false, field content is strictly read-only. */
     editable?: boolean;
+    /** Puts the caret in the field once its document is ready, the first time only. */
+    autoFocus?: boolean;
 }
 
 function safeJsValue(value: string): string {
@@ -233,6 +235,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     maxHeight,
     mountDelayMs = 0,
     editable = true,
+    autoFocus = false,
 }, ref) {
     const webViewRef = useRef<WebView>(null);
     // Web renders the same field document in a same-origin iframe instead of a WebView.
@@ -244,6 +247,7 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     const lastChangeSeqRef = useRef(0);
     const latestValueRef = useRef(value);
     const editorReadyRef = useRef(false);
+    const autoFocusPendingRef = useRef(autoFocus);
     const pendingCallsRef = useRef<EditorCall[]>([]);
     // Native saves wait on this until the field has delivered its last edit (flushChange).
     const [flushBarrier] = useState(() => new EditorFlushBarrier());
@@ -479,6 +483,10 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
                 const pending = pendingCallsRef.current;
                 pendingCallsRef.current = [];
                 pending.forEach(callEditor);
+                if (autoFocusPendingRef.current && editable) {
+                    autoFocusPendingRef.current = false;
+                    callEditor({ fn: '__tusEditorFocus', args: [] });
+                }
                 if (Platform.OS === 'web') {
                     setWebFallbackDue(false);
                     watchWebFieldMedia();

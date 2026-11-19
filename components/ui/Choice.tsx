@@ -142,6 +142,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
     const pillWidth = useRef(new Animated.Value(0)).current;
     const placedFor = useRef<T | null>(null);
     const chosen = layouts[value];
+    const hasChoice = options.some((option) => option.value === value);
 
     useEffect(() => {
         if (!chosen) return undefined;
@@ -182,6 +183,9 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
                 return (
                     <Pressable
                         key={option.value}
+                        // One Tab stop for the whole row, on the chosen segment; the arrow keys move
+                        // between segments (hooks/useWebKeyboardNavigation.ts).
+                        tabIndex={selected || !hasChoice ? 0 : -1}
                         onLayout={(event) => {
                             const layout = event.nativeEvent.layout;
                             setLayouts((current) => {

@@ -42,6 +42,7 @@ import {
     setDeckDescription,
     emptyFilteredDeck,
     reorderDeckRelative,
+    compareDeckDisplayOrder,
     type DeckTreeNode,
     getBuriedCountForDeck,
     getBuriedKindsForDeck,
@@ -76,6 +77,7 @@ import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/De
 import DeckAddMenu, { DECK_ADD_MENU_LIST_INSET } from '../../components/decks/DeckAddMenu';
 import DeckRowMenu from '../../components/decks/DeckRowMenu';
 import DeckNameButton from '../../components/decks/DeckNameButton';
+import DeckDragHandle from '../../components/decks/DeckDragHandle';
 import { createDeckDragCell, type DeckRowLayouts } from '../../components/decks/DeckDragCell';
 import { Button, IconButton } from '../../components/ui/Button';
 import { SectionLabel } from '../../components/ui/Card';
@@ -85,11 +87,14 @@ import { TextField } from '../../components/ui/Fields';
 import { BottomBar, BottomBarItem } from '../../components/ui/Bars';
 import { ArrowUpIcon, ChevronDownIcon, ChevronRightIcon, DragHandleIcon, MoreIcon, PlusIcon, RefreshIcon } from '../../components/ui/icons';
 import { MenuItem, PopoverMenu } from '../../components/ui/Menu';
+import { KeyboardGlyph } from '../../components/UiGlyphs';
+import { openKeyboardShortcuts } from '../../lib/keyboardShortcutsHelp';
 import { SwitchRow } from '../../components/ui/Rows';
 import { AppSheet } from '../../components/ui/Sheet';
 import { SheetNoDrag } from '../../components/SwipeDismissSheet';
 import { DISABLED_OPACITY, HIT_TARGET, Shadow, Type, Radius } from '../../components/ui/tokens';
 import { isCatalogDeck } from '../../lib/catalogProtection';
+import { deckStep } from '../../lib/deckKeyboardReorder';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
 import {
     BKA_CATALOG_DEFAULT_ROOT_DECK,
@@ -1059,6 +1064,33 @@ export default function DecksScreen() {
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
     };
 
+    /**
+     * Moves a deck one place among its siblings without dragging: the arrow keys on its handle
+     * (web) and VoiceOver's actions on it. Returns whether it moved.
+     */
+    const stepDeck = (deck: Deck, direction: 'up' | 'down'): boolean => {
+        const parent = getParentDeckName(deck.name);
+        const siblings = getAllDecks()
+            .filter((entry) => getParentDeckName(entry.name) === parent)
+            .sort(compareDeckDisplayOrder)
+            .map((entry) => ({ id: entry.id, movable: !isCatalogDeck(entry) }));
+        const step = deckStep(siblings, deck.id, direction);
+        if (!step) return false;
+        try {
+            reorderDeckRelative(deck.id, step.targetId, step.placement);
+            animateDeckTreeLayout();
+            refresh();
+            return true;
+        } catch (e) {
+            console.warn('[Decks] keyboard reorder failed:', e);
+            alert(t('common.error'), userFacingErrorMessage(
+                e,
+                l('Deste sıralanamadı. Lütfen tekrar deneyin.', 'Could not reorder the deck. Please try again.'),
+            ));
+            return false;
+        }
+    };
+
     const completeDeckDrag = () => {
         const dragged = draggingRef.current;
         const target = dropTargetRef.current;
@@ -1284,17 +1316,14 @@ export default function DecksScreen() {
                 </View>
 
                 {dragResponder && (
-                    <View
+                    <DeckDragHandle
                         style={[styles.dragHandle, isDragging && styles.dragHandleActive]}
-                        {...dragResponder.panHandlers}
-                        accessible
-                        accessibilityRole="button"
-                        accessibilityLabel={l(`${displayName} destesini taşı`, `Move ${displayName} deck`)}
-                        accessibilityHint={l('Satırın üstüne veya altına bırakarak sıralayın; ortasına bırakarak alt deste yapın', 'Drop at a row edge to reorder, or at its center to make a subdeck')}
-                        {...webTitle(l('Kenarlara bırakın: sırala · Ortaya bırakın: alt deste yap', 'Drop at edges: reorder · Drop at center: make a subdeck'))}
+                        displayName={displayName}
+                        panHandlers={dragResponder.panHandlers}
+                        onStep={(direction) => stepDeck(deck, direction)}
                     >
                         <DragHandleIcon color={colors.textMuted} />
-                    </View>
+                    </DeckDragHandle>
                 )}
                 {!dragResponder && (
                     <View
@@ -1550,7 +1579,7 @@ export default function DecksScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>{t('tabs.decks')}</Text>
+                <Text style={styles.title} accessibilityRole="header">{t('tabs.decks')}</Text>
                 <View style={styles.headerActions}>
                     <IconButton onPress={refresh} accessibilityLabel={l('Desteleri yenile', 'Refresh decks')}>
                         <RefreshIcon color={colors.textSecondary} />
@@ -1601,6 +1630,16 @@ export default function DecksScreen() {
                     icon={<DeckOverflowGlyph kind="restore" color={colors.textMuted} size={22} />}
                     onPress={() => openOverflowRoute('/backups')}
                 />
+                {Platform.OS === 'web' ? (
+                    <MenuItem
+                        label={l('Klavye kısayolları', 'Keyboard shortcuts')}
+                        icon={<KeyboardGlyph color={colors.textMuted} size={22} />}
+                        onPress={() => {
+                            setShowOverflowMenu(false);
+                            openKeyboardShortcuts();
+                        }}
+                    />
+                ) : null}
             </PopoverMenu>
 
             <AppDialog

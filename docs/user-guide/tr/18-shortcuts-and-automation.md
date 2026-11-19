@@ -171,6 +171,34 @@ işlemi geri alır. Web sürümünde Ctrl/Cmd+Z geri alır, Ctrl/Cmd+1–7 bayra
 - Tam liste: [Çalışma ekranı](05-studying.md#keyboard-shortcuts).
 - Tuşları değiştirmek: [Ayarlar › Kontroller › Klavye](16-settings.md#keyboard).
 
+<a id="web-keyboard"></a>
+### Web sürümünde klavyeyle kullanım
+
+Web sürümü fareye dokunmadan kullanılabilir. Tab ve Shift+Tab denetimler arasında gezer, Enter veya
+Boşluk seçili düğmeyi kullanır; klavyeyle gezerken seçili denetimin çevresinde bir çerçeve görünür.
+Menülerde ↑ ↓, sekme gruplarında (örneğin İstatistikler'deki dönem seçimi) ← → ile ilerlersiniz;
+Esc menüyü veya pencereyi kapatır ve sizi açtığınız düğmeye geri götürür.
+
+Bir metin alanında yazmıyorken şu harfler her ekranda çalışır:
+
+| Tuş | Ne yapar |
+|---|---|
+| D | Desteler |
+| A | Kart ekle |
+| B | Kartlarım |
+| T | İstatistikler |
+| K | Kronometre |
+| Ctrl+, (Mac'te Cmd+,) | Ayarlar |
+| / | Ekrandaki arama alanına gider |
+| ? | Bütün kısayolların listesi |
+
+**Not ekle** ekranı imleci ilk alana koyar; Ctrl+Enter (Mac'te Cmd+Enter) notu kaydeder. Listeyi
+**Desteler › ••• › Klavye kısayolları**'ndan da açabilirsiniz.
+
+Bir desteyi sürüklemeden taşımak için satırındaki taşıma tutamacına Tab ile gelin ve ↑ veya ↓'ye
+basın; deste kardeşleri arasında bir sıra yukarı veya aşağı gider. Sayı alanlarında ↑ ↓ değeri
+birer artırır veya azaltır.
+
 ## İlgili konular
 
 - [Desteler](04-decks.md)

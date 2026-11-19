@@ -874,6 +874,21 @@ export default function EditorScreen() {
         });
     };
 
+    // Cmd/Ctrl+Enter saves from anywhere on the web page; inside a field's frame the field's own
+    // script sends the same request (lib/richTextEditorScript.ts).
+    const handleSaveRef = useRef<(() => Promise<void>) | null>(null);
+    useEffect(() => {
+        if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.defaultPrevented || event.key !== 'Enter' || !(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
+            if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+            event.preventDefault();
+            void handleSaveRef.current?.();
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, []);
+
     const handleBack = () => {
         goBackOr(router);
     };
@@ -965,7 +980,7 @@ export default function EditorScreen() {
         requestAnimationFrame(() => fieldEditorRefs.current[0]?.focus());
     };
 
-    const handleSave = async () => {
+    const handleSave = async (): Promise<void> => {
         if (saveInFlightRef.current) return;
         if (isContentReadOnly) {
             handleSaveCatalogTags();
@@ -1159,6 +1174,7 @@ export default function EditorScreen() {
             saveInFlightRef.current = false;
         }
     };
+    handleSaveRef.current = handleSave;
 
     /**
      * Anki deletes the note, not the one card that was opened, so the confirmation names the note
@@ -1373,6 +1389,9 @@ export default function EditorScreen() {
                                 ref={(el) => {
                                     fieldEditorRefs.current[index] = el;
                                 }}
+                                // A keyboard on the web types straight into a new note, as Add does
+                                // in Anki; on the iPhone the software keyboard waits for a tap.
+                                autoFocus={Platform.OS === 'web' && !isEditing && index === 0}
                                 value={fieldValues[index] || ''}
                                 editable={!isContentReadOnly}
                                 onChange={(val) => handleFieldChange(index, val)}
@@ -1396,6 +1415,7 @@ export default function EditorScreen() {
                                     if (shortcut === 'growFont') stepEditorFontSize(1);
                                     else if (shortcut === 'shrinkFont') stepEditorFontSize(-1);
                                     else if (shortcut === 'changeCase') cycleTextCase();
+                                    else if (shortcut === 'save') void handleSave();
                                 }}
                                 placeholder={placeholder}
                                 colors={colors}
@@ -1448,6 +1468,8 @@ export default function EditorScreen() {
                     style={styles.scrollBottomDismissArea}
                     onPress={dismissEditorKeyboard}
                     accessible={false}
+                    // Only a place to tap; react-native-web would otherwise make it a Tab stop.
+                    tabIndex={-1}
                 />
             </ScrollView>
 

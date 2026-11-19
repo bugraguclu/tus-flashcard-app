@@ -139,6 +139,7 @@ export function SpeedDial({
                             },
                         ]}
                         pointerEvents="box-none"
+                        accessibilityRole="menu"
                     >
                         {items.map((item, index) => (
                             // The action nearest the button comes out first.
@@ -172,7 +173,7 @@ export function SpeedDialAction({ label, icon, onPress }: {
 }) {
     const colors = useThemeColors();
     return (
-        <TouchableOpacity style={styles.action} onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+        <TouchableOpacity style={styles.action} onPress={onPress} accessibilityRole="menuitem" accessibilityLabel={label}>
             <View style={styles.actionLabel}>
                 <Text style={[styles.actionLabelText, { color: colors.onAccent }]}>{label}</Text>
             </View>

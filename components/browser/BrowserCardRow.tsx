@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { View, TouchableOpacity, Platform, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, Platform, Pressable, StyleSheet } from 'react-native';
 import { Text } from '../AppText';
 import { useRouter } from 'expo-router';
 import { FontSize, type ColorScheme } from '../../constants/theme';
@@ -110,6 +110,29 @@ export function BrowserCardRow({
         ].filter(Boolean).join(' · ')
         : '';
 
+    const toggleRow = () => (selectionMode
+        ? toggleCardSelection(item.cardId)
+        : setExpandedCard(isExpanded ? null : item.cardId));
+    const startSelection = () => {
+        longPressHaptic();
+        if (!selectionMode) setSelectionMode(true);
+        toggleCardSelection(item.cardId);
+    };
+    // On the web the row holds the edit button, and a <button> may not hold another, so the
+    // question and answer area is the button that opens the row: a keyboard and a screen reader
+    // reach it as one, with its expanded state, and the edit button beside it.
+    const bodyIsControl = Platform.OS === 'web' && !selectionMode;
+    const bodyProps = bodyIsControl
+        ? {
+            onPress: toggleRow,
+            onLongPress: startSelection,
+            accessibilityRole: 'button' as const,
+            accessibilityState: { expanded: isExpanded },
+            'aria-expanded': isExpanded,
+        }
+        : null;
+    const Body = bodyIsControl ? Pressable : View;
+
     return (
         <TouchableOpacity
             style={[
@@ -122,26 +145,18 @@ export function BrowserCardRow({
                 !isNotesMode && !item.state.suspended && item.state.buried && styles.cardBuried,
                 isSelected && styles.cardItemSelected,
             ]}
-            onPress={() => selectionMode
-                ? toggleCardSelection(item.cardId)
-                : setExpandedCard(isExpanded ? null : item.cardId)}
-            onLongPress={() => {
-                longPressHaptic();
-                if (!selectionMode) setSelectionMode(true);
-                toggleCardSelection(item.cardId);
-            }}
+            onPress={toggleRow}
+            onLongPress={startSelection}
             activeOpacity={0.7}
-            // react-native-web renders the button role as a <button>, and this row holds the
-            // edit button, which a <button> may not contain. On web the row stays a focusable
-            // element that Enter toggles, and the edit button keeps the button role.
             accessibilityRole={selectionMode ? 'checkbox' : Platform.OS === 'web' ? undefined : 'button'}
-            focusable={Platform.OS === 'web' ? true : undefined}
+            // On the web the body below is the Tab stop while the row is not a checkbox.
+            focusable={Platform.OS === 'web' ? !bodyIsControl : undefined}
             accessibilityState={selectionMode ? { checked: isSelected } : undefined}
             aria-checked={selectionMode ? isSelected : undefined}
         >
             <View style={styles.cardItemHeader}>
                 {selectionMode && <View style={styles.selectionMark}><Checkbox checked={isSelected} /></View>}
-                <View style={styles.cardBody}>
+                <Body style={styles.cardBody} {...bodyProps}>
                     <Text
                         style={[
                             styles.cardQuestion,
@@ -198,7 +213,7 @@ export function BrowserCardRow({
                             </Text>
                         </View>
                     )}
-                </View>
+                </Body>
                 <View style={[styles.cardActions]}>
                     {!selectionMode && (
                         // A full 44-point button; its negative margin keeps the pencil where

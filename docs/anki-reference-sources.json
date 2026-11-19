@@ -14,6 +14,13 @@
       ]
     },
     {
+      "id": "w3c-aria-apg",
+      "priority": 3,
+      "platform": "web keyboard interaction",
+      "url": "https://www.w3.org/WAI/ARIA/apg/patterns/",
+      "useFor": ["menu, tabs and modal dialog keyboard patterns", "roving Tab stop of a segmented control", "focus return when a dialog closes; hooks/useWebKeyboardNavigation.ts"]
+    },
+    {
       "id": "react-native-textinput-key-recording",
       "priority": 3,
       "platform": "iPhone hardware keyboard input",
@@ -25,7 +32,7 @@
       "priority": 1,
       "platform": "cross-platform behavior",
       "url": "https://docs.ankiweb.net/intro.html",
-      "useFor": ["studying", "reviewer keyboard shortcuts", "scheduler semantics", "deck options", "search", "templates", "import/export", "backups", "exporting stored snapshots"]
+      "useFor": ["studying", "reviewer keyboard shortcuts", "web main-window shortcuts (D, A, B, T) and Add with Ctrl/Cmd+Enter", "scheduler semantics", "deck options", "search", "templates", "import/export", "backups", "exporting stored snapshots"]
     },
     {
       "id": "anki-manual-empty-cards",

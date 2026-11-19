@@ -66,6 +66,7 @@ export function PopoverMenu({ visible, onClose, onDismiss, closeAtOnce, anchor, 
                         style,
                     ]}
                     accessibilityViewIsModal
+                    accessibilityRole="menu"
                     accessibilityLabel={accessibilityLabel}
                 >
                     <ScrollView bounces={false} contentContainerStyle={styles.menuContent}>{children}</ScrollView>
@@ -226,8 +227,8 @@ function MenuDialogCard({ title, children }: { title: string; children: React.Re
     };
 
     return (
-        <Animated.View style={[styles.dialogCard, { backgroundColor: colors.bgCard }, growIn]} accessibilityViewIsModal>
-            <Text style={[Type.title, styles.dialogTitle, { color: colors.textPrimary }]}>{title}</Text>
+        <Animated.View style={[styles.dialogCard, { backgroundColor: colors.bgCard }, growIn]} accessibilityViewIsModal accessibilityRole="menu">
+            <Text style={[Type.title, styles.dialogTitle, { color: colors.textPrimary }]} accessibilityRole="header">{title}</Text>
             <ScrollView
                 ref={scrollRef}
                 style={styles.dialogScroll}

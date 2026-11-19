@@ -144,6 +144,8 @@ export const SearchField = forwardRef<TextInput, SearchFieldProps>(function Sear
                 clearButtonMode="while-editing"
                 returnKeyType="search"
                 autoCorrect={false}
+                // The web build's `/` shortcut looks for this role (hooks/useWebKeyboardNavigation.ts).
+                role="searchbox"
                 {...props}
                 style={[styles.searchInput, { color: colors.textPrimary }]}
             />

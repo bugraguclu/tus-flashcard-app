@@ -555,6 +555,8 @@ export default function CardWebView({
         return (
             <WebHtmlFrame
                 frameRef={iframeRef}
+                // What a screen reader names the card's frame before reading what is in it.
+                title={l('Kart', 'Card')}
                 html={fullHtml}
                 sandbox="allow-same-origin"
                 onLoad={() => {

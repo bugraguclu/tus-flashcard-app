@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { Radius, Type } from './ui/tokens';
 import { useI18n } from '../hooks/useI18n';
+import { useWebKeyboardNavigation } from '../hooks/useWebKeyboardNavigation';
+import KeyboardShortcutsDialog from './KeyboardShortcutsDialog';
+import { onKeyboardShortcutsRequested } from '../lib/keyboardShortcutsHelp';
+import { isShowingRoute, type AppShortcut } from '../lib/webKeyboardNavigation';
 import { returnToDeckList } from '../lib/backNavigation';
 import { alert } from '../lib/confirm';
 import { inferImportFileType } from '../lib/importFile';
@@ -22,6 +26,8 @@ type LaunchQueue = { setConsumer(consumer: (params: LaunchParams) => void): void
  *   workflow exactly as a file handed over by the Files app does.
  * - Clicking a study reminder opens the deck list, as tapping one does on iOS.
  * - The service worker that lets the installed web app start offline.
+ * - Keyboard use: focus rings, focus inside dialogs and menus, arrow keys, app-wide shortcuts and
+ *   their list (`?`). See `hooks/useWebKeyboardNavigation.ts`.
  *
  * Mounted once, by the root stack, on web only.
  */
@@ -31,6 +37,29 @@ export default function WebAppIntegrations() {
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const [dragging, setDragging] = useState(false);
+    const [shortcutsVisible, setShortcutsVisible] = useState(false);
+    const pathname = usePathname();
+
+    const runShortcut = useCallback((shortcut: AppShortcut) => {
+        if (shortcut.kind === 'help') {
+            setShortcutsVisible(true);
+            return;
+        }
+        if (shortcut.kind === 'search') {
+            const field = Array.from(document.querySelectorAll<HTMLElement>('[role="searchbox"]'))
+                .find((element) => element.getClientRects().length > 0);
+            field?.focus();
+            return;
+        }
+        if (isShowingRoute(pathname, shortcut.route)) return;
+        if (shortcut.route === '/decks') returnToDeckList(router);
+        else router.push(shortcut.route as never);
+    }, [pathname, router]);
+
+    // The text colour on a band of the card colour: it stands out on white cards, the accent headers and
+    // filled buttons alike, light or dark.
+    useWebKeyboardNavigation({ ringColor: colors.textPrimary, haloColor: colors.bgCard, onShortcut: runShortcut });
+    useEffect(() => onKeyboardShortcutsRequested(() => setShortcutsVisible(true)), []);
 
     const openImport = useCallback((file: File) => {
         router.push({
@@ -108,14 +137,18 @@ export default function WebAppIntegrations() {
         };
     }, [l, openImport]);
 
-    if (!dragging) return null;
     return (
-        <View style={[styles.overlay, { pointerEvents: 'none' }]} accessibilityLiveRegion="polite">
-            <View style={styles.card}>
-                <Text style={styles.title}>{l('İçe aktarmak için bırakın', 'Drop to import')}</Text>
-                <Text style={styles.body}>.apkg / .zip · .colpkg · .csv · .tsv · .txt</Text>
-            </View>
-        </View>
+        <>
+            <KeyboardShortcutsDialog visible={shortcutsVisible} onClose={() => setShortcutsVisible(false)} />
+            {dragging ? (
+                <View style={[styles.overlay, { pointerEvents: 'none' }]} accessibilityLiveRegion="polite">
+                    <View style={styles.card}>
+                        <Text style={styles.title}>{l('İçe aktarmak için bırakın', 'Drop to import')}</Text>
+                        <Text style={styles.body}>.apkg / .zip · .colpkg · .csv · .tsv · .txt</Text>
+                    </View>
+                </View>
+            ) : null}
+        </>
     );
 }
 
