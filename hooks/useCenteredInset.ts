@@ -1,6 +1,5 @@
 import { useWindowDimensions } from 'react-native';
-import { READABLE_WIDTH } from '../components/ui/tokens';
-import { centeredInset as centeredInsetFor } from '../lib/centeredInset';
+import { READABLE_WIDTH, centeredInset as centeredInsetFor } from '../lib/centeredInset';
 
 /**
  * The extra side inset that centres a column of `maxWidth` in the window, or 0 while the window

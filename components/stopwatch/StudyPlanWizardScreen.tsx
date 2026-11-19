@@ -12,7 +12,7 @@ import { Button } from '../ui/Button';
 import { Section } from '../ui/Card';
 import { Notice, ProgressBar } from '../ui/Feedback';
 import { TextField } from '../ui/Fields';
-import { READABLE_WIDTH } from '../ui/tokens';
+import { READABLE_WIDTH } from '../../lib/centeredInset';
 import { useCenteredInset } from '../../hooks/useCenteredInset';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';

@@ -18,6 +18,7 @@ vi.mock('react-native', () => ({
     Platform: { OS: 'ios' },
     StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
     ScrollView: 'ScrollView', View: 'View',
+    useWindowDimensions: () => ({ width: 390, height: 844 }),
 }));
 vi.mock('react-native-safe-area-context', () => ({
     SafeAreaView: 'SafeAreaView',
