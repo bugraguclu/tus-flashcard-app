@@ -37,8 +37,17 @@ export const WEB_APP_PRODUCTION_CSP = [
     "form-action 'self'",
 ].join('; ');
 
+/**
+ * Apple's and Google's sign-in scripts and the windows they open (lib/appleSignIn.web.ts,
+ * lib/googleSignIn.web.ts). Only the development page names them: the published web preview has
+ * no account server (its connect-src is 'self'), so it never offers accounts.
+ */
+export const SIGN_IN_PROVIDER_SCRIPTS = 'https://appleid.cdn-apple.com https://accounts.google.com';
+export const SIGN_IN_PROVIDER_FRAMES = 'https://appleid.apple.com https://accounts.google.com';
+
 // Expo's local development server uses WebSockets, loopback HTTP and inline/eval'd module code.
 // A hash in script-src would switch 'unsafe-inline' off, so development lists none.
 export const WEB_APP_DEVELOPMENT_CSP = WEB_APP_PRODUCTION_CSP
     .replace("connect-src 'self' blob: data:", "connect-src 'self' blob: data: http: https: ws: wss:")
-    .replace(PRODUCTION_SCRIPT_SRC, "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'");
+    .replace("frame-src 'self' blob:", `frame-src 'self' blob: ${SIGN_IN_PROVIDER_FRAMES}`)
+    .replace(PRODUCTION_SCRIPT_SRC, `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' ${SIGN_IN_PROVIDER_SCRIPTS}`);

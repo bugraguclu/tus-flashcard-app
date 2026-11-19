@@ -50,3 +50,17 @@ export function googleClientIds(): { ios: string | null; web: string | null } {
         web: googleClientId(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID),
     };
 }
+
+/** A Services ID or bundle ID in reverse-DNS form (com.example.app), or null for anything else. */
+export function appleServiceId(value: string | undefined): string | null {
+    const id = value?.trim() ?? '';
+    return /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(id) ? id : null;
+}
+
+/**
+ * The Services ID the web preview signs in with Apple through (the iPhone uses the app's bundle
+ * ID and needs no setting). Without it the web preview draws no Apple button.
+ */
+export function appleWebServiceId(): string | null {
+    return appleServiceId(process.env.EXPO_PUBLIC_APPLE_WEB_SERVICE_ID);
+}

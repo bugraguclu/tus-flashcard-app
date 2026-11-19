@@ -15,6 +15,7 @@ import {
 import { AccountRequestError, isAccountRequestError } from '../../lib/accountApi';
 import { accountErrorMessage } from '../../lib/accountMessages';
 import { nameFromEmail } from '../../lib/accountSession';
+import { requestAppleCredential } from '../../lib/appleSignIn';
 import { requestGoogleIdToken } from '../../lib/googleSignIn';
 import { useAccount } from '../../contexts/AccountContext';
 import { useI18n } from '../../hooks/useI18n';
@@ -259,6 +260,18 @@ export function useSignInFlow({
         });
     }, [account, finish, run, setNotice]);
 
+    /** Apple's own sheet, then the account server; closing the sheet changes nothing. */
+    const continueWithApple = useCallback(() => {
+        void run(async () => {
+            setFields({});
+            setNotice(null);
+            const credential = await requestAppleCredential();
+            if (!credential) return;
+            await account.signInWithApple(credential);
+            finish();
+        });
+    }, [account, finish, run, setNotice]);
+
     const resend = useCallback(() => {
         if (resendIn > 0) return;
         void run(async () => {
@@ -321,5 +334,6 @@ export function useSignInFlow({
         submit,
         resend,
         continueWithGoogle,
+        continueWithApple,
     };
 }

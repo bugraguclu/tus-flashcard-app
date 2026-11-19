@@ -65,11 +65,33 @@ kaynaklar incelenerek sadeleştirildi. Kurallar ve kaynakları:
   silme Google'la yeniden onaylanır (App Store 5.1.1(v)). İsterse "Şifremi unuttum" ile şifre
   belirleyebilir.
 - **App Store 4.8:** Google gibi üçüncü taraf girişi sunan uygulama Sign in with Apple da sunmak
-  zorundadır. Apple girişi eklenmeden Google canlı derlemede açılmamalı.
+  zorundadır; aşağıdaki Apple girişiyle bu karşılandı.
 - **Hesap sayfası sadeleşti:** kart çerçevesiz profil (baş harfler, ad, e-posta), tek kartta Ad,
   Şifreyi değiştir, Oturumu kapat; en altta kırmızı "Hesabı sil". Kaldırılanlar: "E-posta
   doğrulandı" rozeti (yalnızca doğrulanmamışsa uyarı çıkar), "Hesap bilgileri" başlığı ve
   **Son etkinlik** listesi (sunucu olayları tutmaya devam eder, `/v1/account/activity`).
+
+## Apple ile giriş · 19 Kasım 2026
+
+- **Apple ile devam et**, Google'ın üstünde ve onunla aynı düğme: beyaz zeminli, kenarlı, Apple
+  logosu ve yazı aynı renkte (Apple'ın "white with outline" biçimi,
+  [HIG: Sign in with Apple](https://developer.apple.com/design/human-interface-guidelines/sign-in-with-apple)).
+  İki marka düğmesi aynı boyda ve aynı ağırlıkta; ekranda dolgulu tek düğme yine e-postanın
+  "Giriş yap"ı. Logo `components/AppleGlyph.tsx`, düğmenin yazı rengini alır.
+- iPhone'da `expo-apple-authentication` (Apple'ın kendi sayfası, Face ID ile tek dokunuş), web
+  önizlemesinde Sign in with Apple JS açılır penceresi (`lib/appleSignIn*.ts`). Uygulama kimlik
+  belirtecini, yetki kodunu ve — Apple yalnızca ilk girişte verdiği için — adı sunucuya iletir.
+- Sunucu belirteci Apple'ın anahtarlarıyla kendisi doğrular (`server/account/apple.ts`,
+  Google'la ortak `idToken.ts`). Kullanıcı e-postasını gizlerse hesap Apple'ın
+  `@privaterelay.appleid.com` yönlendirme adresiyle açılır; kodlar o adrese gider ve Apple iletir.
+- **Hesap silinince Apple erişimi iptal edilir** (Apple'ın 2022'den beri istediği): sunucu girişte
+  yetki kodunu bir yenileme belirteciyle değiştirip saklar, silmede Apple'a iptal ettirir. Bunun
+  için sunucuya Sign in with Apple anahtarı (.p8) verilir; ayrıntı `server/account/README.md`.
+- Düğme, sunucuda `APPLE_CLIENT_IDS` varsa iPhone'da görünür (web'de ayrıca
+  `EXPO_PUBLIC_APPLE_WEB_SERVICE_ID` gerekir). `EXPO_PUBLIC_ACCOUNT_API_URL` verilen her iOS
+  derlemesi Sign in with Apple yetkisini (entitlement) taşır; hesapsız canlı derleme taşımaz.
+- Apple ile açılan şifresiz hesap Apple'la yeniden onaylanarak silinir. Hesap sayfasında e-postanın
+  yanında hangi sağlayıcılarla giriş yapıldığı yazar ("· Apple · Google").
 
 ## Diyet uygulamasına göre iyileştirmeler
 
@@ -124,8 +146,10 @@ kapanır. Ağ hatası oturumu kapatmaz.
 - `docs/privacy.html` hesap bölümünün hukuki gözden geçirmesi; App Store gizlilik yanıtlarında Ad,
   E-posta ve Kullanıcı Kimliği (kullanıcıya bağlı, uygulama işlevi, izleme yok).
 - iPhone'da `docs/IOS_RELEASE_CHECKLIST.md` içindeki **Account sign-in** satırı.
-- Apple ile giriş ve Google ile giriş bu sürümde yok. Google eklenirse App Store 4.8 gereği Apple
-  ile giriş de gerekir; ikisi de ücretli Apple Developer hesabı ve sağlayıcı anahtarları ister.
+- Apple ve Google ile giriş gerçek kimliklerle denenmedi: Apple Developer'da Sign in with Apple
+  yeteneği ve .p8 anahtarı, Google Cloud'da iOS ve web istemcileri gerekir. Yeni yerel modüller
+  (`expo-apple-authentication`, `@react-native-google-signin/google-signin`) için iOS yeniden
+  derlenmeli; iPhone'da Apple girişi, iptal ve hesap silme denenmeli.
 
 ## Testler
 

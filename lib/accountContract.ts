@@ -58,7 +58,9 @@ export type AccountErrorCode =
     | 'timeout'
     | 'not_configured'
     /** Google's sign-in did not finish or its token was not accepted. */
-    | 'google_failed';
+    | 'google_failed'
+    /** Apple's sign-in did not finish or its token was not accepted. */
+    | 'apple_failed';
 
 export interface AccountUser {
     id: string;
@@ -66,10 +68,12 @@ export interface AccountUser {
     email: string;
     emailVerified: boolean;
     createdAt: string;
-    /** False for an account made with Google that never set a password. */
+    /** False for an account made with Google or Apple that never set a password. */
     hasPassword: boolean;
     /** Signs in with Google as well (or only). */
     google: boolean;
+    /** Signs in with Apple as well (or only). */
+    apple: boolean;
 }
 
 /** What the server tells a signed-out app about itself, so screens offer only what works. */
@@ -80,10 +84,24 @@ export interface AccountServiceConfig {
     emailVerificationRequired: boolean;
     /** The server accepts "Sign in with Google". */
     googleSignIn: boolean;
+    /** The server accepts "Sign in with Apple". */
+    appleSignIn: boolean;
     policyVersion: string;
     operatorName: string;
     contactEmail: string;
 }
+
+/** What Apple's sign-in sheet hands back, for the account server to check. */
+export interface AppleCredential {
+    identityToken: string;
+    /** Single-use; the server trades it for the token that revokes the access on deletion. */
+    authorizationCode: string;
+    /** Apple shares the name only the first time; empty afterwards. */
+    name: string;
+}
+
+/** Deleting an account takes its password, or a fresh token from the provider it signs in with. */
+export type AccountDeleteProof = { password: string } | { googleIdToken: string } | { appleIdentityToken: string };
 
 export interface AccountSessionGrant {
     user: AccountUser;

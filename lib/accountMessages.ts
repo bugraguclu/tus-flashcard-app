@@ -61,6 +61,8 @@ export function accountErrorMessage(code: AccountErrorCode, l: Localize, retryAf
             return l('Şifre hatalı.', 'The password is incorrect.');
         case 'google_failed':
             return l('Google ile giriş tamamlanamadı. Yeniden deneyin.', 'Signing in with Google didn’t finish. Try again.');
+        case 'apple_failed':
+            return l('Apple ile giriş tamamlanamadı. Yeniden deneyin.', 'Signing in with Apple didn’t finish. Try again.');
         case 'unauthorized':
             return l('Oturumunuzun süresi doldu. Yeniden giriş yapın.', 'Your session has ended. Sign in again.');
         case 'rate_limited':

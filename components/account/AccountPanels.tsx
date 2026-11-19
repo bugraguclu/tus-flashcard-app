@@ -16,6 +16,7 @@ import { isAccountRequestError, AccountRequestError } from '../../lib/accountApi
 import { accountErrorMessage, accountFieldMessage } from '../../lib/accountMessages';
 import { useAccount } from '../../contexts/AccountContext';
 import { useI18n } from '../../hooks/useI18n';
+import { requestAppleCredential } from '../../lib/appleSignIn';
 import { requestGoogleIdToken } from '../../lib/googleSignIn';
 import { Button } from '../ui/Button';
 import { PasswordField, TextField } from '../ui/Fields';
@@ -163,15 +164,22 @@ export function DeleteAccountPanel({ user, onCancel, onDeleted }: { user: Accoun
     const { l } = form;
     const [password, setPassword] = useState('');
     const styles = usePanelStyles();
-    // An account made with Google has no password; Google's sheet confirms it is still its owner.
-    const withGoogle = !user.hasPassword;
+    // An account made with Apple or Google has no password; the provider's sheet confirms it is
+    // still its owner.
+    const provider = user.hasPassword ? null : user.apple ? 'apple' : 'google';
 
     const remove = () => {
-        if (withGoogle) {
+        if (provider) {
             void form.run(async () => {
-                const googleIdToken = await requestGoogleIdToken();
-                if (!googleIdToken) return;
-                await account.deleteAccount({ googleIdToken });
+                if (provider === 'apple') {
+                    const credential = await requestAppleCredential();
+                    if (!credential) return;
+                    await account.deleteAccount({ appleIdentityToken: credential.identityToken });
+                } else {
+                    const googleIdToken = await requestGoogleIdToken();
+                    if (!googleIdToken) return;
+                    await account.deleteAccount({ googleIdToken });
+                }
                 onDeleted();
             });
             return;
@@ -195,7 +203,7 @@ export function DeleteAccountPanel({ user, onCancel, onDeleted }: { user: Accoun
                 )}
             </Text>
             {form.error ? <Notice tone="danger">{form.error}</Notice> : null}
-            {withGoogle ? null : (
+            {provider ? null : (
                 <PasswordField
                     showLabel={l('Şifreyi göster', 'Show password')}
                     hideLabel={l('Şifreyi gizle', 'Hide password')}
@@ -209,9 +217,11 @@ export function DeleteAccountPanel({ user, onCancel, onDeleted }: { user: Accoun
                 />
             )}
             <Button
-                label={withGoogle
-                    ? l('Google ile onayla ve sil', 'Confirm with Google and delete')
-                    : l('Hesabımı kalıcı olarak sil', 'Delete my account permanently')}
+                label={provider === 'apple'
+                    ? l('Apple ile onayla ve sil', 'Confirm with Apple and delete')
+                    : provider === 'google'
+                        ? l('Google ile onayla ve sil', 'Confirm with Google and delete')
+                        : l('Hesabımı kalıcı olarak sil', 'Delete my account permanently')}
                 onPress={remove}
                 variant="destructive"
                 busy={form.busy}

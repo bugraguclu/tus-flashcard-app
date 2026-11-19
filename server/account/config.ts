@@ -1,4 +1,5 @@
-import { randomBytes } from 'node:crypto';
+import { createPrivateKey, randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { hostname } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,6 +48,10 @@ export interface ServerConfig {
     sessionDays: number;
     /** OAuth client IDs (iOS and web) whose Google ID tokens are accepted; empty turns Google off. */
     googleClientIds: string[];
+    /** The app's bundle ID and the web Services ID whose Apple identity tokens are accepted; empty turns Apple off. */
+    appleClientIds: string[];
+    /** The Sign in with Apple key that lets the server revoke a deleted account's access, or null. */
+    appleKey: { teamId: string; keyId: string; privateKey: string } | null;
     smtp: SmtpConfig | null;
     /** Things worth saying once at startup. */
     warnings: string[];
@@ -144,6 +149,34 @@ function googleClientIds(env: Environment): string[] {
     return ids;
 }
 
+/** `APPLE_CLIENT_IDS`: comma-separated bundle and Services IDs (com.example.app). */
+function appleClientIds(env: Environment): string[] {
+    const ids = text(env, 'APPLE_CLIENT_IDS').split(',').map((id) => id.trim()).filter(Boolean);
+    const invalid = ids.find((id) => !/^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/.test(id));
+    if (invalid) throw new ConfigError(`APPLE_CLIENT_IDS has an entry that is not a bundle or Services ID: ${invalid}`);
+    return ids;
+}
+
+/** `APPLE_TEAM_ID`, `APPLE_KEY_ID` and `APPLE_PRIVATE_KEY_FILE` (the .p8 file): all three or none. */
+function appleKey(env: Environment, warnings: string[], appleOn: boolean): ServerConfig['appleKey'] {
+    const teamId = text(env, 'APPLE_TEAM_ID');
+    const keyId = text(env, 'APPLE_KEY_ID');
+    const file = text(env, 'APPLE_PRIVATE_KEY_FILE');
+    if (!teamId && !keyId && !file) {
+        if (appleOn) warnings.push('APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_PRIVATE_KEY_FILE are not set; deleting an account will not revoke its Sign in with Apple access.');
+        return null;
+    }
+    if (!teamId || !keyId || !file) throw new ConfigError('APPLE_TEAM_ID, APPLE_KEY_ID and APPLE_PRIVATE_KEY_FILE go together; set all three');
+    let privateKey: string;
+    try {
+        privateKey = readFileSync(resolve(file), 'utf8');
+        createPrivateKey(privateKey);
+    } catch {
+        throw new ConfigError(`APPLE_PRIVATE_KEY_FILE could not be read as a .p8 key: ${file}`);
+    }
+    return { teamId, keyId, privateKey };
+}
+
 export function loadConfig(env: Environment = process.env): ServerConfig {
     const production = text(env, 'NODE_ENV') === 'production';
     const dev = flag(env, 'ACCOUNT_DEV', false);
@@ -167,6 +200,7 @@ export function loadConfig(env: Environment = process.env): ServerConfig {
         warnings.push('EMAIL_HOST is not set; verification and password-reset codes cannot be sent.');
     }
 
+    const apple = appleClientIds(env);
     const databaseSetting = text(env, 'ACCOUNT_DATABASE');
     const databasePath = !databaseSetting
         ? DEFAULT_DATABASE_PATH
@@ -189,6 +223,8 @@ export function loadConfig(env: Environment = process.env): ServerConfig {
         trustProxy: flag(env, 'TRUST_PROXY', false),
         sessionDays: integer(env, 'ACCOUNT_SESSION_DAYS', 60, 1, 365),
         googleClientIds: googleClientIds(env),
+        appleClientIds: apple,
+        appleKey: appleKey(env, warnings, apple.length > 0),
         smtp: mail,
         warnings,
     };

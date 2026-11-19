@@ -44,6 +44,7 @@ export function parseUser(value: unknown): AccountUser | null {
         // Servers from before Google sign-in send neither: every such account has a password.
         hasPassword: value.hasPassword !== false,
         google: value.google === true,
+        apple: value.apple === true,
     };
 }
 
@@ -65,6 +66,7 @@ export function parseServiceConfig(value: unknown): AccountServiceConfig | null 
         emailReady: value.emailReady as boolean,
         emailVerificationRequired: value.emailVerificationRequired as boolean,
         googleSignIn: value.googleSignIn === true,
+        appleSignIn: value.appleSignIn === true,
         policyVersion: boundedString(value.policyVersion, 40) ?? '',
         operatorName: boundedString(value.operatorName, 200) ?? '',
         contactEmail: boundedString(value.contactEmail, 320) ?? '',

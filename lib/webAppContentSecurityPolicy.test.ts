@@ -30,4 +30,11 @@ describe('web app content security policy', () => {
         expect(scriptSrc).not.toContain("'sha256-");
         expect(directive(WEB_APP_DEVELOPMENT_CSP, 'connect-src')).toContain('ws:');
     });
+
+    it('lets Apple’s and Google’s sign-in run on the development page only', () => {
+        expect(directive(WEB_APP_DEVELOPMENT_CSP, 'script-src')).toContain('https://appleid.cdn-apple.com');
+        expect(directive(WEB_APP_DEVELOPMENT_CSP, 'frame-src')).toContain('https://appleid.apple.com');
+        expect(WEB_APP_PRODUCTION_CSP).not.toContain('apple.com');
+        expect(WEB_APP_PRODUCTION_CSP).not.toContain('google.com');
+    });
 });

@@ -15,13 +15,21 @@ export interface UserRow {
     id: string;
     email: string;
     name: string;
-    /** Empty for an account made with Google that never set a password. */
+    /** Empty for an account made with Google or Apple that never set a password. */
     passwordHash: string;
     emailVerifiedAt: number | null;
     createdAt: number;
     updatedAt: number;
     /** Google's account ID (`sub`) once the account has signed in with Google. */
     googleSub: string | null;
+    /** Apple's account ID (`sub`) once the account has signed in with Apple. */
+    appleSub: string | null;
+}
+
+/** What it takes to revoke the app's Sign in with Apple access when the account is deleted. */
+export interface AppleGrant {
+    clientId: string;
+    refreshToken: string;
 }
 
 export interface SessionRow {
@@ -107,10 +115,17 @@ const MIGRATIONS = [
     ALTER TABLE users ADD COLUMN google_sub TEXT;
     CREATE UNIQUE INDEX users_by_google_sub ON users(google_sub) WHERE google_sub IS NOT NULL;
     `,
+    // 3: Sign in with Apple, with the refresh token that revokes it when the account is deleted.
+    `
+    ALTER TABLE users ADD COLUMN apple_sub TEXT;
+    ALTER TABLE users ADD COLUMN apple_client_id TEXT;
+    ALTER TABLE users ADD COLUMN apple_refresh_token TEXT;
+    CREATE UNIQUE INDEX users_by_apple_sub ON users(apple_sub) WHERE apple_sub IS NOT NULL;
+    `,
 ];
 
 const USER_COLUMNS = `id, email, name, password_hash AS passwordHash, email_verified_at AS emailVerifiedAt,
-    created_at AS createdAt, updated_at AS updatedAt, google_sub AS googleSub`;
+    created_at AS createdAt, updated_at AS updatedAt, google_sub AS googleSub, apple_sub AS appleSub`;
 const SESSION_COLUMNS = `token_hash AS tokenHash, user_id AS userId, created_at AS createdAt,
     last_used_at AS lastUsedAt, expires_at AS expiresAt, client`;
 const CODE_COLUMNS = `id, email, purpose, code_hash AS codeHash, attempts, created_at AS createdAt, expires_at AS expiresAt`;
@@ -201,16 +216,37 @@ export class AccountStore {
         return this.one<UserRow>(`SELECT ${USER_COLUMNS} FROM users WHERE google_sub = ?`, sub);
     }
 
+    findUserByAppleSub(sub: string): UserRow | undefined {
+        return this.one<UserRow>(`SELECT ${USER_COLUMNS} FROM users WHERE apple_sub = ?`, sub);
+    }
+
     insertUser(user: UserRow): void {
         this.run(
-            `INSERT INTO users (id, email, name, password_hash, email_verified_at, created_at, updated_at, google_sub)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            user.id, user.email, user.name, user.passwordHash, user.emailVerifiedAt, user.createdAt, user.updatedAt, user.googleSub,
+            `INSERT INTO users (id, email, name, password_hash, email_verified_at, created_at, updated_at, google_sub, apple_sub)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            user.id, user.email, user.name, user.passwordHash, user.emailVerifiedAt, user.createdAt, user.updatedAt,
+            user.googleSub, user.appleSub,
         );
     }
 
     setGoogleSub(userId: string, sub: string, now: number): void {
         this.run('UPDATE users SET google_sub = ?, updated_at = ? WHERE id = ?', sub, now, userId);
+    }
+
+    setAppleSub(userId: string, sub: string, now: number): void {
+        this.run('UPDATE users SET apple_sub = ?, updated_at = ? WHERE id = ?', sub, now, userId);
+    }
+
+    setAppleGrant(userId: string, grant: AppleGrant): void {
+        this.run('UPDATE users SET apple_client_id = ?, apple_refresh_token = ? WHERE id = ?', grant.clientId, grant.refreshToken, userId);
+    }
+
+    appleGrant(userId: string): AppleGrant | undefined {
+        const row = this.one<{ clientId: string | null; refreshToken: string | null }>(
+            'SELECT apple_client_id AS clientId, apple_refresh_token AS refreshToken FROM users WHERE id = ?',
+            userId,
+        );
+        return row?.clientId && row.refreshToken ? { clientId: row.clientId, refreshToken: row.refreshToken } : undefined;
     }
 
     setPassword(userId: string, passwordHash: string, now: number): void {

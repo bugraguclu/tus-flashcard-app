@@ -15,7 +15,9 @@ import { Notice } from '../ui/Feedback';
 import { BackIcon } from '../ui/icons';
 import { Divider } from '../ui/Card';
 import { Type } from '../ui/tokens';
+import AppleGlyph from '../AppleGlyph';
 import GoogleGlyph from '../GoogleGlyph';
+import { appleSignInAvailable } from '../../lib/appleSignIn';
 import { googleSignInAvailable } from '../../lib/googleSignIn';
 import { useSignInFlow, type SignInMode } from './useSignInFlow';
 
@@ -35,8 +37,10 @@ interface SignInScreenProps {
  * are local state. Kept to what a sign-in needs (sources in docs/HESAP_GIRIS.md): e-mail and
  * password on one page, a password asked once with a show button, one code field iOS can fill
  * from Mail, specific button labels, and on first run a full-width way past it that needs no
- * network. When the build and the server both allow it, "Continue with Google" comes first: one
- * tap, no password, and it signs in or creates the account alike.
+ * network. When the build and the server both allow them, "Continue with Apple" and "Continue
+ * with Google" come first: one tap, no password, and they sign in or create the account alike.
+ * Both are the same outlined button with the brand's mark (Apple's "white with outline" style),
+ * Apple's first, as App Review asks for it wherever Google is offered.
  */
 export default function SignInScreen({ variant, initialMode, sendCodeOnOpen, onClose, onFinished }: SignInScreenProps) {
     const { l, locale } = useI18n();
@@ -53,9 +57,10 @@ export default function SignInScreen({ variant, initialMode, sendCodeOnOpen, onC
     const registrationClosed = mode === 'register' && account.config?.registrationOpen === false;
     const emailClosed = mode === 'forgot' && account.config?.emailReady === false;
     const welcome = variant === 'welcome';
-    const google = (mode === 'login' || mode === 'register')
-        && account.config?.googleSignIn === true
-        && googleSignInAvailable();
+    const firstStep = mode === 'login' || mode === 'register';
+    const apple = firstStep && account.config?.appleSignIn === true && appleSignInAvailable();
+    const google = firstStep && account.config?.googleSignIn === true && googleSignInAvailable();
+    const providers = apple || google;
 
     // What the server offers can change while the app is open; ask again for this screen.
     const { refresh } = account;
@@ -175,15 +180,26 @@ export default function SignInScreen({ variant, initialMode, sendCodeOnOpen, onC
                     </Notice>
                 ) : null}
 
-                {google ? (
+                {providers ? (
                     <>
-                        <Button
-                            variant="secondary"
-                            icon={<GoogleGlyph />}
-                            label={l('Google ile devam et', 'Continue with Google')}
-                            onPress={flow.continueWithGoogle}
-                            disabled={busy}
-                        />
+                        {apple ? (
+                            <Button
+                                variant="secondary"
+                                icon={<AppleGlyph color={colors.textPrimary} />}
+                                label={l('Apple ile devam et', 'Continue with Apple')}
+                                onPress={flow.continueWithApple}
+                                disabled={busy}
+                            />
+                        ) : null}
+                        {google ? (
+                            <Button
+                                variant="secondary"
+                                icon={<GoogleGlyph />}
+                                label={l('Google ile devam et', 'Continue with Google')}
+                                onPress={flow.continueWithGoogle}
+                                disabled={busy}
+                            />
+                        ) : null}
                         <View style={styles.or} accessible={false}>
                             <Divider style={styles.orLine} />
                             <Text style={[Type.caption, { color: colors.textSecondary }]}>{l('veya e-postayla', 'or with email')}</Text>
@@ -275,9 +291,9 @@ export default function SignInScreen({ variant, initialMode, sendCodeOnOpen, onC
                     disabled={registrationClosed || emailClosed}
                 />
 
-                {mode === 'register' || google ? (
-                    // Going on under this sentence is the agreement (Google can create an account
-                    // from the sign-in step too); there is no checkbox.
+                {mode === 'register' || providers ? (
+                    // Going on under this sentence is the agreement (Apple and Google can create
+                    // an account from the sign-in step too); there is no checkbox.
                     <Text style={[Type.caption, styles.centred, { color: colors.textSecondary }]}>
                         {locale === 'tr' ? (
                             <>

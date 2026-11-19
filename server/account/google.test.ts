@@ -64,6 +64,7 @@ describe('Google ID token check', () => {
             email: 'ayse@example.com',
             emailVerified: true,
             name: 'Ayşe Yılmaz',
+            audience: CLIENT_ID,
         });
     });
 

@@ -6,11 +6,13 @@ import {
     normalizeEmail,
     normalizeName,
     type AccountCodeSent,
+    type AccountDeleteProof,
     type AccountEvent,
     type AccountLocale,
     type AccountServiceConfig,
     type AccountSessionGrant,
     type AccountUser,
+    type AppleCredential,
 } from '../lib/accountContract';
 import { AccountRequestError, createAccountClient, isAccountRequestError } from '../lib/accountApi';
 import { accountApiUrl } from '../lib/accountConfig';
@@ -59,8 +61,10 @@ interface AccountContextValue {
     updateName: (name: string) => Promise<void>;
     /** Signs in with an ID token from Google, making the account on first use. */
     signInWithGoogle: (idToken: string) => Promise<{ created: boolean }>;
+    /** `name` is what Apple's sheet returned, empty after the first sign-in. */
+    signInWithApple: (credential: AppleCredential) => Promise<{ created: boolean }>;
     /** Confirmed with the password, or with a fresh Google token for an account without one. */
-    deleteAccount: (proof: { password: string } | { googleIdToken: string }) => Promise<void>;
+    deleteAccount: (proof: AccountDeleteProof) => Promise<void>;
     signOut: () => Promise<void>;
     loadActivity: () => Promise<AccountEvent[]>;
 }
@@ -78,6 +82,7 @@ const AccountContext = createContext<AccountContextValue>({
     signIn: notConfigured,
     register: notConfigured,
     signInWithGoogle: notConfigured,
+    signInWithApple: notConfigured,
     requestVerification: notConfigured,
     confirmVerification: notConfigured,
     requestPasswordReset: notConfigured,
@@ -261,6 +266,19 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         return { created: grant.created };
     }, [adoptGrant, client]);
 
+    const signInWithApple = useCallback(async (credential: AppleCredential) => {
+        const grant = await client.signInWithApple({
+            identityToken: credential.identityToken,
+            authorizationCode: credential.authorizationCode,
+            name: normalizeName(credential.name),
+            consent: true,
+            policyVersion: ACCOUNT_POLICY_VERSION,
+            locale: localeRef.current,
+        });
+        await adoptGrant(grant);
+        return { created: grant.created };
+    }, [adoptGrant, client]);
+
     const register = useCallback(async (input: { name: string; email: string; password: string }): Promise<RegisterOutcome> => {
         const result = await client.register({
             name: normalizeName(input.name),
@@ -314,7 +332,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         await keepUser(await guard(() => client.updateProfile(requireToken(), { name: normalizeName(name) })));
     }, [client, guard, keepUser, requireToken]);
 
-    const deleteAccount = useCallback(async (proof: { password: string } | { googleIdToken: string }) => {
+    const deleteAccount = useCallback(async (proof: AccountDeleteProof) => {
         await guard(() => client.deleteAccount(requireToken(), proof));
         await forgetSession();
     }, [client, forgetSession, guard, requireToken]);
@@ -342,6 +360,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         signIn,
         register,
         signInWithGoogle,
+        signInWithApple,
         requestVerification,
         confirmVerification,
         requestPasswordReset,
@@ -354,7 +373,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
     }), [
         status, user, config, firstRunPrompt, resolveFirstRunPrompt, refresh, signIn, register,
         requestVerification, confirmVerification, requestPasswordReset, confirmPasswordReset,
-        changePassword, updateName, deleteAccount, signOut, loadActivity, signInWithGoogle,
+        changePassword, updateName, deleteAccount, signOut, loadActivity, signInWithGoogle, signInWithApple,
     ]);
 
     return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;

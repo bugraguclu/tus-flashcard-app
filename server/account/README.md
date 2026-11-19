@@ -39,6 +39,7 @@ yayın derlemesinde hesap özellikleri tamamen gizlenir ve uygulama bugünkü gi
 | POST | `/v1/register` | Hesap açar, koşul kabulünü kaydeder; oturum açar ya da kod ister |
 | POST | `/v1/login` | Giriş; doğrulama zorunluysa ve adres doğrulanmamışsa kod gönderip 403 `unverified` |
 | POST | `/v1/google` | Google ile giriş: `idToken` doğrulanır; hesap yoksa (onayla) şifresiz açılır, aynı e-postalı hesap varsa ona bağlanır |
+| POST | `/v1/apple` | Apple ile giriş: `identityToken` doğrulanır, Google'daki gibi açılır ya da bağlanır; `name` (Apple adı yalnızca ilk girişte verir) ve `authorizationCode` (iptal için) birlikte gelir |
 | POST | `/v1/logout` | Bu oturumu kapatır |
 | POST | `/v1/email/verify` | Doğrulama kodu gönderir |
 | POST | `/v1/email/verify/confirm` | Kodu doğrular (oturum yoksa oturum da açar) |
@@ -46,7 +47,7 @@ yayın derlemesinde hesap özellikleri tamamen gizlenir ve uygulama bugünkü gi
 | POST | `/v1/password/reset/confirm` | Kod + yeni şifre; tüm eski oturumları kapatır, yenisini açar |
 | POST | `/v1/password` | Şifre değiştirir; diğer cihazlardaki oturumları kapatır |
 | PATCH | `/v1/account` | Adı günceller |
-| DELETE | `/v1/account` | Şifreyle (Google hesabında yeni bir Google belirteciyle) onaylanan kalıcı hesap silme (App Store 5.1.1(v)) |
+| DELETE | `/v1/account` | Şifreyle (şifresiz Google/Apple hesabında sağlayıcının yeni belirteciyle) onaylanan kalıcı hesap silme (App Store 5.1.1(v)); Apple erişimi de iptal edilir |
 | GET | `/v1/account/activity` | Son 20 hesap olayı |
 
 Hata gövdesi her zaman `{ "error": { "code", "message", "fields?", "retryAfter?" } }` biçimindedir;
@@ -61,7 +62,27 @@ virgülle bu değişkene yazın; uygulamanın derlemesine de `EXPO_PUBLIC_GOOGLE
 `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` verin. Sunucu kimlik belirtecini Google'ın yayımladığı
 anahtarlarla kendisi doğrular (RS256, yayıncı, hedef kitle, süre; `google.ts`), yalnızca Google'ın
 doğruladığı e-postaları kabul eder. App Store 4.8 gereği Google ile giriş sunan bir uygulama
-**Sign in with Apple** da sunmalıdır; o eklenmeden Google'ı canlı derlemede açmayın.
+**Sign in with Apple** da sunmalıdır: Google'ı yalnızca Apple ile birlikte açın.
+
+## Apple ile giriş
+
+`APPLE_CLIENT_IDS` boşsa Apple ile giriş kapalıdır. Açmak için:
+
+1. Apple Developer → Identifiers'da uygulamanın kimliğinde (`com.tusankim.app`) **Sign in with
+   Apple** yeteneğini açın. `EXPO_PUBLIC_ACCOUNT_API_URL` verilen her derleme bu yetkiyi
+   (`expo-apple-authentication` eklentisi, `app.config.js`) zaten ister.
+2. `APPLE_CLIENT_IDS=com.tusankim.app` yazın. Web önizlemesinde de istenirse bir **Services ID**
+   oluşturun (dönüş adresi web sitesinin kökü), onu da virgülle ekleyin ve web derlemesine
+   `EXPO_PUBLIC_APPLE_WEB_SERVICE_ID` olarak verin.
+3. Keys bölümünde Sign in with Apple için bir anahtar (.p8) oluşturun; `APPLE_TEAM_ID`,
+   `APPLE_KEY_ID` ve `APPLE_PRIVATE_KEY_FILE` verin. Apple, hesap silinince uygulamanın Apple
+   erişiminin iptal edilmesini ister: sunucu girişte gelen `authorizationCode`'u bir yenileme
+   belirteciyle değiştirip saklar, hesap silinince onu Apple'a iptal ettirir (`apple.ts`).
+   Anahtar yoksa giriş çalışır, yalnızca iptal yapılamaz ve sunucu açılışta uyarır.
+
+Sunucu kimlik belirtecini Google'ınkiyle aynı kontrolden geçirir (`idToken.ts`; yayıncı
+`https://appleid.apple.com`). Apple, kullanıcı e-postasını gizlerse `@privaterelay.appleid.com`
+uzantılı bir yönlendirme adresi verir; hesap o adresle açılır.
 
 ## Güvenlik
 

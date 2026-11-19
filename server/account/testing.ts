@@ -49,7 +49,7 @@ export function createClock(start = Date.UTC(2026, 10, 8, 9, 0, 0)): { now: () =
 
 export type HarnessConfig = AccountServiceDeps['config'];
 
-export function createHarness(config: Partial<HarnessConfig> = {}, extra: Pick<AccountServiceDeps, 'googleKeys'> = {}) {
+export function createHarness(config: Partial<HarnessConfig> = {}, extra: Pick<AccountServiceDeps, 'googleKeys' | 'appleKeys' | 'appleTokens'> = {}) {
     const clock = createClock();
     const store = new AccountStore(':memory:');
     const mailer = new FakeMailer();

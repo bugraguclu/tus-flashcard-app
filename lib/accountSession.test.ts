@@ -9,7 +9,7 @@ import {
     shouldOfferFirstRunPrompt,
 } from './accountSession';
 
-const user = { id: 'u1', name: 'Ayşe Yılmaz', email: 'ayse@example.com', emailVerified: true, createdAt: '2026-11-08T10:00:00.000Z', hasPassword: true, google: false };
+const user = { id: 'u1', name: 'Ayşe Yılmaz', email: 'ayse@example.com', emailVerified: true, createdAt: '2026-11-08T10:00:00.000Z', hasPassword: true, google: false, apple: false };
 
 describe('stored session', () => {
     it('round-trips a session and drops anything malformed', () => {
@@ -28,6 +28,7 @@ describe('server replies', () => {
             emailReady: false,
             emailVerificationRequired: false,
             googleSignIn: false,
+            appleSignIn: false,
             policyVersion: '',
             operatorName: '',
             contactEmail: '',

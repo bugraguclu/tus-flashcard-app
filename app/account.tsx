@@ -79,7 +79,7 @@ export default function AccountScreen() {
                     <AccountAvatar user={user} size={72} />
                     <Text style={[styles.name, { color: colors.textPrimary }]} accessibilityRole="header">{user.name}</Text>
                     <Text style={[Type.body, { color: colors.textSecondary }]} selectable>
-                        {user.google ? `${user.email} · Google` : user.email}
+                        {[user.email, user.apple ? 'Apple' : null, user.google ? 'Google' : null].filter(Boolean).join(' · ')}
                     </Text>
                 </View>
 

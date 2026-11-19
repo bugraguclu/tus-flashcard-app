@@ -40,7 +40,8 @@ function loadScript(): Promise<GoogleIdentityServices> {
         };
         script.onerror = () => {
             loading = null;
-            reject(new AccountRequestError('offline'));
+            // The provider's script, not the account server, could not be reached.
+            reject(new AccountRequestError('google_failed'));
         };
         document.head.appendChild(script);
     });
