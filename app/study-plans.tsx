@@ -12,7 +12,7 @@ import { Card, Section, SectionLabel } from '../components/ui/Card';
 import { EmptyState, Notice } from '../components/ui/Feedback';
 import { ChevronDownIcon, ChevronUpIcon, DragHandleIcon, PlusIcon } from '../components/ui/icons';
 import { ListRow } from '../components/ui/Rows';
-import { Radius, Type } from '../components/ui/tokens';
+import { Radius, Type, READABLE_WIDTH } from '../components/ui/tokens';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
@@ -311,7 +311,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgCard },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
-        content: { padding: Spacing.lg, gap: Spacing.lg },
+        content: { width: '100%', maxWidth: READABLE_WIDTH, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.lg },
         list: { gap: Spacing.md },
         cardBody: { padding: Spacing.lg, gap: Spacing.sm },
         title: { ...Type.sectionTitle, fontWeight: '600', color: colors.accent },

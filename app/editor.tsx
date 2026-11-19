@@ -72,6 +72,7 @@ import { dbUpsertFtsCard } from '../lib/db';
 import { commitCollectionWrite } from '../lib/collectionWrite';
 import { userFacingErrorMessage } from '../lib/userFacingError';
 import { useI18n } from '../hooks/useI18n';
+import { useCenteredInset } from '../hooks/useCenteredInset';
 import { localizeCardTemplateName, localizeFieldName, localizeNoteTypeName } from '../lib/i18n';
 import { clozeFieldIndex, countCardsForNote, nextClozeNumber } from '../lib/templates';
 import { loadSettings, saveSettings } from '../lib/storage';
@@ -94,7 +95,7 @@ import {
     type LocalizedPresetText,
 } from '../lib/customToolbar';
 import { loadNoteTypeStickyFields, saveNoteTypeStickyFields } from '../lib/editorStickyFields';
-import { createEditorStyles } from '../components/editor/editorStyles';
+import { createEditorStyles, EDITOR_WIDTH } from '../components/editor/editorStyles';
 import { EyeIcon, PinIcon } from '../components/editor/EditorIcons';
 import ScreenHeader from '../components/ScreenHeader';
 import { IconButton } from '../components/ui/Button';
@@ -155,7 +156,8 @@ export default function EditorScreen() {
     const { activeDeckName } = useStudyScope();
     const colors = useThemeColors();
     const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-    const styles = useMemo(() => createEditorStyles(colors), [colors]);
+    const editorInset = useCenteredInset(EDITOR_WIDTH);
+    const styles = useMemo(() => createEditorStyles(colors, editorInset), [colors, editorInset]);
     const insets = useSafeAreaInsets();
     const previewBodyHeight = Math.max(
         PREVIEW_BODY_MIN_HEIGHT,

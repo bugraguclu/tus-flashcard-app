@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Path, Rect } from 'react-native-svg';
 import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
+import { useCenteredInset } from '../../hooks/useCenteredInset';
 import { useModalHandoff } from '../../hooks/useModalHandoff';
 import StatsGlyph from '../StatsGlyph';
 import { IconFrame, iconStroke, outline } from '../icons/IconFrame';
@@ -57,6 +58,8 @@ interface StudyToolsMenuProps {
  * the button again closes them.
  */
 export default function StudyToolsMenu({ bottom, onOpenCalendar }: StudyToolsMenuProps) {
+    // Kept at the edge of the centred column its screens use in a wide window.
+    const inset = useCenteredInset();
     const { l } = useI18n();
     const colors = useThemeColors();
     const router = useRouter();
@@ -105,6 +108,7 @@ export default function StudyToolsMenu({ bottom, onOpenCalendar }: StudyToolsMen
             onClose={() => setOpen(false)}
             closeAtOnce={handoff.closeAtOnce}
             bottom={bottom}
+            inset={inset}
             shape="round"
             color={tint}
             icon={<AnalyticsIcon color={colors.onAccent} size={26} />}

@@ -48,6 +48,14 @@ header. Larger drawings are the floating button's own icon (26–28) and the pic
 error state (30 and up). A small mark (a disclosure chevron inside a button, the tick in a check
 box, a badge's glyph) is 16; no icon is drawn smaller.
 
+A wide window (desktop web, iPad) centres each screen's content in one column instead of
+stretching it: `READABLE_WIDTH` (760) for forms, settings, timelines and cards, `LIST_WIDTH` (920)
+for the deck list and the card browser, 720 for the note editor's fields. Content in a scroll view
+takes `width: '100%', maxWidth, alignSelf: 'center'`; a full-width bar (a header, a bottom bar, a
+list whose scroll bar stays at the window edge) keeps its background edge to edge and adds
+`useCenteredInset(maxWidth)` (or `centeredInset(width, maxWidth)`) to its side padding, and a
+floating button adds it to its `right`. A phone is narrower than every limit, so it never changes.
+
 No colour literal belongs in a screen. Exceptions: user-chosen ink and highlight swatches (drawing
 pad, photo editor, editor colour pickers), image content (the sleeping panda), card templates, and
 the photo editor's crop frame, which is drawn over the photo itself.

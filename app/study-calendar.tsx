@@ -35,6 +35,7 @@ import {
 } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
+import { centeredInset } from '../hooks/useCenteredInset';
 import { useI18n } from '../hooks/useI18n';
 import { useStudySubjects } from '../hooks/useStudySubjects';
 import { goBackOr, openOrReturnTo } from '../lib/backNavigation';
@@ -95,8 +96,11 @@ function shiftAnchor(anchor: AnchorDate, mode: ViewMode, direction: 1 | -1): Anc
 export default function StudyCalendarScreen() {
     const { l, locale, localeTag } = useI18n();
     const colors = useThemeColors();
-    const isCompact = useWindowDimensions().width < 430;
-    const styles = useMemo(() => createStyles(colors, isCompact), [colors, isCompact]);
+    const windowWidth = useWindowDimensions().width;
+    const isCompact = windowWidth < 430;
+    // A wide window centres the month and the timeline in one readable column.
+    const inset = centeredInset(windowWidth);
+    const styles = useMemo(() => createStyles(colors, isCompact, inset), [colors, isCompact, inset]);
     const router = useRouter();
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
@@ -596,7 +600,7 @@ const NEW_SESSION_CHOICE: StudyChoice = { subject: 'Karışık', kind: 'pass', p
 /** Tail padding that keeps the last card out from under the floating stopwatch and tools buttons. */
 const STOPWATCH_BUTTON_CLEARANCE = 2 * FAB_SIZE + Spacing.md + 2 * Spacing.lg;
 
-function createStyles(colors: ColorScheme, isCompact: boolean) {
+function createStyles(colors: ColorScheme, isCompact: boolean, inset: number) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgSecondary },
 
@@ -604,15 +608,15 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
             flexDirection: 'row',
             alignItems: 'center',
             // The arrows are full 44-point icon buttons; their icons line up with the 16-point gutter.
-            paddingLeft: Spacing.xs,
-            paddingRight: Spacing.lg,
+            paddingLeft: Spacing.xs + inset,
+            paddingRight: Spacing.lg + inset,
             paddingTop: Spacing.sm,
             paddingBottom: Spacing.xs,
         },
         rangeTitle: { flexShrink: 1, fontSize: isCompact ? FontSize.sm : FontSize.lg, fontWeight: '600', color: colors.textSecondary },
         modeSwitch: { marginLeft: 'auto' },
 
-        weekdayRow: { flexDirection: 'row', paddingHorizontal: Spacing.sm, paddingBottom: Spacing.xs },
+        weekdayRow: { flexDirection: 'row', paddingHorizontal: Spacing.sm + inset, paddingBottom: Spacing.xs },
         weekdayLabel: {
             flex: 1,
             textAlign: 'center',
@@ -622,7 +626,7 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         },
         weekdayLabelToday: { color: colors.streak, fontWeight: '600' },
 
-        grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: Spacing.sm },
+        grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: Spacing.sm + inset },
         cell: {
             width: `${100 / 7}%`,
             alignItems: 'center',
@@ -632,8 +636,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
 
         timelineFrame: { flex: 1, marginTop: Spacing.sm },
         timeline: { flex: 1, backgroundColor: colors.bgPrimary },
-        timelineContent: {},
+        timelineContent: { paddingHorizontal: inset },
 
-        stopwatchButton: { position: 'absolute', right: Spacing.lg },
+        stopwatchButton: { position: 'absolute', right: Spacing.lg + inset },
     });
 }

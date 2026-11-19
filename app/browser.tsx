@@ -92,6 +92,8 @@ import {
 } from '../components/browser/BrowserDialogs';
 import { BrowserNoteTools, type BrowserNoteTool } from '../components/browser/BrowserNoteTools';
 import { renameTagFilters } from '../lib/tagRename';
+import { useCenteredInset } from '../hooks/useCenteredInset';
+import { LIST_WIDTH } from '../components/ui/tokens';
 
 export default function BrowserScreen() {
     const { height: windowHeight } = useWindowDimensions();
@@ -106,7 +108,8 @@ export default function BrowserScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const colors = useThemeColors();
-    const styles = useMemo(() => createBrowserStyles(colors), [colors]);
+    const listInset = useCenteredInset(LIST_WIDTH);
+    const styles = useMemo(() => createBrowserStyles(colors, listInset), [colors, listInset]);
     const browserFontScale = (settings.browserFontScalePercent ?? 100) / 100;
     const { activeDeckName } = useStudyScope();
     const routeDeckName = typeof params.deck === 'string' && params.deck ? params.deck : null;

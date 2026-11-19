@@ -10,7 +10,7 @@ import { Card, Section, SectionFootnote } from '../components/ui/Card';
 import { Chip, SegmentedControl } from '../components/ui/Choice';
 import { EmptyState, ProgressBar } from '../components/ui/Feedback';
 import { BackIcon, ForwardIcon } from '../components/ui/icons';
-import { Radius, Type } from '../components/ui/tokens';
+import { Radius, Type, READABLE_WIDTH } from '../components/ui/tokens';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
@@ -283,7 +283,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgCard },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
-        content: { padding: Spacing.lg, gap: Spacing.lg },
+        content: { width: '100%', maxWidth: READABLE_WIDTH, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.lg },
         groupMeta: { fontSize: FontSize.sm, color: colors.textSecondary },
         courseRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
         tile: { width: 36, height: 36, borderRadius: Radius.inset, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },

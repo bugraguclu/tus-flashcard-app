@@ -92,7 +92,8 @@ import { openKeyboardShortcuts } from '../../lib/keyboardShortcutsHelp';
 import { SwitchRow } from '../../components/ui/Rows';
 import { AppSheet } from '../../components/ui/Sheet';
 import { SheetNoDrag } from '../../components/SwipeDismissSheet';
-import { DISABLED_OPACITY, HIT_TARGET, Shadow, Type, Radius } from '../../components/ui/tokens';
+import { DISABLED_OPACITY, HIT_TARGET, LIST_WIDTH, Shadow, Type, Radius } from '../../components/ui/tokens';
+import { centeredInset } from '../../hooks/useCenteredInset';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { deckStep } from '../../lib/deckKeyboardReorder';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -192,6 +193,10 @@ export default function DecksScreen() {
     const { width } = useWindowDimensions();
     const isCompact = width < 600;
     const isDesktopWeb = Platform.OS === 'web' && !isCompact;
+    // A wide window centres the header, the table and the bottom bar in one column, as a
+    // desktop deck list does, instead of stretching the counts to the far edge.
+    const listInset = centeredInset(width, LIST_WIDTH);
+    const insetStyle = listInset > 0 ? { paddingHorizontal: listInset } : null;
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
     const { settings } = useAppSettings();
@@ -1578,7 +1583,7 @@ export default function DecksScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
+            <View style={[styles.header, listInset > 0 && { paddingLeft: Spacing.lg + listInset, paddingRight: Spacing.sm + listInset }]}>
                 <Text style={styles.title} accessibilityRole="header">{t('tabs.decks')}</Text>
                 <View style={styles.headerActions}>
                     <IconButton onPress={refresh} accessibilityLabel={l('Desteleri yenile', 'Refresh decks')}>
@@ -1600,7 +1605,7 @@ export default function DecksScreen() {
                 onDismiss={handleOverflowDismiss}
                 closeAtOnce={overflowHandoff.closeAtOnce}
                 // Hangs from the bottom of the ⋮ button, flush with the header's right padding.
-                anchor={{ top: Spacing.md + HIT_TARGET, right: Spacing.lg }}
+                anchor={{ top: Spacing.md + HIT_TARGET, right: Spacing.lg + listInset }}
                 accessibilityLabel={l('Diğer seçenekler', 'More options')}
             >
                 <MenuItem
@@ -1664,7 +1669,7 @@ export default function DecksScreen() {
                 })}
             </AppDialog>
 
-            <DeckListColumnHeaders />
+            <DeckListColumnHeaders inset={listInset} />
 
             <View
                 style={styles.listWrap}
@@ -1680,6 +1685,7 @@ export default function DecksScreen() {
                     ref={deckScrollRef}
                     {...deckPull.scrollProps}
                     style={styles.deckList}
+                    contentContainerStyle={insetStyle}
                     data={visibleRows}
                     renderItem={renderVirtualizedRow}
                     keyExtractor={deckRowKey}
@@ -1773,6 +1779,7 @@ export default function DecksScreen() {
 
             <DeckAddMenu
                 bottom={insets.bottom + bottomBarHeight + Spacing.md}
+                inset={listInset}
                 visible={showAddMenu}
                 onOpen={() => setShowAddMenu(true)}
                 onClose={() => setShowAddMenu(false)}
@@ -1781,7 +1788,7 @@ export default function DecksScreen() {
                 onAddCard={openAddCard}
             />
 
-            <BottomBar onLayout={(event) => setBottomBarHeight(event.nativeEvent.layout.height)}>
+            <BottomBar style={insetStyle} onLayout={(event) => setBottomBarHeight(event.nativeEvent.layout.height)}>
                 <BottomBarItem
                     label={t('sidebar.myCards')}
                     accessibilityLabel={l('Kartlarımı aç', 'Open Card Browser')}

@@ -18,6 +18,7 @@ import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatc
 import StudyToolsMenu, { STUDY_TOOLS_FAB_SIZE } from '../components/stopwatch/StudyToolsMenu';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { BellIcon, CalendarIcon, GearIcon, PlusCircleIcon } from '../components/stopwatch/StopwatchIcons';
+import { useCenteredInset } from '../hooks/useCenteredInset';
 import { FontSize, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
@@ -77,7 +78,9 @@ export default function StopwatchScreen() {
     const colors = useThemeColors();
     const isDark = useIsDarkTheme();
     const heroColor = useStopwatchHeroColor();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    // A wide window centres the timeline in one readable column under the hero.
+    const inset = useCenteredInset();
+    const styles = useMemo(() => createStyles(colors, inset), [colors, inset]);
     const router = useRouter();
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
@@ -469,7 +472,7 @@ export default function StopwatchScreen() {
                     ref={scrollRef}
                     style={styles.scroll}
                     {...pull.scrollProps}
-                    contentContainerStyle={{ paddingBottom: insets.bottom + STUDY_TOOLS_FAB_SIZE + Spacing.xxl }}
+                    contentContainerStyle={{ paddingHorizontal: inset, paddingBottom: insets.bottom + STUDY_TOOLS_FAB_SIZE + Spacing.xxl }}
                     showsVerticalScrollIndicator={false}
                 >
                     <StopwatchTimeline
@@ -560,7 +563,7 @@ export default function StopwatchScreen() {
     );
 }
 
-function createStyles(colors: ColorScheme) {
+function createStyles(colors: ColorScheme, inset: number) {
     return StyleSheet.create({
         container: { flex: 1 },
         page: { flex: 1, backgroundColor: colors.bgPrimary },
@@ -569,7 +572,7 @@ function createStyles(colors: ColorScheme) {
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            paddingHorizontal: Spacing.lg,
+            paddingHorizontal: Spacing.lg + inset,
             paddingTop: Spacing.lg,
             paddingBottom: Spacing.xs,
         },

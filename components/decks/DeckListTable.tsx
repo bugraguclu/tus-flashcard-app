@@ -19,11 +19,12 @@ function useTableStyles() {
     return useMemo(() => createStyles(colors, columnWidth, learningWidth), [colors, columnWidth, learningWidth]);
 }
 
-export function DeckListColumnHeaders() {
+/** `inset` lines the headings up with a deck list centred in a wide window. */
+export function DeckListColumnHeaders({ inset = 0 }: { inset?: number }) {
     const styles = useTableStyles();
     const { t } = useI18n();
     return (
-        <View style={styles.header}>
+        <View style={[styles.header, inset > 0 && { paddingLeft: Spacing.lg + inset, paddingRight: Spacing.xs + inset }]}>
             <Text style={styles.deckLabel}>{t('common.deck')}</Text>
             <View style={styles.counts}>
                 <Text style={[styles.column, styles.label, styles.new]} numberOfLines={1} maxFontSizeMultiplier={COUNT_TEXT_CAP}>{t('anki.new')}</Text>

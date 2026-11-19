@@ -2,15 +2,21 @@ import { Platform, StyleSheet } from 'react-native';
 import { FontSize, Spacing, type ColorScheme } from '../../constants/theme';
 import { Radius } from '../ui/tokens';
 
-/** Styles for the note editor screen and the content of the dialogs it opens. */
-export function createEditorStyles(colors: ColorScheme) {
+/** The widest the note's fields grow; a wider window centres them. */
+export const EDITOR_WIDTH = 720;
+
+/**
+ * Styles for the note editor screen and the content of the dialogs it opens. `inset` lines the
+ * formatting toolbar's field tabs up with the centred fields in a wide window (0 on a phone).
+ */
+export function createEditorStyles(colors: ColorScheme, inset = 0) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgCard },
     keyboardArea: { flex: 1 },
     editorScroll: { flex: 1, backgroundColor: colors.bgCard },
     content: {
         width: '100%',
-        maxWidth: 720,
+        maxWidth: EDITOR_WIDTH,
         alignSelf: 'center',
         paddingHorizontal: Spacing.s6,
         paddingTop: 5,
@@ -28,7 +34,8 @@ export function createEditorStyles(colors: ColorScheme) {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: Spacing.sm,
+        // The buttons below centre themselves; the field tabs line up with the fields.
+        paddingHorizontal: Spacing.sm + inset,
         paddingTop: 4,
     },
     keyboardDismissButton: {

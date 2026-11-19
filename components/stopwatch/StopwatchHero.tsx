@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { centeredInset } from '../../hooks/useCenteredInset';
 import { Text, useLayoutTextScale } from '../AppText';
 import { FontSize, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { Shadow, Radius } from '../ui/tokens';
@@ -66,6 +67,9 @@ export default function StopwatchHero({
     const colors = useThemeColors();
     const heroColor = useStopwatchHeroColor();
     const { width } = useWindowDimensions();
+    // A wide window keeps the ring and the goal over the centred timeline, not at its edges.
+    const inset = centeredInset(width);
+    const heroInset = inset > 0 ? { paddingHorizontal: Spacing.lg + inset } : null;
     const ringSize = Math.round(Math.min(140, Math.max(106, width * 0.29)));
     const ringStroke = Math.round(ringSize * 0.075);
     // The goal and "Başla" keep TUSBuddy's width at the designed text size and grow with larger
@@ -85,7 +89,7 @@ export default function StopwatchHero({
             `Studying ${running.subject}${onBreak ? ', on a break' : ''}. This session ${sessionClock}. Today ${total} of a ${goal} goal.`,
         );
         return (
-            <View style={[styles.hero, styles.heroRunning]}>
+            <View style={[styles.hero, styles.heroRunning, heroInset]}>
                 <View accessible accessibilityRole="summary" accessibilityLabel={summary} style={styles.runningTop}>
                     <View style={styles.todayRow}>
                         <Text style={styles.todayLabel}>
@@ -145,7 +149,7 @@ export default function StopwatchHero({
     // than with adjustsFontSizeToFit, which the web build does not support.
     const totalFontSize = total.length > 9 ? FontSize.md : total.length > 7 ? FontSize.lg : FontSize.xl;
     return (
-        <View style={styles.hero}>
+        <View style={[styles.hero, heroInset]}>
             <View style={styles.row}>
                 <View style={styles.half}>
                     <View

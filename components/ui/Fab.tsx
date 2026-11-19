@@ -83,6 +83,11 @@ interface SpeedDialProps {
     closeAtOnce?: boolean;
     /** Distance of the button from the screen's bottom edge. */
     bottom: number;
+    /**
+     * Extra side inset that keeps the button and its actions at the edge of a column centred in
+     * a wide window (`useCenteredInset`); 0 on a phone.
+     */
+    inset?: number;
     shape?: FabShape;
     /** The button's fill; the accent by default. */
     color?: string;
@@ -106,7 +111,7 @@ interface SpeedDialProps {
  * the button again closes it.
  */
 export function SpeedDial({
-    visible, onOpen, onClose, onDismiss, closeAtOnce, bottom, shape = 'rounded', color, openColor,
+    visible, onOpen, onClose, onDismiss, closeAtOnce, bottom, inset = 0, shape = 'rounded', color, openColor,
     icon, turnsToClose = false, openLabel, closeLabel, stretch = false, children,
 }: SpeedDialProps) {
     const colors = useThemeColors();
@@ -116,7 +121,7 @@ export function SpeedDial({
     const items = React.Children.toArray(children);
     return (
         <>
-            <Fab accessibilityLabel={openLabel} onPress={onOpen} shape={shape} color={fill} expanded={false} style={[styles.floating, { bottom }]}>
+            <Fab accessibilityLabel={openLabel} onPress={onOpen} shape={shape} color={fill} expanded={false} style={[styles.floating, { bottom, right: Spacing.lg + inset }]}>
                 {icon}
             </Fab>
             <PopoverModal visible={visible} onRequestClose={onClose} onDismiss={onDismiss} closeAtOnce={closeAtOnce} itemCount={items.length}>
@@ -134,8 +139,8 @@ export function SpeedDial({
                             !stretch && styles.actionsHug,
                             {
                                 paddingBottom: bottom + FAB_SIZE + (stretch ? Spacing.lg : Spacing.md),
-                                paddingLeft: Spacing.lg + insets.left,
-                                paddingRight: Spacing.lg + (stretch ? insets.right : 0),
+                                paddingLeft: Spacing.lg + insets.left + (stretch ? inset : 0),
+                                paddingRight: Spacing.lg + inset + (stretch ? insets.right : 0),
                             },
                         ]}
                         pointerEvents="box-none"
@@ -157,7 +162,7 @@ export function SpeedDial({
                         icon={icon}
                         onPress={onClose}
                         label={closeLabel}
-                        style={[styles.floating, { bottom }]}
+                        style={[styles.floating, { bottom, right: Spacing.lg + inset }]}
                     />
                 </View>
             </PopoverModal>

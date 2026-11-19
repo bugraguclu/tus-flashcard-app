@@ -174,7 +174,7 @@ export function SelectionBar({
 }: SelectionBarProps) {
     const empty = selectedCardIds.size === 0;
     return (
-        <BottomBar>
+        <BottomBar style={styles.selectionBarInset}>
             <TouchableOpacity
                 style={styles.selectionBarCount}
                 onPress={closeSelection}

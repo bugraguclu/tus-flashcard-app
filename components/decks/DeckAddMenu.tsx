@@ -12,6 +12,8 @@ export const DECK_ADD_MENU_LIST_INSET = FAB_SIZE + 2 * Spacing.md;
 
 interface DeckAddMenuProps {
     bottom: number;
+    /** Extra right inset that keeps ＋ at the edge of a centred deck list in a wide window. */
+    inset?: number;
     visible: boolean;
     onOpen: () => void;
     onClose: () => void;
@@ -25,7 +27,7 @@ interface DeckAddMenuProps {
  * strong dimming while ＋ turns into ×, and sink back into it when the menu closes.
  */
 export default function DeckAddMenu({
-    bottom, visible, onOpen, onClose, onCreateFilteredDeck, onCreateDeck, onAddCard,
+    bottom, inset = 0, visible, onOpen, onClose, onCreateFilteredDeck, onCreateDeck, onAddCard,
 }: DeckAddMenuProps) {
     const { l } = useI18n();
     const colors = useThemeColors();
@@ -59,6 +61,7 @@ export default function DeckAddMenu({
             onDismiss={handleDismiss}
             closeAtOnce={handoff.closeAtOnce}
             bottom={bottom}
+            inset={inset}
             openColor={colors.accentHover}
             icon={<PlusIcon color={colors.onAccent} size={28} />}
             turnsToClose

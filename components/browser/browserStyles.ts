@@ -2,8 +2,11 @@ import { StyleSheet, Platform } from 'react-native';
 import { Spacing, FontSize, type ColorScheme } from '../../constants/theme';
 import { Radius, Shadow, Type } from '../ui/tokens';
 
-/** Styles for the card browser, its rows, bars, menus and dialogs. */
-export function createBrowserStyles(colors: ColorScheme) {
+/**
+ * Styles for the card browser, its rows, bars, menus and dialogs. `inset` is the extra side
+ * padding that centres the toolbar, search, chips and list in a wide window (0 on a phone).
+ */
+export function createBrowserStyles(colors: ColorScheme, inset = 0) {
     return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bgPrimary },
     scopeToolbar: {
@@ -11,7 +14,7 @@ export function createBrowserStyles(colors: ColorScheme) {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        paddingHorizontal: Spacing.lg,
+        paddingHorizontal: Spacing.lg + inset,
         paddingVertical: Spacing.sm,
     },
     scopeBlock: { flex: 1, minWidth: 0 },
@@ -22,7 +25,7 @@ export function createBrowserStyles(colors: ColorScheme) {
     // The ⋮ keeps its dots where they were, a little into the gutter.
     moreButton: { flexShrink: 0, marginRight: -Spacing.sm },
 
-    searchContainer: { paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
+    searchContainer: { paddingHorizontal: Spacing.lg + inset, marginBottom: Spacing.sm },
     searchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
     searchField: { flex: 1 },
     searchDraftHint: { marginHorizontal: 4, marginTop: 4, fontSize: FontSize.xs, color: colors.textMuted },
@@ -30,10 +33,10 @@ export function createBrowserStyles(colors: ColorScheme) {
     // flexGrow: 0 + centered content pin the chips to their natural size; otherwise the
     // row stretches into leftover space when the list below is short, inflating the chips.
     filterScroll: { minHeight: 42, maxHeight: 42, flexGrow: 0 },
-    filterContent: { paddingHorizontal: Spacing.lg, gap: Spacing.s6, alignItems: 'center' },
+    filterContent: { paddingHorizontal: Spacing.lg + inset, gap: Spacing.s6, alignItems: 'center' },
 
     list: { flex: 1 },
-    listContent: { flexGrow: 1, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, gap: 3 },
+    listContent: { flexGrow: 1, paddingHorizontal: Spacing.md + inset, paddingVertical: Spacing.sm, gap: 3 },
     // Centred in the space the list leaves when it has nothing to show.
     emptyState: { flex: 1 },
 
@@ -98,6 +101,8 @@ export function createBrowserStyles(colors: ColorScheme) {
 
     cardInfoBtn: { marginTop: Spacing.sm },
 
+    // Lines the selection bar's actions up with the centred list in a wide window.
+    selectionBarInset: { paddingHorizontal: inset },
     // The selection bar's leading control: the count of what is selected, which closes selection.
     // It takes twice an action's share of the bar, so the count stays readable.
     selectionBarCount: {
