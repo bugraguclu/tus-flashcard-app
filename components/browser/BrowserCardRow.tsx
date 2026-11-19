@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { View, TouchableOpacity, Platform, Pressable, StyleSheet } from 'react-native';
+import { webContextMenuProps } from '../../lib/webContextMenu';
 import { Text } from '../AppText';
 import { useRouter } from 'expo-router';
 import { FontSize, type ColorScheme } from '../../constants/theme';
@@ -126,6 +127,7 @@ export function BrowserCardRow({
         ? {
             onPress: toggleRow,
             onLongPress: startSelection,
+            ...webContextMenuProps(startSelection),
             accessibilityRole: 'button' as const,
             accessibilityState: { expanded: isExpanded },
             'aria-expanded': isExpanded,
@@ -148,6 +150,8 @@ export function BrowserCardRow({
             onPress={toggleRow}
             onLongPress={startSelection}
             activeOpacity={0.7}
+            // A right click starts selecting from this card, as a long press does on iPhone.
+            {...webContextMenuProps(selectionMode ? null : startSelection)}
             accessibilityRole={selectionMode ? 'checkbox' : Platform.OS === 'web' ? undefined : 'button'}
             // On the web the body below is the Tab stop while the row is not a checkbox.
             focusable={Platform.OS === 'web' ? !bodyIsControl : undefined}

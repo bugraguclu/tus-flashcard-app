@@ -94,6 +94,7 @@ import { AppSheet } from '../../components/ui/Sheet';
 import { SheetNoDrag } from '../../components/SwipeDismissSheet';
 import { DISABLED_OPACITY, HIT_TARGET, LIST_WIDTH, Shadow, Type, Radius } from '../../components/ui/tokens';
 import { centeredInset } from '../../hooks/useCenteredInset';
+import { webContextMenuProps } from '../../lib/webContextMenu';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { deckStep } from '../../lib/deckKeyboardReorder';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -1239,6 +1240,8 @@ export default function DecksScreen() {
                     isDragging && styles.deckRowDragging,
                     isInsideDropTarget && styles.deckRowDropTarget,
                 ]}
+                // A right click opens the same menu as ⋯, as a desktop deck list does.
+                {...webContextMenuProps(() => openMenu(deck))}
             >
                 {rowDropFeedback && (isDropBefore || isDropAfter) && (
                     <View
