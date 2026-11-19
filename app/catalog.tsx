@@ -5,6 +5,7 @@ import {
     StyleSheet,
     View,
 } from 'react-native';
+import { useCenteredInset } from '../hooks/useCenteredInset';
 import { Text } from '../components/AppText';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,7 +47,9 @@ export default function CatalogScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    // A wide window keeps the unlock button under the centred package, not across the window.
+    const footerInset = useCenteredInset(CATALOG_WIDTH);
+    const styles = useMemo(() => createStyles(colors, footerInset), [colors, footerInset]);
     const { l, locale } = useI18n();
     const {
         catalogAccess, catalogInstalling, purchaseCatalog, restoreCatalogPurchase, refreshCatalogAccess,
@@ -476,7 +479,10 @@ export default function CatalogScreen() {
     );
 }
 
-function createStyles(colors: ColorScheme) {
+/** The catalog page's column; the footer's buttons line up with it. */
+const CATALOG_WIDTH = 720;
+
+function createStyles(colors: ColorScheme, footerInset: number) {
     return StyleSheet.create({
         screen: { flex: 1, backgroundColor: colors.bgPrimary },
 
@@ -485,7 +491,7 @@ function createStyles(colors: ColorScheme) {
         statusBadge: { paddingRight: Spacing.sm },
 
         scroll: { flex: 1 },
-        content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: Spacing.lg },
+        content: { width: '100%', maxWidth: CATALOG_WIDTH, alignSelf: 'center', padding: Spacing.lg },
 
         hero: {
             borderRadius: 24,
@@ -561,7 +567,7 @@ function createStyles(colors: ColorScheme) {
         },
 
         footer: {
-            paddingHorizontal: Spacing.lg,
+            paddingHorizontal: Spacing.lg + footerInset,
             paddingTop: Spacing.md,
             backgroundColor: colors.bgSecondary,
             borderTopWidth: StyleSheet.hairlineWidth,

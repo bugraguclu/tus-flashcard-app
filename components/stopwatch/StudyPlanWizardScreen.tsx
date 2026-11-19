@@ -12,6 +12,8 @@ import { Button } from '../ui/Button';
 import { Section } from '../ui/Card';
 import { Notice, ProgressBar } from '../ui/Feedback';
 import { TextField } from '../ui/Fields';
+import { READABLE_WIDTH } from '../ui/tokens';
+import { useCenteredInset } from '../../hooks/useCenteredInset';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 
@@ -31,7 +33,9 @@ const WEEKDAY_LONG_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
 export default function StudyPlanWizardScreen({ step }: { step: number }) {
     const { l, locale } = useI18n();
     const colors = useThemeColors();
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    // A wide window keeps the progress, the steps and the buttons in one centred column.
+    const inset = useCenteredInset();
+    const styles = useMemo(() => createStyles(colors, inset), [colors, inset]);
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { draft, update, result, leave, create, showingStep } = useStudyPlanWizardDraft();
@@ -95,19 +99,19 @@ export default function StudyPlanWizardScreen({ step }: { step: number }) {
     );
 }
 
-function createStyles(colors: ColorScheme) {
+function createStyles(colors: ColorScheme, inset: number) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgCard },
-        progressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
+        progressRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg + inset, paddingVertical: Spacing.sm },
         progressTrack: { flex: 1 },
         progressText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
-        content: { padding: Spacing.lg, gap: Spacing.lg },
+        content: { width: '100%', maxWidth: READABLE_WIDTH, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.lg },
         inputRow: { padding: Spacing.lg },
         footer: {
             flexDirection: 'row',
             gap: Spacing.md,
-            paddingHorizontal: Spacing.lg,
+            paddingHorizontal: Spacing.lg + inset,
             paddingTop: Spacing.md,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: colors.border,

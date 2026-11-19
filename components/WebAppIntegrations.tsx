@@ -14,6 +14,7 @@ import { alert } from '../lib/confirm';
 import { inferImportFileType } from '../lib/importFile';
 import { onStudyReminderOpened } from '../lib/studyNotifications';
 import { registerWebServiceWorker } from '../lib/webServiceWorker';
+import { installWebHover } from '../lib/webHover';
 
 type LaunchParams = { files?: readonly FileSystemFileHandle[] };
 type LaunchQueue = { setConsumer(consumer: (params: LaunchParams) => void): void };
@@ -28,6 +29,7 @@ type LaunchQueue = { setConsumer(consumer: (params: LaunchParams) => void): void
  * - The service worker that lets the installed web app start offline.
  * - Keyboard use: focus rings, focus inside dialogs and menus, arrow keys, app-wide shortcuts and
  *   their list (`?`). See `hooks/useWebKeyboardNavigation.ts`.
+ * - Hover feedback under a mouse pointer, which a touch screen never needs.
  *
  * Mounted once, by the root stack, on web only.
  */
@@ -71,6 +73,8 @@ export default function WebAppIntegrations() {
     useEffect(() => {
         registerWebServiceWorker();
     }, []);
+
+    useEffect(() => installWebHover(document, colors.hoverOverlay), [colors.hoverOverlay]);
 
     useEffect(() => onStudyReminderOpened(() => returnToDeckList(router)), [router]);
 

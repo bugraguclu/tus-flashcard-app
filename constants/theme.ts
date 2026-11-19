@@ -93,6 +93,8 @@ const LightColors = {
     scrimLight: 'rgba(0, 0, 0, 0.22)',
     /** Dimming behind a speed-dial menu whose labels sit directly on it. */
     scrimStrong: 'rgba(0, 0, 0, 0.6)',
+    /** The tint a mouse pointer lays over the control under it (web with a mouse only). */
+    hoverOverlay: 'rgba(0, 0, 0, 0.045)',
 
     white: '#ffffff',
     transparent: 'transparent',
@@ -167,6 +169,7 @@ const DarkColors: ColorScheme = {
     scrim: 'rgba(0, 0, 0, 0.4)',
     scrimLight: 'rgba(0, 0, 0, 0.22)',
     scrimStrong: 'rgba(0, 0, 0, 0.6)',
+    hoverOverlay: 'rgba(255, 255, 255, 0.06)',
 
     white: '#ffffff',
     transparent: 'transparent',

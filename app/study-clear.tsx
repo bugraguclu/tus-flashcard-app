@@ -8,6 +8,7 @@ import { DateField } from '../components/stopwatch/StudyToolControls';
 import { Button } from '../components/ui/Button';
 import { Section } from '../components/ui/Card';
 import { Notice } from '../components/ui/Feedback';
+import { READABLE_WIDTH } from '../components/ui/tokens';
 import { ValueRow } from '../components/ui/Rows';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -198,7 +199,7 @@ function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: colors.bgCard },
         scroll: { flex: 1, backgroundColor: colors.bgPrimary },
-        content: { padding: Spacing.lg, gap: Spacing.lg },
+        content: { width: '100%', maxWidth: READABLE_WIDTH, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.lg },
         buttonRow: { padding: Spacing.lg },
         previewRow: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm + 2, gap: Spacing.xxs },
         previewTitle: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
