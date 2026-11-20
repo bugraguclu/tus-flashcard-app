@@ -1,0 +1,164 @@
+---
+// Desktop mouse drag-to-scroll for [data-drag-scroll] horizontal rails — ported from belif.
+// Touch stays 100% native browser momentum scroll.
+---
+<style is:global>
+  @media (hover: hover) and (pointer: fine) {
+    [data-drag-ready] { cursor: grab; }
+  }
+  [data-dragging],
+  [data-dragging] * {
+    cursor: grabbing !important;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  [data-dragging] > * { pointer-events: none; }
+</style>
+
+<script>
+  const THRESHOLD = 6;
+  const quiet = matchMedia('(prefers-reduced-motion: reduce)');
+  const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+  type Handlers = {
+    press: (e: PointerEvent) => boolean;
+    drag: (dx: number) => void;
+    release: (dx: number, v: number, dragged: boolean) => void;
+  };
+
+  function onMouseDrag(el: HTMLElement, h: Handlers) {
+    let id: number | null = null;
+    let x0 = 0;
+    let dragging = false;
+    let trail: { x: number; t: number }[] = [];
+    let swallow = false;
+
+    el.addEventListener('click', (e) => {
+      if (!swallow || !e.isTrusted) return;
+      swallow = false;
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+
+    el.addEventListener('dragstart', (e) => e.preventDefault());
+
+    const finish = (e: PointerEvent, cancelled: boolean) => {
+      if (e.pointerId !== id) return;
+      id = null;
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', up);
+      removeEventListener('pointercancel', cancel);
+      const dragged = dragging;
+      dragging = false;
+      let v = 0;
+      if (dragged) {
+        el.removeAttribute('data-dragging');
+        if (!cancelled) {
+          swallow = true;
+          setTimeout(() => { swallow = false; });
+          const recent = trail.filter((p) => e.timeStamp - p.t < 100);
+          const a = recent[0];
+          const b = recent[recent.length - 1];
+          if (a && b && b.t > a.t) v = (b.x - a.x) / (b.t - a.t);
+        }
+      }
+      h.release(cancelled ? 0 : e.clientX - x0, v, dragged);
+    };
+
+    const move = (e: PointerEvent) => {
+      if (e.pointerId !== id) return;
+      const dx = e.clientX - x0;
+      if (!dragging) {
+        if (Math.abs(dx) < THRESHOLD) return;
+        dragging = true;
+        el.setPointerCapture(e.pointerId);
+        el.setAttribute('data-dragging', '');
+        getSelection()?.removeAllRanges();
+      }
+      trail.push({ x: e.clientX, t: e.timeStamp });
+      if (trail.length > 8) trail.shift();
+      h.drag(dx);
+    };
+
+    const up = (e: PointerEvent) => finish(e, false);
+    const cancel = (e: PointerEvent) => finish(e, true);
+
+    el.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (!h.press(e)) return;
+      e.preventDefault();
+      id = e.pointerId;
+      x0 = e.clientX;
+      trail = [{ x: e.clientX, t: e.timeStamp }];
+      addEventListener('pointermove', move);
+      addEventListener('pointerup', up);
+      addEventListener('pointercancel', cancel);
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-drag-scroll]').forEach((track) => {
+    const room = () => track.scrollWidth - track.clientWidth;
+    let left0 = 0;
+    let run = 0;
+    let gliding = false;
+
+    track.addEventListener('pointerenter', () => {
+      track.toggleAttribute('data-drag-ready', room() > 4);
+    });
+
+    const snapOn = () => { gliding = false; track.style.scrollSnapType = ''; };
+    const stopGlide = () => { run++; if (gliding) snapOn(); };
+
+    const snapPoints = () => {
+      const pad = parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0;
+      const origin = track.getBoundingClientRect().left + pad - track.scrollLeft;
+      const max = room();
+      return Array.from(track.children, (c) => clamp(c.getBoundingClientRect().left - origin, 0, max));
+    };
+
+    const glide = (to: number) => {
+      const mine = ++run;
+      const from = track.scrollLeft;
+      const dist = to - from;
+      const ms = quiet.matches ? 0 : clamp(Math.abs(dist) * 0.8, 220, 520);
+      const t0 = performance.now();
+      gliding = true;
+      const frame = (now: number) => {
+        if (mine !== run) return;
+        const p = ms ? Math.min(1, (now - t0) / ms) : 1;
+        track.scrollLeft = from + dist * (1 - (1 - p) ** 3);
+        if (p < 1) requestAnimationFrame(frame);
+        else snapOn();
+      };
+      requestAnimationFrame(frame);
+    };
+
+    track.addEventListener('wheel', stopGlide, { passive: true });
+
+    onMouseDrag(track, {
+      press: () => {
+        if (room() <= 4) return false;
+        run++;
+        left0 = track.scrollLeft;
+        return true;
+      },
+      drag: (dx) => {
+        track.style.scrollSnapType = 'none';
+        track.scrollLeft = left0 - dx;
+      },
+      release: (_dx, v, dragged) => {
+        if (!dragged) { snapOn(); return; }
+        const toss = quiet.matches ? 0 : -v * 260;
+        const aim = clamp(
+          clamp(track.scrollLeft + toss, left0 - track.clientWidth, left0 + track.clientWidth),
+          0,
+          room(),
+        );
+        const points = snapPoints();
+        const target = points.reduce((best, p) => (Math.abs(p - aim) < Math.abs(best - aim) ? p : best), aim);
+        glide(points.length ? target : aim);
+      },
+    });
+  });
+</script>

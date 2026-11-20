@@ -1,0 +1,135 @@
+---
+// Self-hosted Plus Jakarta Sans (Latin + Latin-Ext for Turkish İ/ı/ğ/ş/ö/ü/ç — zero external font calls).
+import '@fontsource/plus-jakarta-sans/latin-400.css';
+import '@fontsource/plus-jakarta-sans/latin-500.css';
+import '@fontsource/plus-jakarta-sans/latin-600.css';
+import '@fontsource/plus-jakarta-sans/latin-700.css';
+import '@fontsource/plus-jakarta-sans/latin-ext-400.css';
+import '@fontsource/plus-jakarta-sans/latin-ext-500.css';
+import '@fontsource/plus-jakarta-sans/latin-ext-600.css';
+import '@fontsource/plus-jakarta-sans/latin-ext-700.css';
+// Order matters (belif cascade): Tailwind base/components/utilities FIRST, custom global.css AFTER.
+import '../styles/tailwind.css';
+import '../styles/global.css';
+
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import DragScroll from '../components/DragScroll.astro';
+import { PUBLIC, SITE, SOCIAL } from '../config';
+
+interface Props {
+  title: string;
+  description?: string;
+  schema?: Record<string, any> | Record<string, any>[];
+  noindex?: boolean;
+  ogImage?: string;
+  preloadImage?: string;
+}
+
+const {
+  title,
+  description = SITE.description,
+  schema,
+  noindex = false,
+  ogImage = '/images/og.svg',
+  preloadImage,
+} = Astro.props;
+
+const pageSchemas = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const origin = new URL(Astro.site!).origin;
+const shareImage = new URL(ogImage, Astro.site).href;
+
+const orgId = origin + '/#organization';
+const brandId = origin + '/#brand';
+
+const siteSchemas = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': orgId,
+    name: SITE.name,
+    url: origin + '/',
+    logo: new URL('/images/app-mark.png', Astro.site).href,
+    description: SITE.description,
+    sameAs: SOCIAL.map((s) => s.url),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Brand',
+    '@id': brandId,
+    name: SITE.name,
+    slogan: SITE.tagline,
+    logo: new URL('/images/app-mark.png', Astro.site).href,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': origin + '/#website',
+    name: SITE.name,
+    url: origin + '/',
+    inLanguage: 'tr-TR',
+    publisher: { '@id': orgId },
+  },
+];
+
+const schemas = [...siteSchemas, ...pageSchemas];
+const jsonLd = (o: unknown) =>
+  JSON.stringify(o)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+---
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {!noindex && (
+      <>
+        <link rel="canonical" href={canonical} />
+        <link rel="alternate" hreflang="tr" href={canonical} />
+        <link rel="alternate" hreflang="x-default" href={canonical} />
+      </>
+    )}
+    <link rel="icon" href="/favicon.png" sizes="32x32" type="image/png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    {preloadImage && (
+      <link rel="preload" as="image" href={preloadImage} fetchpriority="high" />
+    )}
+
+    {PUBLIC && !noindex
+      ? <meta name="robots" content="index,follow,max-image-preview:large" />
+      : <meta name="robots" content="noindex,nofollow" />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:image:alt" content={title} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={shareImage} />
+
+    {schemas.map((s) => (
+      <script type="application/ld+json" set:html={jsonLd(s)} />
+    ))}
+  </head>
+  <body class="bg-paper text-ink antialiased">
+    <a href="#icerik" class="skip-link">Ana içeriğe geç</a>
+    <Header />
+    <main id="icerik" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+    <DragScroll />
+  </body>
+</html>

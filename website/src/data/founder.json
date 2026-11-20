@@ -1,0 +1,37 @@
+{
+  "kicker": "Arkasında Gerçek Uzmanlık & Editöryal Sorumluluk",
+  "name": "TusAnkiM Kurucu & Editör Ekibi",
+  "role": "TUS Kazanan Hekim Onaylı Kart Standardı",
+  "editableNote": "Kurucu hekim adı, TUS derecesi ve portre fotoğrafı yayına alınmadan önce bu dosyadan tek noktadan güncellenebilir.",
+  "credentials": [
+    "TUS hazırlık sürecini bizzat aralıklı tekrar ile tamamlamış hekim bakış açısı",
+    "Her kartta: gereksiz paragraf yerine tek net klinik ayrım (Cloze + klinik not)",
+    "Her TUS sonrası çıkmış sorulara göre şeffaf boşluk analizi ve sürekli kart güncellemesi"
+  ],
+  "quote": "TUS'ta asıl zorluk konuyu bir kez okumak değil; 11 dersin kritik ayrımlarını sınav sabahı aynı anda hatırlayabilmektir. 30.000 kartlık bitmeyen desteler motivasyonu kırar — hedefimiz sadece 9.575 yüksek verimli kartla her adayın gerçekçi bir günlük tempoda sona ulaşabilmesi.",
+  "letterTitle": "Neden TusAnkiM'i kurduk?",
+  "letterParagraphs": [
+    "TUS'a hazırlanırken neredeyse her hekim adayı aynı döngüye girer: kalın konu kitapları, altı çizili sayfalar, aylar sonra yeniden açıldığında sanki ilk kez görülüyormuş gibi unutulan tablolar. Aralıklı tekrar (spaced repetition) bu sorunu kökten çözen bilimsel yöntemdir; ancak Türkiye'de TUS adayları ya karmaşık İngilizce arayüzlerle boğuşmak ya da fahiş fiyatlı, bitirilmesi neredeyse imkânsız devasa kart yığınlarına mahkûm olmak zorunda kalıyordu.",
+    "TusAnkiM'i iki temel ilkeyle inşa ettik: sadelik ve doğrulanabilir güven. Uygulamayı iPhone ve web tarayıcıda saniyeler içinde çalışılacak kadar sakin, modern ve tamamen Türkçe tasarladık; altına ise bilimsel FSRS-6 zamanlayıcısını, Kronometre'yi, Çalışma Planlama'yı ve kayıpsız Anki (.apkg / .colpkg) uyumluluğunu koyduk.",
+    "Kart kalitesi konusunda ise pazarlama sloganları yerine açık veri sunmayı seçtik. Son 6 TUS'un 1.195 sorusunu tek tek taradık; 'Doğrudan' soruyu çözdüren kartı, tek küçük köprü isteyen 'Dolaylı' karttan ve yalnızca 'Konu İlişkili' karttan ayırdık. 2026/2 TUS için sınavdan 2 gün önceki katalog sürümünü (git a78ae1f) referans alarak hangi kartların sınavdan önce gerçekten destede olduğunu şeffaf biçimde paylaştık.",
+    "Eksik olduğumuz dersleri de gizlemiyoruz. Her sınav döneminin ardından boşluk raporunu çıkarıp hekim/editör denetiminden geçen güncellemelerle 9.575 kartlık çekirdeği şişirmeden keskinleştiriyoruz. Çünkü amacımız en fazla karta sahip olmak değil, gerçekten kazanmanıza yarayan en temiz kartları elinizin altında tutmak."
+  ],
+  "editorialPillars": [
+    {
+      "title": "1. Bitirilebilir hacim: 9.575 odaklı kart",
+      "body": "Gereksiz tekrar ve kopya cümleler elenir. FSRS-6 simülasyonuyla günde 60 yeni kart temposunda 160 günde tüm deste tamamlanır ve son aylarda tekrar yükü düşer."
+    },
+    {
+      "title": "2. Sınav öncesi sürüm kanıtı",
+      "body": "Sınav sonrası eklenen bir kartı 'sınavda tutturduk' diye sunmayız. 2026/2 TUS'ta sonradan düzenlenen 6 soru (T018, K039, K043, K050, K057, K078) açıkça işaretlidir."
+    },
+    {
+      "title": "3. Sürekli güncelleme disiplini",
+      "body": "Kılavuz değişiklikleri, yeni ilaç onayları ve son TUS'ta öne çıkan 'tanıdan sonraki ilk adım' ayrımları her dönemde kataloğa işlenir; kişisel notlarınız ve tekrar geçmişiniz bozulmaz."
+    },
+    {
+      "title": "4. Hekim/Editör onay kapısı",
+      "body": "Son 6 sınav analizimiz yapay zekâ destekli ön değerlendirme ile hazırlanmıştır; her yeni kart ve referans güncellemesi bağımsız hekim editör kontrolünden geçirilerek işaretlenir."
+    }
+  ]
+}

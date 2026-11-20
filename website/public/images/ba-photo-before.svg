@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400" fill="none">
+  <!-- BEFORE: Raw skewed shadowed book photo -->
+  <rect width="600" height="400" fill="#d5cfc6"/>
+  <rect x="0" y="0" width="600" height="400" fill="#463e34" fill-opacity="0.18"/>
+  <!-- Skewed textbook page -->
+  <g transform="rotate(-4.5 300 200)">
+    <rect x="72" y="44" width="460" height="320" rx="6" fill="#ebe3d2" stroke="#b9ae9c" stroke-width="2"/>
+    <!-- Spine shadow -->
+    <rect x="72" y="44" width="64" height="320" fill="#7c705f" fill-opacity="0.28"/>
+    <!-- Phone shadow diagonal -->
+    <polygon points="310,44 532,44 532,290 210,364" fill="#2d261e" fill-opacity="0.18"/>
+    <text x="128" y="96" font-family="Georgia, serif" font-size="16" font-weight="700" fill="#4d4438">MODİFİYE HİNCHEY SINIFLAMASI</text>
+    <line x1="128" y1="108" x2="474" y2="108" stroke="#998e7c" stroke-width="1"/>
+    <text x="128" y="142" font-family="Georgia, serif" font-size="13.5" fill="#594f42">Evre Ia : Sınırlı perikolik inflamasyon / flegmon</text>
+    <text x="128" y="174" font-family="Georgia, serif" font-size="13.5" fill="#594f42">Evre Ib : Sınırlı perikolik veya mezokolik apse</text>
+    <text x="128" y="206" font-family="Georgia, serif" font-size="13.5" fill="#594f42">Evre II : Uzak pelvik veya retroperitoneal apse</text>
+    <text x="128" y="238" font-family="Georgia, serif" font-size="13.5" fill="#594f42">Evre III: Jeneralize pürülan peritonit</text>
+    <text x="128" y="270" font-family="Georgia, serif" font-size="13.5" fill="#594f42">Evre IV : Jeneralize fekal peritonit</text>
+    <!-- Scribbled margin -->
+    <rect x="124" y="294" width="220" height="24" rx="4" fill="#e8d068" fill-opacity="0.45"/>
+    <text x="132" y="311" font-family="Georgia, serif" font-size="12" fill="#594f42">Not: 2026/2 TUS K076'da sorgulandı!</text>
+  </g>
+  <rect x="20" y="348" width="206" height="32" rx="16" fill="#24292c" fill-opacity="0.72"/>
+  <text x="123" y="368" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" font-weight="600" fill="#ffffff">Ham fotoğraf · eğik &amp; gölgeli</text>
+</svg>

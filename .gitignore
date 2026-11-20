@@ -60,3 +60,8 @@ docs/expo-go-qr.png
 
 # Graphify code graph (built locally per checkout; see docs/CODE_GRAPH.md)
 graphify-out/
+
+# Marketing website (isolated Astro project)
+website/node_modules/
+website/dist/
+website/.astro/

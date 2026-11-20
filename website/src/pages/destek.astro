@@ -1,0 +1,123 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import { SITE, WHATSAPP } from '../config';
+import { breadcrumbList } from '../lib/schema';
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'Destek ve İletişim', path: '/destek' },
+]);
+---
+<Layout
+  title="7/24 Destek & İletişim | TusAnkiM"
+  description="TusAnkiM 7/24 WhatsApp chatbot desteği, teknik bildirim, kart düzeltme önerisi ve tıp fakültesi kulüp / sosyal medya ücretsiz hesap başvurusu."
+  schema={[crumbs]}
+>
+  <section class="bg-surface border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">
+        <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+        <span aria-hidden="true" class="mx-2">/</span>
+        <span class="text-ink font-semibold">Destek</span>
+      </nav>
+      <div class="section-num">7/24 Destek &amp; Topluluk</div>
+      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-2xl">
+        Sana nasıl yardımcı olabiliriz?
+      </h1>
+      <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
+        Kurulum, Anki aktarımı, FSRS-6 ayarları, kart düzeltme bildirimi, 7 gün iade talebi veya ücretsiz kulüp hesabı başvurusu için doğrudan ulaşabilirsin.
+      </p>
+    </div>
+  </section>
+
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12">
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- WhatsApp 7/24 -->
+      <div class="rounded-3xl border-2 border-teal bg-white p-6 flex flex-col justify-between">
+        <div>
+          <span class="inline-block rounded-full bg-tint px-3 py-1 text-xs font-bold text-teal">En Hızlı Kanal</span>
+          <h2 class="display text-xl text-ink mt-3">7/24 <span lang="en">WhatsApp</span> Chatbot &amp; Destek</h2>
+          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+            Anki <code>.apkg</code> içe aktarma, FSRS-6 hedef ayarı, günlük çalışma dozu ve iade/erişim sorularında 7/24 anında destek alın.
+          </p>
+        </div>
+        <a
+          href={WHATSAPP.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-6 inline-flex items-center justify-center w-full min-h-[2.75rem] rounded-full bg-teal text-white text-sm font-bold hover:bg-tealDark transition"
+        >
+          WhatsApp'ta Başlat ↗
+        </a>
+      </div>
+
+      <!-- Free account for medical clubs & creators -->
+      <div class="rounded-3xl border border-line bg-surfaceSoft p-6 flex flex-col justify-between">
+        <div>
+          <span class="inline-block rounded-full bg-warmTint px-3 py-1 text-xs font-bold text-warm">Ücretsiz Hesap Programı</span>
+          <h2 class="display text-xl text-ink mt-3">Tıp Kulüpleri &amp; Sosyal Medya</h2>
+          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+            Tıp fakültesi öğrenci toplulukları, dönem temsilcileri ve düzenli tıp eğitimi içeriği üreten sosyal medya hesaplarına ücretsiz tam erişim tanımlıyoruz.
+          </p>
+        </div>
+        <a
+          href={WHATSAPP.clubApplicationUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-6 inline-flex items-center justify-center w-full min-h-[2.75rem] rounded-full border border-teal bg-white text-teal text-sm font-bold hover:bg-tint transition"
+        >
+          Ücretsiz Hesap Başvurusu ↗
+        </a>
+      </div>
+
+      <!-- Technical / Card Error Report -->
+      <div class="rounded-3xl border border-line bg-surfaceSoft p-6 flex flex-col justify-between">
+        <div>
+          <span class="inline-block rounded-full bg-white border border-line px-3 py-1 text-xs font-bold text-inkMuted">Teknik &amp; Kart Bildirimi</span>
+          <h2 class="display text-xl text-ink mt-3">Kart Hatası &amp; Teknik Kayıt</h2>
+          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+            Bir kartta güncel kılavuz farkı gördüğünüzde veya teknik sorun yaşadığınızda kayıt açın; lütfen kişisel sağlık verisi veya parola paylaşmayın.
+          </p>
+        </div>
+        <div class="mt-6 space-y-2.5">
+          <a
+            href={SITE.githubIssuesUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center w-full min-h-[2.75rem] rounded-full border border-line bg-white text-ink text-sm font-semibold hover:border-tealGraphic hover:text-teal transition"
+          >
+            Destek Kaydı Oluştur ↗
+          </a>
+          <p class="text-center text-xs text-inkMuted">
+            E-posta: <a href={`mailto:${SITE.email}`} class="text-teal underline">{SITE.email}</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Self-service help & social -->
+    <div class="mt-12 grid md:grid-cols-2 gap-6">
+      <div class="rounded-2xl border border-line bg-white p-6">
+        <div class="section-num">Hızlı Çözümler</div>
+        <h2 class="display text-lg text-ink mt-2">Yardım Merkezi &amp; SSS</h2>
+        <ul class="mt-3 space-y-0.5 text-sm">
+          <li><a href="/yardim/hizli-baslangic/" class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline hover:text-tealDark">Hızlı başlangıç: 5 dakikada ilk çalışma →</a></li>
+          <li><a href="/yardim/anki-ile-kullanma/" class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline hover:text-tealDark">Anki destelerini (.apkg / .colpkg) aktarma →</a></li>
+          <li><a href="/yardim/sss/" class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline hover:text-tealDark">Sık sorunların çözümleri (kart gelmiyor, yedekleme) →</a></li>
+          <li><a href="/sss/" class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline hover:text-tealDark">Tüm Sıkça Sorulan Sorular →</a></li>
+        </ul>
+      </div>
+
+      <div class="rounded-2xl border border-line bg-white p-6">
+        <div class="section-num">Sosyal Medya</div>
+        <h2 class="display text-lg text-ink mt-2">Düzenli kullanım ipuçları ve TUS duyuruları</h2>
+        <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+          Instagram hesabımızda uygulama ipuçlarını, kart üretim yöntemlerini ve sınav geri sayım hatırlatmalarını düzenli olarak paylaşıyoruz.
+        </p>
+        <SocialLinks variant="inline" class="mt-5" />
+      </div>
+    </div>
+  </section>
+</Layout>

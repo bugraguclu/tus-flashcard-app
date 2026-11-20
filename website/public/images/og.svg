@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" fill="none">
+  <rect width="1200" height="630" fill="#f3f5f6"/>
+  <circle cx="1050" cy="120" r="240" fill="#14998a" fill-opacity="0.12"/>
+  <circle cx="140" cy="540" r="180" fill="#d9661a" fill-opacity="0.08"/>
+  <rect x="72" y="72" width="1056" height="486" rx="32" fill="#ffffff" stroke="#dde1e4" stroke-width="2"/>
+  <rect x="128" y="128" width="228" height="36" rx="18" fill="#e4f4f1"/>
+  <text x="242" y="152" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="700" letter-spacing="1.5" fill="#0e7469">TUSANKİM · FSRS-6</text>
+  <text x="128" y="246" font-family="system-ui, sans-serif" font-size="56" font-weight="700" fill="#24292c">Sadece 9.575 kartla</text>
+  <text x="128" y="314" font-family="system-ui, sans-serif" font-size="56" font-weight="700" fill="#0e7469">hayaline ulaş.</text>
+  <text x="128" y="378" font-family="system-ui, sans-serif" font-size="24" fill="#596166">Anki uyumlu (.apkg/.colpkg) FSRS-6 aralıklı tekrar · Son 6 TUS referans kanıtı · Kronometre</text>
+  <rect x="128" y="438" width="260" height="72" rx="16" fill="#f8f9fa" stroke="#dde1e4"/>
+  <text x="152" y="468" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#0e7469">521 / 1.195</text>
+  <text x="152" y="494" font-family="system-ui, sans-serif" font-size="14" fill="#596166">Son 6 TUS çözüm desteği</text>
+  <rect x="408" y="438" width="260" height="72" rx="16" fill="#f8f9fa" stroke="#dde1e4"/>
+  <text x="432" y="468" font-family="system-ui, sans-serif" font-size="24" font-weight="700" fill="#0e7469">%92,7</text>
+  <text x="432" y="494" font-family="system-ui, sans-serif" font-size="14" fill="#596166">Konu kapsamı (1.108/1.195)</text>
+  <rect x="688" y="438" width="380" height="72" rx="16" fill="#e4f4f1"/>
+  <text x="712" y="468" font-family="system-ui, sans-serif" font-size="22" font-weight="700" fill="#0e7469">Günde 200 kart ücretsiz</text>
+  <text x="712" y="494" font-family="system-ui, sans-serif" font-size="14" fill="#24292c">Lansmana özel tam erişim ayda ₺50 · 7 gün iade</text>
+</svg>

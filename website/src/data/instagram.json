@@ -1,0 +1,55 @@
+{
+  "kicker": "Instagram & Uygulama Rehberi",
+  "heading": "Uygulamayı 30 saniyede ustaca kullan",
+  "lead": "Instagram hesabımızda (@tusankim) her hafta paylaştığımız kısa uygulama ipuçları: ders notundan karta, görsel gizlemeden FSRS-6 optimizasyonuna.",
+  "posts": [
+    {
+      "id": "photo-filter",
+      "tag": "Fotoğraf Düzenleyici",
+      "title": "Kitap sayfasını çek, kırp ve Belge Filtresi ile tertemiz karta dönüştür",
+      "caption": "Gölgeyi kaldır, perspektifi düzelt, tek dokunuşla yüksek kontrastlı kart görseli ekle.",
+      "image": "/images/ig-photo-filter.svg",
+      "helpHref": "/yardim/kart-ekleme/"
+    },
+    {
+      "id": "image-occlusion",
+      "tag": "Görsel Gizleme",
+      "title": "Anatomi ve patoloji şemalarında etiketleri gizleyip 5 saniyede kart üret",
+      "caption": "Her kutu ayrı bir aktif hatırlama kartına dönüşür; tekrar etmesi kolay, akılda kalıcı.",
+      "image": "/images/ig-occlusion.svg",
+      "helpHref": "/yardim/kart-ekleme/"
+    },
+    {
+      "id": "fsrs-tune",
+      "tag": "FSRS-6 İpucu",
+      "title": "Hedef hatırlama oranını %90'da tut, sınav yaklaştıkça tekrar yükünü azalt",
+      "caption": "FSRS-6 parametre optimizasyonu çalışma geçmişine göre aralıkları kişiselleştirir.",
+      "image": "/images/ig-fsrs.svg",
+      "helpHref": "/yardim/fsrs/"
+    },
+    {
+      "id": "kronometre",
+      "tag": "Kronometre & Plan",
+      "title": "Ders çalışma süreni ve kart tekrarlarını tek Çalışma Takviminde birleştir",
+      "caption": "Blok hatırlatmaları, mola takibi ve sınav tarihine göre otomatik günlük hedef.",
+      "image": "/images/ig-kronometre.svg",
+      "helpHref": "/yardim/kronometre/"
+    },
+    {
+      "id": "anki-import",
+      "tag": "Anki Uyumu",
+      "title": "Elindeki .apkg / .colpkg desteni tüm medyası ve geçmişiyle içeri al",
+      "caption": "Özel şablonlar, boşluk doldurma (Cloze) kartları ve etiketler kayıpsız taşınır.",
+      "image": "/images/ig-anki.svg",
+      "helpHref": "/yardim/ice-disa-aktarma/"
+    },
+    {
+      "id": "tus-ref",
+      "tag": "Referans Kanıtı",
+      "title": "Çıkmış TUS sorularında hangi kartın doğrudan çözüm verdiğini gör",
+      "caption": "Son 6 TUS analiziyle eksik adımları keşfet, nokta atışı tekrar yap.",
+      "image": "/images/ig-ref.svg",
+      "helpHref": "/referanslar/"
+    }
+  ]
+}

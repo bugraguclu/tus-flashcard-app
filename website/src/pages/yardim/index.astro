@@ -1,0 +1,134 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getHelpArticles } from '../../lib/helpDocs';
+import { breadcrumbList, collectionPage } from '../../lib/schema';
+import { newest } from '../../lib/lastmod';
+
+const articles = getHelpArticles();
+const categories = [...new Set(articles.map((a) => a.category))];
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'Yardım Merkezi', path: '/yardim' },
+]);
+
+const colSchema = collectionPage(origin, {
+  path: '/yardim',
+  name: 'TusAnkiM Türkçe Yardım Merkezi ve Kullanım Kılavuzu',
+  description: 'TusAnkiM uygulamasının tüm ekranları, FSRS-6, Kronometre, Anki aktarımı ve TUS kart paketi için 21 kapsamlı Türkçe rehber.',
+  items: articles.map((a) => ({ name: a.title, path: a.webPath })),
+  dateModified: newest(articles.map((a) => a.sourceRelPath)),
+});
+---
+<Layout
+  title="Yardım Merkezi & Kullanım Kılavuzu (21 Rehber) | TusAnkiM"
+  description="TusAnkiM Türkçe kullanım kılavuzu: hızlı başlangıç, FSRS-6, desteler, Kronometre, Anki .apkg/.colpkg aktarımı, yedekler ve TUS kart paketi."
+  schema={[crumbs, colSchema]}
+>
+  <section class="bg-surface border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">
+        <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+        <span aria-hidden="true" class="mx-2">/</span>
+        <span class="text-ink font-semibold">Yardım Merkezi</span>
+      </nav>
+      <div class="section-num">Kullanım Kılavuzu · {articles.length} Türkçe Rehber</div>
+      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">
+        TusAnkiM Yardım Merkezi
+      </h1>
+      <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
+        Uygulamanın her ekranı, <span lang="en">FSRS-6</span> ayarları, Kronometre, Anki paket aktarımı ve yedekleme için doğrudan uygulamayla güncel tutulan 21 rehber.
+      </p>
+
+      <search class="mt-6 max-w-xl">
+        <label for="help-filter" class="sr-only">Yardım rehberlerinde ara</label>
+        <div class="search-field flex items-center gap-3 px-4 rounded-2xl border border-line bg-white">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-teal shrink-0" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            id="help-filter"
+            type="search"
+            autocomplete="off"
+            placeholder="Rehberlerde ara (ör. FSRS, kronometre, yedek, apkg, kısayol)..."
+            class="flex-1 min-w-0 py-3 text-sm sm:text-base bg-transparent text-ink placeholder:text-inkMuted outline-none"
+          />
+        </div>
+        <p id="help-count" aria-live="polite" class="mt-2 text-xs font-semibold text-teal">
+          Tüm {articles.length} rehber listeleniyor
+        </p>
+      </search>
+    </div>
+  </section>
+
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-12">
+    {categories.map((cat) => {
+      const list = articles.filter((a) => a.category === cat);
+      return (
+        <div data-help-group>
+          <h2 class="display text-subsection tracking-tightest text-ink pb-3 border-b border-line">{cat}</h2>
+          <div class="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {list.map((art) => (
+              <a
+                href={art.webPath}
+                data-help-card
+                data-hay={`${art.title} ${art.summary} ${art.category}`}
+                class="rounded-2xl border border-line bg-white p-5 lift flex flex-col justify-between"
+              >
+                <div>
+                  <div class="text-[11px] font-bold text-teal tabular-nums">Rehber {String(art.order).padStart(2, '0')}</div>
+                  <h3 class="display text-base text-ink mt-1.5">{art.title}</h3>
+                  <p class="text-xs sm:text-sm text-inkMuted mt-2 leading-relaxed">{art.summary}</p>
+                </div>
+                <span class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-teal">
+                  Rehberi oku →
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      );
+    })}
+
+    <p id="help-empty" hidden class="rounded-2xl border border-line bg-surfaceSoft p-8 text-center text-sm text-inkMuted">
+      Aramanızla eşleşen rehber bulunamadı.
+    </p>
+  </section>
+</Layout>
+
+<script>
+  const input = document.getElementById('help-filter') as HTMLInputElement | null;
+  const countEl = document.getElementById('help-count');
+  const emptyEl = document.getElementById('help-empty');
+  const cards = [...document.querySelectorAll<HTMLElement>('[data-help-card]')];
+  const groups = [...document.querySelectorAll<HTMLElement>('[data-help-group]')];
+
+  if (input && countEl && emptyEl) {
+    const norm = (s: string) =>
+      (s || '')
+        .toLocaleLowerCase('tr')
+        .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/İ/g, 'i')
+        .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/â/g, 'a');
+
+    input.addEventListener('input', () => {
+      const tokens = norm(input.value.trim()).split(/\s+/).filter(Boolean);
+      let visible = 0;
+      cards.forEach((c) => {
+        const hay = norm(c.dataset.hay || '');
+        const match = !tokens.length || tokens.every((t) => hay.includes(t));
+        c.hidden = !match;
+        if (match) visible++;
+      });
+      groups.forEach((g) => {
+        const any = [...g.querySelectorAll<HTMLElement>('[data-help-card]')].some((c) => !c.hidden);
+        g.hidden = !any;
+      });
+      emptyEl.hidden = visible > 0;
+      countEl.textContent = tokens.length
+        ? `${visible} rehber eşleşti`
+        : `Tüm ${cards.length} rehber listeleniyor`;
+    });
+  }
+</script>

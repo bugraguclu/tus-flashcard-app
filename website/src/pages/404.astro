@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout
+  title="Sayfa Bulunamadı (404) | TusAnkiM"
+  description="Aradığınız sayfa taşınmış veya kaldırılmış olabilir."
+  noindex={true}
+>
+  <section class="max-w-xl mx-auto px-5 sm:px-6 py-20 sm:py-28 text-center">
+    <div class="section-num">404 · Sayfa Bulunamadı</div>
+    <h1 class="display text-page-title tracking-tightest text-ink mt-3">
+      Aradığın sayfayı bulamadık
+    </h1>
+    <p class="text-inkMuted mt-3 leading-relaxed">
+      Bağlantı değişmiş olabilir. Ana sayfaya dönebilir, TUS referans kanıtlarını inceleyebilir veya Yardım Merkezi'nde arama yapabilirsin.
+    </p>
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+      <a href="/" class="inline-flex items-center justify-center min-h-[2.75rem] px-6 rounded-full bg-teal text-white text-sm font-bold hover:bg-tealDark transition">
+        Ana Sayfaya Dön
+      </a>
+      <a href="/referanslar/" class="inline-flex items-center justify-center min-h-[2.75rem] px-5 rounded-full border border-line bg-white text-ink text-sm font-semibold hover:border-tealGraphic hover:text-teal transition">
+        TUS Referansları
+      </a>
+      <a href="/yardim/" class="inline-flex items-center justify-center min-h-[2.75rem] px-5 rounded-full border border-line bg-white text-ink text-sm font-semibold hover:border-tealGraphic hover:text-teal transition">
+        Yardım Merkezi
+      </a>
+    </div>
+  </section>
+</Layout>

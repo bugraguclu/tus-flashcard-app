@@ -1,0 +1,99 @@
+{
+  "page": {
+    "metaTitle": "Sıkça Sorulan Sorular | TusAnkiM",
+    "metaDescription": "TusAnkiM 9.575 TUS kartı, FSRS-6 aralıklı tekrar, TUS referans kanıtları, Anki uyumluluğu, fiyatlandırma ve 1 hafta iade garantisi hakkında sık sorulan sorular.",
+    "kicker": "Sıkça Sorulan Sorular",
+    "title": "Aklındaki tüm soruların net cevapları",
+    "lead": "Kart kalitesi, TUS referans yöntemi, FSRS-6, fiyatlandırma ve Anki uyumluluğu hakkında merak ettiklerini tek yerde bul.",
+    "searchPlaceholder": "Soru veya konu ara (ör. FSRS, iade, Anki, referans)..."
+  },
+  "tabs": [
+    { "key": "genel", "label": "Genel & Güven" },
+    { "key": "referanslar", "label": "Kartlar & Referanslar" },
+    { "key": "fsrs", "label": "FSRS-6 & Çalışma" },
+    { "key": "fiyat", "label": "Fiyat & İade" },
+    { "key": "platform", "label": "Platform & Anki" }
+  ],
+  "items": [
+    {
+      "cat": "genel",
+      "q": "TusAnkiM nedir? Orijinal Anki ile ilişkisi var mı?",
+      "a": "TusAnkiM, TUS hazırlık için özel olarak tasarlanmış bağımsız ve yerel öncelikli (local-first) bir aralıklı tekrar uygulamasıdır. Anki veya Ankitects ile resmî bir bağlantısı yoktur; ancak Anki uyumlu (.apkg ve .colpkg) dosya biçimlerini, şablonları, medyayı ve FSRS-6 zamanlayıcısını doğrudan destekler."
+    },
+    {
+      "cat": "genel",
+      "q": "Kartların gerçekten kaliteli olduğuna nasıl emin olabilirim?",
+      "a": "Sadece söz vermek yerine iki somut kanıt sunuyoruz: Ana sayfadaki canlı deneme alanında son 2026/2 TUS'tan sınav öncesi Doğrudan referanslı 11 gerçek kartı hemen çözebilirsiniz. Ayrıca [TUS Referansları](/referanslar/) sayfasında son 6 TUS'un 1.195 sorusunu ders ders ve rozet rozet (Doğrudan / Dolaylı / Konu Kapsamı) şeffaf biçimde inceleyebilirsiniz."
+    },
+    {
+      "cat": "genel",
+      "q": "Verilerim nerede tutulur? İnternet olmadan çalışabilir miyim?",
+      "a": "Kartlarınız, çalışma geçmişiniz, Kronometre kayıtlarınız ve yedekleriniz cihazınızda yerel olarak saklanır. İnternet bağlantınız olmadan da kesintisiz çalışabilirsiniz. Uygulama reklam veya davranışsal takip SDK'sı içermez."
+    },
+    {
+      "cat": "genel",
+      "q": "7/24 WhatsApp desteği nasıl çalışır?",
+      "a": "Sitedeki WhatsApp hattımız üzerinden kurulum, Anki desteği içe aktarma, FSRS-6 ayarları, çalışma temposu önerisi ve paket soruları için 7/24 anında yanıt alabilirsiniz. Karmaşık teknik veya içerik bildirimleri ekibimize aktarılır."
+    },
+    {
+      "cat": "referanslar",
+      "q": "Son 6 TUS referans sayıları nasıl hesaplandı? Doğrudan, Dolaylı ve Konu Kapsamı farkı nedir?",
+      "a": "Son 6 TUS (2024/1–2026/2, 1.195 soru) tek tek taranmıştır. **Doğrudan (333 soru):** Kart doğru şıkkı ya da onu zorunlu kılan bilgiyi açıkça verir. **Dolaylı (188 soru):** Kart doğru bilgiye götürür ancak tek küçük klinik/terim köprüsü gerekir (eksik adım her kayıtta açıkça yazılır). İkisinin toplamı **521/1.195 (%43,6) çözüm desteği**dir.\n\n**Konu Kapsamı (1.108/1.195 = %92,7):** İlgili konuda kart bulunmasıdır; dershane kitaplarının sayfa referansı mantığına benzer. Biz iki metriği hiçbir zaman karıştırmadan ayrı raporlarız."
+    },
+    {
+      "cat": "referanslar",
+      "q": "2026/2 TUS'ta 'sınav öncesi sürüm' (a78ae1f) kanıtı ne anlama geliyor?",
+      "a": "Sınav sonrası kart düzeltip 'sınavda tutturduk' demek güvenilir değildir. Bu yüzden 23 Ağustos 2026 TUS'u için sınavdan 2 gün önceki katalog sürümü (git commit a78ae1f, 21 Ağustos 2026) kontrol edilmiştir. Güncel 82 destekli sorunun **76'sında (%38,0)** çözdüren bilgi sınavdan önce de destedeydi. Sınav sonrası güncellenen 6 soru (T018, K039, K043, K050, K057, K078) [Referanslar](/referanslar/) sayfasında şeffaf biçimde işaretlenmiştir."
+    },
+    {
+      "cat": "referanslar",
+      "q": "Referanslar sayfasında neden ÖSYM soru metinleri yok?",
+      "a": "ÖSYM sınav soruları telif kapsamındadır. TusAnkiM hukuki sınırları korur: sitede ve uygulamada hiçbir zaman soru kökü veya şık metni yayımlanmaz. Bunun yerine yalnızca sınav/soru numarası, kendi cümlemizle ölçülen bilgi özeti, temizlenmiş kart özetimiz ve resmî ÖSYM kitapçık arşivi bağlantısı sunulur."
+    },
+    {
+      "cat": "referanslar",
+      "q": "Kartlar sürekli güncelleniyor mu? Kendi aldığım notlar güncellemeyle silinir mi?",
+      "a": "Evet, kart koleksiyonu her TUS döneminin ardından kılavuz değişikliklerine ve eksik adım analizlerine göre güncellenir. Güncellemeler tekrar geçmişinizi ve kişisel düzenlemelerinizi koruyacak şekilde tasarlanmıştır. Detaylar için [TUS Kartları paketi kılavuzuna](/yardim/tus-kartlari/) göz atabilirsiniz."
+    },
+    {
+      "cat": "fsrs",
+      "q": "FSRS-6 nedir ve klasik SM-2'den farkı nedir?",
+      "a": "FSRS-6 (Free Spaced Repetition Scheduler v6), her kart için hafıza kararlılığı (stability) ve zorluk (difficulty) parametrelerini takip eden modern bilimsel zamanlayıcıdır. Klasik algoritmalara kıyasla aynı hatırlama oranına (%90) ortalama %20–30 daha az günlük tekrarla ulaşmanızı sağlar. Ayrıntılar için [FSRS kılavuzunu](/yardim/fsrs/) okuyabilirsiniz."
+    },
+    {
+      "cat": "fsrs",
+      "q": "9.575 kart TUS için yeterli mi? Neden 30.000 kart değil?",
+      "a": "TUS'ta bitirilemeyen bir deste en büyük zaman tuzağıdır. Gerçek FSRS-6 simülasyonumuza göre günde 60 yeni kartla **9.575 kart 160 günde biter** ve sınavdan önceki son 3 ayda günlük tekrar süresi 50 dakikaya kadar düşer. Aynı tempoda 27.341 kartlık bir mega deste 270 günde bile bitmez ve sınav günü yaklaşırken günde 3 saatten fazla tekrar yükü oluşturur."
+    },
+    {
+      "cat": "fsrs",
+      "q": "Kronometre ve Çalışma Planlama nasıl yardımcı olur?",
+      "a": "TusAnkiM içinde ders süresini ölçen Kronometre, oturum geçmişini kart tekrarlarıyla birleştiren Çalışma Takvimi ve sınav tarihinize göre haftalık hedef oluşturan Çalışma Planlama araçları yer alır. Kart çalışmasıyla konu/deneme sürenizi tek yerde görürsünüz."
+    },
+    {
+      "cat": "fiyat",
+      "q": "Ücretsiz sürümde neler yapabilirim?",
+      "a": "Günde 200 karta kadar ücretsiz çalışma hakkına, sınırsız kendi deste ve kart oluşturmaya, Anki .apkg/.colpkg içe ve dışa aktarmaya, FSRS-6 zamanlayıcısına, Kronometre'ye ve Fotoğraf Düzenleyici'ye tamamen ücretsiz erişebilirsiniz."
+    },
+    {
+      "cat": "fiyat",
+      "q": "Lansmana özel ayda ₺50 paket ve 1 hafta iade garantisi nasıl işliyor?",
+      "a": "Lansmana özel tam erişim modeli, ayda ₺50'den başlayan fiyatla 9.575 kartlık BKA TUS paketine ve sınırsız günlük tekrara erişim sağlamak üzere tasarlanmıştır; memnun kalmazsanız ilk 7 gün içinde koşulsuz iade garantisi sunulur. Güncel beta/önizleme sürümünde ise paket uygulama içinden ödeme alınmadan ücretsiz açılabilmektedir."
+    },
+    {
+      "cat": "fiyat",
+      "q": "Tıp fakültesi kulübüyüm veya sosyal medya içerik üreticisiyim; ücretsiz hesap alabilir miyim?",
+      "a": "Evet. Tıp fakültesi öğrenci topluluklarına, dönem temsilcilerine ve tıp eğitimi/TUS deneyimi paylaşan aktif sosyal medya hesaplarına ücretsiz tam erişim tanımlıyoruz. [Destek](/destek/) sayfasından veya WhatsApp hattımızdan kısaca bilgi paylaşmanız yeterlidir."
+    },
+    {
+      "cat": "platform",
+      "q": "Hangi cihazlarda kullanabilirim? Android ve bulut eşitleme var mı?",
+      "a": "TusAnkiM bugün **iPhone uygulaması** ve **Web tarayıcı (Mac, Windows, iPad ve Android tarayıcı)** üzerinden kullanılabilir. Kişisel destelerinizi .apkg/.colpkg ile cihazlar arasında kayıpsız taşıyabilirsiniz. Otomatik bulut eşitleme, yerel Android uygulaması ve TUS Tercih Simülasyonu geliştirme yol haritamızda **Yakında** olarak yer almaktadır."
+    },
+    {
+      "cat": "platform",
+      "q": "Mevcut Anki destelerimi TusAnkiM'e aktarabilir miyim?",
+      "a": "Evet. Standart .apkg ve .colpkg dosyalarınızı şablonları, medyaları, etiketleri ve tekrar geçmişiyle birlikte doğrudan içe aktarabilir; kişisel destelerinizi istediğiniz zaman tekrar .apkg/.colpkg olarak dışa aktarabilirsiniz. Adım adım rehber için [Anki ile birlikte kullanma](/yardim/anki-ile-kullanma/) sayfasına bakın."
+    }
+  ]
+}

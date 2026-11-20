@@ -1,0 +1,459 @@
+---
+import Layout from '../layouts/Layout.astro';
+import refSummary from '../data/generated/references-summary.json';
+import { breadcrumbList } from '../lib/schema';
+import { dateModified, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'TUS Referansları', path: '/referanslar' },
+]);
+
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'TusAnkiM Son 6 TUS Referans Analizi (2024/1–2026/2)',
+  description:
+    'Son 6 TUS (1.195 soru) için Doğrudan, Dolaylı ve Konu kapsamı ayrımıyla doğrulanmış kart referans kayıtları; ÖSYM soru metni içermez.',
+  inLanguage: 'tr-TR',
+  url: origin + '/referanslar/',
+  ...dateModified(pageSources('referanslar')),
+};
+---
+<Layout
+  title="TUS Referans Kanıtları (Son 6 Sınav · 1.195 Soru) | TusAnkiM"
+  description="Son 6 TUS (2024/1–2026/2, 1.195 soru) ders ders referans analizi: 521/1.195 (%43,6) çözüm desteği, %92,7 konu kapsamı ve 2026/2 sınav öncesi git a78ae1f kanıtı."
+  schema={[crumbs, pageSchema]}
+>
+  <section class="bg-surface border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">
+        <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+        <span aria-hidden="true" class="mx-2">/</span>
+        <span class="text-ink font-semibold">TUS Referansları</span>
+      </nav>
+
+      <div class="section-num">Şeffaf Referans Kanıt Gezgini · Son 6 TUS (2024/1–2026/2)</div>
+      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">
+        1.195 çıkmış TUS sorusunun ders ders açık kanıt cetveli
+      </h1>
+      <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
+        Pazarlama abartısı yok: <strong>Doğrudan</strong> çözdüren kartları, tek küçük köprü isteyen <strong>Dolaylı</strong> kartlardan ve yalnızca <strong>Konu İlişkili</strong> kartlardan ayrı raporluyoruz.
+        ÖSYM telif haklarına saygı gereği soru metni ve şıklar yayımlanmaz; her satırda yalnızca sınav/soru numarası, ölçülen bilgi, temizlenmiş kart özetimiz ve resmî ÖSYM arşivi bağlantısı bulunur.
+      </p>
+
+      <!-- KPI summary row -->
+      <div class="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="text-xs font-semibold text-inkMuted">Çözüm Desteği (Son 6 TUS)</div>
+          <div class="display text-2xl text-teal mt-1 tabular-nums">
+            {refSummary.overall.destek} / 1.195 <span class="text-base">(%{String(refSummary.overall.destekOran).replace('.', ',')})</span>
+          </div>
+          <div class="text-xs text-inkMuted mt-0.5">{refSummary.overall.dogrudan} Doğrudan + {refSummary.overall.dolayli} Dolaylı</div>
+        </div>
+        <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="text-xs font-semibold text-inkMuted">Konu Kapsamı (Kitap Ölçüsü)</div>
+          <div class="display text-2xl text-ink mt-1 tabular-nums">
+            {refSummary.overall.konuKapsami.toLocaleString('tr-TR')} / 1.195 <span class="text-base text-teal">(%{String(refSummary.overall.konuKapsamiOran).replace('.', ',')})</span>
+          </div>
+          <div class="text-xs text-inkMuted mt-0.5">2026/2 TUS'ta 192/200 (%96,0)</div>
+        </div>
+        <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="text-xs font-semibold text-inkMuted">2026/2 Sınav Öncesi Kanıt</div>
+          <div class="display text-2xl text-gradeGood mt-1 tabular-nums">
+            {refSummary.preExam2026_2.preExamEvet} / 200 <span class="text-base">(%38,0)</span>
+          </div>
+          <div class="text-xs text-inkMuted mt-0.5">Git <code>{refSummary.preExam2026_2.commit}</code> · {refSummary.preExam2026_2.date}</div>
+        </div>
+        <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="text-xs font-semibold text-inkMuted">2026/2 Güncel Katalog</div>
+          <div class="display text-2xl text-ink mt-1 tabular-nums">
+            {refSummary.preExam2026_2.supportedCurrent} / 200 <span class="text-base text-teal">(%41,0)</span>
+          </div>
+          <div class="text-xs text-inkMuted mt-0.5">{refSummary.preExam2026_2.preExamKismen + refSummary.preExam2026_2.preExamHayir} kart sınav sonrası güncellendi</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Explorer filters + results -->
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-10" aria-labelledby="explorer-heading">
+    <h2 id="explorer-heading" class="sr-only">Referans arama ve filtreleme</h2>
+
+    <search class="rounded-2xl border border-line bg-surfaceSoft p-4 sm:p-5">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-12 gap-3.5 items-end">
+        <div class="lg:col-span-2">
+          <label for="ref-sinav" class="block text-xs font-bold text-ink mb-1.5">Sınav Dönemi</label>
+          <select id="ref-sinav" class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink">
+            <option value="">Tüm 6 Sınav (1.195)</option>
+            {refSummary.sinavlar.map((s) => <option value={s}>{s} TUS</option>)}
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label for="ref-ders" class="block text-xs font-bold text-ink mb-1.5">Ders (11 Branş)</label>
+          <select id="ref-ders" class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink">
+            <option value="">Tüm Dersler</option>
+            {refSummary.dersler.map((d) => <option value={d}>{d}</option>)}
+          </select>
+        </div>
+
+        <div class="lg:col-span-3">
+          <label for="ref-rozet" class="block text-xs font-bold text-ink mb-1.5">Referans Rozeti</label>
+          <select id="ref-rozet" class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink">
+            <option value="">Tüm Rozetler</option>
+            <option value="DESTEK">Çözüm Desteği (Doğrudan + Dolaylı)</option>
+            <option value="DOGRUDAN">Yalnız Doğrudan (333)</option>
+            <option value="DOLAYLI">Yalnız Dolaylı (188)</option>
+            <option value="KONU">Yalnız Konu İlişkili (587)</option>
+            <option value="YOK">Referans Yok (87)</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-4">
+          <label for="ref-q" class="block text-xs font-bold text-ink mb-1.5">Konu, Kart Özeti veya Soru No Ara</label>
+          <div class="search-field flex items-center gap-2 rounded-xl border border-line bg-white px-3">
+            <input
+              id="ref-q"
+              type="search"
+              autocomplete="off"
+              placeholder="Örn: S2, silikozis, T005, H. pylori..."
+              class="w-full min-h-[2.75rem] text-sm bg-transparent text-ink placeholder:text-inkMuted outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3.5 border-t border-line flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <input id="ref-pre" type="checkbox" class="w-5 h-5 shrink-0 accent-[#0e7469] rounded cursor-pointer" />
+          <label for="ref-pre" class="inline-flex flex-wrap items-center min-h-[2.75rem] py-1 text-xs sm:text-sm font-medium text-ink cursor-pointer select-none">
+            Yalnız 2026/2 sınav öncesi sürümde (<code class="mx-0.5">a78ae1f</code>) doğrulananları göster
+          </label>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span id="ref-status" aria-live="polite" class="text-xs font-semibold text-teal">
+            İlk 24 örnek kayıt gösteriliyor; tüm 1.195 kayıt yükleniyor...
+          </span>
+          <button
+            id="ref-reset"
+            type="button"
+            hidden
+            class="min-h-[2.75rem] px-3.5 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
+          >
+            Filtreyi Sıfırla
+          </button>
+        </div>
+      </div>
+    </search>
+
+    <noscript>
+      <p class="mt-4 rounded-xl bg-tint px-4 py-3 text-sm text-ink">
+        JavaScript kapalı olduğu için aşağıda 2026/2 TUS sınav öncesi Doğrudan örnek kayıtları gösterilmektedir. Tam 1.195 kayıtlık etkileşimli filtre için JavaScript'i etkinleştirebilirsiniz.
+      </p>
+    </noscript>
+
+    <!-- Results list (SSR initial 24 rows for zero CLS + instant paint) -->
+    <div id="ref-list" class="mt-6 space-y-3">
+      {refSummary.featuredSamples.map((r) => (
+        <article class="rounded-2xl border border-line bg-white p-4 sm:p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-surface px-2.5 py-0.5 text-xs font-bold text-ink tabular-nums">
+                {r.sinav} · {r.qid.split('-')[1]}
+              </span>
+              <span class="rounded-full bg-tint px-2.5 py-0.5 text-xs font-semibold text-teal">{r.ders}</span>
+              <span class="rounded-full bg-gradeGoodBg px-2.5 py-0.5 text-xs font-bold text-gradeGood">Doğrudan</span>
+              {r.sinavOncesiSurumde === 'evet' && (
+                <span class="rounded-full bg-surfaceSoft border border-line px-2.5 py-0.5 text-[11px] font-medium text-inkMuted">
+                  Sınav öncesi (a78ae1f)
+                </span>
+              )}
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              {r.cardId && <span class="font-mono text-inkMuted">{r.cardId}</span>}
+              <a
+                href="https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center min-h-[2.75rem] py-2 font-semibold text-teal underline hover:text-tealDark"
+              >
+                ÖSYM Arşivi ↗
+              </a>
+            </div>
+          </div>
+          <p class="mt-2.5 text-sm font-semibold text-ink">{r.olculenBilgi}</p>
+          {r.kartOzet && (
+            <p class="mt-2 rounded-xl bg-surfaceSoft px-3.5 py-2.5 text-xs sm:text-sm text-inkMuted leading-relaxed border border-lineLight">
+              <strong class="text-ink font-semibold">Kart özeti:</strong> {r.kartOzet}
+            </p>
+          )}
+        </article>
+      ))}
+    </div>
+
+    <div id="ref-empty" hidden class="mt-8 rounded-2xl border border-line bg-surfaceSoft p-10 text-center">
+      <p class="display text-base text-ink">Seçtiğiniz filtrelere uyan kayıt bulunamadı.</p>
+      <p class="text-sm text-inkMuted mt-1">Arama kelimesini kısaltın veya filtreleri temizleyin.</p>
+    </div>
+
+    <div class="mt-6 text-center">
+      <button
+        id="ref-more"
+        type="button"
+        hidden
+        class="min-h-[2.75rem] px-6 rounded-full border border-line bg-white text-sm font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
+      >
+        Daha Fazla Kayıt Göster
+      </button>
+    </div>
+
+    <!-- Transparent disclosure: 6 post-exam edited 2026/2 notes + Methodology -->
+    <div class="mt-14 pt-10 border-t border-line grid lg:grid-cols-2 gap-8">
+      <div class="rounded-2xl border border-line bg-surfaceSoft p-6">
+        <div class="section-num">Şeffaflık Kaydı · 2026/2 TUS</div>
+        <h2 class="display text-lg text-ink mt-2">
+          Sınav sonrası güncellenen 6 soru neden sınav öncesi iddiasına katılmadı?
+        </h2>
+        <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+          23 Ağustos 2026 TUS'u için güncel katalogda 82 soru desteklidir; ancak sınavdan 2 gün önceki sürümde (<code>git a78ae1f</code>, 21 Ağustos 2026)
+          aşağıdaki 6 sorunun çözdüren bilgisi kısmen vardı veya sonradan eklendi. Bu nedenle "sınavdan önce kartımızda vardı" rakamını <strong>76/200 (%38,0)</strong> olarak duyuruyoruz:
+        </p>
+        <ul class="mt-4 space-y-2 text-xs text-ink">
+          {refSummary.preExam2026_2.postExamEdited.map((item) => (
+            <li class="rounded-xl bg-white border border-lineLight px-3.5 py-2.5 flex items-start justify-between gap-3">
+              <span>
+                <strong>{item.qid}</strong> ({item.ders}) — {item.olculenBilgi}
+              </span>
+              <span class="shrink-0 rounded-full bg-gradeHardBg px-2 py-0.5 text-[11px] font-bold text-gradeHard">
+                {item.sinavOncesiSurumde === 'kismen' ? 'Kısmen vardı' : 'Sonradan eklendi'}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div class="rounded-2xl border border-line bg-surfaceSoft p-6">
+        <div class="section-num">Ölçüm Yöntemi &amp; Hukuki Sınırlar</div>
+        <h2 class="display text-lg text-ink mt-2">Rozet tanımları ve dürüstlük ilkelerimiz</h2>
+        <dl class="mt-4 space-y-3 text-sm">
+          <div>
+            <dt class="font-bold text-gradeGood">Doğrudan (333 / 1.195)</dt>
+            <dd class="text-inkMuted mt-0.5">Kart doğru şıkkı ya da onu zorunlu kılan bilgiyi açıkça verir veya diğer dört şıkkı eler.</dd>
+          </div>
+          <div>
+            <dt class="font-bold text-warm">Dolaylı (188 / 1.195)</dt>
+            <dd class="text-inkMuted mt-0.5">Kart doğru bilgiye götürür ancak tek küçük terim/klinik köprüsü gerekir; eksik adım satırda açıkça yazılır.</dd>
+          </div>
+          <div>
+            <dt class="font-bold text-ink">Yalnız Konu İlişkili (587 / 1.195)</dt>
+            <dd class="text-inkMuted mt-0.5">Konuya dair kart vardır ancak sorudaki şıkları ayıran spesifik bilgi eksiktir. Hiçbir çözüm oranına katılmaz; yalnızca ayrı "Konu Kapsamı" ölçüsünde (%92,7) gösterilir.</dd>
+          </div>
+        </dl>
+        <p class="mt-4 pt-4 border-t border-line text-xs text-inkMuted leading-relaxed">
+          Değerlendirme 26 Ekim 2026 tarihli katalog (<code>{refSummary.katalogCommit}</code>) üzerinde 11 ders ajanı ve 2026/2 hakem kontrolüyle yapılan yapay zekâ destekli ön sınıflamadır; bağımsız hekim/editör onay süreci devam etmektedir. 2024/1–2026/1 sonuçları güncel kataloğun bu soruları karşılama oranını gösterir.
+        </p>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  type RefRow = {
+    qid: string;
+    sinav: string;
+    test: string;
+    no: number;
+    ders: string;
+    rozet: 'DOGRUDAN' | 'DOLAYLI' | 'KONU' | 'YOK';
+    olculenBilgi: string;
+    eksikAdim: string;
+    sinavOncesiSurumde: string | null;
+    cardId: string | null;
+    kartOzet: string;
+  };
+
+  const sinavEl = document.getElementById('ref-sinav') as HTMLSelectElement | null;
+  const dersEl = document.getElementById('ref-ders') as HTMLSelectElement | null;
+  const rozetEl = document.getElementById('ref-rozet') as HTMLSelectElement | null;
+  const qEl = document.getElementById('ref-q') as HTMLInputElement | null;
+  const preEl = document.getElementById('ref-pre') as HTMLInputElement | null;
+  const statusEl = document.getElementById('ref-status');
+  const resetBtn = document.getElementById('ref-reset') as HTMLButtonElement | null;
+  const listEl = document.getElementById('ref-list');
+  const emptyEl = document.getElementById('ref-empty');
+  const moreBtn = document.getElementById('ref-more') as HTMLButtonElement | null;
+
+  if (sinavEl && dersEl && rozetEl && qEl && preEl && listEl && emptyEl && moreBtn && statusEl && resetBtn) {
+    const PAGE_SIZE = 30;
+    let allRows: Array<RefRow & { _s: string }> = [];
+    let filtered: Array<RefRow & { _s: string }> = [];
+    let visibleCount = PAGE_SIZE;
+    let osymUrl = 'https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html';
+
+    const norm = (s: string) =>
+      (s || '')
+        .toLocaleLowerCase('tr')
+        .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/İ/g, 'i')
+        .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/â/g, 'a');
+
+    const esc = (s: unknown) =>
+      String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] || c));
+
+    const badgeMeta: Record<string, { label: string; cls: string }> = {
+      DOGRUDAN: { label: 'Doğrudan', cls: 'bg-gradeGoodBg text-gradeGood' },
+      DOLAYLI: { label: 'Dolaylı', cls: 'bg-gradeHardBg text-gradeHard' },
+      KONU: { label: 'Yalnız Konu', cls: 'bg-surface text-inkMuted' },
+      YOK: { label: 'Referans Yok', cls: 'bg-gradeAgainBg text-gradeAgain' },
+    };
+
+    function readUrlParams() {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('sinav')) sinavEl!.value = p.get('sinav')!;
+      if (p.get('ders')) dersEl!.value = p.get('ders')!;
+      if (p.get('rozet')) rozetEl!.value = p.get('rozet')!;
+      if (p.get('q')) qEl!.value = p.get('q')!;
+      if (p.get('pre') === '1') preEl!.checked = true;
+    }
+
+    function syncUrl() {
+      const p = new URLSearchParams();
+      if (sinavEl!.value) p.set('sinav', sinavEl!.value);
+      if (dersEl!.value) p.set('ders', dersEl!.value);
+      if (rozetEl!.value) p.set('rozet', rozetEl!.value);
+      if (qEl!.value.trim()) p.set('q', qEl!.value.trim());
+      if (preEl!.checked) p.set('pre', '1');
+      const qs = p.toString();
+      const target = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+      window.history.replaceState(null, '', target);
+    }
+
+    function rowHtml(r: RefRow): string {
+      const bm = badgeMeta[r.rozet] || badgeMeta.KONU;
+      let preBadge = '';
+      if (r.sinavOncesiSurumde === 'evet') {
+        preBadge = '<span class="rounded-full bg-surfaceSoft border border-line px-2.5 py-0.5 text-[11px] font-medium text-inkMuted">Sınav öncesi (a78ae1f)</span>';
+      } else if (r.sinavOncesiSurumde === 'kismen') {
+        preBadge = '<span class="rounded-full bg-gradeHardBg px-2.5 py-0.5 text-[11px] font-bold text-gradeHard">Sınav sonrası düzenlendi (kısmen)</span>';
+      } else if (r.sinavOncesiSurumde === 'hayir') {
+        preBadge = '<span class="rounded-full bg-gradeAgainBg px-2.5 py-0.5 text-[11px] font-bold text-gradeAgain">Sınav sonrası eklendi</span>';
+      }
+
+      const eksikHtml = r.eksikAdim
+        ? `<p class="mt-2 text-xs text-warm"><strong class="font-bold">Eksik adım:</strong> ${esc(r.eksikAdim)}</p>`
+        : '';
+
+      const ozetHtml = r.kartOzet
+        ? `<p class="mt-2 rounded-xl bg-surfaceSoft px-3.5 py-2.5 text-xs sm:text-sm text-inkMuted leading-relaxed border border-lineLight"><strong class="text-ink font-semibold">Kart özeti:</strong> ${esc(r.kartOzet)}</p>`
+        : '';
+
+      return `
+        <article class="rounded-2xl border border-line bg-white p-4 sm:p-5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="rounded-full bg-surface px-2.5 py-0.5 text-xs font-bold text-ink tabular-nums">${esc(r.sinav)} · ${esc(r.qid.split('-')[1] || r.no)}</span>
+              <span class="rounded-full bg-tint px-2.5 py-0.5 text-xs font-semibold text-teal">${esc(r.ders)}</span>
+              <span class="rounded-full ${bm.cls} px-2.5 py-0.5 text-xs font-bold">${bm.label}</span>
+              ${preBadge}
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              ${r.cardId ? `<span class="font-mono text-inkMuted">${esc(r.cardId)}</span>` : ''}
+              <a href="${esc(osymUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center min-h-[2.75rem] py-2 font-semibold text-teal underline hover:text-tealDark">ÖSYM Arşivi ↗</a>
+            </div>
+          </div>
+          <p class="mt-2.5 text-sm font-semibold text-ink">${esc(r.olculenBilgi)}</p>
+          ${eksikHtml}
+          ${ozetHtml}
+        </article>`;
+    }
+
+    function renderList() {
+      const slice = filtered.slice(0, visibleCount);
+      if (!slice.length) {
+        listEl!.innerHTML = '';
+        emptyEl!.hidden = false;
+        moreBtn!.hidden = true;
+      } else {
+        emptyEl!.hidden = true;
+        listEl!.innerHTML = slice.map(rowHtml).join('');
+        moreBtn!.hidden = visibleCount >= filtered.length;
+        const remaining = filtered.length - visibleCount;
+        moreBtn!.textContent = `Daha Fazla Göster (${Math.min(remaining, PAGE_SIZE)} kayıt daha · kalan ${remaining.toLocaleString('tr-TR')})`;
+      }
+
+      const destek = filtered.filter((r) => r.rozet === 'DOGRUDAN' || r.rozet === 'DOLAYLI').length;
+      statusEl!.textContent = `${filtered.length.toLocaleString('tr-TR')} kayıt eşleşti (${destek.toLocaleString('tr-TR')} çözüm desteği)`;
+
+      const hasFilters = Boolean(sinavEl!.value || dersEl!.value || rozetEl!.value || qEl!.value.trim() || preEl!.checked);
+      resetBtn!.hidden = !hasFilters;
+    }
+
+    function applyFilter() {
+      const s = sinavEl!.value;
+      const d = dersEl!.value;
+      const rz = rozetEl!.value;
+      const preOnly = preEl!.checked;
+      const tokens = norm(qEl!.value.trim()).split(/\s+/).filter(Boolean);
+
+      filtered = allRows.filter((r) => {
+        if (s && r.sinav !== s) return false;
+        if (d && r.ders !== d) return false;
+        if (rz === 'DESTEK') {
+          if (r.rozet !== 'DOGRUDAN' && r.rozet !== 'DOLAYLI') return false;
+        } else if (rz && r.rozet !== rz) {
+          return false;
+        }
+        if (preOnly && r.sinavOncesiSurumde !== 'evet') return false;
+        for (const t of tokens) {
+          if (!r._s.includes(t)) return false;
+        }
+        return true;
+      });
+
+      visibleCount = PAGE_SIZE;
+      syncUrl();
+      renderList();
+    }
+
+    let debounceTimer = 0;
+    sinavEl.addEventListener('change', applyFilter);
+    dersEl.addEventListener('change', applyFilter);
+    rozetEl.addEventListener('change', applyFilter);
+    preEl.addEventListener('change', applyFilter);
+    qEl.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(applyFilter, 120);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      sinavEl.value = '';
+      dersEl.value = '';
+      rozetEl.value = '';
+      qEl.value = '';
+      preEl.checked = false;
+      applyFilter();
+    });
+
+    moreBtn.addEventListener('click', () => {
+      visibleCount += PAGE_SIZE;
+      renderList();
+    });
+
+    readUrlParams();
+    fetch('/data/references.json')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.osymUrl) osymUrl = data.osymUrl;
+        allRows = (data.kayitlar || []).map((r: RefRow) => ({
+          ...r,
+          _s: norm(`${r.qid} ${r.sinav} ${r.ders} ${r.olculenBilgi} ${r.eksikAdim} ${r.kartOzet} ${r.cardId || ''}`),
+        }));
+        applyFilter();
+      })
+      .catch(() => {
+        statusEl.textContent = 'Tam veri listesi yüklenemedi; örnek 24 kayıt gösteriliyor.';
+      });
+  }
+</script>

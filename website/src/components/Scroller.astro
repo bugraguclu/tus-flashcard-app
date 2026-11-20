@@ -1,0 +1,200 @@
+---
+// Shared horizontal rail controller (arrows + draggable progress bar) — ported from belif.
+// Native touch scrolling stays intact; touch-action: pan-y keeps vertical page scroll smooth.
+---
+<style is:global>
+  [data-scroller-track] {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    touch-action: pan-y;
+    scrollbar-width: none;
+  }
+  [data-scroller-track]::-webkit-scrollbar { display: none; }
+
+  .is-dragging [data-scroller-track] {
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+  }
+  .is-dragging { -webkit-user-select: none; user-select: none; }
+
+  [data-scroller-bar] {
+    position: relative;
+    height: 28px;
+    cursor: pointer;
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+  }
+  [data-scroller-bar]::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 3px;
+    margin-top: -1.5px;
+    border-radius: 3px;
+    background: #dde1e4;
+  }
+  [data-scroller-thumb] {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 80px;
+    height: 3px;
+    margin-top: -1.5px;
+    border-radius: 3px;
+    background: #0e7469;
+    will-change: transform;
+    transition: height 150ms ease, margin-top 150ms ease;
+  }
+  .is-dragging [data-scroller-thumb] {
+    height: 5px;
+    margin-top: -2.5px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    [data-scroller-bar]:hover [data-scroller-thumb] {
+      height: 5px;
+      margin-top: -2.5px;
+    }
+  }
+  @media (hover: none) {
+    [data-scroller-prev],
+    [data-scroller-next] { display: none !important; }
+  }
+</style>
+
+<script>
+  const EDGE = 4;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function init(root: HTMLElement) {
+    const track = root.querySelector<HTMLElement>('[data-scroller-track]');
+    if (!track || root.dataset.scrollerReady !== undefined) return;
+    root.dataset.scrollerReady = '';
+
+    const prev = root.querySelector<HTMLButtonElement>('[data-scroller-prev]');
+    const next = root.querySelector<HTMLButtonElement>('[data-scroller-next]');
+    const bar = root.querySelector<HTMLElement>('[data-scroller-bar]');
+    const thumb = bar?.querySelector<HTMLElement>('[data-scroller-thumb]') ?? null;
+
+    const items = () => [...track.children] as HTMLElement[];
+    const max = () => Math.max(0, track.scrollWidth - track.clientWidth);
+    const behavior = (): ScrollBehavior => (reduced.matches ? 'auto' : 'smooth');
+
+    const stops = () => {
+      const list = items();
+      if (!list.length) return [0];
+      const first = list[0].offsetLeft;
+      const m = max();
+      return list.map((el) => Math.min(Math.max(0, el.offsetLeft - first), m));
+    };
+    const nearest = (x: number, s = stops()) => {
+      let best = 0;
+      for (let i = 1; i < s.length; i++) if (Math.abs(s[i] - x) < Math.abs(s[best] - x)) best = i;
+      return best;
+    };
+    const perView = () => {
+      const list = items();
+      if (list.length < 2) return 1;
+      const stride = list[1].offsetLeft - list[0].offsetLeft;
+      return stride > 0 ? Math.max(1, Math.floor((track.clientWidth + 8) / stride)) : 1;
+    };
+
+    const go = (i: number) => {
+      const s = stops();
+      track.scrollTo({ left: s[Math.max(0, Math.min(s.length - 1, i))], behavior: behavior() });
+    };
+
+    let raf = 0;
+    const paint = () => {
+      raf = 0;
+      const m = max();
+      const x = track.scrollLeft;
+      const over = m > EDGE;
+      if (prev) prev.hidden = !over || x <= EDGE;
+      if (next) next.hidden = !over || x >= m - EDGE;
+
+      if (bar && thumb) {
+        bar.hidden = !over;
+        if (over) {
+          const bw = bar.clientWidth;
+          const maxThumb = Number(bar.dataset.thumbMax) || 96;
+          const tw = Math.min(bw, Math.min(maxThumb, Math.max(36, Math.round((bw * track.clientWidth) / track.scrollWidth))));
+          thumb.style.width = `${tw}px`;
+          thumb.style.transform = `translateX(${Math.round((bw - tw) * Math.min(1, Math.max(0, x / m)))}px)`;
+        }
+      }
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(paint); };
+
+    track.addEventListener('scroll', schedule, { passive: true });
+    new ResizeObserver(schedule).observe(track);
+    track.addEventListener('load', schedule, true);
+
+    prev?.addEventListener('click', () => go(nearest(track.scrollLeft) - perView()));
+    next?.addEventListener('click', () => go(nearest(track.scrollLeft) + perView()));
+
+    let token = 0;
+    let settleTimer = 0;
+    const startDrag = () => {
+      token++;
+      clearTimeout(settleTimer);
+      root.classList.add('is-dragging');
+    };
+    const settle = () => {
+      const mine = token;
+      const s = stops();
+      track.scrollTo({ left: s[nearest(track.scrollLeft, s)], behavior: behavior() });
+      const done = () => { if (mine === token) root.classList.remove('is-dragging'); };
+      if ('onscrollend' in window) track.addEventListener('scrollend', done, { once: true });
+      settleTimer = window.setTimeout(done, 650);
+    };
+
+    if (bar && thumb) {
+      bar.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 || max() <= EDGE) return;
+        const r = bar.getBoundingClientRect();
+        const tw = thumb.offsetWidth;
+        const tx = thumb.getBoundingClientRect().left - r.left;
+        const onThumb = e.clientX >= r.left + tx - 8 && e.clientX <= r.left + tx + tw + 8;
+        const grab = onThumb ? e.clientX - r.left - tx : tw / 2;
+        const to = (cx: number) => {
+          const span = r.width - tw;
+          const ratio = span > 0 ? (cx - r.left - grab) / span : 0;
+          track.scrollLeft = Math.min(1, Math.max(0, ratio)) * max();
+        };
+        const startX = e.clientX;
+        let dragging = e.pointerType === 'mouse';
+        if (dragging) { e.preventDefault(); startDrag(); to(e.clientX); }
+        try { bar.setPointerCapture(e.pointerId); } catch {}
+
+        const move = (ev: PointerEvent) => {
+          if (!dragging) {
+            if (Math.abs(ev.clientX - startX) < 4) return;
+            dragging = true;
+            startDrag();
+          }
+          to(ev.clientX);
+        };
+        const end = (ev: PointerEvent) => {
+          bar.removeEventListener('pointermove', move);
+          bar.removeEventListener('pointerup', end);
+          bar.removeEventListener('pointercancel', end);
+          if (!dragging && ev.type === 'pointerup') { startDrag(); to(ev.clientX); }
+          else if (!dragging) return;
+          settle();
+        };
+        bar.addEventListener('pointermove', move);
+        bar.addEventListener('pointerup', end);
+        bar.addEventListener('pointercancel', end);
+      });
+    }
+
+    paint();
+  }
+
+  const boot = () => document.querySelectorAll<HTMLElement>('[data-scroller]').forEach(init);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+</script>

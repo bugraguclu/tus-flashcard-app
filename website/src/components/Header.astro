@@ -1,0 +1,197 @@
+---
+import SearchModal from './SearchModal.astro';
+import SocialLinks from './SocialLinks.astro';
+import { SITE } from '../config';
+import { NAV_IDS, page, link } from '../data/pages';
+
+const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const navItems = NAV_IDS.map((id) => page(id));
+---
+<header class="sticky top-0 z-40 border-b border-line header-glass">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="flex items-center justify-between gap-4 h-16 xl:h-[72px]">
+      <!-- Mobile menu button (< xl) -->
+      <div class="flex items-center gap-2 xl:hidden">
+        <button
+          id="mobile-nav-open"
+          type="button"
+          aria-label="Menüyü aç"
+          class="touch-target grid place-items-center w-11 h-11 -ml-2 rounded-full text-ink hover:bg-tint transition"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+            <line x1="3" y1="7" x2="21" y2="7" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="17" x2="21" y2="17" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Brand mark + wordmark -->
+      <a href="/" class="inline-flex items-center gap-2.5 shrink-0 min-h-[2.75rem] py-1" aria-label="TusAnkiM — Ana sayfa">
+        <img
+          src="/images/app-mark.png"
+          alt=""
+          width="36"
+          height="36"
+          class="w-8 h-8 xl:w-9 xl:h-9 rounded-lg object-contain"
+        />
+        <span class="display text-lg xl:text-xl tracking-tight text-ink">TusAnkiM</span>
+        <span class="hidden sm:inline-block border-l border-line pl-2.5 text-[11px] font-semibold tracking-wider text-teal uppercase">
+          <span lang="en">FSRS-6</span> · TUS
+        </span>
+      </a>
+
+      <!-- Desktop primary nav -->
+      <nav aria-label="Ana menü" class="hidden xl:flex items-center gap-7 text-sm font-medium text-ink">
+        {navItems.map((item) => {
+          const isCurrent = currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path + '/'));
+          return (
+            <a
+              href={link(item.path)}
+              class="nav-link inline-flex items-center min-h-[2.75rem] whitespace-nowrap py-1 hover:text-teal transition"
+              aria-current={isCurrent ? 'page' : undefined}
+            >
+              {item.navLabel}
+            </a>
+          );
+        })}
+      </nav>
+
+      <!-- Right tools: search + primary CTA -->
+      <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <SearchModal />
+        <a
+          href="/#demo"
+          class="hidden md:inline-flex items-center justify-center min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-ink text-xs font-semibold hover:border-tealGraphic hover:text-teal transition whitespace-nowrap"
+        >
+          Kartları Dene
+        </a>
+        <a
+          href={SITE.webAppUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hidden sm:inline-flex items-center justify-center min-h-[2.75rem] px-4 rounded-full bg-teal text-white text-xs font-semibold hover:bg-tealDark transition whitespace-nowrap"
+        >
+          Ücretsiz Başla
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Native <dialog> mobile navigation drawer (MWG dialog guide: showModal, closedby="any", no html overflow lock) -->
+<dialog
+  id="mobile-nav-dialog"
+  closedby="any"
+  aria-labelledby="mobile-nav-title"
+  class="mobile-drawer m-0 ml-0 mr-auto h-full max-h-none w-[min(22rem,88vw)] border-r border-line bg-white p-0 shadow-2xl"
+>
+  <div class="flex flex-col min-h-full p-6">
+    <div class="flex items-center justify-between pb-4 border-b border-line">
+      <div class="flex items-center gap-2.5">
+        <img src="/images/app-mark.png" alt="" width="30" height="30" class="w-7 h-7 object-contain" />
+        <h2 id="mobile-nav-title" class="display text-base text-ink">TusAnkiM Menü</h2>
+      </div>
+      <button
+        id="mobile-nav-close"
+        type="button"
+        aria-label="Menüyü kapat"
+        class="touch-target grid place-items-center w-11 h-11 -mr-2 rounded-full text-ink hover:bg-surface transition"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <nav aria-label="Mobil menü" class="mt-2 flex-1">
+      <ul class="divide-y divide-lineLight">
+        <li>
+          <a
+            href="/"
+            class="flex items-center justify-between min-h-[3.25rem] py-3 text-base font-medium text-ink hover:text-teal"
+            aria-current={currentPath === '/' ? 'page' : undefined}
+          >
+            <span>Ana Sayfa</span>
+          </a>
+        </li>
+        {navItems.map((item) => {
+          const isCurrent = currentPath === item.path || (item.path !== '/' && currentPath.startsWith(item.path + '/'));
+          return (
+            <li>
+              <a
+                href={link(item.path)}
+                class={`flex items-center justify-between min-h-[3.25rem] py-3 text-base transition ${isCurrent ? 'font-bold text-teal' : 'font-medium text-ink hover:text-teal'}`}
+                aria-current={isCurrent ? 'page' : undefined}
+              >
+                <span>{item.navLabel}</span>
+                {isCurrent && <span class="w-2 h-2 rounded-full bg-teal" aria-hidden="true"></span>}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+
+    <div class="mt-6 pt-5 border-t border-line space-y-3">
+      <a
+        href="/#demo"
+        class="flex items-center justify-center w-full min-h-[2.75rem] rounded-full border border-line bg-surfaceSoft text-ink text-sm font-semibold hover:border-tealGraphic transition"
+      >
+        Canlı Kartları Dene
+      </a>
+      <a
+        href={SITE.webAppUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="flex items-center justify-center w-full min-h-[2.75rem] rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition"
+      >
+        Web Uygulamasını Aç (Ücretsiz)
+      </a>
+      <div class="pt-3">
+        <SocialLinks />
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .mobile-drawer {
+    padding: 0;
+  }
+  .mobile-drawer[open] {
+    display: flex;
+    flex-direction: column;
+  }
+</style>
+
+<script>
+  const navOpen = document.getElementById('mobile-nav-open') as HTMLButtonElement | null;
+  const navClose = document.getElementById('mobile-nav-close') as HTMLButtonElement | null;
+  const navDialog = document.getElementById('mobile-nav-dialog') as HTMLDialogElement | null;
+
+  if (navOpen && navClose && navDialog) {
+    navOpen.addEventListener('click', () => {
+      if (!navDialog.open) navDialog.showModal();
+    });
+    navClose.addEventListener('click', () => navDialog.close());
+    navDialog.addEventListener('click', (e) => {
+      if ((e.target as Element).closest('a')) navDialog.close();
+    });
+
+    if (!('closedBy' in HTMLDialogElement.prototype)) {
+      const outside = (e: PointerEvent) => {
+        const r = navDialog.getBoundingClientRect();
+        return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+      };
+      let pressedOutside = false;
+      navDialog.addEventListener('pointerdown', (e) => { pressedOutside = outside(e); });
+      navDialog.addEventListener('pointerup', (e) => { if (pressedOutside && outside(e)) navDialog.close(); });
+    }
+
+    matchMedia('(min-width: 1280px)').addEventListener('change', (e) => {
+      if (e.matches && navDialog.open) navDialog.close();
+    });
+  }
+</script>

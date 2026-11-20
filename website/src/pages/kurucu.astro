@@ -1,0 +1,119 @@
+---
+import Layout from '../layouts/Layout.astro';
+import founder from '../data/founder.json';
+import refSummary from '../data/generated/references-summary.json';
+import catalog from '../data/generated/catalog.json';
+import { SITE } from '../config';
+import { breadcrumbList } from '../lib/schema';
+import { dateModified, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'Kurucumuz', path: '/kurucu' },
+]);
+
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  url: origin + '/kurucu/',
+  name: 'Kurucumuz ve Editöryal Kart Standardı | TusAnkiM',
+  description: founder.quote,
+  inLanguage: 'tr-TR',
+  ...dateModified(pageSources('kurucu')),
+};
+---
+<Layout
+  title="Kurucumuz & Editöryal Kart Standardı | TusAnkiM"
+  description="TusAnkiM'i neden kurduk? 9.575 kartlık bitirilebilir hacim, sınav öncesi sürüm kanıtı, hekim editör onayı ve sürekli güncelleme felsefemiz."
+  schema={[crumbs, pageSchema]}
+>
+  <section class="bg-surface border-b border-line py-10 sm:py-14">
+    <div class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">
+        <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+        <span aria-hidden="true" class="mx-2">/</span>
+        <span class="text-ink font-semibold">Kurucumuz</span>
+      </nav>
+      <div class="section-num">{founder.kicker}</div>
+      <h1 class="display text-page-title tracking-tightest text-ink mt-2">
+        {founder.letterTitle}
+      </h1>
+      <p class="text-inkMuted mt-3 leading-relaxed">
+        {founder.name} · {founder.role}
+      </p>
+    </div>
+  </section>
+
+  <article class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10 py-12">
+    <!-- Editorial portrait / emblem header -->
+    <div class="rounded-3xl border border-line bg-surfaceSoft p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-10">
+      <div class="w-20 h-20 rounded-2xl border border-line bg-white grid place-items-center shrink-0">
+        <img src="/images/app-mark.png" alt="TusAnkiM logosu" width="56" height="56" class="w-14 h-14 object-contain" />
+      </div>
+      <div>
+        <div class="display text-lg text-ink">{founder.name}</div>
+        <div class="text-sm font-semibold text-teal mt-0.5">{founder.role}</div>
+        <p class="text-xs text-inkMuted mt-2 leading-relaxed">
+          {catalog.totals.cards.toLocaleString('tr-TR')} doğrulanmış kart · {catalog.totals.courses} ders · Son 6 TUS ({refSummary.overall.destek}/1.195 çözüm desteği) açık doğrulama standardı.
+        </p>
+      </div>
+    </div>
+
+    <!-- Quote -->
+    <blockquote class="border-l-4 border-teal pl-5 py-1 text-lg sm:text-xl font-medium text-ink leading-relaxed">
+      “{founder.quote}”
+    </blockquote>
+
+    <!-- Manifesto letter -->
+    <div class="mt-8 space-y-5 text-base text-ink leading-relaxed">
+      {founder.letterParagraphs.map((para) => (
+        <p>{para}</p>
+      ))}
+    </div>
+
+    <!-- Editorial Pillars -->
+    <section class="mt-14 pt-10 border-t border-line" aria-labelledby="pillars-heading">
+      <div class="section-num">Editöryal Doğrulama İlkeleri</div>
+      <h2 id="pillars-heading" class="display text-section tracking-tightest mt-2 text-ink">
+        Her kartın geçtiği 4 kalite standardı
+      </h2>
+      <div class="mt-6 grid sm:grid-cols-2 gap-4">
+        {founder.editorialPillars.map((pillar) => (
+          <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
+            <h3 class="display text-base text-ink">{pillar.title}</h3>
+            <p class="text-sm text-inkMuted mt-2 leading-relaxed">{pillar.body}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <div class="mt-12 rounded-3xl border border-line bg-tint/60 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h2 class="display text-lg text-ink">Kart kalitemizi kendin ölç</h2>
+        <p class="text-sm text-inkMuted mt-1">
+          Son 6 TUS referans kanıtlarını incele veya 2026/2 sınav öncesi 11 gerçek kartı hemen çöz.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2.5 shrink-0">
+        <a
+          href="/#demo"
+          class="inline-flex items-center justify-center min-h-[2.75rem] px-5 rounded-full bg-teal text-white text-sm font-bold hover:bg-tealDark transition"
+        >
+          Kartları Dene
+        </a>
+        <a
+          href="/referanslar/"
+          class="inline-flex items-center justify-center min-h-[2.75rem] px-5 rounded-full border border-line bg-white text-ink text-sm font-semibold hover:border-tealGraphic hover:text-teal transition"
+        >
+          Referanslar →
+        </a>
+      </div>
+    </div>
+
+    <p class="mt-8 text-xs text-inkMuted">
+      İletişim ve editöryal kart geri bildirimi için <a href="/destek/" class="text-teal underline hover:text-tealDark">Destek sayfamızı</a> veya <a href={SITE.githubIssuesUrl} target="_blank" rel="noopener noreferrer" class="text-teal underline hover:text-tealDark">destek kaydı formumuzu</a> kullanabilirsiniz.
+    </p>
+  </article>
+</Layout>

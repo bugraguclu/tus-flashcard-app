@@ -1,0 +1,38 @@
+---
+// Native <details>/<summary> accordion — compliant with MWG accordion guide:
+// - No headings inside <summary>
+// - Non-exclusive so learners can compare answers side by side
+// - Rotated chevron drawn via CSS ::before mask + progressive ::details-content transition
+import { answerHtml } from '../lib/richtext';
+
+export interface FaqItem {
+  q: string;
+  a: string;
+}
+
+interface Props {
+  items: FaqItem[];
+  heading?: string;
+  id?: string;
+}
+
+const { items, heading, id } = Astro.props;
+const headingId = id ? `${id}-heading` : undefined;
+---
+{items.length > 0 && (
+  <section class="faq" aria-labelledby={heading && headingId ? headingId : undefined}>
+    {heading && (
+      <h2 id={headingId} class="display text-subsection tracking-tightest mb-4 text-ink">
+        {heading}
+      </h2>
+    )}
+    <div>
+      {items.map((f) => (
+        <details>
+          <summary><span>{f.q}</span></summary>
+          <div class="faq-answer" set:html={answerHtml(f.a)}></div>
+        </details>
+      ))}
+    </div>
+  </section>
+)}

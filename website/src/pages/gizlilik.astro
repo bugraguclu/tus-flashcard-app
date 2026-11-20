@@ -1,0 +1,69 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SITE } from '../config';
+import { breadcrumbList } from '../lib/schema';
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'Gizlilik Politikası ve KVKK', path: '/gizlilik' },
+]);
+---
+<Layout
+  title="Gizlilik Politikası ve KVKK Aydınlatma Metni | TusAnkiM"
+  description="TusAnkiM yerel öncelikli (local-first) veri gizliliği, çerezsiz web sitesi ve 6698 sayılı KVKK kapsamındaki haklarınız."
+  schema={[crumbs]}
+>
+  <article class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10 py-10 sm:py-16">
+    <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">
+      <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink font-semibold">Gizlilik Politikası ve KVKK</span>
+    </nav>
+
+    <div class="section-num">KVKK &amp; Yerel Öncelikli Gizlilik</div>
+    <h1 class="display text-page-title tracking-tightest text-ink mt-2">
+      Gizlilik Politikası ve KVKK Aydınlatma Metni
+    </h1>
+    <p class="text-sm text-inkMuted mt-2">Son güncelleme: Kasım 2026</p>
+
+    <div class="help-prose mt-8">
+      <p>
+        <strong>TusAnkiM, kart ve çalışma verilerinizi kendi cihazınızda tutar.</strong> Uygulama ve bu web sitesi reklam ağı, davranışsal takip çerezi veya üçüncü taraf izleme pikseli içermez.
+      </p>
+
+      <h2>1. Uygulamadaki verileriniz (yerel öncelikli mimari)</h2>
+      <p>
+        TusAnkiM iPhone ve web uygulamasında oluşturduğunuz veya içe aktardığınız kartlar, tekrar geçmişi, istatistikler, Kronometre kayıtları, ayarlar ve yedekler yalnızca kendi cihazınızda saklanır. Kart içerikleriniz tarafımızca herhangi bir sunucuya toplanmaz.
+      </p>
+      <ul>
+        <li><strong>Cihaz içi koruma:</strong> iOS cihaz depolaması kilitliyken uygulama dosyaları tam veri koruması (<code>NSFileProtectionComplete</code>) kullanır.</li>
+        <li><strong>Dışa aktarma kontrolü:</strong> <code>.apkg</code>, <code>.colpkg</code> veya JSON yedek paylaşımı yalnızca sizin başlattığınız anda ve seçtiğiniz hedefe yapılır.</li>
+        <li><strong>İzinler:</strong> Kamera, fotoğraf kitaplığı veya mikrofon erişimi yalnızca karta medya eklemek istediğinizde istenir; medya cihazınızda kalır.</li>
+      </ul>
+
+      <h2>2. Bu web sitesinde işlenen veriler</h2>
+      <p>
+        Bu tanıtım web sitesi tamamen statik olarak sunulur: pazarlama çerezi yerleştirmez, üçüncü taraf reklam veya analitik betiği çalıştırmaz, fontları dahi kendi sunucusundan servis eder.
+      </p>
+      <p>
+        Yalnızca barındırma altyapısının standart güvenlik/erişim günlükleri (IP adresi, istenen URL ve zaman damgası) oluşabilir. Ayrıca WhatsApp destek hattımız veya e-posta üzerinden bizimle iletişime geçerseniz, ilettiğiniz iletişim bilgileri yalnızca destek talebinizi yanıtlamak amacıyla işlenir.
+      </p>
+
+      <h2>3. Satın alma ve kart paketi erişimi</h2>
+      <p>
+        Mevcut ücretsiz/beta erişim sürümünde BKA TUS paketi ödeme veya hesap kaydı olmadan yerel olarak açılır. Ücretli planlar veya otomatik bulut eşitleme devreye alındığında ilgili ödeme/hesap sağlayıcılarının veri işleme kapsamı yayın öncesinde bu metne açıkça eklenecektir.
+      </p>
+
+      <h2>4. 6698 Sayılı KVKK m. 11 Kapsamındaki Haklarınız</h2>
+      <p>
+        Kişisel verilerinizin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme, yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme, eksik veya yanlış işlenmişse düzeltilmesini isteme, silinmesini veya yok edilmesini talep etme ve kanuna aykırı işleme nedeniyle zararın giderilmesini isteme haklarına sahipsiniz.
+      </p>
+
+      <h2>5. Başvuru ve iletişim</h2>
+      <p>
+        KVKK talepleriniz ve gizlilik sorularınız için <a href="/destek/">Destek sayfamız</a> üzerinden veya <code>{SITE.email}</code> adresinden bizimle iletişime geçebilirsiniz. Talepler en geç otuz gün içinde yanıtlanır.
+      </p>
+    </div>
+  </article>
+</Layout>

@@ -1,0 +1,216 @@
+---
+// Native <dialog> site search modal — compliant with MWG dialog + html + accessibility guides:
+// - Opened with .showModal(), closedby="any" + pointerdown/pointerup fallback
+// - No redundant role="dialog" or aria-modal, no html/body overflow:hidden lock
+// - Scoped display ONLY under dialog[open]
+const quickLinks = [
+  { title: 'TUS Referans Kanıtları (Son 6 Sınav)', sub: '521/1.195 çözüm desteği · Ders ders & sınav bazlı arama', url: '/referanslar/' },
+  { title: 'TUS Puan & Hedef Net Hesaplayıcı', sub: 'Temel + Klinik doğru/yanlış ve tersine hedef net hesabı', url: '/puan-hesapla/' },
+  { title: 'FSRS-6 Nedir? Nasıl Ayarlanır?', sub: 'Hedef hatırlama oranı, optimizasyon ve kart yeniden zamanlama', url: '/yardim/fsrs/' },
+  { title: 'Anki ile Birlikte Kullanma (.apkg / .colpkg)', sub: 'Destelerinizi kayıpsız içeri aktarın veya dışa verin', url: '/yardim/anki-ile-kullanma/' },
+  { title: 'Sıkça Sorulan Sorular', sub: 'Fiyatlandırma, 7 gün iade garantisi, kart güncellemeleri', url: '/sss/' },
+];
+---
+<button
+  id="site-search-open"
+  type="button"
+  aria-label="Sitede ara (kısayol: /)"
+  class="touch-target grid place-items-center w-11 h-11 xl:w-9 xl:h-9 rounded-full text-ink hover:bg-tint transition"
+>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+    <circle cx="11" cy="11" r="7" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+</button>
+
+<dialog
+  id="site-search-dialog"
+  closedby="any"
+  aria-labelledby="site-search-heading"
+  class="search-dialog w-[calc(100%-2rem)] max-w-2xl rounded-2xl border border-line bg-white p-0 shadow-2xl mt-16 sm:mt-20 mx-auto"
+>
+  <div class="p-4 sm:p-5">
+    <div class="flex items-center justify-between gap-3 mb-3">
+      <h2 id="site-search-heading" class="section-num">Sitede Ara</h2>
+      <button
+        id="site-search-close"
+        type="button"
+        aria-label="Aramayı kapat"
+        class="touch-target grid place-items-center w-10 h-10 rounded-full text-inkMuted hover:text-ink hover:bg-surface transition"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <search>
+      <div class="search-field flex items-center gap-3 px-4 rounded-xl border border-line bg-surfaceSoft">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-teal shrink-0" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <label for="site-search-input" class="sr-only">Sitede sayfa, rehber veya soru ara</label>
+        <input
+          id="site-search-input"
+          type="search"
+          autocomplete="off"
+          autofocus
+          placeholder="Örn: FSRS-6, referanslar, puan hesapla, kronometre, iade..."
+          class="flex-1 min-w-0 py-3 text-base bg-transparent text-ink placeholder:text-inkMuted outline-none"
+        />
+      </div>
+    </search>
+
+    <div class="mt-3 border-t border-lineLight pt-3">
+      <div id="site-search-status" class="sr-only" aria-live="polite"></div>
+      <div id="site-search-results" class="max-h-[55vh] overflow-y-auto overflow-x-hidden space-y-1">
+        <p class="px-2 pb-1 text-xs font-semibold text-inkMuted">Hızlı erişim</p>
+        {quickLinks.map((item) => (
+          <a href={item.url} class="search-hit block rounded-xl px-3 py-2.5 transition">
+            <span class="block text-sm font-semibold text-ink">{item.title}</span>
+            <span class="block text-xs text-inkMuted mt-0.5">{item.sub}</span>
+          </a>
+        ))}
+      </div>
+      <p id="site-search-empty" hidden class="px-3 py-6 text-center text-sm text-inkMuted"></p>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .search-dialog {
+    padding: 0;
+  }
+  .search-dialog[open] {
+    display: block;
+  }
+</style>
+
+<script>
+  const openBtn = document.getElementById('site-search-open') as HTMLButtonElement | null;
+  const dialog = document.getElementById('site-search-dialog') as HTMLDialogElement | null;
+  const closeBtn = document.getElementById('site-search-close') as HTMLButtonElement | null;
+  const input = document.getElementById('site-search-input') as HTMLInputElement | null;
+  const results = document.getElementById('site-search-results') as HTMLElement | null;
+  const emptyEl = document.getElementById('site-search-empty') as HTMLElement | null;
+  const statusEl = document.getElementById('site-search-status') as HTMLElement | null;
+
+  if (openBtn && dialog && closeBtn && input && results && emptyEl) {
+    const dlg = dialog;
+    const inp = input;
+    const resEl = results;
+    const empEl = emptyEl;
+    let index: Array<{ title: string; sub: string; url: string; type: string; _n: string }> | null = null;
+    const defaultHtml = resEl.innerHTML;
+
+    const norm = (s: string) =>
+      (s || '')
+        .toLocaleLowerCase('tr')
+        .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/İ/g, 'i')
+        .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/â/g, 'a');
+
+    const esc = (s: string) =>
+      String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] || c));
+
+    async function ensureIndex() {
+      if (index) return;
+      try {
+        const res = await fetch('/arama-index.json');
+        const data = await res.json();
+        index = data.map((it: any) => ({ ...it, _n: norm(`${it.title} ${it.sub} ${it.terms || ''}`) }));
+      } catch {
+        index = [];
+      }
+    }
+
+    function render(q: string) {
+      const trimmed = q.trim();
+      if (!trimmed) {
+        resEl.innerHTML = defaultHtml;
+        resEl.hidden = false;
+        empEl.hidden = true;
+        if (statusEl) statusEl.textContent = '';
+        return;
+      }
+      if (!index) return;
+      const tokens = norm(trimmed).split(/\s+/).filter(Boolean);
+      const hits = index
+        .map((it) => {
+          let score = 0;
+          for (const t of tokens) if (it._n.includes(t)) score += 1;
+          if (score === tokens.length && norm(it.title).includes(norm(trimmed))) score += 2;
+          return { it, score };
+        })
+        .filter((x) => x.score >= tokens.length)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+        .map((x) => x.it);
+
+      if (!hits.length) {
+        resEl.innerHTML = '';
+        resEl.hidden = true;
+        empEl.textContent = `“${trimmed}” için sonuç bulunamadı.`;
+        empEl.hidden = false;
+        if (statusEl) statusEl.textContent = `Sonuç bulunamadı.`;
+        return;
+      }
+
+      empEl.hidden = true;
+      resEl.hidden = false;
+      resEl.innerHTML = hits
+        .map(
+          (it) => `
+          <a href="${esc(it.url)}" class="search-hit flex items-start justify-between gap-3 rounded-xl px-3 py-2.5 transition">
+            <span class="min-w-0">
+              <span class="block text-sm font-semibold text-ink">${esc(it.title)}</span>
+              <span class="block text-xs text-inkMuted mt-0.5 line-clamp-2">${esc(it.sub)}</span>
+            </span>
+            <span class="shrink-0 rounded-full bg-tint px-2 py-0.5 text-[11px] font-semibold text-teal">${esc(it.type)}</span>
+          </a>`
+        )
+        .join('');
+      if (statusEl) statusEl.textContent = `${hits.length} sonuç listelendi.`;
+    }
+
+    async function openDialog() {
+      if (dlg.open) return;
+      inp.value = '';
+      render('');
+      dlg.showModal();
+      inp.focus();
+      await ensureIndex();
+      if (dlg.open && inp.value.trim()) render(inp.value);
+    }
+
+    openBtn.addEventListener('click', openDialog);
+    closeBtn.addEventListener('click', () => dlg.close());
+    inp.addEventListener('input', () => render(inp.value));
+    resEl.addEventListener('click', (e) => {
+      if ((e.target as Element).closest('a')) dlg.close();
+    });
+
+    // Fallback light-dismiss when closedby="any" is unsupported (MWG dialog guide)
+    if (!('closedBy' in HTMLDialogElement.prototype)) {
+      const outside = (e: PointerEvent) => {
+        const r = dlg.getBoundingClientRect();
+        return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+      };
+      let pressedOutside = false;
+      dlg.addEventListener('pointerdown', (e) => { pressedOutside = outside(e); });
+      dlg.addEventListener('pointerup', (e) => { if (pressedOutside && outside(e)) dlg.close(); });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (dlg.open) return;
+      if (e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+        const tag = (document.activeElement?.tagName || '').toLowerCase();
+        if (tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
+          e.preventDefault();
+          openDialog();
+        }
+      }
+    });
+  }
+</script>

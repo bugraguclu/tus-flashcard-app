@@ -1,0 +1,365 @@
+/* TusAnkiM design system styles — ported from belif architecture & hardened to WCAG 2.2 AA + Modern Web Guidance. */
+
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+html {
+  scroll-behavior: smooth;
+  /* Keep keyboard-focused elements clear of sticky header and fixed WhatsApp pill (WCAG 2.4.11) */
+  scroll-padding-top: 5.5rem;
+  scroll-padding-bottom: 5rem;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color: #24292c;
+  background: #ffffff;
+  overflow-wrap: break-word;
+  -webkit-tap-highlight-color: rgba(14, 116, 105, 0.14);
+}
+
+.display {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+}
+
+/* Calm clinical-clean hero backdrop */
+.hero-bg {
+  background:
+    radial-gradient(ellipse 68% 58% at 78% 22%, rgba(20, 153, 138, 0.10) 0%, transparent 62%),
+    radial-gradient(ellipse 52% 72% at 12% 82%, rgba(228, 244, 241, 0.65) 0%, transparent 60%),
+    linear-gradient(180deg, #f3f5f6 0%, #ffffff 74%);
+}
+
+.header-glass {
+  background: rgba(255, 255, 255, 0.88);
+  /* Standard first, -webkit- second (belif pattern: keeps both with autoprefixer + esbuild cssMinify) */
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+.lift { transition: transform 240ms ease, box-shadow 240ms ease, border-color 200ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  .lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(14, 116, 105, 0.09);
+  }
+}
+
+.section-num {
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: #0e7469;
+  text-transform: uppercase;
+}
+
+footer .section-num {
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+}
+
+.nav-link { position: relative; }
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  height: 2px;
+  width: 0;
+  background: #0e7469;
+  transition: width 220ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover::after { width: 100%; }
+}
+.nav-link[aria-current="page"] {
+  color: #0e7469;
+  font-weight: 600;
+}
+.nav-link[aria-current="page"]::after { width: 100%; }
+
+/* Keep hidden="until-found" intact for Find-in-Page! Only force display:none on plain boolean hidden. */
+[hidden]:not([hidden="until-found"]) { display: none !important; }
+
+/* ── Modern Native Accordion (<details>/<summary>, MWG accordion guide) ──────── */
+.faq details {
+  border-bottom: 1px solid #dde1e4;
+}
+
+.faq summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  min-block-size: 3rem;
+  font-weight: 600;
+  color: #24292c;
+}
+
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::marker { content: ""; }
+
+/* Custom rotated chevron mask placed right before label text for vertical scanning */
+.faq summary::before {
+  content: "";
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  flex-shrink: 0;
+  background-color: #0e7469;
+  mask: url("/icons/chevron-down.svg") no-repeat center / contain;
+  -webkit-mask: url("/icons/chevron-down.svg") no-repeat center / contain;
+  rotate: -90deg;
+}
+
+.faq details[open] > summary::before {
+  rotate: 0deg;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .faq summary::before {
+    transition: rotate 0.2s ease;
+  }
+}
+
+.faq details::details-content {
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  contain: layout;
+}
+
+.faq details:not([open])::details-content {
+  block-size: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .faq details::details-content {
+    transition: block-size, content-visibility, display;
+    transition-duration: 0.28s;
+    transition-timing-function: ease-in-out;
+    transition-behavior: allow-discrete;
+  }
+}
+
+.faq-answer {
+  padding: 0 0 1.25rem 1.875rem;
+  color: #596166;
+  line-height: 1.65;
+  font-size: 0.9375rem;
+}
+
+/* ── Modern WAI-ARIA Tabs (MWG tabs + search-hidden-content guides) ────────── */
+@property --fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+.tablist-scroll {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  scroll-snap-type: inline proximity;
+  scroll-padding-inline: 2.5rem;
+  --fade-size: 2.5rem;
+}
+.tablist-scroll::-webkit-scrollbar { display: none; }
+
+@supports (animation-timeline: scroll()) {
+  .tablist-scroll {
+    mask:
+      linear-gradient(black, black) no-clip subtract,
+      linear-gradient(to right, black, transparent) 0 0 / var(--fade-start) 100% no-repeat no-clip,
+      linear-gradient(to right, transparent, black) 100% 0 / var(--fade-end) 100% no-repeat no-clip;
+    animation: tab-reveal-start linear both, tab-hide-end linear both;
+    animation-timeline: scroll(self inline);
+    animation-range: 0 var(--fade-size), calc(100% - var(--fade-size)) 100%;
+  }
+}
+@keyframes tab-reveal-start {
+  to { --fade-start: var(--fade-size); }
+}
+@keyframes tab-hide-end {
+  from { --fade-end: var(--fade-size); }
+}
+
+.tab-btn {
+  position: relative;
+  flex: none;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  min-block-size: 2.75rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #596166;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  transition: color 160ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tab-btn:hover { color: #24292c; }
+}
+
+.tab-btn[aria-selected="true"] {
+  color: #0e7469;
+}
+
+/* Shape indicator using border (survives Forced Colors Mode, satisfies WCAG 1.4.1) */
+.tab-btn[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  border-block-end: 3px solid #0e7469;
+}
+
+/* Never style [role="tabpanel"] directly (breaks hidden="until-found"); style .tabpanel-inner */
+.tabpanel-inner {
+  padding-top: 1.25rem;
+}
+
+/* ── Native <dialog> (MWG dialog guide) ────────────────────────────────────── */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(36, 41, 44, 0.48);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ── Search field shared styles ────────────────────────────────────────────── */
+.search-field { transition: border-color 180ms ease; }
+.search-field:focus-within {
+  border-color: #0e7469;
+  outline: 2px solid #0e7469;
+  outline-offset: 2px;
+}
+.search-field input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  display: none;
+}
+.search-hit.is-active,
+.search-hit:hover {
+  background: #e4f4f1;
+}
+
+/* ── Help guide prose typography ───────────────────────────────────────────── */
+.help-prose {
+  color: #24292c;
+  line-height: 1.72;
+  font-size: 1rem;
+}
+.help-prose h2 {
+  font-weight: 700;
+  font-size: 1.375rem;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e9ecee;
+  color: #24292c;
+}
+.help-prose h2:first-child { margin-top: 0; border-top: 0; padding-top: 0; }
+.help-prose h3 {
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.35;
+  margin-top: 1.65rem;
+  margin-bottom: 0.5rem;
+  color: #24292c;
+}
+.help-prose p { margin-top: 0.85rem; color: #24292c; }
+.help-prose ul, .help-prose ol { margin-top: 0.75rem; padding-left: 1.35rem; }
+.help-prose ul { list-style-type: disc; }
+.help-prose ol { list-style-type: decimal; }
+.help-prose li { margin-top: 0.375rem; }
+.help-prose a { color: #0e7469; text-decoration: underline; text-underline-offset: 2px; }
+.help-prose a:hover { color: #0b5e55; }
+.help-prose blockquote {
+  margin-top: 1rem;
+  padding: 0.875rem 1.125rem;
+  border-left: 3px solid #14998a;
+  background: #f3f5f6;
+  border-radius: 0 0.75rem 0.75rem 0;
+  color: #24292c;
+}
+.help-prose blockquote p { margin-top: 0; }
+.help-prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875em;
+  background: #f3f5f6;
+  padding: 0.12rem 0.38rem;
+  border-radius: 0.35rem;
+  color: #0e7469;
+}
+.help-prose pre {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #24292c;
+  color: #f3f5f6;
+  overflow-x: auto;
+}
+.help-prose pre code { background: transparent; color: inherit; padding: 0; }
+.help-table-wrap { overflow-x: auto; margin-top: 1rem; }
+.help-prose table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.help-prose th, .help-prose td {
+  border-bottom: 1px solid #dde1e4;
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.help-prose th { font-weight: 700; background: #f8f9fa; color: #24292c; }
+
+/* ── Accessibility ─────────────────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: #0e7469;
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.skip-link:focus { left: 0; }
+#icerik:focus { outline: none; }
+
+:focus-visible {
+  outline: 3px solid #0e7469;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Coarse pointer touch target floor */
+@media (pointer: coarse) {
+  .touch-target {
+    min-block-size: 2.75rem;
+    min-inline-size: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
