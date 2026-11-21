@@ -64,3 +64,8 @@ graphify-out/
 # account server data (server/account)
 server/account/.data/
 server/account/.env
+
+# Marketing website (isolated Astro project)
+website/node_modules/
+website/dist/
+website/.astro/

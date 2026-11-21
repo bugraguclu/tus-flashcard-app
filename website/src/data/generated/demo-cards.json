@@ -1,0 +1,464 @@
+[
+  {
+    "id": "demo-2026-2-t005",
+    "qid": "2026/2-T005",
+    "sinav": "2026/2",
+    "test": "Temel",
+    "no": 5,
+    "ders": "Anatomi",
+    "shortDers": "Anatomi",
+    "deck": "Anatomi",
+    "olculenBilgi": "Spinal subaraknoid aralığın alt sınırı (S2)",
+    "cardId": "BKA-317207",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "Dura mater ve arachnoid mater spinalis'in sonlandığı vertebra seviyesi:\n\n"
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "S2"
+      },
+      {
+        "type": "text",
+        "value": " vertebra seviyesinde sonlanır"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-t016",
+    "qid": "2026/2-T016",
+    "sinav": "2026/2",
+    "test": "Temel",
+    "no": 16,
+    "ders": "Fizyoloji-Histoloji-Embriyoloji",
+    "shortDers": "FHE",
+    "deck": "Deneme ve Soru",
+    "olculenBilgi": "Büllöz pemfigoidde etkilenen bağlantı birimi (hemidesmozom)",
+    "cardId": "BKA-173708",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "Deri bazal membranına (hemidesmozomlara) karşı lineer IgG antikor "
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "büllöz pemfigoidde"
+      },
+      {
+        "type": "text",
+        "value": " görülür"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-t033",
+    "qid": "2026/2-T033",
+    "sinav": "2026/2",
+    "test": "Temel",
+    "no": 33,
+    "ders": "Biyokimya",
+    "shortDers": "Biyokimya",
+    "deck": "Biyokimya",
+    "olculenBilgi": "Urasil yıkım ürünü amino asit",
+    "cardId": "BKA-912037",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "Pirimidin yıkımı:\n\nUrasil ve sitozin →\n"
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "Beta-alanin"
+      },
+      {
+        "type": "text",
+        "value": "\n\nTimin →\n"
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "Beta-aminoizobütirat"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-t050",
+    "qid": "2026/2-T050",
+    "sinav": "2026/2",
+    "test": "Temel",
+    "no": 50,
+    "ders": "Mikrobiyoloji",
+    "shortDers": "Mikrobiyoloji",
+    "deck": "Mikrobiyoloji",
+    "olculenBilgi": "Kanlı agarda çift zonlu hemoliz yapan Clostridium",
+    "cardId": "BKA-319660",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "Clostridium perfringens özellikleri:\n\n"
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "Çift"
+      },
+      {
+        "type": "text",
+        "value": " zonlu hemoliz\n"
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "Sütü"
+      },
+      {
+        "type": "text",
+        "value": " pıhtılaştırması\nTers "
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "CAMP pozitifliği"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-t067",
+    "qid": "2026/2-T067",
+    "sinav": "2026/2",
+    "test": "Temel",
+    "no": 67,
+    "ders": "Patoloji",
+    "shortDers": "Patoloji",
+    "deck": "Patoloji",
+    "olculenBilgi": "Germ hücreli testis tümörleri: prepubertal tipte GCNIS yokluğu",
+    "cardId": "BKA-032901",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "Germ hücreli neoplazi in situ (GCNIS) zemininden gelişmeyen testis tümörleri (3):\n\n"
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "Spermatositik"
+      },
+      {
+        "type": "text",
+        "value": " tümör\nPrepubertal "
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "yolk sac"
+      },
+      {
+        "type": "text",
+        "value": " tümörü\nPrepubertal "
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "teratom"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-t094",
+    "qid": "2026/2-T094",
+    "sinav": "2026/2",
+    "test": "Temel",
+    "no": 94,
+    "ders": "Farmakoloji",
+    "shortDers": "Farmakoloji",
+    "deck": "Farmakoloji",
+    "olculenBilgi": "Anaerob etkinliği olmayan antibiyotik (aztreonam)",
+    "cardId": "BKA-706413",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "Esas olarak Gram negatif aerob basillere etkili antibiyotikler (3) → "
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "aztreonam, polimiksin, aminoglikozidler"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-k004",
+    "qid": "2026/2-K004",
+    "sinav": "2026/2",
+    "test": "Klinik",
+    "no": 4,
+    "ders": "Dahiliye",
+    "shortDers": "Dahiliye",
+    "deck": "Dahiliye",
+    "olculenBilgi": "Silikozda artmış tüberküloz riski",
+    "cardId": "BKA-745353",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "Silikozis → "
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "tüberküloz, mantar"
+      },
+      {
+        "type": "text",
+        "value": " enfeksiyonlarının sıklığı artar"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-k037",
+    "qid": "2026/2-K037",
+    "sinav": "2026/2",
+    "test": "Klinik",
+    "no": 37,
+    "ders": "Pediatri",
+    "shortDers": "Pediatri",
+    "deck": "Pediatri",
+    "olculenBilgi": "CD19+ B hücre yokluğu ile giden humoral immün yetmezlik",
+    "cardId": "BKA-859586",
+    "activeCloze": 2,
+    "parts": [
+      {
+        "type": "text",
+        "value": "Bruton ("
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "X'e bağlı infantil agamaglobulinemi"
+      },
+      {
+        "type": "text",
+        "value": ") → tanı koydurucu bulguları → tonsiller "
+      },
+      {
+        "type": "cloze",
+        "index": 2,
+        "answer": "hipoplazik"
+      },
+      {
+        "type": "text",
+        "value": " / LAP ve splenomegali "
+      },
+      {
+        "type": "cloze",
+        "index": 2,
+        "answer": "yok"
+      },
+      {
+        "type": "text",
+        "value": " / CD19-20 "
+      },
+      {
+        "type": "cloze",
+        "index": 2,
+        "answer": "azalmış"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-k075",
+    "qid": "2026/2-K075",
+    "sinav": "2026/2",
+    "test": "Klinik",
+    "no": 75,
+    "ders": "Genel Cerrahi",
+    "shortDers": "Genel Cerrahi",
+    "deck": "Deneme ve Soru",
+    "olculenBilgi": "Halkalı (ringed) özofagus → eozinofilik özofajit",
+    "cardId": "BKA-395749",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "PPI tedavisine yanıtsız belirtiler + baryumlu grafide halkalı görünüm (kedi kuyruğunu andıran yuvarlak çizgiler):\n\n"
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "Eozinofilik özofajit"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-k095",
+    "qid": "2026/2-K095",
+    "sinav": "2026/2",
+    "test": "Klinik",
+    "no": 95,
+    "ders": "Kadın Doğum",
+    "shortDers": "Kadın Doğum",
+    "deck": "Kadın Doğum",
+    "olculenBilgi": "Ektopik gebelik şüphesinde ilk istenecek kan tetkiki",
+    "cardId": "BKA-047662",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "β-hCG > "
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "3510"
+      },
+      {
+        "type": "text",
+        "value": " mIU/mL iken transvajinal USG'de intrauterin kese görülmüyorsa → ektopik gebelik düşünülür"
+      }
+    ],
+    "extra": "Connolly ve ark. (2013) çalışmasında 3510 mIU/mL, canlı intrauterin gebelikte kesenin transvajinal USG'de görülmesi için %99 olasılık eşiğidir; %100 kesinlik sınırı değildir. Bu düzeyin üzerinde kese görülmemesi tek başına gebeliğin canlılığını veya yerini kesinleştirmez; klinik değerlendirme, seri β-hCG ve tekrar USG gerekir. Klasik diskriminatuar zon 1500–2000 mIU/mL olarak anılır.",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  },
+  {
+    "id": "demo-2026-2-k083",
+    "qid": "2026/2-K083",
+    "sinav": "2026/2",
+    "test": "Klinik",
+    "no": 83,
+    "ders": "Küçük Stajlar",
+    "shortDers": "Küçük Stajlar",
+    "deck": "Patoloji",
+    "olculenBilgi": "Aortadan beslenen sol alt lob lezyonu: bronkopulmoner sekestrasyon",
+    "cardId": "BKA-937273",
+    "activeCloze": 1,
+    "parts": [
+      {
+        "type": "text",
+        "value": "Pulmoner sekestrasyon özellikleri:\n\nHava yolundan "
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "bağımsızdır"
+      },
+      {
+        "type": "text",
+        "value": "\n\nDoğrudan "
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "aorttan"
+      },
+      {
+        "type": "text",
+        "value": " beslenir\n\n"
+      },
+      {
+        "type": "cloze",
+        "index": 1,
+        "answer": "Tekrarlayan"
+      },
+      {
+        "type": "text",
+        "value": " akciğer enfeksiyonlarına yol açar"
+      }
+    ],
+    "extra": "",
+    "osymUrl": "https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html",
+    "intervals": {
+      "again": "10 dk",
+      "hard": "1 gün",
+      "good": "3 gün",
+      "easy": "8 gün"
+    }
+  }
+]

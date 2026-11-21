@@ -1,0 +1,508 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { FOUNDER } from '../config';
+import exams from '../data/exams.json';
+import { breadcrumbList } from '../lib/schema';
+import { effectiveDate, formatTrDate, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate(pageSources('puan'));
+const modLabel = formatTrDate(modDate);
+
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'TUS Puan Hesaplayıcı', path: '/puan-hesapla' },
+]);
+
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  '@id': origin + '/puan-hesapla/#webapp',
+  name: 'TusAnkiM TUS Puan ve Hedef Net Hesaplayıcı',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Web',
+  inLanguage: 'tr-TR',
+  url: origin + '/puan-hesapla/',
+  dateModified: modDate,
+  provider: { '@id': origin + '/#organization' },
+  publisher: { '@id': origin + '/#organization' },
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'TRY',
+  },
+  featureList: [
+    'Temel (%70/%30) ve Klinik (%50/%50) ağırlıklı tahmini TUS puan hesabı',
+    'Güncel %5 puan kesintisi ve 45 barajı kontrolü',
+    'Hedef TUS puanı için gereken tahmini net hesabı',
+  ],
+};
+---
+<Layout
+  title="TUS Puan ve Hedef Net Hesaplayıcı | TusAnkiM"
+  description="Temel ve Klinik doğru/yanlış sayılarından netlerini ve tahmini TUS puanını hesapla; hedef puan için gereken neti gör."
+  ogImage="/images/og-puan-hesapla.png"
+  modifiedTime={modDate}
+  schema={[crumbs, pageSchema]}
+>
+  <section class="bg-surfaceSoft border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">
+        <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+        <span aria-hidden="true" class="mx-2">/</span>
+        <span class="text-ink font-semibold">TUS Puan Hesaplayıcı</span>
+      </nav>
+
+      <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
+        TUS Puan ve Hedef Net Hesaplayıcı
+      </h1>
+      <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
+        Temel (100 soru) ve Klinik (100 soru) doğru-yanlış sayılarınla tahmini TUS puanını hesaplayabilir,
+        hedeflediğin puan için gereken toplam neti görebilirsin.
+      </p>
+      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
+        <span>
+          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
+        </span>
+        <span>
+          İnceleyen:{' '}
+          <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+            {FOUNDER.signature}
+          </a>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main interactive calculator -->
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12" aria-labelledby="calc-heading">
+    <h2 id="calc-heading" class="sr-only">İnteraktif TUS Puan Hesaplama Aracı</h2>
+
+    <div class="grid lg:grid-cols-12 gap-8 items-start" data-tus-score-calc>
+      <!-- Left: Forward Calculator -->
+      <div class="lg:col-span-7 rounded-2xl border border-line bg-white p-6 sm:p-8">
+        <h3 class="display text-subsection text-ink">Doğru ve yanlış sayılarını gir</h3>
+        <p class="text-xs text-inkMuted mt-1">
+          4 yanlış 1 doğruyu götürür. Her oturum 100 sorudur (Toplam 200 soru).
+        </p>
+
+        <div class="mt-6 grid sm:grid-cols-2 gap-6">
+          <!-- Temel Bilimler -->
+          <fieldset class="rounded-2xl border border-line bg-surfaceSoft p-4 space-y-3">
+            <legend class="px-2 text-xs font-bold uppercase tracking-wider text-teal">Temel Bilimler (100 Soru)</legend>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="tt-dogru" class="block text-xs font-semibold text-ink mb-1">Doğru</label>
+                <input
+                  id="tt-dogru"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="65"
+                  inputmode="numeric"
+                  class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-base font-bold text-ink tabular-nums"
+                />
+              </div>
+              <div>
+                <label for="tt-yanlis" class="block text-xs font-semibold text-ink mb-1">Yanlış</label>
+                <input
+                  id="tt-yanlis"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="20"
+                  inputmode="numeric"
+                  class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-base font-bold text-ink tabular-nums"
+                />
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-2 border-t border-lineLight">
+              <span class="text-inkMuted">Boş: <strong data-tt-bos class="text-ink tabular-nums">15</strong></span>
+              <span class="text-teal font-bold">Temel Net: <span data-tt-net class="tabular-nums">60,00</span></span>
+            </div>
+          </fieldset>
+
+          <!-- Klinik Bilimler -->
+          <fieldset class="rounded-2xl border border-line bg-surfaceSoft p-4 space-y-3">
+            <legend class="px-2 text-xs font-bold uppercase tracking-wider text-teal">Klinik Bilimler (100 Soru)</legend>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="kt-dogru" class="block text-xs font-semibold text-ink mb-1">Doğru</label>
+                <input
+                  id="kt-dogru"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="68"
+                  inputmode="numeric"
+                  class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-base font-bold text-ink tabular-nums"
+                />
+              </div>
+              <div>
+                <label for="kt-yanlis" class="block text-xs font-semibold text-ink mb-1">Yanlış</label>
+                <input
+                  id="kt-yanlis"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value="18"
+                  inputmode="numeric"
+                  class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-base font-bold text-ink tabular-nums"
+                />
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-2 border-t border-lineLight">
+              <span class="text-inkMuted">Boş: <strong data-kt-bos class="text-ink tabular-nums">14</strong></span>
+              <span class="text-teal font-bold">Klinik Net: <span data-kt-net class="tabular-nums">63,50</span></span>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-2xl border border-line bg-surfaceSoft px-4 py-1.5">
+          <div class="flex items-center gap-3">
+            <input
+              id="puan-kesinti"
+              type="checkbox"
+              aria-describedby="puan-kesinti-status"
+              class="w-5 h-5 shrink-0 accent-[#0e7469] rounded cursor-pointer"
+            />
+            <label for="puan-kesinti" class="inline-flex flex-wrap items-center min-h-[2.75rem] py-1.5 text-xs sm:text-sm font-semibold text-ink cursor-pointer select-none">
+              %5 Puan Kesintisi Uygula&nbsp;<span class="font-normal text-inkMuted">(uzmanlığa devam / istifa / başlamama)</span>
+            </label>
+          </div>
+          <span id="puan-kesinti-status" data-kesinti-status class="text-xs text-inkMuted shrink-0">
+            Kesinti uygulanmıyor
+          </span>
+        </div>
+
+        <p data-score-warn role="alert" hidden class="mt-4 rounded-xl bg-gradeAgainBg px-4 py-2.5 text-xs font-semibold text-gradeAgain"></p>
+
+        <!-- Result cards -->
+        <div class="mt-6 grid sm:grid-cols-3 gap-3.5" aria-live="polite">
+          <div class="rounded-2xl bg-tint p-4">
+            <div class="text-xs font-semibold text-teal">Tahmini Klinik (K) Puanı</div>
+            <div class="display text-3xl text-ink mt-1 tabular-nums" data-out-k>63,1</div>
+            <div class="text-[11px] text-inkMuted mt-0.5" data-out-k-range>Aralık: 61,6 – 64,6</div>
+          </div>
+          <div class="rounded-2xl bg-surfaceSoft border border-line p-4">
+            <div class="text-xs font-semibold text-inkMuted">Tahmini Temel (T) Puanı</div>
+            <div class="display text-3xl text-ink mt-1 tabular-nums" data-out-t>62,7</div>
+            <div class="text-[11px] text-inkMuted mt-0.5" data-out-t-range>Aralık: 61,2 – 64,2</div>
+          </div>
+          <div class="rounded-2xl bg-surfaceSoft border border-line p-4">
+            <div class="text-xs font-semibold text-inkMuted">Toplam Net</div>
+            <div class="display text-3xl text-teal mt-1 tabular-nums" data-out-totnet>123,50</div>
+            <div class="text-[11px] text-inkMuted mt-0.5" data-out-baraj>K ve T 45 barajı üzerinde</div>
+          </div>
+        </div>
+
+        <p class="mt-5 text-xs text-inkMuted leading-relaxed border-t border-lineLight pt-4">
+          Resmî TUS puanları her dönemin Türkiye ortalaması ve standart sapmasına göre ÖSYM tarafından hesaplanır.
+          Buradaki sonuçlar son dönem TUS dağılım katsayılarına (Temel puanı: %70 Temel + %30 Klinik; Klinik puanı: %50 Temel + %50 Klinik ağırlık) dayanan <em>yaklaşık ±1,5 puan</em> öngörüsüdür; resmî belge yerine geçmez.
+        </p>
+      </div>
+
+      <!-- Right: Reverse Target Net Planner -->
+      <div class="lg:col-span-5 rounded-2xl border border-line bg-surfaceSoft p-6 sm:p-8 space-y-5">
+        <h3 class="display text-subsection text-ink">Hedef puanın için kaç net gerekir?</h3>
+
+        <div>
+          <div class="flex items-baseline justify-between">
+            <label for="target-score" class="text-sm font-semibold text-ink">Hedef TUS Klinik Puanı</label>
+            <span class="display text-2xl text-teal tabular-nums" data-target-val>65,0</span>
+          </div>
+          <input
+            id="target-score"
+            type="range"
+            min="45"
+            max="80"
+            step="0.5"
+            value="65"
+            class="mt-1 w-full min-h-[2.75rem] py-3 accent-[#0e7469] rounded-lg cursor-pointer"
+          />
+          <div class="flex justify-between text-[11px] text-inkMuted tabular-nums">
+            <span>45 (Baraj)</span>
+            <span>60</span>
+            <span>70</span>
+            <span>80</span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-line bg-white p-5 space-y-3" aria-live="polite">
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-inkMuted">Gereken yaklaşık toplam net</span>
+            <strong class="display text-lg text-teal tabular-nums" data-req-total>~130 net</strong>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-inkMuted">Oturum başına ortalama (Temel / Klinik)</span>
+            <strong class="font-bold text-ink tabular-nums" data-req-each>~65 / 100</strong>
+          </div>
+          <div class="pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed" data-req-tip>60–70 puan bandında düzenli FSRS-6 tekrarıyla 9.575 kartı günde 60 yeni kartla 160 günde tamamlayıp son ayları deneme eksiklerini kapatmaya ayırabilirsin.</div>
+        </div>
+
+        <a
+          href="/yardim/fsrs/"
+          class="inline-flex items-center justify-center w-full min-h-[2.75rem] rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition"
+        >
+          FSRS-6 tekrar planlaması rehberi →
+        </a>
+      </div>
+    </div>
+
+    <!-- Preference Process Guide -->
+    <div class="mt-14 pt-12 border-t border-line">
+      <h2 class="display text-section tracking-tightest text-ink">TUS Tercih Süreci: 4 Temel Adım</h2>
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-2xl border border-line bg-white p-5">
+          <div class="text-xs font-bold text-teal">01 · Yabancı Dil Şartı</div>
+          <h3 class="display text-base text-ink mt-1.5">YDS / TIPDİL Yeterliliği</h3>
+          <p class="text-xs text-inkMuted mt-2 leading-relaxed">
+            Tercih yapabilmek için son 5 yıl içinde geçerli bir yabancı dil sınavından en az 50 puan alınmış olması gerekir.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-line bg-white p-5">
+          <div class="text-xs font-bold text-teal">02 · Puan &amp; Sıralama</div>
+          <h3 class="display text-base text-ink mt-1.5">Puandan Çok Sıralamaya Bak</h3>
+          <p class="text-xs text-inkMuted mt-2 leading-relaxed">
+            Sınav zorluğu dönemden döneme değişir; kontenjan artışı ve sıralama bandı ham puandan daha belirleyicidir.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-line bg-white p-5">
+          <div class="text-xs font-bold text-teal">03 · 30 Tercih Dengesi</div>
+          <h3 class="display text-base text-ink mt-1.5">İdeal · Gerçekçi · Güvenli</h3>
+          <p class="text-xs text-inkMuted mt-2 leading-relaxed">
+            Listenin başına hedeflediğin klinikleri, ortasına sıralamanla örtüşen programları, sonuna ise çalışacağın güvenli seçenekleri yaz.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-line bg-white p-5">
+          <div class="text-xs font-bold text-teal">04 · Kesinti Uyarısı</div>
+          <h3 class="display text-base text-ink mt-1.5">%5 Puan Kesintisi Kuralı</h3>
+          <p class="text-xs text-inkMuted mt-2 leading-relaxed">
+            Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği gereği uzmanlık eğitimine devam ederken sınava girenler, istifa edenler veya yerleşip başlamayanlar için ilk sınavda mesleki bilgi puanında %5 kesinti uygulanır.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Static 2027 Exam Dates (replaces live CountdownBand JS timer) -->
+    <div class="mt-12 pt-8 border-t border-line">
+      <h2 class="display text-lg text-ink">2027 TUS Sınav Takvimi</h2>
+      <div class="mt-4 grid sm:grid-cols-2 gap-4">
+        {exams.exams.map((ex) => (
+          <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
+            <h3 class="display text-base text-ink">{ex.name}</h3>
+            <dl class="mt-2 space-y-1 text-xs text-inkMuted tabular-nums">
+              <div class="flex justify-between gap-2">
+                <dt>Sınav tarihi:</dt>
+                <dd class="font-semibold text-ink">{ex.examDateLabel}</dd>
+              </div>
+              <div class="flex justify-between gap-2">
+                <dt>Başvuru:</dt>
+                <dd>{ex.applicationLabel}</dd>
+              </div>
+              <div class="flex justify-between gap-2">
+                <dt>Sonuç açıklaması:</dt>
+                <dd>{ex.resultLabel}</dd>
+              </div>
+            </dl>
+          </div>
+        ))}
+      </div>
+      <p class="mt-3 text-xs text-inkMuted">{exams.sourceNote}</p>
+    </div>
+
+    <!-- Verified Official Authority Sources -->
+    <div class="mt-10 rounded-2xl border border-line bg-surfaceSoft p-5 sm:p-6">
+      <h2 class="display text-base text-ink">Doğrulanmış Resmî Kaynaklar</h2>
+      <ul class="mt-3 space-y-1 text-sm">
+        <li>
+          <a
+            href="https://www.osym.gov.tr/TR,14991/tipta-uzmanlik-egitimi-giris-sinavi.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline underline-offset-2 hover:text-tealDark"
+          >
+            ÖSYM — TUS Başvuru ve Sınav Kılavuzları ↗
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline underline-offset-2 hover:text-tealDark"
+          >
+            ÖSYM — TUS Çıkmış Sınav Soruları Arşivi ↗
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://www.resmigazete.gov.tr/eskiler/2022/09/20220903-2.htm"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline underline-offset-2 hover:text-tealDark"
+          >
+            Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği (Resmî Gazete) ↗
+          </a>
+        </li>
+      </ul>
+      <p class="mt-3 pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed">
+        Puan hesaplama öngörüsü bilgilendirme ve çalışma planlama amaçlıdır; resmî yerleştirme puanı ÖSYM tarafından açıklanır.
+        Son güncelleme: <time datetime={modDate}>{modLabel}</time> · İnceleyen:{' '}
+        <a href="/kurucu/" class="text-teal underline hover:text-tealDark">{FOUNDER.signature}</a>.
+      </p>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-tus-score-calc]').forEach((root) => {
+    const ttD = root.querySelector<HTMLInputElement>('#tt-dogru');
+    const ttY = root.querySelector<HTMLInputElement>('#tt-yanlis');
+    const ktD = root.querySelector<HTMLInputElement>('#kt-dogru');
+    const ktY = root.querySelector<HTMLInputElement>('#kt-yanlis');
+    const kesintiEl = root.querySelector<HTMLInputElement>('#puan-kesinti');
+    const kesintiStatusEl = root.querySelector<HTMLElement>('[data-kesinti-status]');
+    const targetRange = root.querySelector<HTMLInputElement>('#target-score');
+
+    const ttBosEl = root.querySelector<HTMLElement>('[data-tt-bos]');
+    const ttNetEl = root.querySelector<HTMLElement>('[data-tt-net]');
+    const ktBosEl = root.querySelector<HTMLElement>('[data-kt-bos]');
+    const ktNetEl = root.querySelector<HTMLElement>('[data-kt-net]');
+    const warnEl = root.querySelector<HTMLElement>('[data-score-warn]');
+
+    const outK = root.querySelector<HTMLElement>('[data-out-k]');
+    const outKRange = root.querySelector<HTMLElement>('[data-out-k-range]');
+    const outT = root.querySelector<HTMLElement>('[data-out-t]');
+    const outTRange = root.querySelector<HTMLElement>('[data-out-t-range]');
+    const outTot = root.querySelector<HTMLElement>('[data-out-totnet]');
+    const outBaraj = root.querySelector<HTMLElement>('[data-out-baraj]');
+
+    const targetValEl = root.querySelector<HTMLElement>('[data-target-val]');
+    const reqTotalEl = root.querySelector<HTMLElement>('[data-req-total]');
+    const reqEachEl = root.querySelector<HTMLElement>('[data-req-each]');
+    const reqTipEl = root.querySelector<HTMLElement>('[data-req-tip]');
+
+    const fmt = (n: number, d = 1) => n.toFixed(d).replace('.', ',');
+    const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : 0));
+
+    function estimateScores(tNet: number, kNet: number) {
+      const kScore = clamp(28.5 + 0.28 * (tNet + kNet), 15, 86);
+      const tScore = clamp(28.5 + 0.39 * tNet + 0.17 * kNet, 15, 86);
+      return { kScore, tScore };
+    }
+
+    function updateForward() {
+      const td = clamp(Number(ttD?.value), 0, 100);
+      const ty = clamp(Number(ttY?.value), 0, 100);
+      const kd = clamp(Number(ktD?.value), 0, 100);
+      const ky = clamp(Number(ktY?.value), 0, 100);
+
+      const badT = td + ty > 100;
+      const badK = kd + ky > 100;
+      if (warnEl) {
+        if (badT || badK) {
+          warnEl.textContent = 'Doğru ve yanlış toplamı bir oturumda 100 soruyu geçemez. Değerleri düzelt.';
+          warnEl.hidden = false;
+        } else {
+          warnEl.hidden = true;
+        }
+      }
+
+      const safeTy = Math.min(ty, 100 - td);
+      const safeKy = Math.min(ky, 100 - kd);
+      const tBos = 100 - td - safeTy;
+      const kBos = 100 - kd - safeKy;
+      const tNet = Math.max(0, td - safeTy / 4);
+      const kNet = Math.max(0, kd - safeKy / 4);
+      const totNet = tNet + kNet;
+      const raw = estimateScores(tNet, kNet);
+      const hasKesinti = Boolean(kesintiEl?.checked);
+      const mult = hasKesinti ? 0.95 : 1;
+      const kScore = raw.kScore * mult;
+      const tScore = raw.tScore * mult;
+
+      if (kesintiStatusEl) {
+        if (hasKesinti) {
+          kesintiStatusEl.textContent = `%5 kesinti aktif (×0,95 · ham K: ${fmt(raw.kScore, 1)})`;
+          kesintiStatusEl.className = 'text-xs font-semibold text-warm shrink-0';
+        } else {
+          kesintiStatusEl.textContent = 'Kesinti uygulanmıyor';
+          kesintiStatusEl.className = 'text-xs text-inkMuted shrink-0';
+        }
+      }
+
+      const setIfChanged = (el: HTMLElement | null, val: string) => {
+        if (el && el.textContent !== val) el.textContent = val;
+      };
+
+      setIfChanged(ttBosEl, String(tBos));
+      setIfChanged(ttNetEl, fmt(tNet, 2));
+      setIfChanged(ktBosEl, String(kBos));
+      setIfChanged(ktNetEl, fmt(kNet, 2));
+      setIfChanged(outK, fmt(kScore, 1));
+      setIfChanged(outKRange, `Aralık: ${fmt(Math.max(0, kScore - 1.5), 1)} – ${fmt(Math.min(100, kScore + 1.5), 1)}`);
+      setIfChanged(outT, fmt(tScore, 1));
+      setIfChanged(outTRange, `Aralık: ${fmt(Math.max(0, tScore - 1.5), 1)} – ${fmt(Math.min(100, tScore + 1.5), 1)}`);
+      setIfChanged(outTot, fmt(totNet, 2));
+      const barajText =
+        kScore >= 45 && tScore >= 45
+          ? 'K ve T 45 barajı üzerinde'
+          : kScore >= 45
+            ? 'K 45 barajı üzerinde · T 45 altında'
+            : tScore >= 45
+              ? 'T 45 barajı üzerinde · K 45 altında'
+              : 'K ve T 45 barajı altında';
+      setIfChanged(outBaraj, barajText);
+    }
+
+    function updateReverse() {
+      const target = clamp(Number(targetRange?.value), 45, 80);
+      const hasKesinti = Boolean(kesintiEl?.checked);
+      const reqTotal = Math.min(192, Math.max(55, Math.round((target - 28.5) / 0.28)));
+      const reqEach = Math.round(reqTotal / 2);
+
+      const setIfChanged = (el: HTMLElement | null, val: string) => {
+        if (el && el.textContent !== val) el.textContent = val;
+      };
+
+      setIfChanged(targetValEl, fmt(target, 1));
+      setIfChanged(reqTotalEl, `~${reqTotal} net`);
+      setIfChanged(reqEachEl, `~${reqEach} / 100`);
+      if (reqTipEl) {
+        let baseTip = '';
+        if (target >= 70) {
+          baseTip =
+            '70+ puan üst dilim branşlar için hem yüksek temel bilim hâkimiyeti hem de klinik ayrımları hatasız hatırlamayı gerektirir. Günde 60–80 yeni kart + deneme analizi uygundur.';
+        } else if (target >= 60) {
+          baseTip =
+            '60–70 puan bandında düzenli FSRS-6 tekrarıyla 9.575 kartı günde 60 yeni kartla 160 günde tamamlayıp son ayları deneme eksiklerini kapatmaya ayırabilirsin.';
+        } else {
+          baseTip =
+            '45–60 puan bandında yüksek getirili temel ve klinik çekirdek kartlarla (günde 40 yeni kart ≈ 60 dk/gün) hedefine düzenli biçimde ulaşabilirsin.';
+        }
+        if (hasKesinti) {
+          const rawNeeded = target / 0.95;
+          const reqKesintiTotal = Math.min(200, Math.max(55, Math.round((rawNeeded - 28.5) / 0.28)));
+          const kesintiNote =
+            rawNeeded > 86
+              ? ` %5 kesinti etkinken ${fmt(target, 1)} net puan için ham puan hedefi (${fmt(rawNeeded, 1)}) üst sınav bandına dayanır.`
+              : ` %5 kesinti aktifken bu hedefe ulaşmak için ham puanın ~${fmt(rawNeeded, 1)} (yaklaşık ~${reqKesintiTotal} toplam net) olması gerekir.`;
+          setIfChanged(reqTipEl, baseTip + kesintiNote);
+        } else {
+          setIfChanged(reqTipEl, baseTip);
+        }
+      }
+    }
+
+    [ttD, ttY, ktD, ktY].forEach((el) => el?.addEventListener('input', updateForward));
+    kesintiEl?.addEventListener('change', () => {
+      updateForward();
+      updateReverse();
+    });
+    targetRange?.addEventListener('input', updateReverse);
+
+    updateForward();
+    updateReverse();
+  });
+</script>

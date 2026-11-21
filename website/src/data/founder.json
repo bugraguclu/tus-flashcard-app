@@ -1,0 +1,38 @@
+{
+  "kicker": "Kurucu Hekim & Editöryal Standart",
+  "name": "Uzm. Dr. Muhammet Kürşat Güçlü",
+  "role": "Kulak Burun Boğaz (KBB) Uzman Doktoru · İzmir Çiğli",
+  "specialty": "Kulak Burun Boğaz (KBB) Uzman Doktoru",
+  "location": "İzmir Çiğli",
+  "credentials": [
+    "İzmir Çiğli'de görev yapan Kulak Burun Boğaz (KBB) Uzman Doktoru",
+    "Her kartta uzun paragraf yerine tek net klinik ayrım (Cloze + klinik not)",
+    "Her TUS sonrası çıkmış sorulara göre boşluk analizi ve hekim editör kontrolü"
+  ],
+  "quote": "TUS'ta asıl zorluk konuyu bir kez okumak değil, 11 TUS branşının (katalogdaki Deneme ve Soru dâhil toplam 12 dersin; FHE = Fizyoloji-Histoloji-Embriyoloji) kritik ayrımlarını sınav günü aynı anda hatırlayabilmektir. 30.000 kartlık bitmeyen desteler yerine 9.575 odaklı kartla gerçekçi bir günlük tempoda sona ulaşabilirsin.",
+  "letterTitle": "Neden TusAnkiM'i kurduk?",
+  "letterParagraphs": [
+    "TUS'a hazırlanırken kalın konu kitaplarını baştan sona tekrar etmek uzun zaman alır ve birkaç ay sonra tablolar ilk kez görülüyormuş gibi unutulur. Aralıklı tekrar bu sorunu çözen bilimsel yöntemdir; ancak Türkiye'de adaylar ya karmaşık İngilizce arayüzlerle uğraşmak ya da bitirilmesi zor 30.000+ kartlık desteler satın almak zorunda kalıyordu.",
+    "TusAnkiM'i iki ilkeyle kurduk: sade arayüz ve ölçülebilir doğrulama. Uygulamayı iPhone ve web tarayıcıda çevrimdışı çalışacak biçimde tamamen Türkçe tasarladık; içine FSRS-6 zamanlayıcısını, Kronometre'yi, Çalışma Takvimini ve kayıpsız Anki (.apkg / .colpkg) uyumluluğunu koyduk.",
+    "Kart kalitesi konusunda tahmin yerine açık veri sunuyoruz. Son 6 TUS'un 1.195 sorusunu tek tek taradık; soruyu doğrudan çözdüren kartı, tek küçük köprü isteyen Dolaylı karttan ve yalnızca Konu İlişkili karttan ayırdık. 2026/2 Ağustos TUS'u için sınavdan 2 gün önceki katalog sürümünü (git a78ae1f) esas alarak sınavdan önce gerçekten destede bulunan 76/200 soruyu ayrı gösterdik.",
+    "Eksik kaldığımız dersleri gizlemiyoruz. Her sınav sonrası boşluk raporu çıkarıp hekim editör kontrolüyle 9.575 kartlık çekirdeği şişirmeden güncelliyoruz. Amaç en fazla karta sahip olmak değil, bitirebileceğin en temiz desteyi sunmaktır."
+  ],
+  "editorialPillars": [
+    {
+      "title": "1. Bitirilebilir hacim: 9.575 kart",
+      "body": "Gereksiz tekrar ve kopya cümleler çıkarılır. FSRS-6 ile günde 60 yeni kart temposunda 160 günde tüm deste tamamlanır."
+    },
+    {
+      "title": "2. Sınav öncesi sürüm kanıtı",
+      "body": "Sınav sonrası eklenen bir kart sınav öncesi kanıtına katılmaz. 2026/2 TUS'ta sonradan düzenlenen 6 soru (T018, K039, K043, K050, K057, K078) açıkça işaretlidir."
+    },
+    {
+      "title": "3. Sürekli güncelleme",
+      "body": "Kılavuz değişiklikleri ve öne çıkan klinik ayrımlar her dönem kataloğa işlenir; kişisel notların ve tekrar geçmişin korunur."
+    },
+    {
+      "title": "4. Hekim editör kontrolü",
+      "body": "Son 6 sınav analizi yapay zekâ destekli ön sınıflama ile hazırlanmıştır; her yeni kart ve referans güncellemesi bağımsız hekim editör kontrolünden geçirilir."
+    }
+  ]
+}

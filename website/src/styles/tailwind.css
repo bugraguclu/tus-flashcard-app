@@ -1,0 +1,4 @@
+/* Separate Tailwind entry imported BEFORE global.css in Layout.astro (ported from belif cascade). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

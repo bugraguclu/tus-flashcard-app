@@ -1,0 +1,153 @@
+---
+// Rebuilt WAI-ARIA tabbed FAQ — fixes belif radio-input focus bug and obeys MWG tabs + search-hidden-content guides:
+// - <div role="tablist"> + <button type="button" role="tab" aria-selected>
+// - <div role="tabpanel" aria-labelledby hidden="until-found"> with padding on .tabpanel-inner child only
+// - Border-based selected indicator (survives Forced Colors Mode)
+// - ArrowLeft / ArrowRight / Home / End roving tabindex + beforematch Find-in-Page sync
+import faqs from '../data/faqs.json';
+import { answerHtml } from '../lib/richtext';
+
+interface Props {
+  idp?: string;
+  maxPerTab?: number;
+}
+
+const { idp = 'faqtabs', maxPerTab } = Astro.props;
+
+const tabs = faqs.tabs
+  .map((t) => {
+    const all = faqs.items.filter((it) => it.cat === t.key);
+    return {
+      key: t.key,
+      label: t.label,
+      items: maxPerTab ? all.slice(0, maxPerTab) : all,
+    };
+  })
+  .filter((t) => t.items.length > 0);
+---
+<div class="faq-tabs-root" data-tabs-root id={idp}>
+  <div
+    class="tablist-scroll border-b border-line"
+    role="tablist"
+    aria-label="Sık sorulan soru kategorileri"
+  >
+    {tabs.map((t, i) => (
+      <button
+        type="button"
+        role="tab"
+        id={`${idp}-tab-${t.key}`}
+        data-tab-key={t.key}
+        aria-selected={i === 0 ? 'true' : 'false'}
+        tabindex={i === 0 ? '0' : '-1'}
+        class="tab-btn"
+      >
+        {t.label}
+      </button>
+    ))}
+  </div>
+
+  <div class="tab-panels-wrap">
+    {tabs.map((t, i) => (
+      <div
+        role="tabpanel"
+        id={`${idp}-panel-${t.key}`}
+        data-panel-key={t.key}
+        aria-labelledby={`${idp}-tab-${t.key}`}
+        hidden={i === 0 ? undefined : 'until-found'}
+      >
+        <div class="tabpanel-inner">
+          <div class="faq" data-where={t.label}>
+            {t.items.map((f) => (
+              <details>
+                <summary><span>{f.q}</span></summary>
+                <div class="faq-answer" set:html={answerHtml(f.a)}></div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-tabs-root]').forEach((root) => {
+    if (root.dataset.tabsReady) return;
+    root.dataset.tabsReady = '1';
+
+    const tablist = root.querySelector<HTMLElement>('[role="tablist"]');
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panels = [...root.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+    if (!tablist || !tabs.length || !panels.length) return;
+
+    function scrollTabIntoView(btn: HTMLElement) {
+      if (!tablist || tablist.scrollWidth <= tablist.clientWidth) return;
+      const listRect = tablist.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      const pad = 24;
+      let delta = 0;
+      if (btnRect.left < listRect.left + pad) delta = btnRect.left - (listRect.left + pad);
+      else if (btnRect.right > listRect.right - pad) delta = btnRect.right - (listRect.right - pad);
+      if (delta !== 0) {
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        tablist.scrollTo({
+          left: Math.max(0, tablist.scrollLeft + delta),
+          behavior: reduce ? 'auto' : 'smooth',
+        });
+      }
+    }
+
+    function activate(key: string, { focusTab = false } = {}) {
+      tabs.forEach((btn) => {
+        const selected = btn.dataset.tabKey === key;
+        btn.setAttribute('aria-selected', selected ? 'true' : 'false');
+        btn.tabIndex = selected ? 0 : -1;
+        if (selected) {
+          scrollTabIntoView(btn);
+          if (focusTab) btn.focus({ preventScroll: true });
+        }
+      });
+
+      panels.forEach((panel) => {
+        const match = panel.dataset.panelKey === key;
+        if (match) {
+          panel.removeAttribute('hidden');
+        } else {
+          // Use until-found so Find-in-Page can reveal hidden tabs on supporting browsers
+          (panel as any).hidden = 'until-found';
+        }
+      });
+    }
+
+    tabs.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.tabKey) activate(btn.dataset.tabKey);
+      });
+
+      btn.addEventListener('keydown', (e) => {
+        let next = -1;
+        if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') next = 0;
+        else if (e.key === 'End') next = tabs.length - 1;
+        if (next === -1) return;
+        e.preventDefault();
+        const key = tabs[next].dataset.tabKey;
+        if (key) activate(key, { focusTab: true });
+      });
+    });
+
+    // Sync tab selection when native Find-in-Page matches text inside a hidden="until-found" panel
+    root.addEventListener('beforematch', (e) => {
+      const panel = (e.target as Element | null)?.closest<HTMLElement>('[role="tabpanel"]');
+      const key = panel?.dataset.panelKey;
+      if (key) activate(key);
+    });
+
+    // Allow external jump-to search (e.g. /sss/) to open a specific tab cleanly
+    root.addEventListener('tus-tab-activate', (e: Event) => {
+      const key = (e as CustomEvent<string>).detail;
+      if (key) activate(key);
+    });
+  });
+</script>

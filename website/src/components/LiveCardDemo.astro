@@ -1,0 +1,383 @@
+---
+import demoCards from '../data/generated/demo-cards.json';
+import { SITE } from '../config';
+---
+<section id="demo" class="scroll-mt-24 py-14 sm:py-20 bg-surface border-b border-line" aria-labelledby="demo-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
+      <div class="max-w-2xl">
+        <h2 id="demo-heading" class="display text-section tracking-tightest text-ink">
+          Canlı kart denemesi
+        </h2>
+        <p class="text-inkMuted mt-2 leading-relaxed">
+          2026/2 TUS'tan 2 gün önceki katalogda (<code>a78ae1f</code>) yer alan ve soruyu doğrudan çözdüren 11 kartı deneyebilirsin.
+        </p>
+      </div>
+      <a
+        href={SITE.webAppUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center min-h-[2.75rem] shrink-0 text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark"
+      >
+        Web uygulamasında aç ↗
+      </a>
+    </div>
+
+    <div
+      class="rounded-2xl border border-line bg-white overflow-hidden"
+      data-live-demo
+      data-cards={JSON.stringify(demoCards)}
+    >
+      <!-- Subject picker rail -->
+      <div class="border-b border-line bg-surfaceSoft px-4 sm:px-6 pt-2">
+        <div
+          class="tablist-scroll gap-1"
+          role="tablist"
+          aria-label="Deneme kartı dersi seç"
+        >
+          {demoCards.map((c, idx) => (
+            <button
+              type="button"
+              role="tab"
+              id={`demo-tab-${idx}`}
+              data-demo-idx={idx}
+              aria-selected={idx === 0 ? 'true' : 'false'}
+              tabindex={idx === 0 ? '0' : '-1'}
+              class="tab-btn"
+            >
+              {c.shortDers}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Reviewer body -->
+      <div class="p-5 sm:p-8 lg:p-10 max-w-4xl mx-auto">
+        <div role="tabpanel" aria-labelledby="demo-tab-0" data-demo-panel>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4 text-xs text-inkMuted">
+            <span data-demo-meta class="font-semibold text-ink">
+              {demoCards[0].ders} · {demoCards[0].sinav} TUS · {demoCards[0].qid.split('-')[1]} · Doğrudan (a78ae1f)
+            </span>
+            <span data-demo-counter class="tabular-nums">
+              Kart 1 / {demoCards.length} · 0 değerlendirildi
+            </span>
+          </div>
+
+          <!-- Card surface -->
+          <div class="rounded-2xl border border-line bg-surfaceSoft p-6 sm:p-8 min-h-[190px] flex flex-col justify-center">
+            <div data-demo-body class="text-lg sm:text-xl leading-relaxed text-ink whitespace-pre-line">
+              {demoCards[0].parts.map((part) =>
+                part.type === 'cloze' && part.index === (demoCards[0].activeCloze ?? 1) ? (
+                  <span class="demo-cloze inline-block rounded-lg bg-[#e3edf7] px-2.5 py-0.5 font-bold text-cloze border border-cloze/25">
+                    […]
+                  </span>
+                ) : (
+                  <span>{part.type === 'cloze' ? part.answer : part.value}</span>
+                )
+              )}
+            </div>
+
+            <div data-demo-extra hidden class="mt-5 pt-4 border-t border-line text-sm text-inkMuted leading-relaxed"></div>
+
+            <div data-demo-proof hidden class="mt-4 pt-3 border-t border-lineLight text-xs text-inkMuted flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <span>
+                <span class="font-semibold text-ink">Ölçülen TUS bilgisi:</span>{' '}
+                <span data-demo-measured>{demoCards[0].olculenBilgi}</span>
+              </span>
+              <a
+                href={`/referanslar/?sinav=${encodeURIComponent(demoCards[0].sinav)}&ders=${encodeURIComponent(demoCards[0].ders)}&q=${encodeURIComponent(demoCards[0].qid.split('-')[1] || demoCards[0].qid)}`}
+                data-demo-ref-link
+                class="inline-flex items-center min-h-[2.75rem] py-1 shrink-0 font-semibold text-teal underline underline-offset-2 hover:text-tealDark"
+              >
+                Referans kaydını gör →
+              </a>
+            </div>
+          </div>
+
+          <!-- Action bar: Show Answer vs 4 FSRS-6 Grades -->
+          <div class="mt-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div class="flex-1">
+              <div data-demo-reveal-wrap>
+                <button
+                  type="button"
+                  data-demo-reveal
+                  class="w-full sm:w-auto min-w-[210px] min-h-[3rem] px-6 rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition cursor-pointer"
+                >
+                  Cevabı Göster <span class="ml-1.5 text-tint font-normal text-xs">(Boşluk)</span>
+                </button>
+              </div>
+
+              <div data-demo-grades hidden>
+                <p class="text-xs text-inkMuted mb-2.5">
+                  Bu bilgiyi ne kadar kolay hatırladın? (<span lang="en">FSRS-6</span> sonraki tekrarı ayarlar)
+                </p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <button
+                    type="button"
+                    data-demo-grade="again"
+                    class="min-h-[3.25rem] rounded-xl bg-gradeAgainBg text-gradeAgain px-3 py-2 text-center hover:brightness-95 transition cursor-pointer"
+                  >
+                    <span class="block text-sm font-bold">Tekrar</span>
+                    <span class="block text-xs font-normal" data-int-again>10 dk</span>
+                  </button>
+                  <button
+                    type="button"
+                    data-demo-grade="hard"
+                    class="min-h-[3.25rem] rounded-xl bg-gradeHardBg text-gradeHard px-3 py-2 text-center hover:brightness-95 transition cursor-pointer"
+                  >
+                    <span class="block text-sm font-bold">Zor</span>
+                    <span class="block text-xs font-normal" data-int-hard>1 gün</span>
+                  </button>
+                  <button
+                    type="button"
+                    data-demo-grade="good"
+                    class="min-h-[3.25rem] rounded-xl bg-gradeGoodBg text-gradeGood px-3 py-2 text-center hover:brightness-95 transition cursor-pointer"
+                  >
+                    <span class="block text-sm font-bold">İyi</span>
+                    <span class="block text-xs font-normal" data-int-good>3 gün</span>
+                  </button>
+                  <button
+                    type="button"
+                    data-demo-grade="easy"
+                    class="min-h-[3.25rem] rounded-xl bg-gradeEasyBg text-gradeEasy px-3 py-2 text-center hover:brightness-95 transition cursor-pointer"
+                  >
+                    <span class="block text-sm font-bold">Kolay</span>
+                    <span class="block text-xs font-normal" data-int-easy>8 gün</span>
+                  </button>
+                </div>
+              </div>
+
+              <p data-demo-live aria-live="polite" class="mt-2.5 text-xs font-semibold text-teal min-h-[1.25rem]"></p>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                data-demo-prev
+                class="min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
+              >
+                ← Önceki
+              </button>
+              <button
+                type="button"
+                data-demo-next
+                class="min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
+              >
+                Sonraki →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-live-demo]').forEach((root) => {
+    if (root.dataset.demoReady) return;
+    root.dataset.demoReady = '1';
+
+    type Part = { type: 'text'; value: string } | { type: 'cloze'; index: number; answer: string; hint?: string };
+    type Card = {
+      id: string;
+      qid: string;
+      sinav: string;
+      ders: string;
+      shortDers: string;
+      olculenBilgi: string;
+      activeCloze?: number;
+      parts: Part[];
+      extra: string;
+      intervals: { again: string; hard: string; good: string; easy: string };
+    };
+
+    const cards: Card[] = JSON.parse(root.dataset.cards || '[]');
+    if (!cards.length) return;
+
+    const tablist = root.querySelector<HTMLElement>('[role="tablist"]');
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-demo-idx]')];
+    const panelEl = root.querySelector<HTMLElement>('[data-demo-panel]');
+    const metaEl = root.querySelector<HTMLElement>('[data-demo-meta]');
+    const counterEl = root.querySelector<HTMLElement>('[data-demo-counter]');
+    const bodyEl = root.querySelector<HTMLElement>('[data-demo-body]');
+    const extraEl = root.querySelector<HTMLElement>('[data-demo-extra]');
+    const proofEl = root.querySelector<HTMLElement>('[data-demo-proof]');
+    const measuredEl = root.querySelector<HTMLElement>('[data-demo-measured]');
+    const refLinkEl = root.querySelector<HTMLAnchorElement>('[data-demo-ref-link]');
+    const revealWrap = root.querySelector<HTMLElement>('[data-demo-reveal-wrap]');
+    const revealBtn = root.querySelector<HTMLButtonElement>('[data-demo-reveal]');
+    const gradesWrap = root.querySelector<HTMLElement>('[data-demo-grades]');
+    const gradeBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-demo-grade]')];
+    const liveEl = root.querySelector<HTMLElement>('[data-demo-live]');
+    const prevBtn = root.querySelector<HTMLButtonElement>('[data-demo-prev]');
+    const nextBtn = root.querySelector<HTMLButtonElement>('[data-demo-next]');
+
+    let current = 0;
+    let revealed = false;
+    const rated = new Map<string, string>();
+
+    const gradeLabels: Record<string, string> = {
+      again: 'Tekrar (10 dk sonra tekrar)',
+      hard: 'Zor (1 gün sonra)',
+      good: 'İyi (3 gün sonra)',
+      easy: 'Kolay (8 gün sonra)',
+    };
+
+    function scrollTabIntoView(btn: HTMLElement) {
+      if (!tablist || tablist.scrollWidth <= tablist.clientWidth) return;
+      const listRect = tablist.getBoundingClientRect();
+      const btnRect = btn.getBoundingClientRect();
+      const pad = 24;
+      let delta = 0;
+      if (btnRect.left < listRect.left + pad) delta = btnRect.left - (listRect.left + pad);
+      else if (btnRect.right > listRect.right - pad) delta = btnRect.right - (listRect.right - pad);
+      if (delta !== 0) {
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        tablist.scrollTo({
+          left: Math.max(0, tablist.scrollLeft + delta),
+          behavior: reduce ? 'auto' : 'smooth',
+        });
+      }
+    }
+
+    function renderCard({ focusTab = false, scrollTab = false } = {}) {
+      const card = cards[current];
+      const activeCloze = card.activeCloze ?? 1;
+
+      tabs.forEach((btn, i) => {
+        const sel = i === current;
+        btn.setAttribute('aria-selected', sel ? 'true' : 'false');
+        btn.tabIndex = sel ? 0 : -1;
+        if (sel) {
+          if (scrollTab) scrollTabIntoView(btn);
+          if (focusTab) btn.focus({ preventScroll: true });
+        }
+      });
+
+      panelEl?.setAttribute('aria-labelledby', `demo-tab-${current}`);
+
+      if (metaEl) metaEl.textContent = `${card.ders} · ${card.sinav} TUS · ${card.qid.split('-')[1]} · Doğrudan (a78ae1f)`;
+      if (counterEl) counterEl.textContent = `Kart ${current + 1} / ${cards.length} · ${rated.size} değerlendirildi`;
+
+      if (bodyEl) {
+        bodyEl.textContent = '';
+        for (const part of card.parts) {
+          if (part.type === 'cloze' && part.index === activeCloze) {
+            const span = document.createElement('span');
+            if (revealed) {
+              span.className = 'inline-block rounded-lg bg-[#e6f4ec] px-2.5 py-0.5 font-bold text-[#156d3e] border border-[#156d3e]/30';
+              span.textContent = part.answer;
+            } else {
+              span.className = 'inline-block rounded-lg bg-[#e3edf7] px-2.5 py-0.5 font-bold text-[#1d5fa6] border border-[#1d5fa6]/25';
+              span.textContent = part.hint ? `[${part.hint}]` : '[…]';
+            }
+            bodyEl.appendChild(span);
+          } else {
+            bodyEl.appendChild(document.createTextNode(part.type === 'cloze' ? part.answer : part.value));
+          }
+        }
+      }
+
+      if (extraEl) {
+        if (revealed && card.extra) {
+          extraEl.textContent = `Klinik not: ${card.extra}`;
+          extraEl.hidden = false;
+        } else {
+          extraEl.textContent = '';
+          extraEl.hidden = true;
+        }
+      }
+
+      if (proofEl && measuredEl && refLinkEl) {
+        measuredEl.textContent = card.olculenBilgi;
+        const qNum = card.qid.split('-')[1] || card.qid;
+        refLinkEl.href = `/referanslar/?sinav=${encodeURIComponent(card.sinav)}&ders=${encodeURIComponent(card.ders)}&q=${encodeURIComponent(qNum)}`;
+        proofEl.hidden = !revealed;
+      }
+
+      if (revealWrap) revealWrap.hidden = revealed;
+      if (gradesWrap) gradesWrap.hidden = !revealed;
+    }
+
+    function select(idx: number, focusTab = false) {
+      current = (idx + cards.length) % cards.length;
+      revealed = false;
+      renderCard({ focusTab, scrollTab: true });
+    }
+
+    function reveal({ moveFocus = false } = {}) {
+      if (revealed) return;
+      const wasRevealFocused = Boolean(revealWrap && document.activeElement && revealWrap.contains(document.activeElement));
+      revealed = true;
+      renderCard();
+      if (moveFocus || wasRevealFocused) {
+        const goodBtn = root.querySelector<HTMLButtonElement>('[data-demo-grade="good"]') || gradeBtns[0];
+        goodBtn?.focus({ preventScroll: true });
+      }
+      if (liveEl) {
+        liveEl.textContent = `${cards[current].ders} kartının cevabı açıldı. 1–4 tuşlarıyla veya düğmelerle değerlendir.`;
+      }
+    }
+
+    function grade(g: string) {
+      const wasGradeFocused = Boolean(gradesWrap && document.activeElement && gradesWrap.contains(document.activeElement));
+      const card = cards[current];
+      rated.set(card.id, g);
+      const nextIdx = (current + 1) % cards.length;
+      if (liveEl) {
+        liveEl.textContent = `${card.shortDers} kartı "${gradeLabels[g]}" olarak kaydedildi (${rated.size}/${cards.length}). Sıradaki: ${cards[nextIdx].shortDers}.`;
+      }
+      select(nextIdx);
+      if (wasGradeFocused) {
+        revealBtn?.focus({ preventScroll: true });
+      }
+    }
+
+    tabs.forEach((btn, idx) => {
+      btn.addEventListener('click', () => select(idx));
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') { e.preventDefault(); select(idx + 1, true); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); select(idx - 1, true); }
+        else if (e.key === 'Home') { e.preventDefault(); select(0, true); }
+        else if (e.key === 'End') { e.preventDefault(); select(cards.length - 1, true); }
+      });
+    });
+
+    revealBtn?.addEventListener('click', () => reveal());
+    prevBtn?.addEventListener('click', () => select(current - 1));
+    nextBtn?.addEventListener('click', () => select(current + 1));
+
+    gradeBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const g = btn.dataset.demoGrade;
+        if (g) grade(g);
+      });
+    });
+
+    root.addEventListener('keydown', (e) => {
+      const active = document.activeElement as HTMLElement | null;
+      const tag = (active?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (e.key === ' ' && !revealed) {
+        const onOtherInteractive = Boolean(
+          active &&
+          active !== revealBtn &&
+          active.closest('button, a[href], [role="tab"], [role="button"], summary')
+        );
+        if (!onOtherInteractive && active !== revealBtn && root.contains(active)) {
+          e.preventDefault();
+          reveal({ moveFocus: true });
+        }
+      } else if (revealed) {
+        const map: Record<string, string> = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
+        if (map[e.key]) {
+          e.preventDefault();
+          grade(map[e.key]);
+        }
+      }
+    });
+
+    renderCard();
+  });
+</script>

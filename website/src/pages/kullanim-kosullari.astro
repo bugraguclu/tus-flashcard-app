@@ -1,0 +1,76 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SITE } from '../config';
+import { breadcrumbList } from '../lib/schema';
+import { effectiveDate, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate(pageSources('kosullar'));
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'Kullanım Koşulları', path: '/kullanim-kosullari' },
+]);
+
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': origin + '/kullanim-kosullari/#webpage',
+  url: origin + '/kullanim-kosullari/',
+  name: 'Kullanım Koşulları | TusAnkiM',
+  description:
+    'TusAnkiM uygulama ve BKA TUS kart koleksiyonu kullanım koşulları, eğitim amacı uyarısı, iade politikası ve bağımsız ürün beyanı.',
+  inLanguage: 'tr-TR',
+  isPartOf: { '@id': origin + '/#website' },
+  publisher: { '@id': origin + '/#organization' },
+  dateModified: modDate,
+};
+---
+<Layout
+  title="Kullanım Koşulları | TusAnkiM"
+  description="TusAnkiM uygulama ve BKA TUS kart koleksiyonu kullanım koşulları, eğitim amacı uyarısı, iade politikası ve bağımsız ürün beyanı."
+  modifiedTime={modDate}
+  schema={[crumbs, pageSchema]}
+>
+  <article class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10 py-10 sm:py-16">
+    <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">
+      <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink font-semibold">Kullanım Koşulları</span>
+    </nav>
+
+    <h1 class="display text-page-title tracking-tightest text-ink">
+      TusAnkiM Kullanım Koşulları
+    </h1>
+    <p class="text-sm text-inkMuted mt-2">Son güncelleme: Kasım 2026</p>
+
+    <div class="help-prose mt-8">
+      <h2>1. Eğitim ve sınava hazırlık amacı</h2>
+      <p>
+        TusAnkiM, kart koleksiyonu, referans özetleri ve TUS puan hesaplayıcı yalnızca eğitim ve sınava hazırlık amacı taşır. Hiçbir içerik tıbbi tavsiye, tanı, tedavi önerisi veya klinik karar desteği yerine geçmez. Klinik uygulamada güncel resmî kılavuzlar ve yetkili sağlık profesyonelleri esas alınmalıdır.
+      </p>
+
+      <h2>2. Bağımsız ürün beyanı</h2>
+      <p>
+        {SITE.disclaimer} Uygulama, açık standartlara dayanan <code>.apkg</code> / <code>.colpkg</code> dosya uyumluluğu ve bilimsel FSRS-6 aralıklı tekrar algoritması sunar.
+      </p>
+
+      <h2>3. Ücretsiz kullanım, paket erişimi ve 7 gün iade garantisi</h2>
+      <p>
+        TusAnkiM'in temel çalışma deneyimi — kart ve deste oluşturma, Anki paketlerini içe/dışa aktarma, FSRS-6 aralıklı tekrar, Kronometre, Çalışma Takvimi ve yedekleme — ücretsizdir. BKA TUS hazır kart koleksiyonunun ücretli lansman planları devreye alındığında 7 gün koşulsuz iade garantisi uygulanır; mevcut önizleme/beta sürümünde paket ödeme alınmadan yerel olarak açılabilir.
+      </p>
+
+      <h2>4. Fikrî mülkiyet ve telif sınırları</h2>
+      <p>
+        Uygulama ve hazır kart koleksiyonu yalnızca kişisel, ticari olmayan çalışma amacıyla lisanslanır. Kart koleksiyonunun kopyalanması, yeniden satılması veya toplu olarak paylaşılması yasaktır.
+      </p>
+      <p>
+        Kendi içe aktardığınız veya oluşturduğunuz içerikler için gerekli haklara sahip olmak sizin sorumluluğunuzdadır. TusAnkiM web sitesinde ve uygulamasında ÖSYM soru kökleri veya şıkları yayımlanmaz; yalnızca referans numaraları, kendi özetlerimiz ve resmî ÖSYM bağlantıları yer alır.
+      </p>
+
+      <h2>5. İletişim</h2>
+      <p>
+        Koşullar hakkında sorularınız için <a href="/destek/">Destek sayfamızdan</a> veya <code>{SITE.email}</code> adresinden ulaşabilirsiniz.
+      </p>
+    </div>
+  </article>
+</Layout>

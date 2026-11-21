@@ -1,0 +1,180 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FaqTabs from '../components/FaqTabs.astro';
+import faqs from '../data/faqs.json';
+import { breadcrumbList } from '../lib/schema';
+import { effectiveDate, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'Sıkça Sorulan Sorular', path: '/sss' },
+]);
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  dateModified: effectiveDate(pageSources('sss')),
+  mainEntity: faqs.items.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.a.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'),
+    },
+  })),
+};
+---
+<Layout
+  title={faqs.page.metaTitle}
+  description={faqs.page.metaDescription}
+  ogImage="/images/og-sss.png"
+  schema={[faqSchema, crumbs]}
+>
+  <section class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10 pt-10 pb-16 sm:py-16">
+    <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">
+      <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink font-semibold">Sıkça Sorulan Sorular</span>
+    </nav>
+
+    <h1 class="display text-page-title tracking-tightest text-ink">{faqs.page.title}</h1>
+    <p class="text-inkMuted mt-3 leading-relaxed">{faqs.page.lead}</p>
+
+    <!-- Live jump-to search inside <search> landmark -->
+    <search class="relative mt-8 z-20">
+      <label for="faq-q" class="sr-only">Sık sorulan sorularda ara</label>
+      <div class="search-field flex items-center gap-3 px-4 rounded-2xl border border-line bg-white">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-teal shrink-0" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          id="faq-q"
+          type="search"
+          autocomplete="off"
+          placeholder={faqs.page.searchPlaceholder}
+          class="flex-1 min-w-0 py-3.5 text-base bg-transparent text-ink placeholder:text-inkMuted outline-none"
+        />
+        <button
+          id="faq-clear"
+          type="button"
+          aria-label="Aramayı temizle"
+          hidden
+          class="touch-target shrink-0 w-11 h-11 grid place-items-center rounded-full text-inkMuted hover:text-ink hover:bg-surface transition cursor-pointer"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="6" y1="6" x2="18" y2="18" />
+            <line x1="18" y1="6" x2="6" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <div id="faq-drop" hidden class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-lg border border-line overflow-hidden">
+        <div id="faq-hits" class="max-h-[55vh] overflow-y-auto overflow-x-hidden p-2 space-y-1"></div>
+        <div id="faq-empty" hidden class="px-6 py-8 text-center">
+          <div class="display text-base text-ink">Eşleşen soru bulunamadı</div>
+          <p class="text-sm text-inkMuted mt-1.5">Destek sayfamızdan veya e-posta üzerinden bize yazabilirsin.</p>
+          <a href="/destek/" class="inline-flex items-center justify-center mt-4 min-h-[2.75rem] px-5 rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition">
+            Destek Sayfası →
+          </a>
+        </div>
+      </div>
+    </search>
+
+    <div id="faq-root" class="mt-10">
+      <FaqTabs idp="sssfaq" />
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const q = document.getElementById('faq-q') as HTMLInputElement | null;
+  const root = document.getElementById('faq-root');
+  const clearBtn = document.getElementById('faq-clear') as HTMLButtonElement | null;
+  const drop = document.getElementById('faq-drop');
+  const hits = document.getElementById('faq-hits');
+  const empty = document.getElementById('faq-empty');
+
+  if (q && root && clearBtn && drop && hits && empty) {
+    const tabsRoot = root.querySelector<HTMLElement>('[data-tabs-root]');
+    const norm = (s: string) =>
+      (s || '')
+        .toLocaleLowerCase('tr')
+        .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/İ/g, 'i')
+        .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/â/g, 'a');
+    const esc = (s: string) =>
+      s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] || c));
+
+    const items = [...root.querySelectorAll<HTMLDetailsElement>('details')].map((el, i) => {
+      const sum = el.querySelector('summary > span');
+      const question = sum ? sum.textContent?.trim() || '' : '';
+      const panel = el.closest<HTMLElement>('[data-panel-key]');
+      const where = el.closest<HTMLElement>('[data-where]')?.dataset.where || '';
+      return {
+        id: i,
+        el,
+        question,
+        where,
+        tabKey: panel?.dataset.panelKey || '',
+        hay: norm(`${question} ${el.textContent || ''}`),
+      };
+    });
+
+    let shown: typeof items = [];
+
+    const close = () => { drop.hidden = true; };
+
+    function go(it: (typeof items)[number]) {
+      if (it.tabKey && tabsRoot) {
+        tabsRoot.dispatchEvent(new CustomEvent('tus-tab-activate', { detail: it.tabKey }));
+      }
+      it.el.open = true;
+      close();
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      it.el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+      it.el.querySelector('summary')?.focus({ preventScroll: true });
+    }
+
+    function run() {
+      const raw = q!.value.trim();
+      clearBtn!.hidden = !raw;
+      if (!raw) { close(); return; }
+      const tokens = norm(raw).split(/\s+/).filter(Boolean);
+      shown = items.filter((it) => tokens.every((t) => it.hay.includes(t))).slice(0, 8);
+      hits!.innerHTML = shown
+        .map(
+          (it, idx) => `
+          <button type="button" data-hit="${idx}" class="search-hit w-full text-left px-3 py-2.5 rounded-xl transition cursor-pointer">
+            <span class="block text-sm font-semibold text-ink">${esc(it.question)}</span>
+            <span class="block text-xs text-inkMuted mt-0.5">${esc(it.where)}</span>
+          </button>`
+        )
+        .join('');
+      empty!.hidden = shown.length > 0;
+      drop!.hidden = false;
+    }
+
+    q.addEventListener('input', run);
+    q.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { close(); }
+      else if (e.key === 'Enter' && shown.length && !drop.hidden) {
+        e.preventDefault();
+        go(shown[0]);
+      }
+    });
+    clearBtn.addEventListener('click', () => {
+      q.value = '';
+      clearBtn.hidden = true;
+      close();
+      q.focus();
+    });
+    hits.addEventListener('click', (e) => {
+      const btn = (e.target as Element).closest<HTMLButtonElement>('[data-hit]');
+      if (btn) go(shown[Number(btn.dataset.hit)]);
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (!drop.hidden && !q.closest('search')?.contains(e.target as Node)) close();
+    });
+  }
+</script>

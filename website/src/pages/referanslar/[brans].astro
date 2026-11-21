@@ -1,0 +1,351 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { FOUNDER } from '../../config';
+import { getBranches, type BranchInfo } from '../../data/branches';
+import catalog from '../../data/generated/catalog.json';
+import refSummary from '../../data/generated/references-summary.json';
+import { breadcrumbList } from '../../lib/schema';
+import { effectiveDate, formatTrDate } from '../../lib/lastmod';
+
+export function getStaticPaths() {
+  const all = getBranches();
+  return all.map((branch) => ({
+    params: { brans: branch.slug },
+    props: { branch, all },
+  }));
+}
+
+interface Props {
+  branch: BranchInfo;
+  all: BranchInfo[];
+}
+
+const { branch, all } = Astro.props;
+const origin = new URL(Astro.site!).origin;
+const pagePath = `/referanslar/${branch.slug}`;
+const modDate = effectiveDate([
+  'website/src/pages/referanslar/[brans].astro',
+  'website/src/data/branches.ts',
+  'website/src/data/generated/references-summary.json',
+]);
+const modLabel = formatTrDate(modDate);
+
+const fmtPct = (v: number) => `%${v.toFixed(1).replace('.', ',')}`;
+const fmtNum = (n: number) => n.toLocaleString('tr-TR');
+
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'TUS Referansları', path: '/referanslar' },
+  { name: branch.name, path: pagePath },
+]);
+
+const datasetSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: `${branch.name} — Son 6 TUS Çıkmış Soru Referans Analizi`,
+  description: branch.seoDescription,
+  inLanguage: 'tr-TR',
+  url: origin + pagePath + '/',
+  dateModified: modDate,
+  creator: {
+    '@type': 'Person',
+    name: FOUNDER.name,
+    jobTitle: FOUNDER.title,
+    url: origin + '/kurucu/',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: FOUNDER.district,
+      addressRegion: FOUNDER.city,
+      addressCountry: 'TR',
+    },
+  },
+  publisher: { '@id': origin + '/#organization' },
+};
+
+const siblings = all.filter((b) => b.slug !== branch.slug);
+---
+<Layout
+  title={branch.seoTitle}
+  description={branch.seoDescription}
+  ogImage="/images/og-referanslar.png"
+  modifiedTime={modDate}
+  schema={[crumbs, datasetSchema]}
+>
+  <section class="bg-surface border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="mb-3">
+        <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
+          <li class="inline-flex items-center">
+            <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+          </li>
+          <li class="inline-flex items-center">
+            <span aria-hidden="true" class="mx-2">/</span>
+            <a href="/referanslar/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">TUS Referansları</a>
+          </li>
+          <li class="inline-flex items-center">
+            <span aria-hidden="true" class="mx-2">/</span>
+            <a href={pagePath + '/'} aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
+              {branch.name}
+            </a>
+          </li>
+        </ol>
+      </nav>
+
+      <p class="text-xs font-semibold text-teal">
+        {branch.group} · 11 ÖSYM TUS Branşından Biri
+      </p>
+      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">
+        {branch.name} — TUS Çıkmış Soru Referans Analizi
+      </h1>
+      <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
+        Son 6 TUS dönemindeki ({refSummary.sinavlar[refSummary.sinavlar.length - 1]}–{refSummary.sinavlar[0]}) toplam{' '}
+        <strong class="text-ink">{branch.summary.soru} {branch.name}</strong> sorusunun BKA TUS kataloğuyla
+        (<code>{refSummary.katalogCommit}</code>) doğrulanmış çözüm desteği ve konu kapsamı dökümü. ÖSYM telif hakları gereği soru kökleri ve şıklar yayımlanmaz.
+      </p>
+      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
+        <span>
+          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
+        </span>
+        <span>
+          İnceleyen:{' '}
+          <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+            {FOUNDER.signature}
+          </a>
+        </span>
+      </div>
+
+      <div class="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="text-xs font-semibold text-inkMuted">Çözüm Desteği (6 Sınav)</div>
+          <div class="display text-2xl text-teal mt-1 tabular-nums">
+            {branch.summary.destek} / {branch.summary.soru}{' '}
+            <span class="text-base">({fmtPct(branch.summary.destekOran)})</span>
+          </div>
+          <div class="text-xs text-inkMuted mt-0.5">
+            {branch.summary.dogrudan} Doğrudan + {branch.summary.dolayli} Dolaylı
+          </div>
+        </div>
+        <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="text-xs font-semibold text-inkMuted">Konu Kapsamı</div>
+          <div class="display text-2xl text-ink mt-1 tabular-nums">
+            {branch.summary.konuKapsami} / {branch.summary.soru}{' '}
+            <span class="text-base text-teal">({fmtPct(branch.summary.konuKapsamiOran)})</span>
+          </div>
+          <div class="text-xs text-inkMuted mt-0.5">
+            {branch.summary.konu} yalnız konu · {branch.summary.yok} kart yok
+          </div>
+        </div>
+        <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="text-xs font-semibold text-inkMuted">Katalog Deste Hacmi</div>
+          <div class="display text-2xl text-ink mt-1 tabular-nums">
+            {fmtNum(branch.catalogCourse.cards)} kart
+          </div>
+          <div class="text-xs text-inkMuted mt-0.5">
+            {fmtNum(branch.catalogCourse.notes)} not · {branch.catalogCourse.topicSubdecks} konu alt destesi
+          </div>
+        </div>
+        <div class="rounded-2xl border border-line bg-white p-4">
+          <div class="text-xs font-semibold text-inkMuted">Katalog Kodu &amp; Adı</div>
+          <div class="display text-2xl text-ink mt-1">
+            {branch.catalogCourseName}
+          </div>
+          <div class="text-xs text-inkMuted mt-0.5">
+            12 katalog dersinden biri ({branch.group})
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-12">
+    <!-- 6-exam table -->
+    <div>
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
+        <div>
+          <h2 class="display text-section tracking-tightest text-ink">
+            Sınavlara göre {branch.name} referans dağılımı
+          </h2>
+          <p class="text-sm text-inkMuted mt-1">
+            Her dönem için Doğrudan, Dolaylı, Çözüm Desteği ve Konu Kapsamı sayıları.
+          </p>
+        </div>
+        <a
+          href={`/referanslar/?ders=${encodeURIComponent(branch.name)}`}
+          class="inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark shrink-0"
+        >
+          Tüm {branch.summary.soru} soruyu filtrele →
+        </a>
+      </div>
+
+      <div
+        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        tabindex="0"
+        role="region"
+        aria-labelledby="branch-exam-caption"
+      >
+        <table class="w-full text-left border-collapse text-sm">
+          <caption id="branch-exam-caption" class="sr-only">
+            {branch.name} branşı için 2026/2 ile 2024/1 arası 6 TUS referans tablosu
+          </caption>
+          <thead>
+            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+              <th scope="col" class="py-3.5 px-4 sm:px-5">Sınav</th>
+              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Soru</th>
+              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Doğrudan</th>
+              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Dolaylı</th>
+              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Çözüm Desteği</th>
+              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Konu Kapsamı</th>
+              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Yok</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-lineLight tabular-nums">
+            {branch.exams.map((ex) => (
+              <tr>
+                <th scope="row" class="py-3 px-4 sm:px-5 font-semibold text-ink whitespace-nowrap">
+                  {ex.sinav} TUS
+                </th>
+                <td class="py-3 px-4 sm:px-5 text-ink">{ex.soru}</td>
+                <td class="py-3 px-4 sm:px-5 text-gradeGood font-semibold">{ex.dogrudan}</td>
+                <td class="py-3 px-4 sm:px-5 text-warm font-semibold">{ex.dolayli}</td>
+                <td class="py-3 px-4 sm:px-5 text-ink font-semibold">
+                  {ex.destek} ({fmtPct(ex.destekOran)})
+                </td>
+                <td class="py-3 px-4 sm:px-5 text-inkMuted">
+                  {ex.konuKapsami} ({fmtPct(ex.konuKapsamiOran)})
+                </td>
+                <td class="py-3 px-4 sm:px-5 text-inkMuted">{ex.yok}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Strengths, gaps & catalog subdecks -->
+    <div class="grid lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-7 rounded-2xl border border-line bg-surfaceSoft p-6 space-y-5">
+        <h2 class="display text-lg text-ink">Güçlü alanlar ve öncelikli kart boşlukları</h2>
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-gradeGood">Güçlü alanlar</h3>
+          <p class="text-sm text-ink mt-1.5 leading-relaxed">{branch.strongAreas}</p>
+        </div>
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-warm">Tespit edilen öncelikli boşluklar</h3>
+          <p class="text-sm text-inkMuted mt-1.5 leading-relaxed">{branch.priorityGaps}</p>
+        </div>
+        <div class="pt-4 border-t border-line text-xs text-inkMuted leading-relaxed">
+          <strong class="text-ink">12 ders / 11 branş kavram ayrımı:</strong> BKA TUS kataloğunda{' '}
+          <strong>{catalog.totals.courses} ders</strong> bulunur (11 TUS branş destesi + karma soru tekrarı için 806 kartlık{' '}
+          <strong>Deneme ve Soru</strong> destesi;{' '}
+          {branch.catalogCourseName === 'FHE'
+            ? 'bu branş katalogda kısaca FHE adıyla yer alır'
+            : 'Fizyoloji-Histoloji-Embriyoloji branşı katalogda FHE adıyla listelenir'}
+          ). ÖSYM referans analizi ise yalnızca <strong>11 resmî TUS branşı</strong> üzerinden ölçülür.
+        </div>
+      </div>
+
+      <div class="lg:col-span-5 rounded-2xl border border-line bg-white p-6">
+        <h2 class="display text-lg text-ink">En büyük konu alt desteleri ({branch.catalogCourseName})</h2>
+        <p class="text-xs text-inkMuted mt-1">
+          Toplam {branch.catalogCourse.topicSubdecks} konu alt destesi içinde en fazla kart içeren ilk {branch.catalogCourse.topTopics.length} başlık:
+        </p>
+        <ul class="mt-4 divide-y divide-lineLight text-sm">
+          {branch.catalogCourse.topTopics.map((topic) => (
+            <li class="py-2.5 flex items-center justify-between gap-3">
+              <span class="text-ink">{topic.name}</span>
+              <span class="font-semibold text-teal tabular-nums shrink-0">{fmtNum(topic.cards)} kart</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <!-- Sample verified cards -->
+    <div>
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
+        <div>
+          <h2 class="display text-section tracking-tightest text-ink">
+            Örnek doğrulanmış {branch.name} referans kayıtları
+          </h2>
+          <p class="text-sm text-inkMuted mt-1">
+            Her satır ölçülen bilgi özetini ve BKA TUS kataloğundaki temizlenmiş kart karşılığını gösterir.
+          </p>
+        </div>
+        <a
+          href="https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark shrink-0"
+        >
+          ÖSYM Çıkmış Sorular Arşivi ↗
+        </a>
+      </div>
+
+      <div class="space-y-3">
+        {branch.samples.map((r) => (
+          <article class="rounded-2xl border border-line bg-white p-4 sm:p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                <span class="font-bold text-ink tabular-nums">
+                  {r.sinav} · {r.qid.split('-')[1]}
+                </span>
+                <span
+                  class={`rounded-full px-2.5 py-0.5 font-semibold ${
+                    r.rozet === 'DOGRUDAN' ? 'bg-gradeGoodBg text-gradeGood' : 'bg-gradeHardBg text-gradeHard'
+                  }`}
+                >
+                  {r.rozet === 'DOGRUDAN' ? 'Doğrudan' : 'Dolaylı'}
+                </span>
+                {r.sinavOncesiSurumde === 'evet' && (
+                  <span class="text-inkMuted">· Sınav öncesi (a78ae1f)</span>
+                )}
+              </div>
+              {r.cardId && <span class="font-mono text-inkMuted">{r.cardId}</span>}
+            </div>
+            <p class="mt-2.5 text-sm font-semibold text-ink">{r.olculenBilgi}</p>
+            {r.eksikAdim && (
+              <p class="mt-2 text-xs text-warm">
+                <strong class="font-bold">Eksik adım:</strong> {r.eksikAdim}
+              </p>
+            )}
+            {r.kartOzet && (
+              <p class="mt-2 rounded-xl bg-surfaceSoft px-3.5 py-2.5 text-xs sm:text-sm text-inkMuted leading-relaxed border border-lineLight">
+                <strong class="text-ink font-semibold">Kart özeti:</strong> {r.kartOzet}
+              </p>
+            )}
+          </article>
+        ))}
+      </div>
+    </div>
+
+    <!-- Authority & Sibling branches -->
+    <div class="pt-8 border-t border-line grid lg:grid-cols-12 gap-8 items-start">
+      <div class="lg:col-span-8">
+        <h2 class="display text-lg text-ink">Diğer 10 ÖSYM TUS Branşı</h2>
+        <ul class="mt-4 flex flex-wrap gap-2">
+          {siblings.map((sib) => (
+            <li>
+              <a
+                href={`/referanslar/${sib.slug}/`}
+                class="inline-flex items-center min-h-[2.75rem] px-3.5 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+              >
+                {sib.name} ({fmtPct(sib.summary.destekOran)})
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <aside class="lg:col-span-4 rounded-2xl border border-line bg-surfaceSoft p-5 text-xs text-inkMuted leading-relaxed">
+        <h2 class="display text-sm text-ink">Doğrulama ve Sınır Notu</h2>
+        <p class="mt-2">
+          Veriler yalnızca eğitim ve TUS hazırlık analizi amaçlıdır; klinik karar veya resmî ÖSYM kılavuzu yerine geçmez.
+        </p>
+        <p class="mt-2">
+          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time> ·{' '}
+          <a href="/kurucu/" class="text-teal underline hover:text-tealDark">{FOUNDER.signature}</a>
+        </p>
+      </aside>
+    </div>
+  </section>
+</Layout>

@@ -1,0 +1,193 @@
+# TusAnkiM — Tam Referans Dokümanı
+
+> TusAnkiM; TUS hazırlığı için geliştirilmiş yerel öncelikli (local-first), çevrimdışı çalışan, Anki (`.apkg`/`.colpkg`) uyumlu FSRS-6 aralıklı tekrar uygulamasıdır. Katalogda 9.575 kart, 7.721 not, 12 katalog dersi (11 ÖSYM TUS branşı + Deneme ve Soru) ve 106 konu alt destesi bulunur. Son 6 TUS'ta (2024/1–2026/2, 1.195 soru) 521/1.195 (%43,6) çözüm desteği ve 1.108/1.195 (%92,7) konu kapsamı ölçülmüştür. TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir.
+
+Özet sürüm için: [llms.txt](https://tusankim.com/llms.txt)
+
+## Ne olduğu ve ne olmadığı (Bağımsız ürün beyanı)
+
+- **Bağımsızlık beyanı:** TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir. Anki dosya biçimleri (`.apkg` ve `.colpkg`), kart şablonları, medya ekleri ve FSRS-6 aralıklı tekrar zamanlayıcısı ile uyumludur; ancak bağımsız bir yerel kod tabanına sahiptir.
+- **Ne olduğu:**
+  - **Platformlar (Aktif):** iPhone uygulaması ve Web tarayıcı sürümü (`https://tusankim.vercel.app/` üzerinden Mac, Windows, iPad ve Android tarayıcılarda çalışır).
+  - **Yerel öncelikli ve çevrimdışı mimari:** Kartlar, tekrar geçmişi, Kronometre oturumları ve otomatik yedekler kullanıcının kendi cihazında yerel olarak saklanır; internet olmadan çalışır; reklam veya takip SDK'sı içermez.
+  - **Yerleşik araçlar:** FSRS-6 aralıklı tekrar zamanlayıcısı, 21 parametreli optimizasyon, BKA TUS 9.575 kart paketi, Kronometre, Çalışma Takvimi, Çalışma Planlama, TUS Puan Hesaplayıcı, Fotoğraf Düzenleyici ve Görsel Gizleme (Image Occlusion).
+- **Ne olmadığı (Kesin sınırlar):**
+  - **ÖSYM ile bağlantı ve telif sınırı:** ÖSYM ile bağlantısı yoktur. Sitede, uygulamada ve açık veri dosyalarında telifli ÖSYM soru kökü veya şık metni yayımlanmaz; yalnızca sınav/soru numarası, kendi cümlemizle ölçülen bilgi özeti, temizlenmiş kart özeti ve resmî ÖSYM kitapçık bağlantısı sunulur.
+  - **Tıbbi tavsiye sınırı:** Eğitim ve sınav hazırlığı aracıdır; tıbbi tavsiye, tanı veya klinik karar desteği değildir.
+  - **Paket dışa aktarım sınırı:** Kişisel Anki desteleri `.apkg`/`.colpkg` olarak içe ve dışa aktarılabilir; ancak hazır BKA TUS paketi ilerlemesi `.apkg`/`.colpkg` olarak dışa aktarılmaz.
+  - **Geliştirme aşamasında (Yakında):** Otomatik Bulut Eşitleme, Yerel Android Uygulaması ve TUS Tercih Simülasyonu henüz yayında değildir (**Yakında**).
+
+## Katalog yapısı: 9.575 kart, 7.721 not, 12 ders, 106 alt deste
+
+- **Üretim tarihi:** `2026-10-26` (katalog SHA: `7030ad699f7f`)
+- **Toplamlar:** **9.575 kart**, **7.721 not**, **12 katalog dersi**, **106 konu alt destesi**
+- **Grup dağılımı:** **3.957 Temel Bilimler** kartı (`6` ders) + **4.812 Klinik Bilimler** kartı (`5` ders) + **806 Karma** kart (`Deneme ve Soru`)
+- **12 katalog dersi vs 11 ÖSYM TUS branşı ayrımı:** Katalogda `Deneme ve Soru` karma destesi dahil **12 ders** vardır. ÖSYM TUS referans analizinde ise yalnızca **11 ÖSYM TUS branşı** değerlendirilir; `Deneme ve Soru` bir ÖSYM branşı değildir ve katalogdaki **FHE** dersi ÖSYM sınıflamasında **Fizyoloji-Histoloji-Embriyoloji** adını taşır.
+
+| Ders (Katalog) | Grup | Kart | Not | Konu Alt Destesi | Öne Çıkan Konular |
+|---|---|---:|---:|---:|---|
+| Pediatri | Klinik | 1.506 | 1.169 | 15 | Yenidoğan (168), Alerji ve İmmünoloji (135), Metabolizma (129) |
+| Dahiliye | Klinik | 1.183 | 995 | 8 | Hematoloji (199), Kardiyoloji (173), Endokrinoloji (159) |
+| Farmakoloji | Temel | 827 | 669 | 9 | Genel Farmakoloji ve Toksikoloji (121), Santral Sinir Sistemi İlaçları (95), Otonom Sinir Sistemi İlaçları (82) |
+| Deneme ve Soru | Karma | 806 | 745 | 4 | Deneme 1 (121), Deneme 3 (64), Deneme 2 (59) |
+| Kadın Doğum | Klinik | 755 | 524 | 7 | Obstetri (332), Jinekolojik Onkoloji (130), Üreme Endokrinolojisi (63) |
+| Genel Cerrahi | Klinik | 742 | 564 | 9 | İnce Bağırsak ve Kolorektal (112), Karaciğer, Safra ve Pankreas (98), Meme (71) |
+| Mikrobiyoloji | Temel | 730 | 587 | 6 | Bakteriyoloji (191), Viroloji (113), İmmünoloji (102) |
+| Patoloji | Temel | 724 | 609 | 10 | Genel Patoloji (117), Genital Sistem ve Meme Patolojisi (93), Gastrointestinal ve Karaciğer Patolojisi (60) |
+| Küçük Stajlar | Klinik | 626 | 484 | 15 | Nöroloji (86), Göz Hastalıkları (65), Dermatoloji (63) |
+| Biyokimya | Temel | 602 | 484 | 5 | Proteinler (211), Karbonhidratlar (91), Nükleik Asitler (72) |
+| FHE (Fizyoloji-Histoloji-Embriyoloji) | Temel | 597 | 510 | 10 | Hücre ve Doku Histolojisi (67), Nörofizyoloji ve Duyular (51), Embriyoloji (49) |
+| Anatomi | Temel | 477 | 381 | 8 | Baş ve Boyun (136), Nöroanatomi (88), Üst Ekstremite (46) |
+
+## Son 6 TUS referans kanıtları (2024/1–2026/2 · 1.195 soru)
+
+- **Kaynak veri:** `2026-10-26`, katalog commit `fbd7d94` (açık JSON uç noktası: https://tusankim.com/data/references.json)
+- **Metodoloji:** Son 6 TUS'taki **1.195 soru**, `fbd7d94` kataloğu üzerinde 11 ders ajanı ve 2026/2 hakem kontrolüyle yapılan yapay zekâ destekli ön sınıflamadır; bağımsız hekim/editör onay süreci devam etmektedir.
+  - **Doğrudan (333 soru):** Kart, sorunun doğru yanıtını veya onu zorunlu kılan klinik ayrımı açıkça verir.
+  - **Dolaylı (188 soru):** Kart doğru bilgiye götürür ancak tek küçük bir klinik veya terim köprüsü gerektirir (eksik adım her kayıtta açıkça yazılır).
+  - **Çözüm desteği (Doğrudan + Dolaylı):** **521/1.195 (%43,6)**.
+  - **Yalnız Konu İlişkili (587 soru):** İlgili konuda kart bulunur ancak tek başına soruyu çözdürmez; çözüm desteğine dahil edilmez.
+  - **Konu Kapsamı (Doğrudan + Dolaylı + Yalnız Konu):** **1.108/1.195 (%92,7)** (`87` soruda referans yok).
+
+### Sınavlara göre dağılım (6 TUS)
+
+| Sınav | Soru | Doğrudan | Dolaylı | Çözüm Desteği | Çözüm % | Yalnız Konu | Konu Kapsamı | Kapsam % | Yok |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2026/2 | 200 | 51 | 31 | 82 | %41,0 | 110 | 192 | %96,0 | 8 |
+| 2026/1 | 200 | 61 | 29 | 90 | %45,0 | 99 | 189 | %94,5 | 11 |
+| 2025/2 | 198 | 58 | 33 | 91 | %46,0 | 89 | 180 | %90,9 | 18 |
+| 2025/1 | 200 | 57 | 34 | 91 | %45,5 | 91 | 182 | %91,0 | 18 |
+| 2024/2 | 199 | 59 | 33 | 92 | %46,2 | 89 | 181 | %91,0 | 18 |
+| 2024/1 | 198 | 47 | 28 | 75 | %37,9 | 109 | 184 | %92,9 | 14 |
+| **Toplam** | **1.195** | **333** | **188** | **521** | **%43,6** | **587** | **1.108** | **%92,7** | **87** |
+
+### 11 ÖSYM TUS branşına göre dağılım
+
+| ÖSYM TUS Branşı | Soru | Doğrudan | Dolaylı | Çözüm Desteği | Çözüm % | Yalnız Konu | Konu Kapsamı | Kapsam % | Yok |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Anatomi | 78 | 9 | 13 | 22 | %28,2 | 50 | 72 | %92,3 | 6 |
+| Fizyoloji-Histoloji-Embriyoloji | 90 | 17 | 18 | 35 | %38,9 | 52 | 87 | %96,7 | 3 |
+| Biyokimya | 109 | 38 | 23 | 61 | %56,0 | 40 | 101 | %92,7 | 8 |
+| Mikrobiyoloji | 108 | 41 | 19 | 60 | %55,6 | 45 | 105 | %97,2 | 3 |
+| Patoloji | 107 | 34 | 17 | 51 | %47,7 | 49 | 100 | %93,5 | 7 |
+| Farmakoloji | 106 | 37 | 23 | 60 | %56,6 | 43 | 103 | %97,2 | 3 |
+| Dahiliye | 143 | 39 | 19 | 58 | %40,6 | 72 | 130 | %90,9 | 13 |
+| Pediatri | 148 | 49 | 28 | 77 | %52,0 | 62 | 139 | %93,9 | 9 |
+| Genel Cerrahi | 120 | 28 | 10 | 38 | %31,7 | 66 | 104 | %86,7 | 16 |
+| Kadın Doğum | 60 | 14 | 7 | 21 | %35,0 | 37 | 58 | %96,7 | 2 |
+| Küçük Stajlar | 126 | 27 | 11 | 38 | %30,2 | 71 | 109 | %86,5 | 17 |
+
+### 2026/2 Ağustos TUS sınav öncesi sürüm kanıtı (`a78ae1f` vs güncel `82/200`)
+
+- 23 Ağustos 2026 tarihli 2026/2 TUS için sınavdan 2 gün önceki katalog sürümü (`git a78ae1f`, **21 Ağustos 2026**) dondurularak denetlenmiştir.
+- **Sınav öncesi kanıt (`git a78ae1f`):** Güncel katalogdaki `82/200 (%41,0)` destekli sorunun **76/200 (%38,0)** kadarı sınavdan önce de eksiksiz biçimde destede bulunuyordu (`4` soru sınav sonrası kısmen güncellendi, `2` soru sınav sonrası eklendi). Güncel katalogdaki `2026/2` toplam konu kapsamı **192/200 (%96,0)** düzeyindedir.
+- **Sınav sonrası düzenlenen 6 soru (şeffaflık listesi):**
+  - `2026/2-T018` (`Fizyoloji-Histoloji-Embriyoloji`, `DOLAYLI`, sınav öncesi sürümde: `hayır`): Melanosit gövdelerinin epidermisteki yeri (stratum basale).
+  - `2026/2-K039` (`Pediatri`, `DOLAYLI`, sınav öncesi sürümde: `kısmen`): Yetersiz emzirme/geciken mekonyumda indirekt hiperbilirübinemi.
+  - `2026/2-K043` (`Pediatri`, `DOĞRUDAN`, sınav öncesi sürümde: `kısmen`): İmmünsüprese süt çocuğunda suçiçeği temas sonrası profilaksi.
+  - `2026/2-K050` (`Pediatri`, `DOLAYLI`, sınav öncesi sürümde: `hayır`): Ergende fonksiyonel dispepsi tanısı (Roma IV).
+  - `2026/2-K057` (`Pediatri`, `DOĞRUDAN`, sınav öncesi sürümde: `kısmen`): Multipl café-au-lait lekesi yapan sendromlar.
+  - `2026/2-K078` (`Genel Cerrahi`, `DOLAYLI`, sınav öncesi sürümde: `kısmen`): Safra taşı ileusunun nedeni: kolesistoenterik fistül.
+
+## FSRS-6 tekrar zamanlayıcısı ve iş yükü simülasyonu
+
+- **Motor:** `TusAnkiM FSRS-6` (`lib/fsrsSimulator.ts`), varsayılan hedeflenen hatırlama oranı **`%90` (`0,90`)**. Her kart için hafıza kararlılığı (`stability`) ve zorluk (`difficulty`, 1–10) değerlerini tutar; `21` parametreli optimizasyon (`17`/`19`/`21` sayı desteği) sunar ve klasik SM-2 algoritmasına göre aynı hatırlama oranında ortalama **`%20–30` daha az tekrar** üretir.
+- **9.575 kart (Tüm BKA TUS Paketi) @ günde 60 yeni kart:**
+  - **Tamamlanma süresi:** **160 gün** (tüm 9.575 kart tanıtılır).
+  - **180 gün ufku:** Ortalama `388` kart/gün (`335` tekrar), tepe `545` kart/gün, ortalama `124` dk/gün (180. gün: `305` kart / `76` dk), hafızada `9.044` kart (`%94,5`).
+  - **270 gün ufku:** Ortalama `331` kart/gün (`102` dk/gün); 270. günde günlük yük **`50` dk/gün** (`187` kart) düzeyine düşer.
+  - **365 gün ufku:** Ortalama `285` kart/gün (`86` dk/gün); 365. günde `130` kart / `34` dk/gün.
+- **27.341 kartlık mega deste karşılaştırması @ günde 60 yeni kart:**
+  - **270 gün ufku:** Bitmez (`fin: null`, `16.200` kart tanıtılır, `%55,9`), ortalama `474` kart/gün (`149` dk/gün), 270. günde **`198` dk/gün** (`656` kart, günde 3 saati aşan yük).
+  - **365 gün ufku:** Hâlâ bitmez (`21.900` kart tanıtılır, `%75,3`), ortalama `528` kart/gün (`163` dk/gün), tepe `739` kart (`221` dk).
+
+## TUS Puan Hesaplayıcı ve 2027 sınav takvimi
+
+- **Hesaplama kuralları:** `4 yanlış 1 doğru` net kuralı, `45` puan barajı, uzmanlık eğitimine devam edenler, istifa edenler veya yerleşip süresi içinde başlamayanlar için ilk sınavda mesleki bilgi puanında **`%5` kesinti** kuralı, **Temel TUS puanı** (`%70 Temel + %30 Klinik`), **Klinik TUS puanı** (`%50 Temel + %50 Klinik`).
+- **2027 ÖSYM TUS takvimi (`osym.gov.tr` teyidine tabidir):**
+  - **2027-TUS 1. Dönem (Mart 2027 TUS):** Sınav `27 Mart 2027`, başvuru `2–10 Şubat 2027`, sonuç `22 Nisan 2027`.
+  - **2027-TUS 2. Dönem (Ağustos 2027 TUS):** Sınav `22 Ağustos 2027`, başvuru `5–13 Temmuz 2027`, sonuç `16 Eylül 2027`.
+
+## Fiyatlandırma ve açık önizleme durumu (PRICING_MODE: launch-promo)
+
+- **Ücretsiz (`₺0` · Süresiz ücretsiz · Günde 200 kart):** Günde `200` karta kadar ücretsiz çalışma, sınırsız kendi deste ve kart oluşturma, Anki (`.apkg`/`.colpkg`) içe/dışa aktarma, FSRS-6 ve parametre optimizasyonu, Kronometre, Çalışma Takvimi, Çalışma Planı, çevrimdışı yerel depolama ve otomatik yedekleme.
+- **Tam Erişim (`₺50` `/ ay · iPhone + Web`, eski/liste fiyat `₺199`, Lansman fiyatı):** Sınırsız günlük kart tekrarı (`200` kart sınırı kalkar), `9.575` kartlık BKA TUS koleksiyonu (`12` ders, `106` konu alt destesi), her TUS dönemi sonrası güncellenen kart ve referans kayıtları, e-posta ve teknik destek, **7 gün koşulsuz iade garantisi**.
+- **Açık önizleme notu:** Açık önizleme döneminde 9.575 kartlık BKA TUS paketi uygulama içinden ücretsiz açılabilmektedir. Ücretli planlar devreye alındığında aylık `₺50` lansman fiyatı ve `7 gün` iade garantisi geçerli olur.
+- **Öğrenci toplulukları:** Tıp kulüpleri ve dönem temsilcilerine ücretsiz tam erişim hesabı tanımlanır.
+
+## Tüm canlı web sayfaları (10 ana sayfa)
+
+- [Ana Sayfa](https://tusankim.com/): Ürün özeti, 11 canlı deneme kartı, FSRS-6 iş yükü simülatörü ve `launch-promo` fiyatlandırma bilgileri.
+- [TUS Referansları](https://tusankim.com/referanslar/): Son 6 TUS (`2024/1–2026/2`, 1.195 soru) kanıt tablosu, `a78ae1f` sınav öncesi sürüm kanıtı ve aranabilir referans kataloğu.
+- [TUS Çalışma Rehberleri](https://tusankim.com/rehber/): TUS puanı, 2027 takvimi, FSRS-6 algoritması, kart hacmi ve Anki uyumlu akış üzerine 7 kanıt temelli rehber.
+- [TUS Puan Hesaplayıcı](https://tusankim.com/puan-hesapla/): Net, Temel/Klinik TUS puanı, `%5` kesinti kuralı, `45` barajı ve 2027 TUS geri sayım aracı.
+- [Kurucumuz ve Editöryal Standart](https://tusankim.com/kurucu/): Kurucu hekim Uzm. Dr. Muhammet Kürşat Güçlü (İzmir Çiğli, KBB Uzman Doktoru) editöryal yaklaşımı, `9.575` çekirdek hacmi felsefesi ve hekim editör kontrol süreci.
+- [Yardım Merkezi](https://tusankim.com/yardim/): 6 kategori altında 21 Türkçe kullanım kılavuzu ve anlık arama dizini.
+- [Sıkça Sorulan Sorular](https://tusankim.com/sss/): Genel, Kartlar ve Referanslar, FSRS-6, Fiyat ve İade ile Platform başlıklarında 16 yanıt.
+- [Destek ve İletişim](https://tusankim.com/destek/): Kurulum, Anki aktarımı, kart düzeltme bildirimi, kulüp başvurusu ve destek kanalları.
+- [Gizlilik Politikası ve KVKK](https://tusankim.com/gizlilik/): Cihaz içi yerel depolama yaklaşımı, reklam/takip SDK'sı bulunmadığı beyanı ve KVKK hakları.
+- [Kullanım Koşulları](https://tusankim.com/kullanim-kosullari/): Kullanım sınırları, fikri mülkiyet, ÖSYM/Anki bağımsızlık bildirimi ve sorumluluk reddi.
+
+## Kullanım kılavuzu (21 Türkçe rehber)
+
+1. [TusAnkiM nedir?](https://tusankim.com/yardim/tusankim-nedir/) (`Başlangıç`): TusAnkiM'in ne işe yaradığı, verilerinizin nerede durduğu ve kılavuzun nasıl kullanılacağı.
+2. [Temel kavramlar](https://tusankim.com/yardim/temel-kavramlar/) (`Başlangıç`): Aralıklı tekrar, not, kart, deste, not türü, kart durumları ve cevap düğmeleri kısaca.
+3. [Hızlı başlangıç](https://tusankim.com/yardim/hizli-baslangic/) (`Başlangıç`): İlk açılıştan ilk çalışmaya: kart paketini kurma, deste ve kart ekleme, Anki destesi getirme, çalışma.
+4. [Desteler](https://tusankim.com/yardim/desteler/) (`Çalışma & FSRS-6`): Deste listesi ve sayıların anlamı; deste ve alt deste oluşturma, taşıma, silme, deste menüsü, genel bakış ve deste kısayolu.
+5. [Çalışma ekranı](https://tusankim.com/yardim/calisma-ekrani/) (`Çalışma & FSRS-6`): Kart çalışma, cevap düğmeleri, sayılar, geri alma, kart menüsü, yazı tahtası, kısayollar, zaman kutusu ve bitiş ekranı.
+6. [Deste seçenekleri](https://tusankim.com/yardim/deste-secenekleri/) (`Çalışma & FSRS-6`): Tekrar limiti, öğrenme adımları, unutulan kartlar, kartların sırası, gömme, ses, zamanlayıcılar ve ayar grupları.
+7. [FSRS](https://tusankim.com/yardim/fsrs/) (`Çalışma & FSRS-6`): FSRS zamanlayıcısını açma, hedeflenen hatırlama oranı, parametreleri optimize etme ve kartları yeniden zamanlama.
+8. [Kart ekleme ve düzenleme](https://tusankim.com/yardim/kart-ekleme/) (`Kartlar & Arama`): Not ekleme ekranı, alanlar, biçimlendirme, boşluk doldurma, resim, ses, çizim, etiketler ve kaydetme.
+9. [Not türleri ve kart şablonları](https://tusankim.com/yardim/not-turleri/) (`Kartlar & Arama`): Hazır not türleri, alanlar, kart şablonları, şablon söz dizimi, stil ve bir notun türünü değiştirme.
+10. [Kartlarım ve arama](https://tusankim.com/yardim/kartlarim-ve-arama/) (`Kartlar & Arama`): Kartlarım ekranında kartları bulma, filtreleme ve toplu düzenleme; arama terimleri ve Kart bilgisi ekranı.
+11. [Filtrelenmiş deste ve özel çalışma](https://tusankim.com/yardim/filtrelenmis-deste/) (`Kartlar & Arama`): Bir aramaya uyan kartları geçici bir destede toplamak, sıralama, önizleme modu, yeniden oluşturma ve Özel çalışma seçenekleri.
+12. [İstatistikler](https://tusankim.com/yardim/istatistikler/) (`İstatistik & Kronometre`): Deste ve dönem seçimi, Bugün kartı, Çalışma serisi ve İstatistikler ekranındaki her grafiğin ne gösterdiği.
+13. [Kronometre ve çalışma takvimi](https://tusankim.com/yardim/kronometre/) (`İstatistik & Kronometre`): Kronometre ile ders süresini ölçme, mola, günlük hedef, sınav tarihi, hatırlatmalar ve Çalışma Takvimi'ndeki oturumlar.
+14. [İçe ve dışa aktarma](https://tusankim.com/yardim/ice-disa-aktarma/) (`Veri, Yedek & Ayarlar`): Anki paketlerini ve CSV/TSV/TXT dosyalarını içe aktarma, desteleri ve koleksiyonu dışa aktarma, koleksiyonu yeni cihaza taşıma.
+15. [Yedekler ve bakım](https://tusankim.com/yardim/yedekler/) (`Veri, Yedek & Ayarlar`): Otomatik ve elle yedekler, geri yükleme, medya denetimi, veritabanı onarımı, boş kartlar ve koleksiyonu sıfırlama.
+16. [Ayarlar](https://tusankim.com/yardim/ayarlar/) (`Veri, Yedek & Ayarlar`): Dil ve tema, çalışma ekranının görünümü, günün başlangıcı, hatırlatmalar, dokunma ve klavye kontrolleri, erişilebilirlik.
+17. [TUS Kartları paketi](https://tusankim.com/yardim/tus-kartlari/) (`TUS Paketi, Anki & Referans`): Hazır 9.575 kartlık TUS paketini ücretsiz kurma, çalışma, düzenleme, güncellemeler, yedekler ve yeni cihaza geçiş.
+18. [Kısayollar ve otomasyon](https://tusankim.com/yardim/kisayollar/) (`TUS Paketi, Anki & Referans`): Deste kısayolları, `tusankim://` bağlantılarıyla not ekleme ve arama, web sürümü ve klavye kısayolları.
+19. [Anki ile birlikte kullanma](https://tusankim.com/yardim/anki-ile-kullanma/) (`TUS Paketi, Anki & Referans`): Anki'deki destelerinizi TusAnkiM'e taşıma, geri götürme ve iki uygulama arasındaki farklar.
+20. [Sık sorulanlar ve sorun giderme](https://tusankim.com/yardim/sss/) (`TUS Paketi, Anki & Referans`): Kart gelmiyor, yanlış düğmeye bastım, telefon değiştiriyorum, Anki destesi açılmıyor gibi sık sorunların çözümleri.
+21. [Sözlük](https://tusankim.com/yardim/sozluk/) (`TUS Paketi, Anki & Referans`): Uygulamadaki Türkçe terimler, İngilizce arayüzdeki ve Anki'deki karşılıkları ve kısa açıklamaları.
+
+## 11 ÖSYM TUS branşı referans sayfaları
+
+- [Anatomi — TUS Referans Analizi](https://tusankim.com/referanslar/anatomi/) (`22/78` = `%28,2` çözüm desteği, `%92,3` konu kapsamı, `477` kart)
+- [Fizyoloji-Histoloji-Embriyoloji (FHE) — TUS Referans Analizi](https://tusankim.com/referanslar/fizyoloji-histoloji-embriyoloji/) (`35/90` = `%38,9` çözüm desteği, `%96,7` konu kapsamı, `597` kart)
+- [Biyokimya — TUS Referans Analizi](https://tusankim.com/referanslar/biyokimya/) (`61/109` = `%56,0` çözüm desteği, `%92,7` konu kapsamı, `602` kart)
+- [Mikrobiyoloji — TUS Referans Analizi](https://tusankim.com/referanslar/mikrobiyoloji/) (`60/108` = `%55,6` çözüm desteği, `%97,2` konu kapsamı, `730` kart)
+- [Patoloji — TUS Referans Analizi](https://tusankim.com/referanslar/patoloji/) (`51/107` = `%47,7` çözüm desteği, `%93,5` konu kapsamı, `724` kart)
+- [Farmakoloji — TUS Referans Analizi](https://tusankim.com/referanslar/farmakoloji/) (`60/106` = `%56,6` çözüm desteği, `%97,2` konu kapsamı, `827` kart)
+- [Dahiliye — TUS Referans Analizi](https://tusankim.com/referanslar/dahiliye/) (`58/143` = `%40,6` çözüm desteği, `%90,9` konu kapsamı, `1.183` kart)
+- [Pediatri — TUS Referans Analizi](https://tusankim.com/referanslar/pediatri/) (`77/148` = `%52,0` çözüm desteği, `%93,9` konu kapsamı, `1.506` kart)
+- [Genel Cerrahi — TUS Referans Analizi](https://tusankim.com/referanslar/genel-cerrahi/) (`38/120` = `%31,7` çözüm desteği, `%86,7` konu kapsamı, `742` kart)
+- [Kadın Doğum — TUS Referans Analizi](https://tusankim.com/referanslar/kadin-dogum/) (`21/60` = `%35,0` çözüm desteği, `%96,7` konu kapsamı, `755` kart)
+- [Küçük Stajlar — TUS Referans Analizi](https://tusankim.com/referanslar/kucuk-stajlar/) (`38/126` = `%30,2` çözüm desteği, `%86,5` konu kapsamı, `626` kart)
+
+## TUS Çalışma Rehberleri (7 yazı)
+
+1. [TUS'ta kaç kart çalışılmalı? 9.575 kart mı, 30.000 kartlık mega deste mi?](https://tusankim.com/rehber/tusta-kac-kart-calisilmali/)
+2. [TUS için FSRS-6 nedir? Klasik tekrarlara göre neden %20–30 daha az kart çözdürür?](https://tusankim.com/rehber/tus-icin-fsrs-6-nedir/)
+3. [TUS için Anki uyumlu sistem nasıl kullanılır? (.apkg, .colpkg ve FSRS-6 kurulumu)](https://tusankim.com/rehber/tus-icin-anki-uyumlu-sistem/)
+4. [TUS puanı nasıl hesaplanır? %5 puan kesintisi, 45 barajı ve Temel/Klinik ağırlıkları](https://tusankim.com/rehber/tus-puani-nasil-hesaplanir/)
+5. [2027 TUS tarihleri ve başvuru takvimi neler, kalan güne göre çalışma planı nasıl kurulur?](https://tusankim.com/rehber/2027-tus-tarihleri-ve-calisma-plani/)
+6. [TUS çalışırken doğru bilinen 7 yanlış nelerdir (pasif tekrar, mega deste tuzağı, son ay tekrar yükü)?](https://tusankim.com/rehber/tus-calisirken-dogru-bilinen-7-yanlis/)
+7. [TusAnkiM ücretsiz mi, iPhone ve Web'de nasıl kullanılır?](https://tusankim.com/rehber/tusankim-ucretsiz-mi-nasil-kullanilir/)
+
+## Sıkça sorulan sorular özeti
+
+- **TusAnkiM'in Anki ile ilişkisi nedir?** TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir; ancak `.apkg` ve `.colpkg` dosyalarını, şablonları, medyayı ve FSRS-6 zamanlayıcısını destekler.
+- **Veriler nerede tutulur?** Kartlar, çalışma geçmişi, Kronometre kayıtları ve yedekler cihazda yerel olarak saklanır; internet bağlantısı olmadan çalışır ve uygulama reklam/takip SDK'sı içermez.
+- **Kartlar güncellendiğinde kişisel notlar silinir mi?** Hayır. Dönemsel kılavuz ve referans güncellemelerinde tekrar geçmişi ve kişisel düzenlemeler korunur.
+- **Hangi cihazlar destekleniyor?** Bugün iPhone uygulaması ve Web tarayıcı (Mac, Windows, iPad, Android tarayıcı) aktiftir; otomatik bulut eşitleme, yerel Android uygulaması ve TUS Tercih Simülasyonu geliştirme aşamasındadır (**Yakında**).
+
+## Resmi bağlantılar ve iletişim
+
+- Web sitesi: https://tusankim.com/
+- Web uygulaması (iPhone ve tarayıcı): https://tusankim.vercel.app/
+- Destek sayfası: https://tusankim.com/destek/
+- E-posta: destek@tusankim.com
+- Teknik bildirim / GitHub Issues: https://github.com/bugraguclu/tus-flashcard-app/issues
+- Referans açık veri JSON: https://tusankim.com/data/references.json
