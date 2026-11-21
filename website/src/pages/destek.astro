@@ -2,12 +2,28 @@
 import Layout from '../layouts/Layout.astro';
 import { SITE } from '../config';
 import { breadcrumbList } from '../lib/schema';
+import { effectiveDate, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate(pageSources('destek'));
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
   { name: 'Destek ve İletişim', path: '/destek' },
 ]);
+
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  '@id': origin + '/destek/#webpage',
+  url: origin + '/destek/',
+  name: 'Destek ve İletişim | TusAnkiM',
+  description:
+    'TusAnkiM e-posta desteği, teknik kayıt bildirimi, kart düzeltme önerisi ve tıp fakültesi kulüp ücretsiz hesap başvurusu.',
+  inLanguage: 'tr-TR',
+  isPartOf: { '@id': origin + '/#website' },
+  publisher: { '@id': origin + '/#organization' },
+  dateModified: modDate,
+};
 
 const clubMailto = `mailto:${SITE.email}?subject=${encodeURIComponent('Tıp Kulübü / Eğitim Topluluğu Ücretsiz Hesap Başvurusu')}`;
 ---
@@ -15,7 +31,8 @@ const clubMailto = `mailto:${SITE.email}?subject=${encodeURIComponent('Tıp Kul�
   title="Destek ve İletişim | TusAnkiM"
   description="TusAnkiM e-posta desteği, teknik kayıt bildirimi, kart düzeltme önerisi ve tıp fakültesi kulüp ücretsiz hesap başvurusu."
   ogImage="/images/og-destek.png"
-  schema={[crumbs]}
+  modifiedTime={modDate}
+  schema={[crumbs, pageSchema]}
 >
   <section class="bg-surfaceSoft border-b border-line py-10 sm:py-14">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">

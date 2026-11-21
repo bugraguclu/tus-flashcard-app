@@ -17,13 +17,25 @@ const crumbs = breadcrumbList(origin, [
 const pageSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
+  '@id': origin + '/puan-hesapla/#webapp',
   name: 'TusAnkiM TUS Puan ve Hedef Net Hesaplayıcı',
   applicationCategory: 'EducationalApplication',
   operatingSystem: 'Web',
   inLanguage: 'tr-TR',
   url: origin + '/puan-hesapla/',
   dateModified: modDate,
+  provider: { '@id': origin + '/#organization' },
   publisher: { '@id': origin + '/#organization' },
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'TRY',
+  },
+  featureList: [
+    'Temel (%70/%30) ve Klinik (%50/%50) ağırlıklı tahmini TUS puan hesabı',
+    'Güncel %5 puan kesintisi ve 45 barajı kontrolü',
+    'Hedef TUS puanı için gereken tahmini net hesabı',
+  ],
 };
 ---
 <Layout

@@ -51,11 +51,22 @@ const reviewerPerson = {
   },
 };
 
+const rawTitle = `${article.title} — Yardım Merkezi | TusAnkiM`;
+const metaTitle = rawTitle.length <= 60 ? rawTitle : `${article.title} | TusAnkiM`;
+const metaDescription =
+  article.summary.length >= 90
+    ? article.summary
+    : `${article.summary} TusAnkiM Türkçe kullanım kılavuzu ve adım adım rehberi.`;
+
 const docSchema = {
   '@context': 'https://schema.org',
   '@type': 'TechArticle',
+  '@id': origin + article.webPath + '#article',
+  mainEntityOfPage: origin + article.webPath,
+  isPartOf: { '@id': origin + '/#website' },
   headline: article.title,
-  description: article.summary,
+  description: metaDescription,
+  image: new URL('/images/og-yardim.png', Astro.site).href,
   inLanguage: 'tr-TR',
   url: origin + article.webPath,
   dateModified: modDate,
@@ -68,8 +79,8 @@ const docSchema = {
 const h2List = article.headings.filter((h) => h.depth === 2);
 ---
 <Layout
-  title={`${article.title} — Yardım Merkezi | TusAnkiM`}
-  description={article.summary}
+  title={metaTitle}
+  description={metaDescription}
   ogImage="/images/og-yardim.png"
   ogType="article"
   modifiedTime={modDate}

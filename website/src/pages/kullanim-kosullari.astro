@@ -2,17 +2,34 @@
 import Layout from '../layouts/Layout.astro';
 import { SITE } from '../config';
 import { breadcrumbList } from '../lib/schema';
+import { effectiveDate, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate(pageSources('kosullar'));
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
   { name: 'Kullanım Koşulları', path: '/kullanim-kosullari' },
 ]);
+
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': origin + '/kullanim-kosullari/#webpage',
+  url: origin + '/kullanim-kosullari/',
+  name: 'Kullanım Koşulları | TusAnkiM',
+  description:
+    'TusAnkiM uygulama ve BKA TUS kart koleksiyonu kullanım koşulları, eğitim amacı uyarısı, iade politikası ve bağımsız ürün beyanı.',
+  inLanguage: 'tr-TR',
+  isPartOf: { '@id': origin + '/#website' },
+  publisher: { '@id': origin + '/#organization' },
+  dateModified: modDate,
+};
 ---
 <Layout
   title="Kullanım Koşulları | TusAnkiM"
   description="TusAnkiM uygulama ve BKA TUS kart koleksiyonu kullanım koşulları, eğitim amacı uyarısı, iade politikası ve bağımsız ürün beyanı."
-  schema={[crumbs]}
+  modifiedTime={modDate}
+  schema={[crumbs, pageSchema]}
 >
   <article class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10 py-10 sm:py-16">
     <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">

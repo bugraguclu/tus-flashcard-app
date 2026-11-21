@@ -272,6 +272,21 @@ for (const hf of htmlFiles) {
     check(!html.includes('application/ld+json'), '404.html: noindex page must not emit site JSON-LD');
   } else {
     check(html.includes('"@type":"ContactPoint"'), `${rel}: Organization JSON-LD missing ContactPoint`);
+    check(html.includes('"@type":"BreadcrumbList"'), `${rel}: indexable page missing BreadcrumbList JSON-LD`);
+    const decodeEntities = (s) =>
+      s
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;|&#x27;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+    const rawTitle = decodeEntities((html.match(/<title>([^<]+)<\/title>/i)?.[1] ?? '').trim());
+    const rawDesc = decodeEntities((html.match(/<meta name="description" content="([^"]+)"/i)?.[1] ?? '').trim());
+    check(rawTitle.length <= 60, `${rel}: <title> exceeds 60 chars (${rawTitle.length}): "${rawTitle}"`);
+    check(
+      rawDesc.length >= 90 && rawDesc.length <= 160,
+      `${rel}: <meta description> outside 90-160 chars (${rawDesc.length}): "${rawDesc}"`,
+    );
   }
 
   // Forbidden content/patterns (checked across full HTML including scripts)
@@ -296,9 +311,23 @@ for (const hf of htmlFiles) {
   }
 }
 
-// 5. Verify sitemap.xml + <lastmod> / JSON-LD dateModified sync
+// 5. Verify sitemap.xml + <lastmod> / JSON-LD dateModified sync + image sitemap
 const sitemap = fs.readFileSync(path.join(DIST, 'sitemap.xml'), 'utf8');
-const urlEntries = [...sitemap.matchAll(/<url><loc>([^<]+)<\/loc>(?:<lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>)?<\/url>/g)];
+check(
+  sitemap.includes('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"'),
+  'sitemap.xml must declare xmlns:image namespace',
+);
+const urlEntries = [
+  ...sitemap.matchAll(
+    /<url><loc>([^<]+)<\/loc>(?:<lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>)?(?:<image:image>[\s\S]*?<\/image:image>)*<\/url>/g,
+  ),
+];
+const sitemapImages = [...sitemap.matchAll(/<image:loc>([^<]+)<\/image:loc>/g)].map((m) => m[1]);
+check(sitemapImages.length >= 49, `sitemap.xml expected >= 49 <image:loc> entries, found ${sitemapImages.length}`);
+check(
+  sitemapImages.every((u) => u.startsWith('https://tusankim.com/images/') && u.endsWith('.png')),
+  'All sitemap <image:loc> entries must point to https://tusankim.com/images/*.png',
+);
 const locs = urlEntries.map((m) => m[1]);
 const sitemapLastmod = new Map(urlEntries.map((m) => [m[1], m[2] ?? null]));
 check(
@@ -308,6 +337,19 @@ check(
 check(!locs.some((u) => u.includes('/404')), 'sitemap.xml must not include 404');
 check(locs.every((u) => u.startsWith('https://tusankim.com/') && u.endsWith('/')), 'All sitemap URLs must use https://tusankim.com/ and trailing slash');
 const withLastmod = urlEntries.filter((m) => Boolean(m[2])).length;
+
+// 5b. Verify Vercel host protection & immutable caching
+const websiteVercel = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'vercel.json'), 'utf8'));
+const hasImmutableAstro = websiteVercel.headers?.some(
+  (h) => h.source === '/_astro/(.*)' && h.headers?.some((x) => x.key === 'Cache-Control' && x.value.includes('immutable')),
+);
+const hasWildcardPreviewNoindex = websiteVercel.headers?.some(
+  (h) =>
+    h.missing?.some((m) => m.type === 'host' && m.value === 'tusankim.com') &&
+    h.headers?.some((x) => x.key === 'X-Robots-Tag' && x.value.includes('noindex')),
+);
+check(Boolean(hasImmutableAstro), 'website/vercel.json must set immutable Cache-Control on /_astro/(.*)');
+check(Boolean(hasWildcardPreviewNoindex), 'website/vercel.json must send X-Robots-Tag: noindex on all non-tusankim.com hosts');
 check(withLastmod === 49, `sitemap.xml expected 49/49 <lastmod> dates, found ${withLastmod}`);
 
 for (const hf of htmlFiles) {

@@ -51,10 +51,21 @@ const siteSchemas = [
     '@id': orgId,
     name: SITE.name,
     url: origin + '/',
-    logo: new URL('/images/app-mark.png', Astro.site).href,
+    logo: {
+      '@type': 'ImageObject',
+      url: new URL('/images/app-mark.png', Astro.site).href,
+      width: 1024,
+      height: 1024,
+    },
     description: SITE.description,
     email: SITE.email,
     areaServed: 'TR',
+    knowsAbout: [
+      'TUS (Tıpta Uzmanlık Eğitimi Giriş Sınavı)',
+      'FSRS-6 Aralıklı Tekrar Algoritması',
+      'Anki Uyumlu Kart Sistemleri (.apkg / .colpkg)',
+      'Tıp Eğitimi Flashcard',
+    ],
     founder: {
       '@type': 'Person',
       name: FOUNDER.name,

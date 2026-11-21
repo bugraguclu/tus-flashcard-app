@@ -19,8 +19,14 @@
       ]
     },
     {
+      "source": "/_astro/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "tusankim-website.vercel.app" }],
+      "missing": [{ "type": "host", "value": "tusankim.com" }],
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     }
   ]

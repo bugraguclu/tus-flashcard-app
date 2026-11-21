@@ -74,7 +74,7 @@ export const GET: APIRoute = async ({ site }) => {
   const rehberEntries: SitemapEntry[] = REHBER_ARTICLES.map((r) => ({
     path: `/rehber/${r.slug}`,
     lastmod: rehberMod,
-    images: [{ loc: origin + '/images/og-home.png', title: `TusAnkiM TUS Rehberi — ${r.h1}` }],
+    images: [{ loc: origin + '/images/og-home.png', title: `TusAnkiM TUS Rehberi — ${r.questionH1}` }],
   }));
 
   const all = [...staticEntries, ...helpEntries, ...branchEntries, ...rehberEntries];
