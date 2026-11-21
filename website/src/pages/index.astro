@@ -9,9 +9,11 @@ import offer from '../data/offer.json';
 import faqs from '../data/faqs.json';
 import { FOUNDER, SITE, PRICING_MODE, SHOW_PRICING_PROMO } from '../config';
 import { answerHtml } from '../lib/richtext';
-import { dateModified, pageSources } from '../lib/lastmod';
+import { breadcrumbList } from '../lib/schema';
+import { effectiveDate, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
+const homeCrumbs = breadcrumbList(origin, [{ name: 'Ana Sayfa', path: '/' }]);
 
 type OfferTier = {
   id: string;
@@ -50,7 +52,50 @@ const activeOffer: {
       schemaOfferDescription: 'Günde 200 karta kadar ücretsiz; lansmana özel sınırsız tam erişim ayda ₺50.',
     };
 
+const softwareOffers =
+  PRICING_MODE === 'free-beta'
+    ? [
+        {
+          '@type': 'Offer',
+          name: 'Açık Beta — 9.575 Kart Ücretsiz',
+          price: '0',
+          priceCurrency: 'TRY',
+          availability: 'https://schema.org/InStock',
+          description: activeOffer.schemaOfferDescription,
+        },
+      ]
+    : [
+        {
+          '@type': 'Offer',
+          name: 'Ücretsiz Plan (Günde 200 Kart)',
+          price: '0',
+          priceCurrency: 'TRY',
+          availability: 'https://schema.org/InStock',
+          description: 'Günde 200 karta kadar ücretsiz çalışma, Anki (.apkg/.colpkg) uyumu, FSRS-6 ve Kronometre.',
+        },
+        {
+          '@type': 'Offer',
+          name: 'Tam Erişim (Lansman Fiyatı)',
+          price: '50',
+          priceCurrency: 'TRY',
+          availability: 'https://schema.org/InStock',
+          description: '9.575 kartlık BKA TUS koleksiyonu, sınırsız günlük tekrar ve 7 gün koşulsuz iade garantisi.',
+          priceSpecification: {
+            '@type': 'UnitPriceSpecification',
+            price: '50',
+            priceCurrency: 'TRY',
+            billingDuration: 'P1M',
+            referenceQuantity: {
+              '@type': 'QuantitativeValue',
+              value: 1,
+              unitCode: 'MON',
+            },
+          },
+        },
+      ];
+
 const homeSchema = [
+  homeCrumbs,
   {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
@@ -61,23 +106,35 @@ const homeSchema = [
     inLanguage: 'tr-TR',
     isPartOf: { '@id': origin + '/#website' },
     about: { '@id': origin + '/#brand' },
-    ...dateModified(pageSources('home')),
+    dateModified: effectiveDate(pageSources('home')),
   },
   {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
+    '@id': origin + '/#software',
     name: 'TusAnkiM',
     applicationCategory: 'EducationalApplication',
     operatingSystem: 'iOS, Web',
     inLanguage: 'tr-TR',
     description: SITE.description,
     url: origin + '/',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'TRY',
-      description: activeOffer.schemaOfferDescription,
+    screenshot: new URL('/images/og-home.png', Astro.site).href,
+    softwareHelp: { '@type': 'WebPage', url: origin + '/yardim/' },
+    publisher: { '@id': origin + '/#organization' },
+    author: {
+      '@type': 'Person',
+      name: FOUNDER.name,
+      jobTitle: FOUNDER.title,
+      url: origin + '/kurucu/',
     },
+    featureList: [
+      '9.575 TUS kartı (11 TUS branşı + Deneme ve Soru, 106 alt deste)',
+      'FSRS-6 aralıklı tekrar zamanlayıcısı ve parametre optimizasyonu',
+      'Kayıpsız Anki (.apkg / .colpkg) içe ve dışa aktarma',
+      'Kronometre, Çalışma Takvimi ve Çalışma Planlama',
+      'Çevrimdışı yerel öncelikli SQLite depolama ve otomatik yedekleme',
+    ],
+    offers: softwareOffers,
   },
 ];
 

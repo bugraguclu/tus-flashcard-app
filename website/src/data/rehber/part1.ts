@@ -12,14 +12,14 @@ export const REHBER_PART_1: RehberArticle[] = [
     directAnswer:
       'Çoğu TUS adayı için bitirilebilir ve sürdürülebilir çekirdek hacim yaklaşık 9.500–10.000 kart bandıdır. Günde 60 yeni kart temposunda 9.575 kartlık BKA TUS destesi 160 günde biterken, 27.341 kartlık bir mega deste 270 günde bile tamamlanmaz ve son aylarda günlük 3 saati aşan tekrar yükü biriktirir.',
     whyMisconceived: [
-      'Adaylar arasında “ne kadar çok kart o kadar yüksek TUS puanı” düşüncesi yaygındır. Konu kitaplarındaki her cümleyi ayrı karta bölen 25.000–35.000 kartlık mega desteler, kağıt üzerinde hiçbir detayı atlamadığı için güvenli görünür.',
-      'Ancak aralıklı tekrarın gerçek maliyeti kartı ilk kez gördüğün gün değil, sonraki haftalarda biriken günlük tekrar (review) kuyruğudur. Yeni kart sayısı arttıkça yalnızca ilk öğrenme değil, 1., 3., 7. ve 30. gün tekrarları üst üste biner.',
-      'ÖSYM sınav pratiğinde belirleyici olan ise pasif bilgi yığını değil; 11 ÖSYM TUS branşında şıkları birbirinden ayıran klinik ve temel ayrımları sınav sabahı hızlıca geri çağırabilmektir.',
+      'TUS adayları arasında “ne kadar çok kart o kadar yüksek TUS puanı” düşüncesi oldukça yaygındır. Konu kitaplarındaki her cümleyi ve dipnotu ayrı karta bölen 25.000–35.000 kartlık mega desteler, kağıt üzerinde hiçbir detayı atlamadığı için ilk bakışta daha güvenli görünür.',
+      'Ancak aralıklı tekrarın gerçek maliyeti bir kartı ilk kez gördüğün gün değil, sonraki haftalarda ve aylarda biriken günlük tekrar (review) kuyruğudur. Yeni kart sayısı arttıkça yalnızca ilk öğrenme süresi değil, 1., 3., 7., 21. ve 60. gün tekrarları üst üste biner ve deneme çözmek için gereken zamanı tüketir.',
+      'ÖSYM sınav pratiğinde belirleyici olan da pasif bilgi yığını ezberlemek değildir; 11 ÖSYM TUS branşında şıkları birbirinden ayıran tanısal ipuçlarını, ilk tetkik ve tedavi basamaklarını ve mekanizma ayrımlarını sınav sabahı hızlıca geri çağırabilmektir.',
     ],
     truthParagraphs: [
-      'TusAnkiM’in açık FSRS-6 simülasyon motoru (hedef hatırlama %90) aynı çalışma temposu altında 9.575 kartlık BKA TUS koleksiyonu ile 27.341 kartlık bir mega desteyi doğrudan kıyaslar. Günde 60 yeni kart açıldığında 9.575 kart 160 günde biter; 270 günlük pencerede ortalama günlük yük 331 kartta (yaklaşık 102 dakika) kalır ve sınav yaklaştığında günlük tekrar süresi 50 dakikaya kadar düşer.',
-      'Aynı 60 yeni kart/gün temposunda 27.341 kartlık bir mega deste 270 günde hâlâ tamamlanamaz (270. günde yalnızca %55,9 bellek kapsamı ve günde 656 kart / 198 dakika tekrar yükü); 365 günde dahi bitmez. Mega desteyi bitirebilmek için günde 80–140 yeni karta çıkıldığında ise tepe günlük süre 286–411 dakikaya tırmanarak soru bankası ve deneme çözümü için zaman bırakmaz.',
-      'Katalog ve referans sayıları arasındaki fark da bu noktada önem taşır: BKA TUS kataloğu 12 ders (11 TUS branşı + karma pekiştirme için 806 kartlık Deneme ve Soru destesi; katalogda Fizyoloji-Histoloji-Embriyoloji kısaca FHE adıyla yer alır) altında toplam 9.575 kart ve 106 konu alt destesi sunar. ÖSYM referans analizi ise Deneme ve Soru hariç 11 resmî TUS branşında son 6 TUS’un 1.195 sorusunda %92,7 konu kapsamı ve %43,6 çözüm desteği gösterir.',
+      'TusAnkiM’in [FSRS-6 algoritma şartnamesi](https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm) ile uyumlu açık simülasyon motoru (%90 hedef hatırlama varsayımıyla) 9.575 kartlık BKA TUS koleksiyonu ile 27.341 kartlık bir mega desteyi aynı tempoda doğrudan kıyaslar. Günde 60 yeni kart açıldığında 9.575 kart 160 günde biter; 180 gün sonunda hafızada 9.044 kart (%94,5) kalıcılaşır, 270 günlük pencerede ortalama günlük yük 331 kartta (102 dk) kalır ve 270. güne gelindiğinde günlük tekrar süresi 50 dakikaya (187 kart) kadar iner.',
+      'Aynı 60 yeni kart/gün temposunda 27.341 kartlık bir mega deste ise 270 günde hâlâ tamamlanamaz; 270. günde yalnızca 16.200 kart tanıtılmış (%55,9 bellek kapsamı) ve günlük yük 656 karta (198 dk) çıkmıştır. 365 günde dahi bitmez. Mega desteyi bitirebilmek için günde 80–140 yeni karta çıkıldığında tepe günlük süre 286–411 dakikaya tırmanır; bu durum [ACM KDD ’22 FSRS çalışmasında](https://dl.acm.org/doi/10.1145/3534678.3539081) incelenen unutma dinamiğinin aşırı yeni-kart yığılmasıyla nasıl bir tekrar borcu ürettiğini gösterir.',
+      'Katalog ve referans sayıları arasındaki fark da çalışma kapsamını doğru okumak için kritiktir: BKA TUS kataloğu 12 ders (3.957 kartlık 6 Temel Bilimler dersi, 4.812 kartlık 5 Klinik Bilimler dersi ve karma pekiştirme için 806 kartlık Deneme ve Soru destesi; katalogda Fizyoloji-Histoloji-Embriyoloji kısaca FHE adıyla yer alır) altında toplam 9.575 kart, 7.721 not ve 106 konu alt destesi sunar. [ÖSYM TUS çıkmış sorular arşivi](https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html) esas alınarak yapılan ön sınıflamada ise Deneme ve Soru hariç 11 resmî TUS branşındaki 1.195 soruda %92,7 konu kapsamı (1.108/1.195) ve %43,6 çözüm desteği (521/1.195) raporlanır.',
     ],
     table: {
       caption: 'FSRS-6 simülasyonuna göre (%90 hatırlama hedefi) 9.575 kartlık çekirdek deste ve 27.341 kartlık mega deste karşılaştırması',
@@ -34,7 +34,7 @@ export const REHBER_PART_1: RehberArticle[] = [
     },
     actionSteps: [
       'Önce sınava kalan gününü netleştir: 6–9 aylık bir hazırlıkta günde 40–60 yeni kart bandı hem konu okumayı hem deneme çözmeyi korur.',
-      'Kendi notlarınla şişmiş dev paketler yerine, her kartta tek bir ayırt edici bilgi ölçen (Cloze + klinik not) çekirdek bir koleksiyonla başla.',
+      'Kopya cümlelerle şişmiş dev paketler yerine, her kartta tek bir ayırt edici bilgi ölçen (Cloze + klinik not) çekirdek bir koleksiyonla başla.',
       'Son 6 TUS referans cetvelinde Anatomi (%28,2 destek) veya Genel Cerrahi (%31,7 destek) gibi daha zorlu branşlarda eksik hissettiğin konulara kendi hedefli kartlarını ekle.',
       'Günlük tekrar süren 120 dakikanın üzerine kalıcı biçimde çıkıyorsa yeni kart açmayı duraklatıp yalnızca mevcut tekrarları ve deneme yanlışlarını temizle.',
     ],
@@ -42,7 +42,7 @@ export const REHBER_PART_1: RehberArticle[] = [
       'Süre ve kart yükü tahminleri TusAnkiM FSRS-6 simülasyon varsayımlarına dayanır; gerçek çalışma süresi okuma hızı, zorluk oranı ve kişisel tekrar düzenine göre değişir. Bu rehber eğitim planlaması amaçlıdır, resmî sınav kılavuzu yerine geçmez.',
     sources: [
       {
-        label: 'FSRS — Optimizing Spaced Repetition Schedule by Capturing the Dynamics of Memory (ACM KDD ’22)',
+        label: 'A Stochastic Shortest Path Algorithm for Optimizing Spaced Repetition Scheduling (ACM KDD ’22)',
         url: 'https://dl.acm.org/doi/10.1145/3534678.3539081',
         publisher: 'ACM Digital Library',
       },
@@ -76,14 +76,15 @@ export const REHBER_PART_1: RehberArticle[] = [
     directAnswer:
       'FSRS-6, her bilgi kartının bellek kararlılığını (stability) ve zorluğunu (difficulty) ayrı modelleyerek seni tam unutmak üzere olduğun günde tekrar ettiren modern bir aralıklı tekrar algoritmasıdır. Aynı %90 hatırlama oranına ulaşmak için klasik SM-2 tabanlı zamanlayıcılara kıyasla ortalama %20–30 daha az günlük tekrar gerektirir.',
     whyMisconceived: [
-      'Birçok TUS adayı aralıklı tekrar uygulamalarının tamamını “1–3–7–21 gün” gibi sabit kurallar veya 1980’lerde geliştirilmiş klasik SM-2 kolaylık çarpanlarıyla aynı sanır.',
-      'Sabit katsayılı SM-2 düzeninde kolay kartlar gereğinden sık, zor kartlar ise geç veya düzensiz çıkar; buna “ease hell” (kolaylık tuzağı) denir ve aylar içinde günlük tekrar kuyruğu şişer.',
-      'Bazı kullanıcılar da FSRS-6’nın daha az kart göstermesinin hatırlama oranını düşüreceğinden çekinir; oysa FSRS-6 hedef hatırlama olasılığını (ör. %90) doğrudan matematiksel bir parametre olarak korur.',
+      'Birçok TUS adayı aralıklı tekrar uygulamalarının tamamını “1–3–7–21 gün” gibi sabit takvim kurallarıyla veya 1980’lerde geliştirilmiş klasik SM-2 kolaylık çarpanlarıyla aynı sanır; bu yüzden kart tekrarlarını kişiselleşemeyen katı bir liste olarak görür.',
+      'Sabit katsayılı SM-2 düzeninde kolay kartlar gereğinden sık, zor klinik ayrımlar ise düzensiz aralıklarla karşına çıkar. “Tekrar” butonuna birkaç kez basıldığında kolaylık çarpanı kalıcı düşer (“ease hell” / kolaylık tuzağı) ve aylar içinde günlük tekrar kuyruğu içinden çıkılmaz biçimde şişer.',
+      'Bazı kullanıcılar da FSRS-6’nın daha az günlük kart göstermesinin sınav günü hatırlama oranını düşüreceğinden çekinir; oysa FSRS-6 hedef hatırlama olasılığını (ör. %90) rastgele azaltmak yerine doğrudan matematiksel bir hedef değişken olarak korur.',
     ],
     truthParagraphs: [
-      'ACM KDD ’22 bildirisinde tanıtılan ve açık kaynak Open Spaced Repetition topluluğu tarafından geliştirilen FSRS (Free Spaced Repetition Scheduler), bellek dinamiğini üç temel değişkenle izler: Geri Çağrılabilirlik (Retrievability — o an hatırlama olasılığı), Kararlılık (Stability — hatırlamanın %100’den %90’a düşmesi için gereken gün sayısı) ve Zorluk (Difficulty — bilginin doğal karmaşıklığı).',
-      'FSRS-6 sürümü güç yasası (power forgetting curve) tabanlı 21 parametre kullanır ve kısa dönem (gün içi) öğrenme adımlarından uzun vadeli tekrarlara kadar tek tutarlı eğri üretir. Bir kartı zorlanmadan “İyi” veya “Kolay” yanıtladıkça kararlılık sıçraması kartın geçmişine göre dinamik hesaplanır; unuttuğunda (“Tekrar”) ise ceza aralığı sıfıra çakılmak yerine önceki kararlılıktan pay alır.',
-      'TusAnkiM FSRS-6 simülatörünün %90 hedef hatırlama varsayımıyla Temel Bilimler (3.957 kart) için ürettiği eğride günde 60 yeni kart açan bir aday 66 günde tüm yeni kartları bitirir; 180 gün sonunda ortalama tekrar yükü günde 166 tekrarda (59 dk) dengelenir. Klinik Bilimlerde (4.812 kart) aynı tempo 81 günde tamamlanır ve 270 gün ortalaması 160 tekrar/gün (54 dk) düzeyindedir.',
+      'Ye ve arkadaşlarının [ACM KDD ’22 bildirisinde](https://dl.acm.org/doi/10.1145/3534678.3539081) temeli atılan ve açık kaynak [awesome-fsrs algoritma şartnamesinde](https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm) detaylandırılan FSRS (Free Spaced Repetition Scheduler), bellek dinamiğini DSR modeliyle izler: Geri Çağrılabilirlik (Retrievability — o an hatırlama olasılığı), Kararlılık (Stability — hatırlamanın %100’den %90’a inmesi için gereken gün sayısı) ve Zorluk (Difficulty — bilginin 1–10 arası doğal karmaşıklığı).',
+      'FSRS-6 sürümü güç yasası (power forgetting curve) tabanlı 21 parametre kullanır ve 17 veya 19 parametreli eski FSRS kayıtlarıyla da geriye dönük uyumlu çalışır; referans kodu [fsrs-rs açık deposunda](https://github.com/open-spaced-repetition/fsrs-rs) yayımlanır ve [Anki Deste Seçenekleri kılavuzunda](https://docs.ankiweb.net/deck-options.html) anlatıldığı biçimde geçmiş tekrar günlüklerinden (revlog) kişiselleştirilebilir. Bir kartı zorlanmadan “İyi” veya “Kolay” yanıtladıkça kararlılık sıçraması kartın geçmişine göre dinamik büyür; unuttuğunda (“Tekrar”) ise aralık körü körüne sıfırlanmak yerine önceki kararlılıktan pay alır.',
+      'TusAnkiM FSRS-6 simülatörünün %90 hedef hatırlama varsayımıyla ürettiği uzun dönem eğrilerde fark net biçimde görülür: tüm 9.575 kartlık pakette günde 60 yeni kart açan bir aday 160 günde tüm yeni kartları bitirir; 180 gün ortalaması 388 kart (124 dk/gün), 270 gün ortalaması 331 kart (102 dk/gün) ve 365 gün ortalaması 285 kart (86 dk/gün) düzeyindedir. Üstelik 365. güne gelindiğinde günlük tekrar yükü yalnızca 130 karta (34 dk/gün) kadar düşer. Aynı 180 günlük pencerede günde 40 yeni kartla ortalama yük 275 kartta (88 dk/gün) kalırken, günde 80 yeni kartta tüm havuz 120. günde biter ve 180. günde günlük yük 61 dakikaya (228 kart) iner.',
+      'Grup bazında plan yapıldığında yük daha da yönetilebilir olur: Temel Bilimler (3.957 kart, 6 ders) günde 60 yeni kartla 66 günde tamamlanır ve 180 gün sonunda ortalama 166 tekrar/gün (59 dk) gerektirir. Klinik Bilimlerde (4.812 kart, 5 ders) aynı tempo 81 günde biter ve 270 gün ortalaması 160 tekrar/gün (54 dk) düzeyinde kalır. Hedef hatırlamayı %90 yerine %95’e çekmek ise aralıkları daraltarak toplam tekrar yükünü gereksiz yere katlar.',
     ],
     table: {
       caption: 'FSRS-6 ile klasik SM-2 zamanlayıcı yaklaşımının TUS çalışma pratiğindeki temel farkları',
@@ -144,14 +145,16 @@ export const REHBER_PART_1: RehberArticle[] = [
     directAnswer:
       'Anki uyumlu bir TUS çalışma düzeninde kartların, HTML şablonların, görsellerin ve tekrar geçmişin açık .apkg (deste) veya .colpkg (koleksiyon) paketleriyle cihazlar arasında taşınır. TusAnkiM bağımsız ve yerel öncelikli bir uygulama olarak .apkg/.colpkg dosyalarını ve FSRS-6 zamanlayıcısını doğrudan Türkçe arayüzle destekler.',
     whyMisconceived: [
-      'Birçok hekim adayı aralıklı tekrar sistemine başlamak istediğinde karmaşık İngilizce ayar ekranları, şablon kodları ve eklenti gereksinimleri yüzünden ilk haftada vazgeçer.',
-      'Bir diğer yaygın yanılgı ise farklı bir uygulamaya geçildiğinde önceki tüm tekrar geçmişinin (revlog), etiketlerin ve görsellerin kaybolacağı korkusudur.',
-      'Ayrıca bazı kullanıcılar dışa aktarma formatlarının ne zaman .apkg ve ne zaman .colpkg olması gerektiğini karıştırdığı için koleksiyon yedeği yerine yalnızca tek deste alır veya tersini yaparak mevcut destelerinin üzerine yazar.',
+      'Birçok hekim adayı aralıklı tekrar sistemine başlamak istediğinde karmaşık İngilizce ayar ekranları, HTML/CSS şablon kodları ve masaüstü eklenti (add-on) gereksinimleri yüzünden daha ilk haftada sistemi kurmaktan vazgeçer.',
+      'Bir diğer yaygın yanılgı ise cihaz veya uygulama değiştirildiğinde önceki tüm tekrar geçmişinin (revlog), etiket hiyerarşisinin ve anatomi/histoloji görsellerinin kaybolacağı endişesidir; oysa standart paket yapısı bu verileri doğrudan içinde taşır.',
+      'Ayrıca birçok kullanıcı dışa aktarma formatlarının ne zaman .apkg ve ne zaman .colpkg olması gerektiğini karıştırdığı için tam koleksiyon yedeği yerine yalnızca tek deste alır ya da tam tersine, tek bir yeni ders eklemek isterken koleksiyonun üzerine yazar.',
     ],
     truthParagraphs: [
-      'Açık paket standardında .apkg bir veya birkaç seçili desteyi (notlar, kartlar, şablonlar, ses/görsel medya ve isteğe bağlı tekrar geçmişi ile) mevcut koleksiyonuna ekler. Buna karşılık .colpkg tüm koleksiyonu (bütün desteler, ayar ön ayarları ve veritabanı durumu) taşır; bu nedenle resmî Anki kılavuzunda belirtildiği üzere .colpkg içe aktarması mevcut koleksiyonun yerini alır.',
-      'TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile resmî bir bağlantısı yoktur. Ancak açık .apkg ve .colpkg paket biçimlerini, Cloze (boşluk doldurma) ve Image Occlusion (görsel gizleme) kart şablonlarını, medya dosyalarını ve FSRS-6 zamanlayıcısını yerel SQLite veritabanı üzerinde destekler.',
-      'Pratik TUS akışında kendi dershane notlarından ürettiğin .apkg destelerini içe aktarabilir, istersen 12 derslik (11 TUS branşı + Deneme ve Soru) 9.575 kartlık BKA TUS koleksiyonuyla aynı uygulamada birlikte çalışabilir ve istediğin an tüm kişisel destelerini yine .apkg veya .colpkg olarak dışa aktarabilirsin.',
+      'Açık paket standardında bir .apkg dosyası yalnızca seçili bir veya birkaç desteyi (notlar, kartlar, şablonlar, ses/görsel medya ve isteğe bağlı zamanlama geçmişiyle birlikte) mevcut koleksiyonuna ekler. Buna karşılık [Anki Resmî Dışa Aktarma Kılavuzu’nda](https://docs.ankiweb.net/exporting.html#collection-colpkg) açıkça belirtildiği üzere .colpkg dosyası bütün koleksiyonu (tüm desteler, ayar ön ayarları ve veritabanı durumu) kapsar ve içe aktarıldığında mevcut koleksiyonun yerini alır; bu yüzden .colpkg açmadan önce mutlaka otomatik veya elle yedek alınmalıdır.',
+      'TusAnkiM bağımsız bir projedir; Anki, [AnkiMobile](https://docs.ankimobile.net/) veya Ankitects ile resmî bir bağlantısı ya da ortaklığı yoktur. Ancak [Anki Giriş ve Temel Kavramlar kılavuzundaki](https://docs.ankiweb.net/intro.html) açık veri modeline uygun biçimde `.apkg` ve `.colpkg` dosyalarını, Cloze (boşluk doldurma) ve Image Occlusion (görsel gizleme) kart şablonlarını, medya eklerini, etiketleri ve FSRS-6 zamanlayıcısını tamamen çevrimdışı çalışan yerel SQLite veritabanı üzerinde destekler.',
+      'Pratik TUS çalışma akışında kendi dershane notlarından, CSV/TSV tablolarından veya deneme yanlışlarından ürettiğin `.apkg` destelerini iPhone veya Web tarayıcı üzerinden koleksiyonuna ekleyebilir, istersen 12 katalog dersini (11 ÖSYM TUS branşı + karma pekiştirme için 806 kartlık Deneme ve Soru destesi; katalogdaki FHE dersi ÖSYM sınıflamasında Fizyoloji-Histoloji-Embriyoloji adını taşır) kapsayan 9.575 kartlık BKA TUS koleksiyonuyla aynı ekranda çalışabilirsin.',
+      'Tarayıcı ekranında `deck:`, `tag:`, `flag:` veya `is:due` gibi arama filtreleriyle yalnızca zorlandığın branşları seçip geçici bir Filtrelenmiş Deste (Özel Çalışma) kurabilir, Kronometre ve Çalışma Takvimi ile günlük süreni tek çizelgede takip edebilirsin. Kişisel notlarını tablo biçiminde hazırladıysan CSV/TSV içe aktarma ile sütunları doğrudan not alanlarına eşleyebilirsin.',
+      'Veri taşınabilirliği iki yönlü korunur: önceki çalışma düzeninden getirdiğin kişisel desteler, not türleri (Temel, ters kartlı, Boşluk Doldurma / Cloze ve Görsel Gizleme), kart şablonları, medya ekleri ve tekrar geçmişin cihazındaki yerel SQLite veritabanında çevrimdışı saklanır. Uygulama otomatik yedeklerin yanı sıra tek dokunuşla `.colpkg` veya `.apkg` dışa aktarımına da izin verir; böylece kişisel notların hiçbir biçimde tek bir uygulamaya kilitlenmez ve yedek dosyasından kolayca geri yüklenebilir. Hazır BKA TUS paketi ise katalog koruması nedeniyle yalnızca uygulama içinde güvenle çalışır.',
     ],
     table: {
       caption: 'TUS hazırlığında Anki uyumlu paket biçimleri ve kullanım amaçları',
@@ -194,69 +197,5 @@ export const REHBER_PART_1: RehberArticle[] = [
       { label: 'FSRS-6 nasıl çalışır?', href: '/rehber/tus-icin-fsrs-6-nedir/' },
     ],
     keywords: 'anki uyumlu tus sistemi apkg colpkg içe aktarma fsrs kurulum',
-  },
-  {
-    slug: 'tus-puani-nasil-hesaplanir',
-    order: 4,
-    tone: 'Markasız',
-    questionH1: 'TUS puanı nasıl hesaplanır? %5 puan kesintisi, 45 barajı ve Temel/Klinik ağırlıkları',
-    seoTitle: 'TUS Puanı Nasıl Hesaplanır? %5 Kesinti & Ağırlıklar | TusAnkiM',
-    seoDescription:
-      'ÖSYM TUS puan hesaplama mantığı: 4 yanlış 1 doğru kuralı, Temel (%70/%30) ve Klinik (%50/%50) ağırlıkları, 45 puan barajı ve %5 kesinti yönetmeliği.',
-    directAnswer:
-      'TUS’ta her biri 100 soruluk Temel ve Klinik oturumlarda 4 yanlış 1 doğruyu götürür; Temel Tıp Puanı %70 Temel + %30 Klinik, Klinik Tıp Puanı ise %50 Temel + %50 Klinik standart puan ağırlıklarıyla hesaplanır. Yerleştirme için 45 puan barajı, yabancı dil yeterliliği ve yönetmelik kapsamındaki durumlarda %5 kesinti uygulanır.',
-    whyMisconceived: [
-      'Adaylar sıkça yalnızca Klinik Bilimler netinin Klinik TUS puanını belirlediğini düşünür; oysa Temel Bilimler puanının yarısı (%50) doğrudan Klinik Puanı içine girer.',
-      'Bir başka eski alışkanlık da uzmanlık eğitimine devam edenler, istifa edenler veya yerleşip başlamayanlar için kesinti oranını eski yönetmelikteki gibi %2 sanmaktır; güncel yönetmelikte kesinti %5 olarak uygulanır.',
-      'Ayrıca internetteki hesaplayıcıların verdiği puanların kesin resmî puan olduğu yanılgısı yaygındır; gerçek puan her dönemin Türkiye ortalaması ve standart sapmasına göre ÖSYM tarafından hesaplanır.',
-    ],
-    truthParagraphs: [
-      'ÖSYM TUS kılavuzlarına göre sınav iki oturumdan oluşur: Temel Tıp Bilimleri Testi (100 soru: Anatomi, Fizyoloji-Histoloji-Embriyoloji, Biyokimya, Mikrobiyoloji, Patoloji, Farmakoloji) ve Klinik Tıp Bilimleri Testi (100 soru: Dahiliye, Pediatri, Genel Cerrahi, Kadın Doğum, Küçük Stajlar). Her iki testte de doğru sayısından yanlış sayısının dörtte biri çıkarılarak ham net elde edilir.',
-      'Ham netler sınava giren adayların ortalaması ve standart sapması kullanılarak standart puana dönüştürülür. Ağırlıklı Mesleki Bilgi Puanı hesaplanırken Temel Tıp Puanı için Temel standart puanına 0,7 ve Klinik standart puanına 0,3 katsayısı; Klinik Tıp Puanı için ise her iki alana eşit 0,5 + 0,5 katsayısı verilir. İlgili puan türünde tercih yapabilmek için en az 45 puan almak gerekir.',
-      'Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği uyarınca bir uzmanlık programında eğitim görürken sınava girenlerin, eğitimden istifa edenlerin veya ÖSYM tarafından yerleştirilip süresi içinde başlamayanların ilk sınavında mesleki bilgi puanında %5 oranında kesinti yapılır. Ayrıca tercih yapabilmek için son 5 yıl içinde YDS, e-YDS, TIPDİL veya eşdeğeri bir sınavdan en az 50 yabancı dil puanı şartı aranır.',
-    ],
-    table: {
-      caption: 'TUS oturum ağırlıkları, baraj ve kesinti kuralları özeti',
-      headers: ['Bileşen', 'Kural / Oran', 'Resmî Dayanak ve Etkisi'],
-      rows: [
-        ['Ham Net Hesabı', 'Doğru − (Yanlış / 4)', '100 Temel + 100 Klinik toplam 200 soru üzerinde hesaplanır'],
-        ['Temel Tıp Puanı (T)', '%70 Temel + %30 Klinik ağırlık', 'Temel bilimler uzmanlık alanları tercihinde esas alınır'],
-        ['Klinik Tıp Puanı (K)', '%50 Temel + %50 Klinik ağırlık', 'Klinik branşlar için Temel neti de puanın yarısını belirler'],
-        ['Tercih Barajı', '45,000 puan', 'İlgili puan türünde 45 altı tercih hakkı vermez'],
-        ['Puan Kesintisi', '%5 kesinti (× 0,95)', 'Uzmanlığa devam, istifa veya yerleşip başlamama sonrası ilk sınavda'],
-        ['Yabancı Dil Şartı', 'En az 50 puan (son 5 yıl)', 'YDS / TIPDİL / ÖSYM eşdeğer belgesi tercih ön koşuludur'],
-      ],
-    },
-    actionSteps: [
-      'Klinik branş hedefliyorsan Temel Bilimleri ihmal etme: Klinik puanının %50’si Temel netlerinden gelir.',
-      'Deneme sonrası netlerini TUS Puan Hesaplayıcıya girerken önceki yerleştirme veya istifa durumun varsa %5 kesinti seçeneğini mutlaka işaretle.',
-      'Sınav sonucunun ardından yalnızca ham puana değil, o dönemin kontenjan dağılımına ve kendi sıralama bandına göre 30 tercih listesi oluştur.',
-      'Yabancı dil belgenin 5 yıllık geçerlilik süresini başvuru takviminden önce ÖSYM sisteminden kontrol et.',
-    ],
-    boundaryNote:
-      'Buradaki formül ve katsayı açıklamaları genel bilgilendirme amaçlıdır; dönemlik ortalama, standart sapma ve iptal edilen sorular resmî sonucu değiştirebilir. Kesin kurallar için her dönem yayımlanan güncel ÖSYM TUS Kılavuzu ve Resmî Gazete mevzuatı esas alınmalıdır.',
-    sources: [
-      {
-        label: 'ÖSYM — Tıpta Uzmanlık Eğitimi Giriş Sınavı (TUS) Genel Bilgiler ve Kılavuzlar',
-        url: 'https://www.osym.gov.tr/TR,14991/tipta-uzmanlik-egitimi-giris-sinavi.html',
-        publisher: 'ÖSYM',
-      },
-      {
-        label: 'Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği (Resmî Gazete, Sayı 31942)',
-        url: 'https://www.resmigazete.gov.tr/eskiler/2022/09/20220903-2.htm',
-        publisher: 'Resmî Gazete',
-      },
-      {
-        label: 'ÖSYM — TUS Çıkmış Sınav Soruları Arşivi',
-        url: 'https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html',
-        publisher: 'ÖSYM',
-      },
-    ],
-    relatedLinks: [
-      { label: 'İnteraktif TUS Puan Hesaplayıcı', href: '/puan-hesapla/' },
-      { label: '2027 TUS tarihleri ve çalışma planı', href: '/rehber/2027-tus-tarihleri-ve-calisma-plani/' },
-      { label: '11 ÖSYM TUS Branş Referansı', href: '/referanslar/' },
-    ],
-    keywords: 'tus puanı nasıl hesaplanır %5 kesinti 45 barajı temel klinik ağırlık',
   },
 ];

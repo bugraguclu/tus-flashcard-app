@@ -181,6 +181,20 @@ check(
   `Expected 50 HTML pages (10 core + 21 help guides + 11 branches + 8 rehber), got ${htmlFiles.length}`,
 );
 
+const r3Bans = [
+  { re: /wa\.me/i, label: 'Forbidden WhatsApp wa.me link' },
+  { re: /905000000000/, label: 'Forbidden placeholder phone number 905000000000' },
+  { re: /\bWhatsApp\b/i, label: 'Forbidden WhatsApp reference' },
+  { re: /instagram\.com\/tusankim/i, label: 'Unverified Instagram @tusankim placeholder' },
+  { re: /youtube\.com\/@tusankim/i, label: 'Unverified YouTube @tusankim placeholder' },
+  { re: /TusAnkiM Kurucu & Editör Ekibi/i, label: 'Stale generic founder identity' },
+  { re: /7\/24\s*(?:WhatsApp|Destek)/i, label: 'Unverified 7/24 support SLA' },
+  { re: /\bappStoreUrl\b/i, label: 'Forbidden appStoreUrl placeholder' },
+  { re: /apps\.apple\.com/i, label: 'Unverified App Store URL' },
+  { re: /play\.google\.com/i, label: 'Unverified Play Store URL' },
+  { re: /\btel:/i, label: 'Forbidden tel: link' },
+];
+
 const forbiddenText = [
   { re: /Cloze-AnKingMaster/i, label: 'Cloze-AnKingMaster' },
   { re: /Sansa\s*Pro/i, label: 'Sansa Pro' },
@@ -191,13 +205,7 @@ const forbiddenText = [
   { re: /<iframe\b/i, label: 'Forbidden <iframe>' },
   { re: /\son(?:click|change|input|submit)=/i, label: 'Inline JS event handler' },
   { re: /text-ink\/45/i, label: 'Low-contrast text-ink/45' },
-  { re: /wa\.me/i, label: 'Forbidden WhatsApp wa.me link' },
-  { re: /905000000000/, label: 'Forbidden placeholder phone number 905000000000' },
-  { re: /\bWhatsApp\b/i, label: 'Forbidden WhatsApp reference' },
-  { re: /instagram\.com\/tusankim/i, label: 'Unverified Instagram @tusankim placeholder' },
-  { re: /youtube\.com\/@tusankim/i, label: 'Unverified YouTube @tusankim placeholder' },
-  { re: /TusAnkiM Kurucu & Editör Ekibi/i, label: 'Stale generic founder identity' },
-  { re: /7\/24\s*(?:WhatsApp|Destek)/i, label: 'Unverified 7/24 support SLA' },
+  ...r3Bans,
 ];
 
 for (const hf of htmlFiles) {
@@ -322,7 +330,9 @@ for (const hf of htmlFiles) {
 
 // 6. Verify arama-index.json
 const searchIndexRaw = fs.readFileSync(path.join(DIST, 'arama-index.json'), 'utf8');
-check(!/whatsapp|wa\.me|905000000000/i.test(searchIndexRaw), 'arama-index.json must not contain WhatsApp or placeholder phone number');
+for (const ban of r3Bans) {
+  check(!ban.re.test(searchIndexRaw), `arama-index.json: forbidden R3 pattern "${ban.label}"`);
+}
 const searchIndex = JSON.parse(searchIndexRaw);
 check(Array.isArray(searchIndex) && searchIndex.length >= 50, `arama-index.json expected >= 50 entries, got ${searchIndex.length}`);
 
@@ -388,9 +398,52 @@ check(
   'yardim/tus-kartlari/index.html: missing 12 ders vs 11 branş terminology note',
 );
 
+const decodeEntities = (s) =>
+  s
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+
+const extractMeta = (html) => {
+  const title = decodeEntities(html.match(/<title>([^<]+)<\/title>/i)?.[1] ?? '');
+  const desc = decodeEntities(html.match(/<meta name="description" content="([^"]*)"/i)?.[1] ?? '');
+  const lds = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)].map((m) =>
+    JSON.parse(m[1]),
+  );
+  return { title, desc, lds };
+};
+
+const verifyDatasetSchema = (rel, html) => {
+  const { lds } = extractMeta(html);
+  const ds = lds.find((o) => o['@type'] === 'Dataset');
+  check(Boolean(ds), `${rel}: missing Dataset JSON-LD`);
+  if (ds) {
+    check(
+      ds.creator?.name === 'Uzm. Dr. Muhammet Kürşat Güçlü' &&
+        ds.creator?.address?.addressLocality === 'Çiğli' &&
+        ds.creator?.address?.addressRegion === 'İzmir' &&
+        Boolean(ds.publisher?.['@id']?.endsWith('/#organization')),
+      `${rel}: Dataset JSON-LD missing full founder creator/address or publisher`,
+    );
+  }
+};
+
+verifyDatasetSchema('referanslar/index.html', refHtml);
+const kurucuMeta = extractMeta(kurucuHtml);
+check(
+  kurucuMeta.desc.length >= 90 && kurucuMeta.desc.length <= 160,
+  `kurucu/index.html: meta description length ${kurucuMeta.desc.length} outside 90..160`,
+);
+
 for (const slug of BRANCH_SLUGS) {
   const rel = `referanslar/${slug}/index.html`;
   const html = fs.readFileSync(path.join(DIST, rel), 'utf8');
+  const meta = extractMeta(html);
+  check(meta.title.length <= 60, `${rel}: title length ${meta.title.length} > 60`);
+  check(meta.desc.length >= 90 && meta.desc.length <= 160, `${rel}: meta description length ${meta.desc.length} outside 90..160`);
+  verifyDatasetSchema(rel, html);
   check(html.includes('Son güncelleme:'), `${rel}: missing visible Son güncelleme`);
   check(html.includes('Uzm. Dr. Muhammet Kürşat Güçlü'), `${rel}: missing physician review signature`);
   check(html.includes('12 ders') && html.includes('11 resmî TUS branşı'), `${rel}: missing 12 ders vs 11 branş note`);
@@ -403,6 +456,9 @@ for (const slug of BRANCH_SLUGS) {
 for (const slug of REHBER_SLUGS) {
   const rel = `rehber/${slug}/index.html`;
   const html = fs.readFileSync(path.join(DIST, rel), 'utf8');
+  const meta = extractMeta(html);
+  check(meta.title.length <= 60, `${rel}: title length ${meta.title.length} > 60 (${meta.title})`);
+  check(meta.desc.length >= 90 && meta.desc.length <= 160, `${rel}: meta description length ${meta.desc.length} outside 90..160`);
   check(html.includes('Son güncelleme:'), `${rel}: missing visible Son güncelleme`);
   check(html.includes('Uzm. Dr. Muhammet Kürşat Güçlü'), `${rel}: missing physician review signature`);
   check(html.includes('Neden böyle sanılıyor?'), `${rel}: missing 8-part schema section "Neden böyle sanılıyor?"`);
@@ -410,13 +466,26 @@ for (const slug of REHBER_SLUGS) {
   check(html.includes('Ne yapabilirsiniz?'), `${rel}: missing 8-part schema section "Ne yapabilirsiniz?"`);
   check(html.includes('Sınır uyarısı'), `${rel}: missing 8-part schema section "Sınır uyarısı"`);
   check(html.includes('<table'), `${rel}: missing HTML comparison table`);
+  const truthMatch = html.match(/<section[^>]*aria-labelledby="truth-heading"[^>]*>([\s\S]*?)<\/section>/i);
+  check(
+    Boolean(truthMatch && /<a\b[^>]*href="https:\/\/[^"]+"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/i.test(truthMatch[1])),
+    `${rel}: missing inline external https:// citation inside "Doğrusu" section`,
+  );
+  const h1Text = (html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? '').replace(/<[^>]+>/g, '').trim();
+  check(h1Text.includes('?'), `${rel}: H1 must be phrased as a question ("${h1Text}")`);
+  const articleHtml = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/i)?.[1] ?? '';
+  const articleWords = decodeEntities(articleHtml.replace(/<[^>]+>/g, ' ')).trim().split(/\s+/).filter(Boolean).length;
+  check(
+    articleWords >= 600 && articleWords <= 900,
+    `${rel}: <article> word count ${articleWords} outside 600..900 target`,
+  );
   check(
     /<a\b[^>]*href="https:\/\/[^"]+"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/i.test(html),
     `${rel}: missing external https:// authority link`,
   );
 }
 
-// 9. Verify robots.txt AI crawlers & LLM references
+// 10. Verify robots.txt AI crawlers & LLM references
 const robotsPath = path.join(DIST, 'robots.txt');
 if (fs.existsSync(robotsPath)) {
   const robotsText = fs.readFileSync(robotsPath, 'utf8');
@@ -449,7 +518,7 @@ if (fs.existsSync(robotsPath)) {
   check(robotsText.includes('# LLM summary: https://tusankim.com/llms.txt'), 'robots.txt: missing # LLM summary: https://tusankim.com/llms.txt');
 }
 
-// 10. Verify IndexNow key file & monorepo-safe workflow consistency
+// 11. Verify IndexNow key file & monorepo-safe workflow consistency
 const configExports = loadTsExports(path.join(WEBSITE_ROOT, 'src/config.ts'));
 const pagesExports = loadTsExports(path.join(WEBSITE_ROOT, 'src/data/pages.ts'), {
   '../config': configExports,
@@ -484,13 +553,21 @@ if (publicKeyFiles.length === 1) {
     check(/^\s*workflow_dispatch:/m.test(wf), '.github/workflows/indexnow.yml: missing workflow_dispatch trigger');
     check(/^\s*deployment_status:/m.test(wf), '.github/workflows/indexnow.yml: missing deployment_status trigger');
     check(
+      wf.includes("github.event.deployment_status.state == 'success'"),
+      ".github/workflows/indexnow.yml: missing deployment_status.state == 'success' filter",
+    );
+    check(
+      wf.includes("startsWith(github.event.deployment.environment, 'Production')"),
+      ".github/workflows/indexnow.yml: missing startsWith(deployment.environment, 'Production') filter",
+    );
+    check(
       wf.includes(`environment_url == 'https://${SITE.domain}'`),
       `.github/workflows/indexnow.yml: missing strict environment_url filter for https://${SITE.domain}`,
     );
   }
 }
 
-// 11. Drift Guard for llms.txt & llms-full.txt (source data <-> dist parity)
+// 12. Drift Guard for llms.txt & llms-full.txt (source data <-> dist parity)
 const catalogData = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/generated/catalog.json'), 'utf8'));
 const refsSummary = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/generated/references-summary.json'), 'utf8'));
 const fsrsCurves = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/generated/fsrs-curves.json'), 'utf8'));
@@ -510,14 +587,60 @@ const staticEndpoints = new Set([
 
 const megaScope = fsrsCurves.scopes.find((s) => s.id === 'mega');
 const finDays60 = fsrsCurves.matrix?.all?.['180']?.['60']?.fin;
+const allDay270Min = fsrsCurves.matrix?.all?.['270']?.['60']?.pts?.at(-1)?.[2];
+const megaDay270Min = fsrsCurves.matrix?.mega?.['270']?.['60']?.pts?.at(-1)?.[2];
 const desiredRetentionPct = Math.round(Number(fsrsCurves.desiredRetention) * 100);
 const coreSitemapUrls = pagesExports.sitemapPages().map((p) => `https://${SITE.domain}${pagesExports.link(p.path)}`);
+
+function parseMarkdownTables(raw) {
+  const lines = raw.split(/\r?\n/);
+  const tables = [];
+  const sepRe = /^\|(?:\s*:?-+:?\s*\|)+\s*$/;
+  const splitRow = (line) =>
+    line
+      .trim()
+      .split('|')
+      .slice(1, -1)
+      .map((cell) => cell.trim().replace(/\*\*/g, '').replace(/`/g, ''));
+
+  for (let i = 0; i < lines.length - 1; i++) {
+    const headerLine = lines[i].trim();
+    const sepLine = lines[i + 1].trim();
+    if (headerLine.startsWith('|') && sepRe.test(sepLine)) {
+      const headers = splitRow(headerLine);
+      const rows = [];
+      let j = i + 2;
+      while (j < lines.length && lines[j].trim().startsWith('|')) {
+        rows.push(splitRow(lines[j]));
+        j++;
+      }
+      tables.push({ headers, rows });
+      i = j - 1;
+    }
+  }
+  return tables;
+}
+
+const branchSlugMap = new Map([
+  ['Anatomi', 'anatomi'],
+  ['Fizyoloji-Histoloji-Embriyoloji', 'fizyoloji-histoloji-embriyoloji'],
+  ['Biyokimya', 'biyokimya'],
+  ['Mikrobiyoloji', 'mikrobiyoloji'],
+  ['Patoloji', 'patoloji'],
+  ['Farmakoloji', 'farmakoloji'],
+  ['Dahiliye', 'dahiliye'],
+  ['Pediatri', 'pediatri'],
+  ['Genel Cerrahi', 'genel-cerrahi'],
+  ['Kadın Doğum', 'kadin-dogum'],
+  ['Küçük Stajlar', 'kucuk-stajlar'],
+]);
 
 const checkLlmsDoc = (filename, { requireFullBreakdown, maxLines }) => {
   const filePath = path.join(DIST, filename);
   if (!fs.existsSync(filePath)) return;
   const raw = fs.readFileSync(filePath, 'utf8');
   const flat = raw.replace(/\r?\n>\s*/g, ' ').replace(/\s+/g, ' ');
+  const plain = flat.replace(/`/g, '');
 
   // Structure & Turkish sanity
   check(raw.startsWith('# TusAnkiM'), `${filename}: must begin with "# TusAnkiM" H1 (llmstxt.org)`);
@@ -530,12 +653,12 @@ const checkLlmsDoc = (filename, { requireFullBreakdown, maxLines }) => {
 
   // Hard bans (WhatsApp placeholder, stale figures, template leaks)
   const llmsForbidden = [
-    { re: /wa\.me/i, label: 'WhatsApp wa.me link' },
-    { re: /whatsapp/i, label: 'WhatsApp mention/link' },
-    { re: /905000000000/, label: '905000000000 placeholder' },
+    ...r3Bans,
     { re: /822\s*\/\s*1\.?195/, label: 'stale 822/1195 ratio' },
     { re: /%77[,.]5|77[,.]5\s*%/, label: 'stale %77,5 ratio' },
     { re: /%2\s*Puan\s*Kesintisi/i, label: 'stale %2 Puan Kesintisi' },
+    { re: /bağımsız hekim editör doğrulamasıyla tek tek incelenmiştir/i, label: 'premature physician verification claim' },
+    { re: /bir önceki yıl TUS'a yerleşen adaylar için/i, label: 'inaccurate %5 deduction rule' },
     { re: /Cloze-AnKingMaster/i, label: 'Cloze-AnKingMaster' },
     { re: /"reaId"|reaId/i, label: 'reaId' },
     { re: /\bbelif\b/i, label: 'belif leftover' },
@@ -548,122 +671,233 @@ const checkLlmsDoc = (filename, { requireFullBreakdown, maxLines }) => {
   }
 
   // Independent product disclaimer & boundaries
-  check(flat.includes(SITE.disclaimer), `${filename}: missing exact disclaimer "${SITE.disclaimer}"`);
-  check(flat.includes('ÖSYM') && flat.includes('tıbbi tavsiye'), `${filename}: missing ÖSYM / medical-advice boundary`);
-  check(flat.includes('Yakında') && flat.includes('Android'), `${filename}: missing Yakında platform boundary`);
+  check(plain.includes(SITE.disclaimer), `${filename}: missing exact disclaimer "${SITE.disclaimer}"`);
+  check(plain.includes('ÖSYM') && plain.includes('tıbbi tavsiye'), `${filename}: missing ÖSYM / medical-advice boundary`);
+  check(plain.includes('Yakında') && plain.includes('Android'), `${filename}: missing Yakında platform boundary`);
 
-  // Catalog numbers (catalog.json)
-  check(flat.includes(fmtTrInt(catalogData.totals.cards)), `${filename}: missing catalog cards ${fmtTrInt(catalogData.totals.cards)}`);
-  check(flat.includes(fmtTrInt(catalogData.totals.notes)), `${filename}: missing catalog notes ${fmtTrInt(catalogData.totals.notes)}`);
-  check(flat.includes(`${catalogData.totals.courses} ders`) || flat.includes(`${catalogData.totals.courses} katalog dersi`), `${filename}: missing ${catalogData.totals.courses} courses count`);
-  check(flat.includes(`${catalogData.totals.topicSubdecks}`), `${filename}: missing ${catalogData.totals.topicSubdecks} topicSubdecks`);
-  check(flat.includes(fmtTrInt(catalogData.totals.temelCards)), `${filename}: missing temelCards ${fmtTrInt(catalogData.totals.temelCards)}`);
-  check(flat.includes(fmtTrInt(catalogData.totals.klinikCards)), `${filename}: missing klinikCards ${fmtTrInt(catalogData.totals.klinikCards)}`);
-  check(flat.includes(fmtTrInt(catalogData.totals.karmaCards)), `${filename}: missing karmaCards ${fmtTrInt(catalogData.totals.karmaCards)}`);
+  // Catalog numbers (catalog.json) with contextual anchoring
+  check(plain.includes(fmtTrInt(catalogData.totals.cards)), `${filename}: missing catalog cards ${fmtTrInt(catalogData.totals.cards)}`);
+  check(plain.includes(fmtTrInt(catalogData.totals.notes)), `${filename}: missing catalog notes ${fmtTrInt(catalogData.totals.notes)}`);
+  check(
+    plain.includes(`${catalogData.totals.courses} ders`) || plain.includes(`${catalogData.totals.courses} katalog dersi`),
+    `${filename}: missing ${catalogData.totals.courses} courses count`,
+  );
+  check(
+    new RegExp(`\\b${catalogData.totals.topicSubdecks}\\s+(?:konu\\s+)?alt\\s+deste`, 'i').test(plain),
+    `${filename}: missing anchored ${catalogData.totals.topicSubdecks} topicSubdecks (alt deste)`,
+  );
+  check(plain.includes(fmtTrInt(catalogData.totals.temelCards)), `${filename}: missing temelCards ${fmtTrInt(catalogData.totals.temelCards)}`);
+  check(plain.includes(fmtTrInt(catalogData.totals.klinikCards)), `${filename}: missing klinikCards ${fmtTrInt(catalogData.totals.klinikCards)}`);
+  check(plain.includes(fmtTrInt(catalogData.totals.karmaCards)), `${filename}: missing karmaCards ${fmtTrInt(catalogData.totals.karmaCards)}`);
 
   // 12 catalog courses vs 11 ÖSYM branches + FHE distinction
   check(
-    flat.includes(`${refsSummary.dersler.length} ÖSYM`) && flat.includes('FHE') && flat.includes('Fizyoloji-Histoloji-Embriyoloji') && flat.includes('Deneme ve Soru'),
+    plain.includes(`${refsSummary.dersler.length} ÖSYM`) &&
+      plain.includes('FHE') &&
+      plain.includes('Fizyoloji-Histoloji-Embriyoloji') &&
+      plain.includes('Deneme ve Soru'),
     `${filename}: must explicitly distinguish ${catalogData.totals.courses} catalog courses vs ${refsSummary.dersler.length} ÖSYM branches (FHE = Fizyoloji-Histoloji-Embriyoloji, Deneme ve Soru excluded)`,
   );
 
-  // Reference evidence (references-summary.json)
+  // Reference evidence (references-summary.json) with contextual anchoring
   const ov = refsSummary.overall;
   const pre = refsSummary.preExam2026_2;
-  check(flat.includes(fmtTrInt(ov.soru)), `${filename}: missing overall.soru ${fmtTrInt(ov.soru)}`);
-  check(flat.includes(`${ov.destek}/${fmtTrInt(ov.soru)}`), `${filename}: missing ${ov.destek}/${fmtTrInt(ov.soru)}`);
-  check(flat.includes(`%${fmtTrDec1(ov.destekOran)}`), `${filename}: missing %${fmtTrDec1(ov.destekOran)}`);
-  check(flat.includes(`${ov.dogrudan}`) && flat.includes(`${ov.dolayli}`), `${filename}: missing Doğrudan (${ov.dogrudan}) / Dolaylı (${ov.dolayli})`);
-  check(flat.includes(`${fmtTrInt(ov.konuKapsami)}/${fmtTrInt(ov.soru)}`), `${filename}: missing ${fmtTrInt(ov.konuKapsami)}/${fmtTrInt(ov.soru)}`);
-  check(flat.includes(`%${fmtTrDec1(ov.konuKapsamiOran)}`), `${filename}: missing %${fmtTrDec1(ov.konuKapsamiOran)}`);
-  check(flat.includes(`${ov.konu}`) && flat.includes(`${ov.yok}`), `${filename}: missing konu (${ov.konu}) / yok (${ov.yok})`);
+  check(plain.includes(fmtTrInt(ov.soru)), `${filename}: missing overall.soru ${fmtTrInt(ov.soru)}`);
+  check(plain.includes(`${ov.destek}/${fmtTrInt(ov.soru)}`), `${filename}: missing ${ov.destek}/${fmtTrInt(ov.soru)}`);
+  check(plain.includes(`%${fmtTrDec1(ov.destekOran)}`), `${filename}: missing %${fmtTrDec1(ov.destekOran)}`);
+  check(
+    new RegExp(`(?:\\b${ov.dogrudan}\\s+Doğrudan|Doğrudan\\s*\\(${ov.dogrudan}\\s+soru\\))`, 'i').test(plain) &&
+      new RegExp(`(?:\\b${ov.dolayli}\\s+Dolaylı|Dolaylı\\s*\\(${ov.dolayli}\\s+soru\\))`, 'i').test(plain),
+    `${filename}: missing anchored Doğrudan (${ov.dogrudan}) / Dolaylı (${ov.dolayli})`,
+  );
+  check(plain.includes(`${fmtTrInt(ov.konuKapsami)}/${fmtTrInt(ov.soru)}`), `${filename}: missing ${fmtTrInt(ov.konuKapsami)}/${fmtTrInt(ov.soru)}`);
+  check(plain.includes(`%${fmtTrDec1(ov.konuKapsamiOran)}`), `${filename}: missing %${fmtTrDec1(ov.konuKapsamiOran)}`);
+  check(
+    new RegExp(`\\b${ov.konu}\\s+(?:yalnız\\s+konu|soru)`, 'i').test(plain) &&
+      new RegExp(`\\b${ov.yok}\\s+(?:soruda\\s+)?referans\\s+yok`, 'i').test(plain),
+    `${filename}: missing anchored konu (${ov.konu}) / yok (${ov.yok})`,
+  );
 
   // 2026/2 pre-exam a78ae1f (76/200) vs current (82/200)
   check(
-    flat.includes(pre.commit) &&
-      flat.includes(pre.date) &&
-      flat.includes(`${pre.preExamEvet}/200`) &&
-      flat.includes('%38,0') &&
-      flat.includes(`${pre.supportedCurrent}/200`) &&
-      flat.includes('%41,0') &&
-      flat.includes(`${pre.topicCoverage}/200`) &&
-      flat.includes('%96,0'),
+    plain.includes(pre.commit) &&
+      plain.includes(pre.date) &&
+      plain.includes(`${pre.preExamEvet}/200`) &&
+      plain.includes('%38,0') &&
+      plain.includes(`${pre.supportedCurrent}/200`) &&
+      plain.includes('%41,0') &&
+      plain.includes(`${pre.topicCoverage}/200`) &&
+      plain.includes('%96,0'),
     `${filename}: missing 2026/2 pre-exam ${pre.commit} (${pre.preExamEvet}/200 %38,0) vs current (${pre.supportedCurrent}/200 %41,0, ${pre.topicCoverage}/200 %96,0) distinction`,
   );
 
-  // FSRS-6 metrics (fsrs-curves.json)
-  check(flat.includes('FSRS-6'), `${filename}: missing FSRS-6`);
-  check(flat.includes(`%${desiredRetentionPct}`), `${filename}: missing %${desiredRetentionPct} desired retention`);
-  check(flat.includes(`${finDays60} gün`), `${filename}: missing ${finDays60} gün completion horizon`);
-  check(megaScope && flat.includes(fmtTrInt(megaScope.cards)), `${filename}: missing mega deck comparison ${fmtTrInt(megaScope?.cards)}`);
+  // FSRS-6 metrics (fsrs-curves.json) with anchored dk/gün checks
+  check(plain.includes('FSRS-6'), `${filename}: missing FSRS-6`);
+  check(plain.includes(`%${desiredRetentionPct}`), `${filename}: missing %${desiredRetentionPct} desired retention`);
+  check(plain.includes(`${finDays60} gün`), `${filename}: missing ${finDays60} gün completion horizon`);
+  check(megaScope && plain.includes(fmtTrInt(megaScope.cards)), `${filename}: missing mega deck comparison ${fmtTrInt(megaScope?.cards)}`);
+  check(
+    allDay270Min != null && new RegExp(`\\b${allDay270Min}\\s+dk/gün`, 'i').test(plain),
+    `${filename}: missing anchored FSRS 270d load ${allDay270Min} dk/gün`,
+  );
+  check(
+    megaDay270Min != null && new RegExp(`\\b${megaDay270Min}\\s+dk/gün`, 'i').test(plain),
+    `${filename}: missing anchored mega deck 270d load ${megaDay270Min} dk/gün`,
+  );
 
-  // PRICING_MODE alignment (config.ts + offer.json)
+  // PRICING_MODE alignment (config.ts + offer.json) on backtick-normalized plain text
   if (PRICING_MODE === 'launch-promo') {
     const launchTier = offerData.tiers.find((t) => t.id === 'launch');
-    check(flat.includes('200') && flat.includes('₺0'), `${filename}: launch-promo missing 200 card free tier (₺0)`);
-    check(launchTier && flat.includes(launchTier.price) && flat.includes(launchTier.oldPrice), `${filename}: launch-promo missing ${launchTier?.price} / ${launchTier?.oldPrice}`);
-    check(flat.includes('7 gün'), `${filename}: launch-promo missing 7 gün refund guarantee`);
-    check(flat.includes('Açık önizleme döneminde'), `${filename}: launch-promo missing betaTransparencyNote open-preview context`);
+    check(/\b200\s+kart/i.test(plain) && plain.includes('₺0'), `${filename}: launch-promo missing anchored 200 kart free tier (₺0)`);
+    check(launchTier && plain.includes(launchTier.price) && plain.includes(launchTier.oldPrice), `${filename}: launch-promo missing ${launchTier?.price} / ${launchTier?.oldPrice}`);
+    check(plain.includes('7 gün'), `${filename}: launch-promo missing 7 gün refund guarantee`);
+    check(/açık\s+önizleme/i.test(plain) && /(?:önizleme|beta)/i.test(plain), `${filename}: launch-promo missing open-preview transparency phrasing (Açık önizleme / beta)`);
   } else if (PRICING_MODE === 'free-beta') {
-    check(flat.includes(offerData.freeBeta.badge) && flat.includes('₺0'), `${filename}: free-beta missing Açık Beta / ₺0`);
-    check(!/Tam Erişim\s*\([^)]*₺50\/ay[^)]*lansman/i.test(flat), `${filename}: free-beta must not advertise launch-promo active charge`);
+    check(plain.includes(offerData.freeBeta.badge) && plain.includes('₺0'), `${filename}: free-beta missing Açık Beta / ₺0`);
+    check(!plain.includes('PRICING_MODE: launch-promo') && !/\(launch-promo\)/i.test(plain), `${filename}: free-beta must not label pricing mode as launch-promo`);
+    check(!plain.includes('Lansman fiyatı'), `${filename}: free-beta must not advertise Lansman fiyatı`);
+    check(!/Tam Erişim\s*\([^)]*₺50\s*\/\s*ay/i.test(plain), `${filename}: free-beta must not advertise launch-promo active charge`);
   }
 
   // Official contact & platform URLs (bidirectional with config.ts SOCIAL)
-  check(flat.includes(SITE.email), `${filename}: missing SITE.email (${SITE.email})`);
-  check(flat.includes(SITE.webAppUrl), `${filename}: missing SITE.webAppUrl (${SITE.webAppUrl})`);
-  check(flat.includes(SITE.githubIssuesUrl), `${filename}: missing SITE.githubIssuesUrl`);
+  check(plain.includes(SITE.email), `${filename}: missing SITE.email (${SITE.email})`);
+  check(plain.includes(SITE.webAppUrl), `${filename}: missing SITE.webAppUrl (${SITE.webAppUrl})`);
+  check(plain.includes(SITE.githubIssuesUrl), `${filename}: missing SITE.githubIssuesUrl`);
   for (const s of SOCIAL) {
-    check(flat.includes(s.url), `${filename}: missing SOCIAL url ${s.url}`);
+    check(plain.includes(s.url), `${filename}: missing SOCIAL url ${s.url}`);
   }
   const activeSocialUrls = new Set(SOCIAL.map((s) => s.url));
-  for (const socialRe of [/https?:\/\/(?:www\.)?instagram\.com\/[^\s)>\]]+/gi, /https?:\/\/(?:www\.)?youtube\.com\/[^\s)>\]]+/gi]) {
-    for (const m of raw.matchAll(socialRe)) {
-      check(activeSocialUrls.has(m[0]), `${filename}: unverified social URL "${m[0]}" not present in config.ts SOCIAL`);
-    }
+  const socialUrlRe = /https?:\/\/(?:www\.)?(?:instagram\.com|youtube\.com|x\.com|twitter\.com|t\.me|linkedin\.com|tiktok\.com)\/[^\s)>\]"'`]+/gi;
+  for (const m of raw.matchAll(socialUrlRe)) {
+    const foundSocial = m[0].replace(/[.,;:]+$/, '');
+    check(activeSocialUrls.has(foundSocial), `${filename}: unverified social URL "${foundSocial}" not present in config.ts SOCIAL`);
   }
 
-  // Bidirectional URL parity vs sitemap.xml & pages.ts
+  // Bidirectional URL parity vs sitemap.xml & pages.ts (exact Set membership, reject http://)
+  const escapedHost = SITE.domain.replace(/\./g, '\\.');
+  const foundUrls = [...raw.matchAll(new RegExp(`https?://${escapedHost}[^\\s)>\\]"'\`]*`, 'g'))]
+    .map((m) => m[0].replace(/[.,;:]+$/, ''));
+  const foundUrlSet = new Set(foundUrls);
+
   for (const coreUrl of coreSitemapUrls) {
-    check(raw.includes(coreUrl), `${filename}: missing core page URL ${coreUrl}`);
+    check(foundUrlSet.has(coreUrl), `${filename}: missing core page URL ${coreUrl}`);
   }
   for (const loc of locs) {
-    check(raw.includes(loc), `${filename}: missing sitemap URL ${loc}`);
+    check(foundUrlSet.has(loc), `${filename}: missing sitemap URL ${loc}`);
   }
-
-  const foundUrls = [...raw.matchAll(new RegExp(`https://${SITE.domain.replace('.', '\\.')}[^\\s)>\\]"'\`]*`, 'g'))]
-    .map((m) => m[0].replace(/[.,;:]+$/, ''));
-  check(foundUrls.length >= locs.length, `${filename}: expected >= ${locs.length} site URLs, found ${foundUrls.length}`);
-  for (const u of foundUrls) {
+  check(foundUrlSet.size >= locs.length, `${filename}: expected >= ${locs.length} unique site URLs, found ${foundUrlSet.size}`);
+  for (const u of foundUrlSet) {
     if (staticEndpoints.has(u)) continue;
-    check(sitemapSet.has(u), `${filename}: URL "${u}" does not match any live trailing-slash URL in sitemap.xml`);
+    check(
+      u.startsWith('https://') && sitemapSet.has(u),
+      `${filename}: URL "${u}" is insecure or does not match any live trailing-slash URL in sitemap.xml`,
+    );
   }
 
-  // Full reference tables & post-exam QIDs required in llms-full.txt
+  // Full row-level reference tables, branch link summaries & post-exam QIDs required in llms-full.txt
   if (requireFullBreakdown) {
-    for (const c of catalogData.courses) {
+    const tables = parseMarkdownTables(raw);
+    const catalogTable = tables.find((t) => t.headers[0] === 'Ders (Katalog)');
+    const examTable = tables.find((t) => t.headers[0] === 'Sınav');
+    const subjectTable = tables.find((t) => t.headers[0] === 'ÖSYM TUS Branşı');
+
+    check(Boolean(catalogTable), `${filename}: missing catalog Markdown table`);
+    if (catalogTable) {
       check(
-        flat.includes(c.name) && flat.includes(fmtTrInt(c.cards)) && flat.includes(`${c.topicSubdecks}`),
-        `${filename}: missing course breakdown for "${c.name}" (${fmtTrInt(c.cards)} cards, ${c.topicSubdecks} subdecks)`,
+        catalogTable.rows.length === catalogData.courses.length,
+        `${filename}: catalog table expected ${catalogData.courses.length} rows, got ${catalogTable.rows.length}`,
       );
+      for (const c of catalogData.courses) {
+        const row = catalogTable.rows.find((cells) => cells[0] === c.name || cells[0].startsWith(`${c.name} (`));
+        check(
+          Boolean(row) &&
+            row.length >= 5 &&
+            row[1].toLowerCase() === c.group.toLowerCase() &&
+            row[2] === fmtTrInt(c.cards) &&
+            row[3] === fmtTrInt(c.notes) &&
+            row[4] === String(c.topicSubdecks),
+          `${filename}: catalog table mismatch for "${c.name}" (expected group=${c.group}, cards=${fmtTrInt(c.cards)}, notes=${fmtTrInt(c.notes)}, subdecks=${c.topicSubdecks})`,
+        );
+      }
     }
-    for (const e of refsSummary.byExam) {
+
+    const checkRefRow = (table, label, expected) => {
+      const row = table.rows.find((cells) => cells[0] === label);
       check(
-        flat.includes(e.sinav) && flat.includes(`%${fmtTrDec1(e.destekOran)}`) && flat.includes(`%${fmtTrDec1(e.konuKapsamiOran)}`),
-        `${filename}: missing exam breakdown for ${e.sinav}`,
+        Boolean(row) &&
+          row.length === 10 &&
+          row[1] === fmtTrInt(expected.soru) &&
+          row[2] === fmtTrInt(expected.dogrudan) &&
+          row[3] === fmtTrInt(expected.dolayli) &&
+          row[4] === fmtTrInt(expected.destek) &&
+          row[5] === `%${fmtTrDec1(expected.destekOran)}` &&
+          row[6] === fmtTrInt(expected.konu) &&
+          row[7] === fmtTrInt(expected.konuKapsami) &&
+          row[8] === `%${fmtTrDec1(expected.konuKapsamiOran)}` &&
+          row[9] === fmtTrInt(expected.yok),
+        `${filename}: reference table row mismatch for "${label}"`,
       );
+    };
+
+    check(Boolean(examTable), `${filename}: missing byExam Markdown table`);
+    if (examTable) {
+      check(
+        examTable.rows.length === refsSummary.byExam.length + 1,
+        `${filename}: byExam table expected ${refsSummary.byExam.length + 1} rows (6 exams + Toplam), got ${examTable.rows.length}`,
+      );
+      for (const e of refsSummary.byExam) {
+        checkRefRow(examTable, e.sinav, e);
+      }
+      checkRefRow(examTable, 'Toplam', refsSummary.overall);
     }
+
+    check(Boolean(subjectTable), `${filename}: missing bySubject Markdown table`);
+    if (subjectTable) {
+      check(
+        subjectTable.rows.length === refsSummary.bySubject.length,
+        `${filename}: bySubject table expected ${refsSummary.bySubject.length} rows, got ${subjectTable.rows.length}`,
+      );
+      for (const s of refsSummary.bySubject) {
+        checkRefRow(subjectTable, s.ders, s);
+      }
+    }
+
+    const rawLines = raw.split(/\r?\n/);
     for (const s of refsSummary.bySubject) {
+      const slug = branchSlugMap.get(s.ders);
+      const courseName = s.ders === 'Fizyoloji-Histoloji-Embriyoloji' ? 'FHE' : s.ders;
+      const course = catalogData.courses.find((c) => c.name === courseName);
+      const branchUrl = `https://${SITE.domain}/referanslar/${slug}/`;
+      const branchLine = rawLines.find((l) => l.includes(branchUrl));
+      const branchPlain = branchLine ? branchLine.replace(/`/g, '') : '';
       check(
-        flat.includes(s.ders) && flat.includes(`%${fmtTrDec1(s.destekOran)}`) && flat.includes(`%${fmtTrDec1(s.konuKapsamiOran)}`),
-        `${filename}: missing ÖSYM branch breakdown for ${s.ders}`,
+        Boolean(branchLine && course) &&
+          branchPlain.includes(`${s.destek}/${s.soru}`) &&
+          branchPlain.includes(`%${fmtTrDec1(s.destekOran)}`) &&
+          branchPlain.includes(`%${fmtTrDec1(s.konuKapsamiOran)}`) &&
+          branchPlain.includes(`${fmtTrInt(course.cards)} kart`),
+        `${filename}: branch link summary mismatch for ${s.ders} (${branchUrl})`,
       );
     }
+
+    const rozetTr = { DOGRUDAN: 'DOĞRUDAN', DOLAYLI: 'DOLAYLI' };
+    const preStateTr = { hayir: 'hayır', kismen: 'kısmen', evet: 'evet' };
     for (const q of pre.postExamEdited) {
-      check(flat.includes(q.qid), `${filename}: missing post-exam edited QID ${q.qid}`);
+      const qLine = rawLines.find((l) => l.includes(q.qid));
+      const qPlain = qLine ? qLine.replace(/`/g, '') : '';
+      const expectedRozet = rozetTr[q.rozet] ?? q.rozet;
+      const expectedPre = preStateTr[q.sinavOncesiSurumde] ?? q.sinavOncesiSurumde;
+      check(
+        Boolean(qLine) &&
+          qPlain.includes(q.ders) &&
+          qPlain.includes(expectedRozet) &&
+          qPlain.includes(`sınav öncesi sürümde: ${expectedPre}`),
+        `${filename}: postExamEdited entry mismatch for ${q.qid} (${q.ders}, ${expectedRozet}, ${expectedPre})`,
+      );
     }
+
     for (const ex of examsData.exams) {
-      check(flat.includes(ex.examDateLabel), `${filename}: missing 2027 exam date ${ex.examDateLabel}`);
+      check(plain.includes(ex.examDateLabel), `${filename}: missing 2027 exam date ${ex.examDateLabel}`);
     }
   }
 };

@@ -44,6 +44,7 @@ export const PAGES: PageEntry[] = [
       'website/src/data/rehber/index.ts',
       'website/src/data/rehber/part1.ts',
       'website/src/data/rehber/part2.ts',
+      'website/src/data/rehber/part3.ts',
     ],
   },
   {

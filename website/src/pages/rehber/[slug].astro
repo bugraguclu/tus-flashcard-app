@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { FOUNDER } from '../../config';
 import { REHBER_ARTICLES, type RehberArticle } from '../../data/rehber/index';
+import { inlineHtml } from '../../lib/richtext';
 import { breadcrumbList } from '../../lib/schema';
 import { effectiveDate, formatTrDate } from '../../lib/lastmod';
 
@@ -24,6 +25,7 @@ const modDate = effectiveDate([
   'website/src/data/rehber/index.ts',
   'website/src/data/rehber/part1.ts',
   'website/src/data/rehber/part2.ts',
+  'website/src/data/rehber/part3.ts',
 ]);
 const modLabel = formatTrDate(modDate);
 
@@ -129,7 +131,7 @@ const articleSchema = {
     <section class="help-prose" aria-labelledby="truth-heading">
       <h2 id="truth-heading">Doğrusu</h2>
       {article.truthParagraphs.map((p) => (
-        <p>{p}</p>
+        <p set:html={inlineHtml(p)} />
       ))}
 
       <div

@@ -40,7 +40,7 @@ const TUS_YOM: AuthoritySource = {
 };
 
 const FSRS_KDD_PAPER: AuthoritySource = {
-  label: 'Optimizing Spaced Repetition Schedule by Capturing the Dynamics of Memory (ACM KDD ’22)',
+  label: 'A Stochastic Shortest Path Algorithm for Optimizing Spaced Repetition Scheduling (ACM KDD ’22)',
   url: 'https://dl.acm.org/doi/10.1145/3534678.3539081',
   publisher: 'ACM Digital Library',
 };

@@ -1,14 +1,16 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { FOUNDER } from '../config';
 import { getBranches } from '../data/branches';
 import catalog from '../data/generated/catalog.json';
 import refSummary from '../data/generated/references-summary.json';
 import { breadcrumbList } from '../lib/schema';
-import { dateModified, pageSources } from '../lib/lastmod';
+import { effectiveDate, pageSources } from '../lib/lastmod';
 
 const branches = getBranches();
 
 const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate(pageSources('referanslar'));
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
   { name: 'TUS Referansları', path: '/referanslar' },
@@ -17,12 +19,36 @@ const crumbs = breadcrumbList(origin, [
 const pageSchema = {
   '@context': 'https://schema.org',
   '@type': 'Dataset',
+  '@id': origin + '/referanslar/#dataset',
   name: 'TusAnkiM Son 6 TUS Referans Analizi (2024/1–2026/2)',
   description:
     'Son 6 TUS (1.195 soru) için Doğrudan, Dolaylı ve Konu kapsamı ayrımıyla doğrulanmış kart referans kayıtları; ÖSYM soru metni içermez.',
   inLanguage: 'tr-TR',
   url: origin + '/referanslar/',
-  ...dateModified(pageSources('referanslar')),
+  temporalCoverage: '2024/2026',
+  measurementTechnique:
+    'Son 6 TUS sınavındaki 1.195 sorunun 9.575 kartlık BKA TUS koleksiyonuyla Doğrudan, Dolaylı ve Konu Kapsamı olarak ayrı sınıflandırılması; 2026/2 sınavı için sınav öncesi git a78ae1f (21 Ağustos 2026) anlık görüntüsüyle karşılaştırma.',
+  distribution: [
+    {
+      '@type': 'DataDownload',
+      encodingFormat: 'application/json',
+      contentUrl: origin + '/data/references.json',
+    },
+  ],
+  dateModified: modDate,
+  creator: {
+    '@type': 'Person',
+    name: FOUNDER.name,
+    jobTitle: FOUNDER.title,
+    url: origin + '/kurucu/',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: FOUNDER.district,
+      addressRegion: FOUNDER.city,
+      addressCountry: 'TR',
+    },
+  },
+  publisher: { '@id': origin + '/#organization' },
 };
 ---
 <Layout

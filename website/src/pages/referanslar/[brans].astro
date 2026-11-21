@@ -52,6 +52,12 @@ const datasetSchema = {
     name: FOUNDER.name,
     jobTitle: FOUNDER.title,
     url: origin + '/kurucu/',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: FOUNDER.district,
+      addressRegion: FOUNDER.city,
+      addressCountry: 'TR',
+    },
   },
   publisher: { '@id': origin + '/#organization' },
 };

@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { getHelpArticles } from '../../lib/helpDocs';
 import { breadcrumbList, collectionPage } from '../../lib/schema';
-import { helpIndexSources, newest } from '../../lib/lastmod';
+import { effectiveDate, helpIndexSources } from '../../lib/lastmod';
 
 const articles = getHelpArticles();
 const categories = [...new Set(articles.map((a) => a.category))];
@@ -18,7 +18,7 @@ const colSchema = collectionPage(origin, {
   name: 'TusAnkiM Türkçe Yardım Merkezi ve Kullanım Kılavuzu',
   description: 'TusAnkiM uygulamasının tüm ekranları, FSRS-6, Kronometre, Anki aktarımı ve TUS kart paketi için 21 kapsamlı Türkçe rehber.',
   items: articles.map((a) => ({ name: a.title, path: a.webPath })),
-  dateModified: newest(helpIndexSources(articles.map((a) => a.sourceRelPath))),
+  dateModified: effectiveDate(helpIndexSources(articles.map((a) => a.sourceRelPath))),
 });
 ---
 <Layout

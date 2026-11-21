@@ -57,7 +57,7 @@
 - [TUS Kartları paketi](https://tusankim.com/yardim/tus-kartlari/): Hazır 9.575 kartlık BKA TUS paketini kurma, çalışma, güncelleme ve yeni cihaza taşıma rehberi.
 - [Kısayollar ve otomasyon](https://tusankim.com/yardim/kisayollar/): Deste kısayolları, `tusankim://` bağlantıları, web otomasyonu ve klavye kısayolları.
 - [Anki ile birlikte kullanma](https://tusankim.com/yardim/anki-ile-kullanma/): Anki'deki desteleri TusAnkiM'e taşıma, geri aktarma ve iki uygulama arasındaki farklar.
-- [Sıkça Sorulanlar ve Sorun Giderme](https://tusankim.com/yardim/sss/) (`20`): Kart gelmemesi, yanlış düğme, telefon değişimi ve Anki paketi sorunlarının çözümleri.
+- [Sıkça Sorulanlar ve Sorun Giderme](https://tusankim.com/yardim/sss/): Kart gelmemesi, yanlış düğme, telefon değişimi ve Anki paketi sorunlarının çözümleri.
 - [Sözlük](https://tusankim.com/yardim/sozluk/): Uygulamadaki Türkçe terimlerin İngilizce arayüz ve Anki karşılıkları ile kısa tanımları.
 
 ## 11 ÖSYM TUS Branşı Referans Sayfaları

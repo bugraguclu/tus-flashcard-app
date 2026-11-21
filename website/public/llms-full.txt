@@ -42,7 +42,7 @@
 ## Son 6 TUS referans kanıtları (2024/1–2026/2 · 1.195 soru)
 
 - **Kaynak veri:** `2026-10-26`, katalog commit `fbd7d94` (açık JSON uç noktası: https://tusankim.com/data/references.json)
-- **Metodoloji:** Son 6 TUS'taki **1.195 soru** yapay zekâ destekli ön sınıflama ve bağımsız hekim editör doğrulamasıyla tek tek incelenmiştir.
+- **Metodoloji:** Son 6 TUS'taki **1.195 soru**, `fbd7d94` kataloğu üzerinde 11 ders ajanı ve 2026/2 hakem kontrolüyle yapılan yapay zekâ destekli ön sınıflamadır; bağımsız hekim/editör onay süreci devam etmektedir.
   - **Doğrudan (333 soru):** Kart, sorunun doğru yanıtını veya onu zorunlu kılan klinik ayrımı açıkça verir.
   - **Dolaylı (188 soru):** Kart doğru bilgiye götürür ancak tek küçük bir klinik veya terim köprüsü gerektirir (eksik adım her kayıtta açıkça yazılır).
   - **Çözüm desteği (Doğrudan + Dolaylı):** **521/1.195 (%43,6)**.
@@ -103,7 +103,7 @@
 
 ## TUS Puan Hesaplayıcı ve 2027 sınav takvimi
 
-- **Hesaplama kuralları:** `4 yanlış 1 doğru` net kuralı, `45` puan barajı, bir önceki yıl TUS'a yerleşen adaylar için **`%5` puan kesintisi** kuralı, **Temel TUS puanı** (`%70 Temel + %30 Klinik`), **Klinik TUS puanı** (`%50 Temel + %50 Klinik`).
+- **Hesaplama kuralları:** `4 yanlış 1 doğru` net kuralı, `45` puan barajı, uzmanlık eğitimine devam edenler, istifa edenler veya yerleşip süresi içinde başlamayanlar için ilk sınavda mesleki bilgi puanında **`%5` kesinti** kuralı, **Temel TUS puanı** (`%70 Temel + %30 Klinik`), **Klinik TUS puanı** (`%50 Temel + %50 Klinik`).
 - **2027 ÖSYM TUS takvimi (`osym.gov.tr` teyidine tabidir):**
   - **2027-TUS 1. Dönem (Mart 2027 TUS):** Sınav `27 Mart 2027`, başvuru `2–10 Şubat 2027`, sonuç `22 Nisan 2027`.
   - **2027-TUS 2. Dönem (Ağustos 2027 TUS):** Sınav `22 Ağustos 2027`, başvuru `5–13 Temmuz 2027`, sonuç `16 Eylül 2027`.
@@ -172,8 +172,8 @@
 2. [TUS için FSRS-6 nedir? Klasik tekrarlara göre neden %20–30 daha az kart çözdürür?](https://tusankim.com/rehber/tus-icin-fsrs-6-nedir/)
 3. [TUS için Anki uyumlu sistem nasıl kullanılır? (.apkg, .colpkg ve FSRS-6 kurulumu)](https://tusankim.com/rehber/tus-icin-anki-uyumlu-sistem/)
 4. [TUS puanı nasıl hesaplanır? %5 puan kesintisi, 45 barajı ve Temel/Klinik ağırlıkları](https://tusankim.com/rehber/tus-puani-nasil-hesaplanir/)
-5. [2027 TUS tarihleri, başvuru takvimi ve kalan güne göre çalışma planı](https://tusankim.com/rehber/2027-tus-tarihleri-ve-calisma-plani/)
-6. [TUS çalışırken doğru bilinen 7 yanlış (pasif tekrar, mega deste tuzağı, son ay tekrar yükü)](https://tusankim.com/rehber/tus-calisirken-dogru-bilinen-7-yanlis/)
+5. [2027 TUS tarihleri ve başvuru takvimi neler, kalan güne göre çalışma planı nasıl kurulur?](https://tusankim.com/rehber/2027-tus-tarihleri-ve-calisma-plani/)
+6. [TUS çalışırken doğru bilinen 7 yanlış nelerdir (pasif tekrar, mega deste tuzağı, son ay tekrar yükü)?](https://tusankim.com/rehber/tus-calisirken-dogru-bilinen-7-yanlis/)
 7. [TusAnkiM ücretsiz mi, iPhone ve Web'de nasıl kullanılır?](https://tusankim.com/rehber/tusankim-ucretsiz-mi-nasil-kullanilir/)
 
 ## Sıkça sorulan sorular özeti

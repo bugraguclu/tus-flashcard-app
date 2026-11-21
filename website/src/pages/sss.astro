@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import FaqTabs from '../components/FaqTabs.astro';
 import faqs from '../data/faqs.json';
 import { breadcrumbList } from '../lib/schema';
-import { dateModified, pageSources } from '../lib/lastmod';
+import { effectiveDate, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
 const crumbs = breadcrumbList(origin, [
@@ -14,7 +14,7 @@ const crumbs = breadcrumbList(origin, [
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  ...dateModified(pageSources('sss')),
+  dateModified: effectiveDate(pageSources('sss')),
   mainEntity: faqs.items.map((f) => ({
     '@type': 'Question',
     name: f.q,
