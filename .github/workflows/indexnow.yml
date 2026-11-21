@@ -1,0 +1,68 @@
+name: IndexNow
+
+on:
+  deployment_status:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    name: Submit tusankim.com sitemap to IndexNow
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'deployment_status' &&
+        github.event.deployment_status.state == 'success' &&
+        startsWith(github.event.deployment.environment, 'Production') &&
+        (
+          github.event.deployment_status.environment_url == 'https://tusankim.com' ||
+          github.event.deployment_status.environment_url == 'https://tusankim.com/'
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HOST: tusankim.com
+      KEY: 15ac4a324ceef8d8217732cd48d9a1da
+    steps:
+      - name: Wait for CDN propagation after deploy
+        if: github.event_name == 'deployment_status'
+        run: sleep 30
+
+      - name: Verify IndexNow key file and submit sitemap URLs
+        run: |
+          set -euo pipefail
+          remote_key="$(curl -fsS "https://$HOST/$KEY.txt")"
+          if [ "$remote_key" != "$KEY" ]; then
+            echo "Key mismatch at https://$HOST/$KEY.txt" >&2
+            exit 1
+          fi
+
+          curl -fsS "https://$HOST/sitemap.xml" -o sitemap.xml
+          grep -o '<loc>[^<]*</loc>' sitemap.xml | sed -e 's/<loc>//' -e 's/<\/loc>//' > urls.txt
+          url_count="$(wc -l < urls.txt | tr -d ' ')"
+          if [ "$url_count" -eq 0 ]; then
+            echo "No <loc> URLs found in https://$HOST/sitemap.xml" >&2
+            exit 1
+          fi
+          echo "Submitting $url_count URLs to IndexNow for $HOST"
+
+          jq -n --arg host "$HOST" --arg key "$KEY" --rawfile urls urls.txt \
+            '{
+              host: $host,
+              key: $key,
+              keyLocation: ("https://" + $host + "/" + $key + ".txt"),
+              urlList: ($urls | split("\n") | map(select(length > 0)))
+            }' > body.json
+
+          status="$(curl -sS -o response.txt -w '%{http_code}' -X POST \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            --data @body.json https://api.indexnow.org/indexnow)"
+          echo "IndexNow HTTP status: $status"
+          cat response.txt || true
+          case "$status" in 200|202) ;; *) exit 1 ;; esac

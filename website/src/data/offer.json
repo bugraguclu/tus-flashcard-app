@@ -1,62 +1,60 @@
 {
-  "badge": "Lansmana Özel Fiyat · 10x Erişilebilirlik",
-  "headline": "Bir kere satın al, her yerde çalış.",
-  "subheadline": "AnkiMobile'a yalnızca uygulama için tek seferde ₺1.299,99 veya yüksek maliyetli paketlere ₺8.399–₺12.999 ödemek yerine; günde 200 karta kadar tamamen ücretsiz başla, sınırsız tam erişime lansmana özel ayda ₺50'den ulaş.",
+  "badge": "Fiyatlandırma",
+  "headline": "Ücretsiz başla, ihtiyacın olursa yükselt.",
+  "subheadline": "Günde 200 karta kadar ücretsiz çalışabilir, sınırsız günlük tekrar için aylık ₺50 tam erişime geçebilirsin.",
   "refundGuarantee": {
-    "title": "7 Gün Koşulsuz İade Garantisi",
-    "text": "İlk 1 hafta içinde TusAnkiM çalışma sistemine uymazsa tek mesajla kesintisiz iade hakkı."
+    "title": "7 gün koşulsuz iade",
+    "text": "İlk 1 hafta içinde çalışma düzenine uymazsa tek mesajla iade alabilirsin."
   },
   "tiers": [
     {
       "id": "free",
-      "name": "Ücretsiz Başlangıç",
-      "badge": "Kredi kartı gerekmez",
+      "name": "Ücretsiz",
+      "badge": "Günde 200 kart",
       "price": "₺0",
       "period": "Süresiz ücretsiz",
       "highlight": false,
-      "summary": "Günde 200 karta kadar ücretsiz çalışma hakkı ve tüm yerel Anki uyumlu araçlar.",
+      "summary": "Günde 200 karta kadar ücretsiz çalışma ve tüm yerel Anki uyumlu araçlar.",
       "features": [
-        "Günde 200 karta kadar ücretsiz çalışma hakkı",
-        "Anki uyumlu (.apkg / .colpkg) sınırsız içe ve dışa aktarma",
-        "FSRS-6 aralıklı tekrar zamanlayıcısı ve parametre optimizasyonu",
-        "Kronometre, Çalışma Takvimi ve Detaylı Planlama",
-        "Fotoğraf Düzenleyici, Belge Filtresi, Yazı Tahtası ve Görsel Gizleme",
-        "Çevrimdışı (offline) yerel çalışma ve otomatik yedekleme"
+        "Günde 200 karta kadar çalışma",
+        "Anki (.apkg / .colpkg) içe ve dışa aktarma",
+        "FSRS-6 tekrar zamanlayıcısı ve parametre optimizasyonu",
+        "Kronometre, Çalışma Takvimi ve Çalışma Planı",
+        "Çevrimdışı yerel depolama ve otomatik yedekleme"
       ],
-      "ctaLabel": "Ücretsiz Dene",
+      "ctaLabel": "Ücretsiz Başla",
       "ctaHref": "https://tusankim.vercel.app/",
       "external": true
     },
     {
       "id": "launch",
-      "name": "Lansman Tam Erişim",
-      "badge": "Lansmana Özel İndirim",
+      "name": "Tam Erişim",
+      "badge": "Lansman fiyatı",
       "price": "₺50",
       "oldPrice": "₺199",
-      "period": "/ ay · tek erişim, iPhone + Web",
+      "period": "/ ay · iPhone + Web",
       "highlight": true,
-      "summary": "9.575 kartlık sürekli güncellenen BKA TUS koleksiyonu ve sınırsız günlük tekrar.",
+      "summary": "9.575 kartlık BKA TUS koleksiyonu ve sınırsız günlük tekrar.",
       "features": [
         "Sınırsız günlük kart tekrarı (200 kart sınırı kalkar)",
-        "9.575 kart · 12 ders · 106 konu alt destesi tam erişim",
-        "Her TUS dönemi sonrası sürekli güncellenen kart ve referans kayıtları",
-        "AnkiMobile (₺1.299,99) + paket maliyetine kıyasla 10x daha erişilebilir",
-        "7/24 WhatsApp chatbot ve hızlı ekip desteği",
-        "1 hafta koşulsuz iade garantisi"
+        "9.575 kart · 12 ders · 106 konu alt destesi",
+        "Her TUS dönemi sonrası güncellenen kart ve referans kayıtları",
+        "7 gün koşulsuz iade garantisi",
+        "E-posta ve teknik destek"
       ],
-      "ctaLabel": "Lansman Avantajıyla Başla",
+      "ctaLabel": "Tam Erişimle Başla",
       "ctaHref": "https://tusankim.vercel.app/",
       "external": true
     }
   ],
-  "betaTransparencyNote": "Şeffaflık notu: Güncel App Store beta ve web önizleme sürümünde 9.575 kartlık BKA TUS paketi uygulama içinden ücretsiz açılabilmektedir. Ücretli planlar devreye alındığında lansman fiyatı ve 7 gün iade garantisi geçerli olur; iPhone + Web tarayıcıda bugün kullanılabilir, otomatik bulut eşitleme ve yerel Android uygulaması yol haritamızda Yakında olarak işaretlenmiştir.",
+  "betaTransparencyNote": "Açık önizleme döneminde 9.575 kartlık BKA TUS paketi uygulama içinden ücretsiz açılabilmektedir. Ücretli planlar devreye alındığında aylık ₺50 lansman fiyatı ve 7 gün iade garantisi geçerli olur.",
   "freeBeta": {
-    "badge": "Ücretsiz Beta Erişimi · Açık Önizleme",
-    "headline": "Tüm 9.575 kart şimdi ücretsiz beta erişiminde.",
-    "subheadline": "App Store beta ve web önizleme döneminde 9.575 kartlık BKA TUS koleksiyonunu, FSRS-6 aralıklı tekrar motorunu ve Kronometreyi ödeme veya kart bilgisi olmadan hemen deneyebilirsin.",
-    "heroBullet": "Beta döneminde 9.575 kart ücretsiz erişime açık",
-    "schemaOfferDescription": "Güncel beta döneminde 9.575 kartlık BKA TUS paketi ve FSRS-6 aralıklı tekrar motoru ücretsiz erişime açıktır.",
-    "transparencyNote": "Şeffaflık notu: Güncel beta döneminde 9.575 kartlık BKA TUS paketi uygulama içinden ödeme alınmadan yerel olarak açılmaktadır. Ücretli lansman planları devreye alındığında lansmana özel ₺50/ay fiyat ve 7 gün koşulsuz iade garantisi ayrıca duyurulur.",
+    "badge": "Açık Beta",
+    "headline": "9.575 kart şimdi ücretsiz beta erişiminde.",
+    "subheadline": "Beta döneminde 9.575 kartlık BKA TUS koleksiyonunu, FSRS-6 motorunu ve Kronometreyi ödeme yapmadan kullanabilirsin.",
+    "heroBullet": "Beta döneminde 9.575 kart ücretsiz",
+    "schemaOfferDescription": "Açık beta döneminde 9.575 kartlık BKA TUS paketi ve FSRS-6 aralıklı tekrar motoru ücretsiz erişime açıktır.",
+    "transparencyNote": "Açık beta döneminde 9.575 kartlık BKA TUS paketi ödeme alınmadan yerel olarak açılır. Ücretli lansman planları başladığında aylık ₺50 fiyat ve 7 gün iade garantisi ayrıca duyurulur.",
     "tiers": [
       {
         "id": "free-core",
@@ -64,15 +62,15 @@
         "badge": "Süresiz ücretsiz",
         "price": "₺0",
         "oldPrice": "",
-        "period": "Kendi destelerinle sınırsız yerel çalışma",
+        "period": "Kendi destelerinle sınırsız",
         "highlight": false,
-        "summary": "Anki uyumlu (.apkg / .colpkg) tüm araçlar, FSRS-6 motoru ve Kronometre her zaman ücretsiz.",
+        "summary": "Anki uyumlu (.apkg / .colpkg) tüm araçlar, FSRS-6 motoru ve Kronometre ücretsizdir.",
         "features": [
-          "Anki uyumlu (.apkg / .colpkg) sınırsız içe ve dışa aktarma",
-          "FSRS-6 aralıklı tekrar zamanlayıcısı ve parametre optimizasyonu",
-          "Kronometre, Çalışma Takvimi ve Detaylı Planlama",
-          "Fotoğraf Düzenleyici, Belge Filtresi, Yazı Tahtası ve Görsel Gizleme",
-          "Çevrimdışı (offline) yerel çalışma ve otomatik yedekleme"
+          "Anki (.apkg / .colpkg) içe ve dışa aktarma",
+          "FSRS-6 tekrar zamanlayıcısı ve parametre optimizasyonu",
+          "Kronometre, Çalışma Takvimi ve Çalışma Planı",
+          "Fotoğraf Düzenleyici ve Görsel Gizleme",
+          "Çevrimdışı yerel depolama ve otomatik yedekleme"
         ],
         "ctaLabel": "Web Uygulamasını Aç",
         "ctaHref": "https://tusankim.vercel.app/",
@@ -81,17 +79,17 @@
       {
         "id": "beta-catalog",
         "name": "BKA TUS 9.575 Kart Paketi",
-        "badge": "Açık Beta · Ücretsiz",
+        "badge": "Açık Beta",
         "price": "₺0",
         "oldPrice": "₺50/ay",
-        "period": "Beta süresince tam erişim · iPhone + Web",
+        "period": "Beta süresince · iPhone + Web",
         "highlight": true,
-        "summary": "12 ders, 106 konu alt destesi ve son 6 TUS referans kanıtlı 9.575 kart şimdi beta erişiminde.",
+        "summary": "12 ders, 106 konu alt destesi ve son 6 TUS referans kanıtlı 9.575 kart.",
         "features": [
-          "9.575 kart · 12 ders · 106 konu alt destesi tam erişim",
-          "Kredi kartı veya abonelik gerekmeden anında yerel açılım",
-          "Her TUS dönemi sonrası sürekli güncellenen kart ve referans kayıtları",
-          "7/24 WhatsApp chatbot ve hızlı ekip desteği",
+          "9.575 kart · 12 ders · 106 konu alt destesi",
+          "Kart bilgisi veya abonelik gerekmeden yerel açılım",
+          "Her TUS dönemi sonrası güncellenen kart ve referans kayıtları",
+          "E-posta ve teknik destek",
           "Ücretli lansman başladığında 7 gün koşulsuz iade garantisi"
         ],
         "ctaLabel": "Beta Erişimiyle Başla",
@@ -101,84 +99,9 @@
     ]
   },
   "clubProgram": {
-    "kicker": "Ücretsiz Hesap Programı",
-    "title": "Tıp fakültesi kulüplerine, dönem temsilcilerine ve içerik üreticilerine ücretsiz tam erişim",
-    "text": "Fakülte öğrenci toplulukları, TUS çalışma grupları ve düzenli eğitim paylaşımı yapan tıp sosyal medya hesaplarına tam erişim hesabı ücretsiz tanımlıyoruz.",
-    "cta": "WhatsApp'tan Başvur"
-  },
-  "platforms": [
-    {
-      "name": "iPhone Uygulaması",
-      "status": "Aktif",
-      "badgeType": "live",
-      "detail": "Yerel SQLite veritabanı, çevrimdışı çalışma, iOS dosya aktarımı (.apkg/.colpkg), Kronometre ve bildirimler."
-    },
-    {
-      "name": "Web Tarayıcı (Mac, Windows, iPad, Android)",
-      "status": "Aktif",
-      "badgeType": "live",
-      "detail": "Kurulum gerektirmeden tarayıcıdan tam çalışma; klavye kısayolları (Space, 1–4) ve geniş ekran deneyimi."
-    },
-    {
-      "name": "Kişisel Deste Taşınabilirliği (.apkg / .colpkg)",
-      "status": "Aktif",
-      "badgeType": "live",
-      "detail": "Kendi oluşturduğunuz desteleri, şablonları, medyaları ve tekrar geçmişini cihazlar arasında kayıpsız taşıyın."
-    },
-    {
-      "name": "Otomatik Bulut Eşitleme & Android Uygulaması",
-      "status": "Yakında",
-      "badgeType": "soon",
-      "detail": "Cihazlar arası otomatik senkronizasyon, yerel Android uygulaması ve TUS Tercih Simülasyonu geliştirme yol haritamızdadır."
-    }
-  ],
-  "comparison": {
-    "caption": "TusAnkiM ile piyasadaki TUS çalışma seçeneklerinin nesnel özellik karşılaştırması",
-    "columns": ["Özellik", "TusAnkiM", "AnkiMobile (Orijinal)", "Anki Tabanlı TUS Paketleri", "Klasik Dershane / Kitap"],
-    "rows": [
-      {
-        "feature": "Aralıklı tekrar motoru (FSRS-6)",
-        "tusankim": "Yerleşik FSRS-6 + optimizasyon",
-        "ankimobile": "FSRS-6 var",
-        "ankipacks": "Ayrı Anki kurulumu gerekir",
-        "dershane": "Yok (pasif okuma)"
-      },
-      {
-        "feature": "Hazır TUS kart hacmi",
-        "tusankim": "9.575 odaklı kart (bitirilebilir)",
-        "ankimobile": "Boş gelir (kart yok)",
-        "ankipacks": "25.000–35.000+ kart (yüksek yük)",
-        "dershane": "Binlerce sayfa fasikül"
-      },
-      {
-        "feature": "Sınav öncesi kanıtlı TUS referansı",
-        "tusankim": "Git SHA kanıtlı (Doğrudan / Dolaylı ayrı)",
-        "ankimobile": "Yok",
-        "ankipacks": "Yalnız beyan (sınav öncesi kanıt yok)",
-        "dershane": "Kitap sayfa numarası (konu kapsamı)"
-      },
-      {
-        "feature": "Kronometre, Takvim & Çalışma Planı",
-        "tusankim": "Uygulama içinde entegre",
-        "ankimobile": "Yok",
-        "ankipacks": "Yok",
-        "dershane": "Harici takip gerekir"
-      },
-      {
-        "feature": "Anki .apkg / .colpkg uyumluluğu",
-        "tusankim": "Kayıpsız içe/dışa aktarım",
-        "ankimobile": "Yerel",
-        "ankipacks": "Anki üzerinden",
-        "dershane": "Yok"
-      },
-      {
-        "feature": "Erişilebilir maliyet",
-        "tusankim": "Günde 200 kart ücretsiz · Lansman ₺50/ay",
-        "ankimobile": "₺1.299,99 (yalnız uygulama)",
-        "ankipacks": "₺8.399 – ₺12.999+",
-        "dershane": "₺60.000+"
-      }
-    ],
-    "footnote": "Fiyat referansları Kasım 2026 itibarıyla kamuya açık App Store TR (AnkiMobile ₺1.299,99) ve yayımlanmış paket listelerinden alınmıştır; üçüncü taraflar fiyatlarını değiştirebilir."
+    "kicker": "Öğrenci Toplulukları",
+    "title": "Tıp kulüpleri ve dönem temsilcilerine ücretsiz hesap",
+    "text": "Tıp fakültesi öğrenci topluluklarına, çalışma gruplarına ve eğitim paylaşımı yapan hesaplara ücretsiz tam erişim tanımlıyoruz.",
+    "cta": "Başvur"
   }
 }

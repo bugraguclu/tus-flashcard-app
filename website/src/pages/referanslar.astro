@@ -1,8 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { getBranches } from '../data/branches';
+import catalog from '../data/generated/catalog.json';
 import refSummary from '../data/generated/references-summary.json';
 import { breadcrumbList } from '../lib/schema';
 import { dateModified, pageSources } from '../lib/lastmod';
+
+const branches = getBranches();
 
 const origin = new URL(Astro.site!).origin;
 const crumbs = breadcrumbList(origin, [
@@ -24,6 +28,7 @@ const pageSchema = {
 <Layout
   title="TUS Referans Kanıtları (Son 6 Sınav · 1.195 Soru) | TusAnkiM"
   description="Son 6 TUS (2024/1–2026/2, 1.195 soru) ders ders referans analizi: 521/1.195 (%43,6) çözüm desteği, %92,7 konu kapsamı ve 2026/2 sınav öncesi git a78ae1f kanıtı."
+  ogImage="/images/og-referanslar.png"
   schema={[crumbs, pageSchema]}
 >
   <section class="bg-surface border-b border-line py-10 sm:py-14">
@@ -34,12 +39,11 @@ const pageSchema = {
         <span class="text-ink font-semibold">TUS Referansları</span>
       </nav>
 
-      <div class="section-num">Şeffaf Referans Kanıt Gezgini · Son 6 TUS (2024/1–2026/2)</div>
-      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">
-        1.195 çıkmış TUS sorusunun ders ders açık kanıt cetveli
+      <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
+        1.195 çıkmış TUS sorusunun ders ders referans cetveli
       </h1>
       <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
-        Pazarlama abartısı yok: <strong>Doğrudan</strong> çözdüren kartları, tek küçük köprü isteyen <strong>Dolaylı</strong> kartlardan ve yalnızca <strong>Konu İlişkili</strong> kartlardan ayrı raporluyoruz.
+        <strong>Doğrudan</strong> çözdüren kartları, tek küçük köprü isteyen <strong>Dolaylı</strong> kartlardan ve yalnızca <strong>Konu İlişkili</strong> kartlardan ayrı raporluyoruz.
         ÖSYM telif haklarına saygı gereği soru metni ve şıklar yayımlanmaz; her satırda yalnızca sınav/soru numarası, ölçülen bilgi, temizlenmiş kart özetimiz ve resmî ÖSYM arşivi bağlantısı bulunur.
       </p>
 
@@ -85,7 +89,7 @@ const pageSchema = {
       <div class="grid sm:grid-cols-2 lg:grid-cols-12 gap-3.5 items-end">
         <div class="lg:col-span-2">
           <label for="ref-sinav" class="block text-xs font-bold text-ink mb-1.5">Sınav Dönemi</label>
-          <select id="ref-sinav" class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink">
+          <select id="ref-sinav" class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-base sm:text-sm font-normal text-ink">
             <option value="">Tüm 6 Sınav (1.195)</option>
             {refSummary.sinavlar.map((s) => <option value={s}>{s} TUS</option>)}
           </select>
@@ -93,7 +97,7 @@ const pageSchema = {
 
         <div class="lg:col-span-3">
           <label for="ref-ders" class="block text-xs font-bold text-ink mb-1.5">Ders (11 Branş)</label>
-          <select id="ref-ders" class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink">
+          <select id="ref-ders" class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-base sm:text-sm font-normal text-ink">
             <option value="">Tüm Dersler</option>
             {refSummary.dersler.map((d) => <option value={d}>{d}</option>)}
           </select>
@@ -101,7 +105,7 @@ const pageSchema = {
 
         <div class="lg:col-span-3">
           <label for="ref-rozet" class="block text-xs font-bold text-ink mb-1.5">Referans Rozeti</label>
-          <select id="ref-rozet" class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-sm font-medium text-ink">
+          <select id="ref-rozet" class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-base sm:text-sm font-normal text-ink">
             <option value="">Tüm Rozetler</option>
             <option value="DESTEK">Çözüm Desteği (Doğrudan + Dolaylı)</option>
             <option value="DOGRUDAN">Yalnız Doğrudan (333)</option>
@@ -119,7 +123,7 @@ const pageSchema = {
               type="search"
               autocomplete="off"
               placeholder="Örn: S2, silikozis, T005, H. pylori..."
-              class="w-full min-h-[2.75rem] text-sm bg-transparent text-ink placeholder:text-inkMuted outline-none"
+              class="w-full min-h-[2.75rem] text-base sm:text-sm bg-transparent text-ink placeholder:text-inkMuted outline-none"
             />
           </div>
         </div>
@@ -128,7 +132,7 @@ const pageSchema = {
       <div class="mt-4 pt-3.5 border-t border-line flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2.5">
           <input id="ref-pre" type="checkbox" class="w-5 h-5 shrink-0 accent-[#0e7469] rounded cursor-pointer" />
-          <label for="ref-pre" class="inline-flex flex-wrap items-center min-h-[2.75rem] py-1 text-xs sm:text-sm font-medium text-ink cursor-pointer select-none">
+          <label for="ref-pre" class="inline-flex flex-wrap items-center min-h-[2.75rem] py-1 text-xs sm:text-sm font-normal text-ink cursor-pointer select-none">
             Yalnız 2026/2 sınav öncesi sürümde (<code class="mx-0.5">a78ae1f</code>) doğrulananları göster
           </label>
         </div>
@@ -151,7 +155,7 @@ const pageSchema = {
 
     <noscript>
       <p class="mt-4 rounded-xl bg-tint px-4 py-3 text-sm text-ink">
-        JavaScript kapalı olduğu için aşağıda 2026/2 TUS sınav öncesi Doğrudan örnek kayıtları gösterilmektedir. Tam 1.195 kayıtlık etkileşimli filtre için JavaScript'i etkinleştirebilirsiniz.
+        JavaScript kapalı olduğu için aşağıda 2026/2 TUS sınav öncesi Doğrudan örnek kayıtları gösterilmektedir. Tam 1.195 kayıtlık etkileşimli filtre için JavaScript'i etkinleştirebilirsin.
       </p>
     </noscript>
 
@@ -160,15 +164,15 @@ const pageSchema = {
       {refSummary.featuredSamples.map((r) => (
         <article class="rounded-2xl border border-line bg-white p-4 sm:p-5">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="rounded-full bg-surface px-2.5 py-0.5 text-xs font-bold text-ink tabular-nums">
+            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
+              <span class="font-bold text-ink tabular-nums">
                 {r.sinav} · {r.qid.split('-')[1]}
               </span>
-              <span class="rounded-full bg-tint px-2.5 py-0.5 text-xs font-semibold text-teal">{r.ders}</span>
-              <span class="rounded-full bg-gradeGoodBg px-2.5 py-0.5 text-xs font-bold text-gradeGood">Doğrudan</span>
+              <span class="text-inkMuted">{r.ders}</span>
+              <span class="rounded-full bg-gradeGoodBg px-2.5 py-0.5 font-semibold text-gradeGood">Doğrudan</span>
               {r.sinavOncesiSurumde === 'evet' && (
-                <span class="rounded-full bg-surfaceSoft border border-line px-2.5 py-0.5 text-[11px] font-medium text-inkMuted">
-                  Sınav öncesi (a78ae1f)
+                <span class="text-inkMuted">
+                  · Sınav öncesi (a78ae1f)
                 </span>
               )}
             </div>
@@ -195,8 +199,8 @@ const pageSchema = {
     </div>
 
     <div id="ref-empty" hidden class="mt-8 rounded-2xl border border-line bg-surfaceSoft p-10 text-center">
-      <p class="display text-base text-ink">Seçtiğiniz filtrelere uyan kayıt bulunamadı.</p>
-      <p class="text-sm text-inkMuted mt-1">Arama kelimesini kısaltın veya filtreleri temizleyin.</p>
+      <p class="display text-base text-ink">Seçtiğin filtrelere uyan kayıt bulunamadı.</p>
+      <p class="text-sm text-inkMuted mt-1">Arama kelimesini kısalt veya filtreleri temizle.</p>
     </div>
 
     <div class="mt-6 text-center">
@@ -213,13 +217,12 @@ const pageSchema = {
     <!-- Transparent disclosure: 6 post-exam edited 2026/2 notes + Methodology -->
     <div class="mt-14 pt-10 border-t border-line grid lg:grid-cols-2 gap-8">
       <div class="rounded-2xl border border-line bg-surfaceSoft p-6">
-        <div class="section-num">Şeffaflık Kaydı · 2026/2 TUS</div>
-        <h2 class="display text-lg text-ink mt-2">
-          Sınav sonrası güncellenen 6 soru neden sınav öncesi iddiasına katılmadı?
+        <h2 class="display text-lg text-ink">
+          2026/2 TUS: Sınav sonrası güncellenen 6 soru
         </h2>
         <p class="text-sm text-inkMuted mt-2 leading-relaxed">
           23 Ağustos 2026 TUS'u için güncel katalogda 82 soru desteklidir; ancak sınavdan 2 gün önceki sürümde (<code>git a78ae1f</code>, 21 Ağustos 2026)
-          aşağıdaki 6 sorunun çözdüren bilgisi kısmen vardı veya sonradan eklendi. Bu nedenle "sınavdan önce kartımızda vardı" rakamını <strong>76/200 (%38,0)</strong> olarak duyuruyoruz:
+          aşağıdaki 6 sorunun çözdüren bilgisi kısmen vardı veya sonradan eklendi. Bu nedenle sınav öncesi oranı <strong>76/200 (%38,0)</strong> olarak gösteriyoruz:
         </p>
         <ul class="mt-4 space-y-2 text-xs text-ink">
           {refSummary.preExam2026_2.postExamEdited.map((item) => (
@@ -227,7 +230,7 @@ const pageSchema = {
               <span>
                 <strong>{item.qid}</strong> ({item.ders}) — {item.olculenBilgi}
               </span>
-              <span class="shrink-0 rounded-full bg-gradeHardBg px-2 py-0.5 text-[11px] font-bold text-gradeHard">
+              <span class="shrink-0 font-semibold text-gradeHard">
                 {item.sinavOncesiSurumde === 'kismen' ? 'Kısmen vardı' : 'Sonradan eklendi'}
               </span>
             </li>
@@ -236,8 +239,7 @@ const pageSchema = {
       </div>
 
       <div class="rounded-2xl border border-line bg-surfaceSoft p-6">
-        <div class="section-num">Ölçüm Yöntemi &amp; Hukuki Sınırlar</div>
-        <h2 class="display text-lg text-ink mt-2">Rozet tanımları ve dürüstlük ilkelerimiz</h2>
+        <h2 class="display text-lg text-ink">Rozet tanımları ve yöntem</h2>
         <dl class="mt-4 space-y-3 text-sm">
           <div>
             <dt class="font-bold text-gradeGood">Doğrudan (333 / 1.195)</dt>
@@ -255,6 +257,39 @@ const pageSchema = {
         <p class="mt-4 pt-4 border-t border-line text-xs text-inkMuted leading-relaxed">
           Değerlendirme 26 Ekim 2026 tarihli katalog (<code>{refSummary.katalogCommit}</code>) üzerinde 11 ders ajanı ve 2026/2 hakem kontrolüyle yapılan yapay zekâ destekli ön sınıflamadır; bağımsız hekim/editör onay süreci devam etmektedir. 2024/1–2026/1 sonuçları güncel kataloğun bu soruları karşılama oranını gösterir.
         </p>
+      </div>
+    </div>
+
+    <!-- 11 ÖSYM TUS Branch Pages Directory + 12 Courses vs 11 Branches clarification -->
+    <div class="mt-12 pt-10 border-t border-line">
+      <div class="max-w-3xl">
+        <h2 class="display text-section tracking-tightest text-ink">11 ÖSYM TUS Branşı Sayfaları</h2>
+        <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+          Katalogda toplam <strong>{catalog.totals.courses} ders</strong> yer alır (11 TUS branş destesi + karma soru tekrarı için 806 kartlık{' '}
+          <strong>Deneme ve Soru</strong> destesi; katalogda Fizyoloji-Histoloji-Embriyoloji kısaca <strong>FHE</strong> adıyla listelenir).
+          ÖSYM TUS referans cetveli ise <strong>11 ÖSYM TUS branşı</strong> üzerinden (Deneme ve Soru hariç) hesaplanır:
+        </p>
+      </div>
+
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {branches.map((b) => (
+          <a
+            href={`/referanslar/${b.slug}/`}
+            class="rounded-2xl border border-line bg-white p-5 hover:border-tealGraphic transition flex flex-col justify-between"
+          >
+            <div>
+              <div class="text-[11px] font-bold text-teal">{b.group}</div>
+              <h3 class="display text-base text-ink mt-1">{b.name}</h3>
+              <p class="text-xs text-inkMuted mt-2 tabular-nums">
+                Çözüm desteği: <strong class="text-ink">{b.summary.destek}/{b.summary.soru} (%{b.summary.destekOran.toFixed(1).replace('.', ',')})</strong> ·
+                Konu kapsamı: %{b.summary.konuKapsamiOran.toFixed(1).replace('.', ',')}
+              </p>
+            </div>
+            <span class="mt-4 text-xs font-semibold text-teal">
+              Branş analizini ve {b.catalogCourse.cards.toLocaleString('tr-TR')} kartı gör →
+            </span>
+          </a>
+        ))}
       </div>
     </div>
   </section>
@@ -334,11 +369,11 @@ const pageSchema = {
       const bm = badgeMeta[r.rozet] || badgeMeta.KONU;
       let preBadge = '';
       if (r.sinavOncesiSurumde === 'evet') {
-        preBadge = '<span class="rounded-full bg-surfaceSoft border border-line px-2.5 py-0.5 text-[11px] font-medium text-inkMuted">Sınav öncesi (a78ae1f)</span>';
+        preBadge = '<span class="text-inkMuted">· Sınav öncesi (a78ae1f)</span>';
       } else if (r.sinavOncesiSurumde === 'kismen') {
-        preBadge = '<span class="rounded-full bg-gradeHardBg px-2.5 py-0.5 text-[11px] font-bold text-gradeHard">Sınav sonrası düzenlendi (kısmen)</span>';
+        preBadge = '<span class="font-semibold text-gradeHard">· Sınav sonrası düzenlendi (kısmen)</span>';
       } else if (r.sinavOncesiSurumde === 'hayir') {
-        preBadge = '<span class="rounded-full bg-gradeAgainBg px-2.5 py-0.5 text-[11px] font-bold text-gradeAgain">Sınav sonrası eklendi</span>';
+        preBadge = '<span class="font-semibold text-gradeAgain">· Sınav sonrası eklendi</span>';
       }
 
       const eksikHtml = r.eksikAdim
@@ -352,10 +387,10 @@ const pageSchema = {
       return `
         <article class="rounded-2xl border border-line bg-white p-4 sm:p-5">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="rounded-full bg-surface px-2.5 py-0.5 text-xs font-bold text-ink tabular-nums">${esc(r.sinav)} · ${esc(r.qid.split('-')[1] || r.no)}</span>
-              <span class="rounded-full bg-tint px-2.5 py-0.5 text-xs font-semibold text-teal">${esc(r.ders)}</span>
-              <span class="rounded-full ${bm.cls} px-2.5 py-0.5 text-xs font-bold">${bm.label}</span>
+            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs">
+              <span class="font-bold text-ink tabular-nums">${esc(r.sinav)} · ${esc(r.qid.split('-')[1] || r.no)}</span>
+              <span class="text-inkMuted">${esc(r.ders)}</span>
+              <span class="rounded-full ${bm.cls} px-2.5 py-0.5 font-semibold">${bm.label}</span>
               ${preBadge}
             </div>
             <div class="flex items-center gap-3 text-xs">

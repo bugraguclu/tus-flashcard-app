@@ -33,7 +33,7 @@ const emphasise = (escaped: string) =>
   escaped.replace(STRONG, '<strong>$1</strong>').replace(EM, '<em>$1</em>');
 
 /** Wrap English technical terms inside Turkish uppercase kickers so CSS text-transform keeps dotless I. */
-const LATIN_TERMS = /\b(FSRS-6|FSRS|Anki|AnkiMobile|Image Occlusion|Cloze|iPhone|Web|WhatsApp|Instagram|SQLite|Git)\b/g;
+const LATIN_TERMS = /\b(FSRS-6|FSRS|Anki|AnkiMobile|Image Occlusion|Cloze|iPhone|Web|SQLite|Git)\b/g;
 export function markLatinTerms(s: string): string {
   return escapeHtml(s).replace(LATIN_TERMS, (m) => `<span lang="en">${m}</span>`);
 }

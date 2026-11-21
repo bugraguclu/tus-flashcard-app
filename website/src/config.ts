@@ -19,44 +19,33 @@ export const SITE = {
   name: 'TusAnkiM',
   titleSuffix: 'TusAnkiM — TUS Aralıklı Tekrar ve Kart Sistemi',
   domain: 'tusankim.com',
-  tagline: 'Sadece 9.575 kartla hayaline ulaş — biz yanındayız.',
+  tagline: '9.575 TUS kartı · FSRS-6 · Anki uyumlu',
   description:
-    'TUS için yerel öncelikli, Anki uyumlu (.apkg/.colpkg) FSRS-6 aralıklı tekrar uygulaması. 9.575 doğrulanmış kart, son 6 TUS referans kanıtı, Kronometre ve puan hesaplayıcı.',
+    'TUS için yerel öncelikli, Anki uyumlu (.apkg/.colpkg) FSRS-6 aralıklı tekrar uygulaması. 9.575 kart, son 6 TUS referans kaydı, Kronometre ve puan hesaplayıcı.',
   disclaimer:
     'TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir.',
   webAppUrl: 'https://tusankim.vercel.app/',
   githubIssuesUrl: 'https://github.com/bugraguclu/tus-flashcard-app/issues',
-  // Replace with live App Store link once published; currently directs to iPhone/Web onboarding anchor.
-  appStoreUrl: 'https://tusankim.vercel.app/',
   email: 'destek@tusankim.com',
 } as const;
 
-export const WHATSAPP = {
-  enabled: true,
-  // Replace phone number with live WhatsApp Business chatbot number before go-live.
-  url: 'https://wa.me/905000000000?text=Merhaba%2C%20TusAnkiM%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum.',
-  displayHours: '7/24 Kesintisiz WhatsApp Chatbot + Ekip Desteği',
-  clubApplicationUrl:
-    'https://wa.me/905000000000?text=Merhaba%2C%20t%C4%B1p%20fak%C3%BCltesi%20kul%C3%BCb%C3%BC%20%2F%20sosyal%20medya%20%C3%BCcretsiz%20hesap%20program%C4%B1na%20ba%C5%9Fvurmak%20istiyorum.',
+export const FOUNDER = {
+  name: 'Uzm. Dr. Muhammet Kürşat Güçlü',
+  title: 'Kulak Burun Boğaz (KBB) Uzman Doktoru',
+  shortTitle: 'KBB Uzman Doktoru',
+  location: 'İzmir Çiğli',
+  city: 'İzmir',
+  district: 'Çiğli',
+  signature: 'Uzm. Dr. Muhammet Kürşat Güçlü (İzmir Çiğli, KBB Uzman Doktoru)',
+  reviewDateIso: '2026-11-21',
+  reviewDateLabel: '21 Kasım 2026',
 } as const;
 
-export const SOCIAL = [
-  {
-    icon: 'instagram',
-    name: 'Instagram',
-    handle: '@tusankim',
-    url: 'https://www.instagram.com/tusankim/',
-  },
-  {
-    icon: 'youtube',
-    name: 'YouTube',
-    handle: '@tusankim',
-    url: 'https://www.youtube.com/@tusankim',
-  },
-  {
-    icon: 'whatsapp',
-    name: 'WhatsApp 7/24',
-    handle: '7/24 Destek Hattı',
-    url: WHATSAPP.url,
-  },
-] as const;
+export interface SocialProfile {
+  icon: 'instagram' | 'youtube';
+  name: string;
+  handle: string;
+  url: string;
+}
+
+export const SOCIAL: readonly SocialProfile[] = [];

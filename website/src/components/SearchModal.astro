@@ -7,7 +7,7 @@ const quickLinks = [
   { title: 'TUS Referans Kanıtları (Son 6 Sınav)', sub: '521/1.195 çözüm desteği · Ders ders & sınav bazlı arama', url: '/referanslar/' },
   { title: 'TUS Puan & Hedef Net Hesaplayıcı', sub: 'Temel + Klinik doğru/yanlış ve tersine hedef net hesabı', url: '/puan-hesapla/' },
   { title: 'FSRS-6 Nedir? Nasıl Ayarlanır?', sub: 'Hedef hatırlama oranı, optimizasyon ve kart yeniden zamanlama', url: '/yardim/fsrs/' },
-  { title: 'Anki ile Birlikte Kullanma (.apkg / .colpkg)', sub: 'Destelerinizi kayıpsız içeri aktarın veya dışa verin', url: '/yardim/anki-ile-kullanma/' },
+  { title: 'Anki ile Birlikte Kullanma (.apkg / .colpkg)', sub: 'Destelerini kayıpsız içeri aktar veya dışa ver', url: '/yardim/anki-ile-kullanma/' },
   { title: 'Sıkça Sorulan Sorular', sub: 'Fiyatlandırma, 7 gün iade garantisi, kart güncellemeleri', url: '/sss/' },
 ];
 ---
@@ -31,12 +31,12 @@ const quickLinks = [
 >
   <div class="p-4 sm:p-5">
     <div class="flex items-center justify-between gap-3 mb-3">
-      <h2 id="site-search-heading" class="section-num">Sitede Ara</h2>
+      <h2 id="site-search-heading" class="text-sm font-semibold text-ink">Sitede Ara</h2>
       <button
         id="site-search-close"
         type="button"
         aria-label="Aramayı kapat"
-        class="touch-target grid place-items-center w-10 h-10 rounded-full text-inkMuted hover:text-ink hover:bg-surface transition"
+        class="touch-target grid place-items-center w-11 h-11 rounded-full text-inkMuted hover:text-ink hover:bg-surface transition"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <line x1="6" y1="6" x2="18" y2="18" />
@@ -162,12 +162,12 @@ const quickLinks = [
       resEl.innerHTML = hits
         .map(
           (it) => `
-          <a href="${esc(it.url)}" class="search-hit flex items-start justify-between gap-3 rounded-xl px-3 py-2.5 transition">
+          <a href="${esc(it.url)}" class="search-hit flex items-baseline justify-between gap-3 rounded-xl px-3 py-2.5 transition">
             <span class="min-w-0">
               <span class="block text-sm font-semibold text-ink">${esc(it.title)}</span>
               <span class="block text-xs text-inkMuted mt-0.5 line-clamp-2">${esc(it.sub)}</span>
             </span>
-            <span class="shrink-0 rounded-full bg-tint px-2 py-0.5 text-[11px] font-semibold text-teal">${esc(it.type)}</span>
+            <span class="shrink-0 text-xs text-inkMuted">${esc(it.type)}</span>
           </a>`
         )
         .join('');

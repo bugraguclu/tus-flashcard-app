@@ -1,10 +1,41 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
+import ts from 'typescript';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WEBSITE_ROOT = path.resolve(__dirname, '..');
+const REPO_ROOT = path.resolve(WEBSITE_ROOT, '..');
 const DIST = path.join(WEBSITE_ROOT, 'dist');
+const PUBLIC_DIR = path.join(WEBSITE_ROOT, 'public');
+
+function loadTsExports(absPath, mocks = {}) {
+  const source = fs.readFileSync(absPath, 'utf8');
+  const transpiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+      esModuleInterop: true,
+    },
+  });
+  const mod = { exports: {} };
+  const context = {
+    module: mod,
+    exports: mod.exports,
+    require: (specifier) => {
+      if (Object.prototype.hasOwnProperty.call(mocks, specifier)) {
+        return mocks[specifier];
+      }
+      throw new Error(`Unexpected import "${specifier}" while loading ${absPath}`);
+    },
+  };
+  vm.runInNewContext(transpiled.outputText, context, { filename: absPath });
+  return mod.exports;
+}
+
+const fmtTrInt = (n) => String(Math.round(Number(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const fmtTrDec1 = (n) => Number(n).toFixed(1).replace('.', ',');
 
 const failures = [];
 const check = (cond, msg) => {
@@ -34,10 +65,37 @@ for (const rf of relFiles) {
   check(!/\.(apkg|tuspack)$/i.test(rf), `Forbidden catalog package in dist: ${rf}`);
 }
 
+const BRANCH_SLUGS = [
+  'anatomi',
+  'fizyoloji-histoloji-embriyoloji',
+  'biyokimya',
+  'mikrobiyoloji',
+  'patoloji',
+  'farmakoloji',
+  'dahiliye',
+  'pediatri',
+  'genel-cerrahi',
+  'kadin-dogum',
+  'kucuk-stajlar',
+];
+
+const REHBER_SLUGS = [
+  'tusta-kac-kart-calisilmali',
+  'tus-icin-fsrs-6-nedir',
+  'tus-icin-anki-uyumlu-sistem',
+  'tus-puani-nasil-hesaplanir',
+  '2027-tus-tarihleri-ve-calisma-plani',
+  'tus-calisirken-dogru-bilinen-7-yanlis',
+  'tusankim-ucretsiz-mi-nasil-kullanilir',
+];
+
 // 2. Check required routes exist
 const requiredFiles = [
   'index.html',
   'referanslar/index.html',
+  ...BRANCH_SLUGS.map((s) => `referanslar/${s}/index.html`),
+  'rehber/index.html',
+  ...REHBER_SLUGS.map((s) => `rehber/${s}/index.html`),
   'puan-hesapla/index.html',
   'kurucu/index.html',
   'sss/index.html',
@@ -52,11 +110,52 @@ const requiredFiles = [
   '404.html',
   'sitemap.xml',
   'robots.txt',
+  'llms.txt',
+  'llms-full.txt',
   'arama-index.json',
   'data/references.json',
+  'favicon.ico',
+  'favicon.svg',
+  'favicon-32x32.png',
+  'favicon-48x48.png',
+  'apple-touch-icon.png',
+  'images/app-mark.png',
+  'images/app-mark-128.webp',
+  'images/app-mark-128.png',
+  'images/og-home.png',
+  'images/og-referanslar.png',
+  'images/og-puan-hesapla.png',
+  'images/og-yardim.png',
+  'images/og-kurucu.png',
+  'images/og-sss.png',
+  'images/og-destek.png',
 ];
 for (const rf of requiredFiles) {
   check(fs.existsSync(path.join(DIST, rf)), `Missing required built file: ${rf}`);
+}
+check(!fs.existsSync(path.join(DIST, 'favicon.png')), 'Stale grayscale favicon.png must be removed');
+check(!fs.existsSync(path.join(DIST, 'images/og.svg')), 'Stale SVG OG image images/og.svg must be removed');
+check(!fs.existsSync(path.join(WEBSITE_ROOT, 'src/assets/app-mark.png')), 'Dead duplicate src/assets/app-mark.png must stay removed');
+
+// 2b. Asset weight, EXIF-free & color favicon invariants
+const webpLogoSize = fs.existsSync(path.join(DIST, 'images/app-mark-128.webp'))
+  ? fs.statSync(path.join(DIST, 'images/app-mark-128.webp')).size
+  : Infinity;
+const pngLogoSize = fs.existsSync(path.join(DIST, 'images/app-mark-128.png'))
+  ? fs.statSync(path.join(DIST, 'images/app-mark-128.png')).size
+  : Infinity;
+check(webpLogoSize <= 10 * 1024, `images/app-mark-128.webp too large (${webpLogoSize} B > 10 KB)`);
+check(pngLogoSize <= 15 * 1024, `images/app-mark-128.png too large (${pngLogoSize} B > 15 KB)`);
+if (fs.existsSync(path.join(DIST, 'images/app-mark.png'))) {
+  const masterBuf = fs.readFileSync(path.join(DIST, 'images/app-mark.png'));
+  check(!masterBuf.includes(Buffer.from('eXIf')), 'images/app-mark.png must not contain an eXIf chunk');
+}
+for (const iconRel of ['favicon-32x32.png', 'favicon-48x48.png', 'apple-touch-icon.png']) {
+  const iconPath = path.join(DIST, iconRel);
+  if (fs.existsSync(iconPath)) {
+    const colorType = fs.readFileSync(iconPath)[25];
+    check(colorType === 2 || colorType === 6, `${iconRel}: expected RGB/RGBA color PNG (colorType 2 or 6), got ${colorType}`);
+  }
 }
 
 // 3. Check CSS preservation & no low-contrast belif leftovers
@@ -77,7 +176,10 @@ for (const svgFile of files.filter((f) => f.endsWith('.svg'))) {
 
 // 4. Audit every HTML page
 const htmlFiles = files.filter((f) => f.endsWith('.html'));
-check(htmlFiles.length === 31, `Expected 31 HTML pages (10 core + 21 help guides), got ${htmlFiles.length}`);
+check(
+  htmlFiles.length === 50,
+  `Expected 50 HTML pages (10 core + 21 help guides + 11 branches + 8 rehber), got ${htmlFiles.length}`,
+);
 
 const forbiddenText = [
   { re: /Cloze-AnKingMaster/i, label: 'Cloze-AnKingMaster' },
@@ -89,6 +191,13 @@ const forbiddenText = [
   { re: /<iframe\b/i, label: 'Forbidden <iframe>' },
   { re: /\son(?:click|change|input|submit)=/i, label: 'Inline JS event handler' },
   { re: /text-ink\/45/i, label: 'Low-contrast text-ink/45' },
+  { re: /wa\.me/i, label: 'Forbidden WhatsApp wa.me link' },
+  { re: /905000000000/, label: 'Forbidden placeholder phone number 905000000000' },
+  { re: /\bWhatsApp\b/i, label: 'Forbidden WhatsApp reference' },
+  { re: /instagram\.com\/tusankim/i, label: 'Unverified Instagram @tusankim placeholder' },
+  { re: /youtube\.com\/@tusankim/i, label: 'Unverified YouTube @tusankim placeholder' },
+  { re: /TusAnkiM Kurucu & Editör Ekibi/i, label: 'Stale generic founder identity' },
+  { re: /7\/24\s*(?:WhatsApp|Destek)/i, label: 'Unverified 7/24 support SLA' },
 ];
 
 for (const hf of htmlFiles) {
@@ -138,6 +247,23 @@ for (const hf of htmlFiles) {
     check(/\balt=/i.test(img), `${rel}: <img> missing alt: ${img.slice(0, 80)}`);
     check(/\bwidth=/i.test(img) && /\bheight=/i.test(img), `${rel}: <img> missing width/height: ${img.slice(0, 80)}`);
     check(!(/\bfetchpriority="high"/i.test(img) && /\bloading="lazy"/i.test(img)), `${rel}: <img> combines fetchpriority=high and loading=lazy`);
+    check(!/src="\/images\/app-mark\.png"/i.test(img), `${rel}: UI <img> must use lightweight /images/app-mark-128.{webp,png}, not 1024px /images/app-mark.png`);
+  }
+
+  // Raster PNG OG + Twitter meta & favicon links
+  const ogImg = html.match(/<meta property="og:image" content="([^"]+)"/i)?.[1] ?? '';
+  const twImg = html.match(/<meta name="twitter:image" content="([^"]+)"/i)?.[1] ?? '';
+  check(ogImg.endsWith('.png') && twImg.endsWith('.png'), `${rel}: og:image (${ogImg}) and twitter:image (${twImg}) must be raster .png`);
+  check(/<meta property="og:image:type" content="image\/png"/i.test(html), `${rel}: missing og:image:type="image/png"`);
+  check(/<meta name="twitter:title" content="[^"]+"/i.test(html), `${rel}: missing twitter:title`);
+  check(/<meta name="twitter:description" content="[^"]+"/i.test(html), `${rel}: missing twitter:description`);
+  check(html.includes('href="/favicon.ico"') && html.includes('href="/apple-touch-icon.png"'), `${rel}: missing favicon.ico or apple-touch-icon.png link`);
+
+  if (rel === '404.html') {
+    check(!/<meta property="og:url"/i.test(html), '404.html: noindex page must not emit og:url');
+    check(!html.includes('application/ld+json'), '404.html: noindex page must not emit site JSON-LD');
+  } else {
+    check(html.includes('"@type":"ContactPoint"'), `${rel}: Organization JSON-LD missing ContactPoint`);
   }
 
   // Forbidden content/patterns (checked across full HTML including scripts)
@@ -162,15 +288,42 @@ for (const hf of htmlFiles) {
   }
 }
 
-// 5. Verify sitemap.xml
+// 5. Verify sitemap.xml + <lastmod> / JSON-LD dateModified sync
 const sitemap = fs.readFileSync(path.join(DIST, 'sitemap.xml'), 'utf8');
-const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-check(locs.length === 30, `sitemap.xml expected 30 URLs (9 pages + 21 help guides), found ${locs.length}`);
+const urlEntries = [...sitemap.matchAll(/<url><loc>([^<]+)<\/loc>(?:<lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>)?<\/url>/g)];
+const locs = urlEntries.map((m) => m[1]);
+const sitemapLastmod = new Map(urlEntries.map((m) => [m[1], m[2] ?? null]));
+check(
+  locs.length === 49,
+  `sitemap.xml expected 49 URLs (10 core pages + 21 help guides + 11 branches + 7 rehber articles), found ${locs.length}`,
+);
 check(!locs.some((u) => u.includes('/404')), 'sitemap.xml must not include 404');
 check(locs.every((u) => u.startsWith('https://tusankim.com/') && u.endsWith('/')), 'All sitemap URLs must use https://tusankim.com/ and trailing slash');
+const withLastmod = urlEntries.filter((m) => Boolean(m[2])).length;
+check(withLastmod === 49, `sitemap.xml expected 49/49 <lastmod> dates, found ${withLastmod}`);
+
+for (const hf of htmlFiles) {
+  const rel = path.relative(DIST, hf);
+  if (rel === '404.html') continue;
+  const html = fs.readFileSync(hf, 'utf8');
+  const routePath = rel === 'index.html' ? '/' : '/' + rel.replace(/index\.html$/, '');
+  const expectedMod = sitemapLastmod.get('https://tusankim.com' + routePath);
+  const ldBlocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)];
+  for (const b of ldBlocks) {
+    const obj = JSON.parse(b[1]);
+    if (obj.dateModified) {
+      check(
+        obj.dateModified === expectedMod,
+        `${rel}: JSON-LD dateModified (${obj.dateModified}) != sitemap.xml <lastmod> (${expectedMod})`,
+      );
+    }
+  }
+}
 
 // 6. Verify arama-index.json
-const searchIndex = JSON.parse(fs.readFileSync(path.join(DIST, 'arama-index.json'), 'utf8'));
+const searchIndexRaw = fs.readFileSync(path.join(DIST, 'arama-index.json'), 'utf8');
+check(!/whatsapp|wa\.me|905000000000/i.test(searchIndexRaw), 'arama-index.json must not contain WhatsApp or placeholder phone number');
+const searchIndex = JSON.parse(searchIndexRaw);
 check(Array.isArray(searchIndex) && searchIndex.length >= 50, `arama-index.json expected >= 50 entries, got ${searchIndex.length}`);
 
 // 7. Verify public/data/references.json integrity
@@ -183,11 +336,9 @@ check(!/Cloze-AnKingMaster|<img|<script|"reaId"/i.test(refRaw), 'dist/data/refer
 const indexHtml = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
 check(indexHtml.includes('aria-labelledby="demo-tab-0"'), 'index.html: LiveCardDemo missing role="tabpanel" aria-labelledby="demo-tab-0"');
 check(!indexHtml.includes('opacity-90" data-int-easy'), 'index.html: LiveCardDemo Easy grade interval must not use opacity-90 (drops contrast below 4.5:1 AA)');
-check(!indexHtml.includes('aria-live="polite" data-cd-numbers'), 'index.html: CountdownBand numbers must not carry aria-live="polite"');
-check(indexHtml.includes('data-cd-announce'), 'index.html: CountdownBand missing dedicated announcement live region');
-check(indexHtml.includes('role="group" aria-label="Hedef TUS dönemi"'), 'index.html: CountdownBand must use role="group" with aria-pressed buttons');
-check(indexHtml.includes('1.195') && indexHtml.includes('1.108'), 'index.html: ReferenceShowcase missing tr-TR formatted 1.195 / 1.108');
-check(indexHtml.includes('tabindex="0" role="region" aria-label="TusAnkiM ve alternatif TUS çalışma seçenekleri karşılaştırma tablosu"'), 'index.html: Comparison table container must be keyboard-scrollable region');
+check(indexHtml.includes('1.195') && indexHtml.includes('1.108'), 'index.html: Reference summary missing tr-TR formatted 1.195 / 1.108');
+check(indexHtml.includes('76 / 200') && indexHtml.includes('82/200'), 'index.html: Reference summary missing 76 / 200 vs 82/200 pre-exam distinction');
+check(indexHtml.includes('tabindex="0" role="region" aria-label="TUS referans özeti tablosu"'), 'index.html: Reference summary table container must be keyboard-scrollable region');
 
 const puanHtml = fs.readFileSync(path.join(DIST, 'puan-hesapla/index.html'), 'utf8');
 check(puanHtml.includes('%5 Puan Kesintisi Kuralı'), 'puan-hesapla: missing %5 Puan Kesintisi Kuralı');
@@ -198,6 +349,327 @@ check(puanHtml.includes('Temel puanı: %70 Temel + %30 Klinik; Klinik puanı: %5
 
 const refHtml = fs.readFileSync(path.join(DIST, 'referanslar/index.html'), 'utf8');
 check(refHtml.includes('for="ref-pre"'), 'referanslar: checkbox label must explicitly associate via for="ref-pre"');
+check(refHtml.includes('12 ders') && refHtml.includes('11 ÖSYM TUS branşı'), 'referanslar: missing 12 ders vs 11 ÖSYM TUS branşı distinction');
+
+// 9. Group 4 checks (R1: 21 help guides, R2: 11 branches + 7 rehber + terminology, R3: founder identity)
+const kurucuHtml = fs.readFileSync(path.join(DIST, 'kurucu/index.html'), 'utf8');
+check(
+  kurucuHtml.includes('Uzm. Dr. Muhammet Kürşat Güçlü') &&
+    kurucuHtml.includes('İzmir Çiğli') &&
+    kurucuHtml.includes('KBB'),
+  'kurucu/index.html: missing physician identity (Uzm. Dr. Muhammet Kürşat Güçlü, İzmir Çiğli, KBB)',
+);
+check(
+  indexHtml.includes('Uzm. Dr. Muhammet Kürşat Güçlü'),
+  'index.html: missing physician identity in Organization JSON-LD / founder teaser',
+);
+
+const helpGuideHtmlFiles = htmlFiles.filter(
+  (f) => relPath(f).startsWith('yardim/') && relPath(f) !== 'yardim/index.html',
+);
+function relPath(f) {
+  return path.relative(DIST, f);
+}
+check(helpGuideHtmlFiles.length === 21, `Expected 21 help guide HTML files, found ${helpGuideHtmlFiles.length}`);
+for (const hf of helpGuideHtmlFiles) {
+  const rel = relPath(hf);
+  const html = fs.readFileSync(hf, 'utf8');
+  check(html.includes('Son güncelleme:'), `${rel}: missing visible Son güncelleme`);
+  check(html.includes('Uzm. Dr. Muhammet Kürşat Güçlü'), `${rel}: missing physician review signature`);
+  check(
+    /<a\b[^>]*href="https:\/\/[^"]+"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/i.test(html),
+    `${rel}: missing external https:// authority link`,
+  );
+}
+
+const tusCardsHtml = fs.readFileSync(path.join(DIST, 'yardim/tus-kartlari/index.html'), 'utf8');
+check(
+  tusCardsHtml.includes('12 dersten') && tusCardsHtml.includes('11 resmî TUS branşı'),
+  'yardim/tus-kartlari/index.html: missing 12 ders vs 11 branş terminology note',
+);
+
+for (const slug of BRANCH_SLUGS) {
+  const rel = `referanslar/${slug}/index.html`;
+  const html = fs.readFileSync(path.join(DIST, rel), 'utf8');
+  check(html.includes('Son güncelleme:'), `${rel}: missing visible Son güncelleme`);
+  check(html.includes('Uzm. Dr. Muhammet Kürşat Güçlü'), `${rel}: missing physician review signature`);
+  check(html.includes('12 ders') && html.includes('11 resmî TUS branşı'), `${rel}: missing 12 ders vs 11 branş note`);
+  check(
+    /<a\b[^>]*href="https:\/\/www\.osym\.gov\.tr\/[^"]+"[^>]*target="_blank"/i.test(html),
+    `${rel}: missing ÖSYM external authority link`,
+  );
+}
+
+for (const slug of REHBER_SLUGS) {
+  const rel = `rehber/${slug}/index.html`;
+  const html = fs.readFileSync(path.join(DIST, rel), 'utf8');
+  check(html.includes('Son güncelleme:'), `${rel}: missing visible Son güncelleme`);
+  check(html.includes('Uzm. Dr. Muhammet Kürşat Güçlü'), `${rel}: missing physician review signature`);
+  check(html.includes('Neden böyle sanılıyor?'), `${rel}: missing 8-part schema section "Neden böyle sanılıyor?"`);
+  check(html.includes('Doğrusu'), `${rel}: missing 8-part schema section "Doğrusu"`);
+  check(html.includes('Ne yapabilirsiniz?'), `${rel}: missing 8-part schema section "Ne yapabilirsiniz?"`);
+  check(html.includes('Sınır uyarısı'), `${rel}: missing 8-part schema section "Sınır uyarısı"`);
+  check(html.includes('<table'), `${rel}: missing HTML comparison table`);
+  check(
+    /<a\b[^>]*href="https:\/\/[^"]+"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/i.test(html),
+    `${rel}: missing external https:// authority link`,
+  );
+}
+
+// 9. Verify robots.txt AI crawlers & LLM references
+const robotsPath = path.join(DIST, 'robots.txt');
+if (fs.existsSync(robotsPath)) {
+  const robotsText = fs.readFileSync(robotsPath, 'utf8');
+  const stanzas = robotsText.trim().split(/\r?\n\s*\r?\n/);
+  const hasAllowBlock = (agent) =>
+    stanzas.some((block) => {
+      const lines = block.split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+      return lines.some((l) => l === `User-agent: ${agent}`) &&
+        lines.some((l) => l === 'Allow: /') &&
+        !lines.some((l) => /^Disallow:\s*\//i.test(l));
+    });
+
+  check(hasAllowBlock('*'), 'robots.txt: missing User-agent: * with Allow: /');
+  const requiredAiBots = [
+    'GPTBot',
+    'OAI-SearchBot',
+    'ChatGPT-User',
+    'Google-Extended',
+    'ClaudeBot',
+    'Claude-SearchBot',
+    'PerplexityBot',
+    'Perplexity-User',
+    'Applebot-Extended',
+    'CCBot',
+  ];
+  for (const bot of requiredAiBots) {
+    check(hasAllowBlock(bot), `robots.txt: missing explicit User-agent: ${bot} + Allow: / stanza`);
+  }
+  check(/^Sitemap:\s*https:\/\/tusankim\.com\/sitemap\.xml$/m.test(robotsText), 'robots.txt: missing Sitemap: https://tusankim.com/sitemap.xml');
+  check(robotsText.includes('# LLM summary: https://tusankim.com/llms.txt'), 'robots.txt: missing # LLM summary: https://tusankim.com/llms.txt');
+}
+
+// 10. Verify IndexNow key file & monorepo-safe workflow consistency
+const configExports = loadTsExports(path.join(WEBSITE_ROOT, 'src/config.ts'));
+const pagesExports = loadTsExports(path.join(WEBSITE_ROOT, 'src/data/pages.ts'), {
+  '../config': configExports,
+});
+const { SITE, SOCIAL, PRICING_MODE } = configExports;
+
+const publicKeyFiles = fs.existsSync(PUBLIC_DIR)
+  ? fs.readdirSync(PUBLIC_DIR).filter((f) => /^[0-9a-f]{32}\.txt$/.test(f))
+  : [];
+check(publicKeyFiles.length === 1, `Expected exactly 1 32-char lowercase hex IndexNow key file in website/public/, found ${publicKeyFiles.length}`);
+
+let indexNowKey = '';
+if (publicKeyFiles.length === 1) {
+  const keyFile = publicKeyFiles[0];
+  indexNowKey = keyFile.slice(0, 32);
+  const distKeyPath = path.join(DIST, keyFile);
+  check(fs.existsSync(distKeyPath), `Missing built IndexNow key file: dist/${keyFile}`);
+  if (fs.existsSync(distKeyPath)) {
+    const distKeyContent = fs.readFileSync(distKeyPath, 'utf8');
+    check(
+      distKeyContent === indexNowKey,
+      `dist/${keyFile}: content must equal "${indexNowKey}" with no trailing newline or whitespace (got length ${distKeyContent.length})`,
+    );
+  }
+
+  const workflowPath = path.join(REPO_ROOT, '.github/workflows/indexnow.yml');
+  check(fs.existsSync(workflowPath), 'Missing .github/workflows/indexnow.yml');
+  if (fs.existsSync(workflowPath)) {
+    const wf = fs.readFileSync(workflowPath, 'utf8');
+    check(wf.includes(`KEY: ${indexNowKey}`), `.github/workflows/indexnow.yml: KEY does not match ${keyFile}`);
+    check(wf.includes(`HOST: ${SITE.domain}`), `.github/workflows/indexnow.yml: missing HOST: ${SITE.domain}`);
+    check(/^\s*workflow_dispatch:/m.test(wf), '.github/workflows/indexnow.yml: missing workflow_dispatch trigger');
+    check(/^\s*deployment_status:/m.test(wf), '.github/workflows/indexnow.yml: missing deployment_status trigger');
+    check(
+      wf.includes(`environment_url == 'https://${SITE.domain}'`),
+      `.github/workflows/indexnow.yml: missing strict environment_url filter for https://${SITE.domain}`,
+    );
+  }
+}
+
+// 11. Drift Guard for llms.txt & llms-full.txt (source data <-> dist parity)
+const catalogData = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/generated/catalog.json'), 'utf8'));
+const refsSummary = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/generated/references-summary.json'), 'utf8'));
+const fsrsCurves = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/generated/fsrs-curves.json'), 'utf8'));
+const offerData = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/offer.json'), 'utf8'));
+const examsData = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/exams.json'), 'utf8'));
+
+const sitemapSet = new Set(locs);
+const staticEndpoints = new Set([
+  `https://${SITE.domain}/llms.txt`,
+  `https://${SITE.domain}/llms-full.txt`,
+  `https://${SITE.domain}/sitemap.xml`,
+  `https://${SITE.domain}/robots.txt`,
+  `https://${SITE.domain}/arama-index.json`,
+  `https://${SITE.domain}/data/references.json`,
+  ...(indexNowKey ? [`https://${SITE.domain}/${indexNowKey}.txt`] : []),
+]);
+
+const megaScope = fsrsCurves.scopes.find((s) => s.id === 'mega');
+const finDays60 = fsrsCurves.matrix?.all?.['180']?.['60']?.fin;
+const desiredRetentionPct = Math.round(Number(fsrsCurves.desiredRetention) * 100);
+const coreSitemapUrls = pagesExports.sitemapPages().map((p) => `https://${SITE.domain}${pagesExports.link(p.path)}`);
+
+const checkLlmsDoc = (filename, { requireFullBreakdown, maxLines }) => {
+  const filePath = path.join(DIST, filename);
+  if (!fs.existsSync(filePath)) return;
+  const raw = fs.readFileSync(filePath, 'utf8');
+  const flat = raw.replace(/\r?\n>\s*/g, ' ').replace(/\s+/g, ' ');
+
+  // Structure & Turkish sanity
+  check(raw.startsWith('# TusAnkiM'), `${filename}: must begin with "# TusAnkiM" H1 (llmstxt.org)`);
+  check(/^>\s+\S+/m.test(raw), `${filename}: missing blockquote summary ("> ...")`);
+  check(/[ğüşıöçĞÜŞİÖÇ]/.test(raw), `${filename}: expected Turkish content`);
+  if (maxLines) {
+    const lineCount = raw.split(/\r?\n/).length;
+    check(lineCount <= maxLines, `${filename}: expected concise <= ${maxLines} lines, got ${lineCount}`);
+  }
+
+  // Hard bans (WhatsApp placeholder, stale figures, template leaks)
+  const llmsForbidden = [
+    { re: /wa\.me/i, label: 'WhatsApp wa.me link' },
+    { re: /whatsapp/i, label: 'WhatsApp mention/link' },
+    { re: /905000000000/, label: '905000000000 placeholder' },
+    { re: /822\s*\/\s*1\.?195/, label: 'stale 822/1195 ratio' },
+    { re: /%77[,.]5|77[,.]5\s*%/, label: 'stale %77,5 ratio' },
+    { re: /%2\s*Puan\s*Kesintisi/i, label: 'stale %2 Puan Kesintisi' },
+    { re: /Cloze-AnKingMaster/i, label: 'Cloze-AnKingMaster' },
+    { re: /"reaId"|reaId/i, label: 'reaId' },
+    { re: /\bbelif\b/i, label: 'belif leftover' },
+    { re: /\bBeymen\b/i, label: 'Beymen leftover' },
+    { re: /<script\b/i, label: '<script> tag' },
+    { re: /<img\b/i, label: '<img> tag' },
+  ];
+  for (const rule of llmsForbidden) {
+    check(!rule.re.test(raw), `${filename}: forbidden pattern "${rule.label}"`);
+  }
+
+  // Independent product disclaimer & boundaries
+  check(flat.includes(SITE.disclaimer), `${filename}: missing exact disclaimer "${SITE.disclaimer}"`);
+  check(flat.includes('ÖSYM') && flat.includes('tıbbi tavsiye'), `${filename}: missing ÖSYM / medical-advice boundary`);
+  check(flat.includes('Yakında') && flat.includes('Android'), `${filename}: missing Yakında platform boundary`);
+
+  // Catalog numbers (catalog.json)
+  check(flat.includes(fmtTrInt(catalogData.totals.cards)), `${filename}: missing catalog cards ${fmtTrInt(catalogData.totals.cards)}`);
+  check(flat.includes(fmtTrInt(catalogData.totals.notes)), `${filename}: missing catalog notes ${fmtTrInt(catalogData.totals.notes)}`);
+  check(flat.includes(`${catalogData.totals.courses} ders`) || flat.includes(`${catalogData.totals.courses} katalog dersi`), `${filename}: missing ${catalogData.totals.courses} courses count`);
+  check(flat.includes(`${catalogData.totals.topicSubdecks}`), `${filename}: missing ${catalogData.totals.topicSubdecks} topicSubdecks`);
+  check(flat.includes(fmtTrInt(catalogData.totals.temelCards)), `${filename}: missing temelCards ${fmtTrInt(catalogData.totals.temelCards)}`);
+  check(flat.includes(fmtTrInt(catalogData.totals.klinikCards)), `${filename}: missing klinikCards ${fmtTrInt(catalogData.totals.klinikCards)}`);
+  check(flat.includes(fmtTrInt(catalogData.totals.karmaCards)), `${filename}: missing karmaCards ${fmtTrInt(catalogData.totals.karmaCards)}`);
+
+  // 12 catalog courses vs 11 ÖSYM branches + FHE distinction
+  check(
+    flat.includes(`${refsSummary.dersler.length} ÖSYM`) && flat.includes('FHE') && flat.includes('Fizyoloji-Histoloji-Embriyoloji') && flat.includes('Deneme ve Soru'),
+    `${filename}: must explicitly distinguish ${catalogData.totals.courses} catalog courses vs ${refsSummary.dersler.length} ÖSYM branches (FHE = Fizyoloji-Histoloji-Embriyoloji, Deneme ve Soru excluded)`,
+  );
+
+  // Reference evidence (references-summary.json)
+  const ov = refsSummary.overall;
+  const pre = refsSummary.preExam2026_2;
+  check(flat.includes(fmtTrInt(ov.soru)), `${filename}: missing overall.soru ${fmtTrInt(ov.soru)}`);
+  check(flat.includes(`${ov.destek}/${fmtTrInt(ov.soru)}`), `${filename}: missing ${ov.destek}/${fmtTrInt(ov.soru)}`);
+  check(flat.includes(`%${fmtTrDec1(ov.destekOran)}`), `${filename}: missing %${fmtTrDec1(ov.destekOran)}`);
+  check(flat.includes(`${ov.dogrudan}`) && flat.includes(`${ov.dolayli}`), `${filename}: missing Doğrudan (${ov.dogrudan}) / Dolaylı (${ov.dolayli})`);
+  check(flat.includes(`${fmtTrInt(ov.konuKapsami)}/${fmtTrInt(ov.soru)}`), `${filename}: missing ${fmtTrInt(ov.konuKapsami)}/${fmtTrInt(ov.soru)}`);
+  check(flat.includes(`%${fmtTrDec1(ov.konuKapsamiOran)}`), `${filename}: missing %${fmtTrDec1(ov.konuKapsamiOran)}`);
+  check(flat.includes(`${ov.konu}`) && flat.includes(`${ov.yok}`), `${filename}: missing konu (${ov.konu}) / yok (${ov.yok})`);
+
+  // 2026/2 pre-exam a78ae1f (76/200) vs current (82/200)
+  check(
+    flat.includes(pre.commit) &&
+      flat.includes(pre.date) &&
+      flat.includes(`${pre.preExamEvet}/200`) &&
+      flat.includes('%38,0') &&
+      flat.includes(`${pre.supportedCurrent}/200`) &&
+      flat.includes('%41,0') &&
+      flat.includes(`${pre.topicCoverage}/200`) &&
+      flat.includes('%96,0'),
+    `${filename}: missing 2026/2 pre-exam ${pre.commit} (${pre.preExamEvet}/200 %38,0) vs current (${pre.supportedCurrent}/200 %41,0, ${pre.topicCoverage}/200 %96,0) distinction`,
+  );
+
+  // FSRS-6 metrics (fsrs-curves.json)
+  check(flat.includes('FSRS-6'), `${filename}: missing FSRS-6`);
+  check(flat.includes(`%${desiredRetentionPct}`), `${filename}: missing %${desiredRetentionPct} desired retention`);
+  check(flat.includes(`${finDays60} gün`), `${filename}: missing ${finDays60} gün completion horizon`);
+  check(megaScope && flat.includes(fmtTrInt(megaScope.cards)), `${filename}: missing mega deck comparison ${fmtTrInt(megaScope?.cards)}`);
+
+  // PRICING_MODE alignment (config.ts + offer.json)
+  if (PRICING_MODE === 'launch-promo') {
+    const launchTier = offerData.tiers.find((t) => t.id === 'launch');
+    check(flat.includes('200') && flat.includes('₺0'), `${filename}: launch-promo missing 200 card free tier (₺0)`);
+    check(launchTier && flat.includes(launchTier.price) && flat.includes(launchTier.oldPrice), `${filename}: launch-promo missing ${launchTier?.price} / ${launchTier?.oldPrice}`);
+    check(flat.includes('7 gün'), `${filename}: launch-promo missing 7 gün refund guarantee`);
+    check(flat.includes('Açık önizleme döneminde'), `${filename}: launch-promo missing betaTransparencyNote open-preview context`);
+  } else if (PRICING_MODE === 'free-beta') {
+    check(flat.includes(offerData.freeBeta.badge) && flat.includes('₺0'), `${filename}: free-beta missing Açık Beta / ₺0`);
+    check(!/Tam Erişim\s*\([^)]*₺50\/ay[^)]*lansman/i.test(flat), `${filename}: free-beta must not advertise launch-promo active charge`);
+  }
+
+  // Official contact & platform URLs (bidirectional with config.ts SOCIAL)
+  check(flat.includes(SITE.email), `${filename}: missing SITE.email (${SITE.email})`);
+  check(flat.includes(SITE.webAppUrl), `${filename}: missing SITE.webAppUrl (${SITE.webAppUrl})`);
+  check(flat.includes(SITE.githubIssuesUrl), `${filename}: missing SITE.githubIssuesUrl`);
+  for (const s of SOCIAL) {
+    check(flat.includes(s.url), `${filename}: missing SOCIAL url ${s.url}`);
+  }
+  const activeSocialUrls = new Set(SOCIAL.map((s) => s.url));
+  for (const socialRe of [/https?:\/\/(?:www\.)?instagram\.com\/[^\s)>\]]+/gi, /https?:\/\/(?:www\.)?youtube\.com\/[^\s)>\]]+/gi]) {
+    for (const m of raw.matchAll(socialRe)) {
+      check(activeSocialUrls.has(m[0]), `${filename}: unverified social URL "${m[0]}" not present in config.ts SOCIAL`);
+    }
+  }
+
+  // Bidirectional URL parity vs sitemap.xml & pages.ts
+  for (const coreUrl of coreSitemapUrls) {
+    check(raw.includes(coreUrl), `${filename}: missing core page URL ${coreUrl}`);
+  }
+  for (const loc of locs) {
+    check(raw.includes(loc), `${filename}: missing sitemap URL ${loc}`);
+  }
+
+  const foundUrls = [...raw.matchAll(new RegExp(`https://${SITE.domain.replace('.', '\\.')}[^\\s)>\\]"'\`]*`, 'g'))]
+    .map((m) => m[0].replace(/[.,;:]+$/, ''));
+  check(foundUrls.length >= locs.length, `${filename}: expected >= ${locs.length} site URLs, found ${foundUrls.length}`);
+  for (const u of foundUrls) {
+    if (staticEndpoints.has(u)) continue;
+    check(sitemapSet.has(u), `${filename}: URL "${u}" does not match any live trailing-slash URL in sitemap.xml`);
+  }
+
+  // Full reference tables & post-exam QIDs required in llms-full.txt
+  if (requireFullBreakdown) {
+    for (const c of catalogData.courses) {
+      check(
+        flat.includes(c.name) && flat.includes(fmtTrInt(c.cards)) && flat.includes(`${c.topicSubdecks}`),
+        `${filename}: missing course breakdown for "${c.name}" (${fmtTrInt(c.cards)} cards, ${c.topicSubdecks} subdecks)`,
+      );
+    }
+    for (const e of refsSummary.byExam) {
+      check(
+        flat.includes(e.sinav) && flat.includes(`%${fmtTrDec1(e.destekOran)}`) && flat.includes(`%${fmtTrDec1(e.konuKapsamiOran)}`),
+        `${filename}: missing exam breakdown for ${e.sinav}`,
+      );
+    }
+    for (const s of refsSummary.bySubject) {
+      check(
+        flat.includes(s.ders) && flat.includes(`%${fmtTrDec1(s.destekOran)}`) && flat.includes(`%${fmtTrDec1(s.konuKapsamiOran)}`),
+        `${filename}: missing ÖSYM branch breakdown for ${s.ders}`,
+      );
+    }
+    for (const q of pre.postExamEdited) {
+      check(flat.includes(q.qid), `${filename}: missing post-exam edited QID ${q.qid}`);
+    }
+    for (const ex of examsData.exams) {
+      check(flat.includes(ex.examDateLabel), `${filename}: missing 2027 exam date ${ex.examDateLabel}`);
+    }
+  }
+};
+
+checkLlmsDoc('llms.txt', { requireFullBreakdown: false, maxLines: 140 });
+checkLlmsDoc('llms-full.txt', { requireFullBreakdown: true, maxLines: null });
 
 if (failures.length) {
   console.error(`[verify-site] FAILED (${failures.length} issues):`);
@@ -208,5 +680,5 @@ if (failures.length) {
 console.log(
   `[verify-site] PASSED: ${htmlFiles.length} HTML pages, ${locs.length} sitemap URLs, ` +
   `${searchIndex.length} search entries, ${refData.kayitlar.length} reference records, ` +
-  `all WCAG/MWG/CSP/integrity checks green.`
+  `llms.txt/llms-full.txt Drift Guard, robots.txt AI crawlers, IndexNow (${indexNowKey}) & all WCAG/MWG/CSP/integrity checks green.`
 );

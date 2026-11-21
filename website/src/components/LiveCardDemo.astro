@@ -2,41 +2,38 @@
 import demoCards from '../data/generated/demo-cards.json';
 import { SITE } from '../config';
 ---
-<section id="demo" class="scroll-mt-24 py-14 sm:py-20 bg-surface border-y border-line" aria-labelledby="demo-heading">
+<section id="demo" class="scroll-mt-24 py-14 sm:py-20 bg-surface border-b border-line" aria-labelledby="demo-heading">
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
       <div class="max-w-2xl">
-        <div class="section-num">Uygulamamızı Keşfet · Canlı Kart Denemesi</div>
-        <h2 id="demo-heading" class="display text-section tracking-tightest mt-2 text-ink">
-          Sözle değil, gerçek çıkmış TUS kartlarıyla test et
+        <h2 id="demo-heading" class="display text-section tracking-tightest text-ink">
+          Canlı kart denemesi
         </h2>
-        <p class="text-inkMuted mt-3 leading-relaxed">
-          Aşağıdaki 11 kartın tamamı, 2026/2 TUS sınavından 2 gün önceki katalog sürümünde (<code class="text-xs font-semibold text-teal bg-tint px-1.5 py-0.5 rounded">a78ae1f</code>)
-          yer alan ve soruyu <strong>Doğrudan</strong> çözdüren gerçek kartlarımızdır. Bir ders seç, boşluğu tahmin et, cevabı aç.
+        <p class="text-inkMuted mt-2 leading-relaxed">
+          2026/2 TUS'tan 2 gün önceki katalogda (<code>a78ae1f</code>) yer alan ve soruyu doğrudan çözdüren 11 kartı deneyebilirsin.
         </p>
       </div>
       <a
         href={SITE.webAppUrl}
         target="_blank"
         rel="noopener noreferrer"
-        class="inline-flex items-center justify-center gap-2 shrink-0 min-h-[2.75rem] px-5 rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition"
+        class="inline-flex items-center min-h-[2.75rem] shrink-0 text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark"
       >
-        <span>Tam Web Uygulamasında Dene</span>
-        <span aria-hidden="true">↗</span>
+        Web uygulamasında aç ↗
       </a>
     </div>
 
     <div
-      class="rounded-3xl border border-line bg-white shadow-sm overflow-hidden"
+      class="rounded-2xl border border-line bg-white overflow-hidden"
       data-live-demo
       data-cards={JSON.stringify(demoCards)}
     >
       <!-- Subject picker rail -->
-      <div class="border-b border-line bg-surfaceSoft px-4 sm:px-6 pt-3">
+      <div class="border-b border-line bg-surfaceSoft px-4 sm:px-6 pt-2">
         <div
           class="tablist-scroll gap-1"
           role="tablist"
-          aria-label="Deneme kartı dersi seçin"
+          aria-label="Deneme kartı dersi seç"
         >
           {demoCards.map((c, idx) => (
             <button
@@ -55,73 +52,64 @@ import { SITE } from '../config';
       </div>
 
       <!-- Reviewer body -->
-      <div class="p-5 sm:p-8 lg:p-10">
-        <div class="grid lg:grid-cols-12 gap-8 items-start">
-          <!-- Main flashcard stage -->
-          <div class="lg:col-span-8" role="tabpanel" aria-labelledby="demo-tab-0" data-demo-panel>
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-              <div class="flex flex-wrap items-center gap-2">
-                <span data-demo-ders class="inline-flex items-center rounded-full bg-tint px-3 py-1 text-xs font-bold text-teal">
-                  {demoCards[0].ders}
-                </span>
-                <span data-demo-qid class="inline-flex items-center rounded-full bg-gradeGoodBg px-3 py-1 text-xs font-bold text-gradeGood">
-                  {demoCards[0].sinav} TUS · {demoCards[0].qid.split('-')[1]} · Doğrudan
-                </span>
-                <span class="inline-flex items-center rounded-full bg-surface px-2.5 py-1 text-xs font-medium text-inkMuted">
-                  Sınav öncesi sürümde
-                </span>
-              </div>
-              <span data-demo-counter class="text-xs font-semibold text-inkMuted tabular-nums">
-                Kart 1 / {demoCards.length} · 0 değerlendirildi
+      <div class="p-5 sm:p-8 lg:p-10 max-w-4xl mx-auto">
+        <div role="tabpanel" aria-labelledby="demo-tab-0" data-demo-panel>
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-4 text-xs text-inkMuted">
+            <span data-demo-meta class="font-semibold text-ink">
+              {demoCards[0].ders} · {demoCards[0].sinav} TUS · {demoCards[0].qid.split('-')[1]} · Doğrudan (a78ae1f)
+            </span>
+            <span data-demo-counter class="tabular-nums">
+              Kart 1 / {demoCards.length} · 0 değerlendirildi
+            </span>
+          </div>
+
+          <!-- Card surface -->
+          <div class="rounded-2xl border border-line bg-surfaceSoft p-6 sm:p-8 min-h-[190px] flex flex-col justify-center">
+            <div data-demo-body class="text-lg sm:text-xl leading-relaxed text-ink whitespace-pre-line">
+              {demoCards[0].parts.map((part) =>
+                part.type === 'cloze' && part.index === (demoCards[0].activeCloze ?? 1) ? (
+                  <span class="demo-cloze inline-block rounded-lg bg-[#e3edf7] px-2.5 py-0.5 font-bold text-cloze border border-cloze/25">
+                    […]
+                  </span>
+                ) : (
+                  <span>{part.type === 'cloze' ? part.answer : part.value}</span>
+                )
+              )}
+            </div>
+
+            <div data-demo-extra hidden class="mt-5 pt-4 border-t border-line text-sm text-inkMuted leading-relaxed"></div>
+
+            <div data-demo-proof hidden class="mt-4 pt-3 border-t border-lineLight text-xs text-inkMuted flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <span>
+                <span class="font-semibold text-ink">Ölçülen TUS bilgisi:</span>{' '}
+                <span data-demo-measured>{demoCards[0].olculenBilgi}</span>
               </span>
+              <a
+                href={`/referanslar/?sinav=${encodeURIComponent(demoCards[0].sinav)}&ders=${encodeURIComponent(demoCards[0].ders)}&q=${encodeURIComponent(demoCards[0].qid.split('-')[1] || demoCards[0].qid)}`}
+                data-demo-ref-link
+                class="inline-flex items-center min-h-[2.75rem] py-1 shrink-0 font-semibold text-teal underline underline-offset-2 hover:text-tealDark"
+              >
+                Referans kaydını gör →
+              </a>
             </div>
+          </div>
 
-            <!-- Card surface -->
-            <div class="rounded-2xl border border-line bg-surfaceSoft p-6 sm:p-8 min-h-[210px] flex flex-col justify-center">
-              <div data-demo-body class="text-lg sm:text-xl leading-relaxed font-medium text-ink whitespace-pre-line">
-                {demoCards[0].parts.map((part) =>
-                  part.type === 'cloze' && part.index === (demoCards[0].activeCloze ?? 1) ? (
-                    <span class="demo-cloze inline-block rounded-lg bg-[#e3edf7] px-2.5 py-0.5 font-bold text-cloze border border-cloze/25">
-                      […]
-                    </span>
-                  ) : (
-                    <span>{part.type === 'cloze' ? part.answer : part.value}</span>
-                  )
-                )}
-              </div>
-
-              <div data-demo-extra hidden class="mt-5 pt-4 border-t border-line text-sm text-inkMuted leading-relaxed"></div>
-
-              <div data-demo-proof hidden class="mt-4 rounded-xl bg-tint/70 px-4 py-3 text-xs text-ink flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                <span>
-                  <span class="font-bold text-teal">Ölçülen TUS bilgisi:</span>{' '}
-                  <span data-demo-measured>{demoCards[0].olculenBilgi}</span>
-                </span>
-                <a
-                  href={`/referanslar/?sinav=${encodeURIComponent(demoCards[0].sinav)}&ders=${encodeURIComponent(demoCards[0].ders)}&q=${encodeURIComponent(demoCards[0].qid.split('-')[1] || demoCards[0].qid)}`}
-                  data-demo-ref-link
-                  class="inline-flex items-center min-h-[2.75rem] py-1 shrink-0 font-semibold text-teal underline hover:text-tealDark"
-                >
-                  Referans kaydını gör →
-                </a>
-              </div>
-            </div>
-
-            <!-- Action bar: Show Answer vs 4 FSRS-6 Grades -->
-            <div class="mt-5">
+          <!-- Action bar: Show Answer vs 4 FSRS-6 Grades -->
+          <div class="mt-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div class="flex-1">
               <div data-demo-reveal-wrap>
                 <button
                   type="button"
                   data-demo-reveal
-                  class="w-full sm:w-auto min-w-[220px] min-h-[3rem] px-6 rounded-2xl bg-teal text-white text-sm font-bold hover:bg-tealDark transition cursor-pointer"
+                  class="w-full sm:w-auto min-w-[210px] min-h-[3rem] px-6 rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition cursor-pointer"
                 >
-                  Cevabı Göster <span class="ml-1.5 text-tint font-medium text-xs">(Boşluk)</span>
+                  Cevabı Göster <span class="ml-1.5 text-tint font-normal text-xs">(Boşluk)</span>
                 </button>
               </div>
 
               <div data-demo-grades hidden>
-                <p class="text-xs font-semibold text-inkMuted mb-2.5">
-                  Bu bilgiyi ne kadar kolay hatırladın? (<span lang="en">FSRS-6</span> sonraki tekrar aralığını anında hesaplar)
+                <p class="text-xs text-inkMuted mb-2.5">
+                  Bu bilgiyi ne kadar kolay hatırladın? (<span lang="en">FSRS-6</span> sonraki tekrarı ayarlar)
                 </p>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <button
@@ -130,7 +118,7 @@ import { SITE } from '../config';
                     class="min-h-[3.25rem] rounded-xl bg-gradeAgainBg text-gradeAgain px-3 py-2 text-center hover:brightness-95 transition cursor-pointer"
                   >
                     <span class="block text-sm font-bold">Tekrar</span>
-                    <span class="block text-xs font-medium" data-int-again>10 dk</span>
+                    <span class="block text-xs font-normal" data-int-again>10 dk</span>
                   </button>
                   <button
                     type="button"
@@ -138,7 +126,7 @@ import { SITE } from '../config';
                     class="min-h-[3.25rem] rounded-xl bg-gradeHardBg text-gradeHard px-3 py-2 text-center hover:brightness-95 transition cursor-pointer"
                   >
                     <span class="block text-sm font-bold">Zor</span>
-                    <span class="block text-xs font-medium" data-int-hard>1 gün</span>
+                    <span class="block text-xs font-normal" data-int-hard>1 gün</span>
                   </button>
                   <button
                     type="button"
@@ -146,7 +134,7 @@ import { SITE } from '../config';
                     class="min-h-[3.25rem] rounded-xl bg-gradeGoodBg text-gradeGood px-3 py-2 text-center hover:brightness-95 transition cursor-pointer"
                   >
                     <span class="block text-sm font-bold">İyi</span>
-                    <span class="block text-xs font-medium" data-int-good>3 gün</span>
+                    <span class="block text-xs font-normal" data-int-good>3 gün</span>
                   </button>
                   <button
                     type="button"
@@ -154,50 +142,31 @@ import { SITE } from '../config';
                     class="min-h-[3.25rem] rounded-xl bg-gradeEasyBg text-gradeEasy px-3 py-2 text-center hover:brightness-95 transition cursor-pointer"
                   >
                     <span class="block text-sm font-bold">Kolay</span>
-                    <span class="block text-xs font-medium" data-int-easy>8 gün</span>
+                    <span class="block text-xs font-normal" data-int-easy>8 gün</span>
                   </button>
                 </div>
               </div>
 
-              <p data-demo-live aria-live="polite" class="mt-3 text-xs font-medium text-teal min-h-[1.25rem]"></p>
+              <p data-demo-live aria-live="polite" class="mt-2.5 text-xs font-semibold text-teal min-h-[1.25rem]"></p>
             </div>
-          </div>
 
-          <!-- Right context panel -->
-          <aside class="lg:col-span-4 rounded-2xl border border-line bg-surfaceSoft p-5 space-y-4">
-            <div class="section-num">Kart Kalite Özeti</div>
-            <h3 class="display text-base text-ink">Neden bu kartlar akılda kalıyor?</h3>
-            <ul class="space-y-2.5 text-sm text-inkMuted">
-              <li class="flex gap-2.5">
-                <span class="text-teal font-bold" aria-hidden="true">1.</span>
-                <span><strong class="text-ink">Tek net ayrım:</strong> Uzun paragraf yerine sınavda şık eleyen tek atomik boşluk (<span lang="en">Cloze</span>).</span>
-              </li>
-              <li class="flex gap-2.5">
-                <span class="text-teal font-bold" aria-hidden="true">2.</span>
-                <span><strong class="text-ink">Kanıtlı referans:</strong> Her kartın bağlı olduğu TUS sorusu ve sınav öncesi sürüm durumu şeffafça izlenir.</span>
-              </li>
-              <li class="flex gap-2.5">
-                <span class="text-teal font-bold" aria-hidden="true">3.</span>
-                <span><strong class="text-ink"><span lang="en">FSRS-6</span> aralığı:</strong> Zorlandığın kart sık, bildiğin kart seyrek gelir; boşa zaman harcanmaz.</span>
-              </li>
-            </ul>
-            <div class="pt-3 border-t border-line flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 data-demo-prev
-                class="min-h-[2.75rem] px-3.5 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
+                class="min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
               >
                 ← Önceki
               </button>
               <button
                 type="button"
                 data-demo-next
-                class="min-h-[2.75rem] px-3.5 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
+                class="min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
               >
-                Sonraki Kart →
+                Sonraki →
               </button>
             </div>
-          </aside>
+          </div>
         </div>
       </div>
     </div>
@@ -229,8 +198,7 @@ import { SITE } from '../config';
     const tablist = root.querySelector<HTMLElement>('[role="tablist"]');
     const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-demo-idx]')];
     const panelEl = root.querySelector<HTMLElement>('[data-demo-panel]');
-    const dersEl = root.querySelector<HTMLElement>('[data-demo-ders]');
-    const qidEl = root.querySelector<HTMLElement>('[data-demo-qid]');
+    const metaEl = root.querySelector<HTMLElement>('[data-demo-meta]');
     const counterEl = root.querySelector<HTMLElement>('[data-demo-counter]');
     const bodyEl = root.querySelector<HTMLElement>('[data-demo-body]');
     const extraEl = root.querySelector<HTMLElement>('[data-demo-extra]');
@@ -289,8 +257,7 @@ import { SITE } from '../config';
 
       panelEl?.setAttribute('aria-labelledby', `demo-tab-${current}`);
 
-      if (dersEl) dersEl.textContent = card.ders;
-      if (qidEl) qidEl.textContent = `${card.sinav} TUS · ${card.qid.split('-')[1]} · Doğrudan`;
+      if (metaEl) metaEl.textContent = `${card.ders} · ${card.sinav} TUS · ${card.qid.split('-')[1]} · Doğrudan (a78ae1f)`;
       if (counterEl) counterEl.textContent = `Kart ${current + 1} / ${cards.length} · ${rated.size} değerlendirildi`;
 
       if (bodyEl) {
@@ -349,7 +316,7 @@ import { SITE } from '../config';
         goodBtn?.focus({ preventScroll: true });
       }
       if (liveEl) {
-        liveEl.textContent = `${cards[current].ders} kartının cevabı açıldı. 1–4 tuşlarıyla veya düğmelerle değerlendirin.`;
+        liveEl.textContent = `${cards[current].ders} kartının cevabı açıldı. 1–4 tuşlarıyla veya düğmelerle değerlendir.`;
       }
     }
 
@@ -393,8 +360,6 @@ import { SITE } from '../config';
       const tag = (active?.tagName || '').toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
       if (e.key === ' ' && !revealed) {
-        // Never hijack Space when another interactive control (tab, prev/next, link) has focus;
-        // revealBtn itself natively triggers click on Space/Enter.
         const onOtherInteractive = Boolean(
           active &&
           active !== revealBtn &&

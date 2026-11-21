@@ -1,10 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import CountdownBand from '../components/CountdownBand.astro';
+import { FOUNDER } from '../config';
+import exams from '../data/exams.json';
 import { breadcrumbList } from '../lib/schema';
-import { dateModified, pageSources } from '../lib/lastmod';
+import { effectiveDate, formatTrDate, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate(pageSources('puan'));
+const modLabel = formatTrDate(modDate);
+
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
   { name: 'TUS Puan Hesaplayıcı', path: '/puan-hesapla' },
@@ -18,15 +22,18 @@ const pageSchema = {
   operatingSystem: 'Web',
   inLanguage: 'tr-TR',
   url: origin + '/puan-hesapla/',
-  ...dateModified(pageSources('puan')),
+  dateModified: modDate,
+  publisher: { '@id': origin + '/#organization' },
 };
 ---
 <Layout
-  title="TUS Puan ve Hedef Net Hesaplayıcı + Tercih Rehberi | TusAnkiM"
-  description="Temel ve Klinik doğru/yanlış sayılarınızla tahmini TUS puanınızı hesaplayın, hedef puan için gereken neti bulun ve 2027 TUS tercih sürecini adım adım planlayın."
+  title="TUS Puan ve Hedef Net Hesaplayıcı | TusAnkiM"
+  description="Temel ve Klinik doğru/yanlış sayılarından netlerini ve tahmini TUS puanını hesapla; hedef puan için gereken neti gör."
+  ogImage="/images/og-puan-hesapla.png"
+  modifiedTime={modDate}
   schema={[crumbs, pageSchema]}
 >
-  <section class="bg-surface border-b border-line py-10 sm:py-14">
+  <section class="bg-surfaceSoft border-b border-line py-10 sm:py-14">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
       <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted mb-3">
         <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
@@ -34,14 +41,24 @@ const pageSchema = {
         <span class="text-ink font-semibold">TUS Puan Hesaplayıcı</span>
       </nav>
 
-      <div class="section-num">TUS Hazırlık &amp; Tercih Araçları</div>
-      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">
-        TUS Puan &amp; Hedef Net Hesaplayıcı
+      <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
+        TUS Puan ve Hedef Net Hesaplayıcı
       </h1>
       <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
-        Temel (100 soru) ve Klinik (100 soru) doğru-yanlış sayılarınızdan netlerinizi ve tahmini TUS puanlarınızı anında hesaplayın;
-        veya hedeflediğiniz puana ulaşmak için kaç net gerektiğini görün.
+        Temel (100 soru) ve Klinik (100 soru) doğru-yanlış sayılarınla tahmini TUS puanını hesaplayabilir,
+        hedeflediğin puan için gereken toplam neti görebilirsin.
       </p>
+      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
+        <span>
+          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
+        </span>
+        <span>
+          İnceleyen:{' '}
+          <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+            {FOUNDER.signature}
+          </a>
+        </span>
+      </div>
     </div>
   </section>
 
@@ -51,11 +68,10 @@ const pageSchema = {
 
     <div class="grid lg:grid-cols-12 gap-8 items-start" data-tus-score-calc>
       <!-- Left: Forward Calculator -->
-      <div class="lg:col-span-7 rounded-3xl border border-line bg-white p-6 sm:p-8 shadow-sm">
-        <div class="section-num">1 · Netten Tahmini TUS Puanı</div>
-        <h3 class="display text-subsection text-ink mt-1">Doğru ve yanlış sayılarını gir</h3>
+      <div class="lg:col-span-7 rounded-2xl border border-line bg-white p-6 sm:p-8">
+        <h3 class="display text-subsection text-ink">Doğru ve yanlış sayılarını gir</h3>
         <p class="text-xs text-inkMuted mt-1">
-          ÖSYM kuralı: 4 yanlış 1 doğruyu götürür. Her oturum 100 sorudur (Toplam 200 soru).
+          4 yanlış 1 doğruyu götürür. Her oturum 100 sorudur (Toplam 200 soru).
         </p>
 
         <div class="mt-6 grid sm:grid-cols-2 gap-6">
@@ -142,7 +158,7 @@ const pageSchema = {
               %5 Puan Kesintisi Uygula&nbsp;<span class="font-normal text-inkMuted">(uzmanlığa devam / istifa / başlamama)</span>
             </label>
           </div>
-          <span id="puan-kesinti-status" data-kesinti-status class="text-xs font-medium text-inkMuted shrink-0">
+          <span id="puan-kesinti-status" data-kesinti-status class="text-xs text-inkMuted shrink-0">
             Kesinti uygulanmıyor
           </span>
         </div>
@@ -169,14 +185,13 @@ const pageSchema = {
         </div>
 
         <p class="mt-5 text-xs text-inkMuted leading-relaxed border-t border-lineLight pt-4">
-          <strong>Şeffaflık notu:</strong> Resmî TUS puanları her dönemin Türkiye ortalaması ve standart sapmasına göre ÖSYM tarafından hesaplanır.
-          Buradaki sonuçlar son dönem TUS dağılım katsayılarına (Temel puanı: %70 Temel + %30 Klinik; Klinik puanı: %50 Temel + %50 Klinik ağırlık) dayanan <em>yaklaşık ±1,5 puan</em> öngörüsüdür; resmî yerleştirme belgesi yerine geçmez.
+          Resmî TUS puanları her dönemin Türkiye ortalaması ve standart sapmasına göre ÖSYM tarafından hesaplanır.
+          Buradaki sonuçlar son dönem TUS dağılım katsayılarına (Temel puanı: %70 Temel + %30 Klinik; Klinik puanı: %50 Temel + %50 Klinik ağırlık) dayanan <em>yaklaşık ±1,5 puan</em> öngörüsüdür; resmî belge yerine geçmez.
         </p>
       </div>
 
       <!-- Right: Reverse Target Net Planner -->
-      <div class="lg:col-span-5 rounded-3xl border border-line bg-surfaceSoft p-6 sm:p-8 space-y-5">
-        <div class="section-num">2 · Tersine Hedef Planlayıcı</div>
+      <div class="lg:col-span-5 rounded-2xl border border-line bg-surfaceSoft p-6 sm:p-8 space-y-5">
         <h3 class="display text-subsection text-ink">Hedef puanın için kaç net gerekir?</h3>
 
         <div>
@@ -210,32 +225,21 @@ const pageSchema = {
             <span class="text-inkMuted">Oturum başına ortalama (Temel / Klinik)</span>
             <strong class="font-bold text-ink tabular-nums" data-req-each>~65 / 100</strong>
           </div>
-          <div class="pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed" data-req-tip>60–70 puan bandında düzenli FSRS-6 tekrarı en yüksek getiriyi sağlar: 9.575 kartı günde 60 yeni kartla 160 günde tamamlayıp son ayları deneme eksiklerini kapatmaya ayırabilirsiniz.</div>
-        </div>
-
-        <div class="rounded-2xl border border-dashed border-line bg-white p-5">
-          <div class="flex items-center justify-between gap-2">
-            <h4 class="display text-sm text-ink">TUS Tercih Simülasyonu &amp; Taban Puanlar</h4>
-            <span class="rounded-full bg-gradeHardBg px-2.5 py-0.5 text-[11px] font-bold text-gradeHard">Yakında</span>
-          </div>
-          <p class="text-xs text-inkMuted mt-2 leading-relaxed">
-            Bölüm ve şehir bazlı geçmiş taban puan karşılaştırma ile etkileşimli 30 sıralı tercih simülatörü üzerinde çalışıyoruz.
-          </p>
+          <div class="pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed" data-req-tip>60–70 puan bandında düzenli FSRS-6 tekrarıyla 9.575 kartı günde 60 yeni kartla 160 günde tamamlayıp son ayları deneme eksiklerini kapatmaya ayırabilirsin.</div>
         </div>
 
         <a
-          href="/#calisma-dozu"
-          class="inline-flex items-center justify-center w-full min-h-[2.75rem] rounded-full bg-teal text-white text-sm font-bold hover:bg-tealDark transition"
+          href="/yardim/fsrs/"
+          class="inline-flex items-center justify-center w-full min-h-[2.75rem] rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition"
         >
-          FSRS-6 Çalışma Dozunu Planla →
+          FSRS-6 tekrar planlaması rehberi →
         </a>
       </div>
     </div>
 
     <!-- Preference Process Guide -->
     <div class="mt-14 pt-12 border-t border-line">
-      <div class="section-num">Sınav Sonrası Rehber</div>
-      <h2 class="display text-section tracking-tightest mt-2 text-ink">TUS Tercih Süreci: 4 Temel Adım</h2>
+      <h2 class="display text-section tracking-tightest text-ink">TUS Tercih Süreci: 4 Temel Adım</h2>
       <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="rounded-2xl border border-line bg-white p-5">
           <div class="text-xs font-bold text-teal">01 · Yabancı Dil Şartı</div>
@@ -248,14 +252,14 @@ const pageSchema = {
           <div class="text-xs font-bold text-teal">02 · Puan &amp; Sıralama</div>
           <h3 class="display text-base text-ink mt-1.5">Puandan Çok Sıralamaya Bak</h3>
           <p class="text-xs text-inkMuted mt-2 leading-relaxed">
-            Sınav zorluğu dönemden döneme değişir; kontenjan artışı ve sıralama bandı tek başına ham puandan daha belirleyicidir.
+            Sınav zorluğu dönemden döneme değişir; kontenjan artışı ve sıralama bandı ham puandan daha belirleyicidir.
           </p>
         </div>
         <div class="rounded-2xl border border-line bg-white p-5">
           <div class="text-xs font-bold text-teal">03 · 30 Tercih Dengesi</div>
           <h3 class="display text-base text-ink mt-1.5">İdeal · Gerçekçi · Güvenli</h3>
           <p class="text-xs text-inkMuted mt-2 leading-relaxed">
-            Listenin başına hayalinizdeki klinikleri, ortasına sıralamanızla örtüşen programları, sonuna ise gerçekten çalışacağınız güvenli seçenekleri yazın.
+            Listenin başına hedeflediğin klinikleri, ortasına sıralamanla örtüşen programları, sonuna ise çalışacağın güvenli seçenekleri yaz.
           </p>
         </div>
         <div class="rounded-2xl border border-line bg-white p-5">
@@ -267,9 +271,76 @@ const pageSchema = {
         </div>
       </div>
     </div>
-  </section>
 
-  <CountdownBand compact />
+    <!-- Static 2027 Exam Dates (replaces live CountdownBand JS timer) -->
+    <div class="mt-12 pt-8 border-t border-line">
+      <h2 class="display text-lg text-ink">2027 TUS Sınav Takvimi</h2>
+      <div class="mt-4 grid sm:grid-cols-2 gap-4">
+        {exams.exams.map((ex) => (
+          <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
+            <h3 class="display text-base text-ink">{ex.name}</h3>
+            <dl class="mt-2 space-y-1 text-xs text-inkMuted tabular-nums">
+              <div class="flex justify-between gap-2">
+                <dt>Sınav tarihi:</dt>
+                <dd class="font-semibold text-ink">{ex.examDateLabel}</dd>
+              </div>
+              <div class="flex justify-between gap-2">
+                <dt>Başvuru:</dt>
+                <dd>{ex.applicationLabel}</dd>
+              </div>
+              <div class="flex justify-between gap-2">
+                <dt>Sonuç açıklaması:</dt>
+                <dd>{ex.resultLabel}</dd>
+              </div>
+            </dl>
+          </div>
+        ))}
+      </div>
+      <p class="mt-3 text-xs text-inkMuted">{exams.sourceNote}</p>
+    </div>
+
+    <!-- Verified Official Authority Sources -->
+    <div class="mt-10 rounded-2xl border border-line bg-surfaceSoft p-5 sm:p-6">
+      <h2 class="display text-base text-ink">Doğrulanmış Resmî Kaynaklar</h2>
+      <ul class="mt-3 space-y-1 text-sm">
+        <li>
+          <a
+            href="https://www.osym.gov.tr/TR,14991/tipta-uzmanlik-egitimi-giris-sinavi.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline underline-offset-2 hover:text-tealDark"
+          >
+            ÖSYM — TUS Başvuru ve Sınav Kılavuzları ↗
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline underline-offset-2 hover:text-tealDark"
+          >
+            ÖSYM — TUS Çıkmış Sınav Soruları Arşivi ↗
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://www.resmigazete.gov.tr/eskiler/2022/09/20220903-2.htm"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline underline-offset-2 hover:text-tealDark"
+          >
+            Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği (Resmî Gazete) ↗
+          </a>
+        </li>
+      </ul>
+      <p class="mt-3 pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed">
+        Puan hesaplama öngörüsü bilgilendirme ve çalışma planlama amaçlıdır; resmî yerleştirme puanı ÖSYM tarafından açıklanır.
+        Son güncelleme: <time datetime={modDate}>{modLabel}</time> · İnceleyen:{' '}
+        <a href="/kurucu/" class="text-teal underline hover:text-tealDark">{FOUNDER.signature}</a>.
+      </p>
+    </div>
+  </section>
 </Layout>
 
 <script>
@@ -303,8 +374,6 @@ const pageSchema = {
     const fmt = (n: number, d = 1) => n.toFixed(d).replace('.', ',');
     const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(n) ? n : 0));
 
-    // Recent ÖSYM TUS standardized-score linear approximation (mean ~45 net => ~50 pts, ~0.27-0.29 pts per weighted net)
-    // T = 0.7 * Temel + 0.3 * Klinik for T-score orientation vs K = 0.5 * Temel + 0.5 * Klinik
     function estimateScores(tNet: number, kNet: number) {
       const kScore = clamp(28.5 + 0.28 * (tNet + kNet), 15, 86);
       const tScore = clamp(28.5 + 0.39 * tNet + 0.17 * kNet, 15, 86);
@@ -321,7 +390,7 @@ const pageSchema = {
       const badK = kd + ky > 100;
       if (warnEl) {
         if (badT || badK) {
-          warnEl.textContent = 'Doğru + yanlış toplamı bir oturumda 100 soruyu geçemez. Lütfen değerleri düzeltin.';
+          warnEl.textContent = 'Doğru ve yanlış toplamı bir oturumda 100 soruyu geçemez. Değerleri düzelt.';
           warnEl.hidden = false;
         } else {
           warnEl.hidden = true;
@@ -347,7 +416,7 @@ const pageSchema = {
           kesintiStatusEl.className = 'text-xs font-semibold text-warm shrink-0';
         } else {
           kesintiStatusEl.textContent = 'Kesinti uygulanmıyor';
-          kesintiStatusEl.className = 'text-xs font-medium text-inkMuted shrink-0';
+          kesintiStatusEl.className = 'text-xs text-inkMuted shrink-0';
         }
       }
 
@@ -392,13 +461,13 @@ const pageSchema = {
         let baseTip = '';
         if (target >= 70) {
           baseTip =
-            '70+ puan üst dilim branşlar için hem yüksek temel bilim hâkimiyeti hem de "tanıdan sonraki ilk adım" klinik ayrımlarını hatasız hatırlamayı gerektirir. Günde 60–80 yeni kart + deneme analizi önerilir.';
+            '70+ puan üst dilim branşlar için hem yüksek temel bilim hâkimiyeti hem de klinik ayrımları hatasız hatırlamayı gerektirir. Günde 60–80 yeni kart + deneme analizi uygundur.';
         } else if (target >= 60) {
           baseTip =
-            '60–70 puan bandında düzenli FSRS-6 tekrarı en yüksek getiriyi sağlar: 9.575 kartı günde 60 yeni kartla 160 günde tamamlayıp son ayları deneme eksiklerini kapatmaya ayırabilirsiniz.';
+            '60–70 puan bandında düzenli FSRS-6 tekrarıyla 9.575 kartı günde 60 yeni kartla 160 günde tamamlayıp son ayları deneme eksiklerini kapatmaya ayırabilirsin.';
         } else {
           baseTip =
-            '45–60 puan bandında yüksek getirili temel ve klinik çekirdek kartlarla (günde 40 yeni kart ≈ 60 dk/gün) istikrarlı biçimde hedefinize ulaşabilirsiniz.';
+            '45–60 puan bandında yüksek getirili temel ve klinik çekirdek kartlarla (günde 40 yeni kart ≈ 60 dk/gün) hedefine düzenli biçimde ulaşabilirsin.';
         }
         if (hasKesinti) {
           const rawNeeded = target / 0.95;

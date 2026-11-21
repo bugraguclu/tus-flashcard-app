@@ -1,20 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import CountdownBand from '../components/CountdownBand.astro';
 import LiveCardDemo from '../components/LiveCardDemo.astro';
-import ReferenceShowcase from '../components/ReferenceShowcase.astro';
-import FsrsDoseCalculator from '../components/FsrsDoseCalculator.astro';
-import StoryBands, { type StoryBand } from '../components/StoryBands.astro';
-import BeforeAfter, { type BeforeAfterData } from '../components/BeforeAfter.astro';
-import InstagramRail from '../components/InstagramRail.astro';
-import SponsorsBand from '../components/SponsorsBand.astro';
-import FaqTabs from '../components/FaqTabs.astro';
 
 import catalog from '../data/generated/catalog.json';
 import refSummary from '../data/generated/references-summary.json';
+import demoCards from '../data/generated/demo-cards.json';
 import offer from '../data/offer.json';
-import founder from '../data/founder.json';
-import { SITE, WHATSAPP, SHOW_PRICING_PROMO, PRICING_MODE } from '../config';
+import faqs from '../data/faqs.json';
+import { FOUNDER, SITE, PRICING_MODE, SHOW_PRICING_PROMO } from '../config';
+import { answerHtml } from '../lib/richtext';
 import { dateModified, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
@@ -35,36 +29,24 @@ type OfferTier = {
 };
 
 const activeOffer: {
-  badge: string;
   headline: string;
   subheadline: string;
   tiers: OfferTier[];
   note: string;
-  heroBullet: string;
-  heroSecondaryCta: string;
-  comparisonCostCell: string;
   schemaOfferDescription: string;
 } = PRICING_MODE === 'free-beta'
   ? {
-      badge: offer.freeBeta.badge,
       headline: offer.freeBeta.headline,
       subheadline: offer.freeBeta.subheadline,
       tiers: offer.freeBeta.tiers,
       note: offer.freeBeta.transparencyNote,
-      heroBullet: offer.freeBeta.heroBullet,
-      heroSecondaryCta: 'Ücretsiz Beta’yı Aç (9.575 Kart)',
-      comparisonCostCell: 'Açık beta: ücretsiz · Lansman ₺50/ay',
       schemaOfferDescription: offer.freeBeta.schemaOfferDescription,
     }
   : {
-      badge: offer.badge,
       headline: offer.headline,
       subheadline: offer.subheadline,
       tiers: offer.tiers,
       note: offer.betaTransparencyNote,
-      heroBullet: 'Lansmana özel ayda ₺50 tam erişim',
-      heroSecondaryCta: 'Ücretsiz Başla (Günde 200 Kart)',
-      comparisonCostCell: 'Günde 200 kart ücretsiz · Lansman ₺50/ay',
       schemaOfferDescription: 'Günde 200 karta kadar ücretsiz; lansmana özel sınırsız tam erişim ayda ₺50.',
     };
 
@@ -74,7 +56,7 @@ const homeSchema = [
     '@type': 'WebPage',
     '@id': origin + '/#webpage',
     url: origin + '/',
-    name: 'TusAnkiM — TUS Aralıklı Tekrar, 9.575 Kart ve Referans Kanıtı',
+    name: 'TusAnkiM — 9.575 TUS Kartı, FSRS-6 ve Referans Kanıtı',
     description: SITE.description,
     inLanguage: 'tr-TR',
     isPartOf: { '@id': origin + '/#website' },
@@ -99,389 +81,358 @@ const homeSchema = [
   },
 ];
 
-const storyBands: StoryBand[] = [
-  {
-    img: '/images/band-fsrs.svg',
-    imgAlt: 'FSRS-6 aralıklı tekrar unutma eğrisi ile pasif okumanın karşılaştırma grafiği',
-    kicker: 'Aralıklı Tekrar · FSRS-6 Motoru',
-    heading: 'Pasif okuma 72 saatte uçar; FSRS-6 tam unutacağın gün hatırlatır',
-    text: 'Aynı konu kitabını baştan sona üç kez okumak zaman kaybettirir. TusAnkiM’in yerleşik FSRS-6 algoritması her kartta hafıza kararlılığını ve zorluğunu ayrı ölçer; bildiğin kartları haftalar sonrasına atar, zorlandığın ayrımları tam unutma eşiğinde önüne getirir.',
-    bullets: [
-      'Aynı %90 hatırlama hedefine klasik tekrarlara göre %20–30 daha az kartla ulaşın.',
-      'Kendi çalışma geçmişinizden FSRS parametre optimizasyonu ve kolay günler (Easy Days) desteği.',
-      'Yazı tahtası, klavye kısayolları ve tek dokunuşla geri alma ile kesintisiz odak.',
-    ],
-    ctaLabel: 'FSRS-6 nasıl çalışır? Kılavuzu oku',
-    ctaHref: '/yardim/fsrs/',
-  },
-  {
-    img: '/images/band-kronometre.svg',
-    imgAlt: 'TusAnkiM Kronometre, haftalık çalışma takvimi ve detaylı çalışma planı ekranı',
-    kicker: 'TUS Çalışma Merkezi · Kronometre & Plan',
-    heading: 'Kronometre, Çalışma Takvimi ve Çalışma Planı tek uygulamada',
-    text: 'Sadece kart çalışmak yetmez; konu tekrarı, deneme süresi ve günlük çalışma disiplini bir bütün olmalı. Kronometre oturumlarınız kart tekrarlarınızla aynı Çalışma Takviminde birleşir.',
-    bullets: [
-      'Blok hatırlatmaları ve mola takibiyle kesintisiz çalışma serisi.',
-      'Sınav tarihinize göre haftalık ve ders bazlı Detaylı Çalışma Planlama sihirbazı.',
-      'Çalışma Analiziniz ekranıyla gerçek hızınızı ve en verimli saatlerinizi görün.',
-    ],
-    ctaLabel: 'Kronometre ve Takvim rehberi',
-    ctaHref: '/yardim/kronometre/',
-    flip: true,
-  },
-  {
-    img: '/images/band-anki-compat.svg',
-    imgAlt: 'Anki .apkg ve .colpkg uyumluluğu ve iPhone ile Web platform desteği',
-    kicker: 'Bütün Platformlarda Çalış · Anki Uyumu',
-    heading: 'Bir kere başla, Anki uyumlu (.apkg / .colpkg) motorla her yerde çalış',
-    text: 'Kendi oluşturduğun destelere asla kilit vurulmaz. iPhone uygulamasında çevrimdışı çalış, Mac, Windows, iPad veya Android tarayıcıda Web üzerinden devam et; elindeki Anki destelerini medyası ve geçmişiyle içeri al.',
-    bullets: [
-      'iPhone uygulaması ve Web tarayıcı (Mac, Windows, iPad, Android tarayıcı) bugün aktif.',
-      'Kişisel destelerde .apkg, .colpkg ve CSV/TSV tam içe/dışa aktarım uyumu.',
-      'Otomatik Bulut Eşitleme, yerel Android uygulaması ve TUS Tercih Simülasyonu yol haritamızda (Yakında).',
-    ],
-    ctaLabel: 'Anki ile birlikte kullanma rehberi',
-    ctaHref: '/yardim/anki-ile-kullanma/',
-    note: 'TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir.',
-  },
-];
-
-const beforeAfterData: BeforeAfterData = {
-  kicker: 'Fotoğraf Düzenleyici & Görsel Gizleme',
-  heading: 'Ders notunu çek, kırp, saniyeler içinde karta dönüştür',
-  lead: 'Kendi aldığın ders notlarını veya anatomi şemalarını karta çevirmek için ek uygulamaya gerek yok. Dahili Fotoğraf Düzenleyici ve Görsel Gizleme (Image Occlusion) ile temiz, akılda kalıcı kartlar üret.',
-  bullets: [
-    'Perspektif kırpma ve Belge Filtresi ile gölgeli kitap sayfalarını yüksek kontrastlı karta çevirin.',
-    'Görsel Gizleme (Image Occlusion) ile tek bir şemadan saniyeler içinde birden çok aktif hatırlama kartı çıkarın.',
-    'Görselleriniz cihazınızda yerel saklanır; hiçbir sunucuya yüklenmez.',
-  ],
-  note: 'Instagram hesabımızda (@tusankim) bu iş akışlarının 30 saniyelik pratik kullanım videolarını düzenli olarak paylaşıyoruz.',
-  pairs: [
-    {
-      label: 'Fotoğraf & Belge Filtresi',
-      before: '/images/ba-photo-before.svg',
-      after: '/images/ba-photo-after.svg',
-      beforeAlt: 'Eğik ve gölgeli ham ders kitabı fotoğrafı',
-      afterAlt: 'TusAnkiM Belge Filtresi ile kırpılmış ve netleştirilmiş kart görseli',
-    },
-    {
-      label: 'Görsel Gizleme (Occlusion)',
-      before: '/images/ba-occ-before.svg',
-      after: '/images/ba-occ-after.svg',
-      beforeAlt: 'Tüm etiketleri açık pasif brakiyal pleksus şeması',
-      afterAlt: 'TusAnkiM Görsel Gizleme ile aktif hatırlama kutularına dönüştürülmüş şema',
-    },
-  ],
-};
+const heroCard = demoCards.find((c) => c.shortDers === 'Dahiliye') ?? demoCards[0];
+const exam2026_2 = refSummary.byExam.find((e) => e.sinav === '2026/2');
+const teaserFaqs = [
+  faqs.items[0],
+  faqs.items[4],
+  faqs.items[5],
+  faqs.items[9],
+  faqs.items[14],
+].filter(Boolean);
 ---
 <Layout
-  title="TusAnkiM — Sadece 9.575 Kartla TUS'a Hazırlan | FSRS-6 & Referans Kanıtı"
+  title="TusAnkiM — 9.575 TUS Kartı, FSRS-6 ve Referans Kanıtı"
   description={SITE.description}
   schema={homeSchema}
-  preloadImage="/images/hero-tusankim.svg"
 >
-  <!-- 1 · HERO -->
-  <section class="hero-bg border-b border-line">
+  <!-- 1 · HERO (2-column, flat surface, concrete product preview) -->
+  <section class="bg-surfaceSoft border-b border-line">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 sm:py-16 lg:py-20">
       <div class="grid lg:grid-cols-12 gap-10 lg:gap-12 items-center">
         <div class="lg:col-span-6">
-          <div class="inline-flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 gap-y-1 rounded-2xl sm:rounded-full border border-line bg-white px-3 sm:px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold text-teal shadow-xs">
-            <span class="w-2 h-2 rounded-full bg-tealGraphic" aria-hidden="true"></span>
-            <span>9.575 Doğrulanmış Kart</span>
-            <span aria-hidden="true" class="text-inkMuted">·</span>
-            <span>Son 6 TUS Kanıtlı</span>
-            <span aria-hidden="true" class="text-inkMuted">·</span>
-            <span lang="en">FSRS-6</span>
-          </div>
-
-          <h1 class="display text-hero-title tracking-tightest text-ink mt-5">
-            Sadece 9.575 kartla hayaline ulaş — <span class="text-teal">biz yanındayız.</span>
+          <h1 class="display text-hero-title tracking-tightest text-ink">
+            9.575 TUS kartıyla planlı tekrar.
           </h1>
 
-          <p class="mt-5 text-base sm:text-lg text-inkMuted leading-relaxed max-w-xl">
-            TUS kazanan hekim bakış açısıyla hazırlanıp sürekli güncellenen kartlar, <span lang="en">Anki</span> uyumlu
-            (<code>.apkg</code> / <code>.colpkg</code>) <span lang="en">FSRS-6</span> aralıklı tekrar motoru, Kronometre ve
-            şeffaf TUS referans kanıtları tek sakin uygulamada.
+          <p class="mt-4 text-base sm:text-lg text-inkMuted leading-relaxed max-w-xl">
+            Çıkmış sınavlardan süzülen 9.575 bilgi kartını <span lang="en">FSRS-6</span> tekrar takvimiyle çalışırsın.
+            iPhone ve web tarayıcıda çevrimdışı çalışır, kişisel <span lang="en">Anki</span> (<code>.apkg</code> / <code>.colpkg</code>) destelerini kayıpsız taşır.
           </p>
 
           <div class="mt-7 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <a
               href="#demo"
-              class="inline-flex items-center justify-center min-h-[3.125rem] px-6 rounded-full bg-teal text-white text-sm font-bold hover:bg-tealDark transition"
+              class="inline-flex items-center justify-center min-h-[3rem] px-6 rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition"
             >
-              Gerçek TUS Kartlarını Dene ↓
+              Kartları Dene
             </a>
             <a
               href={SITE.webAppUrl}
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center justify-center min-h-[3.125rem] px-6 rounded-full border border-line bg-white text-ink text-sm font-bold hover:border-tealGraphic hover:text-teal transition"
+              class="inline-flex items-center justify-center min-h-[3rem] px-6 rounded-full border border-line bg-white text-ink text-sm font-semibold hover:border-tealGraphic hover:text-teal transition"
             >
-              {activeOffer.heroSecondaryCta} ↗
+              Ücretsiz Başla ↗
             </a>
           </div>
-
-          <ul class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-inkMuted">
-            <li class="inline-flex items-center gap-1.5">
-              <span class="text-teal font-bold" aria-hidden="true">•</span>
-              {activeOffer.heroBullet}
-            </li>
-            <li class="inline-flex items-center gap-1.5">
-              <span class="text-teal font-bold" aria-hidden="true">•</span>
-              7 gün koşulsuz iade garantisi
-            </li>
-            <li class="inline-flex items-center gap-1.5">
-              <span class="text-teal font-bold" aria-hidden="true">•</span>
-              iPhone &amp; Web tarayıcıda aktif
-            </li>
-          </ul>
         </div>
 
         <div class="lg:col-span-6">
-          <div class="rounded-3xl overflow-hidden border border-line bg-white shadow-md">
-            <img
-              src="/images/hero-tusankim.svg"
-              alt="TusAnkiM iPhone çalışma ekranı, Web deste görünümü, 2026/2 TUS doğrudan referans kartı ve Kronometre özeti"
-              width="640"
-              height="520"
-              fetchpriority="high"
-              class="block w-full h-auto"
-            />
+          <div class="rounded-2xl border border-line bg-white p-5 sm:p-7">
+            <div class="flex items-center justify-between gap-2 text-xs text-inkMuted pb-3 border-b border-lineLight">
+              <span class="font-semibold text-ink">{heroCard.ders}</span>
+              <span class="tabular-nums">{heroCard.sinav} TUS · {heroCard.qid.split('-')[1]} · Doğrudan</span>
+            </div>
+
+            <p class="mt-5 text-base sm:text-lg leading-relaxed text-ink whitespace-pre-line">
+              {heroCard.parts.map((part) =>
+                part.type === 'cloze' && part.index === (heroCard.activeCloze ?? 1) ? (
+                  <span class="inline-block rounded-md bg-gradeGoodBg px-2 py-0.5 font-bold text-gradeGood border border-gradeGood/25">
+                    {part.answer}
+                  </span>
+                ) : (
+                  <span>{part.type === 'cloze' ? part.answer : part.value}</span>
+                )
+              )}
+            </p>
+
+            <div class="mt-6 pt-4 border-t border-lineLight grid grid-cols-4 gap-2 text-center">
+              <div class="rounded-lg bg-gradeAgainBg py-2 px-1">
+                <span class="block text-xs font-bold text-gradeAgain">Tekrar</span>
+                <span class="block text-[11px] text-gradeAgain tabular-nums">10 dk</span>
+              </div>
+              <div class="rounded-lg bg-gradeHardBg py-2 px-1">
+                <span class="block text-xs font-bold text-gradeHard">Zor</span>
+                <span class="block text-[11px] text-gradeHard tabular-nums">1 gün</span>
+              </div>
+              <div class="rounded-lg bg-gradeGoodBg py-2 px-1">
+                <span class="block text-xs font-bold text-gradeGood">İyi</span>
+                <span class="block text-[11px] text-gradeGood tabular-nums">3 gün</span>
+              </div>
+              <div class="rounded-lg bg-gradeEasyBg py-2 px-1">
+                <span class="block text-xs font-bold text-gradeEasy">Kolay</span>
+                <span class="block text-[11px] text-gradeEasy tabular-nums">8 gün</span>
+              </div>
+            </div>
+
+            <p class="mt-4 text-xs text-inkMuted">
+              Örnek çalışma kartı · Günde 200 karta kadar ücretsiz
+            </p>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 2 · TRUST STAT ROW (ported from belif .stat-row) -->
+  <!-- 2 · 4-STAT HAIRLINE PROOF STRIP -->
   <section class="bg-white border-b border-line" aria-labelledby="trust-stats-heading">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-10">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-8 sm:py-10">
       <h2 id="trust-stats-heading" class="sr-only">TusAnkiM doğrulanmış rakamlarla</h2>
       <ul role="list" class="stat-row grid grid-cols-2 lg:grid-cols-4">
         <li class="stat">
           <div class="stat-n display">{catalog.totals.cards.toLocaleString('tr-TR')}</div>
           <div class="stat-l">
-            Odaklı TUS kartı · {catalog.totals.courses} ders, {catalog.totals.topicSubdecks} konu alt destesi
+            Kart · {catalog.totals.notes.toLocaleString('tr-TR')} not · {catalog.totals.courses} ders (11 TUS branşı + Deneme ve Soru) · {catalog.totals.topicSubdecks} alt deste
           </div>
         </li>
         <li class="stat">
           <div class="stat-n display">{refSummary.overall.destek} / 1.195</div>
           <div class="stat-l">
-            Son 6 TUS çözüm desteği (%{String(refSummary.overall.destekOran).replace('.', ',')} · {refSummary.overall.dogrudan} Doğrudan + {refSummary.overall.dolayli} Dolaylı)
+            Son 6 TUS çözüm desteği (%{String(refSummary.overall.destekOran).replace('.', ',')} · {refSummary.overall.dogrudan} doğrudan, {refSummary.overall.dolayli} dolaylı)
           </div>
         </li>
         <li class="stat">
           <div class="stat-n display">%{String(refSummary.overall.konuKapsamiOran).replace('.', ',')}</div>
           <div class="stat-l">
-            Son 6 TUS konu kapsamı ({refSummary.overall.konuKapsami.toLocaleString('tr-TR')} / 1.195 soru · 2026/2'de %96,0)
+            Konu kapsamı ({refSummary.overall.konuKapsami.toLocaleString('tr-TR')} / 1.195 soru)
           </div>
         </li>
         <li class="stat">
           <div class="stat-n display">{refSummary.preExam2026_2.preExamEvet} / 200</div>
           <div class="stat-l">
-            2026/2 TUS sınav öncesi sürümde (<code>a78ae1f</code>) kanıtlı çözüm desteği
+            2026/2 Ağustos sınav öncesi a78ae1f (güncel {refSummary.preExam2026_2.supportedCurrent}/200 · {refSummary.preExam2026_2.topicCoverage}/200 konu)
           </div>
         </li>
       </ul>
     </div>
   </section>
 
-  <!-- 3 · 2027 TUS COUNTDOWN -->
-  <CountdownBand />
-
-  <!-- 4 · LIVE INTERACTIVE CARD DEMO (Trust #1 — real pre-exam DOGRUDAN cards) -->
+  <!-- 3 · INTERACTIVE CARD DEMO -->
   <LiveCardDemo />
 
-  <!-- 5 · REFERENCE PROOF BY EXAM & SUBJECT -->
-  <ReferenceShowcase />
-
-  <!-- 6 · FSRS-6 STUDY DOSE CALCULATOR -->
-  <FsrsDoseCalculator />
-
-  <!-- 7 · TUS ECOSYSTEM HUB (All TUS prep + preference needs in one place) -->
-  <section class="py-16 sm:py-20 bg-surface border-y border-line" aria-labelledby="ecosystem-heading">
+  <!-- 4 · CALM REFERENCE PROOF SUMMARY -->
+  <section id="referans-ozet" class="scroll-mt-24 py-14 sm:py-20 bg-white border-b border-line" aria-labelledby="ref-summary-heading">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
-      <div class="max-w-2xl">
-        <div class="section-num">TUS Hazırlık &amp; Tercih Ekosistemi</div>
-        <h2 id="ecosystem-heading" class="display text-section tracking-tightest mt-2 text-ink">
-          TUS hazırlık ve tercih sürecindeki tüm ihtiyaçların tek yerde
-        </h2>
-        <p class="text-inkMuted mt-3 leading-relaxed">
-          Kart çalışmasından net hesabına, Kronometre takibinden çıkmış soru referansına kadar dağınık araçları tek sade sistemde topladık.
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+        <div class="max-w-2xl">
+          <h2 id="ref-summary-heading" class="display text-section tracking-tightest text-ink">
+            Çıkmış TUS referans özeti
+          </h2>
+          <p class="text-inkMuted mt-2 leading-relaxed">
+            Soruyu doğrudan çözdüren kartları, tek köprü isteyen dolaylı kartlardan ve yalnızca konu kapsamından ayrı tutuyoruz.
+          </p>
+        </div>
+        <a
+          href="/referanslar/"
+          class="inline-flex items-center min-h-[2.75rem] shrink-0 text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark"
+        >
+          1.195 soruyu incele →
+        </a>
+      </div>
+
+      <div
+        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        tabindex="0"
+        role="region"
+        aria-label="TUS referans özeti tablosu"
+      >
+        <table class="w-full text-left border-collapse text-sm">
+          <caption class="sr-only">Son 6 TUS ve 2026/2 Ağustos TUS referans dağılımı</caption>
+          <thead>
+            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+              <th scope="col" class="py-3.5 px-5">Kapsam</th>
+              <th scope="col" class="py-3.5 px-5 tabular-nums">Doğrudan</th>
+              <th scope="col" class="py-3.5 px-5 tabular-nums">Dolaylı</th>
+              <th scope="col" class="py-3.5 px-5 tabular-nums">Çözüm Desteği</th>
+              <th scope="col" class="py-3.5 px-5 tabular-nums">Konu Kapsamı</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-lineLight tabular-nums">
+            <tr>
+              <th scope="row" class="py-3.5 px-5 font-semibold text-ink whitespace-nowrap">
+                Son 6 TUS (2024/1–2026/2 · 1.195 soru)
+              </th>
+              <td class="py-3.5 px-5 text-gradeGood font-semibold">{refSummary.overall.dogrudan}</td>
+              <td class="py-3.5 px-5 text-warm font-semibold">{refSummary.overall.dolayli}</td>
+              <td class="py-3.5 px-5 text-ink font-semibold">
+                {refSummary.overall.destek} / 1.195 (%{String(refSummary.overall.destekOran).replace('.', ',')})
+              </td>
+              <td class="py-3.5 px-5 text-inkMuted">
+                {refSummary.overall.konuKapsami.toLocaleString('tr-TR')} / 1.195 (%{String(refSummary.overall.konuKapsamiOran).replace('.', ',')})
+              </td>
+            </tr>
+            {exam2026_2 && (
+              <tr>
+                <th scope="row" class="py-3.5 px-5 font-semibold text-ink whitespace-nowrap">
+                  2026/2 Ağustos (güncel katalog · 200 soru)
+                </th>
+                <td class="py-3.5 px-5 text-gradeGood font-semibold">{exam2026_2.dogrudan}</td>
+                <td class="py-3.5 px-5 text-warm font-semibold">{exam2026_2.dolayli}</td>
+                <td class="py-3.5 px-5 text-ink font-semibold">
+                  {exam2026_2.destek} / 200 (%{exam2026_2.destekOran.toFixed(1).replace('.', ',')})
+                </td>
+                <td class="py-3.5 px-5 text-inkMuted">
+                  {exam2026_2.konuKapsami} / 200 (%{exam2026_2.konuKapsamiOran.toFixed(1).replace('.', ',')})
+                </td>
+              </tr>
+            )}
+            <tr>
+              <th scope="row" class="py-3.5 px-5 font-semibold text-ink whitespace-nowrap">
+                2026/2 Ağustos (sınav öncesi <code>{refSummary.preExam2026_2.commit}</code>)
+              </th>
+              <td class="py-3.5 px-5 text-inkMuted" colspan="2">Sınavdan 2 gün önce ({refSummary.preExam2026_2.date})</td>
+              <td class="py-3.5 px-5 text-ink font-semibold">
+                {refSummary.preExam2026_2.preExamEvet} / 200 (%38,0)
+              </td>
+              <td class="py-3.5 px-5 text-inkMuted">
+                {refSummary.preExam2026_2.preExamKismen + refSummary.preExam2026_2.preExamHayir} soru sınav sonrası eklendi
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="mt-4 text-xs text-inkMuted leading-relaxed max-w-3xl">
+        Sınıflandırma 26 Ekim 2026 kataloğu (<code>{refSummary.katalogCommit}</code>) üzerinde yapay zekâ destekli ön değerlendirme ile hazırlanmıştır;
+        bağımsız hekim editör kontrolü sürmektedir. Katalog 12 ders (FHE dâhil 11 branş + karma Deneme ve Soru) içerir; çıkmış soru referansları ise
+        11 resmî ÖSYM TUS branşı üzerinden raporlanır. Yalnız konu ilişkili kartlar çözüm desteğine katılmaz; ÖSYM soru metni yayımlanmaz.
+      </p>
+    </div>
+  </section>
+
+  <!-- 5 · 4-CAPABILITY FLAT ROW (Yemek Takibi 1x4 grid) -->
+  <section class="py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="capabilities-heading">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <h2 id="capabilities-heading" class="display text-section tracking-tightest text-ink">
+        Temel araçlar
+      </h2>
+
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="/yardim/fsrs/" class="rounded-2xl border border-line bg-white p-5 flex flex-col justify-between hover:border-tealGraphic transition">
+          <div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0e7469" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12h4l3-7 4 14 3-7h4" />
+            </svg>
+            <h3 class="display text-base text-ink mt-3">FSRS-6 Tekrar Takvimi</h3>
+            <p class="text-sm text-inkMuted mt-1.5 leading-relaxed">
+              Her kartın zorluğuna göre tekrar gününü hesaplar; aynı hatırlama oranına daha az tekrarla ulaşırsın.
+            </p>
+          </div>
+          <span class="mt-4 text-xs font-semibold text-teal">FSRS rehberi →</span>
+        </a>
+
+        <a href="/yardim/anki-ile-kullanma/" class="rounded-2xl border border-line bg-white p-5 flex flex-col justify-between hover:border-tealGraphic transition">
+          <div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0e7469" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M7 16V4m0 0L3 8m4-4l4 4" />
+              <path d="M17 8v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+            <h3 class="display text-base text-ink mt-3">Kişisel Anki Uyumu</h3>
+            <p class="text-sm text-inkMuted mt-1.5 leading-relaxed">
+              Kendi .apkg ve .colpkg destelerini medyası ve tekrar geçmişiyle kayıpsız içe veya dışa aktarabilirsin.
+            </p>
+          </div>
+          <span class="mt-4 text-xs font-semibold text-teal">Aktarım rehberi →</span>
+        </a>
+
+        <a href="/yardim/kronometre/" class="rounded-2xl border border-line bg-white p-5 flex flex-col justify-between hover:border-tealGraphic transition">
+          <div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0e7469" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="13" r="8" />
+              <path d="M12 9v4l2.5 1.5" />
+              <path d="M9 2h6" />
+            </svg>
+            <h3 class="display text-base text-ink mt-3">Kronometre ve Plan</h3>
+            <p class="text-sm text-inkMuted mt-1.5 leading-relaxed">
+              Konu ve deneme sürelerini kaydeder, kart tekrarlarıyla aynı çalışma takviminde birleştirir.
+            </p>
+          </div>
+          <span class="mt-4 text-xs font-semibold text-teal">Kronometre rehberi →</span>
+        </a>
+
+        <a href="/puan-hesapla/" class="rounded-2xl border border-line bg-white p-5 flex flex-col justify-between hover:border-tealGraphic transition">
+          <div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0e7469" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="4" y="3" width="16" height="18" rx="2" />
+              <line x1="8" y1="7" x2="16" y2="7" />
+              <line x1="8" y1="12" x2="10" y2="12" />
+              <line x1="14" y1="12" x2="16" y2="12" />
+              <line x1="8" y1="16" x2="10" y2="16" />
+              <line x1="14" y1="16" x2="16" y2="16" />
+            </svg>
+            <h3 class="display text-base text-ink mt-3">TUS Puan Hesaplayıcı</h3>
+            <p class="text-sm text-inkMuted mt-1.5 leading-relaxed">
+              Güncel %5 kesinti ve %70/%30, %50/%50 ağırlıklarla netten puana, puandan hedef nete hesaplar.
+            </p>
+          </div>
+          <span class="mt-4 text-xs font-semibold text-teal">Puan hesapla →</span>
+        </a>
+      </div>
+
+      <div class="mt-6 space-y-1.5 text-xs text-inkMuted leading-relaxed max-w-3xl">
+        <p>
+          <strong class="text-ink">Deste hacmi:</strong> 9.575 kart günde 60 yeni kartla 160 günde tamamlanır; 27.000+ kartlık mega destelerin son aylarda biriktirdiği tekrar yükünü oluşturmaz.
+        </p>
+        <p>
+          <strong class="text-ink">Platform durumu:</strong> iPhone uygulaması ve Web tarayıcıda aktif. Otomatik bulut eşitleme, yerel Android uygulaması ve Tercih Simülasyonu geliştirme aşamasındadır (Yakında).
         </p>
       </div>
-
-      <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-        <a href="#demo" class="rounded-2xl border border-line bg-white p-6 lift block">
-          <span class="inline-block rounded-full bg-tint px-2.5 py-0.5 text-[11px] font-bold text-teal">Aktif</span>
-          <h3 class="display text-lg text-ink mt-3">9.575 Kart &amp; <span lang="en">FSRS-6</span></h3>
-          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-            12 ders, 106 konu alt destesi, boşluk doldurma (<span lang="en">Cloze</span>), görsel gizleme ve bilimsel unutma eğrisi optimizasyonu.
-          </p>
-        </a>
-
-        <a href="/referanslar/" class="rounded-2xl border border-line bg-white p-6 lift block">
-          <span class="inline-block rounded-full bg-tint px-2.5 py-0.5 text-[11px] font-bold text-teal">Aktif</span>
-          <h3 class="display text-lg text-ink mt-3">Çıkmış TUS Referans Sistemi</h3>
-          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-            Son 6 TUS'un 1.195 sorusunda ders ders Doğrudan, Dolaylı ve Konu kapsamı kanıtlarını filtreleyip inceleyin.
-          </p>
-        </a>
-
-        <a href="/puan-hesapla/" class="rounded-2xl border border-line bg-white p-6 lift block">
-          <span class="inline-block rounded-full bg-tint px-2.5 py-0.5 text-[11px] font-bold text-teal">Aktif</span>
-          <h3 class="display text-lg text-ink mt-3">TUS Puan &amp; Hedef Net Hesapla</h3>
-          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-            Temel ve Klinik netlerinizle tahmini TUS puanınızı görün veya hedef puan için gereken neti tersine hesaplayın.
-          </p>
-        </a>
-
-        <a href="/yardim/kronometre/" class="rounded-2xl border border-line bg-white p-6 lift block">
-          <span class="inline-block rounded-full bg-warmTint px-2.5 py-0.5 text-[11px] font-bold text-warm">Aktif</span>
-          <h3 class="display text-lg text-ink mt-3">Kronometre, Takvim &amp; Planlama</h3>
-          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-            Ders sürelerinizi ölçün, blok hatırlatıcı kurun ve Çalışma Takviminde kart + konu çalışma sürenizi birleştirin.
-          </p>
-        </a>
-
-        <a href="/yardim/" class="rounded-2xl border border-line bg-white p-6 lift block">
-          <span class="inline-block rounded-full bg-tint px-2.5 py-0.5 text-[11px] font-bold text-teal">21 Rehber</span>
-          <h3 class="display text-lg text-ink mt-3">Türkçe Kullanım Kılavuzu</h3>
-          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-            İlk kurulumdan <span lang="en">FSRS-6</span> ince ayarlarına, Anki aktarımından yedeklemeye kadar eksiksiz Türkçe dokümantasyon.
-          </p>
-        </a>
-
-        <div class="rounded-2xl border border-dashed border-line bg-white/80 p-6">
-          <span class="inline-block rounded-full bg-gradeHardBg px-2.5 py-0.5 text-[11px] font-bold text-gradeHard">Yakında</span>
-          <h3 class="display text-lg text-ink mt-3">TUS Tercih Simülasyonu &amp; Bulut</h3>
-          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-            Taban puan karşılaştırma, kontenjan tercih simülasyonu, otomatik bulut eşitleme ve yerel Android uygulaması yol haritamızdadır.
-          </p>
-        </div>
-      </div>
     </div>
   </section>
 
-  <!-- 8 · STORY BANDS (FSRS-6, Kronometre, Cross-platform & Anki compat) -->
-  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-16 sm:py-20">
-    <h2 class="sr-only">TusAnkiM temel özellikleri</h2>
-    <StoryBands bands={storyBands} />
-  </section>
-
-  <!-- 9 · BEFORE / AFTER INTERACTIVE SLIDER (Photo Editor & Image Occlusion) -->
-  <div class="border-y border-line bg-surfaceSoft py-16 sm:py-20">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
-      <BeforeAfter data={beforeAfterData} id="editor-once-sonra" />
-    </div>
-  </div>
-
-  <!-- 10 · FOUNDER & EDITORIAL VERIFICATION TEASER -->
-  <section class="py-16 sm:py-20 bg-white" aria-labelledby="founder-teaser-heading">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
-      <div class="rounded-3xl border border-line bg-surfaceSoft p-6 sm:p-10 lg:p-12">
-        <div class="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          <div class="lg:col-span-7">
-            <div class="section-num">{founder.kicker}</div>
-            <h2 id="founder-teaser-heading" class="display text-section tracking-tightest mt-2 text-ink">
-              {founder.letterTitle}
-            </h2>
-            <blockquote class="mt-5 border-l-4 border-teal pl-4 sm:pl-5 text-base sm:text-lg text-ink leading-relaxed font-medium">
-              “{founder.quote}”
-            </blockquote>
-            <ul class="mt-6 space-y-2 text-sm text-inkMuted">
-              {founder.credentials.map((cred) => (
-                <li class="flex items-start gap-2.5">
-                  <span class="text-teal font-bold" aria-hidden="true">•</span>
-                  <span>{cred}</span>
-                </li>
-              ))}
-            </ul>
-            <div class="mt-7 flex flex-wrap items-center gap-4">
-              <a
-                href="/kurucu/"
-                class="inline-flex items-center justify-center min-h-[2.75rem] px-5 rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition"
-              >
-                Kurucumuzun Yazısının Tamamını Oku →
-              </a>
-              <span class="text-xs font-semibold text-inkMuted">{founder.name} · {founder.role}</span>
-            </div>
-          </div>
-
-          <div class="lg:col-span-5 grid sm:grid-cols-2 lg:grid-cols-1 gap-3.5">
-            {founder.editorialPillars.map((p) => (
-              <div class="rounded-2xl border border-line bg-white p-4">
-                <h3 class="display text-sm text-ink">{p.title}</h3>
-                <p class="text-xs text-inkMuted mt-1.5 leading-relaxed">{p.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 11 · PRICING, 10x VALUE, 7-DAY REFUND, CLUB PROGRAM & COMPETITOR COMPARISON -->
+  <!-- 6 · CLEAN 2-COLUMN PRICING -->
   {SHOW_PRICING_PROMO && (
-    <section id="fiyatlandirma" class="scroll-mt-24 py-16 sm:py-20 bg-surface border-y border-line" aria-labelledby="pricing-heading">
+    <section id="fiyatlandirma" class="scroll-mt-24 py-14 sm:py-20 bg-white border-b border-line" aria-labelledby="pricing-heading">
       <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
         <div class="max-w-2xl">
-          <div class="section-num">{activeOffer.badge}</div>
-          <h2 id="pricing-heading" class="display text-section tracking-tightest mt-2 text-ink">
+          <h2 id="pricing-heading" class="display text-section tracking-tightest text-ink">
             {activeOffer.headline}
           </h2>
-          <p class="text-inkMuted mt-3 leading-relaxed">{activeOffer.subheadline}</p>
+          <p class="text-inkMuted mt-2 leading-relaxed">{activeOffer.subheadline}</p>
         </div>
 
-        <!-- Two clean cards -->
         <div class="mt-8 grid lg:grid-cols-2 gap-6 items-stretch">
           {activeOffer.tiers.map((tier) => (
             <div
-              class={`rounded-3xl p-6 sm:p-8 flex flex-col ${
-                tier.highlight
-                  ? 'border-2 border-teal bg-white shadow-md'
-                  : 'border border-line bg-white'
+              class={`rounded-2xl p-6 sm:p-8 flex flex-col bg-white ${
+                tier.highlight ? 'border-2 border-teal' : 'border border-line'
               }`}
             >
-              <div class="flex items-center justify-between gap-3">
+              <div class="flex items-baseline justify-between gap-3">
                 <h3 class="display text-xl text-ink">{tier.name}</h3>
-                <span
-                  class={`rounded-full px-3 py-1 text-xs font-bold ${
-                    tier.highlight ? 'bg-tint text-teal' : 'bg-surface text-inkMuted'
-                  }`}
-                >
+                <span class={`text-xs font-semibold ${tier.highlight ? 'text-teal' : 'text-inkMuted'}`}>
                   {tier.badge}
                 </span>
               </div>
 
-              <div class="mt-5 flex items-baseline gap-2.5">
-                <span class="display text-4xl sm:text-5xl text-ink tabular-nums">{tier.price}</span>
+              <div class="mt-4 flex items-baseline gap-2.5">
+                <span class="display text-4xl text-ink tabular-nums">{tier.price}</span>
                 {tier.oldPrice && (
-                  <span class="text-lg text-inkMuted line-through tabular-nums">{tier.oldPrice}</span>
+                  <span class="text-base text-inkMuted line-through tabular-nums">{tier.oldPrice}</span>
                 )}
                 <span class="text-sm text-inkMuted">{tier.period}</span>
               </div>
 
               <p class="text-sm text-inkMuted mt-3 leading-relaxed">{tier.summary}</p>
 
-              <ul class="mt-6 space-y-2.5 flex-1">
+              <ul class="mt-5 space-y-2 flex-1">
                 {tier.features.map((feat) => (
                   <li class="flex items-start gap-2.5 text-sm text-ink">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14998a" stroke-width="2.2" class="shrink-0 mt-0.5" aria-hidden="true">
-                      <circle cx="12" cy="12" r="9" />
-                      <path d="M9 12l2 2 4-4" />
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14998a" stroke-width="2.2" class="shrink-0 mt-1" aria-hidden="true">
+                      <path d="M5 13l4 4L19 7" />
                     </svg>
                     <span>{feat}</span>
                   </li>
                 ))}
               </ul>
 
-              <div class="mt-7">
+              <div class="mt-6">
                 <a
                   href={tier.ctaHref}
                   target={tier.external ? '_blank' : undefined}
                   rel={tier.external ? 'noopener noreferrer' : undefined}
-                  class={`inline-flex items-center justify-center w-full min-h-[3rem] rounded-full text-sm font-bold transition ${
+                  class={`inline-flex items-center justify-center w-full min-h-[3rem] rounded-full text-sm font-semibold transition ${
                     tier.highlight
                       ? 'bg-teal text-white hover:bg-tealDark'
                       : 'border border-line bg-surfaceSoft text-ink hover:border-tealGraphic hover:text-teal'
@@ -494,164 +445,49 @@ const beforeAfterData: BeforeAfterData = {
           ))}
         </div>
 
-        <!-- 7-day guarantee + Student clubs free program -->
-        <div class="mt-6 grid md:grid-cols-2 gap-4">
-          <div class="rounded-2xl border border-line bg-white p-5 flex items-start gap-4">
-            <div class="w-11 h-11 rounded-xl bg-tint text-teal grid place-items-center shrink-0" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <path d="M9 12l2 2 4-4" />
-              </svg>
-            </div>
-            <div>
-              <h3 class="display text-base text-ink">{offer.refundGuarantee.title}</h3>
-              <p class="text-sm text-inkMuted mt-1 leading-relaxed">{offer.refundGuarantee.text}</p>
-            </div>
-          </div>
-
-          <div class="rounded-2xl border border-line bg-white p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div class="section-num">{offer.clubProgram.kicker}</div>
-              <h3 class="display text-base text-ink mt-1">{offer.clubProgram.title}</h3>
-              <p class="text-xs text-inkMuted mt-1 leading-relaxed">{offer.clubProgram.text}</p>
-            </div>
-            <a
-              href={WHATSAPP.clubApplicationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center justify-center shrink-0 min-h-[2.75rem] px-4 rounded-full border border-teal text-teal text-xs font-bold hover:bg-tint transition"
-            >
-              {offer.clubProgram.cta} ↗
-            </a>
-          </div>
-        </div>
-
-        <!-- Honest Beta / Platform Availability Transparency Note -->
-        <p class="mt-5 text-xs text-inkMuted leading-relaxed" data-pricing-mode={PRICING_MODE}>
-          {activeOffer.note}
-        </p>
-
-        <!-- Platform Status Strip -->
-        <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {offer.platforms.map((pl) => (
-            <div class="rounded-2xl border border-line bg-white p-4">
-              <div class="flex items-center justify-between gap-2">
-                <h3 class="display text-sm text-ink">{pl.name}</h3>
-                <span
-                  class={`rounded-full px-2.5 py-0.5 text-[11px] font-bold shrink-0 ${
-                    pl.badgeType === 'live' ? 'bg-gradeGoodBg text-gradeGood' : 'bg-gradeHardBg text-gradeHard'
-                  }`}
-                >
-                  {pl.status}
-                </span>
-              </div>
-              <p class="text-xs text-inkMuted mt-2 leading-relaxed">{pl.detail}</p>
-            </div>
-          ))}
-        </div>
-
-        <!-- Objective Comparison Table -->
-        <div class="mt-12 rounded-3xl border border-line bg-white overflow-hidden">
-          <div class="p-6 pb-3">
-            <div class="section-num">Nesnel Karşılaştırma</div>
-            <h3 class="display text-subsection tracking-tightest mt-1 text-ink">
-              TusAnkiM, AnkiMobile, paketler ve klasik kaynaklar yan yana
-            </h3>
-          </div>
-          <div
-            class="overflow-x-auto"
-            tabindex="0"
-            role="region"
-            aria-label="TusAnkiM ve alternatif TUS çalışma seçenekleri karşılaştırma tablosu"
-          >
-            <table class="w-full text-left border-collapse text-sm">
-              <caption class="sr-only">{offer.comparison.caption}</caption>
-              <thead>
-                <tr class="border-y border-line bg-surfaceSoft text-xs uppercase tracking-wider text-inkMuted">
-                  <th scope="col" class="py-3.5 px-5 font-bold">Özellik</th>
-                  <th scope="col" class="py-3.5 px-5 font-bold text-teal bg-tint/60">TusAnkiM</th>
-                  <th scope="col" class="py-3.5 px-5 font-bold"><span lang="en">AnkiMobile</span></th>
-                  <th scope="col" class="py-3.5 px-5 font-bold">Anki TUS Paketleri</th>
-                  <th scope="col" class="py-3.5 px-5 font-bold">Dershane / Kitap</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-lineLight">
-                {offer.comparison.rows.map((row) => (
-                  <tr>
-                    <th scope="row" class="py-3.5 px-5 font-semibold text-ink whitespace-nowrap">{row.feature}</th>
-                    <td class="py-3.5 px-5 font-semibold text-teal bg-tint/35">
-                      {row.feature === 'Erişilebilir maliyet' ? activeOffer.comparisonCostCell : row.tusankim}
-                    </td>
-                    <td class="py-3.5 px-5 text-inkMuted">{row.ankimobile}</td>
-                    <td class="py-3.5 px-5 text-inkMuted">{row.ankipacks}</td>
-                    <td class="py-3.5 px-5 text-inkMuted">{row.dershane}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p class="px-5 py-3.5 text-xs text-inkMuted bg-surfaceSoft border-t border-line">
-            {offer.comparison.footnote}
+        <div class="mt-6 space-y-1.5 text-xs text-inkMuted leading-relaxed max-w-3xl" data-pricing-mode={PRICING_MODE}>
+          <p>
+            <strong class="text-ink">7 gün iade &amp; öğrenci toplulukları:</strong> Ücretli planda ilk 1 hafta içinde koşulsuz iade hakkı vardır.
+            Tıp fakültesi kulüplerine ve dönem temsilcilerine ücretsiz hesap tanımlanır (<a href="/destek/" class="text-teal underline hover:text-tealDark">Destek sayfasından başvurabilirsin</a>).
           </p>
+          <p>{activeOffer.note}</p>
         </div>
       </div>
     </section>
   )}
 
-  <!-- 12 · INSTAGRAM USAGE SHOWCASE RAIL -->
-  <InstagramRail />
+  <!-- 7 · FOUNDER LINE + KEY NATIVE FAQ TEASER -->
+  <section id="sss" class="scroll-mt-24 py-14 sm:py-20 bg-surfaceSoft" aria-labelledby="home-faq-heading">
+    <div class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10">
+      <p class="pb-8 mb-8 border-b border-line text-sm text-inkMuted">
+        Kartların hazırlanma standardı ve 2026/2 doğrulama yöntemi için kurucu hekim{' '}
+        <strong class="text-ink font-semibold">{FOUNDER.signature}</strong> tarafından kaleme alınan{' '}
+        <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-4 hover:text-tealDark">
+          kurucu notunu okuyabilirsin →
+        </a>
+      </p>
 
-  <!-- 13 · WHATSAPP 7/24 CHATBOT SUPPORT BAND -->
-  <section class="py-12 sm:py-16 bg-tint/60 border-y border-line" aria-labelledby="wa-support-heading">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
-      <div class="rounded-3xl border border-line bg-white p-6 sm:p-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div class="max-w-2xl">
-          <div class="section-num"><span lang="en">WhatsApp</span> 7/24 Kesintisiz Destek</div>
-          <h2 id="wa-support-heading" class="display text-subsection tracking-tightest mt-2 text-ink">
-            Takıldığın her anda 7/24 <span lang="en">WhatsApp</span> destek hattı yanında
-          </h2>
-          <p class="text-sm sm:text-base text-inkMuted mt-2.5 leading-relaxed">
-            Anki desteni nasıl içe aktaracağını, <span lang="en">FSRS-6</span> hedef oranını kaç seçmen gerektiğini veya günlük çalışma temposunu
-            gecenin üçünde bile <span lang="en">WhatsApp</span> chatbot'umuza sorabilir; içerik veya teknik bildirimlerini ekibimize iletebilirsin.
-          </p>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3 shrink-0">
-          <a
-            href={WHATSAPP.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center justify-center gap-2 min-h-[3rem] px-6 rounded-full bg-teal text-white text-sm font-bold hover:bg-tealDark transition"
-          >
-            <span>WhatsApp'tan Yaz (7/24) ↗</span>
-          </a>
-          <a
-            href="/destek/"
-            class="inline-flex items-center justify-center min-h-[3rem] px-5 rounded-full border border-line bg-surfaceSoft text-ink text-sm font-semibold hover:border-tealGraphic hover:text-teal transition"
-          >
-            Destek Sayfası
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 14 · SPONSORS (controlled by SHOW_SPONSORS in src/config.ts) -->
-  <SponsorsBand />
-
-  <!-- 15 · FAQ TEASER -->
-  <section class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10 py-16 sm:py-20" aria-labelledby="home-faq-heading">
-    <div class="flex items-end justify-between gap-4 mb-6">
-      <div>
-        <div class="section-num">Sıkça Sorulan Sorular</div>
-        <h2 id="home-faq-heading" class="display text-section tracking-tightest mt-2 text-ink">
-          Merak ettiklerin
+      <div class="flex items-end justify-between gap-4 mb-4">
+        <h2 id="home-faq-heading" class="display text-section tracking-tightest text-ink">
+          Sıkça sorulan sorular
         </h2>
+        <a
+          href="/sss/"
+          class="shrink-0 inline-flex items-center min-h-[2.75rem] py-2 text-sm font-semibold text-teal hover:text-tealDark underline underline-offset-4 whitespace-nowrap"
+        >
+          Tüm soruları gör ({faqs.items.length}) →
+        </a>
       </div>
-      <a href="/sss/" class="shrink-0 inline-flex items-center min-h-[2.75rem] py-2 text-sm font-semibold text-teal hover:text-tealDark underline underline-offset-4">
-        Tüm SSS →
-      </a>
+
+      <div class="faq">
+        {teaserFaqs.map((f) => (
+          <details>
+            <summary><span>{f.q}</span></summary>
+            <div class="faq-answer" set:html={answerHtml(f.a)}></div>
+          </details>
+        ))}
+      </div>
     </div>
-    <FaqTabs idp="hpfaq" />
   </section>
 </Layout>
 

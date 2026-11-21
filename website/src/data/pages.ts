@@ -32,6 +32,21 @@ export const PAGES: PageEntry[] = [
     sources: ['website/src/pages/referanslar.astro', 'website/src/data/generated/references-summary.json'],
   },
   {
+    id: 'rehber',
+    path: '/rehber',
+    title: 'TUS Çalışma Rehberleri',
+    navLabel: 'Rehber',
+    footerLabel: 'TUS Çalışma Rehberleri (7 Yazı)',
+    published: true,
+    sitemap: true,
+    sources: [
+      'website/src/pages/rehber/index.astro',
+      'website/src/data/rehber/index.ts',
+      'website/src/data/rehber/part1.ts',
+      'website/src/data/rehber/part2.ts',
+    ],
+  },
+  {
     id: 'puan',
     path: '/puan-hesapla',
     title: 'TUS Puan Hesaplayıcı',
@@ -76,7 +91,7 @@ export const PAGES: PageEntry[] = [
     path: '/destek',
     title: 'Destek ve İletişim',
     navLabel: 'Destek',
-    footerLabel: '7/24 Destek & İletişim',
+    footerLabel: 'Destek & İletişim',
     published: LEGAL_PAGES,
     sitemap: LEGAL_PAGES,
     sources: ['website/src/pages/destek.astro'],
@@ -103,8 +118,8 @@ export const PAGES: PageEntry[] = [
   },
 ];
 
-export const NAV_IDS = ['referanslar', 'puan', 'kurucu', 'yardim', 'sss'] as const;
-export const FOOTER_DISCOVER_IDS = ['referanslar', 'puan', 'kurucu', 'yardim', 'sss', 'destek'] as const;
+export const NAV_IDS = ['referanslar', 'rehber', 'puan', 'kurucu', 'yardim', 'sss'] as const;
+export const FOOTER_DISCOVER_IDS = ['referanslar', 'rehber', 'puan', 'kurucu', 'yardim', 'sss', 'destek'] as const;
 export const FOOTER_LEGAL_IDS = ['gizlilik', 'kosullar', 'destek'] as const;
 
 export const page = (id: string): PageEntry => {

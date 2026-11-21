@@ -1,11 +1,10 @@
-/* TusAnkiM design system styles — ported from belif architecture & hardened to WCAG 2.2 AA + Modern Web Guidance. */
+/* TusAnkiM design system styles — restrained surface tokens, WCAG 2.2 AA & Modern Web Guidance. */
 
 * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 html {
   scroll-behavior: smooth;
-  /* Keep keyboard-focused elements clear of sticky header and fixed WhatsApp pill (WCAG 2.4.11) */
+  /* Keep keyboard-focused elements clear of sticky header (WCAG 2.4.11) */
   scroll-padding-top: 5.5rem;
-  scroll-padding-bottom: 5rem;
 }
 
 body {
@@ -21,41 +20,11 @@ body {
   font-weight: 700;
 }
 
-/* Calm clinical-clean hero backdrop */
-.hero-bg {
-  background:
-    radial-gradient(ellipse 68% 58% at 78% 22%, rgba(20, 153, 138, 0.10) 0%, transparent 62%),
-    radial-gradient(ellipse 52% 72% at 12% 82%, rgba(228, 244, 241, 0.65) 0%, transparent 60%),
-    linear-gradient(180deg, #f3f5f6 0%, #ffffff 74%);
-}
-
 .header-glass {
-  background: rgba(255, 255, 255, 0.88);
-  /* Standard first, -webkit- second (belif pattern: keeps both with autoprefixer + esbuild cssMinify) */
+  background: rgba(255, 255, 255, 0.9);
+  /* Standard first, -webkit- second (keeps both with autoprefixer + esbuild cssMinify) */
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-}
-
-.lift { transition: transform 240ms ease, box-shadow 240ms ease, border-color 200ms ease; }
-@media (hover: hover) and (pointer: fine) {
-  .lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 28px rgba(14, 116, 105, 0.09);
-  }
-}
-
-.section-num {
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: #0e7469;
-  text-transform: uppercase;
-}
-
-footer .section-num {
-  font-weight: 700;
-  font-size: 11.5px;
-  letter-spacing: 0.14em;
 }
 
 .nav-link { position: relative; }
@@ -198,7 +167,7 @@ footer .section-num {
   min-block-size: 2.75rem;
   padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #596166;
   cursor: pointer;
   background: transparent;
@@ -251,9 +220,13 @@ dialog::backdrop {
   -webkit-appearance: none;
   display: none;
 }
-.search-hit.is-active,
-.search-hit:hover {
+.search-hit.is-active {
   background: #e4f4f1;
+}
+@media (hover: hover) and (pointer: fine) {
+  .search-hit:hover {
+    background: #e4f4f1;
+  }
 }
 
 /* ── Help guide prose typography ───────────────────────────────────────────── */

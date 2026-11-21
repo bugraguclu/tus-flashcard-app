@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { getHelpArticles } from '../../lib/helpDocs';
 import { breadcrumbList, collectionPage } from '../../lib/schema';
-import { newest } from '../../lib/lastmod';
+import { helpIndexSources, newest } from '../../lib/lastmod';
 
 const articles = getHelpArticles();
 const categories = [...new Set(articles.map((a) => a.category))];
@@ -18,12 +18,13 @@ const colSchema = collectionPage(origin, {
   name: 'TusAnkiM Türkçe Yardım Merkezi ve Kullanım Kılavuzu',
   description: 'TusAnkiM uygulamasının tüm ekranları, FSRS-6, Kronometre, Anki aktarımı ve TUS kart paketi için 21 kapsamlı Türkçe rehber.',
   items: articles.map((a) => ({ name: a.title, path: a.webPath })),
-  dateModified: newest(articles.map((a) => a.sourceRelPath)),
+  dateModified: newest(helpIndexSources(articles.map((a) => a.sourceRelPath))),
 });
 ---
 <Layout
   title="Yardım Merkezi & Kullanım Kılavuzu (21 Rehber) | TusAnkiM"
   description="TusAnkiM Türkçe kullanım kılavuzu: hızlı başlangıç, FSRS-6, desteler, Kronometre, Anki .apkg/.colpkg aktarımı, yedekler ve TUS kart paketi."
+  ogImage="/images/og-yardim.png"
   schema={[crumbs, colSchema]}
 >
   <section class="bg-surface border-b border-line py-10 sm:py-14">
@@ -33,12 +34,11 @@ const colSchema = collectionPage(origin, {
         <span aria-hidden="true" class="mx-2">/</span>
         <span class="text-ink font-semibold">Yardım Merkezi</span>
       </nav>
-      <div class="section-num">Kullanım Kılavuzu · {articles.length} Türkçe Rehber</div>
-      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">
+      <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
         TusAnkiM Yardım Merkezi
       </h1>
       <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
-        Uygulamanın her ekranı, <span lang="en">FSRS-6</span> ayarları, Kronometre, Anki paket aktarımı ve yedekleme için doğrudan uygulamayla güncel tutulan 21 rehber.
+        Uygulamanın ekranları, <span lang="en">FSRS-6</span> ayarları, Kronometre, Anki paket aktarımı ve yedekleme için uygulamayla güncel tutulan {articles.length} Türkçe rehber.
       </p>
 
       <search class="mt-6 max-w-xl">
@@ -75,7 +75,7 @@ const colSchema = collectionPage(origin, {
                 href={art.webPath}
                 data-help-card
                 data-hay={`${art.title} ${art.summary} ${art.category}`}
-                class="rounded-2xl border border-line bg-white p-5 lift flex flex-col justify-between"
+                class="rounded-2xl border border-line bg-white p-5 hover:border-tealGraphic transition flex flex-col justify-between"
               >
                 <div>
                   <div class="text-[11px] font-bold text-teal tabular-nums">Rehber {String(art.order).padStart(2, '0')}</div>
@@ -93,7 +93,7 @@ const colSchema = collectionPage(origin, {
     })}
 
     <p id="help-empty" hidden class="rounded-2xl border border-line bg-surfaceSoft p-8 text-center text-sm text-inkMuted">
-      Aramanızla eşleşen rehber bulunamadı.
+      Aramanla eşleşen rehber bulunamadı.
     </p>
   </section>
 </Layout>
