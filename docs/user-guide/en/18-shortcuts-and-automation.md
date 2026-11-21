@@ -162,6 +162,14 @@ Drag a deck file onto the browser window. When **Drop to import** appears, let g
 files are accepted; any other file shows **Unknown file format**. See
 [Import and export](14-import-export.md).
 
+<a id="web-panels"></a>
+### Panels in a wide window
+
+The panels that rise from the bottom on iPhone and close when pulled down open as a window in the
+middle of the screen when the browser window is wide (on a computer or a tablet). Close one with
+**×** at its top right, with Esc, or by clicking outside it. In a narrow window, such as a phone's
+browser, they rise from the bottom as on iPhone.
+
 <a id="keyboard"></a>
 ## Keyboard shortcuts
 

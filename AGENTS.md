@@ -147,7 +147,10 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   backdrop close it. Its title sits centred under the grabber (the `title` and `subtitle` of
   `AppSheet`, which hands them to `SwipeDismissSheet`; no eyebrow). The whole sheet pulls down except what
   scrolls or edits text: a sheet's scrolling body is a `SheetScrollView` and a multi-line field
-  sits in `SheetNoDrag`.
+  sits in `SheetNoDrag`. On a window 720 points or wider (desktop web, a tablet;
+  `lib/sheetPresentation.ts`) the same `AppSheet` is a centred dialog instead: no grabber or
+  pull-down, `AppDialog`'s header with a close ×. A sheet's own Cancel is `cancelLabel`, which that
+  × replaces; never draw a grabber or a sheet-only control there by hand.
 - Import and export are canonical full-screen workflows. Every entry point, including Settings
   and the Decks overflow menu, must open `/import` or `/export`; do not implement a second
   import/export path inside the calling screen.

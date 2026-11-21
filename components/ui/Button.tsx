@@ -185,15 +185,17 @@ export function IconButton({
 }
 
 /** Closes a sheet, dialog or full-screen form. */
-export function CloseButton({ accessibilityLabel, onPress, color }: {
+export function CloseButton({ accessibilityLabel, onPress, color, disabled }: {
     accessibilityLabel: string;
     onPress: () => void;
     /** For a tinted header; the muted text colour otherwise. */
     color?: string;
+    /** While what it closes has to stay open, e.g. a pack that is still installing. */
+    disabled?: boolean;
 }) {
     const colors = useThemeColors();
     return (
-        <IconButton accessibilityLabel={accessibilityLabel} onPress={onPress}>
+        <IconButton accessibilityLabel={accessibilityLabel} onPress={onPress} disabled={disabled}>
             <CloseIcon color={color ?? colors.textSecondary} />
         </IconButton>
     );

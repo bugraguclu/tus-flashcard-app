@@ -20,6 +20,8 @@ import { Text } from './AppText';
 import { useI18n } from '../hooks/useI18n';
 import { MotionEasing, MotionSpring } from '../constants/motion';
 import { Spacing, useThemeColors } from '../constants/theme';
+import type { SheetPresentation } from '../lib/sheetPresentation';
+import { CloseButton } from './ui/Button';
 import { Type } from './ui/tokens';
 
 interface SwipeDismissSheetProps {
@@ -28,9 +30,22 @@ interface SwipeDismissSheetProps {
     children: React.ReactNode;
     /**
      * False while the sheet has to stay open (a recording, an unlock in progress): it does not
-     * drag or close from the grabber, and the grabber's place stays so nothing moves.
+     * drag or close from the grabber, and the grabber's place stays so nothing moves. As a dialog,
+     * its close button fades and does nothing.
      */
     enabled?: boolean;
+    /**
+     * `dialog` on a wide window (`lib/sheetPresentation`): no grabber and no pull-down; the title
+     * sits at the leading edge and a close button at the trailing one, as in `AppDialog`.
+     */
+    presentation?: SheetPresentation;
+    /**
+     * Asked to close by the dialog's close button or the VoiceOver escape gesture of a dialog: the
+     * owner plays the exit. Without it the sheet slides itself away and calls `onDismiss`.
+     */
+    onClose?: () => void;
+    /** Spoken for the dialog's close button; "Kapat" by default. */
+    closeLabel?: string;
     onDismiss: () => void;
     onLayout?: (event: LayoutChangeEvent) => void;
     /**
@@ -67,12 +82,16 @@ const SheetDragContext = createContext<SheetDragGate | null>(null);
  * A bottom-sheet surface with a grabber and a title, pulled down to dismiss from anywhere on it
  * except a part that scrolls (`SheetScrollView`) or edits text (`SheetNoDrag`), the way an
  * iPhone sheet does. Tapping the grabber or the VoiceOver escape gesture also dismisses it.
+ * As a `dialog` it has neither grabber nor pull-down: its close button asks the owner to close it.
  */
 export default function SwipeDismissSheet({
     active = true,
     accessibilityViewIsModal,
     children,
     enabled = true,
+    presentation = 'sheet',
+    onClose,
+    closeLabel,
     onDismiss,
     onLayout,
     position,
@@ -183,6 +202,51 @@ export default function SwipeDismissSheet({
     const hasHeader = Boolean(title || subtitle || headerLeft || headerRight);
     const hasSides = Boolean(headerLeft || headerRight);
 
+    if (presentation === 'dialog') {
+        const requestClose = onClose ?? dismiss;
+        const close = (
+            <CloseButton accessibilityLabel={closeLabel ?? l('Kapat', 'Close')} onPress={requestClose} disabled={!enabled} />
+        );
+        return (
+            <SheetDragContext.Provider value={gate}>
+                {/* The owner moves the dialog (it fades and grows in place); nothing here drags it. */}
+                <Animated.View
+                    style={style}
+                    accessibilityViewIsModal={accessibilityViewIsModal}
+                    onAccessibilityEscape={enabled ? requestClose : undefined}
+                    onLayout={onLayout}
+                >
+                    {hasHeader ? (
+                        <View style={styles.dialogHeader}>
+                            {headerLeft ? <View style={styles.dialogSide}>{headerLeft}</View> : null}
+                            <View style={styles.dialogCopy}>
+                                {title ? (
+                                    <Text style={[styles.dialogTitle, { color: colors.textPrimary }]} accessibilityRole="header" numberOfLines={2}>
+                                        {title}
+                                    </Text>
+                                ) : null}
+                                {subtitle ? (
+                                    <Text style={[styles.dialogSubtitle, { color: colors.textMuted }]} numberOfLines={2}>
+                                        {subtitle}
+                                    </Text>
+                                ) : null}
+                            </View>
+                            {headerRight ? <View style={styles.dialogSide}>{headerRight}</View> : null}
+                            <View style={styles.dialogClose}>{close}</View>
+                        </View>
+                    ) : (
+                        // Content that draws its own heading starts where it would under a grabber,
+                        // with the close button in the corner beside it.
+                        <View style={styles.dialogTopSpace}>
+                            <View style={styles.dialogCornerClose}>{close}</View>
+                        </View>
+                    )}
+                    {children}
+                </Animated.View>
+            </SheetDragContext.Provider>
+        );
+    }
+
     return (
         <SheetDragContext.Provider value={gate}>
             <Animated.View
@@ -202,7 +266,7 @@ export default function SwipeDismissSheet({
                     accessibilityLabel={l('Paneli kapat', 'Close sheet')}
                     accessibilityHint={l('Dokunun veya aşağı sürükleyin', 'Tap or swipe down')}
                 >
-                    <View style={[styles.grabber, { backgroundColor: colors.border }, !enabled && styles.grabberLocked]} />
+                    <View style={[styles.grabber, { backgroundColor: colors.textMuted }, !enabled && styles.grabberLocked]} />
                 </TouchableOpacity>
                 {hasHeader ? (
                     <View style={[styles.header, hasSides && styles.headerWithSides]}>
@@ -304,17 +368,21 @@ export function SheetNoDrag({ onStartShouldSetResponderCapture, ...props }: View
 }
 
 const styles = StyleSheet.create({
+    // The system sheet's grabber (iOS 26, measured on the routed form sheets): 36 × 5 points, 5
+    // points under the top edge, a mid grey at half strength. The title stays where it was, 38
+    // points under the top edge, as the system sheet's title is.
     grabberButton: {
         alignSelf: 'center',
         width: 88,
         height: 22,
         alignItems: 'center',
-        paddingTop: 8,
+        paddingTop: 5,
     },
     grabber: {
         width: 36,
         height: 5,
         borderRadius: 2.5,
+        opacity: 0.5,
     },
     grabberLocked: { opacity: 0 },
     header: {
@@ -335,6 +403,24 @@ const styles = StyleSheet.create({
     headerCopy: { flex: 1, minWidth: 0, alignItems: 'center', gap: Spacing.xxs },
     title: { ...Type.sectionTitle, lineHeight: 22, textAlign: 'center' },
     subtitle: { ...Type.caption, textAlign: 'center' },
+    // The dialog's header is `AppDialog`'s: the title at the content's leading edge, the close
+    // button's glyph near the trailing one, its 44-point target overhanging the row.
+    dialogHeader: {
+        alignSelf: 'stretch',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        paddingTop: Spacing.xl,
+        paddingBottom: Spacing.md,
+    },
+    dialogSide: { justifyContent: 'center' },
+    dialogCopy: { flex: 1, minWidth: 0, gap: Spacing.xxs },
+    dialogTitle: { ...Type.title, lineHeight: 24 },
+    dialogSubtitle: { ...Type.caption },
+    dialogClose: { marginVertical: -Spacing.sm, marginRight: -Spacing.sm },
+    // As tall as a grabber's place, above the content so the corner button takes its taps.
+    dialogTopSpace: { height: 22, zIndex: 1 },
+    dialogCornerClose: { position: 'absolute', top: Spacing.sm, right: -Spacing.sm },
     // A ScrollView's own flex, moved to the area around it so the sheet lays out as before.
     scrollArea: { flexGrow: 1, flexShrink: 1 },
     scrollEdge: {

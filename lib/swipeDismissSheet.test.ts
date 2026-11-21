@@ -22,7 +22,7 @@ vi.mock('react-native', () => {
     return {
         Animated: { Value, View: 'Animated.View', timing: () => animation, spring: () => animation },
         Keyboard: { dismiss: () => {} },
-        PanResponder: { create: (config: unknown) => { sheet.responders.push(config); return { panHandlers: {} }; } },
+        PanResponder: { create: (config: unknown) => { sheet.responders.push(config); return { panHandlers: { onResponderMove: 'pan' } }; } },
         Platform: { OS: 'ios' },
         ScrollView: 'ScrollView',
         StyleSheet: { create: (styles: unknown) => styles },
@@ -42,11 +42,19 @@ vi.mock('../constants/theme', () => ({
     useThemeColors: () => ({ border: '#ccc', textPrimary: '#000', textMuted: '#666' }),
 }));
 vi.mock('../constants/motion', () => ({ MotionEasing: { out: (t: number) => t }, MotionSpring: { snap: {} } }));
+vi.mock('../components/ui/Button', () => ({ CloseButton: 'CloseButton' }));
 
 import SwipeDismissSheet from '../components/SwipeDismissSheet';
 
 let renderer: TestRenderer.ReactTestRenderer | undefined;
-const render = (props: { onDismiss: () => void; enabled?: boolean }) => act(() => {
+type SheetProps = {
+    onDismiss: () => void;
+    enabled?: boolean;
+    presentation?: 'sheet' | 'dialog';
+    onClose?: () => void;
+    title?: string;
+};
+const render = (props: SheetProps) => act(() => {
     const element = React.createElement(SwipeDismissSheet, { ...props, children: null });
     if (renderer) renderer.update(element);
     else renderer = TestRenderer.create(element);
@@ -87,5 +95,44 @@ describe('SwipeDismissSheet pull-down', () => {
         render({ onDismiss: () => {}, enabled: false });
         expect(sheet.responders).toHaveLength(1);
         expect(responder().onStartShouldSetPanResponder()).toBe(false);
+    });
+});
+
+describe('SwipeDismissSheet as a dialog (a wide window)', () => {
+    const surface = () => renderer!.root.findAll((node) => (node.type as string) === 'Animated.View')[0];
+    const closeButton = () => renderer!.root.findAll((node) => (node.type as string) === 'CloseButton')[0];
+    const grabber = () => renderer!.root.findAll((node) => (node.type as string) === 'TouchableOpacity' && node.props.accessibilityLabel === 'Close sheet');
+
+    it('has no grabber and no pull-down; its close button asks the owner to close', () => {
+        const onClose = vi.fn();
+        const onDismiss = vi.fn();
+        render({ onDismiss, onClose, presentation: 'dialog', title: 'Simple Plan' });
+        expect(grabber()).toHaveLength(0);
+        expect(surface().props.onResponderMove).toBeUndefined();
+        // The owner plays the exit: nothing slides here, and the sheet is not reported gone.
+        closeButton().props.onPress();
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(onDismiss).not.toHaveBeenCalled();
+        expect(sheet.position).toEqual([0]);
+        expect(closeButton().props.accessibilityLabel).toBe('Close');
+    });
+
+    it('fades its close button while it has to stay open', () => {
+        render({ onDismiss: () => {}, onClose: () => {}, presentation: 'dialog', title: 'Unlock', enabled: false });
+        expect(closeButton().props.disabled).toBe(true);
+        expect(surface().props.onAccessibilityEscape).toBeUndefined();
+    });
+
+    it('keeps its close button in the corner when the content draws its own heading', () => {
+        render({ onDismiss: () => {}, onClose: () => {}, presentation: 'dialog' });
+        expect(closeButton()).toBeDefined();
+        expect(renderer!.root.findAll((node) => (node.type as string) === 'Text')).toHaveLength(0);
+    });
+
+    it('is the pulled-down iPhone sheet on a phone, with a grabber and no close button', () => {
+        render({ onDismiss: () => {}, onClose: () => {}, title: 'Simple Plan' });
+        expect(grabber()).toHaveLength(1);
+        expect(renderer!.root.findAll((node) => (node.type as string) === 'CloseButton')).toHaveLength(0);
+        expect(surface().props.onResponderMove).toBe('pan');
     });
 });

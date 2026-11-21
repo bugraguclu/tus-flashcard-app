@@ -745,6 +745,8 @@ function AppStack() {
                         title: t('root.noteTypes'),
                         headerStyle: { backgroundColor: colors.bgSecondary },
                         headerTintColor: colors.accent,
+                        // A sheet's title is ink, as on every other sheet and screen; the tint is for controls.
+                        headerTitleStyle: { color: colors.textPrimary },
                     }}
                 />
                 <Stack.Screen

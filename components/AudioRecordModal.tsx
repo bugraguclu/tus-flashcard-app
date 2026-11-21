@@ -501,14 +501,14 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
 
     return (
         // A stray swipe never throws a take away: the sheet is pulled down only while it is empty,
-        // and Cancel and the backdrop ask first when there is something recorded.
+        // and Cancel (a wide window's close button) and the backdrop ask first when there is
+        // something recorded.
         <AppSheet
             visible={visible}
             onClose={requestClose}
             title={l('Ses kaydet', 'Record Audio')}
-            headerLeft={(
-                <Button label={l('Vazgeç', 'Cancel')} variant="plain" size="compact" tone="muted" onPress={requestClose} disabled={busy} />
-            )}
+            cancelLabel={l('Vazgeç', 'Cancel')}
+            cancelDisabled={busy}
             swipeEnabled={phase === 'idle' && !busy}
             backdropLabel={l('Ses kaydı penceresini kapat', 'Close audio recording dialog')}
             onDismiss={onDismissed}

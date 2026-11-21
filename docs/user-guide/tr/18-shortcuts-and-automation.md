@@ -161,6 +161,14 @@ Bir deste dosyasını tarayıcı penceresinin üstüne sürükleyin. **İçe akt
 `.tsv` ve `.txt` dosyaları kabul edilir; başka bir dosya bırakırsanız **Bilinmeyen dosya biçimi**
 uyarısı çıkar. Bkz. [İçe ve dışa aktarma](14-import-export.md).
 
+<a id="web-panels"></a>
+### Geniş pencerede paneller
+
+iPhone'da alttan açılan ve aşağı çekilerek kapanan paneller, tarayıcı penceresi genişken
+(bilgisayarda veya tablette) ekranın ortasında bir pencere olarak açılır. Kapatmak için sağ üstteki
+**×**'e tıklayın, Esc'ye basın veya pencerenin dışına tıklayın. Dar bir pencerede (örneğin telefonun
+tarayıcısında) iPhone'daki gibi alttan açılır.
+
 <a id="keyboard"></a>
 ## Klavye kısayolları
 

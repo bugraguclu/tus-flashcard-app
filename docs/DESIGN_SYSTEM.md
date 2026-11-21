@@ -55,6 +55,7 @@ takes `width: '100%', maxWidth, alignSelf: 'center'`; a full-width bar (a header
 list whose scroll bar stays at the window edge) keeps its background edge to edge and adds
 `useCenteredInset(maxWidth)` (or `centeredInset(width, maxWidth)`) to its side padding, and a
 floating button adds it to its `right`. A phone is narrower than every limit, so it never changes.
+On such a window a sheet becomes a centred dialog (see Rules).
 
 No colour literal belongs in a screen. Exceptions: user-chosen ink and highlight swatches (drawing
 pad, photo editor, editor colour pickers), image content (the sleeping panda), card templates, and
@@ -77,7 +78,7 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | Chips, badges, segmented control, checkboxes, chosen-row tick | `Chip` (`role` button, radio or checkbox), `Badge` (coloured text, no pill; `keycap` boxes a keyboard key), `SegmentedControl`, `Checkbox` / `CheckRow` (`mixed` for a partly ticked group), `SelectedMark` | `components/ui/Choice.tsx` |
 | Text entry | `TextField` (`label` for a caption above it, `error` / `hint` for a line under it, `accessory` for a control inside its right edge, `monospace` for code), `PasswordField` (show/hide button, iOS Password AutoFill; `isNew` for a password being chosen), `SearchField` | `components/ui/Fields.tsx` |
 | Empty, loading, notices, progress | `EmptyState`, `LoadingState` (`delayed` stays blank for 300 ms, then fades in), `Notice` (`info`, `warning`, `danger`, `success`), `ProgressBar` | `components/ui/Feedback.tsx` |
-| Bottom sheet | `AppSheet` (title and subtitle centred under the grabber, keyboard lift, overlay picker), `SheetScrollView` for its scrolling body, `SheetNoDrag` around a multi-line field | `components/ui/Sheet.tsx` |
+| Bottom sheet | `AppSheet` (title and subtitle centred under the grabber, keyboard lift, overlay picker, `cancelLabel` for a Cancel; a centred dialog on a wide window), `SheetScrollView` for its scrolling body, `SheetNoDrag` around a multi-line field | `components/ui/Sheet.tsx` |
 | Centred form, picker or explanation | `AppDialog` | `components/ui/Dialog.tsx` |
 | ••• menu | `PopoverMenu` + `MenuItem` (`chevron` for a row that opens a submenu) | `components/ui/Menu.tsx` |
 | A long action menu centred over the screen (the deck row's •••) | `MenuDialog` + `MenuItem` | `components/ui/Menu.tsx` |
@@ -141,6 +142,14 @@ copy them; change them only on the owner's word.
 - Sheets are `AppSheet` over `BottomSheetModal`; dialogs are `AppDialog`; neither draws its own
   backdrop colour. A sheet has no close button: its grabber, a pull-down from anywhere outside
   what scrolls or edits text, and the backdrop close it. Dialogs keep their `CloseButton`.
+- A sheet is a phone's surface. From 720 points of window width (desktop web, a tablet;
+  `lib/sheetPresentation.ts`) `AppSheet` shows the same content as a dialog: a 560-point card in
+  the middle of the window, rounded all round, with `AppDialog`'s header (the title at the leading
+  edge, `CloseButton` at the trailing one) and no grabber or pull-down. It grows in from 95% like a
+  popover; Reduce Motion keeps only the fade. Its close button does what the grabber does: it fades
+  while `swipeEnabled` is off, unless the sheet has a Cancel. Give a sheet its Cancel with
+  `cancelLabel` (and `cancelDisabled`), not a `headerLeft` button: a phone draws it as a text
+  button, the dialog's close button takes its place, so the two never show together.
 - A header's back control is spoken as "Geri dön" / "Go back", or names the one place it returns
   to ("Destelere dön", "Ayarlara dön"). One meaning has one wording.
 - Left raw on purpose: the number inside a stepper, a time box and the keyboard-shortcut field
