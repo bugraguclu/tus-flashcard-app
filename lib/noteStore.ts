@@ -230,7 +230,7 @@ function generateUniqueCardId(): number {
 }
 
 /** Next new-card position: Anki gives each new card an incrementing `due` that sets its order. */
-function nextNewCardPosition(): number {
+export function nextNewCardPosition(): number {
     const db = getDB();
     const row = db.getFirstSync<{ maxDue: number | null }>(
         'SELECT MAX(due) AS maxDue FROM anki_cards WHERE type = 0',
@@ -242,13 +242,14 @@ function nextNewCardPosition(): number {
  * The new-card position for cards generated for an existing note, as Anki chooses it
  * (`extract_data_from_existing_cards` and `CardGenCache::next_position` in
  * rslib/src/notetype/cardgen.rs): the position of a sibling that is still new, otherwise one
- * fresh position, taken once and shared by every card this pass creates.
+ * fresh position, taken once and shared by every card this pass creates. A caller that walks many
+ * notes passes its own `freshPosition`, so the table is not read again for each of them.
  */
-export function notePositionForPass(existing: readonly AnkiCard[] = []): () => number {
+export function notePositionForPass(existing: readonly AnkiCard[] = [], freshPosition: () => number = nextNewCardPosition): () => number {
     const newSibling = existing.find((card) => card.type === 0);
     let position = newSibling ? (newSibling.odid ? newSibling.odue : newSibling.due) : undefined;
     return () => {
-        position ??= nextNewCardPosition();
+        position ??= freshPosition();
         return position;
     };
 }

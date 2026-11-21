@@ -34,6 +34,7 @@ import {
     structuralEditOverDraft,
     type FieldEdit,
 } from '../lib/noteTypeEditor';
+import { changesCardGeneration, generateMissingCardsForNoteType } from '../lib/noteTypeCardGeneration';
 import { isCatalogNoteType, PaidCatalogProtectionError } from '../lib/catalogProtection';
 import { isImageOcclusionNoteType } from '../lib/imageOcclusionNoteType';
 import { canDeleteNoteType, catalogNotesOfType, deleteNoteTypeWithBackup, NoteTypeDeletionError, noteTypeDeletionImpact } from '../lib/noteTypeDeletion';
@@ -79,6 +80,8 @@ export default function NoteTypeScreen() {
     // Which card template the editor shows; Anki's Cards screen lists every one (SAB-9).
     const [templateIndex, setTemplateIndex] = useState(0);
     const [deleting, setDeleting] = useState(false);
+    // Set when creating the notes' missing cards failed, so the next save tries again.
+    const [cardGenerationPending, setCardGenerationPending] = useState(false);
 
     useEffect(() => {
         const loaded = getNoteType(id);
@@ -137,6 +140,35 @@ export default function NoteTypeScreen() {
     const deletable = canDeleteNoteType(nt);
 
     /**
+     * As Anki does when a note type is saved with a changed front, card type or field, give the
+     * type's notes the cards they are now missing; a card that became empty stays for Empty Cards.
+     * Returns how many were created, or null when that failed: the note type itself is saved.
+     */
+    const createMissingCards = (before: NoteType | null, after: NoteType): number | null => {
+        if (!cardGenerationPending && before && !changesCardGeneration(before, after)) return 0;
+        try {
+            const created = generateMissingCardsForNoteType(after);
+            setCardGenerationPending(false);
+            return created;
+        } catch (e) {
+            console.warn('[NoteType] card generation failed:', e);
+            setCardGenerationPending(true);
+            return null;
+        }
+    };
+    const createdCardsText = (created: number) => l(
+        `${created} yeni kart oluşturuldu.`,
+        `${created} new ${created === 1 ? 'card was' : 'cards were'} created.`,
+    );
+    const announceCardGenerationFailure = () => alert(
+        l('Kartlar oluşturulamadı', 'Could Not Create Cards'),
+        l(
+            'Değişiklik kaydedildi, ancak notların eksik kartları oluşturulamadı. Yeniden denemek için not türünü kaydedin.',
+            'The change was saved, but the cards its notes are missing could not be created. Save the note type to try again.',
+        ),
+    );
+
+    /**
      * Structural field changes migrate every note, so they persist at once. They are built on the
      * saved note type: a name, template or styling still being edited is neither saved with them
      * unchecked nor marked as saved. The same change is applied to the draft on screen.
@@ -147,14 +179,19 @@ export default function NoteTypeScreen() {
         if (!edit) return; // no-op edit
         try {
             applyFieldEdit(nt.id, edit.persist);
-            setNt(edit.draft);
-            setSavedSnapshot(stableSnapshot(edit.persist.noteType));
-            // Fields and notes change, no card does: a study session keeps its queue, as in Anki.
-            bumpDataVersion({ keepsStudyQueue: true });
         } catch (e) {
             console.warn('[NoteType] field edit failed:', e);
             alert(t('common.error'), l('Alan güncellenemedi.', 'Could not update the field.'));
+            return;
         }
+        setNt(edit.draft);
+        setSavedSnapshot(stableSnapshot(edit.persist.noteType));
+        // Removing a field takes its conditions out of the fronts, which can make a card renderable.
+        const created = createMissingCards(saved, edit.persist.noteType);
+        // Fields and notes change: a study session keeps its queue, as in Anki, unless a card was added.
+        bumpDataVersion(created ? undefined : { keepsStudyQueue: true });
+        if (created === null) announceCardGenerationFailure();
+        else if (created > 0) alert(t('common.completed'), createdCardsText(created));
     };
 
     const handleRemoveField = (ord: number) => {
@@ -286,17 +323,27 @@ export default function NoteTypeScreen() {
             );
             return;
         }
+        const stored = getNoteType(nt.id);
         try {
             saveNoteType(next);
-            setNt(next);
-            setSavedSnapshot(stableSnapshot(next));
-            // Templates and styling only: the card on screen is redrawn, the queue keeps its order.
-            bumpDataVersion({ keepsStudyQueue: true });
-            alert(t('common.saved'), l('Not türü güncellendi.', 'Note type updated.'), () => goBackOr(router, '/note-types'));
         } catch (e) {
             console.warn('[NoteType] save failed:', e);
             alert(t('common.error'), l('Not türü kaydedilemedi.', 'Could not save the note type.'));
+            return;
         }
+        setNt(next);
+        setSavedSnapshot(stableSnapshot(next));
+        const created = createMissingCards(stored, next);
+        // Templates and styling only redraw the card on screen and the queue keeps its order; new
+        // cards rebuild the queue and the counts.
+        bumpDataVersion(created ? undefined : { keepsStudyQueue: true });
+        if (created === null) {
+            // Stay here: saving again retries.
+            announceCardGenerationFailure();
+            return;
+        }
+        const updated = l('Not türü güncellendi.', 'Note type updated.');
+        alert(t('common.saved'), created > 0 ? `${updated} ${createdCardsText(created)}` : updated, () => goBackOr(router, '/note-types'));
     };
 
     return (
