@@ -41,6 +41,9 @@ const LightColors = {
     badgeReviewBg: '#e4f3ea',
     // The Browser row's card state, written as a quiet label over the question: the badge hues
     // pulled toward the text greys so the word sits with the row instead of shouting over it.
+    // Text that is there but asks for nothing, such as a zero count: dimmer than textMuted,
+    // as a solid colour rather than opacity (which drifts with what is underneath).
+    textFaint: '#b4bbbf',
     stateLabelLearn: '#a5672a',
     stateLabelReview: '#3f7d5d',
 
@@ -136,6 +139,7 @@ const DarkColors: ColorScheme = {
     badgeLearnBg: '#382916',
     badgeReview: '#3cb874',
     badgeReviewBg: '#163222',
+    textFaint: '#545c60',
     stateLabelLearn: '#c9a37c',
     stateLabelReview: '#8ab89f',
 

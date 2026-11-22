@@ -57,12 +57,9 @@ function createStyles(colors: ColorScheme) {
             backgroundColor: colors.bgPrimary,
         },
         icon: {
-            width: 64,
-            height: 64,
-            borderRadius: 32,
+            // The glyph alone, no tinted disc behind it.
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: colors.warningBg,
             marginBottom: Spacing.md,
         },
         title: {

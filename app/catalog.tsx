@@ -9,7 +9,6 @@ import { useCenteredInset } from '../hooks/useCenteredInset';
 import { Text } from '../components/AppText';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { useCatalogStatus } from '../contexts/AppContext';
 import { BKA_PRODUCT, isCatalogPurchaseSimulationEnabled } from '../lib/catalogPurchases';
@@ -35,7 +34,6 @@ import { getDeckByName } from '../lib/deckManager';
 
 /** Deep, near-black green: reads as premium in both themes and keeps the hero legible. */
 const HERO_TOP = '#0d3128';
-const HERO_BOTTOM = '#14513f';
 const HERO_TEXT = '#f2f7f4';
 const HERO_MUTED = '#9fbcb0';
 const HERO_ACCENT = '#7ddcae';
@@ -57,7 +55,6 @@ export default function CatalogScreen() {
     const [expanded, setExpanded] = useState<string | null>(null);
     // The gradient is painted at an explicit pixel size: a percentage-sized SVG keeps the height
     // of the first layout pass and leaves a strip of the hero unpainted as the copy wraps.
-    const [heroSize, setHeroSize] = useState({ width: 0, height: 0 });
 
     const owned = catalogAccess.hasAccess;
     // The store granted the pack (or the free unlock ran) but the cards did not install: the
@@ -222,31 +219,7 @@ export default function CatalogScreen() {
                 contentContainerStyle={[styles.content, { paddingBottom: Spacing.xxxl }]}
                 showsVerticalScrollIndicator={false}
             >
-                <View
-                    style={styles.hero}
-                    onLayout={(event) => {
-                        const { width, height } = event.nativeEvent.layout;
-                        setHeroSize((current) => (
-                            current.width === width && current.height === height ? current : { width, height }
-                        ));
-                    }}
-                >
-                    {heroSize.width > 0 && (
-                        <Svg
-                            style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}
-                            width={heroSize.width}
-                            height={heroSize.height}
-                        >
-                            <Defs>
-                                <LinearGradient id="heroFill" x1="0" y1="0" x2="1" y2="1">
-                                    <Stop offset="0" stopColor={HERO_TOP} />
-                                    <Stop offset="1" stopColor={HERO_BOTTOM} />
-                                </LinearGradient>
-                            </Defs>
-                            <Rect x="0" y="0" width={heroSize.width} height={heroSize.height} fill="url(#heroFill)" />
-                        </Svg>
-                    )}
-
+                <View style={styles.hero}>
                     {/* Part of the hero artwork: its own colours on the dark green, sized to its text. */}
                     <View style={styles.heroBadge}>
                         <Text style={styles.heroBadgeText}>
@@ -491,7 +464,7 @@ function createStyles(colors: ColorScheme, footerInset: number) {
             borderRadius: 24,
             padding: Spacing.xl,
             overflow: 'hidden',
-            // Solid ground under the gradient, so the hero is never half-painted mid-layout.
+            // One flat dark green, no gradient.
             backgroundColor: HERO_TOP,
             ...Shadow.card,
         },
@@ -518,7 +491,7 @@ function createStyles(colors: ColorScheme, footerInset: number) {
         heroPriceNote: { color: HERO_MUTED, fontSize: FontSize.sm, fontWeight: '600', flexShrink: 1 },
 
         courseCard: { marginTop: Spacing.xl },
-        courseLock: { opacity: 0.6 },
+        courseLock: {},
 
         topicWell: {
             // Under the course's name, past the row's inset (the row has no icon column).
@@ -530,9 +503,9 @@ function createStyles(colors: ColorScheme, footerInset: number) {
         topicRow: { flexDirection: 'row', alignItems: 'center', minHeight: 34 },
         topicBullet: {
             width: 5, height: 5, borderRadius: 3,
-            backgroundColor: colors.textMuted, opacity: 0.6, marginRight: Spacing.sm,
+            backgroundColor: colors.textMuted, marginRight: Spacing.sm,
         },
-        topicBulletPlain: { opacity: 0.25 },
+        topicBulletPlain: { backgroundColor: colors.textFaint },
         topicName: { flex: 1, color: colors.textSecondary, fontSize: FontSize.md },
         topicNamePlain: { color: colors.textMuted, fontStyle: 'italic' },
         topicCount: { color: colors.textMuted, fontSize: FontSize.sm, fontWeight: '600' },

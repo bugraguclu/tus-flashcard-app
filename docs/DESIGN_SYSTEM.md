@@ -23,7 +23,7 @@ role, the 2- and 6-point spacing steps and the three icon sizes.
 
 | Role | Token | Value |
 |---|---|---|
-| Danger, warning, success, info | `colors.danger`, `warning`, `success`, `info` (+ `…Bg`) | The red, orange, green and blue the grade buttons and badges use. Never borrow `btnAgain` or `badgeNew` for chrome. |
+| Danger, warning, success, info | `colors.danger`, `warning`, `success`, `info` (+ `…Bg`) | The red, orange, green and blue the grade buttons and badges use. Never borrow `btnAgain` or `badgeNew` for chrome. Status words are coloured text: no tinted pill, disc or tile behind a label, count or icon (the owner rejects that look), and no `opacity` to dim text — use `textMuted` or `textFaint`. A tinted fill marks only a selected or active control. |
 | Text on an accent or red fill | `colors.onAccent` | white |
 | Dimming behind a dialog or sheet | `colors.scrim` | black 40% |
 | Dimming behind a popover or side menu | `colors.scrimLight` | black 22% |
@@ -74,7 +74,7 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | A labelled group of rows | `Section` (`SectionLabel` + `Card` + `SectionFootnote`) | `components/ui/Card.tsx` |
 | Rows | `ListRow` (opens something; `selected` makes it an option of a single-choice list, `expanded` a disclosure), `SwitchRow`, `ValueRow` (label and value or control), `SelectRow` (label and chosen option) | `components/ui/Rows.tsx` |
 | Switch | `AppSwitch` | `components/ui/Rows.tsx` |
-| Chips, badges, segmented control, checkboxes, chosen-row tick | `Chip` (`role` button, radio or checkbox), `Badge`, `SegmentedControl`, `Checkbox` / `CheckRow` (`mixed` for a partly ticked group), `SelectedMark` | `components/ui/Choice.tsx` |
+| Chips, badges, segmented control, checkboxes, chosen-row tick | `Chip` (`role` button, radio or checkbox), `Badge` (coloured text, no pill; `keycap` boxes a keyboard key), `SegmentedControl`, `Checkbox` / `CheckRow` (`mixed` for a partly ticked group), `SelectedMark` | `components/ui/Choice.tsx` |
 | Text entry | `TextField` (`label` for a caption above it, `error` / `hint` for a line under it, `accessory` for a control inside its right edge, `monospace` for code), `PasswordField` (show/hide button, iOS Password AutoFill; `isNew` for a password being chosen), `SearchField` | `components/ui/Fields.tsx` |
 | Empty, loading, notices, progress | `EmptyState`, `LoadingState` (`delayed` stays blank for 300 ms, then fades in), `Notice` (`info`, `warning`, `danger`, `success`), `ProgressBar` | `components/ui/Feedback.tsx` |
 | Bottom sheet | `AppSheet` (title and subtitle centred under the grabber, keyboard lift, overlay picker), `SheetScrollView` for its scrolling body, `SheetNoDrag` around a multi-line field | `components/ui/Sheet.tsx` |

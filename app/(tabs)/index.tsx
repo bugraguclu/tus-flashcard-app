@@ -3110,9 +3110,9 @@ export default function StudyScreen() {
                 </Text>
                 <ChevronDownIcon color={colors.textMuted} size={16} />
                 {streak.current > 0 ? (
-                    <View style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}>
-                        <FlameGlyph size={16} />
-                        <Text style={styles.streakChipText}>{streak.current}</Text>
+                    <View style={styles.streakChip}>
+                        <FlameGlyph size={16} color={streak.studiedToday ? undefined : colors.textMuted} />
+                        <Text style={[styles.streakChipText, !streak.studiedToday && styles.streakChipIdleText]}>{streak.current}</Text>
                     </View>
                 ) : null}
             </TouchableOpacity>
@@ -3225,12 +3225,12 @@ export default function StudyScreen() {
                                 </View>
                                 {newStudyScreenEnabled && streak.current > 0 ? (
                                     <View
-                                        style={[styles.streakChip, !streak.studiedToday && styles.streakChipIdle]}
+                                        style={styles.streakChip}
                                         accessible
                                         accessibilityLabel={reviewerStreakLabel(l, streak.current)}
                                     >
-                                        <FlameGlyph size={16} />
-                                        <Text style={styles.streakChipText}>{streak.current}</Text>
+                                        <FlameGlyph size={16} color={streak.studiedToday ? undefined : colors.textMuted} />
+                                        <Text style={[styles.streakChipText, !streak.studiedToday && styles.streakChipIdleText]}>{streak.current}</Text>
                                     </View>
                                 ) : null}
                             </View>
@@ -3682,7 +3682,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     // The streak beside the deck name: the flame carries the colour, the number stays in the
     // text greys, and nothing sits behind them.
     streakChip: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: Spacing.xxs },
-    streakChipIdle: { opacity: 0.55 },
+    // Not studied yet today: the streak greys out, with no opacity on top.
+    streakChipIdleText: { color: colors.textMuted },
     streakChipText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
 
     contentArea: { flex: 1, position: 'relative', overflow: 'hidden' },

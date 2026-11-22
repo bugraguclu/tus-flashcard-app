@@ -416,6 +416,7 @@ function createStyles(colors: ColorScheme) {
     deckLeafMarker: { width: 32, minHeight: 42, alignItems: 'center', justifyContent: 'center' },
     deckLeafDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.border },
     deckLeafDotActive: { backgroundColor: colors.accent },
+    // The deck glyph stands alone; only the selected deck keeps a filled square.
     deckIcon: {
         width: 30,
         height: 30,
@@ -423,9 +424,8 @@ function createStyles(colors: ColorScheme) {
         borderRadius: Radius.control,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: colors.accentLight,
     },
-    deckRootIcon: { backgroundColor: colors.bgCard },
+    deckRootIcon: {},
     deckIconActive: { backgroundColor: colors.accent },
     deckName: {
         flex: 1,
@@ -513,7 +513,7 @@ function createStyles(colors: ColorScheme) {
     actionText: { fontSize: FontSize.xs, fontWeight: '500', color: colors.textSecondary },
     settingsBtn: { marginBottom: Spacing.sm },
     creditContainer: { alignItems: 'center', paddingVertical: Spacing.s6 },
-    creditText: { fontSize: FontSize.xs, color: colors.textMuted, letterSpacing: 0.3 },
+    creditText: { fontSize: FontSize.xs, color: colors.textMuted },
     creditName: { fontWeight: '600', color: colors.accent },
     });
 }

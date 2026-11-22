@@ -1411,9 +1411,9 @@ export default function DecksScreen() {
                 </Text>
             </View>
             {!catalogInstalling && (
-                // A filled call to action, as before the design system: this row sells the free pack.
                 <View style={styles.lockedDeckPricePill}>
                     <Text style={styles.lockedDeckPriceText}>{l('Ücretsiz aç', 'Unlock free')}</Text>
+                    <ChevronRightIcon color={colors.accent} size={16} />
                 </View>
             )}
         </TouchableOpacity>
@@ -1942,12 +1942,9 @@ function createStyles(colors: ColorScheme) {
     lockedDeckCopy: { flex: 1, marginHorizontal: Spacing.sm },
     lockedDeckName: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
     lockedDeckMeta: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: Spacing.xxs },
-    lockedDeckPricePill: {
-        paddingHorizontal: 12, paddingVertical: 7,
-        borderRadius: Radius.pill,
-        backgroundColor: colors.accent,
-    },
-    lockedDeckPriceText: { color: colors.onAccent, fontSize: FontSize.sm, fontWeight: '600' },
+    // The row's call to action as accent text with a chevron, not a filled pill.
+    lockedDeckPricePill: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+    lockedDeckPriceText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '600' },
     deckRowDragging: { opacity: 0.22, transform: [{ scale: 0.99 }] },
     deckRowDropTarget: {
         backgroundColor: colors.accentLight,

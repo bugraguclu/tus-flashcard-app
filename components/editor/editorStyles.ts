@@ -42,13 +42,12 @@ export function createEditorStyles(colors: ColorScheme, inset = 0) {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        paddingHorizontal: 10,
+        // A plain text button over the keyboard, no tinted pill.
+        paddingHorizontal: Spacing.s6,
         paddingVertical: 5,
-        borderRadius: Radius.pill,
-        backgroundColor: colors.accentLight,
     },
     keyboardDismissText: {
-        fontSize: FontSize.xs,
+        fontSize: FontSize.sm,
         fontWeight: '600',
         color: colors.accent,
     },

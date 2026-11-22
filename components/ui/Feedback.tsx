@@ -110,11 +110,13 @@ interface NoticeProps {
 /** A boxed note under a field or at the top of a form: a warning, an error, a hint or a success. */
 export function Notice({ tone = 'info', title, children, icon, action, style }: NoticeProps) {
     const colors = useThemeColors();
+    // Every tone sits in the same quiet box; only the title says warning, error or done, so a
+    // form is not painted orange or red around the field it is about.
     const palette = {
         info: { border: colors.border, background: colors.bgSecondary, title: colors.textPrimary },
-        warning: { border: colors.warning, background: colors.warningBg, title: colors.warning },
-        danger: { border: colors.danger, background: colors.dangerBg, title: colors.danger },
-        success: { border: colors.success, background: colors.successBg, title: colors.success },
+        warning: { border: colors.border, background: colors.bgSecondary, title: colors.warning },
+        danger: { border: colors.border, background: colors.bgSecondary, title: colors.danger },
+        success: { border: colors.border, background: colors.bgSecondary, title: colors.success },
     }[tone];
     const body = (
         <>

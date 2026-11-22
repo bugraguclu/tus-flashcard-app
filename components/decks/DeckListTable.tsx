@@ -83,7 +83,7 @@ function createStyles(colors: ColorScheme, columnWidth: number, learningWidth: n
         new: { color: colors.badgeNew },
         learn: { color: colors.badgeLearn, width: learningWidth },
         review: { color: colors.badgeReview },
-        zero: { color: colors.textMuted, opacity: 0.55 },
+        zero: { color: colors.textFaint },
         actionsSpacer: { width: 88 },
     });
 }

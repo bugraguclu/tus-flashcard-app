@@ -104,7 +104,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
             justifyContent: 'center',
         },
         boxStudied: { backgroundColor: colors.streak, borderColor: colors.streak },
-        boxToday: { borderColor: colors.streak, backgroundColor: colors.streakBg },
+        // Today is marked by its outline alone.
+        boxToday: { borderColor: colors.streak },
         boxSelected: { borderColor: colors.accent, borderWidth: 2 },
         boxDimmed: { opacity: 0.45 },
         date: { color: highContrast ? colors.textPrimary : colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },

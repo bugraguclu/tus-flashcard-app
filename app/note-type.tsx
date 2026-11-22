@@ -382,7 +382,7 @@ export default function NoteTypeScreen() {
                 )}
                 {template && (
                     <>
-                        <SectionLabel style={styles.label}>{l('ÖN YÜZ (SORU)', 'FRONT TEMPLATE')}</SectionLabel>
+                        <SectionLabel style={styles.label}>{l('Ön yüz (soru)', 'Front template')}</SectionLabel>
                         <TextField
                             monospace
                             value={template.qfmt}
@@ -394,7 +394,7 @@ export default function NoteTypeScreen() {
                             accessibilityLabel={l(`${template.name}: ön yüz şablonu`, `${template.name}: front template`)}
                         />
 
-                        <SectionLabel style={styles.label}>{l('ARKA YÜZ (CEVAP)', 'BACK TEMPLATE')}</SectionLabel>
+                        <SectionLabel style={styles.label}>{l('Arka yüz (cevap)', 'Back template')}</SectionLabel>
                         <TextField
                             monospace
                             value={template.afmt}
@@ -408,7 +408,7 @@ export default function NoteTypeScreen() {
                     </>
                 )}
 
-                <SectionLabel style={styles.label}>{l('STİL (CSS)', 'STYLING (CSS)')}</SectionLabel>
+                <SectionLabel style={styles.label}>{l('Stil (CSS)', 'Styling (CSS)')}</SectionLabel>
                 <TextField
                     monospace
                     value={nt.css}
