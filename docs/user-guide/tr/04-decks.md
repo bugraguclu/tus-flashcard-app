@@ -35,8 +35,11 @@ Ekranı yukarıdan aşağıya şöyle okursunuz:
   - üç sayı (bkz. [Sayılar ne anlama gelir?](#deck-counts)),
   - **⠿** taşıma tutamacı,
   - **•••** deste menüsü.
-- **＋ düğmesi** sağ altta: deste, filtrelenmiş deste veya kart ekler.
-- **Alt çubuk:** **Kartlarım**, **İstatistik**, **Ayarlar**.
+- **Alt çubuk:** ekranın altında yüzen beyaz çubuk. Solda **Kartlarım** ve **Kronometre**, sağda **İstatistik** ve
+  **Ayarlar**; ortadaki çentikte yükseltilmiş **＋ Ekle** düğmesi deste, filtrelenmiş deste veya kart ekler.
+  Uzun bir listede bilerek aşağı kaydırdığınızda çubuk yer açmak için aşağı çekilir. Biraz yukarı kaydırınca,
+  listenin başına ya da sonuna gelince ve bu ekrana her dönüşünüzde geri gelir; kendiliğinden, bir süre
+  sonra geri gelmez, böylece dokunmak üzere olduğunuz satırın üstüne kaymaz. VoiceOver açıkken hiç gizlenmez.
 
 Alt destelerin açık veya kapalı durumu hatırlanır; uygulamayı yeniden açtığınızda liste aynı
 görünür. Filtrelenmiş desteler eğik ve mavi yazıyla, adlarının solunda **⧉** işaretiyle görünür.
@@ -94,7 +97,7 @@ Destenin açıklamasını, bugünkü sayılarını ve gömülü kartlarını gö
 <a id="create-deck"></a>
 ## Deste oluşturmak
 
-1. Sağ alttaki **＋** düğmesine dokunun.
+1. Alt çubuğun ortasındaki **＋** düğmesine dokunun.
 2. **Deste oluştur**'u seçin.
 3. **Deste adı** alanına adı yazın ve **Oluştur**'a dokunun.
 
@@ -126,7 +129,7 @@ destelerinin altına kendi destenizi koyamazsınız.
 <a id="add-menu"></a>
 ## ＋ menüsü
 
-Sağ alttaki **＋** üç seçenek açar. Menüyü kapatmak için ekranın boş bir yerine dokunun.
+Alt çubuğun ortasındaki **＋** üç seçenek açar. Menüyü kapatmak için ekranın boş bir yerine dokunun.
 
 - **Filtrelenmiş deste oluştur:** Bir aramaya uyan kartları geçici bir destede toplar.
   Bkz. [Filtrelenmiş deste oluşturmak](11-filtered-decks.md#create-filtered-deck).

@@ -49,8 +49,8 @@ girişi ikinci yol olarak kalır.
 **Yeni kullanıcının ilk gördüğü:** Desteler başlığı (**↻**, **⋮**); **DESTE / Yeni / Öğrenme /
 Tekrar** sütun başlıkları; listenin en üstünde kesik çizgili kilitli **TUS Kartları** satırı
 ("9.575 kart · 12 ders · 106 alt deste", **Ücretsiz aç**; `decks.tsx:1383-1415`). Altında tek bir
-deste, **Varsayılan**, 0/0/0 sayılarla (`lib/models.ts:469-471`). Sağ altta **＋**, altta
-**Kartlarım / İstatistik / Ayarlar**. Paket erişimi yoksa hiçbir şey kendiliğinden kurulmaz
+deste, **Varsayılan**, 0/0/0 sayılarla (`lib/models.ts:469-471`). Altta yüzen çubukta
+**Kartlarım / Kronometre / ＋ Ekle (ortada, yükseltilmiş) / İstatistik / Ayarlar**. Paket erişimi yoksa hiçbir şey kendiliğinden kurulmaz
 (`contexts/AppContext.tsx:172-186`). **Varsayılan** her zaman var olduğu için mevcut boş durum
 (`decks.tsx:2199-2211`) yeni kurulumda **hiç görünmez**. Yeni kullanıcıya ne yapacağını söyleyen
 bir metin yoktu; 2026-11-07'den beri aşağıdaki ilk açılış kartı ve **Varsayılan** ipucu bunu söyler.
@@ -105,7 +105,7 @@ Boş **Varsayılan**, başka desteler olunca Anki'deki gibi listede gizlenir (`l
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |
 | help.decks.empty.title | Liste boş durumu, `decks.tsx:2206` | boş durum başlığı | İlk destenizi oluşturun | Create your first deck | Mevcut — koru |
-| help.decks.empty.text | aynı, `decks.tsx:2207` | boş durum metni | Sağ alttaki ＋ ile bir deste oluşturun veya ⋮ › İçe aktar ile Anki’den bir deste getirin. | Create a deck with ＋ at the bottom right, or bring one in from Anki with ⋮ › Import. | Mevcut — koru (2026-11-07; menü satırının adı **İçe aktar**) |
+| help.decks.empty.text | aynı, `decks.tsx:2207` | boş durum metni | Alttaki ＋ ile bir deste oluşturun veya ⋮ › İçe aktar ile Anki’den bir deste getirin. | Create a deck with ＋ at the bottom, or bring one in from Anki with ⋮ › Import. | Mevcut — koru (2026-11-07; menü satırının adı **İçe aktar**) |
 | help.decks.loadError | Aynı yer; deste listesi yüklenemezse (bugün `decks.tsx:262-266` yalnızca konsola yazar ve boş durumu gösterir) | hata durumu | Desteler yüklenemedi. ↻ ile yeniden deneyin. | Your decks could not be loaded. Tap ↻ to try again. | Yeni |
 | help.decks.locked.a11y | Kilitli TUS satırı, `decks.tsx:1388-1391` | erişilebilirlik etiketi | TUS Kartları hazır kart paketi, 9.575 kart. Ücretsiz kurmak için dokunun. | TUS Kartları ready-made card pack, 9,575 cards. Tap to install it for free. | Mevcut — koru (2026-11-07, `help.tusCards.lockedRowA11y` ile aynı) |
 | help.decks.locked.meta | Kilitli TUS satırı alt satırı, `decks.tsx:1403-1406` | satır içi | {kart} kart · {ders} ders · {konu} alt deste | {cards} cards · {courses} courses · {topics} subdecks | Mevcut — koru |

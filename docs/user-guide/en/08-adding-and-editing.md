@@ -30,7 +30,7 @@ The same screen opens as **Edit Card** when you change an existing note.
 
 To add a new note:
 
-- On the **Decks** tab, tap the round **＋** button at the bottom right › **Add note**.
+- On the **Decks** tab, tap the **＋** button in the middle of the bottom bar › **Add note**.
 - A deck's **•••** button › **Add note**: the note goes straight into that deck.
 - In the **Card Browser**, tap **＋ New Note** (or **＋ New Card**).
 - While studying, tap **⋮** at the top or **Tools** › **Add note**.

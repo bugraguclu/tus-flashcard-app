@@ -23,7 +23,7 @@ import {
 import { PullToRefreshIndicator, usePullToRefresh } from '../../components/PullToRefresh';
 import { Text } from '../../components/AppText';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors, type ColorScheme, Spacing, FontSize } from '../../constants/theme';
 import { exitDuration, MotionSpring, NATIVE_DRIVER } from '../../constants/motion';
 import {
@@ -60,6 +60,8 @@ import {
 } from '../../contexts/AppContext';
 import { useI18n } from '../../hooks/useI18n';
 import { useModalHandoff } from '../../hooks/useModalHandoff';
+import { useDockScroll } from '../../hooks/useDockScroll';
+import { useScreenReaderEnabled } from '../../hooks/useScreenReaderEnabled';
 import { formatCount } from '../../lib/i18n';
 import { normalizeDeckLeafInput } from '../../lib/deckNavigation';
 import { normalizeDeckName } from '../../lib/deckNames';
@@ -74,7 +76,7 @@ import GearGlyph from '../../components/GearGlyph';
 import { StopwatchIcon } from '../../components/stopwatch/StopwatchIcons';
 import DeckOverflowGlyph from '../../components/DeckOverflowGlyph';
 import { DeckListCounts, DeckListColumnHeaders } from '../../components/decks/DeckListTable';
-import DeckAddMenu, { DECK_ADD_MENU_LIST_INSET } from '../../components/decks/DeckAddMenu';
+import DeckAddMenu from '../../components/decks/DeckAddMenu';
 import DeckRowMenu from '../../components/decks/DeckRowMenu';
 import DeckNameButton from '../../components/decks/DeckNameButton';
 import DeckDragHandle from '../../components/decks/DeckDragHandle';
@@ -84,7 +86,7 @@ import { SectionLabel } from '../../components/ui/Card';
 import { AppDialog } from '../../components/ui/Dialog';
 import { EmptyState, LoadingState } from '../../components/ui/Feedback';
 import { TextField } from '../../components/ui/Fields';
-import { BottomBar, BottomBarItem } from '../../components/ui/Bars';
+import { Dock, DockItem, useDockClearance } from '../../components/ui/Dock';
 import { ArrowUpIcon, ChevronDownIcon, ChevronRightIcon, DragHandleIcon, MoreIcon, PlusIcon, RefreshIcon } from '../../components/ui/icons';
 import { MenuItem, PopoverMenu } from '../../components/ui/Menu';
 import { KeyboardGlyph } from '../../components/UiGlyphs';
@@ -152,8 +154,6 @@ const DECK_HOVER_EXPAND_DELAY_MS = 800;
 // Expanding or collapsing a deck moves the rows under it this long.
 const DECK_TREE_LAYOUT_MS = 190;
 
-// Four labels share the bottom bar, like a tab bar's: one line each, growing less than content,
-// and on iPhone shrinking to fit rather than breaking a word on the smallest phones.
 /** Keep disclosure state attached to the same decks after an Anki-style subtree rename. */
 function remapExpandedDeckPaths(
     paths: Set<string>,
@@ -190,7 +190,6 @@ const VirtualizedDeckRow = React.memo(function VirtualizedDeckRow({
 export default function DecksScreen() {
     const { t, l, locale } = useI18n();
     const router = useRouter();
-    const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions();
     const isCompact = width < 600;
     const isDesktopWeb = Platform.OS === 'web' && !isCompact;
@@ -227,7 +226,6 @@ export default function DecksScreen() {
     }, [activeDeckName, setActiveDeckName]);
     const [showAddDeck, setShowAddDeck] = useState(false);
     const [showAddMenu, setShowAddMenu] = useState(false);
-    const [bottomBarHeight, setBottomBarHeight] = useState(66);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const pendingOverflowRouteRef = useRef<string | null>(null);
     const pendingOverflowActionRef = useRef<(() => void) | null>(null);
@@ -312,6 +310,15 @@ export default function DecksScreen() {
     const deckScrollRef = useRef<FlatList<DeckListRowModel>>(null);
     const hoverExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [draggingDeck, setDraggingDeck] = useState<string | null>(null);
+    // The dock gets out of the way while the learner moves down a long list on a phone, and stays
+    // for a screen reader and in a wide window (lib/dockScroll.ts). A dragged deck needs the whole
+    // list to drop onto, so the dock leaves for the drag.
+    const screenReaderEnabled = useScreenReaderEnabled();
+    const dock = useDockScroll(isCompact && !screenReaderEnabled);
+    const dockHidden = dock.hidden || draggingDeck !== null;
+    const dockClearance = useDockClearance();
+    const revealDock = dock.reveal;
+    useFocusEffect(revealDock);
     const deckPull = usePullToRefresh({
         scrollRef: deckScrollRef,
         busy: snapshotLoading,
@@ -322,6 +329,7 @@ export default function DecksScreen() {
         },
         onScroll: (event) => {
             scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+            dock.onScroll(event);
         },
         onRefresh: () => setRefreshNonce((value) => value + 1),
     });
@@ -1581,12 +1589,13 @@ export default function DecksScreen() {
         <EmptyState
             icon={<PlusIcon color={colors.accent} size={36} />}
             title={l('İlk destenizi oluşturun', 'Create your first deck')}
-            body={l('Sağ alttaki ＋ ile bir deste oluşturun veya ⋮ › İçe aktar ile Anki’den bir deste getirin.', 'Create a deck with ＋ at the bottom right, or bring one in from Anki with ⋮ › Import.')}
+            body={l('Alttaki ＋ ile bir deste oluşturun veya ⋮ › İçe aktar ile Anki’den bir deste getirin.', 'Create a deck with ＋ at the bottom, or bring one in from Anki with ⋮ › Import.')}
         />
     )), [colors.accent, l, snapshotLoading]);
 
     return (
-        <SafeAreaView style={styles.container}>
+        // The list runs to the screen's bottom edge, behind the floating dock and the home indicator.
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <View style={[styles.header, listInset > 0 && { paddingLeft: Spacing.lg + listInset, paddingRight: Spacing.sm + listInset }]}>
                 <Text style={styles.title} accessibilityRole="header">{t('tabs.decks')}</Text>
                 <View style={styles.headerActions}>
@@ -1696,11 +1705,12 @@ export default function DecksScreen() {
                     CellRendererComponent={DeckDragCell}
                     ListHeaderComponent={deckListHeader}
                     ListEmptyComponent={deckListEmpty}
-                    ListFooterComponent={<View style={{ height: DECK_ADD_MENU_LIST_INSET }} />}
+                    ListFooterComponent={<View style={{ height: dockClearance }} />}
                     showsVerticalScrollIndicator={false}
                     scrollEnabled={!draggingDeck}
                     onContentSizeChange={(_width, height) => {
                         listContentHeightRef.current = height;
+                        dock.onContentSizeChange(height);
                     }}
                     initialNumToRender={isCompact ? 12 : 20}
                     maxToRenderPerBatch={isCompact ? 10 : 16}
@@ -1781,9 +1791,42 @@ export default function DecksScreen() {
                 )}
             </View>
 
+            <Dock
+                hidden={dockHidden}
+                action={{
+                    icon: <PlusIcon color={colors.onAccent} size={28} />,
+                    label: l('Ekle', 'Add'),
+                    onPress: () => setShowAddMenu(true),
+                    expanded: showAddMenu,
+                }}
+            >
+                <DockItem
+                    label={t('sidebar.myCards')}
+                    accessibilityLabel={l('Kartlarımı aç', 'Open Card Browser')}
+                    icon={<CardsGlyph color={colors.textPrimary} size={24} />}
+                    onPress={() => router.push('/browser' as any)}
+                />
+                <DockItem
+                    label={l('Kronometre', 'Stopwatch')}
+                    accessibilityLabel={l('Kronometreyi aç', 'Open stopwatch')}
+                    icon={<StopwatchIcon color={colors.textPrimary} size={24} />}
+                    onPress={() => router.push('/stopwatch' as any)}
+                />
+                <DockItem
+                    label={t('tabs.statistics')}
+                    accessibilityLabel={l('İstatistikleri aç', 'Open statistics')}
+                    icon={<StatsGlyph color={colors.textPrimary} size={24} />}
+                    onPress={() => router.push('/stats' as any)}
+                />
+                <DockItem
+                    label={t('tabs.settings')}
+                    accessibilityLabel={l('Ayarları aç', 'Open settings')}
+                    icon={<GearGlyph color={colors.textPrimary} size={24} />}
+                    onPress={() => router.push('/settings' as any)}
+                />
+            </Dock>
+
             <DeckAddMenu
-                bottom={insets.bottom + bottomBarHeight + Spacing.md}
-                inset={listInset}
                 visible={showAddMenu}
                 onOpen={() => setShowAddMenu(true)}
                 onClose={() => setShowAddMenu(false)}
@@ -1791,33 +1834,6 @@ export default function DecksScreen() {
                 onCreateDeck={openCreateDeck}
                 onAddCard={openAddCard}
             />
-
-            <BottomBar style={insetStyle} onLayout={(event) => setBottomBarHeight(event.nativeEvent.layout.height)}>
-                <BottomBarItem
-                    label={t('sidebar.myCards')}
-                    accessibilityLabel={l('Kartlarımı aç', 'Open Card Browser')}
-                    icon={<CardsGlyph color={colors.textSecondary} size={20} />}
-                    onPress={() => router.push('/browser' as any)}
-                />
-                <BottomBarItem
-                    label={l('Kronometre', 'Stopwatch')}
-                    accessibilityLabel={l('Kronometreyi aç', 'Open stopwatch')}
-                    icon={<StopwatchIcon color={colors.textSecondary} size={20} />}
-                    onPress={() => router.push('/stopwatch' as any)}
-                />
-                <BottomBarItem
-                    label={t('tabs.statistics')}
-                    accessibilityLabel={l('İstatistikleri aç', 'Open statistics')}
-                    icon={<StatsGlyph color={colors.textSecondary} size={20} />}
-                    onPress={() => router.push('/stats' as any)}
-                />
-                <BottomBarItem
-                    label={t('tabs.settings')}
-                    accessibilityLabel={l('Ayarları aç', 'Open settings')}
-                    icon={<GearGlyph color={colors.textSecondary} size={20} />}
-                    onPress={() => router.push('/settings' as any)}
-                />
-            </BottomBar>
 
             {isDesktopWeb && draggingDeck && (
                 <View style={styles.dragBanner}>

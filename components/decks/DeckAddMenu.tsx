@@ -1,19 +1,15 @@
 import { useRef } from 'react';
 import { Platform } from 'react-native';
-import { Spacing, useThemeColors } from '../../constants/theme';
+import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { useModalHandoff } from '../../hooks/useModalHandoff';
 import DeckOverflowGlyph from '../DeckOverflowGlyph';
 import PencilGlyph from '../PencilGlyph';
-import { FAB_SIZE, SpeedDial, SpeedDialAction } from '../ui/Fab';
+import { useDockActionBottom } from '../ui/Dock';
+import { SpeedDial, SpeedDialAction } from '../ui/Fab';
 import { PlusIcon } from '../ui/icons';
 
-export const DECK_ADD_MENU_LIST_INSET = FAB_SIZE + 2 * Spacing.md;
-
 interface DeckAddMenuProps {
-    bottom: number;
-    /** Extra right inset that keeps ＋ at the edge of a centred deck list in a wide window. */
-    inset?: number;
     visible: boolean;
     onOpen: () => void;
     onClose: () => void;
@@ -23,14 +19,16 @@ interface DeckAddMenuProps {
 }
 
 /**
- * The deck list's add actions: the kit's speed dial. Labelled buttons rise out of ＋ over the
- * strong dimming while ＋ turns into ×, and sink back into it when the menu closes.
+ * The deck list's add actions: the kit's speed dial, opened by the ＋ raised in the dock's notch
+ * (the dock draws that button). Labelled buttons rise out of ＋ over the strong dimming while ＋
+ * turns into ×, and sink back into it when the menu closes.
  */
 export default function DeckAddMenu({
-    bottom, inset = 0, visible, onOpen, onClose, onCreateFilteredDeck, onCreateDeck, onAddCard,
+    visible, onOpen, onClose, onCreateFilteredDeck, onCreateDeck, onAddCard,
 }: DeckAddMenuProps) {
     const { l } = useI18n();
     const colors = useThemeColors();
+    const bottom = useDockActionBottom();
     const pendingAction = useRef<(() => void) | null>(null);
     const handoff = useModalHandoff(visible);
 
@@ -61,7 +59,8 @@ export default function DeckAddMenu({
             onDismiss={handleDismiss}
             closeAtOnce={handoff.closeAtOnce}
             bottom={bottom}
-            inset={inset}
+            placement="center"
+            withButton={false}
             openColor={colors.accentHover}
             icon={<PlusIcon color={colors.onAccent} size={28} />}
             turnsToClose

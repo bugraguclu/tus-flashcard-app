@@ -31,7 +31,7 @@ role, the 2- and 6-point spacing steps and the three icon sizes.
 | Marked-note star | `colors.marked` | amber |
 | Chosen segment | `colors.segmentSelected` | white (dark: border tone) |
 | Corners | `Radius.control` 8 · `inset` 8 · `button` 12 · `card` 16 · `sheet` 16 · `pill` | small controls (tool buttons, steppers, boxed chips) · menus, segmented track, boxes inside a card · buttons and text fields · cards and dialogs · sheet top · chips and badges. Screens name a role; `BorderRadius` is only the scale the roles are built on. |
-| Shadows | `Shadow.card` · `Shadow.floating` | a white surface resting on the page · anything that hovers above it (menus, dialogs, sheets, the floating button, a dragged row). No other shadow value belongs in a screen. |
+| Shadows | `Shadow.card` · `Shadow.floating` (· `Shadow.floatingOutline`) | a white surface resting on the page · anything that hovers above it (menus, dialogs, sheets, the floating button, a dragged row, the dock). `floatingOutline` is the same shadow for a surface drawn as an SVG outline (the dock's notched panel): it follows the drawing, where a box shadow would cast a rectangle. No other shadow value belongs in a screen. |
 | Touch target | `HIT_TARGET` | 44 pt minimum for anything tappable |
 | Disabled | `DISABLED_OPACITY` | 0.45 on the whole control |
 | Text | `Type.title` 18/600 · `sectionTitle` 16/600 · `rowTitle` 14/500 · `body` 14/400 · `bodyStrong` 14/600 · `button` 14/600 · `textButton` 14/600 · `caption` 12/18 · `label` 12/500 sentence case · `micro` 11/500 | screen, sheet and dialog titles · card headings · row titles · body · values · filled buttons · text buttons · summaries and footnotes · group labels · badges, bar captions, count columns and chart axes |
@@ -81,9 +81,10 @@ the photo editor's crop frame, which is drawn over the photo itself.
 | Centred form, picker or explanation | `AppDialog` | `components/ui/Dialog.tsx` |
 | ••• menu | `PopoverMenu` + `MenuItem` (`chevron` for a row that opens a submenu) | `components/ui/Menu.tsx` |
 | A long action menu centred over the screen (the deck row's •••) | `MenuDialog` + `MenuItem` | `components/ui/Menu.tsx` |
-| Floating button | `Fab` (`rounded`: the deck list's ＋; `round` with `colors.studyTool`: the Kronometre's tools and the calendar's stopwatch) | `components/ui/Fab.tsx` |
-| Floating button that opens actions above itself | `SpeedDial` + `SpeedDialAction` (a label and a small button) or `SpeedDialCard` (a filled card with a title and what it does) | `components/ui/Fab.tsx` |
-| Bar of shortcuts or bulk actions along the bottom edge | `BottomBar` + `BottomBarItem` (icon over a caption) | `components/ui/Bars.tsx` |
+| Floating button | `Fab` (`rounded`: the ＋ shape; `round` with `colors.studyTool`: the Kronometre's tools and the calendar's stopwatch); `FabFace` is its face alone, for a button that also holds a caption (the dock's raised ＋) | `components/ui/Fab.tsx` |
+| Floating button that opens actions above itself | `SpeedDial` + `SpeedDialAction` (a label and a small button) or `SpeedDialCard` (a filled card with a title and what it does); `placement="center"` + `withButton={false}` opens it over the dock's raised ＋ | `components/ui/Fab.tsx` |
+| A screen's shortcuts floating over its bottom edge, with its main action raised in the middle | `Dock` + `DockItem` (24 pt icon over a caption) and its `action` (the deck list's ＋); `useDockClearance` for the list under it, `useDockScroll` for when it gets out of the way | `components/ui/Dock.tsx` |
+| Bar of bulk actions along the bottom edge | `BottomBar` + `BottomBarItem` (icon over a caption) | `components/ui/Bars.tsx` |
 | One tool of a formatting or drawing toolbar | `ToolButton` (44 pt square, `selected` tint, optional `label` under the icon) | `components/ui/Bars.tsx` |
 | Confirmation | `lib/confirm` (system alert on iPhone, `DialogHost` on web) | `lib/confirm.ts` |
 
@@ -107,6 +108,7 @@ The screens used to carry their own small kits. They map onto the parts like thi
 | Text glyphs ›, ⌄, ⌃, ×, ✕, ✓, ⋮, •••, ＋, ↻, ↑, ↓, ← as icons | `components/ui/icons` |
 | Per-screen floating buttons and their menus (deck list ＋, study tools, calendar stopwatch) | `Fab`, `SpeedDial` |
 | The deck list's shortcut bar and Browse's selection bar | `BottomBar` + `BottomBarItem` |
+| The deck list's `BottomBar` and its ＋ floating at the bottom right (22 November 2026, after Yemek Takibi's dock) | `Dock` + `DockItem`, the ＋ raised in the dock's notch |
 | Editor, whiteboard and drawing-pad tool buttons (44, 38, 46 and 36 pt) | `ToolButton` |
 | Filled or accent-text rows marking the chosen option (pickers, sort, export format, fonts) | `ListRow selected` / `CheckRow`: a tick, no fill |
 | Note-type and tag pickers, the reviewer's flag panel | `AppDialog` with `ListRow` / `CheckRow`; `PopoverMenu` + `MenuItem` |
@@ -144,6 +146,10 @@ copy them; change them only on the owner's word.
 - Left raw on purpose: the number inside a stepper, a time box and the keyboard-shortcut field
   (`TextInput`), and the system `ActivityIndicator` inside an icon button or beside a label. A
   whole-screen wait is `LoadingState`.
+- A dock is on screen by default. It leaves only while the learner moves down a long list on purpose
+  and comes back on any small move up, at the top and the end of the list and on every return to
+  the screen, never on a timer (`lib/dockScroll.ts`). It stays put for a screen reader and in a
+  wide window; with Reduce Motion it fades instead of sliding.
 - Disabled controls fade with `DISABLED_OPACITY`. Every state a control has (disabled, checked,
   selected, expanded, busy) is passed both as `accessibilityState` and as the matching `aria-*`
   prop: react-native-web reads only the `aria-*` props, iOS reads both.

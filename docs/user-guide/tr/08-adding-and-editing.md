@@ -30,7 +30,7 @@ Aynı ekran, var olan bir notu düzenlerken **Kartı düzenle** adıyla açılı
 
 Yeni not eklemek için:
 
-- **Desteler** sekmesinde sağ alttaki **＋** düğmesi › **Kart ekle**.
+- **Desteler** sekmesinde alt çubuğun ortasındaki **＋** düğmesi › **Kart ekle**.
 - Bir destenin **•••** düğmesi › **Kart ekle**: not doğrudan o desteye gider.
 - **Kartlarım** ekranında **＋ Yeni not** (veya **＋ Yeni kart**) düğmesi.
 - Çalışırken üstteki **⋮** düğmesi veya **Araçlar** › **Not ekle**.

@@ -34,6 +34,8 @@ export const MotionDuration = {
     badge: 160,
     /** Content fading in once it has loaded. */
     fade: 220,
+    /** The deck list's dock sliding back over the bottom of the screen; it leaves in 80% of this. */
+    dock: 280,
 } as const;
 
 /** An exit takes this share of its entrance. */

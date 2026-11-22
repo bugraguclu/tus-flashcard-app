@@ -29,8 +29,9 @@ Uygulama **Desteler** ekranıyla açılır. İlk açılışta orada şunları g�
 - **Varsayılan** — boş bir deste. Başka deste seçmediğiniz kartlar buraya gider. Başka desteleriniz
   olduğunda boşken listede gizlenir (Anki'deki gibi) ve içine bir kart eklenince yeniden görünür.
 
-Ekranın altında **Kartlarım**, **Kronometre**, **İstatistik** ve **Ayarlar** düğmeleri, sağ altta yeni deste veya
-kart eklemek için **＋** düğmesi, sağ üstte de **⋮** (Diğer seçenekler) menüsü bulunur.
+Ekranın altındaki yüzen çubukta **Kartlarım**, **Kronometre**, **İstatistik** ve **Ayarlar** düğmeleri, ortasında da
+yeni deste veya kart eklemek için yükseltilmiş **＋ Ekle** düğmesi bulunur; sağ üstte **⋮** (Diğer seçenekler) menüsü
+vardır. Uzun bir listede aşağı kaydırırken çubuk aşağı çekilir; biraz yukarı kaydırınca geri gelir.
 
 <a id="get-cards"></a>
 ## 2. Kart edinin

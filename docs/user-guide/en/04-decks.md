@@ -35,8 +35,12 @@ From top to bottom:
   - three numbers (see [What the numbers mean](#deck-counts)),
   - the **⠿** move handle,
   - the **•••** deck menu.
-- **＋ button** at the bottom right: adds a deck, a filtered deck or a card.
-- **Bottom bar:** **Card Browser**, **Stats**, **Settings**.
+- **Bottom bar:** a white bar floating at the bottom of the screen. **Card Browser** and **Stopwatch** on the
+  left, **Stats** and **Settings** on the right; the raised **＋ Add** button in the notch at its middle adds a
+  deck, a filtered deck or a card. When you deliberately scroll down a long list, the bar moves down out of the
+  way. It comes back when you scroll up a little, reach the top or the end of the list, or return to this
+  screen; it never comes back on its own after a while, so it cannot slide over the row you are about to tap.
+  With VoiceOver on it never moves.
 
 Which subdecks are shown or hidden is remembered, so the list looks the same next time. Filtered
 decks appear in blue italics with a **⧉** mark on the left.
@@ -95,7 +99,7 @@ For the study screen itself, see [Studying](05-studying.md).
 <a id="create-deck"></a>
 ## Creating a deck
 
-1. Tap the **＋** button at the bottom right.
+1. Tap the **＋** button in the middle of the bottom bar.
 2. Choose **Create deck**.
 3. Type the name in the **Name** field and tap **Create**.
 
@@ -127,7 +131,7 @@ the decks of the TUS Kartları pack.
 <a id="add-menu"></a>
 ## The ＋ menu
 
-The **＋** at the bottom right opens three options. Tap an empty part of the screen to close it.
+The **＋** in the middle of the bottom bar opens three options. Tap an empty part of the screen to close it.
 
 - **Create filtered deck:** gathers the cards matching a search into a temporary deck.
   See [Creating a filtered deck](11-filtered-decks.md#create-filtered-deck).

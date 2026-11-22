@@ -285,10 +285,32 @@ export function dropShadow({ x = 0, y, blur, opacity, elevation }: DropShadow) {
     });
 }
 
+/**
+ * The same shadow cast by a drawn outline (an SVG) instead of a box. Natively a view with no
+ * background casts its shadow from what it draws; on web a CSS drop-shadow filter follows the
+ * drawing where boxShadow would cast a rectangle. The filter's blur is a standard deviation, half
+ * the blur radius boxShadow takes.
+ */
+export function outlineDropShadow({ x = 0, y, blur, opacity }: DropShadow) {
+    return Platform.select({
+        web: { filter: `drop-shadow(${x}px ${y}px ${blur / 2}px rgba(0, 0, 0, ${opacity}))` },
+        default: {
+            shadowColor: '#000',
+            shadowOffset: { width: x, height: y },
+            shadowOpacity: opacity,
+            shadowRadius: blur,
+        },
+    });
+}
+
+const LG_SHADOW: DropShadow = { y: 6, blur: 18, opacity: 0.1, elevation: 6 };
+
 // Shadows only lift what floats (menus, sheets, the FAB) or separate a white card from the
 // grey page; they stay soft enough that a hairline border does most of the work.
 export const Shadows = {
     sm: dropShadow({ y: 1, blur: 2, opacity: 0.05, elevation: 1 }),
     md: dropShadow({ y: 2, blur: 6, opacity: 0.06, elevation: 3 }),
-    lg: dropShadow({ y: 6, blur: 18, opacity: 0.1, elevation: 6 }),
+    lg: dropShadow(LG_SHADOW),
+    /** `lg` cast by a drawn outline: the deck list's dock, whose top edge dips around its ＋. */
+    lgOutline: outlineDropShadow(LG_SHADOW),
 };

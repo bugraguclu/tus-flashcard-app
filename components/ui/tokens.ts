@@ -25,11 +25,14 @@ export const Radius = {
 
 /**
  * The two shadows. `card` separates a white surface from the grey page; `floating` lifts what
- * hovers above the screen: menus, dialogs, sheets, the floating button, a dragged row.
+ * hovers above the screen: menus, dialogs, sheets, the floating button, a dragged row, the dock.
+ * `floatingOutline` is the same shadow for a surface drawn as an SVG outline rather than a box.
  */
 export const Shadow = {
     card: Shadows.sm,
     floating: Shadows.lg,
+    /** `floating` for a surface that draws its own outline (the dock's notched panel), not a box. */
+    floatingOutline: Shadows.lgOutline,
 } as const;
 
 /** The smallest touch target, in points, for anything the user taps. */

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Animated, type StyleProp, StyleSheet, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import { Animated, type StyleProp, StyleSheet, TouchableOpacity, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
@@ -11,6 +11,9 @@ import { Radius, Shadow } from './tokens';
 
 /** The side of a floating button, in points. */
 export const FAB_SIZE = 56;
+
+/** The side of a speed dial action's small button. */
+const ACTION_BUTTON_SIZE = 46;
 
 /** `rounded` is the deck list's ＋ (a rounded square); `round` is the Kronometre's orange circle. */
 export type FabShape = 'rounded' | 'round';
@@ -27,6 +30,24 @@ interface FabProps {
     expanded?: boolean;
     /** Where it floats (`position`, `right`, `bottom`); the look comes from `shape` and `color`. */
     style?: StyleProp<ViewStyle>;
+}
+
+/**
+ * The floating button's face (its fill, corners, shadow and icon) for a control that wraps it in a
+ * larger button: the dock's raised ＋, whose caption under it is part of the same button.
+ */
+export function FabFace({ children, shape = 'rounded', color }: {
+    /** The icon, in `colors.onAccent`. */
+    children: React.ReactNode;
+    shape?: FabShape;
+    color?: string;
+}) {
+    const colors = useThemeColors();
+    return (
+        <View style={[styles.fab, shape === 'round' ? styles.round : styles.rounded, { backgroundColor: color ?? colors.accent }]}>
+            {children}
+        </View>
+    );
 }
 
 /** The floating button: the one action a screen keeps above its content. It sinks under the finger. */
@@ -84,6 +105,16 @@ interface SpeedDialProps {
     /** Distance of the button from the screen's bottom edge. */
     bottom: number;
     /**
+     * Where the button sits: at the right edge (a floating button), or centred on the screen (the
+     * dock's raised ＋), with its actions rising above it in a column on the same line.
+     */
+    placement?: 'right' | 'center';
+    /**
+     * False when the closed button is drawn by its container at the same spot (the dock draws its
+     * raised ＋ in its notch): the speed dial then brings only the open menu and its turning button.
+     */
+    withButton?: boolean;
+    /**
      * Extra side inset that keeps the button and its actions at the edge of a column centred in
      * a wide window (`useCenteredInset`); 0 on a phone.
      */
@@ -111,19 +142,30 @@ interface SpeedDialProps {
  * the button again closes it.
  */
 export function SpeedDial({
-    visible, onOpen, onClose, onDismiss, closeAtOnce, bottom, inset = 0, shape = 'rounded', color, openColor,
-    icon, turnsToClose = false, openLabel, closeLabel, stretch = false, children,
+    visible, onOpen, onClose, onDismiss, closeAtOnce, bottom, placement = 'right', withButton = true, inset = 0,
+    shape = 'rounded', color, openColor, icon, turnsToClose = false, openLabel, closeLabel, stretch = false, children,
 }: SpeedDialProps) {
     const colors = useThemeColors();
     const insets = useSafeAreaInsets();
+    const { width: windowWidth } = useWindowDimensions();
     const { l } = useI18n();
     const fill = color ?? colors.accent;
     const items = React.Children.toArray(children);
+    const centred = placement === 'center';
+    const buttonPlace: ViewStyle = centred
+        ? { bottom, left: (windowWidth - FAB_SIZE) / 2 }
+        : { bottom, right: Spacing.lg + inset };
+    // Centred, the actions' buttons line up over the ＋ and their names reach to its left.
+    const actionsRight = centred && !stretch
+        ? windowWidth / 2 - ACTION_BUTTON_SIZE / 2
+        : Spacing.lg + inset + (stretch ? insets.right : 0);
     return (
         <>
-            <Fab accessibilityLabel={openLabel} onPress={onOpen} shape={shape} color={fill} expanded={false} style={[styles.floating, { bottom, right: Spacing.lg + inset }]}>
-                {icon}
-            </Fab>
+            {withButton ? (
+                <Fab accessibilityLabel={openLabel} onPress={onOpen} shape={shape} color={fill} expanded={false} style={[styles.floating, buttonPlace]}>
+                    {icon}
+                </Fab>
+            ) : null}
             <PopoverModal visible={visible} onRequestClose={onClose} onDismiss={onDismiss} closeAtOnce={closeAtOnce} itemCount={items.length}>
                 <View style={styles.overlay}>
                     <PopoverBackdrop
@@ -140,7 +182,7 @@ export function SpeedDial({
                             {
                                 paddingBottom: bottom + FAB_SIZE + (stretch ? Spacing.lg : Spacing.md),
                                 paddingLeft: Spacing.lg + insets.left + (stretch ? inset : 0),
-                                paddingRight: Spacing.lg + inset + (stretch ? insets.right : 0),
+                                paddingRight: actionsRight,
                             },
                         ]}
                         pointerEvents="box-none"
@@ -162,7 +204,7 @@ export function SpeedDial({
                         icon={icon}
                         onPress={onClose}
                         label={closeLabel}
-                        style={[styles.floating, { bottom, right: Spacing.lg + inset }]}
+                        style={[styles.floating, buttonPlace]}
                     />
                 </View>
             </PopoverModal>
@@ -227,16 +269,17 @@ const styles = StyleSheet.create({
     // A rounded square, not a circle (the owner chose it for the deck list's ＋).
     rounded: { borderRadius: Radius.sheet },
     round: { borderRadius: FAB_SIZE / 2 },
-    floating: { position: 'absolute', right: Spacing.lg },
+    floating: { position: 'absolute' },
     overlay: { flex: 1, justifyContent: 'flex-end' },
     actions: { gap: Spacing.md },
     actionsHug: { alignItems: 'flex-end' },
     action: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.md },
-    actionLabel: { maxWidth: 240, paddingHorizontal: 10, paddingVertical: 7 },
-    actionLabelText: { fontSize: FontSize.sm, fontWeight: '500' },
+    // A name too long for the room beside its button wraps, hugging the button.
+    actionLabel: { flexShrink: 1, maxWidth: 240, paddingHorizontal: 10, paddingVertical: 7 },
+    actionLabelText: { fontSize: FontSize.sm, fontWeight: '500', textAlign: 'right' },
     actionButton: {
-        width: 46,
-        height: 46,
+        width: ACTION_BUTTON_SIZE,
+        height: ACTION_BUTTON_SIZE,
         borderRadius: Radius.inset,
         alignItems: 'center',
         justifyContent: 'center',

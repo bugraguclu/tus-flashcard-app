@@ -30,9 +30,10 @@ The app opens on the **Decks** screen. On first launch you see:
   deck go here. Once you have other decks it is hidden while empty (as in Anki) and comes back as
   soon as a card goes into it.
 
-At the bottom of the screen are the **Card Browser**, **Stopwatch**, **Stats** and **Settings** buttons. At the
-bottom right is the **＋** button for adding a new deck or card, and at the top right is the **⋮**
-(More options) menu.
+A bar floating at the bottom of the screen holds the **Card Browser**, **Stopwatch**, **Stats** and **Settings**
+buttons, with the raised **＋ Add** button in its middle for adding a new deck or card; at the top right is the
+**⋮** (More options) menu. While you scroll down a long list the bar moves out of the way; scroll up a little
+and it comes back.
 
 <a id="get-cards"></a>
 ## 2. Get some cards
