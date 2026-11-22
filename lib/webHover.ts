@@ -29,6 +29,13 @@ export const HOVER_TARGET_SELECTOR = [
 /** The attribute the tinted control carries while the pointer is over it. */
 export const HOVER_ATTRIBUTE = 'data-tus-hover';
 
+/**
+ * Marks the visible shape of a button that takes presses over a larger area (the dock's raised ＋
+ * with its caption, a speed dial action with its name): the tint, and the keyboard focus ring
+ * (hooks/useWebKeyboardNavigation.ts), go on that shape instead of the button's whole box.
+ */
+export const FACE_ATTRIBUTE = 'data-focus-face';
+
 /** A control covering more than this share of the window is a backdrop, not something to tint. */
 const MAX_HOVER_AREA_SHARE = 0.4;
 
@@ -54,7 +61,7 @@ export function hoverStyleSheet(overlay: string, scrollbarThumb?: string): strin
         ? `\n  ${HIDDEN_SCROLLBAR_SELECTOR} { scrollbar-width: thin !important; scrollbar-color: ${scrollbarThumb} transparent !important; }`
         : '';
     return `@media (hover: hover) and (pointer: fine) {
-  [${HOVER_ATTRIBUTE}] { background-image: linear-gradient(${overlay}, ${overlay}); }${scrollbars}
+  [${HOVER_ATTRIBUTE}]:not(:has([${FACE_ATTRIBUTE}])), [${HOVER_ATTRIBUTE}] [${FACE_ATTRIBUTE}] { background-image: linear-gradient(${overlay}, ${overlay}); }${scrollbars}
 }`;
 }
 

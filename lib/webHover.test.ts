@@ -117,6 +117,12 @@ describe('installWebHover', () => {
         expect(hoverStyleSheet('red')).toContain('@media (hover: hover) and (pointer: fine)');
     });
 
+    it('tints the visible shape of a button marked with one, not its whole box', () => {
+        const sheet = hoverStyleSheet('red');
+        expect(sheet).toContain('[data-tus-hover]:not(:has([data-focus-face]))');
+        expect(sheet).toContain('[data-tus-hover] [data-focus-face]');
+    });
+
     it('brings thin scroll bars back for a mouse when given their colour', () => {
         expect(hoverStyleSheet('red')).not.toContain('scrollbar-width');
         const sheet = hoverStyleSheet('red', 'gray');

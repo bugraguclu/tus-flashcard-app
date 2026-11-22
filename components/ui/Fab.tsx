@@ -44,7 +44,7 @@ interface FabProps {
     style?: StyleProp<ViewStyle>;
 }
 
-/** In a browser, the keyboard focus ring of the button around a face is drawn on the face. */
+/** In a browser, the mouse tint and keyboard focus ring of the button around a face go on the face (lib/webHover.ts). */
 const FOCUS_FACE_PROPS: object = Platform.OS === 'web' ? { dataSet: { focusFace: 'true' } } : {};
 
 /**
@@ -299,7 +299,7 @@ export function SpeedDialAction({ label, icon, onPress }: {
                     {label}
                 </Text>
             </View>
-            <View style={[styles.actionButton, { backgroundColor: colors.accent }]}>{icon}</View>
+            <View style={[styles.actionButton, { backgroundColor: colors.accent }]} {...FOCUS_FACE_PROPS}>{icon}</View>
         </TouchableOpacity>
     );
 }
