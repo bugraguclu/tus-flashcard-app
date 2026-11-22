@@ -95,6 +95,47 @@
   text-align: center;
 }
 
+/* Photo bezel from Mobile FIRST (commercial use):
+   https://www.webmobilefirst.com/en/mockups/apple-iphone-18-pro-2026/ */
+@media (max-width: 639px) {
+  .hero-device {
+    position: relative;
+    aspect-ratio: 389 / 800;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    filter: drop-shadow(0 0.65rem 0.65rem #13393242);
+  }
+
+  .hero-device::before,
+  .hero-device::after {
+    content: "";
+    position: absolute;
+  }
+
+  /* Match the transparent opening, leaving space above the app for the camera. */
+  .hero-device::before {
+    inset: 1.5% 4.1%;
+    border-radius: 16% / 7.4%;
+    background: #fff;
+  }
+
+  .hero-device-answer::before { background: #f0f2f3; }
+
+  .hero-device::after {
+    inset: 0;
+    background: url('/images/uygulama/iphone-18-pro.webp') center / contain no-repeat;
+  }
+
+  .hero-device img {
+    position: absolute;
+    inset: 8.2% 4.35% auto;
+    inline-size: 91.3%;
+    border-radius: 0;
+  }
+}
+
 @keyframes hero-in {
   from { opacity: 0; translate: 0 14px; }
 }

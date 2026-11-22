@@ -1,4 +1,4 @@
-// Captured from the production web app (65412ca2) at 402 × 786 CSS px.
+// Captured from the production web app (3dbf0169) at 402 × 786 CSS px.
 // The example collection is built by scripts/readme-screenshots/sample_deck.py.
 const screenshot = (file: string, alt: string) => ({
   src: `/images/uygulama/${file}.webp`,
