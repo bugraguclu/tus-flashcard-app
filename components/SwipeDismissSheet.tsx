@@ -216,6 +216,10 @@ export default function SwipeDismissSheet({
                     onAccessibilityEscape={enabled ? requestClose : undefined}
                     onLayout={onLayout}
                 >
+                    {/* The grabber's place on a phone, kept empty so the content below stays the
+                        same child: a window resized across the dialog width keeps what is typed
+                        and scrolled in it instead of building it anew. */}
+                    {null}
                     {hasHeader ? (
                         <View style={styles.dialogHeader}>
                             {headerLeft ? <View style={styles.dialogSide}>{headerLeft}</View> : null}

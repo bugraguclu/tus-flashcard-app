@@ -43,6 +43,12 @@ interface AppSheetProps {
      * VoiceOver and cannot be pulled down while it is up.
      */
     overlay?: React.ReactNode;
+    /**
+     * Closes `overlay` when the system asks to close while it is up (Esc on the web, Android's
+     * back): the picker goes and the sheet under it stays, with what was typed into it. Without it
+     * that request does nothing while an overlay is up; the picker's own controls close it.
+     */
+    onCloseOverlay?: () => void;
     /** Where the overlay sits: centred (a picker card) or at the bottom edge (date and time wheels). */
     overlayPlacement?: 'center' | 'bottom';
     /** The sheet's height limit; 88% of the screen by default (a dialog stops at 86%). */
@@ -87,6 +93,7 @@ export function AppSheet({
     avoidKeyboard = false,
     swipeEnabled = true,
     overlay,
+    onCloseOverlay,
     overlayPlacement = 'center',
     maxHeight = '88%',
     sheetStyle,
@@ -108,6 +115,9 @@ export function AppSheet({
         <BottomSheetModal
             visible={visible}
             onClose={onClose}
+            // Esc over a picker closes the picker: closing the sheet would throw away what was
+            // typed into it, and the picker covering it is all the learner is looking at.
+            onRequestClose={covered ? (onCloseOverlay ?? ignoreCloseRequest) : onClose}
             presentation={presentation}
             avoidKeyboard={avoidKeyboard}
             swipeEnabled={(dialog ? swipeEnabled || cancelOpen : swipeEnabled) && !covered}
@@ -149,6 +159,8 @@ export function AppSheet({
         </BottomSheetModal>
     );
 }
+
+const ignoreCloseRequest = () => undefined;
 
 const styles = StyleSheet.create({
     sheet: {

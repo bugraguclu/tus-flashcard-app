@@ -166,7 +166,8 @@ uyarısı çıkar. Bkz. [İçe ve dışa aktarma](14-import-export.md).
 
 iPhone'da alttan açılan ve aşağı çekilerek kapanan paneller, tarayıcı penceresi genişken
 (bilgisayarda veya tablette) ekranın ortasında bir pencere olarak açılır. Kapatmak için sağ üstteki
-**×**'e tıklayın, Esc'ye basın veya pencerenin dışına tıklayın. Dar bir pencerede (örneğin telefonun
+**×**'e tıklayın, Esc'ye basın veya pencerenin dışına tıklayın. Panelin içinde bir liste ya da saat
+seçici açıksa Esc önce onu kapatır, panel açık kalır. Dar bir pencerede (örneğin telefonun
 tarayıcısında) iPhone'daki gibi alttan açılır.
 
 <a id="keyboard"></a>

@@ -33,6 +33,11 @@ interface BottomSheetModalProps {
     visible: boolean;
     /** Asked to close: backdrop tap, grabber, pull-down, the dialog's close button or the system back action. */
     onClose: () => void;
+    /**
+     * Asked to close by the system (Esc on the web, Android's back) rather than by the learner's
+     * hand on the sheet; `onClose` when left out. A picker drawn over the sheet takes it instead.
+     */
+    onRequestClose?: () => void;
     children: React.ReactNode;
     /** The sheet surface (size, colour, corners, padding). */
     sheetStyle?: StyleProp<ViewStyle>;
@@ -85,6 +90,7 @@ interface BottomSheetModalProps {
 export default function BottomSheetModal({
     visible,
     onClose,
+    onRequestClose,
     children,
     sheetStyle,
     containerStyle,
@@ -202,7 +208,7 @@ export default function BottomSheetModal({
             visible={mounted && !leavingAtOnce}
             transparent
             animationType={reduceMotion && !leavingAtOnce ? 'fade' : 'none'}
-            onRequestClose={onClose}
+            onRequestClose={onRequestClose ?? onClose}
             onDismiss={onDismiss}
         >
             <KeyboardAvoidingView

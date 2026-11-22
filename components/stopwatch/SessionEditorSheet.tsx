@@ -278,6 +278,10 @@ export default function SessionEditorSheet({
             onClose={onClose}
             avoidKeyboard
             overlay={overlay}
+            onCloseOverlay={() => {
+                setPicker(null);
+                setOpenField(null);
+            }}
             overlayPlacement={openField ? 'bottom' : 'center'}
             title={recordId !== null ? l('Çalışmanızı düzenleyin', 'Edit your session') : l('Geçmiş çalışmanızı ekleyin', 'Add a past session')}
         >

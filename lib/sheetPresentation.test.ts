@@ -161,3 +161,35 @@ describe('AppSheet on a phone and on a wide window', () => {
         expect(flatStyle(surface().style).transform).toBeUndefined();
     });
 });
+
+// Esc on the web (Android's back) reaches the sheet's Modal as `onRequestClose`. A picker drawn
+// over the sheet lives inside that Modal, so the sheet has to pass the request on to it: closing
+// the sheet instead threw away a past session typed into the editor under a time picker.
+describe('AppSheet when the system asks it to close', () => {
+    const modal = () => renderer!.root.findAll((node) => (node.type as string) === 'Modal')[0].props as { onRequestClose: () => void };
+
+    it('closes the sheet when nothing covers it', () => {
+        const onClose = vi.fn();
+        show(1280, { onClose });
+        act(() => modal().onRequestClose());
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes the picker over it first, on a phone and on a wide window, and keeps the sheet', () => {
+        const onClose = vi.fn();
+        const onCloseOverlay = vi.fn();
+        for (const width of [390, 1280]) {
+            show(width, { onClose, onCloseOverlay, overlay: React.createElement('View') });
+            act(() => modal().onRequestClose());
+        }
+        expect(onCloseOverlay).toHaveBeenCalledTimes(2);
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('leaves the sheet open under a picker that gave no way to close it', () => {
+        const onClose = vi.fn();
+        show(1280, { onClose, overlay: React.createElement('View') });
+        act(() => modal().onRequestClose());
+        expect(onClose).not.toHaveBeenCalled();
+    });
+});

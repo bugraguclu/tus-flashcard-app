@@ -167,7 +167,8 @@ files are accepted; any other file shows **Unknown file format**. See
 
 The panels that rise from the bottom on iPhone and close when pulled down open as a window in the
 middle of the screen when the browser window is wide (on a computer or a tablet). Close one with
-**×** at its top right, with Esc, or by clicking outside it. In a narrow window, such as a phone's
+**×** at its top right, with Esc, or by clicking outside it. When a list or a time picker is open
+inside a panel, Esc closes that first and the panel stays. In a narrow window, such as a phone's
 browser, they rise from the bottom as on iPhone.
 
 <a id="keyboard"></a>

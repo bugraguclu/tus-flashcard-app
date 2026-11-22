@@ -53,9 +53,10 @@ type SheetProps = {
     presentation?: 'sheet' | 'dialog';
     onClose?: () => void;
     title?: string;
+    children?: React.ReactNode;
 };
 const render = (props: SheetProps) => act(() => {
-    const element = React.createElement(SwipeDismissSheet, { ...props, children: null });
+    const element = React.createElement(SwipeDismissSheet, { ...props, children: props.children ?? null });
     if (renderer) renderer.update(element);
     else renderer = TestRenderer.create(element);
 });
@@ -127,6 +128,22 @@ describe('SwipeDismissSheet as a dialog (a wide window)', () => {
         render({ onDismiss: () => {}, onClose: () => {}, presentation: 'dialog' });
         expect(closeButton()).toBeDefined();
         expect(renderer!.root.findAll((node) => (node.type as string) === 'Text')).toHaveLength(0);
+    });
+
+    it('keeps its content, and what is typed in it, when a resized window turns it into a dialog and back', () => {
+        let mounts = 0;
+        function Form() {
+            React.useEffect(() => { mounts += 1; }, []);
+            return React.createElement('View');
+        }
+        const form = React.createElement(Form);
+        render({ onDismiss: () => {}, title: 'Simple Plan', children: form });
+        render({ onDismiss: () => {}, onClose: () => {}, title: 'Simple Plan', presentation: 'dialog', children: form });
+        // Content that draws its own heading: the dialog's corner close button instead of a header.
+        render({ onDismiss: () => {}, onClose: () => {}, presentation: 'dialog', children: form });
+        render({ onDismiss: () => {}, children: form });
+        render({ onDismiss: () => {}, title: 'Simple Plan', children: form });
+        expect(mounts).toBe(1);
     });
 
     it('is the pulled-down iPhone sheet on a phone, with a grabber and no close button', () => {

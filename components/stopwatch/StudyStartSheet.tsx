@@ -73,7 +73,13 @@ export default function StudyStartSheet({ visible, initial, recentSubjects, pass
     ) : null;
 
     return (
-        <AppSheet visible={visible} onClose={onClose} title={l('Çalışmaya başla', 'Start studying')} overlay={overlay}>
+        <AppSheet
+            visible={visible}
+            onClose={onClose}
+            title={l('Çalışmaya başla', 'Start studying')}
+            overlay={overlay}
+            onCloseOverlay={() => setPicker(null)}
+        >
             <View style={styles.body}>
                 <Card divided>
                     <SelectRow
