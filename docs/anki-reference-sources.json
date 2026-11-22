@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-11-08",
+  "lastVerified": "2026-11-22",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -221,7 +221,23 @@
       "priority": 1,
       "platform": "cross-platform card styling",
       "url": "https://docs.ankiweb.net/templates/styling.html#night-mode",
-      "useFor": ["nightMode card class", "note-type night-mode rules"]
+      "useFor": ["nightMode card class", "note-type night-mode rules", "nightMode and night_mode on the card page's body as well as the card (cardPageBodyTag, lib/cardPageDefaults.test.ts)"]
+    },
+    {
+      "id": "anki-source-theme-body-classes",
+      "priority": 3,
+      "platform": "cross-platform reviewer page",
+      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/theme.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["body_classes_for_card_ord: the reviewer body is `card cardN` plus platform classes, and `nightMode night_mode` at night; read from Anki 26.09.3 by scripts/anki-oracle/gen_media_names.py, lib/cardMediaNames.test.ts"]
+    },
+    {
+      "id": "anki-source-escape-media-filenames",
+      "priority": 3,
+      "platform": "cross-platform reviewer media",
+      "url": "https://github.com/ankitects/anki/blob/main/pylib/anki/media.py",
+      "license": "AGPL-3.0-or-later; behavior reference only",
+      "useFor": ["escape_media_filenames: fields keep raw media names and the reviewer percent-encodes a src (`#` as %23) before showing a side; write_data keeps `#` in a stored name and drops `?`; read from Anki 26.09.3 by scripts/anki-oracle/gen_media_names.py, encodeLocalMediaUrls, lib/cardMediaNames.test.ts"]
     },
     {
       "id": "anki-manual-filtered-decks",

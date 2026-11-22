@@ -24,7 +24,8 @@ import {
     stableMeasuredHeight,
     type EmbeddedWebViewScrollMode,
 } from '../lib/embeddedWebViewScroll';
-import { defaultCardTextCss, nightModeCardCss } from '../lib/cardPageDefaults';
+import { defaultCardTextCss, nativeCardDocument, nightModeCardCss, webCardDocument } from '../lib/cardPageDefaults';
+import { encodeLocalMediaUrls } from '../lib/templateSecurity';
 import { hiddenAudioChromeCss } from '../lib/cardAudioChrome';
 import { MATHJAX_TYPESET_EVENT, MATHJAX_TYPESET_PROMISE, containsMathDelimiters } from '../lib/mathjax';
 import { typesetCardDocument, useMathJaxRuntime } from '../lib/mathjaxRuntime';
@@ -357,8 +358,14 @@ export default function CardWebView({
     // Anki's do. Preference CSS goes last so user-selected accessibility/display settings override
     // imported note-type CSS without mutating the note template itself.
     const themeTextCss = `<style>${defaultCardTextCss(colors.textPrimary)}${nightModeCardCss(colors.textPrimary)}</style>`;
-    const html = `${viewportMeta}${themeTextCss}${renderedHtml}${preferenceCss}${mathJax.css}`;
-    const nativeHtml = `${CARD_CONTENT_CSP_META}${html}`;
+    // The card and the stylesheets the reviewer lays over it: the body of the card document, whose
+    // head carries the policy, the viewport and the theme's defaults.
+    const html = `${renderedHtml}${preferenceCss}${mathJax.css}`;
+    const nativeHtml = nativeCardDocument({
+        head: `${CARD_CONTENT_CSP_META}${viewportMeta}${themeTextCss}`,
+        content: html,
+        nightMode: isDark,
+    });
     // Card media is named by bare filename, so the card is a document in the media folder: on
     // iPhone a file loaded with read access to the folder, which a device needs to show the
     // pictures and play the sounds at all (lib/localMediaDocument.ts).
@@ -507,10 +514,12 @@ export default function CardWebView({
             }).catch(() => audioActiveRef.current?.(false));
         } else {
             audioActiveRef.current?.(true);
+            // The playlist names its media as the card document does (encodeLocalMediaUrls), so a
+            // sound called "Kalp sesi #2.mp3" is found among the visible players and loads.
             webViewRef.current?.injectJavaScript(
                 '(function(){var gen=window.__tusAudioGeneration=(window.__tusAudioGeneration||0)+1;var old=document.getElementById("tus-replay-media");if(old)old.remove();' +
                 'var l=Array.from(document.querySelectorAll("audio,video"));l.forEach(function(m){m.pause();m.onended=null;});' +
-                'var h=document.createElement("div");h.id="tus-replay-media";h.hidden=true;h.innerHTML=' + JSON.stringify(playlistHtml) + ';' +
+                'var h=document.createElement("div");h.id="tus-replay-media";h.hidden=true;h.innerHTML=' + JSON.stringify(encodeLocalMediaUrls(playlistHtml)) + ';' +
                 'var used=[];var a=Array.from(h.querySelectorAll("audio,video")).map(function(m){var v=l.find(function(x){return used.indexOf(x)<0&&x.tagName===m.tagName&&x.getAttribute("src")===m.getAttribute("src");});v=v||m;used.push(v);return v;});document.body.appendChild(h);' +
                 'function s(v){if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage("AUDIO:"+v);}' +
                 'function p(i){if(gen!==window.__tusAudioGeneration)return;if(i>=a.length||(i>0&&window.__tusFinishCurrentOnly)){s(0);return;}var m=a[i];m.currentTime=0;m.playbackRate=' + JSON.stringify(audioPlaybackRate || 1) + ';' +
@@ -551,7 +560,11 @@ export default function CardWebView({
     }, [pauseAudioSignal]);
 
     if (Platform.OS === 'web') {
-        const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8">${CARD_CONTENT_CSP_META}${viewportMeta}<style>html,body{margin:0;padding:0;background:transparent;color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;overflow:${scrollsInside ? 'auto' : 'hidden'};${onCardSwipe ? 'touch-action:pan-y pinch-zoom;' : ''}}</style></head><body>${webHtml}</body></html>`;
+        const fullHtml = webCardDocument({
+            head: `${CARD_CONTENT_CSP_META}${viewportMeta}<style>html,body{margin:0;padding:0;background:transparent;color:${colors.textPrimary};font-size:16px;line-height:24px;font-family:system-ui,-apple-system,sans-serif;overflow:${scrollsInside ? 'auto' : 'hidden'};${onCardSwipe ? 'touch-action:pan-y pinch-zoom;' : ''}}</style>${themeTextCss}`,
+            content: webHtml,
+            nightMode: isDark,
+        });
         return (
             <WebHtmlFrame
                 frameRef={iframeRef}

@@ -76,6 +76,32 @@ describe('local media file links', () => {
         expect(localMediaFileFromUrl(`${MEDIA_BASE}o%CC%88zet.pdf`, MEDIA_BASE)).toBe('özet.pdf');
     });
 
+    it('names a file whose #, ? or % reached the address percent-encoded', () => {
+        // The card document writes these characters of a media name as escapes
+        // (encodeLocalMediaUrls in lib/templateSecurity.ts); the name read back is the stored one.
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}%C5%9Eekil%20%233.png`, MEDIA_BASE)).toBe('Şekil #3.png');
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}Kalp%20sesi%20%232.mp3`, MEDIA_BASE)).toBe('Kalp sesi #2.mp3');
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}a.png%3Fx=1`, MEDIA_BASE)).toBe('a.png?x=1');
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}50%25%20off.pdf`, MEDIA_BASE)).toBe('50% off.pdf');
+        // Unencoded, the same characters still end the file name, and the address names no file.
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}%C5%9Eekil%20#3.png`, MEDIA_BASE)).toBeNull();
+        expect(localMediaFileFromUrl(`${MEDIA_BASE}a.png?x=1`, MEDIA_BASE)).toBeNull();
+    });
+
+    it('still loads only its own document, whatever a media name is called', () => {
+        const mine = localMediaDocumentLocation(MEDIA_BASE, 'abc', 'one')!;
+        for (const url of [
+            `${MEDIA_BASE}%C5%9Eekil%20%233.png`,
+            `${MEDIA_BASE}a.png%3Fx=1`,
+            `${MEDIA_BASE}%2Etus-view-abc.html`,
+            `${MEDIA_BASE}%2Etus-view-abc.html?v=1`,
+            `${mine.fileUri}%3Fv=1`,
+            `${mine.fileUri}%23top`,
+        ]) {
+            expect(isLocalMediaDocumentUrl(url, MEDIA_BASE, mine.uri)).toBe(false);
+        }
+    });
+
     it('is not a file link for the base itself or anything outside the media folder', () => {
         for (const url of [
             MEDIA_BASE,

@@ -1,0 +1,31 @@
+{
+  "stored": {
+    "Şekil #3.png": "şekil #3.png",
+    "Kalp sesi #2.mp3": "kalp sesi #2.mp3",
+    "a.png?x=1": "a.pngx=1",
+    "50% off.pdf": "50% off.pdf",
+    "A b.png": "a b.png"
+  },
+  "rendered": "<img src=\"Şekil #3.png\">",
+  "escaped": {
+    "<img src=\"Şekil #3.png\">": "<img src=\"Şekil%20%233.png\">",
+    "<img src=\"Kalp sesi.png\">": "<img src=\"Kalp%20sesi.png\">",
+    "<img src=\"a%20b.png\">": "<img src=\"a%20b.png\">",
+    "<img src=\"x%23y.png\">": "<img src=\"x%23y.png\">",
+    "<img src=\"50% off.png\">": "<img src=\"50%%20off.png\">",
+    "<img src=q#1.png>": "<img src=q%231.png>",
+    "<img src=\"a&amp;b #1.png\">": "<img src=\"a&amp;b%20%231.png\">",
+    "<img class=\"a\" src=\"Ş #1.png\" alt=\"#\">": "<img class=\"a\" src=\"Ş%20%231.png\" alt=\"#\">",
+    "<audio controls src=\"s #1.mp3\"></audio>": "<audio controls src=\"s%20%231.mp3\"></audio>",
+    "<source src=\"s #1.mp3\">": "<source src=\"s%20%231.mp3\">",
+    "<video poster=\"p #1.png\" src=\"v #1.mp4\"></video>": "<video poster=\"p #1.png\" src=\"v%20%231.mp4\"></video>",
+    "<img src=\"q?.png\">": "<img src=\"q?.png\">",
+    "<a href=\"x#y.pdf\">l</a>": "<a href=\"x#y.pdf\">l</a>",
+    "<img src=\"https://example.com/a.png#b\">": "<img src=\"https://example.com/a.png#b\">",
+    "<style>.a{background:url(\"b #1.png\")}</style>": "<style>.a{background:url(\"b #1.png\")}</style>"
+  },
+  "body": {
+    "day": "card card1 isMac fancy",
+    "night": "card card1 isMac nightMode night_mode fancy"
+  }
+}
