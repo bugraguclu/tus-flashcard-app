@@ -664,7 +664,8 @@ export default function DecksScreen() {
 
     const handleCreateShortcut = async (deck: Deck) => {
         try {
-            const url = Linking.createURL('/', { queryParams: { deck: deck.name } });
+            const webBase = Platform.OS === 'web' ? process.env.EXPO_BASE_URL || '' : '';
+            const url = Linking.createURL(webBase + '/', { queryParams: { deck: deck.name } });
             const visibleDeckName = deck.name.replaceAll('::', ' › ');
 
             if (Platform.OS === 'android') {

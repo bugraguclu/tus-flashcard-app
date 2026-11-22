@@ -18,7 +18,7 @@ export const ACCESS = {
 /** Publish /gizlilik/, /kullanim-kosullari/, /destek/ routes and footer links. */
 export const LEGAL_PAGES = true;
 
-const webAppUrl = 'https://tusankim.vercel.app' + (process.env.TUSANKIM_WEB_BASE ?? '') + '/';
+const webAppUrl = 'https://tusankim.vercel.app/uygulama/';
 
 export const SITE = {
   name: 'TusAnkiM',
