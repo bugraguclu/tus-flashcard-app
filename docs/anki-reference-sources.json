@@ -1559,6 +1559,13 @@
       "useFor": ["cards generated for an existing note take a new sibling's position or one shared next position"]
     },
     {
+      "id": "anki-manual-notetype-save-card-generation",
+      "priority": 1,
+      "platform": "cross-platform card generation and maintenance behavior",
+      "url": "https://docs.ankiweb.net/templates/generation.html#card-generation--deletion",
+      "useFor": ["saving a note type whose front changed or that gained a card type gives its notes the cards they are missing", "no other note-type save creates a card (fields added or moved, fields no front shows renamed or removed, names, backs, styling); measured in Anki 26.09.3 by scripts/anki-oracle/notetype_card_generation.py", "a generated card joins its siblings' home deck; Anki uses the Default deck when they are split, TusAnkiM the note's first card"]
+    },
+    {
       "id": "anki-source-render-card-empty-front",
       "priority": 3,
       "platform": "cross-platform card rendering",

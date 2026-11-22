@@ -1,9 +1,11 @@
 // Saving a note type creates the cards its notes are now missing, as Anki does when a front
 // template changes or a card type is added, and never removes, moves or reschedules a card
 // (https://docs.ankiweb.net/templates/generation.html#card-generation--deletion). The cases follow
-// Anki 26.09.3 as probed by scripts/anki-oracle/notetype_card_generation.py: the new card joins its
-// siblings' home deck, shares a new sibling's position or takes a fresh one, a note without cards
-// gets none, and a cloze note gets a card only for a cloze number that has none.
+// Anki 26.09.3 as probed by scripts/anki-oracle/notetype_card_generation.py: no other save starts
+// it, the new card joins its siblings' home deck, shares a new sibling's position or takes a fresh
+// one, a note without cards gets none, and a cloze note gets a card only for a cloze number that
+// has none. Siblings spread over two decks are the one deliberate difference: Anki puts the card
+// in the Default deck, here it joins the note's first card.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
@@ -19,7 +21,7 @@ import { CATALOG_INSTALL_KEY, CATALOG_PACK_ID } from './catalogRows';
 import { createNote, getCardsForNote, saveAnkiCard } from './noteStore';
 import { saveNoteType } from './noteTypeStore';
 import { createDeck } from './deckStore';
-import { addField, moveField, removeField, renameField, renameNoteType, setCss, updateTemplate } from './noteTypeEditor';
+import { addField, moveField, removeField, renameField, renameNoteType, setCss, setFieldSticky, updateTemplate } from './noteTypeEditor';
 import { changesCardGeneration, generateMissingCardsForNoteType } from './noteTypeCardGeneration';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
@@ -192,6 +194,9 @@ describe('generateMissingCardsForNoteType', () => {
         expect(ordsOf(sound.note.id)).toEqual([0, 1]);
     });
 
+    // Anki 26.09.3 puts this card in the Default deck (the probe's part 3): its siblings share no
+    // deck, and it falls back to Default. Here it joins the note's first card instead, so the
+    // learner finds it beside the note's other cards and not in a deck the list may hide.
     it('puts the card beside the first sibling when the siblings sit in different decks', () => {
         const deckA = createDeck('A');
         const deckB = createDeck('B');
@@ -250,21 +255,43 @@ describe('generateMissingCardsForNoteType', () => {
     });
 });
 
+// Which saves make Anki 26.09.3 bring back a card a note is missing, as the probe's parts 6 and 7
+// print them: only a changed front or a new card type. A field change counts only through the
+// front it rewrites, so a card missing for another reason (an imported package without it) is not
+// brought back by adding, moving or renaming a field no front uses.
 describe('changesCardGeneration', () => {
-    it('is true for what decides which cards a note has', () => {
+    /** Notes is shown only on a back, Spare nowhere. */
+    const WIDE: NoteType = {
+        ...CONDITIONAL,
+        id: 9103,
+        fields: [...CONDITIONAL.fields, field('Notes', 3), field('Spare', 4)],
+        templates: [{ ...CONDITIONAL.templates[0], afmt: '{{Back}}<br>{{Notes}}' }, CONDITIONAL.templates[1]],
+    };
+
+    it('is true for a changed front and a new card type, a field edit that rewrote a front included', () => {
         expect(changesCardGeneration(CONDITIONAL, UNCONDITIONAL)).toBe(true);
+        // Extra is tested by Card 2's front: renaming or removing it rewrites that front.
         expect(changesCardGeneration(CONDITIONAL, renameField(CONDITIONAL, 2, 'More'))).toBe(true);
-        expect(changesCardGeneration(CONDITIONAL, addField(CONDITIONAL, 'Hint').noteType)).toBe(true);
         expect(changesCardGeneration(CONDITIONAL, removeField(CONDITIONAL, 2).noteType)).toBe(true);
-        expect(changesCardGeneration(CONDITIONAL, moveField(CONDITIONAL, 2, 0).noteType)).toBe(true);
         expect(changesCardGeneration(CONDITIONAL, {
             ...CONDITIONAL,
             templates: [...CONDITIONAL.templates, { name: 'Card 3', ord: 2, qfmt: '{{Back}}?', afmt: '{{Front}}' }],
         })).toBe(true);
     });
 
-    it('is false for a name, a back template and the styling', () => {
+    it('is false for a field added or moved, and for a field no front uses renamed or removed', () => {
+        expect(changesCardGeneration(WIDE, addField(WIDE, 'Hint').noteType)).toBe(false);
+        expect(changesCardGeneration(WIDE, moveField(WIDE, 4, 0).noteType)).toBe(false);
+        expect(changesCardGeneration(WIDE, renameField(WIDE, 3, 'Remarks'))).toBe(false);
+        expect(changesCardGeneration(WIDE, removeField(WIDE, 3).noteType)).toBe(false);
+        expect(changesCardGeneration(WIDE, renameField(WIDE, 4, 'Unused'))).toBe(false);
+        expect(changesCardGeneration(WIDE, removeField(WIDE, 4).noteType)).toBe(false);
+        expect(changesCardGeneration(WIDE, setFieldSticky(WIDE, 0, true))).toBe(false);
+    });
+
+    it('is false for a name, a card type name, a back template and the styling', () => {
         expect(changesCardGeneration(CONDITIONAL, renameNoteType(CONDITIONAL, 'Renamed'))).toBe(false);
+        expect(changesCardGeneration(CONDITIONAL, updateTemplate(CONDITIONAL, 0, { name: 'Recognition' }))).toBe(false);
         expect(changesCardGeneration(CONDITIONAL, updateTemplate(CONDITIONAL, 1, { afmt: '{{Front}}<br>', name: 'Reverse' }))).toBe(false);
         expect(changesCardGeneration(CONDITIONAL, setCss(CONDITIONAL, '.card { color: red; }'))).toBe(false);
         expect(changesCardGeneration(CONDITIONAL, { ...CONDITIONAL })).toBe(false);

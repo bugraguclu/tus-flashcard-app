@@ -1,8 +1,10 @@
 // A note-type edit here (fields, templates, a new note type) writes the note type and its notes but
 // no card. Anki keeps a study session's queue across such a change, since only cards, decks and
 // options rebuild it (https://github.com/ankitects/anki/blob/main/rslib/src/ops.rs,
-// `requires_study_queue_rebuild`), so app/note-type.tsx passes `keepsStudyQueue`. This pins that
-// claim: if one of these paths ever starts adding or removing cards, the flag must go.
+// `requires_study_queue_rebuild`), so app/note-type.tsx passes `keepsStudyQueue`, unless the save
+// then creates the cards a changed front brings (lib/noteTypeCardGeneration.ts), which rebuilds
+// the queue as Anki's card changes do. This pins that claim: if one of these paths ever starts
+// adding or removing cards itself, the flag must go.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';

@@ -3,9 +3,12 @@
  * now missing whenever a note type is saved with a changed front template or a new card type, and
  * leaves the cards that became empty to Empty Cards
  * (https://docs.ankiweb.net/templates/generation.html#card-generation--deletion). The details
- * follow Anki 26.09.3 as scripts/anki-oracle/notetype_card_generation.py prints them: the card
- * joins its siblings, shares a new sibling's position or takes a fresh one for its note, a note
- * without cards gets none, and a cloze note gets a card only for a cloze number that has none.
+ * follow Anki 26.09.3 as scripts/anki-oracle/notetype_card_generation.py prints them: only a
+ * changed front or a new card type starts it, the card joins its siblings' home deck, shares a
+ * new sibling's position or takes a fresh one for its note, a note without cards gets none, and a
+ * cloze note gets a card only for a cloze number that has none. One difference is deliberate:
+ * when the siblings sit in different decks Anki puts the card in the Default deck, and here it
+ * joins the note's first card, so it is found beside the note's other cards.
  */
 
 import { dbUpsertFtsCard, getDB } from './db';
@@ -14,18 +17,20 @@ import { clozeNumbersForNote, shouldGenerateCard } from './templates';
 import { assertCatalogNoteMutable, PaidCatalogProtectionError } from './catalogProtection';
 import { createCardForNote, nextNewCardPosition, notePositionForPass, searchIndexCardFromNote } from './noteStore';
 
-/** What decides which cards a note has: the kind, the field names in order and every front. */
+/** What makes Anki look for missing cards when a note type is saved: its card types and fronts. */
 function generationInputs(noteType: NoteType): string {
     return JSON.stringify([
         noteType.kind,
-        noteType.fields.map((field) => field.name),
         noteType.templates.map((template) => [template.ord, template.qfmt]),
     ]);
 }
 
 /**
- * Whether a note of the type may need a card after the change that it did not need before: a
- * front, the card types or the fields differ. A name, a back template and the styling never do.
+ * Whether saving the type gives its notes the cards they are missing, as Anki 26.09.3 does: a
+ * front changed or a card type was added, a field rename or removal that rewrote a front
+ * included. A name, a field added or moved, a field no front uses, a back template, the styling
+ * and a card type's name never do (scripts/anki-oracle/notetype_card_generation.py, part 7), so a
+ * card missing for another reason is not brought back by them.
  */
 export function changesCardGeneration(before: NoteType, after: NoteType): boolean {
     return generationInputs(before) !== generationInputs(after);
@@ -112,8 +117,8 @@ function isLockedByCatalog(note: Note): boolean {
  * Create the cards the notes of `noteType` are missing, in one transaction, and return how many.
  * Call it after the note type is saved. No card is removed, moved or rescheduled: a card that
  * became empty stays for Empty Cards. A new card goes to the home deck of the note's first card
- * (Anki uses the siblings' deck when they share one), as a new card on a new sibling's position,
- * or on one fresh position for its note. A note without any card, a note the catalog locks and a
+ * (Anki uses the siblings' deck when they share one, and the Default deck when they do not), as
+ * a new card on a new sibling's position, or on one fresh position for its note. A note without any card, a note the catalog locks and a
  * note whose stored data cannot be read are left as they are.
  */
 export function generateMissingCardsForNoteType(noteType: NoteType): number {

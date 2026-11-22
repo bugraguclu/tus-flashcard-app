@@ -12,7 +12,9 @@ before and after, so the output shows:
   * a back-template or styling change creates nothing, even where a card is missing;
   * removing a field that a front's condition tested creates the cards too;
   * a cloze type creates a card only for a cloze number without one, and only when its front is saved;
-  * which other saves (a field added, moved, renamed or removed, a card type added) fill a gap.
+  * which other saves (a field added, moved, renamed or removed, a card type added) fill a gap;
+  * that only a front that changes fills one: a field a front shows renamed does, a field only a
+    back shows or no template shows renamed or removed does not, nor a name, sticky or sort field.
 
 Usage (from scripts/anki-oracle):
     ./run.sh notetype_card_generation.py
@@ -200,6 +202,38 @@ def main():
 
         print("   a card type added:    %d" % after(add_template))
         show(col, "   the note after the card type was added", [("note", gap_note)])
+
+        # 7. Only a changed front fills a gap. Each change gets a fresh type whose Back is shown on
+        #    a front, Extra only on a back and Spare nowhere, and a note missing its Card 2.
+        print("\n7. Card 2 deleted behind Anki's back, then one change saved on a fresh type; Card 2 created again?")
+        fresh = [0]
+
+        def on_fresh_type(label, change):
+            fresh[0] += 1
+            model = new_type(col, "Trigger %d" % fresh[0], ["Front", "Back", "Extra", "Spare"], [
+                ("{{Front}}", "{{Back}}<br>{{Extra}}"),
+                ("{{Back}}", "{{Front}}"),
+            ])
+            note_id = add(col, model, deck_a, {"Front": "f", "Back": "b", "Extra": "x"})
+            col.db.execute("delete from cards where nid = ? and ord = 1", note_id)
+            current = col.models.get(model["id"])
+            change(current)
+            col.models.update_dict(current)
+            print("   %-46s %d" % (label + ":", len(col.db.list("select id from cards where nid = ? and ord = 1", note_id))))
+
+        models = col.models
+        on_fresh_type("a field a front shows renamed (Back)", lambda m: models.rename_field(m, m["flds"][1], "Answer"))
+        on_fresh_type("a field only a back shows renamed (Extra)", lambda m: models.rename_field(m, m["flds"][2], "More"))
+        on_fresh_type("a field no template shows renamed (Spare)", lambda m: models.rename_field(m, m["flds"][3], "Unused"))
+        on_fresh_type("a field only a back shows removed (Extra)", lambda m: models.remove_field(m, m["flds"][2]))
+        on_fresh_type("a field no template shows removed (Spare)", lambda m: models.remove_field(m, m["flds"][3]))
+        on_fresh_type("a field made sticky", lambda m: m["flds"][0].__setitem__("sticky", True))
+        on_fresh_type("the sort field changed", lambda m: models.set_sort_index(m, 1))
+        on_fresh_type("the note type renamed", lambda m: m.__setitem__("name", m["name"] + " renamed"))
+        on_fresh_type("a card type renamed", lambda m: m["tmpls"][1].__setitem__("name", "Production"))
+        on_fresh_type("a back changed", lambda m: m["tmpls"][0].__setitem__("afmt", "{{Back}}!"))
+        on_fresh_type("the styling changed", lambda m: m.__setitem__("css", m["css"] + "\n.card { color: red; }"))
+        on_fresh_type("another card type's front changed", lambda m: m["tmpls"][0].__setitem__("qfmt", "{{Front}}!"))
     finally:
         col.close()
         shutil.rmtree(work, ignore_errors=True)
