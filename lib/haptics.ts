@@ -12,3 +12,15 @@ export function longPressHaptic(): void {
         // Haptics unavailable (web, or a device without a Taptic Engine).
     }
 }
+
+/**
+ * The light tap as a menu opens out of the button that was pressed (the deck list's ＋, the
+ * Kronometre's tools): the finger feels the menu arrive before it has finished growing.
+ */
+export function menuOpenHaptic(): void {
+    try {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+    } catch {
+        // Haptics unavailable (web, or a device without a Taptic Engine).
+    }
+}

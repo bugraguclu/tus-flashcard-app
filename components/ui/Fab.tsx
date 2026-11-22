@@ -5,6 +5,7 @@ import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
+import { menuOpenHaptic } from '../../lib/haptics';
 import { PopoverBackdrop, PopoverItem, PopoverModal, usePopoverProgress } from '../Popover';
 import PressableScale from '../PressableScale';
 import { Radius, Shadow } from './tokens';
@@ -82,7 +83,24 @@ export function Fab({ accessibilityLabel, onPress, children, shape = 'rounded', 
     );
 }
 
-/** The open menu's button: its icon turns 45° (＋ becomes ×) and its fill deepens as the menu opens. */
+/** How much the open menu's button grows as the menu opens: lifted toward the finger, not jumping. */
+const OPEN_GROW = 1.06;
+/** How far its glow reaches past the button once open. */
+const GLOW_GROW = 1.3;
+/** How strong the glow is at its fullest: a hint of light, not a second button. */
+const GLOW_OPACITY = 0.35;
+/** The glow's soft edge: a wide shadow of its own colour (a CSS box shadow in a browser). */
+function glowShadow(color: string): ViewStyle {
+    return Platform.OS === 'web'
+        ? ({ boxShadow: `0 0 24px 6px ${color}` } as ViewStyle)
+        : { shadowColor: color, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 18 };
+}
+
+/**
+ * The open menu's button: its icon turns 45° (＋ becomes ×), its fill deepens, it grows a little
+ * and a soft glow of its own colour lights up behind it as the menu opens, all on the menu's own
+ * clock, so they shrink back together as it closes. Reduce Motion keeps the glow's fade only.
+ */
 function OpenFab({ shape, color, openColor, turns, icon, onPress, label, style }: {
     shape: FabShape;
     color: string;
@@ -101,10 +119,29 @@ function OpenFab({ shape, color, openColor, turns, icon, onPress, label, style }
     const fill = progress && openColor !== color
         ? progress.interpolate({ inputRange: [0, 1], outputRange: [color, openColor] })
         : openColor;
+    const grow = (to: number) => (progress && !reduceMotion
+        ? progress.interpolate({ inputRange: [0, 1], outputRange: [1, to] })
+        : 1);
+    const corners = shape === 'round' ? styles.round : styles.rounded;
     return (
-        <Fab accessibilityLabel={label} onPress={onPress} shape={shape} color={fill} expanded style={style}>
-            <Animated.View style={{ transform: [{ rotate }] }}>{icon}</Animated.View>
-        </Fab>
+        <Animated.View style={[style, styles.openFab, { transform: [{ scale: grow(OPEN_GROW) }] }]} pointerEvents="box-none">
+            <Animated.View
+                pointerEvents="none"
+                style={[
+                    styles.glow,
+                    corners,
+                    { backgroundColor: openColor },
+                    glowShadow(openColor),
+                    {
+                        opacity: progress ? progress.interpolate({ inputRange: [0, 1], outputRange: [0, GLOW_OPACITY] }) : GLOW_OPACITY,
+                        transform: [{ scale: grow(GLOW_GROW) }],
+                    },
+                ]}
+            />
+            <Fab accessibilityLabel={label} onPress={onPress} shape={shape} color={fill} expanded>
+                <Animated.View style={{ transform: [{ rotate }] }}>{icon}</Animated.View>
+            </Fab>
+        </Animated.View>
     );
 }
 
@@ -161,6 +198,9 @@ export function SpeedDial({
     shape = 'rounded', color, openColor, icon, turnsToClose = false, openLabel, closeLabel, stretch = false, children,
 }: SpeedDialProps) {
     const colors = useThemeColors();
+    React.useEffect(() => {
+        if (visible) menuOpenHaptic();
+    }, [visible]);
     const insets = useSafeAreaInsets();
     const { width: windowWidth } = useWindowDimensions();
     const { l } = useI18n();
@@ -304,6 +344,9 @@ const styles = StyleSheet.create({
     rounded: { borderRadius: Radius.sheet },
     round: { borderRadius: FAB_SIZE / 2 },
     floating: { position: 'absolute' },
+    openFab: { width: FAB_SIZE, height: FAB_SIZE },
+    // Light behind the button: its own colour, faint, with a wide soft shadow of the same colour.
+    glow: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
     overlay: { flex: 1, justifyContent: 'flex-end' },
     actions: { gap: Spacing.md },
     actionsHug: { alignItems: 'flex-end' },

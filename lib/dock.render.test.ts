@@ -60,6 +60,7 @@ vi.mock('../components/Popover', () => ({
     usePopoverProgress: () => null,
 }));
 vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ l: (tr: string) => tr }) }));
+vi.mock('../lib/haptics', () => ({ menuOpenHaptic: () => {} }));
 vi.mock('../hooks/useReduceMotion', () => ({ useReduceMotion: () => env.reduceMotion }));
 import { Dock, DockItem } from '../components/ui/Dock';
 import { exitDuration, MotionDuration } from '../lib/motion';
