@@ -58,8 +58,8 @@
       "permanent": false
     },
     {
-      "source": "/:route(account|backups|browser|card-info|catalog|deck-options|deck-overview|decks|editor|empty-cards|export|import|note-type|note-types|settings|sign-in|stats|stopwatch|study-analysis|study-calendar|study-clear|study-plan-wizard|study-plans|x-callback-url)/:path*",
-      "destination": "/uygulama/:route/:path*",
+      "source": "/:appPath((?:account|backups|browser|card-info|catalog|deck-options|deck-overview|decks|editor|empty-cards|export|import|note-type|note-types|settings|sign-in|stats|stopwatch|study-analysis|study-calendar|study-clear|study-plan-wizard|study-plans|x-callback-url)(?:/[^/]+)*){/}?",
+      "destination": "/uygulama/:appPath",
       "permanent": false
     }
   ]
