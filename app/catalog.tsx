@@ -29,10 +29,9 @@ import { AppDialog } from '../components/ui/Dialog';
 import { Notice } from '../components/ui/Feedback';
 import { CheckIcon } from '../components/ui/icons';
 import { ListRow } from '../components/ui/Rows';
-import { Radius, Shadow, Type } from '../components/ui/tokens';
+import { Shadow, Type } from '../components/ui/tokens';
 import { BKA_CATALOG_DEFAULT_ROOT_DECK, getBkaCatalogRootDeckName } from '../lib/bkaCatalog';
 import { getDeckByName } from '../lib/deckManager';
-import { studySubjectInitial } from '../lib/studyCalendar';
 
 /** Deep, near-black green: reads as premium in both themes and keeps the hero legible. */
 const HERO_TOP = '#0d3128';
@@ -253,8 +252,8 @@ export default function CatalogScreen() {
                         <Text style={styles.heroBadgeText}>
                             {/* Nothing is bought while the pack is free, so neither badge may say so. */}
                             {purchaseSimulationEnabled
-                                ? (owned ? l('AÇIK', 'UNLOCKED') : l('HAZIR KART PAKETİ', 'READY-MADE CARD PACK'))
-                                : (owned ? l('SATIN ALINDI', 'PURCHASED') : l('PREMIUM KART PAKETİ', 'PREMIUM CARD PACK'))}
+                                ? (owned ? l('Açık', 'Unlocked') : l('Hazır kart paketi', 'Ready-made card pack'))
+                                : (owned ? l('Satın alındı', 'Purchased') : l('Premium kart paketi', 'Premium card pack'))}
                         </Text>
                     </View>
                     <Text style={styles.heroTitle}>
@@ -324,11 +323,6 @@ export default function CatalogScreen() {
                                             `${number(course.cards)} cards · ${subdeckCount} subdecks`,
                                         )
                                         : l(`${number(course.cards)} kart`, `${number(course.cards)} cards`)}
-                                    icon={(
-                                        <View style={styles.courseIconTile}>
-                                            <Text style={styles.courseInitial}>{studySubjectInitial(course.name)}</Text>
-                                        </View>
-                                    )}
                                     accessory={owned ? undefined : (
                                         <View style={styles.courseLock}>
                                             <LockGlyph color={colors.textMuted} size={16} />
@@ -501,14 +495,9 @@ function createStyles(colors: ColorScheme, footerInset: number) {
             backgroundColor: HERO_TOP,
             ...Shadow.card,
         },
-        heroBadge: {
-            alignSelf: 'flex-start',
-            paddingHorizontal: 10, paddingVertical: Spacing.s6,
-            borderRadius: Radius.pill,
-            backgroundColor: 'rgba(125,220,174,0.16)',
-            borderWidth: 1, borderColor: 'rgba(125,220,174,0.4)',
-        },
-        heroBadgeText: { color: HERO_ACCENT, fontSize: FontSize.xs, fontWeight: '600', letterSpacing: 1 },
+        // The pack's kind, a small line over the title: no glowing pill, no capitals.
+        heroBadge: { alignSelf: 'flex-start' },
+        heroBadgeText: { color: HERO_ACCENT, fontSize: FontSize.sm, fontWeight: '600' },
         heroTitle: {
             color: HERO_TEXT, fontSize: FontSize.title, lineHeight: 38, fontWeight: '600',
             letterSpacing: -0.8, marginTop: Spacing.lg,
@@ -529,18 +518,11 @@ function createStyles(colors: ColorScheme, footerInset: number) {
         heroPriceNote: { color: HERO_MUTED, fontSize: FontSize.sm, fontWeight: '600', flexShrink: 1 },
 
         courseCard: { marginTop: Spacing.xl },
-        // The course's initial, in the row's icon column.
-        courseIconTile: {
-            width: 28, height: 28, borderRadius: Radius.inset,
-            alignItems: 'center', justifyContent: 'center',
-            backgroundColor: colors.accentLight,
-        },
-        courseInitial: { color: colors.accent, fontSize: FontSize.md, fontWeight: '600' },
         courseLock: { opacity: 0.6 },
 
         topicWell: {
-            // Under the course's name: past the row's inset, its icon column and the gap after it.
-            paddingLeft: Spacing.lg + 24 + Spacing.md,
+            // Under the course's name, past the row's inset (the row has no icon column).
+            paddingLeft: Spacing.lg,
             paddingRight: Spacing.lg,
             paddingBottom: Spacing.sm,
             backgroundColor: colors.bgSecondary,

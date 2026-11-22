@@ -10,7 +10,7 @@ import { Card, Section, SectionFootnote } from '../components/ui/Card';
 import { Chip, SegmentedControl } from '../components/ui/Choice';
 import { EmptyState, ProgressBar } from '../components/ui/Feedback';
 import { BackIcon, ForwardIcon } from '../components/ui/icons';
-import { Radius, Type, READABLE_WIDTH } from '../components/ui/tokens';
+import { Type, READABLE_WIDTH } from '../components/ui/tokens';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useI18n } from '../hooks/useI18n';
@@ -25,7 +25,6 @@ import {
     studyDayYmd,
     type StudyAnalysisPeriod,
 } from '../lib/studyAnalysis';
-import { studySubjectInitial } from '../lib/studyCalendar';
 import { readStudyPlansForDisplay } from '../lib/studyPlanStore';
 import { addDaysYmd, ymdToLocalDate, type StudyPlanBlock } from '../lib/studyPlans';
 
@@ -107,7 +106,6 @@ export default function StudyAnalysisScreen() {
                         accessible
                         accessibilityLabel={`${course.subject}: ${duration(course.studyMs)}, ${daysLabel(course.days)}, ${lastLabel(course.lastStartMs)}`}
                     >
-                        <View style={styles.tile}><Text style={styles.tileText}>{studySubjectInitial(course.subject)}</Text></View>
                         <View style={styles.courseCopy}>
                             <Text style={styles.courseName} numberOfLines={1}>{course.subject}</Text>
                             <Text style={styles.courseMeta}>{lastLabel(course.lastStartMs)}</Text>
@@ -286,8 +284,6 @@ function createStyles(colors: ColorScheme) {
         content: { width: '100%', maxWidth: READABLE_WIDTH, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.lg },
         groupMeta: { fontSize: FontSize.sm, color: colors.textSecondary },
         courseRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm },
-        tile: { width: 36, height: 36, borderRadius: Radius.inset, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },
-        tileText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
         courseCopy: { flex: 1, gap: Spacing.xxs },
         courseName: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
         courseMeta: { fontSize: FontSize.xs, color: colors.textMuted },

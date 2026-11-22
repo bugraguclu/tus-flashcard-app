@@ -22,7 +22,6 @@ import { formatStudyTotal } from '../lib/stopwatch';
 import { recentStudySubjects } from '../lib/stopwatchStore';
 import { studyDayYmd } from '../lib/studyAnalysis';
 import { longPressHaptic } from '../lib/haptics';
-import { studySubjectInitial } from '../lib/studyCalendar';
 import { loadStudyPlans, removeStudyPlans, saveStudyPlans } from '../lib/studyPlanStore';
 import { WEEKDAYS_MONDAY_FIRST, emptyStudyPlan, formatPlanClock, ymdToLocalDate, type StudyPlanBlock } from '../lib/studyPlans';
 
@@ -122,7 +121,6 @@ export default function StudyPlansScreen() {
 
     const planSummary = (plan: StudyPlanBlock) => (
         <View style={styles.planBody}>
-            <View style={styles.tile}><Text style={styles.tileText}>{studySubjectInitial(plan.subject)}</Text></View>
             <View style={styles.planCopy}>
                 <Text style={styles.subject} numberOfLines={1}>{plan.subject}</Text>
                 <Text style={styles.meta}>
@@ -317,8 +315,6 @@ function createStyles(colors: ColorScheme) {
         title: { ...Type.sectionTitle, fontWeight: '600', color: colors.accent },
         groupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
         planBody: { flexDirection: 'row', gap: Spacing.md },
-        tile: { width: 38, height: 38, borderRadius: Radius.inset, backgroundColor: colors.accentLight, alignItems: 'center', justifyContent: 'center' },
-        tileText: { fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
         planCopy: { flex: 1, gap: Spacing.xxs },
         subject: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
         meta: { fontSize: FontSize.sm, color: colors.textSecondary },

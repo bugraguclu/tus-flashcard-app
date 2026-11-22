@@ -94,8 +94,7 @@ export function BrowserCardRow({
     const deckName = deckById.get(item.deckId)?.name ?? sub?.name ?? item.subject;
     const homeDeckName = item.rawCard?.odid ? deckById.get(item.rawCard.odid)?.name : undefined;
     const cardDeckText = (homeDeckName ? `${deckName} (${homeDeckName})` : deckName).replaceAll('::', ' › ');
-    const statusColor = item.state.status === 'learning' ? colors.badgeLearn : colors.badgeReview;
-    const statusBg = item.state.status === 'learning' ? colors.badgeLearnBg : colors.badgeReviewBg;
+    const statusColor = item.state.status === 'learning' ? colors.stateLabelLearn : colors.stateLabelReview;
     const noteDeckText = isNotesMode
         ? noteSummary.deckCount > 1
             ? l(`${noteSummary.deckCount} deste`, `${noteSummary.deckCount} decks`)
@@ -161,6 +160,11 @@ export function BrowserCardRow({
             <View style={styles.cardItemHeader}>
                 {selectionMode && <View style={styles.selectionMark}><Checkbox checked={isSelected} /></View>}
                 <Body style={styles.cardBody} {...bodyProps}>
+                    {!isNotesMode && item.state.status !== 'new' ? (
+                        <Text style={[styles.stateLabel, { color: statusColor }]} numberOfLines={1}>
+                            {item.state.status === 'learning' ? t('anki.learn') : t('anki.review')}
+                        </Text>
+                    ) : null}
                     <Text
                         style={[
                             styles.cardQuestion,
@@ -179,13 +183,6 @@ export function BrowserCardRow({
                                 ? `${rowNoteType ? localizeNoteTypeName(locale, rowNoteType.name) : l('Not', 'Note')} · ${noteDeckText}`
                                 : `${cardDeckText}${item.topic ? ` · ${localizeTopicName(locale, item.topic)}` : ''}`}
                         </Text>
-                        {!isNotesMode && item.state.status !== 'new' ? (
-                            <View style={[styles.statusDot, { backgroundColor: statusBg }]}>
-                                <Text style={[styles.statusDotText, { color: statusColor }]}>
-                                    {item.state.status === 'learning' ? t('anki.learn') : t('anki.review')}
-                                </Text>
-                            </View>
-                        ) : null}
                     </View>
                     {showAnswerSnippet && !isExpanded && (
                         <Text
@@ -255,7 +252,7 @@ export function BrowserCardRow({
             {isExpanded && !selectionMode && (
                 <View style={styles.expandedContent}>
                     <View style={styles.answerBox}>
-                        <Text style={styles.answerLabel}>{isNotesMode ? l('İLK KARTIN CEVABI', 'FIRST CARD ANSWER') : l('CEVAP', 'ANSWER')}</Text>
+                        <Text style={styles.answerLabel}>{isNotesMode ? l('İlk kartın cevabı', 'First card answer') : l('Cevap', 'Answer')}</Text>
                         <Text style={[styles.answerContent, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]}>{humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames }) || '—'}</Text>
                     </View>
 

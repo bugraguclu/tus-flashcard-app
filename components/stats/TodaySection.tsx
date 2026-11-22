@@ -9,7 +9,7 @@ import type { StudyStreak, TodayAnswerStats } from '../../lib/reviewLogger';
 import WeekStreakStrip from '../WeekStreakStrip';
 import { Card } from '../ui/Card';
 import { ChevronRightIcon } from '../ui/icons';
-import { Radius } from '../ui/tokens';
+import FlameGlyph from '../FlameGlyph';
 import { useStatsFormat } from './useStatsFormat';
 
 interface TodaySectionProps {
@@ -48,7 +48,7 @@ export default function TodaySection({ today, streak, rolloverHour, dataVersion,
             title={l('Bugün', 'Today')}
             accessory={(
                 <TouchableOpacity
-                    style={[styles.streakPill, streak.current === 0 && styles.streakPillIdle]}
+                    style={[styles.streakPill, null]}
                     onPress={() => router.push('/stopwatch' as any)}
                     activeOpacity={0.7}
                     // The pill is drawn 24 points tall; the slop makes up a finger's 44.
@@ -57,8 +57,9 @@ export default function TodaySection({ today, streak, rolloverHour, dataVersion,
                     accessibilityLabel={l(`Çalışma serisi: ${days(streak.current)}`, `Study streak: ${days(streak.current)}`)}
                     accessibilityHint={l('Kronometreyi açar', 'Opens the stopwatch')}
                 >
-                    <Text style={[styles.streakText, streak.current === 0 && styles.streakTextIdle]}>{days(streak.current)}</Text>
-                    <ChevronRightIcon color={streak.current === 0 ? colors.textSecondary : colors.streak} size={16} />
+                    {streak.current > 0 ? <FlameGlyph size={16} /> : null}
+                    <Text style={styles.streakText}>{days(streak.current)}</Text>
+                    <ChevronRightIcon color={colors.textMuted} size={16} />
                 </TouchableOpacity>
             )}
         >
@@ -96,14 +97,10 @@ function createStyles(colors: ColorScheme) {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 4,
-            paddingHorizontal: 10,
             paddingVertical: 4,
-            borderRadius: Radius.pill,
-            backgroundColor: colors.streakBg,
         },
-        streakPillIdle: { backgroundColor: colors.bgInput },
-        streakText: { color: colors.streak, fontSize: FontSize.sm, fontWeight: '600' },
-        streakTextIdle: { color: colors.textSecondary },
+        // The flame carries the streak's colour; the words stay in the text greys, with no pill.
+        streakText: { color: colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
         figures: { flexDirection: 'row', gap: Spacing.sm },
         figure: { flex: 1, minWidth: 0 },
         value: { color: colors.textPrimary, fontSize: FontSize.xxl, fontWeight: '600' },

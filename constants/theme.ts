@@ -39,6 +39,10 @@ const LightColors = {
     badgeLearnBg: '#fcf1e3',
     badgeReview: '#1f8a52',
     badgeReviewBg: '#e4f3ea',
+    // The Browser row's card state, written as a quiet label over the question: the badge hues
+    // pulled toward the text greys so the word sits with the row instead of shouting over it.
+    stateLabelLearn: '#a5672a',
+    stateLabelReview: '#3f7d5d',
 
     streak: '#e8761a',
     streakBg: '#fdf0e4',
@@ -132,6 +136,8 @@ const DarkColors: ColorScheme = {
     badgeLearnBg: '#382916',
     badgeReview: '#3cb874',
     badgeReviewBg: '#163222',
+    stateLabelLearn: '#c9a37c',
+    stateLabelReview: '#8ab89f',
 
     streak: '#f0904a',
     streakBg: '#382617',

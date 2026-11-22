@@ -254,8 +254,8 @@ export function FindDuplicatesDialog({
                                 accessibilityLabel={`${noteCount(group.noteIds.length, l)}: ${shown}`}
                                 accessibilityHint={l('Bu notları listede gösterir', 'Shows these notes in the list')}
                             >
-                                <Text style={toolStyles.groupCount}>{noteCount(group.noteIds.length, l)}</Text>
                                 <Text style={toolStyles.groupValue} numberOfLines={2}>{shown}</Text>
+                                <Text style={toolStyles.groupCount}>{noteCount(group.noteIds.length, l)}</Text>
                                 <ChevronRightIcon color={colors.textMuted} />
                             </TouchableOpacity>
                         );

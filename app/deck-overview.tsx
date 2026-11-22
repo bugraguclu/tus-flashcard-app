@@ -45,7 +45,7 @@ import { Badge } from '../components/ui/Choice';
 import { EmptyState, LoadingState } from '../components/ui/Feedback';
 import { MoreIcon, RefreshIcon } from '../components/ui/icons';
 import { ListRow } from '../components/ui/Rows';
-import { Type, Radius } from '../components/ui/tokens';
+import { Type } from '../components/ui/tokens';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { getDeckOverviewSnapshot } from '../lib/screenSnapshots';
 
@@ -229,7 +229,7 @@ export default function DeckOverviewScreen() {
             <View style={styles.scrollFrame}>
             <Animated.ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + Spacing.xxxl }]} {...pull.scrollProps}>
                 <View style={styles.hero}>
-                    <View style={[styles.deckIcon, deck.isFiltered && styles.deckIconFiltered]}>
+                    <View style={styles.deckIcon}>
                         <DeckOverflowGlyph
                             kind={deck.isFiltered ? 'filteredDeck' : 'deck'}
                             color={deck.isFiltered ? colors.info : colors.accent}
@@ -433,17 +433,8 @@ function createStyles(colors: ColorScheme) {
         scrollFrame: { flex: 1 },
         content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.xl, gap: Spacing.md, alignItems: 'stretch' },
         hero: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingVertical: Spacing.sm },
-        deckIcon: {
-            width: 52,
-            height: 52,
-            borderRadius: Radius.inset,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.accentLight,
-            borderWidth: 1,
-            borderColor: colors.border,
-        },
-        deckIconFiltered: { backgroundColor: colors.infoBg, borderColor: colors.info },
+        // The deck glyph on its own beside the name; no tinted, bordered square behind it.
+        deckIcon: { width: 40, height: 52, alignItems: 'center', justifyContent: 'center' },
         heroText: { flex: 1 },
         heroEyebrow: { color: colors.accent, marginBottom: 3 },
         deckTitle: { fontSize: FontSize.xxl, fontWeight: '600', color: colors.textPrimary },

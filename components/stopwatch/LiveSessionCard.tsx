@@ -1,7 +1,7 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
-import { Shadow, Radius } from '../ui/tokens';
+import { Shadow } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import { blockProgress, formatStopwatchClock, type StudyKind } from '../../lib/stopwatch';
 import { formatClockHhMm, formatSessionDuration } from '../../lib/studyCalendar';
@@ -124,17 +124,11 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                             </View>
                         </View>
                     </View>
-                    <View
-                        style={[
-                            local.sessionPill,
-                            live.onBreak
-                                ? { backgroundColor: colors.streakBg, borderColor: colors.streak }
-                                : { backgroundColor: colors.accentLight, borderColor: colors.border },
-                        ]}
-                    >
-                        <Text style={[local.sessionText, { color: colors.textPrimary }]}>
+                    <View style={local.sessionPill}>
+                        <Text style={[local.sessionText, { color: colors.textSecondary }]}>
                             {live.onBreak ? l('Mola süreniz: ', 'Break time: ') : l('Oturum süreniz: ', 'Session time: ')}
-                            <Text style={local.sessionClock}>{formatStopwatchClock(live.onBreak ? live.phaseMs : live.studyMs)}</Text>
+                            {/* A break shows in the clock's colour; nothing sits behind the line. */}
+                            <Text style={[local.sessionClock, { color: live.onBreak ? colors.streak : colors.textPrimary }]}>{formatStopwatchClock(live.onBreak ? live.phaseMs : live.studyMs)}</Text>
                         </Text>
                     </View>
                     <View style={[local.rule, { backgroundColor: colors.borderLight }]} />
@@ -175,13 +169,7 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
 const local = StyleSheet.create({
     card: { flexDirection: 'column', gap: Spacing.sm },
     top: { flexDirection: 'row', gap: Spacing.md },
-    sessionPill: {
-        alignItems: 'center',
-        borderRadius: Radius.pill,
-        borderWidth: StyleSheet.hairlineWidth,
-        paddingVertical: 5,
-        paddingHorizontal: Spacing.md,
-    },
+    sessionPill: { alignItems: 'center', paddingVertical: Spacing.xxs },
     sessionText: { fontSize: FontSize.md },
     sessionClock: { fontWeight: '800', fontVariant: ['tabular-nums'] },
     rule: { height: StyleSheet.hairlineWidth },

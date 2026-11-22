@@ -3220,9 +3220,7 @@ export default function StudyScreen() {
                                         );
                                     })}
                                     {previewMode ? (
-                                        <View style={styles.previewBadge}>
-                                            <Text style={styles.previewBadgeText}>{l('Önizleme', 'Preview')}</Text>
-                                        </View>
+                                        <Text style={styles.previewLabel} numberOfLines={1}>{`· ${l('Önizleme', 'Preview')}`}</Text>
                                     ) : null}
                                 </View>
                                 {newStudyScreenEnabled && streak.current > 0 ? (
@@ -3681,16 +3679,11 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     classicToolbarTitleNarrow: { fontSize: FontSize.md, lineHeight: 17 },
     toolbarActions: { flexDirection: 'row', alignItems: 'center', marginLeft: 'auto' },
 
-    streakChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.streakBg,
-        paddingHorizontal: 10,
-        paddingVertical: 3,
-        borderRadius: Radius.pill,
-    },
+    // The streak beside the deck name: the flame carries the colour, the number stays in the
+    // text greys, and nothing sits behind them.
+    streakChip: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: Spacing.xxs },
     streakChipIdle: { opacity: 0.55 },
-    streakChipText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.streak },
+    streakChipText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
 
     contentArea: { flex: 1, position: 'relative', overflow: 'hidden' },
     cardContext: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: Spacing.s6 },
@@ -3719,14 +3712,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     cardTopicCrumb: { flexShrink: 1, minWidth: 0 },
     cardSubject: { fontSize: FontSize.sm, fontWeight: '600', color: colors.accent },
     cardTopic: { fontSize: FontSize.sm, color: colors.textMuted },
-    previewBadge: {
-        flexShrink: 0,
-        paddingHorizontal: 8,
-        paddingVertical: Spacing.xxs,
-        borderRadius: Radius.pill,
-        backgroundColor: colors.infoBg,
-    },
-    previewBadgeText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.info, letterSpacing: 0.5 },
+    // A filtered deck that does not reschedule: one more quiet word in the line, not a badge.
+    previewLabel: { flexShrink: 0, fontSize: FontSize.sm, color: colors.textMuted },
     deckDescription: {
         fontSize: FontSize.sm,
         color: colors.textMuted,
@@ -3903,15 +3890,8 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
     queueCountCurrent: { textDecorationLine: 'underline' },
 
     emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingVertical: 40 },
-    emptyIcon: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.accentLight,
-        marginBottom: Spacing.md,
-    },
+    // The empty state's glyph stands alone over its title, with no tinted disc.
+    emptyIcon: { alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md },
     countdownText: {
         fontSize: 44,
         fontWeight: '600',

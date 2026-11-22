@@ -266,11 +266,10 @@ const makeErrorStyles = (colors: ColorScheme) => StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: colors.border,
     },
+    // The glyph stands on the card by itself; a tinted disc behind it only added noise.
     iconBadge: {
         width: 72,
         height: 72,
-        borderRadius: Radius.pill,
-        backgroundColor: colors.infoBg,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: Spacing.lg,
@@ -321,8 +320,9 @@ const makeErrorStyles = (colors: ColorScheme) => StyleSheet.create({
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
     },
-    secondaryBar: { backgroundColor: colors.infoBg, paddingVertical: Spacing.s6, paddingHorizontal: 12 },
-    secondaryBarText: { ...Type.caption, color: colors.info, textAlign: 'center' },
+    // The web's "open in another tab" line: muted text over a hairline, not a blue strip.
+    secondaryBar: { paddingVertical: Spacing.s6, paddingHorizontal: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+    secondaryBarText: { ...Type.caption, color: colors.textMuted, textAlign: 'center' },
 });
 
 // The web-only startup gate (`WebDbGate`) is rendered into the static document, where the server

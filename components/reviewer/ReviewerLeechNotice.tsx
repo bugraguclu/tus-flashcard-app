@@ -52,9 +52,10 @@ function createStyles(colors: ColorScheme) {
             paddingVertical: Spacing.sm,
             paddingHorizontal: Spacing.md,
             borderRadius: Radius.inset,
-            borderWidth: 1,
-            borderColor: colors.warning,
-            backgroundColor: colors.warningBg,
+            // A plain card-coloured toast; the message says what happened, no warning tint.
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
+            backgroundColor: colors.bgCard,
             ...Shadow.floating,
         },
         text: { fontSize: FontSize.sm, fontWeight: '500', color: colors.textPrimary, textAlign: 'center' },

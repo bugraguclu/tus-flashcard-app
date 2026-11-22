@@ -96,19 +96,24 @@ export function Chip({ label, selected = false, onPress, onRemove, removeLabel, 
 export type BadgeTone = 'accent' | 'neutral' | 'info' | 'warning' | 'danger' | 'success';
 
 /** A small read-only capsule: a status, a count, a label on a row. */
-export function Badge({ label, tone = 'neutral', style }: { label: string; tone?: BadgeTone; style?: StyleProp<ViewStyle> }) {
+/**
+ * A short status word or count beside a title: coloured text with nothing behind it, so it reads
+ * as part of the row rather than a sticker on it. `keycap` is the one boxed form, for a keyboard
+ * key, where the box is what says "press this".
+ */
+export function Badge({ label, tone = 'neutral', keycap = false, style }: { label: string; tone?: BadgeTone; keycap?: boolean; style?: StyleProp<ViewStyle> }) {
     const colors = useThemeColors();
-    const palette = {
-        accent: [colors.accentLight, colors.accent],
-        neutral: [colors.bgInput, colors.textSecondary],
-        info: [colors.infoBg, colors.info],
-        warning: [colors.warningBg, colors.warning],
-        danger: [colors.dangerBg, colors.danger],
-        success: [colors.successBg, colors.success],
+    const color = {
+        accent: colors.accent,
+        neutral: colors.textSecondary,
+        info: colors.info,
+        warning: colors.stateLabelLearn,
+        danger: colors.danger,
+        success: colors.stateLabelReview,
     }[tone];
     return (
-        <View style={[styles.badge, { backgroundColor: palette[0] }, style]}>
-            <Text style={[styles.badgeText, { color: palette[1] }]} numberOfLines={1} maxFontSizeMultiplier={1.4}>{label}</Text>
+        <View style={[keycap ? [styles.keycap, { backgroundColor: colors.bgInput, borderColor: colors.border }] : styles.badge, style]}>
+            <Text style={[styles.badgeText, { color: keycap ? colors.textSecondary : color }]} numberOfLines={1} maxFontSizeMultiplier={1.4}>{label}</Text>
         </View>
     );
 }
@@ -332,7 +337,8 @@ const styles = StyleSheet.create({
     chipRemove: { minHeight: 32, paddingRight: Spacing.sm + 2, paddingLeft: 0, justifyContent: 'center' },
     // A badge mostly sits in a row beside a title, where the row centres it; a column that should
     // not stretch it passes alignSelf.
-    badge: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xxs, borderRadius: Radius.pill },
+    badge: { paddingVertical: Spacing.xxs },
+    keycap: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xxs, borderRadius: Radius.control, borderWidth: StyleSheet.hairlineWidth },
     badgeText: Type.micro,
     track: { flexDirection: 'row', alignSelf: 'flex-start', padding: Spacing.xxs, borderRadius: Radius.inset },
     trackFill: { alignSelf: 'stretch' },

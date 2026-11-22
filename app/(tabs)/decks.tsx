@@ -1937,11 +1937,8 @@ function createStyles(colors: ColorScheme) {
         minHeight: 72,
         ...Shadow.card,
     },
-    lockedDeckIcon: {
-        width: 36, height: 36, borderRadius: Radius.inset,
-        alignItems: 'center', justifyContent: 'center',
-        backgroundColor: colors.accentLight,
-    },
+    // The lock on its own, in a 36-point column; no tinted square behind it.
+    lockedDeckIcon: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
     lockedDeckCopy: { flex: 1, marginHorizontal: Spacing.sm },
     lockedDeckName: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
     lockedDeckMeta: { fontSize: FontSize.sm, color: colors.textMuted, marginTop: Spacing.xxs },

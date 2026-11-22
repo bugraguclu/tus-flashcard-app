@@ -7,7 +7,7 @@ import { SheetScrollView } from '../SwipeDismissSheet';
 import { Button } from '../ui/Button';
 import { Notice } from '../ui/Feedback';
 import { AppSheet } from '../ui/Sheet';
-import { Radius, Type } from '../ui/tokens';
+import { Type } from '../ui/tokens';
 
 /** The filtered deck form's ? help, a bottom sheet over the form whose steps scroll. */
 export default function FilteredDeckHelpSheet({ visible, onClose }: {
@@ -83,7 +83,7 @@ type HelpStyles = ReturnType<typeof createStyles>;
 function HelpStep({ number, title, body, styles }: { number: string; title: string; body: string; styles: HelpStyles }) {
     return (
         <View style={styles.step}>
-            <View style={styles.number}><Text style={styles.numberText}>{number}</Text></View>
+            <View style={styles.number}><Text style={styles.numberText}>{`${number}.`}</Text></View>
             <View style={styles.stepCopy}>
                 <Text style={styles.stepTitle}>{title}</Text>
                 <Text style={styles.stepBody}>{body}</Text>
@@ -98,15 +98,9 @@ function createStyles(colors: ColorScheme) {
         content: { gap: Spacing.lg, paddingBottom: Spacing.lg },
         lead: { ...Type.caption, lineHeight: 20, color: colors.textSecondary },
         step: { flexDirection: 'row', gap: Spacing.md },
-        number: {
-            width: 28,
-            height: 28,
-            borderRadius: Radius.pill,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.accentLight,
-        },
-        numberText: { color: colors.accent, fontWeight: '600' },
+        // The step number as a plain "1." in the margin, not a tinted disc.
+        number: { width: 28, alignItems: 'flex-start' },
+        numberText: { ...Type.caption, color: colors.textMuted, fontWeight: '600' },
         stepCopy: { flex: 1, gap: 3 },
         stepTitle: { ...Type.caption, fontWeight: '600', color: colors.textPrimary },
         stepBody: { ...Type.caption, lineHeight: 20, color: colors.textSecondary },

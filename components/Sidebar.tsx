@@ -365,7 +365,7 @@ function createStyles(colors: ColorScheme) {
         borderBottomColor: colors.border,
     },
     sidebarTitle: { fontSize: FontSize.lg, fontWeight: '600', color: colors.accent },
-    sidebarSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, letterSpacing: 0.5, marginTop: Spacing.xxs },
+    sidebarSubtitle: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: Spacing.xxs },
     subjectList: { flex: 1, paddingVertical: Spacing.sm },
     subjectRow: {
         flexDirection: 'row',

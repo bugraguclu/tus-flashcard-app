@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
-import { FontSize, useThemeColors, type ColorScheme, Spacing } from '../../constants/theme';
+import { FontSize, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { formatStopwatch } from '../../lib/reviewerTimers';
-import { Radius } from '../ui/tokens';
 
 type Props = {
     compact: boolean;
@@ -70,11 +69,6 @@ function createStyles(colors: ColorScheme, compact: boolean) {
             fontSize: FontSize.xs,
             fontWeight: '600',
             color: colors.warning,
-            backgroundColor: colors.warningBg,
-            borderRadius: Radius.pill,
-            paddingHorizontal: 8,
-            paddingVertical: Spacing.xxs,
-            overflow: 'hidden',
         },
         remaining: { flexShrink: 0, fontSize: FontSize.sm, color: colors.textMuted, fontVariant: ['tabular-nums'] },
     });

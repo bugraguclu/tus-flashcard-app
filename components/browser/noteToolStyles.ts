@@ -36,15 +36,10 @@ export function createNoteToolStyles(colors: ColorScheme) {
             borderBottomWidth: StyleSheet.hairlineWidth,
             borderBottomColor: colors.borderLight,
         },
+        // How many notes share the value: muted text at the line's end, not a pill.
         groupCount: {
-            minWidth: 58,
-            paddingHorizontal: Spacing.sm,
-            paddingVertical: 3,
-            overflow: 'hidden',
-            textAlign: 'center',
-            color: colors.accent,
-            backgroundColor: colors.accentLight,
-            borderRadius: Radius.pill,
+            flexShrink: 0,
+            color: colors.textMuted,
             fontSize: FontSize.xs,
             fontWeight: '600',
         },

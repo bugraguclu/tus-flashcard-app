@@ -258,7 +258,7 @@ function createStyles(colors: ColorScheme, heroColor: string) {
         todayValue: { color: colors.white, fontWeight: '600' },
         goalTrack: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: RING_TRACK, overflow: 'hidden' },
         goalFill: { height: 8, borderRadius: 4, backgroundColor: colors.white },
-        runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', letterSpacing: 0.8, color: colors.white },
+        runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', color: colors.white },
         bigClock: { fontSize: 54, lineHeight: 62, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
         breakLine: { fontSize: FontSize.md, fontWeight: '600', color: ON_HERO_SOFT, fontVariant: ['tabular-nums'] },
         runningButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.md },

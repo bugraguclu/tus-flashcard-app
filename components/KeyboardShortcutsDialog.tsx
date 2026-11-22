@@ -69,7 +69,7 @@ export default function KeyboardShortcutsDialog({ visible, onClose }: { visible:
                     <Section key={group.label} label={group.label}>
                         {group.rows.map((row) => (
                             <ValueRow key={`${row.keys}-${row.label}`} label={row.label}>
-                                <Badge label={row.keys} />
+                                <Badge label={row.keys} keycap />
                             </ValueRow>
                         ))}
                     </Section>

@@ -117,7 +117,7 @@ export default function KeyboardSettingsSection({ bindings, onChange }: Props) {
                     <ValueRow key={row.field} label={label}>
                         <View style={styles.keySlot} accessibilityLiveRegion="polite">
                             <Badge
-                                tone="accent"
+                                keycap
                                 label={recording ? l('Bir tuşa basın', 'Press a key') : formatKeyLabel(bindings[row.field])}
                             />
                             {recording && Platform.OS !== 'web' ? (

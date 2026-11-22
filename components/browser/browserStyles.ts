@@ -63,8 +63,8 @@ export function createBrowserStyles(colors: ColorScheme, inset = 0) {
     cardQuestion: { ...Type.rowTitle, color: colors.textPrimary, lineHeight: 20 },
     cardMeta: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: Spacing.s6, marginTop: Spacing.xxs },
     cardTopic: { flex: 1, minWidth: 0, fontSize: FontSize.xs, lineHeight: 14, color: colors.textMuted },
-    statusDot: { flexShrink: 0, paddingHorizontal: Spacing.s6, paddingVertical: 1, borderRadius: Radius.pill },
-    statusDotText: { fontSize: FontSize.xs, fontWeight: '500' },
+    // The card's state, a plain word over the question (no pill): Learning or Review.
+    stateLabel: { fontSize: FontSize.xs, lineHeight: 14, fontWeight: '600', marginBottom: 1 },
     scheduleMeta: { fontSize: FontSize.xs, color: colors.textMuted, marginTop: 1 },
     answerSnippet: { fontSize: FontSize.sm, color: colors.textSecondary, marginTop: Spacing.xxs, lineHeight: 18 },
     cardActions: {
@@ -85,13 +85,12 @@ export function createBrowserStyles(colors: ColorScheme, inset = 0) {
         padding: Spacing.md,
         marginBottom: Spacing.md,
     },
+    // A quiet caption over the answer, in sentence case.
     answerLabel: {
         fontSize: FontSize.xs,
         fontWeight: '600',
-        letterSpacing: 1,
-        color: colors.accent,
+        color: colors.textMuted,
         marginBottom: 4,
-        textTransform: 'uppercase',
     },
     answerContent: { fontSize: FontSize.md, color: colors.textSecondary, lineHeight: 22 },
     cardDetails: { gap: 4, marginBottom: Spacing.sm },

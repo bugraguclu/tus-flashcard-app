@@ -11,7 +11,7 @@ import { formatCount } from '../lib/i18n';
 import { Button } from './ui/Button';
 import { Notice } from './ui/Feedback';
 import { AppSheet } from './ui/Sheet';
-import { Radius, Type } from './ui/tokens';
+import { Type } from './ui/tokens';
 import { UnlockGlyph } from './UiGlyphs';
 
 type Props = {
@@ -114,12 +114,11 @@ function createStyles(colors: ReturnType<typeof useThemeColors>) {
             paddingBottom: Spacing.sm,
         },
         iconWrap: {
+            // The unlock glyph on its own, without a tinted disc behind it.
             width: 54,
             height: 54,
-            borderRadius: Radius.pill,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: colors.accentLight,
             marginTop: Spacing.md,
             marginBottom: Spacing.md,
         },

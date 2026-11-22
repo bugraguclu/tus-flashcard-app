@@ -211,8 +211,8 @@ export function HelpButton({ accessibilityLabel, accessibilityHint, onPress, exp
     const colors = useThemeColors();
     return (
         <IconButton accessibilityLabel={accessibilityLabel} accessibilityHint={accessibilityHint} onPress={onPress} expanded={expanded}>
-            <View style={[styles.helpCircle, { borderColor: colors.accent, backgroundColor: colors.accentLight }]}>
-                <Text style={[styles.helpMark, { color: colors.accent }]} maxFontSizeMultiplier={1.2}>?</Text>
+            <View style={[styles.helpCircle, { borderColor: colors.textMuted }]}>
+                <Text style={[styles.helpMark, { color: colors.textSecondary }]} maxFontSizeMultiplier={1.2}>?</Text>
             </View>
         </IconButton>
     );

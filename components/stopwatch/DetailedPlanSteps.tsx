@@ -4,7 +4,6 @@ import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { formatStudyTotal } from '../../lib/stopwatch';
-import { studySubjectInitial } from '../../lib/studyCalendar';
 import {
     MAX_COURSE_HOURS,
     MAX_DAILY_CAPACITY_MINUTES,
@@ -24,7 +23,6 @@ import { Section } from '../ui/Card';
 import { ArrowDownIcon, ArrowUpIcon } from '../ui/icons';
 import { ListRow, ValueRow } from '../ui/Rows';
 import { Stepper } from '../ui/Stepper';
-import { Radius } from '../ui/tokens';
 
 const CAPACITY_STEP = 30;
 const PREVIEW_DAY_LIMIT = 120;
@@ -60,9 +58,6 @@ export function CoursesStep({ courses, onChange }: { courses: StudyWorkload[]; o
                 return (
                     <View key={course.subject} style={styles.course}>
                         <View style={styles.courseHeader}>
-                            <View style={[styles.tile, { backgroundColor: colors.accentLight }]}>
-                                <Text style={[styles.tileText, { color: colors.accent }]}>{studySubjectInitial(course.subject)}</Text>
-                            </View>
                             <Text style={[styles.courseName, { color: colors.accent }]} numberOfLines={1}>{`${index + 1}. ${course.subject}`}</Text>
                             <IconButton
                                 onPress={() => move(index, -1)}
@@ -229,8 +224,6 @@ export function CapacityStep({ draft, onChange, preview, weekdayName }: Capacity
 const styles = StyleSheet.create({
     course: { paddingVertical: Spacing.xs },
     courseHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingLeft: Spacing.lg, paddingRight: Spacing.sm },
-    tile: { width: 30, height: 30, borderRadius: Radius.control, alignItems: 'center', justifyContent: 'center', marginRight: Spacing.xs },
-    tileText: { fontSize: FontSize.xs, fontWeight: '600' },
     courseName: { flex: 1, fontSize: FontSize.md, fontWeight: '600' },
     stepper: { alignSelf: 'center' },
     linkRow: { paddingVertical: Spacing.xs },
