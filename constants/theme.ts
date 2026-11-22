@@ -97,6 +97,8 @@ const LightColors = {
     scrimStrong: 'rgba(0, 0, 0, 0.6)',
     /** The tint a mouse pointer lays over the control under it (web with a mouse only). */
     hoverOverlay: 'rgba(0, 0, 0, 0.045)',
+    /** A list row under the finger (or a held mouse button), as an iPhone table row highlights. */
+    rowPressed: '#eceff1',
 
     white: '#ffffff',
     transparent: 'transparent',
@@ -172,6 +174,7 @@ const DarkColors: ColorScheme = {
     scrimLight: 'rgba(0, 0, 0, 0.22)',
     scrimStrong: 'rgba(0, 0, 0, 0.6)',
     hoverOverlay: 'rgba(255, 255, 255, 0.06)',
+    rowPressed: '#22282b',
 
     white: '#ffffff',
     transparent: 'transparent',

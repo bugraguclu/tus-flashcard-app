@@ -6,6 +6,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi, type Mock }
 vi.mock('react-native', () => ({
     Platform: { OS: 'ios' },
     View: 'View',
+    Pressable: 'Pressable',
     TouchableOpacity: 'TouchableOpacity',
     PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
 }));
@@ -17,20 +18,28 @@ let onPress: Mock<() => void>;
 let drag: { begin: Mock<(pageY: number) => void>; move: Mock<(pageY: number) => void>; complete: Mock<() => void>; cancel: Mock<() => void> };
 const event = (pageX = 60, pageY = 100) => ({ nativeEvent: { pageX, pageY } });
 const button = () => renderer!.root.findByType('View' as unknown as typeof DeckNameButton);
-const props = () => ({ children: 'Deste', style: {}, accessibilityLabel: 'Deste çalış', onPress, drag });
+let onPressedChange: Mock<(pressed: boolean) => void>;
+const props = () => ({ children: 'Deste', style: {}, accessibilityLabel: 'Deste çalış', onPress, onPressedChange, drag });
 
 beforeAll(() => { (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true; });
 beforeEach(() => {
     Object.assign(Platform, { OS: 'ios' });
     vi.useFakeTimers();
     onPress = vi.fn();
+    onPressedChange = vi.fn();
     drag = { begin: vi.fn(), move: vi.fn(), complete: vi.fn(), cancel: vi.fn() };
 });
 afterEach(() => {
+    delete (globalThis as { window?: unknown }).window;
     if (renderer) act(() => renderer!.unmount());
     renderer = undefined;
     vi.useRealTimers();
 });
+/** The web build under a mouse that can hover. */
+const withMouse = () => {
+    Object.assign(Platform, { OS: 'web' });
+    (globalThis as { window?: unknown }).window = { matchMedia: () => ({ matches: true }) };
+};
 const render = () => act(() => { renderer = TestRenderer.create(React.createElement(DeckNameButton, props())); });
 const grant = () => act(() => button().props.onPanResponderGrant(event()));
 const hold = () => act(() => { vi.advanceTimersByTime(450); });
@@ -130,7 +139,10 @@ describe('deck name tap and hold', () => {
 
     it('retains a normal study button for filtered and protected decks without drag handlers', () => {
         act(() => { renderer = TestRenderer.create(React.createElement(DeckNameButton, { ...props(), drag: undefined })); });
-        const normalButton = renderer!.root.findByType('TouchableOpacity' as unknown as typeof DeckNameButton);
+        const normalButton = renderer!.root.findByType('Pressable' as unknown as typeof DeckNameButton);
+        act(() => normalButton.props.onPressIn());
+        expect(normalButton.props.style).toContainEqual({ opacity: 0.2 });
+        act(() => normalButton.props.onPressOut());
         act(() => normalButton.props.onPress());
         expect(onPress).toHaveBeenCalledOnce();
         expect(normalButton.props.onLongPress).toBeUndefined();
@@ -158,5 +170,52 @@ describe('deck name tap and hold', () => {
         expect(button().props.accessibilityRole).toBe('button');
         expect(button().props.accessibilityLabel).toBe('Deste çalış');
         expect(drag.begin).not.toHaveBeenCalled();
+    });
+
+    it('keeps the phone feedback: the name fades under the finger and the row is left alone', () => {
+        render();
+        grant();
+        expect(button().props.style).toContainEqual({ opacity: 0.2 });
+        act(() => button().props.onPanResponderRelease(event()));
+        act(() => { vi.advanceTimersByTime(200); });
+        expect(button().props.style).not.toContainEqual({ opacity: 0.2 });
+        expect(onPressedChange).not.toHaveBeenCalled();
+    });
+
+    it('lights the row for a mouse held still, never for one that starts a scroll', () => {
+        withMouse();
+        render();
+        grant();
+        act(() => { vi.advanceTimersByTime(50); });
+        act(() => button().props.onPanResponderMove(event(60, 125)));
+        act(() => { vi.advanceTimersByTime(200); });
+        expect(onPressedChange).not.toHaveBeenCalled();
+
+        grant();
+        act(() => { vi.advanceTimersByTime(100); });
+        expect(onPressedChange.mock.calls).toEqual([[true]]);
+        act(() => button().props.onPanResponderRelease(event()));
+        act(() => { vi.advanceTimersByTime(200); });
+        expect(onPressedChange.mock.calls).toEqual([[true], [false]]);
+    });
+
+    it('flashes the row for a click released before the highlight showed', () => {
+        withMouse();
+        render();
+        grant();
+        act(() => { vi.advanceTimersByTime(30); });
+        act(() => button().props.onPanResponderRelease(event()));
+        expect(onPressedChange.mock.calls).toEqual([[true]]);
+        act(() => { vi.advanceTimersByTime(200); });
+        expect(onPressedChange.mock.calls).toEqual([[true], [false]]);
+        expect(onPress).toHaveBeenCalledOnce();
+    });
+
+    it('turns the highlight off when a hold lifts the deck for dragging', () => {
+        withMouse();
+        render();
+        grant();
+        hold();
+        expect(onPressedChange.mock.calls).toEqual([[true], [false]]);
     });
 });

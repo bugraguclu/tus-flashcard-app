@@ -97,6 +97,7 @@ import { SheetNoDrag } from '../../components/SwipeDismissSheet';
 import { DISABLED_OPACITY, HIT_TARGET, LIST_WIDTH, Shadow, Type, Radius } from '../../components/ui/tokens';
 import { centeredInset } from '../../hooks/useCenteredInset';
 import { webContextMenuProps } from '../../lib/webContextMenu';
+import { HOVER_ROW_DATA } from '../../lib/webHover';
 import { isCatalogDeck } from '../../lib/catalogProtection';
 import { deckStep } from '../../lib/deckKeyboardReorder';
 import { BKA_MANIFEST } from '../../lib/bkaManifest';
@@ -178,14 +179,21 @@ const VirtualizedDeckRow = React.memo(function VirtualizedDeckRow({
     renderRow,
 }: {
     row: DeckListRowModel;
-    renderRow: (node: DeckTreeNode, isExpanded: boolean) => React.ReactElement;
+    renderRow: (node: DeckTreeNode, isExpanded: boolean, press: DeckRowPress) => React.ReactElement;
 }) {
+    // Held per row, so a finger on one name re-renders only that row.
+    const [pressed, setPressed] = useState(false);
     return (
         <View>
-            {renderRow(row.node, row.isExpanded)}
+            {renderRow(row.node, row.isExpanded, { pressed, onPressedChange: setPressed })}
         </View>
     );
 });
+
+interface DeckRowPress { pressed: boolean; onPressedChange: (pressed: boolean) => void }
+
+/** Web: the row tints and rings as a whole around its name button (lib/webHover.ts). */
+const HOVER_ROW_PROPS = Platform.OS === 'web' ? ({ dataSet: HOVER_ROW_DATA } as object) : {};
 
 export default function DecksScreen() {
     const { t, l, locale } = useI18n();
@@ -1219,7 +1227,7 @@ export default function DecksScreen() {
 
     // ---- Rendering ----
 
-    const renderDeckRow = useCallback((node: DeckTreeNode, isExpanded: boolean) => {
+    const renderDeckRow = useCallback((node: DeckTreeNode, isExpanded: boolean, press: DeckRowPress) => {
         const deck = node.deck;
         const hasChildren = node.children.length > 0;
         const displayName = getDeckDisplayName(deck.name);
@@ -1246,9 +1254,11 @@ export default function DecksScreen() {
                 style={[
                     styles.deckRow,
                     { paddingLeft: contentIndent },
+                    press.pressed && styles.deckRowPressed,
                     isDragging && styles.deckRowDragging,
                     isInsideDropTarget && styles.deckRowDropTarget,
                 ]}
+                {...HOVER_ROW_PROPS}
                 // A right click opens the same menu as ⋯, as a desktop deck list does.
                 {...webContextMenuProps(() => openMenu(deck))}
             >
@@ -1296,6 +1306,7 @@ export default function DecksScreen() {
                     <DeckNameButton
                         style={styles.deckNameTouchable}
                         onPress={() => handleStudyDeck(deck.name)}
+                        onPressedChange={press.onPressedChange}
                         drag={dragResponder ? {
                             begin: (pageY) => dragHandlersRef.current?.begin(node, pageY),
                             move: (pageY) => dragHandlersRef.current?.move(pageY),
@@ -1943,6 +1954,7 @@ function createStyles(colors: ColorScheme) {
     // The row's call to action as accent text with a chevron, not a filled pill.
     lockedDeckPricePill: { flexDirection: 'row', alignItems: 'center', gap: 2 },
     lockedDeckPriceText: { color: colors.accent, fontSize: FontSize.sm, fontWeight: '600' },
+    deckRowPressed: { backgroundColor: colors.rowPressed },
     deckRowDragging: { opacity: 0.22, transform: [{ scale: 0.99 }] },
     deckRowDropTarget: {
         backgroundColor: colors.accentLight,

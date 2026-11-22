@@ -41,7 +41,11 @@ class FakeElement extends FakeTarget {
     constructor(public control: FakeElement | null = null, public size = { width: 100, height: 44 }) {
         super();
     }
-    closest() { return this.control; }
+    /** The list row (`data-hover-row`) around this element, and whether it is that row's main control. */
+    row: FakeElement | null = null;
+    primary = false;
+    closest(selector: string) { return selector === '[data-hover-row]' ? this.row : this.control; }
+    matches(selector: string) { return selector === '[data-row-primary]' && this.primary; }
     getAttribute(name: string) { return this.attributes.get(name) ?? null; }
     setAttribute(name: string, value: string) { this.attributes.set(name, value); }
     removeAttribute(name: string) { this.attributes.delete(name); }
@@ -128,5 +132,30 @@ describe('installWebHover', () => {
         const sheet = hoverStyleSheet('red', 'gray');
         expect(sheet).toContain('[class*="r-scrollbarWidth-"] { scrollbar-width: thin !important; scrollbar-color: gray transparent !important; }');
         expect(sheet.indexOf('scrollbar-width')).toBeLessThan(sheet.lastIndexOf('}'));
+    });
+
+    it('tints a whole list row around its main control, not a box around the name', () => {
+        const { doc, over } = fakeDocument();
+        const row = new FakeElement(null, { width: 900, height: 52 });
+        const name = control({ width: 500, height: 44 });
+        name.row = row;
+        name.primary = true;
+        const label = new FakeElement(name);
+        label.row = row;
+        const more = control();
+        more.row = row;
+        const outside = control();
+        installWebHover(doc as unknown as Document, 'rgba(0, 0, 0, 0.045)');
+
+        over(label);
+        expect(row.hasAttribute(HOVER_ATTRIBUTE)).toBe(true);
+        expect(name.hasAttribute(HOVER_ATTRIBUTE)).toBe(false);
+        over(more);
+        expect(row.hasAttribute(HOVER_ATTRIBUTE)).toBe(true);
+        expect(more.hasAttribute(HOVER_ATTRIBUTE)).toBe(true);
+        over(outside);
+        expect(row.hasAttribute(HOVER_ATTRIBUTE)).toBe(false);
+        expect(more.hasAttribute(HOVER_ATTRIBUTE)).toBe(false);
+        expect(outside.hasAttribute(HOVER_ATTRIBUTE)).toBe(true);
     });
 });

@@ -141,7 +141,9 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
 
 // Drawn outside the control so a filled button keeps its own colour, with a band of the card colour
 // between ring and control so it shows on the accent-coloured headers too. A field drawn as a row
-// (`fieldRowProps`, lib/fieldRowFocus.ts) wears the ring on the row rather than on its input.
+// (`fieldRowProps`, lib/fieldRowFocus.ts) wears the ring on the row rather than on its input. A list
+// row whose main control is only part of it (`data-hover-row`, lib/webHover.ts) wears the ring on
+// the whole row, just inside its edge, instead of a box around the name alone.
 // A button whose visible shape is smaller than what it takes presses for (the dock's raised ＋ with
 // its caption under it) wears the ring on that shape, marked `data-focus-face`.
 const FOCUS_RING_CSS = `
@@ -170,6 +172,11 @@ html[data-focus-ring] [data-field-row]:has(input:focus, textarea:focus) {
     outline: 2px solid var(--tus-focus-ring) !important;
     outline-offset: 2px !important;
     box-shadow: 0 0 0 2px var(--tus-focus-halo) !important;
+}
+html[data-focus-ring] [data-row-primary]:focus { outline: none !important; box-shadow: none !important; }
+html[data-focus-ring] [data-hover-row]:has([data-row-primary]:focus) {
+    outline: 2px solid var(--tus-focus-ring) !important;
+    outline-offset: -2px !important;
 }
 `;
 
