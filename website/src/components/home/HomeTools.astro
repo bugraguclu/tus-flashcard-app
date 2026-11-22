@@ -1,0 +1,87 @@
+<section id="araclar" class="scroll-mt-24 py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="capabilities-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-2xl reveal">
+      <p class="kicker">Tek uygulamada</p>
+      <h2 id="capabilities-heading" class="display text-section tracking-tightest text-ink mt-3">Temel araçlar</h2>
+      <p class="text-inkMuted mt-3 leading-relaxed">Kart tekrarı, süre takibi, dosya aktarımı ve puan hesabı aynı yerde. Her birinin Türkçe rehberi var.</p>
+    </div>
+
+    <div class="mt-8 grid md:grid-cols-2 gap-4">
+      <a id="fsrs" href="/yardim/fsrs/" class="scroll-mt-24 reveal lift rounded-2xl border border-line bg-white p-6 flex flex-col">
+        <div class="rounded-xl bg-surfaceSoft border border-lineLight p-4" aria-hidden="true">
+          <div class="flex items-end justify-between gap-2 h-20">
+            {[{ h: 14, l: '10 dk' }, { h: 26, l: '1 gün' }, { h: 44, l: '3 gün' }, { h: 66, l: '8 gün' }, { h: 100, l: '3 hafta' }].map((b) => (
+              <span class="flex-1 flex flex-col items-center justify-end gap-1 h-full">
+                <span class="w-full rounded-md bg-tealGraphic/25 border border-tealGraphic/70" style={`height: ${b.h}%`}></span>
+                <span class="text-[0.6875rem] text-inkMuted tabular-nums whitespace-nowrap">{b.l}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+        <h3 class="display text-lg text-ink mt-5">FSRS-6 tekrar takvimi</h3>
+        <p class="text-sm text-inkMuted mt-1.5 leading-relaxed flex-1">
+          Her kartın zorluğuna ve senin cevaplarına göre bir sonraki tekrar gününü hesaplar. Hatırladıkça aralık uzar; aynı hatırlama oranına daha az tekrarla ulaşırsın.
+        </p>
+        <span class="mt-4 text-sm font-semibold text-teal">FSRS rehberi →</span>
+      </a>
+
+      <a id="kronometre" href="/yardim/kronometre/" class="scroll-mt-24 reveal lift rounded-2xl border border-line bg-white p-6 flex flex-col" style="--d: 60ms">
+        <div class="rounded-xl bg-warmTint/60 border border-lineLight p-4 flex items-center justify-between gap-4" aria-hidden="true">
+          <div>
+            <p class="text-xs font-semibold text-warm">Dahiliye · Konu tekrarı</p>
+            <p class="display text-4xl text-ink tabular-nums mt-1">45:00</p>
+          </div>
+          <div class="text-right text-xs text-inkMuted space-y-1 tabular-nums">
+            <p><span class="font-semibold text-ink">Çalışma</span> 45 dk</p>
+            <p><span class="font-semibold text-ink">Mola</span> 10 dk</p>
+          </div>
+        </div>
+        <h3 class="display text-lg text-ink mt-5">Kronometre ve çalışma takvimi</h3>
+        <p class="text-sm text-inkMuted mt-1.5 leading-relaxed flex-1">
+          Konu okuma, soru çözme ve deneme sürelerini kaydeder; kart tekrarlarınla aynı takvimde gün gün gösterir. Çalışma Planlama sihirbazı haftanı bloklara böler.
+        </p>
+        <span class="mt-4 text-sm font-semibold text-teal">Kronometre rehberi →</span>
+      </a>
+
+      <a id="anki" href="/yardim/anki-ile-kullanma/" class="scroll-mt-24 reveal lift rounded-2xl border border-line bg-white p-6 flex flex-col">
+        <div class="rounded-xl bg-surfaceSoft border border-lineLight p-4 flex items-center gap-4" aria-hidden="true">
+          <span class="grid place-items-center w-11 h-12 rounded-lg bg-white border border-line text-[0.625rem] font-bold text-gradeEasy">APKG</span>
+          <div class="text-sm">
+            <p class="font-semibold text-ink">Kendi destem.apkg</p>
+            <p class="text-xs text-inkMuted mt-0.5">Kartlar · şablonlar · medya · tekrar geçmişi</p>
+          </div>
+          <svg class="ml-auto shrink-0" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14998a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4" /><path d="M17 8v12m0 0l4-4m-4 4l-4-4" /></svg>
+        </div>
+        <h3 class="display text-lg text-ink mt-5">Kişisel Anki uyumu</h3>
+        <p class="text-sm text-inkMuted mt-1.5 leading-relaxed flex-1">
+          Kendi <code>.apkg</code> ve <code>.colpkg</code> destelerini medyası ve tekrar geçmişiyle kayıpsız içe ya da dışa aktarabilirsin. Hazır TUS paketi dışa aktarılmaz.
+        </p>
+        <span class="mt-4 text-sm font-semibold text-teal">Aktarım rehberi →</span>
+      </a>
+
+      <a href="/puan-hesapla/" class="reveal lift rounded-2xl border border-line bg-white p-6 flex flex-col" style="--d: 60ms">
+        <div class="rounded-xl bg-surfaceSoft border border-lineLight p-4 grid grid-cols-2 gap-3 text-sm" aria-hidden="true">
+          <div class="rounded-lg bg-white border border-line p-3">
+            <p class="text-xs text-inkMuted">Temel puan</p>
+            <p class="font-semibold text-ink tabular-nums mt-0.5">%70 T + %30 K</p>
+          </div>
+          <div class="rounded-lg bg-white border border-line p-3">
+            <p class="text-xs text-inkMuted">Klinik puan</p>
+            <p class="font-semibold text-ink tabular-nums mt-0.5">%50 T + %50 K</p>
+          </div>
+        </div>
+        <h3 class="display text-lg text-ink mt-5">TUS puan hesaplayıcı</h3>
+        <p class="text-sm text-inkMuted mt-1.5 leading-relaxed flex-1">
+          Güncel %5 kesinti ve %70/%30, %50/%50 ağırlıklarla netten puana, puandan hedef nete hesaplar. Kayıt veya uygulama gerekmez.
+        </p>
+        <span class="mt-4 text-sm font-semibold text-teal">Puan hesapla →</span>
+      </a>
+    </div>
+
+    <div class="mt-6 space-y-1.5 text-xs text-inkMuted leading-relaxed max-w-3xl">
+      <p>
+        <strong class="text-ink">Platform durumu:</strong> iPhone uygulaması geliştiriliyor; Web tarayıcıda ücretsiz beta olarak aktif. Otomatik bulut eşitleme, yerel Android uygulaması ve Tercih Simülasyonu geliştirme aşamasındadır (Yakında).
+      </p>
+    </div>
+  </div>
+</section>

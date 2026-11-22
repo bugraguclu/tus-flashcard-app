@@ -1,100 +1,137 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import '../styles/home.css';
 import LiveCardDemo from '../components/LiveCardDemo.astro';
-import HomeEcosystem from '../components/home/HomeEcosystem.astro';
-import HomeStudy from '../components/home/HomeStudy.astro';
+import HomeHero from '../components/home/HomeHero.astro';
+import HomeProof from '../components/home/HomeProof.astro';
+import HomePlan from '../components/home/HomePlan.astro';
+import HomeReferences from '../components/home/HomeReferences.astro';
+import HomeTools from '../components/home/HomeTools.astro';
 import HomeAccess from '../components/home/HomeAccess.astro';
-import HomeGuides from '../components/home/HomeGuides.astro';
-import founder from '../data/founder.json';
+import HomeTrust from '../components/home/HomeTrust.astro';
+import '../styles/home.css';
+
 import catalog from '../data/generated/catalog.json';
-import references from '../data/generated/references-summary.json';
 import { ACCESS, SITE, SHOW_PRICING_PROMO, PRICING_MODE } from '../config';
 import { breadcrumbList } from '../lib/schema';
 import { dateModified, pageSources } from '../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
-const crumbs = breadcrumbList(origin, [{ name: 'Ana Sayfa', path: '/' }]);
-const count = (value: number) => value.toLocaleString('tr-TR');
+const homeCrumbs = breadcrumbList(origin, [{ name: 'Ana Sayfa', path: '/' }]);
 const beta = PRICING_MODE === 'free-beta';
-const schema = {
-  '@context': 'https://schema.org',
-  '@type': 'WebPage',
-  url: new URL('/', Astro.site).href,
-  name: 'TusAnkiM — TUS için günlük kart tekrarı',
-  description: SITE.description,
-  inLanguage: 'tr-TR',
-  isPartOf: { '@id': new URL('/#website', Astro.site).href },
-  ...dateModified(pageSources('home')),
-};
-const appSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  '@id': origin + '/#application',
-  name: SITE.name,
-  url: origin + '/',
-  description: SITE.description,
-  applicationCategory: 'EducationalApplication',
-  operatingSystem: 'iOS; Web tarayıcı',
-  inLanguage: 'tr-TR',
-  publisher: { '@id': origin + '/#organization' },
-  featureList: [
-    `${count(catalog.totals.cards)} hazır kart ve ${catalog.totals.courses} ders`,
-    'FSRS-6 aralıklı tekrar', 'Kişisel desteler', 'Kronometre ve çalışma takvimi',
-  ],
-  screenshot: origin + '/images/iphone-calisma.jpg',
-  softwareHelp: { '@type': 'CreativeWork', url: origin + '/yardim/' },
-  isAccessibleForFree: true,
-  offers: {
-    '@type': 'Offer', name: 'Güncel ücretsiz beta', price: 0, priceCurrency: 'TRY',
-    url: SITE.webAppUrl,
-    description: [ACCESS.betaDescription, ...(SHOW_PRICING_PROMO && !beta ? [ACCESS.plannedLaunchDescription] : [])].join(' '),
+const cards = catalog.totals.cards.toLocaleString('tr-TR');
+
+const homeSchema = [
+  homeCrumbs,
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': origin + '/#webpage',
+    url: origin + '/',
+    name: `TusAnkiM — ${cards} TUS Kartı, FSRS-6 ve Referans Kanıtı`,
+    description: SITE.description,
+    inLanguage: 'tr-TR',
+    isPartOf: { '@id': origin + '/#website' },
+    about: { '@id': origin + '/#brand' },
+    mainEntity: { '@id': origin + '/#application' },
+    primaryImageOfPage: {
+      '@type': 'ImageObject',
+      url: new URL('/images/og/home.png', Astro.site).href,
+      width: 1200,
+      height: 630,
+    },
+    speakable: {
+      '@type': 'SpeakableSpecification',
+      cssSelector: ['#hero-title', '[data-speakable]'],
+    },
+    significantLink: [
+      origin + '/referanslar/',
+      origin + '/puan-hesapla/',
+      origin + '/yardim/fsrs/',
+      origin + '/yardim/anki-ile-kullanma/',
+    ],
+    ...dateModified(pageSources('home')),
   },
-};
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    '@id': origin + '/#application',
+    name: 'TusAnkiM',
+    applicationCategory: 'EducationalApplication',
+    operatingSystem: 'iOS, Web',
+    inLanguage: 'tr-TR',
+    description: SITE.description,
+    url: origin + '/',
+    screenshot: origin + '/images/iphone-calisma.jpg',
+    softwareHelp: { '@type': 'WebPage', url: origin + '/yardim/' },
+    isAccessibleForFree: true,
+    audience: {
+      '@type': 'EducationalAudience',
+      educationalRole: 'student',
+      audienceType: 'TUS adayları: tıp öğrencileri ve pratisyen hekimler',
+    },
+    publisher: { '@id': origin + '/#organization' },
+    featureList: [
+      `${cards} TUS kartı (${catalog.totals.courses} ders, ${catalog.totals.topicSubdecks} alt deste)`,
+      'FSRS-6 aralıklı tekrar zamanlayıcısı ve parametre optimizasyonu',
+      'Kayıpsız Anki (.apkg / .colpkg) içe ve dışa aktarma',
+      'Kronometre, Çalışma Takvimi ve Çalışma Planlama',
+      'Çevrimdışı yerel öncelikli SQLite depolama ve otomatik yedekleme',
+    ],
+    offers: {
+      '@type': 'Offer', name: 'Güncel ücretsiz beta', price: 0, priceCurrency: 'TRY',
+      url: SITE.webAppUrl,
+      description: [ACCESS.betaDescription, ...(SHOW_PRICING_PROMO && !beta ? [ACCESS.plannedLaunchDescription] : [])].join(' '),
+    },
+  },
+];
+
 ---
-<Layout title="TusAnkiM — TUS için günlük kart tekrarı" schema={[schema, crumbs, appSchema]}>
-  <div class="home-page">
-  <section class="site-container home-hero" aria-labelledby="home-title">
-    <div class="hero-copy">
-      <p class="eyebrow">TUS için aralıklı tekrar</p>
-      <h1 id="home-title">TUS tekrarını günlük bir<br class="desktop-break" /> alışkanlığa dönüştür.</h1>
-      <p class="home-lead">{count(catalog.totals.cards)} hazır kart, FSRS-6 aralıklı tekrar ve çalışma takibi aynı yerde. Güncel ücretsiz betayı tarayıcıda dene; kartların anlatımını kendin incele.</p>
-      <div class="home-actions">
-        <a class="button-primary" href={SITE.webAppUrl} target="_blank" rel="noopener noreferrer">Ücretsiz dene</a>
-        <a class="home-link" href="#demo-heading">Kartları keşfet</a>
+<Layout
+  title={`TusAnkiM — ${cards} TUS Kartı, FSRS-6 ve Referans Kanıtı`}
+  description={SITE.description}
+  schema={homeSchema}
+>
+  <HomeHero />
+  <HomeProof />
+  <section id="demo-bolumu" class="home-demo scroll-mt-24 py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="demo-section-heading">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+      <div class="lg:col-span-5 reveal">
+        <p class="kicker">Canlı deneme</p>
+        <h2 id="demo-section-heading" class="display text-section tracking-tightest text-ink mt-3">Kartları burada dene.</h2>
+        <p class="text-inkMuted mt-3 leading-relaxed">
+          11 dersten gerçek kartlar. Boşluğu tahmin et, cevabı aç ve ne kadar kolay hatırladığını işaretle; uygulamadaki tekrar akışı aynen böyle işler.
+        </p>
       </div>
-      <p class="home-note">iPhone için geliştiriliyor. Tarayıcı önizlemesinde deneyebilirsin.<br />Güncel beta ücretsiz. Ödeme veya kart bilgisi gerekmez.</p>
-    </div>
-    <LiveCardDemo />
-  </section>
-
-  <section id="referans-ozet" class="site-container home-section" aria-labelledby="reference-title">
-    <div>
-      <p class="eyebrow">TUS referansları</p>
-      <h2 id="reference-title">Kartları gör.<br class="desktop-break" /> Soru ilişkilerini incele.</h2>
-      <p class="home-description">Gerçek demo kartlarıyla anlatımı dene. Son 6 TUS’taki {count(references.overall.soru)} soru için yapılan ön değerlendirmede, {count(references.overall.destek)} soruda doğrudan veya dolaylı çözüm desteği kaydedildi. Her eşleşmenin açıklamasını inceleyebilirsin.</p>
-      <a class="home-link" href="/referanslar/">Referans kayıtlarını incele</a>
-    </div>
-    <div>
-      <dl class="reference-facts">
-        <div><dt>Toplam çözüm desteği <span>Doğrudan ve dolaylı toplamı</span></dt><dd>{count(references.overall.destek)}/{count(references.overall.soru)}</dd></div>
-        <div><dt>Doğrudan çözüm desteği</dt><dd>{count(references.overall.dogrudan)}</dd></div>
-        <div><dt>Dolaylı çözüm desteği</dt><dd>{count(references.overall.dolayli)}</dd></div>
-        <div><dt>Konu kapsamı <span>Çözüm desteği dahil</span></dt><dd>{count(references.overall.konuKapsami)}</dd></div>
-      </dl>
-      <p class="home-note">2026/2 için sınav öncesi sürümde {references.preExam2026_2.preExamEvet}/200, güncel katalogda {references.preExam2026_2.supportedCurrent}/200 çözüm desteği bulunur. Sonradan güncellenen altı kayıt ayrı gösterilir. Kayıtlar yapay zekâ destekli ön değerlendirmedir; bağımsız hekim editör onayı tamamlanmamıştır. Konu kapsamı, çözüm desteğinden ayrı raporlanır.</p>
+      <div class="lg:col-span-7 min-w-0">
+        <LiveCardDemo />
+      </div>
     </div>
   </section>
-
-  <HomeEcosystem />
-  <HomeStudy />
-
-  <section id="neden-tusankim" class="site-container founder-section" aria-labelledby="founder-heading">
-    <div><p class="eyebrow">Hakkımızda</p><h2 id="founder-heading">{founder.letterTitle}</h2></div>
-    <div><p class="founder-lead">Kart tekrarını ve çalışma takibini günlük bir alışkanlığa dönüştürmek için.</p><p class="home-description">Hazır kartların, kişisel destelerin, kronometren ve çalışma planın aynı uygulamada olsun istedik. Kartlara yaklaşımımızı ve düzeltme bildirimlerini nasıl paylaşabileceğini Hakkımızda sayfasında anlatıyoruz.</p><a class="home-link" href="/kurucu/">Hikâyemizi oku</a></div>
-  </section>
-
-  {SHOW_PRICING_PROMO && <HomeAccess />}
-  <HomeGuides />
-  </div>
+  <HomePlan />
+  <HomeReferences />
+  <HomeTools />
+  <HomeAccess />
+  <HomeTrust />
 </Layout>
+
+<script>
+  // Reveal sections once as they scroll into view. Content is visible without JS,
+  // elements already on screen at load are left alone, and Reduce Motion skips it all.
+  const targets = document.querySelectorAll<HTMLElement>('.reveal, .grow, .chart');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce && 'IntersectionObserver' in window && targets.length) {
+    let first = true;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          if (!first) entry.target.classList.add('is-in');
+          io.unobserve(entry.target);
+        }
+        first = false;
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+    );
+    targets.forEach((el) => io.observe(el));
+  }
+</script>

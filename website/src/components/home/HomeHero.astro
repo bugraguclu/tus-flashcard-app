@@ -1,0 +1,126 @@
+---
+import demoCards from '../../data/generated/demo-cards.json';
+import catalog from '../../data/generated/catalog.json';
+import { SITE } from '../../config';
+import { num } from '../../lib/format';
+
+const card = demoCards.find((c) => c.shortDers === 'Dahiliye') ?? demoCards[0];
+const qNo = card.qid.split('-')[1];
+const grades = [
+  { label: 'Tekrar', value: card.intervals.again, cls: 'bg-gradeAgainBg text-gradeAgain' },
+  { label: 'Zor', value: card.intervals.hard, cls: 'bg-gradeHardBg text-gradeHard' },
+  { label: 'İyi', value: card.intervals.good, cls: 'bg-gradeGoodBg text-gradeGood ring-1 ring-gradeGood/40' },
+  { label: 'Kolay', value: card.intervals.easy, cls: 'bg-gradeEasyBg text-gradeEasy' },
+];
+const trust = ['Güncel beta ücretsiz, kart bilgisi gerekmez', 'Hesap açmadan çalışır', 'İnternet olmadan da çalışır'];
+---
+<section class="relative overflow-hidden hero-bg border-b border-line" aria-labelledby="hero-title">
+  <div class="absolute inset-0 hero-grain pointer-events-none" aria-hidden="true"></div>
+  <div class="relative max-w-content mx-auto px-5 sm:px-6 lg:px-10 pt-10 pb-14 sm:pt-14 sm:pb-20 lg:pt-20 lg:pb-24">
+    <div class="grid lg:grid-cols-12 gap-12 lg:gap-10 items-center">
+      <div class="lg:col-span-7">
+        <p class="kicker hero-in">TUS için aralıklı tekrar</p>
+        <h1 id="hero-title" class="hero-title display text-hero-title tracking-tightest text-ink mt-4">
+          {num(catalog.totals.cards)} TUS kartıyla <em>planlı tekrar.</em>
+        </h1>
+
+        <p class="mt-5 text-base sm:text-lg text-inkMuted leading-relaxed max-w-xl">
+          Çıkmış sınavlardan süzülen {num(catalog.totals.cards)} bilgi kartını <span lang="en">FSRS-6</span> tekrar takvimiyle çalışırsın:
+          hangi kartın bugün sorulacağını uygulama hesaplar, sen yalnızca hatırlayıp hatırlamadığını işaretlersin.
+          iPhone için geliştiriliyor, bugün tarayıcıda çevrimdışı da çalışır; kişisel <span lang="en">Anki</span> (<code>.apkg</code> / <code>.colpkg</code>) destelerini kayıpsız taşır.
+        </p>
+
+        <div class="hero-in mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3" style="--d: 180ms">
+          <a
+            href={SITE.webAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center justify-center gap-2 min-h-[3.25rem] px-7 rounded-full bg-teal text-white text-[0.9375rem] font-semibold shadow-[0_10px_24px_-12px_rgba(14,116,105,0.7)] hover:bg-tealDark transition"
+          >
+            Ücretsiz Başla
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" /></svg>
+            <span class="sr-only">(yeni sekmede açılır)</span>
+          </a>
+          <a
+            href={`${SITE.webAppUrl}decks`}
+            class="inline-flex items-center justify-center min-h-[3.25rem] px-7 rounded-full border border-line bg-white text-ink text-[0.9375rem] font-semibold hover:border-tealGraphic hover:text-teal transition"
+          >
+            Kartları Dene
+          </a>
+        </div>
+
+        <ul role="list" class="hero-in mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-inkMuted" style="--d: 240ms">
+          {trust.map((t) => (
+            <li class="inline-flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14998a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg>
+              {t}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <figure class="lg:col-span-5 w-full">
+        <div class="relative mx-auto w-full max-w-[20rem]">
+        <div class="phone hero-in" style="--d: 120ms">
+          <div class="phone-screen">
+            <span class="phone-island" aria-hidden="true"></span>
+            <div class="pt-11 px-4 pb-3 flex items-center justify-between text-xs border-b border-line/70">
+              <span class="font-bold text-ink">BKA TUS · {card.ders}</span>
+              <span class="rounded-full bg-gradeEasyBg px-2 py-0.5 font-semibold text-gradeEasy">Yeni</span>
+            </div>
+
+            <div class="flex-1 px-3.5 py-4 flex flex-col">
+              <div class="rounded-2xl bg-white border border-line px-4 py-5 shadow-[0_6px_18px_-12px_rgba(20,32,30,0.35)]">
+                <p class="text-[0.6875rem] font-semibold uppercase tracking-wider text-inkMuted">{card.sinav} TUS · {qNo}</p>
+                <p class="mt-3 text-[1.0625rem] leading-relaxed text-ink">
+                  {card.parts.map((part) =>
+                    part.type === 'cloze' && part.index === (card.activeCloze ?? 1) ? (
+                      <mark class="rounded-md bg-gradeGoodBg px-1.5 py-0.5 font-bold text-gradeGood">{part.answer}</mark>
+                    ) : (
+                      <span>{part.type === 'cloze' ? part.answer : part.value}</span>
+                    )
+                  )}
+                </p>
+                <p class="mt-4 pt-3 border-t border-lineLight text-xs text-inkMuted">
+                  Ölçülen bilgi: {card.olculenBilgi}
+                </p>
+              </div>
+
+              <p class="mt-4 text-center text-xs text-inkMuted">Ne kadar kolay hatırladın?</p>
+              <div class="mt-2 grid grid-cols-4 gap-1.5 text-center">
+                {grades.map((g) => (
+                  <span class={`rounded-xl py-2 ${g.cls}`}>
+                    <span class="block text-xs font-bold">{g.label}</span>
+                    <span class="block text-[0.6875rem] tabular-nums">{g.value}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="mt-5 flex flex-wrap justify-center gap-3 xl:mt-0" aria-hidden="true">
+        <div class="float-chip chip-in xl:-left-[14%] xl:bottom-[17%]" style="--d: 420ms">
+          <span class="chip-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 11h18" /></svg>
+          </span>
+          <span><span class="block font-semibold text-ink">Sonraki tekrar</span><span class="text-inkMuted">“İyi” derse {card.intervals.good} sonra</span></span>
+        </div>
+
+        <div class="float-chip chip-in xl:-right-[12%] xl:bottom-[4%]" style="--d: 560ms">
+          <span class="chip-icon chip-icon-warm">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4" /><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" /></svg>
+          </span>
+          <span><span class="block font-semibold text-ink">{card.sinav} TUS {qNo}</span><span class="text-inkMuted">Doğrudan çözdüren kart</span></span>
+        </div>
+        </div>
+        </div>
+
+        <figcaption class="sr-only">
+          Örnek çalışma ekranı: {card.ders} destesinden, {card.sinav} TUS {qNo} sorusunu doğrudan çözdüren kart ve dört değerlendirme düğmesi.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>

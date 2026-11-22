@@ -60,8 +60,9 @@ export function verifySearchOutput({ dist, htmlFiles, check }) {
   const elements = (homeMarkup.match(/<[a-z][a-z0-9-]*(?=[\s>])/gi) || []).length;
   const bytes = Buffer.byteLength(home);
   check(elements < 1300, `home: ${elements} elements exceeds the 1,300 element budget`);
-  // The restored product, access and usage sections share a 32 KB static HTML budget.
-  check(bytes < 32000, `home: ${bytes} bytes exceeds the 32 KB HTML budget`);
+  // The landing page (hero, proof, demo, study pace, references, tools, access, usage, FAQ)
+  // shares a 72 KB static HTML budget (about 13 KB gzipped).
+  check(bytes < 72000, `home: ${bytes} bytes exceeds the 72 KB HTML budget`);
   check(!/\bdata-cards=|\bdata-fsrs=/.test(home), 'home: bulk demo/simulation JSON was embedded again');
   check(home.includes('data-cards-url="/data/demo-cards.json"'), 'home: missing external demo data URL');
   check(home.includes('data-demo-retry'), 'home: external demo failure needs a retry action');
