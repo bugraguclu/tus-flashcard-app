@@ -67,11 +67,12 @@ export default function DeckAddMenu({
             openLabel={l('Ekle', 'Add')}
             closeLabel={l('Ekleme menüsünü kapat', 'Close add menu')}
         >
+            {/* Left to right: the most used first, the filtered deck last. */}
             <SpeedDialAction
-                key="filtered-deck"
-                label={l('Filtrelenmiş deste oluştur', 'Create filtered deck')}
-                icon={<DeckOverflowGlyph kind="filteredDeck" color={colors.onAccent} size={22} />}
-                onPress={() => selectAction(onCreateFilteredDeck)}
+                key="note"
+                label={l('Kart ekle', 'Add note')}
+                icon={<PencilGlyph color={colors.onAccent} size={22} />}
+                onPress={() => selectAction(onAddCard)}
             />
             <SpeedDialAction
                 key="deck"
@@ -80,10 +81,10 @@ export default function DeckAddMenu({
                 onPress={() => selectAction(onCreateDeck)}
             />
             <SpeedDialAction
-                key="note"
-                label={l('Kart ekle', 'Add note')}
-                icon={<PencilGlyph color={colors.onAccent} size={22} />}
-                onPress={() => selectAction(onAddCard)}
+                key="filtered-deck"
+                label={l('Filtrelenmiş deste oluştur', 'Create filtered deck')}
+                icon={<DeckOverflowGlyph kind="filteredDeck" color={colors.onAccent} size={22} />}
+                onPress={() => selectAction(onCreateFilteredDeck)}
             />
         </SpeedDial>
     );
