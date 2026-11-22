@@ -1,0 +1,14 @@
+---
+import { appScreens } from '../data/appScreens';
+
+interface Props {
+  screen: keyof typeof appScreens;
+  class?: string;
+  loading?: 'eager' | 'lazy';
+  fetchpriority?: 'high';
+}
+
+const { screen, class: className, loading = 'lazy', fetchpriority } = Astro.props;
+const { alt, ...image } = appScreens[screen];
+---
+<img {...image} {alt} class={className} {loading} {fetchpriority} decoding="async" />

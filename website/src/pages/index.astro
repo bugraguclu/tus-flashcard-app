@@ -10,6 +10,7 @@ import HomeAccess from '../components/home/HomeAccess.astro';
 import HomeTrust from '../components/home/HomeTrust.astro';
 import '../styles/home.css';
 
+import { appScreens } from '../data/appScreens';
 import catalog from '../data/generated/catalog.json';
 import { ACCESS, SITE, SHOW_PRICING_PROMO, PRICING_MODE } from '../config';
 import { breadcrumbList } from '../lib/schema';
@@ -61,7 +62,7 @@ const homeSchema = [
     inLanguage: 'tr-TR',
     description: SITE.description,
     url: origin + '/',
-    screenshot: origin + '/images/iphone-calisma.jpg',
+    screenshot: origin + appScreens.question.src,
     softwareHelp: { '@type': 'WebPage', url: origin + '/yardim/' },
     isAccessibleForFree: true,
     audience: {

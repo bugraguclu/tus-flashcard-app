@@ -1,4 +1,5 @@
 ---
+import { appScreens } from '../data/appScreens';
 import demoCards from '../data/generated/demo-cards.json';
 const first = demoCards[0];
 ---
@@ -44,7 +45,7 @@ const first = demoCards[0];
     <a data-demo-ref-link href={`/referanslar/?sinav=${encodeURIComponent(first.sinav)}&ders=${encodeURIComponent(first.ders)}&q=${first.qid.split('-')[1]}`}>Referans kaydı</a>
   </p>
   <p class="demo-footnote">11 gerçek kart · Sınav öncesi katalogdan (<code>a78ae1f</code>). Bu denemedeki yanıtlar saklanmaz.</p>
-  <a class="text-link" href="/images/iphone-calisma.jpg">iPhone çalışma ekranını gör</a>
+  <a class="text-link" href={appScreens.question.src}>Uygulamadaki çalışma ekranını gör</a>
   <p data-demo-status role="status" class="demo-footnote">Kartlar yükleniyor…</p>
   <button type="button" data-demo-retry hidden class="text-link">Yeniden yükle</button>
   <noscript><p class="demo-footnote">Kartları denemek için JavaScript’i açabilir veya referans kayıtlarını inceleyebilirsin.</p></noscript>
