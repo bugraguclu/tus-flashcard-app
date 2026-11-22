@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Platform, StyleSheet, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Text } from '../AppText';
@@ -8,6 +8,7 @@ import { DECORATIVE_SVG_PROPS } from '../decorativeSvgProps';
 import { Spacing, useThemeColors } from '../../constants/theme';
 import { exitDuration, MotionDuration, MotionEasing, NATIVE_DRIVER } from '../../constants/motion';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
+import { MotionCurve } from '../../lib/motion';
 import {
     DOCK,
     dockBottom,
@@ -35,6 +36,12 @@ const ACTION_WIDTH = FAB_SIZE + 2 * Spacing.sm;
 /** Every caption's distance from the panel's bottom edge, the raised button's included. */
 const CAPTION_BOTTOM = Spacing.md;
 const HAIRLINE = StyleSheet.hairlineWidth;
+/**
+ * A browser slides the dock with a CSS transition: it runs off the main thread and turns around
+ * from where it is. Animated without the native driver hands the same style to React as well,
+ * which can commit a frame from mid-slide after the slide has ended.
+ */
+const CSS_TRANSITION = Platform.OS === 'web';
 
 /** The raised action in the dock's notch, e.g. the deck list's ＋. */
 export interface DockAction {
@@ -85,6 +92,7 @@ export function Dock({ children, action, hidden = false }: DockProps) {
     const progress = useRef(new Animated.Value(hidden ? 1 : 0)).current;
 
     useEffect(() => {
+        if (CSS_TRANSITION) return undefined;
         const target = hidden ? 1 : 0;
         let animation: Animated.CompositeAnimation | undefined;
         let cancelled = false;
@@ -120,9 +128,18 @@ export function Dock({ children, action, hidden = false }: DockProps) {
         [hasAction, width],
     );
     const travel = dockHiddenOffset(insets.bottom, FAB_SIZE);
-    const motionStyle = reduceMotion
+    // One node for the dock's life: a fresh interpolation on every render of the deck list (each
+    // scroll event re-renders it) would be re-attached mid-slide and could paint a stale frame.
+    const motionStyle = useMemo(() => (reduceMotion
         ? { opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }
-        : { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, travel] }) }] };
+        : { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, travel] }) }] }
+    ), [progress, reduceMotion, travel]);
+    const transitionStyle = {
+        ...(reduceMotion ? { opacity: hidden ? 0 : 1 } : { transform: [{ translateY: hidden ? travel : 0 }] }),
+        transitionProperty: reduceMotion ? 'opacity' : 'transform',
+        transitionDuration: `${hidden ? exitDuration(MotionDuration.dock) : MotionDuration.dock}ms`,
+        transitionTimingFunction: `cubic-bezier(${MotionCurve.easeOut.join(', ')})`,
+    } as unknown as ViewStyle; // react-native-web reads the CSS transition props.
 
     const items = React.Children.toArray(children);
     const half = Math.ceil(items.length / 2);
@@ -142,7 +159,7 @@ export function Dock({ children, action, hidden = false }: DockProps) {
                     bottom: dockBottom(insets.bottom),
                     height: DOCK.height + (hasAction ? FAB_SIZE / 2 : 0),
                 },
-                motionStyle,
+                CSS_TRANSITION ? transitionStyle : motionStyle,
             ]}
         >
             <View style={styles.column} pointerEvents="box-none">

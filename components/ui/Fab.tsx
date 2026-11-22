@@ -15,6 +15,9 @@ export const FAB_SIZE = 56;
 /** The side of a speed dial action's small button. */
 const ACTION_BUTTON_SIZE = 46;
 
+/** The screen edge a speed dial's actions hug: their buttons sit at that edge, their names inward. */
+const SpeedDialSide = React.createContext<'left' | 'right'>('right');
+
 /** `rounded` is the deck list's ＋ (a rounded square); `round` is the Kronometre's orange circle. */
 export type FabShape = 'rounded' | 'round';
 
@@ -105,8 +108,9 @@ interface SpeedDialProps {
     /** Distance of the button from the screen's bottom edge. */
     bottom: number;
     /**
-     * Where the button sits: at the right edge (a floating button), or centred on the screen (the
-     * dock's raised ＋), with its actions rising above it in a column on the same line.
+     * Where the button sits: at the right edge (a floating button), with its actions rising above
+     * it, or centred on the screen (the dock's raised ＋), with its actions opening at the left
+     * edge, their buttons outermost and their names reaching inward.
      */
     placement?: 'right' | 'center';
     /**
@@ -155,10 +159,7 @@ export function SpeedDial({
     const buttonPlace: ViewStyle = centred
         ? { bottom, left: (windowWidth - FAB_SIZE) / 2 }
         : { bottom, right: Spacing.lg + inset };
-    // Centred, the actions' buttons line up over the ＋ and their names reach to its left.
-    const actionsRight = centred && !stretch
-        ? windowWidth / 2 - ACTION_BUTTON_SIZE / 2
-        : Spacing.lg + inset + (stretch ? insets.right : 0);
+    const side = centred && !stretch ? 'left' : 'right';
     return (
         <>
             {withButton ? (
@@ -178,23 +179,29 @@ export function SpeedDial({
                     <View
                         style={[
                             styles.actions,
-                            !stretch && styles.actionsHug,
+                            !stretch && (side === 'left' ? styles.actionsHugLeft : styles.actionsHug),
                             {
                                 paddingBottom: bottom + FAB_SIZE + (stretch ? Spacing.lg : Spacing.md),
-                                paddingLeft: Spacing.lg + insets.left + (stretch ? inset : 0),
-                                paddingRight: actionsRight,
+                                paddingLeft: Spacing.lg + insets.left + (stretch || side === 'left' ? inset : 0),
+                                paddingRight: Spacing.lg + inset + (stretch ? insets.right : 0),
                             },
                         ]}
                         pointerEvents="box-none"
                         accessibilityRole="menu"
                         accessibilityLabel={openLabel}
                     >
-                        {items.map((item, index) => (
-                            // The action nearest the button comes out first.
-                            <PopoverItem key={(item as React.ReactElement).key ?? index} index={items.length - 1 - index} origin="bottom right">
-                                {item}
-                            </PopoverItem>
-                        ))}
+                        <SpeedDialSide.Provider value={side}>
+                            {items.map((item, index) => (
+                                // The action nearest the button comes out first.
+                                <PopoverItem
+                                    key={(item as React.ReactElement).key ?? index}
+                                    index={items.length - 1 - index}
+                                    origin={side === 'left' ? 'bottom left' : 'bottom right'}
+                                >
+                                    {item}
+                                </PopoverItem>
+                            ))}
+                        </SpeedDialSide.Provider>
                     </View>
                     <OpenFab
                         shape={shape}
@@ -220,10 +227,11 @@ export function SpeedDialAction({ label, icon, onPress }: {
     onPress: () => void;
 }) {
     const colors = useThemeColors();
+    const left = React.useContext(SpeedDialSide) === 'left';
     return (
-        <TouchableOpacity style={styles.action} onPress={onPress} accessibilityRole="menuitem" accessibilityLabel={label}>
+        <TouchableOpacity style={[styles.action, left && styles.actionLeft]} onPress={onPress} accessibilityRole="menuitem" accessibilityLabel={label}>
             <View style={styles.actionLabel}>
-                <Text style={[styles.actionLabelText, { color: colors.onAccent }]}>{label}</Text>
+                <Text style={[styles.actionLabelText, left && styles.actionLabelTextLeft, { color: colors.onAccent }]}>{label}</Text>
             </View>
             <View style={[styles.actionButton, { backgroundColor: colors.accent }]}>{icon}</View>
         </TouchableOpacity>
@@ -273,10 +281,13 @@ const styles = StyleSheet.create({
     overlay: { flex: 1, justifyContent: 'flex-end' },
     actions: { gap: Spacing.md },
     actionsHug: { alignItems: 'flex-end' },
+    actionsHugLeft: { alignItems: 'flex-start' },
     action: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.md },
+    actionLeft: { flexDirection: 'row-reverse' },
     // A name too long for the room beside its button wraps, hugging the button.
     actionLabel: { flexShrink: 1, maxWidth: 240, paddingHorizontal: 10, paddingVertical: 7 },
     actionLabelText: { fontSize: FontSize.sm, fontWeight: '500', textAlign: 'right' },
+    actionLabelTextLeft: { textAlign: 'left' },
     actionButton: {
         width: ACTION_BUTTON_SIZE,
         height: ACTION_BUTTON_SIZE,
