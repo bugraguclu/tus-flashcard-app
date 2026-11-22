@@ -142,6 +142,8 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
 // Drawn outside the control so a filled button keeps its own colour, with a band of the card colour
 // between ring and control so it shows on the accent-coloured headers too. A field drawn as a row
 // (`fieldRowProps`, lib/fieldRowFocus.ts) wears the ring on the row rather than on its input.
+// A button whose visible shape is smaller than what it takes presses for (the dock's raised ＋ with
+// its caption under it) wears the ring on that shape, marked `data-focus-face`.
 const FOCUS_RING_CSS = `
 html:not([data-focus-ring]) :focus { outline: none !important; }
 html[data-focus-ring] :focus {
@@ -153,6 +155,12 @@ html[data-focus-ring] input:focus, html[data-focus-ring] textarea:focus { outlin
 html[data-focus-ring] [data-focus-inset]:focus {
     outline-offset: -2px !important;
     box-shadow: inset 0 0 0 4px var(--tus-focus-halo) !important;
+}
+html[data-focus-ring] :is(button, [role="button"]):focus:has([data-focus-face]) { outline: none !important; box-shadow: none !important; }
+html[data-focus-ring] :is(button, [role="button"]):focus [data-focus-face] {
+    outline: 2px solid var(--tus-focus-ring) !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 2px var(--tus-focus-halo) !important;
 }
 html[data-focus-ring] [data-field-row] input:focus, html[data-focus-ring] [data-field-row] textarea:focus {
     outline: none !important;

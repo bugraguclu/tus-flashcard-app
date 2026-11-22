@@ -36,6 +36,8 @@ const ACTION_WIDTH = FAB_SIZE + 2 * Spacing.sm;
 /** Every caption's distance from the panel's bottom edge, the raised button's included. */
 const CAPTION_BOTTOM = Spacing.md;
 const HAIRLINE = StyleSheet.hairlineWidth;
+/** In a browser, a shortcut's keyboard focus ring sits inside it, within the panel's edge. */
+const FOCUS_INSET_PROPS: object = Platform.OS === 'web' ? { dataSet: { focusInset: 'true' } } : {};
 /**
  * A browser slides the dock with a CSS transition: it runs off the main thread and turns around
  * from where it is. Animated without the native driver hands the same style to React as well,
@@ -230,6 +232,7 @@ export function DockItem({ label, accessibilityLabel, icon, onPress }: DockItemP
             style={styles.item}
             onPress={onPress}
             activeOpacity={0.6}
+            {...FOCUS_INSET_PROPS}
             accessibilityRole="button"
             accessibilityLabel={accessibilityLabel ?? label}
         >
@@ -261,6 +264,8 @@ const styles = StyleSheet.create({
         gap: Spacing.xs,
         paddingHorizontal: Spacing.xxs,
         paddingBottom: CAPTION_BOTTOM,
+        // The keyboard focus ring (web) follows these corners.
+        borderRadius: Radius.card,
     },
     caption: { ...Type.micro, textAlign: 'center' },
     actionSlot: { width: ACTION_SLOT },
