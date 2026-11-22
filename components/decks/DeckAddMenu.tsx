@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Platform, useWindowDimensions } from 'react-native';
+import { Platform } from 'react-native';
 import { useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { useModalHandoff } from '../../hooks/useModalHandoff';
@@ -8,7 +8,6 @@ import PencilGlyph from '../PencilGlyph';
 import { useDockActionBottom } from '../ui/Dock';
 import { SpeedDial, SpeedDialAction } from '../ui/Fab';
 import { PlusIcon } from '../ui/icons';
-import { DOCK } from '../../lib/dockGeometry';
 
 interface DeckAddMenuProps {
     visible: boolean;
@@ -21,8 +20,8 @@ interface DeckAddMenuProps {
 
 /**
  * The deck list's add actions: the kit's speed dial, opened by the ＋ raised in the dock's notch
- * (the dock draws that button). The labelled actions open at the left edge, in line with the
- * dock's own (a wide window centres the dock), over the strong dimming while ＋ turns into ×.
+ * (the dock draws that button). Its three actions open side by side in an arc over ＋, one after
+ * another from the left, over the strong dimming while ＋ turns into ×.
  */
 export default function DeckAddMenu({
     visible, onOpen, onClose, onCreateFilteredDeck, onCreateDeck, onAddCard,
@@ -30,9 +29,6 @@ export default function DeckAddMenu({
     const { l } = useI18n();
     const colors = useThemeColors();
     const bottom = useDockActionBottom();
-    const { width } = useWindowDimensions();
-    // A wide window centres the dock: the actions keep to its left edge, not the window's.
-    const inset = Math.max(0, (width - 2 * DOCK.sideInset - DOCK.maxWidth) / 2);
     const pendingAction = useRef<(() => void) | null>(null);
     const handoff = useModalHandoff(visible);
 
@@ -64,7 +60,6 @@ export default function DeckAddMenu({
             closeAtOnce={handoff.closeAtOnce}
             bottom={bottom}
             placement="center"
-            inset={inset}
             withButton={false}
             openColor={colors.accentHover}
             icon={<PlusIcon color={colors.onAccent} size={28} />}

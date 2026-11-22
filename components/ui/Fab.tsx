@@ -15,8 +15,16 @@ export const FAB_SIZE = 56;
 /** The side of a speed dial action's small button. */
 const ACTION_BUTTON_SIZE = 46;
 
-/** The screen edge a speed dial's actions hug: their buttons sit at that edge, their names inward. */
-const SpeedDialSide = React.createContext<'left' | 'right'>('right');
+/**
+ * How a speed dial lays out its actions: a column hugging the right edge (names left of their
+ * buttons), or a row above a centred button (names under their buttons).
+ */
+const SpeedDialLayout = React.createContext<'column' | 'row'>('column');
+
+/** How far the middle of a row of actions rises over its ends: they open in an arc over ＋. */
+const ROW_ARC = Spacing.xl;
+/** A row action's width: room for its name on two lines under its button. */
+const ROW_ACTION_WIDTH = 104;
 
 /** `rounded` is the deck list's ＋ (a rounded square); `round` is the Kronometre's orange circle. */
 export type FabShape = 'rounded' | 'round';
@@ -109,8 +117,8 @@ interface SpeedDialProps {
     bottom: number;
     /**
      * Where the button sits: at the right edge (a floating button), with its actions rising above
-     * it, or centred on the screen (the dock's raised ＋), with its actions opening at the left
-     * edge, their buttons outermost and their names reaching inward.
+     * it in a column, or centred on the screen (the dock's raised ＋), with its actions opening
+     * side by side in an arc over it, one after another from the left, like steps.
      */
     placement?: 'right' | 'center';
     /**
@@ -120,7 +128,7 @@ interface SpeedDialProps {
     withButton?: boolean;
     /**
      * Extra side inset that keeps the button and its actions at the edge of a column centred in
-     * a wide window (`useCenteredInset`); 0 on a phone.
+     * a wide window (`useCenteredInset`); 0 on a phone. A centred speed dial needs none.
      */
     inset?: number;
     shape?: FabShape;
@@ -159,7 +167,8 @@ export function SpeedDial({
     const buttonPlace: ViewStyle = centred
         ? { bottom, left: (windowWidth - FAB_SIZE) / 2 }
         : { bottom, right: Spacing.lg + inset };
-    const side = centred && !stretch ? 'left' : 'right';
+    const layout = centred && !stretch ? 'row' : 'column';
+    const middle = (items.length - 1) / 2;
     return (
         <>
             {withButton ? (
@@ -179,29 +188,41 @@ export function SpeedDial({
                     <View
                         style={[
                             styles.actions,
-                            !stretch && (side === 'left' ? styles.actionsHugLeft : styles.actionsHug),
+                            layout === 'row' ? styles.actionsRow : !stretch && styles.actionsHug,
                             {
                                 paddingBottom: bottom + FAB_SIZE + (stretch ? Spacing.lg : Spacing.md),
-                                paddingLeft: Spacing.lg + insets.left + (stretch || side === 'left' ? inset : 0),
-                                paddingRight: Spacing.lg + inset + (stretch ? insets.right : 0),
+                                paddingLeft: Spacing.lg + insets.left + (stretch ? inset : 0),
+                                paddingRight: Spacing.lg + (layout === 'row' ? insets.right : inset + (stretch ? insets.right : 0)),
                             },
                         ]}
                         pointerEvents="box-none"
                         accessibilityRole="menu"
                         accessibilityLabel={openLabel}
                     >
-                        <SpeedDialSide.Provider value={side}>
+                        <SpeedDialLayout.Provider value={layout}>
                             {items.map((item, index) => (
-                                // The action nearest the button comes out first.
-                                <PopoverItem
-                                    key={(item as React.ReactElement).key ?? index}
-                                    index={items.length - 1 - index}
-                                    origin={side === 'left' ? 'bottom left' : 'bottom right'}
-                                >
-                                    {item}
-                                </PopoverItem>
+                                layout === 'row' ? (
+                                    // Left to right, one after another, the middle one highest.
+                                    <PopoverItem
+                                        key={(item as React.ReactElement).key ?? index}
+                                        index={index}
+                                        origin="bottom"
+                                        style={{ marginBottom: middle > 0 ? ROW_ARC * (1 - Math.abs(index - middle) / middle) : 0 }}
+                                    >
+                                        {item}
+                                    </PopoverItem>
+                                ) : (
+                                    // The action nearest the button comes out first.
+                                    <PopoverItem
+                                        key={(item as React.ReactElement).key ?? index}
+                                        index={items.length - 1 - index}
+                                        origin="bottom right"
+                                    >
+                                        {item}
+                                    </PopoverItem>
+                                )
                             ))}
-                        </SpeedDialSide.Provider>
+                        </SpeedDialLayout.Provider>
                     </View>
                     <OpenFab
                         shape={shape}
@@ -227,11 +248,16 @@ export function SpeedDialAction({ label, icon, onPress }: {
     onPress: () => void;
 }) {
     const colors = useThemeColors();
-    const left = React.useContext(SpeedDialSide) === 'left';
+    const row = React.useContext(SpeedDialLayout) === 'row';
     return (
-        <TouchableOpacity style={[styles.action, left && styles.actionLeft]} onPress={onPress} accessibilityRole="menuitem" accessibilityLabel={label}>
-            <View style={styles.actionLabel}>
-                <Text style={[styles.actionLabelText, left && styles.actionLabelTextLeft, { color: colors.onAccent }]}>{label}</Text>
+        <TouchableOpacity style={row ? styles.rowAction : styles.action} onPress={onPress} accessibilityRole="menuitem" accessibilityLabel={label}>
+            <View style={row ? styles.rowActionLabel : styles.actionLabel}>
+                <Text
+                    style={[styles.actionLabelText, row && styles.rowActionLabelText, { color: colors.onAccent }]}
+                    numberOfLines={row ? 2 : undefined}
+                >
+                    {label}
+                </Text>
             </View>
             <View style={[styles.actionButton, { backgroundColor: colors.accent }]}>{icon}</View>
         </TouchableOpacity>
@@ -281,13 +307,15 @@ const styles = StyleSheet.create({
     overlay: { flex: 1, justifyContent: 'flex-end' },
     actions: { gap: Spacing.md },
     actionsHug: { alignItems: 'flex-end' },
-    actionsHugLeft: { alignItems: 'flex-start' },
+    actionsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: Spacing.sm },
     action: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.md },
-    actionLeft: { flexDirection: 'row-reverse' },
+    // Name under the button: the button first on screen, the name read first by VoiceOver.
+    rowAction: { width: ROW_ACTION_WIDTH, flexDirection: 'column-reverse', alignItems: 'center', gap: Spacing.sm },
     // A name too long for the room beside its button wraps, hugging the button.
     actionLabel: { flexShrink: 1, maxWidth: 240, paddingHorizontal: 10, paddingVertical: 7 },
     actionLabelText: { fontSize: FontSize.sm, fontWeight: '500', textAlign: 'right' },
-    actionLabelTextLeft: { textAlign: 'left' },
+    rowActionLabel: { alignSelf: 'stretch', minHeight: 36, justifyContent: 'flex-start' },
+    rowActionLabelText: { textAlign: 'center', lineHeight: 18 },
     actionButton: {
         width: ACTION_BUTTON_SIZE,
         height: ACTION_BUTTON_SIZE,
