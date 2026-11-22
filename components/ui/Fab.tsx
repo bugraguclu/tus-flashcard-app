@@ -21,8 +21,8 @@ const ACTION_BUTTON_SIZE = 46;
  */
 const SpeedDialLayout = React.createContext<'column' | 'row'>('column');
 
-/** How far the middle of a row of actions rises over its ends: they open in an arc over ＋. */
-const ROW_ARC = Spacing.xl;
+/** How far a row of actions slides up as it opens, like a drawer pulled out from behind ＋. */
+const ROW_SLIDE = 40;
 /** A row action's width: room for its name on two lines under its button. */
 const ROW_ACTION_WIDTH = 104;
 
@@ -117,8 +117,8 @@ interface SpeedDialProps {
     bottom: number;
     /**
      * Where the button sits: at the right edge (a floating button), with its actions rising above
-     * it in a column, or centred on the screen (the dock's raised ＋), with its actions opening
-     * side by side in an arc over it, one after another from the left, like steps.
+     * it in a column, or centred on the screen (the dock's raised ＋), with its actions side by
+     * side over it, sliding up together from behind it like a drawer.
      */
     placement?: 'right' | 'center';
     /**
@@ -168,7 +168,6 @@ export function SpeedDial({
         ? { bottom, left: (windowWidth - FAB_SIZE) / 2 }
         : { bottom, right: Spacing.lg + inset };
     const layout = centred && !stretch ? 'row' : 'column';
-    const middle = (items.length - 1) / 2;
     return (
         <>
             {withButton ? (
@@ -202,12 +201,10 @@ export function SpeedDial({
                         <SpeedDialLayout.Provider value={layout}>
                             {items.map((item, index) => (
                                 layout === 'row' ? (
-                                    // Left to right, one after another, the middle one highest.
+                                    // All together, sliding up from behind the button like a drawer.
                                     <PopoverItem
                                         key={(item as React.ReactElement).key ?? index}
-                                        index={index}
-                                        origin="bottom"
-                                        style={{ marginBottom: middle > 0 ? ROW_ARC * (1 - Math.abs(index - middle) / middle) : 0 }}
+                                        slide={{ axis: 'y', distance: ROW_SLIDE }}
                                     >
                                         {item}
                                     </PopoverItem>

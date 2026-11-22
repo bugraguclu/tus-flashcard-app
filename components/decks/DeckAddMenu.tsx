@@ -20,8 +20,8 @@ interface DeckAddMenuProps {
 
 /**
  * The deck list's add actions: the kit's speed dial, opened by the ＋ raised in the dock's notch
- * (the dock draws that button). Its three actions open side by side in an arc over ＋, one after
- * another from the left, over the strong dimming while ＋ turns into ×.
+ * (the dock draws that button). Its three actions sit side by side over ＋ and slide up together
+ * from behind it like a drawer, over the strong dimming while ＋ turns into ×.
  */
 export default function DeckAddMenu({
     visible, onOpen, onClose, onCreateFilteredDeck, onCreateDeck, onAddCard,
