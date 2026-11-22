@@ -1,0 +1,15 @@
+---
+import { SOCIAL } from '../../config';
+const instagram = SOCIAL.find((social) => social.icon === 'instagram')!;
+const guides = [
+  { title: 'İlk kartınla başla', text: 'Hazır paketi aç, dersini seç ve ilk tekrarını yap.', href: '/yardim/hizli-baslangic/' },
+  { title: 'Kartını görselle anlat', text: 'Kişisel kartına not ve görsel ekle, görseli düzenle veya değiştir.', href: '/yardim/kart-ekleme/' },
+  { title: 'Kısayolları öğren', text: 'Klavye ve dokunma kontrollerini çalışma alışkanlığına göre ayarla.', href: '/yardim/kisayollar/' },
+];
+---
+<section id="kullanim" class="site-container usage-section" aria-labelledby="usage-heading">
+  <div class="usage-heading"><div><p class="eyebrow">Uygulama kullanımı</p><h2 id="usage-heading">Uygulamayı keşfet.</h2></div><a class="text-link" href="/yardim/">Tüm rehberler</a></div>
+  <div class="guide-list">{guides.map((guide) => <a href={guide.href}><h3>{guide.title}</h3><p>{guide.text}</p></a>)}</div>
+  <div class="instagram-line"><div><h3>Instagram’da TusAnkiM</h3><p>Uygulama kullanımı ve kart paylaşımları için {instagram.handle} hesabını ziyaret edebilirsin.</p></div><a class="text-link" href={instagram.url} target="_blank" rel="noopener noreferrer">{instagram.handle}</a></div>
+  <div class="faq-line"><p>Aklında bir soru mu var?</p><a class="text-link" href="/sss/">Sıkça sorulan sorular</a></div>
+</section>

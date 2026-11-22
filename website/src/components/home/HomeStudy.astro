@@ -1,0 +1,74 @@
+---
+import catalog from '../../data/generated/catalog.json';
+const firstPassDays = 180;
+const dailyNewCards = Math.ceil(catalog.totals.cards / firstPassDays);
+---
+<section class="site-container study-details" aria-label="TusAnkiM ile çalışma">
+  <section id="fsrs" class="study-row" aria-labelledby="fsrs-heading">
+    <div class="study-copy">
+      <p class="eyebrow">FSRS-6</p>
+      <h2 id="fsrs-heading">Tekrar zamanını<br />yanıtların belirler.</h2>
+      <p>Kartın cevabını aç, ne kadar kolay hatırladığını seç. FSRS-6, kartın geçmişini ve yanıtını kullanarak sonraki tekrarını planlar.</p>
+      <p>Yeni kart sayısını ve hedef hatırlama oranını kendi çalışma tempona göre ayarlayabilirsin.</p>
+      <a class="text-link" href="/yardim/fsrs/">Aralıklı tekrar nasıl çalışır?</a>
+    </div>
+    <figure class="study-figure">
+      <div class="review-example">
+        <p class="example-label">Kartı değerlendirme</p>
+        <p class="example-title">Bu bilgiyi ne kadar<br />kolay hatırladın?</p>
+        <div class="example-grades"><span>Tekrar</span><span>Zor</span><span>İyi</span><span>Kolay</span></div>
+        <p class="example-note">Her kartın tekrar aralığı ayrı hesaplanır.</p>
+      </div>
+      <figcaption>Değerlendirme adımının sade gösterimi</figcaption>
+    </figure>
+  </section>
+  <section id="kronometre" class="study-row stopwatch-row" aria-labelledby="stopwatch-heading">
+    <div class="study-copy">
+      <p class="eyebrow">Kronometre ve çalışma takvimi</p>
+      <h2 id="stopwatch-heading">Çalıştığın süreyi<br />gün gün gör.</h2>
+      <p>Konu okurken, soru çözerken veya deneme yaparken kronometreyi başlat. Çalışma ve mola sürelerini ayrı kaydet.</p>
+      <p>Kart tekrarların ve kronometre oturumların aynı takvimde görünür. İstatistiklerde tekrar sayını, çalışma süreni ve cevap dağılımını incele; zorlandığın destelere odaklan.</p>
+      <a class="text-link" href="/yardim/istatistikler/">Performans takibini keşfet</a>
+      <a class="text-link" href="/yardim/kronometre/">Kronometre ve takvim rehberi</a>
+    </div>
+    <figure class="study-figure">
+      <div class="session-example">
+        <p class="example-label">Örnek çalışma oturumu</p>
+        <p class="session-subject">Dahiliye <span>Konu tekrarı</span></p>
+        <p class="session-time">45:00</p>
+        <dl><div><dt>Çalışma</dt><dd>45 dk</dd></div><div><dt>Mola</dt><dd>10 dk</dd></div></dl>
+        <p class="example-note">Oturumlarını Çalışma Takvimi’nde incele.</p>
+      </div>
+      <figcaption>Örnek süreler; çalışan bir kronometre değildir.</figcaption>
+    </figure>
+  </section>
+  <section id="gunluk-calisma" class="study-row" aria-labelledby="daily-heading">
+    <div class="study-copy">
+      <p class="eyebrow">Günde ne kadar çalışmalısın?</p>
+      <h2 id="daily-heading">Önce bugünün tekrarları,<br />sonra yeni kartlar.</h2>
+      <p>Vadesi gelen tekrarlarını tamamlayarak başla. Yeni kart hedefini konu çalışmana ve ayırabildiğin süreye göre belirle; birkaç günlük gerçek çalışma süreni gördükten sonra ayarla.</p>
+      <a class="text-link" href="/yardim/deste-secenekleri/">Tekrar ayarlarını incele</a>
+    </div>
+    <aside class="study-figure" aria-label="Örnek ilk tur hesabı">
+      <div><h3>Örnek ilk tur hesabı</h3><p class="example-title">{catalog.totals.cards.toLocaleString('tr-TR')} kart / {firstPassDays} gün<br />Günde yaklaşık {dailyNewCards} yeni kart</p><p class="example-note">Bu yalnızca ilk tur hesabıdır; tekrarları, dinlenme günlerini ve konu çalışmasını içermez. Hedefini kendi çalışma sürene göre ayarla.</p></div>
+    </aside>
+  </section>
+  <section id="anki" class="study-row" aria-labelledby="anki-heading">
+    <div class="study-copy">
+      <p class="eyebrow">Anki dosya desteği</p>
+      <h2 id="anki-heading">Kendi destelerinle<br />devam et.</h2>
+      <p>Kişisel Anki destelerini <code>.apkg</code> veya <code>.colpkg</code> dosyasıyla getir. Kartların, şablonların, medya dosyaların ve seçtiğinde tekrar geçmişin birlikte aktarılır.</p>
+      <p>Kişisel destelerini tekrar dışa aktarabilirsin. İki uygulama arasında taşıma dosyayla yapılır; otomatik eşitleme yoktur.</p>
+      <a class="text-link" href="/yardim/anki-ile-kullanma/">Anki ile birlikte kullanma</a>
+    </div>
+    <figure class="study-figure">
+      <div class="transfer-example">
+        <p class="example-label">Kişisel deste aktarımı</p>
+        <p class="file-name">Kendi destem.apkg</p>
+        <ul><li>Kartlar ve notlar</li><li>Şablonlar ve medya</li><li>İsteğe bağlı tekrar geçmişi</li></ul>
+        <p class="example-note">Hazır TUS paketi dışa aktarılmaz.</p>
+      </div>
+      <figcaption>Aktarılabilen içeriklerin özeti</figcaption>
+    </figure>
+  </section>
+</section>

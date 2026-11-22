@@ -1,0 +1,21 @@
+---
+import catalog from '../../data/generated/catalog.json';
+const tools = [
+  { title: 'Hazır TUS kartları', text: `${catalog.totals.cards.toLocaleString('tr-TR')} kart, ${catalog.totals.courses} ders. Hazır koleksiyondan veya kendi destelerinden çalış.`, href: '#demo' },
+  { title: 'TUS referansları', text: 'Kartların son 6 TUS’taki sorularla ilişkisini dönem toplamları ve açıklamalı kayıtlarla incele.', href: '/referanslar/' },
+  { title: 'Puan ve hedef net', text: 'Doğru ve yanlışlarını gir; netlerini, tahmini puanını ve hedefin için gereken neti gör.', href: '/puan-hesapla/' },
+  { title: 'Kronometre ve planlama', text: 'Çalışma süreni ölç. Kart tekrarlarını ve ders oturumlarını takvimde takip et.', href: '/yardim/kronometre/' },
+  { title: 'Kullanım kılavuzu', text: 'Kart ekleme, tekrar ayarları, dosya aktarımı ve yedekleme için Türkçe rehberler.', href: '/yardim/' },
+];
+---
+<section id="ekosistem" class="site-container ecosystem" aria-labelledby="ecosystem-heading">
+  <div class="ecosystem-intro">
+    <p class="eyebrow">Çalışma araçları</p>
+    <h2 id="ecosystem-heading">TUS hazırlığında<br />günlük çalışma araçların.</h2>
+    <p>Günlük tekrar, çalışma takibi ve net hesabı. Hazırlık sürecinde kullandığın araçlara buradan ulaş.</p>
+  </div>
+  <div class="ecosystem-list">
+    {tools.map((tool) => <a href={tool.href}><h3>{tool.title}</h3><p>{tool.text}</p></a>)}
+    <a href="https://www.osym.gov.tr/" target="_blank" rel="noopener noreferrer"><h3>Sınav ve tercih duyuruları</h3><p>Güncel takvim ve tercih kılavuzları için resmî ÖSYM duyurularını takip et. TusAnkiM’de tercih simülatörü bulunmuyor.</p></a>
+  </div>
+</section>

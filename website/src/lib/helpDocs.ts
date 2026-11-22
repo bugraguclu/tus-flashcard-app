@@ -52,6 +52,10 @@ function slugifyTr(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+export function helpCategoryId(category: string): string {
+  return `rehber-${slugifyTr(category)}`;
+}
+
 function categoryForOrder(order: number): string {
   if (order <= 3) return 'Başlangıç';
   if (order <= 7) return 'Çalışma & FSRS-6';
@@ -109,15 +113,17 @@ export function getHelpArticles(): HelpArticle[] {
       });
 
       const headings: HelpHeading[] = [];
-      const seenIds = new Map<string, number>();
+      // Reserve authored anchors so generated headings cannot duplicate stable deep links.
+      const seenIds = new Set([...md.matchAll(/<a id="([^"]+)"><\/a>/g)].map((match) => match[1]));
 
       const renderer = new Renderer();
       renderer.heading = function (token) {
         const rawText = token.text.trim();
         const baseId = slugifyTr(rawText) || 'bolum';
-        const count = seenIds.get(baseId) ?? 0;
-        seenIds.set(baseId, count + 1);
-        const id = count === 0 ? baseId : `${baseId}-${count}`;
+        let id = baseId;
+        let suffix = 1;
+        while (seenIds.has(id)) id = `${baseId}-${suffix++}`;
+        seenIds.add(id);
 
         if (token.depth === 2 || token.depth === 3) {
           headings.push({

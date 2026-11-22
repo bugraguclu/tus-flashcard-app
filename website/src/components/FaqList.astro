@@ -1,0 +1,24 @@
+---
+import faqs from '../data/faqs.json';
+import { answerHtml } from '../lib/richtext';
+import { websiteFaqAnchor } from '../lib/websiteSearchIndex';
+---
+<div id="faq-root">
+  {faqs.tabs.map((category) => (
+    <section data-faq-group class="faq-group" aria-labelledby={`faq-${category.key}`}>
+      <h2 id={`faq-${category.key}`} class="display text-subsection text-ink">{category.label}</h2>
+      <div class="faq mt-4">
+        {faqs.items.filter((item) => item.cat === category.key).map((item) => (
+          <details data-faq-item>
+            <summary id={websiteFaqAnchor(item.q)}><span>{item.q}</span></summary>
+            <div class="faq-answer" set:html={answerHtml(item.a)}></div>
+          </details>
+        ))}
+      </div>
+    </section>
+  ))}
+</div>
+<style>
+  .faq-group { margin-top: 2.5rem; }
+  .faq-group:first-child { margin-top: 0; }
+</style>

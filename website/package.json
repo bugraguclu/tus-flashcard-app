@@ -6,14 +6,14 @@
   "engines": {
     "node": ">=22.12.0"
   },
-  "description": "TusAnkiM — TUS aralıklı tekrar ve doğrulanmış kart referans web sitesi.",
+  "description": "TusAnkiM \u2014 TUS aral\u0131kl\u0131 tekrar ve do\u011frulanm\u0131\u015f kart referans web sitesi.",
   "scripts": {
+    "assets:build": "node --experimental-strip-types scripts/build-brand-assets.mjs",
     "dev": "astro dev",
     "data:build": "node scripts/build-data.mjs",
-    "data:fsrs": "node --experimental-transform-types scripts/precompute-fsrs.mjs",
-    "data": "npm run data:build && npm run data:fsrs",
+    "data": "npm run data:build",
     "build": "astro check && astro build",
-    "verify": "node scripts/verify-site.mjs",
+    "verify": "node --experimental-strip-types --test scripts/gitDates.test.ts scripts/helpReading.test.ts scripts/guideSearch.test.ts && node scripts/verify-site.mjs",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -30,6 +30,7 @@
     "@types/node": "^22.15.0",
     "esbuild": "^0.28.0",
     "jszip": "^3.10.2",
+    "sharp": "^0.35.5",
     "typescript": "^5.8.2"
   }
 }

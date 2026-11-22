@@ -16,9 +16,11 @@
  * It also answers clicks on study reminders, which the page shows through this worker.
  */
 
-const CACHE = 'tusankim-app-v2';
-const SHELL = '/';
-const HASHED_PATHS = ['/_expo/static/', '/assets/'];
+// The shared Vercel build prepends APP_BASE. Keep the worker at /sw.js so installed copies update.
+const BASE = typeof APP_BASE === 'string' ? APP_BASE : '';
+const CACHE = BASE ? 'tusankim-app-v3' : 'tusankim-app-v2';
+const SHELL = BASE + '/';
+const HASHED_PATHS = [BASE + '/_expo/static/', BASE + '/assets/'];
 const PRECACHE = ['/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 // A connection this slow to answer starts the app from the shell instead; the network copy still
 // replaces the shell once it arrives.
@@ -27,7 +29,8 @@ const STUDY_REMINDER_KIND = 'tusankim.study-reminder';
 
 /** The static bundle files the page loads, e.g. /_expo/static/js/web/entry-<hash>.js. */
 function bundlePaths(html) {
-    return [...new Set(html.match(/\/_expo\/static\/[^"'\s)]+/g) || [])];
+    const paths = Array.from(html.matchAll(/["'](\/[^"'\s]+)["']/g), ([, path]) => path);
+    return [...new Set(paths.filter((path) => path.startsWith(HASHED_PATHS[0])))];
 }
 
 /**
@@ -37,6 +40,7 @@ function bundlePaths(html) {
 async function storeShell(cache, response) {
     const html = await response.clone().text();
     const paths = bundlePaths(html);
+    if (paths.length === 0) return;
     await Promise.all(paths.map(async (path) => {
         if (await cache.match(path)) return;
         try {
@@ -47,10 +51,9 @@ async function storeShell(cache, response) {
         }
     }));
     await cache.put(SHELL, response);
-    if (paths.length === 0) return;
     for (const request of await cache.keys()) {
         const path = new URL(request.url).pathname;
-        if (path.startsWith('/_expo/static/js/') && !paths.includes(path)) await cache.delete(request);
+        if (path.startsWith(HASHED_PATHS[0] + 'js/') && !paths.includes(path)) await cache.delete(request);
     }
 }
 
@@ -138,6 +141,7 @@ self.addEventListener('fetch', (event) => {
     if (request.method !== 'GET') return;
     const url = new URL(request.url);
     if (url.origin !== self.location.origin) return;
+    if (BASE && url.pathname !== BASE && !url.pathname.startsWith(SHELL) && !PRECACHE.includes(url.pathname)) return;
 
     if (request.mode === 'navigate') {
         handleNavigation(event);
@@ -154,12 +158,12 @@ self.addEventListener('notificationclick', (event) => {
     if (data.kind !== STUDY_REMINDER_KIND) return;
     event.waitUntil((async () => {
         const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-        const client = windows[0];
+        const client = windows.find(({ url }) => !BASE || new URL(url).pathname.startsWith(SHELL));
         if (client) {
             await client.focus();
             client.postMessage({ type: 'tusankim:study-reminder-open' });
             return;
         }
-        await self.clients.openWindow('/decks');
+        await self.clients.openWindow(BASE + '/decks');
     })());
 });

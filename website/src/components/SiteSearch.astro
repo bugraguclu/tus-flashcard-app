@@ -1,0 +1,268 @@
+---
+import { link, page } from '../data/pages';
+
+const suggestions = ['puan', 'referanslar', 'yardim'].map(page);
+---
+<dialog id="site-search" closedby="any" aria-labelledby="site-search-title">
+  <search class="search-panel">
+    <div class="search-heading">
+      <h2 id="site-search-title">Sitede ara</h2>
+      <button id="site-search-close" type="button" aria-label="Aramayı kapat">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+      </button>
+    </div>
+    <label class="sr-only" for="site-search-query">Sayfa, rehber veya konu ara</label>
+    <div class="search-field">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 4 4" /></svg>
+      <input id="site-search-query" type="search" placeholder="Örn. yedekleme, puan" autocomplete="off" enterkeyhint="search" maxlength="120" autofocus />
+      <button id="site-search-clear" type="button" aria-label="Aramayı temizle" hidden>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+      </button>
+    </div>
+    <div class="search-scroll">
+      <p id="site-search-status" role="status"></p>
+      <ul id="site-search-suggestions" aria-label="Önerilen sayfalar">
+        {suggestions.map((item) => <li><a href={link(item.path)}><strong>{item.title}</strong><span aria-hidden="true">›</span></a></li>)}
+      </ul>
+      <ul id="site-search-results" aria-label="Arama sonuçları" hidden></ul>
+      <a id="site-search-help" class="text-link" href="/yardim/" hidden>Yardım Merkezi’ne git</a>
+      <button id="site-search-retry" class="text-link" type="button" hidden>Yeniden dene</button>
+    </div>
+  </search>
+</dialog>
+
+<script>
+  import { createGuideSearch, guideSearchWords } from '../lib/guideSearch';
+  import type { WebsiteSearchEntry } from '../lib/websiteSearchIndex';
+
+  const dialog = document.querySelector<HTMLDialogElement>('#site-search')!;
+  const opener = document.querySelector<HTMLButtonElement>('#site-search-open')!;
+  const close = dialog.querySelector<HTMLButtonElement>('#site-search-close')!;
+  const input = dialog.querySelector<HTMLInputElement>('#site-search-query')!;
+  const clear = dialog.querySelector<HTMLButtonElement>('#site-search-clear')!;
+  const suggestions = dialog.querySelector<HTMLUListElement>('#site-search-suggestions')!;
+  const results = dialog.querySelector<HTMLUListElement>('#site-search-results')!;
+  const status = dialog.querySelector<HTMLElement>('#site-search-status')!;
+  const help = dialog.querySelector<HTMLAnchorElement>('#site-search-help')!;
+  const retry = dialog.querySelector<HTMLButtonElement>('#site-search-retry')!;
+  const listViewport = dialog.querySelector<HTMLElement>('.search-scroll')!;
+  const viewport = window.visualViewport;
+  let returnFocus: HTMLElement | null = null;
+  let find: ReturnType<typeof createGuideSearch> | undefined;
+  let state: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
+
+  function fit() {
+    if (!viewport || viewport.scale !== 1) {
+      dialog.style.removeProperty('--search-height');
+      dialog.style.removeProperty('--search-top');
+      return;
+    }
+    dialog.style.setProperty('--search-height', `${viewport.height}px`);
+    dialog.style.setProperty('--search-top', `${viewport.offsetTop}px`);
+  }
+
+  async function load() {
+    state = 'loading';
+    render();
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch('/arama-index.json', { signal: controller.signal });
+      if (!response.ok) throw new Error('Arama dizini yüklenemedi');
+      const entries: WebsiteSearchEntry[] = await response.json();
+      if (!Array.isArray(entries) || !entries.length) throw new Error('Arama dizini boş');
+      find = createGuideSearch(entries);
+      state = 'ready';
+    } catch {
+      state = 'error';
+    } finally {
+      window.clearTimeout(timeout);
+    }
+    render();
+  }
+
+  function resultItem(item: WebsiteSearchEntry) {
+    const row = document.createElement('li');
+    const link = document.createElement('a');
+    const label = document.createElement('strong');
+    const kind = document.createElement('span');
+    const summary = document.createElement('small');
+    link.href = item.url;
+    label.textContent = item.title;
+    kind.textContent = item.type;
+    summary.textContent = item.sub;
+    link.append(label, kind);
+    if (item.sub && item.sub !== item.title) link.append(summary);
+    row.append(link);
+    return row;
+  }
+
+  function render() {
+    const querying = guideSearchWords(input.value).length > 0;
+    const hits = querying && find ? find(input.value) : [];
+    const shown = hits.slice(0, 8);
+    clear.hidden = !input.value;
+    suggestions.hidden = querying;
+    results.hidden = !shown.length;
+    help.hidden = !querying || (state !== 'error' && (state !== 'ready' || hits.length > 0));
+    retry.hidden = !querying || state !== 'error';
+    results.replaceChildren(...shown.map(resultItem));
+    status.textContent = !querying ? 'Önerilen sayfalar'
+      : state === 'error' ? 'Arama şu anda yüklenemiyor.'
+      : state !== 'ready' ? 'Arama yükleniyor…'
+      : !hits.length ? 'Sonuç bulunamadı'
+      : hits.length > shown.length ? `${hits.length} sonuç · İlk ${shown.length} gösteriliyor`
+      : `${hits.length} sonuç`;
+  }
+
+  function open(trigger?: HTMLElement) {
+    if (document.querySelector('dialog[open]')) return;
+    const active = document.activeElement;
+    returnFocus = trigger ?? (active instanceof HTMLElement && active !== document.body ? active : opener);
+    fit();
+    dialog.showModal();
+    input.focus({ preventScroll: true });
+    viewport?.addEventListener('resize', fit);
+    viewport?.addEventListener('scroll', fit);
+  }
+
+  if (typeof dialog.showModal === 'function') {
+    opener.hidden = false;
+    opener.addEventListener('click', () => open(opener));
+    document.addEventListener('keydown', (event) => {
+      if (event.defaultPrevented || event.isComposing || event.altKey || event.shiftKey ||
+          !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'k' ||
+          document.querySelector('dialog[open]')) return;
+      event.preventDefault();
+      if (!event.repeat) open();
+    });
+  }
+
+  close.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => {
+    if (dialog.open) return;
+    viewport?.removeEventListener('resize', fit);
+    viewport?.removeEventListener('scroll', fit);
+    if (returnFocus) (returnFocus.getClientRects().length ? returnFocus : opener).focus({ preventScroll: true });
+  });
+
+  // Emulate native light dismissal on Safari versions without closedby.
+  if (!('closedBy' in HTMLDialogElement.prototype)) {
+    let pressedOutside = false;
+    const outside = (event: PointerEvent) => {
+      const rect = dialog.getBoundingClientRect();
+      return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+    };
+    dialog.addEventListener('pointerdown', (event) => { pressedOutside = outside(event); });
+    dialog.addEventListener('pointerup', (event) => { if (pressedOutside && outside(event)) dialog.close(); });
+  }
+
+  dialog.addEventListener('click', (event) => {
+    const link = (event.target as Element).closest<HTMLAnchorElement>('a[href]');
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    returnFocus = null;
+    dialog.close();
+  });
+
+  input.addEventListener('input', () => {
+    listViewport.scrollTop = 0;
+    if (state === 'idle' && guideSearchWords(input.value).length) void load();
+    else render();
+  });
+  retry.addEventListener('click', () => {
+    input.focus({ preventScroll: true });
+    void load();
+  });
+  clear.addEventListener('click', () => {
+    input.value = '';
+    listViewport.scrollTop = 0;
+    input.focus({ preventScroll: true });
+    render();
+  });
+  dialog.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      dialog.close();
+      return;
+    }
+    const links = [...(suggestions.hidden ? results : suggestions).querySelectorAll<HTMLAnchorElement>('a')];
+    const focused = links.indexOf(document.activeElement as HTMLAnchorElement);
+    if (event.target === input && event.key === 'Enter' && suggestions.hidden && links.length) {
+      event.preventDefault();
+      links[0].click();
+    } else if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && links.length && (event.target === input || focused >= 0)) {
+      event.preventDefault();
+      const next = focused < 0 ? (event.key === 'ArrowUp' ? links.length - 1 : 0)
+        : focused + (event.key === 'ArrowUp' ? -1 : 1);
+      (links[next] ?? input).focus();
+    }
+  });
+
+  render();
+</script>
+
+<style>
+  :global(html:has(#site-search[open])) { overflow: hidden; scrollbar-gutter: stable; }
+  #site-search {
+    --search-gap: .75rem;
+    position: fixed; inset: calc(var(--search-top, 0px) + var(--search-gap)) 0 auto;
+    margin: 0 auto; width: min(35rem, calc(100% - 1.5rem));
+    max-height: calc(var(--search-height, 100dvh) - var(--search-gap) - .75rem);
+    padding: 0; border: 1px solid #dde1e4; border-radius: 1rem;
+    color: #24292c; background: #fff; box-shadow: 0 20px 56px rgb(24 44 40 / .22);
+    overflow: auto; overscroll-behavior: contain;
+  }
+  #site-search[open] { display: flex; }
+  #site-search::backdrop { background: rgb(22 38 35 / .48); }
+  .search-panel { display: flex; flex-direction: column; width: 100%; min-width: 0; padding: .75rem; }
+  .search-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: .375rem; padding-left: .375rem; flex: none; }
+  .search-heading h2 { font-size: 1.125rem; font-weight: 700; letter-spacing: -.025em; }
+  .search-heading button, #site-search-clear { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: .5rem; color: #596166; }
+  .search-field {
+    display: flex; align-items: center; gap: .625rem; flex: none;
+    padding-left: .75rem; border: 1px solid #dde1e4; border-radius: .625rem; color: #0e7469;
+  }
+  #site-search-query { flex: 1; min-width: 0; min-height: 2.875rem; color: #24292c; background: transparent; font-size: 1rem; }
+  #site-search-query:focus-visible { outline: none; }
+  #site-search-query::-webkit-search-cancel-button { -webkit-appearance: none; }
+  .search-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; margin-top: .75rem; }
+  #site-search-status { color: #596166; font-size: .8125rem; padding: 0 .625rem .375rem; }
+  .search-scroll :global(li + li) { border-top: 1px solid #e9ecee; }
+  .search-scroll :global(li a) {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .125rem .5rem;
+    min-height: 2.75rem; padding: .625rem; color: #24292c; border-radius: .5rem;
+  }
+  .search-scroll :global(li a:focus-visible) { outline-offset: -3px; background: #eaf5f2; }
+  @media (hover: hover) and (pointer: fine) {
+    .search-scroll :global(li a:hover) { background: #eaf5f2; }
+  }
+  .search-scroll :global(a strong) { font-size: .9375rem; font-weight: 700; }
+  .search-scroll :global(a span) { color: #0e7469; font-size: .75rem; font-weight: 600; }
+  .search-scroll :global(a small) {
+    grid-column: 1 / -1; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+    color: #596166; font-size: .8125rem; line-height: 1.5;
+  }
+  #site-search-help, #site-search-retry { margin-inline: .625rem; }
+  @media (min-width: 801px) and (min-height: 500px) { #site-search { --search-gap: 5rem; } }
+  @media (prefers-reduced-motion: no-preference) {
+    #site-search[open] { animation: search-enter 200ms cubic-bezier(.23, 1, .32, 1); }
+    #site-search[open]::backdrop { animation: search-shade 200ms cubic-bezier(.23, 1, .32, 1); }
+    @supports (overlay: auto) and (transition-behavior: allow-discrete) {
+      #site-search, #site-search::backdrop {
+        opacity: 0;
+        transition: opacity 160ms, scale 160ms, overlay 160ms allow-discrete, display 160ms allow-discrete;
+        transition-timing-function: cubic-bezier(.23, 1, .32, 1);
+      }
+      #site-search { scale: .95; transform-origin: center top; }
+      #site-search[open], #site-search[open]::backdrop { animation: none; opacity: 1; transition-duration: 200ms; }
+      #site-search[open] { scale: 1; }
+      @starting-style {
+        #site-search[open] { opacity: 0; scale: .95; }
+        #site-search[open]::backdrop { opacity: 0; }
+      }
+    }
+  }
+  @keyframes search-enter { from { opacity: 0; scale: .95; } }
+  @keyframes search-shade { from { opacity: 0; } }
+</style>

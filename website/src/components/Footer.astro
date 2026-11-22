@@ -1,98 +1,35 @@
 ---
-import { SITE, LEGAL_PAGES, SOCIAL } from '../config';
-import { FOOTER_DISCOVER_IDS, FOOTER_LEGAL_IDS, page, link } from '../data/pages';
-import SocialLinks from './SocialLinks.astro';
-
-const discoverLinks = FOOTER_DISCOVER_IDS.map(page).filter((p) => p.published);
+import { SITE, LEGAL_PAGES } from '../config';
+import { FOOTER_LEGAL_IDS, page, link } from '../data/pages';
 const legalLinks = FOOTER_LEGAL_IDS.map(page).filter((p) => p.published);
 ---
-<footer class="border-t border-line bg-surfaceSoft mt-16 lg:mt-20">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 pt-12 pb-8 lg:pt-14">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
-      <!-- Brand column -->
-      <div class="sm:col-span-2">
-        <a href="/" class="inline-flex items-center gap-2.5 min-h-[2.75rem] py-1">
-          <picture>
-            <source srcset="/images/app-mark-128.webp" type="image/webp" />
-            <img
-              src="/images/app-mark-128.png"
-              alt=""
-              width="32"
-              height="32"
-              loading="lazy"
-              class="w-8 h-8 rounded-lg object-contain"
-            />
-          </picture>
-          <span class="display text-lg tracking-tight text-ink">TusAnkiM</span>
-        </a>
-        <p class="text-sm text-inkMuted max-w-md leading-relaxed mt-3">
-          TUS hazırlığı için yerel öncelikli, <span lang="en">Anki</span> uyumlu (<code>.apkg</code> / <code>.colpkg</code>)
-          <span lang="en">FSRS-6</span> aralıklı tekrar uygulaması.
-        </p>
-        <p class="mt-4 text-xs text-inkMuted max-w-md leading-relaxed border-l-2 border-line pl-3">
-          {SITE.disclaimer}
-        </p>
-        {SOCIAL.length > 0 && (
-          <div class="mt-5">
-            <SocialLinks />
-          </div>
-        )}
-      </div>
-
-      <!-- Discover column -->
-      <div>
-        <div class="text-xs font-semibold text-ink mb-2">Sayfalar</div>
-        <ul class="space-y-0.5 text-sm text-inkMuted">
-          {discoverLinks.map((p) => (
-            <li>
-              <a href={link(p.path)} class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">
-                {p.footerLabel ?? p.navLabel}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <!-- Access & Support column -->
-      <div>
-        <div class="text-xs font-semibold text-ink mb-2">Uygulama &amp; Destek</div>
-        <ul class="space-y-1 text-sm text-inkMuted">
-          <li>
-            <a
-              href={SITE.webAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center min-h-[2.75rem] py-2 font-semibold text-teal underline underline-offset-2 hover:text-tealDark"
-            >
-              Web Uygulamasını Aç →
-            </a>
-          </li>
-          <li>
-            <a
-              href={`mailto:${SITE.email}`}
-              class="inline-flex items-center min-h-[2.75rem] py-2 text-ink underline underline-offset-2 hover:text-teal transition"
-            >
-              {SITE.email}
-            </a>
-          </li>
-          <li class="pt-1 text-xs">iPhone &amp; Web tarayıcıda aktif</li>
-          <li class="text-xs">Bulut eşitleme &amp; Android: Yakında</li>
-        </ul>
-      </div>
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-top">
+      <a class="footer-brand" href="/">TusAnkiM</a>
+      <nav aria-label="Diğer bağlantılar">
+        <a href="/kurucu/">Hakkımızda</a>
+        <a href="/sss/">Sıkça sorulan sorular</a>
+        <a href="https://www.instagram.com/tusankim/" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <a href={`mailto:${SITE.email}`}>E-posta</a>
+      </nav>
     </div>
-
-    <div class="mt-10 pt-6 border-t border-line flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-inkMuted">
+    <p class="footer-disclaimer">{SITE.disclaimer}</p>
+    <div class="footer-bottom">
       <span>© {new Date().getFullYear()} TusAnkiM</span>
-      {LEGAL_PAGES && (
-        <nav aria-label="Yasal bağlantılar" class="flex flex-wrap gap-x-5 gap-y-1">
-          {legalLinks.map((p) => (
-            <a href={link(p.path)} class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">
-              {p.footerLabel ?? p.navLabel}
-            </a>
-          ))}
-        </nav>
-      )}
-      <span>{SITE.tagline}</span>
+      {LEGAL_PAGES && <nav aria-label="Yasal bağlantılar">{legalLinks.map((p) => <a href={link(p.path)}>{p.navLabel}</a>)}</nav>}
     </div>
   </div>
 </footer>
+<style>
+  .site-footer { border-top: 1px solid #dde1e4; background: #fff; color: #596166; }
+  .footer-inner { width: min(1120px, calc(100% - 3rem)); margin-inline: auto; padding-block: 2rem; }
+  .footer-top, .footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 2rem; }
+  .footer-brand { color: #24292c; font-size: 1.125rem; font-weight: 600; }
+  nav { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; }
+  a { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; }
+  a:hover { color: #0e7469; }
+  .footer-disclaimer { font-size: .8125rem; line-height: 1.75; margin-block: 1rem; }
+  .footer-bottom { border-top: 1px solid #e9ecee; padding-top: 1rem; font-size: .8125rem; }
+  @media (max-width: 600px) { .footer-inner { width: calc(100% - 2.5rem); } .footer-top, .footer-bottom { align-items: flex-start; flex-direction: column; } }
+</style>

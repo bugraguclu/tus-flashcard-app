@@ -138,7 +138,7 @@ function LocalizedErrorFallback({
     const handleReturnHome = () => {
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
             try {
-                window.location.href = '/';
+                window.location.href = (process.env.EXPO_BASE_URL || '') + '/';
                 return;
             } catch {
                 // A blocked navigation still leaves the in-app reset below to fall back on.

@@ -1,10 +1,12 @@
-/* TusAnkiM design system styles — restrained surface tokens, WCAG 2.2 AA & Modern Web Guidance. */
+/* TusAnkiM: white surfaces, quiet dividers, colour for actions and card states. */
 
 * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 html {
+  --site-header-height: 4.75rem;
   scroll-behavior: smooth;
   /* Keep keyboard-focused elements clear of sticky header (WCAG 2.4.11) */
   scroll-padding-top: 5.5rem;
+  scroll-padding-bottom: 1.5rem;
 }
 
 body {
@@ -13,19 +15,57 @@ body {
   background: #ffffff;
   overflow-wrap: break-word;
   -webkit-tap-highlight-color: rgba(14, 116, 105, 0.14);
+  line-height: 1.6;
 }
 
 .display {
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  font-weight: 700;
+  font-weight: 600;
 }
 
-.header-glass {
-  background: rgba(255, 255, 255, 0.9);
-  /* Standard first, -webkit- second (keeps both with autoprefixer + esbuild cssMinify) */
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+.page-intro { background: #fff; }
+.page-intro h1 { text-wrap: balance; }
+.page-intro nav[aria-label="Sayfa konumu"] { margin-bottom: 1.25rem; }
+.page-intro .section-num { color: #596166; font-weight: 500; }
+
+.site-container { width: min(1120px, calc(100% - 3rem)); margin-inline: auto; }
+.text-link { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; font-weight: 500; color: #0e7469; text-decoration: underline; text-underline-offset: 4px; }
+.text-link:hover { color: #0b5e55; }
+.eyebrow { color: #0e7469; font-size: .875rem; font-weight: 500; margin-bottom: 1rem; }
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url('/icons/chevron-down.svg');
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  background-size: 1rem;
+  padding-right: 2.25rem !important;
 }
+@media (max-width: 800px) {
+  html { --site-header-height: 4rem; }
+  .site-container { width: calc(100% - 2.5rem); }
+}
+
+@media (max-width: 800px) {
+  input[type="search"], input[type="number"], select { font-size: 1rem !important; }
+}
+.guide-link:hover h3 { color: #0e7469; }
+
+/* Shared surfaces stay quiet; content and controls carry the hierarchy. */
+.hero-bg { background: #fff; }
+.lift { transition: border-color 160ms ease; }
+.section-num { font-weight: 600; font-size: .875rem; letter-spacing: normal; color: #0e7469; }
+.button-primary, .button-secondary {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 2.75rem; padding: .75rem 1.125rem;
+  border: 1px solid transparent; border-radius: .5rem;
+  font-size: .875rem; font-weight: 600; line-height: 1.5; text-align: center; cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.button-primary { background: #0e7469; color: #fff; }
+.button-primary:hover { background: #0b5e55; }
+.button-secondary { background: #fff; color: #24292c; border-color: #dde1e4; }
+.button-secondary:hover { border-color: #0e7469; }
 
 .nav-link { position: relative; }
 .nav-link::after {
@@ -45,7 +85,7 @@ body {
   color: #0e7469;
   font-weight: 600;
 }
-.nav-link[aria-current="page"]::after { width: 100%; }
+.nav-link[aria-current="page"]::after, .nav-link:focus-visible::after { width: 100%; }
 
 /* Keep hidden="until-found" intact for Find-in-Page! Only force display:none on plain boolean hidden. */
 [hidden]:not([hidden="until-found"]) { display: none !important; }
@@ -92,108 +132,11 @@ body {
   }
 }
 
-.faq details::details-content {
-  interpolate-size: allow-keywords;
-  overflow: clip;
-  contain: layout;
-}
-
-.faq details:not([open])::details-content {
-  block-size: 0;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .faq details::details-content {
-    transition: block-size, content-visibility, display;
-    transition-duration: 0.28s;
-    transition-timing-function: ease-in-out;
-    transition-behavior: allow-discrete;
-  }
-}
-
 .faq-answer {
   padding: 0 0 1.25rem 1.875rem;
   color: #596166;
   line-height: 1.65;
-  font-size: 0.9375rem;
-}
-
-/* ── Modern WAI-ARIA Tabs (MWG tabs + search-hidden-content guides) ────────── */
-@property --fade-start {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-@property --fade-end {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-
-.tablist-scroll {
-  display: flex;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  scroll-snap-type: inline proximity;
-  scroll-padding-inline: 2.5rem;
-  --fade-size: 2.5rem;
-}
-.tablist-scroll::-webkit-scrollbar { display: none; }
-
-@supports (animation-timeline: scroll()) {
-  .tablist-scroll {
-    mask:
-      linear-gradient(black, black) no-clip subtract,
-      linear-gradient(to right, black, transparent) 0 0 / var(--fade-start) 100% no-repeat no-clip,
-      linear-gradient(to right, transparent, black) 100% 0 / var(--fade-end) 100% no-repeat no-clip;
-    animation: tab-reveal-start linear both, tab-hide-end linear both;
-    animation-timeline: scroll(self inline);
-    animation-range: 0 var(--fade-size), calc(100% - var(--fade-size)) 100%;
-  }
-}
-@keyframes tab-reveal-start {
-  to { --fade-start: var(--fade-size); }
-}
-@keyframes tab-hide-end {
-  from { --fade-end: var(--fade-size); }
-}
-
-.tab-btn {
-  position: relative;
-  flex: none;
-  white-space: nowrap;
-  scroll-snap-align: start;
-  min-block-size: 2.75rem;
-  padding: 0.625rem 0.875rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #596166;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-  transition: color 160ms ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .tab-btn:hover { color: #24292c; }
-}
-
-.tab-btn[aria-selected="true"] {
-  color: #0e7469;
-}
-
-/* Shape indicator using border (survives Forced Colors Mode, satisfies WCAG 1.4.1) */
-.tab-btn[aria-selected="true"]::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  border-block-end: 3px solid #0e7469;
-}
-
-/* Never style [role="tabpanel"] directly (breaks hidden="until-found"); style .tabpanel-inner */
-.tabpanel-inner {
-  padding-top: 1.25rem;
+  font-size: 1rem;
 }
 
 /* ── Native <dialog> (MWG dialog guide) ────────────────────────────────────── */
@@ -205,8 +148,6 @@ dialog::backdrop {
   overflow: hidden;
   overscroll-behavior: contain;
   background: rgba(36, 41, 44, 0.48);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
 }
 
 /* ── Search field shared styles ────────────────────────────────────────────── */
@@ -219,14 +160,6 @@ dialog::backdrop {
 .search-field input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
   display: none;
-}
-.search-hit.is-active {
-  background: #e4f4f1;
-}
-@media (hover: hover) and (pointer: fine) {
-  .search-hit:hover {
-    background: #e4f4f1;
-  }
 }
 
 /* ── Help guide prose typography ───────────────────────────────────────────── */

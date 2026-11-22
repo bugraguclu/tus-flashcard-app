@@ -19,7 +19,14 @@ export const PAGES: PageEntry[] = [
     navLabel: 'Ana Sayfa',
     published: true,
     sitemap: true,
-    sources: ['website/src/pages/index.astro', 'website/src/data/offer.json', 'website/src/data/generated/references-summary.json'],
+    sources: [
+      'website/src/pages/index.astro', 'website/src/components/LiveCardDemo.astro',
+      'website/src/components/home/HomeEcosystem.astro', 'website/src/components/home/HomeStudy.astro',
+      'website/src/components/home/HomeAccess.astro', 'website/src/components/home/HomeGuides.astro',
+      'website/src/data/founder.json', 'website/src/config.ts',
+      'website/src/data/generated/catalog.json', 'website/src/data/generated/demo-cards.json',
+      'website/src/data/generated/references-summary.json',
+    ],
   },
   {
     id: 'referanslar',
@@ -32,22 +39,6 @@ export const PAGES: PageEntry[] = [
     sources: ['website/src/pages/referanslar.astro', 'website/src/data/generated/references-summary.json'],
   },
   {
-    id: 'rehber',
-    path: '/rehber',
-    title: 'TUS Çalışma Rehberleri',
-    navLabel: 'Rehber',
-    footerLabel: 'TUS Çalışma Rehberleri (7 Yazı)',
-    published: true,
-    sitemap: true,
-    sources: [
-      'website/src/pages/rehber/index.astro',
-      'website/src/data/rehber/index.ts',
-      'website/src/data/rehber/part1.ts',
-      'website/src/data/rehber/part2.ts',
-      'website/src/data/rehber/part3.ts',
-    ],
-  },
-  {
     id: 'puan',
     path: '/puan-hesapla',
     title: 'TUS Puan Hesaplayıcı',
@@ -55,14 +46,14 @@ export const PAGES: PageEntry[] = [
     footerLabel: 'TUS Puan & Hedef Net Hesapla',
     published: true,
     sitemap: true,
-    sources: ['website/src/pages/puan-hesapla.astro', 'website/src/data/exams.json'],
+    sources: ['website/src/pages/puan-hesapla.astro'],
   },
   {
     id: 'kurucu',
     path: '/kurucu',
-    title: 'Kurucumuz ve Editöryal Standart',
-    navLabel: 'Kurucumuz',
-    footerLabel: 'Kurucumuz & Kart Standardı',
+    title: 'Hakkımızda',
+    navLabel: 'Hakkımızda',
+    footerLabel: 'Hakkımızda',
     published: true,
     sitemap: true,
     sources: ['website/src/pages/kurucu.astro', 'website/src/data/founder.json'],
@@ -75,7 +66,8 @@ export const PAGES: PageEntry[] = [
     footerLabel: 'Kullanım Kılavuzu (21 Rehber)',
     published: true,
     sitemap: true,
-    sources: ['website/src/pages/yardim/index.astro', 'website/src/lib/helpDocs.ts'],
+    sources: ['website/src/pages/yardim/index.astro', 'website/src/components/HelpSearch.astro', 'website/src/lib/helpDocs.ts',
+      'website/src/lib/guideSearch.ts', 'website/src/lib/websiteSearchIndex.ts'],
   },
   {
     id: 'sss',
@@ -85,14 +77,14 @@ export const PAGES: PageEntry[] = [
     footerLabel: 'Sıkça Sorulan Sorular',
     published: true,
     sitemap: true,
-    sources: ['website/src/pages/sss.astro', 'website/src/data/faqs.json'],
+    sources: ['website/src/pages/sss.astro', 'website/src/components/FaqList.astro', 'website/src/data/faqs.json'],
   },
   {
     id: 'destek',
     path: '/destek',
     title: 'Destek ve İletişim',
     navLabel: 'Destek',
-    footerLabel: 'Destek & İletişim',
+    footerLabel: 'Destek ve İletişim',
     published: LEGAL_PAGES,
     sitemap: LEGAL_PAGES,
     sources: ['website/src/pages/destek.astro'],
@@ -115,12 +107,12 @@ export const PAGES: PageEntry[] = [
     footerLabel: 'Kullanım Koşulları',
     published: LEGAL_PAGES,
     sitemap: LEGAL_PAGES,
-    sources: ['website/src/pages/kullanim-kosullari.astro'],
+    sources: ['website/src/pages/kullanim-kosullari.astro', 'website/src/config.ts'],
   },
 ];
 
-export const NAV_IDS = ['referanslar', 'rehber', 'puan', 'kurucu', 'yardim', 'sss'] as const;
-export const FOOTER_DISCOVER_IDS = ['referanslar', 'rehber', 'puan', 'kurucu', 'yardim', 'sss', 'destek'] as const;
+export const NAV_IDS = ['referanslar', 'puan', 'yardim', 'sss'] as const;
+export const FOOTER_DISCOVER_IDS = ['referanslar', 'puan', 'kurucu', 'yardim', 'sss', 'destek'] as const;
 export const FOOTER_LEGAL_IDS = ['gizlilik', 'kosullar', 'destek'] as const;
 
 export const page = (id: string): PageEntry => {

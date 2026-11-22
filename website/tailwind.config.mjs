@@ -58,7 +58,7 @@ export default {
         subsection: [fluid(22, 28), { lineHeight: fluid(28, 34) }],
       },
       letterSpacing: { tightest: '-0.02em' },
-      maxWidth: { content: '1240px' },
+      maxWidth: { content: '1168px' },
     },
   },
   plugins: [],

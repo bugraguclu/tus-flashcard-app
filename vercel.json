@@ -1,37 +1,108 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build:web && cp dist/+not-found.html dist/404.html",
-  "outputDirectory": "dist",
+  "installCommand": "npm ci && npm --prefix website ci",
+  "buildCommand": "export TUSANKIM_WEB_BASE=/uygulama && npm --prefix website run build && npm run build:web && node scripts/assemble-vercel.mjs",
+  "outputDirectory": "website/dist",
   "cleanUrls": true,
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-        { "key": "Referrer-Policy", "value": "no-referrer" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
       ]
     },
     {
-      "source": "/_expo/static/(.*)",
+      "source": "/uygulama/_expo/static/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
-      "source": "/assets/(.*)",
+      "source": "/uygulama/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "(?<preview>.*\\.vercel\\.app)" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "(?<preview>.*\\.vercel\\.app)"
+        }
+      ],
       "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
       ]
+    },
+    {
+      "source": "/((?!uygulama(?:/|$)).*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; media-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'self'; upgrade-insecure-requests"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "accelerometer=(), autoplay=(self), browsing-topics=(), camera=(), display-capture=(), encrypted-media=(), geolocation=(), gyroscope=(), interest-cohort=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=(), xr-spatial-tracking=()"
+        }
+      ]
+    },
+    {
+      "source": "/((?!uygulama(?:/|$)).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "^.+\\.vercel\\.app$"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/_astro/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:route(account|backups|browser|card-info|catalog|deck-options|deck-overview|decks|editor|empty-cards|export|import|note-type|note-types|settings|sign-in|stats|stopwatch|study-analysis|study-calendar|study-clear|study-plan-wizard|study-plans|x-callback-url)/:path*",
+      "destination": "/uygulama/:route/:path*",
+      "permanent": false
     }
   ]
 }

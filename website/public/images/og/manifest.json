@@ -1,0 +1,122 @@
+{
+  "/images/og/home.png": {
+    "title": "TUS tekrarını günlük bir alışkanlığa dönüştür.",
+    "sha256": "ddeabc1222b20d4adf7a146516cfd6a7f466f4ea8e7e20aa34ef30d9639814fd"
+  },
+  "/images/og/referanslar.png": {
+    "title": "TUS referansları",
+    "sha256": "84991311fd10e11e7d29407d464e231b0fd07b7d907258d19b0d7e5e087609e4"
+  },
+  "/images/og/puan-hesapla.png": {
+    "title": "TUS puan hesaplayıcı",
+    "sha256": "caa2977d7d5205820c360c7fbc45c83c4520ed8db651d53d9617aa7377d070da"
+  },
+  "/images/og/yardim.png": {
+    "title": "Yardım Merkezi",
+    "sha256": "615551c36df414ae94328c83d3405fdaf5bed0e5949e9f35efe7aa11556ce95a"
+  },
+  "/images/og/sss.png": {
+    "title": "Sıkça sorulan sorular",
+    "sha256": "8f08e20939536fe90a3387dcd679a9b97d4ee7c891eba974790af98779259137"
+  },
+  "/images/og/kurucu.png": {
+    "title": "Neden TusAnkiM’i kurduk?",
+    "sha256": "16ccac59fe9884e9d4b1b524787aa730b7ad369a7658541ceb4e0f77b1786283"
+  },
+  "/images/og/destek.png": {
+    "title": "Destek ve iletişim",
+    "sha256": "72ce26999fe6090c74e3678f65c032fb6e5360c46f98a664b5a4f45a1337b20e"
+  },
+  "/images/og/gizlilik.png": {
+    "title": "Gizlilik politikası ve KVKK",
+    "sha256": "b6c74ce71674f3382c82802e6c3a56cc0d60151767ec78aaebd40d9a65b2aa5e"
+  },
+  "/images/og/kullanim-kosullari.png": {
+    "title": "Kullanım koşulları",
+    "sha256": "4af63b43491ae2b4af146e2eb121906d9912dbf1587b12d3ad761a0da5665116"
+  },
+  "/images/og/yardim/tusankim-nedir.png": {
+    "title": "TusAnkiM nedir?",
+    "sha256": "94862b285070638dd285f8dd51acaa2611e9387132973f059752437796a2ff54"
+  },
+  "/images/og/yardim/temel-kavramlar.png": {
+    "title": "Temel kavramlar",
+    "sha256": "3e77f79302255d968f1e28b06d216c0bfac6e23b57aba50ece17b2c746b7ab42"
+  },
+  "/images/og/yardim/hizli-baslangic.png": {
+    "title": "Hızlı başlangıç",
+    "sha256": "d90abc61f6ff21b0ad77593356b689a25919f470747d095ab3921bce2bd9764e"
+  },
+  "/images/og/yardim/desteler.png": {
+    "title": "Desteler",
+    "sha256": "2a3192afdeb7fb99dd6d37ed90785a7413ae6fdda402f55b30ea1aa3ec1c9170"
+  },
+  "/images/og/yardim/calisma-ekrani.png": {
+    "title": "Çalışma ekranı",
+    "sha256": "d40d12920d56ef4750f25773d6f90ae9c9b3f026246cfbcb81ab40f72f65cb27"
+  },
+  "/images/og/yardim/deste-secenekleri.png": {
+    "title": "Deste seçenekleri",
+    "sha256": "d75c642e24a255990fd6c838bb7a7c5d79fb858beac78eecbabd622f3b4bf637"
+  },
+  "/images/og/yardim/fsrs.png": {
+    "title": "FSRS",
+    "sha256": "f90d1f07c392a0c6a0f9e1bef4ed12529cb96ab5f6e504aaa82f6d48cf11704f"
+  },
+  "/images/og/yardim/kart-ekleme.png": {
+    "title": "Kart ekleme ve düzenleme",
+    "sha256": "546474f7ab3fc688e81f2c4c1dce1549f39769ad962c42603229648987dc591f"
+  },
+  "/images/og/yardim/not-turleri.png": {
+    "title": "Not türleri ve kart şablonları",
+    "sha256": "f739abaebdcc2ee2a7918efd3244095a8740ddb5742d18452e573dbb31ae3af3"
+  },
+  "/images/og/yardim/kartlarim-ve-arama.png": {
+    "title": "Kartlarım ve arama",
+    "sha256": "7efba68fa23539b95d2d8bf73d750b1336acf50ac989762e8f5c02befff90c74"
+  },
+  "/images/og/yardim/filtrelenmis-deste.png": {
+    "title": "Filtrelenmiş deste ve özel çalışma",
+    "sha256": "6ab899fb26e36abd6dd4a6571ff34b523cc9940228ea4186a1af9e253ce25fb2"
+  },
+  "/images/og/yardim/istatistikler.png": {
+    "title": "İstatistikler",
+    "sha256": "622b0e9ed656ad2363f46ac2108ffd6885a7047b4690aaf3699fad66117bdcfd"
+  },
+  "/images/og/yardim/kronometre.png": {
+    "title": "Kronometre ve çalışma takvimi",
+    "sha256": "915dbc86ae2a499937d6eb01f32dcd0ebd21983bf83a2e5171b6da4cd35204d8"
+  },
+  "/images/og/yardim/ice-disa-aktarma.png": {
+    "title": "İçe ve dışa aktarma",
+    "sha256": "203c48e5edd716f0ca2c846cbe88647fa140be3b90cbcd7e0448286176b91ccf"
+  },
+  "/images/og/yardim/yedekler.png": {
+    "title": "Yedekler ve bakım",
+    "sha256": "578debd18d572ab581ff73e6bc16c321a3b40e3a26652f911623b6a7403ae57f"
+  },
+  "/images/og/yardim/ayarlar.png": {
+    "title": "Ayarlar",
+    "sha256": "582b879444de34a32986b0bd50592b47821fa9c62ba4c5f8c1037893def8035d"
+  },
+  "/images/og/yardim/tus-kartlari.png": {
+    "title": "TUS Kartları paketi",
+    "sha256": "77c0c32456bc076782b4c88bac93025ed97e2982768645d57f8d7cdea3ac1ce7"
+  },
+  "/images/og/yardim/kisayollar.png": {
+    "title": "Kısayollar ve otomasyon",
+    "sha256": "b68f98b0bac66aef68e5e5bca369aa3c5e3a7232b1887cced9195d45bd42f339"
+  },
+  "/images/og/yardim/anki-ile-kullanma.png": {
+    "title": "Anki ile birlikte kullanma",
+    "sha256": "e35c43e8e4f5140b258d120d26dc0f334000da0434ee1983f124f1433330318c"
+  },
+  "/images/og/yardim/sss.png": {
+    "title": "Sorun giderme",
+    "sha256": "24dac337eecc9e53b6bb77ed2a08274efcc095f71f0b7317c5c80d95cdf273e1"
+  },
+  "/images/og/yardim/sozluk.png": {
+    "title": "Sözlük",
+    "sha256": "1f680ba61dfb7ece2495dd7b2a377ba4eff91efa26ba683242fea4396ba3efef"
+  }
+}

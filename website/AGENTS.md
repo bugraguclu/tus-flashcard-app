@@ -24,4 +24,3 @@ cd website && npm run build && npm run verify
 # And from the repository root:
 npm run quality
 ```
-Note: `src/data/generated/fsrs-curves.json` is precomputed from `../lib/fsrsSimulator.ts` and committed so `npm run build` works on branches (such as `Havuz`) that do not yet carry `lib/fsrsSimulator.ts`.

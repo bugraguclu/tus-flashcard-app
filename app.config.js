@@ -13,5 +13,8 @@ module.exports = ({ config }) => {
         const iosUrlScheme = iosClientId.split('.').reverse().join('.');
         plugins.push(['@react-native-google-signin/google-signin', { iosUrlScheme }]);
     }
-    return plugins.length === (config.plugins ?? []).length ? config : { ...config, plugins };
+    const appConfig = plugins.length === (config.plugins ?? []).length ? config : { ...config, plugins };
+    const baseUrl = process.env.TUSANKIM_WEB_BASE;
+    if (!baseUrl) return appConfig;
+    return { ...appConfig, experiments: { ...appConfig.experiments, baseUrl } };
 };

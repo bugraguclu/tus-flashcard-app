@@ -51,8 +51,8 @@ and [Turkish](docs/user-guide/tr/01-welcome.md).
 
 ## Live preview
 
-[tusankim.vercel.app][preview] runs the production web build of `master` and is rebuilt on every
-push. The iPhone app is the release target, and the browser version is a preview of the same code.
+The [TusAnkiM website][website] opens at the Vercel domain. [Ücretsiz dene][preview] opens the
+browser app. Both are built from `master` on every push. The iPhone app is the release target, and the browser version is a preview of the same code.
 It opens with an empty collection: install the free TUS card pack from the deck list, or drop your
 own deck onto the window.
 
@@ -236,4 +236,5 @@ GPL-family projects, and their code is not copied into this MIT repository.
 
 TusAnkiM is an independent project. It is not affiliated with, or endorsed by, Anki or Ankitects.
 
-[preview]: https://tusankim.vercel.app
+[website]: https://tusankim.vercel.app/
+[preview]: https://tusankim.vercel.app/uygulama/

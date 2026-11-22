@@ -4,6 +4,166 @@
 >
 > **Kısa sözleşme:** `website/AGENTS.md` · **Kök uygulama sözleşmesi:** `AGENTS.md`
 
+## 21 Kasım 2026 — Alt sayfaların okuma düzeni
+
+- Referans kayıtları ince ayraçlı satırlara dönüştü. Filtreler ayrı bir alanda;
+  eşleşme türü, açıklama ve katalog kimliği aynı hiyerarşide gösterilir. Tam veri
+  yüklenemezse 24 statik örnek ve seçili filtreler kalır. HTTP/veri kontrolü ve
+  zaman aşımı sonrası “Yeniden dene” aynı filtrelerle çalışır; klavye odağı korunur.
+- 21 rehber `website/src/data/help-intros.ts` üzerinden kısa açıklama, üç başlangıç
+  adımı, gerekli veri uyarısı ve üç ilgili rehber alır. Kaynak Markdown içerikleri
+  korunur; ayrıntılar 2–5 konu grubunda yerel `details` ile açılır. Mobilde yazıdan
+  önce 27 başlık sıralanmaz; her sayfada tüm rehberlerin tekrarı kaldırıldı.
+  Eski bölüm bağlantıları doğru grubu açar. Yazılmış sabit kimlikler ile otomatik
+  başlık kimliklerinin çakışması önlendi. Çalışma rehberinde depodaki gerçek iPhone
+  görüntüsü isteğe bağlı açılır; önceki sürüme ait olduğu açıkça yazılır.
+- Ürün SSS’si `/sss/`, teknik sorun giderme `/yardim/sss/` olarak ayrılır.
+  Gereksiz sekme/arama popover’ı yerine kategorili soru listesi ve yerinde arama
+  kullanılır. FSRS–SM-2 karşılaştırması doğrudan yanıtlandı. SSS, gizlilik ve
+  koşullarda sen dili kullanılır. Yedi günlük iade vaadi site metinlerinden ve
+  pazarlama taslaklarından kaldırıldı. Koşullardaki beta ve planlanan ₺50/ay bilgisi
+  `ACCESS` kaynağından okunur; ücretli erişim başlamış gibi sunulmaz.
+- Astro build: 31 sayfa, 0 hata/uyarı/ipucu. Website verify: beş test, tüm HTML,
+  bağlantı hedefleri, benzersiz kimlikler, şema/sitemap ve referans verisi başarılı.
+  21 rehberin tüm ayrıntıları 320px’de açılarak yatay taşma kontrol edildi; temel
+  alt sayfalar 320/390/1280px’de taşmıyor ve olağan yüklemede kaymıyor. Referans
+  HTTP 503 → yeniden deneme, filtre birlikteliği, SSS arama/boş sonuç, klavye ile
+  açma, bölüm bağlantıları ve mobil menü kontrol edildi. Fiziksel iPhone ve
+  VoiceOver kontrolü yapılmadı.
+- Kök `npm run quality` mevcut `lib/studyPlanWizardScreen.test.ts` dosyasındaki
+  84/95/101/103/105 TS2769 hatalarında durur; bu tur uygulama kodunu değiştirmez.
+- Tek dosyalık önce/sonra karşılaştırması:
+  `output/website-alt-pages-2026-11-21/once-sonra.html` (26 sayfa, 104 gerçek
+  masaüstü/mobil ekran görüntüsü; önce sürümü `52b4c29b`).
+
+## 21 Kasım 2026 — İstenen ürün bölümleri geri eklendi
+
+Kullanıcının içerik düzeltmesiyle ana sayfa genişletildi. Önceki sade tasarım ve
+Grup 3 veri/arama iyileştirmeleri korunur; aşağıdaki notlar güncel içerik sırasıdır.
+
+- Ana sayfa: kısa ürün tanıtımı ve çalışan kart örneği, referans özeti, TUS hazırlık
+  ve tercih ekosistemi, FSRS-6 / Kronometre / Anki açıklamaları, kuruluş hikâyesi,
+  erişim ve cihazlar, kullanım rehberleri ve Instagram bağlantısı.
+- Yeni parçalar `components/home/` içinde: `HomeEcosystem`, `HomeStudy`,
+  `HomeAccess`, `HomeGuides`. Ekosistem sade bağlantı listesi kullanır. Tercih
+  simülasyonu mevcut bir araç gibi sunulmaz; hazırlanmakta olduğu açıkça yazılır.
+- Özellik örnekleri statik HTML/CSS’tir; canlı hesap, çalışan kronometre veya
+  gerçek oturum verisi gibi gösterilmez. Başarı yüzdeleri, rakip fiyatları,
+  unutma süresi iddiaları, yapay Instagram gönderileri ve yeni kaydırıcı yoktur.
+- “Bir kere satın al” bölümünün işlevi geri geldi; kullanıcı mevcut beta ve fiyat
+  bilgisinin korunmasını seçti. Bu nedenle tek seferlik satın alma veya tüm
+  cihazlara otomatik erişim vaadi eklenmez. Güncel ücretsiz beta ve planlanan
+  ₺50/ay metni, `ACCESS` ve mevcut uygulama şemasıyla aynı kaynaktan okunur.
+  Kişisel destelerin dosyayla taşındığı, otomatik eşitlemenin olmadığı ve hazır
+  TUS paketi ilerlemesinin cihazlar arasında aktarılamadığı belirtilir.
+- `WhatsAppSupport.astro` geri eklendi. `config.ts` içindeki `WHATSAPP.enabled`
+  `false`, URL boştur. Gerçek kanal URL’si ayarlanıp açıkça etkinleştirilmedikçe
+  arayüze veya yapılandırılmış veriye WhatsApp bağlantısı çıkmaz.
+- SSS yalnızca `/sss/` üzerindedir; üst menüye SSS bağlantısı eklendi. Ana sayfa
+  soru listesini veya FAQPage şemasını çoğaltmaz.
+- Eklenen içerikle HTML 29.328 bayt / 293 öğe oldu. Statik HTML bütçesi, bu açık
+  kapsam değişikliği için 24 KB’den 32 KB’ye güncellendi; DOM sınırı 1.300,
+  dış demo verisi ve metadata kontrolleri korunur. Yeni bölümler çalışma zamanı
+  JavaScript’i veya ağdan yüklenen sosyal medya bileşeni eklemez.
+- Astro derleme 31 sayfa, 0 hata/uyarı/ipucu. `npm run verify`: 31 HTML sayfası,
+  30 sitemap URL’si, 56 arama girdisi, 1.195 referans kaydı ve içerik tarih testi
+  başarılı; istenen bölümler ve gizli WhatsApp koşulu doğrulandı. Kök `npm run quality`, önceden mevcut
+  `studyPlanWizardScreen.test.ts` 84/95/101/103/105 TS2769 hatalarında durur.
+  Bu oturumda yerel tarayıcı erişimi yoktu; yeni düzenin görsel tarayıcı ve fiziksel
+  iPhone / VoiceOver kontrolü yapılmadı.
+
+## 21 Kasım 2026 — Grup 3: hız ve arama görünümü
+
+Bu tur yalnızca raporun Grup 3 kapsamını tamamlar; önceki yerel sadeleştirme korunur.
+Başlangıçtaki ana sayfa 31.119 bayt HTML ve 173 öğeydi; eski rapordaki 285,9 KB /
+2.236 öğelik sürüm artık çalışma ağacında bulunmuyordu. Son çıktı 20.127 bayt ve
+173 öğedir (HTML boyutunda %35,3 azalma). Ağır referans sekmeleri ve çalışma dozu
+bölümü önceki sadeleştirmede kaldırılmıştı; yeniden eklenmedi.
+
+- Demo kartlarının tüm verisi `data-cards` HTML özniteliğinden çıkarıldı. Statik
+  `/data/demo-cards.json`, yalnızca istemcinin kullandığı 11 kart alanını sunar.
+  İlk soru JavaScript olmadan okunabilir; veri isteği başarısız olursa yeniden deneme
+  ve referans bağlantısı görünür. Kart açma, ders seçimi, değerlendirme ve klavye korunur.
+- Ana sayfa/hesaplayıcı başlıkları zaten kısaydı. Uzun yardım başlıkları 58 karaktere
+  sığmıyorsa yalnızca `| TusAnkiM` son eki kullanılır; görünür yazı başlığı değişmez.
+  Temel kavramlar ve destek açıklamaları genişletildi, referans açıklaması kısaltıldı.
+  Tüm indekslenebilir sayfalar 58 karakter başlık ve 90–160 karakter açıklama kapısından
+  geçer; ana sayfa, hesaplayıcı ve temel kavramlar için açıklama hedefi 120–155’tir.
+- Ana sayfaya BreadcrumbList ve SoftwareApplication eklendi: yayıncı, özellikler,
+  yardım bağlantısı ve depodaki gerçek iPhone çalışma ekranı kaydı kullanılır.
+  Ekran görüntüsü yalnızca bağlantı açıldığında indirilir. Ücretsiz beta aktif tekliftir;
+  ₺50/ay planı henüz başlamamış lansman açıklamasıdır. Görünür lansman açıklaması ve
+  JSON-LD aynı `ACCESS` metnini kullanır; ücretli erişim başlamış gibi gösterilmez.
+  Şemadaki ekran görüntüsü, depodaki `docs/app-store/screenshots/02-kart-soru.jpg`
+  dosyasının değiştirilmemiş kopyasıdır; ilk yüklemede indirilmez.
+- Destek ContactPage; gizlilik ve koşullar WebPage olarak tanımlanır. Dataset,
+  2024/2026 kapsamını ve görünür JSON indirme bağlantısını içerir. Hesaplayıcı ile
+  21 TechArticle, Organization yazarı/yayıncısı ve içerik geçmişinden tarih alır.
+  Kişisel hekim kimliği bu turun kapsamında değildir.
+- Tarih alanlarının çalışması için ortak git yardımcısı depo kökünden sorgular;
+  bu düzeltme mevcut sitemap tüketicisine de yansır. Yayın tarihi ilk kayıtlı içerik
+  revizyonu, güncelleme tarihi son bilinen kaynak değişikliğidir. Gerçek canlıya çıkış
+  tarihi veya derleme günü uydurulmaz. Sığ kopyanın belirsiz sınır tarihleri atlanır;
+  bu durumda doğrulama tam git geçmişi ister. İç içe çalışma dizini, sığ kopya,
+  geçmişin tamamlanması ve geçmişsiz dizin bir geçici git deposuyla test edilir.
+- 404 için canonical, Open Graph, Twitter ve tüm JSON-LD kaldırıldı; noindex korunur.
+  Ana sayfada uzun SSS tekrarları yoktur; `/sss/` tam soru listesini korur ve ana
+  sayfadan “Tüm sorular” bağlantısı alır.
+- `verify-search-output.mjs`, boyut/DOM bütçesini, başlık/açıklamaları, JSON-LD’yi,
+  fiyat metni uyumunu, SSS’nin tamlığını ve dış demo verisini `npm run verify` içinde denetler.
+
+Doğrulama: `website` build 0 hata/uyarı/ipucu; verify 31 HTML / 30 sitemap URL’si
+ve git tarih regresyonu başarılı. Üretim çıktısında yerel Chrome 1440, 390 ve 320px:
+yatay taşma ve başlangıç kayması yok; cevap, değerlendirme, ders seçimi, Space tuşu
+ve başarısız veri isteğinden yeniden denemeyle dönüş başarılı; JS hatası yok.
+Fiziksel iPhone/VoiceOver çalıştırılmadı. Kök testler 3.535 başarılı / 5 atlanan;
+`verify:ios` ve `check:budgets` başarılı. Kök `npm run quality`, önceden mevcut
+`lib/studyPlanWizardScreen.test.ts` 84/95/101/103/105 TS2769 hatalarında durur.
+
+Şema kaynakları: [SoftwareApplication](https://schema.org/SoftwareApplication),
+[Dataset](https://schema.org/Dataset), [TechArticle](https://schema.org/TechArticle).
+
+## 21 Kasım 2026 — Güncel sadeleştirme
+
+Aşağıdaki ilk kurulum kaydı tarihsel bağlamdır. Güncel site, TusAnkiM’in beyaz
+kartlarını, açık gri yüzeylerini, ince ayraçlarını ve yeşil eylem rengini kullanır.
+Yemek Takibi’nin kısa tanıtımı ve ferah iki sütunlu yerleşimi, Belif’in içerik
+hiyerarşisi referans alındı. Ticari font ve marka görseli alınmadı.
+
+- Ana sayfanın statik kart görseli ve ayrı demo bölümü tek çalışan kart örneğinde
+  birleştirildi. Ders seçimi yerel `<select>` ile yapılır; 11 kart, cevap açma,
+  dört değerlendirme, önceki/sonraki, klavye ve referans bağlantısı korunur.
+  Önceden hesaplanan aralıklar canlı FSRS hesabı gibi sunulmaz; deneme yanıtları saklanmaz.
+- Ana sayfa ürün tanıtımı, üç kısa özellik, ayrı referans özeti ve beta erişiminden
+  oluşur. Güncel ücretsiz beta ve planlanan ücretli lansman açıkça ayrılır.
+- Menü ve alt bilgi kısaltıldı. Referanslar / Puan Hesapla / Yardım üst menüdedir;
+  diğer sayfalar alt bilgidedir. Mobil menü yerel diyalogla açılır.
+- Referans gezgininde kutular ve tekrarlanan rozetler azaltıldı. Doğrudan / Dolaylı /
+  Konu Kapsamı, 76/200 sınav öncesi ve 82/200 güncel katalog ayrımı, editör onay durumu,
+  filtreler ve URL kapsamı korunur.
+- Yardım merkezi sade bağlantı listesi kullanır. Hakkımızda ve SSS metinleri kısaltıldı;
+  doğrulanmamış uzmanlık, performans ve başarı vaatleri çıkarıldı. Destek sayfası gerçek
+  e-posta ve GitHub kanallarını gösterir; örnek WhatsApp numarası kaldırıldı.
+- Puan hesaplayıcısının hesabı ve %5 kesinti kontrolü korunur. Geri sayım, dekoratif
+  adımlar, henüz çalışmayan tercih simülasyonu kutusu ve kart çalışma reçeteleri çıkarıldı.
+- Kullanılmayan `BeforeAfter`, `StoryBands`, `FsrsDoseCalculator`, `InstagramRail`,
+  `SponsorsBand`, `DragScroll`, `CountdownBand`, `ReferenceShowcase`, `Scroller`,
+  `SearchModal`, `SocialLinks` ve `FAQ` sarmalayıcısı kaldırıldı. SSS’nin kullandığı
+  `FaqTabs` korunur. Sekme maskeleri ve gereksiz açılma animasyonları kaldırıldı.
+  Tüketicisi kalmayan tanıtım SVG’leri, teklif/sponsor/Instagram/sınav verileri ve
+  FSRS simülatörünün ön hesaplama betiği/verisi kaldırıldı. Paylaşım görseli sadeleştirildi.
+- Derleme: 31 sayfa, 0 Astro hata/uyarı. `npm run verify`: 31 HTML sayfası, 30 sitemap
+  URL’si, 56 arama girdisi ve 1.195 referans kaydı başarılı.
+- Üretim çıktısında masaüstü ve 320px/390px düzen; kart açma, değerlendirme ve ders
+  değiştirme; referansların sınav/ders/arama birlikte filtrelenmesi; hesaplayıcı girişleri,
+  %5 kesinti ve geçersiz toplam uyarısı; yardım araması ve mobil menü kontrol edildi.
+  Ana sayfa ve temel alt sayfalar 320px’de yatay taşmaz, ilk yükleme `scrollY=0`.
+  Fiziksel iPhone / VoiceOver kontrolü yapılmadı.
+- Kök `npm run quality`, önceden mevcut `lib/studyPlanWizardScreen.test.ts` satır
+  84, 95, 101, 103 ve 105 üzerindeki `act` callback / `Promise<VitestUtils>` TS2769
+  hataları nedeniyle tip kontrolünde durdu. Site değişiklikleri uygulama koduna dokunmaz.
+
+
 ---
 
 ## 1. Özet: Ne Yaptık?
@@ -144,6 +304,16 @@ npm run quality
 | Sponsor/iş birliği kayıtları (`SHOW_SPONSORS = true` ile açılır) | `website/src/data/sponsors.json` |
 | SSS soruları ve kategorileri | `website/src/data/faqs.json` |
 | Instagram kullanım kartları | `website/src/data/instagram.json` |
+
+### Vercel yayını
+
+Kök Vercel projesi `master` dalından iki statik siteyi derler. Tanıtım sitesi
+`https://tusankim.vercel.app/` adresinde, Expo uygulaması aynı alan adındaki
+`/uygulama/` yolunda açılır. Eski uygulama bağlantıları yeni yola yönlenir.
+Tarayıcı koleksiyonları aynı origin'deki IndexedDB'de kalır. PWA manifesti ve
+service worker güncelleme adresi kökte kalır, çevrimdışı uygulama dosyaları
+`/uygulama/` altında önbelleğe alınır. Kök yapılandırmanın `buildCommand`
+komutu yerel dağıtım çıktısını da üretir.
 
 ### Yayına Almadan Önce Kalan İçerik/Altyapı Adımları
 1. `website/src/config.ts`: `905000000000` yer tutucu numarasını canlı WhatsApp Business hattıyla, `appStoreUrl` alanını canlı App Store linkiyle değiştirin.

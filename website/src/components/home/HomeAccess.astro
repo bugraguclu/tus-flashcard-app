@@ -1,0 +1,25 @@
+---
+import { ACCESS, SITE, PRICING_MODE } from '../../config';
+import catalog from '../../data/generated/catalog.json';
+const beta = PRICING_MODE === 'free-beta';
+---
+<section id="fiyatlandirma" class="access-section" aria-labelledby="pricing-title">
+  <div class="site-container access-inner">
+    <div class="access-copy">
+      <p class="eyebrow">Ücretsiz deneme ve erişim</p>
+      <h2 id="pricing-title">Ücretsiz dene.<br />Kartların sana uygunluğunu gör.</h2>
+      <p>{ACCESS.betaDescription}</p>
+      <p>iPhone için geliştirilen uygulamayı tarayıcı önizlemesinde keşfet. Yerel Android uygulaması henüz yok.</p>
+      <p>Kendi destelerini dosyayla taşıyabilirsin. Otomatik cihaz eşitlemesi yoktur; hazır TUS paketindeki ilerleme başka cihaza aktarılamaz.</p>
+      <a class="text-link" href="/yardim/tus-kartlari/#new-device">Cihaz değiştirirken bilmen gerekenler</a>
+    </div>
+    <div class="access-plan">
+      <h3>Güncel beta</h3>
+      <p class="access-price">Ücretsiz</p>
+      <p>{catalog.totals.cards.toLocaleString('tr-TR')} kartlık hazır TUS koleksiyonu, kişisel desteler ve çalışma araçları.</p>
+      <a class="button-primary" href={SITE.webAppUrl} target="_blank" rel="noopener noreferrer">Ücretsiz dene</a>
+      {!beta && <p class="launch-note">{ACCESS.plannedLaunchDescription} Günlük sınırın işleyişi ve satın alma koşulları ücretli erişim başlamadan önce açıklanacak.</p>}
+      <a class="text-link" href="/sss/">Erişim ve iade sorularını incele</a>
+    </div>
+  </div>
+</section>
