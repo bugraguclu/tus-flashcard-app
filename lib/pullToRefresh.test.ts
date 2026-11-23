@@ -13,7 +13,7 @@ import {
 } from './pullToRefresh';
 
 const tr = (turkish: string) => turkish;
-const labels = { refreshing: 'Çalışmalarınız yenileniyor…', done: 'Çalışmalarınız yenilendi!' };
+const labels = { refreshing: 'Çalışmalarınız yenileniyor…', done: 'Çalışmalarınız güncel' };
 
 /** A clock that only moves when the run sleeps, so every wait is visible in `slept`. */
 function fakeClock() {
@@ -61,7 +61,7 @@ describe('pull-to-refresh copy', () => {
             'Yenilemek için çekin',
             'Yenilemek için bırakın',
             'Çalışmalarınız yenileniyor…',
-            'Çalışmalarınız yenilendi!',
+            'Çalışmalarınız güncel',
             'Yenilenemedi, yeniden deneyin',
         ]);
         for (const text of texts) expect(text.toLocaleLowerCase('tr')).not.toContain('senkron');

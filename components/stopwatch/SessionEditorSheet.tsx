@@ -250,7 +250,7 @@ export default function SessionEditorSheet({
     ) : openField ? (
         <TimePickerPanel
             value={openField === 'start' ? startMs : endMs}
-            label={openField === 'start' ? l('Çalışma Başlangıcı', 'Start') : l('Çalışma Bitişi', 'End')}
+            label={openField === 'start' ? l('Çalışma başlangıcı', 'Start') : l('Çalışma bitişi', 'End')}
             onCancel={() => setOpenField(null)}
             onConfirm={(ms) => {
                 changeField(openField, ms);
@@ -279,7 +279,7 @@ export default function SessionEditorSheet({
             avoidKeyboard
             overlay={overlay}
             overlayPlacement={openField ? 'bottom' : 'center'}
-            title={recordId !== null ? l('Çalışmanızı Düzenleyin', 'Edit Your Session') : l('Geçmiş Çalışmanızı Ekleyin', 'Add a Past Session')}
+            title={recordId !== null ? l('Çalışmanızı düzenleyin', 'Edit your session') : l('Geçmiş çalışmanızı ekleyin', 'Add a past session')}
         >
             <SheetScrollView
                 style={styles.form}
@@ -297,7 +297,7 @@ export default function SessionEditorSheet({
                         accessibilityHint={l('Ders listesini açar', 'Opens the subject list')}
                     />
                     <SelectRow
-                        label={l('Tür Seçin', 'Type')}
+                        label={l('Tür seçin', 'Type')}
                         value={typeLabel}
                         onPress={() => setPicker('type')}
                         expanded={picker === 'type'}
@@ -306,8 +306,8 @@ export default function SessionEditorSheet({
                     />
                 </Card>
                 <Card divided>
-                    {timeRow('start', l('Çalışma Başlangıcı', 'Start'), startMs)}
-                    {timeRow('end', l('Çalışma Bitişi', 'End'), endMs)}
+                    {timeRow('start', l('Çalışma başlangıcı', 'Start'), startMs)}
+                    {timeRow('end', l('Çalışma bitişi', 'End'), endMs)}
                 </Card>
                 <Notice tone="info">
                     <Text style={[Type.caption, { color: colors.textSecondary }]}>
@@ -324,7 +324,7 @@ export default function SessionEditorSheet({
                     </Text>
                 </Notice>
                 <Card divided>
-                    <ValueRow label={l('Mola Sayısı', 'Breaks')}>
+                    <ValueRow label={l('Mola sayısı', 'Breaks')}>
                         <Stepper
                             value={String(breakCount)}
                             onDecrement={() => stepBreakCount(-1)}
@@ -335,7 +335,7 @@ export default function SessionEditorSheet({
                             canIncrement={breakCount < MAX_BREAK_COUNT}
                         />
                     </ValueRow>
-                    <ValueRow label={l('Toplam Mola Süresi', 'Total Break')}>
+                    <ValueRow label={l('Toplam mola süresi', 'Total break')}>
                         <Stepper
                             value={formatGoalClock(breakMinutes)}
                             onDecrement={() => stepBreakMinutes(-1)}
@@ -351,7 +351,7 @@ export default function SessionEditorSheet({
                 <View style={styles.noteSection}>
                     <SheetNoDrag>
                         <TextField
-                            label={l('Çalışma Notu', 'Study Note')}
+                            label={l('Çalışma notu', 'Study note')}
                             style={styles.noteField}
                             value={note}
                             onChangeText={setNote}
@@ -368,7 +368,7 @@ export default function SessionEditorSheet({
                 </View>
 
                 <Button
-                    label={recordId !== null ? l('Değişiklikleri Kaydet', 'Save Changes') : l('Çalışma Ekle', 'Add Session')}
+                    label={recordId !== null ? l('Değişiklikleri kaydet', 'Save changes') : l('Çalışma ekle', 'Add session')}
                     onPress={save}
                     disabled={Boolean(error)}
                     accessibilityLabel={recordId !== null ? l('Değişiklikleri kaydet', 'Save changes') : l('Çalışma ekle', 'Add session')}

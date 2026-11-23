@@ -16,7 +16,7 @@ import StopwatchAlertsSheet from '../components/stopwatch/StopwatchAlertsSheet';
 import SessionActionsMenu, { type SessionMenuItem } from '../components/stopwatch/SessionActionsMenu';
 import StudyToolsMenu, { STUDY_TOOLS_FAB_SIZE } from '../components/stopwatch/StudyToolsMenu';
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
-import { BellIcon, CalendarIcon, GearIcon, PlusCircleIcon } from '../components/stopwatch/StopwatchIcons';
+import { BellIcon, CalendarIcon, GearIcon, PlusIcon } from '../components/stopwatch/StopwatchIcons';
 import { useCenteredInset } from '../hooks/useCenteredInset';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
@@ -245,7 +245,7 @@ export default function StopwatchScreen() {
         }
         // TUSBuddy's warning, then what will be saved.
         confirm(
-            l('Çalışmayı Sonlandır', 'Finish the Session'),
+            l('Çalışmayı sonlandır', 'Finish the session'),
             l(
                 `'${running.subject}' çalışmanız sonlandırılacak. Çalışmayı sonlandırdıktan sonra aynı çalışmayı devam ettiremezsiniz.\n\n${formatSessionDuration(draft.studyMs, locale)} çalışma ve ${formatSessionDuration(draft.breakMs, locale)} mola kaydedilecek.`,
                 `Your '${running.subject}' session will be finished. Once it is finished, it cannot be continued.\n\n${formatSessionDuration(draft.studyMs, locale)} of study and ${formatSessionDuration(draft.breakMs, locale)} of break will be saved.`,
@@ -383,7 +383,7 @@ export default function StopwatchScreen() {
         busy: snapshotLoading,
         labels: {
             refreshing: l('Çalışmalarınız yenileniyor…', 'Refreshing your sessions…'),
-            done: l('Çalışmalarınız yenilendi!', 'Your sessions are up to date!'),
+            done: l('Çalışmalarınız güncel', 'Your sessions are up to date'),
         },
         onRefresh: () => {
             stopwatch.reload();
@@ -443,7 +443,7 @@ export default function StopwatchScreen() {
                 />
 
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle} accessibilityRole="header">{l('Son Çalışmalarınız', 'Recent Study')}</Text>
+                    <Text style={styles.sectionTitle} accessibilityRole="header">{l('Son çalışmalarınız', 'Recent study')}</Text>
                     <TouchableOpacity
                         style={styles.addButton}
                         onPress={() => openEditor(null)}
@@ -451,8 +451,8 @@ export default function StopwatchScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={l('Geçmiş çalışma ekle', 'Add a past session')}
                     >
-                        <PlusCircleIcon color={colors.info} size={20} />
-                        <Text style={styles.addText}>{l('Çalışma Ekle', 'Add Session')}</Text>
+                        <PlusIcon color={colors.info} size={18} />
+                        <Text style={styles.addText}>{l('Çalışma ekle', 'Add session')}</Text>
                     </TouchableOpacity>
                 </View>
 

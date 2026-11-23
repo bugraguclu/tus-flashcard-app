@@ -83,7 +83,7 @@ export default function StopwatchAlertsSheet({ visible, prefs, onChange, onClose
                 {status ? <Text style={[Type.body, styles.status, { color: blocked ? colors.danger : colors.textMuted }]}>{status}</Text> : null}
                 <View style={styles.footer}>
                     {blocked && Platform.OS === 'ios' ? (
-                        <Button label={l('Ayarları Aç', 'Open Settings')} variant="secondary" onPress={() => void Linking.openSettings()} />
+                        <Button label={l('Ayarları aç', 'Open settings')} variant="secondary" onPress={() => void Linking.openSettings()} />
                     ) : null}
                 </View>
             </View>

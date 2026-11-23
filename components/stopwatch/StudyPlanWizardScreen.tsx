@@ -78,7 +78,7 @@ export default function StudyPlanWizardScreen({ step }: { step: number }) {
                             />
                         </View>
                         <DateField label={l('Başlangıç', 'Start')} ymd={draft.startYmd} onChange={(startYmd) => update({ startYmd })} />
-                        <DateField label={l('Hedef Tarihi', 'Target Date')} ymd={draft.deadlineYmd} onChange={(deadlineYmd) => update({ deadlineYmd })} />
+                        <DateField label={l('Hedef tarihi', 'Target date')} ymd={draft.deadlineYmd} onChange={(deadlineYmd) => update({ deadlineYmd })} />
                     </Section>
                 ) : step === 1 ? (
                     <CoursesStep courses={draft.courses} onChange={(courses) => update({ courses })} />

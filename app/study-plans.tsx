@@ -70,7 +70,7 @@ export default function StudyPlansScreen() {
         scrollRef,
         labels: {
             refreshing: l('Çalışma planlarınız yenileniyor…', 'Refreshing your study plans…'),
-            done: l('Çalışma planlarınız yenilendi!', 'Your study plans are up to date!'),
+            done: l('Çalışma planlarınız güncel', 'Your study plans are up to date'),
         },
         onRefresh: reload,
     });

@@ -125,7 +125,7 @@ export default function StopwatchHero({
                         <View style={styles.pillIcon}>
                             {onBreak ? <PlayIcon color={colors.white} size={16} /> : <PauseIcon color={colors.white} size={16} />}
                         </View>
-                        <Text style={styles.pillText}>{onBreak ? l('Devam Et', 'Resume') : l('Mola Ver', 'Break')}</Text>
+                        <Text style={styles.pillText}>{onBreak ? l('Devam et', 'Resume') : l('Mola ver', 'Break')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -156,7 +156,7 @@ export default function StopwatchHero({
                             {/* The ring is drawn at a fixed size around this copy, which already fills its
                                 centre at the designed size, so it never grows past it. */}
                             <View style={[styles.ringCenter, { maxWidth: ringSize - ringStroke * 2 - 8 }]}>
-                                <Text style={styles.ringLabel} maxFontSizeMultiplier={1}>{l('Toplam\nÇalışma Süresi', 'Total\nStudy Time')}</Text>
+                                <Text style={styles.ringLabel} maxFontSizeMultiplier={1}>{l('Toplam\nçalışma süresi', 'Total\nstudy time')}</Text>
                                 <Text style={[styles.ringValue, { fontSize: totalFontSize }]} numberOfLines={1} maxFontSizeMultiplier={1}>{total}</Text>
                             </View>
                         </ProgressRing>
@@ -166,7 +166,7 @@ export default function StopwatchHero({
                 <View style={styles.half}>
                     <View style={[styles.controls, { width: controlWidth }]}>
                         <Text style={styles.goalLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-                            {l('Günlük Hedef', 'Daily Goal')}
+                            {l('Günlük hedef', 'Daily goal')}
                         </Text>
                         <HeroStepper
                             value={formatGoalClock(goalMinutes)}

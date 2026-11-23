@@ -325,7 +325,7 @@ export default function DecksScreen() {
         enabled: !draggingDeck,
         labels: {
             refreshing: l('Desteleriniz yenileniyor…', 'Refreshing your decks…'),
-            done: l('Desteleriniz yenilendi!', 'Your decks are up to date!'),
+            done: l('Desteleriniz güncel', 'Your decks are up to date'),
         },
         onScroll: (event) => {
             scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
@@ -1935,7 +1935,6 @@ function createStyles(colors: ColorScheme) {
         borderColor: colors.border,
         borderRadius: Radius.card,
         minHeight: 72,
-        ...Shadow.card,
     },
     // The lock on its own, in a 36-point column; no tinted square behind it.
     lockedDeckIcon: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },

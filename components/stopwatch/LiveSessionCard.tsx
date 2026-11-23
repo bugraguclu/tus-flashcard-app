@@ -1,7 +1,6 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
-import { Shadow } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import { blockProgress, formatStopwatchClock, type StudyKind } from '../../lib/stopwatch';
 import { formatClockHhMm, formatSessionDuration } from '../../lib/studyCalendar';
@@ -139,7 +138,7 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
                     >
-                        <View style={[local.bookBadge, { backgroundColor: colors.bgCard, borderColor: colors.borderLight }]}>
+                        <View style={local.bookBadge}>
                             <BookIcon color={live.onBreak ? colors.streak : colors.success} size={16} />
                         </View>
                         <Text style={[local.message, { color: live.onBreak ? colors.streak : colors.textPrimary }]} numberOfLines={2}>{message}</Text>
@@ -174,16 +173,8 @@ const local = StyleSheet.create({
     sessionClock: { fontWeight: '800', fontVariant: ['tabular-nums'] },
     rule: { height: StyleSheet.hairlineWidth },
     messageRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-    // The book in a small white circle, as TUSBuddy shows it before the note.
-    bookBadge: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        borderWidth: StyleSheet.hairlineWidth,
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...Shadow.card,
-    },
+    // The book glyph on its own before the note.
+    bookBadge: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
     message: { flex: 1, fontSize: FontSize.md, fontWeight: '500' },
     progress: { gap: 4 },
     progressLabels: { flexDirection: 'row', justifyContent: 'space-between' },

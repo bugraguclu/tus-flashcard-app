@@ -129,7 +129,7 @@ export default function StatsScreen() {
         enabled: !scrollLocked,
         labels: {
             refreshing: l('İstatistikleriniz yenileniyor…', 'Refreshing your statistics…'),
-            done: l('İstatistikleriniz yenilendi!', 'Your statistics are up to date!'),
+            done: l('İstatistikleriniz güncel', 'Your statistics are up to date'),
         },
         onRefresh: () => {
             setSchedulingRevision(getSchedulingRevision());

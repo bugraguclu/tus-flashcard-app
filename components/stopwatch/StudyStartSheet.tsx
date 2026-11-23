@@ -73,7 +73,7 @@ export default function StudyStartSheet({ visible, initial, recentSubjects, pass
     ) : null;
 
     return (
-        <AppSheet visible={visible} onClose={onClose} title={l('Çalışmaya Başla', 'Start Studying')} overlay={overlay}>
+        <AppSheet visible={visible} onClose={onClose} title={l('Çalışmaya başla', 'Start studying')} overlay={overlay}>
             <View style={styles.body}>
                 <Card divided>
                     <SelectRow
@@ -85,7 +85,7 @@ export default function StudyStartSheet({ visible, initial, recentSubjects, pass
                         accessibilityHint={l('Ders listesini açar', 'Opens the subject list')}
                     />
                     <SelectRow
-                        label={l('Tür Seçin', 'Type')}
+                        label={l('Tür seçin', 'Type')}
                         value={typeLabel}
                         onPress={() => setPicker('type')}
                         expanded={picker === 'type'}

@@ -34,7 +34,7 @@ export default function RunningNoteSheet({ visible, subject, note, onClose, onSa
     }, [visible]);
 
     return (
-        <AppSheet visible={visible} onClose={onClose} title={l('Çalışma Notu', 'Study Note')} avoidKeyboard>
+        <AppSheet visible={visible} onClose={onClose} title={l('Çalışma notu', 'Study note')} avoidKeyboard>
             <View style={styles.body}>
                 <Text style={[Type.body, styles.hint, { color: colors.textSecondary }]}>
                     {l(`${subject} çalışmanıza not ekleyin; kronometreyi bitirdiğinizde çalışmayla birlikte kaydedilir.`,
@@ -56,7 +56,7 @@ export default function RunningNoteSheet({ visible, subject, note, onClose, onSa
                 </Text>
                 {/* TUSBuddy's words: "Not Ekle" for a first note, "Çalışma Notunu Güncelle" after. */}
                 <Button
-                    label={note ? l('Çalışma Notunu Güncelle', 'Update Study Note') : l('Not Ekle', 'Add Note')}
+                    label={note ? l('Çalışma notunu güncelle', 'Update study note') : l('Not ekle', 'Add note')}
                     onPress={() => visible && onSave(draft)}
                     accessibilityLabel={note ? l('Çalışma notunu güncelle', 'Update the study note') : l('Not ekle', 'Add the note')}
                     style={styles.save}

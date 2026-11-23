@@ -1,6 +1,6 @@
 import { StyleSheet, Platform } from 'react-native';
 import { Spacing, FontSize, type ColorScheme } from '../../constants/theme';
-import { Radius, Shadow, Type } from '../ui/tokens';
+import { Radius, Type } from '../ui/tokens';
 
 /**
  * Styles for the card browser, its rows, bars, menus and dialogs. `inset` is the extra side
@@ -48,7 +48,6 @@ export function createBrowserStyles(colors: ColorScheme, inset = 0) {
         borderCurve: 'continuous',
         paddingVertical: 4,
         paddingHorizontal: Spacing.md - 2,
-        ...Shadow.card,
     },
     cardItemSelected: { borderColor: colors.accent, backgroundColor: colors.accentLight },
     // Anki tints the row instead of fading it: a suspended card is out of the queue, not less

@@ -169,7 +169,7 @@ export default function StopwatchTimeline({
                             <View style={shared.column}>
                                 <View style={[shared.card, styles.missedCard]}>
                                     <SleepingPanda width={50} snoreColor={colors.info} />
-                                    <Text style={styles.missedText}>{l('Hiç çalışmanız yok!', 'No study this day!')}</Text>
+                                    <Text style={styles.missedText}>{l('Bu gün çalışma yok', 'No study this day')}</Text>
                                 </View>
                             </View>
                         </View>
@@ -180,10 +180,10 @@ export default function StopwatchTimeline({
             <Card style={styles.calendarCard}>
                 <ListRow
                     icon={<TimelineListIcon color={colors.streak} size={24} />}
-                    title={l('Çalışma Takviminiz', 'Your Study Calendar')}
+                    title={l('Çalışma takviminiz', 'Your study calendar')}
                     summary={l('Tüm çalışmalarınızı takvimde görün', 'See all your sessions on the calendar')}
                     onPress={onOpenCalendar}
-                    accessibilityLabel={l('Çalışma Takviminiz. Tüm çalışmalarınızı takvimde görün.', 'Your Study Calendar. See all your sessions on the calendar.')}
+                    accessibilityLabel={l('Çalışma takviminiz. Tüm çalışmalarınızı takvimde görün.', 'Your study calendar. See all your sessions on the calendar.')}
                 />
             </Card>
         </View>
@@ -217,7 +217,7 @@ function createStyles(colors: ColorScheme) {
         todayEmpty: { alignItems: 'center', paddingVertical: Spacing.md, gap: Spacing.sm },
         todayEmptyText: { fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
         missedCard: { alignItems: 'center' },
-        missedText: { flex: 1, fontSize: FontSize.md, fontWeight: '500', color: colors.textPrimary },
+        missedText: { flex: 1, fontSize: FontSize.md, color: colors.textSecondary },
         calendarCard: { marginHorizontal: Spacing.lg, marginTop: Spacing.xxl },
     });
 }

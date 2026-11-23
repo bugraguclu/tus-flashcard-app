@@ -108,7 +108,7 @@ export function SubjectGridPicker({ selected, recentSubjects, onSelect, onClose 
                 {/* Two columns at the largest text sizes outgrow a small iPhone: the courses scroll
                     and Kapat stays pinned under them, so closing never needs a scroll first. */}
                 <ScrollView style={styles.gridScroll} contentContainerStyle={styles.gridContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                    <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">{l('Ders Seçin', 'Choose a Subject')}</Text>
+                    <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header">{l('Ders seçin', 'Choose a subject')}</Text>
                     <View style={[styles.grid, typing && styles.hidden]} accessibilityRole="radiogroup" accessibilityLabel={l('Ders', 'Subject')}>
                         {subjects.map((subject) => {
                             const isSelected = studySubjectKey(subject) === selectedKey;

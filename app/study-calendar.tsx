@@ -177,7 +177,7 @@ export default function StudyCalendarScreen() {
         busy: loading,
         labels: {
             refreshing: l('Çalışmalarınız yenileniyor…', 'Refreshing your sessions…'),
-            done: l('Çalışmalarınız yenilendi!', 'Your sessions are up to date!'),
+            done: l('Çalışmalarınız güncel', 'Your sessions are up to date'),
         },
         onRefresh: () => {
             setSchedulingRevision(getSchedulingRevision());

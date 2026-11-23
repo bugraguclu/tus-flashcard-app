@@ -92,7 +92,7 @@ export default function BackupsScreen() {
         scrollRef,
         labels: {
             refreshing: l('Yedekleriniz yenileniyor…', 'Refreshing your backups…'),
-            done: l('Yedekleriniz yenilendi!', 'Your backups are up to date!'),
+            done: l('Yedekleriniz güncel', 'Your backups are up to date'),
         },
         onRefresh: async () => {
             try {

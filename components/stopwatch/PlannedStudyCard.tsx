@@ -5,7 +5,7 @@ import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { formatHeroDuration } from '../../lib/stopwatch';
 import { formatPlanClock, type StudyPlanBlock } from '../../lib/studyPlans';
-import { CheckIcon } from '../ui/icons';
+import { CheckIcon, ChevronRightIcon } from '../ui/icons';
 import { ClockIcon, GearIcon } from './StopwatchIcons';
 import { studyTypeLabel } from './StudyTypeChips';
 import { SubjectTile } from './SubjectArt';
@@ -123,13 +123,14 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
                                 </View>
                                 {startable ? (
                                     <TouchableOpacity
-                                        style={[local.start, { backgroundColor: colors.accent }]}
+                                        style={local.start}
                                         onPress={onStart}
                                         hitSlop={{ top: 10, right: 8, bottom: 10, left: 8 }}
                                         accessibilityRole="button"
                                         accessibilityLabel={l(`${plan.subject} çalışmasını başlat`, `Start ${plan.subject}`)}
                                     >
-                                        <Text style={[local.startText, { color: colors.onAccent }]}>{l('Başlat', 'Start')}</Text>
+                                        <Text style={[local.startText, { color: colors.accent }]}>{l('Başlat', 'Start')}</Text>
+                                        <ChevronRightIcon color={colors.accent} size={16} />
                                     </TouchableOpacity>
                                 ) : null}
                             </View>
@@ -155,9 +156,9 @@ const local = StyleSheet.create({
     leftRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.md },
     left: { fontSize: FontSize.md, fontWeight: '500' },
     done: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    // The small filled "Başlat" TUSBuddy puts after the time left.
-    start: { borderRadius: Radius.control, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
-    startText: { fontSize: FontSize.sm, fontWeight: '600' },
+    // "Başlat" after the time left: accent text with a chevron, not a filled button.
+    start: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 3 },
+    startText: { fontSize: FontSize.md, fontWeight: '600' },
 });
 
 export default React.memo(PlannedStudyCard);

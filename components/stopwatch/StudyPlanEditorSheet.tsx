@@ -145,7 +145,7 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
                     </Card>
 
                     <Card padded>
-                        <Text style={[Type.rowTitle, { color: colors.textPrimary }]}>{l('Çalışma Günleri', 'Study Days')}</Text>
+                        <Text style={[Type.rowTitle, { color: colors.textPrimary }]}>{l('Çalışma günleri', 'Study days')}</Text>
                         <View style={styles.days}>
                             {WEEKDAYS_MONDAY_FIRST.map((weekday) => {
                                 const selected = draft.weekdays.includes(weekday);
@@ -210,7 +210,7 @@ export default function StudyPlanEditorSheet({ plan, isNew, recentSubjects, onCl
                     <View style={styles.footer}>
                         <Button label={l('Kaydet', 'Save')} onPress={() => { if (!problem) onSave(draft); }} disabled={problem !== null} />
                         {!isNew ? (
-                            <Button label={l('Planı Sil', 'Delete Plan')} variant="destructive" onPress={() => onDelete(draft)} />
+                            <Button label={l('Planı sil', 'Delete plan')} variant="destructive" onPress={() => onDelete(draft)} />
                         ) : null}
                     </View>
                 </SheetScrollView>

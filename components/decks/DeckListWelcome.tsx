@@ -9,7 +9,7 @@ import PencilGlyph from '../PencilGlyph';
 import DeckOverflowGlyph from '../DeckOverflowGlyph';
 import { CloseIcon } from '../ui/icons';
 import { ListRow } from '../ui/Rows';
-import { Shadow, Radius } from '../ui/tokens';
+import { Radius } from '../ui/tokens';
 
 interface DeckListWelcomeProps {
     /** Offer the TUS pack: false once the full pack is installed. */
@@ -105,7 +105,6 @@ function createStyles(colors: ColorScheme) {
             borderWidth: 1,
             borderColor: colors.borderLight,
             borderRadius: Radius.inset,
-            ...Shadow.card,
         },
         header: {
             flexDirection: 'row',

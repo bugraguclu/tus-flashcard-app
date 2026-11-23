@@ -99,7 +99,7 @@ export default function DeckOverviewScreen() {
         busy: loading,
         labels: {
             refreshing: l('Deste yenileniyor…', 'Refreshing the deck…'),
-            done: l('Deste yenilendi!', 'The deck is up to date!'),
+            done: l('Deste güncel', 'The deck is up to date'),
         },
         onRefresh: () => {
             setSchedulingRevision(getSchedulingRevision());

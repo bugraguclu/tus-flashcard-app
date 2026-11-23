@@ -28,7 +28,7 @@ import { AppDialog } from '../components/ui/Dialog';
 import { Notice } from '../components/ui/Feedback';
 import { CheckIcon } from '../components/ui/icons';
 import { ListRow } from '../components/ui/Rows';
-import { Shadow, Type } from '../components/ui/tokens';
+import { Type } from '../components/ui/tokens';
 import { BKA_CATALOG_DEFAULT_ROOT_DECK, getBkaCatalogRootDeckName } from '../lib/bkaCatalog';
 import { getDeckByName } from '../lib/deckManager';
 
@@ -466,7 +466,6 @@ function createStyles(colors: ColorScheme, footerInset: number) {
             overflow: 'hidden',
             // One flat dark green, no gradient.
             backgroundColor: HERO_TOP,
-            ...Shadow.card,
         },
         // The pack's kind, a small line over the title: no glowing pill, no capitals.
         heroBadge: { alignSelf: 'flex-start' },

@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { FontSize, Spacing, type ColorScheme } from '../../constants/theme';
-import { Shadow, Radius } from '../ui/tokens';
+import { Radius } from '../ui/tokens';
 
 /** Width of the column left of the cards, which holds the timeline line, its nodes and buttons. */
 const TIMELINE_GUTTER = 80;
@@ -69,11 +69,8 @@ function createTimelineStyles(colors: ColorScheme) {
         sideButton: {
             width: 26,
             height: 24,
-            borderRadius: Radius.control,
-            backgroundColor: colors.bgCard,
             alignItems: 'center',
             justifyContent: 'center',
-            ...Shadow.card,
         },
 
         column: { flex: 1, paddingRight: Spacing.lg, paddingVertical: Spacing.sm },
@@ -82,8 +79,9 @@ function createTimelineStyles(colors: ColorScheme) {
             gap: Spacing.md,
             backgroundColor: colors.bgCard,
             borderRadius: Radius.card,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
             padding: Spacing.md,
-            ...Shadow.card,
         },
         body: { flex: 1, gap: Spacing.xs },
         titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },

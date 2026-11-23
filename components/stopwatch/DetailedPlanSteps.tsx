@@ -159,7 +159,7 @@ export function CapacityStep({ draft, onChange, preview, weekdayName }: Capacity
     return (
         <>
             <Section
-                label={l('Haftalık Çalışma Süresi', 'Weekly Study Time')}
+                label={l('Haftalık çalışma süresi', 'Weekly study time')}
                 footnote={l(`Haftalık toplam: ${formatStudyTotal(weekly * 60_000, 'tr')}. Dinlenme günü için süreyi 0 yapın.`, `Weekly total: ${formatStudyTotal(weekly * 60_000, 'en')}. Set 0 for a rest day.`)}
             >
                 {WEEKDAYS_MONDAY_FIRST.map((weekday) => (
@@ -175,7 +175,7 @@ export function CapacityStep({ draft, onChange, preview, weekdayName }: Capacity
                     <Button
                         variant="plain"
                         size="compact"
-                        label={l('Varsayılan Sürelere Dön', 'Back to Default Times')}
+                        label={l('Varsayılan sürelere dön', 'Back to default times')}
                         onPress={() => onChange({ weeklyMinutes: [480, 480, 480, 480, 480, 480, 480], dayOverrides: {} })}
                         style={styles.link}
                     />
@@ -183,15 +183,15 @@ export function CapacityStep({ draft, onChange, preview, weekdayName }: Capacity
             </Section>
 
             {preview.length > 0 ? (
-                <Section label={l('Plan Özeti', 'Plan Summary')}>
-                    <ValueRow label={l('Çalışma Günü', 'Study Days')} value={String(byDay.size)} />
-                    <ValueRow label={l('Toplam Süre', 'Total Time')} value={formatStudyTotal(total * 60_000, locale)} />
+                <Section label={l('Plan özeti', 'Plan summary')}>
+                    <ValueRow label={l('Çalışma günü', 'Study days')} value={String(byDay.size)} />
+                    <ValueRow label={l('Toplam süre', 'Total time')} value={formatStudyTotal(total * 60_000, locale)} />
                     <ValueRow label={l('Bitiş', 'Finishes')} value={dayLabel(preview[preview.length - 1].fromYmd)} />
                 </Section>
             ) : null}
 
             <Section
-                label={l('Günlük Takvim', 'Daily Calendar')}
+                label={l('Günlük takvim', 'Daily calendar')}
                 footnote={days.length === PREVIEW_DAY_LIMIT ? l(`İlk ${PREVIEW_DAY_LIMIT} gün gösteriliyor.`, `Showing the first ${PREVIEW_DAY_LIMIT} days.`) : undefined}
             >
                 {days.map((day) => {

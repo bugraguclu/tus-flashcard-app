@@ -413,8 +413,8 @@ export default function BrowserScreen() {
         scrollRef: listRef,
         busy: loading,
         labels: tableMode === 'notes'
-            ? { refreshing: l('Notlarınız yenileniyor…', 'Refreshing your notes…'), done: l('Notlarınız yenilendi!', 'Your notes are up to date!') }
-            : { refreshing: l('Kartlarınız yenileniyor…', 'Refreshing your cards…'), done: l('Kartlarınız yenilendi!', 'Your cards are up to date!') },
+            ? { refreshing: l('Notlarınız yenileniyor…', 'Refreshing your notes…'), done: l('Notlarınız güncel', 'Your notes are up to date') }
+            : { refreshing: l('Kartlarınız yenileniyor…', 'Refreshing your cards…'), done: l('Kartlarınız güncel', 'Your cards are up to date') },
         onRefresh: () => {
             setSchedulingRevision(getSchedulingRevision());
             reload();

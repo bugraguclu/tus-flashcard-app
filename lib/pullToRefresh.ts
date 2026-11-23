@@ -2,7 +2,7 @@
  * Pull-to-refresh for the app's data views: pull the list down past a threshold, let go, and the
  * screen reads its data from the collection again. While pulling the indicator says "Yenilemek
  * için çekin", past the threshold "Yenilemek için bırakın", then "<subject> yenileniyor…" and
- * finally "<subject> yenilendi!" before it folds away. This module holds the UI-free part: the
+ * finally "<subject> güncel" before it folds away. This module holds the UI-free part: the
  * thresholds, the phase a pull is in and the refresh run with its timings.
  */
 
@@ -12,7 +12,7 @@ export const PULL_INDICATOR_HEIGHT = 56;
 export const PULL_TRIGGER_DISTANCE = 72;
 /** The spinner shows at least this long, so a fast local read still reads as a refresh. */
 export const MIN_REFRESH_MS = 650;
-/** How long "… yenilendi!" stays before the indicator folds away. */
+/** How long "… güncel" stays before the indicator folds away. */
 export const DONE_HOLD_MS = 1100;
 /** Time the list takes to scroll back over the indicator before the gap is removed. */
 export const CLOSE_ANIMATION_MS = 320;
@@ -41,7 +41,7 @@ export function pullPhase(run: RefreshRunState, armed: boolean): PullPhase {
     return armed ? 'armed' : 'pulling';
 }
 
-/** Screen-specific words, e.g. "Çalışmalarınız yenileniyor…" and "Çalışmalarınız yenilendi!". */
+/** Screen-specific words, e.g. "Çalışmalarınız yenileniyor…" and "Çalışmalarınız güncel". */
 export interface PullRefreshLabels {
     refreshing: string;
     done: string;
