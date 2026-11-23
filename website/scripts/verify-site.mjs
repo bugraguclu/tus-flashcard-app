@@ -226,6 +226,7 @@ check(indexHtml.includes('href="/kart-denemesi/"') && indexHtml.includes('href="
 check(!indexHtml.includes('data-cd-announce'), 'index.html: removed countdown returned');
 
 const guideHtml = fs.readFileSync(path.join(DIST, 'tus-calisma-rehberi/index.html'), 'utf8');
+const guideVisible = guideHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
 for (const anchor of ['hizli-ozet', 'tempo-ve-profiller', 'mega-deste-kiyasi', 'tus-takvimi', 'brans-stratejisi', 'puan-ve-mevzuat', 'fsrs-ve-hacim', 'zorluklar', 'rehber-sss', 'kaynaklar']) {
   check(guideHtml.includes(`id="${anchor}"`), `tus-calisma-rehberi: missing required section #${anchor}`);
 }
@@ -233,6 +234,10 @@ check(guideHtml.includes('Bitirilebilir deste, bitmeyen desteden önce gelir'), 
 check(guideHtml.includes('27 Mart 2027') && guideHtml.includes('22 Ağustos 2027'), 'tus-calisma-rehberi: missing 2027 TUS exam dates');
 check(guideHtml.includes('Zorluk 07') && guideHtml.includes('data-faq-toggle-all'), 'tus-calisma-rehberi: missing 7 struggles or FAQ expand/collapse control');
 check(guideHtml.includes('76/200') && guideHtml.includes('82/200') && guideHtml.includes('a78ae1f'), 'tus-calisma-rehberi: missing honest pre-exam/current reference distinction');
+check(guideHtml.includes('property="og:type" content="article"') && guideHtml.includes('property="article:modified_time"'), 'tus-calisma-rehberi: missing Open Graph article metadata');
+check(!/`[^`]+`/.test(guideVisible), 'tus-calisma-rehberi: raw markdown backticks leaked into visible HTML');
+check(!guideVisible.includes('TR,14991') && !guideVisible.includes('TR,15070'), 'tus-calisma-rehberi: dead 404 ÖSYM citation URL found');
+check(!guideVisible.includes('guide-defer'), 'tus-calisma-rehberi: content-visibility:auto class (.guide-defer) breaks TOC anchor scroll positioning');
 check(
   searchIndex.some((entry) => entry.url === '/tus-calisma-rehberi/') &&
   searchIndex.some((entry) => entry.url === '/tus-calisma-rehberi/#zorluklar') &&

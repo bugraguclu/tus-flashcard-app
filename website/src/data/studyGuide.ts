@@ -45,7 +45,7 @@ export const BRANCH_STUDY_NOTES: BranchStudyNote[] = [
     ders: 'Anatomi',
     catalogId: 'bka-anatomi',
     group: 'Temel',
-    examQuestionsLabel: '13–14 soru',
+    examQuestionsLabel: '13 soru',
     priorityTag: 'Atlas / vaka desteği',
     focus: 'Baş-boyun, nöroanatomi ve komşuluklar için kartları görsel atlas ve Görsel Gizleme ile destekle.',
   },
@@ -237,7 +237,7 @@ export const TUS_STRUGGLES: StruggleItem[] = [
       'Adaylar çoğu zaman haftalık çözülen soru sayısını artırmaya odaklanır ama yanlış yapılan soruların neden kaçtığını ayrıştırmaz. Aynı iki şık arasında kalıp tekrar tekrar düşülen klinik ayrımlar düzeltilmedikçe netler 55–65 bandında plato yapar.',
     steps: [
       'Her denemeden sonra yanlış ve boşları 3 sınıfa ayır: (A) Hiç görmediğim bilgi, (B) Çalıştım ama iki şıkta karıştırdığım/unuttuğum bilgi, (C) Soru kökü dikkatsizliği.',
-      'En hızlı puan artışı (B) grubundan gelir: karıştırdığın iki hastalık veya ilacı kıyaslayan tek cümlelik kişisel kartlar yaz ve `deneme-yanlis` etiketiyle topla.',
+      'En hızlı puan artışı (B) grubundan gelir: karıştırdığın iki hastalık veya ilacı kıyaslayan tek cümlelik kişisel kartlar yaz ve “deneme-yanlis” etiketiyle topla.',
       'Kartlarım arama ekranında bu etiketi veya en sık hata yaptığın dersin alt destesini filtreleyip 7–10 gün sonra tekrar test et.',
     ],
     links: [
@@ -327,12 +327,12 @@ export const GUIDE_FAQS: GuideFaq[] = [
     a: '9.575 kartlık BKA TUS çekirdeği için %90 FSRS-6 hedef hatırlama simülasyonunda günde 60 yeni kart açıldığında ilk tur 160. günde tamamlanır; 270 günlük pencerede ortalama kart yükü 331 kart (~102 dk/gün), 270. günde 187 kart (~50 dk/gün) olur. Kart tekrarını 60–125 dakika bandında tutmak, her gün konu okuma, soru bankası ve deneme analizi için 2–4+ saatlik net zaman bırakır.',
   },
   {
-    q: 'TUS puanı nasıl hesaplanır? Klinik puanı için Temel Bilimler neden bu kadar önemli?',
-    a: 'TUS iki oturumda toplam 200 sorudan (100 Temel + 100 Klinik) oluşur ve 4 yanlış 1 doğruyu götürür. ÖSYM katsayılarına göre Temel Tıp Puanı (T) = %70 Temel + %30 Klinik; Klinik Tıp Puanı (K) = %50 Temel + %50 Klinik ağırlığıyla hesaplanır. Yani Klinik branş hedeflesen bile puanının yarısı 6 Temel Bilimler dersinden gelir.',
+    q: 'TUS kaç soru, kaç dakika ve puanı nasıl hesaplanır? Temel Bilimler Klinik puanını nasıl etkiler?',
+    a: 'TUS aynı gün iki oturumda toplam 200 sorudan (100 Temel Bilimler · 135 dakika + 100 Klinik Bilimler · 135 dakika, toplam 270 dakika) oluşur ve 4 yanlış 1 doğruyu götürür. ÖSYM katsayılarına göre Temel Tıp Puanı (T) = %70 Temel + %30 Klinik; Klinik Tıp Puanı (K) = %50 Temel + %50 Klinik ağırlığıyla hesaplanır. Yani Klinik branş hedeflesen bile puanının yarısı 6 Temel Bilimler dersinden gelir.',
   },
   {
     q: 'TUS’ta %5 puan kesintisi kimlere uygulanır ve net hedefini nasıl değiştirir?',
-    a: 'Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği uyarınca uzmanlık eğitimine devam ederken sınava girenler, istifa edenler veya yerleşip süresi içinde başlamayanlar için takip eden ilk sınavda mesleki bilgi puanında %5 kesinti (× 0,95) uygulanır. Kesintisiz ~65 Klinik puanı yaklaşık ~130 net bandındayken, %5 kesinti etkinken aynı 65 net puana ulaşmak için yaklaşık ~68,4 ham puan gerekir. Güncel koşullar için ÖSYM kılavuzunu kontrol et.',
+    a: 'Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği uyarınca uzmanlık eğitimine devam ederken sınava girenler, istifa edenler veya yerleşip süresi içinde başlamayanlar için takip eden ilk sınavda mesleki bilgi puanında %5 kesinti (× 0,95) uygulanır. Kesintisiz 65 Klinik puanı yaklaşık 130 net bandındayken, %5 kesinti etkinken aynı 65 net puana ulaşmak için yaklaşık 68,4 ham puan (~143 net) gerekir. Güncel koşullar için ÖSYM kılavuzunu kontrol et.',
   },
   {
     q: 'FSRS-6 hedef hatırlama oranı TUS için %85 mi, %90 mı, %93 mü olmalı?',
@@ -354,14 +354,14 @@ export const GUIDE_FAQS: GuideFaq[] = [
 
 export const OFFICIAL_SOURCES = [
   {
-    title: 'ÖSYM — Tıpta Uzmanlık Eğitimi Giriş Sınavı (TUS) Genel Bilgiler ve Kılavuzlar',
-    url: 'https://www.osym.gov.tr/TR,14991/tipta-uzmanlik-egitimi-giris-sinavi.html',
-    note: 'Sınav yapısı, 45 barajı, yabancı dil koşulu ve dönemsel takvim',
+    title: 'ÖSYM — TUS Duyuruları, Kılavuzlar ve Temel Soru Kitapçıkları',
+    url: 'https://www.osym.gov.tr/SinavGrubu/Index/6',
+    note: 'Sınav yapısı, 45 barajı, yabancı dil koşulu, kılavuzlar ve yayımlanan soru kitapçıkları',
   },
   {
-    title: 'ÖSYM — TUS Çıkmış Sınav Soruları Arşivi',
-    url: 'https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html',
-    note: 'Resmî geçmiş dönem soru kitapçıkları',
+    title: 'ÖSYM — Resmî Sınav ve Yerleştirme Takvimi',
+    url: 'https://www.osym.gov.tr/Sayfa/SinavTakvimi',
+    note: 'Güncel TUS başvuru, sınav ve sonuç açıklaması tarihleri',
   },
   {
     title: 'Resmî Gazete — Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği',
@@ -380,7 +380,7 @@ export const OFFICIAL_SOURCES = [
   },
   {
     title: 'Anki Manual — Deck Options & FSRS',
-    url: 'https://docs.ankiweb.net/deck-options.html',
+    url: 'https://docs.ankiweb.net/manual/deck-options',
     note: 'Hedef hatırlama, öğrenme adımları ve parametre optimizasyonu dokümantasyonu',
   },
 ] as const;

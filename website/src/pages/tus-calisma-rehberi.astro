@@ -27,9 +27,11 @@ const articleSchema = {
   '@type': 'Article',
   '@id': pageUrl + '#article',
   mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
+  isPartOf: { '@id': origin + '/#website' },
   url: pageUrl,
   headline: GUIDE_META.h1,
   description: GUIDE_META.description,
+  articleSection: 'TUS Çalışma Rehberi',
   inLanguage: 'tr-TR',
   author: { '@id': origin + '/#organization' },
   publisher: { '@id': origin + '/#organization' },
@@ -83,6 +85,9 @@ const faqSchema = {
 <Layout
   title={GUIDE_META.title}
   description={GUIDE_META.description}
+  ogType="article"
+  publishedTime={dates.datePublished}
+  modifiedTime={dates.dateModified}
   schema={[crumbs, articleSchema, howToSchema, faqSchema]}
 >
   <GuideHeroAndToc />
@@ -95,33 +100,67 @@ const faqSchema = {
 </Layout>
 
 <script>
-  // 1. Scrollspy aria-current sync (native CSS scroll-target-group + IntersectionObserver fallback)
+  // 1. Scrollspy aria-current sync (native CSS scroll-target-group + deterministic fallback)
   const tocNav = document.querySelector<HTMLElement>('[data-guide-toc]');
   if (tocNav) {
     const links = Array.from(tocNav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'));
     const sections = links
       .map((a) => document.getElementById(a.getAttribute('href')!.slice(1)))
       .filter((el): el is HTMLElement => Boolean(el));
+    const tocBar = tocNav.closest<HTMLElement>('.guide-toc-bar');
 
     const centerTocPill = (active: HTMLAnchorElement | null) => {
-      if (!active || window.scrollY < 40) return;
-      const targetLeft = active.offsetLeft - (tocNav.clientWidth - active.offsetWidth) / 2;
-      tocNav.scrollLeft = Math.max(0, targetLeft);
+      if (!active || window.scrollY < 40 || tocNav.scrollWidth <= tocNav.clientWidth) return;
+      const navRect = tocNav.getBoundingClientRect();
+      const linkRect = active.getBoundingClientRect();
+      const delta = linkRect.left - navRect.left - (navRect.width - linkRect.width) / 2;
+      tocNav.scrollLeft = Math.max(0, tocNav.scrollLeft + delta);
+    };
+
+    const stickyBottom = () => Math.round(tocBar?.getBoundingClientRect().bottom ?? 140);
+
+    const resolveActiveId = () => {
+      if (!sections.length) return '';
+      const atBottom =
+        window.scrollY > 0 &&
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 24;
+      if (atBottom) return sections[sections.length - 1].id;
+      const cutoff = stickyBottom() + 36;
+      let current = sections[0].id;
+      for (const section of sections) {
+        if (section.getBoundingClientRect().top <= cutoff) current = section.id;
+        else break;
+      }
+      return current;
     };
 
     const supportsNative = typeof CSS !== 'undefined' && CSS.supports('scroll-target-group: auto');
     if (supportsNative) {
+      let rafId = 0;
       const syncNative = () => {
-        const active = tocNav.querySelector<HTMLAnchorElement>('a:target-current');
+        rafId = 0;
+        const nativeActive = tocNav.querySelector<HTMLAnchorElement>('a:target-current');
+        const fallbackId = nativeActive ? null : resolveActiveId();
+        const active =
+          nativeActive ??
+          links.find((l) => l.getAttribute('href') === `#${fallbackId}`) ??
+          links[0] ??
+          null;
         links.forEach((link) => {
           if (link === active) link.setAttribute('aria-current', 'true');
           else link.removeAttribute('aria-current');
         });
         centerTocPill(active);
       };
+      const scheduleSync = () => {
+        if (!rafId) rafId = requestAnimationFrame(syncNative);
+      };
       syncNative();
       document.addEventListener('scrollend', syncNative, { passive: true });
-    } else if ('IntersectionObserver' in window && sections.length) {
+      window.addEventListener('scroll', scheduleSync, { passive: true });
+      window.addEventListener('hashchange', scheduleSync);
+    } else if (sections.length) {
+      let rafId = 0;
       const setActive = (id: string) => {
         let active: HTMLAnchorElement | null = null;
         links.forEach((link) => {
@@ -136,15 +175,34 @@ const faqSchema = {
         });
         centerTocPill(active);
       };
-      const io = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            if (entry.isIntersecting) setActive(entry.target.id);
-          }
-        },
-        { rootMargin: '-25% 0px -65% 0px', threshold: 0 },
-      );
-      sections.forEach((section) => io.observe(section));
+      const syncFallback = () => {
+        rafId = 0;
+        setActive(resolveActiveId());
+      };
+      const scheduleFallback = () => {
+        if (!rafId) rafId = requestAnimationFrame(syncFallback);
+      };
+
+      const initialHash = window.location.hash.slice(1);
+      if (initialHash && sections.some((s) => s.id === initialHash)) {
+        setActive(initialHash);
+      } else {
+        setActive(resolveActiveId());
+      }
+
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(scheduleFallback, {
+          rootMargin: '-15% 0px -65% 0px',
+          threshold: 0,
+        });
+        sections.forEach((section) => io.observe(section));
+      }
+      window.addEventListener('scroll', scheduleFallback, { passive: true });
+      window.addEventListener('hashchange', () => {
+        const hashId = window.location.hash.slice(1);
+        if (hashId && sections.some((s) => s.id === hashId)) setActive(hashId);
+        scheduleFallback();
+      });
     }
   }
 

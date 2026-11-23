@@ -259,24 +259,6 @@
   .branch-row:hover .branch-name { color: #0e7469; text-decoration: underline; text-underline-offset: 3px; }
 }
 
-/* ── Workload chart ─────────────────────────────────────────────────────── */
-.chart-line {
-  fill: none;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .chart.is-in .chart-line {
-    stroke-dasharray: var(--len, 1200);
-    animation: draw 1.1s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  }
-}
-@keyframes draw {
-  from { stroke-dashoffset: var(--len, 1200); }
-}
-
 /* ── Cards that lift on real hover only ─────────────────────────────────── */
 .lift {
   transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;

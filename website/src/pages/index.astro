@@ -121,7 +121,7 @@ const homeSchema = [
 <script>
   // Reveal sections once as they scroll into view. Content is visible without JS,
   // elements already on screen at load are left alone, and Reduce Motion skips it all.
-  const targets = document.querySelectorAll<HTMLElement>('.reveal, .grow, .chart');
+  const targets = document.querySelectorAll<HTMLElement>('.reveal, .grow');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reduce && 'IntersectionObserver' in window && targets.length) {
     let first = true;

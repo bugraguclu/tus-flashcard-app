@@ -53,13 +53,15 @@ import exams from '../../data/exams.json';
 </section>
 
 <script>
-  // Fill days remaining on the client so static HTML never displays a stale countdown.
-  const DAY = 86_400_000;
+  import { daysUntilExamIso, todayUtcMs } from '../../lib/studyPlannerTypes';
+
+  // Use the exact same calendar-day calculation as /calisma-plani/ so counts match at every hour
+  // and exam morning shows "Bugün" rather than "1 gün kaldı".
+  const todayMs = todayUtcMs();
   document.querySelectorAll<HTMLElement>('[data-days-left]').forEach((el) => {
-    const at = Date.parse(el.dataset.daysLeft ?? '');
-    if (Number.isNaN(at)) return;
-    const days = Math.ceil((at - Date.now()) / DAY);
-    if (days < 0) return;
+    const raw = el.dataset.daysLeft ?? '';
+    const days = daysUntilExamIso(raw.slice(0, 10), todayMs);
+    if (days === null || days < 0) return;
     el.textContent = days === 0 ? 'Bugün' : `${days.toLocaleString('tr-TR')} gün kaldı`;
     el.hidden = false;
   });

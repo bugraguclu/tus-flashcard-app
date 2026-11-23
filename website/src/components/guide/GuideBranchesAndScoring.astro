@@ -25,6 +25,8 @@ const branchRows = BRANCH_STUDY_NOTES.map((note) => {
   };
 });
 
+const destekPct = (ders: string) => pct(refBySubject.get(ders)!.destekOran);
+
 const scoreBenchmarks = [
   { target: '55,0 puan', noPenaltyNet: '~95 net (~47–48 / oturum)', penaltyRaw: '~57,9 ham puan', penaltyNet: '~105 net' },
   { target: '60,0 puan', noPenaltyNet: '~113 net (~56–57 / oturum)', penaltyRaw: '~63,2 ham puan', penaltyNet: '~124 net' },
@@ -33,7 +35,7 @@ const scoreBenchmarks = [
   { target: '75,0 puan', noPenaltyNet: '~166 net (~83 / oturum)', penaltyRaw: '~78,9 ham puan', penaltyNet: '~180 net' },
 ];
 ---
-<section id="brans-stratejisi" tabindex="-1" class="guide-section guide-defer py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="branches-heading">
+<section id="brans-stratejisi" tabindex="-1" class="guide-section py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="branches-heading">
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 space-y-8">
     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
       <div class="max-w-3xl">
@@ -67,7 +69,7 @@ const scoreBenchmarks = [
           {branchRows.map((b) => (
             <tr>
               <th scope="row">
-                <a href={b.refHref} class="text-ink hover:text-teal underline decoration-line hover:decoration-teal underline-offset-4">
+                <a href={b.refHref} class="inline-flex items-center min-h-[2.75rem] -my-1.5 text-ink hover:text-teal underline decoration-line hover:decoration-teal underline-offset-4">
                   {b.ders}
                 </a>
                 <span class="block text-xs font-normal text-inkMuted mt-0.5">{b.group} · {b.priorityTag}</span>
@@ -81,7 +83,7 @@ const scoreBenchmarks = [
                 <span class="block text-xs text-inkMuted">{b.dogrudan} doğrudan + {b.dolayli} dolaylı / {b.soru}</span>
               </td>
               <td data-col="Konu Kapsamı" class="tabular-nums whitespace-nowrap">{pct(b.konuKapsamiOran)}</td>
-              <td data-col="Çalışma Odağı" class="text-inkMuted leading-relaxed min-w-[16rem]">{b.focus}</td>
+              <td data-col="Çalışma Odağı" class="guide-col-focus text-inkMuted leading-relaxed">{b.focus}</td>
             </tr>
           ))}
         </tbody>
@@ -92,10 +94,10 @@ const scoreBenchmarks = [
       <div class="lg:col-span-7 space-y-2">
         <h3 class="display text-lg text-ink">Bu tablo çalışma planına nasıl çevrilir?</h3>
         <p class="text-sm text-inkMuted leading-relaxed">
-          Son 6 TUS referans dağılımında <strong>Farmakoloji (%56,6)</strong>, <strong>Biyokimya (%56,0)</strong>,
-          <strong>Mikrobiyoloji (%55,6)</strong> ve <strong>Pediatri (%52,0)</strong> çekirdek kartlarla en yüksek doğrudan/dolaylı çözüm
+          Son 6 TUS referans dağılımında <strong>Farmakoloji ({destekPct('Farmakoloji')})</strong>, <strong>Biyokimya ({destekPct('Biyokimya')})</strong>,
+          <strong>Mikrobiyoloji ({destekPct('Mikrobiyoloji')})</strong> ve <strong>Pediatri ({destekPct('Pediatri')})</strong> çekirdek kartlarla en yüksek doğrudan/dolaylı çözüm
           desteğini verir; bu dersleri erken tura almak net tabanını hızlı sağlamlaştırır.
-          <strong>Anatomi (%28,2)</strong>, <strong>Küçük Stajlar (%30,2)</strong> ve <strong>Genel Cerrahi (%31,7)</strong> ise
+          <strong>Anatomi ({destekPct('Anatomi')})</strong>, <strong>Küçük Stajlar ({destekPct('Küçük Stajlar')})</strong> ve <strong>Genel Cerrahi ({destekPct('Genel Cerrahi')})</strong> ise
           kart tekrarına ek olarak görsel atlas, klinik algoritma ve çıkmış vaka soruları gerektirir.
         </p>
       </div>
@@ -116,16 +118,17 @@ const scoreBenchmarks = [
 </section>
 
 <!-- Puan hesaplama, ağırlıklar, baraj, YDS ve %5 kesinti -->
-<section id="puan-ve-mevzuat" tabindex="-1" class="guide-section guide-defer py-14 sm:py-20 bg-white border-b border-line" aria-labelledby="scoring-heading">
+<section id="puan-ve-mevzuat" tabindex="-1" class="guide-section py-14 sm:py-20 bg-white border-b border-line" aria-labelledby="scoring-heading">
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 space-y-8">
     <div class="grid lg:grid-cols-12 gap-8 items-start">
       <div class="lg:col-span-7 space-y-4">
         <p class="guide-kicker">Puan Ağırlıkları &amp; Güncel Mevzuat</p>
         <h2 id="scoring-heading" class="display text-section tracking-tightest text-ink">
-          TUS puanı nasıl hesaplanır? Baraj, yabancı dil ve %5 kesinti
+          TUS puanı nasıl hesaplanır? Süre, baraj, yabancı dil ve %5 kesinti
         </h2>
         <p class="text-inkMuted leading-relaxed">
-          Her iki oturumda da <strong>4 yanlış 1 doğruyu götürür</strong> ve standart puanlar o dönemin Türkiye ortalaması ile
+          Her oturum <strong>100 soru ve 135 dakika</strong> sürer (Temel 135 dk + Klinik 135 dk = toplam 270 dk);
+          <strong>4 yanlış 1 doğruyu götürür</strong> ve standart puanlar o dönemin Türkiye ortalaması ile
           standart sapması üzerinden ÖSYM tarafından hesaplanır. Resmî ağırlıklar çalışma önceliğini doğrudan belirler:
         </p>
 
@@ -148,7 +151,7 @@ const scoreBenchmarks = [
 
         <ul class="space-y-2 text-sm text-inkMuted leading-relaxed list-disc pl-5">
           <li><strong class="text-ink">45,000 puan barajı:</strong> Tercih yapabilmek için ilgili puan türünde (T veya K) en az 45 puan almak gerekir.</li>
-          <li><strong class="text-ink">Yabancı dil şartı:</strong> Son 5 yıl içinde geçerli YDS, e-YDS veya TIPDİL sınavlarından en az <strong>50 puan</strong> (veya ÖSYM eşdeğerliği) aranır.</li>
+          <li><strong class="text-ink">Yabancı dil şartı (erken hallet):</strong> Son 5 yıl içinde geçerli YDS, e-YDS veya TIPDİL sınavlarından en az <strong>50 puan</strong> (veya ÖSYM eşdeğerliği) aranır; geçerliliği dolan veya sona bırakılan dil puanı yüksek TUS puanıyla yerleşmeyi engelleyebilir.</li>
           <li><strong class="text-ink">%5 puan kesintisi (× 0,95):</strong> Uzmanlık eğitimine devam ederken sınava girenler, istifa edenler veya yerleşip süresi içinde başlamayanlar için takip eden ilk sınavda mesleki bilgi puanından %5 düşülür.</li>
         </ul>
       </div>
@@ -160,7 +163,7 @@ const scoreBenchmarks = [
           Kendi doğru/yanlışlarınla anlık denemek için hesaplayıcıyı açabilirsin.
         </p>
         <div class="guide-table-wrap" tabindex="0" role="region" aria-label="Hedef TUS Klinik puanına göre kesintisiz ve %5 kesintili yaklaşık net tablosu">
-          <table class="guide-table">
+          <table class="guide-table guide-table-compact">
             <caption class="sr-only">Hedef TUS Klinik puanı için kesintisiz ve %5 kesintili yaklaşık toplam net karşılaştırması</caption>
             <thead>
               <tr>

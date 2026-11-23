@@ -20,6 +20,11 @@
 }
 .guide-kicker-warm { color: #a3430a; }
 
+/* Keep anchor jumps (#mega-deste-kiyasi, TOC sections) and keyboard focus clear of header + sticky TOC (WCAG 2.4.11) */
+html:has(.guide-toc-bar) {
+  scroll-padding-top: calc(var(--site-header-height, 4.75rem) + 4rem);
+}
+
 /* ── Sticky Scrollspy Table of Contents (MWG scrollspy guide) ────────────── */
 .guide-toc-bar {
   position: sticky;
@@ -30,6 +35,7 @@
 }
 
 .guide-toc-list {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.375rem;
@@ -73,17 +79,14 @@
   font-weight: 700;
 }
 
-/* Sections targeted by TOC links clear both site header and sticky TOC bar */
-.guide-section {
-  scroll-margin-top: calc(var(--site-header-height) + 4.25rem);
+/* Zero scroll-margin-top so it never doubles html's scroll-padding-top */
+.guide-section,
+.guide-subanchor {
+  scroll-margin-top: 0;
 }
-.guide-section:focus {
+.guide-section:focus,
+.guide-subanchor:focus {
   outline: none;
-}
-
-.guide-defer {
-  content-visibility: auto;
-  contain-intrinsic-block-size: auto 44rem;
 }
 
 /* ── Meters, legends, workload chart (moved from home.css) ───────────────── */
@@ -200,27 +203,46 @@
   color: #24292c;
 }
 
-/* Container-adaptive stacked cards for narrow viewports (zero horizontal overflow) */
+.guide-table-compact {
+  font-size: 0.8125rem;
+}
+.guide-table-compact thead th {
+  white-space: normal;
+  padding: 0.625rem 0.625rem;
+}
+.guide-table-compact tbody th[scope="row"],
+.guide-table-compact tbody td {
+  padding: 0.625rem 0.625rem;
+}
+
+@container (width >= 560px) {
+  .guide-col-focus {
+    min-inline-size: 16rem;
+  }
+}
+
+/* Container-adaptive stacked cards for narrow wide-table containers (zero horizontal overflow).
+ * Style descendants of .guide-table-wrap (never the container itself, which cannot self-query). */
 @container (width < 560px) {
-  .guide-table-wrap {
+  .guide-table:not(.guide-table-compact) {
     background: #f8f9fa;
     padding: 0.625rem;
   }
 
-  .guide-table,
-  .guide-table thead,
-  .guide-table tbody,
-  .guide-table tr,
-  .guide-table th,
-  .guide-table td {
+  .guide-table:not(.guide-table-compact),
+  .guide-table:not(.guide-table-compact) thead,
+  .guide-table:not(.guide-table-compact) tbody,
+  .guide-table:not(.guide-table-compact) tr,
+  .guide-table:not(.guide-table-compact) th,
+  .guide-table:not(.guide-table-compact) td {
     display: block;
   }
 
-  .guide-table thead {
+  .guide-table:not(.guide-table-compact) thead {
     display: none;
   }
 
-  .guide-table tbody tr {
+  .guide-table:not(.guide-table-compact) tbody tr {
     background: #ffffff;
     border: 1px solid #dde1e4;
     border-radius: 0.75rem;
@@ -228,11 +250,11 @@
     margin-block-end: 0.75rem;
   }
 
-  .guide-table tbody tr:last-child {
+  .guide-table:not(.guide-table-compact) tbody tr:last-child {
     margin-block-end: 0;
   }
 
-  .guide-table tbody th[scope="row"] {
+  .guide-table:not(.guide-table-compact) tbody th[scope="row"] {
     position: static;
     background: #f8f9fa;
     border-bottom: 1px solid #dde1e4;
@@ -240,7 +262,7 @@
     font-size: 0.9375rem;
   }
 
-  .guide-table tbody td {
+  .guide-table:not(.guide-table-compact) tbody td {
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
@@ -249,7 +271,64 @@
     border-bottom: 1px solid #e9ecee;
   }
 
-  .guide-table tbody td[data-col]::before {
+  .guide-table:not(.guide-table-compact) tbody td[data-col]::before {
+    content: attr(data-col);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #596166;
+  }
+}
+
+/* Compact 3-column tables remain tabular in desktop sidebars (~385px) and stack on narrow mobile (<340px) */
+@container (width < 340px) {
+  .guide-table-compact {
+    background: #f8f9fa;
+    padding: 0.625rem;
+  }
+
+  .guide-table-compact,
+  .guide-table-compact thead,
+  .guide-table-compact tbody,
+  .guide-table-compact tr,
+  .guide-table-compact th,
+  .guide-table-compact td {
+    display: block;
+  }
+
+  .guide-table-compact thead {
+    display: none;
+  }
+
+  .guide-table-compact tbody tr {
+    background: #ffffff;
+    border: 1px solid #dde1e4;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    margin-block-end: 0.625rem;
+  }
+
+  .guide-table-compact tbody tr:last-child {
+    margin-block-end: 0;
+  }
+
+  .guide-table-compact tbody th[scope="row"] {
+    position: static;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dde1e4;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .guide-table-compact tbody td {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-inline-size: 0;
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid #e9ecee;
+  }
+
+  .guide-table-compact tbody td[data-col]::before {
     content: attr(data-col);
     font-size: 0.75rem;
     font-weight: 700;
