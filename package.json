@@ -32,7 +32,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
     "@react-native-google-signin/google-signin": "~17.0.0",
-    "entities": "^4.5.0",
+    "entities": "^9.0.0",
     "expo": "^57.0.0",
     "expo-apple-authentication": "~57.0.2",
     "expo-asset": "~57.0.16",
@@ -76,7 +76,7 @@
     "qrcode": "^1.5.4",
     "react-test-renderer": "^19.1.0",
     "typescript": "~6.0.3",
-    "vitest": "^4.0.18"
+    "vitest": "^5.1.1"
   },
   "overrides": {
     "vite": "8.1.6",
