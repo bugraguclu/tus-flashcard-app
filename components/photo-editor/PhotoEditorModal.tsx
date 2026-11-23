@@ -260,11 +260,15 @@ export default function PhotoEditorModal({ visible, photo, onClose, onSaved }: P
     };
 
     const chooseAspect = (id: PhotoCropAspectId) => {
+        if (!working || !stage || saving) return;
+        drawing.select(null);
+        setDraftCrop(null);
         setCropAspect(id);
-        const ratio = photoCropAspectRatio(id, oriented);
-        if (!ratio || !working || !stage) return;
-        const crop = photoCropForAspect(editRef.current.geometry.crop, ratio, oriented);
-        commit(cropPhotoEdit(editRef.current, crop, photoSize, stage));
+        const current = editRef.current;
+        const size = orientedPhotoSize(photoSize, current.geometry.quarterTurns);
+        const ratio = photoCropAspectRatio(id, size);
+        const crop = photoCropForAspect(current.geometry.crop, ratio, size);
+        commit(cropPhotoEdit(current, crop, photoSize, stage));
     };
 
     const slide = (key: PhotoAdjustmentKey, value: number) => {

@@ -188,24 +188,22 @@ export function dragPhotoCrop(input: {
 }
 
 /**
- * The frame reshaped to a newly chosen ratio: the same area where it can be, centred where it
- * was, and shrunk only as far as the photo's edges make it.
+ * The largest frame the photo can hold at a newly chosen ratio, keeping its previous centre
+ * wherever the photo's edges allow. Each preset starts from the whole photo's dimensions, so
+ * switching ratios never compounds a crop and the original ratio always restores the whole photo.
+ * Free only releases the ratio lock and leaves the frame where it is.
  */
 export function photoCropForAspect(crop: PhotoCropRect, aspect: number | null, canvas: PhotoSize): PhotoCropRect {
-    if (!aspect || aspect <= 0) return crop;
-    const width = canvas.width;
-    const height = canvas.height;
-    const centreX = (crop.x + crop.width / 2) * width;
-    const centreY = (crop.y + crop.height / 2) * height;
-    const area = crop.width * width * crop.height * height;
-    let boxWidth = Math.sqrt(area * aspect);
-    let boxHeight = boxWidth / aspect;
-    const fit = Math.min(1, width / boxWidth, height / boxHeight);
-    boxWidth *= fit;
-    boxHeight *= fit;
-    const left = clamp(centreX - boxWidth / 2, 0, width - boxWidth);
-    const top = clamp(centreY - boxHeight / 2, 0, height - boxHeight);
-    return toCrop(left, top, left + boxWidth, top + boxHeight, canvas);
+    if (!aspect || aspect <= 0 || !Number.isFinite(aspect)) return crop;
+    const photoAspect = canvas.width / canvas.height;
+    const width = Math.min(1, aspect / photoAspect);
+    const height = Math.min(1, photoAspect / aspect);
+    return {
+        x: clamp(crop.x + crop.width / 2 - width / 2, 0, 1 - width),
+        y: clamp(crop.y + crop.height / 2 - height / 2, 0, 1 - height),
+        width,
+        height,
+    };
 }
 
 function toCrop(left: number, top: number, right: number, bottom: number, canvas: PhotoSize): PhotoCropRect {

@@ -533,6 +533,16 @@
       ]
     },
     {
+      "id": "apple-iphone-photo-crop",
+      "priority": 1,
+      "platform": "iPhone photo editor interaction reference",
+      "url": "https://support.apple.com/en-ca/guide/iphone/iph0f3ebb1dd/ios",
+      "useFor": [
+        "manual cropping and standard preset ratio choices on iPhone",
+        "TusAnkiM product policy, independently implemented: fixed presets use the largest fitting frame, Original restores the whole turned photo, and Free preserves the current frame; lib/photoCrop.test.ts and lib/photoEdit.test.ts"
+      ]
+    },
+    {
       "id": "apple-photo-library-add-usage",
       "priority": 1,
       "platform": "iOS share sheet Save Image",

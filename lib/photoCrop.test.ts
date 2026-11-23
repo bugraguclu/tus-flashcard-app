@@ -9,6 +9,7 @@ import {
     turnedPhotoCropAspect,
 } from './photoCrop';
 import type { PhotoCropRect } from './photoEditor';
+import { FULL_PHOTO_CROP, orientedPhotoSize } from './photoGeometry';
 
 const canvas = { width: 400, height: 300 };
 const frame: PhotoCropRect = { x: 0.25, y: 0.2, width: 0.5, height: 0.6 }; // 100,60 → 300,240
@@ -111,12 +112,48 @@ describe('frame shapes', () => {
         expect(next.left).toBeCloseTo(50);
     });
 
-    it('keeps the area and the middle of a smaller frame', () => {
+    it('opens the largest matching frame instead of preserving a smaller crop area', () => {
         const next = pixels(photoCropForAspect(frame, 16 / 9, canvas));
-        expect(next.width * next.height).toBeCloseTo(200 * 180);
+        expect(next.width).toBeCloseTo(400);
+        expect(next.height).toBeCloseTo(225);
         expect(next.width / next.height).toBeCloseTo(16 / 9);
         expect(next.left + next.width / 2).toBeCloseTo(200);
         expect(next.top + next.height / 2).toBeCloseTo(150);
+    });
+
+    it('restores the whole photo from every preset, before and after a turn', () => {
+        for (const photo of [canvas, { width: 3024, height: 4032 }, { width: 4031, height: 3023 }]) {
+            for (const turns of [0, 1, 2, 3] as const) {
+                const oriented = orientedPhotoSize(photo, turns);
+                for (const id of PHOTO_CROP_ASPECTS) {
+                    const cropped = photoCropForAspect(frame, photoCropAspectRatio(id, oriented), oriented);
+                    const original = photoCropForAspect(cropped, photoCropAspectRatio('original', oriented), oriented);
+                    expect(original).toEqual(FULL_PHOTO_CROP);
+                }
+            }
+        }
+    });
+
+    it('does not progressively shrink when switching back and forth between presets', () => {
+        let crop = FULL_PHOTO_CROP;
+        for (let pass = 0; pass < 5; pass++) {
+            for (const id of PHOTO_CROP_ASPECTS.filter((id) => id !== 'free')) {
+                const aspect = photoCropAspectRatio(id, canvas)!;
+                crop = photoCropForAspect(crop, aspect, canvas);
+                expect(crop.width * canvas.width / (crop.height * canvas.height)).toBeCloseTo(aspect);
+                expect(Math.max(crop.width, crop.height)).toBe(1);
+                expect(crop.x).toBeGreaterThanOrEqual(0);
+                expect(crop.y).toBeGreaterThanOrEqual(0);
+                expect(crop.x + crop.width).toBeLessThanOrEqual(1);
+                expect(crop.y + crop.height).toBeLessThanOrEqual(1);
+            }
+        }
+    });
+
+    it('keeps the subject centred where there is room, clamping a moved frame to the photo', () => {
+        const moved = { x: 0.75, y: 0.1, width: 0.2, height: 0.2 };
+        const square = photoCropForAspect(moved, 1, canvas);
+        expect(square).toEqual({ x: 0.25, y: 0, width: 0.75, height: 1 });
     });
 
     it('leaves a free frame alone', () => {

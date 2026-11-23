@@ -12,7 +12,8 @@ import {
     turnPhotoEdit,
     type PhotoEdit,
 } from './photoEdit';
-import { FULL_PHOTO_CROP, applyPhotoAffine, isIdentityPhotoGeometry, photoDisplayTransform } from './photoGeometry';
+import { FULL_PHOTO_CROP, applyPhotoAffine, isIdentityPhotoGeometry, orientedPhotoSize, photoDisplayTransform } from './photoGeometry';
+import { photoCropAspectRatio, photoCropForAspect } from './photoCrop';
 import { calculatePhotoTextBounds, type PhotoStroke, type PhotoText } from './photoEditor';
 
 const photo = { width: 400, height: 300 };
@@ -88,6 +89,30 @@ describe('photo edits carry the markup along', () => {
         expect(outside.point.y).toBeLessThan(0);
         const turned = turnPhotoEdit(cropped, 'cw', photo, stage).annotations[0] as PhotoText;
         expect(turned.point.x).toBeGreaterThan(1);
+    });
+
+    it('restores the whole photo with Original while preserving rotation, mirror, colour and markup', () => {
+        const adjusted = { ...drawn, adjustments: { ...drawn.adjustments, brightness: 0.3 } };
+        let edit = mirrorPhotoEdit(turnPhotoEdit(adjusted, 'cw', photo, stage));
+        const before = onPhoto(edit);
+        const geometry = edit.geometry;
+        const oriented = orientedPhotoSize(photo, edit.geometry.quarterTurns);
+        for (const id of ['9:16', 'square', '16:9', 'original'] as const) {
+            edit = cropPhotoEdit(edit, photoCropForAspect(edit.geometry.crop, photoCropAspectRatio(id, oriented), oriented), photo, stage);
+        }
+        expect(edit.geometry).toEqual({ ...geometry, crop: FULL_PHOTO_CROP });
+        expect(edit.adjustments).toBe(adjusted.adjustments);
+        const after = onPhoto(edit);
+        expect(after.pixel.x).toBeCloseTo(before.pixel.x, 6);
+        expect(after.pixel.y).toBeCloseTo(before.pixel.y, 6);
+        expect(after.widthOnPhoto).toBeCloseTo(before.widthOnPhoto, 6);
+    });
+
+    it('can save the picked file unchanged after selecting a preset and then Original', () => {
+        let edit = cropPhotoEdit(INITIAL_PHOTO_EDIT, photoCropForAspect(FULL_PHOTO_CROP, 9 / 16, photo), photo, stage);
+        expect(isPhotoEditUntouched(edit)).toBe(false);
+        edit = cropPhotoEdit(edit, photoCropForAspect(edit.geometry.crop, photoCropAspectRatio('original', photo), photo), photo, stage);
+        expect(isPhotoEditUntouched(edit)).toBe(true);
     });
 
     it('returns the same edit for a crop that changes nothing', () => {
