@@ -8,6 +8,8 @@ import {
     stepIndex,
     type AppShortcut,
 } from '../lib/webKeyboardNavigation';
+import { revealFocusedControl } from '../lib/webFocusReveal';
+import { preventIosFocusZoom } from '../lib/webFocusZoom';
 
 /**
  * What a keyboard and mouse bring to the web build, which the iPhone gets from its own system:
@@ -18,6 +20,9 @@ import {
  *   replaces. react-native-web's Modal already closes on Escape and returns focus to the opener.
  * - Arrow keys, Home and End move through a menu's items and a row of tabs (a segmented
  *   control); a tab is chosen as focus reaches it, as a segmented control is chosen by a tap.
+ * - A control that Tab reaches is kept in sight with its ring: clear of the window's edge and of
+ *   a floating button over the list (lib/webFocusReveal.ts).
+ * - On iPhone and iPad Safari, a field taking focus no longer zooms the page (lib/webFocusZoom.ts).
  * - App-wide shortcuts (see `appShortcutFor`), handed to `onShortcut`; without one (the welcome
  *   sign-in, which stands in for the navigator) the letters stay plain keys.
  *
@@ -42,6 +47,8 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
     useEffect(() => {
         if (Platform.OS !== 'web' || typeof document === 'undefined') return undefined;
         const root = document.documentElement;
+        // A field taking focus on iPhone Safari zooms the page unless the viewport says not to.
+        preventIosFocusZoom(document, navigator);
         const style = document.createElement('style');
         style.textContent = FOCUS_RING_CSS + `
             #tus-skip-link { position: fixed; left: -9999px; top: 12px; z-index: 100000; padding: 12px 16px; background: var(--tus-focus-halo); color: var(--tus-focus-ring); border-radius: 8px; font: 600 16px system-ui; }
@@ -96,6 +103,10 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
         const onFocusIn = (event: FocusEvent) => {
             const target = event.target;
             if (target instanceof HTMLElement) markClippedRing(target);
+            // Once the browser has scrolled it in, clear of the window's edge and anything floating over it.
+            if (target instanceof HTMLElement && root.dataset.focusRing) {
+                setTimeout(() => { if (document.activeElement === target) revealFocusedControl(target); }, 0);
+            }
             if (target instanceof HTMLElement && !topModal() && !target.closest('[aria-modal="true"]')) lastOutside = target;
         };
         // Runs once the batch of DOM changes has settled and react-native-web's own focus trap has
@@ -158,7 +169,7 @@ html[data-focus-ring] :focus {
     box-shadow: 0 0 0 2px var(--tus-focus-halo) !important;
 }
 html[data-focus-ring] input:focus, html[data-focus-ring] textarea:focus { outline-offset: 0 !important; box-shadow: none !important; }
-html[data-focus-ring] [data-focus-inset]:focus {
+html[data-focus-ring] :is([data-focus-inset], [data-focus-clipped]):focus {
     outline-offset: -2px !important;
     box-shadow: inset 0 0 0 4px var(--tus-focus-halo) !important;
 }
@@ -204,8 +215,9 @@ function markClippedRing(element: HTMLElement): void {
         || bounds.right - rect.right < room
         || rect.top - bounds.top < room
         || bounds.bottom - rect.bottom < room;
-    if (clipped) element.dataset.focusInset = '';
-    else delete element.dataset.focusInset;
+    // Its own attribute: a control that asks for an inset ring (`data-focus-inset`) keeps it.
+    if (clipped) element.dataset.focusClipped = '';
+    else delete element.dataset.focusClipped;
 }
 
 /** How long after the last DOM change a newly opened modal takes focus. */
