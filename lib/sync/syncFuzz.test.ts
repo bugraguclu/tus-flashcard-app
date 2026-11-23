@@ -3,7 +3,7 @@
 // whole local copy. After everyone syncs until quiet, the five invariants of the design must hold.
 // SYNC_FUZZ_RUNS=500 runs more; a failing seed is printed so it can be replayed with SYNC_FUZZ_SEED.
 import initSqlJs from 'sql.js';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 const holder = vi.hoisted(() => ({ db: null as any }));
 vi.mock('../db', () => ({
@@ -35,6 +35,19 @@ const FIXED_SEED = process.env.SYNC_FUZZ_SEED ? Number(process.env.SYNC_FUZZ_SEE
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
+// A bury lasts until the day ends on each device's own clock (§6.2), and the browsers' clocks
+// drift up to 90 minutes, so near a day rollover (any hour from 00:00 to 11:00 here) two devices
+// rightly disagree on a buried card's queue for that long. The wall clock is moved to 18:00 today,
+// far from every rollover, so the run checks convergence and not the time it happens to run at.
+// It keeps running: a frozen clock would pile every stamp onto one millisecond.
+beforeAll(() => {
+    const realNow = Date.now.bind(Date);
+    const evening = new Date(realNow());
+    evening.setHours(18, 0, 0, 0);
+    const shift = evening.getTime() - realNow();
+    vi.spyOn(Date, 'now').mockImplementation(() => realNow() + shift);
+});
+afterAll(() => { vi.restoreAllMocks(); });
 
 function mulberry32(seed: number): () => number {
     let a = seed >>> 0;

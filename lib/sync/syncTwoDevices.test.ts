@@ -122,6 +122,24 @@ describe('concurrent changes to one card', () => {
         expectConverged();
     });
 
+    it('keeps a bury to the day it was made on, each device going by its own day', async () => {
+        const { cards } = phone.run(() => createNote(BASIC, ['Soru', 'Cevap'], 1));
+        const cardId = cards[0].id;
+        // The browser's clock is a day ahead: for it, the phone's bury day is already over.
+        web.skewMs = 24 * 3_600_000;
+        await linkBoth();
+        expect(web.env.ctx.today()).toBe(phone.env.ctx.today() + 1);
+        phone.run(() => buryCard(cardId));
+        await syncUntilQuiet([phone, web]);
+        expect(phone.run(() => getAnkiCard(cardId)!.queue)).toBe(-3);
+        expect(web.run(() => getAnkiCard(cardId)!.queue)).toBe(0);
+        // The browser shows the card again without sending that back: the phone keeps its bury.
+        const pushed = await web.sync();
+        expect(pushed?.pushed).toBe(0);
+        await phone.sync();
+        expect(phone.run(() => getAnkiCard(cardId)!.queue)).toBe(-3);
+    });
+
     it('takes back an answer undone on the phone everywhere, keeping no stray review', async () => {
         const { cards } = phone.run(() => createNote(BASIC, ['Soru', 'Cevap'], 1));
         const cardId = cards[0].id;
