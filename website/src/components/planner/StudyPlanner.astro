@@ -1,0 +1,141 @@
+---
+import catalog from '../../data/generated/catalog.json';
+import {
+  DEFAULT_PLANNER_INPUT,
+  PLANNER_PRESETS,
+  buildShareSummaryText,
+  buildSvgChartGeometry,
+  encodePlannerQuery,
+  formatDurationTr,
+  formatTrInt,
+  runPlanner,
+} from '../../lib/studyPlanner';
+import PlannerControls from './PlannerControls.astro';
+import PlannerResults from './PlannerResults.astro';
+
+const initial = runPlanner(DEFAULT_PLANNER_INPUT);
+const geom = buildSvgChartGeometry(initial);
+const initialInspectDay = initial.target.finishDay ?? Math.round(initial.input.days * 0.6);
+const initialCopyText = buildShareSummaryText(initial);
+const initialShareLink = `${new URL('/calisma-plani/', Astro.site).href}?${encodePlannerQuery(initial.input)}#calisma-plani`;
+
+const presetCards = PLANNER_PRESETS.map((preset) => {
+  const sim = runPlanner({ ...DEFAULT_PLANNER_INPUT, ...preset.patch });
+  return { preset, sim };
+});
+---
+<section
+  id="calisma-plani"
+  class="scroll-mt-24 py-14 sm:py-20 bg-white border-b border-line"
+  aria-labelledby="plan-heading"
+  data-study-planner
+>
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <!-- Section header -->
+    <div class="max-w-3xl reveal">
+      <p class="kicker">Çalışma temposu · FSRS-6 Planlayıcı</p>
+      <h2 id="plan-heading" class="display text-section tracking-tightest text-ink mt-3">
+        Sınava kaç gün var? Temponu ona göre kur.
+      </h2>
+      <p class="text-inkMuted mt-3 leading-relaxed">
+        Aşağıdaki sayılar tahmin değil: {formatTrInt(catalog.totals.cards)} kartın tamamı için TusAnkiM’in gerçek{' '}
+        <span lang="en">FSRS-6</span> simülatöründen gelir. Hazır profillerden birine dokun ya da aşağıdaki planlayıcıda
+        sınav tarihini, derslerini, nöbet/mola günlerini ve hedef hatırlamanı seçip kişisel temponu oluştur.
+      </p>
+    </div>
+
+    <!-- Layer 1: 4 Interactive Stage Preset Cards -->
+    <ol role="list" class="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {presetCards.map(({ preset, sim }, i) => {
+        const isDefault = preset.id === 'mezun';
+        return (
+          <li
+            class="preset-card reveal rounded-2xl border border-line bg-white p-5 flex flex-col"
+            style={`--d: ${i * 55}ms`}
+          >
+            <div class="flex items-center justify-between gap-2 min-h-[1.5rem]">
+              <p class="text-xs font-bold uppercase tracking-wider text-inkMuted">{preset.title}</p>
+              {preset.examId && (
+                <span
+                  class="rounded-full bg-warmTint px-2 py-0.5 text-[11px] font-bold text-warm tabular-nums whitespace-nowrap shrink-0"
+                  data-exam-days-badge={preset.examId}
+                  data-badge-style="full"
+                  hidden
+                ></span>
+              )}
+            </div>
+            <h3 class="display text-lg text-ink mt-1.5">{preset.horizonLabel}</h3>
+            <p class="mt-3 flex items-baseline gap-1.5">
+              <span class="display text-4xl text-teal tabular-nums">{sim.activePace}</span>
+              <span class="text-sm text-inkMuted">yeni kart / gün</span>
+            </p>
+            <ul role="list" class="mt-3 space-y-1 text-sm text-ink tabular-nums">
+              <li>
+                İlk tur <strong>{sim.target.finishDay ?? sim.input.days}. günde</strong> biter
+              </li>
+              <li>
+                Ortalama <strong>{formatTrInt(sim.target.avgCards)}</strong> kart/gün (<strong>~{formatDurationTr(sim.target.avgMinutes)}</strong>)
+              </li>
+              <li>
+                Haftada <strong>{sim.input.studyDaysPerWeek} gün</strong> · son <strong>{sim.target.reviewOnlyTailDays} gün</strong> tekrar
+              </li>
+            </ul>
+            <p class="mt-3 text-xs text-inkMuted leading-relaxed flex-1">{preset.tip}</p>
+            <div class="mt-4 pt-3 border-t border-lineLight flex flex-col gap-1.5">
+              <button
+                type="button"
+                data-preset-btn={preset.id}
+                aria-pressed={isDefault ? 'true' : 'false'}
+                class="preset-apply-btn w-full"
+              >
+                {isDefault ? 'Planlayıcıda seçili' : 'Bu profili uygula'}
+              </button>
+              <a
+                href={preset.href}
+                class="inline-flex items-center justify-center min-h-[2.75rem] text-xs font-semibold text-teal hover:text-tealDark underline underline-offset-4"
+              >
+                {preset.linkLabel} →
+              </a>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+
+    <!-- Layer 2: Interactive FSRS-6 Study Pace & Plan Builder Studio -->
+    <div class="planner-studio mt-10 rounded-3xl border border-line bg-surfaceSoft p-4 sm:p-6 lg:p-8">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-6 border-b border-line">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-teal">İnteraktif Kart &amp; Tekrar Hesaplayıcı</p>
+          <h3 id="planner-studio-heading" class="display text-subsection tracking-tightest text-ink mt-1">
+            Kişisel <span lang="en">FSRS-6</span> Tempo ve Plan Oluşturucu
+          </h3>
+        </div>
+        <p class="text-xs text-inkMuted max-w-md">
+          Değerleri değiştirdikçe günlük yeni + tekrar eğrisi, tepe çalışma süresi ve ders takvimi anında yeniden simüle edilir.
+        </p>
+      </div>
+
+      <div class="mt-6 grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        <PlannerControls
+          initial={initial}
+          totalCatalogCards={catalog.totals.cards}
+          temelCards={catalog.totals.temelCards}
+          klinikCards={catalog.totals.klinikCards}
+        />
+        <PlannerResults
+          initial={initial}
+          geom={geom}
+          initialInspectDay={initialInspectDay}
+          initialCopyText={initialCopyText}
+          initialShareLink={initialShareLink}
+        />
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initStudyPlanner } from '../../lib/studyPlannerClient';
+  initStudyPlanner();
+</script>

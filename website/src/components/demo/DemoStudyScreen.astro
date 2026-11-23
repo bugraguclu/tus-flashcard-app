@@ -1,0 +1,178 @@
+---
+import DemoIcons from './DemoIcons.astro';
+---
+<div data-demo-screen="study" tabindex="-1" hidden class="bg-surface text-ink flex-1 flex flex-col min-h-0 focus:outline-none">
+  <!-- Top Toolbar matching app/(tabs)/index.tsx & ReviewerDeckScope -->
+  <div class="min-h-[54px] px-1 sm:px-4 bg-surface border-b border-lineLight flex items-center justify-between gap-1 shrink-0">
+    <button
+      type="button"
+      data-demo-back
+      aria-label="Destelere dön"
+      class="inline-flex items-center justify-center w-[44px] h-[44px] min-w-[44px] min-h-[44px] rounded-full text-inkMuted hover:bg-black/[0.045] hover:text-ink transition-colors cursor-pointer shrink-0"
+    >
+      <DemoIcons name="back" size={22} />
+    </button>
+
+    <button
+      type="button"
+      data-demo-scope
+      aria-label="Deste seçimine dön"
+      class="demo-scope-btn flex-1 min-w-0 min-h-[44px] flex flex-col items-start justify-center gap-0.5 px-1.5 rounded-lg hover:bg-black/[0.04] transition-colors cursor-pointer text-left"
+    >
+      <span data-demo-deck-title class="text-[12px] font-semibold text-inkMuted truncate max-w-full">
+        TUS Deneme
+      </span>
+      <span class="flex items-center gap-[7px] text-[14px] font-semibold tabular-nums">
+        <span data-scope-new class="text-gradeEasy">0</span>
+        <span data-scope-learn class="text-gradeHard">0</span>
+        <span data-scope-review class="text-gradeGood">0</span>
+        <DemoIcons name="chevron-down" size={16} class="text-inkMuted" />
+      </span>
+    </button>
+
+    <button
+      type="button"
+      data-demo-undo
+      aria-label="Son değerlendirmeyi geri al"
+      disabled
+      class="inline-flex items-center justify-center w-[44px] h-[44px] min-w-[44px] min-h-[44px] rounded-full text-inkMuted hover:bg-black/[0.045] hover:text-ink disabled:opacity-45 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+    >
+      <DemoIcons name="undo" size={20} />
+    </button>
+  </div>
+
+  <!-- Scrollable Card Stage (max-width: 760px) -->
+  <div class="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 pt-3 sm:pt-4 pb-5">
+    <div data-demo-active-stage class="w-full max-w-[760px] mx-auto">
+      <!-- CardContextCrumb + streakChip -->
+      <div class="min-h-[28px] mb-2 px-1 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1 min-w-0">
+          <span data-demo-crumb-course class="text-[12px] font-semibold text-teal shrink-0"></span>
+          <DemoIcons name="chevron-right" size={15} class="text-inkMuted shrink-0" />
+          <span data-demo-crumb-topic class="text-[12px] text-inkMuted truncate"></span>
+        </div>
+        <span
+          class="text-warm text-[12px] font-semibold inline-flex items-center gap-1 shrink-0"
+        >
+          <DemoIcons name="flame" size={14} />
+          <span data-demo-streak-count class="tabular-nums">0</span>
+        </span>
+      </div>
+
+      <!-- Card Surface (#ffffff, border #e1e5e8, radius 20px) -->
+      <div
+        class="bg-white border border-[#e1e5e8] rounded-[20px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] px-4 sm:px-6 py-5 sm:py-8 min-h-[200px] sm:min-h-[250px] flex flex-col justify-center"
+      >
+        <div
+          data-demo-card-body
+          class="text-[17px] sm:text-[19px] leading-[1.6] text-ink whitespace-pre-line break-words"
+        ></div>
+
+        <div data-demo-card-back hidden>
+          <hr class="h-px border-0 my-4 bg-line" />
+
+          <div data-demo-extra-wrap hidden class="mb-3">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.06em] text-inkMuted mb-1">Ek Bilgi</p>
+            <p data-demo-extra class="text-[14px] leading-relaxed text-inkMuted"></p>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[12px] text-inkMuted">
+            <span>
+              <span class="font-semibold text-ink">Ölçülen TUS bilgisi:</span>{' '}
+              <span data-demo-measured></span>
+            </span>
+            <a
+              data-demo-ref-link
+              href="/referanslar/"
+              class="inline-flex items-center min-h-[44px] py-1 shrink-0 font-semibold text-teal underline underline-offset-2 hover:text-tealDark"
+            >
+              Referans kaydını gör →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deck Completion State ("Bugünlük bitti") -->
+    <div
+      data-demo-complete-stage
+      hidden
+      class="w-full max-w-[760px] mx-auto py-8 sm:py-10 px-4 text-center flex flex-col items-center justify-center"
+    >
+      <div class="text-teal inline-flex items-center justify-center mb-4">
+        <DemoIcons name="check" size={30} />
+      </div>
+      <p class="text-[22px] font-semibold text-ink">Bugünlük bitti</p>
+      <p data-demo-complete-desc class="mt-2 text-[14px] leading-[22px] text-inkMuted max-w-[520px]"></p>
+      <div class="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto">
+        <button
+          type="button"
+          data-demo-complete-back
+          class="min-h-[48px] w-full sm:w-auto sm:min-w-[200px] px-5 rounded-[12px] bg-teal hover:bg-tealDark text-white text-[15px] font-semibold transition-colors cursor-pointer"
+        >
+          Destelere dön
+        </button>
+        <button
+          type="button"
+          data-demo-complete-replay
+          class="min-h-[48px] w-full sm:w-auto sm:min-w-[200px] px-5 rounded-[12px] bg-white border border-line hover:border-tealGraphic text-ink text-[15px] font-semibold transition-colors cursor-pointer"
+        >
+          Desteyi tekrar çalış
+        </button>
+      </div>
+      <p data-demo-complete-sub class="mt-4 text-[13px] text-inkMuted"></p>
+    </div>
+  </div>
+
+  <!-- Pinned Bottom Action Bar (answerBar) -->
+  <div data-demo-answer-bar class="w-full bg-surface border-t border-line px-4 sm:px-6 pt-2 pb-3 sm:pb-3.5 shrink-0">
+    <div class="w-full max-w-[760px] mx-auto">
+      <div data-demo-reveal-wrap>
+        <button
+          type="button"
+          data-demo-reveal
+          class="w-full min-h-[54px] rounded-[12px] bg-teal hover:bg-tealDark text-white text-[17px] font-semibold tracking-[0.2px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-colors cursor-pointer"
+        >
+          Cevabı göster
+        </button>
+      </div>
+
+      <div data-demo-grades hidden>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+          <button
+            type="button"
+            data-demo-grade="again"
+            class="min-h-[56px] rounded-[12px] py-2 px-2 bg-gradeAgainBg text-gradeAgain border border-gradeAgainBg hover:brightness-95 transition flex flex-col items-center justify-center gap-[1px] cursor-pointer"
+          >
+            <span data-int-again class="text-[12px] font-semibold tabular-nums">10 dk</span>
+            <span class="text-[15px] sm:text-[16px] font-semibold">Tekrar</span>
+          </button>
+          <button
+            type="button"
+            data-demo-grade="hard"
+            class="min-h-[56px] rounded-[12px] py-2 px-2 bg-gradeHardBg text-gradeHard border border-gradeHardBg hover:brightness-95 transition flex flex-col items-center justify-center gap-[1px] cursor-pointer"
+          >
+            <span data-int-hard class="text-[12px] font-semibold tabular-nums">1 gün</span>
+            <span class="text-[15px] sm:text-[16px] font-semibold">Zor</span>
+          </button>
+          <button
+            type="button"
+            data-demo-grade="good"
+            class="min-h-[56px] rounded-[12px] py-2 px-2 bg-gradeGoodBg text-gradeGood border border-gradeGoodBg hover:brightness-95 transition flex flex-col items-center justify-center gap-[1px] cursor-pointer"
+          >
+            <span data-int-good class="text-[12px] font-semibold tabular-nums">3 gün</span>
+            <span class="text-[15px] sm:text-[16px] font-semibold">İyi</span>
+          </button>
+          <button
+            type="button"
+            data-demo-grade="easy"
+            class="min-h-[56px] rounded-[12px] py-2 px-2 bg-gradeEasyBg text-gradeEasy border border-gradeEasyBg hover:brightness-95 transition flex flex-col items-center justify-center gap-[1px] cursor-pointer"
+          >
+            <span data-int-easy class="text-[12px] font-semibold tabular-nums">8 gün</span>
+            <span class="text-[15px] sm:text-[16px] font-semibold">Kolay</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

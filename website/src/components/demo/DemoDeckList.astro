@@ -1,0 +1,148 @@
+---
+import DemoIcons from './DemoIcons.astro';
+
+export interface DeckNode {
+  id: string;
+  title: string;
+  parentId: string | null;
+  expanded?: boolean;
+  children: DeckNode[];
+}
+
+export interface DemoDeckCard {
+  id: string;
+  deckId: string;
+  initialBucket: 'new' | 'learning' | 'review';
+}
+
+interface Props {
+  decks: DeckNode[];
+  cards: DemoDeckCard[];
+}
+
+const { decks, cards } = Astro.props;
+
+type Counts = { new: number; learning: number; review: number };
+type FlatRow = {
+  id: string;
+  title: string;
+  parentId: string | null;
+  depth: number;
+  hasChildren: boolean;
+  expanded: boolean;
+  counts: Counts;
+};
+
+const leafCounts = new Map<string, Counts>();
+for (const c of cards) {
+  const cur = leafCounts.get(c.deckId) ?? { new: 0, learning: 0, review: 0 };
+  cur[c.initialBucket] += 1;
+  leafCounts.set(c.deckId, cur);
+}
+
+function sumCounts(node: DeckNode): Counts {
+  if (!node.children.length) {
+    return leafCounts.get(node.id) ?? { new: 0, learning: 0, review: 0 };
+  }
+  const acc = { new: 0, learning: 0, review: 0 };
+  for (const child of node.children) {
+    const c = sumCounts(child);
+    acc.new += c.new;
+    acc.learning += c.learning;
+    acc.review += c.review;
+  }
+  return acc;
+}
+
+const rows: FlatRow[] = [];
+function flatten(nodes: DeckNode[], depth: number) {
+  for (const node of nodes) {
+    rows.push({
+      id: node.id,
+      title: node.title,
+      parentId: node.parentId,
+      depth,
+      hasChildren: node.children.length > 0,
+      expanded: node.expanded ?? true,
+      counts: sumCounts(node),
+    });
+    if (node.children.length) {
+      flatten(node.children, depth + 1);
+    }
+  }
+}
+flatten(decks, 0);
+---
+<div data-demo-screen="decks" class="bg-white text-ink flex-1 flex flex-col min-h-0">
+  <div class="w-full max-w-[920px] mx-auto flex-1 flex flex-col min-h-0">
+    <!-- Header matching app/(tabs)/decks.tsx -->
+    <div class="px-4 sm:px-5 py-2 bg-white flex items-center justify-between gap-2 shrink-0">
+      <h3 class="text-[22px] leading-[28px] font-semibold text-ink tracking-[-0.01em]">Desteler</h3>
+      <button
+        type="button"
+        data-demo-reset
+        aria-label="Deneme ilerlemesini sıfırla"
+        class="inline-flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-full text-inkMuted hover:bg-black/[0.045] hover:text-ink transition-colors cursor-pointer shrink-0"
+      >
+        <DemoIcons name="refresh" size={22} />
+      </button>
+    </div>
+
+    <!-- Column headers matching components/decks/DeckListTable.tsx -->
+    <div class="demo-deck-header pl-4 sm:pl-5 pr-[14px] sm:pr-[22px] pt-1 pb-1.5 bg-white border-b border-line flex items-center shrink-0">
+      <span class="flex-1 min-w-0 text-[12px] font-medium text-inkMuted">Deste</span>
+      <span class="demo-deck-counts demo-deck-heads">
+        <span class="demo-col-new text-gradeEasy">Yeni</span>
+        <span class="demo-col-learn text-gradeHard">Öğrenme</span>
+        <span class="demo-col-review text-gradeGood">Tekrar</span>
+      </span>
+    </div>
+
+    <!-- Scrollable hierarchical deck list -->
+    <div data-demo-deck-rows class="flex-1 overflow-y-auto overscroll-contain bg-white">
+      {rows.map((row) => (
+        <div
+          data-deck-row={row.id}
+          data-parent={row.parentId ?? ''}
+          data-depth={row.depth}
+          style={`--depth: ${row.depth};`}
+          class="demo-deck-row"
+        >
+          {row.hasChildren ? (
+            <button
+              type="button"
+              data-demo-toggle={row.id}
+              aria-expanded={row.expanded ? 'true' : 'false'}
+              aria-label={`${row.title} alt destelerini aç veya kapat`}
+              class="demo-deck-toggle"
+            >
+              <DemoIcons name="chevron-down" size={20} class="demo-chevron" />
+            </button>
+          ) : (
+            <span class="demo-deck-leaf-spacer" aria-hidden="true"><span></span></span>
+          )}
+
+          <button
+            type="button"
+            data-demo-study={row.id}
+            aria-label={`${row.title} destesini çalış`}
+            class="demo-deck-study-btn"
+          >
+            <span class="demo-deck-title">{row.title}</span>
+            <span class="demo-deck-counts">
+              <span
+                data-count-new={row.id}
+                class={`demo-col-new ${row.counts.new > 0 ? 'text-gradeEasy' : 'text-inkMuted'}`}>{row.counts.new}</span>
+              <span
+                data-count-learn={row.id}
+                class={`demo-col-learn ${row.counts.learning > 0 ? 'text-gradeHard' : 'text-inkMuted'}`}>{row.counts.learning}</span>
+              <span
+                data-count-review={row.id}
+                class={`demo-col-review ${row.counts.review > 0 ? 'text-gradeGood' : 'text-inkMuted'}`}>{row.counts.review}</span>
+            </span>
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>

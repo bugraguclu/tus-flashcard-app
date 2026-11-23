@@ -1,0 +1,80 @@
+---
+---
+<div class="max-w-[960px] mx-auto">
+  <div class="relative">
+    <!-- Subtle landscape iPad hardware buttons (desktop/tablet) -->
+    <span
+      class="hidden sm:block absolute -top-[3px] left-14 w-9 h-[3px] rounded-t-sm bg-[#3a4147]"
+      aria-hidden="true"
+    ></span>
+    <span
+      class="hidden sm:block absolute -top-[3px] left-[6.25rem] w-9 h-[3px] rounded-t-sm bg-[#3a4147]"
+      aria-hidden="true"
+    ></span>
+    <span
+      class="hidden sm:block absolute top-14 -right-[3px] w-[3px] h-11 rounded-r-sm bg-[#3a4147]"
+      aria-hidden="true"
+    ></span>
+
+    <!-- Anodized Space Gray aluminum outer shell -->
+    <div
+      class="relative rounded-[1.6rem] sm:rounded-[2.35rem] p-[2px] bg-gradient-to-b from-[#454d53] via-[#262b2f] to-[#343b40] shadow-[0_32px_64px_-22px_rgba(15,45,41,0.38),0_14px_28px_-14px_rgba(15,45,41,0.24)]"
+    >
+      <!-- Matte black iPad glass bezel -->
+      <div
+        class="relative rounded-[1.5rem] sm:rounded-[2.25rem] p-2 sm:p-3.5 bg-[#121619] shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset]"
+      >
+        <!-- Landscape TrueDepth front camera dot -->
+        <span
+          class="hidden sm:flex items-center justify-center absolute top-[5px] left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-[#242a2f] ring-1 ring-white/10"
+          aria-hidden="true"
+        >
+          <span class="w-1 h-1 rounded-full bg-[#1a3a4a]"></span>
+        </span>
+
+        <!-- iPad screen viewport -->
+        <div
+          class="demo-viewport rounded-[1.125rem] sm:rounded-[1.45rem] overflow-hidden bg-white ring-1 ring-black/15 flex flex-col h-[580px] sm:h-[630px] lg:h-[670px] min-w-0"
+        >
+          <!-- Authentic iPadOS Status Bar (SafeAreaView top) -->
+          <div
+            data-demo-statusbar
+            aria-hidden="true"
+            class="h-[26px] sm:h-[28px] px-4 sm:px-5 bg-white text-ink flex items-center justify-between text-[11px] font-semibold tracking-[-0.01em] select-none shrink-0"
+          >
+            <div class="flex items-center gap-2.5 tabular-nums">
+              <span>09:41</span>
+              <span class="hidden sm:inline font-medium text-inkMuted">Pzt 23 Kas</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-ink">
+              <!-- Wi-Fi icon -->
+              <svg width="14" height="10" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+                <path d="M1.5 4.2C5.1 0.9 10.9 0.9 14.5 4.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                <path d="M4.1 6.9C6.3 4.9 9.7 4.9 11.9 6.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                <circle cx="8" cy="10" r="1.25" fill="currentColor" />
+              </svg>
+              <span class="hidden sm:inline text-[10px] font-semibold tabular-nums">100%</span>
+              <!-- Battery icon -->
+              <svg width="22" height="11" viewBox="0 0 24 12" fill="none" aria-hidden="true">
+                <rect x="0.75" y="1.25" width="19.5" height="9.5" rx="2.5" stroke="currentColor" stroke-width="1.25" />
+                <rect x="2.5" y="3" width="16" height="6" rx="1.2" fill="currentColor" />
+                <path d="M22 4.25V7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+            </div>
+          </div>
+
+          <slot />
+
+          <!-- Authentic iPadOS Home Indicator (SafeAreaView bottom) -->
+          <div
+            data-demo-homebar
+            aria-hidden="true"
+            class="h-[18px] sm:h-[20px] bg-white flex items-center justify-center shrink-0"
+          >
+            <span class="w-[108px] sm:w-[134px] h-[4.5px] rounded-full bg-ink/25"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

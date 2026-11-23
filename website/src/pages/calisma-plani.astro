@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import StudyPlanner from '../components/planner/StudyPlanner.astro';
+import '../styles/planner.css';
+import catalog from '../data/generated/catalog.json';
+import { breadcrumbList } from '../lib/schema';
+import { publicationDates, pageSources } from '../lib/lastmod';
+import { num } from '../lib/format';
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'TUS Çalışma Planı', path: '/calisma-plani' },
+]);
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'TusAnkiM TUS Çalışma Planı ve Tempo Hesaplayıcı',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Web',
+  inLanguage: 'tr-TR',
+  url: origin + '/calisma-plani/',
+  author: { '@id': origin + '/#organization' },
+  publisher: { '@id': origin + '/#organization' },
+  isAccessibleForFree: true,
+  ...publicationDates('website/src/pages/calisma-plani.astro', pageSources('calisma-plani')),
+};
+---
+<Layout
+  title="TUS Çalışma Planı ve Tempo Hesaplayıcı | TusAnkiM"
+  description={`Sınav tarihine, derslerine ve çalışma günlerine göre ${num(catalog.totals.cards)} TUS kartı için günlük yeni kart, tekrar yükü ve süreyi FSRS-6 simülasyonuyla hesapla.`}
+  schema={[crumbs, pageSchema]}
+>
+  <section class="page-intro bg-surface border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
+      <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-sm text-inkMuted mb-3">
+        <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+        <span aria-hidden="true" class="mx-2">/</span>
+        <span class="text-ink font-semibold">TUS Çalışma Planı</span>
+      </nav>
+      <div class="section-num">Çalışma araçları</div>
+      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">TUS çalışma planı ve tempo hesaplayıcı</h1>
+      <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
+        Sınava kalan süreyi, derslerini ve haftada kaç gün çalışacağını seç; günlük yeni kart, tekrar yükü ve ilk turun ne zaman biteceği anında hesaplanır.
+      </p>
+    </div>
+  </section>
+  <StudyPlanner />
+</Layout>

@@ -104,6 +104,12 @@ export function verifySearchOutput({ dist, htmlFiles, check }) {
       `demo: card ${index} content changed in transit`);
   }
   check(!/Cloze-AnKingMaster|<img|<script|"reaId"/i.test(JSON.stringify(demo)), 'demo: unsafe content in external JSON');
+  const tablet = read('kart-denemesi/index.html');
+  check(tablet.includes('data-decks-url="/data/demo-decks.json"') && tablet.includes('data-demo-retry'), 'tablet demo: cards must load from /data/demo-decks.json with a retry action');
+  check(!tablet.includes('data-demo-payload'), 'tablet demo: card JSON was embedded in the page again');
+  const deckDemo = JSON.parse(read('data/demo-decks.json'));
+  check(deckDemo.cards.length === 44 && new Set(deckDemo.cards.map((card) => card.deckId)).size === 11, 'tablet demo: expected 4 cards in each of 11 decks');
+  check(!/Cloze-AnKingMaster|<img|<script|"reaId"|\[sound:/i.test(JSON.stringify(deckDemo)), 'tablet demo: unsafe content in external JSON');
 
   const calculator = byType(schemas(read('puan-hesapla/index.html'), 'calculator'), 'WebApplication');
   check(Boolean(calculator?.author?.['@id'] && calculator?.publisher?.['@id']), 'calculator: missing author/publisher');

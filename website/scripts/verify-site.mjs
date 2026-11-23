@@ -78,7 +78,7 @@ for (const svgFile of files.filter((f) => f.endsWith('.svg'))) {
 
 // 4. Audit every HTML page
 const htmlFiles = files.filter((f) => f.endsWith('.html'));
-check(htmlFiles.length === 31, `Expected 31 HTML pages (10 core + 21 help guides), got ${htmlFiles.length}`);
+check(htmlFiles.length === 33, `Expected 33 HTML pages (12 core + 21 help guides), got ${htmlFiles.length}`);
 
 const forbiddenText = [
   { re: /7\s*gün[^<.]{0,80}iade|koşulsuz\s+iade|iade\s+garantisi/i, label: 'Removed refund promise' },
@@ -188,7 +188,7 @@ for (const hf of htmlFiles) {
 // 5. Verify sitemap.xml
 const sitemap = fs.readFileSync(path.join(DIST, 'sitemap.xml'), 'utf8');
 const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-check(locs.length === 30, `sitemap.xml expected 30 URLs (9 pages + 21 help guides), found ${locs.length}`);
+check(locs.length === 32, `sitemap.xml expected 32 URLs (11 pages + 21 help guides), found ${locs.length}`);
 check(!locs.some((u) => u.includes('/404')), 'sitemap.xml must not include 404');
 check(locs.every((u) => u.startsWith('https://tusankim.com/') && u.endsWith('/')), 'All sitemap URLs must use https://tusankim.com/ and trailing slash');
 
@@ -217,6 +217,7 @@ check(indexHtml.includes('for="demo-subject"') && indexHtml.includes('id="demo-s
 check(indexHtml.includes('1.195') && indexHtml.includes('1.108'), 'index.html: missing reference totals');
 check(indexHtml.includes('76/200') && indexHtml.includes('82/200') && indexHtml.includes('a78ae1f'), 'index.html: missing pre-exam/current reference distinction');
 check(indexHtml.includes('data-demo-prev') && indexHtml.includes('data-demo-next'), 'index.html: missing demo navigation');
+check(indexHtml.includes('href="/kart-denemesi/"') && indexHtml.includes('href="/calisma-plani/"'), 'index.html: missing links to the tablet demo and the study planner');
 check(!indexHtml.includes('data-cd-announce'), 'index.html: removed countdown returned');
 
 const puanHtml = fs.readFileSync(path.join(DIST, 'puan-hesapla/index.html'), 'utf8');

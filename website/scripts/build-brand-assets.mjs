@@ -38,6 +38,8 @@ const covers = {
   home: ['TUS tekrarını günlük bir', 'alışkanlığa dönüştür.'],
   referanslar: ['TUS referansları'],
   'puan-hesapla': ['TUS puan hesaplayıcı'],
+  'calisma-plani': ['TUS çalışma planı', 've tempo hesaplayıcı'],
+  'kart-denemesi': ['Kartları tablette dene'],
   yardim: ['Yardım Merkezi'],
   sss: ['Sıkça sorulan sorular'],
   kurucu: ['Neden TusAnkiM’i kurduk?'],

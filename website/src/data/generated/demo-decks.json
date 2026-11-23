@@ -1,0 +1,2108 @@
+{
+  "decks": [
+    {
+      "id": "tus-deneme",
+      "title": "TUS Deneme",
+      "parentId": null,
+      "expanded": true,
+      "children": [
+        {
+          "id": "temel-bilimler",
+          "title": "Temel Bilimler",
+          "parentId": "tus-deneme",
+          "expanded": true,
+          "children": [
+            {
+              "id": "anatomi",
+              "title": "Anatomi",
+              "parentId": "temel-bilimler",
+              "children": []
+            },
+            {
+              "id": "fhe",
+              "title": "FHE",
+              "parentId": "temel-bilimler",
+              "children": []
+            },
+            {
+              "id": "biyokimya",
+              "title": "Biyokimya",
+              "parentId": "temel-bilimler",
+              "children": []
+            },
+            {
+              "id": "mikrobiyoloji",
+              "title": "Mikrobiyoloji",
+              "parentId": "temel-bilimler",
+              "children": []
+            },
+            {
+              "id": "patoloji",
+              "title": "Patoloji",
+              "parentId": "temel-bilimler",
+              "children": []
+            },
+            {
+              "id": "farmakoloji",
+              "title": "Farmakoloji",
+              "parentId": "temel-bilimler",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "klinik-bilimler",
+          "title": "Klinik Bilimler",
+          "parentId": "tus-deneme",
+          "expanded": true,
+          "children": [
+            {
+              "id": "dahiliye",
+              "title": "Dahiliye",
+              "parentId": "klinik-bilimler",
+              "children": []
+            },
+            {
+              "id": "pediatri",
+              "title": "Pediatri",
+              "parentId": "klinik-bilimler",
+              "children": []
+            },
+            {
+              "id": "genel-cerrahi",
+              "title": "Genel Cerrahi",
+              "parentId": "klinik-bilimler",
+              "children": []
+            },
+            {
+              "id": "kucuk-stajlar",
+              "title": "Küçük Stajlar",
+              "parentId": "klinik-bilimler",
+              "children": []
+            },
+            {
+              "id": "kadin-dogum",
+              "title": "Kadın Doğum",
+              "parentId": "klinik-bilimler",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "id": "deck-anatomi-2026-2-t005",
+      "deckId": "anatomi",
+      "course": "Anatomi",
+      "ders": "Anatomi",
+      "topic": "2026/2 TUS · T005",
+      "sinav": "2026/2",
+      "qid": "2026/2-T005",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Spinal subaraknoid aralığın alt sınırı (S2)",
+      "cardId": "BKA-317207",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Dura mater ve arachnoid mater spinalis'in sonlandığı vertebra seviyesi:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "S2"
+        },
+        {
+          "type": "text",
+          "value": " vertebra seviyesinde sonlanır"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-anatomi-2025-2-t002",
+      "deckId": "anatomi",
+      "course": "Anatomi",
+      "ders": "Anatomi",
+      "topic": "2025/2 TUS · T002",
+      "sinav": "2025/2",
+      "qid": "2025/2-T002",
+      "verifiedLabel": "2025/2 TUS · Doğrudan",
+      "olculenBilgi": "AC eklem çıkığında yırtılan bağ",
+      "cardId": "BKA-867303",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "El üzerine düşme sonrası akromiyoklaviküler eklem çıkığında kopabilen bağ:\n\nLig. "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "coracoclaviculare"
+        }
+      ],
+      "extra": "Özellikle trapezoid parça etkilenebilir.",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-anatomi-2026-1-t001",
+      "deckId": "anatomi",
+      "course": "Anatomi",
+      "ders": "Anatomi",
+      "topic": "2026/1 TUS · T001",
+      "sinav": "2026/1",
+      "qid": "2026/1-T001",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Pes planus/ark çökmesinde güçlendirilecek kas",
+      "cardId": "BKA-223238",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Longitudinal ayak arkını destekleyen en önemli kas → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "m. tibialis posterior"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-anatomi-2026-1-t004",
+      "deckId": "anatomi",
+      "course": "Anatomi",
+      "ders": "Anatomi",
+      "topic": "2026/1 TUS · T004",
+      "sinav": "2026/1",
+      "qid": "2026/1-T004",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Truncus coeliacus basısı (median arkuat ligaman sendromu)",
+      "cardId": "BKA-248301",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Truncus coeliacus’a bası yapabilen diyafram bağı:\n\nLig. arcuatum "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "medianum"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-fhe-2026-2-t016",
+      "deckId": "fhe",
+      "course": "FHE",
+      "ders": "Fizyoloji-Histoloji-Embriyoloji",
+      "topic": "2026/2 TUS · T016",
+      "sinav": "2026/2",
+      "qid": "2026/2-T016",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Büllöz pemfigoidde etkilenen bağlantı birimi (hemidesmozom)",
+      "cardId": "BKA-173708",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Deri bazal membranına (hemidesmozomlara) karşı lineer IgG antikor "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "büllöz pemfigoidde"
+        },
+        {
+          "type": "text",
+          "value": " görülür"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-fhe-2026-2-t025",
+      "deckId": "fhe",
+      "course": "FHE",
+      "ders": "Fizyoloji-Histoloji-Embriyoloji",
+      "topic": "2026/2 TUS · T025",
+      "sinav": "2026/2",
+      "qid": "2026/2-T025",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "S2'nin fizyolojik çiftleşme mekanizması",
+      "cardId": "BKA-551042",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Derin inspiryumda "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "pulmoner kapağın"
+        },
+        {
+          "type": "text",
+          "value": " kapanması gecikir"
+        }
+      ],
+      "extra": "Sağ kalbe venöz dönüşün artmasıyla pulmoner kapak geç kapanır; S2 çiftleşir.",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-fhe-2026-1-t028",
+      "deckId": "fhe",
+      "course": "FHE",
+      "ders": "Fizyoloji-Histoloji-Embriyoloji",
+      "topic": "2026/1 TUS · T028",
+      "sinav": "2026/1",
+      "qid": "2026/1-T028",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Kan akımını en çok etkileyen faktör (damar yarıçapı)",
+      "cardId": "BKA-308351",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Poiseuille denklemine göre vasküler direnç (R) = "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "(8 · viskozite (η) · damar uzunluğu (L)) / (π · r4)"
+        }
+      ],
+      "extra": "R vasküler direnci, η kan viskozitesini, L damar uzunluğunu, r damar yarıçapını temsil eder.",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-fhe-2026-1-t019",
+      "deckId": "fhe",
+      "course": "FHE",
+      "ders": "Fizyoloji-Histoloji-Embriyoloji",
+      "topic": "2026/1 TUS · T019",
+      "sinav": "2026/1",
+      "qid": "2026/1-T019",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Sirozda miyofibroblasta dönüşüp fibrozis yapan hücre (İto)",
+      "cardId": "BKA-477330",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Karaciğerde İto hücrelerini (hepatik stellat hücreler) uyararak aktive eden sitokinler:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "TNF-alfa"
+        },
+        {
+          "type": "text",
+          "value": "\n\nIL-"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "17"
+        },
+        {
+          "type": "text",
+          "value": "\n\nTGF-beta\n\nPDGF\n\nReaktif oksijen ürünleri"
+        }
+      ],
+      "extra": "Uyarılmış İto hücreleri miyofibroblastlara dönüşerek kollajen sentezler ve hepatik fibrozise yol açar.",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-biyokimya-2026-2-t033",
+      "deckId": "biyokimya",
+      "course": "Biyokimya",
+      "ders": "Biyokimya",
+      "topic": "2026/2 TUS · T033",
+      "sinav": "2026/2",
+      "qid": "2026/2-T033",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Urasil yıkım ürünü amino asit",
+      "cardId": "BKA-912037",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Pirimidin yıkımı:\n\nUrasil ve sitozin →\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Beta-alanin"
+        },
+        {
+          "type": "text",
+          "value": "\n\nTimin →\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Beta-aminoizobütirat"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-biyokimya-2026-2-t041",
+      "deckId": "biyokimya",
+      "course": "Biyokimya",
+      "ders": "Biyokimya",
+      "topic": "2026/2 TUS · T041",
+      "sinav": "2026/2",
+      "qid": "2026/2-T041",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Kollajen hastalıkları ve tutulan kollajen tipi",
+      "cardId": "BKA-919272",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Cilt biyopsisiyle tanı konabilen nefrit → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Alport"
+        },
+        {
+          "type": "text",
+          "value": "\n\nBiyopsi → "
+        },
+        {
+          "type": "cloze",
+          "index": 12,
+          "answer": "tip 4 kollajen alfa-5 zinciri"
+        },
+        {
+          "type": "text",
+          "value": " boyanması yok"
+        }
+      ],
+      "extra": "Bulgu X'e bağlı (COL4A5) formda görülür; kadın taşıyıcılarda mozaik boyanma olur, otozomal formlarda cilt biyopsisi normaldir.",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-biyokimya-2025-2-t040",
+      "deckId": "biyokimya",
+      "course": "Biyokimya",
+      "ders": "Biyokimya",
+      "topic": "2025/2 TUS · T040",
+      "sinav": "2025/2",
+      "qid": "2025/2-T040",
+      "verifiedLabel": "2025/2 TUS · Doğrudan",
+      "olculenBilgi": "Endokrin tümör - tümör belirteci eşleşmeleri",
+      "cardId": "BKA-680362",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "AFP"
+        },
+        {
+          "type": "text",
+          "value": " > 400 ng/mL + BT'de "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "hipervasküler"
+        },
+        {
+          "type": "text",
+          "value": " kitle → doğrudan HCC tanısı (biyopsiye gerek yok)\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Kalsitonin"
+        },
+        {
+          "type": "text",
+          "value": " > 200 pg/mL + tiroit "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "nodülü"
+        },
+        {
+          "type": "text",
+          "value": " → doğrudan medüller tiroit kanseri tanısı"
+        }
+      ],
+      "extra": "Güncel AASLD ve EASL ölçütlerinde sirotik hastada HCC tanısı AFP'den bağımsız olarak dinamik BT/MR'de arteriyel fazda kontrastlanma ve geç fazda yıkanma (washout) bulgusuyla konur.",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-biyokimya-2025-1-t032",
+      "deckId": "biyokimya",
+      "course": "Biyokimya",
+      "ders": "Biyokimya",
+      "topic": "2025/1 TUS · T032",
+      "sinav": "2025/1",
+      "qid": "2025/1-T032",
+      "verifiedLabel": "2025/1 TUS · Doğrudan",
+      "olculenBilgi": "Plazma proteinleri ve işlevleri",
+      "cardId": "BKA-428084",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Vernal konjonktivit → tip "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "1"
+        },
+        {
+          "type": "text",
+          "value": " hipersensitivite reaksiyonu özellikleri taşır ama hastaların yaklaşık yarısında öncesinde duyarlanma "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "gösterilemez"
+        },
+        {
+          "type": "text",
+          "value": " ("
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "yalnız IgE aracılı değildir"
+        },
+        {
+          "type": "text",
+          "value": ")"
+        }
+      ],
+      "extra": "IgE aracılı (tip 1) reaksiyona Th2 lenfosit aracılı (tip 4) inflamasyon eşlik eder; hastaların yaklaşık yarısında deri prik testi ve spesifik IgE negatiftir.",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-mikrobiyoloji-2026-2-t050",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "ders": "Mikrobiyoloji",
+      "topic": "2026/2 TUS · T050",
+      "sinav": "2026/2",
+      "qid": "2026/2-T050",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Kanlı agarda çift zonlu hemoliz yapan Clostridium",
+      "cardId": "BKA-319660",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Clostridium perfringens özellikleri:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Çift"
+        },
+        {
+          "type": "text",
+          "value": " zonlu hemoliz\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Sütü"
+        },
+        {
+          "type": "text",
+          "value": " pıhtılaştırması\nTers "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "CAMP pozitifliği"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-mikrobiyoloji-2026-2-t056",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "ders": "Mikrobiyoloji",
+      "topic": "2026/2 TUS · T056",
+      "sinav": "2026/2",
+      "qid": "2026/2-T056",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Tek iplikli (+) RNA, ikozahedral, zarfsız aile: Caliciviridae",
+      "cardId": "BKA-097210",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Pozitif polariteli RNA taşıyan virüs grupları\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Pikornavirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Kalisivirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Flavivirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Togavirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Koronavirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Retrovirüsler"
+        }
+      ],
+      "extra": "Retrovirüsler pozitif polariteli RNA taşır, ancak Baltimore sınıf VI'da ayrı değerlendirilir.",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-mikrobiyoloji-2025-2-t056",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "ders": "Mikrobiyoloji",
+      "topic": "2025/2 TUS · T056",
+      "sinav": "2025/2",
+      "qid": "2025/2-T056",
+      "verifiedLabel": "2025/2 TUS · Doğrudan",
+      "olculenBilgi": "SARS-CoV-2'ye etkili antiviral: remdesivir",
+      "cardId": "BKA-383853",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Antiviraller\n\nKondilom tedavisinde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "TLR7"
+        },
+        {
+          "type": "text",
+          "value": " agonisti immünomodülatör: "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "imikimod"
+        },
+        {
+          "type": "text",
+          "value": "\n\nCOVID-19 tedavisinde RNA bağımlı RNA polimeraz inhibitörü: "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "remdesivir"
+        },
+        {
+          "type": "text",
+          "value": "\n\nİnfluenza ve COVID-19 tedavisinde RNA bağımlı RNA polimeraz inhibitörü: "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "favipiravir"
+        },
+        {
+          "type": "text",
+          "value": "\n\nEnterovirüs ve rinovirüs solunum yolu enfeksiyonlarında viral kapside bağlanan ajan: "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "plekonaril"
+        }
+      ],
+      "extra": "Plekonaril onay almamış deneysel bir ilaçtır. Favipiravir FDA ve EMA onayı almamıştır; COVID-19'da randomize çalışmalarda hastaneye yatışı ve ölümü azaltmamıştır.",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-mikrobiyoloji-2024-2-t054",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "ders": "Mikrobiyoloji",
+      "topic": "2024/2 TUS · T054",
+      "sinav": "2024/2",
+      "qid": "2024/2-T054",
+      "verifiedLabel": "2024/2 TUS · Doğrudan",
+      "olculenBilgi": "Kedi-köpek ısırığıyla bulaşan bakteri: Pasteurella multocida",
+      "cardId": "BKA-517177",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "İnsan ve hayvan ısırıklarında (Eikenella, Pasteurella) ampirik ilk seçenek antibiyotik profilaksisi ve tedavisi:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Amoksisilin-klavulanat"
+        }
+      ],
+      "extra": "İnsan ısırığında Eikenella corrodens, kedi ve köpek ısırığında Pasteurella multocida etkenleri hedeflenir.",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-patoloji-2026-2-t067",
+      "deckId": "patoloji",
+      "course": "Patoloji",
+      "ders": "Patoloji",
+      "topic": "2026/2 TUS · T067",
+      "sinav": "2026/2",
+      "qid": "2026/2-T067",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Germ hücreli testis tümörleri: prepubertal tipte GCNIS yokluğu",
+      "cardId": "BKA-032901",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Germ hücreli neoplazi in situ (GCNIS) zemininden gelişmeyen testis tümörleri (3):\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Spermatositik"
+        },
+        {
+          "type": "text",
+          "value": " tümör\nPrepubertal "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "yolk sac"
+        },
+        {
+          "type": "text",
+          "value": " tümörü\nPrepubertal "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "teratom"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-patoloji-2024-2-t068",
+      "deckId": "patoloji",
+      "course": "Patoloji",
+      "ders": "Patoloji",
+      "topic": "2024/2 TUS · T068",
+      "sinav": "2024/2",
+      "qid": "2024/2-T068",
+      "verifiedLabel": "2024/2 TUS · Doğrudan",
+      "olculenBilgi": "Postoperatif DVT nedeni: immobilizasyon (staz)",
+      "cardId": "BKA-301595",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Pulmoner emboli Wells skorlaması\n\nPredispozan ("
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "geçirilmiş VTE"
+        },
+        {
+          "type": "text",
+          "value": " 1,5 / "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "cerrahi - immobilizasyon"
+        },
+        {
+          "type": "text",
+          "value": " öyküsü 1,5 / "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "kanser"
+        },
+        {
+          "type": "text",
+          "value": " varlığı 1)\n\nSemptom ("
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "hemoptizi"
+        },
+        {
+          "type": "text",
+          "value": " 1)\n\nBulgu ("
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "kalp hızı"
+        },
+        {
+          "type": "text",
+          "value": " > 100 1,5 / "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "DVT"
+        },
+        {
+          "type": "text",
+          "value": " bulguları 3)\n\nKlinik karar ("
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "alternatif tanı PE'den daha az olası"
+        },
+        {
+          "type": "text",
+          "value": " 3)"
+        }
+      ],
+      "extra": "> 4 → PE olası (yüksek risk) → doğrudan BT anjiyografi; ≤ 4 → D-dimer",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-patoloji-2024-1-t065",
+      "deckId": "patoloji",
+      "course": "Patoloji",
+      "ders": "Patoloji",
+      "topic": "2024/1 TUS · T065",
+      "sinav": "2024/1",
+      "qid": "2024/1-T065",
+      "verifiedLabel": "2024/1 TUS · Doğrudan",
+      "olculenBilgi": "Tip 2 otoimmün hepatit otoantikoru: anti-LKM-1",
+      "cardId": "BKA-096954",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Otoimmün hepatit tipleri ve karakteristik otoantikorlar:\n\nTip 1 → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "ANA ve ASMA"
+        },
+        {
+          "type": "text",
+          "value": " (+)\n\nTip 2 → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "anti-LKM-1"
+        },
+        {
+          "type": "text",
+          "value": " (+)"
+        }
+      ],
+      "extra": "Tip 1 erişkinde (ANA, ASMA), tip 2 çocuklarda (anti-LKM-1) daha sıktır.",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-patoloji-2026-2-t079",
+      "deckId": "patoloji",
+      "course": "Patoloji",
+      "ders": "Patoloji",
+      "topic": "2026/2 TUS · T079",
+      "sinav": "2026/2",
+      "qid": "2026/2-T079",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Paraneoplastik hiperkalsemi yapan tümör",
+      "cardId": "BKA-175223",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Paraneoplastik sendromlar:\n\nHipoglisemi → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "fibrosarkom"
+        },
+        {
+          "type": "text",
+          "value": "\n\nHiperkalsemi → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "akciğer skuamöz hücreli karsinomu"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-farmakoloji-2026-2-t094",
+      "deckId": "farmakoloji",
+      "course": "Farmakoloji",
+      "ders": "Farmakoloji",
+      "topic": "2026/2 TUS · T094",
+      "sinav": "2026/2",
+      "qid": "2026/2-T094",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Anaerob etkinliği olmayan antibiyotik (aztreonam)",
+      "cardId": "BKA-706413",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Esas olarak Gram negatif aerob basillere etkili antibiyotikler (3) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "aztreonam, polimiksin, aminoglikozidler"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-farmakoloji-2026-2-t091",
+      "deckId": "farmakoloji",
+      "course": "Farmakoloji",
+      "ders": "Farmakoloji",
+      "topic": "2026/2 TUS · T091",
+      "sinav": "2026/2",
+      "qid": "2026/2-T091",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Gutlu hipertansifte kaçınılacak antihipertansif grup",
+      "cardId": "BKA-051160",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Gut'ta ürik asidi artırdığı için önerilmeyen ilaçlar (4) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "aspirin, siklosporin, tiyazidler, niasin"
+        }
+      ],
+      "extra": "Kardiyovasküler korunma için kullanılan düşük doz aspirin gut nedeniyle kesilmez.",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-farmakoloji-2026-2-t090",
+      "deckId": "farmakoloji",
+      "course": "Farmakoloji",
+      "ders": "Farmakoloji",
+      "topic": "2026/2 TUS · T090",
+      "sinav": "2026/2",
+      "qid": "2026/2-T090",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "TNF-α inhibitörü olmayan biyolojik ajan (IL-17 blokörü)",
+      "cardId": "BKA-815433",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Psöriazis tedavisi\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Ustekinumab"
+        },
+        {
+          "type": "text",
+          "value": "\n\nIL-17 antagonistleri (4) → "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "iksekizumab, sekukinumab, brodalumab, bimekizumab"
+        },
+        {
+          "type": "text",
+          "value": "\n\nPDE4 inhibitörü (IL-23'ü baskılar) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "apremilast"
+        },
+        {
+          "type": "text",
+          "value": "\n\nSentetik D3 vitamini analoğu → "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "kalsipotriol"
+        }
+      ],
+      "extra": "Brodalumab IL-17 reseptörünü (IL-17RA), bimekizumab hem IL-17A'yı hem IL-17F'yi bloke eder.",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-farmakoloji-2026-1-t095",
+      "deckId": "farmakoloji",
+      "course": "Farmakoloji",
+      "ders": "Farmakoloji",
+      "topic": "2026/1 TUS · T095",
+      "sinav": "2026/1",
+      "qid": "2026/1-T095",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "BRAF V600E kinaz inhibitörü",
+      "cardId": "BKA-396027",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Mutant BRAF inhibitörleri (2) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "vemurafenib, dabrafenib"
+        }
+      ],
+      "extra": "Melanom; 2018'de onaylanan üçüncü BRAF inhibitörü: enkorafenib",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-dahiliye-2026-2-k004",
+      "deckId": "dahiliye",
+      "course": "Dahiliye",
+      "ders": "Dahiliye",
+      "topic": "2026/2 TUS · K004",
+      "sinav": "2026/2",
+      "qid": "2026/2-K004",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Silikozda artmış tüberküloz riski",
+      "cardId": "BKA-745353",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Silikozis → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "tüberküloz, mantar"
+        },
+        {
+          "type": "text",
+          "value": " enfeksiyonlarının sıklığı artar"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-dahiliye-2026-1-k017",
+      "deckId": "dahiliye",
+      "course": "Dahiliye",
+      "ders": "Dahiliye",
+      "topic": "2026/1 TUS · K017",
+      "sinav": "2026/1",
+      "qid": "2026/1-K017",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Anti-Ro/SSA ve anti-La/SSB ile ilişkili hastalık",
+      "cardId": "BKA-341804",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Fetal parvovirüs B19 enfeksiyonunun kardiyak etkileri → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "miyokardite bağlı konjenital kalp bloğu ve hidrops"
+        }
+      ],
+      "extra": "Otoimmün konjenital kalp bloğu ise maternal anti-Ro/SSA ve anti-La/SSB antikorlarına bağlıdır (maternal SLE, Sjögren sendromu).",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-dahiliye-2026-1-k007",
+      "deckId": "dahiliye",
+      "course": "Dahiliye",
+      "ders": "Dahiliye",
+      "topic": "2026/1 TUS · K007",
+      "sinav": "2026/1",
+      "qid": "2026/1-K007",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Sağ kalp kapak tutulumlu karsinoid kalp hastalığı tanısı",
+      "cardId": "BKA-711079",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Karsinoid sendrom\n\nEn sık kalp tutulumu:\n\nGenel cerrahi kaynaklarına göre: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "pulmoner darlık"
+        },
+        {
+          "type": "text",
+          "value": "\n\nDahiliye kaynaklarına göre: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "triküspit yetmezliği"
+        }
+      ],
+      "extra": "Ekokardiyografik serilerde karsinoid kalp hastalığının en sık lezyonu triküspit yetmezliğidir; pulmoner kapak darlığı ve yetmezliği de sık eşlik eder.",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-dahiliye-2025-2-k019",
+      "deckId": "dahiliye",
+      "course": "Dahiliye",
+      "ders": "Dahiliye",
+      "topic": "2025/2 TUS · K019",
+      "sinav": "2025/2",
+      "qid": "2025/2-K019",
+      "verifiedLabel": "2025/2 TUS · Doğrudan",
+      "olculenBilgi": "Ateş, görme kaybı ve temporal arter hassasiyetiyle dev hücreli arterit",
+      "cardId": "BKA-590624",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Altitudinal görme alanı defekti:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Anterior iskemik optik nöropati"
+        }
+      ],
+      "extra": "Arteritik anterior iskemik optik nöropati:Temporal arterit, SLE Nonarteritik: HT ve DM",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-pediatri-2026-2-k037",
+      "deckId": "pediatri",
+      "course": "Pediatri",
+      "ders": "Pediatri",
+      "topic": "2026/2 TUS · K037",
+      "sinav": "2026/2",
+      "qid": "2026/2-K037",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "CD19+ B hücre yokluğu ile giden humoral immün yetmezlik",
+      "cardId": "BKA-859586",
+      "activeCloze": 2,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Bruton ("
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "X'e bağlı infantil agamaglobulinemi"
+        },
+        {
+          "type": "text",
+          "value": ") → tanı koydurucu bulguları → tonsiller "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "hipoplazik"
+        },
+        {
+          "type": "text",
+          "value": " / LAP ve splenomegali "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "yok"
+        },
+        {
+          "type": "text",
+          "value": " / CD19-20 "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "azalmış"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-pediatri-2026-2-k036",
+      "deckId": "pediatri",
+      "course": "Pediatri",
+      "ders": "Pediatri",
+      "topic": "2026/2 TUS · K036",
+      "sinav": "2026/2",
+      "qid": "2026/2-K036",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Anne sütünün kesin kontrendike olduğu metabolik hastalık",
+      "cardId": "BKA-960615",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Anne sütünün kontrendike olduğu durumlar\n\nEn kesin → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "galaktozemi"
+        },
+        {
+          "type": "text",
+          "value": "\n\nCMV enfeksiyonu (klasik bilgi): prematürelerde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "kontrendike"
+        },
+        {
+          "type": "text",
+          "value": " / termlerde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "verilir"
+        }
+      ],
+      "extra": "AAP'ye göre CMV pozitif annenin sütü prematürede de kesin kontrendike değildir; çok düşük doğum ağırlıklı bebekte sütün dondurulması veya pastörizasyonu bulaş riskini azaltır.",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-pediatri-2026-2-k057",
+      "deckId": "pediatri",
+      "course": "Pediatri",
+      "ders": "Pediatri",
+      "topic": "2026/2 TUS · K057",
+      "sinav": "2026/2",
+      "qid": "2026/2-K057",
+      "verifiedLabel": "2026/2 TUS · Doğrudan",
+      "olculenBilgi": "Multipl café-au-lait lekesi yapan sendromlar",
+      "cardId": "BKA-124347",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Yenidoğanda café au lait lekeleriyle giden başlıca sendromlar (3) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "NF1, Fanconi anemisi, McCune-Albright sendromu"
+        }
+      ],
+      "extra": "Diğer nedenler: Legius sendromu, tüberoz skleroz, Bloom sendromu, Russell-Silver sendromu.",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-pediatri-2026-2-k043",
+      "deckId": "pediatri",
+      "course": "Pediatri",
+      "ders": "Pediatri",
+      "topic": "2026/2 TUS · K043",
+      "sinav": "2026/2",
+      "qid": "2026/2-K043",
+      "verifiedLabel": "2026/2 TUS · Doğrudan",
+      "olculenBilgi": "İmmünsüprese süt çocuğunda suçiçeği temas sonrası profilaksi",
+      "cardId": "BKA-414234",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "VZV temas:\n\nAşılanmamış > 12 ay: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "3–5"
+        },
+        {
+          "type": "text",
+          "value": " gün içinde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "aşı"
+        },
+        {
+          "type": "text",
+          "value": "\n\n< 12 ay: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "96"
+        },
+        {
+          "type": "text",
+          "value": " saat içinde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "VZIG"
+        }
+      ],
+      "extra": "Güncel öneride VZIG temastan sonra 10 gün içinde verilebilir ve yalnız yüksek riskli gruplara (immün yetmezlik, gebe, annesi doğum çevresinde su çiçeği geçiren yenidoğan, hastanede yatan prematüre) önerilir.",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-genel-cerrahi-2026-2-k075",
+      "deckId": "genel-cerrahi",
+      "course": "Genel Cerrahi",
+      "ders": "Genel Cerrahi",
+      "topic": "2026/2 TUS · K075",
+      "sinav": "2026/2",
+      "qid": "2026/2-K075",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Halkalı (ringed) özofagus → eozinofilik özofajit",
+      "cardId": "BKA-395749",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "PPI tedavisine yanıtsız belirtiler + baryumlu grafide halkalı görünüm (kedi kuyruğunu andıran yuvarlak çizgiler):\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Eozinofilik özofajit"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-genel-cerrahi-2026-2-k080",
+      "deckId": "genel-cerrahi",
+      "course": "Genel Cerrahi",
+      "ders": "Genel Cerrahi",
+      "topic": "2026/2 TUS · K080",
+      "sinav": "2026/2",
+      "qid": "2026/2-K080",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "ERCP sonrası pankreatit risk faktörleri",
+      "cardId": "BKA-414754",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "ERCP sonrası pankreatitin risk faktörleri:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Genç"
+        },
+        {
+          "type": "text",
+          "value": " yaş\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Kadın"
+        },
+        {
+          "type": "text",
+          "value": " cinsiyet\n\nFazla kontrast verilmesi\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Normal"
+        },
+        {
+          "type": "text",
+          "value": " safra yolları"
+        }
+      ],
+      "extra": "Riski azaltmak için: Rektal indometazin Geçici pankreatik stent",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-genel-cerrahi-2026-1-k065",
+      "deckId": "genel-cerrahi",
+      "course": "Genel Cerrahi",
+      "ders": "Genel Cerrahi",
+      "topic": "2026/1 TUS · K065",
+      "sinav": "2026/1",
+      "qid": "2026/1-K065",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Yanık merkezine sevk endikasyonları",
+      "cardId": "BKA-776742",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Yanıklı hastanın yanık merkezine sevk endikasyonları\n\n> %"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "10"
+        },
+        {
+          "type": "text",
+          "value": " 2. derece yanık\n\nHerhangi bir 3. derece yanık\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Yüz, el, ayak, genital bölge, perine ve büyük eklem"
+        },
+        {
+          "type": "text",
+          "value": " yanıkları (6), genişliğine bakmadan"
+        }
+      ],
+      "extra": "Elektrik, kimyasal ve inhalasyon yanıkları da sevk gerektirir.",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-genel-cerrahi-2024-2-k072",
+      "deckId": "genel-cerrahi",
+      "course": "Genel Cerrahi",
+      "ders": "Genel Cerrahi",
+      "topic": "2024/2 TUS · K072",
+      "sinav": "2024/2",
+      "qid": "2024/2-K072",
+      "verifiedLabel": "2024/2 TUS · Doğrudan",
+      "olculenBilgi": "Tiroidektomide RLN yaralanmasının en olası aşaması: Berry ligamanı",
+      "cardId": "BKA-411919",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Tiroit bezinin posterior süspansuar ligamanının özel adı:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Berry"
+        },
+        {
+          "type": "text",
+          "value": " ligamanı"
+        }
+      ],
+      "extra": "Rekürren laringeal sinir en çok Berry ligamanı seviyesinde yaralanır.",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-kucuk-stajlar-2026-2-k083",
+      "deckId": "kucuk-stajlar",
+      "course": "Küçük Stajlar",
+      "ders": "Küçük Stajlar",
+      "topic": "2026/2 TUS · K083",
+      "sinav": "2026/2",
+      "qid": "2026/2-K083",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Aortadan beslenen sol alt lob lezyonu: bronkopulmoner sekestrasyon",
+      "cardId": "BKA-937273",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Pulmoner sekestrasyon özellikleri:\n\nHava yolundan "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "bağımsızdır"
+        },
+        {
+          "type": "text",
+          "value": "\n\nDoğrudan "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "aorttan"
+        },
+        {
+          "type": "text",
+          "value": " beslenir\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Tekrarlayan"
+        },
+        {
+          "type": "text",
+          "value": " akciğer enfeksiyonlarına yol açar"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-kucuk-stajlar-2026-1-k030",
+      "deckId": "kucuk-stajlar",
+      "course": "Küçük Stajlar",
+      "ders": "Küçük Stajlar",
+      "topic": "2026/1 TUS · K030",
+      "sinav": "2026/1",
+      "qid": "2026/1-K030",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Anne ölümü / canlı doğum ×100.000 ölçütünün adı",
+      "cardId": "BKA-895124",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Anne ölüm oranı (maternal mortality ratio) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "belirli dönemde anne ölümleri / aynı dönemde canlı doğumlar × 100.000"
+        }
+      ],
+      "extra": "WHO anne ölüm oranını kadın nüfusuna göre hesaplanan anne ölüm hızından ayırır. Anne ölümü gebelik sırasında veya sona ermesinden sonraki 42 gün içinde, gebelikle ilişkili ya da gebelikle ağırlaşan nedenlere bağlı ölümdür; tesadüfi nedenler dışlanır. Bu oran yalnız indirekt yöntemle hesaplanan tek ölçüt değildir.",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-kucuk-stajlar-2026-1-k032",
+      "deckId": "kucuk-stajlar",
+      "course": "Küçük Stajlar",
+      "ders": "Küçük Stajlar",
+      "topic": "2026/1 TUS · K032",
+      "sinav": "2026/1",
+      "qid": "2026/1-K032",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Bupivakain kardiyotoksisitesinde arrest tedavisi",
+      "cardId": "BKA-690157",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Bupivakaine bağlı, ciddi lokal anestezik sistemik toksisitesinde erken değerlendirilen kurtarma tedavisi → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "İV lipid emülsiyonu"
+        }
+      ],
+      "extra": "ASRA 2020 v1.1: ciddi LASTta %20 lipid emülsiyonu erken düşünülür; arrestin resüsitasyona dirençli olmasını beklemek gerekmez. Hava yolu, konvülziyon kontrolü ve LASTa uygun resüsitasyon eş zamanlı değerlendirilir; bu tek satır tüm doz algoritması değildir.",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-kucuk-stajlar-2026-1-k035",
+      "deckId": "kucuk-stajlar",
+      "course": "Küçük Stajlar",
+      "ders": "Küçük Stajlar",
+      "topic": "2026/1 TUS · K035",
+      "sinav": "2026/1",
+      "qid": "2026/1-K035",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "RCC'de metastazsız intrahepatik kolestaz: Stauffer sendromu",
+      "cardId": "BKA-300437",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Stauffer"
+        },
+        {
+          "type": "text",
+          "value": " sendromu → RCC'de karaciğer metastazı olmadan karaciğer fonksiyon bozukluğu gelişmesi"
+        }
+      ],
+      "extra": "Paraneoplastik bir sendromdur (ALP yüksekliği, PT uzaması, hepatosplenomegali); nefrektomi sonrası düzelir.",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-kadin-dogum-2026-2-k095",
+      "deckId": "kadin-dogum",
+      "course": "Kadın Doğum",
+      "ders": "Kadın Doğum",
+      "topic": "2026/2 TUS · K095",
+      "sinav": "2026/2",
+      "qid": "2026/2-K095",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Ektopik gebelik şüphesinde ilk istenecek kan tetkiki",
+      "cardId": "BKA-047662",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "β-hCG > "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "3510"
+        },
+        {
+          "type": "text",
+          "value": " mIU/mL iken transvajinal USG'de intrauterin kese görülmüyorsa → ektopik gebelik düşünülür"
+        }
+      ],
+      "extra": "Connolly ve ark. (2013) çalışmasında 3510 mIU/mL, canlı intrauterin gebelikte kesenin transvajinal USG'de görülmesi için %99 olasılık eşiğidir; %100 kesinlik sınırı değildir. Bu düzeyin üzerinde kese görülmemesi tek başına gebeliğin canlılığını veya yerini kesinleştirmez; klinik değerlendirme, seri β-hCG ve tekrar USG gerekir. Klasik diskriminatuar zon 1500–2000 mIU/mL olarak anılır.",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-kadin-dogum-2026-1-k094",
+      "deckId": "kadin-dogum",
+      "course": "Kadın Doğum",
+      "ders": "Kadın Doğum",
+      "topic": "2026/1 TUS · K094",
+      "sinav": "2026/1",
+      "qid": "2026/1-K094",
+      "verifiedLabel": "2026/1 TUS · Doğrudan",
+      "olculenBilgi": "Anormal uterin kanama nedenleri (PALM-COEIN)",
+      "cardId": "BKA-400145",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Anormal uterin kanamanın (AUK) "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "PALM-COEIN"
+        },
+        {
+          "type": "text",
+          "value": " sınıflaması\n\nP "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Polip"
+        },
+        {
+          "type": "text",
+          "value": "\nA "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Adenomyozis"
+        },
+        {
+          "type": "text",
+          "value": "\nL "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Leiomyom"
+        },
+        {
+          "type": "text",
+          "value": "\nM "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Malignansi"
+        },
+        {
+          "type": "text",
+          "value": " ve "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "hiperplazi"
+        },
+        {
+          "type": "text",
+          "value": "\n\nC "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Koagülopati"
+        },
+        {
+          "type": "text",
+          "value": "\nO "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Ovulatuar disfonksiyon"
+        },
+        {
+          "type": "text",
+          "value": " (anovulasyon)\nE "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Endometrial"
+        },
+        {
+          "type": "text",
+          "value": " nedenler\nI "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "İatrojenik"
+        },
+        {
+          "type": "text",
+          "value": "\nN Başka şekilde sınıflandırılmamış (eski: henüz sınıflandırılmamış)"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-kadin-dogum-2025-2-k097",
+      "deckId": "kadin-dogum",
+      "course": "Kadın Doğum",
+      "ders": "Kadın Doğum",
+      "topic": "2025/2 TUS · K097",
+      "sinav": "2025/2",
+      "qid": "2025/2-K097",
+      "verifiedLabel": "2025/2 TUS · Doğrudan",
+      "olculenBilgi": "İnfertil kadında mikroprolaktinoma tedavisi",
+      "cardId": "BKA-700448",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Prolaktinomaya bağlı hiperprolaktinemide ilk tercih tedavi → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "medikal (kabergolin)"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-kadin-dogum-2025-2-k093",
+      "deckId": "kadin-dogum",
+      "course": "Kadın Doğum",
+      "ders": "Kadın Doğum",
+      "topic": "2025/2 TUS · K093",
+      "sinav": "2025/2",
+      "qid": "2025/2-K093",
+      "verifiedLabel": "2025/2 TUS · Doğrudan",
+      "olculenBilgi": "Riskli taramada 18. haftada kesin tanı yöntemi",
+      "cardId": "BKA-200280",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "2. trimester tarama testleri → 15–21. haftada "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "AFP"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "E3"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "hCG"
+        },
+        {
+          "type": "text",
+          "value": " (üçlü test) + "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "inhibin A"
+        },
+        {
+          "type": "text",
+          "value": " (dörtlü test) → risk yüksekse → "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "amniyosentez"
+        },
+        {
+          "type": "text",
+          "value": " ("
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "15"
+        },
+        {
+          "type": "text",
+          "value": ". haftadan sonra) yapılır"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "review",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    }
+  ]
+}

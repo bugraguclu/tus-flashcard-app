@@ -11,6 +11,14 @@
     "title": "TUS puan hesaplayıcı",
     "sha256": "caa2977d7d5205820c360c7fbc45c83c4520ed8db651d53d9617aa7377d070da"
   },
+  "/images/og/calisma-plani.png": {
+    "title": "TUS çalışma planı ve tempo hesaplayıcı",
+    "sha256": "49e695f10310cac07244a67063f36df5ebc0172c93110c7508f1a52e9182e2a2"
+  },
+  "/images/og/kart-denemesi.png": {
+    "title": "Kartları tablette dene",
+    "sha256": "2b4de7926c2e3c96e7cc7459d9e31dd007ab2878b6984dffed1f1f0df818068b"
+  },
   "/images/og/yardim.png": {
     "title": "Yardım Merkezi",
     "sha256": "615551c36df414ae94328c83d3405fdaf5bed0e5949e9f35efe7aa11556ce95a"

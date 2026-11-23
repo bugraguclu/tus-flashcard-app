@@ -409,13 +409,184 @@ function buildDemoCards(rawRef, notesMap) {
   return cards;
 }
 
-function verifyOutputs(catalog, summary, records, demoCards) {
-  const serialized = JSON.stringify({ catalog, summary, records, demoCards });
+const DEMO_DECK_BRANCHES = [
+  { deckId: 'anatomi', title: 'Anatomi', groupId: 'temel-bilimler', ders: 'Anatomi', course: 'Anatomi', flagshipQid: '2026/2-T005', flagshipNid: 1622380317207 },
+  { deckId: 'fhe', title: 'FHE', groupId: 'temel-bilimler', ders: 'Fizyoloji-Histoloji-Embriyoloji', course: 'FHE', flagshipQid: '2026/2-T016', flagshipNid: 1603884173708 },
+  { deckId: 'biyokimya', title: 'Biyokimya', groupId: 'temel-bilimler', ders: 'Biyokimya', course: 'Biyokimya', flagshipQid: '2026/2-T033', flagshipNid: 1611058912037 },
+  { deckId: 'mikrobiyoloji', title: 'Mikrobiyoloji', groupId: 'temel-bilimler', ders: 'Mikrobiyoloji', course: 'Mikrobiyoloji', flagshipQid: '2026/2-T050', flagshipNid: 1604266319660 },
+  { deckId: 'patoloji', title: 'Patoloji', groupId: 'temel-bilimler', ders: 'Patoloji', course: 'Patoloji', flagshipQid: '2026/2-T067', flagshipNid: 1604579032901 },
+  { deckId: 'farmakoloji', title: 'Farmakoloji', groupId: 'temel-bilimler', ders: 'Farmakoloji', course: 'Farmakoloji', flagshipQid: '2026/2-T094', flagshipNid: 1604750706413 },
+  { deckId: 'dahiliye', title: 'Dahiliye', groupId: 'klinik-bilimler', ders: 'Dahiliye', course: 'Dahiliye', flagshipQid: '2026/2-K004', flagshipNid: 1604993745353 },
+  { deckId: 'pediatri', title: 'Pediatri', groupId: 'klinik-bilimler', ders: 'Pediatri', course: 'Pediatri', flagshipQid: '2026/2-K037', flagshipNid: 1605268859586, activeCloze: 2 },
+  { deckId: 'genel-cerrahi', title: 'Genel Cerrahi', groupId: 'klinik-bilimler', ders: 'Genel Cerrahi', course: 'Genel Cerrahi', flagshipQid: '2026/2-K075', flagshipNid: 1608384395749 },
+  { deckId: 'kucuk-stajlar', title: 'Küçük Stajlar', groupId: 'klinik-bilimler', ders: 'Küçük Stajlar', course: 'Küçük Stajlar', flagshipQid: '2026/2-K083', flagshipNid: 1604405937273 },
+  { deckId: 'kadin-dogum', title: 'Kadın Doğum', groupId: 'klinik-bilimler', ders: 'Kadın Doğum', course: 'Kadın Doğum', flagshipQid: '2026/2-K095', flagshipNid: 1606067047662 },
+];
+
+function buildDemoDecks(rawRef, notesMap) {
+  const CARDS_PER_DECK = 4;
+  const BUCKETS = ['new', 'new', 'learning', 'review'];
+  const EXAM_RANK = new Map([
+    ['2026/2', 6],
+    ['2026/1', 5],
+    ['2025/2', 4],
+    ['2025/1', 3],
+    ['2024/2', 2],
+    ['2024/1', 1],
+  ]);
+
+  const byQid = new Map(rawRef.kayitlar.map((r) => [r.qid, r]));
+  const usedNids = new Set();
+  const cards = [];
+
+  const toDeckCard = (ref, note, branch, slotIdx, preferredActiveCloze) => {
+    const { parts, clozeCount } = parseClozeSegments(note.f0);
+    if (clozeCount === 0) return null;
+    const hasLeftoverBraces = parts.some((p) => {
+      const txt = p.type === 'cloze' ? `${p.answer} ${p.hint ?? ''}` : p.value;
+      return /\{\{|\}\}/.test(txt);
+    });
+    if (hasLeftoverBraces) return null;
+
+    const plainLen = sanitizeCardText(note.f0, { keepCloze: false }).length;
+    if (plainLen < 20 || plainLen > 360) return null;
+
+    const clozeIndices = parts.filter((p) => p.type === 'cloze').map((p) => p.index);
+    const activeCloze = preferredActiveCloze && clozeIndices.includes(preferredActiveCloze)
+      ? preferredActiveCloze
+      : clozeIndices[0];
+    if (!activeCloze) return null;
+
+    const extraClean = note.f1 && !/<img/i.test(note.f1)
+      ? sanitizeCardText(note.f1, { keepCloze: false }).replace(/\n+/g, ' ').trim()
+      : '';
+
+    const qNum = ref.qid.split('-')[1] || ref.qid;
+    const isPreExam = ref.sinav === '2026/2' && ref.sinavOncesiSurumde === 'evet';
+
+    return {
+      id: `deck-${branch.deckId}-${ref.qid.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+      deckId: branch.deckId,
+      course: branch.course,
+      ders: ref.ders,
+      topic: `${ref.sinav} TUS · ${qNum}`,
+      sinav: ref.sinav,
+      qid: ref.qid,
+      verifiedLabel: isPreExam ? '2026/2 TUS · a78ae1f Doğrudan' : `${ref.sinav} TUS · Doğrudan`,
+      olculenBilgi: stripForbiddenMeta(String(ref.olculenBilgi ?? '')).trim(),
+      cardId: `BKA-${String(note.id).slice(-6)}`,
+      activeCloze,
+      parts,
+      extra: extraClean,
+      initialBucket: BUCKETS[slotIdx] ?? 'new',
+      intervals: {
+        again: '10 dk',
+        hard: '1 gün',
+        good: '3 gün',
+        easy: '8 gün',
+      },
+    };
+  };
+
+  for (const branch of DEMO_DECK_BRANCHES) {
+    const flagshipRef = byQid.get(branch.flagshipQid);
+    const flagshipNote = notesMap.get(branch.flagshipNid);
+    if (!flagshipRef || !flagshipNote) {
+      throw new Error(`Demo deck flagship missing: ${branch.flagshipQid} / ${branch.flagshipNid}`);
+    }
+    const flagshipCard = toDeckCard(flagshipRef, flagshipNote, branch, 0, branch.activeCloze);
+    if (!flagshipCard) {
+      throw new Error(`Demo deck flagship failed validation: ${branch.flagshipQid}`);
+    }
+    usedNids.add(branch.flagshipNid);
+    const branchCards = [flagshipCard];
+
+    const pool = [];
+    for (const ref of rawRef.kayitlar) {
+      if (ref.rozet !== 'DOGRUDAN' || ref.ders !== branch.ders) continue;
+      const nid = Array.isArray(ref.notIds) && ref.notIds.length > 0 ? Number(ref.notIds[0]) : null;
+      if (!nid || usedNids.has(nid)) continue;
+      const note = notesMap.get(nid);
+      if (!note || /<img\b/i.test(note.f0) || /<img\b/i.test(note.f1)) continue;
+      const built = toDeckCard(ref, note, branch, 1);
+      if (!built) continue;
+      pool.push({ ref, note, nid, built });
+    }
+
+    pool.sort((a, b) => {
+      const aExtra = a.built.extra.length > 0 ? 1 : 0;
+      const bExtra = b.built.extra.length > 0 ? 1 : 0;
+      if (aExtra !== bExtra) return bExtra - aExtra;
+
+      const aPre = a.ref.sinav === '2026/2' && a.ref.sinavOncesiSurumde === 'evet' ? 1 : 0;
+      const bPre = b.ref.sinav === '2026/2' && b.ref.sinavOncesiSurumde === 'evet' ? 1 : 0;
+      if (aPre !== bPre) return bPre - aPre;
+
+      const aExam = EXAM_RANK.get(a.ref.sinav) ?? 0;
+      const bExam = EXAM_RANK.get(b.ref.sinav) ?? 0;
+      if (aExam !== bExam) return bExam - aExam;
+
+      return a.built.parts.length - b.built.parts.length;
+    });
+
+    for (const item of pool) {
+      if (branchCards.length >= CARDS_PER_DECK) break;
+      if (usedNids.has(item.nid)) continue;
+      usedNids.add(item.nid);
+      const slotIdx = branchCards.length;
+      const card = toDeckCard(item.ref, item.note, branch, slotIdx);
+      if (card) branchCards.push(card);
+    }
+
+    if (branchCards.length < CARDS_PER_DECK) {
+      throw new Error(`Insufficient safe cards for ${branch.deckId}: got ${branchCards.length}, expected ${CARDS_PER_DECK}`);
+    }
+    cards.push(...branchCards);
+  }
+
+  const leafNode = (b) => ({
+    id: b.deckId,
+    title: b.title,
+    parentId: b.groupId,
+    children: [],
+  });
+
+  const decks = [
+    {
+      id: 'tus-deneme',
+      title: 'TUS Deneme',
+      parentId: null,
+      expanded: true,
+      children: [
+        {
+          id: 'temel-bilimler',
+          title: 'Temel Bilimler',
+          parentId: 'tus-deneme',
+          expanded: true,
+          children: DEMO_DECK_BRANCHES.filter((b) => b.groupId === 'temel-bilimler').map(leafNode),
+        },
+        {
+          id: 'klinik-bilimler',
+          title: 'Klinik Bilimler',
+          parentId: 'tus-deneme',
+          expanded: true,
+          children: DEMO_DECK_BRANCHES.filter((b) => b.groupId === 'klinik-bilimler').map(leafNode),
+        },
+      ],
+    },
+  ];
+
+  return { decks, cards };
+}
+
+function verifyOutputs(catalog, summary, records, demoCards, demoDecks) {
+  const serialized = JSON.stringify({ catalog, summary, records, demoCards, demoDecks });
   const forbidden = [
     { re: /Cloze-AnKingMaster/i, label: 'Cloze-AnKingMaster leakage' },
     { re: /Basic \(type in the answer\)/i, label: 'Basic note type leakage' },
     { re: /<img\b/i, label: 'Raw <img> tag leakage' },
     { re: /<script\b/i, label: 'Raw <script> tag leakage' },
+    { re: /\[sound:/i, label: 'Raw [sound:] tag leakage' },
     { re: /"reaId"\s*:/i, label: 'reaId field leakage' },
     { re: /\bA\)\s+\S+[\s\S]{0,80}\bB\)\s+\S+[\s\S]{0,80}\bC\)\s+\S+/i, label: 'ÖSYM option pattern' },
   ];
@@ -443,6 +614,7 @@ function verifyOutputs(catalog, summary, records, demoCards) {
   assertEq(summary.preExam2026_2.preExamHayir, 2, '2026/2 pre-exam hayir');
   assertEq(summary.preExam2026_2.topicCoverage, 192, '2026/2 topic coverage');
   assertEq(demoCards.length, 11, 'demo cards count');
+  assertEq(demoDecks.cards.length, 44, 'demo deck cards count');
 }
 
 async function main() {
@@ -453,12 +625,14 @@ async function main() {
   const catalog = buildCatalog(manifest);
   const { records, summary } = buildReferences(rawRef, notesMap);
   const demoCards = buildDemoCards(rawRef, notesMap);
+  const demoDecks = buildDemoDecks(rawRef, notesMap);
 
-  verifyOutputs(catalog, summary, records, demoCards);
+  verifyOutputs(catalog, summary, records, demoCards, demoDecks);
 
   fs.writeFileSync(path.join(OUT_GENERATED, 'catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
   fs.writeFileSync(path.join(OUT_GENERATED, 'references-summary.json'), JSON.stringify(summary, null, 2) + '\n');
   fs.writeFileSync(path.join(OUT_GENERATED, 'demo-cards.json'), JSON.stringify(demoCards, null, 2) + '\n');
+  fs.writeFileSync(path.join(OUT_GENERATED, 'demo-decks.json'), JSON.stringify(demoDecks, null, 2) + '\n');
   fs.writeFileSync(path.join(OUT_PUBLIC_DATA, 'references.json'), JSON.stringify({
     tarih: rawRef.tarih,
     katalogCommit: rawRef.katalog.commit,
@@ -471,7 +645,7 @@ async function main() {
   console.log(
     `[build-data] Verified OK: ${catalog.totals.cards} cards, ${catalog.totals.notes} notes, ` +
     `${records.length} references (${summary.overall.destek} destek / ${summary.preExam2026_2.preExamEvet} 2026/2 pre-exam), ` +
-    `${demoCards.length} demo cards. public/data/references.json = ${(refBytes / 1024).toFixed(1)} KB.`
+    `${demoCards.length} demo cards, ${demoDecks.cards.length} demo deck cards. public/data/references.json = ${(refBytes / 1024).toFixed(1)} KB.`
   );
 }
 

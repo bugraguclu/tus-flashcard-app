@@ -1,0 +1,47 @@
+---
+import Layout from '../layouts/Layout.astro';
+import TabletDemo from '../components/TabletDemo.astro';
+import { SITE } from '../config';
+import { breadcrumbList } from '../lib/schema';
+import { publicationDates, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'Kartları Tablette Dene', path: '/kart-denemesi' },
+]);
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'TusAnkiM kart denemesi',
+  inLanguage: 'tr-TR',
+  url: origin + '/kart-denemesi/',
+  isPartOf: { '@id': origin + '/#website' },
+  ...publicationDates('website/src/pages/kart-denemesi.astro', pageSources('kart-denemesi')),
+};
+---
+<Layout
+  title="Kartları Tablette Dene | TusAnkiM"
+  description="TusAnkiM’in deste listesini ve kart çalışma ekranını tarayıcında dene: 11 dersten gerçek TUS kartlarıyla boşluğu tahmin et, cevabı aç ve kendini değerlendir."
+  schema={[crumbs, pageSchema]}
+>
+  <section class="page-intro bg-surface border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
+      <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-sm text-inkMuted mb-3">
+        <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+        <span aria-hidden="true" class="mx-2">/</span>
+        <span class="text-ink font-semibold">Kartları Tablette Dene</span>
+      </nav>
+      <div class="section-num">Canlı deneme</div>
+      <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">Kartları tablette dene</h1>
+      <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
+        Uygulamadaki deste listesi ve kart çalışma ekranı, 11 dersten gerçek kartlarla. Bir deste seç, boşluğu tahmin et, cevabı aç ve ne kadar kolay hatırladığını işaretle.
+        Uygulamanın tamamı için <a href={SITE.webAppUrl} class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">web uygulamasını aç</a>.
+      </p>
+    </div>
+  </section>
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 py-12" aria-labelledby="demo-heading">
+    <h2 id="demo-heading" class="sr-only">Tablet simülatörü</h2>
+    <TabletDemo />
+  </section>
+</Layout>

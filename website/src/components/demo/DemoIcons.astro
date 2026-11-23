@@ -1,0 +1,124 @@
+---
+interface Props {
+  name: 'refresh' | 'chevron-down' | 'chevron-right' | 'back' | 'undo' | 'flame' | 'check';
+  size?: number;
+  class?: string;
+}
+
+const { name, size = 20, class: className = '' } = Astro.props;
+---
+{name === 'refresh' && (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.81"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+    class={className}
+  >
+    <path d="M19.5 12A8 8 0 1 0 16.09 18.55M21.75 9.75 19.5 12l-2.25-2.25" />
+  </svg>
+)}
+{name === 'chevron-down' && (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.98"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+    class={className}
+  >
+    <path d="m6 9.25 6 6 6-6" />
+  </svg>
+)}
+{name === 'chevron-right' && (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.98"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+    class={className}
+  >
+    <path d="m9.25 6 6 6-6 6" />
+  </svg>
+)}
+{name === 'back' && (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.9"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+    class={className}
+  >
+    <path d="M15.5 4.75 8.25 12l7.25 7.25" />
+  </svg>
+)}
+{name === 'undo' && (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.81"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+    class={className}
+  >
+    <path d="M8.75 13.25 4.5 9l4.25-4.25M4.5 9h10.25a5 5 0 0 1 0 10H10" />
+  </svg>
+)}
+{name === 'flame' && (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    focusable="false"
+    class={className}
+  >
+    <path d="M12 21.25C8.6 21.25 5.75 18.6 5.75 15c0-2.4 1-4.4 2.25-5.9.6 1.5 1.6 2.3 2.6 2.5-.6-3.4.4-6.6 2.4-8.85 3.4 2.65 5.25 6.85 5.25 12 0 3.75-2.85 6.5-6.25 6.5Z" />
+  </svg>
+)}
+{name === 'check' && (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+    class={className}
+  >
+    <path d="M4.75 12.75 9.5 17.5 19.25 7" />
+  </svg>
+)}

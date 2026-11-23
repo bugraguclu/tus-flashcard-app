@@ -1,0 +1,530 @@
+---
+import { SITE } from '../../config';
+import {
+  MEGA_DECK_CARDS,
+  formatDurationTr,
+  formatTrInt,
+  formatTrPct,
+  scopeDisplayLabel,
+  type ChartGeometry,
+  type PlannerResult,
+} from '../../lib/studyPlanner';
+
+interface Props {
+  initial: PlannerResult;
+  geom: ChartGeometry;
+  initialInspectDay: number;
+  initialCopyText: string;
+  initialShareLink: string;
+}
+
+const { initial, geom, initialInspectDay, initialCopyText, initialShareLink } = Astro.props;
+const initialPt = initial.series[initialInspectDay - 1] ?? initial.series[0];
+
+const introSpan = initial.target.finishDay ?? initial.introWindowDays;
+const tailSpan = Math.max(0, initial.input.days - introSpan);
+const introPct = Math.max(4, Math.round((introSpan / initial.input.days) * 100));
+const tailPct = 100 - introPct;
+const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--control-value:${initialInspectDay}`;
+---
+<div class="lg:col-span-7 space-y-5">
+  <!-- Verdict banner -->
+  <div
+    data-plan-verdict
+    class={`rounded-2xl border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 verdict-${initial.verdict.tone}`}
+  >
+    <div class="space-y-1">
+      <span class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider" data-verdict-badge>
+        {initial.verdict.badge}
+      </span>
+      <p class="text-sm sm:text-base font-bold text-ink leading-snug" data-verdict-title>
+        {initial.verdict.title}
+      </p>
+      <p class="text-xs sm:text-sm text-ink leading-relaxed" data-verdict-detail>
+        {initial.verdict.detail}
+      </p>
+    </div>
+    <button
+      type="button"
+      data-verdict-fix
+      hidden={!initial.verdict.fixAction}
+      class="shrink-0 inline-flex items-center justify-center min-h-[2.75rem] px-4 rounded-full bg-teal text-white text-xs font-semibold hover:bg-tealDark transition cursor-pointer"
+    >
+      {initial.verdict.fixAction?.label ?? ''}
+    </button>
+  </div>
+
+  <!-- 4 Primary KPI Tiles (single-line numeric display + muted unit suffix) -->
+  <dl class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="rounded-2xl border border-line bg-white p-4">
+      <dt class="text-[11px] font-bold uppercase tracking-wider text-inkMuted">Günlük yeni kart</dt>
+      <dd class="mt-1 flex items-baseline gap-1 whitespace-nowrap">
+        <span class="display text-2xl sm:text-[1.75rem] text-teal tabular-nums leading-none" data-kpi-pace>
+          {initial.activePace}
+        </span>
+        <span class="text-xs font-semibold text-inkMuted">yeni</span>
+      </dd>
+      <dd class="text-xs text-inkMuted mt-1.5 leading-snug tabular-nums" data-kpi-finish>
+        İlk tur {initial.target.finishDay ?? initial.input.days}. günde biter
+      </dd>
+    </div>
+    <div class="rounded-2xl border border-line bg-white p-4">
+      <dt class="text-[11px] font-bold uppercase tracking-wider text-inkMuted">Günlük ortalama</dt>
+      <dd class="mt-1 flex items-baseline gap-1 whitespace-nowrap">
+        <span class="display text-2xl sm:text-[1.75rem] text-ink tabular-nums leading-none" data-kpi-avg>
+          {formatTrInt(initial.target.avgCards)}
+        </span>
+        <span class="text-xs font-semibold text-inkMuted">kart</span>
+      </dd>
+      <dd class="text-xs text-inkMuted mt-1.5 leading-snug tabular-nums" data-kpi-avg-min>
+        ~{formatDurationTr(initial.target.avgMinutes)} / gün (yeni + tekrar)
+      </dd>
+    </div>
+    <div class="rounded-2xl border border-line bg-white p-4">
+      <dt class="text-[11px] font-bold uppercase tracking-wider text-inkMuted">Tepe günlük yük</dt>
+      <dd class="mt-1 flex items-baseline gap-1 whitespace-nowrap">
+        <span class="display text-2xl sm:text-[1.75rem] text-ink tabular-nums leading-none" data-kpi-peak>
+          {formatTrInt(initial.target.peakCards)}
+        </span>
+        <span class="text-xs font-semibold text-inkMuted">kart</span>
+      </dd>
+      <dd class="text-xs text-inkMuted mt-1.5 leading-snug tabular-nums" data-kpi-peak-sub>
+        ~{formatDurationTr(initial.target.peakMinutes)} · {initial.target.peakDay}. günde tepe
+      </dd>
+    </div>
+    <div class="rounded-2xl border border-line bg-white p-4">
+      <dt class="text-[11px] font-bold uppercase tracking-wider text-inkMuted">Sınav günü hafızada</dt>
+      <dd class="mt-1 flex items-baseline gap-1 whitespace-nowrap">
+        <span class="display text-2xl sm:text-[1.75rem] text-teal tabular-nums leading-none" data-kpi-pct>
+          {formatTrPct(initial.target.memorizedPct)}
+        </span>
+      </dd>
+      <dd class="text-xs text-inkMuted mt-1.5 leading-snug tabular-nums" data-kpi-mem>
+        {formatTrInt(initial.target.memorized)} / {formatTrInt(initial.target.remainingCards)} kart (%{initial.input.retention} FSRS-6)
+      </dd>
+    </div>
+  </dl>
+
+  <!-- Interactive Dual-Series FSRS-6 Workload Curve -->
+  <figure class="rounded-2xl border border-line bg-white p-4 sm:p-5 space-y-3">
+    <figcaption class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <span class="block text-sm font-semibold text-ink" data-chart-title>
+          Günlük kart yükü (yeni + tekrar)
+        </span>
+        <span class="legend mt-1">
+          <span><i style="background:#0e7469"></i>TusAnkiM</span>
+          <span data-legend-mega><i style="background:#d9661a"></i>27.341 Mega deste</span>
+        </span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="inline-flex rounded-xl border border-line bg-surfaceSoft p-0.5" role="group" aria-label="Grafik birimi">
+          <div>
+            <input type="radio" id="unit-cards" name="plan-unit" value="cards" class="visually-hidden" checked />
+            <label for="unit-cards" class="seg-radio-label border-0 min-h-[2.75rem] px-3 py-1 text-xs rounded-lg">
+              Kart
+            </label>
+          </div>
+          <div>
+            <input type="radio" id="unit-minutes" name="plan-unit" value="minutes" class="visually-hidden" />
+            <label for="unit-minutes" class="seg-radio-label border-0 min-h-[2.75rem] px-3 py-1 text-xs rounded-lg">
+              Dakika
+            </label>
+          </div>
+        </div>
+
+        <label for="plan-show-mega" class="inline-flex items-center gap-2 min-h-[2.75rem] text-xs font-semibold text-ink cursor-pointer select-none">
+          <input
+            id="plan-show-mega"
+            type="checkbox"
+            checked
+            class="w-4 h-4 accent-[#0e7469] rounded cursor-pointer"
+          />
+          <span>Mega desteyle kıyasla</span>
+        </label>
+      </div>
+    </figcaption>
+
+    <svg
+      class="w-full h-auto select-none touch-pan-y cursor-crosshair"
+      viewBox={`0 0 ${geom.width} ${geom.height}`}
+      role="img"
+      data-plan-chart
+      aria-label={`${initial.input.days} gün boyunca ${scopeDisplayLabel(initial.input.scope, initial.activeCourses.length)} için günlük FSRS-6 kart eğrisi.`}
+    >
+      <g data-chart-grid>
+        {geom.yTicks.map((v) => (
+          <g>
+            <line
+              x1={geom.pad.l}
+              x2={geom.width - geom.pad.r}
+              y1={geom.yAt(v)}
+              y2={geom.yAt(v)}
+              stroke="#dde1e4"
+              stroke-dasharray={v === 0 ? undefined : '3 4'}
+            />
+            <text x={geom.pad.l - 8} y={geom.yAt(v) + 4} text-anchor="end" font-size="12.5" fill="#596166">
+              {formatTrInt(v)}
+            </text>
+          </g>
+        ))}
+      </g>
+
+      <g data-chart-xaxis>
+        {geom.xTicks.map((d) => (
+          <text
+            x={geom.xAt(d)}
+            y={geom.height - 8}
+            text-anchor={d === 1 ? 'start' : d === initial.input.days ? 'end' : 'middle'}
+            font-size="12.5"
+            fill="#596166"
+          >
+            {d}. gün
+          </text>
+        ))}
+      </g>
+
+      <rect
+        data-chart-buffer
+        class="chart-buffer-zone"
+        x={geom.bufferRect ? geom.bufferRect.x.toFixed(1) : '0'}
+        y={geom.pad.t}
+        width={geom.bufferRect ? geom.bufferRect.width.toFixed(1) : '0'}
+        height={geom.height - geom.pad.t - geom.pad.b}
+        display={geom.bufferRect ? undefined : 'none'}
+      />
+
+      <path data-chart-area class="chart-area" d={geom.targetAreaPath} />
+      <path data-chart-mega class="chart-mega" d={geom.megaPath} />
+      <path data-chart-target class="chart-target" d={geom.targetPath} />
+
+      <g data-chart-finish-group display={geom.finishX === null ? 'none' : undefined}>
+        <line
+          data-chart-finish-line
+          x1={(geom.finishX ?? 0).toFixed(1)}
+          x2={(geom.finishX ?? 0).toFixed(1)}
+          y1={geom.pad.t}
+          y2={geom.height - geom.pad.b}
+          stroke="#14998a"
+          stroke-dasharray="3 3"
+          stroke-width="1.5"
+        />
+        <text
+          data-chart-finish-label
+          x={((geom.finishX ?? 0) - 6).toFixed(1)}
+          y={geom.pad.t + 13}
+          text-anchor="end"
+          font-size="12"
+          font-weight="700"
+          fill="#0e7469"
+        >
+          İlk tur biter ({initial.target.finishDay}. gün)
+        </text>
+      </g>
+
+      <!-- Interactive hover/scrub cursor -->
+      <line
+        data-chart-cursor-line
+        x1={geom.xAt(initialInspectDay).toFixed(1)}
+        x2={geom.xAt(initialInspectDay).toFixed(1)}
+        y1={geom.pad.t}
+        y2={geom.height - geom.pad.b}
+        stroke="#24292c"
+        stroke-opacity="0.28"
+        stroke-width="1"
+      />
+      <circle
+        data-chart-cursor-mega
+        cx={geom.xAt(initialInspectDay).toFixed(1)}
+        cy={geom.megaYAtDay(initialInspectDay).toFixed(1)}
+        r="4"
+        fill="#d9661a"
+        stroke="#ffffff"
+        stroke-width="1.5"
+      />
+      <circle
+        data-chart-cursor-target
+        cx={geom.xAt(initialInspectDay).toFixed(1)}
+        cy={geom.targetYAtDay(initialInspectDay).toFixed(1)}
+        r="4.5"
+        fill="#0e7469"
+        stroke="#ffffff"
+        stroke-width="1.5"
+      />
+    </svg>
+
+    <p data-chart-smooth-note hidden class="text-[11px] text-inkMuted -mt-1">
+      Not: Mola günlü planlarda eğri 7 günlük hareketli ortalamayı, gün inceleyici ise o günün gerçek yükünü gösterir.
+    </p>
+
+    <!-- Day Inspector & Keyboard Scrubber -->
+    <div class="rounded-xl bg-surfaceSoft border border-lineLight px-3.5 py-2.5 space-y-1">
+      <p class="text-xs font-semibold text-ink tabular-nums leading-relaxed" data-day-readout>
+        {initialInspectDay}. gün · TusAnkiM: {formatTrInt(initialPt.totalCards)} kart ({initialPt.newCards} yeni +{' '}
+        {formatTrInt(initialPt.reviews)} tekrar, ~{formatDurationTr(initialPt.minutes)}) · Mega deste:{' '}
+        {formatTrInt(initialPt.megaTotalCards)} kart (~{formatDurationTr(initialPt.megaMinutes)})
+      </p>
+      <div class="flex items-center gap-3">
+        <label for="plan-inspect-day" class="text-[11px] font-semibold text-inkMuted shrink-0">
+          Günü incele:
+        </label>
+        <input
+          id="plan-inspect-day"
+          type="range"
+          min="1"
+          max={initial.input.days}
+          step="1"
+          value={initialInspectDay}
+          aria-valuetext={`${initialInspectDay}. gün: ${formatTrInt(initialPt.totalCards)} kart`}
+          class="planner-range"
+          style={defaultInspectStyle}
+        />
+      </div>
+    </div>
+
+    <!-- Side-by-side finishability comparison meters -->
+    <div data-cmp-wrap class="pt-3 border-t border-lineLight">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-inkMuted">
+        Bitirilebilir deste vs. bitmeyen mega deste
+      </h4>
+      <dl class="mt-2.5 grid sm:grid-cols-2 gap-4">
+        <div>
+          <dt class="flex justify-between text-xs">
+            <span class="font-semibold text-ink" data-cmp-target-label>
+              TusAnkiM · {formatTrInt(initial.target.remainingCards)} kart
+            </span>
+            <span class="tabular-nums font-bold text-teal" data-cmp-target-pct>
+              {formatTrPct(initial.target.memorizedPct)}
+            </span>
+          </dt>
+          <dd class="mt-1.5">
+            <div class="meter" aria-hidden="true">
+              <span data-cmp-target-bar style={`width: ${initial.target.memorizedPct}%`}></span>
+            </div>
+            <p class="mt-1 text-xs text-inkMuted tabular-nums" data-cmp-target-note>
+              İlk tur {initial.target.finishDay}. günde biter; son gün yük {formatDurationTr(initial.target.endDayMinutes)}.
+            </p>
+          </dd>
+        </div>
+        <div>
+          <dt class="flex justify-between text-xs">
+            <span class="font-semibold text-ink">Mega deste · {formatTrInt(MEGA_DECK_CARDS)} kart</span>
+            <span class="tabular-nums font-bold text-warm" data-cmp-mega-pct>
+              {formatTrPct(initial.mega.memorizedPct)}
+            </span>
+          </dt>
+          <dd class="mt-1.5">
+            <div class="meter" aria-hidden="true">
+              <span data-cmp-mega-bar style={`width: ${initial.mega.memorizedPct}%; background: #d9661a`}></span>
+            </div>
+            <p class="mt-1 text-xs text-inkMuted tabular-nums" data-cmp-mega-note>
+              {initial.input.days} günde ilk tur bitmez ({formatTrInt(MEGA_DECK_CARDS)} kart) · son gün {formatDurationTr(initial.mega.endDayMinutes)}.
+            </p>
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </figure>
+
+  <!-- Two-Phase Roadmap & Subject-by-Subject Calendar Schedule -->
+  <div class="rounded-2xl border border-line bg-white p-4 sm:p-5 space-y-3">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h4 class="text-sm font-bold text-ink">İki Fazlı Çalışma Yol Haritan</h4>
+      <span class="text-xs text-inkMuted tabular-nums" data-roadmap-count>
+        {initial.roadmap.length} ders · {formatTrInt(initial.target.remainingCards)} kart
+      </span>
+    </div>
+
+    <div class="phase-bar" aria-hidden="true">
+      <span class="phase-intro" data-phase-intro-bar style={`flex: ${introPct} 0 0%`}></span>
+      <span class="phase-tail" data-phase-tail-bar style={`flex: ${tailPct} 0 0%`} hidden={tailSpan === 0}></span>
+    </div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-inkMuted tabular-nums">
+      <span class="font-semibold text-ink" data-phase-intro-label>
+        1. Faz (Yeni + Tekrar): 1–{introSpan}. gün
+      </span>
+      <span data-phase-tail-label>
+        2. Faz (Yalnız Tekrar + Deneme): {introSpan + 1}–{initial.input.days}. gün ({tailSpan} gün)
+      </span>
+    </div>
+
+    <details class="planner-details pt-2 border-t border-lineLight">
+      <summary class="cursor-pointer list-none flex items-center justify-between gap-2 min-h-[2.75rem] text-xs font-bold text-teal hover:text-tealDark select-none">
+        <span>Ders ders gün dağılımını ve TUS çözüm desteğini gör</span>
+        <svg class="details-chevron shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </summary>
+      <div class="pt-3 space-y-3">
+        <fieldset class="flex flex-wrap items-center gap-2">
+          <legend class="sr-only">Ders sıralama düzeni</legend>
+          {[
+            { v: 'temel-first', l: 'Önce Temel' },
+            { v: 'klinik-first', l: 'Önce Klinik' },
+            { v: 'high-yield', l: 'TUS çözüm desteğine göre' },
+          ].map((opt) => (
+            <div>
+              <input
+                type="radio"
+                id={`order-${opt.v}`}
+                name="plan-order"
+                value={opt.v}
+                class="visually-hidden"
+                checked={initial.input.courseOrder === opt.v}
+              />
+              <label for={`order-${opt.v}`} class="seg-radio-label px-3 py-1 text-xs">
+                {opt.l}
+              </label>
+            </div>
+          ))}
+        </fieldset>
+
+        <div class="overflow-x-auto rounded-xl border border-line" tabindex="0" role="region" aria-label="Ders ders çalışma takvimi">
+          <table class="w-full text-left border-collapse text-xs">
+            <caption class="sr-only">Seçili derslerin günlük kart hızına göre tahmini gün aralığı ve TUS referans çözüm desteği</caption>
+            <thead>
+              <tr class="bg-surfaceSoft text-inkMuted font-semibold">
+                <th scope="col" class="py-2.5 px-3">Ders</th>
+                <th scope="col" class="py-2.5 px-3 tabular-nums">Kart</th>
+                <th scope="col" class="py-2.5 px-3 tabular-nums">Gün aralığı</th>
+                <th scope="col" class="py-2.5 px-3 text-right tabular-nums">Çözüm desteği</th>
+                <th scope="col" class="py-2.5 px-3 text-right">Süre</th>
+              </tr>
+            </thead>
+            <tbody data-roadmap-body>
+              {initial.roadmap.map((item) => (
+                <tr class="border-t border-lineLight">
+                  <th scope="row" class="py-2.5 px-3 font-semibold text-ink text-left">
+                    {item.course.name}
+                  </th>
+                  <td class="py-2.5 px-3 tabular-nums text-inkMuted">{formatTrInt(item.remainingCards)}</td>
+                  <td class="py-2.5 px-3 tabular-nums text-ink whitespace-nowrap">{item.startDay}–{item.endDay}. gün</td>
+                  <td class="py-2.5 px-3 tabular-nums text-right">
+                    {item.course.destekOran !== null ? (
+                      <span class="font-semibold text-teal">{formatTrPct(item.course.destekOran)}</span>
+                    ) : (
+                      <span class="text-inkMuted">Karma</span>
+                    )}
+                  </td>
+                  <td class={`py-2.5 px-3 text-right font-semibold whitespace-nowrap ${item.finishesBeforeExam ? 'text-gradeGood' : 'text-gradeAgain'}`}>
+                    {item.finishesBeforeExam ? `${item.activeDays} aktif gün` : 'Sınavı aşar'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p class="text-[11px] text-inkMuted leading-relaxed">
+          Çözüm desteği yüzdeleri son 6 TUS’un (2024/1–2026/2) 11 ÖSYM branşındaki doğrudan + dolaylı kart oranlarıdır;
+          Deneme ve Soru karma pekiştirme destesidir.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  <!-- TusAnkiM Deck Settings & Share / Calendar Export / CTA Bar -->
+  <div class="rounded-2xl border border-line bg-white p-4 sm:p-5 space-y-4">
+    <div>
+      <h4 class="text-sm font-bold text-ink">TusAnkiM’de gireceğin Deste Seçenekleri</h4>
+      <dl class="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+        <div class="rounded-xl bg-surfaceSoft border border-lineLight p-3">
+          <dt class="text-inkMuted">Günlük yeni kart</dt>
+          <dd class="font-bold text-ink mt-0.5 tabular-nums" data-set-new>{initial.settings.newPerDay} kart/gün</dd>
+        </div>
+        <div class="rounded-xl bg-surfaceSoft border border-lineLight p-3">
+          <dt class="text-inkMuted">Hedef hatırlama</dt>
+          <dd class="font-bold text-teal mt-0.5 tabular-nums" data-set-ret>%{initial.settings.retentionPct}</dd>
+        </div>
+        <div class="rounded-xl bg-surfaceSoft border border-lineLight p-3">
+          <dt class="text-inkMuted">Haftalık düzen</dt>
+          <dd class="font-bold text-ink mt-0.5 tabular-nums" data-set-cadence>{initial.input.studyDaysPerWeek} gün/hafta</dd>
+        </div>
+        <div class="rounded-xl bg-surfaceSoft border border-lineLight p-3">
+          <dt class="text-inkMuted">Tekrar tamponu</dt>
+          <dd class="font-bold text-ink mt-0.5 tabular-nums" data-set-buffer>
+            {initial.effectiveBufferDays > 0 ? `Son ${initial.effectiveBufferDays} gün` : 'Yok'}
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Hidden clean text targets for MWG Invoker Command copy buttons -->
+    <pre id="plan-copy-source" class="visually-hidden">{initialCopyText}</pre>
+    <span id="plan-link-source" class="visually-hidden">{initialShareLink}</span>
+
+    <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-lineLight">
+      <span class="copy-wrap">
+        <button
+          type="button"
+          class="copy-btn inline-flex items-center justify-center gap-1.5 min-h-[2.75rem] px-3.5 rounded-full border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
+          {...({ command: '--copy', commandfor: 'plan-copy-source' } as Record<string, string>)}
+          data-copy-ok="Plan özeti kopyalandı"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <span>Planı kopyala</span>
+        </button>
+        <span class="copy-tip" role="status"></span>
+      </span>
+
+      <span class="copy-wrap">
+        <button
+          type="button"
+          class="copy-btn inline-flex items-center justify-center gap-1.5 min-h-[2.75rem] px-3.5 rounded-full border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
+          {...({ command: '--copy', commandfor: 'plan-link-source' } as Record<string, string>)}
+          data-copy-ok="Plan bağlantısı kopyalandı"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+          <span>Bağlantı</span>
+        </button>
+        <span class="copy-tip" role="status"></span>
+      </span>
+
+      <span class="copy-wrap">
+        <button
+          type="button"
+          data-download-ics
+          data-copy-ok="Takvim dosyası indirildi (.ics)"
+          class="copy-btn inline-flex items-center justify-center gap-1.5 min-h-[2.75rem] px-3.5 rounded-full border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition cursor-pointer"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
+          <span>Takvime ekle (.ics)</span>
+        </button>
+        <span class="copy-tip" role="status"></span>
+      </span>
+
+      <a
+        href={SITE.webAppUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="w-full sm:w-auto sm:ml-auto inline-flex items-center justify-center gap-1.5 min-h-[2.75rem] px-5 rounded-full bg-teal text-white text-xs font-semibold hover:bg-tealDark transition"
+      >
+        <span>Bu tempoyla ücretsiz başla</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 17 17 7M9 7h8v8" />
+        </svg>
+        <span class="sr-only">(yeni sekmede açılır)</span>
+      </a>
+    </div>
+  </div>
+
+  <p class="text-xs text-inkMuted leading-relaxed">
+    Kaynak: TusAnkiM <span lang="en">FSRS-6</span> simülatörü (<code>lib/fsrsSimulator.ts</code>, %85 / %90 / %93 hedef hatırlama çekirdekleri).
+    Gerçek günlük süre okuma hızına ve kart zorluğuna göre değişebilir. Yöntem ayrıntıları:{' '}
+    <a href="/yardim/fsrs/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+      FSRS ve tekrar takvimi
+    </a>
+  </p>
+
+  <!-- Silent on initial load; announces only after user interaction -->
+  <p class="sr-only" aria-live="polite" data-plan-announce></p>
+</div>
