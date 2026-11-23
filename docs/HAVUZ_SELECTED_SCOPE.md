@@ -49,6 +49,9 @@ items 14–15 must use current production source rather than replace it with Hav
   The rejected `re:"(a+)+$"` search showed the last valid results and a syntax notice without
   freezing. These interactions used only the new local test origin.
 - Physical iPhone smoke remains a release gate. Do not infer a native pass from screenshots.
+  On 2026-11-23 the owner explicitly deferred this check ("Cihaz kontrolü sonraya kalsın").
+  The requested selection/implementation and visual review are complete; no native-device
+  pass or production deployment is claimed.
 
 ## Thumbnail demonstration (item 13)
 

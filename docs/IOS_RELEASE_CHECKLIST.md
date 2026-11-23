@@ -108,6 +108,8 @@ complete scope and automated evidence are in [HAVUZ_SELECTED_SCOPE.md](HAVUZ_SEL
 
 Physical-iPhone execution is pending and must be recorded before release. The thumbnail
 screenshots in the selection report were taken from Havuz's web preview, not a native iPhone.
+The owner explicitly deferred this device check on 2026-11-23; the selected local package
+may be reviewed with that limitation, without claiming a physical-device pass.
 
 ## Web regression target
 
