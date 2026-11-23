@@ -11,6 +11,7 @@
 import { Platform } from 'react-native';
 import { getDB } from './db';
 import { extractMediaFilenames } from './mediaAttachment';
+import * as mediaStore from './mediaStore';
 import { ensureMediaDir, listStoredMediaFilenames } from './mediaStore';
 import { getLegacyFileSystem } from './files';
 
@@ -106,6 +107,7 @@ export async function restoreMediaTrash(): Promise<{ restored: number; skipped: 
     const rootInfo = await fs.getInfoAsync(root);
     if (!rootInfo.exists) return { restored: 0, skipped: 0, failed: 0 };
     let restored = 0; let skipped = 0; let failed = 0;
+    const restoredNames: string[] = [];
     for (const folder of await fs.readDirectoryAsync(root)) {
         const dir = `${root}${folder}/`;
         for (const name of await fs.readDirectoryAsync(dir)) {
@@ -114,10 +116,20 @@ export async function restoreMediaTrash(): Promise<{ restored: number; skipped: 
                 if ((await fs.getInfoAsync(target)).exists) { skipped++; continue; }
                 await fs.moveAsync({ from: `${dir}${name}`, to: target });
                 restored++;
+                restoredNames.push(name);
             } catch (error) {
                 console.warn('[Media] could not restore from the trash:', name, error);
                 failed++;
             }
+        }
+    }
+    if (restoredNames.length > 0) {
+        try {
+            if (typeof mediaStore.notifyMediaChanged === 'function') {
+                mediaStore.notifyMediaChanged(restoredNames);
+            }
+        } catch {
+            // Partial test mocks of mediaStore may omit notifyMediaChanged.
         }
     }
     return { restored, skipped, failed };

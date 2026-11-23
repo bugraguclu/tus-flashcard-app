@@ -74,6 +74,7 @@ import { createBrowserStyles } from '../components/browser/browserStyles';
 import { appendBrowserSearchTerm } from '../components/browser/searchHelpGroups';
 import { SearchHelpModal } from '../components/browser/SearchHelpModal';
 import { BrowserCardRow } from '../components/browser/BrowserCardRow';
+import { BrowserImagePreviewSheet, type BrowserImagePreview } from '../components/browser/BrowserImagePreviewSheet';
 import { FilterChips, SelectionBar } from '../components/browser/BrowserBars';
 import {
     BrowserOptionsModal,
@@ -134,6 +135,9 @@ export default function BrowserScreen() {
     const [sortDescending, setSortDescending] = useState(() => readBrowserBoolean('browser_sort_desc', false));
     const [showAnswerSnippet, setShowAnswerSnippet] = useState(() => readBrowserBoolean('browser_show_answer', false));
     const [showScheduleDetails, setShowScheduleDetails] = useState(() => readBrowserBoolean('browser_show_schedule', true));
+    const [showImageThumbnails, setShowImageThumbnails] = useState(() => readBrowserBoolean('browser_show_thumbnails', true));
+    const [imagePreview, setImagePreview] = useState<BrowserImagePreview | null>(null);
+    const openImagePreview = useCallback((filename: string, showActions: boolean) => setImagePreview({ filename, showActions }), []);
     const [expandedCard, setExpandedCard] = useState<number | null>(null);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const [deckScopePickerVisible, setDeckScopePickerVisible] = useState(false);
@@ -691,9 +695,10 @@ export default function BrowserScreen() {
         setDbSetting('browser_sort_desc', descending ? '1' : '0');
     }, []);
 
-    const updateBrowserOption = useCallback((key: 'answer' | 'schedule', value: boolean) => {
+    const updateBrowserOption = useCallback((key: 'answer' | 'schedule' | 'thumbnails', value: boolean) => {
         if (key === 'answer') setShowAnswerSnippet(value);
         if (key === 'schedule') setShowScheduleDetails(value);
+        if (key === 'thumbnails') setShowImageThumbnails(value);
         setDbSetting(`browser_show_${key}`, value ? '1' : '0');
     }, []);
 
@@ -877,6 +882,8 @@ export default function BrowserScreen() {
             setSelectionMode={setSelectionMode}
             settings={settings}
             showAnswerSnippet={showAnswerSnippet}
+            showImageThumbnails={showImageThumbnails}
+            onOpenImage={openImagePreview}
             showScheduleDetails={showScheduleDetails}
             styles={styles}
             subject={subject}
@@ -1317,10 +1324,13 @@ export default function BrowserScreen() {
                 visible={showSearchHelp}
             />
 
+            <BrowserImagePreviewSheet image={imagePreview} onClose={() => setImagePreview(null)} />
+
             <BrowserOptionsModal
                 l={l}
                 setShowOptions={setShowOptions}
                 showAnswerSnippet={showAnswerSnippet}
+                showImageThumbnails={showImageThumbnails}
                 showOptions={showOptions}
                 showScheduleDetails={showScheduleDetails}
                 styles={styles}

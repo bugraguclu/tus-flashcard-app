@@ -14,9 +14,11 @@ items 14–15 must use current production source rather than replace it with Hav
 - **7–12:** excluded from this package (Havuz focus package, Today plan panel, section layout,
   comparisons, lazy graphs, bundle budgets). Existing production accessibility and other
   unrelated behavior are retained.
-- **13:** visual demonstration only, awaiting approval. No thumbnail implementation is added
-  to this branch. Screenshots show the actual `Havuz` production-web build with the bundled
-  TUS package, not a mockup or a native iPhone build.
+- **13:** approved with the owner's follow-up changes: image previews use the current live
+  row design, with no generated image emoji. Tapping a thumbnail opens the original locally;
+  holding it (or right-clicking on web) offers “Görseli aç”. Both stay in one sheet over
+  Kartlarım, preserving the list's search, filters and scroll. The remembered preview option
+  defaults on; missing images leave no decorative fallback icon. Original media is unchanged.
 - **14:** current live search implementation retained, with its remaining fixes applied:
   nested unbounded regex repetition is refused, Custom Study names are escaped literally,
   and old `is:relearn` scope terms are upgraded without rewriting quoted field text.
@@ -39,7 +41,7 @@ items 14–15 must use current production source rather than replace it with Hav
   Advance dwell/timer/input guard tests and the Anki search oracle.
 - An extra quote-preservation regression failed against Havuz's original legacy-state
   replacement; the selected implementation now scans quotes/escapes before upgrading a term.
-- Full quality on Node 24.16.0: 356 files / 3,859 tests passed; 2 files / 5 tests
+- Full quality including item 13 on Node 24.16.0: 359 files / 3,886 tests passed; 2 files / 5 tests
   skipped. This includes TypeScript, the source registry and iOS configuration checks.
 - The production web export passed. The current site's build and verify passed with 33 HTML
   pages, 32 sitemap URLs, 65 search entries and 1,195 reference records.
@@ -53,7 +55,30 @@ items 14–15 must use current production source rather than replace it with Hav
   The requested selection/implementation and visual review are complete; no native-device
   pass or production deployment is claimed.
 
-## Thumbnail demonstration (item 13)
+## Selected thumbnail implementation (item 13)
+
+The owner's follow-up approved the port and requested removal of the image emoji and an
+in-place “Görseli aç” action on long press. The implementation uses the shared IconButton,
+MenuItem and AppSheet. Cards and Notes share the same image extraction and original viewer.
+Raster thumbnails are disposable derivatives in a separate bounded cache; file invalidation,
+aborted requests and web object-URL ownership are covered by focused regressions. Remote
+images, SVGs and missing files are not decoded as thumbnails. Original media stays read-only.
+
+At `http://127.0.0.1:8098/browser`, Safari's isolated local origin installed the bundled
+9,575-card package. The new rows showed decoded thumbnails without the generated emoji.
+Holding the first thumbnail offered “Görseli aç”; that action displayed the original over the
+same Browser route. Closing returned to the same rows. A “Sinapsları” search showed two cards;
+tapping its thumbnail opened the original directly without navigation. Closing preserved the
+search and both results. These are desktop-web
+checks, not physical-iPhone evidence.
+
+New screenshots in the chat's visualization directory:
+
+- `13-kartlarim-emojisiz.png` — current selected rows.
+- `13-kartlarim-gorsel-acik.png` — original image over Kartlarım.
+
+## Initial thumbnail demonstration (historical)
+
 
 On `http://127.0.0.1:8096/browser`, the bundled 9,575-card catalog was installed in the local
 test origin. The resulting collection had 9,577 cards, including two pre-existing local test
@@ -69,8 +94,8 @@ visualization directory:
 - `13-onizleme-kapali.jpg` — previews off.
 - `13-onizleme-acik.jpg` — previews on.
 
-The old Havuz UI includes older row decorations. A future approved thumbnail port must use
-the current live design system and keep image-free rows free of those older leading icons.
+The initial Havuz UI included older row decorations. The selected port uses the current live
+design system and keeps image-free rows free of those older leading icons.
 
 ## Production-source boundary
 

@@ -8,6 +8,8 @@ import type { StudyCard, AppSettings, Subject } from '../../lib/types';
 import { FLAG_COLORS, type CardFlag, type Deck, type NoteType } from '../../lib/models';
 import type { BrowserTableMode } from '../../lib/studyRepository';
 import { humanizeCardText } from '../../lib/displayText';
+import { extractBrowserThumbnailFilename } from '../../lib/browserThumbnail';
+import { BrowserThumbnail } from './BrowserThumbnail';
 import { cardFlagName, localizeNoteTypeName, localizeTopicName, type SupportedLocale } from '../../lib/i18n';
 import { expandSelectedCardsToNotes, toggleSelectedSuspend } from '../../lib/browserSelection';
 import { longPressHaptic } from '../../lib/haptics';
@@ -41,6 +43,8 @@ interface BrowserCardRowProps {
     setSelectionMode: Dispatch<SetStateAction<boolean>>;
     settings: AppSettings;
     showAnswerSnippet: boolean;
+    showImageThumbnails?: boolean;
+    onOpenImage?: (filename: string, showActions: boolean) => void;
     showScheduleDetails: boolean;
     styles: BrowserStyles;
     subject: (id: string) => Subject | undefined;
@@ -69,6 +73,8 @@ export function BrowserCardRow({
     setSelectionMode,
     settings,
     showAnswerSnippet,
+    showImageThumbnails = false,
+    onOpenImage,
     showScheduleDetails,
     styles,
     subject,
@@ -86,6 +92,8 @@ export function BrowserCardRow({
     const rowNoteType = item.rawNote
         ? noteTypes.find((noteType) => noteType.id === item.rawNote?.noteTypeId)
         : undefined;
+
+    const thumbnailFilename = showImageThumbnails ? extractBrowserThumbnailFilename(item, rowNoteType) : null;
 
     const isNewCard = item.state.status === 'new';
     const newPosition = isNewCard ? newQueuePosition(item.rawCard) : null;
@@ -120,7 +128,7 @@ export function BrowserCardRow({
     // On the web the row holds the edit button, and a <button> may not hold another, so the
     // question and answer area is the button that opens the row: a keyboard and a screen reader
     // reach it as one, with its expanded state, and the edit button beside it.
-    const bodyIsControl = Platform.OS === 'web' && !selectionMode;
+    const bodyIsControl = !selectionMode;
     const bodyProps = bodyIsControl
         ? {
             onPress: toggleRow,
@@ -148,7 +156,8 @@ export function BrowserCardRow({
             activeOpacity={0.7}
             // A right click starts selecting from this card, as a long press does on iPhone.
             {...webContextMenuProps(selectionMode ? null : startSelection)}
-            accessibilityRole={selectionMode ? 'checkbox' : Platform.OS === 'web' ? undefined : 'button'}
+            accessibilityRole={selectionMode ? 'checkbox' : undefined}
+            accessible={selectionMode}
             // On the web the body below is the Tab stop while the row is not a checkbox.
             focusable={Platform.OS === 'web' ? !bodyIsControl : undefined}
             accessibilityState={selectionMode ? { checked: isSelected } : undefined}
@@ -156,6 +165,9 @@ export function BrowserCardRow({
         >
             <View style={styles.cardItemHeader}>
                 {selectionMode && <View style={styles.selectionMark}><Checkbox checked={isSelected} /></View>}
+                {thumbnailFilename && onOpenImage && !selectionMode ? (
+                    <BrowserThumbnail filename={thumbnailFilename} onOpen={onOpenImage} />
+                ) : null}
                 <Body style={styles.cardBody} {...bodyProps}>
                     {/* The card's state as words above the question: learning or review, then
                         suspended or buried, instead of painting the whole row. */}
@@ -186,7 +198,7 @@ export function BrowserCardRow({
                         ]}
                         numberOfLines={isExpanded ? undefined : 1}
                     >
-                        {humanizeCardText(item.question, { showAudioFilenames: settings.showBrowserAudioFilenames }) || l('(boş)', '(empty)')}
+                        {humanizeCardText(item.question, { showAudioFilenames: settings.showBrowserAudioFilenames, showImageIcon: false }) || l('(boş)', '(empty)')}
                     </Text>
                     <View style={[styles.cardMeta]}>
                         <Text style={[styles.cardTopic]} numberOfLines={1}>
@@ -203,7 +215,7 @@ export function BrowserCardRow({
                             ]}
                             numberOfLines={1}
                         >
-                            {humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames }) || '—'}
+                            {humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames, showImageIcon: false }) || '—'}
                         </Text>
                     )}
                     {showScheduleDetails && (
@@ -259,7 +271,7 @@ export function BrowserCardRow({
                 <View style={styles.expandedContent}>
                     <View style={styles.answerBox}>
                         <Text style={styles.answerLabel}>{isNotesMode ? l('İlk kartın cevabı', 'First card answer') : l('Cevap', 'Answer')}</Text>
-                        <Text style={[styles.answerContent, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]}>{humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames }) || '—'}</Text>
+                        <Text style={[styles.answerContent, { fontSize: FontSize.md * browserFontScale, lineHeight: 22 * browserFontScale }]}>{humanizeCardText(item.answer, { showAudioFilenames: settings.showBrowserAudioFilenames, showImageIcon: false }) || '—'}</Text>
                     </View>
 
                     <View style={styles.cardDetails}>

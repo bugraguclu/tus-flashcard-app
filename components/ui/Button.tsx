@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import {
     ActivityIndicator,
+    Platform,
     type GestureResponderEvent,
     type Insets,
     type StyleProp,
@@ -138,6 +139,8 @@ interface IconButtonProps {
     /** Spoken by VoiceOver; the icon itself is decorative. */
     accessibilityLabel: string;
     onPress: (event: GestureResponderEvent) => void;
+    onLongPress?: (event: GestureResponderEvent) => void;
+    onContextMenu?: (event: { preventDefault: () => void; stopPropagation: () => void }) => void;
     children: React.ReactNode;
     accessibilityHint?: string;
     disabled?: boolean;
@@ -153,6 +156,8 @@ interface IconButtonProps {
 export function IconButton({
     accessibilityLabel,
     onPress,
+    onLongPress,
+    onContextMenu,
     children,
     accessibilityHint,
     disabled = false,
@@ -165,6 +170,8 @@ export function IconButton({
         <TouchableOpacity
             style={[styles.icon, disabled && styles.disabled, style]}
             onPress={onPress}
+            onLongPress={onLongPress}
+            {...(Platform.OS === 'web' && onContextMenu ? { onContextMenu } : {})}
             disabled={disabled}
             hitSlop={hitSlop ?? { top: 4, right: 4, bottom: 4, left: 4 }}
             accessibilityRole="button"

@@ -105,9 +105,16 @@ complete scope and automated evidence are in [HAVUZ_SELECTED_SCOPE.md](HAVUZ_SEL
   gathers only the literal selected scope. A legacy is:relearn filtered deck still opens in Browse.
 - Keep the existing Auto Advance modal/background pause behavior; Quick Search is not installed
   by this package. The dwell and timer tests cover the applicable retained behavior.
+- In Kartlarım, verify image previews in Cards and Notes, and turn the remembered option off/on.
+  Generated image emoji must not appear in row text. Tap a thumbnail to view the original;
+  hold it and select “Görseli aç” to do the same. Dismiss by pull-down/backdrop: the same search,
+  deck, filters and scroll position remain, with no card selected. Verify VoiceOver reaches
+  the image button separately from the row/edit button. A missing or unreadable original
+  gives a retryable error; a missing thumbnail adds no fallback icon. These device checks
+  remain deferred by the owner, as recorded below.
 
 Physical-iPhone execution is pending and must be recorded before release. The thumbnail
-screenshots in the selection report were taken from Havuz's web preview, not a native iPhone.
+screenshots in the selection report were taken from local web builds, not a native iPhone.
 The owner explicitly deferred this device check on 2026-11-23; the selected local package
 may be reviewed with that limitation, without claiming a physical-device pass.
 

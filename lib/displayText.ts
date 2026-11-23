@@ -17,6 +17,8 @@ const BLOCK_TAG = /<\/?(?:address|article|aside|blockquote|dd|details|div|dl|dt|
 
 type HumanizeCardTextOptions = {
     showAudioFilenames?: boolean;
+    /** The Browser already shows the image itself; keep its text label without an emoji. */
+    showImageIcon?: boolean;
 };
 
 function safeAudioFilename(raw: string): string {
@@ -58,12 +60,12 @@ export function humanizeCardText(text: string, options: HumanizeCardTextOptions 
     }
 
     for (const [pattern, placeholder] of MEDIA_PLACEHOLDERS) {
-        result = result.replace(pattern, placeholder);
+        result = result.replace(pattern, options.showImageIcon === false ? placeholder.replace('🖼️ ', '') : placeholder);
     }
 
     // Image Occlusion keeps its masks as clozes ("{{c1::image-occlusion:rect:left=.1:…}}"). They
     // are shapes drawn over the picture, not words, so a run of them reads as one label.
-    result = result.replace(/(?:\{\{c\d+::image-occlusion:[^}]*\}\}\s*)+/g, ' 🖼️ Görüntü örtme ');
+    result = result.replace(/(?:\{\{c\d+::image-occlusion:[^}]*\}\}\s*)+/g, options.showImageIcon === false ? ' Görüntü örtme ' : ' 🖼️ Görüntü örtme ');
 
     // Cloze notes store their prompt as "{{c1::answer::hint}}". A list row is not a review, so
     // show the text a human would read rather than the deletion syntax.

@@ -87,7 +87,11 @@ In **⋮ › Options › View**, choose **Cards** or **Notes**.
 
 The same window has **Show answer preview**, which adds a short piece of the answer to each row,
 and **Scheduling details**, which turns the "Last: … · Next: …" line on or off. Your choices are
-remembered. The text size of the rows is set in **Settings** under **Card browser › Font scaling**.
+remembered. **Show image previews**, on by default, adds thumbnails to rows with an image.
+Tap a thumbnail to open the original above Browse, or hold it and choose **Open image**
+(right-click on web). Closing it preserves your search, filters and position in the list.
+This works in both Cards and Notes. The text size of the rows is set in **Settings** under
+**Card browser › Font scaling**.
 
 <a id="sorting-and-columns"></a>
 ## Sorting and columns
@@ -104,8 +108,8 @@ is remembered.
 | **Created** / **Modified** | When the note was added / when the card last changed |
 | **Interval**, **Ease**, **Lapses**, **Reviews** | That value of the card; average or total in the Notes view |
 
-The row layout is fixed; columns cannot be added or removed. Only the two optional lines in
-**Options** can be added.
+The row layout is fixed; columns cannot be added or removed. **Options** toggles image and
+answer previews and scheduling details.
 
 <a id="selecting"></a>
 ## Selecting cards and bulk actions

@@ -86,6 +86,10 @@ bütün filtreleri kaldırır ama aramayı ve deste seçimini değiştirmez.
 
 Aynı pencerede **Yanıt önizlemesini göster** her satıra cevabın kısa bir parçasını ekler,
 **Zamanlama ayrıntıları** "Son: … · Sonraki: …" satırını açıp kapatır. Seçimleriniz hatırlanır.
+**Görsel önizlemelerini göster** seçeneği, görselli satırlarda küçük resim gösterir ve varsayılan
+olarak açıktır. Küçük resme dokununca asıl görsel Kartlarım'ın üzerinde açılır. Basılı tutup
+**Görseli aç**'ı da seçebilirsiniz; web'de sağ tıklama aynı seçeneği açar. Görseli kapatınca
+arama, filtreler ve listedeki konumunuz korunur. Bu seçenek Kartlar ve Notlar'da geçerlidir.
 Satırların yazı boyutunu **Ayarlar**'daki **Kart tarayıcısı › Yazı ölçeği** değiştirir.
 
 <a id="sorting-and-columns"></a>
@@ -103,8 +107,8 @@ Seçim hatırlanır.
 | **Oluşturulma** / **Değiştirilme** | Notun eklendiği zaman / kartın son değiştiği zaman |
 | **Aralık**, **Kolaylık**, **Unutma sayısı**, **Tekrar sayısı** | Kartın bu değeri; Notlar görünümünde ortalama veya toplam |
 
-Satırların düzeni sabittir; sütun eklenip çıkarılamaz. Satıra yalnızca **Seçenekler**'deki iki
-isteğe bağlı bilgi eklenebilir.
+Satırların düzeni sabittir; sütun eklenip çıkarılamaz. **Seçenekler**'den görsel ve yanıt
+önizlemeleri ile zamanlama ayrıntıları açılıp kapatılabilir.
 
 <a id="selecting"></a>
 ## Kart seçme ve toplu işlemler

@@ -19,6 +19,28 @@ export { sanitizeMediaFilename };
 const WEB_MEDIA_DB = 'tus-media';
 const WEB_MEDIA_STORE = 'files';
 
+type MediaChangeListener = (filenames: readonly string[]) => void;
+const mediaChangeListeners = new Set<MediaChangeListener>();
+
+/** Subscribe to media file writes/removals (used by derived caches to invalidate stale entries). */
+export function onMediaChanged(listener: MediaChangeListener): () => void {
+    mediaChangeListeners.add(listener);
+    return () => {
+        mediaChangeListeners.delete(listener);
+    };
+}
+
+export function notifyMediaChanged(filenames: readonly string[]): void {
+    if (filenames.length === 0 || mediaChangeListeners.size === 0) return;
+    for (const listener of mediaChangeListeners) {
+        try {
+            listener(filenames);
+        } catch (error) {
+            console.warn('[mediaStore] media change listener failed:', error);
+        }
+    }
+}
+
 let _mediaDir: string | null = null;
 
 function getMediaDir(): string {
@@ -160,13 +182,17 @@ export async function saveMediaBytes(filename: string, bytes: Uint8Array, mimeTy
         const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
         await idbPut(safe, new Blob([buffer], type ? { type } : undefined));
         // The next lookup must see the new content, not a cached miss or a stale URL.
+        const previousUrl = objectUrlCache.get(safe);
+        if (previousUrl) URL.revokeObjectURL(previousUrl);
         objectUrlCache.delete(safe);
+        notifyMediaChanged([safe]);
         return;
     }
 
     const dir = await ensureMediaDir();
     const fs = getFileSystem();
     await fs.writeAsStringAsync(`${dir}${safe}`, bytesToBase64(bytes), { encoding: fs.EncodingType.Base64 });
+    notifyMediaChanged([safe]);
 }
 
 /** Store a media file from a local URI (fast native copy when available, byte fallback). Returns the sanitized filename. */
@@ -184,6 +210,7 @@ export async function saveMediaFromUri(filename: string, uri: string, mimeType?:
     const sourceLocation = toFileUri(uri);
     try {
         await fs.copyAsync({ from: sourceLocation, to: `${dir}${safe}` });
+        notifyMediaChanged([safe]);
     } catch (e) {
         console.warn('[mediaStore] copyAsync failed, falling back to byte copy:', e);
         const bytes = await readUriBytes(uri);
@@ -208,6 +235,7 @@ export async function removeMediaExcept(filenames: Iterable<string>): Promise<{ 
             if (url) URL.revokeObjectURL(url);
             objectUrlCache.delete(name);
         }
+        notifyMediaChanged(stale);
         return { deleted: stale.length, remaining: existing.length - stale.length };
     }
 
@@ -219,6 +247,7 @@ export async function removeMediaExcept(filenames: Iterable<string>): Promise<{ 
     for (const name of stale) {
         await fs.deleteAsync(`${dir}${name}`, { idempotent: true });
     }
+    notifyMediaChanged(stale);
     return { deleted: stale.length, remaining: existing.length - stale.length };
 }
 
@@ -248,6 +277,18 @@ export async function readMediaBytes(filename: string): Promise<Uint8Array | nul
     const encoded = await fs.readAsStringAsync(uri, { encoding: fs.EncodingType.Base64 });
     const { base64ToBytes } = require('./files') as typeof import('./files');
     return base64ToBytes(encoded);
+}
+
+/** Read a stored web media Blob directly from IndexedDB without mutating it. Native returns null. */
+export async function readWebMediaBlob(filename: string): Promise<Blob | null> {
+    if (Platform.OS !== 'web' || typeof indexedDB === 'undefined') return null;
+    const safe = sanitizeMediaFilename(filename);
+    try {
+        return await idbGet(safe);
+    } catch (error) {
+        console.warn('[MediaStore] web blob lookup failed:', error);
+        return null;
+    }
 }
 
 export function getMediaBaseUrl(): string {

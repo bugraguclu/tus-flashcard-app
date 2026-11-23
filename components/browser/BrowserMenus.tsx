@@ -630,12 +630,13 @@ interface BrowserOptionsModalProps {
     l: BrowserI18n['l'];
     setShowOptions: Dispatch<SetStateAction<boolean>>;
     showAnswerSnippet: boolean;
+    showImageThumbnails?: boolean;
     showOptions: boolean;
     showScheduleDetails: boolean;
     styles: BrowserStyles;
     t: BrowserI18n['t'];
     tableMode: BrowserTableMode;
-    updateBrowserOption: (key: "answer" | "schedule", value: boolean) => void;
+    updateBrowserOption: (key: "answer" | "schedule" | "thumbnails", value: boolean) => void;
     updateTableMode: (mode: BrowserTableMode) => void;
 }
 
@@ -644,6 +645,7 @@ export function BrowserOptionsModal({
     l,
     setShowOptions,
     showAnswerSnippet,
+    showImageThumbnails = true,
     showOptions,
     showScheduleDetails,
     styles,
@@ -675,6 +677,14 @@ export function BrowserOptionsModal({
                 />
             </View>
             <View>
+                <Divider />
+                <SwitchRow
+                    title={l('Görsel önizlemeleri göster', 'Show image previews')}
+                    summary={l('Görsele dokunarak veya basılı tutarak Kartlarım içinde açın.', 'Tap or hold an image to open it within the Card Browser.')}
+                    value={showImageThumbnails}
+                    onValueChange={(value) => updateBrowserOption('thumbnails', value)}
+                    style={styles.dialogRow}
+                />
                 <Divider />
                 <SwitchRow
                     title={l('Yanıt önizlemesini göster', 'Show answer preview')}
