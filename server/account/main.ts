@@ -9,6 +9,8 @@ import { PasswordHasher } from './passwords.ts';
 import { RateLimiter } from './rateLimit.ts';
 import { AccountService } from './service.ts';
 import { AccountStore } from './store.ts';
+import { SyncService } from './sync.ts';
+import { SyncCollections } from './syncStore.ts';
 
 /*
  * Entry point: `node server/account/main.ts` (Node 24 runs the TypeScript directly).
@@ -48,9 +50,21 @@ function main(): void {
     store.purgeExpired(Date.now());
     const limiter = new RateLimiter();
     const mailer = createMailer(config, log);
-    const service = new AccountService({ store, config, mailer, limiter, hasher: new PasswordHasher(), log });
+    const collections = config.syncEnabled ? new SyncCollections(config.syncDirectory) : null;
+    const sync = collections
+        ? new SyncService({ accounts: store, collections, log, quotaBytes: config.syncQuotaBytes })
+        : null;
+    const service = new AccountService({
+        store,
+        config,
+        mailer,
+        limiter,
+        hasher: new PasswordHasher(),
+        log,
+        onAccountDeleted: sync ? (userId) => sync.deleteUser(userId) : undefined,
+    });
 
-    const server = createServer(createAccountHandler(service, config, log));
+    const server = createServer(createAccountHandler(service, config, log, sync));
     server.requestTimeout = 15_000;
     server.headersTimeout = 10_000;
     server.keepAliveTimeout = 5_000;
@@ -65,7 +79,7 @@ function main(): void {
         const address = server.address();
         const port = typeof address === 'object' && address ? address.port : config.port;
         const mode = config.production ? 'production' : config.dev ? 'development' : 'local';
-        log.info(`[account] listening on http://${config.host}:${port} · ${mode} · mail: ${mailer.mode}`);
+        log.info(`[account] listening on http://${config.host}:${port} · ${mode} · mail: ${mailer.mode} · sync: ${sync ? 'on' : 'off'}`);
     });
 
     let stopping = false;
@@ -75,6 +89,7 @@ function main(): void {
         log.info(`[account] ${signal} received, stopping`);
         clearInterval(maintenance);
         server.close(() => {
+            collections?.closeAll();
             store.close();
             process.exit(0);
         });

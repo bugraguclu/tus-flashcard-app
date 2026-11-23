@@ -19,6 +19,7 @@
 
 import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js';
 import { stashTakeoverDraft } from './webTakeoverDraft';
+import { installCaptureIfEnabled } from './sync/syncDb';
 
 // Persistence — IndexedDB snapshot store
 
@@ -135,6 +136,23 @@ function idbSave(bytes: Uint8Array): Promise<void> {
 }
 
 /**
+ * sql.js's export() closes and reopens the database, which drops everything TEMP on the
+ * connection: the sync's capture triggers among them (lib/sync/syncDb.ts). They go back on at
+ * once, in the same task, so no write can slip past them. The handle used here does not schedule
+ * another save.
+ */
+function exportSnapshot(db: SqlJsDatabase): Uint8Array {
+    const bytes = db.export();
+    installCaptureIfEnabled({
+        execSync: (sql: string) => { db.run(sql); },
+        runSync: (sql: string, ...params: any[]) => { db.run(sql, bindParams(params)); },
+        getAllSync: <T = any>(sql: string, ...params: any[]) => execToObjects<T>(db, sql, params),
+        getFirstSync: <T = any>(sql: string, ...params: any[]) => execToObjects<T>(db, sql, params)[0] ?? null,
+    });
+    return bytes;
+}
+
+/**
  * Export the in-memory database and write it to IndexedDB, coalescing overlapping
  * saves so a burst of writes queues at most one extra save and the newest state wins.
  */
@@ -148,7 +166,7 @@ function persistToIdb(): Promise<void> {
         try {
             do {
                 _saveDirty = false;
-                await idbSave(_sqlDb!.export());
+                await idbSave(exportSnapshot(_sqlDb!));
             } while (_saveDirty);
         } finally {
             _saveInFlight = null;
@@ -192,7 +210,7 @@ function flushPersist(): void {
     // the order they started, and this one carries the newest state.
     if (_idbConnection) {
         try {
-            void writeSnapshot(_idbConnection, _sqlDb.export(), false)
+            void writeSnapshot(_idbConnection, exportSnapshot(_sqlDb), false)
                 .catch((e) => console.warn('[WebDB] Failed to persist database to IndexedDB:', e));
             // A pending explicit flush must still wait for a snapshot containing the latest
             // edits. The independent pagehide write must not clear its queued-save barrier.

@@ -53,6 +53,12 @@ export interface ServerConfig {
     /** The Sign in with Apple key that lets the server revoke a deleted account's access, or null. */
     appleKey: { teamId: string; keyId: string; privateKey: string } | null;
     smtp: SmtpConfig | null;
+    /** ACCOUNT_SYNC (default on): offer two-way iPhone/web sync of the collection. */
+    syncEnabled: boolean;
+    /** Where each account's synced collection file lives; `:memory:` with an in-memory database. */
+    syncDirectory: string;
+    /** ACCOUNT_SYNC_QUOTA_MB: the largest synced collection one account may keep. */
+    syncQuotaBytes: number;
     /** Things worth saying once at startup. */
     warnings: string[];
 }
@@ -226,6 +232,11 @@ export function loadConfig(env: Environment = process.env): ServerConfig {
         appleClientIds: apple,
         appleKey: appleKey(env, warnings, apple.length > 0),
         smtp: mail,
+        syncEnabled: flag(env, 'ACCOUNT_SYNC', true),
+        syncDirectory: text(env, 'ACCOUNT_SYNC_DIR')
+            ? resolve(text(env, 'ACCOUNT_SYNC_DIR'))
+            : databasePath === ':memory:' ? ':memory:' : resolve(dirname(databasePath), 'collections'),
+        syncQuotaBytes: integer(env, 'ACCOUNT_SYNC_QUOTA_MB', 512, 16, 64 * 1024) * 1024 * 1024,
         warnings,
     };
 }

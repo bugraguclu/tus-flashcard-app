@@ -29,6 +29,7 @@ const KNOWN_CODES = new Set<AccountErrorCode>([
     'email_unavailable', 'code_invalid', 'code_expired', 'wrong_password', 'unauthorized',
     'rate_limited', 'not_found', 'payload_too_large', 'server_error', 'offline', 'timeout',
     'not_configured', 'google_failed', 'apple_failed',
+    'clock_ahead', 'format_too_old', 'device_unknown', 'quota_exceeded', 'batch_expired',
 ]);
 
 const FIELD_NAMES = new Set(['name', 'email', 'password', 'currentPassword', 'code', 'consent']);
@@ -104,7 +105,7 @@ function retryAfterSeconds(body: unknown, header: string | null): number | null 
     return Number.isFinite(seconds) ? Math.max(0, Math.round(seconds)) : null;
 }
 
-function errorFromReply(status: number, payload: unknown, retryHeader: string | null): AccountRequestError {
+export function errorFromReply(status: number, payload: unknown, retryHeader: string | null): AccountRequestError {
     const error = typeof payload === 'object' && payload !== null
         ? (payload as { error?: Record<string, unknown> }).error
         : undefined;

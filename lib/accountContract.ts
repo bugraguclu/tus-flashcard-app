@@ -60,7 +60,17 @@ export type AccountErrorCode =
     /** Google's sign-in did not finish or its token was not accepted. */
     | 'google_failed'
     /** Apple's sign-in did not finish or its token was not accepted. */
-    | 'apple_failed';
+    | 'apple_failed'
+    /** Sync: the device's clock stamped changes too far ahead of the server's (lib/syncContract.ts). */
+    | 'clock_ahead'
+    /** Sync: this build speaks an older sync format than the server accepts. */
+    | 'format_too_old'
+    /** Sync: the server does not know this device; it registers again. */
+    | 'device_unknown'
+    /** Sync: the account's synced collection is full. */
+    | 'quota_exceeded'
+    /** Sync: the parts of a large push did not all arrive; the device sends them again. */
+    | 'batch_expired';
 
 export interface AccountUser {
     id: string;
@@ -89,6 +99,8 @@ export interface AccountServiceConfig {
     policyVersion: string;
     operatorName: string;
     contactEmail: string;
+    /** The server keeps the collection in two-way sync between the learner's devices. */
+    sync: boolean;
 }
 
 /** What Apple's sign-in sheet hands back, for the account server to check. */

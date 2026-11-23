@@ -15,6 +15,8 @@ import { ListRow } from '../components/ui/Rows';
 import { Type } from '../components/ui/tokens';
 import { ChangePasswordPanel, DeleteAccountPanel, EditNamePanel } from '../components/account/AccountPanels';
 import AccountAvatar from '../components/account/AccountAvatar';
+import AccountSyncSection from '../components/account/AccountSyncSection';
+import { useSync } from '../contexts/SyncContext';
 
 type OpenPanel = 'name' | 'password' | 'delete' | null;
 
@@ -27,6 +29,7 @@ export default function AccountScreen() {
     const { l } = useI18n();
     const colors = useThemeColors();
     const account = useAccount();
+    const sync = useSync();
     const [panel, setPanel] = useState<OpenPanel>(null);
     const [message, setMessage] = useState<string | null>(null);
     const user = account.user;
@@ -100,7 +103,11 @@ export default function AccountScreen() {
                 ) : null}
                 {message ? <Notice tone="success">{message}</Notice> : null}
 
-                <Section footnote={l('Kartlarınız ve çalışma geçmişiniz yalnızca bu cihazda saklanır; hesap onlara dokunmaz.', 'Your cards and study history are kept only on this device; the account never touches them.')}>
+                <AccountSyncSection />
+
+                <Section footnote={sync.status.enabled
+                    ? l('Hesabınız adınızı, e-postanızı ve eşitlenen çalışmanızı tutar. Oturumu kapatırsanız kartlarınız bu cihazda kalır.', 'Your account keeps your name, email and synced study. If you sign out, your cards stay on this device.')
+                    : l('Kartlarınız ve çalışma geçmişiniz yalnızca bu cihazda saklanır; eşitlemeyi açmadıkça hesap onlara dokunmaz.', 'Your cards and study history are kept only on this device; the account never touches them unless you turn on sync.')}>
                     <ListRow title={l('Ad', 'Name')} value={user.name} onPress={() => toggle('name')} expanded={panel === 'name'} />
                     {panel === 'name' ? (
                         <View style={styles.panel}>

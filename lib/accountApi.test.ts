@@ -12,6 +12,7 @@ const config = {
     policyVersion: '2026-11-08',
     operatorName: 'TusAnkiM',
     contactEmail: 'destek@example.com',
+    sync: true,
 };
 
 function reply(status: number, body: unknown, headers: Record<string, string> = {}) {

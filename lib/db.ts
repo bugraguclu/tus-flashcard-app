@@ -8,6 +8,7 @@ import { Platform } from 'react-native';
 import { ankiFilteredOrderFromLegacy } from './filteredDeckOptions';
 import { translateActive } from './i18n';
 import { openFtsSafeDatabaseSync } from './sqliteOpenOptions';
+import { installCaptureIfEnabled } from './sync/syncDb';
 
 // Both expo-sqlite and the web wrapper implement this surface, so callers never
 // branch on platform.
@@ -458,6 +459,8 @@ export function initDB(): DBHandle {
     // No foreign_keys pragma: the schema declares no FK constraints (integrity is
     // enforced in code, as Anki does), so enabling it would be a misleading no-op.
     runMigrations(db);
+    // A collection that syncs with an account captures every write from here on (lib/sync/).
+    installCaptureIfEnabled(db);
     return db;
 }
 

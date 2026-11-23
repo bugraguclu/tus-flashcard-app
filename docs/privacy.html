@@ -25,13 +25,13 @@
 
 <p><strong>TusAnkiM kart ve çalışma verilerinizi cihazınızda tutar.</strong></p>
 
-<p>Kartlarınız, çalışma geçmişiniz, istatistikleriniz, yedekleriniz ve ayarlarınız
-yalnızca kendi cihazınızda saklanır. Mevcut sürümde BKA TUS koleksiyonu ödeme veya
+<p>Hesabınızda iPhone ve web eşitlemeyi açmadıkça kartlarınız, çalışma geçmişiniz,
+istatistikleriniz, yedekleriniz ve ayarlarınız yalnızca kendi cihazınızda saklanır. Mevcut sürümde BKA TUS koleksiyonu ödeme veya
 mağaza doğrulaması yapılmadan yerel olarak açılır.</p>
 
 <h2>Toplanan veriler</h2>
 <p>Uygulama reklam, davranışsal analitik veya çökme raporlama SDK'sı içermez.
-Kart içeriğiniz ve çalışma geçmişiniz tarafımızca toplanmaz.</p>
+Eşitlemeyi açmadıkça kart içeriğiniz ve çalışma geçmişiniz tarafımızca toplanmaz.</p>
 
 <h2>İsteğe bağlı TusAnkiM hesabı</h2>
 <p>Uygulamayı hesap olmadan kullanabilirsiniz. Hesap oluşturursanız hesap sunucusunda yalnızca
@@ -45,9 +45,22 @@ adresinizi ya da gizlemeyi seçtiyseniz Apple'ın yönlendirme adresini ve Apple
 iletir; hesabınızı silerseniz uygulamanın Apple erişimi de Apple'da iptal edilir. Google'dan ve
 Apple'dan başka hiçbir veri istenmez ve onlara kartlarınız gönderilmez. Oturum
 anahtarı cihazınızda iOS Anahtar Zinciri'nde saklanır.
-Kartlarınız, desteleriniz, çalışma geçmişiniz ve yedekleriniz hesap sunucusuna gönderilmez.
-Hesabınızı uygulamadaki Ayarlar › Hesap › Hesabı sil adımıyla istediğiniz zaman kalıcı olarak
-silebilirsiniz; bu işlem cihazınızdaki kartlara dokunmaz.</p>
+Eşitlemeyi açmadıkça kartlarınız, desteleriniz, çalışma geçmişiniz ve yedekleriniz hesap
+sunucusuna gönderilmez. Hesabınızı uygulamadaki Ayarlar › Hesap › Hesabı sil adımıyla istediğiniz
+zaman kalıcı olarak silebilirsiniz; bu işlem cihazınızdaki kartlara dokunmaz.</p>
+
+<h2>İsteğe bağlı iPhone ve web eşitleme</h2>
+<p>Ayarlar › Hesap › Eşitlemeyi aç adımını seçerseniz, aynı hesapla kullandığınız iPhone ve
+tarayıcıların aynı kartları ve ilerlemeyi göstermesi için şu veriler hesap sunucusunda saklanır:
+kendi notlarınız ve kartlarınız, desteleriniz ve deste ayarlarınız, not tipleriniz, kartların
+zamanlaması, bayrakları ve etiketleri, cevap kaydınız, öğrenmeyi etkileyen uygulama ayarlarınız
+(dil, gün başlangıcı saati, FSRS gibi), Kronometre oturumlarınız, dersleriniz ve çalışma
+planlarınız; ayrıca her cihaz için rastgele üretilmiş bir cihaz kimliği, cihaz adı ("TusAnkiM iOS"
+gibi) ve son görülme zamanı. BKA TUS kart paketinin içeriği gönderilmez; yalnızca bu kartlardaki
+ilerlemeniz ve eklediğiniz etiketler eşitlenir. Görünüm, hareket, klavye, bildirim ve yedekleme
+ayarlarınız ile cihazdaki yedek dosyalarınız cihazda kalır. Fotoğraf ve ses dosyaları bu sürümde
+eşitlenmez. Eşitlemeyi istediğiniz zaman kapatabilirsiniz; hesabınızı silerseniz eşitlenen
+verileriniz de sunucudan silinir.</p>
 
 <h2>Kart paketine erişim</h2>
 <p>Mevcut sürümde kart paketini açmak Apple veya RevenueCat sunucularına bağlanmaz,
@@ -93,7 +106,8 @@ için satın alma kaydı oluşturmaz.</p>
 
 <h2>Yurt dışına aktarım</h2>
 <p>Mevcut ücretsiz kart paketi erişimi kapsamında Apple veya RevenueCat'e satın alma verisi
-aktarılmaz. Kart içeriğiniz ve çalışma geçmişiniz tarafımızca herhangi bir sunucuya gönderilmez.</p>
+aktarılmaz. Eşitlemeyi açmadıkça kart içeriğiniz ve çalışma geçmişiniz tarafımızca herhangi bir
+sunucuya gönderilmez.</p>
 
 <h2>Haklarınız (KVKK m. 11)</h2>
 <p>Kişisel verilerinizin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep
@@ -116,13 +130,13 @@ içinde sonuçlandırılır.</p>
 
 <p><strong>TusAnkiM keeps your cards and study data on your device.</strong></p>
 
-<p>Your cards, study history, statistics, backups, and settings are stored only on
-your own device. In the current version, the BKA TUS collection unlocks locally without
+<p>Unless you turn on iPhone and web sync for your account, your cards, study history,
+statistics, backups, and settings are stored only on your own device. In the current version, the BKA TUS collection unlocks locally without
 a payment or store verification.</p>
 
 <h2>Data collection</h2>
 <p>The app contains no advertising, behavioral analytics, or crash-reporting SDKs.
-We do not collect your card content or study history.</p>
+Unless you turn on sync, we do not collect your card content or study history.</p>
 
 <h2>Optional TusAnkiM account</h2>
 <p>You can use the app without an account. If you create one, the account server keeps only
@@ -135,10 +149,22 @@ choose "Continue with Apple", Apple passes us your name (on the first sign-in on
 address or, if you chose to hide it, Apple's relay address, and your Apple account ID; deleting
 your account also revokes the app's access at Apple. Nothing else is requested from Google or
 Apple and your cards are never sent to them. The session key is stored
-on your device in the iOS Keychain. Your cards,
+on your device in the iOS Keychain. Unless you turn on sync, your cards,
 decks, study history and backups are never sent to the account server. You can permanently
 delete your account at any time in Settings › Account › Delete account; this does not touch the
 cards on your device.</p>
+
+<h2>Optional iPhone and web sync</h2>
+<p>If you choose Settings › Account › Turn on sync, the account server keeps the following so the
+iPhone and browsers signed in to your account show the same cards and progress: your own notes and
+cards, your decks and deck options, your note types, the cards' scheduling, flags and tags, your
+review history, the app settings that change how you study (language, the hour a new day starts,
+FSRS and similar), your Kronometre sessions, courses and study plans; and for each device a
+randomly generated device ID, a device name (such as "TusAnkiM iOS") and when it was last seen.
+The BKA TUS card pack's content is never sent; only your progress on those cards and the tags you
+add are synced. Display, gesture, keyboard, notification and backup settings and the backup files
+on your device stay on the device. Photos and audio files are not synced in this version. You can
+turn sync off at any time; deleting your account also deletes your synced data from the server.</p>
 
 <h2>Card-pack access</h2>
 <p>In the current version, unlocking the card pack does not contact Apple or RevenueCat,
@@ -170,7 +196,8 @@ card-pack flow creates no purchase record.</p>
 
 <h2>International transfer</h2>
 <p>The current free card-pack flow sends no purchase data to Apple or RevenueCat.
-Your card content and review history are not sent to any server operated by us.</p>
+Unless you turn on sync, your card content and review history are not sent to any server operated
+by us.</p>
 
 <h2>Your rights</h2>
 <p>You may request access to, correction of, or deletion of your personal data, ask which

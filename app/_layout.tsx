@@ -36,6 +36,7 @@ import { initWebDb, isPrimaryTab, isStorageReadError } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppContext';
 import { AccountProvider, useAccount } from '../contexts/AccountContext';
+import { SyncProvider } from '../contexts/SyncContext';
 import AccountFirstRunGate from '../components/account/AccountFirstRunGate';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { onStudyReminderOpened } from '../lib/studyNotifications';
@@ -777,15 +778,17 @@ export default function RootLayout() {
                 <WebDbGate>
                     <AppProvider>
                         <AccountProvider>
-                            <PageTitleLocaleContext.Provider value={setTitleLocale}>
-                                <ThemeGate>
-                                    <StartupGate>
-                                        <AccountFirstRunGate>
-                                            <AppStack />
-                                        </AccountFirstRunGate>
-                                    </StartupGate>
-                                </ThemeGate>
-                            </PageTitleLocaleContext.Provider>
+                            <SyncProvider>
+                                <PageTitleLocaleContext.Provider value={setTitleLocale}>
+                                    <ThemeGate>
+                                        <StartupGate>
+                                            <AccountFirstRunGate>
+                                                <AppStack />
+                                            </AccountFirstRunGate>
+                                        </StartupGate>
+                                    </ThemeGate>
+                                </PageTitleLocaleContext.Provider>
+                            </SyncProvider>
                         </AccountProvider>
                     </AppProvider>
                 </WebDbGate>

@@ -4,6 +4,8 @@ import type { ServerConfig } from './config.ts';
 import type { Logger } from './mailer.ts';
 import { AccountError } from './service.ts';
 import type { AccountService, RequestBody, RequestContext } from './service.ts';
+import { SYNC_DEVICE_HEADER, SYNC_MAX_BODY_BYTES } from '../../lib/syncContract.ts';
+import type { SyncService } from './sync.ts';
 
 /*
  * HTTP in front of `AccountService`: routing, JSON in and out, CORS for the web build, and the
@@ -12,7 +14,9 @@ import type { AccountService, RequestBody, RequestContext } from './service.ts';
 
 export const MAX_BODY_BYTES = 16 * 1024;
 const CLIENT_LABEL_LIMIT = 60;
-const ALLOWED_HEADERS = 'authorization, content-type, x-client';
+const ALLOWED_HEADERS = `authorization, content-type, x-client, ${SYNC_DEVICE_HEADER}`;
+/** Paths whose bodies may be as large as a sync part; the account endpoints keep 16 KB. */
+const LARGE_BODY_PATHS = new Set(['/v1/sync/push']);
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
@@ -20,6 +24,11 @@ interface Call {
     body: RequestBody;
     token: string | null;
     context: RequestContext;
+    query: URLSearchParams;
+    /** The sync device id header, when sent. */
+    device: string | null;
+    /** Aborted when the client goes away (long polls stop waiting). */
+    signal: AbortSignal;
 }
 
 interface Outcome {
@@ -31,8 +40,35 @@ type Handler = (call: Call) => Outcome | Promise<Outcome>;
 
 type HttpSettings = Pick<ServerConfig, 'allowedOrigins' | 'allowLocalOrigins' | 'trustProxy'>;
 
-function routesFor(service: AccountService): Map<string, Partial<Record<Method, Handler>>> {
+function syncRoutes(service: AccountService, sync: SyncService): Array<[string, Partial<Record<Method, Handler>>]> {
+    const user = (token: string | null, kind: 'push' | 'pull' | 'wait') => {
+        const id = service.authenticatedUserId(token);
+        service.limitSync(id, kind);
+        return id;
+    };
+    return [
+        ['/v1/sync/state', {
+            GET: ({ token, device, context, query }) => ({
+                body: sync.state(user(token, 'pull'), device, context.client, Number(query.get('format') ?? 0)),
+            }),
+        }],
+        ['/v1/sync/push', { POST: ({ token, device, body }) => ({ body: sync.push(user(token, 'push'), device, body) }) }],
+        ['/v1/sync/pull', {
+            GET: ({ token, device, query }) => ({ body: sync.pull(user(token, 'pull'), device, query.get('since'), query.get('cursor')) }),
+        }],
+        ['/v1/sync/wait', {
+            GET: async ({ token, device, query, signal }) => ({ body: await sync.wait(user(token, 'wait'), device, query.get('since'), signal) }),
+        }],
+        ['/v1/sync/devices', {
+            GET: ({ token, device }) => ({ body: sync.devices(service.authenticatedUserId(token), device) }),
+            DELETE: ({ token, body }) => ({ body: sync.removeDevice(service.authenticatedUserId(token), Number(body.dev)) }),
+        }],
+    ];
+}
+
+function routesFor(service: AccountService, sync: SyncService | null): Map<string, Partial<Record<Method, Handler>>> {
     return new Map<string, Partial<Record<Method, Handler>>>([
+        ...(sync ? syncRoutes(service, sync) : []),
         ['/v1/health', { GET: () => ({ body: { ok: true } }) }],
         ['/v1/session', { GET: ({ token }) => ({ body: service.sessionInfo(token) }) }],
         ['/v1/register', { POST: async ({ body, context }) => ({ status: 201, body: await service.register(body, context) }) }],
@@ -96,10 +132,10 @@ function clientLabel(header: string | string[] | undefined): string | null {
     return clean || null;
 }
 
-function readBody(request: IncomingMessage): Promise<RequestBody> {
+function readBody(request: IncomingMessage, maxBytes: number = MAX_BODY_BYTES): Promise<RequestBody> {
     return new Promise((resolve, reject) => {
         const declared = Number(request.headers['content-length']);
-        if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
+        if (Number.isFinite(declared) && declared > maxBytes) {
             reject(new AccountError('payload_too_large', 413));
             return;
         }
@@ -109,7 +145,7 @@ function readBody(request: IncomingMessage): Promise<RequestBody> {
         request.on('data', (chunk: Buffer) => {
             if (settled) return;
             size += chunk.length;
-            if (size > MAX_BODY_BYTES) {
+            if (size > maxBytes) {
                 settled = true;
                 reject(new AccountError('payload_too_large', 413));
                 return;
@@ -186,8 +222,9 @@ export function createAccountHandler(
     service: AccountService,
     settings: HttpSettings,
     log: Logger,
+    sync: SyncService | null = null,
 ): (request: IncomingMessage, response: ServerResponse) => void {
-    const routes = routesFor(service);
+    const routes = routesFor(service, sync);
 
     async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
         setCommonHeaders(response);
@@ -196,7 +233,8 @@ export function createAccountHandler(
         const corsAllowed = typeof origin === 'string' && isAllowedOrigin(origin, settings);
         if (corsAllowed) response.setHeader('Access-Control-Allow-Origin', origin);
 
-        const path = new URL(request.url ?? '/', 'http://account.invalid').pathname.replace(/\/+$/, '') || '/';
+        const url = new URL(request.url ?? '/', 'http://account.invalid');
+        const path = url.pathname.replace(/\/+$/, '') || '/';
         const route = routes.get(path);
         const method = (request.method ?? 'GET').toUpperCase();
 
@@ -219,7 +257,10 @@ export function createAccountHandler(
             throw new AccountError('not_found', 405, 'Bu adres bu yöntemi desteklemiyor.');
         }
 
-        const body = method === 'GET' ? {} : await readBody(request);
+        const body = method === 'GET' ? {} : await readBody(request, LARGE_BODY_PATHS.has(path) ? SYNC_MAX_BODY_BYTES : MAX_BODY_BYTES);
+        const gone = new AbortController();
+        response.on('close', () => gone.abort());
+        const deviceHeader = request.headers[SYNC_DEVICE_HEADER];
         const outcome = await handler({
             body,
             token: bearerToken(request.headers.authorization),
@@ -227,7 +268,11 @@ export function createAccountHandler(
                 ip: clientAddress(request, settings.trustProxy),
                 client: clientLabel(request.headers['x-client']),
             },
+            query: url.searchParams,
+            device: (Array.isArray(deviceHeader) ? deviceHeader[0] : deviceHeader) ?? null,
+            signal: gone.signal,
         });
+        if (response.destroyed) return;
         sendJson(response, outcome.status ?? 200, outcome.body);
     }
 

@@ -265,6 +265,7 @@ describe('sign-in and sessions', () => {
             policyVersion: ACCOUNT_POLICY_VERSION,
             operatorName: 'TusAnkiM Test',
             contactEmail: 'help@example.com',
+            sync: false,
         });
     });
 

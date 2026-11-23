@@ -47,8 +47,13 @@ behaviour, scheduling, storage, import/export, or iOS configuration; of
   `lib/accountContract.ts` (rules, error codes and wire types shared with the server — keep it
   import-free), `lib/accountApi.ts`, `lib/accountVault*.ts` (Keychain), `contexts/AccountContext.tsx`,
   routes `sign-in` and `account`, pieces in `components/account/`, and the dependency-free Node
-  server in `server/account/`. Accounts never block local study and never receive collection data;
-  a build without `EXPO_PUBLIC_ACCOUNT_API_URL` hides them entirely.
+  server in `server/account/`. Accounts never block local study. Collection data reaches the server
+  only when the learner turns on two-way sync (`docs/HESAP_SENKRON.md`): `lib/syncContract.ts`
+  (wire format shared with the server, import-free), `lib/sync/` (capture triggers, codecs, apply,
+  repairs, the round and the app loop), `contexts/SyncContext.tsx`,
+  `components/account/AccountSyncSection.tsx`, and `server/account/sync*.ts`. A write path needs no
+  sync code: triggers capture every write. A build without `EXPO_PUBLIC_ACCOUNT_API_URL` hides
+  accounts and sync entirely.
 - Catalog and purchases: `lib/bkaCatalog.ts`, `lib/catalog*.ts`, `lib/catalogProtection.ts`,
   `lib/purchasesSdk.ts`. App-wide state: `contexts/AppContext.tsx`. Theme: `constants/theme.ts`.
   Copy: `lib/i18n.ts` keys and inline `l('Türkçe', 'English')`. Web-only code is in `*.web.ts`.

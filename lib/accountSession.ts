@@ -70,6 +70,7 @@ export function parseServiceConfig(value: unknown): AccountServiceConfig | null 
         policyVersion: boundedString(value.policyVersion, 40) ?? '',
         operatorName: boundedString(value.operatorName, 200) ?? '',
         contactEmail: boundedString(value.contactEmail, 320) ?? '',
+        sync: value.sync === true,
     };
 }
 

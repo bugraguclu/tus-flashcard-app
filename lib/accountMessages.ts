@@ -81,6 +81,21 @@ export function accountErrorMessage(code: AccountErrorCode, l: Localize, retryAf
             return l('Hesap sunucusu yanıt vermedi. Biraz sonra yeniden deneyin.', 'The account server didn’t respond. Try again in a little while.');
         case 'not_configured':
             return l('Hesaplar bu sürümde kullanılamıyor.', 'Accounts aren’t available in this version.');
+        case 'format_too_old':
+            return l(
+                'Eşitlemeye devam etmek için uygulamayı güncelleyin. Çalışmanız bu cihazda kayıtlı kalır.',
+                'Update the app to keep syncing. Your study stays saved on this device.',
+            );
+        case 'quota_exceeded':
+            return l(
+                'Hesabınızdaki eşitleme alanı doldu. Çalışmanız bu cihazda kayıtlı kalır.',
+                'Your account’s sync space is full. Your study stays saved on this device.',
+            );
+        case 'clock_ahead':
+            return l(
+                'Cihazın saati yanlış görünüyor. Tarih ve saat ayarını kontrol edin.',
+                'This device’s clock looks wrong. Check its date and time settings.',
+            );
         case 'not_found':
         case 'payload_too_large':
         case 'server_error':

@@ -12,8 +12,11 @@ silme, hesap etkinliği, hız sınırları, koşul kabulü kaydı) TusAnkiM'e uy
 - **Çerez + CSRF yerine taşıyıcı belirteç.** Uygulama oturumu iOS Anahtar Zinciri'nde tutar;
   sunucu belirtecin yalnızca SHA-256 özetini saklar.
 
-**Kartlar, desteler ve çalışma geçmişi bu sunucuya hiç gelmez.** Sunucunun bildiği tek şey ad,
+**Kartlar, desteler ve çalışma geçmişi bu sunucuya yalnızca öğrenci iPhone–web eşitlemesini
+açarsa gelir** (`docs/HESAP_SENKRON.md`). Eşitleme kapalıyken sunucunun bildiği tek şey ad,
 e-posta, parola özeti, koşul kabulü sürümü ve hesap olaylarıdır (yöntem ve saat; içerik yok).
+Eşitleme açıkken her hesabın verisi ayrı bir SQLite dosyasında (`collections/<hesapKimliği>.sqlite`)
+alan grupları olarak tutulur; sunucu değerlerin içini okumaz. Katalog içeriği hiç gelmez.
 
 ## Çalıştırma (geliştirme)
 
@@ -49,6 +52,11 @@ yayın derlemesinde hesap özellikleri tamamen gizlenir ve uygulama bugünkü gi
 | PATCH | `/v1/account` | Adı günceller |
 | DELETE | `/v1/account` | Şifreyle (şifresiz Google/Apple hesabında sağlayıcının yeni belirteciyle) onaylanan kalıcı hesap silme (App Store 5.1.1(v)); Apple erişimi de iptal edilir |
 | GET | `/v1/account/activity` | Son 20 hesap olayı |
+| GET | `/v1/sync/state?format=1` | Eşitleme: cihazı (`X-Device`) kaydeder; kısa cihaz numarası, `usn`, sunucu saati |
+| POST | `/v1/sync/push` | Değişen alan grupları (≤2 MB; büyükse `batch` parçalarıyla, son parçada tek işlemde). Yanıt: yeni `usn`, kaybeden gruplar için kazananlar, kimlik çakışmaları |
+| GET | `/v1/sync/pull?since=&cursor=` | `usn > since` olan nesneler, 2.000'lik sayfalar |
+| GET | `/v1/sync/wait?since=` | Uzun yoklama: başka cihaz değiştirince hemen, yoksa 20 sn sonra döner |
+| GET / DELETE | `/v1/sync/devices` | Cihazlarım; bir cihazı unutma |
 
 Hata gövdesi her zaman `{ "error": { "code", "message", "fields?", "retryAfter?" } }` biçimindedir;
 uygulama metni koda göre kendi dilinde gösterir. Ortak kurallar ve tipler
@@ -129,3 +137,14 @@ npx vitest run server/account
 Servis kuralları, HTTP katmanı (yönlendirme, 404/405/413/415, CORS, taşıyıcı belirteç,
 `Retry-After`) ve sahte bir SMTP sunucusuyla e-posta konuşması sınanır. `npm run quality` bu
 testleri de çalıştırır.
+
+## Eşitleme ayarları
+
+| Değişken | Varsayılan | Ne yapar |
+| --- | --- | --- |
+| `ACCOUNT_SYNC` | `1` | `0` eşitleme uçlarını kapatır; uygulama eşitleme bölümünü göstermez |
+| `ACCOUNT_SYNC_DIR` | veritabanının yanında `collections/` | Hesap başına koleksiyon dosyalarının klasörü |
+| `ACCOUNT_SYNC_QUOTA_MB` | `512` | Bir hesabın eşitlenen koleksiyonu için üst sınır (`quota_exceeded`) |
+
+Hesap silinince o hesabın koleksiyon dosyası da silinir. Koleksiyon dosyalarının yedeği
+(`VACUUM INTO`, saatlik) henüz bu sunucuda değil; yayına almadan önce kurulmalı (tasarım §8.5).

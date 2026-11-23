@@ -23,6 +23,11 @@ export const ERROR_MESSAGES: Record<AccountErrorCode, string> = {
     not_configured: 'Hesap hizmeti yapılandırılmamış.',
     google_failed: 'Google ile giriş doğrulanamadı. Yeniden deneyin.',
     apple_failed: 'Apple ile giriş doğrulanamadı. Yeniden deneyin.',
+    clock_ahead: 'Cihaz saati sunucunun saatinden çok ileride.',
+    format_too_old: 'Eşitleme için uygulamayı güncelleyin.',
+    device_unknown: 'Cihaz tanınmadı; yeniden kaydedilecek.',
+    quota_exceeded: 'Hesabınızdaki eşitleme alanı doldu.',
+    batch_expired: 'Gönderimin parçaları eksik; yeniden gönderilecek.',
 };
 
 export interface AccountErrorDetails {

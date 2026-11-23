@@ -122,6 +122,19 @@ const MIGRATIONS = [
     ALTER TABLE users ADD COLUMN apple_refresh_token TEXT;
     CREATE UNIQUE INDEX users_by_apple_sub ON users(apple_sub) WHERE apple_sub IS NOT NULL;
     `,
+    // 4: Two-way sync. Each device gets a short number that breaks ties between equal stamps.
+    `
+    CREATE TABLE sync_devices (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        device_id TEXT NOT NULL,
+        dev INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        last_seen_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, device_id),
+        UNIQUE (user_id, dev)
+    );
+    `,
 ];
 
 const USER_COLUMNS = `id, email, name, password_hash AS passwordHash, email_verified_at AS emailVerifiedAt,
@@ -132,6 +145,14 @@ const CODE_COLUMNS = `id, email, purpose, code_hash AS codeHash, attempts, creat
 
 export function isUniqueEmailViolation(error: unknown): boolean {
     return error instanceof Error && /UNIQUE constraint failed: users\.email/.test(error.message);
+}
+
+export interface SyncDeviceRow {
+    deviceId: string;
+    dev: number;
+    name: string;
+    createdAt: number;
+    lastSeenAt: number;
 }
 
 export class AccountStore {
@@ -364,6 +385,57 @@ export class AccountStore {
         return this.all<EventRow>(
             'SELECT type, method, created_at AS createdAt FROM account_events WHERE user_id = ? ORDER BY id DESC LIMIT ?',
             userId, limit,
+        );
+    }
+
+    // --- Sync devices ---------------------------------------------------------------------
+
+    findSyncDevice(userId: string, deviceId: string): SyncDeviceRow | undefined {
+        return this.one<SyncDeviceRow>(
+            `SELECT device_id AS deviceId, dev, name, created_at AS createdAt, last_seen_at AS lastSeenAt
+             FROM sync_devices WHERE user_id = ? AND device_id = ?`,
+            userId, deviceId,
+        );
+    }
+
+    /** The device's number, registering it with the next free number on first sight. */
+    registerSyncDevice(userId: string, deviceId: string, name: string, now: number): SyncDeviceRow {
+        return this.transaction(() => {
+            const existing = this.findSyncDevice(userId, deviceId);
+            if (existing) {
+                this.run(
+                    'UPDATE sync_devices SET name = ?, last_seen_at = ? WHERE user_id = ? AND device_id = ?',
+                    name, now, userId, deviceId,
+                );
+                return { ...existing, name, lastSeenAt: now };
+            }
+            const next = Number(this.one<{ n: number }>('SELECT COALESCE(MAX(dev), 0) + 1 AS n FROM sync_devices WHERE user_id = ?', userId)?.n ?? 1);
+            this.run(
+                'INSERT INTO sync_devices (user_id, device_id, dev, name, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)',
+                userId, deviceId, next, name, now, now,
+            );
+            return { deviceId, dev: next, name, createdAt: now, lastSeenAt: now };
+        });
+    }
+
+    touchSyncDevice(userId: string, deviceId: string, now: number): void {
+        this.run('UPDATE sync_devices SET last_seen_at = ? WHERE user_id = ? AND device_id = ?', now, userId, deviceId);
+    }
+
+    listSyncDevices(userId: string): SyncDeviceRow[] {
+        return this.all<SyncDeviceRow>(
+            `SELECT device_id AS deviceId, dev, name, created_at AS createdAt, last_seen_at AS lastSeenAt
+             FROM sync_devices WHERE user_id = ? AND device_id NOT LIKE 'removed:%' ORDER BY last_seen_at DESC`,
+            userId,
+        );
+    }
+
+    /** Forgets a device. Its number is never handed out again, as MAX(dev) only grows. */
+    removeSyncDevice(userId: string, dev: number): number {
+        // Keep a placeholder so the number stays taken; only the name and id are dropped.
+        return this.run(
+            "UPDATE sync_devices SET device_id = 'removed:' || dev, name = '' WHERE user_id = ? AND dev = ? AND device_id NOT LIKE 'removed:%'",
+            userId, dev,
         );
     }
 

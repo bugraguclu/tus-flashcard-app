@@ -69,6 +69,8 @@ export interface AccountServiceDeps {
         ServerConfig,
         'secret' | 'registrationOpen' | 'emailVerificationRequired' | 'operatorName' | 'contactEmail' | 'sessionDays'
     > & {
+        /** The sync endpoints are served (ACCOUNT_SYNC). */
+        syncEnabled?: boolean;
         /** OAuth client IDs whose Google ID tokens are accepted; none turns Google sign-in off. */
         googleClientIds?: readonly string[];
         /** The app's bundle ID and web Services ID, whose Apple identity tokens are accepted; none turns Apple off. */
@@ -85,6 +87,8 @@ export interface AccountServiceDeps {
     limiter?: RateLimiter;
     now?: Clock;
     log?: Logger;
+    /** Called inside account deletion, after the account row is gone (drops its synced collection). */
+    onAccountDeleted?: (userId: string) => void;
 }
 
 const MINUTE = 60_000;
@@ -129,6 +133,7 @@ export class AccountService {
     private readonly googleKeys: KeySource;
     private readonly appleKeys: KeySource;
     private readonly appleTokens: AppleTokenService | null;
+    private readonly onAccountDeleted: ((userId: string) => void) | null;
 
     constructor(deps: AccountServiceDeps) {
         this.store = deps.store;
@@ -142,6 +147,18 @@ export class AccountService {
         this.appleKeys = deps.appleKeys ?? new AppleKeys(undefined, this.now);
         const appleKey = deps.config.appleKey;
         this.appleTokens = deps.appleTokens !== undefined ? deps.appleTokens : appleKey ? new AppleTokens(appleKey) : null;
+        this.onAccountDeleted = deps.onAccountDeleted ?? null;
+    }
+
+    /** The signed-in account's id, for the sync endpoints; throws `unauthorized` otherwise. */
+    authenticatedUserId(token: string | null): string {
+        return this.authenticate(token).id;
+    }
+
+    /** Per-account request budget shared with the sync endpoints. */
+    limitSync(userId: string, kind: 'push' | 'pull' | 'wait'): void {
+        const budget = kind === 'push' ? 600 : kind === 'pull' ? 1_200 : 600;
+        this.limit(`sync:${kind}:${userId}`, budget, HOUR);
     }
 
     private get googleClientIds(): readonly string[] {
@@ -168,6 +185,7 @@ export class AccountService {
             policyVersion: ACCOUNT_POLICY_VERSION,
             operatorName: this.config.operatorName,
             contactEmail: this.config.contactEmail,
+            sync: this.config.syncEnabled === true,
         };
     }
 
@@ -573,6 +591,13 @@ export class AccountService {
             this.store.deleteUser(user.id);
         });
         this.log.info('[account] an account was deleted at its owner’s request');
+        if (this.onAccountDeleted) {
+            try {
+                this.onAccountDeleted(user.id);
+            } catch (error) {
+                this.log.error('[account] a deleted account’s synced collection could not be removed', error);
+            }
+        }
         if (appleGrant) {
             if (!this.appleTokens) this.log.warn('[account] a deleted account’s Apple access was not revoked: no Apple key is set');
             else {

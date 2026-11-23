@@ -32,7 +32,9 @@ describe('server replies', () => {
             policyVersion: '',
             operatorName: '',
             contactEmail: '',
+            sync: false,
         });
+        expect(parseServiceConfig({ registrationOpen: true, emailReady: true, emailVerificationRequired: false, sync: true })?.sync).toBe(true);
         expect(parseServiceConfig({ registrationOpen: 'yes' })).toBeNull();
     });
 

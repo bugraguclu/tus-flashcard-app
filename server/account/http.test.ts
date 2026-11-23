@@ -255,7 +255,7 @@ describe('CORS', () => {
         });
         expect(preflight.status).toBe(204);
         expect(preflight.headers['access-control-allow-methods']).toBe('PATCH, DELETE, OPTIONS');
-        expect(preflight.headers['access-control-allow-headers']).toBe('authorization, content-type, x-client');
+        expect(preflight.headers['access-control-allow-headers']).toBe('authorization, content-type, x-client, x-device');
         expect(preflight.headers['access-control-max-age']).toBe('600');
 
         const stranger = await call('OPTIONS', '/v1/account', { headers: { origin: 'https://evil.example' } });

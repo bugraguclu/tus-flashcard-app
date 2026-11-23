@@ -67,6 +67,10 @@ interface AccountContextValue {
     deleteAccount: (proof: AccountDeleteProof) => Promise<void>;
     signOut: () => Promise<void>;
     loadActivity: () => Promise<AccountEvent[]>;
+    /** The account server's address, or null in a build without accounts. */
+    baseUrl: string | null;
+    /** The signed-in session's token for the sync endpoints (lib/sync/syncApi.ts), or null. */
+    getToken: () => string | null;
 }
 
 const notConfigured = () => Promise.reject(new AccountRequestError('not_configured'));
@@ -92,6 +96,8 @@ const AccountContext = createContext<AccountContextValue>({
     deleteAccount: notConfigured,
     signOut: async () => { },
     loadActivity: notConfigured,
+    baseUrl: null,
+    getToken: () => null,
 });
 
 /** A server check on returning to the app, at most this often. */
@@ -349,7 +355,11 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         [client, guard, requireToken],
     );
 
+    const getToken = useCallback(() => sessionRef.current?.token ?? null, []);
+
     const value = useMemo<AccountContextValue>(() => ({
+        baseUrl,
+        getToken,
         status,
         ready: status !== 'loading',
         user,
@@ -374,6 +384,7 @@ export function AccountProvider({ children }: { children: React.ReactNode }) {
         status, user, config, firstRunPrompt, resolveFirstRunPrompt, refresh, signIn, register,
         requestVerification, confirmVerification, requestPasswordReset, confirmPasswordReset,
         changePassword, updateName, deleteAccount, signOut, loadActivity, signInWithGoogle, signInWithApple,
+        baseUrl, getToken,
     ]);
 
     return <AccountContext.Provider value={value}>{children}</AccountContext.Provider>;
