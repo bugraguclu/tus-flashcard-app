@@ -497,7 +497,7 @@ function createStyles(colors: ColorScheme, footerInset: number) {
             paddingLeft: Spacing.lg,
             paddingRight: Spacing.lg,
             paddingBottom: Spacing.sm,
-            backgroundColor: colors.bgSecondary,
+            // On the card itself: the indent sets the topics apart, no grey band.
         },
         topicRow: { flexDirection: 'row', alignItems: 'center', minHeight: 34 },
         topicBullet: {

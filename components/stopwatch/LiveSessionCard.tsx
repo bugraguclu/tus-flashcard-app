@@ -170,7 +170,7 @@ const local = StyleSheet.create({
     top: { flexDirection: 'row', gap: Spacing.md },
     sessionPill: { alignItems: 'center', paddingVertical: Spacing.xxs },
     sessionText: { fontSize: FontSize.md },
-    sessionClock: { fontWeight: '800', fontVariant: ['tabular-nums'] },
+    sessionClock: { fontWeight: '600', fontVariant: ['tabular-nums'] },
     rule: { height: StyleSheet.hairlineWidth },
     messageRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
     // The book glyph on its own before the note.

@@ -86,15 +86,9 @@ function createTimelineStyles(colors: ColorScheme) {
         body: { flex: 1, gap: Spacing.xs },
         titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
         subject: { flex: 1, fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
-        // The type ("1. Tekrar") as TUSBuddy outlines it.
-        chip: {
-            borderWidth: 1,
-            borderColor: colors.info,
-            borderRadius: Radius.control,
-            paddingHorizontal: Spacing.s6,
-            paddingVertical: 1,
-        },
-        chipText: { fontSize: FontSize.xs, fontWeight: '600', color: colors.info },
+        // The type ("1. Tekrar") as plain blue text beside the subject, not an outlined chip.
+        chip: {},
+        chipText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.info },
         metricsRow: { flexDirection: 'row' },
         metric: { flex: 1, gap: Spacing.xxs },
         metricLabel: { fontSize: FontSize.sm, fontWeight: '600', color: colors.success },

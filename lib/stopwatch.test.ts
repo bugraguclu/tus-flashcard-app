@@ -401,12 +401,12 @@ describe('block reminders', () => {
     it('words each reminder from the copy', () => {
         const copy = {
             focusTitle: 'F', focusBody: 'fb', breakTitle: 'B', breakBody: 'bb',
-            breakOverTitle: (minutes: number) => `Mola Süresini ${minutes} Dakika Aştınız!`, breakOverBody: 'ob',
+            breakOverTitle: (minutes: number) => `Mola sürenizi ${minutes} dakika aştınız`, breakOverBody: 'ob',
         };
         expect(stopwatchAlertContent({ kind: 'focus', atMs: 0, overMinutes: 0 }, copy)).toEqual({ title: 'F', body: 'fb' });
         expect(stopwatchAlertContent({ kind: 'break', atMs: 0, overMinutes: 0 }, copy)).toEqual({ title: 'B', body: 'bb' });
         expect(stopwatchAlertContent({ kind: 'breakOver', atMs: 0, overMinutes: 3 }, copy))
-            .toEqual({ title: 'Mola Süresini 3 Dakika Aştınız!', body: 'ob' });
+            .toEqual({ title: 'Mola sürenizi 3 dakika aştınız', body: 'ob' });
     });
 });
 

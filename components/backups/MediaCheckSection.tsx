@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '../AppText';
 import { Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
 import { Button } from '../ui/Button';
+import { ChevronRightIcon } from '../ui/icons';
 import { Section } from '../ui/Card';
 import { LoadingState } from '../ui/Feedback';
 import { Type } from '../ui/tokens';
@@ -102,7 +103,14 @@ export default function MediaCheckSection({ disabled }: { disabled: boolean }) {
 
     return (
         <Section label={l('Medya', 'Media')} padded>
-            <Button label={l('Medyayı denetle', 'Check Media')} variant="secondary" onPress={handleCheck} disabled={locked} />
+            <Button
+                label={l('Medyayı denetle', 'Check Media')}
+                variant="plain"
+                trailingIcon={<ChevronRightIcon color={colors.accent} size={16} />}
+                onPress={handleCheck}
+                disabled={locked}
+                style={styles.check}
+            />
             {working && <LoadingState />}
             {result && (
                 <View style={styles.result}>
@@ -143,6 +151,8 @@ export default function MediaCheckSection({ disabled }: { disabled: boolean }) {
 
 function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
+        // A plain action with a chevron, not a bordered full-width box.
+        check: { alignSelf: 'flex-start', paddingHorizontal: 0 },
         result: { gap: Spacing.sm },
         summary: { ...Type.body, color: colors.textPrimary },
         heading: { ...Type.caption, fontWeight: '600', color: colors.textSecondary },

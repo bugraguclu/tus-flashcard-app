@@ -306,7 +306,7 @@ export default function BackupsScreen() {
                                 <View style={styles.rowActions}>
                                     <Button
                                         label={l('Geri yükle', 'Restore')}
-                                        variant="secondary"
+                                        variant="plain"
                                         size="compact"
                                         onPress={() => handleRestore(backup.name)}
                                         disabled={busy}
@@ -314,7 +314,7 @@ export default function BackupsScreen() {
                                     />
                                     <Button
                                         label={l('Paylaş', 'Share')}
-                                        variant="secondary"
+                                        variant="plain"
                                         size="compact"
                                         onPress={() => handleShare(backup.name)}
                                         disabled={busy}

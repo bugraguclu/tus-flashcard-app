@@ -57,7 +57,7 @@ interface StudyDayBoxProps extends Omit<ViewProps, 'style' | 'children'> {
     highContrast?: boolean;
 }
 
-/** Studied days are filled orange with a dot, today is outlined orange. */
+/** Studied days are filled orange with a dot, today is outlined orange, other days are bare numbers. */
 export default function StudyDayBox({
     dateOfMonth,
     studied,
@@ -98,8 +98,9 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
             height: size,
             borderRadius: Radius.inset,
             borderWidth: 1.5,
-            borderColor: colors.border,
-            backgroundColor: colors.bgCard,
+            // A day with nothing in it is its number alone; Increase Contrast keeps the outline.
+            borderColor: highContrast ? colors.border : 'transparent',
+            backgroundColor: highContrast ? colors.bgCard : 'transparent',
             alignItems: 'center',
             justifyContent: 'center',
         },

@@ -61,8 +61,8 @@ export default function NoteTypesScreen() {
                 </Card>
 
                 <Button
-                    variant="secondary"
-                    icon={<PlusIcon color={colors.textPrimary} size={20} />}
+                    variant="plain"
+                    icon={<PlusIcon color={colors.accent} size={18} />}
                     label={l('Yeni not türü', 'New Note Type')}
                     accessibilityLabel={l('Yeni not türü ekle', 'Add a note type')}
                     onPress={() => setAdding(true)}
@@ -79,6 +79,6 @@ function createStyles(colors: ColorScheme) {
     container: { flex: 1, backgroundColor: colors.bgPrimary },
     content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: Spacing.lg, gap: Spacing.sm },
     help: { fontSize: FontSize.sm, color: colors.textSecondary, marginBottom: Spacing.sm },
-    addButton: { marginTop: Spacing.sm },
+    addButton: { marginTop: Spacing.sm, alignSelf: 'flex-start' },
     });
 }

@@ -516,7 +516,7 @@ export function stepBlockMinutes(minutes: number, direction: 1 | -1, max: number
 export interface StopwatchAlert {
     /**
      * `focus`: the study block is over, take a break. `break`: the break is over. `breakOver`: the
-     * break has run `overMinutes` past its end ("Mola Süresini 3 Dakika Aştınız!").
+     * break has run `overMinutes` past its end ("Mola sürenizi 3 dakika aştınız").
      */
     kind: 'focus' | 'break' | 'breakOver';
     atMs: number;
@@ -547,7 +547,7 @@ export interface StopwatchAlertCopy {
     focusBody: string;
     breakTitle: string;
     breakBody: string;
-    /** "Mola Süresini 3 Dakika Aştınız!" for a break `minutes` past its end. */
+    /** "Mola sürenizi 3 dakika aştınız" for a break `minutes` past its end. */
     breakOverTitle: (minutes: number) => string;
     breakOverBody: string;
 }

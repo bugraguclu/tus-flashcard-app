@@ -20,9 +20,9 @@ export type { StopwatchAlertCopy } from './stopwatch';
 
 /**
  * The Kronometre's block reminders on iPhone: a local notification when a study block is over
- * ("Çalışma süresi doldu, mola zamanı!") or a break is over ("Mola süreniz bitti, çalışma
- * zamanı!"), and while a break runs on, one, three and five minutes past its end, as TUSBuddy
- * reminds ("Mola Süresini 3 Dakika Aştınız!"). The web build has its own module with the same
+ * ("Çalışma süresi doldu, mola zamanı") or a break is over ("Mola süreniz bitti, çalışma
+ * zamanı"), and while a break runs on, one, three and five minutes past its end, as TUSBuddy
+ * reminds ("Mola sürenizi 3 dakika aştınız"). The web build has its own module with the same
  * exports (`stopwatchNotifications.web.ts`).
  *
  * At most four reminders are pending, each under a fixed identifier, so rescheduling is a plain

@@ -1453,7 +1453,8 @@ export default function SettingsScreen({ section: activeSection }: { section: Se
                     <Animated.View style={{ transform: [{ scale: savedPulse }] }}>
                         <Button
                             size="compact"
-                            variant={showSaved ? 'secondary' : 'primary'}
+                            variant="plain"
+                            tone={showSaved ? 'muted' : undefined}
                             icon={showSaved ? <CheckIcon color={colors.success} size={16} /> : undefined}
                             label={showSaved ? l('Kaydedildi', 'Saved') : l('Kaydet', 'Save')}
                             numberOfLines={1}

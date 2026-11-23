@@ -95,16 +95,16 @@ export default function StopwatchScreen() {
 
     // The reminders' words follow TUSBuddy's: the title says what is due, the body adds the subject.
     const buildAlertCopy = useCallback((state: RunningStopwatch, prefs: StopwatchPrefs) => ({
-        focusTitle: l('Çalışma süresi doldu, mola zamanı!', 'Study time is up, time for a break!'),
+        focusTitle: l('Çalışma süresi doldu, mola zamanı', 'Study time is up, time for a break'),
         focusBody: l(
             `${state.subject}: ${prefs.focusMinutes} dakikadır çalışıyorsunuz. Kısa bir mola verebilirsiniz.`,
             `${state.subject}: you have studied for ${prefs.focusMinutes} minutes. Time for a short break.`,
         ),
-        breakTitle: l('Mola süreniz bitti, çalışma zamanı!', 'Your break is over, time to study!'),
+        breakTitle: l('Mola süreniz bitti, çalışma zamanı', 'Your break is over, time to study'),
         breakBody: l(`${state.subject} çalışmanıza dönebilirsiniz.`, `You can get back to ${state.subject}.`),
         breakOverTitle: (minutes: number) => l(
-            `Mola Süresini ${minutes} Dakika Aştınız!`,
-            minutes === 1 ? 'Your break ran 1 minute over!' : `Your break ran ${minutes} minutes over!`,
+            `Mola sürenizi ${minutes} dakika aştınız`,
+            minutes === 1 ? 'Your break ran 1 minute over' : `Your break ran ${minutes} minutes over`,
         ),
         breakOverBody: l(`${state.subject} çalışmanıza devam edin.`, `Get back to ${state.subject}.`),
     }), [l]);

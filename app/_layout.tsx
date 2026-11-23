@@ -32,7 +32,6 @@ import {
     useIsDarkTheme,
     useThemeColors,
 } from '../constants/theme';
-import { Shadow } from '../components/ui/tokens';
 import { initWebDb, isPrimaryTab, isStorageReadError } from '../lib/db';
 import { DialogHost } from '../components/DialogHost';
 import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppContext';
@@ -262,7 +261,6 @@ const makeErrorStyles = (colors: ColorScheme) => StyleSheet.create({
         borderRadius: Radius.card,
         padding: Spacing.xxl,
         alignItems: 'center',
-        ...Shadow.card,
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: colors.border,
     },

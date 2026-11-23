@@ -1287,10 +1287,9 @@ export default function DecksScreen() {
                             : <ChevronRightIcon color={colors.textPrimary} size={20} />}
                     </IconButton>
                 ) : (
-                    <View style={styles.expandBtn}>
-                        {/* A filtered deck is told apart by its blue italic name, not an icon. */}
-                        <View style={styles.leafDot} />
-                    </View>
+                    // A deck without subdecks keeps the chevron's column empty, so names line up.
+                    // A filtered deck is told apart by its blue italic name, not an icon.
+                    <View style={styles.expandBtn} />
                 )}
 
                 <View style={styles.deckMain}>
@@ -1989,7 +1988,6 @@ function createStyles(colors: ColorScheme) {
         fontWeight: '600',
     },
     expandBtn: { width: 34, height: undefined, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-    leafDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.border },
     // The name and its counts share a wrapping line: a name that does not fit beside the
     // counts gets the whole width (a word is never broken) and the counts move under it.
     // The name must not shrink: Yoga would rather narrow it than wrap the counts, which breaks

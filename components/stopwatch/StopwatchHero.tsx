@@ -111,7 +111,7 @@ export default function StopwatchHero({
                         accessibilityLabel={l('Çalışmayı sonlandır ve kaydet', 'Finish and save the session')}
                     >
                         <View style={styles.pillIcon}>
-                            <StopIcon color={colors.white} size={16} />
+                            <StopIcon color={colors.accent} size={18} />
                         </View>
                         <Text style={styles.pillText}>{l('Sonlandır', 'Finish')}</Text>
                     </TouchableOpacity>
@@ -123,7 +123,7 @@ export default function StopwatchHero({
                         accessibilityLabel={onBreak ? l('Moladan dön, devam et', 'End the break and resume') : l('Mola ver', 'Take a break')}
                     >
                         <View style={styles.pillIcon}>
-                            {onBreak ? <PlayIcon color={colors.white} size={16} /> : <PauseIcon color={colors.white} size={16} />}
+                            {onBreak ? <PlayIcon color={colors.accent} size={18} /> : <PauseIcon color={colors.accent} size={18} />}
                         </View>
                         <Text style={styles.pillText}>{onBreak ? l('Devam et', 'Resume') : l('Mola ver', 'Break')}</Text>
                     </TouchableOpacity>
@@ -183,8 +183,8 @@ export default function StopwatchHero({
                             accessibilityRole="button"
                             accessibilityLabel={l('Kronometreyi başlat', 'Start the stopwatch')}
                         >
-                            <View style={styles.iconCircle}>
-                                <PlayIcon color={colors.white} size={20} />
+                            <View style={styles.startIcon}>
+                                <PlayIcon color={colors.accent} size={22} />
                             </View>
                             <Text style={styles.startText} numberOfLines={1}>{l('Başla', 'Start')}</Text>
                         </TouchableOpacity>
@@ -218,7 +218,7 @@ function createStyles(colors: ColorScheme) {
         half: { flex: 1, alignItems: 'center' },
         ringCenter: { alignItems: 'center', gap: Spacing.xxs },
         ringLabel: { fontSize: FontSize.sm, color: colors.textSecondary, textAlign: 'center', lineHeight: 16 },
-        ringValue: { fontWeight: '800', color: colors.textPrimary, marginTop: Spacing.xxs },
+        ringValue: { fontWeight: '600', color: colors.textPrimary, marginTop: Spacing.xxs },
         controls: { alignItems: 'stretch', gap: Spacing.sm },
         goalLabel: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary, textAlign: 'center' },
         startButton: {
@@ -233,11 +233,10 @@ function createStyles(colors: ColorScheme) {
             paddingLeft: 4,
             paddingRight: Spacing.md,
         },
-        iconCircle: {
+        startIcon: {
             width: 32,
             height: 32,
             borderRadius: 16,
-            backgroundColor: colors.accent,
             alignItems: 'center',
             justifyContent: 'center',
         },
@@ -249,7 +248,7 @@ function createStyles(colors: ColorScheme) {
         goalTrack: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' },
         goalFill: { height: 8, borderRadius: 4, backgroundColor: colors.accent },
         runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
-        bigClock: { fontSize: 54, lineHeight: 62, fontWeight: '700', color: colors.textPrimary, fontVariant: ['tabular-nums'] },
+        bigClock: { fontSize: 54, lineHeight: 62, fontWeight: '600', color: colors.textPrimary, fontVariant: ['tabular-nums'] },
         breakLine: { fontSize: FontSize.md, fontWeight: '600', color: colors.streak, fontVariant: ['tabular-nums'] },
         runningButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.md },
         pill: {
@@ -269,7 +268,6 @@ function createStyles(colors: ColorScheme) {
             width: 28,
             height: 28,
             borderRadius: 14,
-            backgroundColor: colors.accent,
             alignItems: 'center',
             justifyContent: 'center',
         },

@@ -1136,6 +1136,9 @@ export default function DeckOptionsScreen() {
                     <>
                         <Button
                             label={saveLabel}
+                            // Accent text, not a filled block in the header; grey once saved.
+                            variant="plain"
+                            tone={isDirty ? undefined : 'muted'}
                             size="compact"
                             onPress={handleSave}
                             disabled={saveDisabled}

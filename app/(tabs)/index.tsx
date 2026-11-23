@@ -3804,7 +3804,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         borderRadius: Radius.button,
         alignItems: 'center',
         justifyContent: 'center',
-        ...Shadow.card,
     },
     showAnswerText: { fontSize: 17, fontWeight: '600', color: colors.onAccent, letterSpacing: 0.2 },
 
@@ -3845,7 +3844,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         backgroundColor: colors.bgSecondary,
         borderWidth: 1,
         borderColor: colors.border,
-        ...Shadow.card,
     },
     // Not built on answerBtn: its `flex: 1` overridden by `flex: 0` becomes CSS `flex: 0` (a 0%
     // basis) on web, which squeezed the button to its padding. The row stretches it to the grades' height.
@@ -3861,7 +3859,6 @@ function createStyles(colors: ColorScheme, isCompact: boolean) {
         gap: 1,
         backgroundColor: colors.bgSecondary,
         borderColor: colors.border,
-        ...Shadow.card,
     },
     reviewerToolsGradeLabel: {
         fontSize: FontSize.xs,
