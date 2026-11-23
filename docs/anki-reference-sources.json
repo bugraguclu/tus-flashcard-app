@@ -314,7 +314,7 @@
       "priority": 1,
       "platform": "cross-platform browser behavior",
       "url": "https://docs.ankiweb.net/browsing.html#table-modes",
-      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "row context for the local image-preview adaptation (TusAnkiM-specific UI; no Anki parity claim)", "Notes-mode row aggregation and first-card semantics", "flag filtering", "rows matching the active search", "Change Deck out of a filtered deck", "Due column New #N for new cards", "Deck column naming the home deck of a filtered card"]
+      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "row context for the local question/answer preview opened from a thumbnail (TusAnkiM-specific UI; no Anki parity claim)", "Notes-mode row aggregation and first-card semantics", "flag filtering", "rows matching the active search", "Change Deck out of a filtered deck", "Due column New #N for new cards", "Deck column naming the home deck of a filtered card"]
     },
     {
       "id": "w3c-aria-checkbox-state",

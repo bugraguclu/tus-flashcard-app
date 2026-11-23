@@ -87,9 +87,10 @@ bütün filtreleri kaldırır ama aramayı ve deste seçimini değiştirmez.
 Aynı pencerede **Yanıt önizlemesini göster** her satıra cevabın kısa bir parçasını ekler,
 **Zamanlama ayrıntıları** "Son: … · Sonraki: …" satırını açıp kapatır. Seçimleriniz hatırlanır.
 **Görsel önizlemelerini göster** seçeneği, görselli satırlarda küçük resim gösterir ve varsayılan
-olarak açıktır. Küçük resme dokununca asıl görsel Kartlarım'ın üzerinde açılır. Basılı tutup
-**Görseli aç**'ı da seçebilirsiniz; web'de sağ tıklama aynı seçeneği açar. Görseli kapatınca
-arama, filtreler ve listedeki konumunuz korunur. Bu seçenek Kartlar ve Notlar'da geçerlidir.
+olarak açıktır. Küçük resme dokununca veya basılı tutunca kart önizlemesi doğrudan açılır;
+web'de sağ tıklama da aynı işi yapar. Kart Ekle'deki gibi **Soru / Cevap** arasında geçiş yapın:
+her yüzün metni ve tüm görselleri kartın şablonuna göre gösterilir. Önizlemeyi kapatınca arama,
+filtreler ve listedeki konumunuz korunur. Bu seçenek Kartlar ve Notlar'da geçerlidir.
 Satırların yazı boyutunu **Ayarlar**'daki **Kart tarayıcısı › Yazı ölçeği** değiştirir.
 
 <a id="sorting-and-columns"></a>

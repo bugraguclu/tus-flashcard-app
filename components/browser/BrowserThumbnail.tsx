@@ -15,7 +15,7 @@ import {
 
 interface BrowserThumbnailProps {
     filename: string;
-    onOpen: (filename: string, showActions: boolean) => void;
+    onOpen: () => void;
 }
 
 type ThumbnailState =
@@ -29,7 +29,7 @@ function initialStateFor(filename: string): ThumbnailState {
     return { status: cached === null ? 'fallback' : 'loading', uri: null };
 }
 
-/** A disposable derivative; opening it reads the original image in the Browser's own sheet. */
+/** A disposable derivative; opening it previews the card's question and answer above Browse. */
 export const BrowserThumbnail = memo(function BrowserThumbnail({ filename, onOpen }: BrowserThumbnailProps) {
     const colors = useThemeColors();
     const { l } = useI18n();
@@ -83,17 +83,17 @@ export const BrowserThumbnail = memo(function BrowserThumbnail({ filename, onOpe
     }, [filename]);
 
     if (state.status === 'fallback') return null;
-    const open = (event: Pick<GestureResponderEvent, 'stopPropagation'>, showActions: boolean) => {
+    const open = (event: Pick<GestureResponderEvent, 'stopPropagation'>, withHaptic: boolean) => {
         event.stopPropagation();
         if (state.status !== 'ready') return;
-        if (showActions) longPressHaptic();
-        onOpen(filename, showActions);
+        if (withHaptic) longPressHaptic();
+        onOpen();
     };
     return (
         <IconButton
             style={styles.button}
-            accessibilityLabel={l('Görseli aç', 'Open image')}
-            accessibilityHint={l('Seçenekler için basılı tutun', 'Hold for image options')}
+            accessibilityLabel={l('Kartı önizle', 'Preview card')}
+            accessibilityHint={l('Soru ve cevabı görmek için dokunun veya basılı tutun', 'Tap or hold to preview the question and answer')}
             onPress={event => open(event, false)}
             onLongPress={event => open(event, true)}
             onContextMenu={event => { event.preventDefault(); open(event, true); }}

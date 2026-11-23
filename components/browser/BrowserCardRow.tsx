@@ -44,7 +44,7 @@ interface BrowserCardRowProps {
     settings: AppSettings;
     showAnswerSnippet: boolean;
     showImageThumbnails?: boolean;
-    onOpenImage?: (filename: string, showActions: boolean) => void;
+    onOpenImage?: (card: StudyCard) => void;
     showScheduleDetails: boolean;
     styles: BrowserStyles;
     subject: (id: string) => Subject | undefined;
@@ -166,7 +166,7 @@ export function BrowserCardRow({
             <View style={styles.cardItemHeader}>
                 {selectionMode && <View style={styles.selectionMark}><Checkbox checked={isSelected} /></View>}
                 {thumbnailFilename && onOpenImage && !selectionMode ? (
-                    <BrowserThumbnail filename={thumbnailFilename} onOpen={onOpenImage} />
+                    <BrowserThumbnail filename={thumbnailFilename} onOpen={() => onOpenImage(item)} />
                 ) : null}
                 <Body style={styles.cardBody} {...bodyProps}>
                     {/* The card's state as words above the question: learning or review, then

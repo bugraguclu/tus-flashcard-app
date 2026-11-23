@@ -15,9 +15,9 @@ items 14–15 must use current production source rather than replace it with Hav
   comparisons, lazy graphs, bundle budgets). Existing production accessibility and other
   unrelated behavior are retained.
 - **13:** approved with the owner's follow-up changes: image previews use the current live
-  row design, with no generated image emoji. Tapping a thumbnail opens the original locally;
-  holding it (or right-clicking on web) offers “Görseli aç”. Both stay in one sheet over
-  Kartlarım, preserving the list's search, filters and scroll. The remembered preview option
+  row design, with no generated image emoji. Tapping or holding a thumbnail (web right-click
+  too) opens Soru/Cevap directly, using the same preview content as Kart Ekle. Each template
+  side shows all its images. The sheet stays above Kartlarım, preserving search, filters and scroll. The remembered preview option
   defaults on; missing images leave no decorative fallback icon. Original media is unchanged.
 - **14:** current live search implementation retained, with its remaining fixes applied:
   nested unbounded regex repetition is refused, Custom Study names are escaped literally,
@@ -57,14 +57,16 @@ items 14–15 must use current production source rather than replace it with Hav
 
 ## Selected thumbnail implementation (item 13)
 
-The owner's follow-up approved the port and requested removal of the image emoji and an
-in-place “Görseli aç” action on long press. The implementation uses the shared IconButton,
-MenuItem and AppSheet. Cards and Notes share the same image extraction and original viewer.
+The latest owner follow-ups remove the intermediate “Görseli aç” action: holding opens directly.
+The preview now shares CardPreviewContent with Kart Ekle, including Soru/Cevap and CardWebView.
+Actual note/card/template data, rather than one extracted file, supplies both faces and all
+images. The original selection/implementation used the menu described in the historical web
+verification below; that menu is superseded. Cards and Notes share this same preview.
 Raster thumbnails are disposable derivatives in a separate bounded cache; file invalidation,
 aborted requests and web object-URL ownership are covered by focused regressions. Remote
 images, SVGs and missing files are not decoded as thumbnails. Original media stays read-only.
 
-At `http://127.0.0.1:8098/browser`, Safari's isolated local origin installed the bundled
+Before the final Soru/Cevap follow-up, at `http://127.0.0.1:8098/browser`, Safari's isolated local origin installed the bundled
 9,575-card package. The new rows showed decoded thumbnails without the generated emoji.
 Holding the first thumbnail offered “Görseli aç”; that action displayed the original over the
 same Browser route. Closing returned to the same rows. A “Sinapsları” search showed two cards;
@@ -76,6 +78,22 @@ New screenshots in the chat's visualization directory:
 
 - `13-kartlarim-emojisiz.png` — current selected rows.
 - `13-kartlarim-gorsel-acik.png` — original image over Kartlarım.
+
+## Latest Soru/Cevap verification
+
+The final web build was opened in Chrome on the isolated local `8098` origin, with the bundled
+9,575-card catalog. Holding its first thumbnail opened Önizleme immediately, without an action
+menu. Soru showed the image and hidden cloze answers; Cevap showed the same image, revealed
+answers and a second image. The URL stayed `/browser`. Different front/back images, multiple
+images, a back-only image, reversed-card ordinals and reopening on Question are covered by
+`lib/browserImagePreview.test.ts`, which also compares the Browser's rendered HTML to the
+editor's shared preview. The scrolling WebView is excluded from sheet dragging.
+
+Final `npm run quality`: 359 files / 3,886 tests passed, 2 files / 5 tests skipped. A preceding
+run concurrent with web builds hit the existing 5-second 33,000-card scale-test timeout; the
+unchanged full command passed after the builds finished, with no timeout increase. The app's
+web export and the current website's build/verify passed. Physical-device execution remains
+explicitly deferred by the owner.
 
 ## Initial thumbnail demonstration (historical)
 

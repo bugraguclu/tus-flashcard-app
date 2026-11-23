@@ -408,15 +408,17 @@ The web reviewer and editor share `components/WebHtmlFrame.tsx`: their HTML is w
 ## Browser, card/note table modes, tags, flags, marks, suspend/bury, reposition
 
 **Local image previews (2026-11-23):** Kartlarım defaults to remembered raster thumbnails in
-Cards and Notes. A tap opens the original; holding the thumbnail (web right-click too) offers
-“Görseli aç”. The shared sheet stays above the same mounted Browser, preserving search, scope,
-filters and scroll. Generated image emoji are omitted from row text; authored text is unchanged.
-Missing images leave no leading fallback icon. The viewer reads only local raster originals
-and reports an unreadable file with Retry. Thumbnail derivatives have a bounded, separate
-cache; changes invalidate affected files, obsolete loads are ignored and web URLs are released.
-The original media, scheduling and exports are unchanged. This is TusAnkiM presentation, not
-an Anki parity claim (`lib/browserThumbnail.test.ts`, `lib/mediaThumbnails.test.ts`,
-`lib/browserImagePreview.test.ts`). Physical-iPhone/VoiceOver checks are explicitly deferred.
+Cards and Notes. Tapping or holding a thumbnail (web right-click too) opens the preview directly,
+with the same Question/Answer segmented control and CardWebView as Add Card. Each side uses the
+actual card template and ordinal, so all images, FrontSide and Image Occlusion are rendered as
+on that card. Switching sides never changes the Browser's search, scope, filters or scroll.
+Closing and reopening starts on Question. The contained card scrolls independently of the sheet.
+Generated image emoji are omitted from row text; authored text is unchanged. Missing thumbnails
+leave no leading fallback icon. Thumbnail derivatives have a bounded, separate cache; changes
+invalidate affected files and obsolete loads are ignored. Original media, scheduling and exports
+are unchanged. This is TusAnkiM presentation, not an Anki parity claim (`lib/browserThumbnail.test.ts`,
+`lib/mediaThumbnails.test.ts`, `lib/browserImagePreview.test.ts`). Physical-iPhone/VoiceOver checks
+are explicitly deferred.
 
 Custom Study writes deck/tag names literally, escaping wildcard and backslash characters and protecting keyword names such as `none`/`current` (`lib/customStudy.test.ts`). A legacy filtered-deck search containing `is:relearn` is adapted to `(is:learn is:review)` when the Browser builds its search; quoted field text is preserved (`lib/searchSafety.test.ts`). New searches use `is:learn is:review`.
 

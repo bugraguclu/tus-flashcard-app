@@ -74,7 +74,7 @@ import { createBrowserStyles } from '../components/browser/browserStyles';
 import { appendBrowserSearchTerm } from '../components/browser/searchHelpGroups';
 import { SearchHelpModal } from '../components/browser/SearchHelpModal';
 import { BrowserCardRow } from '../components/browser/BrowserCardRow';
-import { BrowserImagePreviewSheet, type BrowserImagePreview } from '../components/browser/BrowserImagePreviewSheet';
+import { BrowserImagePreviewSheet } from '../components/browser/BrowserImagePreviewSheet';
 import { FilterChips, SelectionBar } from '../components/browser/BrowserBars';
 import {
     BrowserOptionsModal,
@@ -136,8 +136,8 @@ export default function BrowserScreen() {
     const [showAnswerSnippet, setShowAnswerSnippet] = useState(() => readBrowserBoolean('browser_show_answer', false));
     const [showScheduleDetails, setShowScheduleDetails] = useState(() => readBrowserBoolean('browser_show_schedule', true));
     const [showImageThumbnails, setShowImageThumbnails] = useState(() => readBrowserBoolean('browser_show_thumbnails', true));
-    const [imagePreview, setImagePreview] = useState<BrowserImagePreview | null>(null);
-    const openImagePreview = useCallback((filename: string, showActions: boolean) => setImagePreview({ filename, showActions }), []);
+    const [imagePreview, setImagePreview] = useState<StudyCard | null>(null);
+    const openImagePreview = useCallback((card: StudyCard) => setImagePreview(card), []);
     const [expandedCard, setExpandedCard] = useState<number | null>(null);
     const [showOverflowMenu, setShowOverflowMenu] = useState(false);
     const [deckScopePickerVisible, setDeckScopePickerVisible] = useState(false);
@@ -645,6 +645,10 @@ export default function BrowserScreen() {
         () => selectedNoteIds.some((noteId) => isCatalogNote(noteId)),
         [selectedNoteIds],
     );
+    const imagePreviewNote = imagePreview?.rawNote ?? (imagePreview ? noteById.get(imagePreview.noteId) : null);
+    const imagePreviewNoteType = imagePreviewNote ? noteTypes.find(type => type.id === imagePreviewNote.noteTypeId) : null;
+    const imagePreviewPayload = imagePreviewNote && imagePreviewNoteType && imagePreview?.rawCard
+        ? { note: imagePreviewNote, noteType: imagePreviewNoteType, card: imagePreview.rawCard } : null;
     const previewCard = previewIndex === null ? null : selectedCards[previewIndex] ?? null;
     const previewNote = previewCard ? noteById.get(previewCard.noteId) ?? null : null;
     const previewNoteType = previewNote ? noteTypes.find((type) => type.id === previewNote.noteTypeId) ?? null : null;
@@ -1324,7 +1328,10 @@ export default function BrowserScreen() {
                 visible={showSearchHelp}
             />
 
-            <BrowserImagePreviewSheet image={imagePreview} onClose={() => setImagePreview(null)} />
+            <BrowserImagePreviewSheet visible={imagePreview !== null} payload={imagePreviewPayload}
+                deck={imagePreview ? deckById.get(imagePreview.deckId) ?? null : null}
+                audioPlaybackRate={settings.audioPlaybackRate ?? 1}
+                onClose={() => setImagePreview(null)} />
 
             <BrowserOptionsModal
                 l={l}

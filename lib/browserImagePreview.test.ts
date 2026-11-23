@@ -4,10 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
     platform: 'web', cached: 'blob:thumbnail' as string | null | undefined,
-    read: vi.fn(), load: vi.fn(), invalidate: vi.fn(), haptic: vi.fn(),
-    mediaListeners: new Set<(names: readonly string[]) => void>(),
+    load: vi.fn(), invalidate: vi.fn(), haptic: vi.fn(),
     thumbListeners: new Set<(names: readonly string[] | null) => void>(),
-    createUrl: vi.fn(), revokeUrl: vi.fn(),
 }));
 vi.mock('react-native', () => ({
     Platform: { get OS() { return h.platform; } },
@@ -16,14 +14,17 @@ vi.mock('react-native', () => ({
     Image: 'Image', View: 'View', Pressable: 'Pressable', TouchableOpacity: 'TouchableOpacity',
 }));
 vi.mock('../components/AppText', () => ({ Text: 'Text' }));
-vi.mock('../components/ui/Choice', () => ({ Checkbox: 'Checkbox' }));
+vi.mock('../components/ui/Choice', () => ({ Checkbox: 'Checkbox', SegmentedControl: 'SegmentedControl' }));
+vi.mock('../components/CardWebView', () => ({ default: 'CardWebView' }));
+vi.mock('../components/SwipeDismissSheet', () => ({ SheetNoDrag: 'SheetNoDrag' }));
+vi.mock('../components/ui/Dialog', () => ({
+    AppDialog: ({ visible, children, ...props }: any) => React.createElement('Dialog', props, visible ? children : null),
+}));
 vi.mock('../components/ui/Button', () => ({ IconButton: 'IconButton', Button: 'Button' }));
 vi.mock('../components/ui/Sheet', async () => ({
     AppSheet: ({ visible, children, ...props }: any) => React.createElement('Sheet', props, visible ? children : null),
 }));
-vi.mock('../components/ui/Menu', () => ({ MenuItem: 'MenuItem' }));
 vi.mock('../components/ui/Feedback', () => ({ EmptyState: 'EmptyState', LoadingState: 'LoadingState' }));
-vi.mock('../components/SwipeDismissSheet', () => ({ SheetNoDrag: 'SheetNoDrag' }));
 vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ l: (_tr: string, en: string) => en }) }));
 vi.mock('../constants/theme', () => ({
     useThemeColors: () => ({ border: 'border', bgInput: 'input' }),
@@ -42,17 +43,13 @@ vi.mock('./mediaThumbnails', () => ({
         h.thumbListeners.add(fn); return () => { h.thumbListeners.delete(fn); };
     },
 }));
-vi.mock('./mediaStore', () => ({
-    ensureMediaDir: async () => 'file:///media/',
-    readWebMediaBlob: h.read,
-    onMediaChanged: (fn: (names: readonly string[]) => void) => {
-        h.mediaListeners.add(fn); return () => { h.mediaListeners.delete(fn); };
-    },
-}));
 import { BrowserThumbnail } from '../components/browser/BrowserThumbnail';
 import { BrowserImagePreviewSheet } from '../components/browser/BrowserImagePreviewSheet';
 import { humanizeCardText } from './displayText';
 import { BrowserCardRow } from '../components/browser/BrowserCardRow';
+import { EditorPreviewModal } from '../components/editor/EditorPreviewModal';
+import { BUILTIN_NOTE_TYPES, type AnkiCard, type Note } from './models';
+import { renderCardHtml } from './templates';
 
 let tree: TestRenderer.ReactTestRenderer | undefined;
 const byType = (type: string) => tree!.root.findByType(type as any);
@@ -61,12 +58,8 @@ const render = async (element: React.ReactElement) => act(async () => { tree = T
 beforeEach(() => {
     (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
     h.platform = 'web'; h.cached = 'blob:thumbnail';
-    h.read.mockReset().mockResolvedValue(new Blob(['original'], { type: 'image/png' }));
     h.load.mockReset(); h.invalidate.mockReset(); h.haptic.mockClear();
-    h.createUrl.mockReset().mockReturnValue('blob:original'); h.revokeUrl.mockClear();
-    h.mediaListeners.clear(); h.thumbListeners.clear();
-    vi.spyOn(URL, 'createObjectURL').mockImplementation(h.createUrl);
-    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(h.revokeUrl);
+    h.thumbListeners.clear();
 });
 afterEach(() => { if (tree) act(() => tree!.unmount()); tree = undefined; vi.restoreAllMocks(); });
 
@@ -88,21 +81,21 @@ describe('thumbnail interaction inside the Browser', () => {
         const text = () => tree!.root.findAllByType('Text' as any).map(n => n.props.children).join(' ');
         expect(text()).toContain('Görsel Kalp');
         expect(text()).not.toContain('🖼');
-        const open = byTypes('IconButton').find(n => n.props.accessibilityLabel === 'Open image')!;
+        const open = byTypes('IconButton').find(n => n.props.accessibilityLabel === 'Preview card')!;
         act(() => open.props.onLongPress({ stopPropagation: vi.fn() }));
-        expect(onOpenImage).toHaveBeenCalledWith('heart.png', true);
+        expect(onOpenImage).toHaveBeenCalledWith(props.item);
         expect(select).not.toHaveBeenCalled(); expect(route).not.toHaveBeenCalled();
         await act(async () => tree!.update(React.createElement(BrowserCardRow, { ...props, item: { ...props.item, question: 'Plain' } } as any)));
         expect(byTypes('Image')).toHaveLength(0);
     });
-    it('opens the original on tap and offers the action on hold or right click without bubbling to the row', async () => {
+    it('opens directly on tap, hold and right click without bubbling to the row', async () => {
         const onOpen = vi.fn();
         await render(React.createElement(BrowserThumbnail, { filename: 'heart.png', onOpen }));
         const stopPropagation = vi.fn(); const preventDefault = vi.fn();
         act(() => byType('IconButton').props.onPress({ stopPropagation }));
-        expect(onOpen).toHaveBeenLastCalledWith('heart.png', false);
+        expect(onOpen).toHaveBeenLastCalledWith();
         act(() => byType('IconButton').props.onLongPress({ stopPropagation }));
-        expect(onOpen).toHaveBeenLastCalledWith('heart.png', true);
+        expect(onOpen).toHaveBeenLastCalledWith();
         act(() => byType('IconButton').props.onContextMenu({ stopPropagation, preventDefault }));
         expect(stopPropagation).toHaveBeenCalledTimes(3);
         expect(preventDefault).toHaveBeenCalledOnce();
@@ -137,55 +130,85 @@ describe('thumbnail interaction inside the Browser', () => {
     });
 });
 
-describe('original image in the same sheet', () => {
-    it('waits for Open image and then reads the full original, with no route or download', async () => {
+const noteType = BUILTIN_NOTE_TYPES[0];
+const note: Note = {
+    id: 42, guid: 'image-preview', noteTypeId: noteType.id, mod: 0, usn: -1, tags: [],
+    fields: ['Soru <img src="front.png"><img src="front-detail.png">', 'Cevap <img src="back.png">'],
+    sfld: 'Soru', csum: 0, flags: 0,
+};
+const card: AnkiCard = {
+    id: 43, noteId: note.id, deckId: 1, ord: 0, mod: 0, usn: -1, type: 0, queue: 0,
+    due: 1, ivl: 0, factor: 0, reps: 0, lapses: 0, left: 0, odue: 0, odid: 0, flags: 0, lastReview: 0,
+};
+const payload = { note, card, noteType };
+const previewProps = { visible: true, payload, deck: null, audioPlaybackRate: 1.25, onClose: vi.fn() };
+function renderedSideHtml() {
+    const props = byType('CardWebView').props;
+    return renderCardHtml(props.noteType, props.note, props.card.ord, props.side);
+}
+
+describe('question and answer preview above the Browser', () => {
+    it('shows the card immediately and switches every image to its template side, with the same content as Add Card', async () => {
+        await render(React.createElement(BrowserImagePreviewSheet, previewProps));
+        expect(byTypes('MenuItem')).toHaveLength(0);
+        expect(byType('Sheet').props.title).toBe('Preview');
+        expect(byTypes('SheetNoDrag')).toHaveLength(1);
+        const segments = byType('SegmentedControl');
+        expect(segments.props.options).toEqual([
+            { value: 'question', label: 'Question' }, { value: 'answer', label: 'Answer' },
+        ]);
+        expect(segments.props.value).toBe('question');
+        expect(renderedSideHtml()).toContain('front.png');
+        expect(renderedSideHtml()).toContain('front-detail.png');
+        expect(renderedSideHtml()).not.toContain('back.png');
+        await act(async () => segments.props.onChange('answer'));
+        expect(byType('CardWebView').props.side).toBe('answer');
+        // Basic's answer includes FrontSide, so all three originals must remain in the preview.
+        expect(renderedSideHtml()).toContain('front.png');
+        expect(renderedSideHtml()).toContain('front-detail.png');
+        expect(renderedSideHtml()).toContain('back.png');
+        expect(byType('CardWebView').props.audioPlaybackRate).toBe(1.25);
+        expect(byType('CardWebView').props.scrollMode).toBe('contained');
+        const browserHtml = renderedSideHtml();
+        await act(async () => tree!.update(React.createElement(EditorPreviewModal, {
+            visible: true, payload, side: 'answer', onSideChange: vi.fn(), bodyHeight: 400,
+            audioPlaybackRate: 1.25, onClose: vi.fn(), deck: null, styles: {},
+            l: (_tr: string, en: string) => en, t: (key: string) => key,
+        } as any)));
+        expect(renderedSideHtml()).toBe(browserHtml);
+        expect(byTypes('SheetNoDrag')).toHaveLength(0);
+    });
+
+    it('shows a back-only image after switching to Answer and respects a reversed card ordinal', async () => {
+        const reversed = BUILTIN_NOTE_TYPES.find(type => type.id === 2)!;
+        const backOnly = { ...note, fields: ['Metin soru', '<img src="back-only.png">'] };
+        await render(React.createElement(BrowserImagePreviewSheet, { ...previewProps, payload: { ...payload, note: backOnly } }));
+        expect(renderedSideHtml()).not.toContain('back-only.png');
+        act(() => byType('SegmentedControl').props.onChange('answer'));
+        expect(renderedSideHtml()).toContain('back-only.png');
+        await act(async () => tree!.update(React.createElement(BrowserImagePreviewSheet, {
+            ...previewProps, payload: { note: { ...backOnly, noteTypeId: reversed.id },
+                noteType: reversed, card: { ...card, id: 44, ord: 1 } },
+        })));
+        expect(byType('SegmentedControl').props.value).toBe('question');
+        expect(renderedSideHtml()).toContain('back-only.png');
+    });
+
+    it('closes in place and starts on Question when reopened', async () => {
         const onClose = vi.fn();
-        const image = { filename: 'heart.png', showActions: true };
-        await render(React.createElement(BrowserImagePreviewSheet, { image, onClose }));
-        expect(byType('MenuItem').props.label).toBe('Open image');
-        expect(h.read).not.toHaveBeenCalled();
-        await act(async () => byType('MenuItem').props.onPress());
-        expect(h.read).toHaveBeenCalledWith('heart.png');
-        expect(byType('Image').props.source.uri).toBe('blob:original');
-        expect(byType('Image').props.resizeMode).toBe('contain');
+        await render(React.createElement(BrowserImagePreviewSheet, { ...previewProps, onClose }));
+        act(() => byType('SegmentedControl').props.onChange('answer'));
         act(() => byType('Sheet').props.onClose());
         expect(onClose).toHaveBeenCalledOnce();
-        await act(async () => tree!.update(React.createElement(BrowserImagePreviewSheet, { image: null, onClose })));
-        expect(h.revokeUrl).toHaveBeenCalledWith('blob:original');
-        await act(async () => tree!.update(React.createElement(BrowserImagePreviewSheet, { image: { ...image }, onClose })));
-        expect(byTypes('MenuItem')).toHaveLength(1);
+        await act(async () => tree!.update(React.createElement(BrowserImagePreviewSheet, { ...previewProps, visible: false, onClose })));
+        expect(byTypes('CardWebView')).toHaveLength(0);
+        await act(async () => tree!.update(React.createElement(BrowserImagePreviewSheet, { ...previewProps, onClose })));
+        expect(byType('CardWebView').props.side).toBe('question');
     });
 
-    it('reads the native original file with encoded special filename characters', async () => {
-        h.platform = 'ios';
-        await render(React.createElement(BrowserImagePreviewSheet, {
-            image: { filename: 'heart #1?.png', showActions: false }, onClose: vi.fn(),
-        }));
-        expect(byType('Image').props.source.uri).toBe('file:///media/heart%20%231%3F.png');
-        expect(h.read).not.toHaveBeenCalled();
-    });
-
-    it('discards a late read after closing and never creates a leaked original URL', async () => {
-        let resolve!: (blob: Blob) => void;
-        h.read.mockImplementationOnce(() => new Promise<Blob>(done => { resolve = done; }));
-        const onClose = vi.fn();
-        await render(React.createElement(BrowserImagePreviewSheet, { image: { filename: 'heart.png', showActions: false }, onClose }));
-        await act(async () => tree!.update(React.createElement(BrowserImagePreviewSheet, { image: null, onClose })));
-        await act(async () => resolve(new Blob(['old'])));
-        expect(h.createUrl).not.toHaveBeenCalled();
-    });
-
-    it('shows a recoverable missing-image state and reloads the original after media changes', async () => {
-        h.read.mockResolvedValueOnce(null);
-        await render(React.createElement(BrowserImagePreviewSheet, { image: { filename: 'heart.png', showActions: false }, onClose: vi.fn() }));
-        expect(byType('EmptyState').props.title).toBe('Could not open image');
-        await act(async () => { h.mediaListeners.forEach(fn => fn(['unrelated.png'])); });
-        expect(h.read).toHaveBeenCalledOnce();
-        await act(async () => { h.mediaListeners.forEach(fn => fn(['heart.png'])); });
-        expect(byType('Image').props.source.uri).toBe('blob:original');
-        await act(async () => byType('Image').props.onError());
-        expect(byType('EmptyState').props.action.props.label).toBe('Try again');
-        await act(async () => byType('EmptyState').props.action.props.onPress());
-        expect(byTypes('Image')).toHaveLength(1);
+    it('names an unavailable card instead of showing a blank viewer', async () => {
+        await render(React.createElement(BrowserImagePreviewSheet, { ...previewProps, payload: null }));
+        expect(byType('EmptyState').props.title).toBe('Could not preview the card.');
+        expect(byTypes('CardWebView')).toHaveLength(0);
     });
 });

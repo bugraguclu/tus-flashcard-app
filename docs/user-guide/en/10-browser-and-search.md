@@ -88,8 +88,9 @@ In **⋮ › Options › View**, choose **Cards** or **Notes**.
 The same window has **Show answer preview**, which adds a short piece of the answer to each row,
 and **Scheduling details**, which turns the "Last: … · Next: …" line on or off. Your choices are
 remembered. **Show image previews**, on by default, adds thumbnails to rows with an image.
-Tap a thumbnail to open the original above Browse, or hold it and choose **Open image**
-(right-click on web). Closing it preserves your search, filters and position in the list.
+Tap or hold a thumbnail (or right-click on web) to open the card preview directly above Browse.
+Switch between **Question / Answer**, just as in Add Card: each side shows its text and all
+images according to the card template. Closing preserves your search, filters and list position.
 This works in both Cards and Notes. The text size of the rows is set in **Settings** under
 **Card browser › Font scaling**.
 

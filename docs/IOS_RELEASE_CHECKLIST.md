@@ -106,11 +106,13 @@ complete scope and automated evidence are in [HAVUZ_SELECTED_SCOPE.md](HAVUZ_SEL
 - Keep the existing Auto Advance modal/background pause behavior; Quick Search is not installed
   by this package. The dwell and timer tests cover the applicable retained behavior.
 - In Kartlarım, verify image previews in Cards and Notes, and turn the remembered option off/on.
-  Generated image emoji must not appear in row text. Tap a thumbnail to view the original;
-  hold it and select “Görseli aç” to do the same. Dismiss by pull-down/backdrop: the same search,
-  deck, filters and scroll position remain, with no card selected. Verify VoiceOver reaches
-  the image button separately from the row/edit button. A missing or unreadable original
-  gives a retryable error; a missing thumbnail adds no fallback icon. These device checks
+  Generated image emoji must not appear in row text. Tap or hold a thumbnail: the Soru/Cevap
+  preview opens directly, with no intervening menu. On a card with different images on both
+  sides, switch to Cevap and back; also check a back-only image, multiple images and a reversed
+  card. Compare to Kart Ekle's preview. Scroll the card without dragging the sheet. Dismiss
+  by pull-down/backdrop: search, deck, filters and scroll remain, with no card selected. Reopen:
+  Soru is active. VoiceOver reaches the preview button separately from row/edit and announces
+  the selected side. A missing thumbnail adds no fallback icon. These device checks
   remain deferred by the owner, as recorded below.
 
 Physical-iPhone execution is pending and must be recorded before release. The thumbnail
