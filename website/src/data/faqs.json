@@ -92,8 +92,8 @@
     },
     {
       "cat": "fiyat",
-      "q": "Lansmana özel ₺50/ay ve günde 200 ücretsiz kart başladı mı?",
-      "a": "Henüz başlamadı. **Günde 200 kart ücretsiz çalışma ve sınırsız erişim için ₺50/ay**, planlanan lansman modelidir. Güncel betada TUS paketi ücretsiz açılır. Ücretli erişimin başlangıcı, kapsamı ve günlük sınırın işleyişi devreye alınmadan önce ayrıca duyurulacak."
+      "q": "3 segmentli fiyatlandırma (₺0, ₺1.000 tüm kartlar, ₺50 reklam kaldırma) nasıl işliyor?",
+      "a": "TusAnkiM’de üç net seçenek vardır: (1) **Ücretsiz kullanım (₺0):** ara ara reklam çıkar; reklam sıklığı sonradan ayarlanacak. (2) **Tüm 9.575 BKA TUS kartına erişim ₺1.000’dir.** (3) **Reklamları kaldırma ₺50’dir.** Her üç segmentte de seçili demo sorularına doğrudan erişebilirsin. Güncel betada ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır."
     },
     {
       "cat": "platform",
@@ -133,7 +133,7 @@
     {
       "cat": "fiyat",
       "q": "Tek seferlik satın alma mı, aylık abonelik mi?",
-      "a": "Şu anda ödeme alınmıyor. Açıklanan lansman planı aylık erişim modeli; tek seferlik satın alma veya ömür boyu erişim olarak sunulmuyor. Güncel betayı ücretsiz deneyebilirsin."
+      "a": "Şu anda ödeme alınmıyor. Erişim modelinde tüm kartlara erişim (₺1.000) ve reklamları kaldırma (₺50) birer seçenek olarak sunulacak; ödeme koşulları ücretli erişim başlamadan önce açıklanacak. Güncel betayı ücretsiz deneyebilirsin."
     },
     {
       "cat": "fiyat",

@@ -1,0 +1,391 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SITE } from '../config';
+import catalog from '../data/generated/catalog.json';
+import demoCards from '../data/generated/demo-cards.json';
+import { breadcrumbList, collectionPage } from '../lib/schema';
+import { effectiveDate, formatTrDate, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate(pageSources('spot-bilgiler'));
+const modLabel = formatTrDate(modDate);
+
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'TUS Spot Bilgiler', path: '/tus-spot-bilgiler' },
+]);
+
+const colSchema = collectionPage(origin, {
+  path: '/tus-spot-bilgiler',
+  name: 'TUS Spot Bilgiler ve Aktif Hatırlama Kart Havuzu | TusAnkiM',
+  description:
+    '12 ders ve 106 alt destede 9.575 TUS kartı, 11 branştan doğrulanmış etkileşimli spot önizlemesi ve FSRS-6 aktif hatırlama yaklaşımı.',
+  items: demoCards.map((c, idx) => ({
+    name: `${c.ders}: ${c.olculenBilgi}`,
+    path: `/tus-spot-bilgiler#spot-${idx + 1}`,
+  })),
+  dateModified: modDate,
+});
+
+const fmtInt = (n: number) => n.toLocaleString('tr-TR');
+const groupLabel = (g: string) => (g === 'temel' ? 'Temel' : g === 'klinik' ? 'Klinik' : 'Karma');
+const temelCount = demoCards.filter((c) => c.test === 'Temel').length;
+const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
+---
+<Layout
+  title="TUS Spot Bilgiler ve Aktif Tekrar Kartları | TusAnkiM"
+  description="Pasif PDF spot listeleri yerine FSRS-6 aktif hatırlama: 12 ders ve 106 alt destede 9.575 TUS kartı, 11 canlı demo spot kartı ve doğrudan demo erişimi."
+  modifiedTime={modDate}
+  schema={[crumbs, colSchema]}
+>
+  <section class="bg-surfaceSoft border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="mb-3">
+        <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
+          <li class="inline-flex items-center">
+            <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+          </li>
+          <li class="inline-flex items-center">
+            <span aria-hidden="true" class="mx-2">/</span>
+            <a href="/tus-spot-bilgiler/" aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
+              TUS Spot Bilgiler
+            </a>
+          </li>
+        </ol>
+      </nav>
+
+      <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
+        TUS Spot Bilgiler: Pasif Listeler Yerine FSRS-6 Aktif Hatırlama
+      </h1>
+      <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
+        <strong>{fmtInt(catalog.totals.cards)} kart</strong>, <strong>{fmtInt(catalog.totals.notes)} not</strong>,
+        <strong>{catalog.totals.courses} ders</strong> ve <strong>{catalog.totals.topicSubdecks} konu alt destesi</strong> içinden
+        2026/2 sınav öncesi sürümde (<code>a78ae1f</code>) yer alan 11 doğrulanmış yüksek verimli spot kartını hemen aşağıda test edebilirsin.
+      </p>
+
+      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
+        <span>
+          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
+        </span>
+        <span>
+          Hazırlayan:{' '}
+          <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+            TusAnkiM
+          </a>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1 · Why Passive Spot PDFs Fail vs Active Recall -->
+  <section class="bg-white border-b border-line py-10 sm:py-12" aria-labelledby="why-active-heading">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <div class="max-w-2xl">
+        <h2 id="why-active-heading" class="display text-section tracking-tightest text-ink">
+          Pasif Spot Okuma Neden Sınavda Yeterli Kalmaz?
+        </h2>
+        <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+          PDF spot listelerini veya kanal akışlarını baştan sona okumak kısa süreli tanıdıklık hissi oluşturur ama sınavdaki ipuçsuz hatırlamayı ölçmez.
+        </p>
+      </div>
+
+      <div class="mt-6 grid md:grid-cols-3 gap-5">
+        <div class="rounded-2xl border border-line bg-surfaceSoft p-5 space-y-2">
+          <div class="text-xs font-bold text-teal">01 · İpuçsuz Geri Çağırma</div>
+          <h3 class="display text-base text-ink">Cevabı Gizle, Önce Zihninden Getir</h3>
+          <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
+            Boşluk doldurma (cloze) spot kartları kritik ayrımı — örneğin ilk tetkik, özgül antikor veya anatomik seviye — gizleyerek aktif test yapar.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-line bg-surfaceSoft p-5 space-y-2">
+          <div class="text-xs font-bold text-teal">02 · FSRS-6 ile %20–30 Daha Az Tekrar</div>
+          <h3 class="display text-base text-ink">Unutmak Üzereyken Karşına Çıkar</h3>
+          <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
+            İyi bildiğin spotları haftalarca erteleyip karıştırdıklarını sıklaştırır. Günde 60 yeni kartla 9.575 kart 160 günde tamamlanır.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-line bg-surfaceSoft p-5 space-y-2">
+          <div class="text-xs font-bold text-teal">03 · Her Segmentte Seçili Demo</div>
+          <h3 class="display text-base text-ink">Kurulumdan Önce veya Uygulamada Dene</h3>
+          <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
+            Ücretsiz (ara ara reklam), Tüm Kartlara Erişim (<strong>₺1.000</strong>) ve Reklamları Kaldırma (<strong>₺50</strong>)
+            segmentlerinin tamamında seçili demo sorularına doğrudan erişim vardır.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · Interactive Verified Spot Cards Preview (Zero Copyrighted ÖSYM Text) -->
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-14" aria-labelledby="spots-preview-heading">
+    <div class="space-y-5" data-spot-hub>
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div class="max-w-2xl">
+          <h2 id="spots-preview-heading" class="display text-section tracking-tightest text-ink">
+            11 Branştan Doğrulanmış Etkileşimli Spot Örnekleri
+          </h2>
+          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+            Aşağıdaki 11 kartın tamamı kendi hazırladığımız ders kartlarıdır (telifli ÖSYM soru metni veya şıkkı içermez).
+            Önce boşluğu zihninden yanıtla, sonra “Cevabı Göster” ile kontrol et.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Spot dersi bölümü filtresi">
+          <button
+            type="button"
+            data-spot-filter="all"
+            aria-pressed="true"
+            class="min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-teal text-white transition cursor-pointer"
+          >
+            Tümü ({demoCards.length})
+          </button>
+          <button
+            type="button"
+            data-spot-filter="Temel"
+            aria-pressed="false"
+            class="min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-surfaceSoft border border-line text-ink hover:border-tealGraphic transition cursor-pointer"
+          >
+            Temel ({temelCount})
+          </button>
+          <button
+            type="button"
+            data-spot-filter="Klinik"
+            aria-pressed="false"
+            class="min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-surfaceSoft border border-line text-ink hover:border-tealGraphic transition cursor-pointer"
+          >
+            Klinik ({klinikCount})
+          </button>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-5">
+        {demoCards.map((card, idx) => {
+          const activeCloze = card.activeCloze ?? 1;
+          const qNum = card.qid.split('-')[1] || card.qid;
+          const refHref = `/referanslar/?sinav=${encodeURIComponent(card.sinav)}&ders=${encodeURIComponent(card.ders)}&q=${encodeURIComponent(qNum)}`;
+          return (
+            <article
+              id={`spot-${idx + 1}`}
+              data-spot-card
+              data-spot-group={card.test}
+              class="rounded-2xl border border-line bg-white p-6 flex flex-col justify-between gap-4"
+            >
+              <div class="space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-inkMuted">
+                  <span class="font-bold text-teal">{card.ders} · {card.test}</span>
+                  <span class="tabular-nums">{card.sinav} TUS · {qNum} · a78ae1f</span>
+                </div>
+
+                <p class="text-sm sm:text-base text-ink leading-relaxed whitespace-pre-line">
+                  {card.parts.map((part) => {
+                    const hint = 'hint' in part && typeof part.hint === 'string' ? part.hint : '';
+                    return part.type === 'cloze' && part.index === activeCloze ? (
+                      <span
+                        data-spot-cloze
+                        data-answer={part.answer}
+                        data-hint={hint}
+                        data-revealed="false"
+                        class="inline-block rounded-md bg-[#e3edf7] px-2 py-0.5 font-bold text-[#1d5fa6] border border-[#1d5fa6]/25"
+                      >
+                        {hint ? `[${hint}]` : '[…]'}
+                      </span>
+                    ) : (
+                      <span>{part.type === 'cloze' ? part.answer : part.value}</span>
+                    );
+                  })}
+                </p>
+
+                <div data-spot-meta hidden class="pt-3 border-t border-lineLight space-y-1.5 text-xs text-inkMuted">
+                  {card.extra && (
+                    <p><strong class="text-ink">Klinik not:</strong> {card.extra}</p>
+                  )}
+                  <p>
+                    <strong class="text-ink">Ölçülen TUS bilgisi:</strong> {card.olculenBilgi}
+                  </p>
+                </div>
+              </div>
+
+              <div class="pt-3 border-t border-lineLight flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  data-spot-toggle
+                  data-spot-label={`${idx + 1}. ${card.ders}`}
+                  aria-expanded="false"
+                  aria-label={`${idx + 1}. ${card.ders} spot kartı cevabını göster`}
+                  class="min-h-[2.75rem] px-4 rounded-full bg-teal text-white text-xs font-semibold hover:bg-tealDark transition cursor-pointer"
+                >
+                  Cevabı Göster
+                </button>
+                <a
+                  href={refHref}
+                  class="inline-flex items-center min-h-[2.75rem] text-xs font-semibold text-teal underline underline-offset-2 hover:text-tealDark"
+                >
+                  Referans kaydı →
+                </a>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <p data-spot-live aria-live="polite" class="sr-only"></p>
+    </div>
+
+    <!-- 3 · High-Yield Course Distribution Table (catalog.json) -->
+    <div class="pt-8 border-t border-line space-y-4">
+      <div class="max-w-3xl">
+        <h2 class="display text-section tracking-tightest text-ink">
+          12 Ders ve 106 Alt Destede 9.575 Kart Dağılımı
+        </h2>
+        <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+          Katalogda <strong>{fmtInt(catalog.totals.temelCards)} Temel</strong>, <strong>{fmtInt(catalog.totals.klinikCards)} Klinik</strong> ve
+          <strong>{fmtInt(catalog.totals.karmaCards)} Karma</strong> (<em>Deneme ve Soru</em>) olmak üzere toplam <strong>12 ders</strong> yer alır.
+          ÖSYM referans analizinde ise <em>Deneme ve Soru</em> karma destesi hariç <strong>11 resmî ÖSYM TUS branşı</strong> raporlanır
+          (katalogdaki FHE = Fizyoloji-Histoloji-Embriyoloji).
+        </p>
+      </div>
+
+      <div
+        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        tabindex="0"
+        role="region"
+        aria-labelledby="catalog-spot-caption"
+      >
+        <table class="w-full text-left border-collapse text-sm">
+          <caption id="catalog-spot-caption" class="sr-only">
+            BKA TUS 9.575 kart kataloğunun 12 ders, 7.721 not ve 106 alt deste dağılım tablosu
+          </caption>
+          <thead>
+            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+              <th scope="col" class="py-3.5 px-4">Ders (Katalog)</th>
+              <th scope="col" class="py-3.5 px-4">Grup</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Kart</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Not</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Alt Deste</th>
+              <th scope="col" class="py-3.5 px-4">Öne Çıkan Yüksek Verimli Alt Konular</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-lineLight tabular-nums">
+            {catalog.courses.map((course) => (
+              <tr>
+                <th scope="row" class="py-3 px-4 font-semibold text-ink whitespace-nowrap">
+                  {course.name === 'FHE' ? 'FHE (Fizyoloji-Histoloji-Embriyoloji)' : course.name}
+                </th>
+                <td class="py-3 px-4 text-xs text-inkMuted">{groupLabel(course.group)}</td>
+                <td class="py-3 px-4 font-semibold text-teal">{fmtInt(course.cards)}</td>
+                <td class="py-3 px-4 text-ink">{fmtInt(course.notes)}</td>
+                <td class="py-3 px-4 text-inkMuted">{course.topicSubdecks}</td>
+                <td class="py-3 px-4 text-xs text-inkMuted">
+                  {course.topTopics.slice(0, 3).map((t) => `${t.name} (${t.cards})`).join(' · ')}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4 · Direct Demo Access Across All 3 Segments + Cross-Links -->
+    <div class="rounded-2xl border border-line bg-tint p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div class="max-w-2xl space-y-2">
+        <h2 class="display text-lg text-ink">Seçili Demo Sorularına Her Segmentte Doğrudan Erişim</h2>
+        <p class="text-sm text-inkMuted leading-relaxed">
+          TusAnkiM’i ücretsiz başlat (ara ara reklam çıkar, reklam sıklığı sonradan ayarlanacak), tüm 9.575 karta <strong>₺1.000</strong> ile eriş
+          veya <strong>₺50</strong> ile reklamları kaldır. Her üç segmentte de seçili demo sorularını doğrudan çözebilir, kişisel
+          <code>.apkg</code>/<code>.colpkg</code> destelerini çevrimdışı çalışabilirsin.
+        </p>
+        <p class="text-xs text-inkMuted">{SITE.disclaimer}</p>
+      </div>
+      <div class="flex flex-wrap gap-2.5 shrink-0">
+        <a
+          href="/#demo"
+          class="inline-flex items-center min-h-[2.75rem] px-5 rounded-full bg-teal text-white text-xs sm:text-sm font-semibold hover:bg-tealDark transition"
+        >
+          FSRS-6 Canlı Kart Denemesi →
+        </a>
+        <a
+          href="/referanslar/"
+          class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+        >
+          1.195 Referans Kanıtı →
+        </a>
+        <a
+          href="/yardim/kronometre/"
+          class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+        >
+          TUS Kronometre &amp; Takvim →
+        </a>
+        <a
+          href="/tus-cikmis-sorular-ve-analiz/"
+          class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+        >
+          Çıkmış Soru Dağılımı →
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-spot-hub]').forEach((root) => {
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+
+    const filterBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-spot-filter]')];
+    const cards = [...root.querySelectorAll<HTMLElement>('[data-spot-card]')];
+    const liveEl = root.querySelector<HTMLElement>('[data-spot-live]');
+
+    filterBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const selected = btn.dataset.spotFilter || 'all';
+        filterBtns.forEach((b) => {
+          const active = b === btn;
+          b.setAttribute('aria-pressed', active ? 'true' : 'false');
+          b.className = active
+            ? 'min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-teal text-white transition cursor-pointer'
+            : 'min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-surfaceSoft border border-line text-ink hover:border-tealGraphic transition cursor-pointer';
+        });
+        let shown = 0;
+        cards.forEach((card) => {
+          const match = selected === 'all' || card.dataset.spotGroup === selected;
+          card.hidden = !match;
+          if (match) shown++;
+        });
+        if (liveEl) liveEl.textContent = `${shown} spot kartı gösteriliyor.`;
+      });
+    });
+
+    cards.forEach((card) => {
+      const toggleBtn = card.querySelector<HTMLButtonElement>('[data-spot-toggle]');
+      const clozes = [...card.querySelectorAll<HTMLElement>('[data-spot-cloze]')];
+      const metaEl = card.querySelector<HTMLElement>('[data-spot-meta]');
+
+      toggleBtn?.addEventListener('click', () => {
+        const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
+        const nextOpen = !isOpen;
+        const spotLabel = toggleBtn.dataset.spotLabel || '';
+        toggleBtn.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+        toggleBtn.textContent = nextOpen ? 'Cevabı Gizle' : 'Cevabı Göster';
+        if (spotLabel) {
+          toggleBtn.setAttribute(
+            'aria-label',
+            `${spotLabel} spot kartı cevabını ${nextOpen ? 'gizle' : 'göster'}`,
+          );
+        }
+
+        clozes.forEach((el) => {
+          el.dataset.revealed = nextOpen ? 'true' : 'false';
+          if (nextOpen) {
+            el.textContent = el.dataset.answer || '';
+            el.className = 'inline-block rounded-md bg-[#e6f4ec] px-2 py-0.5 font-bold text-[#156d3e] border border-[#156d3e]/30';
+          } else {
+            el.textContent = el.dataset.hint ? `[${el.dataset.hint}]` : '[…]';
+            el.className = 'inline-block rounded-md bg-[#e3edf7] px-2 py-0.5 font-bold text-[#1d5fa6] border border-[#1d5fa6]/25';
+          }
+        });
+
+        if (metaEl) metaEl.hidden = !nextOpen;
+        if (liveEl) liveEl.textContent = nextOpen ? 'Spot cevabı gösterildi.' : 'Spot cevabı gizlendi.';
+      });
+    });
+  });
+</script>

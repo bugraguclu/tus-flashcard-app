@@ -1,0 +1,580 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SITE } from '../config';
+import {
+  OSYM_APPLICANTS_AND_TRANSFERS,
+  OSYM_BRANCH_PLACEMENTS,
+  OSYM_MACRO_PLACEMENTS,
+  OSYM_PERIOD_COUNTS,
+} from '../data/osymPlacement';
+import { breadcrumbList } from '../lib/schema';
+import { effectiveDate, formatTrDate, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate(pageSources('taban-puanlari'));
+const modLabel = formatTrDate(modDate);
+
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'TUS Taban Puanları ve Kontenjan', path: '/tus-taban-puanlari-ve-kontenjan' },
+]);
+
+const datasetSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  '@id': origin + '/tus-taban-puanlari-ve-kontenjan/#dataset',
+  name: 'ÖSYM 2025–2026 TUS Taban Puanları, Kontenjan ve Doluluk Verileri',
+  description:
+    'ÖSYM resmî yerleştirme PDF’lerinden derlenen 2025/1–2026/2 TUS makro kontenjan/yerleşen sayıları, başvuru artışı, Uzmanlık Dalı Değişikliği ve 3 döneme ait 122 Genel Kontenjan uzmanlık dalı min–max puan özeti.',
+  url: origin + '/tus-taban-puanlari-ve-kontenjan/',
+  inLanguage: 'tr-TR',
+  isAccessibleForFree: true,
+  dateModified: modDate,
+  creator: { '@id': origin + '/#organization' },
+  publisher: { '@id': origin + '/#organization' },
+};
+
+const fmtInt = (n: number) => n.toLocaleString('tr-TR');
+const fmtDec1 = (n: number) => n.toFixed(1).replace('.', ',');
+const fmtScore = (n: number) => n.toFixed(2).replace('.', ',');
+
+const normTr = (s: string) =>
+  s
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ç/g, 'c')
+    .replace(/ğ/g, 'g')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ş/g, 's')
+    .replace(/ü/g, 'u')
+    .replace(/â/g, 'a');
+
+const BRANCH_ALIASES: Record<string, string> = {
+  'Deri ve Zührevi Hastalıkları': 'dermatoloji cildiye derma',
+  'Kulak Burun Boğaz Hastalıkları': 'kbb kulak burun bogaz',
+  'İç Hastalıkları': 'dahiliye ic hastaliklari',
+  'Çocuk Sağlığı ve Hastalıkları': 'pediatri cocuk sagligi',
+  'Ruh Sağlığı ve Hastalıkları': 'psikiyatri ruh sagligi',
+  'Çocuk ve Ergen Ruh Sağlığı ve Hastalıkları': 'cocuk psikiyatrisi cersh',
+  'Fiziksel Tıp ve Rehabilitasyon': 'ftr fizik tedavi',
+  'Kalp ve Damar Cerrahisi': 'kvc kalp damar',
+  'Kadın Hastalıkları ve Doğum': 'kadin dogum jinekoloji obstetri',
+  'Beyin ve Sinir Cerrahisi': 'beyin cerrahisi norosirurji',
+  'Plastik, Rekonstrüktif ve Estetik Cerrahi': 'plastik cerrahi prc estetik',
+  'Anesteziyoloji ve Reanimasyon': 'anestezi reanimasyon',
+  'Enfeksiyon Hastalıkları ve Klinik Mikrobiyoloji': 'enfeksiyon intaniye',
+  'Göz Hastalıkları': 'goz oftalmoloji',
+  'Ortopedi ve Travmatoloji': 'ortopedi',
+  'Tıbbi Patoloji': 'patoloji',
+  'Tıbbi Mikrobiyoloji': 'mikrobiyoloji',
+  'Tıbbi Biyokimya': 'biyokimya',
+  'Tıbbi Farmakoloji': 'farmakoloji',
+  'Tıbbi Genetik': 'genetik',
+  'Histoloji ve Embriyoloji': 'fhe histoloji embriyoloji',
+  'Fizyoloji': 'fhe fizyoloji',
+};
+---
+<Layout
+  title="2026 TUS Taban Puanları ve Kontenjanlar (ÖSYM) | TusAnkiM"
+  description="ÖSYM 2025/1–2026/2 TUS yerleştirme verileri: 40+ uzmanlık dalı Genel Kontenjan min–max puanları, doluluk oranları, başvuru artışı ve 2026/2 ek kontenjan."
+  modifiedTime={modDate}
+  schema={[crumbs, datasetSchema]}
+>
+  <section class="bg-surfaceSoft border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="mb-3">
+        <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
+          <li class="inline-flex items-center">
+            <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+          </li>
+          <li class="inline-flex items-center">
+            <span aria-hidden="true" class="mx-2">/</span>
+            <a href="/tus-taban-puanlari-ve-kontenjan/" aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
+              TUS Taban Puanları ve Kontenjan
+            </a>
+          </li>
+        </ol>
+      </nav>
+
+      <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
+        2025–2026 TUS Taban Puanları ve Kontenjan Verileri
+      </h1>
+      <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
+        ÖSYM’nin yayımladığı resmî yerleştirme PDF’lerinden derlenen son 3 tam yerleştirme dönemine ait
+        <strong>{OSYM_BRANCH_PLACEMENTS.length} uzmanlık dalı kaydı</strong> (2026/2: {OSYM_PERIOD_COUNTS['2026/2']} dal,
+        2026/1: {OSYM_PERIOD_COUNTS['2026/1']} dal, 2025/2: {OSYM_PERIOD_COUNTS['2025/2']} dal), makro kontenjan eğilimleri ve
+        resmî başvuru sayıları.
+      </p>
+
+      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
+        <span>
+          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
+        </span>
+        <span>
+          Hazırlayan:{' '}
+          <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+            TusAnkiM
+          </a>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1 · Key Macro Indicators -->
+  <section class="bg-white border-b border-line py-8 sm:py-10" aria-labelledby="macro-stats-heading">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <h2 id="macro-stats-heading" class="sr-only">ÖSYM TUS 2025–2026 temel makro göstergeleri</h2>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
+          <div class="text-xs font-semibold text-inkMuted">KTBT Başvuru Büyümesi (1,5 Yıl)</div>
+          <div class="display text-2xl sm:text-3xl text-teal mt-1 tabular-nums">+%19,9</div>
+          <p class="text-xs text-inkMuted mt-1 tabular-nums">30.945 (2025/1) → 37.109 (2026/2)</p>
+        </div>
+        <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
+          <div class="text-xs font-semibold text-inkMuted">İlk Yerleştirme Kontenjanı</div>
+          <div class="display text-2xl sm:text-3xl text-ink mt-1 tabular-nums">-%17,3</div>
+          <p class="text-xs text-inkMuted mt-1 tabular-nums">10.439 (2025/2) → 8.637 (2026/2)</p>
+        </div>
+        <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
+          <div class="text-xs font-semibold text-inkMuted">2026/2 İlk Yerleştirme Doluluğu</div>
+          <div class="display text-2xl sm:text-3xl text-teal mt-1 tabular-nums">%88,3</div>
+          <p class="text-xs text-inkMuted mt-1 tabular-nums">7.625 yerleşen / 8.637 kontenjan</p>
+        </div>
+        <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
+          <div class="text-xs font-semibold text-inkMuted">2026/2 Ek Yerleştirme Kontenjanı</div>
+          <div class="display text-2xl sm:text-3xl text-ink mt-1 tabular-nums">1.442</div>
+          <p class="text-xs text-inkMuted mt-1 tabular-nums">788 program (1.287 Genel · 155 YU)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · Interactive + Full SSR Branch Min-Max Table -->
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-12" aria-labelledby="branch-table-heading">
+    <div class="space-y-5" data-osym-explorer>
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div class="max-w-2xl">
+          <h2 id="branch-table-heading" class="display text-section tracking-tightest text-ink">
+            Uzmanlık Dalı Bazlı Genel Kontenjan Taban–Tavan Puanları
+          </h2>
+          <p class="text-sm text-inkMuted mt-2 leading-relaxed">
+            Aşağıdaki tabloda <strong>2026/2</strong>, <strong>2026/1</strong> ve <strong>2025/2</strong> ilk yerleştirme dönemlerine ait
+            tüm Genel Kontenjan branş özetleri eksiksiz yer alır. Dönem seçip uzmanlık dalı arayarak karşılaştırabilirsin.
+          </p>
+        </div>
+        <a
+          href="/puan-hesapla/"
+          class="inline-flex items-center justify-center min-h-[2.75rem] px-5 rounded-full bg-teal text-white text-xs sm:text-sm font-semibold hover:bg-tealDark transition shrink-0"
+        >
+          Netinle TUS Puanını Hesapla →
+        </a>
+      </div>
+
+      <!-- Filter controls -->
+      <div class="rounded-2xl border border-line bg-surfaceSoft p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Yerleştirme dönemi filtresi">
+          <button
+            type="button"
+            data-osym-period="all"
+            aria-pressed="true"
+            class="min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-teal text-white transition cursor-pointer"
+          >
+            Tümü ({OSYM_BRANCH_PLACEMENTS.length})
+          </button>
+          <button
+            type="button"
+            data-osym-period="2026/2"
+            aria-pressed="false"
+            class="min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-white border border-line text-ink hover:border-tealGraphic transition cursor-pointer"
+          >
+            2026/2 ({OSYM_PERIOD_COUNTS['2026/2']})
+          </button>
+          <button
+            type="button"
+            data-osym-period="2026/1"
+            aria-pressed="false"
+            class="min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-white border border-line text-ink hover:border-tealGraphic transition cursor-pointer"
+          >
+            2026/1 ({OSYM_PERIOD_COUNTS['2026/1']})
+          </button>
+          <button
+            type="button"
+            data-osym-period="2025/2"
+            aria-pressed="false"
+            class="min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-white border border-line text-ink hover:border-tealGraphic transition cursor-pointer"
+          >
+            2025/2 ({OSYM_PERIOD_COUNTS['2025/2']})
+          </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 lg:w-auto w-full">
+          <div class="flex-1 sm:w-64">
+            <label for="osym-search" class="sr-only">Uzmanlık dalı ara</label>
+            <input
+              id="osym-search"
+              type="search"
+              placeholder="Branş ara (örn. Dermatoloji, KBB, Göz)…"
+              autocomplete="off"
+              class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3.5 text-sm text-ink placeholder:text-inkMuted"
+            />
+          </div>
+          <div class="sm:w-52">
+            <label for="osym-sort" class="sr-only">Sıralama ölçütü</label>
+            <select
+              id="osym-sort"
+              class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-sm text-ink"
+            >
+              <option value="default">Dönem + En Küçük Puan</option>
+              <option value="min-desc">En Küçük Puan (Yüksek → Düşük)</option>
+              <option value="max-desc">En Büyük Puan (Yüksek → Düşük)</option>
+              <option value="quota-desc">Kontenjan (Çok → Az)</option>
+              <option value="fill-desc">Doluluk Oranı (Yüksek → Düşük)</option>
+              <option value="alpha">Branş Adı (A → Z)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-inkMuted tabular-nums" data-osym-count aria-live="polite">
+        Gösterilen kayıt: <strong class="text-ink">{OSYM_BRANCH_PLACEMENTS.length}</strong> / {OSYM_BRANCH_PLACEMENTS.length}
+      </p>
+
+      <div
+        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        tabindex="0"
+        role="region"
+        aria-labelledby="osym-branch-caption"
+      >
+        <table class="w-full text-left border-collapse text-sm">
+          <caption id="osym-branch-caption" class="sr-only">
+            ÖSYM 2026/2, 2026/1 ve 2025/2 TUS Genel Kontenjan uzmanlık dalı min-max puan, kontenjan, yerleşen, boş ve doluluk tablosu
+          </caption>
+          <thead>
+            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+              <th scope="col" class="py-3.5 px-4">Dönem</th>
+              <th scope="col" class="py-3.5 px-4">Uzmanlık Dalı (Genel Kontenjan)</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Program</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Kontenjan</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Yerleşen</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Boş</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Doluluk</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">En Küçük Puan</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">En Büyük Puan</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-lineLight tabular-nums" data-osym-tbody>
+            {OSYM_BRANCH_PLACEMENTS.map((row, idx) => (
+              <tr
+                data-osym-row
+                data-idx={idx}
+                data-period={row.period}
+                data-branch={row.branch.toLocaleLowerCase('tr-TR')}
+                data-search={normTr(`${row.branch} ${BRANCH_ALIASES[row.branch] ?? ''} ${row.period}`)}
+                data-min={row.minScore}
+                data-max={row.maxScore}
+                data-quota={row.quota}
+                data-fill={row.fillRate}
+              >
+                <td class="py-3 px-4 font-semibold text-teal whitespace-nowrap">{row.period}</td>
+                <th scope="row" class="py-3 px-4 font-semibold text-ink">{row.branch}</th>
+                <td class="py-3 px-4 text-inkMuted">{fmtInt(row.programs)}</td>
+                <td class="py-3 px-4 text-ink">{fmtInt(row.quota)}</td>
+                <td class="py-3 px-4 text-ink">{fmtInt(row.placed)}</td>
+                <td class="py-3 px-4 text-inkMuted">{fmtInt(row.empty)}</td>
+                <td class="py-3 px-4 font-semibold text-ink">%{fmtDec1(row.fillRate)}</td>
+                <td class="py-3 px-4 font-semibold text-teal">{fmtScore(row.minScore)}</td>
+                <td class="py-3 px-4 text-ink">{fmtScore(row.maxScore)}</td>
+              </tr>
+            ))}
+            <tr data-osym-empty hidden>
+              <td colspan="9" class="py-8 px-4 text-center text-sm text-inkMuted">
+                Aradığın ölçütle eşleşen uzmanlık dalı bulunamadı. Dönem filtresini veya arama terimini değiştir.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Methodology & Honest Boundaries Footnote -->
+      <div class="rounded-2xl border border-line bg-surfaceSoft p-5 sm:p-6 space-y-2.5 text-xs sm:text-sm text-inkMuted leading-relaxed">
+        <h3 class="display text-base text-ink">Veri kapsamı ve önemli notlar</h3>
+        <p>
+          <strong class="text-ink">Genel Kontenjan branş aralıkları:</strong> Tablodaki En Küçük ve En Büyük Puanlar,
+          her uzmanlık dalındaki tüm <em>Genel Kontenjan</em> programlarının en düşük ve en yüksek yerleştirme puanlarını gösterir;
+          hastane ve şehir bazlı kurum taban puanları bu aralık içinde değişir. Yabancı Uyruklu (YU) kadroları ayrı değerlendirilir.
+        </p>
+        <p>
+          <strong class="text-ink">%100 üstü doluluk açıklaması:</strong> 2026/1 (Göz %100,3, Plastik Cerrahi %100,5, Tıbbi Mikrobiyoloji %101,3)
+          ve 2025/2 (Göz %100,3, Plastik Cerrahi %100,6) dönemlerinde doluluğun %100’ü aşması ÖSYM’nin taban puanda eşit puanlı adayları
+          birlikte yerleştirmesinden kaynaklanır.
+        </p>
+        <p>
+          <strong class="text-ink">Tercih robotu sınırı:</strong> TusAnkiM şu anda bir <strong>TUS tercih robotu veya kurum bazlı tercih simülasyonu sunmaz</strong>
+          (TUS Tercih Simülasyonu geliştirme aşamasındadır — <em>Yakında</em>). Kesin tercih listesi için ÖSYM’nin resmî kılavuz ve
+          kurum bazlı PDF tabloları esas alınmalıdır.
+        </p>
+      </div>
+    </div>
+
+    <!-- 3 · Macro Placement & Ek Yerleştirme Table -->
+    <div class="pt-8 border-t border-line space-y-4">
+      <h2 class="display text-section tracking-tightest text-ink">
+        2025/1 – 2026/2 Makro Yerleştirme ve Ek Yerleştirme Özeti
+      </h2>
+      <p class="text-sm text-inkMuted max-w-3xl leading-relaxed">
+        Son dört dönemde ilk yerleştirme kontenjanları 10.439’dan 8.637’ye gerilerken ilk yerleştirme doluluğu %88,3’e yükselmiştir.
+        2026/2 ek yerleştirme tercihleri 20 Kasım 2026’da 1.442 kadro için açılmıştır (sonuçlar açıklanmadığından yerleşen kolonu beklemededir).
+      </p>
+
+      <div
+        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        tabindex="0"
+        role="region"
+        aria-labelledby="osym-macro-caption"
+      >
+        <table class="w-full text-left border-collapse text-sm">
+          <caption id="osym-macro-caption" class="sr-only">
+            ÖSYM 2025/1–2026/2 TUS yerleştirme ve ek yerleştirme toplam kontenjan, yerleşen, boş ve doluluk tablosu
+          </caption>
+          <thead>
+            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+              <th scope="col" class="py-3.5 px-4">Dönem / İşlem</th>
+              <th scope="col" class="py-3.5 px-4">Duyuru Tarihi</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Program</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Kontenjan</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Yerleşen</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Boş</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Doluluk</th>
+              <th scope="col" class="py-3.5 px-4">Genel / YU Özeti</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-lineLight tabular-nums">
+            {OSYM_MACRO_PLACEMENTS.map((m) => (
+              <tr>
+                <th scope="row" class="py-3 px-4 font-semibold text-ink">{m.period}</th>
+                <td class="py-3 px-4 text-inkMuted whitespace-nowrap">{m.date}</td>
+                <td class="py-3 px-4 text-inkMuted">{fmtInt(m.programs)}</td>
+                <td class="py-3 px-4 font-semibold text-ink">{fmtInt(m.totalQuota)}</td>
+                <td class="py-3 px-4 text-teal font-semibold">{m.totalPlaced !== null ? fmtInt(m.totalPlaced) : 'Beklemede'}</td>
+                <td class="py-3 px-4 text-inkMuted">{m.totalEmpty !== null ? fmtInt(m.totalEmpty) : '—'}</td>
+                <td class="py-3 px-4 font-semibold text-ink">{m.fillRate !== null ? `%${fmtDec1(m.fillRate)}` : '—'}</td>
+                <td class="py-3 px-4 text-xs text-inkMuted">{m.genelSummary}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4 · Official Applicant Growth & Uzmanlık Dalı Değişikliği -->
+    <div class="pt-8 border-t border-line space-y-4">
+      <h2 class="display text-section tracking-tightest text-ink">
+        Resmî Başvuru Artışı ve Uzmanlık Dalı Değişikliği Sayıları
+      </h2>
+      <p class="text-sm text-inkMuted max-w-3xl leading-relaxed">
+        ÖSYM 2025 Faaliyet Raporu ve 2026 sınav günü resmî açıklamalarına göre KTBT başvuruları 1,5 yılda 30.945’ten 37.109’a (+%19,9) çıkmıştır.
+        Ek yerleştirme sonrası kalan boş kadrolar Uzmanlık Dalı Değişikliği ile ayrıca açılmaktadır.
+      </p>
+
+      <div
+        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        tabindex="0"
+        role="region"
+        aria-labelledby="osym-applicants-caption"
+      >
+        <table class="w-full text-left border-collapse text-sm">
+          <caption id="osym-applicants-caption" class="sr-only">
+            2025/1–2026/2 TUS TTBT ve KTBT resmî başvuran sayıları, ilk/ek yerleşenler ve Uzmanlık Dalı Değişikliği tablosu
+          </caption>
+          <thead>
+            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+              <th scope="col" class="py-3.5 px-4">Dönem</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">TTBT Başvuru</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">KTBT Başvuru</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">İlk Yerleşen</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Ek Yerleşen</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Dal Değişikliği (Y / K)</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Toplam Yerleşen</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-lineLight tabular-nums">
+            {OSYM_APPLICANTS_AND_TRANSFERS.map((r) => (
+              <tr>
+                <th scope="row" class="py-3 px-4 font-semibold text-ink">{r.period}</th>
+                <td class="py-3 px-4 text-ink">{fmtInt(r.ttbt)}</td>
+                <td class="py-3 px-4 font-semibold text-teal">{fmtInt(r.ktbt)}</td>
+                <td class="py-3 px-4 text-ink">{fmtInt(r.firstPlaced)}</td>
+                <td class="py-3 px-4 text-inkMuted">{r.ekPlaced !== null ? fmtInt(r.ekPlaced) : 'Beklemede'}</td>
+                <td class="py-3 px-4 text-inkMuted">
+                  {r.dalDegisikligiPlaced !== null && r.dalDegisikligiQuota !== null
+                    ? `${fmtInt(r.dalDegisikligiPlaced)} / ${fmtInt(r.dalDegisikligiQuota)}`
+                    : 'Açılmadı'}
+                </td>
+                <td class="py-3 px-4 font-semibold text-ink">{r.totalPlacedLabel}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5 · Actionable Study Bridge + Sources -->
+    <div class="grid md:grid-cols-2 gap-6 pt-8 border-t border-line">
+      <div class="rounded-2xl border border-line bg-tint p-6 space-y-3">
+        <h2 class="display text-lg text-ink">Hedef Puanını Planlı Tekrara Dönüştür</h2>
+        <p class="text-sm text-inkMuted leading-relaxed">
+          Kontenjanlar daralıp başvuru sayısı 37.109’a çıkarken 60–65+ puan bandını korumak için pasif okuma yerine
+          FSRS-6 aralıklı tekrar ve 9.575 kartlık bitirilebilir çekirdek (günde 60 yeni kartla 160 günde tamamlanır) kullanabilirsin.
+          Her üç erişim segmentinde de seçili demo sorularına doğrudan erişim vardır.
+        </p>
+        <div class="flex flex-wrap gap-3 pt-1">
+          <a
+            href="/puan-hesapla/"
+            class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full bg-teal text-white text-xs font-semibold hover:bg-tealDark transition"
+          >
+            TUS Puan Hesaplayıcı →
+          </a>
+          <a
+            href="/referanslar/"
+            class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+          >
+            1.195 Soru Referans Kanıtı →
+          </a>
+          <a
+            href="/yardim/kronometre/"
+            class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+          >
+            TUS Kronometre &amp; Takvim →
+          </a>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-line bg-white p-6 space-y-2.5">
+        <h2 class="display text-lg text-ink">Doğrulanmış Resmî Kaynaklar</h2>
+        <ul class="space-y-1 text-sm">
+          <li>
+            <a
+              href="https://www.osym.gov.tr/SinavGrubu/Index/6"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center min-h-[2.75rem] py-1 text-teal underline underline-offset-2 hover:text-tealDark"
+            >
+              ÖSYM — TUS Duyuruları ve Sayısal Bilgiler ↗
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://dokuman.osym.gov.tr/web/2026/10/2026-tus-2donem-yerlestirme-sonuclarina-liskin-en-buyuk-ve-en-kucuk-puanlar-genel-yabanci-uyruklu-uzp3a0-16132230.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center min-h-[2.75rem] py-1 text-teal underline underline-offset-2 hover:text-tealDark"
+            >
+              ÖSYM 2026-TUS 2. Dönem Min–Max Puan PDF’i ↗
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://dokuman.osym.gov.tr/pdfdokuman/2026/TUSDONEM-1/YERLESTIRME/SB/minmax_ts1d21052026.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center min-h-[2.75rem] py-1 text-teal underline underline-offset-2 hover:text-tealDark"
+            >
+              ÖSYM 2026-TUS 1. Dönem Min–Max Puan PDF’i ↗
+            </a>
+          </li>
+        </ul>
+        <p class="text-xs text-inkMuted pt-2 border-t border-lineLight">
+          {SITE.disclaimer} ÖSYM ile resmî bağ yoktur.
+        </p>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-osym-explorer]').forEach((root) => {
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+
+    const periodBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-osym-period]')];
+    const searchInput = root.querySelector<HTMLInputElement>('#osym-search');
+    const sortSelect = root.querySelector<HTMLSelectElement>('#osym-sort');
+    const tbody = root.querySelector<HTMLElement>('[data-osym-tbody]');
+    const countEl = root.querySelector<HTMLElement>('[data-osym-count]');
+    if (!tbody) return;
+    const tableBody = tbody;
+
+    const rows = [...tableBody.querySelectorAll<HTMLTableRowElement>('[data-osym-row]')];
+    const emptyRow = tableBody.querySelector<HTMLTableRowElement>('[data-osym-empty]');
+    let activePeriod = 'all';
+
+    const normTr = (s: string) =>
+      s
+        .toLocaleLowerCase('tr-TR')
+        .replace(/ç/g, 'c')
+        .replace(/ğ/g, 'g')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ş/g, 's')
+        .replace(/ü/g, 'u')
+        .replace(/â/g, 'a');
+
+    function applyFilterAndSort() {
+      const tokens = normTr((searchInput?.value || '').trim()).split(/\s+/).filter(Boolean);
+      const mode = sortSelect?.value || 'default';
+
+      const sorted = [...rows].sort((a, b) => {
+        if (mode === 'min-desc') return Number(b.dataset.min) - Number(a.dataset.min);
+        if (mode === 'max-desc') return Number(b.dataset.max) - Number(a.dataset.max);
+        if (mode === 'quota-desc') return Number(b.dataset.quota) - Number(a.dataset.quota);
+        if (mode === 'fill-desc') return Number(b.dataset.fill) - Number(a.dataset.fill);
+        if (mode === 'alpha') return (a.dataset.branch || '').localeCompare(b.dataset.branch || '', 'tr-TR');
+        return Number(a.dataset.idx) - Number(b.dataset.idx);
+      });
+
+      let visible = 0;
+      const frag = document.createDocumentFragment();
+      for (const row of sorted) {
+        const matchPeriod = activePeriod === 'all' || row.dataset.period === activePeriod;
+        const hay = row.dataset.search || '';
+        const matchQuery = tokens.every((t) => hay.includes(t));
+        const show = matchPeriod && matchQuery;
+        row.hidden = !show;
+        if (show) visible++;
+        frag.appendChild(row);
+      }
+      if (emptyRow) {
+        emptyRow.hidden = visible > 0;
+        frag.appendChild(emptyRow);
+      }
+      tableBody.appendChild(frag);
+
+      if (countEl) {
+        countEl.textContent = '';
+        countEl.appendChild(document.createTextNode('Gösterilen kayıt: '));
+        const strong = document.createElement('strong');
+        strong.className = 'text-ink';
+        strong.textContent = String(visible);
+        countEl.appendChild(strong);
+        countEl.appendChild(document.createTextNode(` / ${rows.length}`));
+      }
+    }
+
+    periodBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activePeriod = btn.dataset.osymPeriod || 'all';
+        periodBtns.forEach((b) => {
+          const active = b === btn;
+          b.setAttribute('aria-pressed', active ? 'true' : 'false');
+          b.className = active
+            ? 'min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-teal text-white transition cursor-pointer'
+            : 'min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold bg-white border border-line text-ink hover:border-tealGraphic transition cursor-pointer';
+        });
+        applyFilterAndSort();
+      });
+    });
+
+    searchInput?.addEventListener('input', applyFilterAndSort);
+    sortSelect?.addEventListener('change', applyFilterAndSort);
+  });
+</script>

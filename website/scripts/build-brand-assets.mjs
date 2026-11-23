@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import { getHelpArticles } from '../src/lib/helpDocs.ts';
+import { REHBER_PART_1 } from '../src/data/rehber/part1.ts';
+import { REHBER_PART_2 } from '../src/data/rehber/part2.ts';
+import { REHBER_PART_3 } from '../src/data/rehber/part3.ts';
 
 // Technical derivatives of the existing brand assets; no generated imagery.
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -47,6 +50,16 @@ const covers = {
   destek: ['Destek ve iletişim'],
   gizlilik: ['Gizlilik politikası ve KVKK'],
   'kullanim-kosullari': ['Kullanım koşulları'],
+  rehber: ['TUS rehber yazıları'],
+  'tus-cikmis-sorular-ve-analiz': ['TUS çıkmış sorular', 've dağılım analizi'],
+  'tus-taban-puanlari-ve-kontenjan': ['TUS taban puanları', 've kontenjanlar'],
+  'tus-spot-bilgiler': ['TUS spot bilgiler', 've aktif tekrar'],
+  'tus-icin-ankimobile-alternatifi': ['TUS için', 'AnkiMobile alternatifi'],
+};
+const REFERENCE_BRANCHES = {
+  anatomi: 'Anatomi', 'fizyoloji-histoloji-embriyoloji': 'Fizyoloji, Histoloji ve Embriyoloji', biyokimya: 'Biyokimya',
+  mikrobiyoloji: 'Mikrobiyoloji', patoloji: 'Patoloji', farmakoloji: 'Farmakoloji', dahiliye: 'Dahiliye',
+  pediatri: 'Pediatri', 'genel-cerrahi': 'Genel Cerrahi', 'kadin-dogum': 'Kadın Doğum', 'kucuk-stajlar': 'Küçük Stajlar',
 };
 const escape = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 async function fitTitle(title) {
@@ -67,6 +80,12 @@ async function fitTitle(title) {
 for (const article of getHelpArticles()) {
   const title = article.slug === 'sss' ? 'Sorun giderme' : article.title;
   covers[`yardim/${article.slug}`] = await fitTitle(title);
+}
+for (const [slug, name] of Object.entries(REFERENCE_BRANCHES)) {
+  covers[`referanslar/${slug}`] = await fitTitle(`${name} TUS referansları`);
+}
+for (const article of [...REHBER_PART_1, ...REHBER_PART_2, ...REHBER_PART_3]) {
+  covers[`rehber/${article.slug}`] = await fitTitle(article.seoTitle.replace(/\s*\|\s*TusAnkiM$/, ''));
 }
 const markData = (await sharp(mark).resize(108, 108).png().toBuffer()).toString('base64');
 const manifest = {};

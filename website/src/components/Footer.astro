@@ -1,6 +1,7 @@
 ---
 import { SITE, LEGAL_PAGES } from '../config';
-import { FOOTER_LEGAL_IDS, page, link } from '../data/pages';
+import { FOOTER_CONTENT_IDS, FOOTER_LEGAL_IDS, page, link } from '../data/pages';
+const contentLinks = FOOTER_CONTENT_IDS.map(page).filter((p) => p.published);
 const legalLinks = FOOTER_LEGAL_IDS.map(page).filter((p) => p.published);
 ---
 <footer class="site-footer">
@@ -16,6 +17,7 @@ const legalLinks = FOOTER_LEGAL_IDS.map(page).filter((p) => p.published);
         <a href={`mailto:${SITE.email}`}>E-posta</a>
       </nav>
     </div>
+    <nav class="footer-content" aria-label="TUS içerikleri">{contentLinks.map((p) => <a href={link(p.path)}>{p.footerLabel ?? p.navLabel}</a>)}</nav>
     <p class="footer-disclaimer">{SITE.disclaimer}</p>
     <div class="footer-bottom">
       <span>© {new Date().getFullYear()} TusAnkiM</span>
@@ -31,6 +33,7 @@ const legalLinks = FOOTER_LEGAL_IDS.map(page).filter((p) => p.published);
   nav { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; }
   a { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; }
   a:hover { color: #0e7469; }
+  .footer-content { margin-top: .5rem; padding-top: .5rem; border-top: 1px solid #e9ecee; }
   .footer-disclaimer { font-size: .8125rem; line-height: 1.75; margin-block: 1rem; }
   .footer-bottom { border-top: 1px solid #e9ecee; padding-top: 1rem; font-size: .8125rem; }
   @media (max-width: 600px) { .footer-inner { width: calc(100% - 2.5rem); } .footer-top, .footer-bottom { align-items: flex-start; flex-direction: column; } }

@@ -1,0 +1,293 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { SITE } from '../config';
+import { breadcrumbList } from '../lib/schema';
+import { effectiveDate, formatTrDate, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate(pageSources('ankimobile-alternatifi'));
+const modLabel = formatTrDate(modDate);
+
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'TUS İçin AnkiMobile Alternatifi', path: '/tus-icin-ankimobile-alternatifi' },
+]);
+
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  '@id': origin + '/tus-icin-ankimobile-alternatifi/#article',
+  headline: 'TUS İçin AnkiMobile Alternatifi: iPhone ve Web’de Bağımsız Karşılaştırma',
+  description:
+    'AnkiMobile Flashcards (₺1.299,99) ile bağımsız, yerel öncelikli TusAnkiM’in .apkg/.colpkg uyumluluğu, FSRS-6, Kronometre ve 3 segmentli erişim açısından dürüst karşılaştırması.',
+  url: origin + '/tus-icin-ankimobile-alternatifi/',
+  inLanguage: 'tr-TR',
+  dateModified: modDate,
+  author: { '@id': origin + '/#organization' },
+  publisher: { '@id': origin + '/#organization' },
+};
+
+const COMPARISON_ROWS = [
+  {
+    feature: 'Giriş maliyeti (iPhone / iOS)',
+    ankimobile: '₺1.299,99 tek seferlik (App Store TR, 21 Kasım 2026)',
+    tusankim: '₺0 ücretsiz başlangıç (ara ara reklam); tüm 9.575 kart ₺1.000, reklam kaldırma ₺50',
+  },
+  {
+    feature: 'Seçili demo soruları',
+    ankimobile: 'Boş uygulama; hazır TUS sorusu/destesi içermez',
+    tusankim: 'Her üç erişim segmentinde de seçili demo sorularına doğrudan erişim',
+  },
+  {
+    feature: 'Açık Anki biçimleri (.apkg / .colpkg)',
+    ankimobile: 'Tam resmî Anki biçimi desteği',
+    tusankim: 'Kişisel .apkg / .colpkg ve CSV/TSV kayıpsız içe ve dışa aktarma (bağımsız motor)',
+  },
+  {
+    feature: 'Aralıklı tekrar algoritması',
+    ankimobile: 'FSRS ve SM-2',
+    tusankim: 'FSRS-6 (%90 hedef hatırlama, 21 parametreli optimizasyon) ve klasik zamanlayıcı',
+  },
+  {
+    feature: 'Hazır TUS kart arşivi ve referans',
+    ankimobile: 'Topluluk desteleri elle kurulur; TUS referans denetimi yoktur',
+    tusankim: '9.575 kart (12 ders, 106 alt deste) · son 6 TUS’ta %43,6 çözüm desteği / %92,7 konu kapsamı',
+  },
+  {
+    feature: 'TUS Kronometre & Çalışma Takvimi',
+    ankimobile: 'Yerleşik ders kronometresi / etüt takvimi yoktur',
+    tusankim: 'Çevrimdışı SQLite Kronometre, Çalışma Takvimi ve Çalışma Planlama yerleşiktir',
+  },
+  {
+    feature: 'Otomatik bulut eşitleme',
+    ankimobile: 'AnkiWeb üzerinden yerleşik bulut eşitleme',
+    tusankim: 'Henüz aktif değil (Yakında) — cihazlar arası geçiş .colpkg dosyası ile yapılır',
+  },
+  {
+    feature: 'Android ve Masaüstü erişimi',
+    ankimobile: 'AnkiDroid (Android) ve Anki Masaüstü ayrı uygulamalar',
+    tusankim: 'iPhone uygulaması + tarayıcı Web önizlemesi (tusankim.vercel.app; Android yerel: Yakında)',
+  },
+] as const;
+---
+<Layout
+  title="TUS İçin AnkiMobile Alternatifi (iPhone & Web) | TusAnkiM"
+  description="iPhone’da ücretsiz AnkiMobile alternatifi arayan TUS adayları için bağımsız karşılaştırma: .apkg/.colpkg uyumu, FSRS-6, Kronometre ve 3 segmentli erişim."
+  ogType="article"
+  modifiedTime={modDate}
+  schema={[crumbs, articleSchema]}
+>
+  <section class="bg-surfaceSoft border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="mb-3">
+        <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
+          <li class="inline-flex items-center">
+            <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+          </li>
+          <li class="inline-flex items-center">
+            <span aria-hidden="true" class="mx-2">/</span>
+            <a href="/tus-icin-ankimobile-alternatifi/" aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
+              AnkiMobile Alternatifi
+            </a>
+          </li>
+        </ol>
+      </nav>
+
+      <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
+        TUS İçin iPhone’da AnkiMobile Alternatifi: Dürüst Karşılaştırma
+      </h1>
+      <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
+        iPhone’da <strong>AnkiMobile Flashcards</strong> Türkiye App Store’da <strong>₺1.299,99</strong> ücretli olduğu için (21 Kasım 2026 doğrulaması)
+        birçok TUS adayı klon uygulamalara yönelip <code>.apkg</code> içe aktarma veya abonelik sorunları yaşıyor.
+        TusAnkiM; yerel öncelikli, bağımsız ve açık dosya uyumlu bir alternatif sunar.
+      </p>
+
+      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
+        <span>
+          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
+        </span>
+        <span>
+          Hazırlayan:{' '}
+          <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+            TusAnkiM
+          </a>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-12">
+    <!-- Independence & Transparency Callout -->
+    <div class="rounded-2xl border-l-4 border-teal bg-tint p-5 sm:p-6">
+      <p class="text-sm sm:text-base text-ink leading-relaxed font-semibold">
+        {SITE.disclaimer} Resmî Anki yazılımı ve AnkiWeb harika bir açık kaynak ekosistemdir; bu sayfa hangi senaryoda AnkiMobile’ın,
+        hangi senaryoda TusAnkiM’in daha uygun olduğunu artı ve eksileriyle net biçimde gösterir.
+      </p>
+    </div>
+
+    <!-- Main Comparison Table -->
+    <div class="space-y-4">
+      <h2 class="display text-section tracking-tightest text-ink">
+        AnkiMobile Flashcards vs TusAnkiM (Özellik ve Fiyat Karşılaştırması)
+      </h2>
+      <p class="text-sm text-inkMuted max-w-3xl leading-relaxed">
+        App Store’da Anki adını taklit eden ancak <code>.apkg</code> aktarmayı kilitleyen abonelikli klon uygulamaların aksine
+        TusAnkiM açık dosya biçimlerini destekler ve üç net erişim segmentiyle çalışır.
+      </p>
+
+      <div
+        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        tabindex="0"
+        role="region"
+        aria-labelledby="anki-comp-caption"
+      >
+        <table class="w-full text-left border-collapse text-sm">
+          <caption id="anki-comp-caption" class="sr-only">
+            AnkiMobile Flashcards ve TusAnkiM özellik, fiyat, .apkg uyumluluğu, FSRS-6 ve platform karşılaştırma tablosu
+          </caption>
+          <thead>
+            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+              <th scope="col" class="py-3.5 px-5">Ölçüt</th>
+              <th scope="col" class="py-3.5 px-5">AnkiMobile Flashcards (Resmî iOS)</th>
+              <th scope="col" class="py-3.5 px-5 text-teal">TusAnkiM (Bağımsız · iPhone &amp; Web)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-lineLight">
+            {COMPARISON_ROWS.map((r) => (
+              <tr>
+                <th scope="row" class="py-3.5 px-5 font-semibold text-ink">{r.feature}</th>
+                <td class="py-3.5 px-5 text-inkMuted">{r.ankimobile}</td>
+                <td class="py-3.5 px-5 text-ink font-medium">{r.tusankim}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3-Segment Access Summary -->
+    <div class="space-y-4 pt-6 border-t border-line">
+      <h2 class="display text-section tracking-tightest text-ink">
+        TusAnkiM’de 3 Net Erişim Segmenti (Sürpriz Abonelik Yok)
+      </h2>
+      <div class="grid md:grid-cols-3 gap-5">
+        <div class="rounded-2xl border border-line bg-surfaceSoft p-6 space-y-2">
+          <div class="text-xs font-bold text-teal">Segment 1 · ₺0</div>
+          <h3 class="display text-lg text-ink">Ücretsiz Erişim</h3>
+          <p class="text-sm text-inkMuted leading-relaxed">
+            Kendi destelerinle çalışma, kişisel <code>.apkg</code>/<code>.colpkg</code> içe ve dışa aktarma, FSRS-6,
+            Kronometre ve seçili demo sorularına doğrudan erişim ücretsizdir. Ücretsiz kullanıcılar için ara ara reklam çıkar
+            (reklam sıklığı sonradan ayarlanacak).
+          </p>
+        </div>
+        <div class="rounded-2xl border-2 border-teal bg-white p-6 space-y-2">
+          <div class="text-xs font-bold text-teal">Segment 2 · ₺1.000</div>
+          <h3 class="display text-lg text-ink">Tüm Kartlara Erişim</h3>
+          <p class="text-sm text-inkMuted leading-relaxed">
+            12 ders ve 106 alt destede <strong>9.575 kartlık</strong> (7.721 not) BKA TUS arşivinin tamamına ve
+            seçili demo sorularına doğrudan erişim sağlar; 160 günde tamamlanabilir çekirdek hacim sunar.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-line bg-surfaceSoft p-6 space-y-2">
+          <div class="text-xs font-bold text-teal">Segment 3 · ₺50</div>
+          <h3 class="display text-lg text-ink">Reklamları Kaldırma</h3>
+          <p class="text-sm text-inkMuted leading-relaxed">
+            Ücretsiz kullanımda çıkan ara ara reklamları kaldırarak kişisel <code>.apkg</code>/<code>.colpkg</code> destelerinde ve
+            seçili demo sorularında reklamsız çalışma imkânı sunar.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Android & Desktop Web Preview Bridge + Honest Limitations -->
+    <div class="grid lg:grid-cols-2 gap-6 pt-6 border-t border-line">
+      <div class="rounded-2xl border border-line bg-white p-6 space-y-3">
+        <h2 class="display text-lg text-ink">Android, Mac veya Windows Kullanıyorsan: Web Önizlemesi</h2>
+        <p class="text-sm text-inkMuted leading-relaxed">
+          TusAnkiM’in ana yerel uygulaması bugün <strong>iPhone</strong> içindir; yerel Android uygulaması geliştirme aşamasındadır (<em>Yakında</em>).
+          Ancak Android telefondan, iPad’den veya bilgisayardan kurulum yapmadan{' '}
+          <a
+            href={SITE.webAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark"
+          >
+            Web uygulamasını (tusankim.vercel.app) ↗
+          </a>{' '}
+          açarak <code>.apkg</code>/<code>.colpkg</code> destelerini yerel tarayıcı deposunda çalışabilir ve seçili demo sorularını deneyebilirsin.
+        </p>
+        <div class="flex flex-wrap gap-3 pt-2">
+          <a
+            href={SITE.webAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center min-h-[2.75rem] px-5 rounded-full bg-teal text-white text-xs sm:text-sm font-semibold hover:bg-tealDark transition"
+          >
+            Web Uygulamasını Aç ↗
+          </a>
+          <a
+            href="/#demo"
+            class="inline-flex items-center min-h-[2.75rem] px-5 rounded-full border border-line bg-surfaceSoft text-xs sm:text-sm font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+          >
+            11 Canlı Demo Kartını Dene →
+          </a>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-line bg-surfaceSoft p-6 space-y-3">
+        <h2 class="display text-lg text-ink">Dürüst Sınırlar: Ne Zaman Resmî AnkiMobile Daha Uygundur?</h2>
+        <ul class="space-y-2 text-sm text-inkMuted list-disc pl-5 leading-relaxed">
+          <li>
+            <strong class="text-ink">AnkiWeb otomatik bulut eşitleme gerekiyorsa:</strong> TusAnkiM’de otomatik bulut eşitleme henüz yoktur
+            (<em>Yakında</em>); cihazlar arası taşıma <code>.colpkg</code> dışa/içe aktarma ile yapılır.
+          </li>
+          <li>
+            <strong class="text-ink">Özel JavaScript eklentili kart şablonları kullanıyorsan:</strong> TusAnkiM güvenlik nedeniyle
+            üçüncü taraf kart içi JS çalıştırmaz; tam Anki paritesi iddiası taşımaz.
+          </li>
+          <li>
+            <strong class="text-ink">Hazır BKA TUS paketi dışa aktarımı:</strong> Kişisel destelerin her zaman kayıpsız dışa aktarılabilir,
+            ancak hazır BKA TUS paketi ilerlemesi <code>.apkg</code>/<code>.colpkg</code> olarak dışa aktarılmaz.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Sources & Related Links -->
+    <div class="rounded-2xl border border-line bg-white p-6 space-y-3">
+      <h2 class="display text-base text-ink">Doğrulanmış Kaynaklar ve İlgili Rehberler</h2>
+      <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+        <a
+          href="https://docs.ankiweb.net/exporting.html#collection-colpkg"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center min-h-[2.75rem] py-1 text-teal underline underline-offset-2 hover:text-tealDark"
+        >
+          Anki Manual — .apkg ve .colpkg Açık Paket Biçimleri ↗
+        </a>
+        <a
+          href="https://dl.acm.org/doi/10.1145/3534678.3539081"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center min-h-[2.75rem] py-1 text-teal underline underline-offset-2 hover:text-tealDark"
+        >
+          ACM KDD ’22 — FSRS Aralıklı Tekrar Optimizasyonu ↗
+        </a>
+      </div>
+      <nav aria-label="İlgili sayfalar" class="pt-3 border-t border-lineLight flex flex-wrap gap-2.5">
+        <a href="/yardim/anki-ile-kullanma/" class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition">
+          Anki ile Birlikte Kullanma Kılavuzu →
+        </a>
+        <a href="/rehber/tus-icin-anki-uyumlu-sistem/" class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition">
+          TUS İçin Anki Uyumlu Sistem Rehberi →
+        </a>
+        <a href="/yardim/kronometre/" class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition">
+          TUS Kronometre &amp; Çalışma Takvimi →
+        </a>
+        <a href="/referanslar/" class="inline-flex items-center min-h-[2.75rem] px-4 rounded-full border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition">
+          Son 6 TUS Referans Kanıtları →
+        </a>
+      </nav>
+    </div>
+  </section>
+</Layout>

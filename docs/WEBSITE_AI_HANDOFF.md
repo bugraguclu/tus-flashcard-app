@@ -4,6 +4,28 @@
 >
 > **Kısa sözleşme:** `website/AGENTS.md` · **Kök uygulama sözleşmesi:** `AGENTS.md`
 
+## 23 Kasım 2026 — SEO/GEO sayfaları ve 3 segmentli erişim canlı sitede
+
+- `tusbud_landing_page` (`d510c840`) dalındaki içerik, sahibinin onayıyla güncel siteye
+  taşındı (eski site sürümü yerine konmadı): `/tus-cikmis-sorular-ve-analiz/`,
+  `/tus-icin-ankimobile-alternatifi/`, `/tus-spot-bilgiler/`,
+  `/tus-taban-puanlari-ve-kontenjan/` (`src/data/osymPlacement.ts`), 8 yazılık `/rehber/`
+  (`src/data/rehber/`) ve 11 branş sayfası `/referanslar/<branş>/` (`src/data/branches.ts`).
+  Ders ders net girişli `/puan-hesapla/`, canlıdaki iPhone klavye araç çubuğunu
+  (`lib/scoreKeyboard.ts`, yalnız görünen alanlar) korur.
+- Fiyat bölümü `src/data/offer.json` üç segmentini gösterir (₺0 ara ara reklam, ₺1.000 tüm
+  kartlar, ₺50 reklam kaldırma). Güncel betada ücretli seçenekler ve reklamlar devrede
+  değildir; bu cümle `offer.json`, `config.ts` `ACCESS`, SSS ve `llms*.txt` içinde korunur.
+  Uygulama içi Yardım (`docs/user-guide/`) bu modele göre değiştirilmedi: uygulamada henüz
+  ₺1.000 satın alma veya reklam yok.
+- Yeni sayfalarda imza “Hazırlayan: TusAnkiM”dır; adı geçen bir hekimin incelediği iddiası
+  ve `Person` yazar şeması bilerek taşınmadı (`founder.json`: hekim editör onayı sürüyor).
+- Her sayfanın kendi sosyal kapağı vardır: `npm run assets:build` yeni sayfaları,
+  branşları ve rehber yazılarını da üretir. `verify-site.mjs` 58 HTML / 57 sitemap URL'si
+  bekler; kimlik kontrolü artık `data-*-id` özniteliklerini kimlik saymaz.
+- Ham arama talebi araştırması (`research/tus-search-demand/`) yorumcu adları içerdiği için
+  herkese açık repoya alınmadı; repo dışında, temizlenmiş kopyasıyla paket olarak saklanır.
+
 ## 21 Kasım 2026 — Alt sayfaların okuma düzeni
 
 - Referans kayıtları ince ayraçlı satırlara dönüştü. Filtreler ayrı bir alanda;

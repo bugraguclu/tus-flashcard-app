@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { sitemapPages } from '../data/pages';
 import { getHelpArticles } from '../lib/helpDocs';
 import { newest, pageSources, helpSources } from '../lib/lastmod';
+import { getBranches } from '../data/branches';
+import { REHBER_ARTICLES } from '../data/rehber/index';
 
 const withSlash = (p: string) => (p.endsWith('/') ? p : `${p}/`);
 const xmlEsc = (s: string) =>
@@ -20,7 +22,23 @@ export const GET: APIRoute = async ({ site }) => {
     lastmod: newest(helpSources(art.sourceRelPath)),
   }));
 
-  const all = [...staticEntries, ...helpEntries];
+  const branchMod = newest([
+    'website/src/pages/referanslar/[brans].astro',
+    'website/src/data/branches.ts',
+    'website/src/data/generated/references-summary.json',
+  ]);
+  const branchEntries = getBranches().map((b) => ({ path: `/referanslar/${b.slug}`, lastmod: branchMod }));
+
+  const rehberMod = newest([
+    'website/src/pages/rehber/[slug].astro',
+    'website/src/data/rehber/index.ts',
+    'website/src/data/rehber/part1.ts',
+    'website/src/data/rehber/part2.ts',
+    'website/src/data/rehber/part3.ts',
+  ]);
+  const rehberEntries = REHBER_ARTICLES.map((r) => ({ path: `/rehber/${r.slug}`, lastmod: rehberMod }));
+
+  const all = [...staticEntries, ...helpEntries, ...branchEntries, ...rehberEntries];
 
   const body =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +

@@ -7,10 +7,15 @@
 - [TUS Çalışma Rehberi (2027)](https://tusankim.com/tus-calisma-rehberi/): 4 aday profili için FSRS-6 temposu, 9.575 vs 27.341 mega deste kıyası, 2027 ÖSYM takvimi, 11 branş çalışma stratejisi, puan ağırlıkları, %5 kesinti kuralı ve TUS çalışırken en çok zorlanılan 7 alana somut çözümler.
 - [TUS Çalışma Planı ve Tempo Hesaplayıcı](https://tusankim.com/calisma-plani/): Sınav tarihine, derslere ve haftalık çalışma gününe göre interaktif FSRS-6 tempo simülatörü ve `.ics` takvim çıktısı.
 - [TUS Puan Hesaplayıcı](https://tusankim.com/puan-hesapla/): 100 Temel + 100 Klinik net hesabı, %70/%30 ve %50/%50 ağırlıklar, 45 barajı, %5 puan kesintisi (× 0,95) ve tersine hedef net planlayıcı.
-- [TUS Referansları](https://tusankim.com/referanslar/): Son 6 TUS (2024/1–2026/2, 1.195 soru) açık veri referans gezgini (`Doğrudan`, `Dolaylı` ve `Konu Kapsamı` ayrı).
+- [TUS Referansları](https://tusankim.com/referanslar/): Son 6 TUS (2024/1–2026/2, 1.195 soru) açık veri referans gezgini (`Doğrudan`, `Dolaylı` ve `Konu Kapsamı` ayrı); her branş için ayrı analiz sayfası (ör. [Anatomi](https://tusankim.com/referanslar/anatomi/)).
+- [TUS Çıkmış Sorular ve Analiz](https://tusankim.com/tus-cikmis-sorular-ve-analiz/): Son 6 TUS'taki 1.195 sorunun 11 branşa ve döneme göre dağılımı, çözüm desteği ve konu kapsamı.
+- [TUS Taban Puanları ve Kontenjan](https://tusankim.com/tus-taban-puanlari-ve-kontenjan/): ÖSYM 2025/1–2026/2 yerleştirme verileri; uzmanlık dallarına göre en düşük–en yüksek puan, doluluk ve kontenjan.
+- [TUS Spot Bilgiler](https://tusankim.com/tus-spot-bilgiler/): PDF spot listeleri yerine aktif hatırlama; 12 ders, 106 alt deste ve canlı demo kartları.
+- [TUS İçin AnkiMobile Alternatifi](https://tusankim.com/tus-icin-ankimobile-alternatifi/): iPhone ve web için .apkg/.colpkg uyumlu, FSRS-6'lı bağımsız alternatifin karşılaştırması.
+- [TUS Rehber Yazıları](https://tusankim.com/rehber/): 2027 takvimi, intörn ve son 1 ay programı, puan hesabı, FSRS-6 ve günlük kart sayısı üzerine 8 yazı.
 - [Kartları Tablette Dene](https://tusankim.com/kart-denemesi/): 11 dersten 44 kartlık tarayıcı içi deste listesi ve çalışma ekranı demosu.
 - [Yardım Merkezi (21 Rehber)](https://tusankim.com/yardim/): Kurulum, FSRS-6, Deste Seçenekleri, Filtrelenmiş Deste, Kronometre, İstatistikler, Anki aktarım ve yedekleme kılavuzları.
-- [Sıkça Sorulan Sorular](https://tusankim.com/sss/): Ürün, referans yöntemi, ücretsiz beta, planlanan lansman ve cihazlar hakkında yanıtlar.
+- [Sıkça Sorulan Sorular](https://tusankim.com/sss/): Ürün, referans yöntemi, ücretsiz beta, 3 segmentli erişim modeli ve cihazlar hakkında yanıtlar.
 - [Hakkımızda](https://tusankim.com/kurucu/): TusAnkiM hazırlama yaklaşımı ve editöryal ilkeler.
 
 ## Tam Metin Özeti

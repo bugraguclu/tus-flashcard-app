@@ -83,7 +83,7 @@ for (const svgFile of files.filter((f) => f.endsWith('.svg'))) {
 
 // 4. Audit every HTML page
 const htmlFiles = files.filter((f) => f.endsWith('.html'));
-check(htmlFiles.length === 34, `Expected 34 HTML pages (13 core + 21 help guides), got ${htmlFiles.length}`);
+check(htmlFiles.length === 58, `Expected 58 HTML pages (18 core + 8 rehber + 11 branş + 21 help guides), got ${htmlFiles.length}`);
 
 const forbiddenText = [
   { re: /7\s*gün[^<.]{0,80}iade|koşulsuz\s+iade|iade\s+garantisi/i, label: 'Removed refund promise' },
@@ -109,7 +109,7 @@ for (const hf of htmlFiles) {
   // Strip <script> blocks for markup-only structural checks (template literals inside scripts have JS expressions)
   const htmlNoScripts = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
 
-  const ids = [...htmlNoScripts.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
+  const ids = [...htmlNoScripts.matchAll(/(?<![\w-])id="([^"]+)"/g)].map((match) => match[1]);
   check(new Set(ids).size === ids.length, `${rel}: duplicate element IDs`);
   if (rel.startsWith('yardim/') && rel !== 'yardim/index.html') {
     check(html.includes('data-help-steps'), `${rel}: missing short starting steps`);
@@ -193,7 +193,7 @@ for (const hf of htmlFiles) {
 // 5. Verify sitemap.xml
 const sitemap = fs.readFileSync(path.join(DIST, 'sitemap.xml'), 'utf8');
 const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-check(locs.length === 33, `sitemap.xml expected 33 URLs (12 pages + 21 help guides), found ${locs.length}`);
+check(locs.length === 57, `sitemap.xml expected 57 URLs (17 pages + 8 rehber + 11 branş + 21 help guides), found ${locs.length}`);
 check(!locs.some((u) => u.includes('/404')), 'sitemap.xml must not include 404');
 check(locs.every((u) => u.startsWith('https://tusankim.com/') && u.endsWith('/')), 'All sitemap URLs must use https://tusankim.com/ and trailing slash');
 

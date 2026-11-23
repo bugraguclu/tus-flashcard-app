@@ -1,0 +1,112 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { REHBER_ARTICLES } from '../../data/rehber/index';
+import { breadcrumbList, collectionPage } from '../../lib/schema';
+import { effectiveDate, formatTrDate } from '../../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const modDate = effectiveDate([
+  'website/src/pages/rehber/index.astro',
+  'website/src/data/rehber/index.ts',
+  'website/src/data/rehber/part1.ts',
+  'website/src/data/rehber/part2.ts',
+  'website/src/data/rehber/part3.ts',
+]);
+const modLabel = formatTrDate(modDate);
+
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'Rehberler', path: '/rehber' },
+]);
+
+const colSchema = collectionPage(origin, {
+  path: '/rehber',
+  name: 'TUS Çalışma Rehberleri ve FSRS-6 Kılavuzları | TusAnkiM',
+  description:
+    'TUS puanı hesaplama, 2027 TUS tarihleri, FSRS-6 aralıklı tekrar, kart hacmi ve Anki uyumlu çalışma rehberleri.',
+  items: REHBER_ARTICLES.map((a) => ({ name: a.questionH1, path: `/rehber/${a.slug}` })),
+  dateModified: modDate,
+});
+---
+<Layout
+  title="TUS Çalışma Rehberleri (FSRS-6, Puan, Takvim) | TusAnkiM"
+  description="TUS hazırlığında doğru bilinen yanlışlar, 5. sınıf/intörn/son 1 ay programı, 2027 takvimi, puan hesaplama ve FSRS-6 üzerine 8 kanıt temelli rehber."
+  modifiedTime={modDate}
+  schema={[crumbs, colSchema]}
+>
+  <section class="bg-surface border-b border-line py-10 sm:py-14">
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <nav aria-label="Sayfa konumu" class="mb-3">
+        <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
+          <li class="inline-flex items-center">
+            <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+          </li>
+          <li class="inline-flex items-center">
+            <span aria-hidden="true" class="mx-2">/</span>
+            <a href="/rehber/" aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
+              Rehber
+            </a>
+          </li>
+        </ol>
+      </nav>
+
+      <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
+        TUS Çalışma Rehberleri
+      </h1>
+      <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
+        TUS puanı, 2027 sınav takvimi, FSRS-6 algoritması, kart hacmi ve sık yapılan çalışma hataları üzerine veri ve resmî kaynak temelli {REHBER_ARTICLES.length} temel rehber.
+      </p>
+      <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
+        <span>
+          Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
+        </span>
+        <span>
+          Hazırlayan:{' '}
+          <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+            TusAnkiM
+          </a>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12">
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {REHBER_ARTICLES.map((art) => (
+        <a
+          href={`/rehber/${art.slug}/`}
+          class="rounded-2xl border border-line bg-white p-6 hover:border-tealGraphic transition flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-2 text-[11px] font-bold text-teal">
+              <span>Yazı {String(art.order).padStart(2, '0')}</span>
+              <span class="text-inkMuted font-semibold">{art.tone}</span>
+            </div>
+            <h2 class="display text-base text-ink mt-2 leading-snug">{art.questionH1}</h2>
+            <p class="text-xs sm:text-sm text-inkMuted mt-2.5 leading-relaxed">{art.directAnswer}</p>
+          </div>
+          <span class="mt-5 inline-flex items-center text-xs font-semibold text-teal">
+            Rehberi oku →
+          </span>
+        </a>
+      ))}
+    </div>
+
+    <aside class="mt-12 rounded-2xl border border-line bg-surfaceSoft p-6 text-sm text-inkMuted leading-relaxed">
+      <h2 class="display text-base text-ink">Uygulama Kullanım Kılavuzu, Araçlar ve Referanslar</h2>
+      <p class="mt-2">
+        Uygulama ekranlarının adım adım kullanımı için{' '}
+        <a href="/yardim/" class="font-semibold text-teal underline hover:text-tealDark">21 Türkçe Yardım Rehberini</a>,
+        çıkmış soru dağılımı ve analizleri için{' '}
+        <a href="/tus-cikmis-sorular-ve-analiz/" class="font-semibold text-teal underline hover:text-tealDark">TUS Çıkmış Sorular Analizini</a>{' '}
+        ve <a href="/referanslar/" class="font-semibold text-teal underline hover:text-tealDark">11 ÖSYM TUS Branşı Referans Cetvelini</a>,
+        etkileşimli araçlar ve kılavuzlar için{' '}
+        <a href="/tus-taban-puanlari-ve-kontenjan/" class="font-semibold text-teal underline hover:text-tealDark">TUS Taban Puanları</a>,{' '}
+        <a href="/yardim/kronometre/" class="font-semibold text-teal underline hover:text-tealDark">TUS Kronometre &amp; Çalışma Takvimi</a>,{' '}
+        <a href="/tus-spot-bilgiler/" class="font-semibold text-teal underline hover:text-tealDark">TUS Spot Bilgiler</a> ve{' '}
+        <a href="/tus-icin-ankimobile-alternatifi/" class="font-semibold text-teal underline hover:text-tealDark">AnkiMobile Alternatifi</a>{' '}
+        sayfalarını inceleyebilirsin.
+      </p>
+    </aside>
+  </section>
+</Layout>

@@ -3,6 +3,8 @@ const FIELD_GAP = 12;
 
 export function enhanceScoreKeyboard(root: HTMLElement) {
   const fields = Array.from(root.querySelectorAll<HTMLInputElement>('[data-score-field]'));
+  // A calculator may keep a second input mode in a hidden panel: only the visible fields take part.
+  const visibleFields = () => fields.filter((input) => !input.closest('[hidden]'));
   const results = root.querySelector<HTMLElement>('#score-results-heading');
   const warning = root.querySelector<HTMLElement>('[data-score-warn]');
   const resultsButton = root.querySelector<HTMLButtonElement>('[data-score-results-button]');
@@ -34,7 +36,7 @@ export function enhanceScoreKeyboard(root: HTMLElement) {
 
     keyboard.style.setProperty('--score-keyboard-bottom', `${viewport.offsetTop + viewport.height}px`);
     currentField.textContent = activeField.dataset.scoreField ?? '';
-    nextField.textContent = activeField === fields.at(-1) ? 'Sonucu gör' : 'Sonraki alan';
+    nextField.textContent = activeField === visibleFields().at(-1) ? 'Sonucu gör' : 'Sonraki alan';
 
     if (revealField && field) {
       const toolbar = keyboard.getBoundingClientRect();
@@ -73,7 +75,8 @@ export function enhanceScoreKeyboard(root: HTMLElement) {
   }
 
   function advance(field: HTMLInputElement) {
-    const next = fields[fields.indexOf(field) + 1];
+    const visible = visibleFields();
+    const next = visible[visible.indexOf(field) + 1];
     if (!next) {
       showResults();
       return;

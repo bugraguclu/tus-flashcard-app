@@ -28,7 +28,7 @@ export const PAGES: PageEntry[] = [
       'website/src/styles/home.css', 'website/src/data/faqs.json',
       'website/src/lib/studyPlanner.ts', 'website/src/lib/studyPlannerTypes.ts',
       'website/src/data/generated/fsrs-planner.json', 'website/src/data/exams.json',
-      'website/src/data/founder.json', 'website/src/config.ts',
+      'website/src/data/founder.json', 'website/src/config.ts', 'website/src/data/offer.json',
       'website/src/data/generated/catalog.json', 'website/src/data/generated/demo-cards.json',
       'website/src/data/generated/references-summary.json',
     ],
@@ -52,6 +52,76 @@ export const PAGES: PageEntry[] = [
     published: true,
     sitemap: true,
     sources: ['website/src/pages/puan-hesapla.astro'],
+  },
+  {
+    id: 'rehber',
+    path: '/rehber',
+    title: 'TUS Çalışma Rehberleri',
+    navLabel: 'Rehber Yazıları',
+    footerLabel: 'TUS Çalışma Rehberleri (8 Yazı)',
+    published: true,
+    sitemap: true,
+    sources: [
+      'website/src/pages/rehber/index.astro',
+      'website/src/data/rehber/index.ts',
+      'website/src/data/rehber/part1.ts',
+      'website/src/data/rehber/part2.ts',
+      'website/src/data/rehber/part3.ts',
+    ],
+  },
+  {
+    id: 'taban-puanlari',
+    path: '/tus-taban-puanlari-ve-kontenjan',
+    title: 'TUS Taban Puanları ve Kontenjanlar',
+    navLabel: 'Taban Puanları',
+    footerLabel: 'TUS Taban Puanları & Kontenjan (2025–2026)',
+    published: true,
+    sitemap: true,
+    sources: [
+      'website/src/pages/tus-taban-puanlari-ve-kontenjan.astro',
+      'website/src/data/osymPlacement.ts',
+    ],
+  },
+  {
+    id: 'cikmis-sorular',
+    path: '/tus-cikmis-sorular-ve-analiz',
+    title: 'TUS Çıkmış Sorular ve Dağılım Analizi',
+    navLabel: 'Çıkmış Sorular',
+    footerLabel: 'TUS Çıkmış Sorular & Dağılım Analizi',
+    published: true,
+    sitemap: true,
+    sources: [
+      'website/src/pages/tus-cikmis-sorular-ve-analiz.astro',
+      'website/src/data/branches.ts',
+      'website/src/data/generated/references-summary.json',
+    ],
+  },
+  {
+    id: 'spot-bilgiler',
+    path: '/tus-spot-bilgiler',
+    title: 'TUS Spot Bilgiler ve Aktif Tekrar',
+    navLabel: 'Spot Bilgiler',
+    footerLabel: 'TUS Spot Bilgiler & Demo Kartlar',
+    published: true,
+    sitemap: true,
+    sources: [
+      'website/src/pages/tus-spot-bilgiler.astro',
+      'website/src/data/generated/catalog.json',
+      'website/src/data/generated/demo-cards.json',
+    ],
+  },
+  {
+    id: 'ankimobile-alternatifi',
+    path: '/tus-icin-ankimobile-alternatifi',
+    title: 'TUS İçin AnkiMobile Alternatifi',
+    navLabel: 'AnkiMobile Alternatifi',
+    footerLabel: 'TUS İçin AnkiMobile Alternatifi',
+    published: true,
+    sitemap: true,
+    sources: [
+      'website/src/pages/tus-icin-ankimobile-alternatifi.astro',
+      'website/src/data/offer.json',
+    ],
   },
   {
     id: 'calisma-rehberi',
@@ -179,6 +249,7 @@ export const PAGES: PageEntry[] = [
 
 export const NAV_IDS = ['calisma-rehberi', 'referanslar', 'puan', 'yardim', 'sss'] as const;
 export const FOOTER_DISCOVER_IDS = ['calisma-rehberi', 'calisma-plani', 'referanslar', 'puan', 'kurucu', 'yardim', 'sss', 'destek'] as const;
+export const FOOTER_CONTENT_IDS = ['rehber', 'cikmis-sorular', 'taban-puanlari', 'spot-bilgiler', 'ankimobile-alternatifi'] as const;
 export const FOOTER_LEGAL_IDS = ['gizlilik', 'kosullar', 'destek'] as const;
 
 export const page = (id: string): PageEntry => {

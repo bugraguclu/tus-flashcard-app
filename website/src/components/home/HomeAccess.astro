@@ -1,9 +1,6 @@
 ---
-import { ACCESS, SITE, SOCIAL, SHOW_PRICING_PROMO, PRICING_MODE } from '../../config';
-import catalog from '../../data/generated/catalog.json';
-import { num } from '../../lib/format';
-
-const showLaunch = SHOW_PRICING_PROMO && PRICING_MODE !== 'free-beta';
+import { SITE, SOCIAL, SHOW_PRICING_PROMO, PRICING_MODE } from '../../config';
+import offer from '../../data/offer.json';
 const instagram = SOCIAL.find((social) => social.icon === 'instagram');
 const guides = [
   { title: 'İlk kartınla başla', text: 'Hazır paketi aç, dersini seç ve ilk tekrarını yap.', href: '/yardim/hizli-baslangic/' },
@@ -11,29 +8,57 @@ const guides = [
   { title: 'Kısayolları öğren', text: 'Klavye ve dokunma kontrollerini alışkanlığına göre ayarla.', href: '/yardim/kisayollar/' },
 ];
 ---
+{SHOW_PRICING_PROMO && (
 <section id="fiyatlandirma" class="scroll-mt-24 py-14 sm:py-20 bg-white border-b border-line" aria-labelledby="pricing-heading">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 grid lg:grid-cols-12 gap-8 items-start">
-    <div class="lg:col-span-7 reveal">
-      <p class="kicker">Ücretsiz deneme ve erişim</p>
-      <h2 id="pricing-heading" class="display text-section tracking-tightest text-ink mt-3">Ücretsiz dene, kartların sana uyuyor mu gör.</h2>
-      <p class="text-inkMuted mt-3 leading-relaxed">{ACCESS.betaDescription}</p>
-      <p class="text-inkMuted mt-2 leading-relaxed">
-        iPhone için geliştirilen uygulamayı tarayıcıda keşfet. Kendi destelerini dosyayla taşıyabilirsin; otomatik cihaz eşitlemesi henüz yok.
-      </p>
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="max-w-2xl reveal">
+      <p class="kicker">{offer.badge}</p>
+      <h2 id="pricing-heading" class="display text-section tracking-tightest text-ink mt-3">{offer.headline}</h2>
+      <p class="text-inkMuted mt-3 leading-relaxed">{offer.subheadline}</p>
     </div>
-    <div class="lg:col-span-5 reveal rounded-2xl border border-line bg-surfaceSoft p-6" style="--d: 60ms">
-      <h3 class="text-sm font-bold uppercase tracking-wider text-inkMuted">Güncel beta</h3>
-      <p class="display text-4xl text-teal mt-2">Ücretsiz</p>
-      <p class="text-sm text-ink mt-2 leading-relaxed">{num(catalog.totals.cards)} kartlık hazır TUS koleksiyonu, kişisel desteler ve çalışma araçları.</p>
-      <a href={SITE.webAppUrl} target="_blank" rel="noopener noreferrer" class="mt-5 inline-flex w-full items-center justify-center min-h-[3rem] rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition">
-        Ücretsiz dene<span class="sr-only"> (yeni sekmede açılır)</span>
-      </a>
-      {showLaunch && (
-        <p class="mt-4 text-xs text-inkMuted leading-relaxed">{ACCESS.plannedLaunchDescription} Günlük sınırın işleyişi ve satın alma koşulları ücretli erişim başlamadan önce açıklanacak.</p>
-      )}
+
+    <ul role="list" class="mt-8 grid lg:grid-cols-3 gap-6 items-stretch">
+      {offer.tiers.map((tier, i) => (
+        <li class={`reveal rounded-2xl p-6 sm:p-8 flex flex-col bg-white ${tier.highlight ? 'border-2 border-teal' : 'border border-line'}`} style={`--d: ${i * 60}ms`}>
+          <div class="flex items-baseline justify-between gap-3">
+            <h3 class="display text-xl text-ink">{tier.name}</h3>
+            <span class={`text-xs font-semibold ${tier.highlight ? 'text-teal' : 'text-inkMuted'}`}>{tier.badge}</span>
+          </div>
+          <p class="mt-4 flex flex-wrap items-baseline gap-x-2.5">
+            <span class="display text-4xl text-ink tabular-nums">{tier.price}</span>
+            <span class="text-sm text-inkMuted">{tier.period}</span>
+          </p>
+          <p class="text-sm text-inkMuted mt-3 leading-relaxed">{tier.summary}</p>
+          <ul role="list" class="mt-5 space-y-2 flex-1">
+            {tier.features.map((feat) => (
+              <li class="flex items-start gap-2.5 text-sm text-ink">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0e7469" stroke-width="2.2" class="shrink-0 mt-1" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg>
+                <span>{feat}</span>
+              </li>
+            ))}
+          </ul>
+          <a
+            href={SITE.webAppUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class={`mt-6 inline-flex items-center justify-center w-full min-h-[3rem] rounded-full text-sm font-semibold transition ${tier.highlight ? 'bg-teal text-white hover:bg-tealDark' : 'border border-line bg-surfaceSoft text-ink hover:border-teal hover:text-teal'}`}
+          >
+            {tier.ctaLabel}<span class="sr-only"> (yeni sekmede açılır)</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <div class="mt-6 space-y-1.5 text-xs text-inkMuted leading-relaxed max-w-3xl" data-pricing-mode={PRICING_MODE}>
+      <p>{offer.transparencyNote}</p>
+      <p>
+        <strong class="text-ink">{offer.clubProgram.kicker}:</strong> {offer.clubProgram.text}{' '}
+        <a href="/destek/" class="text-teal underline underline-offset-2 hover:text-tealDark">Destek sayfasından başvurabilirsin</a>.
+      </p>
     </div>
   </div>
 </section>
+)}
 
 <section id="kullanim" class="scroll-mt-24 py-12 sm:py-16 bg-surfaceSoft border-b border-line" aria-labelledby="usage-heading">
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">

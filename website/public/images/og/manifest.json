@@ -47,6 +47,26 @@
     "title": "Kullanım koşulları",
     "sha256": "4af63b43491ae2b4af146e2eb121906d9912dbf1587b12d3ad761a0da5665116"
   },
+  "/images/og/rehber.png": {
+    "title": "TUS rehber yazıları",
+    "sha256": "f76a2dfbd99b53b187a1f344576ab88064d1cf94d5167b7375f951808241a9e8"
+  },
+  "/images/og/tus-cikmis-sorular-ve-analiz.png": {
+    "title": "TUS çıkmış sorular ve dağılım analizi",
+    "sha256": "8e718cdc965d8cb5ae420728efd7e394e5f3445b7e3a08a6ed35bc2e8f1450e1"
+  },
+  "/images/og/tus-taban-puanlari-ve-kontenjan.png": {
+    "title": "TUS taban puanları ve kontenjanlar",
+    "sha256": "7c4e9bb52024ff9ba2f1156f7c88d39efabcee627f8d81cda1b247b22e0a09ad"
+  },
+  "/images/og/tus-spot-bilgiler.png": {
+    "title": "TUS spot bilgiler ve aktif tekrar",
+    "sha256": "47ba2b839ddb859ecd5af907a85e557fe26d3610c75829fbfcd28830fe4db4c3"
+  },
+  "/images/og/tus-icin-ankimobile-alternatifi.png": {
+    "title": "TUS için AnkiMobile alternatifi",
+    "sha256": "fa01d891d89f420ad08b02f4b8e7ef5688de4b17af5043d2db312203fe0d9b60"
+  },
   "/images/og/yardim/tusankim-nedir.png": {
     "title": "TusAnkiM nedir?",
     "sha256": "94862b285070638dd285f8dd51acaa2611e9387132973f059752437796a2ff54"
@@ -130,5 +150,81 @@
   "/images/og/yardim/sozluk.png": {
     "title": "Sözlük",
     "sha256": "1f680ba61dfb7ece2495dd7b2a377ba4eff91efa26ba683242fea4396ba3efef"
+  },
+  "/images/og/referanslar/anatomi.png": {
+    "title": "Anatomi TUS referansları",
+    "sha256": "1b4ed1f0a557a12f1864b5674fe1ee50240096a6ff7ad0a22024479bbd44cd26"
+  },
+  "/images/og/referanslar/fizyoloji-histoloji-embriyoloji.png": {
+    "title": "Fizyoloji, Histoloji ve Embriyoloji TUS referansları",
+    "sha256": "bba2616f981fcc6b11933d1b7e1811d488c1e0a9aa9094d6510d3a1684f73be3"
+  },
+  "/images/og/referanslar/biyokimya.png": {
+    "title": "Biyokimya TUS referansları",
+    "sha256": "5d138b4ec7e332670266f91c63602dad0a67beec7ffa59ca2cdba8583f8d94e7"
+  },
+  "/images/og/referanslar/mikrobiyoloji.png": {
+    "title": "Mikrobiyoloji TUS referansları",
+    "sha256": "17eb6bac062ecf5ca9c6049d8155675bfcdcfbc3f0b4688a37c9abda49b4470c"
+  },
+  "/images/og/referanslar/patoloji.png": {
+    "title": "Patoloji TUS referansları",
+    "sha256": "fcf410505c88d02cc19daadb39e140e894692de5d016f785fcc442fc0330eb0e"
+  },
+  "/images/og/referanslar/farmakoloji.png": {
+    "title": "Farmakoloji TUS referansları",
+    "sha256": "4b4dadd0c505b65571ad63321aaaac28ca34baa012c3b6be59aa7ec682c557d1"
+  },
+  "/images/og/referanslar/dahiliye.png": {
+    "title": "Dahiliye TUS referansları",
+    "sha256": "0a846225d9717a906e9895fc12f686c87499fc4e1601426ff2cea974ffaffc7b"
+  },
+  "/images/og/referanslar/pediatri.png": {
+    "title": "Pediatri TUS referansları",
+    "sha256": "e5e8778441da1d55437736c4e9442f6eb0374bc21d27ee9d451cb3346c21c613"
+  },
+  "/images/og/referanslar/genel-cerrahi.png": {
+    "title": "Genel Cerrahi TUS referansları",
+    "sha256": "65698b5c5cabe1418748f8bd9e4fab94fe753f64a3cb8c52ae4799d443b789f0"
+  },
+  "/images/og/referanslar/kadin-dogum.png": {
+    "title": "Kadın Doğum TUS referansları",
+    "sha256": "011587da667f4754642725c0b1dbcc2aebc4e6cb736b75b4460acc101523456b"
+  },
+  "/images/og/referanslar/kucuk-stajlar.png": {
+    "title": "Küçük Stajlar TUS referansları",
+    "sha256": "c0ec1c6c95ccad970d3d897bee8f0080d16e52a367091db07d119ba92aed229d"
+  },
+  "/images/og/rehber/tusta-kac-kart-calisilmali.png": {
+    "title": "TUS'ta Kaç Kart Çalışılmalı? Mega Deste Kıyası",
+    "sha256": "3d6cb6c17ac35fd826c5834ef9e8c949eccf288f7bfbbe52f7eb591594974297"
+  },
+  "/images/og/rehber/tus-icin-fsrs-6-nedir.png": {
+    "title": "TUS İçin FSRS-6 Nedir? SM-2 İle Farkı",
+    "sha256": "6cfb54875160282a5d533d8eb563c428b9ec77de435a8cc121a50bb98afd906e"
+  },
+  "/images/og/rehber/tus-icin-anki-uyumlu-sistem.png": {
+    "title": "TUS İçin Anki Uyumlu Sistem: .apkg & FSRS-6",
+    "sha256": "3f2f56ded628169e1cef9c32dbcf23d8d53fe2c97795c67f4c385d806da72148"
+  },
+  "/images/og/rehber/tus-puani-nasil-hesaplanir.png": {
+    "title": "TUS Puanı Nasıl Hesaplanır? %5 Kesinti Kuralı",
+    "sha256": "3c8eb579040d363b33124ddb09408fed88d2b9dc8479b4f7f56a371a189559b6"
+  },
+  "/images/og/rehber/2027-tus-tarihleri-ve-calisma-plani.png": {
+    "title": "2027 TUS Tarihleri & Kalan Gün Çalışma Planı",
+    "sha256": "f35cb81154a15d9078f0e0626e0fd6de71847955b0660fd2fbcef4800d654921"
+  },
+  "/images/og/rehber/tus-calisirken-dogru-bilinen-7-yanlis.png": {
+    "title": "TUS Çalışırken Doğru Bilinen 7 Yanlış",
+    "sha256": "930a1dc474acae7e1d0ac4ee77bdb6904c882482e0168663733d20cd76258453"
+  },
+  "/images/og/rehber/tusankim-ucretsiz-mi-nasil-kullanilir.png": {
+    "title": "TusAnkiM Ücretsiz Mi? Fiyat ve Erişim Modeli",
+    "sha256": "ec260b5c44e5129eefe25aeb1a4d469732c6f4b82a8871c9bb9de441e016cbed"
+  },
+  "/images/og/rehber/5-sinif-intorn-son-1-ay-tus-programi.png": {
+    "title": "5. Sınıf, İntörn ve Son 1 Ay TUS Programı",
+    "sha256": "bc26c29f9196f8853f3b9d036ff83089886ebed28b269a39b94ab563128ae541"
   }
 }

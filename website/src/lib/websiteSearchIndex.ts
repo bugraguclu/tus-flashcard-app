@@ -6,7 +6,7 @@ import { guideSearchWords } from './guideSearch';
 export const websiteFaqAnchor = (question: string) => 'soru-' + guideSearchWords(question).join('-');
 
 export interface WebsiteSearchEntry {
-  type: 'Sayfa' | 'Kılavuz' | 'TUS Ders' | 'SSS';
+  type: 'Sayfa' | 'Kılavuz' | 'TUS Ders' | 'Rehber' | 'SSS';
   title: string;
   sub: string;
   url: string;
@@ -20,6 +20,11 @@ const EXTRA_PAGE_TERMS: Record<string, string> = {
   'kart-denemesi': 'kart denemesi tablet demo deste listesi 11 ders cloze',
   referanslar: 'referans çıkmış soru 2026 2025 2024 doğrudan dolaylı konu kapsamı a78ae1f osym',
   puan: 'puan hesapla hedef net temel klinik %5 kesinti 45 baraj',
+  rehber: 'rehber yazıları tus çalışma planı fsrs-6 puan kesintisi 2027 tarihler kaç kart anki uyumlu intörn son 1 ay',
+  'taban-puanlari': 'taban puanları kontenjan yerleştirme ösym 2026 2025 uzmanlık dalı doluluk min max puan',
+  'cikmis-sorular': 'çıkmış sorular soru dağılımı analiz son 6 tus 1195 soru branş çözüm desteği konu kapsamı',
+  'spot-bilgiler': 'spot bilgiler aktif tekrar pdf demo kart 106 alt deste',
+  'ankimobile-alternatifi': 'ankimobile alternatifi iphone anki ücretsiz apkg colpkg fsrs-6 karşılaştırma',
   kurucu: 'hakkımızda tusankim kart koleksiyonu referans değerlendirme',
   yardim: 'kılavuz rehber kurulum kullanım anki apkg colpkg fsrs kronometre yedek',
   sss: 'sıkça sorulan sorular ücretsiz beta fiyat erişim android bulut',
