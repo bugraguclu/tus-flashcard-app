@@ -10,6 +10,9 @@
  */
 
 import { createBackupNow, type BackupDeps } from './backup';
+import { commitCollectionWrite } from './collectionWrite';
+import { readOnlyTabMessage } from './db';
+import { captureDeletion } from './noteDeletion';
 import { deleteAnkiCardsOnly, planCardOnlyDeletion, type CardOnlyDeletion } from './noteStore';
 
 export class EmptyCardsWorkflowError extends Error {
@@ -45,6 +48,8 @@ export async function deleteEmptyCardsWithBackup(
     options: { preserveNotes: boolean },
     deps: EmptyCardsWorkflowDeps = {},
 ): Promise<EmptyCardsDeletionOutcome> {
+    const readOnly = readOnlyTabMessage();
+    if (readOnly) throw new Error(readOnly);
     const plan = deps.plan ?? planCardOnlyDeletion;
     const deleteCards = deps.deleteCards ?? deleteAnkiCardsOnly;
     const createBackup = deps.createBackup ?? (() => createBackupNow(deps.backupDeps, { requireRestorable: true }));
@@ -60,8 +65,14 @@ export async function deleteEmptyCardsWithBackup(
     }
 
     try {
-        // Planned again inside the deletion's transaction, so what it reports is what it did.
-        return { backupFileName, ...deleteCards(cardIds, options) };
+        const { outcome } = await commitCollectionWrite(() => {
+            const current = plan(cardIds, options);
+            const finish = captureDeletion({ cardIds: current.deleted, noteIds: current.deletedNotes });
+            // No await between capture and deletion; the delete replans inside its transaction.
+            const outcome = deleteCards(cardIds, options);
+            return { outcome, rollback: finish() };
+        }, ({ rollback }) => rollback.undo());
+        return { backupFileName, ...outcome };
     } catch (error) {
         throw new EmptyCardsWorkflowError('delete', backupFileName, { cause: error });
     }

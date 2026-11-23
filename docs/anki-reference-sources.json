@@ -151,14 +151,14 @@
       "priority": 1,
       "platform": "cross-platform note type management",
       "url": "https://docs.ankiweb.net/editing.html#adding-a-note-type",
-      "useFor": ["Add Note Type offers stock types and clones of existing types, then asks for a name", "Delete removes a note type with all its notes and cards", "cloze note types can add, remove and reorder fields"]
+      "useFor": ["Add Note Type offers stock types and clones of existing types, then asks for a name", "Delete removes a note type with all its notes and cards", "cloze note types can add, remove and reorder fields", "local deletion safety: refuse read-only tabs before backup, await durable commit and restore only affected rows on failure; noteTypeDeletion.test.ts"]
     },
     {
       "id": "anki-source-empty-cards-orphaned-notes",
       "priority": 2,
       "platform": "cross-platform card generation and maintenance behavior",
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/emptycards.py",
-      "useFor": ["Empty Cards with Keep Notes off removes the notes left without cards (remove_cards_and_orphaned_notes)", "Keep Notes on leaves a note's first card"]
+      "useFor": ["Empty Cards with Keep Notes off removes the notes left without cards (remove_cards_and_orphaned_notes)", "Keep Notes on leaves a note's first card", "local deletion safety: read-only refusal before backup and affected-row rollback after durable write failure; emptyCardsWorkflow.test.ts"]
     },
     {
       "id": "anki-manual-check-database",
@@ -1068,7 +1068,7 @@
       "priority": 3,
       "platform": "web collection persistence",
       "url": "https://w3c.github.io/IndexedDB/#transaction-lifetime",
-      "useFor": ["wait for transaction completion before acknowledging a durable save", "propagate aborted writes", "keep reviewer, editor and import completion behind the commit"]
+      "useFor": ["wait for transaction completion before acknowledging a durable save", "propagate aborted writes", "keep reviewer, editor and import completion behind the commit", "note-type and Empty Cards deletion report success only after commit and restore their affected rows after failure"]
     },
     {
       "id": "html-standard-frame-navigation",
@@ -1337,6 +1337,7 @@
       "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/fields.py",
       "useFor": [
         "rename a field once with its final name",
+        "local editor adaptation: preserve unsaved values and pins with a stable local identity through rename/reorder, excluded from Anki export; noteTypeEditor.test.ts and noteTypeValidation.test.ts",
         "refuse a field name another field already uses, ignoring case",
         "Fields dialog refuses names starting with #, ^ or / and names containing : { } \" ; template save errors for unknown fields, unclosed sections, no front field and missing cloze (https://docs.ankiweb.net/templates/errors.html)"
       ],
@@ -1498,6 +1499,7 @@
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": [
         "Anki 26.09.3 result IDs and errors, recorded in test/fixtures/anki-26.09-search.json by scripts/anki-oracle/search_parity.py",
+        "local safety differences: reject nested unbounded regex repetition; serialize literal Custom Study names and adapt legacy relearn state terms without rewriting quoted text; searchSafety.test.ts and customStudy.test.ts",
         "Boolean grammar, plain and regex text, case folding and name scopes, due and preview-repeat states, original due for prop:due",
         "Ctrl/Cmd-click joins a browser filter to the whole current query; https://docs.ankiweb.net/browsing.html#search-tool",
         "AnkiMobile browsing/filter interactions; https://docs.ankimobile.net/editing.html#browsing"

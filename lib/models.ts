@@ -11,6 +11,8 @@ import type { AutoAdvanceAnswerAction, AutoAdvanceQuestionAction, NewCardGatherO
 export type NoteTypeKind = 'standard' | 'cloze';
 
 export interface NoteTypeField {
+    /** Local editor identity across rename/reorder; never exported as an Anki field id. */
+    editorId?: string;
     name: string;
     ord: number;
     sticky: boolean;     // keep the value when adding the next card

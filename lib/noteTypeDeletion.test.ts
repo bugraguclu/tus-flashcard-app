@@ -3,8 +3,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
-const holder = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => holder.db, dbUpsertFtsCard: () => {} }));
+const holder = vi.hoisted(() => ({ db: null as any, readOnly: vi.fn(), flush: vi.fn() }));
+vi.mock('./db', () => ({ getDB: () => holder.db, dbUpsertFtsCard: () => {}, readOnlyTabMessage: holder.readOnly, flushDatabaseWrites: holder.flush }));
 import { BUILTIN_NOTE_TYPES } from './models';
 import { createNote, getNote } from './noteStore';
 import { createDeck } from './deckStore';
@@ -16,7 +16,7 @@ import { PaidCatalogProtectionError } from './catalogProtection';
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 let db: SyncDb;
 beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
-beforeEach(() => { db = createAppDb(SQL); holder.db = db; });
+beforeEach(() => { db = createAppDb(SQL); holder.db = db; holder.readOnly.mockReset().mockReturnValue(null); holder.flush.mockReset().mockResolvedValue(undefined); });
 afterEach(() => db.close());
 
 const reversed = BUILTIN_NOTE_TYPES.find((type) => type.id === 2)!;
@@ -81,4 +81,42 @@ describe('deleting a note type', () => {
         expect(canDeleteNoteType({ ...reversed, id: 778 })).toBe(true);
         await expect(deleteNoteTypeWithBackup(reversed, { createBackup: async () => ({ fileName: 'x' }) })).rejects.toThrow('cannot be deleted');
     });
+});
+
+
+it('rejects read-only deletion before creating a backup or changing any row', async () => {
+    const own = createNoteTypeFrom(reversed, 'Read-only type');
+    const { note } = createNote(own, ['Question', 'Answer'], createDeck('Study').id);
+    const backup = vi.fn(async () => ({ fileName: 'safety.json' }));
+    holder.readOnly.mockReturnValue('This tab is read-only');
+    await expect(deleteNoteTypeWithBackup(own, { createBackup: backup })).rejects.toThrow('read-only');
+    expect(backup).not.toHaveBeenCalled();
+    expect(getNoteType(own.id)).not.toBeNull();
+    expect(getNote(note.id)).not.toBeNull();
+});
+
+it('waits for durable deletion and restores affected rows after commit failure for a clean retry', async () => {
+    const own = createNoteTypeFrom(reversed, 'Durable type');
+    const { note, cards } = createNote(own, ['Question', 'Answer'], createDeck('Study').id);
+    db.runSync('INSERT INTO revlog (id, cardId) VALUES (?, ?)', 1, cards[0].id);
+    const tables = ['note_types', 'notes', 'anki_cards', 'cards_fts', 'graves', 'revlog'];
+    const snapshot = () => tables.map(table => db.getAllSync(`SELECT * FROM ${table}`));
+    const before = snapshot();
+    let reject!: (error: Error) => void;
+    holder.flush.mockImplementationOnce(() => new Promise<void>((_resolve, fail) => { reject = fail; }));
+    let completed = false;
+    const pending = deleteNoteTypeWithBackup(own, { createBackup: async () => ({ fileName: 'safety.json' }) })
+        .then(result => { completed = true; return { ok: true, result }; }, error => ({ ok: false, error }));
+    await vi.waitFor(() => expect(holder.flush).toHaveBeenCalledOnce());
+    expect(completed).toBe(false);
+    db.runSync('INSERT INTO settings (key, value) VALUES (?, ?)', 'unrelated-edit', 'keep');
+    reject(new Error('IndexedDB quota exceeded'));
+    expect(await pending).toMatchObject({ ok: false, error: { stage: 'delete', backupFileName: 'safety.json' } });
+    expect(snapshot()).toEqual(before);
+    expect(db.getFirstSync<{ value: string }>('SELECT value FROM settings WHERE key = ?', 'unrelated-edit')?.value).toBe('keep');
+    expect(getNote(note.id)?.fields).toEqual(['Question', 'Answer']);
+    await expect(deleteNoteTypeWithBackup(own, { createBackup: async () => ({ fileName: 'retry.json' }) }))
+        .resolves.toMatchObject({ notes: 1, cards: 2 });
+    expect(db.getAllSync('SELECT * FROM graves')).toHaveLength(3);
+    expect(db.getAllSync('SELECT * FROM revlog')).toHaveLength(1);
 });

@@ -1,3 +1,5 @@
+import type { NoteTypeField } from './models';
+
 /**
  * The editor keeps a note's field values by position. The note type screen can add, remove or
  * move that type's fields while the editor is still open beneath it (from Kartlar:, or Manage note
@@ -7,13 +9,19 @@
 
 const fieldKey = (name: string) => name.trim().normalize('NFC').toLowerCase();
 
+/** Legacy names establish identity once; a rename persists the original key on that field. */
+export function editorFieldKeys(fields: readonly Pick<NoteTypeField, 'name' | 'editorId'>[]): string[] {
+    return fields.map((field) => field.editorId ?? `name:${fieldKey(field.name)}`);
+}
+
 /** Whether two field lists name the same fields in the same order (field names ignore case). */
 export function sameFieldLayout(a: readonly string[], b: readonly string[]): boolean {
     return a.length === b.length && a.every((name, index) => fieldKey(name) === fieldKey(b[index]));
 }
 
 /**
- * The editor's values laid out for the note type's new fields; a value follows its field by name.
+ * The editor's values laid out for the note type's new fields; a value follows its field by identity
+ * (legacy callers may pass names).
  *
  * - Editing a saved note, `stored` is that note as the note type screen migrated it, already in
  *   the new layout: a field the learner has not changed here takes its stored value (so a renamed

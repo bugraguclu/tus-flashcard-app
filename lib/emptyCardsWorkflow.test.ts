@@ -6,8 +6,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 
-const holder = vi.hoisted(() => ({ db: null as any }));
-vi.mock('./db', () => ({ getDB: () => holder.db, dbUpsertFtsCard: () => {}, isPrimaryTab: () => true }));
+const holder = vi.hoisted(() => ({ db: null as any, readOnly: vi.fn(), flush: vi.fn() }));
+vi.mock('./db', () => ({ getDB: () => holder.db, dbUpsertFtsCard: () => {}, isPrimaryTab: () => true, readOnlyTabMessage: holder.readOnly, flushDatabaseWrites: holder.flush }));
 
 import { BackupNotRestorableError, type BackupStore } from './backup';
 import { EmptyCardsWorkflowError, deleteEmptyCardsWithBackup } from './emptyCardsWorkflow';
@@ -16,6 +16,16 @@ import { createNote, getCardsForNote, getNote, saveAnkiCard, saveNote } from './
 import { createDeck } from './deckStore';
 
 const plan = (deleted: number[], kept: number[] = []) => () => ({ deleted, kept, deletedNotes: [] as number[] });
+let SQL: Awaited<ReturnType<typeof initSqlJs>>;
+let db: SyncDb;
+beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
+beforeEach(() => {
+    db = createAppDb(SQL); holder.db = db;
+    holder.readOnly.mockReset().mockReturnValue(null);
+    holder.flush.mockReset().mockResolvedValue(undefined);
+});
+afterEach(() => db.close());
+
 
 describe('deleteEmptyCardsWithBackup', () => {
     it('does not delete a card when the safety backup fails', async () => {
@@ -97,11 +107,6 @@ describe('deleteEmptyCardsWithBackup', () => {
 });
 
 describe('deleting empty cards (real SQLite)', () => {
-    let SQL: Awaited<ReturnType<typeof initSqlJs>>;
-    let db: SyncDb;
-    beforeAll(async () => { SQL = await initSqlJs({ locateFile: () => 'node_modules/sql.js/dist/sql-wasm.wasm' }); });
-    beforeEach(() => { db = createAppDb(SQL); holder.db = db; });
-    afterEach(() => db.close());
 
     const reversed = BUILTIN_NOTE_TYPES.find((type) => type.id === 2)!;
 
@@ -150,4 +155,29 @@ describe('deleting empty cards (real SQLite)', () => {
         expect(getNote(partly.note.id)?.fields).toEqual(['Front', 'Back']);
         expect(getCardsForNote(partly.note.id).map((card) => card.id)).toEqual([partly.cards[0].id]);
     });
+});
+
+
+it('refuses empty-card deletion in a read-only tab before backup or mutation', async () => {
+    const createBackup = vi.fn(async () => ({ fileName: 'safety.json' }));
+    holder.readOnly.mockReturnValue('Read-only tab');
+    await expect(deleteEmptyCardsWithBackup([11], { preserveNotes: false }, { createBackup }))
+        .rejects.toThrow('Read-only');
+    expect(createBackup).not.toHaveBeenCalled();
+});
+
+it('restores the empty note, cards, search rows and graves after durable commit failure', async () => {
+    const { note, cards } = createNote(BUILTIN_NOTE_TYPES[1], ['Front', 'Back'], createDeck('Study').id);
+    const tables = ['notes', 'anki_cards', 'cards_fts', 'graves'];
+    const snapshot = () => tables.map(table => db.getAllSync(`SELECT * FROM ${table}`));
+    const before = snapshot();
+    holder.flush.mockRejectedValueOnce(new Error('IndexedDB quota exceeded'));
+    await expect(deleteEmptyCardsWithBackup(cards.map(card => card.id), { preserveNotes: false }, {
+        createBackup: async () => ({ fileName: 'safety.json' }),
+    })).rejects.toMatchObject({ stage: 'delete', backupFileName: 'safety.json' });
+    expect(snapshot()).toEqual(before);
+    expect(getNote(note.id)).not.toBeNull();
+    await expect(deleteEmptyCardsWithBackup(cards.map(card => card.id), { preserveNotes: false }, {
+        createBackup: async () => ({ fileName: 'retry.json' }),
+    })).resolves.toMatchObject({ deleted: cards.map(card => card.id), deletedNotes: [note.id] });
 });

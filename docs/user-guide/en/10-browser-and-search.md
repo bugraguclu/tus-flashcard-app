@@ -355,7 +355,7 @@ new deck's **Overview**; closing the form with **×** leaves Card Browser as it 
 - `prop:` terms use `=`, `!=`, `<`, `<=`, `>`, `>=`. Use a dot for decimals: `prop:d>0.7`, not `0,7`.
 - Days count by study day: `rated:1` means today. See [Key concepts](02-key-concepts.md#study-day).
 - Percentages in Card Info become 0–1 in FSRS terms: **Difficulty** 70% → `prop:d>0.7`.
-- `is:relearn`, `is:buried-manually`, `is:buried-sibling` and `sc:` (searches through cloze markup)
+- Use `is:learn is:review` for relearning cards. `is:buried-manually`, `is:buried-sibling` and `sc:` (searches through cloze markup)
   work too. Advanced terms such as `mid:`, `did:`, `dupe:` and `has-cd:` need numbers the app does
   not show, so most people will not need them.
 
@@ -410,6 +410,7 @@ shown in the Card Browser (for example "General") cannot be searched.
 > **Different from Anki:**
 > - There is no "ignore accents in search" setting; use `nc:`.
 > - Regular expressions support common Anki classes and leading `i`, `m` and `s` flags. Advanced Rust regex syntax can differ.
+> - Nested unbounded repetitions such as `(a+)+` are refused as invalid searches because they can freeze the app.
 > - `dupe:` compares the first field, without formatting, exactly.
 > - The note type and field names shown in the Turkish interface are not searchable; use the stored
 >   names.

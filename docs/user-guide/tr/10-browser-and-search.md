@@ -357,7 +357,7 @@ Bkz. [Filtrelenmiş deste ve özel çalışma](11-filtered-decks.md).
 - Günler çalışma gününe göre sayılır: `rated:1` bugün demektir. Bkz.
   [Temel kavramlar](02-key-concepts.md#study-day).
 - Kart bilgisindeki yüzdeler FSRS terimlerine 0–1 olarak yazılır: **Zorluk** %70 → `prop:d>0.7`.
-- `is:relearn`, `is:buried-manually`, `is:buried-sibling` ve `sc:` (boşluk doldurma işaretlerini
+- Yeniden öğrenilen kartlar için `is:learn is:review` kullanın. `is:buried-manually`, `is:buried-sibling` ve `sc:` (boşluk doldurma işaretlerini
   okuyarak arar) da çalışır. `mid:`, `did:`, `dupe:`, `has-cd:` gibi ileri terimler uygulamada
   gösterilmeyen numaralar istediği için çoğu kullanıcıya gerekmez.
 
@@ -410,6 +410,7 @@ konu adı (ör. "Genel") aranamaz.
 > **Anki'den farkı:**
 > - "Aramada aksanları yok say" ayarı yoktur; `nc:` kullanın.
 > - Düzenli ifadeler yaygın Anki sınıflarını ve baştaki `i`, `m`, `s` bayraklarını destekler. Rust’ın ileri düzey ifade özelliklerinde farklar vardır.
+> - Uygulamayı dondurabilen `(a+)+` gibi iç içe sınırsız tekrarlar geçersiz arama sayılır.
 > - `dupe:` ilk alanı biçimlendirmesiz hâliyle tam olarak karşılaştırır.
 > - Türkçe arayüzde gördüğünüz not türü ve alan adları aranmaz; kayıtlı adları kullanın.
 

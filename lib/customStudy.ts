@@ -12,6 +12,7 @@
  */
 
 import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
+import { literalSearchName } from './searchQuery';
 
 /** Anki's DYN_MAX_SIZE: the ceiling for every custom study spinner and filtered-deck limit. */
 export const CUSTOM_STUDY_MAX_VALUE = 99_999;
@@ -178,8 +179,25 @@ export function quoteSearchValue(value: string): string {
     return `"${value.replace(/"/g, '')}"`;
 }
 
+/**
+ * A quoted deck or tag term that means exactly the stored name. `_` and `*` are wildcards in a
+ * name term (`deck:"Anatomi_1"` also gathers `Anatomi-1`) and a lone backslash makes the strict
+ * parser reject the whole search, so all three are escaped; a name that spells a keyword (`none`,
+ * `current`) is written in the case Anki does not read as one, as `literalSearchNameTerm` does.
+ */
+function literalNameTerm(prefix: 'deck:' | 'tag:', name: string): string {
+    const literal = literalSearchName(prefix, name.replace(/"/g, ''));
+    return `${prefix}"${literal.replace(/[\\*_]/g, '\\$&')}"`;
+}
+
+/**
+ * A deck or tag term that means exactly the stored name: `_` and `*` are escaped (a bare `_`
+ * matches any character, so `Anatomi_1` would also gather `Anatomi-1`), a backslash no longer
+ * makes the strict parser reject the whole search, and names such as `none` or `current` are not
+ * read as Anki's keywords.
+ */
 export function deckSearchTerm(deckName: string): string {
-    return `deck:${quoteSearchValue(deckName)}`;
+    return literalNameTerm('deck:', deckName);
 }
 
 /**
@@ -191,8 +209,8 @@ export function deckSearchTerm(deckName: string): string {
  * `(tag:1 OR tag:2) (-tag:3 -tag:4)` — and a single tag needs no group at all.
  */
 export function tagSearchTerms(includeTags: string[], excludeTags: string[]): string {
-    const include = dedupeTags(includeTags).map((tag) => `tag:${quoteSearchValue(tag)}`);
-    const exclude = dedupeTags(excludeTags).map((tag) => `-tag:${quoteSearchValue(tag)}`);
+    const include = dedupeTags(includeTags).map((tag) => literalNameTerm('tag:', tag));
+    const exclude = dedupeTags(excludeTags).map((tag) => `-${literalNameTerm('tag:', tag)}`);
 
     return joinSearchTerms([groupSearchTerms(include, ' or '), groupSearchTerms(exclude, ' ')]);
 }

@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeColors } from '../constants/theme';
-import { groupSearchAlternatives, literalSearchNameTerm, SearchSyntaxError } from '../lib/searchQuery';
+import { groupSearchAlternatives, literalSearchNameTerm, SearchSyntaxError, upgradeLegacyStateTerms } from '../lib/searchQuery';
 import { formatCount } from '../lib/i18n';
 import { isValidSearchQuery } from '../lib/searchValidation';
 import { flagForSelection } from '../lib/browserFlags';
@@ -792,7 +792,7 @@ export default function BrowserScreen() {
     const browserSearch = useMemo(() => {
         const terms: string[] = [];
         if (scopeDeck?.isFiltered) {
-            if (scopeDeck.searchQuery?.trim()) terms.push(groupSearchAlternatives(scopeDeck.searchQuery));
+            if (scopeDeck.searchQuery?.trim()) terms.push(groupSearchAlternatives(upgradeLegacyStateTerms(scopeDeck.searchQuery)));
         } else if (scopeDeck) {
             terms.push(literalSearchNameTerm('deck:', scopeDeck.name));
         }

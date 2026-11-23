@@ -5,7 +5,7 @@
 import { getDB } from './db';
 import { translateActive } from './i18n';
 type Row = Record<string, string | number | null>;
-type Table = 'decks' | 'notes' | 'anki_cards';
+type Table = 'decks' | 'notes' | 'anki_cards' | 'note_types';
 export interface DeletionUndo { cardCount: number; undo(): void }
 
 const IN_IDS = 'IN (SELECT value FROM json_each(?))';
@@ -22,9 +22,9 @@ function rowsById(table: Table, ids: number[]): Map<number, Row> {
 
 /** Capture rows before an operation; call the returned function after it (inside the same
  * transaction). Rows the operation created (`createdCardIds`) are removed again on undo. */
-export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; cardIds?: number[] }): (createdCardIds?: number[]) => DeletionUndo {
+export function captureDeletion(ids: { deckIds?: number[]; noteIds?: number[]; cardIds?: number[]; noteTypeIds?: number[] }): (createdCardIds?: number[]) => DeletionUndo {
     const db = getDB();
-    const tables: [Table, number[]][] = [['decks', [...new Set(ids.deckIds ?? [])]], ['notes', [...new Set(ids.noteIds ?? [])]], ['anki_cards', [...new Set(ids.cardIds ?? [])]]];
+    const tables: [Table, number[]][] = [['decks', [...new Set(ids.deckIds ?? [])]], ['notes', [...new Set(ids.noteIds ?? [])]], ['anki_cards', [...new Set(ids.cardIds ?? [])]], ['note_types', [...new Set(ids.noteTypeIds ?? [])]]];
     const before = tables.map(([table, keys]) => {
         const found = rowsById(table, keys);
         return { table, keys, rows: keys.flatMap((id) => (found.has(id) ? [found.get(id)!] : [])) };

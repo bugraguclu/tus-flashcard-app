@@ -5,10 +5,11 @@
  * restorable safety backup is on disk; review history is kept, as for every other deletion.
  */
 
-import { getDB } from './db';
+import { getDB, readOnlyTabMessage } from './db';
+import { commitCollectionWrite } from './collectionWrite';
 import { createBackupNow, type BackupDeps } from './backup';
 import { BUILTIN_NOTE_TYPES, isLegacyTusNoteType, type NoteType } from './models';
-import { deleteCardRows } from './noteDeletion';
+import { captureDeletion, deleteCardRows, type DeletionUndo } from './noteDeletion';
 import { CATALOG_PACK_ID } from './catalogRows';
 import { isCatalogNoteType, isProtectedCatalogGuid, PaidCatalogProtectionError } from './catalogProtection';
 
@@ -59,6 +60,10 @@ function assertNoCatalogNotes(noteTypeId: number): void {
 
 /** Delete the type, its notes (with graves) and their cards in one transaction. */
 export function deleteNoteTypeAndNotes(noteTypeId: number): NoteTypeDeletionImpact {
+    return deleteNoteTypeUndoable(noteTypeId).impact;
+}
+
+function deleteNoteTypeUndoable(noteTypeId: number): { impact: NoteTypeDeletionImpact; rollback: DeletionUndo } {
     const db = getDB();
     assertNoCatalogNotes(noteTypeId);
     const noteIds = db.getAllSync<{ id: number }>('SELECT id FROM notes WHERE noteTypeId = ?', noteTypeId).map((row) => Number(row.id));
@@ -67,14 +72,16 @@ export function deleteNoteTypeAndNotes(noteTypeId: number): NoteTypeDeletionImpa
         const cardIds = noteIds.length === 0 ? [] : db.getAllSync<{ id: number }>(
             'SELECT id FROM anki_cards WHERE noteId IN (SELECT value FROM json_each(?))', JSON.stringify(noteIds),
         ).map((row) => Number(row.id));
+        const finish = captureDeletion({ noteTypeIds: [noteTypeId], noteIds, cardIds });
         const cards = deleteCardRows(cardIds);
         if (noteIds.length > 0) {
             db.runSync('DELETE FROM notes WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(noteIds));
             db.runSync('INSERT INTO graves (oid, type, usn) SELECT value, 1, -1 FROM json_each(?)', JSON.stringify(noteIds));
         }
         db.runSync('DELETE FROM note_types WHERE id = ?', noteTypeId);
+        const rollback = finish();
         db.execSync('COMMIT;');
-        return { notes: noteIds.length, cards };
+        return { impact: { notes: noteIds.length, cards }, rollback };
     } catch (error) {
         db.execSync('ROLLBACK;');
         throw error;
@@ -102,6 +109,8 @@ export async function deleteNoteTypeWithBackup(
     deps: { createBackup?: () => Promise<{ fileName: string }>; backupDeps?: BackupDeps } = {},
 ): Promise<NoteTypeDeletionImpact & { backupFileName: string }> {
     if (!canDeleteNoteType(noteType)) throw new Error(`Note type ${noteType.id} cannot be deleted.`);
+    const readOnly = readOnlyTabMessage();
+    if (readOnly) throw new Error(readOnly);
     assertNoCatalogNotes(noteType.id);
     const createBackup = deps.createBackup ?? (() => createBackupNow(deps.backupDeps, { requireRestorable: true }));
     let backupFileName: string;
@@ -111,7 +120,11 @@ export async function deleteNoteTypeWithBackup(
         throw new NoteTypeDeletionError('backup', undefined, { cause: error });
     }
     try {
-        return { backupFileName, ...deleteNoteTypeAndNotes(noteType.id) };
+        const { impact } = await commitCollectionWrite(
+            () => deleteNoteTypeUndoable(noteType.id),
+            ({ rollback }) => rollback.undo(),
+        );
+        return { backupFileName, ...impact };
     } catch (error) {
         throw new NoteTypeDeletionError('delete', backupFileName, { cause: error });
     }

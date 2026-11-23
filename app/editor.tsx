@@ -80,7 +80,7 @@ import { rememberedCurrentDeck } from '../lib/currentDeck';
 import { recomputeMemoryAfterDeckMove } from '../lib/fsrsMaintenance';
 import { editorDraftKey, hasEditorDraftChanged, isAddScreenFinished, isFirstFieldEmpty, type EditorDraftState } from '../lib/editorDraft';
 import TransientNotice, { type TransientNoticeMessage } from '../components/TransientNotice';
-import { remapFieldPositions, remapFieldValues, sameFieldLayout } from '../lib/editorFieldLayout';
+import { editorFieldKeys, remapFieldPositions, remapFieldValues, sameFieldLayout } from '../lib/editorFieldLayout';
 import { editorFieldFontSize, editorFieldRole } from '../lib/editorFieldStyle';
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard';
 import { registerTakeoverDraft, takeTakeoverDraft, type TakeoverDraft } from '../lib/webTakeoverDraft';
@@ -495,14 +495,14 @@ export default function EditorScreen() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // The field names `fieldValues` is laid out for, and of which note type. The note type screen
+    // The field identities `fieldValues` is laid out for, and of which note type. The note type screen
     // can add, remove or move this type's fields while the editor is open beneath it, migrating
     // the stored notes at once; the values and pins here then follow their fields, or Save would
     // write each value into whichever field now sits where it used to.
     const fieldLayoutRef = useRef<{ typeId: number; names: string[] } | null>(null);
     useEffect(() => {
         if (!selectedNoteType) return;
-        const names = selectedNoteType.fields.map((field) => field.name);
+        const names = editorFieldKeys(selectedNoteType.fields);
         const previous = fieldLayoutRef.current;
         fieldLayoutRef.current = { typeId: selectedNoteType.id, names };
         // Choosing another note type lays its fields out itself (handleSelectNoteType).

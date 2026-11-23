@@ -70,6 +70,8 @@ describe('imported per-field options follow their field (SAB-14)', async () => {
         const added = addField(imported, 'New').noteType;
         const flds = noteTypeJson(added, new Set(), 0).flds as Array<Record<string, unknown>>;
         expect(flds[3]).toMatchObject({ name: 'New', font: 'Arial', size: 20 });
+        expect(added.fields[3].editorId).toBeDefined();
+        expect(flds.every(field => field.editorId === undefined)).toBe(true);
         // Source options a field already carries are kept as they came.
         expect(flds[0]).toMatchObject({ name: 'Front', font: 'F', size: 20, description: 'front' });
         expect(flds[1]).toMatchObject({ font: 'B', size: 30 });

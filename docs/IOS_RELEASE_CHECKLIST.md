@@ -90,6 +90,25 @@ Record device model, iOS version, build number, fixture name, and pass/fail in t
 Do not turn this into a full manual retest of every screen unless the native runtime or database
 schema changed.
 
+## Selected Havuz changes (2026-11-23)
+
+The selected package excludes Quick Search and the other rejected Havuz features; its
+complete scope and automated evidence are in [HAVUZ_SELECTED_SCOPE.md](HAVUZ_SELECTED_SCOPE.md).
+
+- On an isolated collection, type an unsaved value into a new and a saved note, pin the field,
+  then rename and reorder it through Kartlar:. Return and save: the latest value and pin follow
+  that field. Removing it and adding a different field with its old name does not revive the draft.
+- Delete a disposable learner note type and use Empty Cards with Keep Notes off: the existing
+  confirmation and restorable backup precede mutation; the list changes only after success.
+  Web regressions inject a delayed/failed commit and verify rollback plus read-only refusal.
+- Create disposable decks named Anatomi_1 and Anatomi-1, and a tag named none: Custom Study
+  gathers only the literal selected scope. A legacy is:relearn filtered deck still opens in Browse.
+- Keep the existing Auto Advance modal/background pause behavior; Quick Search is not installed
+  by this package. The dwell and timer tests cover the applicable retained behavior.
+
+Physical-iPhone execution is pending and must be recorded before release. The thumbnail
+screenshots in the selection report were taken from Havuz's web preview, not a native iPhone.
+
 ## Web regression target
 
 For collection persistence, use an isolated profile and reload immediately after each visible

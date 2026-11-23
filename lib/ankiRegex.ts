@@ -41,6 +41,56 @@ function unicodeAwareSource(source: string): string {
     return translated;
 }
 
+/**
+ * Anki's regex engine runs in linear time; JavaScript's backtracks, and every search tests each
+ * card synchronously on the JS thread. A repeated group that itself repeats without bound, as in
+ * `(a+)+$` or `(\w+\s?)*`, can take exponential time on one long field (38 s for 30 characters)
+ * and freeze the browser, or a filtered deck's rebuild on every queue build. Such a pattern is
+ * refused as invalid search syntax instead.
+ */
+function rejectNestedRepetition(source: string): void {
+    // Each open group records whether something inside it repeats without bound.
+    const groups: boolean[] = [];
+    let current = false;
+    const unboundedAt = (index: number) => {
+        const next = source[index];
+        if (next === '*' || next === '+') return true;
+        if (next !== '{') return false;
+        return /^\{\d*,\}/.test(source.slice(index));
+    };
+    for (let index = 0; index < source.length; index++) {
+        const char = source[index];
+        if (char === '\\') {
+            index += 1;
+            if (unboundedAt(index + 1)) current = true;
+            continue;
+        }
+        if (char === '[') {
+            // Skip the class; a leading ']' or '^]' is a literal member.
+            let end = index + 1;
+            if (source[end] === '^') end += 1;
+            if (source[end] === ']') end += 1;
+            while (end < source.length && source[end] !== ']') end += source[end] === '\\' ? 2 : 1;
+            index = end;
+            if (unboundedAt(index + 1)) current = true;
+            continue;
+        }
+        if (char === '(') {
+            groups.push(current);
+            current = false;
+            continue;
+        }
+        if (char === ')') {
+            const inner: boolean = current;
+            const quantified = unboundedAt(index + 1);
+            if (inner && quantified) throw new SyntaxError('Nested unbounded repetition is not supported');
+            current = (groups.pop() ?? false) || inner || quantified;
+            continue;
+        }
+        if (unboundedAt(index + 1) && char !== '|') current = true;
+    }
+}
+
 export function ankiRegex(pattern: string, { ignoreCase = true, global = false } = {}): RegExp {
     const flags = { i: ignoreCase, s: false, m: false };
     let source = pattern.normalize('NFC');
@@ -57,5 +107,6 @@ export function ankiRegex(pattern: string, { ignoreCase = true, global = false }
     // Rust allows (?P<name>…) as a second spelling for a named capture.
     source = source.replace(/(^|[^\\])\(\?P</g, '$1(?<');
     const jsFlags = (global ? 'g' : '') + (flags.i ? 'i' : '') + (flags.s ? 's' : '') + (flags.m ? 'm' : '') + 'u';
+    rejectNestedRepetition(source);
     return new RegExp(unicodeAwareSource(source), jsFlags);
 }

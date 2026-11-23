@@ -1,3 +1,4 @@
+import { editorFieldKeys, remapFieldPositions, remapFieldValues } from './editorFieldLayout';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { NoteType } from './models';
 
@@ -293,4 +294,40 @@ describe('applyFieldEdit', () => {
         // The search index is refreshed for each migrated note's cards.
         expect(vi.mocked(dbUpsertFtsCard).mock.calls.map((c) => c[0].id)).toEqual([10, 20]);
     });
+});
+
+
+describe('open editor field identity across note-type edits', () => {
+    it('keeps an unsaved new-note value and its pin after rename and reorder', () => {
+        const before = makeNoteType();
+        const next = moveField(renameField(before, 0, 'Prompt'), 0, 1).noteType;
+        const previousKeys = editorFieldKeys(before.fields);
+        const nextKeys = editorFieldKeys(JSON.parse(JSON.stringify(next)).fields);
+        expect(remapFieldValues(previousKeys, nextKeys, ['Draft question', 'Answer', 'Extra'], null, null))
+            .toEqual(['Answer', 'Draft question', 'Extra']);
+        expect([...remapFieldPositions(previousKeys, nextKeys, new Set([0]))]).toEqual([1]);
+    });
+
+    it('keeps a saved note draft over its old stored value after repeated renames', () => {
+        const before = makeNoteType();
+        const renamed = renameField(renameField(before, 0, 'Prompt'), 0, 'Question');
+        expect(remapFieldValues(editorFieldKeys(before.fields), editorFieldKeys(renamed.fields),
+            ['Latest edit', 'Answer', 'Extra'], ['Old question', 'Answer', 'Extra'], ['Old question', 'Answer', 'Extra']))
+            .toEqual(['Latest edit', 'Answer', 'Extra']);
+    });
+
+    it('does not give a removed field draft to a new field with the same name', () => {
+        const before = makeNoteType();
+        const next = addField(removeField(before, 0).noteType, before.fields[0].name).noteType;
+        expect(remapFieldValues(editorFieldKeys(before.fields), editorFieldKeys(next.fields),
+            ['Removed draft', 'Answer', 'Extra'], null, null)).toEqual(['Answer', 'Extra', '']);
+    });
+});
+
+
+it('gives a newly added field the same identity in the persisted and unsaved note-type drafts', () => {
+    const saved = makeNoteType();
+    const draft = setCss(saved, '.card { color: blue }');
+    const edit = structuralEditOverDraft(saved, draft, base => addField(base, 'Extra field'))!;
+    expect(editorFieldKeys(edit.persist.noteType.fields)).toEqual(editorFieldKeys(edit.draft.fields));
 });

@@ -115,12 +115,51 @@ export function escapeSearchValue(value: string): string {
     return needsQuoting(value) ? `"${escaped}"` : escaped;
 }
 
-/** Serialize a stored name as a term without interpreting Anki's case-sensitive keywords. */
-export function literalSearchNameTerm(prefix: string, name: string): string {
+/**
+ * A stored deck or tag name spelled so Anki's case-sensitive keywords (`tag:none`, `tag:re:`,
+ * `deck:current`, ...) do not claim it; name matching ignores case, so it still finds the name.
+ */
+export function literalSearchName(prefix: string, name: string): string {
     const reservedTag = prefix === 'tag:' && (name === 'none' || name.startsWith('re:') || name.startsWith('nc:'));
     const reservedDeck = prefix === 'deck:' && (name === 'current' || name === 'filtered');
-    const literalName = reservedTag || reservedDeck ? name[0].toUpperCase() + name.slice(1) : name;
-    return `${prefix}${escapeSearchValue(literalName)}`;
+    return reservedTag || reservedDeck ? name[0].toUpperCase() + name.slice(1) : name;
+}
+
+/**
+ * A search saved by an older app version, in today's terms: `is:relearn` (relearning cards) is
+ * `(is:learn is:review)` in Anki 26.09. Filtered-deck rebuilds accept the old term; the Card
+ * Browser scoped to such a deck must read it too instead of refusing the deck's own search.
+ */
+export function upgradeLegacyStateTerms(query: string): string {
+    let quoted = false;
+    let result = '';
+    const legacy = 'is:relearn';
+    for (let index = 0; index < query.length; index++) {
+        const char = query[index];
+        if (char === '\\') {
+            result += query.slice(index, index + 2);
+            index += 1;
+            continue;
+        }
+        if (char === '"') quoted = !quoted;
+        if (!quoted && (index === 0 || /[\s(]/.test(query[index - 1]))) {
+            const negated = char === '-';
+            const start = index + (negated ? 1 : 0);
+            const end = start + legacy.length;
+            if (query.startsWith(legacy, start) && (end === query.length || /[\s)]/.test(query[end]))) {
+                result += `${negated ? '-' : ''}(is:learn is:review)`;
+                index = end - 1;
+                continue;
+            }
+        }
+        result += char;
+    }
+    return result;
+}
+
+/** Serialize a stored name as a term without interpreting Anki's case-sensitive keywords. */
+export function literalSearchNameTerm(prefix: string, name: string): string {
+    return `${prefix}${escapeSearchValue(literalSearchName(prefix, name))}`;
 }
 
 /** Values a bare term could not carry, or would carry as something other than plain text. */

@@ -12,6 +12,8 @@ import {
 } from './customStudy';
 import { FILTERED_SEARCH_ORDER } from './filteredDeckOptions';
 import { parseSearchQuery, tokenizeSearch } from './searchQuery';
+import { hierarchicalGlobMatcher, stripSearchQuotes } from './searchGlob';
+import { isValidSearchQuery } from './searchValidation';
 
 // Behaviour pinned against Anki's own implementation:
 // https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/filtered/custom_study.rs
@@ -148,6 +150,20 @@ describe('custom study search terms', () => {
         // otherwise end the term early and silently widen the search.
         expect(deckSearchTerm('Tıp "2025"')).toBe('deck:"Tıp 2025"');
         expect(tokenizeSearch(deckSearchTerm('Tıp "2025"'))).toEqual(['deck:"Tıp 2025"']);
+    });
+
+    it('names exactly the stored deck or tag, never a wildcard or a keyword', () => {
+        // `_` is a one-character wildcard in a name term: Anatomi_1 must not gather Anatomi-1.
+        expect(deckSearchTerm('Anatomi_1')).toBe('deck:"Anatomi\\_1"');
+        const matches = hierarchicalGlobMatcher(stripSearchQuotes(deckSearchTerm('Anatomi_1').slice('deck:'.length)));
+        expect(matches('Anatomi_1')).toBe(true);
+        expect(matches('Anatomi_1::Kemikler')).toBe(true);
+        expect(matches('Anatomi-1')).toBe(false);
+        // A lone backslash used to make the strict parser reject the whole session search.
+        expect(isValidSearchQuery(deckSearchTerm('C\\D'))).toBe(true);
+        // A tag literally named "none" is that tag, not "untagged notes".
+        expect(tagSearchTerms(['none'], [])).toBe('tag:"None"');
+        expect(deckSearchTerm('current')).toBe('deck:"Current"');
     });
 
     it('produces searches our own parser reads as the intended terms', () => {

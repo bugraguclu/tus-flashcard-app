@@ -18,6 +18,7 @@ import {
 import { getCardsForNote, saveNote, saveNoteType, searchIndexCardFromNote } from './noteManager';
 import { fieldNameSyntaxError, templateSideFieldUse, type FieldNameSyntaxError } from './noteTypeValidation';
 import { sortFieldText } from './noteChecksum';
+import { editorFieldKeys } from './editorFieldLayout';
 
 function reindex<T extends { ord: number }>(items: T[]): T[] {
     return items.map((item, i) => ({ ...item, ord: i }));
@@ -86,7 +87,7 @@ export function renameField(nt: NoteType, ord: number, name: string): NoteType {
     const trimmed = name.trim();
     const current = nt.fields.find((f) => f.ord === ord);
     if (!trimmed || !current || trimmed === current.name || findFieldNameConflict(nt, ord, trimmed) || fieldNameSyntaxError(trimmed)) return nt;
-    const fields = nt.fields.map((f) => (f.ord === ord ? { ...f, name: trimmed } : f));
+    const fields = nt.fields.map((f) => (f.ord === ord ? { ...f, editorId: editorFieldKeys([f])[0], name: trimmed } : f));
     return touch(nt, { fields, templates: rewriteFieldReferences(nt, current.name, trimmed) });
 }
 
@@ -144,6 +145,7 @@ const identityEdit = (nt: NoteType): FieldEdit => ({ noteType: nt, migrate: (val
 export function addField(nt: NoteType, name: string): FieldEdit {
     const field: NoteTypeField = {
         name: uniqueFieldName(nt, name.trim() || `Alan ${nt.fields.length + 1}`),
+        editorId: `added:${Date.now().toString(36)}:${Math.random().toString(36).slice(2)}`,
         ord: nt.fields.length,
         sticky: false,
         rtl: false,
@@ -251,7 +253,13 @@ export function structuralEditOverDraft(
 ): { persist: FieldEdit; draft: NoteType } | null {
     const persist = makeEdit(saved);
     if (persist.noteType === saved) return null;
-    return { persist, draft: { ...makeEdit(draft).noteType, mod: persist.noteType.mod } };
+    const nextDraft = makeEdit(draft).noteType;
+    // makeEdit runs for saved and draft separately; both copies must identify each added field alike.
+    const fields = nextDraft.fields.map((field, index) => {
+        const editorId = persist.noteType.fields[index]?.editorId;
+        return editorId ? { ...field, editorId } : field;
+    });
+    return { persist, draft: { ...nextDraft, fields, mod: persist.noteType.mod } };
 }
 
 /** Persist a field edit and rewrite every note of the type in one transaction. Returns notes migrated. */
