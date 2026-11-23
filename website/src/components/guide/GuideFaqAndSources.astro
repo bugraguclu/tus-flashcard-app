@@ -1,6 +1,8 @@
 ---
 import { SITE } from '../../config';
+import catalog from '../../data/generated/catalog.json';
 import { GUIDE_FAQS, OFFICIAL_SOURCES } from '../../data/studyGuide';
+import { num } from '../../lib/format';
 
 interface Props {
   datePublished?: string;
@@ -162,7 +164,7 @@ const helpfulGuides = [
         Planını kurduysan bugün ilk 20 kartla başla.
       </h2>
       <p class="mt-3 text-white/90 leading-relaxed max-w-2xl">
-        Web uygulamasını ücretsiz aç, 9.575 kartlık BKA TUS paketinden bir ders seç ve ilk tekrarını yap.
+        Web uygulamasını ücretsiz aç, {num(catalog.totals.cards)} kartlık BKA TUS paketinden bir ders seç ve ilk tekrarını yap.
         Hesap açman gerekmez; kartların ve ilerlemen cihazında kalır.
       </p>
     </div>

@@ -238,6 +238,22 @@ check(guideHtml.includes('property="og:type" content="article"') && guideHtml.in
 check(!/`[^`]+`/.test(guideVisible), 'tus-calisma-rehberi: raw markdown backticks leaked into visible HTML');
 check(!guideVisible.includes('TR,14991') && !guideVisible.includes('TR,15070'), 'tus-calisma-rehberi: dead 404 ÖSYM citation URL found');
 check(!guideVisible.includes('guide-defer'), 'tus-calisma-rehberi: content-visibility:auto class (.guide-defer) breaks TOC anchor scroll positioning');
+const guideSummarySection = guideVisible.match(/<section[^>]*id="hizli-ozet"[\s\S]*?<\/section>/)?.[0] ?? '';
+const guideTempoSection = guideVisible.match(/<section[^>]*id="tempo-ve-profiller"[\s\S]*?<\/section>/)?.[0] ?? '';
+const guideSummaryPace = guideSummarySection.match(/180 günde ortalama ([\d.]+) kart \((~[^)/]+)\/gün\)/);
+check(Boolean(guideSummaryPace), 'tus-calisma-rehberi: #hizli-ozet missing formatted 180-day planner summary');
+if (guideSummaryPace) {
+  const [, summaryAvgCards, summaryAvgDur] = guideSummaryPace;
+  check(
+    guideTempoSection.includes(`${summaryAvgCards} kart (${summaryAvgDur})`),
+    `tus-calisma-rehberi: #hizli-ozet (${summaryAvgCards} kart, ${summaryAvgDur}) diverges from #tempo-ve-profiller`,
+  );
+  const llmsFull = fs.readFileSync(path.join(DIST, 'llms-full.txt'), 'utf8');
+  check(
+    llmsFull.includes(`ortalama ${summaryAvgCards} kart (${summaryAvgDur}/gün)`),
+    `tus-calisma-rehberi: #hizli-ozet (${summaryAvgCards} kart, ${summaryAvgDur}) diverges from llms-full.txt`,
+  );
+}
 check(
   searchIndex.some((entry) => entry.url === '/tus-calisma-rehberi/') &&
   searchIndex.some((entry) => entry.url === '/tus-calisma-rehberi/#zorluklar') &&

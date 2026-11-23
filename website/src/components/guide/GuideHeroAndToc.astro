@@ -1,13 +1,20 @@
 ---
 import catalog from '../../data/generated/catalog.json';
 import refSummary from '../../data/generated/references-summary.json';
-import fsrsCurves from '../../data/generated/fsrs-curves.json';
 import { GUIDE_META, GUIDE_TOC } from '../../data/studyGuide';
+import {
+  DEFAULT_PLANNER_INPUT,
+  PLANNER_PRESETS,
+  formatDurationTr,
+  runPlanner,
+} from '../../lib/studyPlanner';
 import { num, pct } from '../../lib/format';
 
 const totalCards = num(catalog.totals.cards);
-const f60_180 = fsrsCurves.matrix.all['180']['60'];
-const retentionPct = Math.round(fsrsCurves.desiredRetention * 100);
+const mezunPreset = PLANNER_PRESETS.find((preset) => preset.id === 'mezun');
+if (!mezunPreset) throw new Error('Missing mezun preset in PLANNER_PRESETS');
+const mezunSim = runPlanner({ ...DEFAULT_PLANNER_INPUT, ...mezunPreset.patch });
+const retentionPct = mezunSim.input.retention;
 ---
 <section class="page-intro bg-surface border-b border-line py-10 sm:py-14">
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
@@ -70,7 +77,7 @@ const retentionPct = Math.round(fsrsCurves.desiredRetention * 100);
       <div class="bg-white p-5">
         <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Önerilen çekirdek tempo</dt>
         <dd class="mt-1.5 text-sm text-ink leading-relaxed">
-          {totalCards} kartta günde <strong>60 yeni kart</strong> ile ilk tur <strong>{f60_180.fin}. günde</strong> biter; 180 günde ortalama {num(f60_180.avg)} kart (~{f60_180.min} dk/gün).
+          {totalCards} kartta günde <strong>{mezunSim.activePace} yeni kart</strong> ile ilk tur <strong>{mezunSim.target.finishDay ?? mezunSim.input.days}. günde</strong> biter; {mezunSim.input.days} günde ortalama {num(mezunSim.target.avgCards)} kart (~{formatDurationTr(mezunSim.target.avgMinutes)}/gün).
         </dd>
       </div>
       <div class="bg-white p-5">
