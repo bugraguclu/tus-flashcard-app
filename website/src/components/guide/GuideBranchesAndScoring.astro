@@ -45,11 +45,11 @@ const scoreBenchmarks = [
         </h2>
         <p class="text-inkMuted mt-3 leading-relaxed">
           TUS iki oturumda <strong>100 Temel Bilimler (6 ders) + 100 Klinik Bilimler (5 ders)</strong> olmak üzere toplam 200 sorudan oluşur.
-          Aşağıdaki tablo her dersin sınav soru aralığını, BKA TUS çekirdek kart sayısını, son 6 TUS’taki (2024/1–2026/2 · 1.195 soru)
+          Aşağıdaki tablo her dersin sınav soru aralığını, BKA TUS çekirdek kart sayısını, son 6 TUS’taki (2024/1–2026/2 · {num(refSummary.overall.soru)} soru)
           çözüm desteğini ve ders bazlı çalışma odağını tek yerde gösterir.
         </p>
       </div>
-      <a href="/referanslar/" class="text-link shrink-0">1.195 soruyu tek tek incele →</a>
+      <a href="/referanslar/" class="text-link shrink-0">{num(refSummary.overall.soru)} soruyu tek tek incele →</a>
     </div>
 
     <div class="guide-table-wrap" tabindex="0" role="region" aria-labelledby="branches-heading">

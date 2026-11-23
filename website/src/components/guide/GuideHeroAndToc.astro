@@ -83,7 +83,7 @@ const retentionPct = mezunSim.input.retention;
       <div class="bg-white p-5">
         <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Son 6 TUS açık referans verisi</dt>
         <dd class="mt-1.5 text-sm text-ink leading-relaxed">
-          1.195 soruda <strong>{refSummary.overall.destek} çözüm desteği ({pct(refSummary.overall.destekOran)})</strong>
+          {num(refSummary.overall.soru)} soruda <strong>{refSummary.overall.destek} çözüm desteği ({pct(refSummary.overall.destekOran)})</strong>
           ({refSummary.overall.dogrudan} doğrudan + {refSummary.overall.dolayli} dolaylı) ve <strong>{num(refSummary.overall.konuKapsami)} ({pct(refSummary.overall.konuKapsamiOran)}) konu kapsamı</strong>.
         </dd>
       </div>

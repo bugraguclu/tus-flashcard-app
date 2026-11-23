@@ -181,6 +181,11 @@ html:has(.guide-toc-bar) {
   white-space: nowrap;
 }
 
+.guide-table thead th:first-child {
+  inset-inline-start: 0;
+  z-index: 3;
+}
+
 .guide-table tbody th[scope="row"],
 .guide-table tbody td {
   border-bottom: 1px solid #e9ecee;

@@ -1,4 +1,43 @@
 import type { WebsiteSearchEntry } from '../lib/websiteSearchIndex';
+import catalog from './generated/catalog.json';
+import refSummary from './generated/references-summary.json';
+import examsData from './exams.json';
+import {
+  DEFAULT_PLANNER_INPUT,
+  MEGA_DECK_CARDS,
+  PLANNER_PRESETS,
+  formatDurationTr,
+  runPlanner,
+} from '../lib/studyPlanner';
+import { num, pct } from '../lib/format';
+
+const totalCards = num(catalog.totals.cards);
+const megaCards = num(MEGA_DECK_CARDS);
+const refBySubject = new Map(refSummary.bySubject.map((s) => [s.ders, s]));
+const destekPct = (ders: string) => {
+  const row = refBySubject.get(ders);
+  if (!row) throw new Error(`Missing subject in references-summary.json: ${ders}`);
+  return pct(row.destekOran);
+};
+
+const runPreset = (id: 'stajyer' | 'intorn' | 'mezun' | 'son4ay') => {
+  const preset = PLANNER_PRESETS.find((p) => p.id === id);
+  if (!preset) throw new Error(`Missing preset in PLANNER_PRESETS: ${id}`);
+  return runPlanner({ ...DEFAULT_PLANNER_INPUT, ...preset.patch });
+};
+
+const stajyerSim = runPreset('stajyer');
+const intornSim = runPreset('intorn');
+const mezunSim = runPreset('mezun');
+const sim270_60 = runPlanner({
+  ...DEFAULT_PLANNER_INPUT,
+  days: 270,
+  newPerDay: mezunSim.activePace,
+  studyDaysPerWeek: 7,
+  bufferDays: 0,
+});
+const [exam1, exam2] = examsData.exams;
+if (!exam1 || !exam2) throw new Error('Missing 2027 exams in exams.json');
 
 export const GUIDE_META = {
   title: 'TUS Çalışma Rehberi 2027: Plan ve FSRS-6 | TusAnkiM',
@@ -125,7 +164,7 @@ export const BRANCH_STUDY_NOTES: BranchStudyNote[] = [
     ders: 'Küçük Stajlar',
     catalogId: 'bka-kucuk-stajlar',
     group: 'Klinik',
-    examQuestionsLabel: '21 soru',
+    examQuestionsLabel: '21–22 soru',
     priorityTag: 'Atlas / vaka desteği',
     focus: 'Nöroloji, göz, dermatoloji, KBB ve psikiyatri 15 alt branşa yayılır; son haftaya bırakmadan küçük parçalarla döndür.',
   },
@@ -165,7 +204,7 @@ export const TUS_STRUGGLES: StruggleItem[] = [
     tone: 'warm',
     title: 'Günlük tekrar yığılması ve kartların 800–1.000+ üzerine şişmesi',
     why:
-      'Başlangıç heyecanıyla günde 100+ yeni kart açmak, 27.341+ kartlık bitmeyen mega destelere girmek, hedef hatırlamayı %95 üzerine çekmek veya birkaç gün üst üste tekrar atlamak vadesi gelen kuyruğu kırılamaz bir duvara dönüştürür.',
+      `Başlangıç heyecanıyla günde 100+ yeni kart açmak, ${megaCards}+ kartlık bitmeyen mega destelere girmek, hedef hatırlamayı %95 üzerine çekmek veya birkaç gün üst üste tekrar atlamak vadesi gelen kuyruğu kırılamaz bir duvara dönüştürür.`,
     steps: [
       'Kuyruk normalleşene kadar günlük yeni kart sınırını 0’a indir; yeni yük eklemeden yalnız vadesi gelen tekrarları erit.',
       'Hedef hatırlamayı %95+ yerine %88–%90 bandında, yoğun staj/nöbet haftalarında %85 düzeyinde tut.',
@@ -186,8 +225,8 @@ export const TUS_STRUGGLES: StruggleItem[] = [
       'Klinik branş isteyen pek çok aday zamanının büyük kısmını Dahiliye, Pediatri ve Genel Cerrahiye ayırıp 6 Temel dersi sona bırakır. Oysa ÖSYM ağırlıklarına göre Klinik Tıp Puanı %50 Temel + %50 Klinik ile hesaplanır; Temel netindeki düşüş Klinik puanını birebir aşağı çeker.',
     steps: [
       'Temel ve Klinik çalışmalarını Kronometre’de ders bazlı kaydet; Çalışma Takvimi ve analiz ekranından haftalık Temel/Klinik dağılımını kontrol et.',
-      'İlk turda yüksek kart tabanı sunan Farmakoloji (%56,6), Biyokimya (%56,0), Mikrobiyoloji (%55,6) ve Pediatri (%52,0) ile sağlam net zemini kur.',
-      'Anatomi (%28,2), Küçük Stajlar (%30,2) ve Genel Cerrahi (%31,7) gibi derslerde kart tekrarının yanına görsel atlas ve klinik vaka sorusu ekle.',
+      `İlk turda yüksek kart tabanı sunan Farmakoloji (${destekPct('Farmakoloji')}), Biyokimya (${destekPct('Biyokimya')}), Mikrobiyoloji (${destekPct('Mikrobiyoloji')}) ve Pediatri (${destekPct('Pediatri')}) ile sağlam net zemini kur.`,
+      `Anatomi (${destekPct('Anatomi')}), Küçük Stajlar (${destekPct('Küçük Stajlar')}) ve Genel Cerrahi (${destekPct('Genel Cerrahi')}) gibi derslerde kart tekrarının yanına görsel atlas ve klinik vaka sorusu ekle.`,
     ],
     links: [
       { label: 'Puan ağırlıklarını hesapla', href: '/puan-hesapla/' },
@@ -219,8 +258,8 @@ export const TUS_STRUGGLES: StruggleItem[] = [
     why:
       'Aynı ders için farklı dershane kitapları, PDF özetler, video notları ve 25.000+ kartlık devasa paylaşımlı desteleri bir arada götürmeye çalışmak hiçbirinin bitmemesine yol açar. Üstelik metni fosforlu kalemle okumak tanıdıklık hissi verir ama şıklardaki klinik ayrımı hatırlatmaz.',
     steps: [
-      'Her branş için tek bir ana konu kaynağı ve tek bir bitirilebilir kart çekirdeği (ör. 9.575 kartlık BKA TUS paketi) seç.',
-      'Son 6 TUS verisindeki %92,7 konu kapsamı ile %43,6 çözüm desteği arasındaki farkı hatırla: konuyu görmek yetmez, soru kökünün ölçtüğü ayırt edici bilgiyi aktif çağırmak gerekir.',
+      `Her branş için tek bir ana konu kaynağı ve tek bir bitirilebilir kart çekirdeği (ör. ${totalCards} kartlık BKA TUS paketi) seç.`,
+      `Son 6 TUS verisindeki ${pct(refSummary.overall.konuKapsamiOran)} konu kapsamı ile ${pct(refSummary.overall.destekOran)} çözüm desteği arasındaki farkı hatırla: konuyu görmek yetmez, soru kökünün ölçtüğü ayırt edici bilgiyi aktif çağırmak gerekir.`,
       'Kendi notlarında eksikliğini gördüğün noktaları uzun paragraflar yerine tek bilgi ölçen kısa kartlara dönüştür; yanlış cevapta Zor değil her zaman Tekrar seç.',
     ],
     links: [
@@ -320,11 +359,11 @@ export interface GuideFaq {
 export const GUIDE_FAQS: GuideFaq[] = [
   {
     q: 'TUS’a çalışmaya nereden ve kaç ay önce başlanmalı?',
-    a: 'Tek bir standart süre yoktur; en kritik kural hazırlığı iki faza (ilk tur + sınav öncesi 14–30 gün yalnız tekrar tamponu) bölmektir. 4.–5. sınıf stajyerleri 12 aylık pencerede stajına paralel günde ~34–40 yeni kartla, intörnler 9 ayda haftada 6 gün ~45–60 yeni kartla, tam zamanlı mezunlar 6 ayda ~60 yeni kartla 9.575 kartlık BKA TUS çekirdeğini bitirip deneme ve konu çalışmasına geniş zaman ayırabilir.',
+    a: `Tek bir standart süre yoktur; en kritik kural hazırlığı iki faza (ilk tur + sınav öncesi 14–30 gün yalnız tekrar tamponu) bölmektir. 4.–5. sınıf stajyerleri 12 aylık pencerede stajına paralel günde ~${stajyerSim.activePace}–40 yeni kartla, intörnler 9 ayda haftada ${intornSim.input.studyDaysPerWeek} gün ~${intornSim.activePace}–60 yeni kartla, tam zamanlı mezunlar 6 ayda ~${mezunSim.activePace} yeni kartla ${totalCards} kartlık BKA TUS çekirdeğini bitirip deneme ve konu çalışmasına geniş zaman ayırabilir.`,
   },
   {
     q: 'TUS için günde kaç saat ve kaç kart çalışmak sürdürülebilirdir?',
-    a: '9.575 kartlık BKA TUS çekirdeği için %90 FSRS-6 hedef hatırlama simülasyonunda günde 60 yeni kart açıldığında ilk tur 160. günde tamamlanır; 270 günlük pencerede ortalama kart yükü 331 kart (~102 dk/gün), 270. günde 187 kart (~50 dk/gün) olur. Kart tekrarını 60–125 dakika bandında tutmak, her gün konu okuma, soru bankası ve deneme analizi için 2–4+ saatlik net zaman bırakır.',
+    a: `${totalCards} kartlık BKA TUS çekirdeği için %${mezunSim.input.retention} FSRS-6 hedef hatırlama simülasyonunda günde ${mezunSim.activePace} yeni kart açıldığında ilk tur ${mezunSim.target.finishDay ?? mezunSim.input.days}. günde tamamlanır; ${mezunSim.input.days} günlük pencerede ortalama ${num(mezunSim.target.avgCards)} kart (~${formatDurationTr(mezunSim.target.avgMinutes)}/gün), 270 günlük pencerede ortalama ${num(sim270_60.target.avgCards)} kart (~${formatDurationTr(sim270_60.target.avgMinutes)}/gün) ve 270. günde ${num(sim270_60.target.endDayCards)} kart (~${formatDurationTr(sim270_60.target.endDayMinutes)}/gün) olur. Kart tekrarını 60–125 dakika bandında tutmak, her gün konu okuma, soru bankası ve deneme analizi için 2–4+ saatlik net zaman bırakır.`,
   },
   {
     q: 'TUS kaç soru, kaç dakika ve puanı nasıl hesaplanır? Temel Bilimler Klinik puanını nasıl etkiler?',
@@ -344,7 +383,7 @@ export const GUIDE_FAQS: GuideFaq[] = [
   },
   {
     q: '2027 TUS tarihleri neler ve son 30 günde ne yapılmalı?',
-    a: 'Resmî ÖSYM 2027 sınav takvimine göre 2027-TUS 1. Dönem 27 Mart 2027’de (başvuru 2–10 Şubat, sonuç 22 Nisan), 2027-TUS 2. Dönem ise 22 Ağustos 2027’de (başvuru 5–13 Temmuz, sonuç 16 Eylül) yapılır. Son 14–30 günde yeni kart açmayı durdurup deneme yanlışlarını, vadesi gelen tekrarları ve Filtrelenmiş Deste Önizleme oturumlarını öne almak en verimli yaklaşımdır.',
+    a: `Resmî ÖSYM 2027 sınav takvimine göre ${exam1.name} ${exam1.examDateLabel}’de (başvuru ${exam1.applicationLabel.replace(' 2027', '')}, sonuç ${exam1.resultLabel.replace(' 2027', '')}), ${exam2.name} ise ${exam2.examDateLabel}’de (başvuru ${exam2.applicationLabel.replace(' 2027', '')}, sonuç ${exam2.resultLabel.replace(' 2027', '')}) yapılır. Son 14–30 günde yeni kart açmayı durdurup deneme yanlışlarını, vadesi gelen tekrarları ve Filtrelenmiş Deste Önizleme oturumlarını öne almak en verimli yaklaşımdır.`,
   },
   {
     q: 'TusAnkiM hangi cihazlarda çalışır ve BKA TUS paketi dışa aktarılır mı?',
@@ -388,15 +427,15 @@ export const OFFICIAL_SOURCES = [
 export const GUIDE_SEARCH_ENTRIES: WebsiteSearchEntry[] = [
   {
     type: 'Sayfa',
-    title: 'TUS Çalışma Temposu: 4 Profil & 9.575 vs 27.341 Kart',
+    title: `TUS Çalışma Temposu: 4 Profil & ${totalCards} vs ${megaCards} Kart`,
     sub: 'Stajyer (365g), İntörn (270g), Mezun (180g) ve Son 4 Ay (120g) için FSRS-6 simülasyonu ve mega deste karşılaştırması.',
     url: '/tus-calisma-rehberi/#tempo-ve-profiller',
-    terms: 'tus çalışma temposu stajyer intörn mezun son 4 ay kaç kart günde kaç saat mega deste 9575 27341 fsrs-6',
+    terms: `tus çalışma temposu stajyer intörn mezun son 4 ay kaç kart günde kaç saat mega deste ${catalog.totals.cards} ${MEGA_DECK_CARDS} fsrs-6`,
   },
   {
     type: 'Sayfa',
     title: '2027 TUS Tarihleri, Başvuru ve Sonuç Takvimi',
-    sub: '27 Mart 2027 (2027/1) ve 22 Ağustos 2027 (2027/2) ÖSYM sınav, başvuru, sonuç tarihleri ve son 30 gün tamponu.',
+    sub: `${exam1.examDateLabel} (2027/1) ve ${exam2.examDateLabel} (2027/2) ÖSYM sınav, başvuru, sonuç tarihleri ve son 30 gün tamponu.`,
     url: '/tus-calisma-rehberi/#tus-takvimi',
     terms: 'tus ne zaman 2027 tus tarihleri mart ağustos başvuru sonuç takvimi ösym son 30 gün',
   },

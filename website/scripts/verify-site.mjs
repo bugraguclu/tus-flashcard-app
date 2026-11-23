@@ -240,19 +240,64 @@ check(!guideVisible.includes('TR,14991') && !guideVisible.includes('TR,15070'), 
 check(!guideVisible.includes('guide-defer'), 'tus-calisma-rehberi: content-visibility:auto class (.guide-defer) breaks TOC anchor scroll positioning');
 const guideSummarySection = guideVisible.match(/<section[^>]*id="hizli-ozet"[\s\S]*?<\/section>/)?.[0] ?? '';
 const guideTempoSection = guideVisible.match(/<section[^>]*id="tempo-ve-profiller"[\s\S]*?<\/section>/)?.[0] ?? '';
-const guideSummaryPace = guideSummarySection.match(/180 günde ortalama ([\d.]+) kart \((~[^)/]+)\/gün\)/);
-check(Boolean(guideSummaryPace), 'tus-calisma-rehberi: #hizli-ozet missing formatted 180-day planner summary');
+const guideMegaAnchorIdx = guideTempoSection.indexOf('id="mega-deste-kiyasi"');
+const guideProfilesPart = guideMegaAnchorIdx > 0 ? guideTempoSection.slice(0, guideMegaAnchorIdx) : guideTempoSection;
+const guideMegaPart = guideMegaAnchorIdx > 0 ? guideTempoSection.slice(guideMegaAnchorIdx) : '';
+const catalogData = JSON.parse(fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/generated/catalog.json'), 'utf8'));
+const expectedCardsFormatted = catalogData.totals.cards.toLocaleString('tr-TR');
+const guideSummaryPace = guideSummarySection.match(
+  /([\d.]+) kartta günde <strong>(\d+) yeni kart<\/strong> ile ilk tur <strong>(\d+)\. günde<\/strong> biter; (\d+) günde ortalama ([\d.]+) kart \((~[^)/]+)\/gün\)/,
+);
+check(Boolean(guideSummaryPace), 'tus-calisma-rehberi: #hizli-ozet missing formatted planner summary');
 if (guideSummaryPace) {
-  const [, summaryAvgCards, summaryAvgDur] = guideSummaryPace;
+  const [, summaryCards, summaryPace, summaryFinish, summaryDays, summaryAvgCards, summaryAvgDur] = guideSummaryPace;
   check(
-    guideTempoSection.includes(`${summaryAvgCards} kart (${summaryAvgDur})`),
+    summaryCards === expectedCardsFormatted,
+    `tus-calisma-rehberi: #hizli-ozet card count (${summaryCards}) differs from catalog.json (${expectedCardsFormatted})`,
+  );
+  check(
+    guideProfilesPart.includes(`${summaryAvgCards} kart (${summaryAvgDur})`),
     `tus-calisma-rehberi: #hizli-ozet (${summaryAvgCards} kart, ${summaryAvgDur}) diverges from #tempo-ve-profiller`,
   );
+  const mezunRow = guideProfilesPart.match(
+    new RegExp(`Mezun[\\s\\S]*?${summaryPace} yeni / gün[\\s\\S]*?${summaryFinish}\\. gün[\\s\\S]*?${summaryAvgCards} kart \\(${summaryAvgDur.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)[\\s\\S]*?(~[^<]+\\([\\d.]+ kart\\))`),
+  );
+  check(Boolean(mezunRow), 'tus-calisma-rehberi: #tempo-ve-profiller Table 1 missing matching Mezun peak row');
+  if (mezunRow) {
+    const mezunPeak = mezunRow[1].trim();
+    check(
+      guideMegaPart.includes(mezunPeak),
+      `tus-calisma-rehberi: #mega-deste-kiyasi peak diverges from #tempo-ve-profiller Table 1 (${mezunPeak})`,
+    );
+  }
+  check(
+    guideVisible.includes(`${expectedCardsFormatted} kartlık BKA TUS paketinden`),
+    `tus-calisma-rehberi: final CTA card count diverges from catalog.json (${expectedCardsFormatted})`,
+  );
+  check(
+    indexHtml.includes(`Günde ${summaryPace} yeni kartla ilk tur ${summaryFinish}. günde biter (${summaryAvgDur}/gün ort.)`),
+    `index.html: HomePlan summary diverges from #hizli-ozet (${summaryPace} new/day, day ${summaryFinish}, ${summaryAvgDur})`,
+  );
+  const llmsTxt = fs.readFileSync(path.join(DIST, 'llms.txt'), 'utf8');
   const llmsFull = fs.readFileSync(path.join(DIST, 'llms-full.txt'), 'utf8');
   check(
-    llmsFull.includes(`ortalama ${summaryAvgCards} kart (${summaryAvgDur}/gün)`),
-    `tus-calisma-rehberi: #hizli-ozet (${summaryAvgCards} kart, ${summaryAvgDur}) diverges from llms-full.txt`,
+    llmsTxt.includes(`${expectedCardsFormatted} kartlık BKA TUS`),
+    `llms.txt: card count diverges from catalog.json (${expectedCardsFormatted})`,
   );
+  check(
+    llmsFull.includes(`${expectedCardsFormatted} kart`) &&
+    llmsFull.includes(`(${summaryDays} gün):** ${summaryPace} yeni/gün`) &&
+    llmsFull.includes(`ilk tur ${summaryFinish}. günde biter`) &&
+    llmsFull.includes(`ortalama ${summaryAvgCards} kart (${summaryAvgDur}/gün)`),
+    `tus-calisma-rehberi: #hizli-ozet (${summaryPace}/gün, ${summaryFinish}. gün, ${summaryAvgCards} kart, ${summaryAvgDur}) diverges from llms-full.txt`,
+  );
+}
+
+// Verify every source path declared in src/data/pages.ts exists on disk.
+const pagesSrc = fs.readFileSync(path.join(WEBSITE_ROOT, 'src/data/pages.ts'), 'utf8');
+const repoRoot = path.resolve(WEBSITE_ROOT, '..');
+for (const match of pagesSrc.matchAll(/'(website\/src\/[^']+)'/g)) {
+  check(fs.existsSync(path.join(repoRoot, match[1])), `pages.ts: non-existent source path "${match[1]}"`);
 }
 check(
   searchIndex.some((entry) => entry.url === '/tus-calisma-rehberi/') &&

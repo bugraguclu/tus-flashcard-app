@@ -110,11 +110,12 @@ const faqSchema = {
     const tocBar = tocNav.closest<HTMLElement>('.guide-toc-bar');
 
     const centerTocPill = (active: HTMLAnchorElement | null) => {
-      if (!active || window.scrollY < 40 || tocNav.scrollWidth <= tocNav.clientWidth) return;
+      if (!active || tocNav.scrollWidth <= tocNav.clientWidth) return;
       const navRect = tocNav.getBoundingClientRect();
       const linkRect = active.getBoundingClientRect();
       const delta = linkRect.left - navRect.left - (navRect.width - linkRect.width) / 2;
-      tocNav.scrollLeft = Math.max(0, tocNav.scrollLeft + delta);
+      const maxScroll = tocNav.scrollWidth - tocNav.clientWidth;
+      tocNav.scrollLeft = Math.max(0, Math.min(maxScroll, tocNav.scrollLeft + delta));
     };
 
     const stickyBottom = () => Math.round(tocBar?.getBoundingClientRect().bottom ?? 140);
@@ -136,9 +137,11 @@ const faqSchema = {
 
     const supportsNative = typeof CSS !== 'undefined' && CSS.supports('scroll-target-group: auto');
     if (supportsNative) {
-      let rafId = 0;
+      let outerRaf = 0;
+      let innerRaf = 0;
       const syncNative = () => {
-        rafId = 0;
+        outerRaf = 0;
+        innerRaf = 0;
         const nativeActive = tocNav.querySelector<HTMLAnchorElement>('a:target-current');
         const fallbackId = nativeActive ? null : resolveActiveId();
         const active =
@@ -152,11 +155,18 @@ const faqSchema = {
         });
         centerTocPill(active);
       };
+      // Blink updates :target-current after the scroll frame's rAF callbacks run;
+      // deferring across two animation frames guarantees we read the fresh marker.
       const scheduleSync = () => {
-        if (!rafId) rafId = requestAnimationFrame(syncNative);
+        if (outerRaf) cancelAnimationFrame(outerRaf);
+        if (innerRaf) cancelAnimationFrame(innerRaf);
+        outerRaf = requestAnimationFrame(() => {
+          outerRaf = 0;
+          innerRaf = requestAnimationFrame(syncNative);
+        });
       };
       syncNative();
-      document.addEventListener('scrollend', syncNative, { passive: true });
+      document.addEventListener('scrollend', scheduleSync, { passive: true });
       window.addEventListener('scroll', scheduleSync, { passive: true });
       window.addEventListener('hashchange', scheduleSync);
     } else if (sections.length) {

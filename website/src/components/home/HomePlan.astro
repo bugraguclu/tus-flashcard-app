@@ -1,18 +1,26 @@
 ---
 import catalog from '../../data/generated/catalog.json';
-import fsrs from '../../data/generated/fsrs-curves.json';
+import {
+  DEFAULT_PLANNER_INPUT,
+  MEGA_DECK_CARDS,
+  PLANNER_PRESETS,
+  formatDurationTr,
+  runPlanner,
+} from '../../lib/studyPlanner';
 import { num } from '../../lib/format';
 
 const cards = num(catalog.totals.cards);
-const megaCards = num(fsrs.scopes.find((s) => s.id === 'mega')!.cards);
-const f60_180 = fsrs.matrix.all['180']['60'];
+const megaCards = num(MEGA_DECK_CARDS);
+const mezunPreset = PLANNER_PRESETS.find((preset) => preset.id === 'mezun');
+if (!mezunPreset) throw new Error('Missing mezun preset in PLANNER_PRESETS');
+const mezunSim = runPlanner({ ...DEFAULT_PLANNER_INPUT, ...mezunPreset.patch });
 
 const highlights = [
   {
     kicker: '4 Profil · FSRS-6 Eğrisi',
     tone: 'teal',
     title: `Stajyer, İntörn, Mezun, Son 4 Ay & ${cards} vs ${megaCards} Kart`,
-    text: `Günde 60 yeni kartla ilk tur ${f60_180.fin}. günde biter (~${f60_180.min} dk/gün ort.); mega deste karşılaştırması ve 4 profil tablosu.`,
+    text: `Günde ${mezunSim.activePace} yeni kartla ilk tur ${mezunSim.target.finishDay ?? mezunSim.input.days}. günde biter (~${formatDurationTr(mezunSim.target.avgMinutes)}/gün ort.); mega deste karşılaştırması ve 4 profil tablosu.`,
     href: '/tus-calisma-rehberi/#tempo-ve-profiller',
   },
   {

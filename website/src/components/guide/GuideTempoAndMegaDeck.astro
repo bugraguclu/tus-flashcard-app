@@ -1,8 +1,8 @@
 ---
-import fsrs from '../../data/generated/fsrs-curves.json';
 import catalog from '../../data/generated/catalog.json';
 import {
   DEFAULT_PLANNER_INPUT,
+  MEGA_DECK_CARDS,
   PLANNER_PRESETS,
   encodePlannerQuery,
   formatDurationTr,
@@ -10,9 +10,10 @@ import {
 } from '../../lib/studyPlanner';
 import { num, pct } from '../../lib/format';
 
-type Cell = { avg: number; rev: number; min: number; peak: number; pMin: number; pct: number; fin: number | null; pts: number[][] };
-const matrix = fsrs.matrix as unknown as Record<string, Record<string, Record<string, Cell>>>;
-const retention = Math.round(fsrs.desiredRetention * 100);
+const totalCardsLabel = num(catalog.totals.cards);
+const megaCards = MEGA_DECK_CARDS;
+const megaCardsLabel = num(megaCards);
+const retention = DEFAULT_PLANNER_INPUT.retention;
 
 const presetCards = PLANNER_PRESETS.map((preset) => {
   const input = { ...DEFAULT_PLANNER_INPUT, ...preset.patch };
@@ -21,30 +22,70 @@ const presetCards = PLANNER_PRESETS.map((preset) => {
   return { preset, sim, plannerUrl };
 });
 
-// Moved from HomePlan.astro: full BKA package vs 27,341 mega deck over 180 days at 60 new/day.
+// Unified with /calisma-plani/: full BKA package vs 27,341 mega deck via runPlanner (FSRS-6 kernel).
 const H = 180;
 const P = 60;
-const mine = matrix.all[String(H)][String(P)];
-const mega = matrix.mega[String(H)][String(P)];
-const megaCards = fsrs.scopes.find((s) => s.id === 'mega')!.cards;
+const sim180_60 = runPlanner({
+  ...DEFAULT_PLANNER_INPUT,
+  days: H,
+  newPerDay: P,
+  studyDaysPerWeek: 7,
+  bufferDays: 0,
+});
+const sim270_60 = runPlanner({
+  ...DEFAULT_PLANNER_INPUT,
+  days: 270,
+  newPerDay: 60,
+  studyDaysPerWeek: 7,
+  bufferDays: 0,
+});
+const sim270_80 = runPlanner({
+  ...DEFAULT_PLANNER_INPUT,
+  days: 270,
+  newPerDay: 80,
+  studyDaysPerWeek: 7,
+  bufferDays: 0,
+});
+const sim365_80 = runPlanner({
+  ...DEFAULT_PLANNER_INPUT,
+  days: 365,
+  newPerDay: 80,
+  studyDaysPerWeek: 7,
+  bufferDays: 0,
+});
 
-// Verified simulation cells for the 180/270/365-day Mega Deck comparison.
-const f60_270 = matrix.all['270']['60'];
-const m60_270 = matrix.mega['270']['60'];
-const m80_270 = matrix.mega['270']['80'];
-const m80_365 = matrix.mega['365']['80'];
+const mine = sim180_60.target;
+const mega = sim180_60.mega;
 
-const f60_270Last = f60_270.pts[f60_270.pts.length - 1];
-const m60_270Last = m60_270.pts[m60_270.pts.length - 1];
-const m80_270Last = m80_270.pts[m80_270.pts.length - 1];
+const sampleDaySet = new Set<number>([1, H]);
+for (let d = 10; d < H; d += 10) sampleDaySet.add(d);
+if (mine.peakDay >= 1 && mine.peakDay <= H) sampleDaySet.add(mine.peakDay);
+if (mine.finishDay) {
+  sampleDaySet.add(mine.finishDay);
+  if (mine.finishDay + 1 <= H) sampleDaySet.add(mine.finishDay + 1);
+}
+const sampledSeries = [...sampleDaySet]
+  .sort((a, b) => a - b)
+  .map((day) => sim180_60.series[day - 1]);
 
 const W = 600;
 const HT = 220;
 const pad = { l: 44, r: 16, t: 14, b: 30 };
-const maxY = Math.ceil(Math.max(...mine.pts.map((p) => p[1]), ...mega.pts.map((p) => p[1])) / 100) * 100;
+const maxY =
+  Math.ceil(
+    Math.max(
+      ...sampledSeries.map((p) => p.totalCards),
+      ...sampledSeries.map((p) => p.megaTotalCards),
+    ) / 100,
+  ) * 100;
 const x = (d: number) => pad.l + ((d - 1) / (H - 1)) * (W - pad.l - pad.r);
 const y = (v: number) => pad.t + (1 - v / maxY) * (HT - pad.t - pad.b);
-const path = (pts: number[][]) => pts.map((p, i) => `${i ? 'L' : 'M'}${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`).join(' ');
+const minePath = sampledSeries
+  .map((p, i) => `${i ? 'L' : 'M'}${x(p.day).toFixed(1)} ${y(p.totalCards).toFixed(1)}`)
+  .join(' ');
+const megaPath = sampledSeries
+  .map((p, i) => `${i ? 'L' : 'M'}${x(p.day).toFixed(1)} ${y(p.megaTotalCards).toFixed(1)}`)
+  .join(' ');
 const yTicks = [0, maxY / 2, maxY];
 const xTicks = [1, 60, 120, 180];
 ---
@@ -102,7 +143,7 @@ const xTicks = [1, 60, 120, 180];
       </h3>
       <div class="guide-table-wrap" tabindex="0" role="region" aria-labelledby="ufuk-tablo-baslik">
         <table class="guide-table">
-          <caption class="sr-only">4 aday profili için 120, 180, 270 ve 365 günlük TUS hazırlık pencerelerinde FSRS-6 (%90) günlük kart, tepe süre ve tampon gün karşılaştırması</caption>
+          <caption class="sr-only">4 aday profili için 120, 180, 270 ve 365 günlük TUS hazırlık pencerelerinde FSRS-6 (%{retention}) günlük kart, tepe süre ve tampon gün karşılaştırması</caption>
           <thead>
             <tr>
               <th scope="col">Aday Profili / Ufuk</th>
@@ -148,24 +189,24 @@ const xTicks = [1, 60, 120, 180];
         <dl class="mt-6 space-y-4">
           <div>
             <dt class="flex justify-between text-sm">
-              <span class="font-semibold text-ink">TusAnkiM · {num(catalog.totals.cards)} kart</span>
-              <span class="tabular-nums font-bold text-teal">{pct(mine.pct)}</span>
+              <span class="font-semibold text-ink">TusAnkiM · {totalCardsLabel} kart</span>
+              <span class="tabular-nums font-bold text-teal">{pct(mine.memorizedPct)}</span>
             </dt>
             <dd class="mt-1.5">
-              <div class="guide-meter" role="img" aria-label={`${H}. günde ${num(catalog.totals.cards)} kartın ${pct(mine.pct)} kadarı hafızada`}>
-                <span style={`width: ${mine.pct}%`}></span>
+              <div class="guide-meter" role="img" aria-label={`${H}. günde ${totalCardsLabel} kartın ${pct(mine.memorizedPct)} kadarı hafızada`}>
+                <span style={`width: ${mine.memorizedPct}%`}></span>
               </div>
-              <p class="mt-1 text-xs text-inkMuted">İlk tur {mine.fin}. günde biter; kalan günler yalnız tekrar ve denemeye açılır.</p>
+              <p class="mt-1 text-xs text-inkMuted">İlk tur {mine.finishDay ?? H}. günde biter; kalan günler yalnız tekrar ve denemeye açılır.</p>
             </dd>
           </div>
           <div>
             <dt class="flex justify-between text-sm">
-              <span class="font-semibold text-ink">Mega deste · {num(megaCards)} kart</span>
-              <span class="tabular-nums font-bold text-warm">{pct(mega.pct)}</span>
+              <span class="font-semibold text-ink">Mega deste · {megaCardsLabel} kart</span>
+              <span class="tabular-nums font-bold text-warm">{pct(mega.memorizedPct)}</span>
             </dt>
             <dd class="mt-1.5">
-              <div class="guide-meter guide-meter-warm" role="img" aria-label={`${H}. günde ${num(megaCards)} kartın ${pct(mega.pct)} kadarı hafızada`}>
-                <span style={`width: ${mega.pct}%`}></span>
+              <div class="guide-meter guide-meter-warm" role="img" aria-label={`${H}. günde ${megaCardsLabel} kartın ${pct(mega.memorizedPct)} kadarı hafızada`}>
+                <span style={`width: ${mega.memorizedPct}%`}></span>
               </div>
               <p class="mt-1 text-xs text-inkMuted">{H} günde ilk tur bitmez; son güne kadar yeni kart yükü sürer.</p>
             </dd>
@@ -177,15 +218,15 @@ const xTicks = [1, 60, 120, 180];
         <figcaption class="flex flex-wrap items-center justify-between gap-2 text-sm">
           <span class="font-semibold text-ink">Günlük kart sayısı (yeni + tekrar · {H} gün, {P} yeni/gün)</span>
           <span class="guide-legend">
-            <span><i style="background:#0e7469"></i>TusAnkiM ({num(catalog.totals.cards)})</span>
-            <span><i style="background:#d9661a"></i>Mega deste ({num(megaCards)})</span>
+            <span><i style="background:#0e7469"></i>TusAnkiM ({totalCardsLabel})</span>
+            <span><i style="background:#d9661a"></i>Mega deste ({megaCardsLabel})</span>
           </span>
         </figcaption>
         <svg
           class="guide-chart mt-3 w-full h-auto"
           viewBox={`0 0 ${W} ${HT}`}
           role="img"
-          aria-label={`${H} gün boyunca günlük kart sayısı. İki deste ${mine.fin}. güne kadar benzer seyreder; sonra TusAnkiM yalnız tekrara iner, mega deste yeni kart eklemeye devam eder.`}
+          aria-label={`${H} gün boyunca günlük kart sayısı. İki deste ${mine.finishDay ?? H}. güne kadar benzer seyreder; sonra TusAnkiM yalnız tekrara iner, mega deste yeni kart eklemeye devam eder.`}
         >
           {yTicks.map((v) => (
             <g>
@@ -196,10 +237,10 @@ const xTicks = [1, 60, 120, 180];
           {xTicks.map((d) => (
             <text x={x(d)} y={HT - 8} text-anchor={d === 1 ? 'start' : d === H ? 'end' : 'middle'} font-size="11" fill="#596166">{d}. gün</text>
           ))}
-          <line x1={x(mine.fin ?? H)} x2={x(mine.fin ?? H)} y1={pad.t} y2={HT - pad.b} stroke="#14998a" stroke-dasharray="2 4" />
-          <text x={x(mine.fin ?? H) - 6} y={pad.t + 10} text-anchor="end" font-size="11" font-weight="700" fill="#0e7469">İlk tur biter ({mine.fin}. gün)</text>
-          <path class="guide-chart-line" d={path(mega.pts)} stroke="#d9661a" style="--len: 900" />
-          <path class="guide-chart-line" d={path(mine.pts)} stroke="#0e7469" style="--len: 900" />
+          <line x1={x(mine.finishDay ?? H)} x2={x(mine.finishDay ?? H)} y1={pad.t} y2={HT - pad.b} stroke="#14998a" stroke-dasharray="2 4" />
+          <text x={x(mine.finishDay ?? H) - 6} y={pad.t + 10} text-anchor="end" font-size="11" font-weight="700" fill="#0e7469">İlk tur biter ({mine.finishDay ?? H}. gün)</text>
+          <path class="guide-chart-line" d={megaPath} stroke="#d9661a" style="--len: 900" />
+          <path class="guide-chart-line" d={minePath} stroke="#0e7469" style="--len: 900" />
         </svg>
         <p class="mt-2 text-xs text-inkMuted">
           Kaynak: TusAnkiM <span lang="en">FSRS-6</span> simülatörü (%{retention} hedef hatırlama).
@@ -211,9 +252,9 @@ const xTicks = [1, 60, 120, 180];
 
     <!-- Compact Mega Deck numeric proof table -->
     <div class="mt-8">
-      <div class="guide-table-wrap" tabindex="0" role="region" aria-label="9.575 kart çekirdeği ile 27.341 kart mega deste 270 ve 365 gün yük karşılaştırması">
+      <div class="guide-table-wrap" tabindex="0" role="region" aria-label={`${totalCardsLabel} kart çekirdeği ile ${megaCardsLabel} kart mega deste 270 ve 365 gün yük karşılaştırması`}>
         <table class="guide-table">
-          <caption class="sr-only">270 ve 365 günlük pencerelerde 9.575 kartlık BKA TUS çekirdeği ile 27.341 kartlık mega deste yük kıyaslaması</caption>
+          <caption class="sr-only">270 ve 365 günlük pencerelerde {totalCardsLabel} kartlık BKA TUS çekirdeği ile {megaCardsLabel} kartlık mega deste yük kıyaslaması</caption>
           <thead>
             <tr>
               <th scope="col">Deste Kapsamı</th>
@@ -225,25 +266,25 @@ const xTicks = [1, 60, 120, 180];
           </thead>
           <tbody class="tabular-nums">
             <tr>
-              <th scope="row">BKA TUS Çekirdek ({num(catalog.totals.cards)} kart)</th>
+              <th scope="row">BKA TUS Çekirdek ({totalCardsLabel} kart)</th>
               <td data-col="Günlük Yeni Kart">60 yeni / gün</td>
-              <td data-col="İlk Tur Durumu (270g / 365g)" class="font-semibold text-gradeGood">{f60_270.fin}. günde biter ({pct(f60_270.pct)} hafızada @ 270g)</td>
-              <td data-col="270. Gün Yükü">{num(f60_270Last[1])} kart · {f60_270Last[2]} dk/gün</td>
-              <td data-col="270g Tepe Günlük Süre">{f60_270.pMin} dk ({num(f60_270.peak)} kart)</td>
+              <td data-col="İlk Tur Durumu (270g / 365g)" class="font-semibold text-gradeGood">{sim270_60.target.finishDay}. günde biter ({pct(sim270_60.target.memorizedPct)} hafızada @ 270g)</td>
+              <td data-col="270. Gün Yükü">{num(sim270_60.target.endDayCards)} kart · ~{formatDurationTr(sim270_60.target.endDayMinutes)}/gün</td>
+              <td data-col="270g Tepe Günlük Süre">~{formatDurationTr(sim270_60.target.peakMinutes)} ({num(sim270_60.target.peakCards)} kart)</td>
             </tr>
             <tr>
-              <th scope="row">Mega Deste ({num(megaCards)} kart)</th>
+              <th scope="row">Mega Deste ({megaCardsLabel} kart)</th>
               <td data-col="Günlük Yeni Kart">60 yeni / gün</td>
-              <td data-col="İlk Tur Durumu (270g / 365g)" class="font-semibold text-gradeAgain">270 ve 365 günde bitmez ({pct(m60_270.pct)} @ 270g)</td>
-              <td data-col="270. Gün Yükü">{num(m60_270Last[1])} kart · {m60_270Last[2]} dk/gün</td>
-              <td data-col="270g Tepe Günlük Süre">{m60_270.pMin} dk ({num(m60_270.peak)} kart)</td>
+              <td data-col="İlk Tur Durumu (270g / 365g)" class="font-semibold text-gradeAgain">270 ve 365 günde bitmez ({pct(sim270_60.mega.memorizedPct)} @ 270g)</td>
+              <td data-col="270. Gün Yükü">{num(sim270_60.mega.endDayCards)} kart · ~{formatDurationTr(sim270_60.mega.endDayMinutes)}/gün</td>
+              <td data-col="270g Tepe Günlük Süre">~{formatDurationTr(sim270_60.mega.peakMinutes)} ({num(sim270_60.mega.peakCards)} kart)</td>
             </tr>
             <tr>
-              <th scope="row">Mega Deste ({num(megaCards)} kart)</th>
+              <th scope="row">Mega Deste ({megaCardsLabel} kart)</th>
               <td data-col="Günlük Yeni Kart">80 yeni / gün</td>
-              <td data-col="İlk Tur Durumu (270g / 365g)">270g’de bitmez; 365g pencerede {m80_365.fin}. günde biter</td>
-              <td data-col="270. Gün Yükü">{num(m80_270Last[1])} kart · {m80_270Last[2]} dk/gün</td>
-              <td data-col="270g Tepe Günlük Süre">{m80_270.pMin} dk (365g tepe: {m80_365.pMin} dk)</td>
+              <td data-col="İlk Tur Durumu (270g / 365g)">270g’de bitmez; 365g pencerede {sim365_80.mega.finishDay}. günde biter</td>
+              <td data-col="270. Gün Yükü">{num(sim270_80.mega.endDayCards)} kart · ~{formatDurationTr(sim270_80.mega.endDayMinutes)}/gün</td>
+              <td data-col="270g Tepe Günlük Süre">~{formatDurationTr(sim270_80.mega.peakMinutes)} (365g tepe: ~{formatDurationTr(sim365_80.mega.peakMinutes)})</td>
             </tr>
           </tbody>
         </table>

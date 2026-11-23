@@ -27,9 +27,9 @@
 ### FSRS-6 (%90 Hedef Hatırlama) Tempo ve Mega Deste Karşılaştırması
 - **Stajyer (4.–5. sınıf · 365 gün):** 34 yeni/gün (haftada 6 gün) → ilk tur 328. günde biter, ortalama 244 kart (~1 sa 15 dk/gün), son 37 gün yalnız tekrar tamponu.
 - **İntörn (270 gün):** 45 yeni/gün (haftada 6 gün) → ilk tur 248. günde biter, ortalama 294 kart (~1 sa 32 dk/gün), son 22 gün yalnız tekrar tamponu.
-- **Mezun / Pratisyen (180 gün):** 60 yeni/gün (haftada 7 gün) → ilk tur 160. günde biter (%94,5 hafızada), ortalama 389 kart (~2 sa 4 dk/gün), son 20 gün yalnız tekrar tamponu.
+- **Mezun / Pratisyen (180 gün):** 60 yeni/gün (haftada 7 gün) → ilk tur 160. günde biter (%94,4 hafızada), ortalama 389 kart (~2 sa 4 dk/gün), son 20 gün yalnız tekrar tamponu.
 - **Son 4 Ay (120 gün):** 91 yeni/gün (haftada 7 gün) → ilk tur 106. günde biter, ortalama 510 kart (~2 sa 47 dk/gün), son 14 gün yalnız tekrar tamponu (veya tek grup: Temel 3.957 / Klinik 4.812 kart).
-- **27.341 Kart Mega Deste Kıyaslaması (60 yeni/gün):** 9.575 kart çekirdeği 160. günde biterken (270. günde 187 kart / 50 dk/gün), 27.341 kartlık mega deste 180, 270 ve 365 günde bitmez (180. günde %37,4, 270. günde %55,9 hafızada; 270. günde 656 kart / 198 dk/gün, 270g tepe 209 dk/gün).
+- **27.341 Kart Mega Deste Kıyaslaması (60 yeni/gün):** 9.575 kart çekirdeği 160. günde biterken (270. günde 171 kart / ~45 dk/gün, tepe ~2 sa 44 dk / 530 kart), 27.341 kartlık mega deste 180, 270 ve 365 günde bitmez (180. günde %37,4, 270. günde %55,9 hafızada; 270. günde 638 kart / ~3 sa 12 dk/gün, 270g tepe ~3 sa 12 dk/gün).
 
 ### TUS Sınav Yapısı, Puan Ağırlıkları ve Mevzuat
 - 200 soru (100 Temel Bilimler · 135 dakika + 100 Klinik Bilimler · 135 dakika = toplam 270 dakika), 4 yanlış 1 doğruyu götürür.
