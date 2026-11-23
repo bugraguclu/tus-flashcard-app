@@ -64,10 +64,12 @@ vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ t: (key: string) => key, 
 vi.mock('../hooks/useDeferredScreenSnapshot', () => ({
     useDeferredScreenSnapshot: (_key: string, load: () => unknown) => ({ snapshot: load(), loading: false, error: null }),
 }));
+vi.mock('./db', () => ({ getDB: () => ({ getFirstSync: () => null }) }));
 vi.mock('./screenSnapshots', () => ({
     getStatsScreenSnapshot: ({ deckName }: { deckName: string | null }) => {
         h.loadedDecks.push(deckName);
         return {
+            scopeDeckName: deckName, scopeRange: { startMs: 0, endMs: 0, spanDays: 365 }, failedSections: [],
             reviewDays: [], addedDays: [], decks: [{ name: 'Fizyoloji' }],
             todayStats: {}, streak: {}, currentWeekStudiedDays: [], hours: [],
             ankiStats: { answerButtons: {}, cardCounts: {}, trueRetention: {} },
@@ -92,7 +94,7 @@ vi.mock('../components/stats/ChartScrollLock', () => ({
 vi.mock('../components/ScreenHeader', () => ({
     default: (props: Record<string, unknown>) => React.createElement('ScreenHeader', props),
 }));
-vi.mock('../components/ui/Button', () => ({ HelpButton: () => null }));
+vi.mock('../components/ui/Button', () => ({ HelpButton: () => null, Button: 'Button' }));
 vi.mock('../components/ui/Card', () => ({ Card: ({ children }: { children: React.ReactNode }) => children }));
 vi.mock('../components/ui/Feedback', () => ({ LoadingState: () => null, Notice: () => null }));
 vi.mock('../components/ui/Rows', () => ({
@@ -101,6 +103,11 @@ vi.mock('../components/ui/Rows', () => ({
 vi.mock('../components/ui/Choice', () => ({
     SegmentedControl: ({ value }: { value: string }) => React.createElement('Segmented', { value }),
 }));
+vi.mock('../hooks/useLiveTodayPlan', () => ({ useLiveTodayPlan: () => null }));
+vi.mock('../components/stats/ComparisonSection', () => ({ default: () => null }));
+vi.mock('../components/stats/StatsLayoutEditor', () => ({ StatsEditableCard: ({ children }: any) => children, StatsLayoutToolbar: () => null }));
+vi.mock('../components/ReadErrorBanner', () => ({ ReadErrorBanner: 'ReadErrorBanner', SectionReadErrorCard: 'SectionReadErrorCard' }));
+vi.mock('../components/stats/LazyStatsSection', () => ({ default: ({ children }: any) => children(), StatsSectionPriorityProvider: ({ children }: any) => children, useStatsSectionPriority: () => ({ contextValue: { registerSectionY: () => {} }, onScroll: () => {}, onBodyLayout: () => {}, onScrollViewLayout: () => {} }) }));
 vi.mock('../components/stats/StatsHelpSheet', () => ({ default: () => null }));
 vi.mock('../components/stats/TodaySection', () => ({ default: () => null }));
 vi.mock('../components/stats/ReviewsSection', () => ({ default: () => null }));

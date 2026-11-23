@@ -18,7 +18,7 @@
       "priority": 3,
       "platform": "web keyboard interaction",
       "url": "https://www.w3.org/WAI/ARIA/apg/patterns/",
-      "useFor": ["menu, tabs and modal dialog keyboard patterns", "roving Tab stop of a segmented control", "focus return when a dialog closes; hooks/useWebKeyboardNavigation.ts"]
+      "useFor": ["menu, tabs and modal dialog keyboard patterns", "roving Tab stop of a segmented control", "focus return when a dialog closes; hooks/useWebKeyboardNavigation.ts", "Skip to main and stable main landmarks added to the existing live keyboard system; native opening focus is separately device-gated"]
     },
     {
       "id": "react-native-textinput-key-recording",
@@ -251,7 +251,7 @@
       "priority": 1,
       "platform": "cross-platform statistics behavior",
       "url": "https://docs.ankiweb.net/manual/stats",
-      "useFor": ["statistics time periods", "today summary", "future due", "reviews", "review time", "card counts", "review intervals", "answer buttons", "true retention", "statistics explanations and scope caveats"]
+      "useFor": ["statistics time periods", "today summary", "future due", "reviews", "review time", "card counts", "review intervals", "answer buttons", "true retention", "statistics explanations and scope caveats", "Independent equal study-day period/deck comparison with explicit passed/answer denominators; app-specific plan/layout features do not claim Anki parity"]
     },
     {
       "id": "ankimobile-manual",
@@ -314,7 +314,7 @@
       "priority": 1,
       "platform": "cross-platform browser behavior",
       "url": "https://docs.ankiweb.net/browsing.html#table-modes",
-      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "row context for the local question/answer preview opened from a thumbnail (TusAnkiM-specific UI; no Anki parity claim)", "Notes-mode row aggregation and first-card semantics", "flag filtering", "rows matching the active search", "Change Deck out of a filtered deck", "Due column New #N for new cards", "Deck column naming the home deck of a filtered card"]
+      "useFor": ["card and note table modes", "selection scope", "browser row semantics", "row context for the local question/answer preview opened from a thumbnail (TusAnkiM-specific UI; no Anki parity claim)", "Notes-mode row aggregation and first-card semantics", "flag filtering", "rows matching the active search", "Change Deck out of a filtered deck", "Due column New #N for new cards", "Deck column naming the home deck of a filtered card", "App-specific contextual filter-count presentation uses the same live search scope; lib/browserFilterCounts.test.ts"]
     },
     {
       "id": "w3c-aria-checkbox-state",

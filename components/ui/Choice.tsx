@@ -272,6 +272,7 @@ export function Checkbox({ checked, mixed = false, onChange, accessibilityLabel,
 }
 
 interface CheckRowProps {
+    accessory?: React.ReactNode;
     label: string;
     summary?: string;
     checked: boolean;
@@ -289,7 +290,7 @@ interface CheckRowProps {
 
 /** A row with a checkbox; the whole row ticks it. */
 export function CheckRow({
-    label, summary, checked, mixed = false, onChange, disabled = false,
+    label, summary, checked, mixed = false, onChange, disabled = false, accessory,
     accessibilityLabel, onLongPress, accessibilityActions, onAccessibilityAction, style,
 }: CheckRowProps) {
     const colors = useThemeColors();
@@ -312,6 +313,7 @@ export function CheckRow({
                 <Text style={[styles.checkLabel, { color: colors.textPrimary }]}>{label}</Text>
                 {summary ? <Text style={[styles.checkSummary, { color: colors.textMuted }]}>{summary}</Text> : null}
             </View>
+            {accessory}
         </TouchableOpacity>
     );
 }

@@ -8,7 +8,7 @@ import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { Button, IconButton } from '../components/ui/Button';
 import { Card, Section, SectionFootnote } from '../components/ui/Card';
 import { Chip, SegmentedControl } from '../components/ui/Choice';
-import { EmptyState, ProgressBar } from '../components/ui/Feedback';
+import { EmptyState, LoadingState, ProgressBar } from '../components/ui/Feedback';
 import { BackIcon, ForwardIcon } from '../components/ui/icons';
 import { Type, READABLE_WIDTH } from '../components/ui/tokens';
 import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
@@ -25,7 +25,10 @@ import {
     studyDayYmd,
     type StudyAnalysisPeriod,
 } from '../lib/studyAnalysis';
-import { readStudyPlansForDisplay } from '../lib/studyPlanStore';
+import { loadStudyPlans } from '../lib/studyPlanStore';
+import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
+import { readStudyAnalysisSnapshot } from '../lib/readErrorState';
+import { ReadErrorBanner } from '../components/ReadErrorBanner';
 import { addDaysYmd, ymdToLocalDate, type StudyPlanBlock } from '../lib/studyPlans';
 
 type AnalysisView = 'repetitions' | StudyAnalysisPeriod;
@@ -54,16 +57,17 @@ export default function StudyAnalysisScreen() {
 
     useFocusEffect(useCallback(() => setRevision((value) => value + 1), []));
 
-    const data = useMemo<{ sessions: StudySessionRecord[]; plans: StudyPlanBlock[] }>(() => {
-        try {
-            return { sessions: fetchStudySessionsBetween(0, Number.MAX_SAFE_INTEGER), plans: readStudyPlansForDisplay() };
-        } catch (error) {
-            console.warn('[StudyAnalysis] read failed:', error);
-            return { sessions: [], plans: [] };
-        }
-        // revision and collectionVersion are the invalidation signals for this read.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [revision, collectionVersion]);
+    const key = JSON.stringify(['study-analysis', revision, collectionVersion, rolloverHour, view, anchorYmd, subject]);
+    const load = useCallback(() => readStudyAnalysisSnapshot({ view, anchorYmd, subject }, {
+        readSessions: () => fetchStudySessionsBetween(0, Number.MAX_SAFE_INTEGER), readPlans: loadStudyPlans,
+    }), [view, anchorYmd, subject]);
+    const { snapshot, loading, error, retry } = useDeferredScreenSnapshot(key, load, { keepPreviousOnError: true, shouldCache: (entry) => !entry.failedParts.length });
+    const data = snapshot ?? { sessions: [], plans: [] };
+    const displayedView = snapshot?.scope.view ?? view;
+    const displayedAnchor = snapshot?.scope.anchorYmd ?? anchorYmd;
+    const displayedSubject = snapshot ? snapshot.scope.subject : subject;
+    const stale = snapshot && (displayedView !== view || displayedAnchor !== anchorYmd || displayedSubject !== subject);
+    const plansFailed = snapshot?.failedParts.includes('plans') ?? false;
 
     const subjects = useMemo(() => {
         const present = new Set(data.sessions.map((session) => session.subject));
@@ -121,7 +125,7 @@ export default function StudyAnalysisScreen() {
     };
 
     const renderPeriod = (period: StudyAnalysisPeriod) => {
-        const analysis = analyzeStudyPeriod(data.sessions, data.plans, { period, anchorYmd, todayYmd, subject, rolloverHour });
+        const analysis = analyzeStudyPeriod(data.sessions, data.plans, { period, anchorYmd: displayedAnchor, todayYmd, subject: displayedSubject, rolloverHour });
         const first = analysis.days[0];
         const last = analysis.days[analysis.days.length - 1];
         const title = period === 'month'
@@ -138,7 +142,7 @@ export default function StudyAnalysisScreen() {
             [l('Günlük Ortalama', 'Daily Average'), duration(analysis.dailyAverageMs)],
             [l('Çalışılan Gün', 'Active Days'), `${analysis.activeDays} / ${analysis.days.length}`],
             [l('Çalışma Sayısı', 'Sessions'), String(analysis.sessions.length)],
-            [l('Planlanan Süre', 'Planned'), duration(analysis.plannedMinutes * MINUTE_MS)],
+            [l('Planlanan Süre', 'Planned'), plansFailed ? l('Okunamadı', 'Unavailable') : duration(analysis.plannedMinutes * MINUTE_MS)],
         ];
         const scienceLabel = { basic: l('Temel Bilimler', 'Basic Sciences'), clinical: l('Klinik Bilimler', 'Clinical Sciences'), other: l('Diğer', 'Other') };
         const bar = (label: string, ms: number, key: string) => (
@@ -271,7 +275,10 @@ export default function StudyAnalysisScreen() {
                     accessibilityLabel={l('Görünüm', 'View')}
                     fill
                 />
-                {view === 'repetitions' ? renderRepetitions() : renderPeriod(view)}
+                {error ? <ReadErrorBanner title={l('Çalışma kayıtları okunamadı.', 'Study sessions could not be read.')} detail={snapshot ? l('Son geçerli kayıtlar aşağıda korunuyor.', 'Last valid records remain below.') : undefined} retryLabel={l('Tekrar dene', 'Try again')} onRetry={retry} /> : null}
+                {stale ? <ReadErrorBanner tone="info" title={l(`Gösterilen: ${displayedView === 'repetitions' ? 'Tekrarlar' : displayedAnchor} · ${displayedSubject ?? 'Tüm Dersler'}`, `Showing: ${displayedView === 'repetitions' ? 'Passes' : displayedAnchor} · ${displayedSubject ?? 'All Courses'}`)} /> : null}
+                {plansFailed ? <ReadErrorBanner title={l('Planlanan süre okunamadı.', 'Planned time could not be read.')} retryLabel={l('Tekrar dene', 'Try again')} onRetry={retry} /> : null}
+                {!snapshot ? loading ? <LoadingState delayed label={l('Analiz yükleniyor…', 'Loading analysis…')} /> : null : displayedView === 'repetitions' ? renderRepetitions() : renderPeriod(displayedView)}
             </ScrollView>
         </SafeAreaView>
     );

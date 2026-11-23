@@ -296,3 +296,21 @@ almaz.
 - [Kartlarım ve arama](10-browser-and-search.md)
 - [Filtrelenmiş deste ve özel çalışma](11-filtered-decks.md)
 - [Deste seçenekleri](06-deck-options.md)
+
+## Plan, düzen ve karşılaştırma {#local-layout-and-comparison}
+
+Bugün kart süresini ve Kronometre planını ayrı gösterir. Planlanan, çalışılan ve kalan süreyle
+tamamlanan blokları görebilirsiniz; başka bir derste geçen süre planınızdaki dersi tamamlamaz.
+Plan olmayan günlerde bu kutu gösterilmez. Kronometre ilerlemesi açık ekranda düzenli yenilenir.
+
+Düzenle ile bölümleri yukarı/aşağı taşıyabilir veya gizleyebilirsiniz. Kaydet düzeni bu cihazda
+saklar; İptal önceki düzeni korur. En az bir bölüm açık kalır. Geniş web penceresinde iki sütun
+seçilebilir; iPhone tek sütun kullanır.
+
+Karşılaştırma, son 7/30/90 çalışma gününü önceki eşit dönemle veya iki desteyi aynı dönemde
+karşılaştırır. Süre kart tekrar kayıtlarından gelir. Doğruluk geçen cevap / toplam cevap olarak
+gösterilir; cevap yoksa doğruluk yoktur. Grafik sütununa dokunarak ayrıntı okuyabilirsiniz.
+Sayısal tablo görünümü sonraki adıma bırakılmıştır.
+
+Veri okunamazsa sıfır çalışma gösterilmez. Tekrar dene ile yeniden okuyabilirsiniz. Önceki
+veriler korunursa kendi deste ve dönemi açıkça belirtilir.

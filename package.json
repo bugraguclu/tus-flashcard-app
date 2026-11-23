@@ -12,7 +12,7 @@
     "verify:ios": "node scripts/verify-ios-readiness.mjs",
     "verify:app-store": "node scripts/verify-ios-readiness.mjs --app-store",
     "verify:app-store:live": "npm run verify:app-store && node scripts/verify-app-store-pages.mjs",
-    "quality": "npm run check && npm run verify:ios",
+    "quality": "npm run check:help && npm run check && npm run verify:ios",
     "doctor": "npx --yes expo-doctor",
     "start": "expo start",
     "share": "node scripts/share-expo-go.mjs",
@@ -26,7 +26,9 @@
     "pack:catalog": "node scripts/pack-catalog-asset.ts",
     "audit:catalog": "sucrase-node scripts/audit-catalog.ts",
     "share:lan": "node scripts/share-expo-go.mjs --lan",
-    "share:ngrok": "node scripts/share-expo-go.mjs --ngrok"
+    "share:ngrok": "node scripts/share-expo-go.mjs --ngrok",
+    "build:help": "node scripts/build-help-content.mjs",
+    "check:help": "node scripts/build-help-content.mjs --check"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

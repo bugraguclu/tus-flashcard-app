@@ -407,6 +407,12 @@ The web reviewer and editor share `components/WebHtmlFrame.tsx`: their HTML is w
 
 ## Browser, card/note table modes, tags, flags, marks, suspend/bury, reposition
 
+**Selected Havuz presentation (2026-11-23):** Flag/tag pickers show counts for the active deck,
+search and other filters. The browser's own WHERE builder supplies the scope. Sibling flags
+in Notes mode use a bitmask union; hierarchical tag combinations use exact weighted unions
+(`lib/browserFilterCounts.test.ts`). Counts are app-specific presentation, not new search
+grammar. Read failures hide counts without disabling selection.
+
 **Local image previews (2026-11-23):** Kartlarım defaults to remembered raster thumbnails in
 Cards and Notes. Tapping or holding a thumbnail (web right-click too) opens the preview directly,
 with the same Question/Answer segmented control and CardWebView as Add Card. Each side uses the
@@ -640,6 +646,11 @@ Readable cardless notes are rescued by creating card 1 in the recovery deck; the
 
 ## Web keyboard navigation and main-window shortcuts
 
+The 2026-11-23 selected package adds Skip to main and a stable root/tab landmark wrapper to
+the existing live focus/keyboard implementation, without adding a second modal trap or
+Quick Search. Screen and sheet headings receive native opening focus only with VoiceOver
+enabled. The physical-device pass remains owner-deferred.
+
 **Status:** Implemented (web)
 
 **Evidence:** The web build answers Anki desktop's main-window letters ([manual](https://docs.ankiweb.net/studying.html)): D decks, A add, B browse, T statistics; K opens the Kronometre, Ctrl/Cmd+, Settings, `/` the screen's search field and `?` a list of every shortcut (also in the deck list's ••• menu on web). Letters act only outside text fields and open dialogs, and the study screen's own keys come first (`appShortcutFor`, `lib/webKeyboardNavigation.test.ts`). The Add screen puts the caret in the first field and saves with Ctrl/Cmd+Enter, as Anki's Add window does, from inside a field's frame or anywhere else on the page. Focus follows the WAI-ARIA Authoring Practices patterns (registry `w3c-aria-apg`): a visible two-tone ring shown only while the keyboard moves focus; dialogs, sheets and menus take focus as they open (a menu on its first item, a form on its first field), keep Tab inside without stopping on the dimmed backdrop, close on Escape and hand focus back to the control that opened them; Up/Down/Home/End move through menu items and Left/Right/Home/End through a segmented control, which is one Tab stop; Space ticks switches and checkboxes and chooses tabs and menu items; Up/Down step a number field (`hooks/useWebKeyboardNavigation.ts`). A deck moves one place among its siblings with Up/Down on its focused drag handle, and with the Move up/Move down actions in VoiceOver on iPhone (`deckStep`, `lib/deckKeyboardReorder.test.ts`). An automated pass over 17 web screens (2026-11-19) found no control without a name and no focusable element hidden from assistive technology; a read of the accessibility tree that screen readers get, on the deck list, study screen, card browser, menus and dialogs, then named every dialog and menu after its title, marked the deck being studied (`aria-current`), named the card frame, gave the sidebar's courses, topics and tiles button roles, and made a card browser row's question area a button with its expanded state (the move handle's VoiceOver actions: `lib/deckDragHandle.render.test.ts`).
@@ -655,6 +666,18 @@ Readable cardless notes are rescued by creating card 1 in the recovery deck; the
 **Next compatibility gate:** Verify provisional and fully authorized delivery on a physical iPhone; vibration and LED/flash remain system-owned iOS settings
 
 ## Statistics and card info
+
+**Selected Havuz presentation (2026-11-23):** Read errors remain distinct from valid empty
+sections; a retained snapshot keeps its own scope and partial reads are not cached
+(`readErrorState`, `screenSnapshotLoader`, `statsScreen` tests). Comparison uses adjacent
+equal study-day windows or two deck scopes, with `passed / answers`, null accuracy without
+answers, shared axes and no percentage change from a zero baseline (`statsComparison.test.ts`).
+Kronometre plan progress is separate from card-review time and allocates time by subject
+(`todayPlanProgress`, `liveTodayPlan` tests). Section order/visibility is a durable local
+preference, outside collection backup/export (`statsLayout`, `settingsWrite` tests). Native
+lazy mounting is monotonic and bypassed with VoiceOver (`statsSectionPriority.test.ts`).
+These are independent product features; they do not claim Anki graph parity. Numeric chart
+tables are the owner's next step and are not included here.
 
 `lib/statsAuditSafety.test.ts` covers intraday/original due projection (a filtered card without an original due is read where it is, not as day 0), the inclusive upper horizon, backlog older than a year, integer daily load, Answer Buttons counting learning, relearning and filtered answers as learning and skipping manual rows and invalid ratings, Answer Buttons and Hourly Breakdown over 30/90/365 days before the next rollover as Anki's `buttons.rs`/`hours.rs` measure them (the per-day graphs keep 31/90/365 study days including today, which matches Anki's reviews graph, so the audit's one-day-edge note is not a difference), deck scopes matched by exact case, a filtered scope bound as one parameter, inactive review/relearning intervals and seven distinct Card Counts categories, New counting only active new cards. The Added graph dates a card by its id, the creation time Anki keeps through import, so a shared deck imported today is filed under the days its author added the cards (`lib/ankiStats.test.ts`). The study streak is labelled as collection-wide. Added count fields are optional at the API boundary so existing empty/loading snapshots remain valid; the screen renders absent initial values as zero. All-history Future Due has no ten-year cap; chart bucketing remains bounded while preserving totals. These calculations follow independently derived graph behavior; the current manual describes some older graph groupings, so the source registry also names the shared-core graph references.
 

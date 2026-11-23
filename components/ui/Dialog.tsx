@@ -31,6 +31,7 @@ interface AppDialogProps {
      * otherwise hold back until this one has gone.
      */
     closeAtOnce?: boolean;
+    onDismiss?: () => void;
     children?: React.ReactNode;
 }
 
@@ -50,6 +51,7 @@ export function AppDialog({
     closeLabel,
     cardStyle,
     closeAtOnce = false,
+    onDismiss,
     children,
 }: AppDialogProps) {
     const colors = useThemeColors();
@@ -61,6 +63,7 @@ export function AppDialog({
             transparent
             animationType={closeAtOnce && !visible ? 'none' : 'fade'}
             onRequestClose={onClose}
+            onDismiss={onDismiss}
             statusBarTranslucent
         >
             <KeyboardAvoidingView

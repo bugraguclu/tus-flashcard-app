@@ -3,6 +3,8 @@ import { Keyboard, ScrollView, type StyleProp, StyleSheet, View, type ViewStyle 
 import { Text, type TextInput } from '../AppText';
 import { Spacing, useThemeColors } from '../../constants/theme';
 import { sanitizeNumericDraft } from '../../lib/deckOptionsForm';
+import { useI18n } from '../../hooks/useI18n';
+import { useHelpHandoff } from '../../hooks/useHelpHandoff';
 import { Button, HelpButton } from '../ui/Button';
 import { Card, Divider } from '../ui/Card';
 import { SegmentedControl } from '../ui/Choice';
@@ -63,7 +65,9 @@ export function OptionCard({ title, description, children, wide = false, help }:
 }) {
     const colors = useThemeColors();
     const [helpOpen, setHelpOpen] = useState(false);
+    const { l } = useI18n();
     const closeHelp = () => setHelpOpen(false);
+    const helpLink = useHelpHandoff(helpOpen, closeHelp, help?.more ?? { article: 'deck-options' });
 
     return (
         <>
@@ -83,7 +87,7 @@ export function OptionCard({ title, description, children, wide = false, help }:
                 {children}
             </SettingsCard>
             {help ? (
-                <AppSheet visible={helpOpen} onClose={closeHelp} title={help.title} backdropLabel={help.dismissLabel}>
+                <AppSheet visible={helpOpen} onClose={closeHelp} onDismiss={helpLink.onDismiss} title={help.title} backdropLabel={help.dismissLabel}>
                     <SheetScrollView style={styles.helpScroll} contentContainerStyle={styles.helpContent} showsVerticalScrollIndicator={false}>
                         <Text style={[Type.rowTitle, styles.helpSummary, { color: colors.textPrimary }]}>{help.summary}</Text>
                         <View style={styles.helpPoints}>
@@ -96,7 +100,7 @@ export function OptionCard({ title, description, children, wide = false, help }:
                         </View>
                         {help.note ? <Notice title={help.noteLabel}>{help.note}</Notice> : null}
                     </SheetScrollView>
-                    <Button label={help.dismissLabel} onPress={closeHelp} style={styles.helpDismiss} />
+                    <Button label={l('Daha fazla bilgi', 'Learn more')} variant="plain" onPress={helpLink.open} style={styles.helpDismiss} />
                 </AppSheet>
             ) : null}
         </>

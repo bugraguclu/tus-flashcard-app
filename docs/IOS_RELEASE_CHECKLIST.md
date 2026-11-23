@@ -95,6 +95,20 @@ schema changed.
 The selected package excludes Quick Search and the other rejected Havuz features; its
 complete scope and automated evidence are in [HAVUZ_SELECTED_SCOPE.md](HAVUZ_SELECTED_SCOPE.md).
 
+- Read-error injection: Stats and Study Analysis show Retry/partial notices, never fake zeros;
+  change deck/period and fail the new read: retained data keeps its own scope label.
+- Detailed Plan: edit, leave immediately, reopen and Continue; repeat on step 3, browser Back,
+  iOS back swipe and background/relaunch. New plan/Discard asks first. Failed writes retain
+  the draft; repeated Create commits once and waits for durable completion.
+- Help in airplane mode: search both languages and open a section. Read past it for 8 seconds:
+  no repeated anchor scrolling. Article Back and the native gesture agree. Open contextual help
+  from a filtered-deck form; returning retains typed searches, limits and deck name.
+- Browser flags/tags: preview counts match the resulting Cards and Notes query, including two
+  siblings with different flags. Search/deck controls stay in place.
+- Statistics: Today does not double-count card time or credit another course; layout Save/
+  Cancel/reset survives reopening, and at least one section stays. Equal-period/deck comparison
+  preserves denominators and missing values. Native lower graphs stay mounted on return;
+  VoiceOver reaches all sections. Item 6 numeric tables are deferred; 3 and 12 are excluded.
 - On an isolated collection, type an unsaved value into a new and a saved note, pin the field,
   then rename and reorder it through Kartlar:. Return and save: the latest value and pin follow
   that field. Removing it and adding a different field with its old name does not revive the draft.

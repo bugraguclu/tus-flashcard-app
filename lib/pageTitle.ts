@@ -18,6 +18,7 @@ const SCREEN_TITLES: Record<string, readonly [string, string]> = {
     '/import': ['İçe aktar', 'Import'],
     '/note-type': ['Not türünü düzenle', 'Edit Note Type'],
     '/note-types': ['Not türleri', 'Note Types'],
+    '/help': ['Yardım Merkezi', 'Help Center'],
     '/stats': ['İstatistikler', 'Statistics'],
     '/stopwatch': ['Kronometre', 'Stopwatch'],
     '/study-analysis': ['Çalışma Analiziniz', 'Your Study Analysis'],

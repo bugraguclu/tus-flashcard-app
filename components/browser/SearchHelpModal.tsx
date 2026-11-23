@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { literalSearchNameTerm } from '../../lib/searchQuery';
+import { useHelpHandoff } from '../../hooks/useHelpHandoff';
+import { CONTEXTUAL_HELP_TARGETS } from '../../lib/helpSearch';
 import { Text } from '../AppText';
 import { Button } from '../ui/Button';
 import { SectionLabel } from '../ui/Card';
@@ -21,6 +23,7 @@ interface SearchHelpModalProps {
 export function SearchHelpModal({ l, onAdd, onClose, styles, visible }: SearchHelpModalProps) {
     const [item, setItem] = useState<SearchHelpItem | null>(null);
     const [value, setValue] = useState('');
+    const helpLink = useHelpHandoff(visible, onClose, CONTEXTUAL_HELP_TARGETS.browserSearch);
     const valueInput = item?.value;
     const name = value.trim();
 
@@ -43,6 +46,7 @@ export function SearchHelpModal({ l, onAdd, onClose, styles, visible }: SearchHe
     return (
         <AppDialog
             visible={visible}
+            onDismiss={helpLink.onDismiss}
             onClose={close}
             closeButton
             title={valueInput?.label ?? l('Arama nasıl çalışır?', 'How search works')}
@@ -55,7 +59,7 @@ export function SearchHelpModal({ l, onAdd, onClose, styles, visible }: SearchHe
                     <Button label={l('Geri', 'Back')} variant="plain" onPress={clearValue} />
                     <Button label={l('Aramaya ekle', 'Add to search')} disabled={!name} onPress={submitValue} />
                 </>
-            ) : undefined}
+            ) : <Button variant="plain" label={l('Daha fazla bilgi', 'Learn more')} onPress={helpLink.open} />}
         >
             {valueInput ? (
                 <TextField

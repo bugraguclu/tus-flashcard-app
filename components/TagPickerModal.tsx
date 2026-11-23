@@ -3,6 +3,8 @@ import { FlatList, InteractionManager, Keyboard, Platform, StyleSheet, View } fr
 import { Text } from './AppText';
 import { FontSize, Spacing, type ColorScheme, useThemeColors } from '../constants/theme';
 import { longPressHaptic } from '../lib/haptics';
+import { countForTag, countMatchingSelectedTags, type BrowserTagFacetCounts } from '../lib/browserFilterCounts';
+import type { BrowserTableMode } from '../lib/browserRepository';
 import { getAllTags } from '../lib/noteManager';
 import { filterTagsForSearch, searchNamesKnownTag } from '../lib/tagPickerFilter';
 import { useI18n } from '../hooks/useI18n';
@@ -25,6 +27,8 @@ interface TagPickerModalProps {
     title?: string;
     /** Browser filters load only tags reachable from the active deck/card scope. */
     loadTags?: () => string[];
+    loadTagCounts?: () => BrowserTagFacetCounts;
+    resultUnit?: BrowserTableMode;
     /** Offered where tags can be renamed (the browser's tag filter): holding a row asks for it. */
     onRenameTag?: (tag: string) => void;
 }
@@ -66,11 +70,14 @@ export default function TagPickerModal({
     allowCreate = true,
     title,
     loadTags = getAllTags,
+    loadTagCounts,
+    resultUnit = 'cards',
     onRenameTag,
 }: TagPickerModalProps) {
     const { t, l } = useI18n();
     const colors = useThemeColors();
     const styles = useMemo(() => createStyles(colors), [colors]);
+    const [tagFacetCounts, setTagFacetCounts] = useState<BrowserTagFacetCounts | null>(null);
     const [knownTags, setKnownTags] = useState<string[]>([]);
     const [draftTags, setDraftTags] = useState<string[]>([]);
     const [addVisible, setAddVisible] = useState(false);
@@ -84,6 +91,7 @@ export default function TagPickerModal({
         const selected = uniqueTags(selectedTags);
         // Paint the modal first. A collection can contain thousands of distinct tags; the SQL
         // aggregation and sort must not compete with the opening animation on the JS thread.
+        setTagFacetCounts(null);
         setKnownTags(selected);
         setDraftTags(selected);
         setSearchText('');
@@ -96,6 +104,12 @@ export default function TagPickerModal({
                 const all = uniqueTags([...loadTags(), ...selected])
                     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
                 if (!cancelled) setKnownTags(all);
+                if (loadTagCounts) {
+                    try { const counts = loadTagCounts(); if (!cancelled) setTagFacetCounts(counts); }
+                    catch (error) { console.warn('[TagPickerModal] counts failed:', error); }
+                }
+            } catch (error) {
+                console.warn('[TagPickerModal] tag load failed:', error);
             } finally {
                 if (!cancelled) setLoadingTags(false);
             }
@@ -104,8 +118,12 @@ export default function TagPickerModal({
             cancelled = true;
             task.cancel();
         };
-    }, [visible, selectedTags, loadTags]);
+    }, [visible, selectedTags, loadTags, loadTagCounts]);
 
+    const previewCount = tagFacetCounts ? countMatchingSelectedTags(tagFacetCounts, draftTags) : null;
+    const confirmLabel = previewCount === null ? l('Onayla', 'Confirm') : resultUnit === 'notes'
+        ? l(`${previewCount} not göster`, `Show ${previewCount} notes`)
+        : l(`${previewCount} kart göster`, `Show ${previewCount} cards`);
     const selectedKeys = useMemo(() => new Set(draftTags.map(tagKey)), [draftTags]);
     const trimmedQuery = searchText.trim();
     const filteredTags = useMemo(
@@ -219,7 +237,7 @@ export default function TagPickerModal({
                         </Text>
                     </View>
                     <Button label={t('common.cancel')} variant="plain" onPress={onCancel} />
-                    <Button label={l('Onayla', 'Confirm')} onPress={confirmTags} />
+                    <Button label={confirmLabel} onPress={confirmTags} />
                 </>
             )}
         >
@@ -305,7 +323,8 @@ export default function TagPickerModal({
                             <CheckRow
                                 key={tagKey(tag)}
                                 label={path}
-                                accessibilityLabel={path}
+                                accessory={tagFacetCounts ? <Badge label={String(countForTag(tagFacetCounts, tag))} /> : undefined}
+                                accessibilityLabel={tagFacetCounts ? `${path}, ${countForTag(tagFacetCounts, tag)} ${resultUnit === 'notes' ? l('not', 'notes') : l('kart', 'cards')}` : path}
                                 checked={selectedKeys.has(tagKey(tag))}
                                 onChange={() => toggleTag(tag)}
                                 onLongPress={onRenameTag ? () => { longPressHaptic(); onRenameTag(tag); } : undefined}

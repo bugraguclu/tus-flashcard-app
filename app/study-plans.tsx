@@ -21,6 +21,7 @@ import { alert, confirm } from '../lib/confirm';
 import { formatStudyTotal } from '../lib/stopwatch';
 import { recentStudySubjects } from '../lib/stopwatchStore';
 import { studyDayYmd } from '../lib/studyAnalysis';
+import { loadStudyPlanWizardDraft } from '../lib/studyPlanWizardDraft';
 import { longPressHaptic } from '../lib/haptics';
 import { loadStudyPlans, removeStudyPlans, saveStudyPlans } from '../lib/studyPlanStore';
 import { WEEKDAYS_MONDAY_FIRST, emptyStudyPlan, formatPlanClock, ymdToLocalDate, type StudyPlanBlock } from '../lib/studyPlans';
@@ -44,18 +45,20 @@ export default function StudyPlansScreen() {
     const insets = useSafeAreaInsets();
     const { settings } = useAppSettings();
     const [plans, setPlans] = useState<StudyPlanBlock[]>([]);
+    const [draftStep, setDraftStep] = useState<number | null>(null);
     const [readable, setReadable] = useState(true);
     const [editing, setEditing] = useState<{ plan: StudyPlanBlock; isNew: boolean } | null>(null);
     const [expanded, setExpanded] = useState<Set<string>>(new Set());
     const [recentSubjects, setRecentSubjects] = useState<string[]>([]);
 
     const reload = useCallback(() => {
+        const savedDraft = loadStudyPlanWizardDraft(studyDayYmd(Date.now(), settings.dayRolloverHour), Date.now(), { preserveCorrupt: true });
+        setDraftStep(savedDraft.status === 'restored' ? savedDraft.value.step : null);
         try {
             setPlans(loadStudyPlans());
             setReadable(true);
         } catch (error) {
             console.warn('[StudyPlans] read failed:', error);
-            setPlans([]);
             setReadable(false);
         }
         try {
@@ -63,7 +66,7 @@ export default function StudyPlansScreen() {
         } catch {
             setRecentSubjects([]);
         }
-    }, []);
+    }, [settings.dayRolloverHour]);
     useFocusEffect(reload);
     const scrollRef = useRef<ScrollView>(null);
     const pull = usePullToRefresh({
@@ -254,7 +257,7 @@ export default function StudyPlansScreen() {
                             // Three lines, the list a detailed plan builds.
                             icon: <DragHandleIcon color={colors.accent} size={22} />,
                             title: l('Detaylı Plan', 'Detailed Plan'),
-                            summary: l('Derslerinizi, sürelerinizi ve haftalık kapasitenizi girin; takvim hazırlansın.', 'Enter your courses, hours and weekly capacity to build a calendar.'),
+                            summary: draftStep === null ? l('Derslerinizi, sürelerinizi ve haftalık kapasitenizi girin; takvim hazırlansın.', 'Enter your courses, hours and weekly capacity to build a calendar.') : l(`Kaydedilmiş taslak · Adım ${draftStep + 1}`, `Saved draft · Step ${draftStep + 1}`),
                             onPress: () => router.push('/study-plan-wizard' as any),
                         },
                     ].map((action) => (
@@ -271,7 +274,7 @@ export default function StudyPlansScreen() {
                 </Section>
 
                 {!readable ? (
-                    <Notice tone="danger">
+                    <Notice tone="danger" action={<Button label={l('Tekrar dene', 'Try again')} onPress={reload} />} >
                         {l('Kaydedilen planlar okunamadı. Üzerlerine yazılmaması için düzenleme kapalı.', 'Saved plans could not be read. Editing is off so they are not overwritten.')}
                     </Notice>
                 ) : entries.length === 0 ? (

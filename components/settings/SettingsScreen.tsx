@@ -1417,6 +1417,7 @@ export default function SettingsScreen({ section: activeSection }: { section: Se
 
     const renderAbout = () => (
         <Card divided title="TusAnkiM" description={l(`Sürüm ${Constants.expoConfig?.version ?? '1.0.0'} • Anki paketleriyle çalışan, verilerini cihazınızda tutan bağımsız bir kart uygulaması. Anki veya Ankitects ile bağlantılı değildir.`, `Version ${Constants.expoConfig?.version ?? '1.0.0'} • An independent flashcard app that works with Anki packages and keeps its data on your device. Not affiliated with Anki or Ankitects.`)}>
+            <ListRow title={l('Yardım ve kullanım kılavuzu', 'Help and user guide')} onPress={() => router.push('/help')} />
             <ListRow title={l('Gizlilik politikası', 'Privacy Policy')} onPress={() => openExternalPage(PRIVACY_URL)} accessibilityRole="link" chevron={false} accessory={<ExternalLinkIcon color={colors.textMuted} />} />
             <ListRow title={l('Destek', 'Support')} onPress={() => openExternalPage(SUPPORT_URL)} accessibilityRole="link" chevron={false} accessory={<ExternalLinkIcon color={colors.textMuted} />} />
         </Card>

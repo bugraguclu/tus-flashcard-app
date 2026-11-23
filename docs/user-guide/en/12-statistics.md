@@ -283,3 +283,21 @@ selected, or the chosen deck's subdecks (**Subdecks**). Filtered decks are not l
 - [Card Browser and search](10-browser-and-search.md)
 - [Filtered decks and Custom Study](11-filtered-decks.md)
 - [Deck options](06-deck-options.md)
+
+## Plans, layout and comparison {#local-layout-and-comparison}
+
+Today keeps card time separate from the Kronometre plan. It shows planned, studied and
+remaining time and completed blocks. Time on another course cannot complete a planned
+course. Days without a plan show no plan box; progress refreshes while the screen is focused.
+
+Edit moves sections up/down or hides them. Save keeps the layout on this device; Cancel keeps
+the previous layout. At least one section remains visible. Wide web windows can use two
+columns; iPhone uses one column.
+
+Comparison shows the last 7/30/90 study days against the previous equal period, or two decks
+over the same period. Time comes from card review records. Accuracy shows passed answers /
+all answers; no answers means no accuracy value. Tap chart bars for details. Numeric chart
+tables are deferred to the next step.
+
+Read failures never become zero study. Retry reads again; retained previous data keeps its
+own deck and period labels.

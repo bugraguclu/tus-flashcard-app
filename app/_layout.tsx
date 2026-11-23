@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Stack, router as globalRouter, useNavigationContainerRef, useRouter } from 'expo-router';
+import { Stack, router as globalRouter, useNavigationContainerRef, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import {
@@ -493,6 +493,8 @@ function StartupGate({ children }: { children: React.ReactNode }) {
 
 /** Renders the navigator + DialogHost; lives inside ThemeGate so it can read live theme colors. */
 function AppStack() {
+    const pathname = usePathname();
+    const rootOwnsMain = pathname !== '/' && pathname !== '/decks';
     const router = useRouter();
     const colors = useThemeColors();
     const isDarkTheme = useIsDarkTheme();
@@ -561,6 +563,7 @@ function AppStack() {
                 the page that is actually drawn. */}
             <StatusBar style={isDarkTheme ? 'light' : 'dark'} />
             {Platform.OS === 'web' ? <WebAppIntegrations /> : null}
+            <View style={{ flex: 1 }} nativeID="tus-app-main" {...(Platform.OS === 'web' && rootOwnsMain ? { role: 'main', tabIndex: -1 } as any : {})}>
             <Stack
                 screenOptions={{
                     headerShown: false,
@@ -758,6 +761,7 @@ function AppStack() {
                     }}
                 />
             </Stack>
+            </View>
             <DialogHost />
         </>
     );

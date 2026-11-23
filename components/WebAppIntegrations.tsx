@@ -146,6 +146,11 @@ export default function WebAppIntegrations() {
 
     return (
         <>
+            <a id="tus-skip-link" href="#tus-main-content" onClick={(event) => {
+                event.preventDefault();
+                const target = Array.from(document.querySelectorAll<HTMLElement>('[role="main"]')).reverse().find((entry) => entry.getClientRects().length > 0 && !entry.closest('[aria-hidden="true"], [inert]'));
+                target?.focus();
+            }}>{l('Ana içeriğe geç', 'Skip to main content')}</a>
             <KeyboardShortcutsDialog visible={shortcutsVisible} onClose={() => setShortcutsVisible(false)} />
             {dragging ? (
                 <View style={[styles.overlay, { pointerEvents: 'none' }]} accessibilityLiveRegion="polite">

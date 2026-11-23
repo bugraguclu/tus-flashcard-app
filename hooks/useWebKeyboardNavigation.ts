@@ -43,7 +43,11 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
         if (Platform.OS !== 'web' || typeof document === 'undefined') return undefined;
         const root = document.documentElement;
         const style = document.createElement('style');
-        style.textContent = FOCUS_RING_CSS;
+        style.textContent = FOCUS_RING_CSS + `
+            #tus-skip-link { position: fixed; left: -9999px; top: 12px; z-index: 100000; padding: 12px 16px; background: var(--tus-focus-halo); color: var(--tus-focus-ring); border-radius: 8px; font: 600 16px system-ui; }
+            #tus-skip-link:focus { left: 12px; }
+            #tus-main-content:focus, #tus-app-main:focus { outline: none !important; box-shadow: none !important; }
+        `;
         document.head.appendChild(style);
 
         const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '');

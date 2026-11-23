@@ -38,6 +38,14 @@ import {
 import { getAllSubjects } from './subjects';
 import type { AppSettings, StudyCard, Subject } from './types';
 import { localDayNumber } from './ankiState';
+import type { StatsSnapshotSection } from './readErrorState';
+import {
+    EMPTY_TODAY_PLAN_PROGRESS,
+    getTodayPlanProgress,
+    type TodayPlanProgress,
+} from './todayPlanProgress';
+
+export type { StatsSnapshotSection } from './readErrorState';
 
 export const EMPTY_TODAY_STATS: TodayAnswerStats = {
     reviewed: 0,
@@ -89,6 +97,7 @@ export interface StatsDeckProgress {
 export interface StatsScreenSnapshot {
     ankiStats: AnkiStatsSnapshot;
     todayStats: TodayAnswerStats;
+    todayPlan: TodayPlanProgress;
     streak: StudyStreak;
     /** Every study day with answers; the Reviews graph buckets them by the chosen range. */
     reviewDays: ReviewDay[];
@@ -99,6 +108,11 @@ export interface StatsScreenSnapshot {
     decks: Deck[];
     filteredScopeCardIds?: number[];
     currentWeekStudiedDays: Set<string>;
+    /** Deck scope and date range this snapshot was actually built for. */
+    scopeDeckName: string | null;
+    scopeRange: StatsDateRange;
+    /** Sections whose read failed during a partial snapshot; empty when complete. */
+    failedSections: StatsSnapshotSection[];
 }
 
 export interface StatsScreenSnapshotParams {
@@ -111,14 +125,29 @@ export interface StatsScreenSnapshotParams {
 
 /** One read model for every database-backed section on Statistics. */
 export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): StatsScreenSnapshot {
+    const failedSections: StatsSnapshotSection[] = [];
+    let firstError: unknown = null;
+    const recordFailure = (section: StatsSnapshotSection, error: unknown) => {
+        if (!failedSections.includes(section)) failedSections.push(section);
+        if (firstError === null) firstError = error;
+    };
+
     let decks: Deck[] = [];
+    let decksFailed = false;
     try {
         decks = getAllDecks();
     } catch (error) {
+        decksFailed = true;
+        recordFailure('decks', error);
         console.warn('[Stats] deck list failed:', error);
     }
 
     let filteredScopeCardIds: number[] | undefined;
+    if (decksFailed && params.deckName) {
+        // Without the deck list we cannot tell whether the scoped deck is filtered (which needs
+        // explicit card-id membership); throw rather than querying by deck name and returning zeros.
+        throw firstError instanceof Error ? firstError : new Error('Deck list read failed');
+    }
     const scopeDeck = params.deckName
         ? decks.find((deck) => deck.name === params.deckName) ?? null
         : null;
@@ -126,11 +155,15 @@ export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): Stats
         try {
             filteredScopeCardIds = getFilteredDeckCardIds(scopeDeck.name, params.settings);
         } catch (error) {
+            recordFailure('filteredScope', error);
             console.warn('[Stats] filtered deck membership failed:', error);
-            filteredScopeCardIds = [];
+            // A filtered deck whose membership failed cannot validly compute any section without
+            // producing misleading zeros; propagate so the screen shows an error instead.
+            throw error;
         }
     }
     const rolloverHour = params.settings.dayRolloverHour;
+    let succeededSections = 0;
 
     let ankiStats = EMPTY_ANKI_STATS;
     try {
@@ -142,21 +175,36 @@ export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): Stats
             filteredScopeCardIds,
             params.includeBacklog !== undefined ? { includeBacklog: params.includeBacklog } : undefined,
         );
+        succeededSections += 1;
     } catch (error) {
+        recordFailure('ankiStats', error);
         console.warn('[Stats] Anki graphs failed:', error);
     }
 
     let todayStats = EMPTY_TODAY_STATS;
     try {
         todayStats = getTodayAnswerStats(rolloverHour, params.deckName ?? undefined, filteredScopeCardIds);
+        succeededSections += 1;
     } catch (error) {
+        recordFailure('todayStats', error);
         console.warn('[Stats] getTodayAnswerStats failed:', error);
+    }
+
+    let todayPlan = EMPTY_TODAY_PLAN_PROGRESS;
+    try {
+        todayPlan = getTodayPlanProgress(rolloverHour);
+        succeededSections += 1;
+    } catch (error) {
+        recordFailure('todayPlan', error);
+        console.warn('[Stats] getTodayPlanProgress failed:', error);
     }
 
     let streak = EMPTY_STUDY_STREAK;
     try {
         streak = getStudyStreak(rolloverHour);
+        succeededSections += 1;
     } catch (error) {
+        recordFailure('streak', error);
         console.warn('[Stats] getStudyStreak failed:', error);
     }
 
@@ -165,65 +213,84 @@ export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): Stats
     let currentWeekStudiedDays = new Set<string>();
     try {
         currentWeekStudiedDays = getStudiedDaysBetween(monday, monday + 6, rolloverHour);
+        succeededSections += 1;
     } catch (error) {
+        recordFailure('currentWeek', error);
         console.warn('[Stats] current week failed:', error);
     }
 
     let reviewDays: ReviewDay[] = [];
     try {
         reviewDays = getReviewDays(params.deckName, rolloverHour, filteredScopeCardIds);
+        succeededSections += 1;
     } catch (error) {
+        recordFailure('reviewDays', error);
         console.warn('[Stats] review history failed:', error);
     }
 
     let addedDays: AddedDay[] = [];
     try {
         addedDays = getAddedDays(params.deckName, rolloverHour, filteredScopeCardIds);
+        succeededSections += 1;
     } catch (error) {
+        recordFailure('addedDays', error);
         console.warn('[Stats] added history failed:', error);
     }
 
     let hours: HourBucket[] = [];
     try {
         hours = getHourBreakdown(params.deckName, params.range, filteredScopeCardIds);
+        succeededSections += 1;
     } catch (error) {
+        recordFailure('hours', error);
         console.warn('[Stats] hourly breakdown failed:', error);
     }
 
     let deckStats: StatsDeckProgress[] = [];
-    try {
-        const regularDecks = decks.filter((deck) => !deck.isFiltered);
-        const perDeck = getDeckTypeCounts();
-        deckStats = getDirectDecksForScope(regularDecks, params.deckName)
-            .map((root) => {
-                const totals = { total: 0, newCount: 0, learningCount: 0, youngCount: 0, matureCount: 0 };
-                for (const deck of regularDecks) {
-                    if (deck.name !== root.name && !deck.name.startsWith(`${root.name}::`)) continue;
-                    const counts = perDeck.get(deck.id);
-                    if (!counts) continue;
-                    totals.total += counts.total;
-                    totals.newCount += counts.newCards;
-                    totals.learningCount += counts.learn;
-                    totals.youngCount += counts.young;
-                    totals.matureCount += counts.mature;
-                }
-                const studied = totals.total - totals.newCount;
-                return {
-                    name: root.name,
-                    displayName: getDeckDisplayName(root.name),
-                    ...totals,
-                    studied,
-                    pct: deckProgressPercent(studied, totals.total),
-                };
-            })
-            .sort((a, b) => a.name.localeCompare(b.name, params.localeTag));
-    } catch (error) {
-        console.warn('[Stats] deck stats failed:', error);
+    if (decksFailed) {
+        recordFailure('deckStats', firstError);
+    } else {
+        try {
+            const regularDecks = decks.filter((deck) => !deck.isFiltered);
+            const perDeck = getDeckTypeCounts();
+            deckStats = getDirectDecksForScope(regularDecks, params.deckName)
+                .map((root) => {
+                    const totals = { total: 0, newCount: 0, learningCount: 0, youngCount: 0, matureCount: 0 };
+                    for (const deck of regularDecks) {
+                        if (deck.name !== root.name && !deck.name.startsWith(`${root.name}::`)) continue;
+                        const counts = perDeck.get(deck.id);
+                        if (!counts) continue;
+                        totals.total += counts.total;
+                        totals.newCount += counts.newCards;
+                        totals.learningCount += counts.learn;
+                        totals.youngCount += counts.young;
+                        totals.matureCount += counts.mature;
+                    }
+                    const studied = totals.total - totals.newCount;
+                    return {
+                        name: root.name,
+                        displayName: getDeckDisplayName(root.name),
+                        ...totals,
+                        studied,
+                        pct: deckProgressPercent(studied, totals.total),
+                    };
+                })
+                .sort((a, b) => a.name.localeCompare(b.name, params.localeTag));
+            succeededSections += 1;
+        } catch (error) {
+            recordFailure('deckStats', error);
+            console.warn('[Stats] deck stats failed:', error);
+        }
+    }
+
+    if (succeededSections === 0 && failedSections.length > 0) {
+        throw firstError instanceof Error ? firstError : new Error('Statistics read failed');
     }
 
     return {
         ankiStats,
         todayStats,
+        todayPlan,
         streak,
         reviewDays,
         addedDays,
@@ -232,6 +299,9 @@ export function getStatsScreenSnapshot(params: StatsScreenSnapshotParams): Stats
         decks,
         filteredScopeCardIds,
         currentWeekStudiedDays,
+        scopeDeckName: params.deckName,
+        scopeRange: params.range,
+        failedSections,
     };
 }
 

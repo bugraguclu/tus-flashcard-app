@@ -1,3 +1,4 @@
+import { useOpeningAccessibilityFocus } from '../hooks/useOpeningAccessibilityFocus';
 import React, { createContext, forwardRef, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Animated,
@@ -200,6 +201,8 @@ export default function SwipeDismissSheet({
     }, [translateY]);
 
     const hasHeader = Boolean(title || subtitle || headerLeft || headerRight);
+    const headingRef = useRef<any>(null);
+    useOpeningAccessibilityFocus(headingRef, active && accessibilityViewIsModal !== false);
     const hasSides = Boolean(headerLeft || headerRight);
 
     if (presentation === 'dialog') {
@@ -225,7 +228,7 @@ export default function SwipeDismissSheet({
                             {headerLeft ? <View style={styles.dialogSide}>{headerLeft}</View> : null}
                             <View style={styles.dialogCopy}>
                                 {title ? (
-                                    <Text style={[styles.dialogTitle, { color: colors.textPrimary }]} accessibilityRole="header" numberOfLines={2}>
+                                    <Text ref={headingRef} style={[styles.dialogTitle, { color: colors.textPrimary }]} accessibilityRole="header" numberOfLines={2}>
                                         {title}
                                     </Text>
                                 ) : null}
@@ -277,7 +280,7 @@ export default function SwipeDismissSheet({
                         {hasSides ? <View style={[styles.side, styles.sideStart]}>{headerLeft}</View> : null}
                         <View style={styles.headerCopy}>
                             {title ? (
-                                <Text style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header" numberOfLines={2}>
+                                <Text ref={headingRef} style={[styles.title, { color: colors.textPrimary }]} accessibilityRole="header" numberOfLines={2}>
                                     {title}
                                 </Text>
                             ) : null}

@@ -43,6 +43,7 @@ import {
     type CardDeckMoveSnapshot,
 } from '../lib/noteManager';
 import { setDbSetting } from '../lib/storage';
+import { getBrowserFlagFilterCounts, getBrowserTagFilterCounts, type BrowserFlagFacetCounts } from '../lib/browserFilterCounts';
 import TagPickerModal from '../components/TagPickerModal';
 import DeckPickerModal from '../components/DeckPickerModal';
 import FilteredDeckOptionsModal from '../components/FilteredDeckOptionsModal';
@@ -326,6 +327,53 @@ export default function BrowserScreen() {
         () => getAllTags(tagCollectionScope),
         [tagCollectionScope],
     );
+
+
+    const loadScopedTagCounts = useCallback(
+        () => getBrowserTagFilterCounts({
+            tableMode,
+            deckIds: scopedDeckIds ? [...scopedDeckIds] : undefined,
+            cardIds: filteredScopeCardIds ? [...filteredScopeCardIds] : undefined,
+            markedOnly,
+            suspendedOnly,
+            flags: flagFilters.length === ALL_CARD_FLAGS.length ? undefined : flagFilters,
+        }, searchQuery),
+        [tableMode, scopedDeckIds, filteredScopeCardIds, markedOnly, suspendedOnly, flagFilters, searchQuery],
+    );
+    const flagFacetQuery = useMemo<BrowserCardQuery>(() => ({
+        tableMode,
+        deckIds: scopedDeckIds ? [...scopedDeckIds] : undefined,
+        cardIds: filteredScopeCardIds ? [...filteredScopeCardIds] : undefined,
+        markedOnly,
+        suspendedOnly,
+        tags: tagFilters,
+    }), [tableMode, scopedDeckIds, filteredScopeCardIds, markedOnly, suspendedOnly, tagFilters]);
+    const flagFacetKey = useMemo(() => JSON.stringify([
+        browserScopeKey,
+        flagFacetQuery,
+        searchQuery.trim(),
+    ]), [browserScopeKey, flagFacetQuery, searchQuery]);
+    const [flagFacets, setFlagFacets] = useState<{ key: string; counts: BrowserFlagFacetCounts } | null>(null);
+    const activeFlagFacetCounts = flagFacets?.key === flagFacetKey ? flagFacets.counts : null;
+    const hasBrowserSnapshot = Boolean(browserSnapshot);
+    useEffect(() => {
+        if (!showFlagFilterMenu || !hasBrowserSnapshot) return;
+        if (flagFacets?.key === flagFacetKey) return;
+        let cancelled = false;
+        const task = InteractionManager.runAfterInteractions(() => {
+            try {
+                const counts = getBrowserFlagFilterCounts(flagFacetQuery, searchQuery);
+                if (!cancelled) setFlagFacets({ key: flagFacetKey, counts });
+            } catch (error) {
+                console.warn('[Browser] flag facet counts failed:', error);
+                if (!cancelled) setFlagFacets(null);
+            }
+        });
+        return () => {
+            cancelled = true;
+            task.cancel();
+        };
+    }, [showFlagFilterMenu, hasBrowserSnapshot, flagFacets?.key, flagFacetKey, flagFacetQuery, searchQuery]);
 
 
     const batchMoveDeckItems = useMemo(
@@ -1129,6 +1177,8 @@ export default function BrowserScreen() {
                 colors={colors}
                 filteredCards={filteredCards}
                 flagFilters={flagFilters}
+                flagFacetCounts={activeFlagFacetCounts}
+                tableMode={tableMode}
                 hasMoreCards={hasMoreCards}
                 hasNoFlagFilter={hasNoFlagFilter}
                 l={l}
@@ -1186,6 +1236,8 @@ export default function BrowserScreen() {
                 selectedTags={tagFilters}
                 allowCreate={false}
                 loadTags={loadScopedTags}
+                loadTagCounts={loadScopedTagCounts}
+                resultUnit={tableMode}
                 title={l('Etikete göre filtrele', 'Filter by Tag')}
                 onCancel={() => setShowTagFilter(false)}
                 onConfirm={(tags) => {

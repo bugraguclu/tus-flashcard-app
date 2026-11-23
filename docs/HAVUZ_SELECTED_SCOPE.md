@@ -7,33 +7,81 @@ The owner selected individual numbered items from the before/after report. A num
 an extra comment means approval; explicit comments take precedence. They also confirmed that
 items 14–15 must use current production source rather than replace it with Havuz's older site.
 
-## Scope actually applied
+## Scope actually applied — revised owner approval
 
-- **1–3:** excluded entirely (read-error overhaul, persistent plan wizard draft, Quick Search).
-- **4–6:** held; not added (offline Help Center, contextual facet counts, chart data tables).
-- **7–12:** excluded from this package (Havuz focus package, Today plan panel, section layout,
-  comparisons, lazy graphs, bundle budgets). Existing production accessibility and other
-  unrelated behavior are retained.
-- **13:** approved with the owner's follow-up changes: image previews use the current live
-  row design, with no generated image emoji. Tapping or holding a thumbnail (web right-click
-  too) opens Soru/Cevap directly, using the same preview content as Kart Ekle. Each template
-  side shows all its images. The sheet stays above Kartlarım, preserving search, filters and scroll. The remembered preview option
-  defaults on; missing images leave no decorative fallback icon. Original media is unchanged.
-- **14:** current live search implementation retained, with its remaining fixes applied:
-  nested unbounded regex repetition is refused, Custom Study names are escaped literally,
-  and old `is:relearn` scope terms are upgraded without rewriting quoted field text.
-  The existing Anki 26.09.3 oracle remains the reference for supported search behavior.
-- **15:** current live `website/` retained. No older Havuz site is imported. The existing
-  Turkish/English search guide receives item 14's corrections through its current sources.
-- **16:** approved pause behavior is retained for existing menus, pickers, backgrounding and
-  whiteboard. Its original Quick Search-specific fix has no runtime target, because item 3
-  is explicitly excluded. No Quick Search provider/hook or UI dependency is introduced.
-- **17:** stable local field identity protects unsaved editor values and pins through field
-  rename/reorder. The identity is local metadata, excluded from Anki field export. Note-type
-  and Empty Cards deletion refuse read-only tabs before backup, await durable completion,
-  and restore only affected rows after write failure, leaving unrelated edits intact.
+On 2026-11-23 the owner explicitly replaced the initial selection and authorized production
+deployment: **1–2 yes; 3 delete; 4–5 yes; 6 next step; 7–11 yes; 12 delete; 13–17 yes.**
 
-## Evidence and verification
+- **1:** Stats and Study Analysis distinguish read failures from valid empty data. Failed
+  sections are labelled, partial results are not cached, Retry reloads data, and previous data
+  retains its own deck/period labels. Plan reads now propagate errors before a write.
+- **2:** Persistent local wizard draft, with Continue / New plan / Discard and the saved step.
+  Adapted to the live three-route wizard instead of replacing it with Havuz's single-screen
+  implementation. Autosave coalesces edits; leaving waits for the latest durable draft. An
+  unreadable draft cannot become an editable empty form. Plan creation and draft removal
+  commit together, repeated Create presses are ignored, and failures preserve the draft.
+- **3:** Quick Search is excluded, including its provider, shortcut and triggers.
+- **4:** Offline Turkish/English Help Center compiled from the **current** guide sources.
+  Search, verified section targets and contextual links are included. Article drill-down uses
+  routed pages so header Back, browser Back and iOS back swipe agree. Nested modal handoffs
+  await dismissal; the filtered-deck form remains mounted while its guide is open.
+- **5:** Contextual flag/tag counts and result actions use the live browser query. Notes mode
+  deduplicates sibling cards; combinations use exact OR unions. Count failures hide counts
+  while filtering remains usable.
+- **6:** **Next step only.** No chart data-table control, sheet or runtime dependency is added.
+- **7:** Retain the newer live keyboard, focus-ring and modal trapping system. Add the missing
+  Skip to main link, main landmarks and native screen/sheet opening focus. The navigator's
+  wrapper remains the same element across routes.
+- **8:** Today shows planned/studied/remaining Kronometre time and blocks, with live refresh
+  while focused. Other subjects do not fill a planned course; card review time stays separate.
+- **9:** Local statistics order/visibility and optional two columns on wide web. Save awaits
+  durable storage, Cancel retains saved preferences, and one section always stays visible.
+- **10:** Equal adjacent 7/30/90-study-day periods or two deck scopes, with shared axes,
+  explicit accuracy denominators and separate missing/zero values. Chart tables are deferred.
+- **11:** Native sections mount near the viewport, remain mounted once shown and mount eagerly
+  with VoiceOver. Web keeps its complete accessible reading order. No device speed claim.
+- **12:** Bundle-budget modules, scripts and CI checks are excluded.
+- **13:** The approved no-emoji thumbnail rows and direct Soru/Cevap preview are retained.
+  Tap/hold opens the shared Kart Ekle preview over Kartlarım, preserving context and originals.
+- **14:** Current live search plus the already selected regex/literal-name/legacy-state fixes.
+- **15:** Current live website retained; no old Havuz website is substituted. Guide updates
+  flow into the current site. The current site's build/verify is checked alongside the app.
+- **16:** Existing modal/background/whiteboard Auto Advance pause remains. The rejected
+  Quick Search-specific dependency is excluded.
+- **17:** Stable local editor field identity and durable note-type / Empty Cards deletion,
+  with the approved backups, read-only refusal and scoped rollback, are retained.
+
+## Next step
+
+Item **6** is the only deferred numbered feature: numeric views for six statistics charts,
+including comparison. It is not part of this production deployment. Items **3 and 12** are
+removed from the delivery scope, rather than queued for later.
+
+## Current release verification
+
+The expanded selection passed `npm run quality` on Node 24.16.0: **371 files / 3,950 tests
+passed**, 2 files / 5 tests skipped. TypeScript, the guide generator and the canonical iOS/source
+registry checks passed. The existing dependency advisory gate reports no blocking advisories.
+
+The production app exported successfully with `TUSANKIM_WEB_BASE=/uygulama`. The unchanged
+current website's build and verify passed: 33 pages, 32 sitemap URLs, 65 search entries, 1,195
+reference records, eight script tests and 17 planner tests. The two outputs were assembled
+with the actual Vercel packaging script. HTTP checks on ten website/app paths verified 200
+responses and every linked script/stylesheet, including Help and all wizard routes.
+
+Visual desktop browser QA could not run in this chat: browser access is unavailable and both
+native Chrome and Safari reported `cgWindowNotFound`. No new visual tap-through is claimed.
+The comparison's actual rendered component has additional regressions for real zero accuracy/
+time, visible answer denominators and local deck selection. Prior item 13 visual evidence is
+retained below; current tests cover its shared Soru/Cevap preview.
+
+Physical iPhone testing remains explicitly owner-deferred ("Cihaz kontrolü sonraya kalsın").
+This authorization deploys the public **web preview**; it does not claim an App Store/native
+release. Production publication is authorized by the revised instruction; this commit is the
+verified candidate to promote from `codex/havuz-approved` to `master` without force.
+
+## Earlier selected-package verification (historical)
+
 
 - Before the fixes, the added focused regressions failed: 19 failures across the six edited
   test files confirmed the missing search guards, field identity and deletion guarantees.
@@ -119,4 +167,4 @@ design system and keeps image-free rows free of those older leading icons.
 
 The live homepage was inspected at `https://tusankim.vercel.app/`. Its current card demo,
 study-planning page links and other site structure are preserved. The 31-page Havuz snapshot
-is not substituted. Changes are prepared locally for review; no deployment is claimed here.
+is not substituted. The original package was prepared locally. The revised owner instruction above authorizes publishing the expanded selected package; final deployment evidence is recorded separately.

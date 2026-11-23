@@ -1,7 +1,6 @@
 # Yardım merkezi ekranı (yeni)
 
-Bu dosya, makalelerin (`tr/`, `en/`) uygulamanın içinde nasıl gösterileceğini tarif eder. Ekran
-henüz yok; aşağıdaki yerleşim ve metinler onu kuracak geliştirme için hazırlandı.
+Bu dosya, makalelerin (`tr/`, `en/`) uygulamanın içinde nasıl gösterileceğini tarif eder. Ekran uygulandı; aşağıdaki metinler ve güncel kılavuzlar çevrimdışı modüle derlenir.
 
 ## Ekran
 
@@ -11,13 +10,13 @@ henüz yok; aşağıdaki yerleşim ve metinler onu kuracak geliştirme için haz
 - **Görünüm:** Gözat, İçe aktar ve Dışa aktar gibi tam ekran bir yardımcı ekran:
   `components/ScreenHeader.tsx` başlığı, yerel geri hareketi (back swipe) açık. Bir sayfa (sheet)
   değildir; uzun metin okunacağı için tam ekran açılır.
-- **Makaleler arası geçiş:** Ekranın içinde yerel durumla yapılır, her makale için yeni rota
-  açılmaz. Başlıktaki geri düğmesi makaleden listeye, listeden çıkışa götürür; geri kaydırma
-  hareketi ekranı doğrudan kapatır.
+- **Makaleler arası geçiş:** Her makale mevcut yardım ekranının üzerine itilen bir sayfadır.
+  Başlık geri düğmesi, tarayıcı Geri ve iOS geri kaydırması önceki makaleye/listeye döner;
+  önceki arama ve kaydırma korunur. Aynı makaledeki bölüm bağlantıları yerinde kaydırır.
 - **İçerik kaynağı:** Uygulamaya gömülü gelir, internet gerektirmez. `docs/user-guide/{tr,en}/*.md`
   dosyalarından üretilen bir modül okunur (bkz. README › Uygulamaya ekleme). Dil, uygulama dilini
   izler (`useI18n().locale`).
-- **Web sürümünde:** Aynı rota `tusankim.vercel.app/help` adresinde de çalışır.
+- **Web sürümünde:** Aynı rota `tusankim.vercel.app/uygulama/help` adresinde de çalışır.
 
 ## Nereden açılır? (giriş noktaları)
 

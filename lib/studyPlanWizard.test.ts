@@ -5,6 +5,8 @@ import TestRenderer, { act, type ReactTestInstance } from 'react-test-renderer';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
+    data: new Map<string, string>(), readFailed: false, flush: vi.fn(), alert: vi.fn(), confirm: vi.fn(),
+    guardOptions: null as any,
     pushed: [] as string[],
     routerBack: 0,
     replaced: [] as string[],
@@ -16,6 +18,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('react-native', () => ({
     Platform: { OS: 'ios' },
+    AppState: { addEventListener: () => ({ remove: () => {} }) },
     StyleSheet: { create: (styles: unknown) => styles, hairlineWidth: 1 },
     ScrollView: 'ScrollView', View: 'View',
     useWindowDimensions: () => ({ width: 390, height: 844 }),
@@ -40,7 +43,7 @@ vi.mock('expo-router', () => {
     };
 });
 vi.mock('../hooks/useUnsavedChangesGuard', () => ({
-    useUnsavedChangesGuard: (dirty: boolean) => { h.held = dirty; },
+    useUnsavedChangesGuard: (dirty: boolean, options: any) => { h.held = dirty; h.guardOptions = options; },
 }));
 vi.mock('../constants/theme', () => {
     const colors = new Proxy({}, { get: () => '#000' });
@@ -48,9 +51,11 @@ vi.mock('../constants/theme', () => {
     return { useThemeColors: () => colors, FontSize: sizes, Spacing: sizes };
 });
 vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ l: (tr: string) => tr, locale: 'tr' }) }));
-vi.mock('../contexts/AppContext', () => ({ useAppSettings: () => ({ settings: { dayRolloverHour: 4 } }) }));
-vi.mock('./confirm', () => ({ alert: () => {} }));
-vi.mock('./studyPlanStore', () => ({ saveStudyPlans: (blocks: unknown[]) => { h.saved.push(...blocks); } }));
+vi.mock('../contexts/AppContext', () => ({ useAppSettings: () => ({ settings: { dayRolloverHour: 4 } }), useCollectionInvalidation: () => ({ invalidateCollection: vi.fn() }) }));
+vi.mock('./confirm', () => ({ alert: h.alert, confirm: h.confirm }));
+vi.mock('./studyPlanStore', () => ({ STUDY_PLANS_KEY: 'tus_study_plans_v1', saveStudyPlans: (blocks: unknown[]) => { h.saved.push(...blocks); } }));
+vi.mock('./db', () => ({ getDB: () => ({ getFirstSync: (_sql: string, key: string) => { if (h.readFailed) throw new Error('Storage busy'); return h.data.has(key) ? { value: h.data.get(key) } : null; }, runSync: (sql: string, key: string, value: string) => { if (sql.startsWith('DELETE')) h.data.delete(key); else h.data.set(key, value); }, execSync: () => {} }), readOnlyTabMessage: () => null, flushDatabaseWrites: h.flush }));
+vi.mock('../components/ReadErrorBanner', () => ({ ReadErrorBanner: 'ReadErrorBanner' }));
 vi.mock('../components/AppText', () => ({ Text: 'Text' }));
 vi.mock('../components/ScreenHeader', () => ({
     default: ({ onBack, backAccessibilityLabel }: { onBack: () => void; backAccessibilityLabel: string }) => (
@@ -88,6 +93,7 @@ beforeAll(() => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 });
 beforeEach(() => {
+    vi.useFakeTimers(); h.data.clear(); h.readFailed = false; h.flush.mockReset().mockResolvedValue(undefined); h.alert.mockReset(); h.confirm.mockReset();
     h.pushed = [];
     h.routerBack = 0;
     h.replaced = [];
@@ -97,6 +103,7 @@ beforeEach(() => {
     h.changeCapacity = null;
 });
 afterEach(() => {
+    vi.useRealTimers();
     if (renderer) act(() => renderer?.unmount());
     renderer = undefined;
 });
@@ -148,14 +155,47 @@ describe('the Detailed Plan wizard', () => {
         expect(h.held).toBe(true);
     });
 
-    it('saves the plan and leaves without asking', () => {
+    it('saves the plan and leaves after durable completion', async () => {
         mount(2);
         act(() => h.changeCapacity?.({ weeklyMinutes: [600, 600, 600, 600, 600, 600, 600] }));
         expect(h.held).toBe(true);
 
-        press('Oluştur');
+        await act(async () => { press('Oluştur'); });
         expect(h.saved.length).toBeGreaterThan(0);
         expect(h.held).toBe(false);
         expect(h.leftWizard).toBe(1);
     });
+});
+
+it('flushes the latest edit on guarded exit before the autosave timer', async () => {
+    mount(0);
+    act(() => renderer!.root.findByType('TextInput' as any).props.onChangeText('Latest exam'));
+    let allowed = false;
+    await act(async () => { allowed = await h.guardOptions.beforeLeave(); });
+    expect(allowed).toBe(true);
+    expect(JSON.parse(h.data.get('tus_study_plan_wizard_draft_v1')!).draft.targetExam).toBe('Latest exam');
+    expect(h.flush).toHaveBeenCalledOnce();
+});
+it('withholds an editable form when saved draft reads fail and restores it on retry', async () => {
+    h.readFailed = true; mount(0);
+    expect(renderer!.root.findAllByType('TextInput' as any)).toHaveLength(0);
+    expect(h.data.size).toBe(0);
+    h.readFailed = false;
+    await act(async () => renderer!.root.findByType('ReadErrorBanner' as any).props.onRetry());
+    expect(renderer!.root.findAllByType('TextInput' as any)).toHaveLength(1);
+    expect(h.flush).not.toHaveBeenCalled();
+});
+it('coalesces edits and holds repeated Create until the durable commit finishes', async () => {
+    mount(2);
+    act(() => h.changeCapacity?.({ weeklyMinutes: [600, 600, 600, 600, 600, 600, 600] }));
+    let finish!: () => void;
+    h.flush.mockReturnValueOnce(new Promise<void>((resolve) => { finish = resolve; }));
+    await act(async () => { press('Oluştur'); press('Oluştur'); });
+    const createdCount = h.saved.length;
+    expect(createdCount).toBeGreaterThan(0);
+    expect(h.leftWizard).toBe(0);
+    expect(h.flush).toHaveBeenCalledOnce();
+    await act(async () => { finish(); });
+    expect(h.saved).toHaveLength(createdCount);
+    expect(h.leftWizard).toBe(1);
 });

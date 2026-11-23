@@ -9,11 +9,16 @@ import type { StudyStreak, TodayAnswerStats } from '../../lib/reviewLogger';
 import WeekStreakStrip from '../WeekStreakStrip';
 import { Card } from '../ui/Card';
 import { ChevronRightIcon } from '../ui/icons';
+import type { TodayPlanProgress } from '../../lib/todayPlanProgress';
+import { ProgressBar, Notice } from '../ui/Feedback';
+import { Button } from '../ui/Button';
 import FlameGlyph from '../FlameGlyph';
 import { useStatsFormat } from './useStatsFormat';
 
 interface TodaySectionProps {
     today: TodayAnswerStats;
+    todayPlan?: TodayPlanProgress;
+    todayPlanFailed?: boolean;
     streak: StudyStreak;
     rolloverHour: number;
     dataVersion: number;
@@ -26,7 +31,7 @@ interface TodaySectionProps {
  * opens the Kronometre, whose sessions keep the streak going too, and a day of the week strip
  * opens that day in the Çalışma Takvimi, which draws its days the same way.
  */
-export default function TodaySection({ today, streak, rolloverHour, dataVersion, currentWeekStudiedDays }: TodaySectionProps) {
+export default function TodaySection({ today, streak, rolloverHour, dataVersion, currentWeekStudiedDays, todayPlan, todayPlanFailed }: TodaySectionProps) {
     const colors = useThemeColors();
     const router = useRouter();
     const navigation = useNavigation();
@@ -38,7 +43,7 @@ export default function TodaySection({ today, streak, rolloverHour, dataVersion,
     const figures = [
         { key: 'answers', value: f.count(today.reviewed), label: l('Cevap', 'Answers') },
         { key: 'accuracy', value: f.ratio(today.passed, today.reviewed), label: l('Doğruluk', 'Correct') },
-        { key: 'time', value: f.duration(today.studyTimeMs), label: l('Süre', 'Time') },
+        { key: 'time', value: f.duration(today.studyTimeMs), label: l('Kart süresi', 'Card time') },
         { key: 'new', value: f.count(today.newCardsIntroduced), label: l('Yeni kart', 'New cards') },
     ];
 
@@ -73,6 +78,13 @@ export default function TodaySection({ today, streak, rolloverHour, dataVersion,
                     </View>
                 ))}
             </View>
+            {todayPlanFailed ? <Notice tone="danger">{l('Bugünkü plan okunamadı.', "Today's plan could not be read.")}</Notice> : todayPlan?.hasPlan ? <View style={{ gap: Spacing.sm }}>
+                <Text style={[styles.best, { textAlign: 'left' }]}>{l('Kronometre planı · Tüm dersler', 'Stopwatch plan · All courses')}</Text>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>{l(`Planlanan ${f.duration(todayPlan.plannedMs)} · Çalışılan ${f.duration(todayPlan.studiedMs)} · Kalan ${f.duration(todayPlan.remainingMs)}`, `Planned ${f.duration(todayPlan.plannedMs)} · Studied ${f.duration(todayPlan.studiedMs)} · Remaining ${f.duration(todayPlan.remainingMs)}`)}</Text>
+                <ProgressBar value={todayPlan.progressRatio} accessibilityLabel={l('Bugünkü plan ilerlemesi', "Today's plan progress")} />
+                <Text style={styles.label}>{l(`${todayPlan.completedBlocks} / ${todayPlan.totalBlocks} blok tamamlandı`, `${todayPlan.completedBlocks} / ${todayPlan.totalBlocks} blocks completed`)}</Text>
+                <Button variant="plain" size="compact" label={todayPlan.nextBlock ? `${todayPlan.nextBlock.subject} · ${todayPlan.nextBlock.clockRange}` : l('Plan tamamlandı', 'Plan completed')} onPress={() => router.push(todayPlan.nextBlock ? '/stopwatch' : '/study-plans')} />
+            </View> : null}
             <View style={styles.week}>
                 <WeekStreakStrip
                     rolloverHour={rolloverHour}

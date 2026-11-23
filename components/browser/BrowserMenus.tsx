@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useThemeColors, type ColorScheme } from '../../constants/theme';
 import type { StudyCard, AppSettings } from '../../lib/types';
 import { getSetDueDateDefault } from '../../lib/setDueDateDefaults';
+import { countMatchingSelectedFlags, type BrowserFlagFacetCounts } from '../../lib/browserFilterCounts';
 import { FLAG_COLORS, type CardFlag } from '../../lib/models';
 import type { BrowserCardSortKey, BrowserTableMode } from '../../lib/studyRepository';
 import { cardFlagName, type SupportedLocale } from '../../lib/i18n';
@@ -310,6 +311,8 @@ interface OverflowMenuModalProps {
     colors: ColorScheme;
     filteredCards: StudyCard[];
     flagFilters: CardFlag[];
+    flagFacetCounts: BrowserFlagFacetCounts | null;
+    tableMode: BrowserTableMode;
     hasMoreCards: boolean;
     hasNoFlagFilter: boolean;
     l: BrowserI18n['l'];
@@ -343,6 +346,8 @@ export function OverflowMenuModal({
     colors,
     filteredCards,
     flagFilters,
+    flagFacetCounts,
+    tableMode,
     hasMoreCards,
     hasNoFlagFilter,
     l,
@@ -374,6 +379,7 @@ export function OverflowMenuModal({
     // instead of after the menu has shrunk away (useModalHandoff).
     const menu = useModalHandoff(showOverflowMenu);
     const closeInto = (next: () => void) => menu.handOff(() => { close(); next(); });
+    const resultLabel = (count: number) => tableMode === 'notes' ? l(`${count} not göster`, `Show ${count} notes`) : l(`${count} kart göster`, `Show ${count} cards`);
     const allFlags = flagFilters.length === ALL_CARD_FLAGS.length;
     const someFlags = flagFilters.length > 0;
     const allFlagsState = allFlags ? true : someFlags ? 'mixed' as const : false;
@@ -439,6 +445,7 @@ export function OverflowMenuModal({
                     <MenuItem
                         icon={<View style={styles.flagIconContainer} />}
                         label={l('Tümünü seç', 'Select all')}
+                        accessory={flagFacetCounts ? <Badge label={String(flagFacetCounts.total)} /> : null}
                         onPress={toggleAllFlagFilters}
                         checked={allFlagsState}
                     />
@@ -453,13 +460,15 @@ export function OverflowMenuModal({
                                 />
                             )}
                             label={cardFlagName(locale, flag)}
+                            accessory={flagFacetCounts ? <Badge label={String(flagFacetCounts.byFlag[flag])} /> : null}
                             checked={flagFilters.includes(flag)}
                             onPress={() => toggleFlagFilter(flag)}
                         />
                     ))}
                     <Text style={styles.flagFilterCount}>
-                        {l(`${flagFilters.length} seçenek seçili`, `${flagFilters.length} selected`)}
+                        {flagFacetCounts ? resultLabel(countMatchingSelectedFlags(flagFacetCounts, flagFilters)) : l(`${flagFilters.length} seçenek seçili`, `${flagFilters.length} selected`)}
                     </Text>
+                    {flagFacetCounts ? <Button size="compact" label={resultLabel(countMatchingSelectedFlags(flagFacetCounts, flagFilters))} onPress={close} /> : null}
                 </View>
             )}
             <MenuSeparator />

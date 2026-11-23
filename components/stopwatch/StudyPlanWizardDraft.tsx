@@ -1,93 +1,134 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
-import { useAppSettings } from '../../contexts/AppContext';
+import { useAppSettings, useCollectionInvalidation } from '../../contexts/AppContext';
 import { useI18n } from '../../hooks/useI18n';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
-import { alert } from '../../lib/confirm';
-import { hasSnapshotChanged, stableSnapshot } from '../../lib/dirtyState';
+import { alert, confirm } from '../../lib/confirm';
 import { studyDayYmd } from '../../lib/studyAnalysis';
-import { saveStudyPlans } from '../../lib/studyPlanStore';
+import { saveStudyPlans, STUDY_PLANS_KEY } from '../../lib/studyPlanStore';
 import { defaultDetailedPlanDraft, generateDetailedPlan, type DetailedPlanDraft } from '../../lib/studyPlans';
+import { clearStudyPlanWizardDraft, loadStudyPlanWizardDraft, saveStudyPlanWizardDraft, WIZARD_DRAFT_KEY } from '../../lib/studyPlanWizardDraft';
+import { commitSettingsWrite } from '../../lib/settingsWrite';
 
-/** The wizard's steps, in order, by the route that shows each under `/study-plan-wizard`. */
 export const STUDY_PLAN_WIZARD_STEPS = ['index', 'courses', 'capacity'] as const;
-
-interface StudyPlanWizardDraft {
-    draft: DetailedPlanDraft;
-    update: (patch: Partial<DetailedPlanDraft>) => void;
-    result: ReturnType<typeof generateDetailedPlan>;
-    /** Leaves the whole wizard, asking first when something was entered. */
-    leave: () => void;
-    /** Saves the plan generated from the draft as it is now, then leaves. */
-    create: () => void;
-    /** Each step calls this as it is shown. */
-    showingStep: (step: number) => void;
+interface Wizard {
+    draft: DetailedPlanDraft; update: (patch: Partial<DetailedPlanDraft>) => void;
+    result: ReturnType<typeof generateDetailedPlan>; leave: () => void; create: () => void;
+    showingStep: (step: number) => void; busy: boolean; readFailed: boolean; persistFailed: boolean;
+    resumeStep: number | null; discarded: boolean; retryRead: () => void; resume: () => void; discard: () => void;
 }
-
-const StudyPlanWizardContext = createContext<StudyPlanWizardDraft | null>(null);
-
-export function useStudyPlanWizardDraft(): StudyPlanWizardDraft {
-    const wizard = useContext(StudyPlanWizardContext);
-    if (!wizard) throw new Error('useStudyPlanWizardDraft must be used inside StudyPlanWizardProvider');
+const Context = createContext<Wizard | null>(null);
+export function useStudyPlanWizardDraft(): Wizard {
+    const wizard = useContext(Context);
+    if (!wizard) throw new Error('StudyPlanWizardProvider is required');
     return wizard;
 }
 
-/**
- * The Detailed Plan draft, shared by the wizard's steps. Each step is a page of the wizard's own
- * stack, so the back swipe goes to the step before; leaving the wizard, from its first step or with
- * its Cancel button, asks before discarding what was entered.
- *
- * Each step reports itself as it is shown, so browser Back from a later step goes to the step
- * before instead of asking about leaving.
- */
+/** Local drafts wrap the existing routed wizard; plans and draft removal commit together. */
 export function StudyPlanWizardProvider({ children }: { children: React.ReactNode }) {
-    const { l } = useI18n();
-    const router = useRouter();
-    // In the wizard's layout, this is the wizard's own route in the stack that opened it.
-    const navigation = useNavigation();
-    const { settings } = useAppSettings();
-    const [initialSnapshot] = useState(() => stableSnapshot(
-        defaultDetailedPlanDraft(studyDayYmd(Date.now(), settings.dayRolloverHour)),
-    ));
-    const [draft, setDraft] = useState<DetailedPlanDraft>(() => JSON.parse(initialSnapshot) as DetailedPlanDraft);
-    const [created, setCreated] = useState(false);
-    const update = useCallback((patch: Partial<DetailedPlanDraft>) => setDraft((current) => ({ ...current, ...patch })), []);
-    const result = useMemo(() => generateDetailedPlan(draft), [draft]);
-    const shownStepRef = useRef(0);
-    const showingStep = useCallback((step: number) => { shownStepRef.current = step; }, []);
-    const onFirstStep = useCallback(() => shownStepRef.current === 0, []);
-
-    useUnsavedChangesGuard(!created && hasSnapshotChanged(initialSnapshot, draft), {
-        title: l('Plan kaydedilmeden çıkılsın mı?', 'Leave without saving the plan?'),
-        message: l('Girdiğiniz bilgiler silinir.', 'What you entered will be discarded.'),
-        browserBackLeaves: onFirstStep,
-    });
-
-    const leave = useCallback(() => {
-        if (navigation.canGoBack()) navigation.goBack();
-        else router.replace('/study-plans' as any);
-    }, [navigation, router]);
-
-    // Leave only once the saved draft no longer holds the screen.
-    useEffect(() => {
-        if (created) leave();
-    }, [created, leave]);
-
-    const create = useCallback(() => {
-        const fresh = generateDetailedPlan(draft);
-        if (!fresh.ok) return;
+    const { l } = useI18n(); const router = useRouter(); const navigation = useNavigation();
+    const { settings } = useAppSettings(); const { invalidateCollection } = useCollectionInvalidation();
+    const today = studyDayYmd(Date.now(), settings.dayRolloverHour);
+    const [loaded, setLoaded] = useState(() => loadStudyPlanWizardDraft(today, Date.now(), { preserveCorrupt: true }));
+    const [draft, setDraft] = useState(() => loaded.status === 'restored' ? loaded.value.draft : defaultDetailedPlanDraft(today));
+    const [resumeStep, setResumeStep] = useState<number | null>(() => loaded.status === 'restored' ? loaded.value.step : null);
+    const [resumeTarget, setResumeTarget] = useState<number | null>(null);
+    const [step, setStep] = useState(0);
+    const [busy, setBusy] = useState(false); const [created, setCreated] = useState(false);
+    const [persistFailed, setPersistFailed] = useState(false); const [pending, setPending] = useState(false);
+    const touched = useRef(false); const operation = useRef(false);
+    const latest = useRef<{ step: number; draft: DetailedPlanDraft } | null>(null);
+    const sequence = useRef<Promise<unknown>>(Promise.resolve());
+    const enqueue = useCallback(<T,>(work: () => Promise<T>): Promise<T> => {
+        const next = sequence.current.then(work, work); sequence.current = next.catch(() => undefined); return next;
+    }, []);
+    const persist = useCallback(async () => {
+        const entry = latest.current;
+        if (!entry) { await sequence.current; return; }
         try {
-            saveStudyPlans(fresh.blocks);
-            setCreated(true);
+            await enqueue(() => commitSettingsWrite([WIZARD_DRAFT_KEY], () => {
+                if (!saveStudyPlanWizardDraft(entry.step, entry.draft)) throw new Error('Draft write failed');
+            }));
+            if (latest.current === entry) { latest.current = null; setPending(false); }
+            setPersistFailed(false);
+        } catch (error) { setPersistFailed(true); throw error; }
+    }, [enqueue]);
+    const showingStep = useCallback((next: number) => setStep(next), []);
+    const result = useMemo(() => generateDetailedPlan(draft), [draft]);
+    const finishLeaving = useCallback(() => {
+        if (navigation.canGoBack()) navigation.goBack(); else router.replace('/study-plans');
+    }, [navigation, router]);
+    const canLeave = useCallback(async () => {
+        try { await persist(); return true; } catch { return false; }
+    }, [persist]);
+    const onFirstStep = useCallback(() => step === 0, [step]);
+    useUnsavedChangesGuard(!created && (pending || persistFailed), {
+        title: l('Taslak kaydedilemeden çıkılsın mı?', 'Leave without saving the draft?'),
+        message: l('Yerel depolamaya yazılamadığı için son değişiklikleriniz kaybolabilir.', 'The latest changes may be lost because local storage could not be written.'),
+        browserBackLeaves: onFirstStep, beforeLeave: canLeave,
+    });
+    const update = useCallback((patch: Partial<DetailedPlanDraft>) => {
+        if (operation.current || loaded.status === 'error') return;
+        touched.current = true; setResumeStep(null);
+        setDraft((current) => { const next = { ...current, ...patch }; latest.current = { step, draft: next }; return next; });
+        setPending(true);
+    }, [step, loaded.status]);
+    useEffect(() => {
+        if (!touched.current || created || loaded.status === 'error') return;
+        latest.current = { step, draft }; setPending(true);
+        const timer = setTimeout(() => { if (!operation.current) void persist().catch(() => undefined); }, 300);
+        return () => clearTimeout(timer);
+    }, [step, draft, created, loaded.status, persist]);
+    useEffect(() => {
+        const subscription = AppState?.addEventListener?.('change', (state) => {
+            if (state !== 'active' && !operation.current) void persist().catch(() => undefined);
+        });
+        return () => { subscription?.remove(); if (!operation.current) void persist().catch(() => undefined); };
+    }, [persist]);
+    useEffect(() => {
+        if (resumeTarget === null) return;
+        if (step >= resumeTarget) { setResumeTarget(null); return; }
+        router.push(`/study-plan-wizard/${STUDY_PLAN_WIZARD_STEPS[step + 1]}` as any);
+    }, [step, resumeTarget, router]);
+    useEffect(() => { if (created) finishLeaving(); }, [created, finishLeaving]);
+    const retryRead = () => {
+        const next = loadStudyPlanWizardDraft(today, Date.now(), { preserveCorrupt: true }); setLoaded(next);
+        if (next.status === 'error') return;
+        setDraft(next.status === 'restored' ? next.value.draft : defaultDetailedPlanDraft(today));
+        setResumeStep(next.status === 'restored' ? next.value.step : null);
+    };
+    const reset = async () => {
+        if (operation.current) return; operation.current = true; setBusy(true);
+        try {
+            await enqueue(() => commitSettingsWrite([WIZARD_DRAFT_KEY], () => { if (!clearStudyPlanWizardDraft()) throw new Error('Draft delete failed'); }));
+            latest.current = null; touched.current = false; setPending(false); setPersistFailed(false);
+            setResumeStep(null); setLoaded({ status: 'empty' }); setDraft(defaultDetailedPlanDraft(today));
+            // Return through the wizard's own stack, retaining its parent and back gesture.
+            router.dismissTo('/study-plan-wizard');
+        } catch { setPersistFailed(true); }
+        finally { operation.current = false; setBusy(false); }
+    };
+    const discard = () => confirm(l('Plan taslağı silinsin mi?', 'Discard the saved draft?'),
+        l('Kaldığınız adım ve bilgiler silinir; yeni planla başlanır.', 'The saved step and entries will be cleared to start a new plan.'), () => { void reset(); }, { destructive: true });
+    const create = async () => {
+        if (operation.current || loaded.status === 'error') return;
+        const fresh = generateDetailedPlan(draft); if (!fresh.ok) return;
+        operation.current = true; setBusy(true);
+        try {
+            await enqueue(() => commitSettingsWrite([STUDY_PLANS_KEY, WIZARD_DRAFT_KEY], () => {
+                saveStudyPlans(fresh.blocks); if (!clearStudyPlanWizardDraft()) throw new Error('Draft delete failed');
+            }));
+            latest.current = null; touched.current = false; setPending(false); setCreated(true);
+            invalidateCollection({ keepsStudyQueue: true });
         } catch (error) {
             console.warn('[StudyPlanWizard] save failed:', error);
-            alert(l('Plan kaydedilemedi', 'The plan could not be saved'), l('Planlarınız değiştirilmedi.', 'Your plans were not changed.'));
-        }
-    }, [draft, l]);
-
-    const value = useMemo(
-        () => ({ draft, update, result, leave, create, showingStep }),
-        [draft, update, result, leave, create, showingStep],
-    );
-    return <StudyPlanWizardContext.Provider value={value}>{children}</StudyPlanWizardContext.Provider>;
+            alert(l('Plan kaydedilemedi', 'The plan could not be saved'), l('Planlarınız değiştirilmedi. Taslağınız korunuyor.', 'Your plans were not changed. Your draft is preserved.'));
+            latest.current = { step, draft }; setPending(true); setPersistFailed(true);
+        } finally { operation.current = false; setBusy(false); }
+    };
+    const value: Wizard = { draft, update, result, leave: finishLeaving, create, showingStep, busy,
+        readFailed: loaded.status === 'error', persistFailed, resumeStep, discarded: loaded.status === 'discarded', retryRead,
+        resume: () => { setResumeStep(null); touched.current = true; setResumeTarget(resumeStep); }, discard };
+    return <Context.Provider value={value}>{children}</Context.Provider>;
 }

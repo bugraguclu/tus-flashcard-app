@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useOpeningAccessibilityFocus } from '../hooks/useOpeningAccessibilityFocus';
 import { StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { FontSize, Spacing, useThemeColors } from '../constants/theme';
@@ -35,6 +36,8 @@ export default function ScreenHeader({
     tint,
 }: ScreenHeaderProps) {
     const colors = useThemeColors();
+    const headingRef = useRef<any>(null);
+    useOpeningAccessibilityFocus(headingRef);
     const foreground = tint?.foreground ?? colors.textPrimary;
 
     return (
@@ -54,7 +57,7 @@ export default function ScreenHeader({
                 </IconButton>
             )}
             <View style={[styles.titleBlock, leading === 'none' && styles.titleBlockCentred]}>
-                <Text style={[Type.title, { color: foreground }]} numberOfLines={1} accessibilityRole="header">
+                <Text ref={headingRef} style={[Type.title, { color: foreground }]} numberOfLines={1} accessibilityRole="header">
                     {title}
                 </Text>
                 {subtitle ? (

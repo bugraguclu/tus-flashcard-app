@@ -4,17 +4,17 @@
  */
 
 import { getDB } from './db';
-import { getDbSetting } from './dbSettings';
 import { normalizeStudyPlans, studyPlanProblem, type StudyPlanBlock } from './studyPlans';
 
-const PLANS_KEY = 'tus_study_plans_v1';
+export const STUDY_PLANS_KEY = 'tus_study_plans_v1';
+const PLANS_KEY = STUDY_PLANS_KEY;
 
 /**
  * Every stored plan. Throws when the stored list cannot be read, so a save never replaces plans
  * it could not see.
  */
 export function loadStudyPlans(): StudyPlanBlock[] {
-    const raw = getDbSetting(PLANS_KEY);
+    const raw = getDB().getFirstSync<{ value: string | null }>('SELECT value FROM settings WHERE key = ?', PLANS_KEY)?.value;
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) throw new Error('Çalışma planları okunamadı.');

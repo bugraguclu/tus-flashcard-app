@@ -14,6 +14,7 @@ import type { DeckTreeNode } from '../lib/deckManager';
 import { getDeckDisplayName } from '../lib/models';
 import { localizeTopicName } from '../lib/i18n';
 import { useI18n } from '../hooks/useI18n';
+import InfoCircleGlyph from './InfoCircleGlyph';
 import CardsGlyph from './CardsGlyph';
 import StatsGlyph from './StatsGlyph';
 import GearGlyph from './GearGlyph';
@@ -278,6 +279,7 @@ export function Sidebar(props: SidebarProps) {
             </ScrollView>
 
             <View style={styles.sidebarActions}>
+                <Button label={l('Yardım Merkezi', 'Help Center')} variant="secondary" size="compact" icon={<InfoCircleGlyph color={colors.textSecondary} size={20} />} onPress={() => navigate('/help')} style={styles.settingsBtn} />
                 <View style={styles.actionRow}>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => navigate('/browser')} {...webTitle(t('sidebar.myCards'))} accessibilityRole="button" accessibilityLabel={t('sidebar.myCards')}>
                         <CardsGlyph color={colors.textSecondary} size={20} />

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Animated, View, ScrollView, useWindowDimensions } from 'react-native';
+import { Animated, Platform, View, ScrollView, useWindowDimensions } from 'react-native';
 import { studyDataSettingsKey } from '../lib/studyDataSettings';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter, useLocalSearchParams } from 'expo-router';
@@ -11,7 +11,7 @@ import { useAppSettings, useCollectionInvalidation, useStudyScope } from '../con
 import DeckPickerModal from '../components/DeckPickerModal';
 import ScreenHeader from '../components/ScreenHeader';
 import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
-import { HelpButton } from '../components/ui/Button';
+import { Button, HelpButton } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { SegmentedControl } from '../components/ui/Choice';
 import { LoadingState, Notice } from '../components/ui/Feedback';
@@ -38,11 +38,21 @@ import { useRouteDeckScope } from '../hooks/useRouteDeckScope';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { getStatsScreenSnapshot } from '../lib/screenSnapshots';
 
+import { ReadErrorBanner, SectionReadErrorCard } from '../components/ReadErrorBanner';
+import { useLiveTodayPlan } from '../hooks/useLiveTodayPlan';
+import { describeMissingStatsSections, statsUiGroupFailed, type StatsUiSectionGroup } from '../lib/readErrorState';
+import { defaultStatsLayout, getVisibleStatsSections, isStatsLayoutDefault, loadStatsLayout, moveStatsSection, saveStatsLayoutDurably, setStatsLayoutColumns, toggleStatsSectionVisibility } from '../lib/statsLayout';
+import { DEFAULT_STATS_SECTION_ORDER } from '../lib/statsLayout';
+import { EAGER_STATS_SECTIONS, STATS_SECTION_ESTIMATED_HEIGHTS, type StatsSectionId } from '../lib/statsSectionPriority';
+import LazyStatsSection, { StatsSectionPriorityProvider, useStatsSectionPriority } from '../components/stats/LazyStatsSection';
+import { StatsEditableCard, StatsLayoutToolbar } from '../components/stats/StatsLayoutEditor';
+import ComparisonSection from '../components/stats/ComparisonSection';
+
 type RangeKey = Exclude<StatsRangeKey, 'custom'>;
 const RANGE_KEYS: readonly RangeKey[] = ['week', 'month', 'threeMonths', 'year', 'all'];
 
 export default function StatsScreen() {
-    const { t, l, localeTag } = useI18n();
+    const { t, l, locale, localeTag } = useI18n();
     const { width } = useWindowDimensions();
     const isCompact = width < 600;
     const colors = useThemeColors();
@@ -61,6 +71,30 @@ export default function StatsScreen() {
     const [schedulingRevision, setSchedulingRevision] = useState(() => getSchedulingRevision());
     const [deckPickerVisible, setDeckPickerVisible] = useState(false);
     const [helpVisible, setHelpVisible] = useState(false);
+    const [savedLayout, setSavedLayout] = useState(loadStatsLayout);
+    const [draftLayout, setDraftLayout] = useState(savedLayout);
+    const [editingLayout, setEditingLayout] = useState(false);
+    const [layoutSaving, setLayoutSaving] = useState(false);
+    const layoutSaveRef = useRef(false);
+    const [layoutAnnouncement, setLayoutAnnouncement] = useState('');
+    const [comparePrimaryDeck, setComparePrimaryDeck] = useState<string | null | undefined>();
+    const [compareBaselineDeck, setCompareBaselineDeck] = useState<string | null | undefined>();
+    const [pickerCurrent, setPickerCurrent] = useState<string | null>(null);
+    const [pickerSlot, setPickerSlot] = useState<'scope' | 'primary' | 'baseline'>('scope');
+    const layout = editingLayout ? draftLayout : savedLayout;
+    const visibleSections = useMemo(() => getVisibleStatsSections(layout), [layout]);
+    const eagerSections = useMemo(() => new Set<StatsSectionId>(editingLayout ? DEFAULT_STATS_SECTION_ORDER : [...visibleSections.slice(0, 3), ...EAGER_STATS_SECTIONS]), [editingLayout, visibleSections]);
+    const priority = useStatsSectionPriority(DEFAULT_STATS_SECTION_ORDER, eagerSections);
+    const useTwoColumns = Platform.OS === 'web' && width >= 960 && layout.columns === 2 && !editingLayout;
+    const liveTodayPlan = useLiveTodayPlan(settings.dayRolloverHour);
+    const saveLayout = async () => {
+        if (layoutSaveRef.current) return;
+        layoutSaveRef.current = true; setLayoutSaving(true);
+        try {
+            if (!await saveStatsLayoutDurably(draftLayout)) { setLayoutAnnouncement(l('Düzen kaydedilemedi. Tekrar deneyin.', 'Layout could not be saved. Try again.')); return; }
+            setSavedLayout(draftLayout); setEditingLayout(false); setLayoutAnnouncement('');
+        } finally { layoutSaveRef.current = false; setLayoutSaving(false); }
+    };
     // Anki's statistics open on a year of history; a deck opened from the Decks list below keeps
     // the period the learner was looking at.
     const [rangeKey, setRangeKey] = useState<RangeKey>(() => (
@@ -112,21 +146,32 @@ export default function StatsScreen() {
         dataSettingsKey,
         refreshNonce,
     ]), [dataVersion, schedulingRevision, deckScope, statsRange, localeTag, dataSettingsKey, refreshNonce]);
-    const loadStatsSnapshot = useCallback(() => getStatsScreenSnapshot({
+    const loadStatsSnapshot = useCallback(() => ({ data: getStatsScreenSnapshot({
         deckName: deckScope,
         range: statsRange,
         settings,
         localeTag,
-    }), [deckScope, statsRange, settings, localeTag]);
+    }), scopeTitle, rangeTitle }), [deckScope, statsRange, settings, localeTag, scopeTitle, rangeTitle]);
     // Reading a long review log takes a moment: the screen shows its loading state, or the new
     // period or deck over dimmed cards, before the read starts.
-    const { snapshot, loading, error } = useDeferredScreenSnapshot(statsSnapshotKey, loadStatsSnapshot, {
+    const { snapshot: loadedSnapshot, loading, error, retry: retrySnapshot } = useDeferredScreenSnapshot(statsSnapshotKey, loadStatsSnapshot, {
         showLoadingFirst: true,
+        keepPreviousOnError: true,
+        shouldCache: (built) => built.data.failedSections.length === 0,
     });
+    const snapshot = loadedSnapshot?.data ?? null;
+    const displayedScope = snapshot ? snapshot.scopeDeckName : deckScope;
+    const displayedRange = snapshot?.scopeRange ?? statsRange;
+    const displayedRangeTitle = loadedSnapshot?.rangeTitle ?? rangeTitle;
+    const displayedScopeLabel = `${loadedSnapshot?.scopeTitle ?? scopeTitle} · ${displayedRangeTitle}`;
+    const failedSections = snapshot?.failedSections ?? [];
+    const isStaleScope = Boolean(loadedSnapshot && (displayedScope !== deckScope || displayedRangeTitle !== rangeTitle));
+    const retry = () => { setRefreshNonce((value) => value + 1); retrySnapshot(); };
     const pull = usePullToRefresh({
         scrollRef,
         busy: loading,
         enabled: !scrollLocked,
+        onScroll: priority.onScroll,
         labels: {
             refreshing: l('İstatistikleriniz yenileniyor…', 'Refreshing your statistics…'),
             done: l('İstatistikleriniz güncel', 'Your statistics are up to date'),
@@ -138,8 +183,8 @@ export default function StatsScreen() {
     });
     const reviewDays = snapshot?.reviewDays ?? [];
     const addedDays = snapshot?.addedDays ?? [];
-    const reviewSpan = rangeStudyDays(statsRange, settings.dayRolloverHour, reviewDays[0]?.day ?? null);
-    const addedSpan = rangeStudyDays(statsRange, settings.dayRolloverHour, addedDays[0]?.day ?? null);
+    const reviewSpan = rangeStudyDays(displayedRange, settings.dayRolloverHour, reviewDays[0]?.day ?? null);
+    const addedSpan = rangeStudyDays(displayedRange, settings.dayRolloverHour, addedDays[0]?.day ?? null);
     const deckPickerItems = useMemo(
         () => deckPickerVisible
             ? [...(snapshot?.decks ?? [])].sort((a, b) => a.name.localeCompare(b.name, localeTag))
@@ -164,7 +209,9 @@ export default function StatsScreen() {
 
     const handlePickDeck = (name: string | null) => {
         setDeckPickerVisible(false);
-        setDeckScope(name);
+        if (pickerSlot === 'primary') setComparePrimaryDeck(name);
+        else if (pickerSlot === 'baseline') setCompareBaselineDeck(name);
+        else { setDeckScope(name); setComparePrimaryDeck(undefined); setCompareBaselineDeck(undefined); }
     };
 
     // A deck tapped in the Decks list below opens as a page of its own, so the back swipe returns
@@ -192,17 +239,39 @@ export default function StatsScreen() {
      */
     const openAddedCards = (firstDay: number, lastDay: number) => {
         const rolloverHour = settings.dayRolloverHour;
-        let deck = deckScope;
+        let deck = displayedScope;
         // A filtered deck owns no cards; only its own scope lists exactly the cards counted here.
         if (snapshot?.filteredScopeCardIds === undefined) {
             try {
-                deck = commonDeckAncestor(getAddedCardDeckNames(deckScope, firstDay, lastDay, rolloverHour)) ?? deckScope;
+                deck = commonDeckAncestor(getAddedCardDeckNames(displayedScope, firstDay, lastDay, rolloverHour)) ?? displayedScope;
             } catch (pickError) {
                 console.warn('[Stats] added card decks failed:', pickError);
             }
         }
         const initialSearch = addedSearchForDays(firstDay, lastDay, localDayNumber(Date.now(), rolloverHour));
         router.push({ pathname: '/browser', params: deck ? { deck, initialSearch } : { initialSearch } } as any);
+    };
+
+    const sectionTitle = (id: StatsSectionId) => ({ today: l('Bugün', 'Today'), reviews: l('Tekrarlar', 'Reviews'), comparison: l('Karşılaştırma', 'Comparison'), futureDue: l('Gelecek tekrarlar', 'Future reviews'), answerButtons: l('Cevap düğmeleri', 'Answer buttons'), trueRetention: l('Gerçek hatırlama', 'True retention'), cardCounts: l('Kart sayıları', 'Card counts'), intervals: l('Aralıklar', 'Intervals'), hourly: l('Saatlik', 'Hourly'), added: l('Eklenenler', 'Added'), deckProgress: displayedScope ? l('Alt desteler', 'Subdecks') : l('Desteler', 'Decks') })[id];
+    const renderSection = (id: StatsSectionId) => {
+        if (!snapshot) return null;
+        const groups: Partial<Record<StatsSectionId, StatsUiSectionGroup>> = { today: 'today', reviews: 'reviews', futureDue: 'ankiGraphs', answerButtons: 'ankiGraphs', trueRetention: 'ankiGraphs', cardCounts: 'ankiGraphs', intervals: 'ankiGraphs', hourly: 'hours', added: 'added', deckProgress: 'deckProgress' };
+        if (groups[id] && statsUiGroupFailed(failedSections, groups[id]!)) return <SectionReadErrorCard title={sectionTitle(id)} message={l('Bu bölüm okunamadı.', 'This section could not be read.')} retryLabel={l('Tekrar dene', 'Try again')} onRetry={retry} />;
+        return <LazyStatsSection id={id} title={sectionTitle(id)} estimatedHeight={STATS_SECTION_ESTIMATED_HEIGHTS[id]} eager={eagerSections.has(id)}>{() => {
+            switch (id) {
+                case 'today': return <TodaySection today={snapshot.todayStats} todayPlan={liveTodayPlan ?? snapshot.todayPlan} todayPlanFailed={!liveTodayPlan && failedSections.includes('todayPlan')} streak={snapshot.streak} rolloverHour={settings.dayRolloverHour} dataVersion={dataVersion + schedulingRevision} currentWeekStudiedDays={snapshot.currentWeekStudiedDays} />;
+                case 'reviews': return <ReviewsSection reviewDays={reviewDays} firstDay={reviewSpan.firstDay} lastDay={reviewSpan.lastDay} rangeTitle={displayedRangeTitle} />;
+                case 'comparison': return <ComparisonSection deckScope={displayedScope} statsRange={displayedRange} rangeTitle={displayedRangeTitle} decks={snapshot.decks} settings={settings} dataRevision={dataVersion + schedulingRevision} retryNonce={refreshNonce} filteredScopeCardIds={snapshot.filteredScopeCardIds} comparePrimaryDeck={comparePrimaryDeck} compareBaselineDeck={compareBaselineDeck} onRequestPickDeck={(slot, current) => { setPickerCurrent(current); setPickerSlot(slot); setDeckPickerVisible(true); }} />;
+                case 'futureDue': return <FutureDueSection stats={snapshot.ankiStats} />;
+                case 'answerButtons': return <AnswerButtonsSection buttons={snapshot.ankiStats.answerButtons} />;
+                case 'trueRetention': return <TrueRetentionSection table={snapshot.ankiStats.trueRetention} />;
+                case 'cardCounts': return <CardCountsSection counts={snapshot.ankiStats.cardCounts} />;
+                case 'intervals': return <IntervalsSection stats={snapshot.ankiStats} rangeTitle={displayedRangeTitle} />;
+                case 'hourly': return <HourlySection hours={snapshot.hours} rangeTitle={displayedRangeTitle} />;
+                case 'added': return <AddedSection addedDays={addedDays} firstDay={addedSpan.firstDay} lastDay={addedSpan.lastDay} rangeTitle={displayedRangeTitle} onOpenCards={openAddedCards} />;
+                case 'deckProgress': return <DeckProgressSection title={sectionTitle(id)} decks={snapshot.deckStats} onSelectDeck={openDeckStats} />;
+            }
+        }}</LazyStatsSection>;
     };
 
     return (
@@ -214,29 +283,35 @@ export default function StatsScreen() {
                     : deckScope ? l('Deste genel bakışına dön', 'Back to deck overview') : l('Destelere dön', 'Back to decks')}
                 onBack={handleBack}
                 actions={(
+                    <>
+                    <Button variant="plain" size="compact" label={l('Düzenle', 'Edit')} onPress={() => { if (layoutSaveRef.current) return; setDraftLayout(savedLayout); setEditingLayout((v) => !v); }} />
                     <HelpButton
                         accessibilityLabel={l('İstatistikler hakkında', 'About statistics')}
                         onPress={() => setHelpVisible(true)}
                         expanded={helpVisible}
                     />
+                    </>
                 )}
             />
             <ChartScrollLockProvider value={setScrollLocked}>
+            <StatsSectionPriorityProvider value={priority.contextValue}>
             <View style={styles.scrollFrame}>
             <Animated.ScrollView
                 ref={scrollRef}
                 {...pull.scrollProps}
+                onLayout={priority.onScrollViewLayout}
+                scrollEventThrottle={16}
                 style={styles.scroll}
                 scrollEnabled={!scrollLocked}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + Spacing.xxxl }]}
+                contentContainerStyle={[styles.scrollContent, useTwoColumns && { maxWidth: 1200 }, { paddingBottom: insets.bottom + Spacing.xxxl }]}
             >
                 <View style={styles.filters}>
                     <Card>
                         <SelectRow
                             label={l('Deste', 'Deck')}
                             value={scopeTitle}
-                            onPress={() => setDeckPickerVisible(true)}
+                            onPress={() => { setPickerSlot('scope'); setDeckPickerVisible(true); }}
                             accessibilityLabel={l(`İstatistik destesi: ${scopeTitle}`, `Statistics deck: ${scopeTitle}`)}
                             expanded={deckPickerVisible}
                         />
@@ -250,55 +325,27 @@ export default function StatsScreen() {
                     />
                 </View>
 
-                {!snapshot ? (
-                    error
-                        ? <Notice tone="danger">{l('İstatistikler yüklenemedi.', 'Statistics could not be loaded.')}</Notice>
-                        : <LoadingState delayed style={styles.loadState} label={t('common.loading')} />
-                ) : (
-                    <Animated.View style={[styles.body, { opacity }]} accessibilityState={{ busy: loading }}>
-                        <TodaySection
-                            today={snapshot.todayStats}
-                            streak={snapshot.streak}
-                            rolloverHour={settings.dayRolloverHour}
-                            dataVersion={dataVersion + schedulingRevision}
-                            currentWeekStudiedDays={snapshot.currentWeekStudiedDays}
-                        />
-                        <ReviewsSection
-                            reviewDays={reviewDays}
-                            firstDay={reviewSpan.firstDay}
-                            lastDay={reviewSpan.lastDay}
-                            rangeTitle={rangeTitle}
-                        />
-                        <FutureDueSection stats={snapshot.ankiStats} />
-                        <AnswerButtonsSection buttons={snapshot.ankiStats.answerButtons} />
-                        <TrueRetentionSection table={snapshot.ankiStats.trueRetention} />
-                        <CardCountsSection counts={snapshot.ankiStats.cardCounts} />
-                        <IntervalsSection stats={snapshot.ankiStats} rangeTitle={rangeTitle} />
-                        <HourlySection hours={snapshot.hours} rangeTitle={rangeTitle} />
-                        <AddedSection
-                            addedDays={addedDays}
-                            firstDay={addedSpan.firstDay}
-                            lastDay={addedSpan.lastDay}
-                            rangeTitle={rangeTitle}
-                            onOpenCards={openAddedCards}
-                        />
-                        <DeckProgressSection
-                            title={deckScope ? l('Alt desteler', 'Subdecks') : l('Desteler', 'Decks')}
-                            decks={snapshot.deckStats}
-                            onSelectDeck={openDeckStats}
-                        />
-                    </Animated.View>
-                )}
+                {error ? <ReadErrorBanner title={l('İstatistikler okunamadı.', 'Statistics could not be read.')} detail={snapshot ? l(`Son geçerli veriler: ${displayedScopeLabel}`, `Last valid data: ${displayedScopeLabel}`) : undefined} retryLabel={l('Tekrar dene', 'Try again')} onRetry={retry} /> : null}
+                {isStaleScope ? <ReadErrorBanner tone="info" title={l(`Gösterilen: ${displayedScopeLabel}`, `Showing: ${displayedScopeLabel}`)} /> : null}
+                {failedSections.length ? <ReadErrorBanner title={l('Bazı bölümler okunamadı.', 'Some sections could not be read.')} detail={describeMissingStatsSections(failedSections, locale).join(', ')} retryLabel={l('Tekrar dene', 'Try again')} onRetry={retry} /> : null}
+                {editingLayout ? <StatsLayoutToolbar canChooseColumns={Platform.OS === 'web' && width >= 960} columns={draftLayout.columns} onChangeColumns={(columns) => { if (!layoutSaveRef.current) setDraftLayout((v) => setStatsLayoutColumns(v, columns)); }} canReset={!isStatsLayoutDefault(draftLayout)} onReset={() => { if (!layoutSaveRef.current) setDraftLayout(defaultStatsLayout()); }} onCancel={() => { if (!layoutSaveRef.current) setEditingLayout(false); }} onSave={saveLayout} announcement={layoutAnnouncement} saving={layoutSaving} /> : null}
+                {!snapshot ? (!error ? <LoadingState delayed style={styles.loadState} label={t('common.loading')} /> : null) : <Animated.View onLayout={priority.onBodyLayout} style={[styles.body, { opacity }, useTwoColumns && { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start' }]} accessibilityState={{ busy: loading }}>
+                    {(editingLayout ? layout.order : visibleSections).map((id, index) => <View key={id} style={useTwoColumns ? { width: '48.8%' } : undefined} onLayout={(event) => priority.contextValue.registerSectionY(id, event.nativeEvent.layout.y)}>
+                        {editingLayout ? <StatsEditableCard title={sectionTitle(id)} index={index} total={layout.order.length} hidden={layout.hidden.includes(id)} canHide={visibleSections.length > 1} onMoveUp={() => { if (!layoutSaveRef.current) setDraftLayout((v) => moveStatsSection(v, id, -1)); }} onMoveDown={() => { if (!layoutSaveRef.current) setDraftLayout((v) => moveStatsSection(v, id, 1)); }} onToggleVisible={() => { if (!layoutSaveRef.current) setDraftLayout((v) => toggleStatsSectionVisibility(v, id)); }}>{renderSection(id)}</StatsEditableCard> : renderSection(id)}
+                    </View>)}
+                </Animated.View>}
+
             </Animated.ScrollView>
             <PullToRefreshIndicator binding={pull} />
             </View>
+            </StatsSectionPriorityProvider>
             </ChartScrollLockProvider>
 
             {deckPickerVisible && <DeckPickerModal
                 visible={deckPickerVisible}
                 colors={colors}
                 decks={deckPickerItems}
-                selectedDeckName={deckScope}
+                selectedDeckName={pickerSlot === 'scope' ? deckScope : pickerCurrent}
                 activeDeckName={deckScope || activeDeckName || null}
                 title={l('Deste seç', 'Select Deck')}
                 allDecksLabel={l('Tüm koleksiyon', 'Whole Collection')}

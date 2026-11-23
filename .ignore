@@ -1,6 +1,7 @@
 # Search exclusions for ripgrep (rg) and other tools that read .ignore files.
 # These files are large or historical and only add noise to code searches.
 # Git is not affected: they stay tracked.
+lib/helpContent.generated.ts
 package-lock.json
 assets/catalog/bka-manifest.json
 docs/catalog-corrections/*.json

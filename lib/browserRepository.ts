@@ -58,9 +58,9 @@ function browserFilterSearches(query: BrowserCardQuery): string[] {
     return searches;
 }
 
-function buildBrowserWhere(
+export function buildBrowserWhere(
     query: BrowserCardQuery,
-    { includeSearchFilters = true }: { includeSearchFilters?: boolean } = {},
+    { includeSearchFilters = true, extraSearchTerms = [] }: { includeSearchFilters?: boolean; extraSearchTerms?: readonly string[] } = {},
 ): { sql: string; params: Array<string | number> } {
     const clauses: string[] = [];
     const params: Array<string | number> = [];
@@ -82,7 +82,7 @@ function buildBrowserWhere(
     }
     addIds('c.id', query.cardIds);
     addIds('n.id', query.noteIds);
-    const searches = includeSearchFilters ? browserFilterSearches(query) : [];
+    const searches = [...extraSearchTerms.map((term) => term.trim()).filter(Boolean), ...(includeSearchFilters ? browserFilterSearches(query) : [])];
     if (searches.length) {
         clauses.push('c.id IN (SELECT value FROM json_each(?))');
         params.push(JSON.stringify(matchingCollectionCardIdsForAll(searches)));
@@ -130,7 +130,7 @@ const BROWSER_SORT_SQL: Record<BrowserCardSortKey, string> = {
 };
 
 /** The tables every browser query joins; search terms read the note, note type and deck. */
-const BROWSER_FROM = `FROM anki_cards c
+export const BROWSER_FROM = `FROM anki_cards c
          JOIN notes n ON n.id = c.noteId
          JOIN note_types nt ON nt.id = n.noteTypeId
          JOIN decks d ON d.id = c.deckId`;

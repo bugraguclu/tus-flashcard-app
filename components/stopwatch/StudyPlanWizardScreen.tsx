@@ -8,6 +8,7 @@ import { CapacityStep, CoursesStep } from './DetailedPlanSteps';
 import { weekdayShortName } from './StudyPlanEditorSheet';
 import { DateField } from './StudyToolControls';
 import { STUDY_PLAN_WIZARD_STEPS, useStudyPlanWizardDraft } from './StudyPlanWizardDraft';
+import { ReadErrorBanner } from '../ReadErrorBanner';
 import { Button } from '../ui/Button';
 import { Section } from '../ui/Card';
 import { Notice, ProgressBar } from '../ui/Feedback';
@@ -38,7 +39,7 @@ export default function StudyPlanWizardScreen({ step }: { step: number }) {
     const styles = useMemo(() => createStyles(colors, inset), [colors, inset]);
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { draft, update, result, leave, create, showingStep } = useStudyPlanWizardDraft();
+    const { draft, update, result, leave, create, showingStep, busy, readFailed, persistFailed, resumeStep, discarded, retryRead, resume, discard } = useStudyPlanWizardDraft();
     useFocusEffect(useCallback(() => { showingStep(step); }, [showingStep, step]));
     const nextStep = () => router.push(`/study-plan-wizard/${STUDY_PLAN_WIZARD_STEPS[step + 1]}` as any);
     const problemText = result.ok ? null : {
@@ -53,13 +54,17 @@ export default function StudyPlanWizardScreen({ step }: { step: number }) {
     const weekdayName = (weekday: number) => (locale === 'tr' ? WEEKDAY_LONG_TR : WEEKDAY_LONG_EN)[weekday] ?? weekdayShortName(weekday, locale);
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']} pointerEvents={busy ? 'none' : 'auto'} accessibilityState={{ busy }}>
             <ScreenHeader title={l('Detaylı Çalışma Planı', 'Detailed Study Plan')} backAccessibilityLabel={l('Vazgeç', 'Cancel')} onBack={leave} />
+            {readFailed ? <View style={styles.content}><ReadErrorBanner title={l('Plan taslağı okunamadı.', 'The plan draft could not be read.')} detail={l('Kaydedilmiş taslağınız korunuyor.', 'Your saved draft is preserved.')} retryLabel={l('Tekrar dene', 'Try again')} onRetry={retryRead} /></View> : <>
             <View style={styles.progressRow} accessible accessibilityLabel={l(`Adım ${step + 1} / ${STEPS}`, `Step ${step + 1} of ${STEPS}`)}>
                 <ProgressBar value={(step + 1) / STEPS} style={styles.progressTrack} />
                 <Text style={styles.progressText}>{`${step + 1} / ${STEPS}`}</Text>
             </View>
             <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+                {resumeStep !== null ? <ReadErrorBanner tone="info" title={l(`Kaydedilmiş taslak · Adım ${resumeStep + 1}`, `Saved draft · Step ${resumeStep + 1}`)} retryLabel={l('Devam et', 'Continue')} onRetry={resume} secondaryLabel={l('Yeni plan / Taslağı sil', 'New plan / Discard draft')} onSecondary={discard} /> : null}
+                {discarded ? <ReadErrorBanner tone="info" title={l('Önceki taslak geçersiz veya süresi geçmiş.', 'The previous draft is invalid or expired.')} detail={l('Yeni planla devam edebilir veya kayıtlı taslağı silebilirsiniz.', 'Continue with a new plan or delete the stored draft.')} secondaryLabel={l('Taslağı sil', 'Delete draft')} onSecondary={discard} /> : null}
+                {persistFailed ? <ReadErrorBanner title={l('Taslak kaydedilemedi.', 'The draft could not be saved.')} detail={l('Son bilgileriniz bu ekranda korunuyor. Çıkışta yeniden kayıt denenecek.', 'Your latest entries remain on this screen. Saving will be retried when leaving.')} /> : null}
                 {step === 0 ? (
                     <Section
                         label={l('Hedeflediğiniz TUS', 'Your Target TUS')}
@@ -92,9 +97,10 @@ export default function StudyPlanWizardScreen({ step }: { step: number }) {
                 {step < STEPS - 1 ? (
                     <Button label={l('İleri', 'Next')} onPress={nextStep} style={styles.footerButton} />
                 ) : (
-                    <Button label={l('Oluştur', 'Create')} onPress={create} disabled={!result.ok} style={styles.footerButton} />
+                    <Button label={l('Oluştur', 'Create')} onPress={create} disabled={!result.ok || busy} busy={busy} style={styles.footerButton} />
                 )}
             </View>
+            </>}
         </SafeAreaView>
     );
 }

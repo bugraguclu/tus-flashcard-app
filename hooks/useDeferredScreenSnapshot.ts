@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
 import {
     LatestSnapshotGeneration,
@@ -15,7 +15,7 @@ const MAX_INTERACTION_WAIT_MS = 500;
  */
 const PENDING_FRAMES = 3;
 
-export interface DeferredScreenSnapshotOptions {
+export interface DeferredScreenSnapshotOptions<T = unknown> {
     /**
      * Draw the screen's pending state before a snapshot is built: its loading state the first
      * time, afterwards the new choice (a moved period selector, dimmed cards) over the previous
@@ -25,12 +25,27 @@ export interface DeferredScreenSnapshotOptions {
      * tap was taken, until the build is done.
      */
     showLoadingFirst?: boolean;
+    /**
+     * Keep the last valid snapshot when a subsequent scope/period read fails, along with its own
+     * `snapshotKey`, so the caller can show an explicit error + Retry while clearly labelling
+     * which scope/period the preserved data belongs to.
+     */
+    keepPreviousOnError?: boolean;
+    /**
+     * Optional predicate controlling whether a built snapshot is cached. Returning false keeps
+     * partial/degraded snapshots out of the cache so returning to the same scope retries cleanly.
+     */
+    shouldCache?: (snapshot: T) => boolean;
 }
 
 export interface DeferredScreenSnapshot<T> {
     snapshot: T | null;
+    /** Key that produced `snapshot`, or null when no valid snapshot has been loaded yet. */
+    snapshotKey: string | null;
     loading: boolean;
     error: unknown;
+    /** Evict any cached entry for the current key and attempt the read again. */
+    retry: () => void;
 }
 
 /**
@@ -41,18 +56,26 @@ export interface DeferredScreenSnapshot<T> {
 export function useDeferredScreenSnapshot<T>(
     key: string,
     load: () => T,
-    { showLoadingFirst = false }: DeferredScreenSnapshotOptions = {},
+    {
+        showLoadingFirst = false,
+        keepPreviousOnError = false,
+        shouldCache,
+    }: DeferredScreenSnapshotOptions<T> = {},
 ): DeferredScreenSnapshot<T> {
     const generationRef = useRef<LatestSnapshotGeneration | null>(null);
     const repositoryRef = useRef<ScreenSnapshotRepository<T> | null>(null);
+    const shouldCacheRef = useRef(shouldCache);
+    shouldCacheRef.current = shouldCache;
     if (!generationRef.current) generationRef.current = new LatestSnapshotGeneration();
     if (!repositoryRef.current) repositoryRef.current = new ScreenSnapshotRepository<T>();
 
     const generation = generationRef.current;
     const repository = repositoryRef.current;
+    const [retryCount, setRetryCount] = useState(0);
     const [state, setState] = useState<{
         key: string;
         snapshot: T | null;
+        snapshotKey: string | null;
         loading: boolean;
         error: unknown;
     }>(() => {
@@ -60,35 +83,52 @@ export function useDeferredScreenSnapshot<T>(
         return {
             key,
             snapshot: cached ?? null,
+            snapshotKey: cached !== undefined ? key : null,
             loading: cached === undefined,
             error: null,
         };
     });
 
+    const retry = useCallback(() => {
+        repository.delete(key);
+        setRetryCount((count) => count + 1);
+    }, [key, repository]);
+
     useEffect(() => {
         const token = generation.begin();
         const cached = repository.get(key);
         if (cached !== undefined) {
-            setState({ key, snapshot: cached, loading: false, error: null });
+            setState({ key, snapshot: cached, snapshotKey: key, loading: false, error: null });
             return;
         }
 
         setState((prev) => ({
             key,
             snapshot: prev.snapshot,
+            snapshotKey: prev.snapshotKey,
             loading: true,
             error: null,
         }));
 
         const build = () => {
             try {
-                const snapshot = repository.getOrCreate(key, load);
+                const snapshot = repository.getOrCreate(
+                    key,
+                    load,
+                    (built) => (shouldCacheRef.current ? shouldCacheRef.current(built) : true),
+                );
                 generation.commit(token, () => {
-                    setState({ key, snapshot, loading: false, error: null });
+                    setState({ key, snapshot, snapshotKey: key, loading: false, error: null });
                 });
             } catch (error) {
                 generation.commit(token, () => {
-                    setState({ key, snapshot: null, loading: false, error });
+                    setState((prev) => ({
+                        key,
+                        snapshot: keepPreviousOnError ? prev.snapshot : null,
+                        snapshotKey: keepPreviousOnError ? prev.snapshotKey : null,
+                        loading: false,
+                        error,
+                    }));
                 });
             }
         };
@@ -104,14 +144,20 @@ export function useDeferredScreenSnapshot<T>(
             task.cancel();
             if (generation.isCurrent(token)) generation.cancel();
         };
-    }, [generation, key, load, repository, showLoadingFirst]);
+    }, [generation, keepPreviousOnError, key, load, repository, retryCount, showLoadingFirst]);
 
     if (state.key !== key) {
         const cached = repository.get(key);
         if (cached !== undefined) {
-            return { snapshot: cached, loading: false, error: null };
+            return { snapshot: cached, snapshotKey: key, loading: false, error: null, retry };
         }
-        return { snapshot: state.snapshot, loading: true, error: null };
+        return { snapshot: state.snapshot, snapshotKey: state.snapshotKey, loading: true, error: null, retry };
     }
-    return state;
+    return {
+        snapshot: state.snapshot,
+        snapshotKey: state.snapshotKey,
+        loading: state.loading,
+        error: state.error,
+        retry,
+    };
 }

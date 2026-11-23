@@ -1,3 +1,5 @@
+import type { HelpLinkTarget } from '../../lib/helpTypes';
+
 /** One choice in a select row: the stored key and the label shown for it. */
 export type SelectOption = { key: string; label: string };
 
@@ -9,4 +11,5 @@ export type OptionHelp = {
     note?: string;
     noteLabel: string;
     dismissLabel: string;
+    more?: HelpLinkTarget;
 };

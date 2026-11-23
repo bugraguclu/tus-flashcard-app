@@ -407,7 +407,7 @@ export default function TabLayout() {
                     <Pressable style={styles.overlay} onPress={() => setSidebarOpen(false)} />
                 ) : null}
 
-                <View style={[styles.mainContent, isWide && !isDeckScreen && styles.mainContentWithSidebar]}>
+                <View nativeID="tus-main-content" {...(Platform.OS === 'web' ? { role: 'main', tabIndex: -1 } as any : {})} style={[styles.mainContent, isWide && !isDeckScreen && styles.mainContentWithSidebar]}>
                     {startupError ? (
                         <StartupIssueScreen />
                     ) : (

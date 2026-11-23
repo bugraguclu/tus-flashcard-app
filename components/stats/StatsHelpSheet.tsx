@@ -1,13 +1,17 @@
 import { StyleSheet, View } from 'react-native';
+import { useHelpHandoff } from '../../hooks/useHelpHandoff';
+import { CONTEXTUAL_HELP_TARGETS } from '../../lib/helpSearch';
 import { Text } from '../AppText';
 import { Spacing, useThemeColors, FontSize } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { SheetScrollView } from '../SwipeDismissSheet';
+import { Button } from '../ui/Button';
 import { AppSheet } from '../ui/Sheet';
 
 /** Keep chart definitions available without repeating paragraphs throughout the page. */
 export default function StatsHelpSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
     const colors = useThemeColors();
+    const helpLink = useHelpHandoff(visible, onClose, CONTEXTUAL_HELP_TARGETS.stats);
     const { l } = useI18n();
     const sections = [
         [l('Deste ve dönem', 'Deck and period'), l(
@@ -42,6 +46,7 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
     return (
         <AppSheet
             visible={visible}
+            onDismiss={helpLink.onDismiss}
             onClose={onClose}
             title={l('İstatistikler hakkında', 'About statistics')}
         >
@@ -53,6 +58,7 @@ export default function StatsHelpSheet({ visible, onClose }: { visible: boolean;
                     </View>
                 ))}
             </SheetScrollView>
+            <Button variant="plain" label={l('Daha fazla bilgi', 'Learn more')} onPress={helpLink.open} />
         </AppSheet>
     );
 }

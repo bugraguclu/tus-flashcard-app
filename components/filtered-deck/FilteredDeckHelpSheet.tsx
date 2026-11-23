@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { useHelpHandoff } from '../../hooks/useHelpHandoff';
+import { CONTEXTUAL_HELP_TARGETS } from '../../lib/helpSearch';
 import { Text } from '../AppText';
 import { useI18n } from '../../hooks/useI18n';
 import { SheetScrollView } from '../SwipeDismissSheet';
@@ -10,16 +12,19 @@ import { AppSheet } from '../ui/Sheet';
 import { Type } from '../ui/tokens';
 
 /** The filtered deck form's ? help, a bottom sheet over the form whose steps scroll. */
-export default function FilteredDeckHelpSheet({ visible, onClose }: {
+export default function FilteredDeckHelpSheet({ visible, onClose, onNavigate }: {
     visible: boolean;
     onClose: () => void;
+    onNavigate?: (href: string) => void;
 }) {
     const { l } = useI18n();
     const colors = useThemeColors();
+    const helpLink = useHelpHandoff(visible, onClose, CONTEXTUAL_HELP_TARGETS.filteredDeck, onNavigate);
     const styles = useMemo(() => createStyles(colors), [colors]);
     return (
         <AppSheet
             visible={visible}
+            onDismiss={helpLink.onDismiss}
             onClose={onClose}
             title={l('Filtrelenmiş deste nasıl çalışır?', 'How does a filtered deck work?')}
         >
@@ -73,7 +78,7 @@ export default function FilteredDeckHelpSheet({ visible, onClose }: {
                     )}
                 </Notice>
             </SheetScrollView>
-            <Button label={l('Anladım', 'Got it')} onPress={onClose} />
+            <Button variant="plain" label={l('Daha fazla bilgi', 'Learn more')} onPress={helpLink.open} />
         </AppSheet>
     );
 }

@@ -14,6 +14,8 @@ type UnsavedChangesGuardOptions = {
      * the layout (its first page is shown) rather than return to an earlier page inside it.
      */
     browserBackLeaves?: () => boolean;
+    /** Save a recoverable local draft first; false falls back to the discard confirmation. */
+    beforeLeave?: () => Promise<boolean>;
 };
 
 /**
@@ -28,10 +30,12 @@ type UnsavedChangesGuardOptions = {
  */
 export function useUnsavedChangesGuard(
     isDirty: boolean,
-    { title, message, browserBackLeaves }: UnsavedChangesGuardOptions,
+    { title, message, browserBackLeaves, beforeLeave }: UnsavedChangesGuardOptions,
 ): void {
     const navigation = useNavigation();
     const dirtyRef = useRef(isDirty);
+    const beforeLeaveRef = useRef(beforeLeave);
+    beforeLeaveRef.current = beforeLeave;
     const allowNavigationRef = useRef(false);
     const confirmationOpenRef = useRef(false);
     const browserBackLeavesRef = useRef(browserBackLeaves);
@@ -47,7 +51,9 @@ export function useUnsavedChangesGuard(
         if (confirmationOpenRef.current) return;
         confirmationOpenRef.current = true;
 
-        void confirmAsync(title, message, { destructive: true })
+        void (beforeLeaveRef.current
+            ? beforeLeaveRef.current().catch(() => false).then((saved) => saved || confirmAsync(title, message, { destructive: true }))
+            : confirmAsync(title, message, { destructive: true }))
             .then((confirmed) => {
                 if (!confirmed) return;
                 allowNavigationRef.current = true;
@@ -78,7 +84,9 @@ export function useUnsavedChangesGuard(
             window.history.go(1);
             if (!confirmationOpenRef.current) {
                 confirmationOpenRef.current = true;
-                void confirmAsync(title, message, { destructive: true })
+                void (beforeLeaveRef.current
+            ? beforeLeaveRef.current().catch(() => false).then((saved) => saved || confirmAsync(title, message, { destructive: true }))
+            : confirmAsync(title, message, { destructive: true }))
                     .then((confirmed) => {
                         if (!confirmed) return;
                         allowNavigationRef.current = true;

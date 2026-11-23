@@ -46,7 +46,7 @@ export class ScreenSnapshotRepository<T> {
         return cached;
     }
 
-    getOrCreate(key: string, create: () => T): T {
+    getOrCreate(key: string, create: () => T, shouldCache: (snapshot: T) => boolean = () => true): T {
         const cached = this.snapshots.get(key);
         if (cached !== undefined) {
             // Refresh insertion order so frequently toggled filters remain cached.
@@ -56,13 +56,19 @@ export class ScreenSnapshotRepository<T> {
         }
 
         const snapshot = create();
-        this.snapshots.set(key, snapshot);
-        while (this.snapshots.size > this.capacity) {
-            const oldestKey = this.snapshots.keys().next().value as string | undefined;
-            if (oldestKey === undefined) break;
-            this.snapshots.delete(oldestKey);
+        if (shouldCache(snapshot)) {
+            this.snapshots.set(key, snapshot);
+            while (this.snapshots.size > this.capacity) {
+                const oldestKey = this.snapshots.keys().next().value as string | undefined;
+                if (oldestKey === undefined) break;
+                this.snapshots.delete(oldestKey);
+            }
         }
         return snapshot;
+    }
+
+    delete(key: string): boolean {
+        return this.snapshots.delete(key);
     }
 
     clear(): void {

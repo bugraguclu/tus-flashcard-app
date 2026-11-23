@@ -88,6 +88,7 @@ import { EmptyState, LoadingState } from '../../components/ui/Feedback';
 import { TextField } from '../../components/ui/Fields';
 import { Dock, DockItem, useDockClearance } from '../../components/ui/Dock';
 import { ArrowUpIcon, ChevronDownIcon, ChevronRightIcon, DragHandleIcon, MoreIcon, PlusIcon, RefreshIcon } from '../../components/ui/icons';
+import InfoCircleGlyph from '../../components/InfoCircleGlyph';
 import { MenuItem, PopoverMenu } from '../../components/ui/Menu';
 import { KeyboardGlyph } from '../../components/UiGlyphs';
 import { openKeyboardShortcuts } from '../../lib/keyboardShortcutsHelp';
@@ -1658,6 +1659,7 @@ export default function DecksScreen() {
                     icon={<DeckOverflowGlyph kind="restore" color={colors.textMuted} size={22} />}
                     onPress={() => openOverflowRoute('/backups')}
                 />
+                <MenuItem icon={<InfoCircleGlyph color={colors.textSecondary} />} label={l('Yardım Merkezi', 'Help Center')} onPress={() => openOverflowRoute('/help')} />
                 {Platform.OS === 'web' ? (
                     <MenuItem
                         label={l('Klavye kısayolları', 'Keyboard shortcuts')}

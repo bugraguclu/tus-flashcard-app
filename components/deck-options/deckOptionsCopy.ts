@@ -76,6 +76,8 @@ export function deckOptionsWarningText(id: DeckOptionsWarningId, l: Localize): s
     }
 }
 
+import { CONTEXTUAL_HELP_TARGETS } from '../../lib/helpSearch';
+
 /** The guide behind each option card's "?" button, in this app's two languages. */
 export function buildOptionHelp(l: Localize) {
     const helpChrome = {
@@ -84,6 +86,7 @@ export function buildOptionHelp(l: Localize) {
     };
     return {
         fsrs: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsFsrs,
             title: l('FSRS nasıl çalışır?', 'How FSRS works'),
             summary: l(
                 'FSRS, her kart için hafıza gücünü (stability) ve zorluğunu takip eder ve aralığı bu iki sayıdan hesaplar; klasik zamanlayıcının kolaylık çarpanını kullanmaz.',
@@ -102,6 +105,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         dailyLimits: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsDailyLimits,
             title: l('Günlük limitler nasıl uygulanır?', 'How daily limits are applied'),
             summary: l(
                 'Yeni kartlarda günlük sınır yoktur. Bu bölüm yalnızca günlük tekrar kartı sınırını belirler.',
@@ -116,6 +120,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         newCards: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsNewCards,
             title: l('Yeni kartların öğrenme akışı', 'New-card learning flow'),
             summary: l('Bu seçenekler yalnızca yeni ve öğrenme aşamasındaki kartları etkiler.', 'These options affect only new cards and cards still in learning.'),
             points: [
@@ -127,6 +132,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         lapses: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsLapses,
             title: l('Unutulan kartlara ne olur?', 'What happens to forgotten cards'),
             summary: l('Bir tekrar kartında Tekrar’a basılması “unutma” sayılır ve bu bölüm devreye girer.', 'Pressing Again on a review card counts as a lapse and activates this section.'),
             points: [
@@ -138,6 +144,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         displayOrder: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsDisplayOrder,
             title: l('Toplama ve sıralama farkı', 'Gathering versus sorting'),
             summary: l('Toplama “hangi kartların”, sıralama ise toplanan kartların “hangi sırayla” gösterileceğini belirler.', 'Gathering chooses which cards enter today; sorting decides the order of the cards already gathered.'),
             points: [
@@ -149,6 +156,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         burying: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsBurying,
             title: l('Kardeş kartları gömme', 'Burying sibling cards'),
             summary: l('Aynı nottan üretilen kartlar kardeştir; örneğin ön→arka, arka→ön ve komşu cloze kartları.', 'Cards generated from the same note are siblings, such as front→back, back→front, and adjacent cloze cards.'),
             points: [
@@ -160,6 +168,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         audio: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsAudio,
             title: l('Kart sesi', 'Card audio'),
             summary: l('Ses seçenekleri kart açılışını ve cevap tarafındaki manuel yeniden oynatmayı ayrı ayrı yönetir.', 'Audio options separately control card-side autoplay and manual replay on the answer side.'),
             points: [
@@ -171,6 +180,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         timers: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsTimers,
             title: l('Cevap zamanlayıcısı', 'Answer timer'),
             summary: l('Zamanlayıcı çalışma süresini ölçer; kartın derecesini veya zamanlama aralığını değiştirmez.', 'The timer measures study time; it does not change a card’s grade or scheduling interval.'),
             points: [
@@ -182,6 +192,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         autoAdvance: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsAutoAdvance,
             title: l('Otomatik ilerleme nasıl çalışır?', 'How Auto Advance works'),
             summary: l('Otomatik ilerleme, belirlediğiniz süre dolunca cevabı gösterebilir ve ardından seçtiğiniz işlemi uygulayabilir.', 'Auto Advance can reveal the answer after a delay and then perform the selected action.'),
             points: [
@@ -193,6 +204,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         easyDays: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsEasyDays,
             title: l('Kolay günler neyi değiştirir?', 'How Easy Days work'),
             summary: l('Yeni bir aralık hesaplanırken vade günü küçük miktarda kaydırılarak belirli günlerdeki tekrar yükü azaltılır.', 'When a new interval is calculated, its due day is shifted slightly to reduce review load on selected weekdays.'),
             points: [
@@ -204,6 +216,7 @@ export function buildOptionHelp(l: Localize) {
             ...helpChrome,
         },
         advanced: {
+            more: CONTEXTUAL_HELP_TARGETS.deckOptionsAdvanced,
             title: l('Gelişmiş aralık ayarları', 'Advanced interval settings'),
             summary: l('Bu değerler mevcut Anki V3 / SM-2 motorunun tekrar aralıklarını doğrudan değiştirir.', 'These values directly change review intervals in the current Anki V3 / SM-2 engine.'),
             points: [

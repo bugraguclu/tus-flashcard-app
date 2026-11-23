@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Keyboard,
     Modal,
@@ -6,6 +6,7 @@ import {
     ScrollView,
     View,
 } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Text } from './AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Spacing, useThemeColors } from '../constants/theme';
@@ -93,6 +94,19 @@ export default function FilteredDeckOptionsModal({
     const styles = useMemo(() => createFilteredDeckOptionsStyles(colors), [colors]);
     const insets = useSafeAreaInsets();
     const creating = deck === null;
+    const router = useRouter();
+    const [helpDetour, setHelpDetour] = useState(false);
+    const pendingHelp = useRef<string | null>(null);
+    const returningFromHelp = useRef(false);
+    useFocusEffect(useCallback(() => {
+        if (returningFromHelp.current) { returningFromHelp.current = false; setHelpDetour(false); }
+    }, []));
+    const openHelpRoute = (href: string) => { pendingHelp.current = href; setHelpDetour(true); };
+    const finishHelpDetour = () => {
+        const href = pendingHelp.current; if (!href) return;
+        pendingHelp.current = null; returningFromHelp.current = true; router.push(href as any);
+    };
+    useEffect(() => { if (helpDetour && Platform.OS !== 'ios') finishHelpDetour(); }, [helpDetour]);
     const [form, setForm] = useState<FilteredDeckFormValues>(() => newFilteredDeckForm('', ''));
     const [orderPicker, setOrderPicker] = useState<1 | 2 | null>(null);
     // Which filter's order the picker sheet edits; kept while the sheet slides away.
@@ -355,7 +369,7 @@ export default function FilteredDeckOptionsModal({
     };
 
     return (
-        <Modal visible={visible} animationType="slide" onRequestClose={close} onDismiss={reportCreated}>
+        <Modal visible={visible && !helpDetour} animationType="slide" onRequestClose={close} onDismiss={() => { reportCreated(); finishHelpDetour(); }}>
             <View style={[styles.screen, { paddingTop: insets.top }]} accessibilityViewIsModal>
                 <ScreenHeader
                     leading="close"
@@ -481,7 +495,7 @@ export default function FilteredDeckOptionsModal({
                     </SheetScrollView>
                 </AppSheet>
 
-                <FilteredDeckHelpSheet visible={helpVisible} onClose={() => setHelpVisible(false)} />
+                <FilteredDeckHelpSheet visible={helpVisible} onClose={() => setHelpVisible(false)} onNavigate={openHelpRoute} />
 
                 {showDeckPicker && (
                     <DeckPickerModal
