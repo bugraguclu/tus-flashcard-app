@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { centeredInset } from '../../hooks/useCenteredInset';
 import { Text, useLayoutTextScale } from '../AppText';
-import { FontSize, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../../constants/theme';
-import { Shadow, Radius } from '../ui/tokens';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../../constants/theme';
+import { Radius } from '../ui/tokens';
 import { useI18n } from '../../hooks/useI18n';
 import {
     MAX_GOAL_MINUTES,
@@ -20,18 +20,6 @@ import { HeroStepper } from './HeroStepper';
 import { PauseIcon, PlayIcon, StopIcon } from './StopwatchIcons';
 
 const MINUTE_MS = 60_000;
-/** Secondary text and the ring's track on the coloured hero. */
-const ON_HERO_SOFT = 'rgba(255, 255, 255, 0.85)';
-const RING_TRACK = 'rgba(255, 255, 255, 0.3)';
-
-/**
- * The hero's background, which the Kronometre's header shares: the accent, or in dark mode its
- * deep tint, on which white text keeps its contrast.
- */
-export function useStopwatchHeroColor(): string {
-    const colors = useThemeColors();
-    return useIsDarkTheme() ? colors.accentLight : colors.accent;
-}
 
 interface StopwatchHeroProps {
     /** Today's study time, the running stopwatch's included. */
@@ -65,7 +53,6 @@ export default function StopwatchHero({
 }: StopwatchHeroProps) {
     const { l, locale } = useI18n();
     const colors = useThemeColors();
-    const heroColor = useStopwatchHeroColor();
     const { width } = useWindowDimensions();
     // A wide window keeps the ring and the goal over the centred timeline, not at its edges.
     const inset = centeredInset(width);
@@ -76,7 +63,7 @@ export default function StopwatchHero({
     // text, up to the half of the hero they sit in.
     const textScale = useLayoutTextScale();
     const controlWidth = Math.round(Math.min((width - Spacing.lg * 2) / 2 - Spacing.xs, CONTROL_WIDTH * Math.max(1, textScale)));
-    const styles = useMemo(() => createStyles(colors, heroColor), [colors, heroColor]);
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const total = formatHeroDuration(todayStudyMs, locale);
     const goal = formatHeroDuration(goalMinutes * MINUTE_MS, locale);
     const progress = goalProgress(todayStudyMs, goalMinutes);
@@ -105,7 +92,7 @@ export default function StopwatchHero({
                         <View style={[styles.goalFill, { width: `${progress * 100}%` }]} />
                     </View>
                     <Text style={styles.runningSubject} numberOfLines={1}>
-                        {running.subject.toLocaleUpperCase(locale === 'tr' ? 'tr' : 'en')}
+                        {running.subject}
                     </Text>
                     {/* Already large; capped so the largest text sizes still fit it on one line. */}
                     <Text style={styles.bigClock} numberOfLines={1} maxFontSizeMultiplier={1.25}>{sessionClock}</Text>
@@ -161,10 +148,10 @@ export default function StopwatchHero({
                             size={ringSize}
                             strokeWidth={ringStroke}
                             progress={progress}
-                            trackColor={RING_TRACK}
-                            progressColor={colors.white}
-                            knobColor={colors.white}
-                            knobDotColor={heroColor}
+                            trackColor={colors.border}
+                            progressColor={colors.accent}
+                            knobColor={colors.accent}
+                            knobDotColor={colors.bgPrimary}
                         >
                             {/* The ring is drawn at a fixed size around this copy, which already fills its
                                 centre at the designed size, so it never grows past it. */}
@@ -211,34 +198,37 @@ export default function StopwatchHero({
 /** Width of the goal stepper and of "Başla" under it, which TUSBuddy draws the same width. */
 const CONTROL_WIDTH = 128;
 
-function createStyles(colors: ColorScheme, heroColor: string) {
+function createStyles(colors: ColorScheme) {
     return StyleSheet.create({
+        // A plain top on the page's own background: the ring, the clock and the accent buttons
+        // carry the colour, not a painted block behind them.
         hero: {
-            backgroundColor: heroColor,
-            borderBottomLeftRadius: 28,
-            borderBottomRightRadius: 28,
+            backgroundColor: colors.bgPrimary,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderBottomColor: colors.border,
             paddingHorizontal: Spacing.lg,
             paddingTop: Spacing.sm,
             paddingBottom: Spacing.xl,
             gap: Spacing.md,
             // Above the list that scrolls under it, so its shadow falls on the list.
             zIndex: 1,
-            ...Shadow.floating,
         },
         heroRunning: { paddingTop: Spacing.xs, gap: Spacing.sm, paddingBottom: Spacing.lg },
         row: { flexDirection: 'row', alignItems: 'center' },
         half: { flex: 1, alignItems: 'center' },
         ringCenter: { alignItems: 'center', gap: Spacing.xxs },
-        ringLabel: { fontSize: FontSize.sm, color: ON_HERO_SOFT, textAlign: 'center', lineHeight: 16 },
-        ringValue: { fontWeight: '800', color: colors.white, marginTop: Spacing.xxs },
+        ringLabel: { fontSize: FontSize.sm, color: colors.textSecondary, textAlign: 'center', lineHeight: 16 },
+        ringValue: { fontWeight: '800', color: colors.textPrimary, marginTop: Spacing.xxs },
         controls: { alignItems: 'stretch', gap: Spacing.sm },
-        goalLabel: { fontSize: FontSize.lg, fontWeight: '600', color: colors.white, textAlign: 'center' },
+        goalLabel: { fontSize: FontSize.lg, fontWeight: '600', color: colors.textPrimary, textAlign: 'center' },
         startButton: {
             flexDirection: 'row',
             alignItems: 'center',
             minHeight: 40,
             marginTop: Spacing.sm,
             backgroundColor: colors.bgCard,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
             borderRadius: Radius.pill,
             paddingLeft: 4,
             paddingRight: Spacing.md,
@@ -254,13 +244,13 @@ function createStyles(colors: ColorScheme, heroColor: string) {
         startText: { flex: 1, textAlign: 'center', fontSize: FontSize.xxl, fontWeight: '600', color: colors.accent },
         runningTop: { alignItems: 'center', gap: Spacing.s6 },
         todayRow: { alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.xs },
-        todayLabel: { fontSize: FontSize.md, color: ON_HERO_SOFT },
-        todayValue: { color: colors.white, fontWeight: '600' },
-        goalTrack: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: RING_TRACK, overflow: 'hidden' },
-        goalFill: { height: 8, borderRadius: 4, backgroundColor: colors.white },
-        runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', color: colors.white },
-        bigClock: { fontSize: 54, lineHeight: 62, fontWeight: '700', color: colors.white, fontVariant: ['tabular-nums'] },
-        breakLine: { fontSize: FontSize.md, fontWeight: '600', color: ON_HERO_SOFT, fontVariant: ['tabular-nums'] },
+        todayLabel: { fontSize: FontSize.md, color: colors.textSecondary },
+        todayValue: { color: colors.textPrimary, fontWeight: '600' },
+        goalTrack: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' },
+        goalFill: { height: 8, borderRadius: 4, backgroundColor: colors.accent },
+        runningSubject: { marginTop: Spacing.xs, fontSize: FontSize.md, fontWeight: '600', color: colors.accent },
+        bigClock: { fontSize: 54, lineHeight: 62, fontWeight: '700', color: colors.textPrimary, fontVariant: ['tabular-nums'] },
+        breakLine: { fontSize: FontSize.md, fontWeight: '600', color: colors.streak, fontVariant: ['tabular-nums'] },
         runningButtons: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.md },
         pill: {
             flexDirection: 'row',
@@ -269,6 +259,8 @@ function createStyles(colors: ColorScheme, heroColor: string) {
             minWidth: 118,
             minHeight: 36,
             backgroundColor: colors.bgCard,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: colors.border,
             borderRadius: Radius.pill,
             paddingLeft: 4,
             paddingRight: Spacing.md,

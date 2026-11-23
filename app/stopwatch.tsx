@@ -4,10 +4,9 @@ import { Text } from '../components/AppText';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { setStatusBarStyle } from 'expo-status-bar';
 import ScreenHeader, { HeaderIconButton } from '../components/ScreenHeader';
 import { PullToRefreshIndicator, usePullToRefresh } from '../components/PullToRefresh';
-import StopwatchHero, { useStopwatchHeroColor } from '../components/stopwatch/StopwatchHero';
+import StopwatchHero from '../components/stopwatch/StopwatchHero';
 import StopwatchTimeline from '../components/stopwatch/StopwatchTimeline';
 import StudyStartSheet, { type StudyChoice } from '../components/stopwatch/StudyStartSheet';
 import SessionEditorSheet, { editorInitialFor, type SessionEditorInitial } from '../components/stopwatch/SessionEditorSheet';
@@ -19,7 +18,7 @@ import StudyToolsMenu, { STUDY_TOOLS_FAB_SIZE } from '../components/stopwatch/St
 import { studyTypeLabel } from '../components/stopwatch/StudyTypeChips';
 import { BellIcon, CalendarIcon, GearIcon, PlusCircleIcon } from '../components/stopwatch/StopwatchIcons';
 import { useCenteredInset } from '../hooks/useCenteredInset';
-import { FontSize, Spacing, useIsDarkTheme, useThemeColors, type ColorScheme } from '../constants/theme';
+import { FontSize, Spacing, useThemeColors, type ColorScheme } from '../constants/theme';
 import { useAppSettings, useCollectionInvalidation } from '../contexts/AppContext';
 import { useDeferredScreenSnapshot } from '../hooks/useDeferredScreenSnapshot';
 import { useI18n } from '../hooks/useI18n';
@@ -76,8 +75,6 @@ function lightHaptic(): void {
 export default function StopwatchScreen() {
     const { l, locale, localeTag } = useI18n();
     const colors = useThemeColors();
-    const isDark = useIsDarkTheme();
-    const heroColor = useStopwatchHeroColor();
     // A wide window centres the timeline in one readable column under the hero.
     const inset = useCenteredInset();
     const styles = useMemo(() => createStyles(colors, inset), [colors, inset]);
@@ -95,12 +92,6 @@ export default function StopwatchScreen() {
         setSchedulingRevision(getSchedulingRevision());
     }, [getSchedulingRevision]));
 
-    // White status bar text over the coloured header while this screen is in front; the screens
-    // opened over it get the theme's own back.
-    useFocusEffect(useCallback(() => {
-        setStatusBarStyle('light');
-        return () => setStatusBarStyle(isDark ? 'light' : 'dark');
-    }, [isDark]));
 
     // The reminders' words follow TUSBuddy's: the title says what is due, the body adds the subject.
     const buildAlertCopy = useCallback((state: RunningStopwatch, prefs: StopwatchPrefs) => ({
@@ -405,10 +396,9 @@ export default function StopwatchScreen() {
     const openCalendar = () => openOrReturnTo(router, navigation, 'study-calendar', '/study-calendar');
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: heroColor }]} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <ScreenHeader
                 title={l('Kronometre', 'Stopwatch')}
-                tint={{ background: heroColor, foreground: colors.white }}
                 backAccessibilityLabel={l('Geri dön', 'Go back')}
                 onBack={() => goBackOr(router)}
                 actions={(
@@ -419,19 +409,19 @@ export default function StopwatchScreen() {
                                 : l('Hatırlatmalar kapalı', 'Reminders off')}
                             onPress={() => setAlertsOpen(true)}
                         >
-                            <BellIcon color={colors.white} size={24} muted={!prefs.alertsEnabled} />
+                            <BellIcon color={colors.accent} size={24} muted={!prefs.alertsEnabled} />
                         </HeaderIconButton>
                         <HeaderIconButton
                             accessibilityLabel={l('Çalışma Takvimi', 'Study Calendar')}
                             onPress={openCalendar}
                         >
-                            <CalendarIcon color={colors.white} size={24} />
+                            <CalendarIcon color={colors.accent} size={24} />
                         </HeaderIconButton>
                         <HeaderIconButton
                             accessibilityLabel={l('Kronometre ayarları', 'Stopwatch settings')}
                             onPress={() => setSettingsOpen(true)}
                         >
-                            <GearIcon color={colors.white} size={24} />
+                            <GearIcon color={colors.accent} size={24} />
                         </HeaderIconButton>
                     </>
                 )}
@@ -565,7 +555,7 @@ export default function StopwatchScreen() {
 
 function createStyles(colors: ColorScheme, inset: number) {
     return StyleSheet.create({
-        container: { flex: 1 },
+        container: { flex: 1, backgroundColor: colors.bgPrimary },
         page: { flex: 1, backgroundColor: colors.bgPrimary },
         scroll: { flex: 1 },
         sectionHeader: {

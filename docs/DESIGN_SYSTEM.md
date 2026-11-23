@@ -126,7 +126,7 @@ copy them; change them only on the owner's word.
 | Deck list | The large "Desteler" title and the TUS Kartları strip. |
 | Deck picker (`components/DeckPickerModal.tsx`) | Its own window and 54 pt rows; the chosen deck ends in the kit's tick. Every screen that picks a deck opens this one picker. |
 | Browse | The card row (`BrowserCardRow`: its own boxed row with two detail lines), the deck scope selector under the header, and the search-help example rows. |
-| Kronometre | The green header and hero, "Başla", the plan card's "Oluştur", "Sınav tarihi ekle", "Geçmiş çalışma ekle", the session card's ••• and the sleeping-panda empty state. Its sheets, selectors, steppers and fields are kit parts. |
+| Kronometre | The hero (on the page background, colour only in its ring, clock and buttons), "Başla", the plan card's "Oluştur", "Sınav tarihi ekle", "Geçmiş çalışma ekle", the session card's ••• and the sleeping-panda empty state. Its sheets, selectors, steppers and fields are kit parts. |
 
 ## Rules
 

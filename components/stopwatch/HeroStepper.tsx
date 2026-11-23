@@ -16,7 +16,7 @@ interface HeroStepperProps {
 }
 
 /**
- * The daily goal's − value + on the Kronometre hero: a card-coloured track over the coloured hero
+ * The daily goal's − value + on the Kronometre hero: a card-coloured track with a hairline edge
  * that fills the width it is given, the value between its two round buttons. It is part of the
  * hero's own design; every other stepper is `components/ui/Stepper`. Holding a button repeats the
  * step.
@@ -50,7 +50,7 @@ export function HeroStepper({ value, onStep, decreaseLabel, increaseLabel, canDe
     };
 
     return (
-        <View style={[styles.track, { backgroundColor: colors.bgCard }]}>
+        <View style={[styles.track, { backgroundColor: colors.bgCard, borderColor: colors.border }]}>
             {button(-1)}
             <Text style={[styles.value, { color: colors.accent }]} numberOfLines={1} accessibilityLiveRegion="polite">
                 {value}
@@ -61,7 +61,7 @@ export function HeroStepper({ value, onStep, decreaseLabel, increaseLabel, canDe
 }
 
 const styles = StyleSheet.create({
-    track: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.pill, padding: 3 },
+    track: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.pill, borderWidth: StyleSheet.hairlineWidth, padding: 3 },
     button: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     disabled: { opacity: DISABLED_OPACITY },
     value: { flex: 1, minWidth: 0, textAlign: 'center', fontSize: FontSize.lg, fontWeight: '600', fontVariant: ['tabular-nums'] },
