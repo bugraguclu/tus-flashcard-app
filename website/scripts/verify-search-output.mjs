@@ -44,7 +44,7 @@ export function verifySearchOutput({ dist, htmlFiles, check }) {
     const description = decode(html.match(/<meta name="description" content="([^"]+)"/)?.[1] ?? '');
     check(title.length > 0 && title.length <= 58, `${rel}: title has ${title.length} characters (maximum 58)`);
     check(description.length >= 90 && description.length <= 160, `${rel}: description has ${description.length} characters (90–160)`);
-    if (['index.html', 'puan-hesapla/index.html', 'yardim/temel-kavramlar/index.html'].includes(rel)) {
+    if (['index.html', 'tus-calisma-rehberi/index.html', 'puan-hesapla/index.html', 'yardim/temel-kavramlar/index.html'].includes(rel)) {
       check(description.length >= 120 && description.length <= 155, `${rel}: targeted description must be 120–155 characters`);
     }
     check(Boolean(byType(list, 'BreadcrumbList')), `${rel}: missing BreadcrumbList`);
@@ -114,6 +114,15 @@ export function verifySearchOutput({ dist, htmlFiles, check }) {
   const calculator = byType(schemas(read('puan-hesapla/index.html'), 'calculator'), 'WebApplication');
   check(Boolean(calculator?.author?.['@id'] && calculator?.publisher?.['@id']), 'calculator: missing author/publisher');
   dated(calculator, 'calculator');
+
+  const guideSchemas = schemas(read('tus-calisma-rehberi/index.html'), 'tus-calisma-rehberi');
+  const guideArticle = byType(guideSchemas, 'Article');
+  const guideHowTo = byType(guideSchemas, 'HowTo');
+  const guideFaq = byType(guideSchemas, 'FAQPage');
+  check(Boolean(guideArticle?.author?.['@id'] && guideArticle?.publisher?.['@id'] && guideArticle?.speakable), 'tus-calisma-rehberi: incomplete Article/Speakable schema');
+  check(Boolean(guideHowTo?.step?.length >= 4), 'tus-calisma-rehberi: missing 4+ step HowTo schema');
+  check(Boolean(guideFaq?.mainEntity?.length >= 8), 'tus-calisma-rehberi: missing 8+ question FAQPage schema');
+  dated(guideArticle, 'tus-calisma-rehberi');
 
   const refs = read('referanslar/index.html');
   const dataset = byType(schemas(refs, 'references'), 'Dataset');

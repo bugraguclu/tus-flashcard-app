@@ -15,6 +15,9 @@ export interface WebsiteSearchEntry {
 
 const EXTRA_PAGE_TERMS: Record<string, string> = {
   home: 'tusankim 9575 kart fsrs-6 aralıklı tekrar kronometre ücretsiz beta',
+  'calisma-rehberi': 'tus çalışma rehberi 2027 plan tempo fsrs-6 11 branş zorluklar unutma tekrar borcu nöbet intörn deneme platosu %5 kesinti',
+  'calisma-plani': 'çalışma planı tempo hesaplayıcı fsrs-6 günlük kart sınav tarihi takvim ics stajyer intörn mezun',
+  'kart-denemesi': 'kart denemesi tablet demo deste listesi 11 ders cloze',
   referanslar: 'referans çıkmış soru 2026 2025 2024 doğrudan dolaylı konu kapsamı a78ae1f osym',
   puan: 'puan hesapla hedef net temel klinik %5 kesinti 45 baraj',
   kurucu: 'hakkımızda tusankim kart koleksiyonu referans değerlendirme',

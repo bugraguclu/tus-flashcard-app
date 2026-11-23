@@ -1,0 +1,186 @@
+---
+import { SITE } from '../../config';
+import { GUIDE_FAQS, OFFICIAL_SOURCES } from '../../data/studyGuide';
+
+interface Props {
+  datePublished?: string;
+  dateModified?: string;
+}
+
+const { datePublished, dateModified } = Astro.props;
+
+const formatTrDate = (iso?: string) => {
+  if (!iso) return null;
+  const parsed = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return iso;
+  return new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(parsed);
+};
+
+const pubLabel = formatTrDate(datePublished);
+const modLabel = formatTrDate(dateModified);
+
+const helpfulGuides = [
+  { title: 'Hızlı başlangıç', text: 'Hazır TUS paketini aç, ilk desteni seç ve çalışmaya başla.', href: '/yardim/hizli-baslangic/' },
+  { title: 'FSRS-6 tekrar takvimi', text: 'Hedef hatırlama oranı, öğrenme adımları ve optimizasyon.', href: '/yardim/fsrs/' },
+  { title: 'Deste seçenekleri', text: 'Günlük kart limitleri, Kolay günler ve sülük (leech) ayarı.', href: '/yardim/deste-secenekleri/' },
+  { title: 'Filtrelenmiş deste', text: 'Birikmiş kuyruğu parçalama ve sınav öncesi Önizleme modu.', href: '/yardim/filtrelenmis-deste/' },
+  { title: 'Kronometre ve takvim', text: 'Konu, soru ve deneme oturumlarını tek takvimde takip et.', href: '/yardim/kronometre/' },
+  { title: 'Anki ile kullanma', text: 'Kişisel .apkg ve .colpkg destelerini medyasıyla taşı.', href: '/yardim/anki-ile-kullanma/' },
+];
+---
+<!-- Guide FAQ Accordion (native details/summary, Expand/Collapse All) -->
+<section id="rehber-sss" tabindex="-1" class="guide-section guide-defer py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="guide-faq-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+    <div class="lg:col-span-4 space-y-4">
+      <p class="guide-kicker">Sık Sorulanlar</p>
+      <h2 id="guide-faq-heading" class="display text-section tracking-tightest text-ink">
+        TUS çalışması hakkında sık sorulan sorular
+      </h2>
+      <p class="text-sm text-inkMuted leading-relaxed">
+        TUS çalışma süresi, puan ağırlıkları, FSRS-6 hedef hatırlama, tekrar borcu ve 2027 sınav takvimi hakkında kısa yanıtlar.
+      </p>
+      <div class="flex flex-wrap items-center gap-3 pt-1">
+        <button
+          type="button"
+          data-faq-toggle-all
+          {...({ commandfor: 'guide-faq-list', command: '--toggle-all' } as Record<string, string>)}
+          aria-expanded="false"
+          class="button-secondary"
+        >
+          <span class="label-expand">Tüm yanıtları aç</span>
+          <span class="label-collapse">Tüm yanıtları kapat</span>
+        </button>
+        <a href="/sss/" class="text-link">Ürün ve fiyat SSS →</a>
+      </div>
+    </div>
+
+    <div id="guide-faq-list" class="lg:col-span-8 faq guide-faq rounded-2xl border border-line bg-white px-5 sm:px-7 py-2">
+      {GUIDE_FAQS.map((item) => (
+        <details>
+          <summary><span>{item.q}</span></summary>
+          <div class="faq-answer">
+            <p>{item.a}</p>
+          </div>
+        </details>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- Related help guides, official citations & editorial boundary -->
+<section id="kaynaklar" tabindex="-1" class="guide-section guide-defer py-14 sm:py-20 bg-white" aria-labelledby="guide-sources-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 space-y-10">
+    <div class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+        <div>
+          <p class="guide-kicker">Derinleştir</p>
+          <h2 id="guide-sources-heading" class="display text-section tracking-tightest text-ink mt-2">
+            İlgili kullanım rehberleri ve resmî kaynaklar
+          </h2>
+        </div>
+        <a href="/yardim/" class="text-link">21 yardım rehberinin tümü →</a>
+      </div>
+
+      <h3 class="sr-only">Uygulama kullanım rehberleri</h3>
+      <ul role="list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {helpfulGuides.map((g) => (
+          <li>
+            <a href={g.href} class="block h-full rounded-2xl border border-line bg-surfaceSoft p-5 hover:border-tealGraphic transition">
+              <p class="font-semibold text-ink">{g.title}</p>
+              <p class="text-sm text-inkMuted mt-1.5 leading-relaxed">{g.text}</p>
+              <span class="mt-3 inline-flex items-center text-xs font-semibold text-teal">Rehberi aç →</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-6 items-start">
+      <div class="lg:col-span-7 rounded-2xl border border-line bg-surfaceSoft p-6 space-y-3">
+        <h3 class="display text-base text-ink">Doğrulanmış resmî ve akademik kaynaklar</h3>
+        <ul class="space-y-1 text-sm">
+          {OFFICIAL_SOURCES.map((src) => (
+            <li class="py-1 border-b border-lineLight last:border-b-0">
+              <a
+                href={src.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center min-h-[2.75rem] py-1 font-medium text-teal underline underline-offset-2 hover:text-tealDark"
+              >
+                {src.title} ↗
+              </a>
+              <p class="text-xs text-inkMuted pb-1">{src.note}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <aside class="lg:col-span-5 rounded-2xl border border-line bg-surfaceSoft p-6 space-y-4">
+        <div class="space-y-2">
+          <h3 class="display text-base text-ink">Kapsam notu ve editöryal şeffaflık</h3>
+          <p class="text-xs text-inkMuted leading-relaxed">
+            Bu rehberdeki FSRS-6 süreleri, net aralıkları ve çalışma planları eğitim planlaması amaçlıdır; tıbbi tavsiye değildir
+            ve resmî ÖSYM kılavuzlarının yerine geçmez. Sınav tarihleri, baraj ve %5 kesinti uygulamaları için sınava gireceğin
+            dönemin güncel ÖSYM TUS Kılavuzu esas alınmalıdır.
+          </p>
+          <p class="text-xs text-inkMuted leading-relaxed">
+            Son 6 TUS referans eşleştirmeleri yapay zekâ destekli ön değerlendirmedir; bağımsız hekim editör onayı sürmektedir.
+            Bir eksiklik veya düzeltme önerisi için <a href="/destek/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">Destek ve iletişim</a> sayfasından bize ulaşabilirsin.
+          </p>
+        </div>
+
+        <dl class="pt-4 border-t border-line text-xs text-inkMuted space-y-1.5">
+          <div>
+            <dt class="inline font-semibold text-ink">Hazırlayan: </dt>
+            <dd class="inline">
+              <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">TusAnkiM ekibi</a>
+            </dd>
+          </div>
+          {pubLabel && datePublished && (
+            <div>
+              <dt class="inline font-semibold text-ink">İlk yayım: </dt>
+              <dd class="inline"><time datetime={datePublished}>{pubLabel}</time></dd>
+            </div>
+          )}
+          {modLabel && dateModified && (
+            <div>
+              <dt class="inline font-semibold text-ink">Son güncelleme: </dt>
+              <dd class="inline"><time datetime={dateModified}>{modLabel}</time></dd>
+            </div>
+          )}
+        </dl>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- Final CTA band -->
+<section class="guide-cta-band text-white" aria-labelledby="guide-cta-bottom-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-14 sm:py-16 grid lg:grid-cols-12 gap-8 items-center">
+    <div class="lg:col-span-8">
+      <h2 id="guide-cta-bottom-heading" class="display text-section tracking-tightest">
+        Planını kurduysan bugün ilk 20 kartla başla.
+      </h2>
+      <p class="mt-3 text-white/90 leading-relaxed max-w-2xl">
+        Web uygulamasını ücretsiz aç, 9.575 kartlık BKA TUS paketinden bir ders seç ve ilk tekrarını yap.
+        Hesap açman gerekmez; kartların ve ilerlemen cihazında kalır.
+      </p>
+    </div>
+    <div class="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3">
+      <a
+        href={SITE.webAppUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center justify-center min-h-[3.25rem] px-7 rounded-full bg-white text-teal text-[0.9375rem] font-semibold hover:bg-tint transition"
+      >
+        Ücretsiz Başla ↗<span class="sr-only"> (yeni sekmede açılır)</span>
+      </a>
+      <a
+        href="/calisma-plani/"
+        class="inline-flex items-center justify-center min-h-[3.25rem] px-7 rounded-full border border-white/60 text-white text-[0.9375rem] font-semibold hover:bg-white/10 transition"
+      >
+        Kişisel FSRS-6 Planlayıcı
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,66 @@
+---
+import exams from '../../data/exams.json';
+---
+<section id="tus-takvimi" tabindex="-1" class="guide-section py-12 sm:py-16 bg-white border-b border-line" aria-labelledby="calendar-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 grid lg:grid-cols-12 gap-8 items-start">
+    <div class="lg:col-span-4">
+      <p class="guide-kicker guide-kicker-warm">TUS Ne Zaman?</p>
+      <h2 id="calendar-heading" class="display text-section tracking-tightest text-ink mt-3">
+        2027 TUS tarihleri ve takvim planlaması
+      </h2>
+      <p class="text-inkMuted mt-3 leading-relaxed text-sm">{exams.sourceNote}</p>
+      <p class="text-inkMuted mt-2 leading-relaxed text-sm">
+        Sınav gününden geriye doğru sayarken ilk tur bitişini sınav sabahına değil, <strong>14–30 gün öncesine</strong> koy.
+        Bu tampon dönemi, yeni bilgi yığmak yerine deneme analizine ve olgun tekrarlara ayır.
+      </p>
+      <a href="/calisma-plani/" class="text-link mt-2">
+        2027 sınavını seçip geri sayım planı kur →
+      </a>
+    </div>
+
+    <ul role="list" class="lg:col-span-8 grid sm:grid-cols-2 gap-4">
+      {exams.exams.map((e, i) => (
+        <li class="guide-reveal rounded-2xl border border-line bg-surfaceSoft p-5 sm:p-6 flex flex-col justify-between" style={`--d: ${i * 60}ms`}>
+          <div>
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="display text-lg text-ink">{e.name}</h3>
+              <span
+                class="shrink-0 rounded-full bg-warmTint px-2.5 py-1 text-xs font-bold text-warm tabular-nums"
+                data-days-left={e.examDate}
+                hidden
+              ></span>
+            </div>
+            <p class="mt-3 display text-3xl text-ink tabular-nums">
+              <time datetime={e.examDate}>{e.examDateLabel}</time>
+            </p>
+          </div>
+          <dl class="mt-5 pt-4 border-t border-line grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt class="text-xs text-inkMuted">Başvuru</dt>
+              <dd class="font-semibold text-ink tabular-nums mt-0.5">{e.applicationLabel}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-inkMuted">Sonuç açıklaması</dt>
+              <dd class="font-semibold text-ink tabular-nums mt-0.5">
+                <time datetime={e.resultDate}>{e.resultLabel}</time>
+              </dd>
+            </div>
+          </dl>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<script>
+  // Fill days remaining on the client so static HTML never displays a stale countdown.
+  const DAY = 86_400_000;
+  document.querySelectorAll<HTMLElement>('[data-days-left]').forEach((el) => {
+    const at = Date.parse(el.dataset.daysLeft ?? '');
+    if (Number.isNaN(at)) return;
+    const days = Math.ceil((at - Date.now()) / DAY);
+    if (days < 0) return;
+    el.textContent = days === 0 ? 'Bugün' : `${days.toLocaleString('tr-TR')} gün kaldı`;
+    el.hidden = false;
+  });
+</script>

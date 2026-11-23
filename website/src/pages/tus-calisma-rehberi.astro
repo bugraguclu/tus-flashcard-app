@@ -1,0 +1,202 @@
+---
+import Layout from '../layouts/Layout.astro';
+import GuideHeroAndToc from '../components/guide/GuideHeroAndToc.astro';
+import GuideTempoAndMegaDeck from '../components/guide/GuideTempoAndMegaDeck.astro';
+import GuideExamCalendar from '../components/guide/GuideExamCalendar.astro';
+import GuideBranchesAndScoring from '../components/guide/GuideBranchesAndScoring.astro';
+import GuideFsrsAndWorkflow from '../components/guide/GuideFsrsAndWorkflow.astro';
+import GuideStruggles from '../components/guide/GuideStruggles.astro';
+import GuideFaqAndSources from '../components/guide/GuideFaqAndSources.astro';
+import '../styles/guide.css';
+
+import { GUIDE_FAQS, GUIDE_META, WORKFLOW_STEPS } from '../data/studyGuide';
+import { breadcrumbList } from '../lib/schema';
+import { publicationDates, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const pageUrl = origin + '/tus-calisma-rehberi/';
+const dates = publicationDates('website/src/pages/tus-calisma-rehberi.astro', pageSources('calisma-rehberi'));
+
+const crumbs = breadcrumbList(origin, [
+  { name: 'Ana Sayfa', path: '/' },
+  { name: 'TUS Çalışma Rehberi', path: '/tus-calisma-rehberi' },
+]);
+
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  '@id': pageUrl + '#article',
+  mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
+  url: pageUrl,
+  headline: GUIDE_META.h1,
+  description: GUIDE_META.description,
+  inLanguage: 'tr-TR',
+  author: { '@id': origin + '/#organization' },
+  publisher: { '@id': origin + '/#organization' },
+  image: {
+    '@type': 'ImageObject',
+    url: origin + '/images/og/tus-calisma-rehberi.png',
+    width: 1200,
+    height: 630,
+  },
+  about: [
+    { '@type': 'Thing', name: 'Tıpta Uzmanlık Eğitimi Giriş Sınavı (TUS)' },
+    { '@type': 'Thing', name: 'Aralıklı tekrar (FSRS-6)' },
+    { '@type': 'Thing', name: 'TUS çalışma planı ve 11 branş stratejisi' },
+  ],
+  speakable: {
+    '@type': 'SpeakableSpecification',
+    cssSelector: ['#guide-title', '[data-speakable]'],
+  },
+  ...dates,
+};
+
+const howToSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'TUS çalışma planı nasıl kurulur ve sürdürülür?',
+  description:
+    'Sınav tarihine göre FSRS-6 temposu belirleme, günlük tekrar önceliği, Kronometre takibi ve deneme analiziyle 4 adımlı TUS çalışma yöntemi.',
+  inLanguage: 'tr-TR',
+  step: WORKFLOW_STEPS.map((s, index) => ({
+    '@type': 'HowToStep',
+    position: index + 1,
+    name: s.name,
+    text: `${s.summary} ${s.detail}`,
+    url: origin + s.href,
+  })),
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: GUIDE_FAQS.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.a,
+    },
+  })),
+};
+---
+<Layout
+  title={GUIDE_META.title}
+  description={GUIDE_META.description}
+  schema={[crumbs, articleSchema, howToSchema, faqSchema]}
+>
+  <GuideHeroAndToc />
+  <GuideTempoAndMegaDeck />
+  <GuideExamCalendar />
+  <GuideBranchesAndScoring />
+  <GuideFsrsAndWorkflow />
+  <GuideStruggles />
+  <GuideFaqAndSources datePublished={dates.datePublished} dateModified={dates.dateModified} />
+</Layout>
+
+<script>
+  // 1. Scrollspy aria-current sync (native CSS scroll-target-group + IntersectionObserver fallback)
+  const tocNav = document.querySelector<HTMLElement>('[data-guide-toc]');
+  if (tocNav) {
+    const links = Array.from(tocNav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'));
+    const sections = links
+      .map((a) => document.getElementById(a.getAttribute('href')!.slice(1)))
+      .filter((el): el is HTMLElement => Boolean(el));
+
+    const centerTocPill = (active: HTMLAnchorElement | null) => {
+      if (!active || window.scrollY < 40) return;
+      const targetLeft = active.offsetLeft - (tocNav.clientWidth - active.offsetWidth) / 2;
+      tocNav.scrollLeft = Math.max(0, targetLeft);
+    };
+
+    const supportsNative = typeof CSS !== 'undefined' && CSS.supports('scroll-target-group: auto');
+    if (supportsNative) {
+      const syncNative = () => {
+        const active = tocNav.querySelector<HTMLAnchorElement>('a:target-current');
+        links.forEach((link) => {
+          if (link === active) link.setAttribute('aria-current', 'true');
+          else link.removeAttribute('aria-current');
+        });
+        centerTocPill(active);
+      };
+      syncNative();
+      document.addEventListener('scrollend', syncNative, { passive: true });
+    } else if ('IntersectionObserver' in window && sections.length) {
+      const setActive = (id: string) => {
+        let active: HTMLAnchorElement | null = null;
+        links.forEach((link) => {
+          const match = link.getAttribute('href') === `#${id}`;
+          link.classList.toggle('target-current', match);
+          if (match) {
+            link.setAttribute('aria-current', 'true');
+            active = link;
+          } else {
+            link.removeAttribute('aria-current');
+          }
+        });
+        centerTocPill(active);
+      };
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) setActive(entry.target.id);
+          }
+        },
+        { rootMargin: '-25% 0px -65% 0px', threshold: 0 },
+      );
+      sections.forEach((section) => io.observe(section));
+    }
+  }
+
+  // 2. Accordion Expand/Collapse All (Invoker Commands + click fallback for older browsers)
+  const faqList = document.getElementById('guide-faq-list');
+  const toggleBtn = document.querySelector<HTMLButtonElement>('[data-faq-toggle-all]');
+  if (faqList && toggleBtn) {
+    const items = () => Array.from(faqList.querySelectorAll<HTMLDetailsElement>(':scope > details'));
+    const syncButton = () => {
+      const allOpen = items().length > 0 && items().every((d) => d.open);
+      toggleBtn.setAttribute('aria-expanded', String(allOpen));
+    };
+    const toggleAll = () => {
+      const expand = toggleBtn.getAttribute('aria-expanded') !== 'true';
+      items().forEach((d) => { d.open = expand; });
+      syncButton();
+    };
+
+    if (Object.hasOwn(HTMLButtonElement.prototype, 'commandForElement')) {
+      faqList.addEventListener('command', (event: Event) => {
+        if ((event as Event & { command?: string }).command !== '--toggle-all') return;
+        toggleAll();
+      });
+    } else {
+      toggleBtn.addEventListener('click', toggleAll);
+    }
+
+    faqList.addEventListener(
+      'toggle',
+      (event) => {
+        if ((event.target as Element)?.matches('#guide-faq-list > details')) syncButton();
+      },
+      { capture: true },
+    );
+  }
+
+  // 3. Progressive reveal / chart stroke draw (never hides content without JS; respects Reduce Motion)
+  const revealTargets = document.querySelectorAll<HTMLElement>('.guide-reveal, .guide-chart');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceMotion && 'IntersectionObserver' in window && revealTargets.length) {
+    let first = true;
+    const revealIo = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          if (!first) entry.target.classList.add('is-in');
+          revealIo.unobserve(entry.target);
+        }
+        first = false;
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+    );
+    revealTargets.forEach((el) => revealIo.observe(el));
+  }
+</script>

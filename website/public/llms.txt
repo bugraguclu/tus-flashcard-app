@@ -1,0 +1,17 @@
+# TusAnkiM
+
+> TUS (Tıpta Uzmanlık Sınavı) hazırlığı için Türkçe aralıklı tekrar (FSRS-6) uygulaması, 9.575 kartlık BKA TUS koleksiyonu, açık referans analizi ve kapsamlı TUS çalışma rehberi. TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir.
+
+## Temel Sayfalar
+- [Ana Sayfa](https://tusankim.com/): Ürün tanıtımı, 11 dersten canlı kart demosu, referans özeti ve çalışma araçları.
+- [TUS Çalışma Rehberi (2027)](https://tusankim.com/tus-calisma-rehberi/): 4 aday profili için FSRS-6 temposu, 9.575 vs 27.341 mega deste kıyası, 2027 ÖSYM takvimi, 11 branş çalışma stratejisi, puan ağırlıkları, %5 kesinti kuralı ve TUS çalışırken en çok zorlanılan 7 alana somut çözümler.
+- [TUS Çalışma Planı ve Tempo Hesaplayıcı](https://tusankim.com/calisma-plani/): Sınav tarihine, derslere ve haftalık çalışma gününe göre interaktif FSRS-6 tempo simülatörü ve `.ics` takvim çıktısı.
+- [TUS Puan Hesaplayıcı](https://tusankim.com/puan-hesapla/): 100 Temel + 100 Klinik net hesabı, %70/%30 ve %50/%50 ağırlıklar, 45 barajı, %5 puan kesintisi (× 0,95) ve tersine hedef net planlayıcı.
+- [TUS Referansları](https://tusankim.com/referanslar/): Son 6 TUS (2024/1–2026/2, 1.195 soru) açık veri referans gezgini (`Doğrudan`, `Dolaylı` ve `Konu Kapsamı` ayrı).
+- [Kartları Tablette Dene](https://tusankim.com/kart-denemesi/): 11 dersten 44 kartlık tarayıcı içi deste listesi ve çalışma ekranı demosu.
+- [Yardım Merkezi (21 Rehber)](https://tusankim.com/yardim/): Kurulum, FSRS-6, Deste Seçenekleri, Filtrelenmiş Deste, Kronometre, İstatistikler, Anki aktarım ve yedekleme kılavuzları.
+- [Sıkça Sorulan Sorular](https://tusankim.com/sss/): Ürün, referans yöntemi, ücretsiz beta, planlanan lansman ve cihazlar hakkında yanıtlar.
+- [Hakkımızda](https://tusankim.com/kurucu/): TusAnkiM hazırlama yaklaşımı ve editöryal ilkeler.
+
+## Tam Metin Özeti
+- [llms-full.txt](https://tusankim.com/llms-full.txt): Doğrulanmış rakamlar, 11 branş tablosu, FSRS-6 simülasyon değerleri ve TUS çalışma rehberi özeti.

@@ -10,7 +10,7 @@ import { newest, pageSources } from '../../lib/lastmod';
 
 const articles = getHelpArticles();
 const categories = [...new Set(articles.map((a) => a.category))];
-const entries = [...websiteGuideEntries(articles), ...websitePageEntries(['puan', 'referanslar', 'sss', 'destek'])];
+const entries = [...websiteGuideEntries(articles), ...websitePageEntries(['calisma-rehberi', 'calisma-plani', 'puan', 'referanslar', 'sss', 'destek'])];
 
 const origin = new URL(Astro.site!).origin;
 const crumbs = breadcrumbList(origin, [
@@ -74,7 +74,10 @@ const colSchema = collectionPage(origin, {
         <p class="text-base text-inkMuted mt-2 leading-relaxed">Çalışma süreni ölç, oturumlarını takvimde gör.</p>
       </a>
     </div>
-    <p class="text-base text-inkMuted mt-5 leading-relaxed">Kartları önce incelemek mi istiyorsun? <a class="text-link" href="/#demo-heading">Gerçek kartları dene</a> ve <a class="text-link" href="/referanslar/">açıklamalı referans kayıtlarına bak</a>.</p>
+    <p class="text-base text-inkMuted mt-5 leading-relaxed">
+      TUS hazırlık stratejisi ve çalışma temposu için <a class="text-link" href="/tus-calisma-rehberi/">TUS Çalışma Rehberi’ni oku</a>.
+      Kartları önce incelemek mi istiyorsun? <a class="text-link" href="/#demo-heading">Gerçek kartları dene</a> ve <a class="text-link" href="/referanslar/">açıklamalı referans kayıtlarına bak</a>.
+    </p>
   </section>
 
   <section data-help-browse class="max-w-content mx-auto px-5 sm:px-6 lg:px-6 py-12 space-y-12">

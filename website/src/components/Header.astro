@@ -46,8 +46,8 @@ const isCurrent = (path: string) => currentPath === path || currentPath.startsWi
   .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 2rem; height: var(--site-header-height); }
   .brand { display: inline-flex; align-items: center; gap: .625rem; min-height: 2.75rem; font-size: 1.125rem; font-weight: 600; letter-spacing: -.035em; }
   .brand img { width: 2.25rem; height: 2.25rem; object-fit: contain; }
-  .desktop-nav { display: flex; align-items: center; gap: 2rem; margin-left: auto; }
-  .desktop-nav a { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; color: #596166; }
+  .desktop-nav { display: flex; align-items: center; gap: clamp(1rem, 1.8vw, 1.75rem); margin-left: auto; }
+  .desktop-nav a { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; color: #596166; white-space: nowrap; }
   .desktop-nav a:hover { color: #0e7469; }
   .header-actions { display: flex; align-items: center; gap: .5rem; }
   button { display: grid; place-items: center; flex: 0 0 2.75rem; width: 2.75rem; height: 2.75rem; border-radius: .5rem; }

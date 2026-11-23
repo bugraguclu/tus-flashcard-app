@@ -11,6 +11,10 @@
     "title": "TUS puan hesaplayıcı",
     "sha256": "caa2977d7d5205820c360c7fbc45c83c4520ed8db651d53d9617aa7377d070da"
   },
+  "/images/og/tus-calisma-rehberi.png": {
+    "title": "TUS çalışma rehberi 2027 plan ve FSRS-6",
+    "sha256": "a4c40e31d60dd3e7e6a6b4c891ef826a2550e63c16ee519f23c359254441ef6f"
+  },
   "/images/og/calisma-plani.png": {
     "title": "TUS çalışma planı ve tempo hesaplayıcı",
     "sha256": "49e695f10310cac07244a67063f36df5ebc0172c93110c7508f1a52e9182e2a2"

@@ -53,6 +53,31 @@ export const PAGES: PageEntry[] = [
     sources: ['website/src/pages/puan-hesapla.astro'],
   },
   {
+    id: 'calisma-rehberi',
+    path: '/tus-calisma-rehberi',
+    title: 'TUS Çalışma Rehberi',
+    navLabel: 'Çalışma Rehberi',
+    footerLabel: 'TUS Çalışma Rehberi (2027)',
+    published: true,
+    sitemap: true,
+    sources: [
+      'website/src/pages/tus-calisma-rehberi.astro',
+      'website/src/data/studyGuide.ts',
+      'website/src/styles/guide.css',
+      'website/src/components/guide/GuideHeroAndToc.astro',
+      'website/src/components/guide/GuideTempoAndMegaDeck.astro',
+      'website/src/components/guide/GuideExamCalendar.astro',
+      'website/src/components/guide/GuideBranchesAndScoring.astro',
+      'website/src/components/guide/GuideFsrsAndWorkflow.astro',
+      'website/src/components/guide/GuideStruggles.astro',
+      'website/src/components/guide/GuideFaqAndSources.astro',
+      'website/src/data/generated/catalog.json',
+      'website/src/data/generated/references-summary.json',
+      'website/src/data/generated/fsrs-curves.json',
+      'website/src/data/exams.json',
+    ],
+  },
+  {
     id: 'calisma-plani',
     path: '/calisma-plani',
     title: 'TUS Çalışma Planı',
@@ -144,8 +169,8 @@ export const PAGES: PageEntry[] = [
   },
 ];
 
-export const NAV_IDS = ['referanslar', 'puan', 'yardim', 'sss'] as const;
-export const FOOTER_DISCOVER_IDS = ['referanslar', 'puan', 'kurucu', 'yardim', 'sss', 'destek'] as const;
+export const NAV_IDS = ['calisma-rehberi', 'referanslar', 'puan', 'yardim', 'sss'] as const;
+export const FOOTER_DISCOVER_IDS = ['calisma-rehberi', 'calisma-plani', 'referanslar', 'puan', 'kurucu', 'yardim', 'sss', 'destek'] as const;
 export const FOOTER_LEGAL_IDS = ['gizlilik', 'kosullar', 'destek'] as const;
 
 export const page = (id: string): PageEntry => {

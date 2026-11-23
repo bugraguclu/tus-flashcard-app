@@ -38,6 +38,7 @@ const covers = {
   home: ['TUS tekrarını günlük bir', 'alışkanlığa dönüştür.'],
   referanslar: ['TUS referansları'],
   'puan-hesapla': ['TUS puan hesaplayıcı'],
+  'tus-calisma-rehberi': ['TUS çalışma rehberi', '2027 plan ve FSRS-6'],
   'calisma-plani': ['TUS çalışma planı', 've tempo hesaplayıcı'],
   'kart-denemesi': ['Kartları tablette dene'],
   yardim: ['Yardım Merkezi'],

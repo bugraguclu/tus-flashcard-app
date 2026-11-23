@@ -1,0 +1,61 @@
+# TusAnkiM — Doğrulanmış Ürün ve TUS Çalışma Rehberi Özeti
+
+> Bağımsız ürün beyanı: TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir.
+> Kapsam notu: Aşağıdaki veriler eğitim planlaması amaçlıdır; tıbbi tavsiye değildir ve resmî ÖSYM TUS kılavuzlarının yerine geçmez.
+
+## 1. Ürün ve Platform Gerçeği
+- **Hazır Koleksiyon (BKA TUS):** 9.575 kart · 7.721 not · 12 ders (11 resmî ÖSYM TUS branşı + 806 kartlık karma Deneme ve Soru) · 106 konu alt destesi.
+- **Zamanlayıcı:** Anki 26.09.3 eşdeğeri FSRS-6 aralıklı tekrar algoritması (varsayılan %90 hedef hatırlama, parametre optimizasyonu).
+- **Platformlar:** iPhone için geliştirilmektedir; bugün web tarayıcısında (Mac, Windows, iPad, Android tarayıcı) ücretsiz beta olarak çalışır. Veriler cihazda yerel olarak saklanır.
+- **Anki Uyumu:** Kişisel `.apkg` ve `.colpkg` desteleri medya ve tekrar geçmişiyle içe ve dışa aktarılır. Hazır BKA TUS paketi ve ilerlemesi dışa aktarılmaz.
+- **Geliştirme Aşamasında (Yakında):** Otomatik bulut eşitleme, yerel Android uygulaması ve TUS Tercih Simülasyonu.
+- **Erişim ve Fiyat:** Güncel beta sürümünde TUS paketi ücretsiz açılır (ödeme veya kart bilgisi gerekmez). Planlanan lansman: günde 200 kart ücretsiz, sınırsız erişim ₺50/ay (ücretli planlar henüz devrede değildir).
+
+## 2. Açık Referans Verisi (Son 6 TUS: 2024/1–2026/2, 1.195 Soru)
+- **Çözüm Desteği:** 521 / 1.195 (%43,6) — 333 Doğrudan + 188 Dolaylı.
+- **Konu Kapsamı:** 1.108 / 1.195 (%92,7) — çözüm desteğinden ayrı sayılır.
+- **2026/2 Ağustos TUS Ayrımı:** Sınavdan 2 gün önceki sürümde (`git a78ae1f`, 21 Ağustos 2026) 76 / 200 (%38,0) çözüm desteği; güncel katalogda 82 / 200 (%41,0) çözüm desteği ve 192 / 200 (%96,0) konu kapsamı. Sınav sonrası güncellenen 6 kayıt ayrı işaretlenir.
+- **Değerlendirme Durumu:** Sınıflandırma yapay zekâ destekli ön değerlendirmedir; bağımsız hekim editör onayı sürmektedir. ÖSYM soru metinleri ve şıkları yayımlanmaz.
+- **Kaynak:** https://tusankim.com/referanslar/ ve https://tusankim.com/data/references.json
+
+## 3. TUS Çalışma Rehberi (https://tusankim.com/tus-calisma-rehberi/)
+
+### 2027 ÖSYM TUS Takvimi
+- **2027-TUS 1. Dönem:** Sınav 27 Mart 2027 · Başvuru 2–10 Şubat 2027 · Sonuç 22 Nisan 2027.
+- **2027-TUS 2. Dönem:** Sınav 22 Ağustos 2027 · Başvuru 5–13 Temmuz 2027 · Sonuç 16 Eylül 2027.
+
+### FSRS-6 (%90 Hedef Hatırlama) Tempo ve Mega Deste Karşılaştırması
+- **Stajyer (365 gün):** 40 yeni/gün → ilk tur 240. günde biter, ortalama 266 kart (~81 dk/gün). Haftada 6 gün planla 34 yeni/gün + son 30 gün tampon.
+- **İntörn (270 gün):** 60 yeni/gün → ilk tur 160. günde biter, ortalama 331 kart (~102 dk/gün), 270. gün yükü 187 kart (50 dk/gün). Haftada 6 gün planla 45 yeni/gün + 21 gün tampon.
+- **Mezun / Pratisyen (180 gün):** 60 yeni/gün → ilk tur 160. günde biter (%94,5 hafızada), ortalama 388 kart (~124 dk/gün).
+- **Son 4 Ay (120 gün):** 80 yeni/gün → ilk tur 120. günde biter, ortalama 473 kart (~157 dk/gün) veya tek grup (Temel 3.957 / Klinik 4.812 kart) odak.
+- **27.341 Kart Mega Deste Kıyaslaması:** Günde 60 yeni kartla 180, 270 ve 365 günde bitmez (180. günde %37,4, 270. günde %55,9 hafızada; 270. günde 198 dk/gün).
+
+### TUS Sınav Yapısı, Puan Ağırlıkları ve Mevzuat
+- 200 soru (100 Temel Bilimler + 100 Klinik Bilimler), 4 yanlış 1 doğruyu götürür.
+- **Temel Tıp Puanı (T):** %70 Temel + %30 Klinik.
+- **Klinik Tıp Puanı (K):** %50 Temel + %50 Klinik.
+- **Barajlar:** İlgili puan türünde 45,000 puan; son 5 yıl içinde YDS / e-YDS / TIPDİL en az 50 puan.
+- **%5 Puan Kesintisi (× 0,95):** Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği uyarınca uzmanlığa devam eden, istifa eden veya yerleşip başlamayan adaylar için takip eden ilk sınavda uygulanır.
+
+### 11 ÖSYM Branşı: Kart Hacmi ve Son 6 TUS Çözüm Desteği
+- **Farmakoloji (Temel):** 827 kart · %56,6 çözüm desteği · %97,2 konu kapsamı.
+- **Biyokimya (Temel):** 602 kart · %56,0 çözüm desteği · %92,7 konu kapsamı.
+- **Mikrobiyoloji (Temel):** 730 kart · %55,6 çözüm desteği · %97,2 konu kapsamı.
+- **Pediatri (Klinik):** 1.506 kart · %52,0 çözüm desteği · %93,9 konu kapsamı.
+- **Patoloji (Temel):** 724 kart · %47,7 çözüm desteği · %93,5 konu kapsamı.
+- **Dahiliye (Klinik):** 1.183 kart · %40,6 çözüm desteği · %90,9 konu kapsamı.
+- **Fizyoloji-Histoloji-Embriyoloji (Temel):** 597 kart · %38,9 çözüm desteği · %96,7 konu kapsamı.
+- **Kadın Doğum (Klinik):** 755 kart · %35,0 çözüm desteği · %96,7 konu kapsamı.
+- **Genel Cerrahi (Klinik):** 742 kart · %31,7 çözüm desteği · %86,7 konu kapsamı.
+- **Küçük Stajlar (Klinik):** 626 kart · %30,2 çözüm desteği · %86,5 konu kapsamı.
+- **Anatomi (Temel):** 477 kart · %28,2 çözüm desteği · %92,3 konu kapsamı.
+
+### TUS Adaylarının En Çok Zorlandığı 7 Alan
+1. 11 branşta uzun süreli kalıcılık (“okuduğumu unutuyorum”) → Cloze + FSRS-6 (%90) + Genç/Olgun hatırlama takibi.
+2. Günlük tekrar yığılması (tekrar borcu / kuyruk krizi) → Yeni kartı 0’a çekme, %85–%90 hedef hatırlama, Filtrelenmiş Deste 100’lük bloklar, Kolay günler, sülük (`leech`) sadeleştirme.
+3. Temel–Klinik dengesi → Klinik puanın %50 Temel ağırlığı + Kronometre ders bazlı analiz.
+4. İntörnlük, nöbet ve tükenmişlik → Haftada 5–6 aktif yeni-kart günü, nöbette yalnızca tekrar, 50/10 blok hatırlatıcı.
+5. Kaynak dağınıklığı ve pasif okuma → Tek ana kaynak + bitirilebilir çekirdek deste + aktif hatırlama.
+6. 55–65 puan deneme platosu → 3’lü hata sınıflandırması (Bilgi / İki şık / Dikkat) + etiketli kişisel yanlış kartları.
+7. Son 30–60 gün paniği → Son 14–30 gün yeni kartsız tampon + Filtrelenmiş Deste Önizleme modu.

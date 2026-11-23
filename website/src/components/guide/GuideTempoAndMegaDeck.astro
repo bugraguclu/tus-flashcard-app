@@ -1,0 +1,269 @@
+---
+import fsrs from '../../data/generated/fsrs-curves.json';
+import catalog from '../../data/generated/catalog.json';
+import {
+  DEFAULT_PLANNER_INPUT,
+  PLANNER_PRESETS,
+  encodePlannerQuery,
+  formatDurationTr,
+  runPlanner,
+} from '../../lib/studyPlanner';
+import { num, pct } from '../../lib/format';
+
+type Cell = { avg: number; rev: number; min: number; peak: number; pMin: number; pct: number; fin: number | null; pts: number[][] };
+const matrix = fsrs.matrix as unknown as Record<string, Record<string, Record<string, Cell>>>;
+const retention = Math.round(fsrs.desiredRetention * 100);
+
+const presetCards = PLANNER_PRESETS.map((preset) => {
+  const input = { ...DEFAULT_PLANNER_INPUT, ...preset.patch };
+  const sim = runPlanner(input);
+  const plannerUrl = `/calisma-plani/?${encodePlannerQuery(input)}#calisma-plani`;
+  return { preset, sim, plannerUrl };
+});
+
+// Moved from HomePlan.astro: full BKA package vs 27,341 mega deck over 180 days at 60 new/day.
+const H = 180;
+const P = 60;
+const mine = matrix.all[String(H)][String(P)];
+const mega = matrix.mega[String(H)][String(P)];
+const megaCards = fsrs.scopes.find((s) => s.id === 'mega')!.cards;
+
+// Verified simulation cells for comparison tables.
+const f40_365 = matrix.all['365']['40'];
+const f60_270 = matrix.all['270']['60'];
+const f60_180 = matrix.all['180']['60'];
+const f80_120 = matrix.all['120']['80'];
+const m60_270 = matrix.mega['270']['60'];
+const m60_365 = matrix.mega['365']['60'];
+const m80_365 = matrix.mega['365']['80'];
+const m80_270 = matrix.mega['270']['80'];
+
+const W = 600;
+const HT = 220;
+const pad = { l: 44, r: 16, t: 14, b: 30 };
+const maxY = Math.ceil(Math.max(...mine.pts.map((p) => p[1]), ...mega.pts.map((p) => p[1])) / 100) * 100;
+const x = (d: number) => pad.l + ((d - 1) / (H - 1)) * (W - pad.l - pad.r);
+const y = (v: number) => pad.t + (1 - v / maxY) * (HT - pad.t - pad.b);
+const path = (pts: number[][]) => pts.map((p, i) => `${i ? 'L' : 'M'}${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`).join(' ');
+const yTicks = [0, maxY / 2, maxY];
+const xTicks = [1, 60, 120, 180];
+---
+<section id="tempo-ve-profiller" tabindex="-1" class="guide-section py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="tempo-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+      <div class="max-w-2xl">
+        <p class="guide-kicker">Çalışma Temposu · 4 Aday Profili</p>
+        <h2 id="tempo-heading" class="display text-section tracking-tightest text-ink mt-3">
+          Sınava kaç gün var? Temponu ona göre seç.
+        </h2>
+        <p class="text-inkMuted mt-3 leading-relaxed">
+          Aşağıdaki sayılar tahmin değil: {num(catalog.totals.cards)} kartın tamamı için TusAnkiM’in gerçek
+          <span lang="en">FSRS-6</span> simülatöründen (%{retention} hedef hatırlama) gelir. Her profil hazırlığı iki faza böler:
+          <strong>1. Faz (Yeni + Tekrar)</strong> ve sınav öncesi <strong>2. Faz (Yalnız Tekrar + Deneme Tamponu)</strong>.
+        </p>
+      </div>
+      <a href="/calisma-plani/" class="button-primary shrink-0 self-start lg:self-auto">
+        Kendi sınav tarihinle planla →
+      </a>
+    </div>
+
+    <!-- 4 Candidate Stage Cards (migrated from HomePlan.astro and synced with PLANNER_PRESETS) -->
+    <ol role="list" class="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {presetCards.map(({ preset, sim, plannerUrl }, i) => (
+        <li class="guide-reveal rounded-2xl border border-line bg-white p-5 flex flex-col" style={`--d: ${i * 50}ms`}>
+          <p class="text-xs font-bold uppercase tracking-wider text-inkMuted">{preset.title}</p>
+          <h3 class="display text-lg text-ink mt-1.5">{preset.horizonLabel}</h3>
+          <p class="mt-4 flex items-baseline gap-1.5">
+            <span class="display text-4xl text-teal tabular-nums">{sim.activePace}</span>
+            <span class="text-sm text-inkMuted">yeni kart / gün</span>
+          </p>
+          <ul role="list" class="mt-3 space-y-1 text-sm text-ink tabular-nums">
+            <li>İlk tur <strong>{sim.target.finishDay ?? sim.input.days}. günde</strong> biter</li>
+            <li>Ortalama <strong>{num(sim.target.avgCards)}</strong> kart/gün (<strong>~{formatDurationTr(sim.target.avgMinutes)}</strong>)</li>
+            <li>Haftada <strong>{sim.input.studyDaysPerWeek} gün</strong> · son <strong>{sim.target.reviewOnlyTailDays} gün</strong> tampon</li>
+          </ul>
+          <p class="mt-4 text-sm text-inkMuted leading-relaxed flex-1">{preset.tip}</p>
+          <div class="mt-4 pt-3 border-t border-lineLight flex flex-col gap-1">
+            <a href={plannerUrl} class="inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal hover:text-tealDark underline underline-offset-4">
+              Bu profili planlayıcıda aç →
+            </a>
+            <a href={preset.href} class="inline-flex items-center min-h-[2.75rem] text-xs font-medium text-inkMuted hover:text-teal underline underline-offset-4">
+              {preset.linkLabel}
+            </a>
+          </div>
+        </li>
+      ))}
+    </ol>
+
+    <!-- Horizon comparison table -->
+    <div class="mt-12 space-y-4">
+      <h3 id="ufuk-tablo-baslik" class="display text-subsection tracking-tightest text-ink">
+        Hazırlık süresine göre FSRS-6 tempo ve günlük süre karşılaştırması
+      </h3>
+      <div class="guide-table-wrap" tabindex="0" role="region" aria-labelledby="ufuk-tablo-baslik">
+        <table class="guide-table">
+          <caption class="sr-only">3–4 ay, 6 ay, 9 ay ve 12 aylık TUS hazırlık pencerelerinde FSRS-6 (%90) günlük kart ve dakika yükü</caption>
+          <thead>
+            <tr>
+              <th scope="col">Aday Profili / Ufuk</th>
+              <th scope="col">Simüle Edilen Tempo</th>
+              <th scope="col">İlk Tur Bitişi</th>
+              <th scope="col">Günlük Ortalama Yük</th>
+              <th scope="col">Tepe Günlük Süre</th>
+              <th scope="col">Önerilen Haftalık Düzen</th>
+            </tr>
+          </thead>
+          <tbody class="tabular-nums">
+            <tr>
+              <th scope="row">Stajyer (4.–5. sınıf · 365 gün)</th>
+              <td data-col="Simüle Edilen Tempo">40 yeni / gün (veya 34/gün @ 6 gün)</td>
+              <td data-col="İlk Tur Bitişi">{f40_365.fin}. gün</td>
+              <td data-col="Günlük Ortalama Yük">{num(f40_365.avg)} kart (~{f40_365.min} dk)</td>
+              <td data-col="Tepe Günlük Süre">{f40_365.pMin} dk ({num(f40_365.peak)} kart)</td>
+              <td data-col="Önerilen Haftalık Düzen">Staja paralel · haftada 1 mola · 30 gün tampon</td>
+            </tr>
+            <tr>
+              <th scope="row">İntörn Hekim (270 gün)</th>
+              <td data-col="Simüle Edilen Tempo">60 yeni / gün (veya 45/gün @ 6 gün)</td>
+              <td data-col="İlk Tur Bitişi">{f60_270.fin}. gün</td>
+              <td data-col="Günlük Ortalama Yük">{num(f60_270.avg)} kart (~{f60_270.min} dk)</td>
+              <td data-col="Tepe Günlük Süre">{f60_270.pMin} dk ({num(f60_270.peak)} kart)</td>
+              <td data-col="Önerilen Haftalık Düzen">Nöbette yalnız tekrar · son 21 gün tampon</td>
+            </tr>
+            <tr>
+              <th scope="row">Mezun / Pratisyen (180 gün)</th>
+              <td data-col="Simüle Edilen Tempo">60 yeni / gün</td>
+              <td data-col="İlk Tur Bitişi">{f60_180.fin}. gün</td>
+              <td data-col="Günlük Ortalama Yük">{num(f60_180.avg)} kart (~{f60_180.min} dk)</td>
+              <td data-col="Tepe Günlük Süre">{f60_180.pMin} dk ({num(f60_180.peak)} kart)</td>
+              <td data-col="Önerilen Haftalık Düzen">Konu + 60 kart · son {180 - (f60_180.fin ?? 160)} gün yalnız tekrar</td>
+            </tr>
+            <tr>
+              <th scope="row">Son 4 Ay (120 gün · Yoğun)</th>
+              <td data-col="Simüle Edilen Tempo">80 yeni / gün (tüm) veya tek grup</td>
+              <td data-col="İlk Tur Bitişi">{f80_120.fin}. gün</td>
+              <td data-col="Günlük Ortalama Yük">{num(f80_120.avg)} kart (~{f80_120.min} dk)</td>
+              <td data-col="Tepe Günlük Süre">{f80_120.pMin} dk ({num(f80_120.peak)} kart)</td>
+              <td data-col="Önerilen Haftalık Düzen">Zayıf branşa odaklan · son 14 gün deneme tamponu</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Moved from HomePlan.astro: Bitirilebilir deste vs Mega deste SVG chart & comparison -->
+    <div id="mega-deste-kiyasi" class="mt-14 pt-12 border-t border-line grid lg:grid-cols-12 gap-8 items-center">
+      <div class="lg:col-span-5">
+        <h3 class="display text-subsection tracking-tightest text-ink">
+          Bitirilebilir deste, bitmeyen desteden önce gelir.
+        </h3>
+        <p class="text-inkMuted mt-3 leading-relaxed">
+          Günde {P} yeni kartla {H} gün çalıştığını düşün. Günlük yük iki destede de ilk aylarda benzer görünür;
+          asıl fark, sınav sabahı destenin ne kadarını bitirmiş olduğun ve kart yükünün konu/deneme zamanını yutup yutmadığıdır.
+        </p>
+        <dl class="mt-6 space-y-4">
+          <div>
+            <dt class="flex justify-between text-sm">
+              <span class="font-semibold text-ink">TusAnkiM · {num(catalog.totals.cards)} kart</span>
+              <span class="tabular-nums font-bold text-teal">{pct(mine.pct)}</span>
+            </dt>
+            <dd class="mt-1.5">
+              <div class="guide-meter" role="img" aria-label={`${H}. günde ${num(catalog.totals.cards)} kartın ${pct(mine.pct)} kadarı hafızada`}>
+                <span style={`width: ${mine.pct}%`}></span>
+              </div>
+              <p class="mt-1 text-xs text-inkMuted">İlk tur {mine.fin}. günde biter; kalan günler yalnız tekrar ve denemeye açılır.</p>
+            </dd>
+          </div>
+          <div>
+            <dt class="flex justify-between text-sm">
+              <span class="font-semibold text-ink">Mega deste · {num(megaCards)} kart</span>
+              <span class="tabular-nums font-bold text-warm">{pct(mega.pct)}</span>
+            </dt>
+            <dd class="mt-1.5">
+              <div class="guide-meter guide-meter-warm" role="img" aria-label={`${H}. günde ${num(megaCards)} kartın ${pct(mega.pct)} kadarı hafızada`}>
+                <span style={`width: ${mega.pct}%`}></span>
+              </div>
+              <p class="mt-1 text-xs text-inkMuted">{H} günde ilk tur bitmez; son güne kadar yeni kart yükü sürer.</p>
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <figure class="lg:col-span-7 rounded-2xl border border-line bg-white p-4 sm:p-6">
+        <figcaption class="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span class="font-semibold text-ink">Günlük kart sayısı (yeni + tekrar · {H} gün, {P} yeni/gün)</span>
+          <span class="guide-legend">
+            <span><i style="background:#0e7469"></i>TusAnkiM ({num(catalog.totals.cards)})</span>
+            <span><i style="background:#d9661a"></i>Mega deste ({num(megaCards)})</span>
+          </span>
+        </figcaption>
+        <svg
+          class="guide-chart mt-3 w-full h-auto"
+          viewBox={`0 0 ${W} ${HT}`}
+          role="img"
+          aria-label={`${H} gün boyunca günlük kart sayısı. İki deste ${mine.fin}. güne kadar benzer seyreder; sonra TusAnkiM yalnız tekrara iner, mega deste yeni kart eklemeye devam eder.`}
+        >
+          {yTicks.map((v) => (
+            <g>
+              <line x1={pad.l} x2={W - pad.r} y1={y(v)} y2={y(v)} stroke="#dde1e4" stroke-dasharray={v === 0 ? '0' : '3 4'} />
+              <text x={pad.l - 8} y={y(v) + 4} text-anchor="end" font-size="11" fill="#596166">{num(v)}</text>
+            </g>
+          ))}
+          {xTicks.map((d) => (
+            <text x={x(d)} y={HT - 8} text-anchor={d === 1 ? 'start' : d === H ? 'end' : 'middle'} font-size="11" fill="#596166">{d}. gün</text>
+          ))}
+          <line x1={x(mine.fin ?? H)} x2={x(mine.fin ?? H)} y1={pad.t} y2={HT - pad.b} stroke="#14998a" stroke-dasharray="2 4" />
+          <text x={x(mine.fin ?? H) - 6} y={pad.t + 10} text-anchor="end" font-size="11" font-weight="700" fill="#0e7469">İlk tur biter ({mine.fin}. gün)</text>
+          <path class="guide-chart-line" d={path(mega.pts)} stroke="#d9661a" style="--len: 900" />
+          <path class="guide-chart-line" d={path(mine.pts)} stroke="#0e7469" style="--len: 900" />
+        </svg>
+        <p class="mt-2 text-xs text-inkMuted">
+          Kaynak: TusAnkiM <span lang="en">FSRS-6</span> simülatörü (%{retention} hedef hatırlama).
+          Günlük sınırları <a href="/yardim/deste-secenekleri/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">deste seçenekleri rehberinde</a>,
+          kişisel eğrini <a href="/calisma-plani/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">Çalışma Planı aracında</a> görebilirsin.
+        </p>
+      </figure>
+    </div>
+
+    <!-- Compact Mega Deck numeric proof table -->
+    <div class="mt-8">
+      <div class="guide-table-wrap" tabindex="0" role="region" aria-label="9.575 kart çekirdeği ile 27.341 kart mega deste 270 ve 365 gün yük karşılaştırması">
+        <table class="guide-table">
+          <caption class="sr-only">270 ve 365 günlük pencerelerde 9.575 kartlık BKA TUS çekirdeği ile 27.341 kartlık mega deste yük kıyaslaması</caption>
+          <thead>
+            <tr>
+              <th scope="col">Deste Kapsamı</th>
+              <th scope="col">Günlük Yeni Kart</th>
+              <th scope="col">İlk Tur Durumu</th>
+              <th scope="col">270. Gün Yükü</th>
+              <th scope="col">Tepe Günlük Süre</th>
+            </tr>
+          </thead>
+          <tbody class="tabular-nums">
+            <tr>
+              <th scope="row">BKA TUS Çekirdek ({num(catalog.totals.cards)} kart)</th>
+              <td data-col="Günlük Yeni Kart">60 yeni / gün</td>
+              <td data-col="İlk Tur Durumu" class="font-semibold text-gradeGood">{f60_270.fin}. günde biter ({pct(f60_270.pct)} hafızada @ 270g)</td>
+              <td data-col="270. Gün Yükü">{num(f60_270.pts[f60_270.pts.length - 1][1])} kart · {f60_270.pts[f60_270.pts.length - 1][2]} dk/gün</td>
+              <td data-col="Tepe Günlük Süre">{f60_270.pMin} dk ({num(f60_270.peak)} kart)</td>
+            </tr>
+            <tr>
+              <th scope="row">Mega Deste ({num(megaCards)} kart)</th>
+              <td data-col="Günlük Yeni Kart">60 yeni / gün</td>
+              <td data-col="İlk Tur Durumu" class="font-semibold text-gradeAgain">270 ve 365 günde bitmez ({pct(m60_270.pct)} @ 270g)</td>
+              <td data-col="270. Gün Yükü">{num(m60_270.pts[m60_270.pts.length - 1][1])} kart · {m60_270.pts[m60_270.pts.length - 1][2]} dk/gün</td>
+              <td data-col="Tepe Günlük Süre">{m60_365.pMin} dk ({num(m60_365.peak)} kart)</td>
+            </tr>
+            <tr>
+              <th scope="row">Mega Deste ({num(megaCards)} kart)</th>
+              <td data-col="Günlük Yeni Kart">80 yeni / gün</td>
+              <td data-col="İlk Tur Durumu">Ancak {m80_365.fin}. günde (365g içinde) biter</td>
+              <td data-col="270. Gün Yükü">270g ort. {m80_270.min} dk/gün · son gün {m80_270.pts[m80_270.pts.length - 1][2]} dk</td>
+              <td data-col="Tepe Günlük Süre">{m80_365.pMin} dk ({num(m80_365.peak)} kart)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>

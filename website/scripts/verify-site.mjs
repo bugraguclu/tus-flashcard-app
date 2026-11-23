@@ -39,6 +39,9 @@ for (const rf of relFiles) {
 // 2. Check required routes exist
 const requiredFiles = [
   'index.html',
+  'tus-calisma-rehberi/index.html',
+  'calisma-plani/index.html',
+  'kart-denemesi/index.html',
   'referanslar/index.html',
   'puan-hesapla/index.html',
   'kurucu/index.html',
@@ -54,6 +57,8 @@ const requiredFiles = [
   '404.html',
   'sitemap.xml',
   'robots.txt',
+  'llms.txt',
+  'llms-full.txt',
   'arama-index.json',
   'data/references.json',
 ];
@@ -78,7 +83,7 @@ for (const svgFile of files.filter((f) => f.endsWith('.svg'))) {
 
 // 4. Audit every HTML page
 const htmlFiles = files.filter((f) => f.endsWith('.html'));
-check(htmlFiles.length === 33, `Expected 33 HTML pages (12 core + 21 help guides), got ${htmlFiles.length}`);
+check(htmlFiles.length === 34, `Expected 34 HTML pages (13 core + 21 help guides), got ${htmlFiles.length}`);
 
 const forbiddenText = [
   { re: /7\s*gün[^<.]{0,80}iade|koşulsuz\s+iade|iade\s+garantisi/i, label: 'Removed refund promise' },
@@ -188,7 +193,7 @@ for (const hf of htmlFiles) {
 // 5. Verify sitemap.xml
 const sitemap = fs.readFileSync(path.join(DIST, 'sitemap.xml'), 'utf8');
 const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-check(locs.length === 32, `sitemap.xml expected 32 URLs (11 pages + 21 help guides), found ${locs.length}`);
+check(locs.length === 33, `sitemap.xml expected 33 URLs (12 pages + 21 help guides), found ${locs.length}`);
 check(!locs.some((u) => u.includes('/404')), 'sitemap.xml must not include 404');
 check(locs.every((u) => u.startsWith('https://tusankim.com/') && u.endsWith('/')), 'All sitemap URLs must use https://tusankim.com/ and trailing slash');
 
@@ -217,8 +222,23 @@ check(indexHtml.includes('for="demo-subject"') && indexHtml.includes('id="demo-s
 check(indexHtml.includes('1.195') && indexHtml.includes('1.108'), 'index.html: missing reference totals');
 check(indexHtml.includes('76/200') && indexHtml.includes('82/200') && indexHtml.includes('a78ae1f'), 'index.html: missing pre-exam/current reference distinction');
 check(indexHtml.includes('data-demo-prev') && indexHtml.includes('data-demo-next'), 'index.html: missing demo navigation');
-check(indexHtml.includes('href="/kart-denemesi/"') && indexHtml.includes('href="/calisma-plani/"'), 'index.html: missing links to the tablet demo and the study planner');
+check(indexHtml.includes('href="/kart-denemesi/"') && indexHtml.includes('href="/calisma-plani/"') && indexHtml.includes('href="/tus-calisma-rehberi/"'), 'index.html: missing links to the tablet demo, study planner, and TUS study guide');
 check(!indexHtml.includes('data-cd-announce'), 'index.html: removed countdown returned');
+
+const guideHtml = fs.readFileSync(path.join(DIST, 'tus-calisma-rehberi/index.html'), 'utf8');
+for (const anchor of ['hizli-ozet', 'tempo-ve-profiller', 'mega-deste-kiyasi', 'tus-takvimi', 'brans-stratejisi', 'puan-ve-mevzuat', 'fsrs-ve-hacim', 'zorluklar', 'rehber-sss', 'kaynaklar']) {
+  check(guideHtml.includes(`id="${anchor}"`), `tus-calisma-rehberi: missing required section #${anchor}`);
+}
+check(guideHtml.includes('Bitirilebilir deste, bitmeyen desteden önce gelir'), 'tus-calisma-rehberi: missing migrated mega-deck comparison');
+check(guideHtml.includes('27 Mart 2027') && guideHtml.includes('22 Ağustos 2027'), 'tus-calisma-rehberi: missing 2027 TUS exam dates');
+check(guideHtml.includes('Zorluk 07') && guideHtml.includes('data-faq-toggle-all'), 'tus-calisma-rehberi: missing 7 struggles or FAQ expand/collapse control');
+check(guideHtml.includes('76/200') && guideHtml.includes('82/200') && guideHtml.includes('a78ae1f'), 'tus-calisma-rehberi: missing honest pre-exam/current reference distinction');
+check(
+  searchIndex.some((entry) => entry.url === '/tus-calisma-rehberi/') &&
+  searchIndex.some((entry) => entry.url === '/tus-calisma-rehberi/#zorluklar') &&
+  searchIndex.some((entry) => entry.url === '/tus-calisma-rehberi/#tus-takvimi'),
+  'arama-index.json: missing TUS Çalışma Rehberi pillar and section entries',
+);
 
 const puanHtml = fs.readFileSync(path.join(DIST, 'puan-hesapla/index.html'), 'utf8');
 check(puanHtml.includes('%5 Puan Kesintisi Kuralı'), 'puan-hesapla: missing %5 Puan Kesintisi Kuralı');

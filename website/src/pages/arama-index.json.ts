@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getHelpArticles } from '../lib/helpDocs';
 import faqs from '../data/faqs.json';
 import { websiteFaqAnchor, websiteGuideEntries, websitePageEntries, type WebsiteSearchEntry } from '../lib/websiteSearchIndex';
+import { GUIDE_SEARCH_ENTRIES } from '../data/studyGuide';
 import refSummary from '../data/generated/references-summary.json';
 
 export const GET: APIRoute = async () => {
@@ -24,7 +25,7 @@ export const GET: APIRoute = async () => {
     terms: `${f.q} ${f.a} ${f.cat}`,
   }));
 
-  const index = [...pageItems, ...subjectItems, ...helpItems, ...faqItems];
+  const index = [...pageItems, ...GUIDE_SEARCH_ENTRIES, ...subjectItems, ...helpItems, ...faqItems];
   return new Response(JSON.stringify(index), {
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
   });

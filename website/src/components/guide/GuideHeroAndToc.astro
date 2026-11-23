@@ -1,0 +1,91 @@
+---
+import catalog from '../../data/generated/catalog.json';
+import refSummary from '../../data/generated/references-summary.json';
+import fsrsCurves from '../../data/generated/fsrs-curves.json';
+import { GUIDE_META, GUIDE_TOC } from '../../data/studyGuide';
+import { num, pct } from '../../lib/format';
+
+const totalCards = num(catalog.totals.cards);
+const f60_180 = fsrsCurves.matrix.all['180']['60'];
+const retentionPct = Math.round(fsrsCurves.desiredRetention * 100);
+---
+<section class="page-intro bg-surface border-b border-line py-10 sm:py-14">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-sm text-inkMuted mb-3">
+      <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
+      <span aria-hidden="true" class="mx-2">/</span>
+      <span class="text-ink font-semibold">TUS Çalışma Rehberi</span>
+    </nav>
+
+    <p class="guide-kicker">{GUIDE_META.kicker}</p>
+    <h1 id="guide-title" class="display text-page-title tracking-tightest text-ink mt-3 max-w-4xl">
+      {GUIDE_META.h1}
+    </h1>
+    <p data-speakable class="text-inkMuted mt-4 max-w-3xl text-base sm:text-lg leading-relaxed">
+      {GUIDE_META.lead}
+    </p>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="/calisma-plani/" class="button-primary">Kişisel FSRS-6 planını kur →</a>
+      <a href="/puan-hesapla/" class="button-secondary">TUS puan &amp; hedef net hesapla</a>
+      <a href="/kart-denemesi/" class="button-secondary">Kartları tablette dene</a>
+    </div>
+  </div>
+</section>
+
+<!-- Sticky Scrollspy Table of Contents -->
+<div class="guide-toc-bar">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <nav aria-label="Rehber bölümleri" class="guide-toc-list" data-guide-toc>
+      {GUIDE_TOC.map((item) => (
+        <a href={`#${item.id}`} class="guide-toc-link">{item.label}</a>
+      ))}
+    </nav>
+  </div>
+</div>
+
+<!-- Direct-answer GEO summary block -->
+<section id="hizli-ozet" tabindex="-1" class="guide-section bg-white border-b border-line py-10 sm:py-14" aria-labelledby="tldr-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 grid lg:grid-cols-12 gap-8 items-start">
+    <div class="lg:col-span-5">
+      <p class="guide-kicker">Hızlı Özet · Doğrudan Yanıt</p>
+      <h2 id="tldr-heading" class="display text-section tracking-tightest text-ink mt-3">
+        TUS nasıl çalışılır? Temel çerçeve.
+      </h2>
+      <p data-speakable class="mt-3 text-inkMuted leading-relaxed">
+        TUS iki oturumda toplam <strong>200 soru</strong> (100 Temel + 100 Klinik) ile 11 tıp branşını aynı gün ölçer;
+        4 yanlış 1 doğruyu götürür, Klinik puanının <strong>%50’si Temel Bilimlerden</strong> gelir.
+        Kalıcı başarı için günlük tekrarını <strong>FSRS-6 (%{retentionPct} hedef hatırlama)</strong> ile 60–125 dakika bandında tutup
+        her gün konu okuma, çıkmış soru ve deneme analizi için 2–4+ saat boşluk bırakmak gerekir.
+      </p>
+    </div>
+
+    <dl class="lg:col-span-7 grid sm:grid-cols-2 gap-px rounded-2xl overflow-hidden border border-line bg-line">
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Sınav yapısı ve ağırlıklar</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">
+          200 soru (100 Temel + 100 Klinik) · Temel Puanı <strong>%70 T + %30 K</strong> · Klinik Puanı <strong>%50 T + %50 K</strong> · 45 baraj ve %5 kesinti kuralı.
+        </dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Önerilen çekirdek tempo</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">
+          {totalCards} kartta günde <strong>60 yeni kart</strong> ile ilk tur <strong>{f60_180.fin}. günde</strong> biter; 180 günde ortalama {num(f60_180.avg)} kart (~{f60_180.min} dk/gün).
+        </dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Son 6 TUS açık referans verisi</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">
+          1.195 soruda <strong>{refSummary.overall.destek} çözüm desteği ({pct(refSummary.overall.destekOran)})</strong>
+          ({refSummary.overall.dogrudan} doğrudan + {refSummary.overall.dolayli} dolaylı) ve <strong>{num(refSummary.overall.konuKapsami)} ({pct(refSummary.overall.konuKapsamiOran)}) konu kapsamı</strong>.
+        </dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Altın son 30 gün kuralı</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">
+          İlk turu sınavdan <strong>14–30 gün önce</strong> bitir; son haftalarda yeni kart açmayı durdurup deneme yanlışları ve olgun tekrarlara odaklan.
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>

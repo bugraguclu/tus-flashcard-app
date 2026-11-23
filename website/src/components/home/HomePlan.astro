@@ -1,153 +1,81 @@
 ---
-import fsrs from '../../data/generated/fsrs-curves.json';
 import catalog from '../../data/generated/catalog.json';
-import { num, pct } from '../../lib/format';
+import fsrs from '../../data/generated/fsrs-curves.json';
+import { num } from '../../lib/format';
 
-type Cell = { avg: number; rev: number; min: number; pct: number; fin: number | null; pts: number[][] };
-const matrix = fsrs.matrix as unknown as Record<string, Record<string, Record<string, Cell>>>;
-const retention = Math.round(fsrs.desiredRetention * 100);
+const cards = num(catalog.totals.cards);
+const megaCards = num(fsrs.scopes.find((s) => s.id === 'mega')!.cards);
+const f60_180 = fsrs.matrix.all['180']['60'];
 
-// Smallest simulated daily pace whose first pass finishes inside the horizon.
-function planFor(horizon: number) {
-  for (const pace of fsrs.paces) {
-    const cell = matrix.all[String(horizon)][String(pace)];
-    if (cell.fin !== null && cell.fin <= horizon) return { pace, ...cell };
-  }
-  const pace = fsrs.paces[fsrs.paces.length - 1];
-  return { pace, ...matrix.all[String(horizon)][String(pace)] };
-}
-
-const phases = [
+const highlights = [
   {
-    title: 'Stajyer · 4.–5. sınıf',
-    horizon: 365,
-    tip: 'Stajına paralel ilerle: o hafta gördüğün branşın destesini aç, yeni kart sayısını sabit tut.',
-    href: '/yardim/fsrs/',
-    link: 'Tekrar takvimi nasıl çalışır?',
+    kicker: '4 Profil · FSRS-6 Eğrisi',
+    tone: 'teal',
+    title: `Stajyer, İntörn, Mezun, Son 4 Ay & ${cards} vs ${megaCards} Kart`,
+    text: `Günde 60 yeni kartla ilk tur ${f60_180.fin}. günde biter (~${f60_180.min} dk/gün ort.); mega deste karşılaştırması ve 4 profil tablosu.`,
+    href: '/tus-calisma-rehberi/#tempo-ve-profiller',
   },
   {
-    title: 'İntörn',
-    horizon: 270,
-    tip: 'Nöbet günlerinde yalnız vadesi gelen tekrarları bitir; yeni kartları daha boş günlere bırak.',
-    href: '/yardim/deste-secenekleri/',
-    link: 'Günlük sınırları ayarla',
+    kicker: '2027 Takvimi & 11 Branş',
+    tone: 'warm',
+    title: 'ÖSYM Sınav Tarihleri, Branş Ağırlıkları & %5 Kesinti',
+    text: '27 Mart ve 22 Ağustos 2027 takvimi, 11 branşta soru ve kart dağılımı, Temel/Klinik puan katsayıları.',
+    href: '/tus-calisma-rehberi/#brans-stratejisi',
   },
   {
-    title: 'Mezun · pratisyen',
-    horizon: 180,
-    tip: 'Konu çalışmanın yanına günlük kartı ekle; ilk tur bitince kalan haftalar yalnız tekrara kalır.',
-    href: '/yardim/kronometre/',
-    link: 'Kronometre ve çalışma planı',
+    kicker: 'TUS Pratiği · 7 Zorluk',
+    tone: 'teal',
+    title: 'Tekrar Yığılması, Nöbet Düzeni ve Deneme Platosu',
+    text: 'Okuduğunu unutma, tekrar borcu, Temel–Klinik dengesi ve son 30 gün paniği için somut çözüm adımları.',
+    href: '/tus-calisma-rehberi/#zorluklar',
   },
-  {
-    title: 'Son 4 ay',
-    horizon: 120,
-    tip: 'Deneme haftalarında yeni kartı durdurup tekrara odaklan; zorlandığın dersleri ayrı filtrele.',
-    href: '/yardim/filtrelenmis-deste/',
-    link: 'Zayıf konuya odaklan',
-  },
-].map((p) => ({ ...p, plan: planFor(p.horizon) }));
-
-// Workload chart: full package vs a 27k mega deck at the same pace over 180 days.
-const H = 180;
-const P = 60;
-const mine = matrix.all[String(H)][String(P)];
-const mega = matrix.mega[String(H)][String(P)];
-const megaCards = fsrs.scopes.find((s) => s.id === 'mega')!.cards;
-const W = 600;
-const HT = 220;
-const pad = { l: 44, r: 16, t: 14, b: 30 };
-const maxY = Math.ceil(Math.max(...mine.pts.map((p) => p[1]), ...mega.pts.map((p) => p[1])) / 100) * 100;
-const x = (d: number) => pad.l + ((d - 1) / (H - 1)) * (W - pad.l - pad.r);
-const y = (v: number) => pad.t + (1 - v / maxY) * (HT - pad.t - pad.b);
-const path = (pts: number[][]) => pts.map((p, i) => `${i ? 'L' : 'M'}${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`).join(' ');
-const yTicks = [0, maxY / 2, maxY];
-const xTicks = [1, 60, 120, 180];
+] as const;
 ---
 <section id="calisma-plani" class="scroll-mt-24 py-14 sm:py-20 bg-white border-b border-line" aria-labelledby="plan-heading">
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
-    <div class="max-w-2xl reveal">
-      <p class="kicker">Çalışma temposu</p>
-      <h2 id="plan-heading" class="display text-section tracking-tightest text-ink mt-3">Sınava kaç gün var? Temponu ona göre seç.</h2>
-      <p class="text-inkMuted mt-3 leading-relaxed">
-        Aşağıdaki sayılar tahmin değil: {num(catalog.totals.cards)} kartın tamamı için <span lang="en">FSRS-6</span> simülasyonundan (%{retention} hedef hatırlama) gelir.
-        Her süre için ilk turu bitiren en düşük günlük yeni kart sayısını gösteriyoruz.
-      </p>
-      <a href="/calisma-plani/" class="text-link">Kendi sınav tarihin ve derslerinle planını oluştur →</a>
-    </div>
-
-    <ol role="list" class="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {phases.map((p, i) => (
-        <li class="reveal lift rounded-2xl border border-line bg-white p-5 flex flex-col" style={`--d: ${i * 60}ms`}>
-          <p class="text-xs font-bold uppercase tracking-wider text-inkMuted">{p.title}</p>
-          <h3 class="display text-lg text-ink mt-1.5">{p.horizon} gün</h3>
-          <p class="mt-4 flex items-baseline gap-1.5">
-            <span class="display text-4xl text-teal tabular-nums">{p.plan.pace}</span>
-            <span class="text-sm text-inkMuted">yeni kart / gün</span>
-          </p>
-          <ul role="list" class="mt-3 space-y-1 text-sm text-ink tabular-nums">
-            <li>İlk tur <strong>{p.plan.fin ?? p.horizon}. günde</strong> biter</li>
-            <li>Ortalama <strong>{num(p.plan.avg)}</strong> kart/gün (yeni + tekrar)</li>
-            <li>Yaklaşık <strong>{p.plan.min} dk</strong> günlük süre</li>
-          </ul>
-          <p class="mt-4 text-sm text-inkMuted leading-relaxed flex-1">{p.tip}</p>
-          <a href={p.href} class="mt-4 inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal hover:text-tealDark underline underline-offset-4">{p.link} →</a>
-        </li>
-      ))}
-    </ol>
-
-    <div class="mt-12 grid lg:grid-cols-12 gap-8 items-center">
-      <div class="lg:col-span-5 reveal">
-        <h3 class="display text-subsection tracking-tightest text-ink">Bitirilebilir deste, bitmeyen desteden önce gelir.</h3>
-        <p class="text-inkMuted mt-3 leading-relaxed">
-          Günde {P} yeni kartla {H} gün çalıştığını düşün. Günlük yük iki destede de neredeyse aynıdır;
-          fark, sınav gününe ne kadarını görmüş olarak girdiğindir.
+    <div class="rounded-3xl border border-line bg-surfaceSoft p-6 sm:p-8 lg:p-10 grid lg:grid-cols-12 gap-8 items-center">
+      <div class="lg:col-span-6 space-y-4 reveal">
+        <p class="kicker">TUS Çalışma Rehberi · Çalışma Temposu</p>
+        <h2 id="plan-heading" class="display text-section tracking-tightest text-ink">
+          Sınava kaç gün var? Planını ve çalışma stratejini tek rehberde kur.
+        </h2>
+        <p class="text-inkMuted leading-relaxed">
+          4 aday profili için <span lang="en">FSRS-6</span> tempo tablosu, {cards} çekirdek kart ile {megaCards} kartlık mega deste kıyası,
+          2027 ÖSYM takvimi, 11 branş çalışma odağı ve TUS adaylarının en çok zorlandığı 7 alana somut çözümler
+          artık <strong>TUS Çalışma Rehberi</strong> sayfasında.
         </p>
-        <dl class="mt-6 space-y-4">
-          <div>
-            <dt class="flex justify-between text-sm"><span class="font-semibold text-ink">TusAnkiM · {num(catalog.totals.cards)} kart</span><span class="tabular-nums font-bold text-teal">{pct(mine.pct)}</span></dt>
-            <dd class="mt-1.5">
-              <div class="meter grow" role="img" aria-label={`${H}. günde ${num(catalog.totals.cards)} kartın ${pct(mine.pct)} kadarı hafızada`}><span style={`width: ${mine.pct}%`}></span></div>
-              <p class="mt-1 text-xs text-inkMuted">İlk tur {mine.fin}. günde biter.</p>
-            </dd>
-          </div>
-          <div>
-            <dt class="flex justify-between text-sm"><span class="font-semibold text-ink">Mega deste · {num(megaCards)} kart</span><span class="tabular-nums font-bold text-warm">{pct(mega.pct)}</span></dt>
-            <dd class="mt-1.5">
-              <div class="meter grow" role="img" aria-label={`${H}. günde ${num(megaCards)} kartın ${pct(mega.pct)} kadarı hafızada`}><span style={`width: ${mega.pct}%; background: #d9661a`}></span></div>
-              <p class="mt-1 text-xs text-inkMuted">{H} günde ilk tur bitmez.</p>
-            </dd>
-          </div>
-        </dl>
+        <div class="pt-1 flex flex-wrap gap-3">
+          <a
+            href="/tus-calisma-rehberi/"
+            class="inline-flex items-center justify-center min-h-[3rem] px-6 rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition"
+          >
+            TUS Çalışma Rehberini Oku →
+          </a>
+          <a
+            href="/calisma-plani/"
+            class="inline-flex items-center justify-center min-h-[3rem] px-6 rounded-full border border-line bg-white text-ink text-sm font-semibold hover:border-tealGraphic hover:text-teal transition"
+          >
+            Kişisel FSRS-6 Planlayıcı
+          </a>
+        </div>
       </div>
 
-      <figure class="lg:col-span-7 rounded-2xl border border-line bg-surfaceSoft p-4 sm:p-6 reveal" style="--d: 80ms">
-        <figcaption class="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <span class="font-semibold text-ink">Günlük kart sayısı (yeni + tekrar)</span>
-          <span class="legend">
-            <span><i style="background:#0e7469"></i>TusAnkiM</span>
-            <span><i style="background:#d9661a"></i>Mega deste</span>
-          </span>
-        </figcaption>
-        <svg class="chart mt-3 w-full h-auto" viewBox={`0 0 ${W} ${HT}`} role="img" aria-label={`${H} gün boyunca günlük kart sayısı. İki deste ${mine.fin}. güne kadar benzer seyreder; sonra TusAnkiM yalnız tekrara iner, mega deste yeni kart eklemeye devam eder.`}>
-          {yTicks.map((v) => (
-            <g>
-              <line x1={pad.l} x2={W - pad.r} y1={y(v)} y2={y(v)} stroke="#dde1e4" stroke-dasharray={v === 0 ? '0' : '3 4'} />
-              <text x={pad.l - 8} y={y(v) + 4} text-anchor="end" font-size="11" fill="#596166">{num(v)}</text>
-            </g>
-          ))}
-          {xTicks.map((d) => (
-            <text x={x(d)} y={HT - 8} text-anchor={d === 1 ? 'start' : d === H ? 'end' : 'middle'} font-size="11" fill="#596166">{d}. gün</text>
-          ))}
-          <line x1={x(mine.fin ?? H)} x2={x(mine.fin ?? H)} y1={pad.t} y2={HT - pad.b} stroke="#14998a" stroke-dasharray="2 4" />
-          <text x={x(mine.fin ?? H) - 6} y={pad.t + 10} text-anchor="end" font-size="11" font-weight="700" fill="#0e7469">İlk tur biter</text>
-          <path class="chart-line" d={path(mega.pts)} stroke="#d9661a" style="--len: 900" />
-          <path class="chart-line" d={path(mine.pts)} stroke="#0e7469" style="--len: 900" />
-        </svg>
-        <p class="mt-2 text-xs text-inkMuted">
-          Kaynak: TusAnkiM <span lang="en">FSRS-6</span> simülatörü, %{retention} hedef hatırlama. Günlük sınırları <a href="/yardim/deste-secenekleri/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">deste seçenekleri rehberinde</a> ayarla.
-        </p>
-      </figure>
+      <ul role="list" class="lg:col-span-6 grid gap-3 reveal" style="--d: 60ms">
+        {highlights.map((item) => (
+          <li>
+            <a href={item.href} class="lift block rounded-2xl border border-line bg-white p-4 sm:p-5">
+              <p class:list={[
+                'text-xs font-bold uppercase tracking-wider',
+                item.tone === 'warm' ? 'text-warm' : 'text-teal',
+              ]}>
+                {item.kicker}
+              </p>
+              <h3 class="display text-base text-ink mt-1">{item.title}</h3>
+              <p class="text-xs sm:text-sm text-inkMuted mt-1 leading-relaxed">{item.text}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   </div>
 </section>

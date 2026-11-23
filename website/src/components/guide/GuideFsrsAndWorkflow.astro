@@ -1,0 +1,137 @@
+---
+import { WORKFLOW_STEPS } from '../../data/studyGuide';
+---
+<section id="fsrs-ve-hacim" tabindex="-1" class="guide-section guide-defer py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="fsrs-workflow-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 space-y-12">
+    <div class="max-w-3xl">
+      <p class="guide-kicker">Aralıklı Tekrar &amp; Günlük Rutin</p>
+      <h2 id="fsrs-workflow-heading" class="display text-section tracking-tightest text-ink mt-3">
+        FSRS-6 aralıklı tekrar, günlük çalışma bütçesi ve deneme analizi
+      </h2>
+      <p class="text-inkMuted mt-3 leading-relaxed">
+        TUS hazırlığında amaç bütün günü karta gömmek değil, unutmayı önleyen tekrarları günde <strong>60–125 dakika</strong>
+        bandında tutup her gün <strong>2–4+ saati</strong> konu kavrama, çıkmış soru ve deneme analizine ayırmaktır.
+      </p>
+    </div>
+
+    <!-- FSRS-6 mechanics & Target Retention -->
+    <div class="grid lg:grid-cols-12 gap-8 items-start">
+      <div class="lg:col-span-7 space-y-4">
+        <h3 class="display text-subsection tracking-tightest text-ink">
+          Pasif okuma neden yetersiz kalır? FSRS-6 ve SM-2 farkı
+        </h3>
+        <p class="text-inkMuted leading-relaxed">
+          Konu kitabını fosforlu kalemle yeniden okumak beyne aşinalık (<em>tanıdıklık yanılsaması</em>) verir; ancak sınav sabahı
+          benzer iki şık arasındaki ince klinik ayrımı sıfırdan hatırlama gücünü zayıf artırır. Aktif hatırlama (<em>active recall</em>)
+          ve aralıklı tekrar birlikte çalıştığında bilgi tam unutulmak üzereyken tazelenir.
+        </p>
+        <p class="text-inkMuted leading-relaxed">
+          Klasik SM-2 algoritması sabit kolaylık çarpanlarıyla çalışırken <strong>FSRS-6</strong>, her kartı üç değişkenli
+          <strong>DSR modeliyle</strong> izler: <strong>Kararlılık (Stability)</strong> (hatırlama olasılığının %100’den %90’a
+          düşme süresi), <strong>Zorluk (Difficulty)</strong> ve <strong>Hatırlanabilirlik (Retrievability)</strong>.
+          Yeterli tekrar biriktiğinde (yaklaşık 1.000 tekrar) TusAnkiM’de <strong>Parametreleri optimize et</strong> seçeneğiyle
+          zamanlama kendi hafıza eğrine uyarlanabilir.
+        </p>
+        <div class="flex flex-wrap gap-x-6 gap-y-1">
+          <a href="/yardim/fsrs/" class="text-link">FSRS-6 ayar rehberi →</a>
+          <a href="/yardim/anki-ile-kullanma/" class="text-link">Anki ile birlikte kullanma →</a>
+        </div>
+      </div>
+
+      <div class="lg:col-span-5 rounded-2xl border border-line bg-white p-5 sm:p-6 space-y-3">
+        <h3 class="display text-lg text-ink">Hedef hatırlama oranı seçimi</h3>
+        <dl class="space-y-2.5 text-sm">
+          <div class="rounded-xl bg-surfaceSoft border border-lineLight p-3.5">
+            <dt class="font-bold text-ink">%90 (0,90) — Varsayılan Denge</dt>
+            <dd class="text-xs text-inkMuted mt-1 leading-relaxed">
+              Çoğu TUS adayı için en sağlıklı verim-süre dengesi. Günlük tekrarları sürdürülebilir bandda tutar.
+            </dd>
+          </div>
+          <div class="rounded-xl bg-surfaceSoft border border-lineLight p-3.5">
+            <dt class="font-bold text-ink">%85 (0,85) — İntörnlük / Ağır Nöbet</dt>
+            <dd class="text-xs text-inkMuted mt-1 leading-relaxed">
+              Günlük tekrar baskısını belirgin azaltır; zamanı dar olan intörn ve aktif çalışan hekimler için uygundur.
+            </dd>
+          </div>
+          <div class="rounded-xl bg-warmTint border border-lineLight p-3.5">
+            <dt class="font-bold text-warm">%93–%95+ — Yüksek Yük Uyarısı</dt>
+            <dd class="text-xs text-inkMuted mt-1 leading-relaxed">
+              Hatırlamayı yalnızca birkaç puan artırırken tekrar aralıklarını daraltıp günlük süreyi hızla katlar.
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- 4-step daily & weekly TusAnkiM workflow -->
+    <div class="pt-10 border-t border-line space-y-5">
+      <div class="max-w-3xl">
+        <h3 class="display text-subsection tracking-tightest text-ink">
+          4 adımda TUS çalışma rutini ve zaman takibi
+        </h3>
+        <p class="text-inkMuted mt-2 leading-relaxed text-sm">
+          Kart tekrarını konu, soru ve deneme çalışmalarıyla aynı takvimde toplamak gerçek ilerlemeyi görünür kılar.
+        </p>
+      </div>
+
+      <ol role="list" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {WORKFLOW_STEPS.map((item) => (
+          <li class="rounded-2xl border border-line bg-white p-5 flex flex-col justify-between">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-teal">Adım {item.step}</p>
+              <h4 class="display text-base text-ink mt-1.5 leading-snug">{item.name}</h4>
+              <p class="text-xs font-semibold text-ink mt-2">{item.summary}</p>
+              <p class="text-xs text-inkMuted mt-2 leading-relaxed">{item.detail}</p>
+            </div>
+            <a href={item.href} class="mt-4 inline-flex items-center min-h-[2.75rem] text-xs font-semibold text-teal hover:text-tealDark underline underline-offset-4">
+              {item.linkLabel} →
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <!-- Deneme analysis matrix -->
+    <div class="pt-10 border-t border-line grid lg:grid-cols-12 gap-8 items-start">
+      <div class="lg:col-span-5 space-y-3">
+        <h3 class="display text-subsection tracking-tightest text-ink">
+          Deneme sınavı ne zaman ve nasıl analiz edilir?
+        </h3>
+        <p class="text-sm text-inkMuted leading-relaxed">
+          İlk turun yarısından itibaren 2 haftada bir, son 2 ayda ise haftada bir tam süreli (Temel + Klinik) deneme çözmek
+          zaman yönetimini ve yorgunluk direncini oturtur. Asıl net artışı denemeyi çözdüğün saatte değil, ertesi gün yaptığın
+          <strong>hata sınıflandırmasında</strong> gelir.
+        </p>
+        <p class="text-xs text-inkMuted leading-relaxed">
+          <strong class="text-ink">Platform notu:</strong> TusAnkiM iPhone için geliştirilmekte olup bugün web tarayıcıda (Mac, Windows, iPad, Android tarayıcı)
+          ücretsiz beta olarak çalışır. Kişisel desteler <code>.apkg</code> / <code>.colpkg</code> dosyalarıyla taşınır; hazır TUS paketi ve ilerlemesi dışa aktarılmaz.
+          Otomatik bulut eşitleme, yerel Android uygulaması ve Tercih Simülasyonu geliştirme aşamasındadır.
+        </p>
+      </div>
+
+      <div class="lg:col-span-7 grid sm:grid-cols-3 gap-4">
+        <article class="rounded-2xl border border-line bg-white p-5 space-y-2">
+          <p class="text-xs font-bold uppercase tracking-wider text-teal">Tip A · Bilgi Eksikliği</p>
+          <p class="text-sm font-semibold text-ink">Konuyu hiç görmemişim</p>
+          <p class="text-xs text-inkMuted leading-relaxed">
+            Hemen yeni kaynağa atlama; sorunun hangi dersten ve alt konudan geldiğini not al, sırası geldiğinde o alt desteyi aç.
+          </p>
+        </article>
+        <article class="rounded-2xl border border-line bg-white p-5 space-y-2">
+          <p class="text-xs font-bold uppercase tracking-wider text-warm">Tip B · İki Şıkta Kalma</p>
+          <p class="text-sm font-semibold text-ink">Çalıştım ama karıştırdım</p>
+          <p class="text-xs text-inkMuted leading-relaxed">
+            <strong>En yüksek getirili hata grubudur.</strong> İki kavramı ayıran tek kritik bulguyu kısa kişisel karta çevir ve <code>deneme-yanlis</code> etiketiyle takip et.
+          </p>
+        </article>
+        <article class="rounded-2xl border border-line bg-white p-5 space-y-2">
+          <p class="text-xs font-bold uppercase tracking-wider text-inkMuted">Tip C · Dikkat &amp; Süre</p>
+          <p class="text-sm font-semibold text-ink">Soru kökünü yanlış okudum</p>
+          <p class="text-xs text-inkMuted leading-relaxed">
+            Olumsuz kök (“değildir”, “en az olası”) ve süre baskısından kaynaklanır. Denemeleri Kronometre ile gerçek sınav saatinde ve sürede çöz.
+          </p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
