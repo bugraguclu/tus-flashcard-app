@@ -31,7 +31,7 @@ const COMPARISON_ROWS = [
   {
     feature: 'Giriş maliyeti (iPhone / iOS)',
     ankimobile: '₺1.299,99 tek seferlik (App Store TR, 21 Kasım 2026)',
-    tusankim: '₺0 ücretsiz başlangıç (ara ara reklam); tüm 9.575 kart ₺1.000, reklam kaldırma ₺50',
+    tusankim: 'Güncel beta ücretsiz (reklamsız). Planlanan model: ₺0 ücretsiz kullanım (ara ara reklam), tüm 9.575 kart ₺1.000, reklam kaldırma ₺50',
   },
   {
     feature: 'Seçili demo soruları',
@@ -66,7 +66,7 @@ const COMPARISON_ROWS = [
   {
     feature: 'Android ve Masaüstü erişimi',
     ankimobile: 'AnkiDroid (Android) ve Anki Masaüstü ayrı uygulamalar',
-    tusankim: 'iPhone uygulaması + tarayıcı Web önizlemesi (tusankim.vercel.app; Android yerel: Yakında)',
+    tusankim: 'iPhone uygulaması geliştiriliyor; bugün tarayıcıda (iPhone Safari dahil) çalışan web uygulaması (tusankim.vercel.app/uygulama; Android yerel: Yakında)',
   },
 ] as const;
 ---
@@ -170,13 +170,14 @@ const COMPARISON_ROWS = [
       <h2 class="display text-section tracking-tightest text-ink">
         TusAnkiM’de 3 Net Erişim Segmenti (Sürpriz Abonelik Yok)
       </h2>
+      <p class="text-sm text-inkMuted leading-relaxed">Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır.</p>
       <div class="grid md:grid-cols-3 gap-5">
         <div class="rounded-2xl border border-line bg-surfaceSoft p-6 space-y-2">
           <div class="text-xs font-bold text-teal">Segment 1 · ₺0</div>
           <h3 class="display text-lg text-ink">Ücretsiz Erişim</h3>
           <p class="text-sm text-inkMuted leading-relaxed">
             Kendi destelerinle çalışma, kişisel <code>.apkg</code>/<code>.colpkg</code> içe ve dışa aktarma, FSRS-6,
-            Kronometre ve seçili demo sorularına doğrudan erişim ücretsizdir. Ücretsiz kullanıcılar için ara ara reklam çıkar
+            Kronometre ve seçili demo sorularına doğrudan erişim ücretsizdir. Ücretli seçenekler devreye girdiğinde ücretsiz kullanıcılar için ara ara reklam çıkacak
             (reklam sıklığı sonradan ayarlanacak).
           </p>
         </div>
@@ -192,7 +193,7 @@ const COMPARISON_ROWS = [
           <div class="text-xs font-bold text-teal">Segment 3 · ₺50</div>
           <h3 class="display text-lg text-ink">Reklamları Kaldırma</h3>
           <p class="text-sm text-inkMuted leading-relaxed">
-            Ücretsiz kullanımda çıkan ara ara reklamları kaldırarak kişisel <code>.apkg</code>/<code>.colpkg</code> destelerinde ve
+            Ücretsiz kullanımda çıkacak ara ara reklamları kaldırarak kişisel <code>.apkg</code>/<code>.colpkg</code> destelerinde ve
             seçili demo sorularında reklamsız çalışma imkânı sunar.
           </p>
         </div>
@@ -204,7 +205,7 @@ const COMPARISON_ROWS = [
       <div class="rounded-2xl border border-line bg-white p-6 space-y-3">
         <h2 class="display text-lg text-ink">Android, Mac veya Windows Kullanıyorsan: Web Önizlemesi</h2>
         <p class="text-sm text-inkMuted leading-relaxed">
-          TusAnkiM’in ana yerel uygulaması bugün <strong>iPhone</strong> içindir; yerel Android uygulaması geliştirme aşamasındadır (<em>Yakında</em>).
+          TusAnkiM’in yerel uygulaması <strong>iPhone</strong> için geliştiriliyor; bugün tarayıcıda (iPhone Safari dahil) çalışır. Yerel Android uygulaması da geliştirme aşamasındadır (<em>Yakında</em>).
           Ancak Android telefondan, iPad’den veya bilgisayardan kurulum yapmadan{' '}
           <a
             href={SITE.webAppUrl}
@@ -212,7 +213,7 @@ const COMPARISON_ROWS = [
             rel="noopener noreferrer"
             class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark"
           >
-            Web uygulamasını (tusankim.vercel.app) ↗
+            Web uygulamasını (tusankim.vercel.app/uygulama) ↗
           </a>{' '}
           açarak <code>.apkg</code>/<code>.colpkg</code> destelerini yerel tarayıcı deposunda çalışabilir ve seçili demo sorularını deneyebilirsin.
         </p>
@@ -255,7 +256,7 @@ const COMPARISON_ROWS = [
 
     <!-- Sources & Related Links -->
     <div class="rounded-2xl border border-line bg-white p-6 space-y-3">
-      <h2 class="display text-base text-ink">Doğrulanmış Kaynaklar ve İlgili Rehberler</h2>
+      <h2 class="display text-base text-ink">Kaynaklar ve İlgili Rehberler</h2>
       <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
         <a
           href="https://docs.ankiweb.net/exporting.html#collection-colpkg"

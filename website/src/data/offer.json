@@ -1,24 +1,24 @@
 {
   "badge": "Fiyatlandırma ve Erişim",
   "headline": "Ücretsiz başla, ihtiyacına göre seç.",
-  "subheadline": "Ücretsiz kullanımda ara ara reklam çıkar; tüm 9.575 karta erişim ₺1.000, reklamları kaldırma ₺50’dir. Her segmentte seçili demo sorularına doğrudan erişim vardır.",
+  "subheadline": "Güncel betada TUS paketi ücretsiz açılır; ücretli seçenekler ve reklamlar henüz devrede değil. Planlanan model: ücretsiz kullanım (ara ara reklam), tüm 9.575 karta erişim ₺1.000, reklamları kaldırma ₺50. Her segmentte seçili demo sorularına doğrudan erişim olacak.",
   "tiers": [
     {
       "id": "free",
       "name": "Ücretsiz Erişim",
       "badge": "Ara ara reklam",
       "price": "₺0",
-      "period": "Süresiz ücretsiz · iPhone + Web",
+      "period": "Süresiz ücretsiz",
       "highlight": false,
       "summary": "Kendi destelerinle çalışma, FSRS-6, Kronometre ve seçili demo sorularına doğrudan erişim.",
       "features": [
         "Seçili demo sorularına doğrudan erişim",
-        "Ücretsiz kullanıcılar için ara ara reklam çıkar (reklam sıklığı sonradan ayarlanacak)",
+        "Ücretsiz kullanıcılar için ara ara reklam çıkacak (reklam sıklığı sonradan ayarlanacak)",
         "Anki (.apkg / .colpkg) içe ve dışa aktarma",
         "FSRS-6 tekrar zamanlayıcısı ve parametre optimizasyonu",
         "Kronometre, Çalışma Takvimi ve otomatik yerel yedekleme"
       ],
-      "ctaLabel": "Ücretsiz Başla",
+      "ctaLabel": "Betayı ücretsiz dene",
       "external": true
     },
     {
@@ -26,7 +26,7 @@
       "name": "Tüm Kartlara Erişim",
       "badge": "9.575 BKA TUS Kartı",
       "price": "₺1.000",
-      "period": "Tam kart arşivi · iPhone + Web",
+      "period": "Tam kart arşivi",
       "highlight": true,
       "summary": "9.575 kartlık BKA TUS koleksiyonunun tamamına erişim ve seçili demo sorularına doğrudan erişim.",
       "features": [
@@ -36,7 +36,7 @@
         "FSRS-6, Kronometre, Çalışma Takvimi ve yerel yedekleme",
         "E-posta ve teknik destek"
       ],
-      "ctaLabel": "Tüm Kartlara Eriş",
+      "ctaLabel": "Betayı ücretsiz dene",
       "external": true
     },
     {
@@ -44,25 +44,25 @@
       "name": "Reklamları Kaldırma",
       "badge": "Reklamsız deneyim",
       "price": "₺50",
-      "period": "Reklamsız kullanım · iPhone + Web",
+      "period": "Reklamsız kullanım",
       "highlight": false,
-      "summary": "Ücretsiz kullanıcılar için çıkan ara ara reklamları kaldırır; seçili demo sorularına doğrudan erişim sunar.",
+      "summary": "Ücretsiz kullanıcılar için çıkacak ara ara reklamları kaldırır; seçili demo sorularına doğrudan erişim sunar.",
       "features": [
         "Seçili demo sorularına doğrudan erişim dahil",
-        "Ara ara çıkan uygulama içi reklamları tamamen kaldırır",
+        "Ücretsiz kullanımda çıkacak reklamları tamamen kaldırır",
         "Kişisel .apkg / .colpkg destelerle kesintisiz çalışma",
         "FSRS-6, Kronometre ve Fotoğraf Düzenleyici tam erişim",
         "Çevrimdışı yerel depolama ve otomatik yedekleme"
       ],
-      "ctaLabel": "Reklamsız Devam Et",
+      "ctaLabel": "Betayı ücretsiz dene",
       "external": true
     }
   ],
-  "transparencyNote": "Her üç segmentte de seçili demo sorularına doğrudan erişim vardır. Ücretsiz kullanıcılar için ara ara reklam çıkar ve reklam sıklığı yayın ayarlarıyla sonradan belirlenir. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır.",
+  "transparencyNote": "Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır. Ücretli erişimin başlangıcı, ödeme koşulları ve reklam sıklığı devreye alınmadan önce açıklanacak. Kartların ve ilerlemen cihazında saklanır; otomatik cihaz eşitlemesi henüz yok, kendi destelerini dosyayla taşıyabilirsin.",
   "clubProgram": {
     "kicker": "Öğrenci Toplulukları",
-    "title": "Tıp kulüpleri ve dönem temsilcilerine ücretsiz hesap",
-    "text": "Tıp fakültesi öğrenci topluluklarına, çalışma gruplarına ve eğitim paylaşımı yapan hesaplara ücretsiz tam erişim tanımlıyoruz.",
+    "title": "Tıp kulüpleri ve dönem temsilcileriyle iş birliği",
+    "text": "Tıp fakültesi öğrenci toplulukları, çalışma grupları ve eğitim paylaşımı yapan hesaplar iş birliği talebi iletebilir; ücretsiz erişim gibi koşulları birlikte netleştiririz.",
     "cta": "Başvur"
   }
 }

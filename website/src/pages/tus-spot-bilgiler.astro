@@ -19,7 +19,7 @@ const colSchema = collectionPage(origin, {
   path: '/tus-spot-bilgiler',
   name: 'TUS Spot Bilgiler ve Aktif Hatırlama Kart Havuzu | TusAnkiM',
   description:
-    '12 ders ve 106 alt destede 9.575 TUS kartı, 11 branştan doğrulanmış etkileşimli spot önizlemesi ve FSRS-6 aktif hatırlama yaklaşımı.',
+    '12 ders ve 106 alt destede 9.575 TUS kartı, 11 branştan etkileşimli örnek spot önizlemesi ve FSRS-6 aktif hatırlama yaklaşımı.',
   items: demoCards.map((c, idx) => ({
     name: `${c.ders}: ${c.olculenBilgi}`,
     path: `/tus-spot-bilgiler#spot-${idx + 1}`,
@@ -60,7 +60,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
       <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
         <strong>{fmtInt(catalog.totals.cards)} kart</strong>, <strong>{fmtInt(catalog.totals.notes)} not</strong>,
         <strong>{catalog.totals.courses} ders</strong> ve <strong>{catalog.totals.topicSubdecks} konu alt destesi</strong> içinden
-        2026/2 sınav öncesi sürümde (<code>a78ae1f</code>) yer alan 11 doğrulanmış yüksek verimli spot kartını hemen aşağıda test edebilirsin.
+        2026/2 sınav öncesi sürümde (<code>a78ae1f</code>) yer alan 11 örnek yüksek verimli spot kartını hemen aşağıda test edebilirsin.
       </p>
 
       <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
@@ -109,7 +109,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
           <h3 class="display text-base text-ink">Kurulumdan Önce veya Uygulamada Dene</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
             Ücretsiz (ara ara reklam), Tüm Kartlara Erişim (<strong>₺1.000</strong>) ve Reklamları Kaldırma (<strong>₺50</strong>)
-            segmentlerinin tamamında seçili demo sorularına doğrudan erişim vardır.
+            segmentlerinin tamamında seçili demo sorularına doğrudan erişim vardır. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır.
           </p>
         </div>
       </div>
@@ -122,7 +122,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
       <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div class="max-w-2xl">
           <h2 id="spots-preview-heading" class="display text-section tracking-tightest text-ink">
-            11 Branştan Doğrulanmış Etkileşimli Spot Örnekleri
+            11 Branştan Etkileşimli Spot Örnekleri
           </h2>
           <p class="text-sm text-inkMuted mt-2 leading-relaxed">
             Aşağıdaki 11 kartın tamamı kendi hazırladığımız ders kartlarıdır (telifli ÖSYM soru metni veya şıkkı içermez).
@@ -289,8 +289,8 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
       <div class="max-w-2xl space-y-2">
         <h2 class="display text-lg text-ink">Seçili Demo Sorularına Her Segmentte Doğrudan Erişim</h2>
         <p class="text-sm text-inkMuted leading-relaxed">
-          TusAnkiM’i ücretsiz başlat (ara ara reklam çıkar, reklam sıklığı sonradan ayarlanacak), tüm 9.575 karta <strong>₺1.000</strong> ile eriş
-          veya <strong>₺50</strong> ile reklamları kaldır. Her üç segmentte de seçili demo sorularını doğrudan çözebilir, kişisel
+          TusAnkiM’in erişim modeli: ücretsiz kullanım (ara ara reklam), tüm 9.575 karta <strong>₺1.000</strong> ile erişim
+          veya <strong>₺50</strong> ile reklamları kaldırma. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır. Her üç segmentte de seçili demo sorularını doğrudan çözebilir, kişisel
           <code>.apkg</code>/<code>.colpkg</code> destelerini çevrimdışı çalışabilirsin.
         </p>
         <p class="text-xs text-inkMuted">{SITE.disclaimer}</p>

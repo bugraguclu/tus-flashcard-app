@@ -156,6 +156,13 @@ for (const hf of htmlFiles) {
     check(!(/\bfetchpriority="high"/i.test(img) && /\bloading="lazy"/i.test(img)), `${rel}: <img> combines fetchpriority=high and loading=lazy`);
   }
 
+  // Planned paid tiers are never presented as active: any page that prices them also states the beta.
+  if (/₺1\.000|ara ara reklam/.test(html)) {
+    check(html.includes('henüz devrede değil'), `${rel}: paid tiers or ads shown without the beta statement`);
+  }
+  // No named-physician review claim until the editorial review exists (founder.json).
+  check(!/kurucu hekim|"@type":"Person"|reviewedBy/i.test(html), `${rel}: physician review or Person/reviewedBy claim`);
+
   // Forbidden content/patterns (checked across full HTML including scripts)
   for (const f of forbiddenText) {
     check(!f.re.test(html), `${rel}: forbidden pattern "${f.label}"`);
