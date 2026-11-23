@@ -22,7 +22,6 @@ import CardsGlyph from '../CardsGlyph';
 import { ClockGlyph, PauseGlyph, PlayGlyph } from '../UiGlyphs';
 import { Button, IconButton } from '../ui/Button';
 import { Checkbox } from '../ui/Choice';
-import { SelectionSuspendIcon } from './BrowserIcons';
 
 interface BrowserCardRowProps {
     item: StudyCard;
@@ -142,8 +141,6 @@ export function BrowserCardRow({
                 // onto the header, the answer box and the detail block separately. Selection
                 // comes last: while picking cards, what is selected matters more than why a
                 // row is out of the queue.
-                !isNotesMode && item.state.suspended && styles.cardSuspended,
-                !isNotesMode && !item.state.suspended && item.state.buried && styles.cardBuried,
                 isSelected && styles.cardItemSelected,
             ]}
             onPress={toggleRow}
@@ -160,9 +157,23 @@ export function BrowserCardRow({
             <View style={styles.cardItemHeader}>
                 {selectionMode && <View style={styles.selectionMark}><Checkbox checked={isSelected} /></View>}
                 <Body style={styles.cardBody} {...bodyProps}>
-                    {!isNotesMode && item.state.status !== 'new' ? (
-                        <Text style={[styles.stateLabel, { color: statusColor }]} numberOfLines={1}>
-                            {item.state.status === 'learning' ? t('anki.learn') : t('anki.review')}
+                    {/* The card's state as words above the question: learning or review, then
+                        suspended or buried, instead of painting the whole row. */}
+                    {!isNotesMode && (item.state.status !== 'new' || item.state.suspended || item.state.buried) ? (
+                        <Text style={styles.stateLabel} numberOfLines={1}>
+                            {item.state.status !== 'new' ? (
+                                <Text style={{ color: statusColor }}>
+                                    {item.state.status === 'learning' ? t('anki.learn') : t('anki.review')}
+                                </Text>
+                            ) : null}
+                            {item.state.status !== 'new' && (item.state.suspended || item.state.buried) ? (
+                                <Text style={{ color: colors.textMuted }}>{' · '}</Text>
+                            ) : null}
+                            {item.state.suspended ? (
+                                <Text style={{ color: colors.stateLabelLearn }}>{l('Askıda', 'Suspended')}</Text>
+                            ) : item.state.buried ? (
+                                <Text style={{ color: colors.textMuted }}>{l('Gömülü', 'Buried')}</Text>
+                            ) : null}
                         </Text>
                     ) : null}
                     <Text
@@ -239,11 +250,6 @@ export function BrowserCardRow({
                             accessibilityLabel={l(`Bayrak: ${cardFlagName(locale, flag)}`, `Flag: ${cardFlagName(locale, flag)}`)}
                         >
                             <FlagGlyph color={FLAG_COLORS[flag].color} size={16} filled />
-                        </View>
-                    )}
-                    {!isNotesMode && item.state.suspended && (
-                        <View style={styles.statusIcon} accessible accessibilityLabel={l('Askıda', 'Suspended')}>
-                            <SelectionSuspendIcon color={colors.warning} size={16} />
                         </View>
                     )}
                 </View>

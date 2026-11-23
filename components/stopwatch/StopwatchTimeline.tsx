@@ -161,8 +161,8 @@ export default function StopwatchTimeline({
                             <View style={shared.gutter}>
                                 <View style={shared.line} />
                                 <View style={[shared.nodeSlot, { pointerEvents: 'none' }]}>
-                                    <View style={[shared.node, shared.nodeMissed]}>
-                                        <MinusIcon color={colors.white} size={16} />
+                                    <View style={shared.node}>
+                                        <MinusIcon color={colors.danger} size={18} />
                                     </View>
                                 </View>
                             </View>

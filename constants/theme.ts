@@ -52,11 +52,6 @@ const LightColors = {
     // The Kronometre's study tools button and cards: an orange dark enough for white text.
     studyTool: '#d9661a',
 
-    // Browser row states. Anki tints the row rather than fading it, so the text of a suspended
-    // card stays as readable as any other — the row says "this one is not coming up", not
-    // "this one is less important".
-    rowSuspendedBg: '#fcf1cf',
-    rowBuriedBg: '#e8ebed',
 
     // Statistics charts. Card states keep the colours Anki gives them (new blue, learning orange,
     // relearning red, young and mature green), stepped per theme and checked as a set: every pair
@@ -146,9 +141,6 @@ const DarkColors: ColorScheme = {
     streak: '#f0904a',
     streakBg: '#382617',
     studyTool: '#d9661a',
-
-    rowSuspendedBg: '#3b3218',
-    rowBuriedBg: '#24292c',
 
     chartNew: '#3a84ca',
     chartLearn: '#d08000',

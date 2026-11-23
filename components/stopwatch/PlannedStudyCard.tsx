@@ -67,8 +67,8 @@ function PlannedStudyCard({ plan, onOpen, remainingMs, onStart }: PlannedStudyCa
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
-                    <View style={[styles.node, done ? styles.nodeDone : styles.nodePlanned]}>
-                        <ClockIcon color={colors.white} size={16} />
+                    <View style={styles.node}>
+                        <ClockIcon color={done ? colors.accent : colors.info} size={18} />
                     </View>
                 </View>
             </View>

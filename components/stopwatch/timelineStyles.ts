@@ -18,19 +18,15 @@ function createTimelineStyles(colors: ColorScheme) {
             paddingBottom: Spacing.xs,
         },
         dayChipSlot: { width: TIMELINE_LINE_X * 2, alignItems: 'center' },
-        // A white label with a thin border, as TUSBuddy marks "Bugün" and "Dün" on the line.
+        // "Bugün" and "Dün" as plain text on the line; the page colour behind it cuts the line.
         dayChip: {
             minWidth: 68,
             alignItems: 'center',
-            backgroundColor: colors.bgCard,
-            borderRadius: Radius.inset,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: colors.border,
-            paddingHorizontal: Spacing.md,
+            backgroundColor: colors.bgPrimary,
+            paddingHorizontal: Spacing.sm,
             paddingVertical: 5,
-            ...Shadow.card,
         },
-        dayChipText: { fontSize: FontSize.md, fontWeight: '600', color: colors.textPrimary },
+        dayChipText: { fontSize: FontSize.sm, fontWeight: '600', color: colors.textSecondary },
         dayHeaderAccessory: { marginLeft: 'auto' },
 
         row: { flexDirection: 'row', alignItems: 'stretch' },
@@ -52,22 +48,17 @@ function createTimelineStyles(colors: ColorScheme) {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        // A filled circle in a white ring, as TUSBuddy marks the line: a tick for a session done, a
-        // clock for a plan, a minus for a day without study.
+        // The line's marks are coloured glyphs with no disc: a tick for a session done (accent), a
+        // clock for a plan (info), a minus for a day without study (danger). The page colour behind
+        // the glyph cuts the line.
         node: {
             width: NODE_SIZE,
             height: NODE_SIZE,
             borderRadius: NODE_SIZE / 2,
-            borderWidth: 1.5,
-            borderColor: colors.bgCard,
+            backgroundColor: colors.bgPrimary,
             alignItems: 'center',
             justifyContent: 'center',
-            ...Shadow.card,
         },
-        nodeDone: { backgroundColor: colors.accent },
-        nodePlanned: { backgroundColor: colors.info },
-        nodeMissed: { backgroundColor: colors.danger },
-        nodeText: { color: colors.white, fontSize: FontSize.xs, fontWeight: '600' },
         sideButtonSlot: {
             position: 'absolute',
             top: 0,

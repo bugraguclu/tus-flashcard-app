@@ -84,8 +84,8 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                     </TouchableOpacity>
                 </View>
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
-                    <View style={[styles.node, styles.nodeDone]}>
-                        <CheckIcon color={colors.white} size={16} />
+                    <View style={styles.node}>
+                        <CheckIcon color={colors.accent} size={18} />
                     </View>
                 </View>
             </View>

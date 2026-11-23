@@ -53,8 +53,6 @@ export function createBrowserStyles(colors: ColorScheme, inset = 0) {
     cardItemSelected: { borderColor: colors.accent, backgroundColor: colors.accentLight },
     // Anki tints the row instead of fading it: a suspended card is out of the queue, not less
     // worth reading. Fading it was the old treatment and made the text look washed out.
-    cardSuspended: { backgroundColor: colors.rowSuspendedBg, borderColor: colors.streak },
-    cardBuried: { backgroundColor: colors.rowBuriedBg },
     cardItemHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
     // Centred on the row's height, like the selection circle in Mail's edit mode: the header
     // keeps its text top-aligned, but the box marks the whole row rather than its first line.

@@ -82,10 +82,10 @@ export default function StudyDayBox({
                 dimmed && styles.boxDimmed,
             ]}
         >
-            <Text style={[styles.date, studied && styles.dateStudied, dimmed && !studied && styles.dateDimmed]}>
+            <Text style={[styles.date, studied && !dimmed && styles.dateStudied, dimmed && styles.dateDimmed]}>
                 {dateOfMonth}
             </Text>
-            {studied && <View style={styles.dot} />}
+            {studied && !dimmed && <View style={styles.dot} />}
         </View>
     );
 }
@@ -107,10 +107,11 @@ function createStyles(colors: ColorScheme, isCompact: boolean, highContrast: boo
         // Today is marked by its outline alone.
         boxToday: { borderColor: colors.streak },
         boxSelected: { borderColor: colors.accent, borderWidth: 2 },
-        boxDimmed: { opacity: 0.45 },
+        // Another month's day: no box, its number in a fixed faint grey rather than faded with opacity.
+        boxDimmed: { borderColor: 'transparent', backgroundColor: 'transparent' },
         date: { color: highContrast ? colors.textPrimary : colors.textSecondary, fontSize: FontSize.sm, fontWeight: '600' },
         dateStudied: { color: colors.onAccent },
-        dateDimmed: { color: highContrast ? colors.textPrimary : colors.textMuted },
+        dateDimmed: { color: highContrast ? colors.textSecondary : colors.textFaint },
         dot: { position: 'absolute', bottom: 3, width: 3, height: 3, borderRadius: 2, backgroundColor: colors.onAccent },
     });
 }

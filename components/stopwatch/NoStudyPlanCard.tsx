@@ -5,7 +5,7 @@ import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { useI18n } from '../../hooks/useI18n';
 import { ClockIcon } from './StopwatchIcons';
 import { timelineStyles } from './timelineStyles';
-import { Radius } from '../ui/tokens';
+import { ChevronRightIcon } from '../ui/icons';
 
 interface NoStudyPlanCardProps {
     /** Whether the learner has plans for other days; then today only has none. */
@@ -29,8 +29,8 @@ function NoStudyPlanCard({ hasPlans, onPress }: NoStudyPlanCardProps) {
             <View style={styles.gutter}>
                 <View style={styles.line} />
                 <View style={[styles.nodeSlot, { pointerEvents: 'none' }]}>
-                    <View style={[styles.node, styles.nodeMissed]}>
-                        <ClockIcon color={colors.white} size={16} />
+                    <View style={styles.node}>
+                        <ClockIcon color={colors.danger} size={18} />
                     </View>
                 </View>
             </View>
@@ -38,16 +38,17 @@ function NoStudyPlanCard({ hasPlans, onPress }: NoStudyPlanCardProps) {
                 <View style={[styles.card, local.card]}>
                     <View style={local.titleRow}>
                         <Text style={[local.title, { color: colors.textPrimary }]} accessibilityRole="header">
-                            {hasPlans ? l('Bugün için planınız yok!', 'Nothing planned for today!') : l('Çalışma planınız yok!', 'You have no study plan!')}
+                            {hasPlans ? l('Bugün için planınız yok', 'Nothing planned for today') : l('Çalışma planınız yok', 'You have no study plan')}
                         </Text>
                         <TouchableOpacity
-                            style={[local.button, { backgroundColor: colors.accent }]}
+                            style={local.button}
                             onPress={onPress}
                             hitSlop={{ top: 12, right: 8, bottom: 12, left: 8 }}
                             accessibilityRole="button"
                             accessibilityLabel={hasPlans ? l('Çalışma planlarını aç', 'Open the study plans') : l('Çalışma planı oluştur', 'Create a study plan')}
                         >
-                            <Text style={[local.buttonText, { color: colors.white }]}>{hasPlans ? l('Planlar', 'Plans') : l('Oluştur', 'Create')}</Text>
+                            <Text style={[local.buttonText, { color: colors.accent }]}>{hasPlans ? l('Planlar', 'Plans') : l('Oluştur', 'Create')}</Text>
+                            <ChevronRightIcon color={colors.accent} size={16} />
                         </TouchableOpacity>
                     </View>
                     <Text style={[local.hint, { color: colors.textSecondary }]}>
@@ -68,8 +69,8 @@ const local = StyleSheet.create({
     card: { flexDirection: 'column', gap: Spacing.xs },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
     title: { flex: 1, fontSize: FontSize.md, fontWeight: '600' },
-    button: { borderRadius: Radius.control, paddingHorizontal: Spacing.sm, paddingVertical: 3 },
-    buttonText: { fontSize: FontSize.sm, fontWeight: '600' },
+    button: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 3 },
+    buttonText: { fontSize: FontSize.md, fontWeight: '600' },
     hint: { fontSize: FontSize.sm, lineHeight: 18 },
 });
 
