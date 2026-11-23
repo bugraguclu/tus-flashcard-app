@@ -61,6 +61,7 @@ export const GUIDE_TOC: GuideTocItem[] = [
   { id: 'brans-stratejisi', label: '11 Branş' },
   { id: 'puan-ve-mevzuat', label: 'Puan & Mevzuat' },
   { id: 'fsrs-ve-hacim', label: 'FSRS-6 & Rutin' },
+  { id: 'kartlari-dene', label: 'Kartları Dene' },
   { id: 'zorluklar', label: '7 Zorluk ve Çözüm' },
   { id: 'rehber-sss', label: 'Sık Sorulanlar' },
   { id: 'kaynaklar', label: 'Kaynaklar' },

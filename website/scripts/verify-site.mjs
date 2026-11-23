@@ -227,9 +227,10 @@ check(!indexHtml.includes('data-cd-announce'), 'index.html: removed countdown re
 
 const guideHtml = fs.readFileSync(path.join(DIST, 'tus-calisma-rehberi/index.html'), 'utf8');
 const guideVisible = guideHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
-for (const anchor of ['hizli-ozet', 'tempo-ve-profiller', 'mega-deste-kiyasi', 'tus-takvimi', 'brans-stratejisi', 'puan-ve-mevzuat', 'fsrs-ve-hacim', 'zorluklar', 'rehber-sss', 'kaynaklar']) {
+for (const anchor of ['hizli-ozet', 'tempo-ve-profiller', 'mega-deste-kiyasi', 'tus-takvimi', 'brans-stratejisi', 'puan-ve-mevzuat', 'fsrs-ve-hacim', 'kartlari-dene', 'zorluklar', 'rehber-sss', 'kaynaklar']) {
   check(guideHtml.includes(`id="${anchor}"`), `tus-calisma-rehberi: missing required section #${anchor}`);
 }
+check(guideHtml.includes('data-demo-simulator') && guideHtml.includes('data-decks-url="/data/demo-decks.json"'), 'tus-calisma-rehberi: missing embedded tablet card demo');
 check(guideHtml.includes('Bitirilebilir deste, bitmeyen desteden önce gelir'), 'tus-calisma-rehberi: missing migrated mega-deck comparison');
 check(guideHtml.includes('27 Mart 2027') && guideHtml.includes('22 Ağustos 2027'), 'tus-calisma-rehberi: missing 2027 TUS exam dates');
 check(guideHtml.includes('Zorluk 07') && guideHtml.includes('data-faq-toggle-all'), 'tus-calisma-rehberi: missing 7 struggles or FAQ expand/collapse control');
