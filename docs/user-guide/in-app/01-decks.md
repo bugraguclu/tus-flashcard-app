@@ -53,54 +53,43 @@ deste, **Varsayılan**, 0/0/0 sayılarla (`lib/models.ts:469-471`). Altta yüzen
 **Kartlarım / Kronometre / ＋ Ekle (ortada, yükseltilmiş) / İstatistik / Ayarlar**. Paket erişimi yoksa hiçbir şey kendiliğinden kurulmaz
 (`contexts/AppContext.tsx:172-186`). **Varsayılan** her zaman var olduğu için mevcut boş durum
 (`decks.tsx:2199-2211`) yeni kurulumda **hiç görünmez**. Yeni kullanıcıya ne yapacağını söyleyen
-bir metin yoktu; 2026-11-07'den beri aşağıdaki ilk açılış kartı ve **Varsayılan** ipucu bunu söyler.
+bir metin yoktu; 2026-11-23'ten beri aşağıdaki ilk açılış sayfası ve **Varsayılan** ipucu bunu söyler.
 Boş **Varsayılan**, başka desteler olunca Anki'deki gibi listede gizlenir (`lib/deckListFirstRun.ts`).
 
-### help.decks.firstRun.card — İlk açılış kartı (yeni)
-- **Yer:** Desteler listesinin başlığı (`FlatList` `ListHeaderComponent`, `decks.tsx:2195-2198`,
-  2362). `deckListHeader` kilitli TUS satırını ve **hemen altında** bu kartı döndürür. Paket
-  kuruluysa kart listenin en üstünde durur. Genişlik ve kenar boşlukları kilitli satırla aynıdır
-  (`styles.lockedDeckCard`).
-- **Gösterim koşulu:** Koleksiyonda paket dışında hiç kart yoksa (deste listesi anlık görüntüsünde,
-  katalog desteleri hariç toplam kart 0) **ve** kart kapatılmadıysa. Kapatma cihazda saklanır
-  (öneri: `settings` tablosunda `help_first_run_dismissed_v1`). İlk kendi kartınız eklenince kart
-  kendiliğinden kaybolur.
-- **Bileşen:** kart: başlık, 2 cümle, en çok üç eylem satırı (simge + etiket, en az 44 pt
-  yükseklik), altta bir bağlantı, sağ üstte **×**.
-- **Eylemler:**
-  1. **TUS paketini aç** → `router.push('/catalog')` (yalnızca tam paket kurulu değilse; kilitli
-     satırla aynı hedef, `decks.tsx:1386`)
-  2. **Kart ekle** → `router.push('/editor')` (`openAddCard` ile aynı, `decks.tsx:471-474`)
-  3. **İçe aktar** → `router.push(DATA_IMPORT_ROUTE)` (kanonik `/import`, AGENTS.md kuralı)
-  - Bağlantı **Kılavuzu aç** → `/help?article=quick-start`
-  - **×** → kartı kalıcı olarak gizler
-- **Daha fazla bilgi:** `tr/03-quick-start.md#first-screen`
-- **Durum:** Mevcut — koru (2026-11-07, `components/decks/DeckListWelcome.tsx`; kapatma
-  `help_first_run_dismissed_v1`). **Kılavuzu aç** bağlantısı Yardım merkezi (`/help`) yapılınca
-  eklenir; o güne kadar boşa giden bir bağlantı gösterilmez. Paket kuruluyken metin ikinci
-  cümleyle değişir (aşağıda).
+### help.decks.firstRun.page — İlk açılış sayfası (yeni)
+- **Yer:** Navigasyondan önce, tam ekran (`components/welcome/WelcomeGate.tsx` →
+  `WelcomeScreen.tsx`, `app/_layout.tsx` içinde hesap kapısının üstünde). Deste listesinin eski
+  Hoş geldiniz kartının yerini alır (2026-11-23).
+- **Gösterim koşulu:** Koleksiyonda hiç not yoksa (`collectionHasNotes`) **ve** sayfa daha önce
+  geçilmediyse (`help_first_run_dismissed_v1`; eski kartı kapatmış olan da görmez). Bir kez
+  gösterilir.
+- **Bileşen:** gri sayfa; üst boşluğun ortasında açılış ekranındaki uygulama simgesi, ortalanmış
+  başlık ve tek cümle; "Nasıl başlamak istersiniz?" altında üç satırlık grup; en altta **Şimdilik
+  geç** ve hesaplı derlemede **Hesabınız var mı? Giriş yapın**. Numaralı adım yok; × yok.
+- **Eylemler:** her biri sayfayı kalıcı kapatır ve hesap kapısının tek seferlik teklifini de
+  kapatır (ikinci bir karşılama gelmez). Seçilen ekranı deste listesi, açıldıktan sonra kendi
+  üstünde açar (`takePendingWelcomeRoute`), geri dönüş listeye gider.
+  1. **Hazır TUS kartları** → `/catalog`
+  2. **Kendi kartımı yazayım** → `/editor`
+  3. **Anki’den deste getir** → `DATA_IMPORT_ROUTE` (kanonik `/import`)
+  - **Giriş yapın** → `/sign-in`; **Şimdilik geç** → Desteler
+- **Varsayılan ipucu:** paket dışında kart yokken **Varsayılan** altında kalır (sayfadan bağımsız).
 
 **TR**
 - Başlık: Hoş geldiniz
-- Metin: Çalışmaya başlamak için kart gerekir. Hazır TUS paketini ücretsiz açabilir, kendi
-  kartınızı yazabilir veya Anki'den bir deste getirebilirsiniz.
-- Eylemler: **TUS paketini aç** — 9.575 hazır kart, ücretsiz · **Kart ekle** — kendi kartınızı
-  yazın · **İçe aktar** — .apkg, .colpkg veya metin dosyası
-- Bağlantı: Kılavuzu aç
-- × erişilebilirlik etiketi: Hoş geldiniz kartını kapat
-- Paket kuruluyken metin: TUS Kartları çalışmaya hazır: bir desteye dokunmanız yeterli. Kendi
-  kartınızı da yazabilir veya Anki’den bir deste getirebilirsiniz.
+- Metin: TUS’a kartlarla çalışın. Her kart, tam unutmak üzereyken yeniden karşınıza çıkar.
+- Grup başlığı: Nasıl başlamak istersiniz?
+- Satırlar: **Hazır TUS kartları** — 9.575 kart, ücretsiz · **Kendi kartımı yazayım** — Soru ve
+  cevabı siz girin · **Anki’den deste getir** — .apkg, .colpkg veya metin dosyası
+- Alt: Şimdilik geç · Hesabınız var mı? Giriş yapın
 
 **EN**
 - Title: Welcome
-- Text: You need cards to start studying. Unlock the ready-made TUS pack for free, write your own
-  card, or bring in a deck from Anki.
-- Actions: **Unlock the TUS pack** — 9,575 ready-made cards, free · **Add note** — write your own
-  card · **Import** — .apkg, .colpkg or text file
-- Link: Open the guide
-- × accessibility label: Close the welcome card
-- Text while the pack is installed: TUS Kartları is ready to study: just tap a deck. You can also
-  write your own card or bring in a deck from Anki.
+- Text: Study for TUS with flashcards. Each card comes back just before you would forget it.
+- Group title: How would you like to start?
+- Rows: **Ready-made TUS cards** — 9,575 cards, free · **Write my own card** — Type in a question
+  and its answer · **Bring a deck from Anki** — .apkg, .colpkg or text file
+- Footer: Skip for now · Have an account? Sign in
 
 | ID | Yer (kontrol, dosya:satır) | Tür | TR | EN | Durum |
 | --- | --- | --- | --- | --- | --- |

@@ -108,9 +108,6 @@
   "components/browser/SearchHelpModal.tsx": {
     "touch": 1
   },
-  "components/decks/DeckListWelcome.tsx": {
-    "touch": 1
-  },
   "components/decks/DeckNameButton.tsx": {
     "touch": 1,
     "smallTouch": 1

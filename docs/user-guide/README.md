@@ -105,7 +105,7 @@ sayfasının altındaki **Daha fazla bilgi** bağlantısı **Makale** sütununda
 
 | Ekran (dosya) | Bilgi sayfası: kontrol → ID | Metin dosyası | Makale |
 | --- | --- | --- | --- |
-| Desteler — `app/(tabs)/decks.tsx` | ⋮ › **Yardım** (yeni, iPhone'da Yardım merkezinin ana girişi) → `/help`; sütun başlığında **DESTE** yanındaki ⓘ (yeni) → `help.decks.sheet`; liste başında ilk açılış kartı (yeni) → `help.decks.firstRun.card` | `in-app/01-decks.md` | 03, 04 |
+| Desteler — `app/(tabs)/decks.tsx` | ⋮ › **Yardım** (yeni, iPhone'da Yardım merkezinin ana girişi) → `/help`; sütun başlığında **DESTE** yanındaki ⓘ (yeni) → `help.decks.sheet`; ilk açılışta listeden önce Hoş geldiniz sayfası → `help.decks.firstRun.page` | `in-app/01-decks.md` | 03, 04 |
 | Genel bakış — `app/deck-overview.tsx` | Sayı kartındaki ⓘ (yeni) → `help.decks.sheet`; **Filtre seçenekleri › ?** (mevcut) → `help.filtered.optionsSheet` | `in-app/01-decks.md` | 04, 11 |
 | Filtrelenmiş deste formu, Özel çalışma | Form araç çubuğundaki **?** (mevcut) → `help.filtered.sheet`; sıralama seçeneklerinin alt yazıları (yeni) | `in-app/01-decks.md` | 11 |
 | Çalışma ekranı — `app/(tabs)/index.tsx` | ⋮ menüsünün son satırı (yeni) → `help.reviewer.sheet`; **Şimdilik hepsi bu kadar!** yanında ⓘ → `help.reviewer.waitingSheet`; **Tebrikler!** yanında ⓘ → `help.reviewer.finishedSheet` | `in-app/02-studying.md` | 05 |

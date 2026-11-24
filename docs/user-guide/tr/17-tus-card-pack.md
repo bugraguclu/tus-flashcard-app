@@ -73,7 +73,7 @@ Paket 12 ders destesinden ve bunların altındaki 106 alt desteden oluşur. Büt
 
 Boş bir desteyi açtığınızda **Bu Deste Henüz Boş** ekranındaki **Hazır TUS kartlarını ekleyin**
 düğmesi de paketi kurar; kurulum bitince çalışma ekranı doğrudan **TUS Kartları** ile
-açılır. İlk açılıştaki **Hoş geldiniz** kartının **TUS paketini aç** satırı bu ekranı açar.
+açılır. İlk açılıştaki **Hoş geldiniz** sayfasının **Hazır TUS kartları** satırı bu ekranı açar.
 
 Kurulum kendi destelerinize, notlarınıza ve tekrar geçmişinize dokunmaz. Kurulum yarıda kalırsa
 koleksiyonunuz olduğu gibi kalır; uygulamayı kapatıp yeniden açtığınızda kurulum kendiliğinden

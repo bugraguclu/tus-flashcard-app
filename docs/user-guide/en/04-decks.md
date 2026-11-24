@@ -54,9 +54,9 @@ you add without choosing a deck go there. As in Anki, it is hidden from the list
 and you have other decks, and it comes back once a card goes into it. The deck picker always offers
 it when you add a card.
 
-While your collection has no cards outside the TUS pack, a **Welcome** card sits at the top of the
-list: **Unlock the TUS pack**, **Add note** and **Import**. It goes away by itself once you add your
-first own card; if you close it with **×**, it does not come back on this device.
+While your collection has no cards outside the TUS pack, a short line under **Varsayılan** says that
+cards you add without choosing a deck go there. The **Welcome** page with the three ways to get
+cards comes only on first launch, once, before the list.
 
 <a id="deck-counts"></a>
 ## What the numbers mean

@@ -111,13 +111,7 @@ import { requestDeckShortcut } from '../../modules/deck-shortcuts';
 import { userFacingErrorMessage } from '../../lib/userFacingError';
 import { DATA_EXPORT_ROUTE, DATA_IMPORT_ROUTE } from '../../lib/dataManagementRoutes';
 import { getDeckListSnapshot } from '../../lib/deckListSnapshot';
-import {
-    DEFAULT_DECK_ID,
-    dismissFirstRunCard,
-    isFirstRunCardDismissed,
-    shouldShowFirstRunCard,
-} from '../../lib/deckListFirstRun';
-import DeckListWelcome from '../../components/decks/DeckListWelcome';
+import { DEFAULT_DECK_ID, takePendingWelcomeRoute } from '../../lib/deckListFirstRun';
 import {
     buildVisibleDeckRows,
     deckDisclosureForSnapshot,
@@ -220,9 +214,8 @@ export default function DecksScreen() {
     const [snapshotLoading, setSnapshotLoading] = useState(true);
     // Bumped by pull-to-refresh: the deck list is read from the collection again.
     const [refreshNonce, setRefreshNonce] = useState(0);
-    // Unknown until the first snapshot, so the welcome card never flashes at a learner who has cards.
+    // Unknown until the first snapshot, so the Default deck's hint never flashes at a learner who has cards.
     const [ownCardCount, setOwnCardCount] = useState<number | null>(null);
-    const [firstRunDismissed, setFirstRunDismissed] = useState(isFirstRunCardDismissed);
     const snapshotGenerationRef = useRef(0);
     const updateExpandedDecks = useCallback((update: (current: Set<string>) => Set<string>) => {
         expandedDecksRef.current = update(expandedDecksRef.current);
@@ -391,7 +384,8 @@ export default function DecksScreen() {
     // flash the locked row at a learner who already owns the pack; the collection itself is the
     // authority on the first frame.
     const fullCatalogPresent = catalogTier === 'full';
-    const showWelcome = ownCardCount !== null && shouldShowFirstRunCard(ownCardCount, firstRunDismissed);
+    // Until the learner has a card of their own, the Default deck says what it is for.
+    const showDefaultDeckHint = ownCardCount === 0;
 
     const visibleRowsRef = useRef<DeckTreeNode[]>([]);
     visibleRowsRef.current = visibleRows.map((row) => row.node);
@@ -572,6 +566,12 @@ export default function DecksScreen() {
     // Anki's "Add" toolbar action: open the note editor targeting the current deck. Passing no
     // deckId lets the editor resolve the last-opened deck (activeDeckName), matching Anki's habit
     // of adding to the deck you last studied.
+    // The screen picked on the welcome page opens over this list, once.
+    useEffect(() => {
+        const route = takePendingWelcomeRoute();
+        if (route) router.push(route as any);
+    }, [router]);
+
     const openAddCard = useCallback(() => {
         setShowAddMenu(false);
         router.push('/editor' as any);
@@ -582,12 +582,6 @@ export default function DecksScreen() {
         setFilteredDeckFormDeck(null);
         setFilteredDeckFormVisible(true);
     };
-
-    const dismissWelcome = useCallback(() => {
-        animateDeckTreeLayout();
-        dismissFirstRunCard();
-        setFirstRunDismissed(true);
-    }, [animateDeckTreeLayout]);
 
     // ---- Gear menu actions ----
 
@@ -1336,7 +1330,7 @@ export default function DecksScreen() {
                         learnCount={node.learnCount}
                         reviewCount={node.reviewCount}
                     />
-                    {showWelcome && deck.id === DEFAULT_DECK_ID ? (
+                    {showDefaultDeckHint && deck.id === DEFAULT_DECK_ID ? (
                         <Text style={styles.deckHint}>
                             {l('Deste seçmeden eklediğiniz kartlar buraya gelir.', 'Cards you add without choosing a deck go here.')}
                         </Text>
@@ -1385,7 +1379,7 @@ export default function DecksScreen() {
         isCompact,
         l,
         openMenu,
-        showWelcome,
+        showDefaultDeckHint,
         styles,
         toggleExpand,
         width,
@@ -1584,18 +1578,8 @@ export default function DecksScreen() {
     const deckListHeader = useMemo(() => (
         <>
             {fullCatalogPresent ? null : renderLockedCatalogCard()}
-            {showWelcome ? (
-                <DeckListWelcome
-                    showCatalog={!fullCatalogPresent}
-                    catalogCardCount={BKA_MANIFEST.totals.cards}
-                    onOpenCatalog={() => router.push('/catalog' as any)}
-                    onAddCard={openAddCard}
-                    onImport={() => router.push(DATA_IMPORT_ROUTE as any)}
-                    onDismiss={dismissWelcome}
-                />
-            ) : null}
         </>
-    ), [dismissWelcome, fullCatalogPresent, openAddCard, renderLockedCatalogCard, router, showWelcome]);
+    ), [fullCatalogPresent, renderLockedCatalogCard]);
     const deckListEmpty = useMemo(() => (snapshotLoading ? <LoadingState /> : (
         <EmptyState
             icon={<PlusIcon color={colors.accent} size={36} />}

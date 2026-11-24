@@ -52,9 +52,9 @@ Satıra dokunduğunuzda paket ekranı açılır. Bkz. [TUS Kartları paketi](17-
 buraya gider. Anki'deki gibi, boşken ve başka desteleriniz varken listede gizlenir; içine bir kart
 eklendiğinde yeniden görünür. Kart eklerken deste seçicide her zaman yer alır.
 
-Koleksiyonunuzda TUS paketi dışında hiç kart yokken listenin başında **Hoş geldiniz** kartı durur:
-**TUS paketini aç**, **Kart ekle** ve **İçe aktar**. İlk kendi kartınızı eklediğinizde kendiliğinden
-kaybolur; **×** ile kapatırsanız bu cihazda bir daha görünmez.
+Koleksiyonunuzda TUS paketi dışında hiç kart yokken **Varsayılan**'ın altında kısa bir not, deste
+seçmeden eklediğiniz kartların oraya gideceğini söyler. Kart edinmenin üç yolunu sunan **Hoş
+geldiniz** sayfası ise yalnızca ilk açılışta, listeden önce bir kez gelir.
 
 <a id="deck-counts"></a>
 ## Sayılar ne anlama gelir?

@@ -7,7 +7,7 @@ import { useWebKeyboardNavigation } from '../../hooks/useWebKeyboardNavigation';
 import SignInScreen from './SignInScreen';
 
 /** The web build's focus ring and keyboard handling, which `WebAppIntegrations` gives the navigator. */
-function WebKeyboardSupport() {
+export function WebKeyboardSupport() {
     const colors = useThemeColors();
     useWebKeyboardNavigation({ ringColor: colors.textPrimary, haloColor: colors.bgCard });
     return null;

@@ -19,13 +19,16 @@ the end of each step.
 <a id="first-screen"></a>
 ## 1. The first screen: Decks
 
-The app opens on the **Decks** screen. On first launch you see:
+On first launch the app opens on a plain **Welcome** page. Under the app's mark and one sentence on
+what it does are the three ways to get cards: **Ready-made TUS cards**,
+**Write my own card** and **Bring a deck from Anki**. The one you pick opens over Decks; **Skip for
+now** at the bottom goes straight to
+Decks. The page is shown once.
+
+From then on the app opens on the **Decks** screen. Before your first card you see:
 
 - **TUS Kartları** — the ready-made pack, with a lock icon and the line "9,575 cards · 12 courses ·
   106 subdecks". It is not on your device yet; tapping it opens its introduction screen.
-- The **Welcome** card — the three ways to get cards: **Unlock the TUS pack**, **Add note** and
-  **Import**. It goes away by itself once you add your first own card; to close it sooner, tap the
-  **×** at its top right.
 - **Varsayılan** — an empty deck (its name means "Default"). Cards you add without choosing another
   deck go here. Once you have other decks it is hidden while empty (as in Anki) and comes back as
   soon as a card goes into it.

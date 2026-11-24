@@ -38,6 +38,7 @@ import { AppProvider, useAppSettings, useStartupStatus } from '../contexts/AppCo
 import { AccountProvider, useAccount } from '../contexts/AccountContext';
 import { SyncProvider } from '../contexts/SyncContext';
 import AccountFirstRunGate from '../components/account/AccountFirstRunGate';
+import WelcomeGate from '../components/welcome/WelcomeGate';
 import { useI18n, useSystemI18n } from '../hooks/useI18n';
 import { onStudyReminderOpened } from '../lib/studyNotifications';
 import { onStopwatchAlertOpened } from '../lib/stopwatchNotifications';
@@ -782,9 +783,11 @@ export default function RootLayout() {
                                 <PageTitleLocaleContext.Provider value={setTitleLocale}>
                                     <ThemeGate>
                                         <StartupGate>
-                                            <AccountFirstRunGate>
-                                                <AppStack />
-                                            </AccountFirstRunGate>
+                                            <WelcomeGate>
+                                                <AccountFirstRunGate>
+                                                    <AppStack />
+                                                </AccountFirstRunGate>
+                                            </WelcomeGate>
                                         </StartupGate>
                                     </ThemeGate>
                                 </PageTitleLocaleContext.Provider>

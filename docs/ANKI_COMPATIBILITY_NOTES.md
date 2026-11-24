@@ -254,9 +254,10 @@ deck if it contains no cards and you have added other decks",
 it back, and deck pickers keep offering it as the destination for new notes. Only the deck list
 snapshot applies the rule (`withoutEmptyDefaultDeck`, `lib/deckListFirstRun.test.ts`), so the
 sidebar tree and the pickers are unchanged. Until the collection holds a card outside the TUS pack,
-the list also opens on a product-specific welcome card with the three ways to get cards (the pack,
-Add, Import) and a hint under Varsayılan; closing it is remembered on the device
-(`help_first_run_dismissed_v1`).
+Varsayılan carries a hint. On an empty collection a product-specific welcome page comes once before
+the deck list (`components/welcome/`), with the three ways to get cards (the pack, Add, Import);
+leaving it is remembered on the device (`help_first_run_dismissed_v1`) and also settles the
+one-time account offer, so no second welcome follows.
 
 **Layout smoke (2026-10-16):** Decks shares the name/new/learning/review columns between phone and web, with common header/count widths and bounded compact indentation. The named production-web and iPhone-simulator checks, screenshots and physical-device limits are recorded in [Mobile layout review](ui-layout-review/README.md). This is product-specific presentation; deck hierarchy, count calculation and scheduling semantics are unchanged.
 

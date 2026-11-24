@@ -1,7 +1,7 @@
 // The deck list a new learner meets: Anki hides an empty Default deck once other decks exist
 // ("Anki will hide the default deck if it contains no cards and you have added other decks",
-// https://docs.ankiweb.net/getting-started.html#decks), and the welcome card stays until the
-// learner has a card of their own or closes it (docs/user-guide/in-app/01-decks.md, help.decks.firstRun.card).
+// https://docs.ankiweb.net/getting-started.html#decks), and the welcome page comes once, before
+// the deck list, on an empty collection (docs/user-guide/in-app/01-decks.md, help.decks.firstRun.page).
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';
@@ -16,9 +16,9 @@ import type { Deck } from './models';
 import type { DeckTreeNode } from './deckTree';
 import {
     DEFAULT_DECK_ID,
-    dismissFirstRunCard,
-    isFirstRunCardDismissed,
-    shouldShowFirstRunCard,
+    dismissWelcome,
+    isWelcomeDismissed,
+    shouldShowWelcomePage,
     withoutEmptyDefaultDeck,
 } from './deckListFirstRun';
 
@@ -100,16 +100,16 @@ describe('the deck list a new learner meets', () => {
     });
 });
 
-describe('the welcome card', () => {
-    it('shows until the learner has a card of their own or closes it', () => {
-        expect(shouldShowFirstRunCard(0, false)).toBe(true);
-        expect(shouldShowFirstRunCard(1, false)).toBe(false);
-        expect(shouldShowFirstRunCard(0, true)).toBe(false);
+describe('the welcome page', () => {
+    it('shows only on an empty collection the learner has not left it on', () => {
+        expect(shouldShowWelcomePage(false, false)).toBe(true);
+        expect(shouldShowWelcomePage(true, false)).toBe(false);
+        expect(shouldShowWelcomePage(false, true)).toBe(false);
     });
 
-    it('stays closed once dismissed', () => {
-        expect(isFirstRunCardDismissed()).toBe(false);
-        dismissFirstRunCard();
-        expect(isFirstRunCardDismissed()).toBe(true);
+    it('stays gone once left', () => {
+        expect(isWelcomeDismissed()).toBe(false);
+        dismissWelcome();
+        expect(isWelcomeDismissed()).toBe(true);
     });
 });

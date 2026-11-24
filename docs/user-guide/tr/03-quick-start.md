@@ -19,13 +19,14 @@ bağlantıya bakın.
 <a id="first-screen"></a>
 ## 1. İlk ekran: Desteler
 
-Uygulama **Desteler** ekranıyla açılır. İlk açılışta orada şunları görürsünüz:
+İlk açılışta uygulama sade bir **Hoş geldiniz** sayfasıyla açılır. Uygulamanın simgesinin ve tek
+cümlelik tanıtımın altında kart edinmenin üç yolu durur: **Hazır TUS kartları**, **Kendi kartımı yazayım** ve **Anki’den deste getir**. Birini
+seçtiğinizde o ekran Desteler'in üstünde açılır; en alttaki **Şimdilik geç** sizi doğrudan Desteler'e götürür. Sayfa bir kez gösterilir.
+
+Ardından uygulama her zaman **Desteler** ekranıyla açılır. İlk kartınızdan önce orada şunları görürsünüz:
 
 - **TUS Kartları** — kilit simgeli, "9.575 kart · 12 ders · 106 alt deste" yazan hazır paket.
   Henüz cihazınızda değildir; dokunduğunuzda tanıtım ekranı açılır.
-- **Hoş geldiniz** kartı — kart edinmenin üç yolu: **TUS paketini aç**, **Kart ekle** ve
-  **İçe aktar**. Kendi ilk kartınızı eklediğinizde kendiliğinden kaybolur; daha önce kapatmak için
-  sağ üstteki **×**'e dokunun.
 - **Varsayılan** — boş bir deste. Başka deste seçmediğiniz kartlar buraya gider. Başka desteleriniz
   olduğunda boşken listede gizlenir (Anki'deki gibi) ve içine bir kart eklenince yeniden görünür.
 

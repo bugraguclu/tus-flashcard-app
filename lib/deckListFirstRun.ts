@@ -6,7 +6,7 @@ import { getDbSetting, setDbSetting } from './dbSettings';
 /** The deck every collection starts with: Anki's Default deck, named Varsayılan here. */
 export const DEFAULT_DECK_ID = 1;
 
-/** Set once the learner closes the deck list's welcome card; it then stays closed on this device. */
+/** Set once the learner leaves the welcome page; it then never comes back on this device. */
 export const FIRST_RUN_DISMISSED_KEY = 'help_first_run_dismissed_v1';
 
 /**
@@ -38,17 +38,34 @@ export function countOwnCards(
 }
 
 /**
- * The welcome card shows until the learner has a card of their own or closes it. The TUS pack
- * alone does not end it: the card then still offers writing a card and importing a deck.
+ * The welcome page comes up once, before the deck list, on a collection with nothing in it yet:
+ * no notes of the learner's own and no TUS pack. Someone who already studies here, or who has seen
+ * the page (or closed the deck list's old welcome card, which used the same key), never meets it.
  */
-export function shouldShowFirstRunCard(ownCardCount: number, dismissed: boolean): boolean {
-    return ownCardCount === 0 && !dismissed;
+export function shouldShowWelcomePage(collectionHasNotes: boolean, dismissed: boolean): boolean {
+    return !collectionHasNotes && !dismissed;
 }
 
-export function isFirstRunCardDismissed(): boolean {
+export function isWelcomeDismissed(): boolean {
     return getDbSetting(FIRST_RUN_DISMISSED_KEY) === 'true';
 }
 
-export function dismissFirstRunCard(): void {
+export function dismissWelcome(): void {
     setDbSetting(FIRST_RUN_DISMISSED_KEY, 'true');
+}
+
+let pendingWelcomeRoute: string | null = null;
+
+/**
+ * The screen picked on the welcome page. The deck list opens it once it has mounted, so it lands
+ * over the deck list (Back returns there) and never races the navigator's own first state.
+ */
+export function setPendingWelcomeRoute(route: string | null): void {
+    pendingWelcomeRoute = route;
+}
+
+export function takePendingWelcomeRoute(): string | null {
+    const route = pendingWelcomeRoute;
+    pendingWelcomeRoute = null;
+    return route;
 }

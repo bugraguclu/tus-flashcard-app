@@ -73,7 +73,7 @@ called **TUS Kartları**. Course and subdeck names are in Turkish.
 
 The **Add ready-made TUS cards** button on the **This Deck is Empty** screen, which
 appears when you open an empty deck, installs the pack too; once it is done the study screen opens
-straight on **TUS Kartları**. The **Unlock the TUS pack** row of the first-launch **Welcome** card
+straight on **TUS Kartları**. The **Ready-made TUS cards** row of the first-launch **Welcome** page
 opens this screen.
 
 Installing does not touch your own decks, notes or review history. If the installation is
