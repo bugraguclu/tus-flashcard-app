@@ -372,7 +372,7 @@ export const GUIDE_FAQS: GuideFaq[] = [
   },
   {
     q: 'TUS’ta %5 puan kesintisi kimlere uygulanır ve net hedefini nasıl değiştirir?',
-    a: 'Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği uyarınca uzmanlık eğitimine devam ederken sınava girenler, istifa edenler veya yerleşip süresi içinde başlamayanlar için takip eden ilk sınavda mesleki bilgi puanında %5 kesinti (× 0,95) uygulanır. Kesintisiz 65 Klinik puanı yaklaşık 130 net bandındayken, %5 kesinti etkinken aynı 65 net puana ulaşmak için yaklaşık 68,4 ham puan (~143 net) gerekir. Güncel koşullar için ÖSYM kılavuzunu kontrol et.',
+    a: 'Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği ve oranı %2’den %5’e çıkaran 16 Mayıs 2024 değişikliği uyarınca uzmanlık eğitimine devam ederken sınava girenler, istifa edenler veya yerleşip süresi içinde başlamayanlar için takip eden ilk sınavda mesleki bilgi puanında %5 kesinti (× 0,95) uygulanır. Kesintisiz 65 Klinik puanı yaklaşık 130 net bandındayken, %5 kesinti etkinken aynı 65 net puana ulaşmak için yaklaşık 68,4 ham puan (~143 net) gerekir. Güncel koşullar için ÖSYM kılavuzunu kontrol et.',
   },
   {
     q: 'FSRS-6 hedef hatırlama oranı TUS için %85 mi, %90 mı, %93 mü olmalı?',
@@ -406,7 +406,12 @@ export const OFFICIAL_SOURCES = [
   {
     title: 'Resmî Gazete — Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği',
     url: 'https://www.resmigazete.gov.tr/eskiler/2022/09/20220903-2.htm',
-    note: 'Güncel %5 puan kesintisi ve yerleştirme hükümleri',
+    note: 'Puan kesintisi ve yerleştirme hükümleri (kesinti başlangıçta %2)',
+  },
+  {
+    title: 'Resmî Gazete — Uzmanlık Eğitimi Yönetmeliğinde Değişiklik (16 Mayıs 2024, Sayı 32548)',
+    url: 'https://www.resmigazete.gov.tr/eskiler/2024/05/20240516-1.htm',
+    note: 'Kesinti oranını %2’den %5’e çıkaran değişiklik',
   },
   {
     title: 'ACM KDD ’22 — A Stochastic Shortest Path Algorithm for Optimizing Spaced Repetition Scheduling',

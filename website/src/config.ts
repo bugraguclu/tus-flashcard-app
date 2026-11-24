@@ -6,13 +6,13 @@ export const PUBLIC = true;
 /** Show the 3-segment pricing cards (website/src/data/offer.json). */
 export const SHOW_PRICING_PROMO = true;
 
-/** Active pricing mode: 'three-segment' (₺0 ara ara reklam, ₺1.000 tüm kartlar, ₺50 reklam kaldırma) | 'free-beta' */
+/** Active pricing mode: 'three-segment' (₺0 ara ara reklam, ₺2.000 tüm kartlar, ₺50 reklam kaldırma) | 'free-beta' */
 export const PRICING_MODE: 'three-segment' | 'free-beta' = 'three-segment';
 
 /** Current access and future pricing are deliberately separate. */
 export const ACCESS = {
   betaDescription: 'Güncel beta sürümünde TUS paketi ücretsiz açılır. Ödeme veya kart bilgisi gerekmez.',
-  plannedLaunchDescription: 'Erişim modeli: ücretsiz kullanım (ara ara reklam), tüm 9.575 karta erişim ₺1.000, reklamları kaldırma ₺50. Ücretli seçenekler ve reklamlar henüz devrede değil.',
+  plannedLaunchDescription: 'Erişim modeli: ücretsiz kullanım (ara ara reklam), tüm 9.575 karta erişim ₺2.000, reklamları kaldırma ₺50. Ücretli seçenekler ve reklamlar henüz devrede değil.',
 } as const;
 
 /** Publish /gizlilik/, /kullanim-kosullari/, /destek/ routes and footer links. */

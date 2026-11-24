@@ -37,7 +37,7 @@ const unlockedCustomer = () => ({ entitlements: { active: { bka_tus_complete: { 
 const offering = (productId = 'com.tusankim.bka.complete.lifetime') => ({
     all: {
         default: {
-            availablePackages: [{ identifier: '$rc_lifetime', product: { identifier: productId, priceString: '₺1.500,00' } }],
+            availablePackages: [{ identifier: '$rc_lifetime', product: { identifier: productId, priceString: '₺2.000,00' } }],
         },
     },
     current: null,
@@ -98,7 +98,7 @@ describe('BKA catalog access', () => {
 
         await expect(loadCatalogAccess()).resolves.toMatchObject({
             status: 'ready', hasAccess: true, configured: true,
-            productAvailable: true, price: '₺1.500,00',
+            productAvailable: true, price: '₺2.000,00',
         });
         expect(fixture.purchases.configure).toHaveBeenCalledWith({ apiKey: 'appl_public_test' });
     });

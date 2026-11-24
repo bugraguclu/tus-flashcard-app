@@ -92,8 +92,8 @@
     },
     {
       "cat": "fiyat",
-      "q": "3 segmentli fiyatlandırma (₺0, ₺1.000 tüm kartlar, ₺50 reklam kaldırma) nasıl işliyor?",
-      "a": "Güncel betada ücretli seçenekler ve reklamlar henüz devrede değil; **TUS paketi ücretsiz açılır.** Planlanan modelde üç seçenek var: (1) **Ücretsiz kullanım (₺0):** ara ara reklam çıkacak; reklam sıklığı sonradan ayarlanacak. (2) **Tüm 9.575 BKA TUS kartına erişim ₺1.000.** (3) **Reklamları kaldırma ₺50.** Her üç segmentte de seçili demo sorularına doğrudan erişilebilecek."
+      "q": "3 segmentli fiyatlandırma (₺0, ₺2.000 tüm kartlar, ₺50 reklam kaldırma) nasıl işliyor?",
+      "a": "Güncel betada ücretli seçenekler ve reklamlar henüz devrede değil; **TUS paketi ücretsiz açılır.** Planlanan modelde üç seçenek var: (1) **Ücretsiz kullanım (₺0):** ara ara reklam çıkacak; reklam sıklığı sonradan ayarlanacak. (2) **Tüm 9.575 BKA TUS kartına erişim ₺2.000.** (3) **Reklamları kaldırma ₺50.** Her üç segmentte de seçili demo sorularına doğrudan erişilebilecek."
     },
     {
       "cat": "platform",
@@ -133,7 +133,7 @@
     {
       "cat": "fiyat",
       "q": "Tek seferlik satın alma mı, aylık abonelik mi?",
-      "a": "Şu anda ödeme alınmıyor. Planlanan modelde tüm kartlara erişim (₺1.000) ve reklamları kaldırma (₺50) ayrı seçenekler olacak; tek seferlik mi süreli mi olacakları ve ödeme koşulları ücretli erişim başlamadan önce açıklanacak. Güncel betayı ücretsiz deneyebilirsin."
+      "a": "Şu anda ödeme alınmıyor. Planlanan modelde tüm kartlara erişim (₺2.000) ve reklamları kaldırma (₺50) ayrı seçenekler olacak; tek seferlik mi süreli mi olacakları ve ödeme koşulları ücretli erişim başlamadan önce açıklanacak. Güncel betayı ücretsiz deneyebilirsin."
     },
     {
       "cat": "fiyat",

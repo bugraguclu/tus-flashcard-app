@@ -13,11 +13,11 @@
   (`src/data/rehber/`) ve 11 branş sayfası `/referanslar/<branş>/` (`src/data/branches.ts`).
   Ders ders net girişli `/puan-hesapla/`, canlıdaki iPhone klavye araç çubuğunu
   (`lib/scoreKeyboard.ts`, yalnız görünen alanlar) korur.
-- Fiyat bölümü `src/data/offer.json` üç segmentini gösterir (₺0 ara ara reklam, ₺1.000 tüm
+- Fiyat bölümü `src/data/offer.json` üç segmentini gösterir (₺0 ara ara reklam, ₺2.000 tüm
   kartlar, ₺50 reklam kaldırma). Güncel betada ücretli seçenekler ve reklamlar devrede
   değildir; bu cümle `offer.json`, `config.ts` `ACCESS`, SSS ve `llms*.txt` içinde korunur.
   Uygulama içi Yardım (`docs/user-guide/`) bu modele göre değiştirilmedi: uygulamada henüz
-  ₺1.000 satın alma veya reklam yok.
+  ₺2.000 satın alma veya reklam yok.
 - Yeni sayfalarda imza “Hazırlayan: TusAnkiM”dır; adı geçen bir hekimin incelediği iddiası
   ve `Person` yazar şeması bilerek taşınmadı (`founder.json`: hekim editör onayı sürüyor).
 - Her sayfanın kendi sosyal kapağı vardır: `npm run assets:build` yeni sayfaları,

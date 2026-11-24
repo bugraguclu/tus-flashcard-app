@@ -11,7 +11,7 @@ const state = (overrides: Partial<CatalogAccessState>): CatalogAccessState => ({
     hasAccess: false,
     previewAccess: false,
     configured: true,
-    price: '₺1.500',
+    price: '₺2.000',
     productAvailable: true,
     ...overrides,
 });

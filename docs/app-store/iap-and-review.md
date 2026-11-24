@@ -10,7 +10,7 @@
 - Reference Name: `BKA TUS Complete Lifetime`
 - Product ID: `com.tusankim.bka.complete.lifetime`
 - Type: `Non-Consumable`
-- Türkiye temel fiyatı: App Store Connect’te `₺1.500` fiyat noktası (mevcutsa; son tutarı Apple belirler)
+- Türkiye temel fiyatı: App Store Connect’te `₺2.000` fiyat noktası (mevcutsa; son tutarı Apple belirler)
 - Display Name (TR): `BKA TUS Tam Koleksiyon`
 - Description (TR): `12 dersi kapsayan 9.575 hazır TUS kartı`
 - Display Name (EN): `BKA TUS Complete Catalog`

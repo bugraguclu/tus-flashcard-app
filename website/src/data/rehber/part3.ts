@@ -73,9 +73,9 @@ export const REHBER_PART_3: RehberArticle[] = [
     questionH1: "TusAnkiM ücretsiz mi, iPhone ve Web'de nasıl kullanılır?",
     seoTitle: 'TusAnkiM Ücretsiz Mi? Fiyat ve Erişim Modeli | TusAnkiM',
     seoDescription:
-      'TusAnkiM güncel betada ücretsiz. Planlanan 3 segmentli model: ücretsiz kullanım (ara ara reklam), ₺1.000 tüm kartlar, ₺50 reklam kaldırma.',
+      'TusAnkiM güncel betada ücretsiz. Planlanan 3 segmentli model: ücretsiz kullanım (ara ara reklam), ₺2.000 tüm kartlar, ₺50 reklam kaldırma.',
     directAnswer:
-      'Evet, TusAnkiM’i ücretsiz olarak kullanabilirsin. Erişim modeli üç segmentlidir: (1) ücretsiz kullanıcılar için ara ara reklam çıkacak (reklam sıklığı sonradan ayarlanacak), (2) tüm 9.575 karta erişim ₺1.000’dir ve (3) reklamları kaldırma ₺50’dir. Her üç segmentte de seçili demo sorularına doğrudan erişebilirsin. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır.',
+      'Evet, TusAnkiM’i ücretsiz olarak kullanabilirsin. Erişim modeli üç segmentlidir: (1) ücretsiz kullanıcılar için ara ara reklam çıkacak (reklam sıklığı sonradan ayarlanacak), (2) tüm 9.575 karta erişim ₺2.000’dir ve (3) reklamları kaldırma ₺50’dir. Her üç segmentte de seçili demo sorularına doğrudan erişebilirsin. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır.',
     whyMisconceived: [
       'Adaylar çoğu zaman “hazır kart paketi ücretliyse uygulamanın tamamı ödeme duvarının arkasındadır” veya “kendi oluşturduğum ya da Anki’den aktardığım desteleri çalışmak için de sürekli aylık abonelik gerekir” diye düşünür.',
       'Bir diğer yaygın karışıklık da iPhone uygulaması ile Web tarayıcı sürümünün birbirinden tamamen farklı özelliklere sahip olduğu ya da internet bağlantısı koptuğunda çalışma verilerine erişilemeyeceği yönündedir.',
@@ -83,12 +83,12 @@ export const REHBER_PART_3: RehberArticle[] = [
     ],
     truthParagraphs: [
       'TusAnkiM yerel öncelikli (local-first) bir mimariyle tasarlanmıştır: kartların, tekrar geçmişin, Kronometre oturumların ve otomatik yedeklerin yalnızca kendi cihazında saklanır; tanıtım web sitesi ise çerez, reklam ağı veya üçüncü taraf izleme pikseli içermez. iPhone uygulaması yayımlandığında dosyalar cihaz kilitliyken [Apple Complete File Protection (NSFileProtectionComplete)](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.default-data-protection) ile korunacak şekilde yapılandırılmıştır. iPhone uygulaması geliştiriliyor; bugün Web tarayıcıda (Mac, Windows, iPad ve iPhone Safari dahil mobil tarayıcılarda tusankim.vercel.app/uygulama üzerinden) çalışır; hatta web sitesindeki 11 canlı deneme kartıyla kurulum yapmadan önce kart düzenini test edebilirsin. Otomatik bulut eşitleme, yerel Android uygulaması ve TUS Tercih Simülasyonu ise geliştirme aşamasındadır (Yakında).',
-      'Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır. Planlanan fiyatlandırma ve erişim üç net segmentten oluşur. Birinci segment olan **Ücretsiz Erişim (₺0)** katmanında seçili demo sorularına doğrudan erişir, sınırsız kendi deste ve notunu oluşturur, [Anki açık paket biçimleri](https://docs.ankiweb.net/exporting.html#collection-colpkg) (`.apkg` / `.colpkg`) ve CSV/TSV dosyalarıyla kişisel destelerini kayıpsız içe/dışa aktarır, FSRS-6 parametre optimizasyonu, Kronometre, Çalışma Takvimi, Çalışma Planlama, Fotoğraf Düzenleyici, Görsel Gizleme ve otomatik yerel yedeklemeyi kullanırsın; ücretli seçenekler devreye girdiğinde ücretsiz kullanıcılar için ara ara reklam çıkacak (reklam sıklığı yayın ayarlarına göre sonradan ayarlanacak). İkinci segment olan **Tüm Kartlara Erişim (₺1.000)** ile 9.575 kartlık BKA TUS koleksiyonunun (7.721 not, 12 ders — 3.957 Temel, 4.812 Klinik, 806 Deneme ve Soru; FHE = Fizyoloji-Histoloji-Embriyoloji — ve 106 konu alt destesi) tamamına ve seçili demo sorularına erişirsin. Üçüncü segment olan **Reklamları Kaldırma (₺50)** seçeneği ise uygulama içi reklamları kaldırarak seçili demo sorularına doğrudan erişimle kesintisiz çalışma sağlar.',
+      'Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır. Planlanan fiyatlandırma ve erişim üç net segmentten oluşur. Birinci segment olan **Ücretsiz Erişim (₺0)** katmanında seçili demo sorularına doğrudan erişir, sınırsız kendi deste ve notunu oluşturur, [Anki açık paket biçimleri](https://docs.ankiweb.net/exporting.html#collection-colpkg) (`.apkg` / `.colpkg`) ve CSV/TSV dosyalarıyla kişisel destelerini kayıpsız içe/dışa aktarır, FSRS-6 parametre optimizasyonu, Kronometre, Çalışma Takvimi, Çalışma Planlama, Fotoğraf Düzenleyici, Görsel Gizleme ve otomatik yerel yedeklemeyi kullanırsın; ücretli seçenekler devreye girdiğinde ücretsiz kullanıcılar için ara ara reklam çıkacak (reklam sıklığı yayın ayarlarına göre sonradan ayarlanacak). İkinci segment olan **Tüm Kartlara Erişim (₺2.000)** ile 9.575 kartlık BKA TUS koleksiyonunun (7.721 not, 12 ders — 3.957 Temel, 4.812 Klinik, 806 Deneme ve Soru; FHE = Fizyoloji-Histoloji-Embriyoloji — ve 106 konu alt destesi) tamamına ve seçili demo sorularına erişirsin. Üçüncü segment olan **Reklamları Kaldırma (₺50)** seçeneği ise uygulama içi reklamları kaldırarak seçili demo sorularına doğrudan erişimle kesintisiz çalışma sağlar.',
       'Bağımsız bir ürün olan TusAnkiM, Anki veya Ankitects ile bağlantılı değildir; açık standartları koruduğu için kişisel destelerini dilediğin zaman geri dışa aktarabilirsin. Hızlı başlangıçta doğrudan seçili demo sorularını çözebilir, kendi `.apkg` veya `.colpkg` desteni ekleyebilir ya da tüm 9.575 kartlık BKA TUS arşivine geçebilirsin. Tüm ekranların ayrıntılı anlatımı 21 Türkçe Yardım Rehberinde adım adım yer alır. Tıp fakültesi öğrenci toplulukları, çalışma grupları ve dönem temsilcileri iş birliği taleplerini destek@tusankim.com adresine iletebilir; ücretsiz erişim gibi koşullar birlikte netleştirilir. Teknik sorunlar ve kart düzeltme önerileri de aynı adresten kart kimliğiyle bildirilebilir.',
     ],
     table: {
       caption: 'TusAnkiM planlanan 3 segmentli fiyatlandırma, demo erişimi ve platform özeti (güncel beta: ücretli seçenekler ve reklamlar henüz devrede değil)',
-      headers: ['Özellik / Segment', 'Ücretsiz Erişim (₺0)', 'Reklamları Kaldırma (₺50)', 'Tüm Kartlara Erişim (₺1.000)'],
+      headers: ['Özellik / Segment', 'Ücretsiz Erişim (₺0)', 'Reklamları Kaldırma (₺50)', 'Tüm Kartlara Erişim (₺2.000)'],
       rows: [
         ['Seçili demo soruları', 'Doğrudan erişim', 'Doğrudan erişim', 'Doğrudan erişim'],
         ['Reklam durumu', 'Ara ara reklam çıkacak (sıklık sonra ayarlanır)', 'Reklamsız deneyim', 'Tüm kart arşivi erişimi'],
@@ -101,7 +101,7 @@ export const REHBER_PART_3: RehberArticle[] = [
     actionSteps: [
       'Hemen Web uygulamasını (tusankim.vercel.app/uygulama) tarayıcıda, iPhone’da da Safari ile açarak seçili demo sorularını doğrudan çözmeye başla.',
       'Elinde hazır .apkg veya .colpkg desten varsa İçe Aktar ekranından ekle ve FSRS-6 tekrar takvimini başlat.',
-      'Güncel betada TUS paketini ücretsiz aç; ücretli seçenekler devreye girdiğinde 9.575 kartlık BKA TUS arşivi için Tüm Kartlara Erişim (₺1.000) veya reklamsız deneyim için Reklamları Kaldırma (₺50) seçilebilecek.',
+      'Güncel betada TUS paketini ücretsiz aç; ücretli seçenekler devreye girdiğinde 9.575 kartlık BKA TUS arşivi için Tüm Kartlara Erişim (₺2.000) veya reklamsız deneyim için Reklamları Kaldırma (₺50) seçilebilecek.',
       'Tıp fakültesi kulübü veya dönem temsilcisiysen iş birliği için destek@tusankim.com adresine kısa bir e-posta gönder.',
     ],
     boundaryNote:
@@ -124,7 +124,7 @@ export const REHBER_PART_3: RehberArticle[] = [
       { label: 'Sıkça Sorulan Sorular', href: '/sss/' },
       { label: 'Hakkımızda', href: '/kurucu/' },
     ],
-    keywords: 'tusankim ücretsiz mi fiyat 1000 tl 50 tl reklam kaldırma demo iphone web',
+    keywords: 'tusankim ücretsiz mi fiyat 2000 tl 50 tl reklam kaldırma demo iphone web',
   },
   {
     slug: '5-sinif-intorn-son-1-ay-tus-programi',

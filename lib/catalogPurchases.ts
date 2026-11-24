@@ -9,8 +9,8 @@ export const BKA_PRODUCT = {
     entitlementId: 'bka_tus_complete',
     offeringId: 'default',
     productId: 'com.tusankim.bka.complete.lifetime',
-    fallbackPrice: '₺1.500',
-    amountTry: 1500,
+    fallbackPrice: '₺2.000',
+    amountTry: 2000,
 } as const;
 
 const STORE_REFRESH_TIMEOUT_MS = 8_000;

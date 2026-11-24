@@ -1,7 +1,7 @@
 {
   "badge": "Fiyatlandırma ve Erişim",
   "headline": "Ücretsiz başla, ihtiyacına göre seç.",
-  "subheadline": "Güncel betada TUS paketi ücretsiz açılır; ücretli seçenekler ve reklamlar henüz devrede değil. Planlanan model: ücretsiz kullanım (ara ara reklam), tüm 9.575 karta erişim ₺1.000, reklamları kaldırma ₺50. Her segmentte seçili demo sorularına doğrudan erişim olacak.",
+  "subheadline": "Güncel betada TUS paketi ücretsiz açılır; ücretli seçenekler ve reklamlar henüz devrede değil. Planlanan model: ücretsiz kullanım (ara ara reklam), tüm 9.575 karta erişim ₺2.000, reklamları kaldırma ₺50. Her segmentte seçili demo sorularına doğrudan erişim olacak.",
   "tiers": [
     {
       "id": "free",
@@ -25,7 +25,7 @@
       "id": "full-access",
       "name": "Tüm Kartlara Erişim",
       "badge": "9.575 BKA TUS Kartı",
-      "price": "₺1.000",
+      "price": "₺2.000",
       "period": "Tam kart arşivi",
       "highlight": true,
       "summary": "9.575 kartlık BKA TUS koleksiyonunun tamamına erişim ve seçili demo sorularına doğrudan erişim.",

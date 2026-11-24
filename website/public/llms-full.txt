@@ -9,7 +9,7 @@
 - **Platformlar:** iPhone için geliştirilmektedir; bugün web tarayıcısında (Mac, Windows, iPad, Android tarayıcı) ücretsiz beta olarak çalışır. Veriler cihazda yerel olarak saklanır.
 - **Anki Uyumu:** Kişisel `.apkg` ve `.colpkg` desteleri medya ve tekrar geçmişiyle içe ve dışa aktarılır. Hazır BKA TUS paketi ve ilerlemesi dışa aktarılmaz.
 - **Geliştirme Aşamasında (Yakında):** Otomatik bulut eşitleme, yerel Android uygulaması ve TUS Tercih Simülasyonu.
-- **Erişim ve Fiyat:** Güncel beta sürümünde TUS paketi ücretsiz açılır (ödeme veya kart bilgisi gerekmez). Erişim modeli üç segmentlidir: ücretsiz kullanım (₺0, ara ara reklam), tüm 9.575 karta erişim (₺1.000) ve reklamları kaldırma (₺50); her segmentte seçili demo sorularına doğrudan erişim vardır. Ücretli seçenekler ve reklamlar henüz devrede değildir.
+- **Erişim ve Fiyat:** Güncel beta sürümünde TUS paketi ücretsiz açılır (ödeme veya kart bilgisi gerekmez). Erişim modeli üç segmentlidir: ücretsiz kullanım (₺0, ara ara reklam), tüm 9.575 karta erişim (₺2.000) ve reklamları kaldırma (₺50); her segmentte seçili demo sorularına doğrudan erişim vardır. Ücretli seçenekler ve reklamlar henüz devrede değildir.
 
 ## 2. Açık Referans Verisi (Son 6 TUS: 2024/1–2026/2, 1.195 Soru)
 - **Çözüm Desteği:** 521 / 1.195 (%43,6) — 333 Doğrudan + 188 Dolaylı.

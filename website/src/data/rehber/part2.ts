@@ -19,7 +19,7 @@ export const REHBER_PART_2: RehberArticle[] = [
     truthParagraphs: [
       '[ÖSYM TUS genel bilgi ve kılavuzlarına](https://www.osym.gov.tr/TR,14991/tipta-uzmanlik-egitimi-giris-sinavi.html) göre sınav iki ayrı oturumdan oluşur: Temel Tıp Bilimleri Testi (100 soru: Anatomi, Fizyoloji-Histoloji-Embriyoloji, Biyokimya, Mikrobiyoloji, Patoloji, Farmakoloji) ve Klinik Tıp Bilimleri Testi (100 soru: Dahiliye, Pediatri, Genel Cerrahi, Kadın Doğum, Küçük Stajlar). Her iki testte de doğru sayısından yanlış sayısının dörtte biri çıkarılarak ham net elde edilir; soru dağılımı örnekleri [ÖSYM TUS çıkmış sorular arşivinde](https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html) incelenebilir.',
       'Ham netler sınava giren adayların ortalaması ve standart sapması kullanılarak ayrı ayrı standart puana dönüştürülür. Ağırlıklı Mesleki Bilgi Puanı hesaplanırken Temel Tıp Puanı için Temel standart puanına 0,7 ve Klinik standart puanına 0,3 katsayısı; Klinik Tıp Puanı için ise her iki alana eşit 0,5 + 0,5 katsayısı verilir. Örneğin Temel’de 65 doğru 20 yanlış (60,00 net) ve Klinik’te 68 doğru 18 yanlış (63,50 net) çıkaran toplam 123,50 netlik bir aday, son dönem katsayılarıyla yaklaşık 63,1 Klinik ve 62,7 Temel puan bandında yer alır ve her iki puan türünde 45,000 tercih barajını aşar.',
-      '[Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği](https://www.resmigazete.gov.tr/eskiler/2022/09/20220903-2.htm) uyarınca bir uzmanlık programında eğitim görürken sınava girenlerin, eğitimden istifa edenlerin veya ÖSYM tarafından yerleştirilip süresi içinde görevine başlamayanların takip eden ilk sınavında mesleki bilgi puanında %5 kesinti (× 0,95) uygulanır. Örneğin ham klinik puanı 65,0 hesaplanan bir adayda kesinti sonrası puan 61,75 düzeyine iner; bu nedenle 65 net puan hedefleyen bir adayın kesinti etkinken yaklaşık 68,4 ham puana (yaklaşık 143 toplam net bandına) çıkması gerekir.',
+      '[Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği](https://www.resmigazete.gov.tr/eskiler/2022/09/20220903-2.htm) ve oranı %2’den %5’e çıkaran [16 Mayıs 2024 tarihli değişiklik](https://www.resmigazete.gov.tr/eskiler/2024/05/20240516-1.htm) uyarınca bir uzmanlık programında eğitim görürken sınava girenlerin, eğitimden istifa edenlerin veya ÖSYM tarafından yerleştirilip süresi içinde görevine başlamayanların takip eden ilk sınavında mesleki bilgi puanında %5 kesinti (× 0,95) uygulanır. Örneğin ham klinik puanı 65,0 hesaplanan bir adayda kesinti sonrası puan 61,75 düzeyine iner; bu nedenle 65 net puan hedefleyen bir adayın kesinti etkinken yaklaşık 68,4 ham puana (yaklaşık 143 toplam net bandına) çıkması gerekir.',
       'Tercih sürecinde yalnızca puan değil, sıralama bandı ve kontenjan dağılımı da belirleyicidir; son 5 yıl içinde YDS, e-YDS, TIPDİL veya ÖSYM eşdeğeri bir sınavdan en az 50 yabancı dil puanı almak tercih yapmanın ön koşuludur. 30 tercihin başına ideal programları, ortasına sıralamanla örtüşen gerçekçi seçenekleri ve sonuna güvenli tercihleri yerleştirerek puan avantajını koruyabilirsin.',
     ],
     table: {
@@ -51,6 +51,11 @@ export const REHBER_PART_2: RehberArticle[] = [
       {
         label: 'Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği (Resmî Gazete, Sayı 31942)',
         url: 'https://www.resmigazete.gov.tr/eskiler/2022/09/20220903-2.htm',
+        publisher: 'Resmî Gazete',
+      },
+      {
+        label: 'Uzmanlık Eğitimi Yönetmeliğinde Değişiklik: %2 → %5 kesinti (Resmî Gazete, 16 Mayıs 2024, Sayı 32548)',
+        url: 'https://www.resmigazete.gov.tr/eskiler/2024/05/20240516-1.htm',
         publisher: 'Resmî Gazete',
       },
       {
