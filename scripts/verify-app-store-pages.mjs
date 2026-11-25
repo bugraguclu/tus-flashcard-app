@@ -1,7 +1,8 @@
 const urls = [
-    'https://bugraguclu.github.io/tus-flashcard-app/privacy.html',
-    'https://bugraguclu.github.io/tus-flashcard-app/support.html',
-    'https://bugraguclu.github.io/tus-flashcard-app/terms.html',
+    // The addresses docs/app-store/metadata-tr.md gives App Store Connect.
+    'https://tusankim.vercel.app/gizlilik/',
+    'https://tusankim.vercel.app/destek/',
+    'https://tusankim.vercel.app/kullanim-kosullari/',
 ];
 
 const failures = [];

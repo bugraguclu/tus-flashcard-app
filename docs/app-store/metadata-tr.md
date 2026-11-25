@@ -11,13 +11,14 @@
 - İkincil kategori: boş bırakılması önerilir
 - Uygulama fiyatı: `Ücretsiz`
 - Hedef cihaz: `Yalnızca iPhone`
-- Gizlilik: `https://bugraguclu.github.io/tus-flashcard-app/privacy.html`
-- Destek: `https://bugraguclu.github.io/tus-flashcard-app/support.html`
-- Koşullar: `https://bugraguclu.github.io/tus-flashcard-app/terms.html`
+- Gizlilik: `https://tusankim.vercel.app/gizlilik/`
+- Destek: `https://tusankim.vercel.app/destek/`
+- Koşullar: `https://tusankim.vercel.app/kullanim-kosullari/`
 
-> Yayın notu: Bu üç adres 30 Ağustos 2026 kontrolünde 404 döndürmektedir. Depodaki
-> GitHub Pages iş akışı `docs/` klasörünü yayımlamaya hazırlar; depo ayarlarında Pages kaynağı
-> GitHub Actions olarak etkinleştirilip adresler HTTP 200 vermeden App Store Connect’e girilmemelidir.
+> Yayın notu: Önceki GitHub Pages yasal adresleri 404 döndürüyor; `tusankim.com` alan adı henüz
+> alınmadı (DNS kaydı yok). Bu yüzden canlı sitenin `tusankim.vercel.app` rotaları kullanılır;
+> üçü 25 Kasım 2026'da HTTP 200 döndürdü. Alan adı bağlanınca adresler `tusankim.com`'a
+> taşınabilir. Gönderim öncesinde `npm run verify:app-store:live` çalıştırılmalıdır.
 
 ## Promosyon metni (170 karakter sınırı)
 
