@@ -81,7 +81,7 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
       </dd>
     </div>
     <div class="rounded-2xl border border-line bg-white p-4">
-      <dt class="text-xs font-semibold text-inkMuted">Tepe günlük yük</dt>
+      <dt class="text-xs font-semibold text-inkMuted">En yoğun gün</dt>
       <dd class="mt-1 flex items-baseline gap-1 whitespace-nowrap">
         <span class="display text-2xl sm:text-[1.75rem] text-ink tabular-nums leading-none" data-kpi-peak>
           {formatTrInt(initial.target.peakCards)}
@@ -89,7 +89,7 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
         <span class="text-xs font-semibold text-inkMuted">kart</span>
       </dd>
       <dd class="text-xs text-inkMuted mt-1.5 leading-snug tabular-nums" data-kpi-peak-sub>
-        ~{formatDurationTr(initial.target.peakMinutes)} · {initial.target.peakDay}. günde tepe
+        ~{formatDurationTr(initial.target.peakMinutes)} · {initial.target.peakDay}. gün
       </dd>
     </div>
     <div class="rounded-2xl border border-line bg-white p-4">
@@ -110,11 +110,11 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
     <figcaption class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <span class="block text-sm font-semibold text-ink" data-chart-title>
-          Günlük kart yükü (yeni + tekrar)
+          Günlük kart sayısı (yeni + tekrar)
         </span>
         <span class="legend mt-1">
           <span><i style="background:#0e7469"></i>TusAnkiM</span>
-          <span data-legend-mega><i style="background:#d9661a"></i>27.341 Mega deste</span>
+          <span data-legend-mega><i style="background:#d9661a"></i>27.341 kartlık mega deste</span>
         </span>
       </div>
 
@@ -255,7 +255,7 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
     </svg>
 
     <p data-chart-smooth-note hidden class="text-[11px] text-inkMuted -mt-1">
-      Not: Mola günlü planlarda eğri 7 günlük hareketli ortalamayı, gün inceleyici ise o günün gerçek yükünü gösterir.
+      Not: Mola günü olan planlarda eğri 7 günlük ortalamayı gösterir. Aşağıdaki gün seçici o günün gerçek kart sayısını verir.
     </p>
 
     <!-- Day Inspector & Keyboard Scrubber -->
@@ -286,7 +286,7 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
     <!-- Side-by-side finishability comparison meters -->
     <div data-cmp-wrap class="pt-3 border-t border-lineLight">
       <h4 class="text-sm font-semibold text-inkMuted">
-        Bitirilebilir deste vs. bitmeyen mega deste
+        Bitirilebilir deste ile bitmeyen mega deste
       </h4>
       <dl class="mt-2.5 grid sm:grid-cols-2 gap-4">
         <div>
@@ -303,7 +303,7 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
               <span data-cmp-target-bar style={`width: ${initial.target.memorizedPct}%`}></span>
             </div>
             <p class="mt-1 text-xs text-inkMuted tabular-nums" data-cmp-target-note>
-              İlk tur {initial.target.finishDay}. günde biter; son gün yük {formatDurationTr(initial.target.endDayMinutes)}.
+              İlk tur {initial.target.finishDay}. günde biter; son gün {formatDurationTr(initial.target.endDayMinutes)} çalışırsın.
             </p>
           </dd>
         </div>
@@ -330,7 +330,7 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
   <!-- Two-Phase Roadmap & Subject-by-Subject Calendar Schedule -->
   <div class="rounded-2xl border border-line bg-white p-4 sm:p-5 space-y-3">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
-      <h4 class="text-sm font-bold text-ink">İki Fazlı Çalışma Yol Haritan</h4>
+      <h4 class="text-sm font-bold text-ink">İki aşamalı yol haritan</h4>
       <span class="text-xs text-inkMuted tabular-nums" data-roadmap-count>
         {initial.roadmap.length} ders · {formatTrInt(initial.target.remainingCards)} kart
       </span>
@@ -342,10 +342,10 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
     </div>
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-inkMuted tabular-nums">
       <span class="font-semibold text-ink" data-phase-intro-label>
-        1. Faz (Yeni + Tekrar): 1–{introSpan}. gün
+        1. faz (yeni + tekrar): 1–{introSpan}. gün
       </span>
       <span data-phase-tail-label>
-        2. Faz (Yalnız Tekrar + Deneme): {introSpan + 1}–{initial.input.days}. gün ({tailSpan} gün)
+        2. faz (yalnız tekrar + deneme): {introSpan + 1}–{initial.input.days}. gün ({tailSpan} gün)
       </span>
     </div>
 
@@ -408,7 +408,7 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
                     )}
                   </td>
                   <td class={`py-2.5 px-3 text-right font-semibold whitespace-nowrap ${item.finishesBeforeExam ? 'text-gradeGood' : 'text-gradeAgain'}`}>
-                    {item.finishesBeforeExam ? `${item.activeDays} aktif gün` : 'Sınavı aşar'}
+                    {item.finishesBeforeExam ? `${item.activeDays} aktif gün` : 'Sınava yetişmez'}
                   </td>
                 </tr>
               ))}
@@ -416,8 +416,8 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
           </table>
         </div>
         <p class="text-[11px] text-inkMuted leading-relaxed">
-          Çözüm desteği yüzdeleri son 6 TUS’un (2024/1–2026/2) 11 ÖSYM branşındaki doğrudan + dolaylı kart oranlarıdır;
-          Deneme ve Soru karma pekiştirme destesidir.
+          Çözüm desteği yüzdesi, son 6 TUS’ta (2024/1–2026/2) 11 ÖSYM branşında kartların doğrudan ya da dolaylı karşıladığı soruların oranıdır.
+          Deneme ve Soru karma bir pekiştirme destesidir.
         </p>
       </div>
     </details>
@@ -518,8 +518,8 @@ const defaultInspectStyle = `--attr-min:1;--attr-max:${initial.input.days};--con
   </div>
 
   <p class="text-xs text-inkMuted leading-relaxed">
-    Kaynak: TusAnkiM <span lang="en">FSRS-6</span> simülatörü (<code>lib/fsrsSimulator.ts</code>, %85 / %90 / %93 hedef hatırlama çekirdekleri).
-    Gerçek günlük süre okuma hızına ve kart zorluğuna göre değişebilir. Yöntem ayrıntıları:{' '}
+    Kaynak: TusAnkiM <span lang="en">FSRS-6</span> simülatörü (<code>lib/fsrsSimulator.ts</code>; %85, %90 ve %93 hedef hatırlama için önceden hesaplanmış eğriler).
+    Gerçek günlük süren okuma hızına ve kartların zorluğuna göre değişir. Yöntemin ayrıntıları:{' '}
     <a href="/yardim/fsrs/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
       FSRS ve tekrar takvimi
     </a>

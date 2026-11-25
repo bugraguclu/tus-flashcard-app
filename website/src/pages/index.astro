@@ -26,7 +26,7 @@ const homeSchema = [
     '@type': 'WebPage',
     '@id': origin + '/#webpage',
     url: origin + '/',
-    name: `TusAnkiM — ${cards} TUS Kartı, FSRS-6 ve Referans Kanıtı`,
+    name: `TusAnkiM — ${cards} TUS Kartı ve FSRS-6 ile Aralıklı Tekrar`,
     description: SITE.description,
     inLanguage: 'tr-TR',
     isPartOf: { '@id': origin + '/#website' },
@@ -77,7 +77,7 @@ const homeSchema = [
       'FSRS-6 aralıklı tekrar zamanlayıcısı ve parametre optimizasyonu',
       'Kayıpsız Anki (.apkg / .colpkg) içe ve dışa aktarma',
       'Kronometre, Çalışma Takvimi ve Çalışma Planlama',
-      'Çevrimdışı yerel öncelikli SQLite depolama ve otomatik yedekleme',
+      'Çevrimdışı çalışma, cihazda saklanan veriler ve otomatik yedekleme',
     ],
     offers: {
       '@type': 'Offer', name: 'Güncel ücretsiz beta', price: 0, priceCurrency: 'TRY',
@@ -89,7 +89,7 @@ const homeSchema = [
 
 ---
 <Layout
-  title={`TusAnkiM — ${cards} TUS Kartı, FSRS-6 ve Referans Kanıtı`}
+  title={`TusAnkiM — ${cards} TUS Kartı ve FSRS-6 ile Aralıklı Tekrar`}
   description={SITE.description}
   schema={homeSchema}
 >
@@ -99,9 +99,9 @@ const homeSchema = [
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div class="max-w-2xl">
           <p class="kicker">Canlı deneme</p>
-          <h2 id="demo-section-heading" class="display text-section tracking-tightest text-ink mt-3">Uygulamadaymış gibi çöz</h2>
+          <h2 id="demo-section-heading" class="display text-section tracking-tightest text-ink mt-3">Önce kartları gör, sonra karar ver</h2>
           <p class="text-inkMuted mt-3 leading-relaxed">
-            11 dersten gerçek kartlar. Bir deste seç, cevabı tahmin et, aç ve ne kadar kolay hatırladığını işaretle; uygulamadaki tekrar böyle işler.
+            Aşağıdakiler 11 dersten gerçek kartlar. Bir deste seç, cevabı aklından geçir, sonra aç. Ne kadar kolay hatırladığını işaretle; uygulamada her gün yapacağın şey bu.
           </p>
         </div>
         <a href="/kart-denemesi/" class="shrink-0 inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark">Tam ekranda dene →</a>

@@ -77,7 +77,7 @@ const articleSchema = {
       </nav>
 
       <p class="text-xs font-semibold text-teal">
-        TUS Çalışma Rehberi {String(article.order).padStart(2, '0')} / {REHBER_ARTICLES.length} · {article.tone}
+        TUS yazısı {String(article.order).padStart(2, '0')} / {REHBER_ARTICLES.length}
       </p>
       <h1 class="display text-page-title tracking-tightest text-ink mt-2">
         {article.questionH1}
@@ -148,9 +148,9 @@ const articleSchema = {
       </div>
     </section>
 
-    <!-- Part 5: Ne yapabilirsiniz? -->
+    <!-- Part 5: Ne yapmalısın? -->
     <section class="help-prose" aria-labelledby="action-heading">
-      <h2 id="action-heading">Ne yapabilirsiniz?</h2>
+      <h2 id="action-heading">Ne yapmalısın?</h2>
       <ol>
         {article.actionSteps.map((step) => (
           <li>{step}</li>
@@ -188,8 +188,8 @@ const articleSchema = {
     </section>
 
     <!-- Part 8: İlgili iç bağlantılar -->
-    <nav aria-label="İlgili rehberler ve araçlar" class="pt-6 border-t border-line">
-      <h2 class="display text-base text-ink">İlgili rehberler ve araçlar</h2>
+    <nav aria-label="İlgili yazılar ve araçlar" class="pt-6 border-t border-line">
+      <h2 class="display text-base text-ink">İlgili yazılar ve araçlar</h2>
       <ul class="mt-3 flex flex-wrap gap-2.5">
         {article.relatedLinks.map((lnk) => (
           <li>

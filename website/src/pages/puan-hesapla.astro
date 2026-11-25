@@ -58,7 +58,7 @@ const KLINIK_BRANCH_INPUTS = [
 
 const SCORE_REFERENCE_ROWS = [
   {
-    band: '45,0 (Baraj)',
+    band: '45,0 (baraj)',
     totalNet: '~59 net (~29,5 / oturum)',
     kesintiTarget: '~47,4 ham puan (~68 net)',
     rankBand: 'Tercih alt sınırı (~26.000+)',
@@ -104,8 +104,8 @@ const OSYM_2026_2_BRANCH_ROWS = [
 ] as const;
 ---
 <Layout
-  title="TUS Puan, Ders Neti ve Sıralama Hesaplayıcı | TusAnkiM"
-  description="Temel (6 ders) ve Klinik (5 ders) netlerinle TUS puanını ve tahmini sıralama bandını hesapla; %5 kesinti ve 45/60/65/70 puan tablosunu gör."
+  title="TUS puan hesaplama: ders neti ve sıralama | TusAnkiM"
+  description="TUS puan hesaplama aracı: Temel ve Klinik netini gir, tahmini puanını ve sıralama bandını gör. %5 kesinti, 45 barajı ve hedef puan için gereken net de var."
   modifiedTime={modDate}
   schema={[crumbs, pageSchema]}
 >
@@ -118,11 +118,11 @@ const OSYM_2026_2_BRANCH_ROWS = [
       </nav>
 
       <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
-        TUS Puan ve Hedef Net Hesaplayıcı
+        TUS puan ve hedef net hesaplayıcı
       </h1>
       <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
-        Temel (100 soru) ve Klinik (100 soru) doğru-yanlış sayılarınla tahmini TUS puanını hesaplayabilir,
-        hedeflediğin puan için gereken toplam neti görebilirsin.
+        Temel ve Klinik testlerdeki (100’er soru) doğru ve yanlış sayını gir, tahmini TUS puanını gör.
+        Hedeflediğin puan için kaç net gerektiğini de hesaplar. Sonuç tahmindir; resmî puanı ÖSYM açıklar.
       </p>
       <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
         <span>
@@ -140,24 +140,24 @@ const OSYM_2026_2_BRANCH_ROWS = [
 
   <!-- Main interactive calculator -->
   <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12" aria-labelledby="calc-heading">
-    <h2 id="calc-heading" class="sr-only">İnteraktif TUS Puan Hesaplama Aracı</h2>
+    <h2 id="calc-heading" class="sr-only">TUS puan hesaplama aracı</h2>
 
     <div class="grid lg:grid-cols-12 gap-8 items-start" data-tus-score-calc>
       <!-- Left: Forward Calculator -->
       <div class="lg:col-span-7 rounded-2xl border border-line bg-white p-6 sm:p-8">
         <h3 class="display text-subsection text-ink">Doğru ve yanlış sayılarını gir</h3>
         <p class="text-xs text-inkMuted mt-1">
-          4 yanlış 1 doğruyu götürür. Her oturum 100 sorudur (Toplam 200 soru).
+          4 yanlış 1 doğruyu götürür. Her oturum 100 soru, toplam 200 soru.
         </p>
 
-        <div class="mt-4 inline-flex flex-wrap gap-2 rounded-2xl border border-line bg-surfaceSoft p-1.5" role="group" aria-label="Giriş modu">
+        <div class="mt-4 inline-flex flex-wrap gap-2 rounded-2xl border border-line bg-surfaceSoft p-1.5" role="group" aria-label="Giriş şekli">
           <button
             type="button"
             data-calc-mode="genel"
             aria-pressed="true"
             class="min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold transition bg-teal text-white cursor-pointer"
           >
-            Genel Giriş (Temel / Klinik)
+            Toplam gir (Temel / Klinik)
           </button>
           <button
             type="button"
@@ -165,14 +165,14 @@ const OSYM_2026_2_BRANCH_ROWS = [
             aria-pressed="false"
             class="min-h-[2.75rem] px-4 rounded-xl text-xs sm:text-sm font-semibold transition text-ink hover:bg-white cursor-pointer"
           >
-            Ders Ders Giriş (11 Branş)
+            Ders ders gir (11 branş)
           </button>
         </div>
 
         <div data-panel-genel class="mt-6 grid sm:grid-cols-2 gap-6">
           <!-- Temel Bilimler -->
           <fieldset class="rounded-2xl border border-line bg-surfaceSoft p-4 space-y-3">
-            <legend class="px-2 text-sm font-semibold text-teal">Temel Bilimler (100 Soru)</legend>
+            <legend class="px-2 text-sm font-semibold text-teal">Temel Bilimler (100 soru)</legend>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label for="tt-dogru" class="block text-xs font-semibold text-ink mb-1">Doğru</label>
@@ -203,13 +203,13 @@ const OSYM_2026_2_BRANCH_ROWS = [
             </div>
             <div class="flex items-center justify-between text-xs pt-2 border-t border-lineLight">
               <span class="text-inkMuted">Boş: <strong data-tt-bos class="text-ink tabular-nums">15</strong></span>
-              <span class="text-teal font-bold">Temel Net: <span data-tt-net class="tabular-nums">60,00</span></span>
+              <span class="text-teal font-bold">Temel net: <span data-tt-net class="tabular-nums">60,00</span></span>
             </div>
           </fieldset>
 
           <!-- Klinik Bilimler -->
           <fieldset class="rounded-2xl border border-line bg-surfaceSoft p-4 space-y-3">
-            <legend class="px-2 text-sm font-semibold text-teal">Klinik Bilimler (100 Soru)</legend>
+            <legend class="px-2 text-sm font-semibold text-teal">Klinik Bilimler (100 soru)</legend>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label for="kt-dogru" class="block text-xs font-semibold text-ink mb-1">Doğru</label>
@@ -240,7 +240,7 @@ const OSYM_2026_2_BRANCH_ROWS = [
             </div>
             <div class="flex items-center justify-between text-xs pt-2 border-t border-lineLight">
               <span class="text-inkMuted">Boş: <strong data-kt-bos class="text-ink tabular-nums">14</strong></span>
-              <span class="text-teal font-bold">Klinik Net: <span data-kt-net class="tabular-nums">63,50</span></span>
+              <span class="text-teal font-bold">Klinik net: <span data-kt-net class="tabular-nums">63,50</span></span>
             </div>
           </fieldset>
         </div>
@@ -248,14 +248,14 @@ const OSYM_2026_2_BRANCH_ROWS = [
         <div data-panel-ders hidden class="mt-6 space-y-5">
           <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-lineLight bg-surfaceSoft px-4 py-2.5 text-xs">
             <span class="text-inkMuted">
-              Temel Net: <strong data-ders-tt-net class="text-teal tabular-nums">60,00</strong> · Klinik Net:{' '}
+              Temel net: <strong data-ders-tt-net class="text-teal tabular-nums">60,00</strong> · Klinik net:{' '}
               <strong data-ders-kt-net class="text-teal tabular-nums">63,50</strong>
             </span>
-            <span class="text-inkMuted">Genel giriş ile otomatik eşitlenir</span>
+            <span class="text-inkMuted">Toplam girişe kendiliğinden aktarılır</span>
           </div>
 
           <fieldset class="rounded-2xl border border-line bg-surfaceSoft p-4 space-y-3">
-            <legend class="px-2 text-sm font-semibold text-teal">Temel Bilimler — 6 Ders (100 Soru)</legend>
+            <legend class="px-2 text-sm font-semibold text-teal">Temel Bilimler · 6 ders (100 soru)</legend>
             <div class="space-y-2.5">
               {TEMEL_BRANCH_INPUTS.map((b) => (
                 <div class="grid grid-cols-12 gap-2 items-center rounded-xl border border-lineLight bg-white px-3 py-2">
@@ -305,9 +305,9 @@ const OSYM_2026_2_BRANCH_ROWS = [
           </fieldset>
 
           <fieldset class="rounded-2xl border border-line bg-surfaceSoft p-4 space-y-3">
-            <legend class="px-2 text-sm font-semibold text-teal">Klinik Bilimler — 5 Ders (100 Soru)</legend>
+            <legend class="px-2 text-sm font-semibold text-teal">Klinik Bilimler · 5 ders (100 soru)</legend>
             <p class="text-[11px] text-inkMuted leading-relaxed">
-              Varsayılan üst sınırlar 2026/2 dağılımına göredir; dönemlere göre Klinik derslerde ±1 soru kayabilir (Dahiliye 23–25, Pediatri 24–25, Genel Cerrahi 19–21, Küçük Stajlar 20–22).
+              Soru sayıları 2026/2 sınavına göredir. Klinik derslerde sayı sınavdan sınava 1 soru oynayabilir (Dahiliye 23–25, Pediatri 24–25, Genel Cerrahi 19–21, Küçük Stajlar 20–22).
             </p>
             <div class="space-y-2.5">
               {KLINIK_BRANCH_INPUTS.map((b) => (
@@ -367,7 +367,7 @@ const OSYM_2026_2_BRANCH_ROWS = [
               class="w-5 h-5 shrink-0 accent-[#0e7469] rounded cursor-pointer"
             />
             <label for="puan-kesinti" class="inline-flex flex-wrap items-center min-h-[2.75rem] py-1.5 text-xs sm:text-sm font-semibold text-ink cursor-pointer select-none">
-              %5 Puan Kesintisi Uygula&nbsp;<span class="font-normal text-inkMuted">(uzmanlığa devam / istifa / başlamama)</span>
+              %5 puan kesintisini uygula&nbsp;<span class="font-normal text-inkMuted">(uzmanlık eğitimindeysen, istifa ettiysen ya da yerleşip başlamadıysan)</span>
             </label>
           </div>
           <span id="puan-kesinti-status" data-kesinti-status class="text-xs text-inkMuted shrink-0">
@@ -387,25 +387,25 @@ const OSYM_2026_2_BRANCH_ROWS = [
         <div class="mt-3 space-y-3.5" aria-live="polite">
           <div class="grid sm:grid-cols-3 gap-3.5">
             <div class="rounded-2xl bg-tint p-4">
-              <div class="text-xs font-semibold text-teal">Tahmini Klinik (K) Puanı</div>
+              <div class="text-xs font-semibold text-teal">Tahmini Klinik (K) puanı</div>
               <div class="display text-3xl text-ink mt-1 tabular-nums" data-out-k>63,1</div>
               <div class="text-[11px] text-inkMuted mt-0.5" data-out-k-range>Aralık: 61,6 – 64,6</div>
             </div>
             <div class="rounded-2xl bg-surfaceSoft border border-line p-4">
-              <div class="text-xs font-semibold text-inkMuted">Tahmini Temel (T) Puanı</div>
+              <div class="text-xs font-semibold text-inkMuted">Tahmini Temel (T) puanı</div>
               <div class="display text-3xl text-ink mt-1 tabular-nums" data-out-t>62,7</div>
               <div class="text-[11px] text-inkMuted mt-0.5" data-out-t-range>Aralık: 61,2 – 64,2</div>
             </div>
             <div class="rounded-2xl bg-surfaceSoft border border-line p-4">
-              <div class="text-xs font-semibold text-inkMuted">Toplam Net</div>
+              <div class="text-xs font-semibold text-inkMuted">Toplam net</div>
               <div class="display text-3xl text-teal mt-1 tabular-nums" data-out-totnet>123,50</div>
-              <div class="text-[11px] text-inkMuted mt-0.5" data-out-baraj>K ve T 45 barajı üzerinde</div>
+              <div class="text-[11px] text-inkMuted mt-0.5" data-out-baraj>K ve T 45 barajının üstünde</div>
             </div>
           </div>
 
           <div class="rounded-2xl bg-surfaceSoft border border-line p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <div class="text-xs font-semibold text-inkMuted">Tahmini Sıralama Bandı (Klinik Puan)</div>
+              <div class="text-xs font-semibold text-inkMuted">Tahmini sıralama bandı (Klinik puana göre)</div>
               <div class="display text-xl text-ink mt-0.5 tabular-nums" data-out-rank>~3.200 – 7.500 bandı</div>
             </div>
             <div class="text-xs text-inkMuted sm:text-right" data-out-rank-note>
@@ -421,11 +421,11 @@ const OSYM_2026_2_BRANCH_ROWS = [
 
         <div class="mt-5 space-y-2 text-xs text-inkMuted leading-relaxed border-t border-lineLight pt-4">
           <p>
-            Resmî TUS puanları her dönemin Türkiye ortalaması ve standart sapmasına göre ÖSYM tarafından hesaplanır.
-            Buradaki sonuçlar son dönem TUS dağılım katsayılarına (Temel puanı: %70 Temel + %30 Klinik; Klinik puanı: %50 Temel + %50 Klinik ağırlık) dayanan <em>yaklaşık ±1,5 puan</em> öngörüsüdür; resmî belge yerine geçmez.
+            Resmî TUS puanını ÖSYM, her sınavın Türkiye ortalamasına ve standart sapmasına göre hesaplar.
+            Buradaki sonuç tahmindir. Son sınavların dağılımına ve puan ağırlıklarına (Temel puanı: %70 Temel + %30 Klinik; Klinik puanı: %50 Temel + %50 Klinik) dayanır, <em>yaklaşık ±1,5 puan</em> şaşabilir. Resmî belgenin yerini tutmaz.
           </p>
           <p>
-            <strong class="text-ink">Sıralama bandı notu (UNR-M04 / OSYM-EX-009):</strong> Sıralama bandı yaklaşık öngörüdür; ÖSYM resmî PDF’lerinde sınava giren toplam aday sayısı yayımlanmaz. Bantlar 2026/2 dönemindeki 37.109 KTBT başvurusu, 8.637 kontenjan / 7.625 ilk yerleşen ve ikincil AİS sonuç belgesi ölçeği (~34.129 geçerli aday) baz alınarak üretilir.
+            <strong class="text-ink">Sıralama bandı da tahmindir.</strong> ÖSYM, sınava giren toplam aday sayısını resmî PDF’lerinde yayımlamıyor. Bantları 2026/2’deki 37.109 KTBT başvurusundan, 8.637 kontenjan ve 7.625 ilk yerleşenden, bir de ikincil kaynak olan AİS sonuç belgesindeki yaklaşık 34.129 geçerli adaydan türettik.
           </p>
         </div>
       </div>
@@ -436,7 +436,7 @@ const OSYM_2026_2_BRANCH_ROWS = [
 
         <div>
           <div class="flex items-baseline justify-between">
-            <label for="target-score" class="text-sm font-semibold text-ink">Hedef TUS Klinik Puanı</label>
+            <label for="target-score" class="text-sm font-semibold text-ink">Hedef Klinik puanın</label>
             <span class="display text-2xl text-teal tabular-nums" data-target-val>65,0</span>
           </div>
           <input
@@ -449,7 +449,7 @@ const OSYM_2026_2_BRANCH_ROWS = [
             class="mt-1 w-full min-h-[2.75rem] py-3 accent-[#0e7469] rounded-lg cursor-pointer"
           />
           <div class="flex justify-between text-[11px] text-inkMuted tabular-nums">
-            <span>45 (Baraj)</span>
+            <span>45 (baraj)</span>
             <span>60</span>
             <span>70</span>
             <span>80</span>
@@ -465,14 +465,14 @@ const OSYM_2026_2_BRANCH_ROWS = [
             <span class="text-inkMuted">Oturum başına ortalama (Temel / Klinik)</span>
             <strong class="font-bold text-ink tabular-nums" data-req-each>~65 / 100</strong>
           </div>
-          <div class="pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed" data-req-tip>60–70 puan bandında düzenli FSRS-6 tekrarıyla 9.575 kartı günde 60 yeni kartla 160 günde tamamlayıp son ayları deneme eksiklerini kapatmaya ayırabilirsin.</div>
+          <div class="pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed" data-req-tip>Düzenli FSRS-6 tekrarıyla günde 60 yeni kart çalışırsan 9.575 kartı 160 günde bitirir, son ayları denemelerdeki eksiklerine ayırırsın.</div>
         </div>
 
         <a
           href="/yardim/fsrs/"
           class="inline-flex items-center justify-center w-full min-h-[2.75rem] rounded-lg bg-teal text-white text-sm font-semibold hover:bg-tealDark transition"
         >
-          FSRS-6 tekrar planlaması rehberi →
+          FSRS-6 ile tekrar planı rehberi →
         </a>
       </div>
     </div>
@@ -481,15 +481,15 @@ const OSYM_2026_2_BRANCH_ROWS = [
     <div class="mt-14 pt-12 border-t border-line space-y-10">
       <div>
         <h2 class="display text-section tracking-tightest text-ink">
-          Puan Bandına Göre Gereken Net ve 2026/2 Örnek Branş Tabanları
+          Hangi puan için kaç net gerekir?
         </h2>
         <p class="text-sm text-inkMuted mt-2 max-w-3xl leading-relaxed">
-          45,0 barajı ile 60,0 / 65,0 / 70,0 Klinik puan hedefleri için gereken yaklaşık toplam net ve ÖSYM 2026-TUS 2. Dönem (16 Ekim 2026) Genel Kontenjan min–max yerleştirme aralıkları.
+          45 barajı ve 60, 65, 70 Klinik puanı için gereken yaklaşık toplam net. Altında ÖSYM 2026-TUS 2. Dönem (16 Ekim 2026) Genel Kontenjan yerleştirmesinde bazı dalların en küçük ve en büyük puanları var.
         </p>
       </div>
 
       <div class="space-y-3">
-        <h3 class="display text-lg text-ink">45,0 / 60,0 / 65,0 / 70,0 Puan Bandı Özeti</h3>
+        <h3 class="display text-lg text-ink">45, 60, 65 ve 70 puan için gereken net</h3>
         <div
           class="overflow-x-auto rounded-2xl border border-line bg-white"
           tabindex="0"
@@ -498,15 +498,15 @@ const OSYM_2026_2_BRANCH_ROWS = [
         >
           <table class="w-full text-left border-collapse text-sm">
             <caption id="score-band-caption" class="sr-only">
-              45,0, 60,0, 65,0 ve 70,0 Klinik TUS puanları için yaklaşık net ve sıralama bandı tablosu
+              45, 60, 65 ve 70 Klinik puanı için yaklaşık net ve sıralama bandı tablosu
             </caption>
             <thead>
               <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
-                <th scope="col" class="py-3.5 px-4 sm:px-5">Klinik Puan Bandı</th>
-                <th scope="col" class="py-3.5 px-4 sm:px-5">Yaklaşık Toplam Net</th>
-                <th scope="col" class="py-3.5 px-4 sm:px-5">%5 Kesintili Ham Hedef</th>
-                <th scope="col" class="py-3.5 px-4 sm:px-5">Tahmini Sıralama Bandı</th>
-                <th scope="col" class="py-3.5 px-4 sm:px-5">2026/2 Örnek Karşılıklar</th>
+                <th scope="col" class="py-3.5 px-4 sm:px-5">Klinik puan</th>
+                <th scope="col" class="py-3.5 px-4 sm:px-5">Yaklaşık toplam net</th>
+                <th scope="col" class="py-3.5 px-4 sm:px-5">%5 kesinti varsa gereken ham puan</th>
+                <th scope="col" class="py-3.5 px-4 sm:px-5">Tahmini sıralama bandı</th>
+                <th scope="col" class="py-3.5 px-4 sm:px-5">2026/2’den örnekler</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-lineLight tabular-nums">
@@ -525,7 +525,7 @@ const OSYM_2026_2_BRANCH_ROWS = [
       </div>
 
       <div class="space-y-3">
-        <h3 class="display text-lg text-ink">2026-TUS 2. Dönem Örnek Branş Min–Max Puan ve Doluluk Oranları</h3>
+        <h3 class="display text-lg text-ink">2026-TUS 2. Dönem’de bazı dalların en küçük ve en büyük puanları</h3>
         <div
           class="overflow-x-auto rounded-2xl border border-line bg-white"
           tabindex="0"
@@ -534,15 +534,15 @@ const OSYM_2026_2_BRANCH_ROWS = [
         >
           <table class="w-full text-left border-collapse text-sm">
             <caption id="branch-threshold-caption" class="sr-only">
-              2026-TUS 2. Dönem Genel Kontenjan örnek branş kontenjan, yerleşen, doluluk ve min-max puanları
+              2026-TUS 2. Dönem Genel Kontenjan: bazı dalların kontenjanı, yerleşen sayısı, doluluğu, en küçük ve en büyük puanı
             </caption>
             <thead>
               <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
-                <th scope="col" class="py-3.5 px-4 sm:px-5">Uzmanlık Dalı (Genel Kontenjan)</th>
+                <th scope="col" class="py-3.5 px-4 sm:px-5">Uzmanlık dalı (Genel Kontenjan)</th>
                 <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Kontenjan / Yerleşen</th>
                 <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Doluluk</th>
-                <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">En Küçük Puan</th>
-                <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">En Büyük Puan</th>
+                <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">En küçük puan</th>
+                <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">En büyük puan</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-lineLight tabular-nums">
@@ -564,13 +564,13 @@ const OSYM_2026_2_BRANCH_ROWS = [
             2025–2026 tüm branş taban puanları ve kontenjanlar →
           </a>
           <a href="/rehber/tus-puani-nasil-hesaplanir/" class="inline-flex items-center min-h-[2.75rem] font-semibold text-teal underline underline-offset-4 hover:text-tealDark">
-            TUS puan hesaplama kuralları rehberi →
+            TUS puanı nasıl hesaplanır? →
           </a>
           <a href="/referanslar/" class="inline-flex items-center min-h-[2.75rem] font-semibold text-teal underline underline-offset-4 hover:text-tealDark">
             11 branşın çıkmış soru referansları →
           </a>
           <a href="/yardim/kronometre/" class="inline-flex items-center min-h-[2.75rem] font-semibold text-teal underline underline-offset-4 hover:text-tealDark">
-            TUS Kronometre ve çalışma takvimi →
+            TUS kronometresi ve çalışma takvimi →
           </a>
         </div>
       </div>
@@ -578,34 +578,34 @@ const OSYM_2026_2_BRANCH_ROWS = [
 
     <!-- Preference Process Guide -->
     <div class="mt-14 pt-12 border-t border-line">
-      <h2 class="display text-section tracking-tightest text-ink">TUS Tercih Süreci: 4 Temel Adım</h2>
+      <h2 class="display text-section tracking-tightest text-ink">TUS tercihinde 4 adım</h2>
       <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="rounded-2xl border border-line bg-white p-5">
-          <div class="text-xs font-bold text-teal">01 · Yabancı Dil Şartı</div>
-          <h3 class="display text-base text-ink mt-1.5">YDS / TIPDİL Yeterliliği</h3>
+          <div class="text-xs font-bold text-teal">01 · Yabancı dil şartı</div>
+          <h3 class="display text-base text-ink mt-1.5">YDS veya TIPDİL puanı</h3>
           <p class="text-xs text-inkMuted mt-2 leading-relaxed">
-            Tercih yapabilmek için son 5 yıl içinde geçerli bir yabancı dil sınavından en az 50 puan alınmış olması gerekir.
+            Tercih yapabilmek için son 5 yıl içinde geçerli bir yabancı dil sınavından en az 50 puan almış olman gerekir.
           </p>
         </div>
         <div class="rounded-2xl border border-line bg-white p-5">
-          <div class="text-xs font-bold text-teal">02 · Puan &amp; Sıralama</div>
-          <h3 class="display text-base text-ink mt-1.5">Puandan Çok Sıralamaya Bak</h3>
+          <div class="text-xs font-bold text-teal">02 · Puan ve sıralama</div>
+          <h3 class="display text-base text-ink mt-1.5">Puandan çok sıralamaya bak</h3>
           <p class="text-xs text-inkMuted mt-2 leading-relaxed">
-            Sınav zorluğu dönemden döneme değişir; kontenjan artışı ve sıralama bandı ham puandan daha belirleyicidir.
+            Sınavın zorluğu dönemden döneme değişir. Nereye yerleşeceğini ham puandan çok sıralaman ve o dönemin kontenjanı belirler.
           </p>
         </div>
         <div class="rounded-2xl border border-line bg-white p-5">
-          <div class="text-xs font-bold text-teal">03 · 30 Tercih Dengesi</div>
-          <h3 class="display text-base text-ink mt-1.5">İdeal · Gerçekçi · Güvenli</h3>
+          <div class="text-xs font-bold text-teal">03 · 30 tercih</div>
+          <h3 class="display text-base text-ink mt-1.5">Hedef, gerçekçi ve güvenli tercihler</h3>
           <p class="text-xs text-inkMuted mt-2 leading-relaxed">
-            Listenin başına hedeflediğin klinikleri, ortasına sıralamanla örtüşen programları, sonuna ise çalışacağın güvenli seçenekleri yaz.
+            Listenin başına en çok istediğin klinikleri, ortasına sıralamana uyan programları, sonuna da yerleşirsen çalışacağın güvenli seçenekleri yaz.
           </p>
         </div>
         <div class="rounded-2xl border border-line bg-white p-5">
-          <div class="text-xs font-bold text-teal">04 · Kesinti Uyarısı</div>
+          <div class="text-xs font-bold text-teal">04 · Kesinti uyarısı</div>
           <h3 class="display text-base text-ink mt-1.5">%5 Puan Kesintisi Kuralı</h3>
           <p class="text-xs text-inkMuted mt-2 leading-relaxed">
-            Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği gereği uzmanlık eğitimine devam ederken sınava girenler, istifa edenler veya yerleşip başlamayanlar için ilk sınavda mesleki bilgi puanında %5 kesinti uygulanır.
+            Uzmanlık eğitimine devam ederken sınava girersen, istifa ettiysen ya da yerleşip başlamadıysan ilk sınavda mesleki bilgi puanından %5 kesilir. Kural, Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği’nden gelir.
           </p>
         </div>
       </div>
@@ -613,7 +613,7 @@ const OSYM_2026_2_BRANCH_ROWS = [
 
     <!-- Static 2027 Exam Dates (replaces live CountdownBand JS timer) -->
     <div class="mt-12 pt-8 border-t border-line">
-      <h2 class="display text-lg text-ink">2027 TUS Sınav Takvimi</h2>
+      <h2 class="display text-lg text-ink">2027 TUS sınav takvimi</h2>
       <div class="mt-4 grid sm:grid-cols-2 gap-4">
         {exams.exams.map((ex) => (
           <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
@@ -640,7 +640,7 @@ const OSYM_2026_2_BRANCH_ROWS = [
 
     <!-- Verified Official Authority Sources -->
     <div class="mt-10 rounded-2xl border border-line bg-surfaceSoft p-5 sm:p-6">
-      <h2 class="display text-base text-ink">Resmî Kaynaklar</h2>
+      <h2 class="display text-base text-ink">Resmî kaynaklar</h2>
       <ul class="mt-3 space-y-1 text-sm">
         <li>
           <a
@@ -654,12 +654,10 @@ const OSYM_2026_2_BRANCH_ROWS = [
         </li>
         <li>
           <a
-            href="https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/tus-cikmis-sorular-ve-analiz/"
             class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline underline-offset-2 hover:text-tealDark"
           >
-            ÖSYM — TUS Çıkmış Sınav Soruları Arşivi ↗
+            TusAnkiM — TUS çıkmış soru analizi
           </a>
         </li>
         <li>
@@ -684,7 +682,7 @@ const OSYM_2026_2_BRANCH_ROWS = [
         </li>
       </ul>
       <p class="mt-3 pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed">
-        Puan hesaplama öngörüsü bilgilendirme ve çalışma planlama amaçlıdır; resmî yerleştirme puanı ÖSYM tarafından açıklanır.
+        Bu hesaplama bilgi vermek ve çalışmanı planlamak içindir; resmî yerleştirme puanını ÖSYM açıklar.
         Son güncelleme: <time datetime={modDate}>{modLabel}</time> · Hazırlayan:{' '}
         <a href="/hakkimizda/" class="text-teal underline hover:text-tealDark">TusAnkiM</a>.
       </p>
@@ -938,7 +936,7 @@ const OSYM_2026_2_BRANCH_ROWS = [
 
       if (kesintiStatusEl) {
         if (hasKesinti) {
-          kesintiStatusEl.textContent = `%5 kesinti aktif (×0,95 · ham K: ${fmt(raw.kScore, 1)})`;
+          kesintiStatusEl.textContent = `%5 kesinti uygulanıyor (×0,95 · kesinti öncesi K: ${fmt(raw.kScore, 1)})`;
           kesintiStatusEl.className = 'text-xs font-semibold text-warm shrink-0';
         } else {
           kesintiStatusEl.textContent = 'Kesinti uygulanmıyor';
@@ -963,12 +961,12 @@ const OSYM_2026_2_BRANCH_ROWS = [
       setIfChanged(outRankNote, rankInfo.note);
       const barajText =
         kScore >= 45 && tScore >= 45
-          ? 'K ve T 45 barajı üzerinde'
+          ? 'K ve T 45 barajının üstünde'
           : kScore >= 45
-            ? 'K 45 barajı üzerinde · T 45 altında'
+            ? 'K 45 barajının üstünde · T altında'
             : tScore >= 45
-              ? 'T 45 barajı üzerinde · K 45 altında'
-              : 'K ve T 45 barajı altında';
+              ? 'T 45 barajının üstünde · K altında'
+              : 'K ve T 45 barajının altında';
       setIfChanged(outBaraj, barajText);
     }
 
@@ -989,21 +987,21 @@ const OSYM_2026_2_BRANCH_ROWS = [
         let baseTip = '';
         if (target >= 70) {
           baseTip =
-            '70+ puan üst dilim branşlar için hem yüksek temel bilim hâkimiyeti hem de klinik ayrımları hatasız hatırlamayı gerektirir. Günde 60–80 yeni kart + deneme analizi uygundur.';
+            '70 ve üstü puan isteyen branşlar için hem temel bilimlere hâkim olman hem de klinik ayrımları hatasız hatırlaman gerekir. Günde 60–80 yeni kart ve deneme analizi bu hedefe uygun.';
         } else if (target >= 60) {
           baseTip =
-            '60–70 puan bandında düzenli FSRS-6 tekrarıyla 9.575 kartı günde 60 yeni kartla 160 günde tamamlayıp son ayları deneme eksiklerini kapatmaya ayırabilirsin.';
+            'Düzenli FSRS-6 tekrarıyla günde 60 yeni kart çalışırsan 9.575 kartı 160 günde bitirir, son ayları denemelerdeki eksiklerine ayırırsın.';
         } else {
           baseTip =
-            '45–60 puan bandında yüksek getirili temel ve klinik çekirdek kartlarla (günde 40 yeni kart ≈ 60 dk/gün) hedefine düzenli biçimde ulaşabilirsin.';
+            '45–60 puan için en çok soru getiren temel ve klinik kartlardan başla. Günde 40 yeni kart yaklaşık 60 dakika tutar.';
         }
         if (hasKesinti) {
           const rawNeeded = target / 0.95;
           const reqKesintiTotal = Math.min(200, Math.max(55, Math.round((rawNeeded - 28.5) / 0.28)));
           const kesintiNote =
             rawNeeded > 86
-              ? ` %5 kesinti etkinken ${fmt(target, 1)} net puan için ham puan hedefi (${fmt(rawNeeded, 1)}) üst sınav bandına dayanır.`
-              : ` %5 kesinti aktifken bu hedefe ulaşmak için ham puanın ~${fmt(rawNeeded, 1)} (yaklaşık ~${reqKesintiTotal} toplam net) olması gerekir.`;
+              ? ` %5 kesintiyle ${fmt(target, 1)} puan için kesinti öncesi ${fmt(rawNeeded, 1)} puan gerekir; bu, sınavın en üst puanlarına denk gelir.`
+              : ` %5 kesintiyle bu hedef için kesinti öncesi puanının ~${fmt(rawNeeded, 1)} olması gerekir (yaklaşık ${reqKesintiTotal} toplam net).`;
           setIfChanged(reqTipEl, baseTip + kesintiNote);
         } else {
           setIfChanged(reqTipEl, baseTip);

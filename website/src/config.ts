@@ -11,8 +11,8 @@ export const PRICING_MODE: 'three-segment' | 'free-beta' = 'three-segment';
 
 /** Current access and future pricing are deliberately separate. */
 export const ACCESS = {
-  betaDescription: 'Güncel beta sürümünde TUS paketi ücretsiz açılır. Ödeme veya kart bilgisi gerekmez.',
-  plannedLaunchDescription: 'Erişim modeli: ücretsiz kullanım (ara ara reklam), tüm 9.575 karta erişim ₺2.000, reklamları kaldırma ₺50. Ücretli seçenekler ve reklamlar henüz devrede değil.',
+  betaDescription: 'Beta sürümünde 9.575 kartlık TUS paketi ücretsiz. Ödeme de kart bilgisi de istemiyoruz.',
+  plannedLaunchDescription: 'İleride üç seçenek olacak: reklamlı ücretsiz kullanım, 9.575 kartın tamamı ₺2.000, reklamları kaldırma ₺50. Ücretli seçenekler ve reklamlar henüz devrede değil.',
 } as const;
 
 /** Publish /gizlilik/, /kullanim-kosullari/, /destek/ routes and footer links. */

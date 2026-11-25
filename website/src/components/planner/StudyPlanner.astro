@@ -33,14 +33,14 @@ const presetCards = PLANNER_PRESETS.map((preset) => {
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
     <!-- Section header -->
     <div class="max-w-3xl reveal">
-      <p class="kicker">Çalışma temposu · FSRS-6 Planlayıcı</p>
+      <p class="kicker">Çalışma temposu · FSRS-6 planlayıcı</p>
       <h2 id="plan-heading" class="display text-section tracking-tightest text-ink mt-3">
-        Sınava kaç gün var? Temponu ona göre kur.
+        Sınava kaç gün var? Temponu ona göre kur
       </h2>
       <p class="text-inkMuted mt-3 leading-relaxed">
-        Aşağıdaki sayılar tahmin değil: {formatTrInt(catalog.totals.cards)} kartın tamamı için TusAnkiM’in gerçek{' '}
-        <span lang="en">FSRS-6</span> simülatöründen gelir. Hazır profillerden birine dokun ya da aşağıdaki planlayıcıda
-        sınav tarihini, derslerini, nöbet/mola günlerini ve hedef hatırlamanı seçip kişisel temponu oluştur.
+        Aşağıdaki sayıları elle yazmadık. {formatTrInt(catalog.totals.cards)} kartın tamamını TusAnkiM’in{' '}
+        <span lang="en">FSRS-6</span> simülatöründen geçirdik. Hazır profillerden birine dokun ya da aşağıdaki planlayıcıda
+        sınav tarihini, derslerini, nöbet ve mola günlerini, hedef hatırlamanı seç; kendi temponu gör.
       </p>
     </div>
 
@@ -106,13 +106,13 @@ const presetCards = PLANNER_PRESETS.map((preset) => {
     <div class="planner-studio mt-10 rounded-3xl border border-line bg-surfaceSoft p-4 sm:p-6 lg:p-8">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-6 border-b border-line">
         <div>
-          <p class="text-sm font-semibold text-teal">İnteraktif Kart &amp; Tekrar Hesaplayıcı</p>
+          <p class="text-sm font-semibold text-teal">Kart ve tekrar hesaplayıcı</p>
           <h3 id="planner-studio-heading" class="display text-subsection tracking-tightest text-ink mt-1">
-            Kişisel <span lang="en">FSRS-6</span> Tempo ve Plan Oluşturucu
+            Kendi <span lang="en">FSRS-6</span> tempon ve planın
           </h3>
         </div>
         <p class="text-xs text-inkMuted max-w-md">
-          Değerleri değiştirdikçe günlük yeni + tekrar eğrisi, tepe çalışma süresi ve ders takvimi anında yeniden simüle edilir.
+          Bir değeri değiştirdiğinde günlük kart eğrisi, en yoğun günün süresi ve ders takvimi hemen yeniden hesaplanır.
         </p>
       </div>
 

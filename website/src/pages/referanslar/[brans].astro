@@ -41,7 +41,7 @@ const crumbs = breadcrumbList(origin, [
 const datasetSchema = {
   '@context': 'https://schema.org',
   '@type': 'Dataset',
-  name: `${branch.name} — Son 6 TUS Çıkmış Soru Referans Analizi`,
+  name: `${branch.name}: son 6 TUS çıkmış soru referans analizi`,
   description: branch.seoDescription,
   inLanguage: 'tr-TR',
   temporalCoverage: '2024/2026',
@@ -81,15 +81,15 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
       </nav>
 
       <p class="text-xs font-semibold text-teal">
-        {branch.group} · 11 ÖSYM TUS Branşından Biri
+        {branch.group} · 11 TUS branşından biri
       </p>
       <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">
-        {branch.name} — TUS Çıkmış Soru Referans Analizi
+        {branch.name} TUS çıkmış sorularını kartlar ne kadar karşılıyor?
       </h1>
       <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
-        Son 6 TUS dönemindeki ({refSummary.sinavlar[refSummary.sinavlar.length - 1]}–{refSummary.sinavlar[0]}) toplam{' '}
-        <strong class="text-ink">{branch.summary.soru} {branch.name}</strong> sorusunun BKA TUS kataloğuyla
-        (<code>{refSummary.katalogCommit}</code>) eşleştirilmiş çözüm desteği ve konu kapsamı dökümü. Sınıflandırma yapay zekâ destekli ön değerlendirmedir; bağımsız hekim editör kontrolü sürmektedir. ÖSYM telif hakları gereği soru kökleri ve şıklar yayımlanmaz.
+        Son 6 TUS’ta ({refSummary.sinavlar[refSummary.sinavlar.length - 1]}–{refSummary.sinavlar[0]}){' '}
+        <strong class="text-ink">{branch.summary.soru} {branch.name}</strong> sorusu çıktı. Her birini BKA TUS kartlarıyla
+        (<code>{refSummary.katalogCommit}</code> sürümü) karşılaştırdık. Kaç soruda kartın çözüme götürdüğünü, kaç soruda yalnızca konunun geçtiğini aşağıda görürsün. Sınıflandırma yapay zekâ destekli bir ön değerlendirme; bağımsız hekim editör onayı henüz tamamlanmadı. ÖSYM’nin telif hakkı nedeniyle soru metni ve şık yayımlamıyoruz.
       </p>
       <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
         <span>
@@ -105,7 +105,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
 
       <div class="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div class="rounded-2xl border border-line bg-white p-4">
-          <div class="text-xs font-semibold text-inkMuted">Çözüm Desteği (6 Sınav)</div>
+          <div class="text-xs font-semibold text-inkMuted">Çözüm desteği (6 sınav)</div>
           <div class="display text-2xl text-teal mt-1 tabular-nums">
             {branch.summary.destek} / {branch.summary.soru}{' '}
             <span class="text-base">({fmtPct(branch.summary.destekOran)})</span>
@@ -125,7 +125,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
           </div>
         </div>
         <div class="rounded-2xl border border-line bg-white p-4">
-          <div class="text-xs font-semibold text-inkMuted">Katalog Deste Hacmi</div>
+          <div class="text-xs font-semibold text-inkMuted">Destedeki kart sayısı</div>
           <div class="display text-2xl text-ink mt-1 tabular-nums">
             {fmtNum(branch.catalogCourse.cards)} kart
           </div>
@@ -134,12 +134,12 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
           </div>
         </div>
         <div class="rounded-2xl border border-line bg-white p-4">
-          <div class="text-xs font-semibold text-inkMuted">Katalog Kodu &amp; Adı</div>
+          <div class="text-xs font-semibold text-inkMuted">Destenin adı</div>
           <div class="display text-2xl text-ink mt-1">
             {branch.catalogCourseName}
           </div>
           <div class="text-xs text-inkMuted mt-0.5">
-            12 katalog dersinden biri ({branch.group})
+            12 dersten biri ({branch.group})
           </div>
         </div>
       </div>
@@ -152,17 +152,17 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
         <div>
           <h2 class="display text-section tracking-tightest text-ink">
-            Sınavlara göre {branch.name} referans dağılımı
+            Sınavlara göre {branch.name} sonuçları
           </h2>
           <p class="text-sm text-inkMuted mt-1">
-            Her dönem için Doğrudan, Dolaylı, Çözüm Desteği ve Konu Kapsamı sayıları.
+            Çözüm desteği, Doğrudan ve Dolaylı soruların toplamıdır. Konu Kapsamı ayrı sayılır.
           </p>
         </div>
         <a
           href={`/referanslar/?ders=${encodeURIComponent(branch.name)}`}
           class="inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark shrink-0"
         >
-          Tüm {branch.summary.soru} soruyu filtrele →
+          {branch.summary.soru} sorunun hepsini gör →
         </a>
       </div>
 
@@ -174,7 +174,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
       >
         <table class="w-full text-left border-collapse text-sm">
           <caption id="branch-exam-caption" class="sr-only">
-            {branch.name} branşı için 2026/2 ile 2024/1 arası 6 TUS referans tablosu
+            {branch.name} için 2024/1–2026/2 arasındaki 6 TUS’un sonuç tablosu
           </caption>
           <thead>
             <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
@@ -182,9 +182,9 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
               <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Soru</th>
               <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Doğrudan</th>
               <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Dolaylı</th>
-              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Çözüm Desteği</th>
+              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Çözüm desteği</th>
               <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Konu Kapsamı</th>
-              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Yok</th>
+              <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Kart yok</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-lineLight tabular-nums">
@@ -209,8 +209,8 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
         </table>
       </div>
       <p class="mt-3 text-xs text-inkMuted leading-relaxed">
-        Tablo güncel kataloğu gösterir. 2026/2 TUS’un tamamında sınavdan önceki sürüm (<code>{refSummary.preExam2026_2.commit}</code>, {refSummary.preExam2026_2.date})
-        {refSummary.preExam2026_2.preExamEvet}/200, güncel katalog {refSummary.preExam2026_2.supportedCurrent}/200 çözüm desteği verir; sınavdan sonra güncellenen kayıtlar ayrı işaretlenir.
+        Tablo kartların güncel sürümüne göredir. 2026/2 TUS’un tamamında sınavdan 2 gün önceki sürüm (<code>{refSummary.preExam2026_2.commit}</code>, {refSummary.preExam2026_2.date})
+        {refSummary.preExam2026_2.preExamEvet}/200, güncel sürüm {refSummary.preExam2026_2.supportedCurrent}/200 soruda çözüm desteği veriyor. Sınavdan sonra güncellediğimiz kayıtları ayrıca işaretliyoruz.
         Ayrıntı: <a href="/referanslar/" class="text-teal underline underline-offset-2 hover:text-tealDark">TUS Referansları</a> ·{' '}
         <a href="/tus-cikmis-sorular-ve-analiz/" class="text-teal underline underline-offset-2 hover:text-tealDark">Çıkmış sorular analizi</a>.
       </p>
@@ -220,57 +220,61 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
     <div class="rounded-2xl border border-line bg-white p-6 sm:p-8 space-y-6">
       <div>
         <h2 class="display text-section tracking-tightest text-ink">
-          TUS’ta {branch.name} Soru Dağılımı ve Güncel Kapsam Niyeti
+          TUS’ta kaç {branch.name} sorusu çıkıyor, kartlar kaçını karşılıyor?
         </h2>
         <p class="text-sm text-inkMuted mt-1 leading-relaxed max-w-3xl">
-          Branşın her dönemdeki soru ağırlığı ile katalogdaki yalnız konu kapsamı ve doğrudan çözüm desteği arasındaki fark.
+          Önce sınavdaki soru sayısı, sonra konusu kartlarda geçen ama kartla çözülmeyen sorular.
         </p>
       </div>
 
       <div class="grid lg:grid-cols-12 gap-6">
         <div class="lg:col-span-5 rounded-2xl border border-line bg-surfaceSoft p-5 space-y-3">
-          <h3 class="display text-base text-ink">Sınavdaki soru dağılımı</h3>
+          <h3 class="display text-base text-ink">Sınavdaki soru sayısı</h3>
           <p class="text-sm text-ink leading-relaxed">
-            Standart bir TUS oturumunda <strong class="text-teal tabular-nums">{branch.examAllocation.standardQuestions} soru / {branch.examAllocation.sessionTotal} {branch.group}</strong>{' '}
-            ({branch.examAllocation.observedRange === String(branch.examAllocation.standardQuestions)
-              ? `son 6 sınavda sabit ${branch.examAllocation.observedRange} soru`
-              : `son 6 sınavda ${branch.examAllocation.observedRange} aralığında`}
-            , toplam <strong class="tabular-nums">{branch.summary.soru} soru</strong>) yer alır.
+            {branch.name}, {branch.examAllocation.sessionTotal} soruluk {branch.group} testinde{' '}
+            <strong class="text-teal tabular-nums">{branch.examAllocation.standardQuestions} soru</strong> tutuyor.{' '}
+            {branch.examAllocation.observedRange === String(branch.examAllocation.standardQuestions)
+              ? 'Son 6 sınavda bu sayı hiç değişmedi;'
+              : `Son 6 sınavda sayı ${branch.examAllocation.observedRange} arasında değişti;`}
+            {' '}toplam <strong class="tabular-nums">{branch.summary.soru} soru</strong> çıktı.
           </p>
           <p class="text-xs text-inkMuted leading-relaxed">
-            {branch.examAllocation.sessionShareNote}. Puan hesabında Temel puanı %70 Temel + %30 Klinik; Klinik puanı ise %50 Temel + %50 Klinik ağırlık taşır.
+            {branch.examAllocation.sessionShareNote}. Temel puanı %70 Temel + %30 Klinik, Klinik puanı %50 Temel + %50 Klinik ağırlıkla hesaplanır.
           </p>
           <div class="pt-1">
             <a
               href="/puan-hesapla/"
               class="inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark"
             >
-              {branch.name} netinin TUS puanına etkisini hesapla →
+              {branch.name} netinle TUS puanını hesapla →
             </a>
           </div>
         </div>
 
         <div class="lg:col-span-7 rounded-2xl border border-line bg-surfaceSoft p-5 space-y-3">
-          <h3 class="display text-base text-ink">Yalnız konu kapsamı vs çözüm desteği</h3>
+          <h3 class="display text-base text-ink">Konusu var ama kartla çözülmeyen sorular</h3>
           <p class="text-sm text-ink leading-relaxed">
-            {fmtNum(catalog.totals.cards)} kartlık katalog genelinde son 6 TUS’ta{' '}
-            <strong class="tabular-nums">{refSummary.overall.destek}/{fmtNum(refSummary.overall.soru)} ({fmtPct(refSummary.overall.destekOran)})</strong> çözüm desteği ve{' '}
-            <strong class="tabular-nums">{fmtNum(refSummary.overall.konuKapsami)}/{fmtNum(refSummary.overall.soru)} ({fmtPct(refSummary.overall.konuKapsamiOran)})</strong> konu kapsamı ölçülürken,{' '}
-            {branch.name} branşında <strong class="tabular-nums">{branch.summary.destek}/{branch.summary.soru} ({fmtPct(branch.summary.destekOran)})</strong> çözüm desteği ile birlikte{' '}
-            <strong class="tabular-nums">{branch.summary.konu} soru</strong> <em>yalnız konu</em> düzeyindedir (toplam konu kapsamı{' '}
-            <strong class="tabular-nums">{branch.summary.konuKapsami}/{branch.summary.soru} · {fmtPct(branch.summary.konuKapsamiOran)}</strong>).
+            {branch.name} sorularında çözüm desteği{' '}
+            <strong class="tabular-nums">{branch.summary.destek}/{branch.summary.soru} ({fmtPct(branch.summary.destekOran)})</strong>.{' '}
+            <strong class="tabular-nums">{branch.summary.konu} soruda</strong> ise konu kartlarda geçiyor ama soruyu çözdüren bilgi eksik. Bunlara <em>yalnız konu</em> diyoruz ve çözüm desteğine saymıyoruz. Çözüm desteği ile yalnız konunun toplamı Konu Kapsamı’dır:{' '}
+            <strong class="tabular-nums">{branch.summary.konuKapsami}/{branch.summary.soru} · {fmtPct(branch.summary.konuKapsamiOran)}</strong>.
+          </p>
+          <p class="text-sm text-ink leading-relaxed">
+            Karşılaştırmak istersen {fmtNum(catalog.totals.cards)} kartın tamamında son 6 TUS için çözüm desteği{' '}
+            <strong class="tabular-nums">{refSummary.overall.destek}/{fmtNum(refSummary.overall.soru)} ({fmtPct(refSummary.overall.destekOran)})</strong>, Konu Kapsamı{' '}
+            <strong class="tabular-nums">{fmtNum(refSummary.overall.konuKapsami)}/{fmtNum(refSummary.overall.soru)} ({fmtPct(refSummary.overall.konuKapsamiOran)})</strong>.
           </p>
           <p class="text-xs text-inkMuted leading-relaxed">
             {branch.group === 'Temel Bilimler'
-              ? 'Yalnız konu eşleşmesi, mekanizma zincirinin veya anatomik/laboratuvar sınırının kartta geçtiğini ancak sınav sorusundaki ayırt edici köprü basamağının soru çözümü ve karşılaştırma kartlarıyla pekiştirilmesi gerektiğini gösterir.'
-              : 'Yalnız konu eşleşmesi, hastalığın temel bilgilerinin destede bulunduğunu ancak vaka sorusundaki ilk tetkik, birinci basamak tedavi veya kontrendikasyon karar adımının soru çözümüyle tamamlanması gerektiğini gösterir.'}
+              ? 'Yalnız konu sorularında mekanizma ya da anatomik/laboratuvar sınırı kartta geçer ama soruyu ayırt ettiren adım eksiktir. O adımı soru çözerek ve karşılaştırma kartlarıyla tamamlaman gerekir.'
+              : 'Yalnız konu sorularında hastalığın temel bilgisi destede vardır ama vakadaki karar adımı (ilk tetkik, birinci basamak tedavi ya da kontrendikasyon) eksiktir. O adımı soru çözerek tamamlaman gerekir.'}
           </p>
           <div class="flex flex-wrap items-center gap-x-5 gap-y-1 pt-1 text-xs">
             <a href="/referanslar/" class="inline-flex items-center min-h-[2.75rem] font-semibold text-teal underline underline-offset-4 hover:text-tealDark">
-              Tüm 11 branşın 1.195 soruluk tam cetveli →
+              11 branşın 1.195 sorusunu gör →
             </a>
             <a href="/rehber/tusta-kac-kart-calisilmali/" class="inline-flex items-center min-h-[2.75rem] font-semibold text-teal underline underline-offset-4 hover:text-tealDark">
-              9.575 kart hacmi &amp; tempo rehberi →
+              9.575 kart ve günlük tempo rehberi →
             </a>
           </div>
         </div>
@@ -280,30 +284,30 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
     <!-- Strengths, gaps & catalog subdecks -->
     <div class="grid lg:grid-cols-12 gap-6">
       <div class="lg:col-span-7 rounded-2xl border border-line bg-surfaceSoft p-6 space-y-5">
-        <h2 class="display text-lg text-ink">Güçlü alanlar ve öncelikli kart boşlukları</h2>
+        <h2 class="display text-lg text-ink">Kartların iyi olduğu ve eksik kaldığı konular</h2>
         <div>
-          <h3 class="text-sm font-semibold text-gradeGood">Güçlü alanlar</h3>
+          <h3 class="text-sm font-semibold text-gradeGood">İyi karşılanan konular</h3>
           <p class="text-sm text-ink mt-1.5 leading-relaxed">{branch.strongAreas}</p>
         </div>
         <div>
-          <h3 class="text-sm font-semibold text-warm">Tespit edilen öncelikli boşluklar</h3>
+          <h3 class="text-sm font-semibold text-warm">Eksik kalan konular</h3>
           <p class="text-sm text-inkMuted mt-1.5 leading-relaxed">{branch.priorityGaps}</p>
         </div>
         <div class="pt-4 border-t border-line text-xs text-inkMuted leading-relaxed">
-          <strong class="text-ink">12 ders / 11 branş kavram ayrımı:</strong> BKA TUS kataloğunda{' '}
-          <strong>{catalog.totals.courses} ders</strong> bulunur (11 TUS branş destesi + karma soru tekrarı için 806 kartlık{' '}
-          <strong>Deneme ve Soru</strong> destesi;{' '}
+          <strong class="text-ink">Neden 12 ders ama 11 branş?</strong> BKA TUS’ta{' '}
+          <strong>{catalog.totals.courses} ders</strong> var. 11’i TUS branşlarının destesi, biri de karma soru tekrarı için 806 kartlık{' '}
+          <strong>Deneme ve Soru</strong> destesi.{' '}
           {branch.catalogCourseName === 'FHE'
-            ? 'bu branş katalogda kısaca FHE adıyla yer alır'
-            : 'Fizyoloji-Histoloji-Embriyoloji branşı katalogda FHE adıyla listelenir'}
-          ). ÖSYM referans analizi ise yalnızca <strong>11 resmî TUS branşı</strong> üzerinden ölçülür.
+            ? 'Bu branşın destesinin adı kısaca FHE.'
+            : 'Fizyoloji-Histoloji-Embriyoloji destesinin adı FHE.'}
+          {' '}Soru karşılaştırmasını yalnızca <strong>11 TUS branşı</strong> için yaptık.
         </div>
       </div>
 
       <div class="lg:col-span-5 rounded-2xl border border-line bg-white p-6">
-        <h2 class="display text-lg text-ink">En büyük konu alt desteleri ({branch.catalogCourseName})</h2>
+        <h2 class="display text-lg text-ink">En çok kartı olan konular ({branch.catalogCourseName})</h2>
         <p class="text-xs text-inkMuted mt-1">
-          Toplam {branch.catalogCourse.topicSubdecks} konu alt destesi içinde en fazla kart içeren ilk {branch.catalogCourse.topTopics.length} başlık:
+          {branch.catalogCourse.topicSubdecks} konu alt destesinden en kalabalık {branch.catalogCourse.topTopics.length} tanesi:
         </p>
         <ul class="mt-4 divide-y divide-lineLight text-sm">
           {branch.catalogCourse.topTopics.map((topic) => (
@@ -321,19 +325,17 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5">
         <div>
           <h2 class="display text-section tracking-tightest text-ink">
-            Örnek {branch.name} referans kayıtları
+            Örnek {branch.name} kayıtları
           </h2>
           <p class="text-sm text-inkMuted mt-1">
-            Her satır ölçülen bilgi özetini ve BKA TUS kataloğundaki temizlenmiş kart karşılığını gösterir.
+            Her kayıtta sorunun ölçtüğü bilgi ve o bilgiyi veren kartın özeti var. Soru metni yok.
           </p>
         </div>
         <a
-          href="https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/tus-cikmis-sorular-ve-analiz/"
           class="inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark shrink-0"
         >
-          ÖSYM Çıkmış Sorular Arşivi ↗
+          Çıkmış soru analizi
         </a>
       </div>
 
@@ -353,7 +355,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
                   {r.rozet === 'DOGRUDAN' ? 'Doğrudan' : 'Dolaylı'}
                 </span>
                 {r.sinavOncesiSurumde === 'evet' && (
-                  <span class="text-inkMuted">· Sınav öncesi (a78ae1f)</span>
+                  <span class="text-inkMuted">· Sınavdan önce de vardı (a78ae1f)</span>
                 )}
               </div>
               {r.cardId && <span class="font-mono text-inkMuted">{r.cardId}</span>}
@@ -377,7 +379,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
     <!-- Authority & Sibling branches -->
     <div class="pt-8 border-t border-line grid lg:grid-cols-12 gap-8 items-start">
       <div class="lg:col-span-8">
-        <h2 class="display text-lg text-ink">Diğer 10 ÖSYM TUS Branşı</h2>
+        <h2 class="display text-lg text-ink">Diğer 10 TUS branşı (çözüm desteği)</h2>
         <ul class="mt-4 flex flex-wrap gap-2">
           {siblings.map((sib) => (
             <li>
@@ -393,9 +395,9 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
       </div>
 
       <aside class="lg:col-span-4 rounded-2xl border border-line bg-surfaceSoft p-5 text-xs text-inkMuted leading-relaxed">
-        <h2 class="display text-sm text-ink">Doğrulama ve Sınır Notu</h2>
+        <h2 class="display text-sm text-ink">Bu veriler ne için?</h2>
         <p class="mt-2">
-          Veriler yalnızca eğitim ve TUS hazırlık analizi amaçlıdır; klinik karar veya resmî ÖSYM kılavuzu yerine geçmez.
+          Veriler yalnızca TUS hazırlığı içindir; klinik kararın ya da resmî ÖSYM kılavuzunun yerini tutmaz. Sınıflandırma ön değerlendirmedir, hekim editör onayı henüz tamamlanmadı.
         </p>
         <p class="mt-2">
           Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time> ·{' '}

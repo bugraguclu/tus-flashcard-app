@@ -1,10 +1,10 @@
 {
   "page": {
     "metaTitle": "TUS Kartları ve Ücretsiz Deneme | TusAnkiM SSS",
-    "metaDescription": "9.575 TUS kartını ücretsiz dene. Kart kalitesi, sınav referansları, aralıklı tekrar, çalışma takibi, erişim modeli ve cihazlar hakkında yanıtlar.",
+    "metaDescription": "9.575 TUS kartını ücretsiz dene. Kartlar ne kadar iyi, hangi sorulara karşılık geliyor, günde kaç kart çalışmalı, fiyat ne olacak? Kısa ve açık yanıtlar.",
     "kicker": "Ürün ve erişim",
     "title": "Sıkça sorulan sorular",
-    "lead": "Kart koleksiyonu, aralıklı tekrar, fiyat ve cihazlar hakkında yanıtlar.",
+    "lead": "Kartlar, aralıklı tekrar, fiyat ve cihazlar hakkında en çok sorulanlar. Her yanıt birkaç cümle.",
     "searchPlaceholder": "Sorularda ara"
   },
   "tabs": [
@@ -32,113 +32,123 @@
   "items": [
     {
       "cat": "genel",
-      "q": "TusAnkiM ile TUS hazırlığında neler yapabilirim?",
-      "a": "9.575 hazır kartla tekrar yapabilir, kendi kartlarını oluşturabilir ve çalışma süreni takip edebilirsin. FSRS-6 tekrar zamanlarını yanıtlarına göre planlar; Kronometre ve Çalışma Takvimi günlük emeğini görünür kılar. TusAnkiM bağımsız bir uygulamadır; Anki veya Ankitects ile resmî bağlantısı yoktur."
+      "q": "TusAnkiM ile TUS’a hazırlanırken ne yapabilirim?",
+      "a": "9.575 hazır kartla tekrar yapar, kendi kartlarını yazar ve ne kadar çalıştığını takip edersin. Hangi kartı hangi gün tekrar edeceğini FSRS-6 cevaplarına bakarak hesaplar. Kronometre ve Çalışma Takvimi de o gün ne kadar çalıştığını gösterir. TusAnkiM bağımsız bir uygulamadır; Anki veya Ankitects ile resmî bağlantısı yoktur."
     },
     {
       "cat": "genel",
       "q": "Kartların kalitesini satın almadan nasıl görebilirim?",
-      "a": "[Ana sayfadaki gerçek kartları](/#demo-heading) incele, cevabı aç ve referans kaydına bak. Demodaki 11 kart, 2026/2 TUS öncesi katalogdan alınmıştır. Ardından [referans kayıtlarında](/referanslar/) kartlarla sınavda ölçülen bilginin ilişkisini inceleyebilirsin. Kayıtlar yapay zekâ destekli ön değerlendirmedir; bağımsız hekim editör onayı henüz tamamlanmamıştır."
+      "a": "[Ana sayfadaki gerçek kartları](/#demo-heading) aç, cevaba bak, altındaki referans kaydına tıkla. Demodaki 11 kart, 2026/2 TUS’tan önceki sürümden alındı. Sonra [referans kayıtlarında](/referanslar/) her kartın sınavda sorulan hangi bilgiye karşılık geldiğini tek tek görebilirsin. Bu kayıtlar yapay zekâ destekli bir ön değerlendirme; bağımsız hekim editör onayı henüz tamamlanmadı."
     },
     {
       "cat": "genel",
-      "q": "İnternet olmadan çalışabilir miyim? Verilerim nerede tutulur?",
-      "a": "Kartların, tekrar geçmişin ve Kronometre kayıtların cihazında saklanır. iPhone uygulamasında kartlarınla çevrimdışı çalışabilir ve hazır TUS paketini internet olmadan açabilirsin. Tarayıcı önizlemesini ilk kez açmak için internet gerekir. Verilerini korumak için [yedekleme rehberini](/yardim/yedekler/) incele."
+      "q": "İnternet olmadan çalışabilir miyim? Verilerim nerede duruyor?",
+      "a": "Kartların, tekrar geçmişin ve Kronometre kayıtların kendi cihazında durur. iPhone uygulamasında internet olmadan çalışabilir, hazır TUS paketini de internetsiz açabilirsin. Tarayıcı sürümünü ilk kez açarken internet gerekir. Verilerini kaybetmemek için [yedekleme rehberine](/yardim/yedekler/) bir göz at."
     },
     {
       "cat": "genel",
-      "q": "Kurulum veya kart içeriğiyle ilgili destek nasıl alırım?",
-      "a": "Kurulum, kullanım ve iş birliği soruların için [Destek ve iletişim](/destek/) sayfasından bize yazabilirsin. Bir kartta düzeltme gerekiyorsa kartın kimliğini ve ilgili bilgiyi ekle; teknik bir sorun için karşılaştığın adımları paylaş."
+      "q": "Kurulumda ya da bir kartta takılırsam kime yazarım?",
+      "a": "[Destek ve iletişim](/destek/) sayfasından bize yaz; kurulum, kullanım ve iş birliği sorularının hepsine oradan bakıyoruz. Bir kartta hata gördüysen kartın kimliğini ve neyin yanlış olduğunu ekle. Teknik bir sorunsa hangi adımda ne olduğunu anlat."
     },
     {
       "cat": "referanslar",
-      "q": "Kartlar son TUS sınavlarında kaç soruya çözüm desteği sağlıyor?",
-      "a": "Son 6 TUS’taki (2024/1–2026/2) **1.195 sorunun 521’inde çözüm desteği** değerlendirildi: 333 doğrudan, 188 dolaylı. Ayrıca 1.108 sorunun konusu koleksiyonda yer alıyor; bu sayı çözüm desteğiyle aynı anlama gelmiyor. Sayım yöntemini ve soru bazındaki açıklamaları [Referanslar](/referanslar/) sayfasında inceleyebilirsin. Sonuçlar yapay zekâ destekli ön değerlendirmedir; bağımsız hekim editör onayı henüz tamamlanmamıştır."
+      "q": "Kartlar son TUS sınavlarında kaç soruya karşılık geliyor?",
+      "a": "Son 6 TUS’ta (2024/1–2026/2) sorulan **1.195 sorunun 521’inde kartlar çözüme yardım ediyor**: 333’ünde doğrudan, 188’inde dolaylı. Ayrıca 1.108 sorunun konusu destede geçiyor; ama konunun geçmesi sorunun çözüldüğü anlamına gelmiyor, o yüzden ayrı sayıyoruz. Nasıl saydığımızı ve soru soru açıklamaları [Referanslar](/referanslar/) sayfasında görebilirsin. Sonuçlar yapay zekâ destekli bir ön değerlendirme; bağımsız hekim editör onayı henüz tamamlanmadı."
     },
     {
       "cat": "referanslar",
-      "q": "2026/2 TUS için sınavdan önce kartlarda ne vardı?",
-      "a": "**200 sorunun 76’sında**, çözümü destekleyen bilgi 21 Ağustos 2026 tarihli sınav öncesi katalogda da vardı. Güncel katalogda bu sayı 82. Sınav sonrasında güncellenen 6 kayıt ayrı işaretlenir. Sınav öncesi ve sonrası kayıtları [Referanslar](/referanslar/) sayfasında karşılaştırabilirsin; değerlendirme bağımsız hekim editör onayından henüz geçmemiştir."
+      "q": "2026/2 TUS’ta sınavdan önce kartlarda ne vardı?",
+      "a": "**200 sorunun 76’sını** çözdüren bilgi, 21 Ağustos 2026 tarihli sınav öncesi sürümde zaten vardı. Bugünkü sürümde bu sayı 82. Sınavdan sonra güncellediğimiz 6 kaydı ayrıca işaretliyoruz, böylece “sonradan eklenmiş” olanı kendin ayırabilirsin. İkisini [Referanslar](/referanslar/) sayfasında karşılaştırabilirsin; değerlendirme bağımsız hekim editör onayından henüz geçmedi."
     },
     {
       "cat": "referanslar",
-      "q": "Referans kayıtlarında neleri inceleyebilirim?",
-      "a": "Sınav ve soru numarasını, ölçülen bilginin kısa özetini, ilişkili kartı ve eşleşmenin gerekçesini görebilirsin. Soru kökü ve şıklar yerine kendi özetlerimiz ile resmî ÖSYM arşivi bağlantıları yer alır. Böylece kartın hangi bilgiyi desteklediğini tek tek inceleyebilirsin."
+      "q": "Referans kayıtlarında ne görürüm?",
+      "a": "Sınavı ve soru numarasını, sorunun ölçtüğü bilginin kısa özetini, ilgili kartı ve neden eşleştirdiğimizi görürsün. Soru metni ve şıklar yok; onların yerine kendi özetimiz ve resmî ÖSYM arşivinin bağlantısı var. Hangi kartın hangi bilgiye yaradığını tek tek kontrol edebilirsin."
     },
     {
       "cat": "referanslar",
-      "q": "Kartlar güncelleniyor mu? Kendi notlarım ne olur?",
-      "a": "Koleksiyonun yeni sürümleri uygulamaya eklenir. Paket güncellendiğinde tekrar geçmişin ve çalışma durumun korunur; metnini değiştirdiğin notlar kendi hâlinde kalır ve o sürümdeki içerik düzeltmesini almaz. Hazır paket kartlarındaki kişisel metin değişiklikleri yedeklere ve dışa aktarılan dosyalara girmez. Ayrıntılar [TUS Kartları rehberinde](/yardim/tus-kartlari/)."
+      "q": "Kartlar güncelleniyor mu? Kendi notlarıma ne olur?",
+      "a": "Evet, koleksiyonun yeni sürümleri uygulamaya geliyor. Paket güncellenince tekrar geçmişin ve çalışma durumun yerinde kalır. Metnini kendin değiştirdiğin notlara dokunmuyoruz; bu yüzden o notlar yeni sürümdeki düzeltmeyi almaz. Hazır paket kartlarında yaptığın kişisel metin değişiklikleri yedeklere ve dışa aktarılan dosyalara girmez. Ayrıntısı [TUS Kartları rehberinde](/yardim/tus-kartlari/)."
     },
     {
       "cat": "fsrs",
       "q": "Aralıklı tekrar günlük çalışmamı nasıl planlar?",
-      "a": "FSRS-6, verdiğin yanıtlara göre kartların tekrar zamanını belirler. Her gün zamanı gelen kartlara döner, yeni kartları kendi tempona göre eklersin. Hedef hatırlama oranını ve öğrenme adımlarını [FSRS rehberinden](/yardim/fsrs/) öğrenebilirsin."
+      "a": "Her gün uygulamayı açtığında o gün zamanı gelen kartlar seni bekler. FSRS-6 bu günleri verdiğin cevaplara göre belirler: kolay hatırladığın kart uzun süre gelmez, zorlandığın kart yakında tekrar gelir. Yeni kartları kendi hızında eklersin. Hedef hatırlama oranı ve öğrenme adımları [FSRS rehberinde](/yardim/fsrs/) anlatılıyor."
     },
     {
       "cat": "fsrs",
       "q": "Hazır koleksiyonda kaç kart var?",
-      "a": "**12 derste 9.575 hazır kart** var. Bir ders veya alt deste seçerek başlayabilir, hazır kartların yanına kendi notlarını ve kişisel destelerini ekleyebilirsin. Koleksiyonun kapsamını [TUS Kartları rehberinde](/yardim/tus-kartlari/) incele."
+      "a": "**12 derste 9.575 hazır kart** var. Bir ders ya da alt deste seçip başlayabilirsin. Hazır kartların yanına kendi notlarını ve kendi destelerini de ekleyebilirsin. Hangi derste ne olduğunu [TUS Kartları rehberinde](/yardim/tus-kartlari/) görebilirsin."
     },
     {
       "cat": "fsrs",
       "q": "Kronometre ve Çalışma Planlama ne işe yarar?",
-      "a": "Kronometreyle konu ve deneme çalışmalarının süresini ölç; Çalışma Takvimi’nde oturumlarını ve kart çalışmalarını birlikte gör. Çalışma Planlama ile sınav tarihine göre haftalık hedefler oluşturabilirsin. Başlamak için [Kronometre rehberini](/yardim/kronometre/) incele."
+      "a": "Kronometre konu çalışırken ve deneme çözerken geçen süreyi ölçer. Çalışma Takvimi bu oturumları kart tekrarlarınla yan yana gösterir; hangi gün ne kadar çalıştığını tek ekranda görürsün. Çalışma Planlama ile sınav tarihine göre haftalık hedef koyabilirsin. Başlamak için [Kronometre rehberine](/yardim/kronometre/) bak."
     },
     {
       "cat": "fiyat",
-      "q": "Ücretsiz nasıl deneyebilirim?",
-      "a": "Güncel betada **9.575 kartlık TUS paketini ücretsiz açabilirsin**; ödeme veya kart bilgisi gerekmez. Kendi kartlarını oluşturabilir, kişisel Anki destelerini aktarabilir ve çalışma araçlarını deneyebilirsin. İlk adımlar [Hızlı başlangıç rehberinde](/yardim/hizli-baslangic/)."
+      "q": "Ücretsiz nasıl denerim?",
+      "a": "Beta sürümünde **9.575 kartlık TUS paketini ücretsiz açabilirsin**; ödeme ya da kart bilgisi istemiyoruz. Kendi kartlarını yazabilir, kendi Anki destelerini getirebilir, çalışma araçlarını deneyebilirsin. İlk adımlar [Hızlı başlangıç rehberinde](/yardim/hizli-baslangic/)."
     },
     {
       "cat": "fiyat",
-      "q": "3 segmentli fiyatlandırma (₺0, ₺2.000 tüm kartlar, ₺50 reklam kaldırma) nasıl işliyor?",
-      "a": "Güncel betada ücretli seçenekler ve reklamlar henüz devrede değil; **TUS paketi ücretsiz açılır.** Planlanan modelde üç seçenek var: (1) **Ücretsiz kullanım (₺0):** ara ara reklam çıkacak; reklam sıklığı sonradan ayarlanacak. (2) **Tüm 9.575 BKA TUS kartına erişim ₺2.000.** (3) **Reklamları kaldırma ₺50.** Her üç segmentte de seçili demo sorularına doğrudan erişilebilecek."
+      "q": "Fiyat ne olacak? ₺0, ₺2.000 ve ₺50 seçenekleri ne anlama geliyor?",
+      "a": "Beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; **TUS paketi ücretsiz açılıyor.** İleride üç seçenek olacak. (1) **Ücretsiz kullanım (₺0):** ara ara reklam çıkacak; ne sıklıkta çıkacağını sonra belirleyeceğiz. (2) **9.575 BKA TUS kartının tamamı ₺2.000.** (3) **Reklamları kaldırma ₺50.** Seçili demo soruları üç seçenekte de açık olacak."
     },
     {
       "cat": "platform",
-      "q": "Hangi cihazlarda çalışabilirim?",
-      "a": "TusAnkiM iPhone için geliştiriliyor. Mac, Windows, iPad ve Android tarayıcılarda web önizlemesini deneyebilirsin. Yerel Android uygulaması ve otomatik bulut eşitleme şu anda yok; her cihazdaki veriler ayrı tutulur. Cihaz değiştirmeden önce [taşıma sınırlarını](/yardim/tus-kartlari/#new-device) incele."
+      "q": "Hangi cihazlarda çalışır?",
+      "a": "TusAnkiM’i iPhone için geliştiriyoruz. Bugün Mac, Windows, iPad ve Android’de tarayıcıdan kullanabilirsin. Android uygulaması ve cihazlar arası otomatik eşitleme şu anda yok; her cihazdaki veri ayrı durur. Cihaz değiştirmeden önce [nelerin taşınıp nelerin taşınmadığına](/yardim/tus-kartlari/#new-device) bak."
     },
     {
       "cat": "platform",
       "q": "Kendi Anki destelerimi getirebilir miyim?",
-      "a": "Kişisel .apkg ve .colpkg paketlerini içe aktarabilir, kişisel destelerini bu biçimlerde dışa aktarabilirsin. Desteklenen içerik ve bilinen farklar için [Anki ile birlikte kullanma rehberini](/yardim/anki-ile-kullanma/) incele. Hazır TUS paketi ve bu paketteki ilerleme dışa aktarılmaz."
+      "a": "Evet. Kendi .apkg ve .colpkg dosyalarını içe aktarabilir, kendi destelerini aynı biçimlerde dışa verebilirsin. Nelerin desteklendiğini ve bilinen farkları [Anki ile birlikte kullanma rehberinde](/yardim/anki-ile-kullanma/) yazdık. Hazır TUS paketi ve o paketteki ilerlemen dışa aktarılmaz."
     },
     {
       "cat": "referanslar",
-      "q": "Kartların arkasındaki ekibi ve hazırlama yaklaşımını nereden tanıyabilirim?",
-      "a": "Projenin neden kurulduğunu ve kartlara yaklaşımımızı [Hakkımızda](/hakkimizda/) sayfasında anlatıyoruz. İçeriği kendin değerlendirmek için gerçek demo kartlarını ve açıklamalı referans kayıtlarını birlikte inceleyebilirsin. Bağımsız hekim editör onayı henüz tamamlanmamıştır."
+      "q": "Kartları kim hazırlıyor, nasıl hazırlıyor?",
+      "a": "Projeyi neden kurduğumuzu ve kartlara nasıl baktığımızı [Hakkımızda](/hakkimizda/) sayfasında anlatıyoruz. Bize inanmak zorunda değilsin: gerçek demo kartlarına ve açıklamalı referans kayıtlarına kendin bak. Bağımsız hekim editör onayı henüz tamamlanmadı; bunu saklamıyoruz."
     },
     {
       "cat": "fsrs",
       "q": "Günde kaç kart çalışmalıyım?",
-      "a": "Önce zamanı gelen tekrarlarını tamamlamayı hedefle. Ardından ayırabildiğin süreye göre yeni kart ekle; tekrar yükün arttığında yeni kart sayını azaltabilirsin. Kronometre ve İstatistikler ile kendi temponu izle. Herkes için geçerli tek bir kart sayısı yok; çalışma düzenini [Çalışma ekranı rehberinden](/yardim/calisma-ekrani/) kurabilirsin."
+      "a": "Herkese uyan tek bir sayı yok. Önce o gün zamanı gelen tekrarlarını bitir. Sonra ayırabildiğin süre kadar yeni kart ekle; tekrarlar birikmeye başlarsa yeni kart sayını düşür. Kronometre ve İstatistikler kendi hızını görmene yardım eder. Günlük düzeni kurmak için [Çalışma ekranı rehberine](/yardim/calisma-ekrani/) bak."
     },
     {
       "cat": "fsrs",
-      "q": "İlerlememi ve zorlandığım noktaları nasıl takip ederim?",
-      "a": "İstatistikler ekranında tekrar sayını, çalışma süreni, cevap dağılımını ve yaklaşan tekrarlarını incele. Deste ve dönem seçerek hangi alana daha çok zaman ayıracağını değerlendirebilirsin. Grafiklerin ne anlattığını [İstatistikler rehberinde](/yardim/istatistikler/) bulabilirsin."
+      "q": "İlerlememi ve zorlandığım yerleri nasıl takip ederim?",
+      "a": "İstatistikler ekranında kaç tekrar yaptığını, ne kadar çalıştığını, cevaplarının dağılımını ve önümüzdeki günlerde kaç kartın geleceğini görürsün. Deste ve dönem seçerek hangi derse daha çok zaman ayırman gerektiğine bakabilirsin. Grafiklerin ne anlattığı [İstatistikler rehberinde](/yardim/istatistikler/)."
     },
     {
       "cat": "fsrs",
       "q": "Kartlara görsel ve kendi notlarımı ekleyebilir miyim?",
-      "a": "Evet. Notu düzenle ekranında metni değiştirebilir, görsel ve ses ekleyebilir, görseller üzerinde düzenleme yapabilirsin. Adımlar [Kart ekleme ve düzenleme rehberinde](/yardim/kart-ekleme/). Hazır TUS paketi kartlarındaki kişisel metin değişikliklerinin yedek ve dışa aktarma sınırlarını da [paket rehberinden](/yardim/tus-kartlari/#backups-and-export) kontrol et."
+      "a": "Evet. “Notu düzenle” ekranında metni değiştirebilir, görsel ve ses ekleyebilir, görseli düzenleyebilirsin. Adımlar [Kart ekleme ve düzenleme rehberinde](/yardim/kart-ekleme/). Hazır TUS paketi kartlarında yaptığın metin değişikliklerinin yedeğe ve dışa aktarmaya girmediğini unutma; ayrıntısı [paket rehberinde](/yardim/tus-kartlari/#backups-and-export)."
     },
     {
       "cat": "fsrs",
-      "q": "FSRS ile klasik SM-2 zamanlaması arasındaki fark ne?",
-      "a": "Klasik SM-2 zamanlaması, cevaplarına göre kartın aralığını ve kolaylık değerini değiştirir. FSRS-6 ise cevap geçmişinden kartın zorluğunu, hafızadaki kalıcılığını ve hatırlama olasılığını tahmin eder; aralığı hedeflediğin hatırlama oranına göre seçer. İkisinde de cevabını doğru değerlendirmen gerekir. Açma, hedef belirleme ve bilinen farklar [FSRS rehberinde](/yardim/fsrs/)."
+      "q": "FSRS ile klasik SM-2 arasındaki fark ne?",
+      "a": "Klasik SM-2, verdiğin cevaba göre kartın aralığını ve kolaylık değerini değiştirir. FSRS-6 ise cevap geçmişine bakıp üç şeyi tahmin eder: kart senin için ne kadar zor, bilgi aklında ne kadar sağlam ve bugün hatırlama ihtimalin ne. Aralığı, hedeflediğin hatırlama oranına göre seçer. İkisinde de cevabını dürüst değerlendirmen gerekir. Nasıl açılacağı, hedefin nasıl belirleneceği ve bilinen farklar [FSRS rehberinde](/yardim/fsrs/)."
     },
     {
       "cat": "fiyat",
-      "q": "Tek seferlik satın alma mı, aylık abonelik mi?",
-      "a": "Şu anda ödeme alınmıyor. Planlanan modelde tüm kartlara erişim (₺2.000) ve reklamları kaldırma (₺50) ayrı seçenekler olacak; tek seferlik mi süreli mi olacakları ve ödeme koşulları ücretli erişim başlamadan önce açıklanacak. Güncel betayı ücretsiz deneyebilirsin."
+      "q": "Tek seferlik mi ödeyeceğim, aylık abonelik mi olacak?",
+      "a": "Şu anda hiç ödeme almıyoruz. İleride tüm kartlar (₺2.000) ve reklamları kaldırma (₺50) ayrı seçenekler olacak. Tek seferlik mi, süreli mi olacaklarını ve ödeme koşullarını ücretli erişim başlamadan önce duyuracağız. O zamana kadar betayı ücretsiz kullanabilirsin."
     },
     {
       "cat": "fiyat",
-      "q": "Fakülte topluluğu veya sosyal medya hesabı için iş birliği yapabilir miyiz?",
-      "a": "Fakülte temsilcileri, öğrenci kulüpleri ve içerik üreticileri [Destek ve iletişim](/destek/) sayfasından iş birliği talebi iletebilir. Topluluğunu, kullanmak istediğin kapsamı ve iletişim bilgilerini paylaş; ücretsiz erişim gibi taleplerin koşullarını birlikte netleştirelim."
+      "q": "Fakülte topluluğum ya da sosyal medya hesabım için iş birliği yapabilir miyiz?",
+      "a": "Yaparız. Fakülte temsilcileri, öğrenci kulüpleri ve içerik üreten hesaplar [Destek ve iletişim](/destek/) sayfasından bize yazabilir. Topluluğunu, ne için kullanmak istediğini ve sana nasıl ulaşacağımızı yaz; ücretsiz erişim gibi koşulları birlikte konuşuruz."
+    },
+    {
+      "cat": "fsrs",
+      "q": "Aralıklı tekrar nedir, TUS’ta neden işe yarar?",
+      "a": "Aralıklı tekrar, bir bilgiyi unutmaya yakınken yeniden hatırlamaya çalışmaktır. Bildiğin kartı seyrek, zorlandığın kartı sık görürsün; böylece zamanın bildiğin şeylere gitmez. TUS’ta binlerce ayrıntıyı aylarca akılda tutmak gerektiği için bu yöntem toplu tekrar okumaktan daha az zamanla daha çok bilgi tutmana yardım eder. Kartı açmadan önce cevabı aklından geçirmen (aktif hatırlama) yöntemin öbür yarısıdır."
+    },
+    {
+      "cat": "genel",
+      "q": "TusAnkiM, Anki’nin kendisi mi?",
+      "a": "Hayır. TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir. Anki’nin açık dosya biçimlerini (.apkg ve .colpkg) okuyup yazdığı için kendi Anki destelerini getirebilir, sonra geri götürebilirsin. Tam Anki eşdeğeri olduğumuzu iddia etmiyoruz; farklar [Anki ile birlikte kullanma rehberinde](/yardim/anki-ile-kullanma/) yazıyor."
     }
   ]
 }

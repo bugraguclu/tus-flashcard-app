@@ -284,7 +284,7 @@ if (guideSummaryPace) {
     `tus-calisma-rehberi: final CTA card count diverges from catalog.json (${expectedCardsFormatted})`,
   );
   check(
-    indexHtml.includes(`Günde ${summaryPace} yeni kartla ilk tur ${summaryFinish}. günde biter (${summaryAvgDur}/gün ort.)`),
+    indexHtml.includes(`Günde ${summaryPace} yeni kartla ilk turu ${summaryFinish}. günde bitirirsin; bu, günde ortalama ${summaryAvgDur} demek`),
     `index.html: HomePlan summary diverges from #hizli-ozet (${summaryPace} new/day, day ${summaryFinish}, ${summaryAvgDur})`,
   );
   const llmsTxt = fs.readFileSync(path.join(DIST, 'llms.txt'), 'utf8');

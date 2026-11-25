@@ -1,6 +1,6 @@
 # TusAnkiM
 
-> TUS (Tıpta Uzmanlık Sınavı) hazırlığı için Türkçe aralıklı tekrar (FSRS-6) uygulaması, 9.575 kartlık BKA TUS koleksiyonu, açık referans analizi ve kapsamlı TUS çalışma rehberi. TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir.
+> TUS (Tıpta Uzmanlık Sınavı) hazırlığı için Türkçe aralıklı tekrar (FSRS-6) uygulaması, 9.575 kartlık BKA TUS koleksiyonu, kartların son 6 TUS’taki karşılığını soru soru gösteren açık referans verisi ve TUS çalışma rehberi. TusAnkiM bağımsız bir projedir; Anki veya Ankitects ile bağlantılı değildir.
 
 ## Temel Sayfalar
 - [Ana Sayfa](https://tusankim.com/): Ürün tanıtımı, 11 dersten canlı kart demosu, referans özeti ve çalışma araçları.
@@ -15,10 +15,10 @@
 - [TUS Yazıları](https://tusankim.com/rehber/): 2027 takvimi, intörn ve son 1 ay programı, puan hesabı, FSRS-6 ve günlük kart sayısı üzerine 8 yazı.
 - [Kartları Tablette Dene](https://tusankim.com/kart-denemesi/): 11 dersten 44 kartlık tarayıcı içi deste listesi ve çalışma ekranı demosu.
 - [Yardım Merkezi (21 Rehber)](https://tusankim.com/yardim/): Kurulum, FSRS-6, Deste Seçenekleri, Filtrelenmiş Deste, Kronometre, İstatistikler, Anki aktarım ve yedekleme kılavuzları.
-- [Sıkça Sorulan Sorular](https://tusankim.com/sss/): Ürün, referans yöntemi, ücretsiz beta, 3 segmentli erişim modeli ve cihazlar hakkında yanıtlar.
+- [Sıkça Sorulan Sorular](https://tusankim.com/sss/): Kart kalitesi, referans yöntemi, ücretsiz beta, ileride gelecek üç fiyat seçeneği ve cihazlar hakkında kısa yanıtlar.
 - [Özellikler](https://tusankim.com/ozellikler/): FSRS-6 tekrar takvimi, Kronometre, Çalışma Takvimi, kayıpsız Anki aktarımı ve puan hesaplayıcı.
-- [Fiyatlar ve Erişim](https://tusankim.com/fiyatlar/): Güncel betada ücretsiz erişim ve planlanan 3 segmentli model; ücretli seçenekler henüz devrede değil.
-- [Hakkımızda](https://tusankim.com/hakkimizda/): TusAnkiM hazırlama yaklaşımı ve editöryal ilkeler.
+- [Fiyatlar ve Erişim](https://tusankim.com/fiyatlar/): Beta ücretsiz. İleride üç seçenek olacak (₺0 reklamlı, tüm kartlar ₺2.000, reklamsız ₺50); ücretli seçenekler henüz devrede değil.
+- [Hakkımızda](https://tusankim.com/hakkimizda/): TusAnkiM neden kuruldu, kartlar nasıl hazırlanıyor ve çıkmış sorularla nasıl karşılaştırılıyor.
 
 ## Tam Metin Özeti
 - [llms-full.txt](https://tusankim.com/llms-full.txt): Doğrulanmış rakamlar, 11 branş tablosu, FSRS-6 simülasyon değerleri ve TUS çalışma rehberi özeti.

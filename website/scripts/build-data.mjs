@@ -19,7 +19,7 @@ const OUT_PUBLIC_DATA = path.join(WEBSITE_ROOT, 'public/data');
 fs.mkdirSync(OUT_GENERATED, { recursive: true });
 fs.mkdirSync(OUT_PUBLIC_DATA, { recursive: true });
 
-const OSYM_ARCHIVE_URL = 'https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html';
+const OSYM_ARCHIVE_URL = 'https://www.osym.gov.tr/';
 
 const SUBJECT_GROUP = {
   'bka-anatomi': 'temel',

@@ -23,9 +23,9 @@ const datasetSchema = {
   '@context': 'https://schema.org',
   '@type': 'Dataset',
   '@id': origin + '/tus-taban-puanlari-ve-kontenjan/#dataset',
-  name: 'ÖSYM 2025–2026 TUS Taban Puanları, Kontenjan ve Doluluk Verileri',
+  name: 'ÖSYM 2025–2026 TUS taban puanları, kontenjan ve doluluk verileri',
   description:
-    'ÖSYM resmî yerleştirme PDF’lerinden derlenen 2025/1–2026/2 TUS makro kontenjan/yerleşen sayıları, başvuru artışı, Uzmanlık Dalı Değişikliği ve 3 döneme ait 122 Genel Kontenjan uzmanlık dalı min–max puan özeti.',
+    'ÖSYM’nin resmî yerleştirme PDF’lerinden derlendi: 2025/1–2026/2 TUS toplam kontenjan ve yerleşen sayıları, başvuru artışı, Uzmanlık Dalı Değişikliği ve 3 döneme ait 122 Genel Kontenjan uzmanlık dalı kaydının en küçük ve en büyük puanı.',
   url: origin + '/tus-taban-puanlari-ve-kontenjan/',
   inLanguage: 'tr-TR',
   isAccessibleForFree: true,
@@ -75,8 +75,8 @@ const BRANCH_ALIASES: Record<string, string> = {
 };
 ---
 <Layout
-  title="2026 TUS Taban Puanları ve Kontenjanlar (ÖSYM) | TusAnkiM"
-  description="ÖSYM 2025/1–2026/2 TUS yerleştirme verileri: 40+ uzmanlık dalı Genel Kontenjan min–max puanları, doluluk oranları, başvuru artışı ve 2026/2 ek kontenjan."
+  title="2026 TUS taban puanları ve kontenjanlar | TusAnkiM"
+  description="2026 TUS taban puanları: ÖSYM 2025/1–2026/2 verileriyle 40+ uzmanlık dalının en küçük ve en büyük puanı, kontenjanı, doluluğu ve 2026/2 ek kontenjanı."
   modifiedTime={modDate}
   schema={[crumbs, datasetSchema]}
 >
@@ -97,13 +97,13 @@ const BRANCH_ALIASES: Record<string, string> = {
       </nav>
 
       <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
-        2025–2026 TUS Taban Puanları ve Kontenjan Verileri
+        2025–2026 TUS taban puanları ve kontenjanlar
       </h1>
       <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
-        ÖSYM’nin yayımladığı resmî yerleştirme PDF’lerinden derlenen son 3 tam yerleştirme dönemine ait
+        Hangi uzmanlık dalı kaç puanla kapattı, kaç kontenjan açıldı? ÖSYM’nin resmî yerleştirme PDF’lerinden son 3 tam yerleştirme dönemini derledik:
         <strong>{OSYM_BRANCH_PLACEMENTS.length} uzmanlık dalı kaydı</strong> (2026/2: {OSYM_PERIOD_COUNTS['2026/2']} dal,
-        2026/1: {OSYM_PERIOD_COUNTS['2026/1']} dal, 2025/2: {OSYM_PERIOD_COUNTS['2025/2']} dal), makro kontenjan eğilimleri ve
-        resmî başvuru sayıları.
+        2026/1: {OSYM_PERIOD_COUNTS['2026/1']} dal, 2025/2: {OSYM_PERIOD_COUNTS['2025/2']} dal).
+        Toplam kontenjanlar ve resmî başvuru sayıları da aşağıda.
       </p>
 
       <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
@@ -123,25 +123,25 @@ const BRANCH_ALIASES: Record<string, string> = {
   <!-- 1 · Key Macro Indicators -->
   <section class="bg-white border-b border-line py-8 sm:py-10" aria-labelledby="macro-stats-heading">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
-      <h2 id="macro-stats-heading" class="sr-only">ÖSYM TUS 2025–2026 temel makro göstergeleri</h2>
+      <h2 id="macro-stats-heading" class="sr-only">ÖSYM TUS 2025–2026 özet sayıları</h2>
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
-          <div class="text-xs font-semibold text-inkMuted">KTBT Başvuru Büyümesi (1,5 Yıl)</div>
+          <div class="text-xs font-semibold text-inkMuted">KTBT başvurusu (1,5 yılda)</div>
           <div class="display text-2xl sm:text-3xl text-teal mt-1 tabular-nums">+%19,9</div>
           <p class="text-xs text-inkMuted mt-1 tabular-nums">30.945 (2025/1) → 37.109 (2026/2)</p>
         </div>
         <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
-          <div class="text-xs font-semibold text-inkMuted">İlk Yerleştirme Kontenjanı</div>
+          <div class="text-xs font-semibold text-inkMuted">İlk yerleştirme kontenjanı</div>
           <div class="display text-2xl sm:text-3xl text-ink mt-1 tabular-nums">-%17,3</div>
           <p class="text-xs text-inkMuted mt-1 tabular-nums">10.439 (2025/2) → 8.637 (2026/2)</p>
         </div>
         <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
-          <div class="text-xs font-semibold text-inkMuted">2026/2 İlk Yerleştirme Doluluğu</div>
+          <div class="text-xs font-semibold text-inkMuted">2026/2 ilk yerleştirme doluluğu</div>
           <div class="display text-2xl sm:text-3xl text-teal mt-1 tabular-nums">%88,3</div>
           <p class="text-xs text-inkMuted mt-1 tabular-nums">7.625 yerleşen / 8.637 kontenjan</p>
         </div>
         <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
-          <div class="text-xs font-semibold text-inkMuted">2026/2 Ek Yerleştirme Kontenjanı</div>
+          <div class="text-xs font-semibold text-inkMuted">2026/2 ek yerleştirme kontenjanı</div>
           <div class="display text-2xl sm:text-3xl text-ink mt-1 tabular-nums">1.442</div>
           <p class="text-xs text-inkMuted mt-1 tabular-nums">788 program (1.287 Genel · 155 YU)</p>
         </div>
@@ -155,18 +155,18 @@ const BRANCH_ALIASES: Record<string, string> = {
       <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div class="max-w-2xl">
           <h2 id="branch-table-heading" class="display text-section tracking-tightest text-ink">
-            Uzmanlık Dalı Bazlı Genel Kontenjan Taban–Tavan Puanları
+            Hangi uzmanlık dalı kaç puanla kapattı?
           </h2>
           <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-            Aşağıdaki tabloda <strong>2026/2</strong>, <strong>2026/1</strong> ve <strong>2025/2</strong> ilk yerleştirme dönemlerine ait
-            tüm Genel Kontenjan branş özetleri eksiksiz yer alır. Dönem seçip uzmanlık dalı arayarak karşılaştırabilirsin.
+            Tabloda <strong>2026/2</strong>, <strong>2026/1</strong> ve <strong>2025/2</strong> ilk yerleştirmelerindeki
+            bütün Genel Kontenjan dallarının en küçük ve en büyük puanı var. Dönemi seç, dalın adını yaz, karşılaştır.
           </p>
         </div>
         <a
           href="/puan-hesapla/"
           class="inline-flex items-center justify-center min-h-[2.75rem] px-5 rounded-lg bg-teal text-white text-xs sm:text-sm font-semibold hover:bg-tealDark transition shrink-0"
         >
-          Netinle TUS Puanını Hesapla →
+          Netinle TUS puanını hesapla →
         </a>
       </div>
 
@@ -224,12 +224,12 @@ const BRANCH_ALIASES: Record<string, string> = {
               id="osym-sort"
               class="w-full min-h-[2.75rem] rounded-xl border border-line bg-white px-3 text-sm text-ink"
             >
-              <option value="default">Dönem + En Küçük Puan</option>
-              <option value="min-desc">En Küçük Puan (Yüksek → Düşük)</option>
-              <option value="max-desc">En Büyük Puan (Yüksek → Düşük)</option>
-              <option value="quota-desc">Kontenjan (Çok → Az)</option>
-              <option value="fill-desc">Doluluk Oranı (Yüksek → Düşük)</option>
-              <option value="alpha">Branş Adı (A → Z)</option>
+              <option value="default">Dönem ve en küçük puan</option>
+              <option value="min-desc">En küçük puan (yüksekten düşüğe)</option>
+              <option value="max-desc">En büyük puan (yüksekten düşüğe)</option>
+              <option value="quota-desc">Kontenjan (çoktan aza)</option>
+              <option value="fill-desc">Doluluk oranı (yüksekten düşüğe)</option>
+              <option value="alpha">Branş adı (A’dan Z’ye)</option>
             </select>
           </div>
         </div>
@@ -247,19 +247,19 @@ const BRANCH_ALIASES: Record<string, string> = {
       >
         <table class="w-full text-left border-collapse text-sm">
           <caption id="osym-branch-caption" class="sr-only">
-            ÖSYM 2026/2, 2026/1 ve 2025/2 TUS Genel Kontenjan uzmanlık dalı min-max puan, kontenjan, yerleşen, boş ve doluluk tablosu
+            ÖSYM 2026/2, 2026/1 ve 2025/2 TUS Genel Kontenjan uzmanlık dallarının en küçük ve en büyük puanı, kontenjanı, yerleşeni, boş kadrosu ve doluluğu
           </caption>
           <thead>
             <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
               <th scope="col" class="py-3.5 px-4">Dönem</th>
-              <th scope="col" class="py-3.5 px-4">Uzmanlık Dalı (Genel Kontenjan)</th>
+              <th scope="col" class="py-3.5 px-4">Uzmanlık dalı (Genel Kontenjan)</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Program</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Kontenjan</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Yerleşen</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Boş</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Doluluk</th>
-              <th scope="col" class="py-3.5 px-4 tabular-nums">En Küçük Puan</th>
-              <th scope="col" class="py-3.5 px-4 tabular-nums">En Büyük Puan</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">En küçük puan</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">En büyük puan</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-lineLight tabular-nums" data-osym-tbody>
@@ -288,7 +288,7 @@ const BRANCH_ALIASES: Record<string, string> = {
             ))}
             <tr data-osym-empty hidden>
               <td colspan="9" class="py-8 px-4 text-center text-sm text-inkMuted">
-                Aradığın ölçütle eşleşen uzmanlık dalı bulunamadı. Dönem filtresini veya arama terimini değiştir.
+                Aradığın uzmanlık dalını bulamadık. Dönem filtresini veya arama kelimesini değiştir.
               </td>
             </tr>
           </tbody>
@@ -297,21 +297,21 @@ const BRANCH_ALIASES: Record<string, string> = {
 
       <!-- Methodology & Honest Boundaries Footnote -->
       <div class="rounded-2xl border border-line bg-surfaceSoft p-5 sm:p-6 space-y-2.5 text-xs sm:text-sm text-inkMuted leading-relaxed">
-        <h3 class="display text-base text-ink">Veri kapsamı ve önemli notlar</h3>
+        <h3 class="display text-base text-ink">Tabloyu okurken bilmen gerekenler</h3>
         <p>
-          <strong class="text-ink">Genel Kontenjan branş aralıkları:</strong> Tablodaki En Küçük ve En Büyük Puanlar,
-          her uzmanlık dalındaki tüm <em>Genel Kontenjan</em> programlarının en düşük ve en yüksek yerleştirme puanlarını gösterir;
-          hastane ve şehir bazlı kurum taban puanları bu aralık içinde değişir. Yabancı Uyruklu (YU) kadroları ayrı değerlendirilir.
+          <strong class="text-ink">Puan aralığı ne anlatıyor?</strong> En küçük ve en büyük puan, o daldaki bütün
+          <em>Genel Kontenjan</em> programlarının en düşük ve en yüksek yerleştirme puanıdır.
+          Hastanenin ve şehrin taban puanı bu aralığın içinde değişir. Yabancı Uyruklu (YU) kadrolar ayrı değerlendirilir.
         </p>
         <p>
-          <strong class="text-ink">%100 üstü doluluk açıklaması:</strong> 2026/1 (Göz %100,3, Plastik Cerrahi %100,5, Tıbbi Mikrobiyoloji %101,3)
-          ve 2025/2 (Göz %100,3, Plastik Cerrahi %100,6) dönemlerinde doluluğun %100’ü aşması ÖSYM’nin taban puanda eşit puanlı adayları
-          birlikte yerleştirmesinden kaynaklanır.
+          <strong class="text-ink">Doluluk neden %100’ü geçebiliyor?</strong> ÖSYM taban puanda eşit puanlı adayları birlikte yerleştirir.
+          2026/1’de (Göz %100,3, Plastik Cerrahi %100,5, Tıbbi Mikrobiyoloji %101,3) ve 2025/2’de (Göz %100,3, Plastik Cerrahi %100,6)
+          doluluk bu yüzden %100’ü geçti.
         </p>
         <p>
-          <strong class="text-ink">Tercih robotu sınırı:</strong> TusAnkiM şu anda bir <strong>TUS tercih robotu veya kurum bazlı tercih simülasyonu sunmaz</strong>
-          (TUS Tercih Simülasyonu geliştirme aşamasındadır — <em>Yakında</em>). Kesin tercih listesi için ÖSYM’nin resmî kılavuz ve
-          kurum bazlı PDF tabloları esas alınmalıdır.
+          <strong class="text-ink">Tercih robotu var mı?</strong> Henüz yok. TusAnkiM’de şu anda <strong>TUS tercih robotu veya kurum bazlı tercih simülasyonu bulunmuyor</strong>;
+          TUS Tercih Simülasyonu üzerinde çalışıyoruz. Kesin tercih listen için ÖSYM’nin resmî kılavuzunu ve
+          kurum bazlı PDF tablolarını esas al.
         </p>
       </div>
     </div>
@@ -319,11 +319,12 @@ const BRANCH_ALIASES: Record<string, string> = {
     <!-- 3 · Macro Placement & Ek Yerleştirme Table -->
     <div class="pt-8 border-t border-line space-y-4">
       <h2 class="display text-section tracking-tightest text-ink">
-        2025/1 – 2026/2 Makro Yerleştirme ve Ek Yerleştirme Özeti
+        Toplam kontenjan ve doluluk nasıl değişti?
       </h2>
       <p class="text-sm text-inkMuted max-w-3xl leading-relaxed">
-        Son dört dönemde ilk yerleştirme kontenjanları 10.439’dan 8.637’ye gerilerken ilk yerleştirme doluluğu %88,3’e yükselmiştir.
-        2026/2 ek yerleştirme tercihleri 20 Kasım 2026’da 1.442 kadro için açılmıştır (sonuçlar açıklanmadığından yerleşen kolonu beklemededir).
+        Son dört dönemde ilk yerleştirme kontenjanı 10.439’dan 8.637’ye indi, ilk yerleştirme doluluğu %88,3’e çıktı.
+        2026/2 ek yerleştirme tercihleri 20 Kasım 2026’da 1.442 kadro için açıldı; sonuçlar açıklanmadığı için yerleşen sütununda “Beklemede” yazıyor.
+        Son sütunda K kontenjanı, Y yerleşeni, B boş kalanı gösterir; parantezdeki yüzde Genel Kontenjan doluluğudur.
       </p>
 
       <div
@@ -334,18 +335,18 @@ const BRANCH_ALIASES: Record<string, string> = {
       >
         <table class="w-full text-left border-collapse text-sm">
           <caption id="osym-macro-caption" class="sr-only">
-            ÖSYM 2025/1–2026/2 TUS yerleştirme ve ek yerleştirme toplam kontenjan, yerleşen, boş ve doluluk tablosu
+            ÖSYM 2025/1–2026/2 TUS yerleştirme ve ek yerleştirmelerinde toplam kontenjan, yerleşen, boş kadro ve doluluk
           </caption>
           <thead>
             <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
-              <th scope="col" class="py-3.5 px-4">Dönem / İşlem</th>
-              <th scope="col" class="py-3.5 px-4">Duyuru Tarihi</th>
+              <th scope="col" class="py-3.5 px-4">Dönem / işlem</th>
+              <th scope="col" class="py-3.5 px-4">Duyuru tarihi</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Program</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Kontenjan</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Yerleşen</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Boş</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Doluluk</th>
-              <th scope="col" class="py-3.5 px-4">Genel / YU Özeti</th>
+              <th scope="col" class="py-3.5 px-4">Genel / YU özeti</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-lineLight tabular-nums">
@@ -369,11 +370,11 @@ const BRANCH_ALIASES: Record<string, string> = {
     <!-- 4 · Official Applicant Growth & Uzmanlık Dalı Değişikliği -->
     <div class="pt-8 border-t border-line space-y-4">
       <h2 class="display text-section tracking-tightest text-ink">
-        Resmî Başvuru Artışı ve Uzmanlık Dalı Değişikliği Sayıları
+        Kaç kişi başvurdu, kaç kişi yerleşti?
       </h2>
       <p class="text-sm text-inkMuted max-w-3xl leading-relaxed">
-        ÖSYM 2025 Faaliyet Raporu ve 2026 sınav günü resmî açıklamalarına göre KTBT başvuruları 1,5 yılda 30.945’ten 37.109’a (+%19,9) çıkmıştır.
-        Ek yerleştirme sonrası kalan boş kadrolar Uzmanlık Dalı Değişikliği ile ayrıca açılmaktadır.
+        KTBT (Klinik Tıp Bilimleri Testi) başvuruları 1,5 yılda 30.945’ten 37.109’a çıktı (+%19,9). Sayılar ÖSYM 2025 Faaliyet Raporu’ndan ve
+        2026 sınav günü yapılan resmî açıklamalardan. Ek yerleştirmeden sonra boş kalan kadrolar Uzmanlık Dalı Değişikliği ile ayrıca açılır.
       </p>
 
       <div
@@ -384,17 +385,17 @@ const BRANCH_ALIASES: Record<string, string> = {
       >
         <table class="w-full text-left border-collapse text-sm">
           <caption id="osym-applicants-caption" class="sr-only">
-            2025/1–2026/2 TUS TTBT ve KTBT resmî başvuran sayıları, ilk/ek yerleşenler ve Uzmanlık Dalı Değişikliği tablosu
+            2025/1–2026/2 TUS TTBT ve KTBT resmî başvuru sayıları, ilk ve ek yerleştirmede yerleşenler ve Uzmanlık Dalı Değişikliği
           </caption>
           <thead>
             <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
               <th scope="col" class="py-3.5 px-4">Dönem</th>
-              <th scope="col" class="py-3.5 px-4 tabular-nums">TTBT Başvuru</th>
-              <th scope="col" class="py-3.5 px-4 tabular-nums">KTBT Başvuru</th>
-              <th scope="col" class="py-3.5 px-4 tabular-nums">İlk Yerleşen</th>
-              <th scope="col" class="py-3.5 px-4 tabular-nums">Ek Yerleşen</th>
-              <th scope="col" class="py-3.5 px-4 tabular-nums">Dal Değişikliği (Y / K)</th>
-              <th scope="col" class="py-3.5 px-4 tabular-nums">Toplam Yerleşen</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">TTBT başvuru</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">KTBT başvuru</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">İlk yerleşen</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Ek yerleşen</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Dal değişikliği (Y / K)</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Toplam yerleşen</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-lineLight tabular-nums">
@@ -421,36 +422,36 @@ const BRANCH_ALIASES: Record<string, string> = {
     <!-- 5 · Actionable Study Bridge + Sources -->
     <div class="grid md:grid-cols-2 gap-6 pt-8 border-t border-line">
       <div class="rounded-2xl border border-line bg-tint p-6 space-y-3">
-        <h2 class="display text-lg text-ink">Hedef Puanını Planlı Tekrara Dönüştür</h2>
+        <h2 class="display text-lg text-ink">Hedef puanına nasıl çalışırsın?</h2>
         <p class="text-sm text-inkMuted leading-relaxed">
-          Kontenjanlar daralıp başvuru sayısı 37.109’a çıkarken 60–65+ puan bandını korumak için pasif okuma yerine
-          FSRS-6 aralıklı tekrar ve 9.575 kartlık bitirilebilir çekirdek (günde 60 yeni kartla 160 günde tamamlanır) kullanabilirsin.
-          Her üç erişim segmentinde de seçili demo sorularına doğrudan erişim vardır.
+          Kontenjan daralıyor, başvuru 37.109’a çıktı. 60–65 ve üstü puanda kalmak için okumakla yetinme;
+          FSRS-6 aralıklı tekrarı deneyebilirsin. 9.575 kartlık arşiv günde 60 yeni kartla 160 günde biter.
+          Seçili demo soruları üç seçenekte de açık.
         </p>
         <div class="flex flex-wrap gap-3 pt-1">
           <a
             href="/puan-hesapla/"
             class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg bg-teal text-white text-xs font-semibold hover:bg-tealDark transition"
           >
-            TUS Puan Hesaplayıcı →
+            TUS puan hesaplayıcı →
           </a>
           <a
             href="/referanslar/"
             class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
           >
-            1.195 Soru Referans Kanıtı →
+            1.195 soru referans kanıtı →
           </a>
           <a
             href="/yardim/kronometre/"
             class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
           >
-            TUS Kronometre &amp; Takvim →
+            TUS kronometresi ve takvim →
           </a>
         </div>
       </div>
 
       <div class="rounded-2xl border border-line bg-white p-6 space-y-2.5">
-        <h2 class="display text-lg text-ink">Resmî Kaynaklar</h2>
+        <h2 class="display text-lg text-ink">Resmî kaynaklar</h2>
         <ul class="space-y-1 text-sm">
           <li>
             <a
@@ -484,7 +485,7 @@ const BRANCH_ALIASES: Record<string, string> = {
           </li>
         </ul>
         <p class="text-xs text-inkMuted pt-2 border-t border-lineLight">
-          {SITE.disclaimer} ÖSYM ile resmî bağ yoktur.
+          {SITE.disclaimer} ÖSYM ile resmî bir bağımız yok.
         </p>
       </div>
     </div>

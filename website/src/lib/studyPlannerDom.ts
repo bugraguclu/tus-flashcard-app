@@ -70,7 +70,7 @@ export function renderChartSvg(refs: ChartDomRefs, res: PlannerResult): ChartGeo
   if (refs.chartTitle) {
     refs.chartTitle.textContent = isMin
       ? 'Günlük çalışma süresi (dakika · yeni + tekrar)'
-      : 'Günlük kart yükü (yeni + tekrar)';
+      : 'Günlük kart sayısı (yeni + tekrar)';
   }
   if (refs.chartLegendMega) refs.chartLegendMega.hidden = !res.input.showMega;
   if (refs.chartSmoothNote) refs.chartSmoothNote.hidden = res.input.studyDaysPerWeek === 7;
@@ -154,7 +154,7 @@ export function renderChartSvg(refs: ChartDomRefs, res: PlannerResult): ChartGeo
     const scopeName = scopeDisplayLabel(res.input.scope, res.activeCourses.length);
     refs.chartSvg.setAttribute(
       'aria-label',
-      `${res.input.days} gün boyunca ${scopeName} için günlük FSRS-6 ${isMin ? 'süre' : 'kart'} eğrisi. Ortalama ${formatTrInt(res.target.avgCards)} kart (${formatDurationTr(res.target.avgMinutes)}), tepe ${formatTrInt(res.target.peakCards)} kart (${res.target.peakDay}. gün).`,
+      `${res.input.days} gün boyunca ${scopeName} için günlük FSRS-6 ${isMin ? 'süre' : 'kart'} eğrisi. Ortalama ${formatTrInt(res.target.avgCards)} kart (${formatDurationTr(res.target.avgMinutes)}), en yoğun gün ${formatTrInt(res.target.peakCards)} kart (${res.target.peakDay}. gün).`,
     );
   }
 
@@ -269,7 +269,7 @@ export function renderRoadmapTableDom(
       tdStatus.textContent = `${item.activeDays} aktif gün`;
     } else {
       tdStatus.className += ' text-gradeAgain';
-      tdStatus.textContent = 'Sınavı aşar';
+      tdStatus.textContent = 'Sınava yetişmez';
     }
 
     tr.append(tdCourse, tdCards, tdDays, tdSupport, tdStatus);

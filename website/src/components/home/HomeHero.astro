@@ -5,7 +5,7 @@ import { SITE } from '../../config';
 import { num } from '../../lib/format';
 
 const cards = num(catalog.totals.cards);
-const trust = ['Güncel beta ücretsiz, kart bilgisi gerekmez', 'Hesap açmadan çalışır', 'İnternet olmadan da çalışır'];
+const trust = ['Beta ücretsiz, kart bilgisi istemiyoruz', 'Hesap açmadan başlarsın', 'İnternet yokken de çalışır'];
 ---
 <section class="home-product-hero border-b border-line" aria-labelledby="hero-title">
   <div class="hero-layout max-w-content mx-auto px-5 sm:px-6 lg:px-10">
@@ -13,11 +13,11 @@ const trust = ['Güncel beta ücretsiz, kart bilgisi gerekmez', 'Hesap açmadan 
       <div>
         <p class="kicker">TUS için aralıklı tekrar</p>
         <h1 id="hero-title" class="hero-title display tracking-tightest text-ink mt-4">
-          {cards} TUS kartıyla <em>planlı tekrar</em>
+          {cards} TUS kartı. <em>Unutmadan önce tekrar</em>
         </h1>
         <p data-speakable class="mt-5 text-base sm:text-lg text-inkMuted leading-relaxed max-w-xl">
-          Çıkmış sınavlardan süzülen kartları <span lang="en" class="whitespace-nowrap">FSRS-6</span> ile çalış.
-          Bugün hangi kartları tekrar edeceğini TusAnkiM hesaplar.
+          Bugün hangi kartı tekrar edeceğini sen düşünme. TusAnkiM cevaplarına bakar,
+          <span lang="en" class="whitespace-nowrap">FSRS-6</span> ile hesaplar. Kartların son 6 TUS’taki karşılığını da soru soru gösteriyoruz.
         </p>
 
         <div class="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -52,7 +52,7 @@ const trust = ['Güncel beta ücretsiz, kart bilgisi gerekmez', 'Hesap açmadan 
           <AppScreenshot screen="answer" loading="eager" fetchpriority="high" />
         </div>
       </div>
-      <figcaption>TusAnkiM web uygulamasından, örnek koleksiyonla.</figcaption>
+      <figcaption>Ekranlar web uygulamasından; içindekiler örnek kartlar.</figcaption>
     </figure>
   </div>
 </section>

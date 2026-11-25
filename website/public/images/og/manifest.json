@@ -1,19 +1,19 @@
 {
   "/images/og/home.png": {
-    "title": "TUS tekrarını günlük bir alışkanlığa dönüştür.",
-    "sha256": "ddeabc1222b20d4adf7a146516cfd6a7f466f4ea8e7e20aa34ef30d9639814fd"
+    "title": "9.575 TUS kartı. Unutmadan önce tekrar",
+    "sha256": "72065d5510bbef9370d9a94ce5722300556a8d6d548c5eaf59cc230b867822ef"
   },
   "/images/og/referanslar.png": {
     "title": "TUS referansları",
     "sha256": "84991311fd10e11e7d29407d464e231b0fd07b7d907258d19b0d7e5e087609e4"
   },
   "/images/og/puan-hesapla.png": {
-    "title": "TUS puan hesaplayıcı",
-    "sha256": "caa2977d7d5205820c360c7fbc45c83c4520ed8db651d53d9617aa7377d070da"
+    "title": "TUS puan ve hedef net hesaplayıcı",
+    "sha256": "2da46d9cb6c23ace2c64154eeafb7171c13fad0f915b5c9b390fb168a7f1fc49"
   },
   "/images/og/tus-calisma-rehberi.png": {
-    "title": "TUS çalışma rehberi 2027 plan ve FSRS-6",
-    "sha256": "a4c40e31d60dd3e7e6a6b4c891ef826a2550e63c16ee519f23c359254441ef6f"
+    "title": "TUS çalışma rehberi: plan, 11 branş ve FSRS-6",
+    "sha256": "7d59f5f763c0d83879dec9059280b94196b54891d1fa5079e3423a22ffef92ba"
   },
   "/images/og/calisma-plani.png": {
     "title": "TUS çalışma planı ve tempo hesaplayıcı",
@@ -32,20 +32,20 @@
     "sha256": "8f08e20939536fe90a3387dcd679a9b97d4ee7c891eba974790af98779259137"
   },
   "/images/og/ozellikler.png": {
-    "title": "TusAnkiM özellikleri",
-    "sha256": "df8de48f756226cdfa78119976a7da93ad8e7bfa77aa58b50fae483036317a09"
+    "title": "TusAnkiM neler yapar?",
+    "sha256": "dbb1750a734df76553d88a3201597fd2ee687ce6d9b8446c0400cd5368278d38"
   },
   "/images/og/fiyatlar.png": {
-    "title": "Fiyatlar ve erişim",
-    "sha256": "1fdf59d1591a84bcf456ec144a9195bbc9890f4582a5e141b0abc6b346babf49"
+    "title": "Şimdi ücretsiz. Sonrası için üç seçenek",
+    "sha256": "6ec077ba554acd51ad3ceae47b0febc0a045dcc9f1a2eb881d1e7551f7380fa5"
   },
   "/images/og/hakkimizda.png": {
     "title": "Neden TusAnkiM’i kurduk?",
     "sha256": "16ccac59fe9884e9d4b1b524787aa730b7ad369a7658541ceb4e0f77b1786283"
   },
   "/images/og/destek.png": {
-    "title": "Destek ve iletişim",
-    "sha256": "72ce26999fe6090c74e3678f65c032fb6e5360c46f98a664b5a4f45a1337b20e"
+    "title": "Nasıl yardımcı olabiliriz?",
+    "sha256": "bc91f199f85af094a280fe70aec4897d739c42c5cd5ff6b9c4cc40afeeaff9e6"
   },
   "/images/og/gizlilik.png": {
     "title": "Gizlilik politikası ve KVKK",
@@ -56,24 +56,24 @@
     "sha256": "4af63b43491ae2b4af146e2eb121906d9912dbf1587b12d3ad761a0da5665116"
   },
   "/images/og/rehber.png": {
-    "title": "TUS rehber yazıları",
-    "sha256": "f76a2dfbd99b53b187a1f344576ab88064d1cf94d5167b7375f951808241a9e8"
+    "title": "TUS yazıları",
+    "sha256": "ed5a1ca79ab56499be049a9017466efedd2a0d04161c534cf4ce4bb79a0dd925"
   },
   "/images/og/tus-cikmis-sorular-ve-analiz.png": {
-    "title": "TUS çıkmış sorular ve dağılım analizi",
-    "sha256": "8e718cdc965d8cb5ae420728efd7e394e5f3445b7e3a08a6ed35bc2e8f1450e1"
+    "title": "TUS çıkmış sorular: hangi branştan kaç soru çıktı?",
+    "sha256": "e2c9583cbb1facc5f676b78079ac853f13486d6e1a936ef334f5b395e3325929"
   },
   "/images/og/tus-taban-puanlari-ve-kontenjan.png": {
-    "title": "TUS taban puanları ve kontenjanlar",
-    "sha256": "7c4e9bb52024ff9ba2f1156f7c88d39efabcee627f8d81cda1b247b22e0a09ad"
+    "title": "2025–2026 TUS taban puanları ve kontenjanlar",
+    "sha256": "58497f5bb6231acfbbc2e4398c437116f28e626bbc98c08891c3d6c18e878dec"
   },
   "/images/og/tus-spot-bilgiler.png": {
-    "title": "TUS spot bilgiler ve aktif tekrar",
-    "sha256": "47ba2b839ddb859ecd5af907a85e557fe26d3610c75829fbfcd28830fe4db4c3"
+    "title": "TUS spot bilgiler nasıl kalıcı çalışılır?",
+    "sha256": "437294815e699cd1ea8044bcc2368ee08b3846f8c744df246e51ee6b6b8b258a"
   },
   "/images/og/tus-icin-ankimobile-alternatifi.png": {
-    "title": "TUS için AnkiMobile alternatifi",
-    "sha256": "fa01d891d89f420ad08b02f4b8e7ef5688de4b17af5043d2db312203fe0d9b60"
+    "title": "TUS için iPhone’da AnkiMobile alternatifi var mı?",
+    "sha256": "5e14b0efbf018e99327d4f1e4f6e06df6f4bb02fa8a50e4fc5f17499cacf0ca0"
   },
   "/images/og/yardim/tusankim-nedir.png": {
     "title": "TusAnkiM nedir?",
@@ -204,35 +204,35 @@
     "sha256": "c0ec1c6c95ccad970d3d897bee8f0080d16e52a367091db07d119ba92aed229d"
   },
   "/images/og/rehber/tusta-kac-kart-calisilmali.png": {
-    "title": "TUS'ta Kaç Kart Çalışılmalı? Mega Deste Kıyası",
-    "sha256": "3d6cb6c17ac35fd826c5834ef9e8c949eccf288f7bfbbe52f7eb591594974297"
+    "title": "TUS’ta kaç kart çalışılmalı? Mega deste kıyası",
+    "sha256": "7d4627eae96741fa4548c5359fd7d055d26f858c9378e471288a3822be9c9123"
   },
   "/images/og/rehber/tus-icin-fsrs-6-nedir.png": {
-    "title": "TUS İçin FSRS-6 Nedir? SM-2 İle Farkı",
-    "sha256": "6cfb54875160282a5d533d8eb563c428b9ec77de435a8cc121a50bb98afd906e"
+    "title": "TUS için FSRS-6 nedir? SM-2’den farkı",
+    "sha256": "4c8eb08ae922f17168853e931c204c6b1ae46f3445d3c7874c5cf7a8c1518bff"
   },
   "/images/og/rehber/tus-icin-anki-uyumlu-sistem.png": {
-    "title": "TUS İçin Anki Uyumlu Sistem: .apkg & FSRS-6",
-    "sha256": "3f2f56ded628169e1cef9c32dbcf23d8d53fe2c97795c67f4c385d806da72148"
+    "title": "TUS için Anki uyumlu sistem nasıl kullanılır?",
+    "sha256": "bc2ab2a3f7c840c78fadb578079e1f785cefff70eaabfbaa768f589fde484d0f"
   },
   "/images/og/rehber/tus-puani-nasil-hesaplanir.png": {
-    "title": "TUS Puanı Nasıl Hesaplanır? %5 Kesinti Kuralı",
-    "sha256": "3c8eb579040d363b33124ddb09408fed88d2b9dc8479b4f7f56a371a189559b6"
+    "title": "TUS puanı nasıl hesaplanır? %5 kesinti kuralı",
+    "sha256": "b69a82809e8b6e5622e7b8859743eb636eedd3c6cc33f288ca4ae2daf14bfb52"
   },
   "/images/og/rehber/2027-tus-tarihleri-ve-calisma-plani.png": {
-    "title": "2027 TUS Tarihleri & Kalan Gün Çalışma Planı",
-    "sha256": "f35cb81154a15d9078f0e0626e0fd6de71847955b0660fd2fbcef4800d654921"
+    "title": "2027 TUS tarihleri ve kalan güne göre plan",
+    "sha256": "9b7aaff43c4135d05b8c763b2580da2d278964856a53ac2d600445927cd9b843"
   },
   "/images/og/rehber/tus-calisirken-dogru-bilinen-7-yanlis.png": {
-    "title": "TUS Çalışırken Doğru Bilinen 7 Yanlış",
-    "sha256": "930a1dc474acae7e1d0ac4ee77bdb6904c882482e0168663733d20cd76258453"
+    "title": "TUS çalışırken doğru bilinen 7 yanlış",
+    "sha256": "087f0dbca888e2c44cd2e3dde4c1ce7ee6d46bfa4b30eedc72c66b15936c097e"
   },
   "/images/og/rehber/tusankim-ucretsiz-mi-nasil-kullanilir.png": {
-    "title": "TusAnkiM Ücretsiz Mi? Fiyat ve Erişim Modeli",
-    "sha256": "ec260b5c44e5129eefe25aeb1a4d469732c6f4b82a8871c9bb9de441e016cbed"
+    "title": "TusAnkiM ücretsiz mi? Fiyatlar ve kullanım",
+    "sha256": "b38fca50b3a4cb6af8c376e19dba4fdc0d3b3aa237eddde2d3bb0a354ab4c988"
   },
   "/images/og/rehber/5-sinif-intorn-son-1-ay-tus-programi.png": {
-    "title": "5. Sınıf, İntörn ve Son 1 Ay TUS Programı",
-    "sha256": "bc26c29f9196f8853f3b9d036ff83089886ebed28b269a39b94ab563128ae541"
+    "title": "5. sınıf, intörn ve son 1 ay TUS programı",
+    "sha256": "6c96f9884ec7fabf52e26f324642c5f5d38f340b848a5ed40fdef3ec2e465b13"
   }
 }

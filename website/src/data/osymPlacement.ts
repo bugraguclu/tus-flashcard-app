@@ -69,7 +69,7 @@ export const OSYM_MACRO_PLACEMENTS: OsymMacroPlacement[] = [
     "totalPlaced": null,
     "totalEmpty": null,
     "fillRate": null,
-    "genelSummary": "Genel: 1.287 · YU: 155 (ilk yerleştirmeden +429 kayıt dışı/feragat; sonuç beklemede)",
+    "genelSummary": "Genel: 1.287 · YU: 155 (429’u ilk yerleştirmede kayıt yaptırmayan veya vazgeçenlerden; sonuç bekleniyor)",
     "sourceUrl": "https://www.osym.gov.tr/SinavGrubu/Index/6"
   },
   {
@@ -177,7 +177,7 @@ export const OSYM_APPLICANTS_AND_TRANSFERS: OsymApplicantTransfer[] = [
     "ekPlaced": null,
     "dalDegisikligiQuota": null,
     "dalDegisikligiPlaced": null,
-    "totalPlacedLabel": "7.625+ (1.442 ek kontenjan beklemede)"
+    "totalPlacedLabel": "7.625 (1.442 kişilik ek yerleştirme bekleniyor)"
   }
 ];
 

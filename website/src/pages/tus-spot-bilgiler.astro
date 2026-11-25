@@ -17,9 +17,9 @@ const crumbs = breadcrumbList(origin, [
 
 const colSchema = collectionPage(origin, {
   path: '/tus-spot-bilgiler',
-  name: 'TUS Spot Bilgiler ve Aktif Hatırlama Kart Havuzu | TusAnkiM',
+  name: 'TUS spot bilgiler ve aktif tekrar kartları | TusAnkiM',
   description:
-    '12 ders ve 106 alt destede 9.575 TUS kartı, 11 branştan etkileşimli örnek spot önizlemesi ve FSRS-6 aktif hatırlama yaklaşımı.',
+    '12 ders ve 106 alt destede 9.575 TUS kartı, 11 branştan denenebilir örnek spot kartı ve FSRS-6 ile aktif tekrar.',
   items: demoCards.map((c, idx) => ({
     name: `${c.ders}: ${c.olculenBilgi}`,
     path: `/tus-spot-bilgiler#spot-${idx + 1}`,
@@ -33,8 +33,8 @@ const temelCount = demoCards.filter((c) => c.test === 'Temel').length;
 const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
 ---
 <Layout
-  title="TUS Spot Bilgiler ve Aktif Tekrar Kartları | TusAnkiM"
-  description="Pasif PDF spot listeleri yerine FSRS-6 aktif hatırlama: 12 ders ve 106 alt destede 9.575 TUS kartı, 11 canlı demo spot kartı ve doğrudan demo erişimi."
+  title="TUS spot bilgiler: kartla aktif tekrar | TusAnkiM"
+  description="TUS spot bilgileri okumak yerine kartla kendini sına: 11 örnek spot kartını hemen dene, 12 ders ve 106 alt destede 9.575 TUS kartının dağılımını gör."
   modifiedTime={modDate}
   schema={[crumbs, colSchema]}
 >
@@ -55,12 +55,13 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
       </nav>
 
       <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
-        TUS Spot Bilgiler: Pasif Listeler Yerine FSRS-6 Aktif Hatırlama
+        TUS spot bilgiler nasıl kalıcı çalışılır?
       </h1>
       <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
-        <strong>{fmtInt(catalog.totals.cards)} kart</strong>, <strong>{fmtInt(catalog.totals.notes)} not</strong>,
-        <strong>{catalog.totals.courses} ders</strong> ve <strong>{catalog.totals.topicSubdecks} konu alt destesi</strong> içinden
-        2026/2 sınav öncesi sürümde (<code>a78ae1f</code>) yer alan 11 örnek yüksek verimli spot kartını hemen aşağıda test edebilirsin.
+        Spot bilgiyi listeden okumak yerine kartla kendine sor; cevabı önce aklından getirmek zorunda kalırsın. Aşağıda 11 örnek spot kartı var, hemen deneyebilirsin.
+        Kartlar <strong>{fmtInt(catalog.totals.cards)} kart</strong>, <strong>{fmtInt(catalog.totals.notes)} not</strong>,
+        <strong>{catalog.totals.courses} ders</strong> ve <strong>{catalog.totals.topicSubdecks} konu alt destesi</strong> içeren arşivin
+        2026/2 sınavı öncesindeki sürümünden (<code>a78ae1f</code>) seçildi.
       </p>
 
       <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
@@ -82,34 +83,34 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
       <div class="max-w-2xl">
         <h2 id="why-active-heading" class="display text-section tracking-tightest text-ink">
-          Pasif Spot Okuma Neden Sınavda Yeterli Kalmaz?
+          Spot listesi okumak neden yetmez?
         </h2>
         <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-          PDF spot listelerini veya kanal akışlarını baştan sona okumak kısa süreli tanıdıklık hissi oluşturur ama sınavdaki ipuçsuz hatırlamayı ölçmez.
+          PDF spot listesini ya da kanal paylaşımlarını baştan sona okuyunca bilgi tanıdık gelir. Sınav ise ipucu vermeden hatırlamanı ister; okumak bunu ölçmez.
         </p>
       </div>
 
       <div class="mt-6 grid md:grid-cols-3 gap-5">
         <div class="rounded-2xl border border-line bg-surfaceSoft p-5 space-y-2">
-          <div class="text-xs font-bold text-teal">01 · İpuçsuz Geri Çağırma</div>
-          <h3 class="display text-base text-ink">Cevabı Gizle, Önce Zihninden Getir</h3>
+          <div class="text-xs font-bold text-teal">01 · İpucu olmadan hatırlama</div>
+          <h3 class="display text-base text-ink">Cevabı gizle, önce kendin hatırla</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
-            Boşluk doldurma (cloze) spot kartları kritik ayrımı — örneğin ilk tetkik, özgül antikor veya anatomik seviye — gizleyerek aktif test yapar.
+            Boşluk doldurma kartı kritik ayrımı gizler; örneğin ilk tetkiki, özgül antikoru ya da anatomik seviyeyi. Önce sen yanıtlarsın, sonra kontrol edersin.
           </p>
         </div>
         <div class="rounded-2xl border border-line bg-surfaceSoft p-5 space-y-2">
-          <div class="text-xs font-bold text-teal">02 · FSRS-6 ile %20–30 Daha Az Tekrar</div>
-          <h3 class="display text-base text-ink">Unutmak Üzereyken Karşına Çıkar</h3>
+          <div class="text-xs font-bold text-teal">02 · FSRS-6 ile %20–30 daha az tekrar</div>
+          <h3 class="display text-base text-ink">Unutmak üzereyken karşına çıkar</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
-            İyi bildiğin spotları haftalarca erteleyip karıştırdıklarını sıklaştırır. Günde 60 yeni kartla 9.575 kart 160 günde tamamlanır.
+            İyi bildiğin spotları haftalarca erteler, karıştırdıklarını daha sık sorar. Günde 60 yeni kartla 9.575 kart 160 günde biter.
           </p>
         </div>
         <div class="rounded-2xl border border-line bg-surfaceSoft p-5 space-y-2">
-          <div class="text-xs font-bold text-teal">03 · Her Segmentte Seçili Demo</div>
-          <h3 class="display text-base text-ink">Kurulumdan Önce veya Uygulamada Dene</h3>
+          <div class="text-xs font-bold text-teal">03 · Her seçenekte demo soruları</div>
+          <h3 class="display text-base text-ink">Kurmadan önce ya da uygulamada dene</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
-            Ücretsiz (ara ara reklam), Tüm Kartlara Erişim (<strong>₺2.000</strong>) ve Reklamları Kaldırma (<strong>₺50</strong>)
-            segmentlerinin tamamında seçili demo sorularına doğrudan erişim vardır. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır.
+            Seçili demo soruları üç seçenekte de açık: ücretsiz kullanım (ara ara reklam), tüm kartlar (<strong>₺2.000</strong>) ve
+            reklamları kaldırma (<strong>₺50</strong>). Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır.
           </p>
         </div>
       </div>
@@ -122,14 +123,14 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
       <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
         <div class="max-w-2xl">
           <h2 id="spots-preview-heading" class="display text-section tracking-tightest text-ink">
-            11 Branştan Etkileşimli Spot Örnekleri
+            11 branştan örnek spot kartları
           </h2>
           <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-            Aşağıdaki 11 kartın tamamı kendi hazırladığımız ders kartlarıdır (telifli ÖSYM soru metni veya şıkkı içermez).
-            Önce boşluğu zihninden yanıtla, sonra “Cevabı Göster” ile kontrol et.
+            11 kartın hepsini biz hazırladık; telifli ÖSYM soru metni veya şıkkı içermez.
+            Önce boşluğu aklından yanıtla, sonra “Cevabı Göster” ile kontrol et.
           </p>
         </div>
-        <div class="flex flex-wrap gap-2" role="group" aria-label="Spot dersi bölümü filtresi">
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Temel veya Klinik kartları filtrele">
           <button
             type="button"
             data-spot-filter="all"
@@ -234,13 +235,13 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
     <div class="pt-8 border-t border-line space-y-4">
       <div class="max-w-3xl">
         <h2 class="display text-section tracking-tightest text-ink">
-          12 Ders ve 106 Alt Destede 9.575 Kart Dağılımı
+          9.575 kart derslere nasıl dağılıyor?
         </h2>
         <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-          Katalogda <strong>{fmtInt(catalog.totals.temelCards)} Temel</strong>, <strong>{fmtInt(catalog.totals.klinikCards)} Klinik</strong> ve
-          <strong>{fmtInt(catalog.totals.karmaCards)} Karma</strong> (<em>Deneme ve Soru</em>) olmak üzere toplam <strong>12 ders</strong> yer alır.
-          ÖSYM referans analizinde ise <em>Deneme ve Soru</em> karma destesi hariç <strong>11 resmî ÖSYM TUS branşı</strong> raporlanır
-          (katalogdaki FHE = Fizyoloji-Histoloji-Embriyoloji).
+          Katalogda <strong>12 ders</strong> var: <strong>{fmtInt(catalog.totals.temelCards)} Temel</strong>, <strong>{fmtInt(catalog.totals.klinikCards)} Klinik</strong> ve
+          <strong>{fmtInt(catalog.totals.karmaCards)} Karma</strong> (<em>Deneme ve Soru</em>) kart.
+          ÖSYM referans analizi karma <em>Deneme ve Soru</em> destesini saymaz, <strong>11 resmî ÖSYM TUS branşı</strong> üzerinden yapılır.
+          Katalogdaki FHE; Fizyoloji, Histoloji ve Embriyoloji demektir.
         </p>
       </div>
 
@@ -252,16 +253,16 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
       >
         <table class="w-full text-left border-collapse text-sm">
           <caption id="catalog-spot-caption" class="sr-only">
-            BKA TUS 9.575 kart kataloğunun 12 ders, 7.721 not ve 106 alt deste dağılım tablosu
+            BKA TUS kataloğundaki 9.575 kartın 12 derse, 7.721 nota ve 106 alt desteye dağılımı
           </caption>
           <thead>
             <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
-              <th scope="col" class="py-3.5 px-4">Ders (Katalog)</th>
+              <th scope="col" class="py-3.5 px-4">Ders</th>
               <th scope="col" class="py-3.5 px-4">Grup</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Kart</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Not</th>
-              <th scope="col" class="py-3.5 px-4 tabular-nums">Alt Deste</th>
-              <th scope="col" class="py-3.5 px-4">Öne Çıkan Yüksek Verimli Alt Konular</th>
+              <th scope="col" class="py-3.5 px-4 tabular-nums">Alt deste</th>
+              <th scope="col" class="py-3.5 px-4">En çok kartı olan alt konular</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-lineLight tabular-nums">
@@ -287,11 +288,11 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
     <!-- 4 · Direct Demo Access Across All 3 Segments + Cross-Links -->
     <div class="rounded-2xl border border-line bg-tint p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
       <div class="max-w-2xl space-y-2">
-        <h2 class="display text-lg text-ink">Seçili Demo Sorularına Her Segmentte Doğrudan Erişim</h2>
+        <h2 class="display text-lg text-ink">Demo soruları hangi seçenekte açık?</h2>
         <p class="text-sm text-inkMuted leading-relaxed">
-          TusAnkiM’in erişim modeli: ücretsiz kullanım (ara ara reklam), tüm 9.575 karta <strong>₺2.000</strong> ile erişim
-          veya <strong>₺50</strong> ile reklamları kaldırma. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır. Her üç segmentte de seçili demo sorularını doğrudan çözebilir, kişisel
-          <code>.apkg</code>/<code>.colpkg</code> destelerini çevrimdışı çalışabilirsin.
+          Üçünde de. Seçenekler şöyle: ücretsiz kullanım (ara ara reklam), <strong>₺2.000</strong> ile 9.575 kartın tamamı
+          veya <strong>₺50</strong> ile reklamları kaldırma. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır.
+          Kendi <code>.apkg</code>/<code>.colpkg</code> destelerinle de internetsiz çalışırsın.
         </p>
         <p class="text-xs text-inkMuted">{SITE.disclaimer}</p>
       </div>
@@ -300,25 +301,25 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
           href="/#demo"
           class="inline-flex items-center min-h-[2.75rem] px-5 rounded-lg bg-teal text-white text-xs sm:text-sm font-semibold hover:bg-tealDark transition"
         >
-          FSRS-6 Canlı Kart Denemesi →
+          FSRS-6 ile kart dene →
         </a>
         <a
           href="/referanslar/"
           class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
         >
-          1.195 Referans Kanıtı →
+          1.195 referans kanıtı →
         </a>
         <a
           href="/yardim/kronometre/"
           class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
         >
-          TUS Kronometre &amp; Takvim →
+          TUS kronometresi ve takvim →
         </a>
         <a
           href="/tus-cikmis-sorular-ve-analiz/"
           class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
         >
-          Çıkmış Soru Dağılımı →
+          Çıkmış soru dağılımı →
         </a>
       </div>
     </div>

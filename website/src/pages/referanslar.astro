@@ -15,7 +15,7 @@ const pageSchema = {
   '@type': 'Dataset',
   name: 'TusAnkiM Son 6 TUS Referans Analizi (2024/1–2026/2)',
   description:
-    '2024/1–2026/2 TUS için Doğrudan, Dolaylı ve Konu Kapsamı ayrı gösterilen yapay zekâ destekli ön değerlendirme; bağımsız hekim editör onayı tamamlanmamıştır.',
+    'Son 6 TUS’un (2024/1–2026/2) 1.195 sorusu için Doğrudan, Dolaylı ve Konu Kapsamı ayrı ayrı. Yapay zekâ destekli ön değerlendirme; bağımsız hekim editör onayı henüz tamamlanmadı.',
   inLanguage: 'tr-TR',
   url: origin + '/referanslar/',
   temporalCoverage: '2024/2026',
@@ -30,7 +30,7 @@ const pageSchema = {
 ---
 <Layout
   title="TUS Referansları | TusAnkiM"
-  description="Son 6 TUS için 1.195 referans kaydını incele: doğrudan ve dolaylı çözüm desteği, ayrı konu kapsamı ve 2026/2 sınav öncesi katalog karşılaştırması."
+  description="TUS referansları: son 6 sınavın 1.195 sorusunu kartlarla karşılaştırdık. Doğrudan, Dolaylı ve Konu Kapsamı ayrı; 2026/2 için sınav öncesi sürüm de var."
   schema={[crumbs, pageSchema]}
 >
   <section class="page-intro bg-surface border-b border-line py-10 sm:py-14">
@@ -46,11 +46,11 @@ const pageSchema = {
         TUS referansları
       </h1>
       <p class="text-inkMuted mt-3 max-w-3xl leading-relaxed">
-        1.195 sorunun kartlarla ilişkisini ders ve sınav bazında incele. <strong>Doğrudan</strong>, <strong>Dolaylı</strong> ve <strong>Konu Kapsamı</strong> ayrı gösterilir. Soru metinleri ve şıklar yayımlanmaz.
+        Son 6 TUS’ta çıkan 1.195 soruyu kartlarımızla karşılaştırdık. Hangi soruda kartın çözüme götürdüğünü derse ve sınava göre arayabilirsin. <strong>Doğrudan</strong>, <strong>Dolaylı</strong> ve <strong>Konu Kapsamı</strong> ayrı sayılır. Soru metni ve şık yayımlamıyoruz.
       </p>
 
       <div class="mt-3 flex flex-wrap gap-x-6 gap-y-1">
-        <a href="/data/references.json" download class="text-link">Referans verilerini JSON olarak indir</a>
+        <a href="/data/references.json" download class="text-link">Verinin tamamını indir (JSON)</a>
         <a href="/tus-calisma-rehberi/#brans-stratejisi" class="text-link">11 branş çalışma stratejisini oku →</a>
       </div>
 
@@ -68,24 +68,24 @@ const pageSchema = {
           <div class="display text-2xl text-ink mt-1 tabular-nums">
             {refSummary.overall.konuKapsami.toLocaleString('tr-TR')} / 1.195 <span class="text-base text-teal">(%{String(refSummary.overall.konuKapsamiOran).replace('.', ',')})</span>
           </div>
-          <div class="text-sm text-inkMuted mt-0.5">2026/2 TUS'ta 192/200 (%96,0)</div>
+          <div class="text-sm text-inkMuted mt-0.5">2026/2 TUS’ta 192/200 (%96,0)</div>
         </div>
         <div class="reference-stat">
-          <div class="text-sm font-semibold text-inkMuted">2026/2 sınav öncesi sürüm</div>
+          <div class="text-sm font-semibold text-inkMuted">2026/2, sınavdan önceki sürüm</div>
           <div class="display text-2xl text-gradeGood mt-1 tabular-nums">
             {refSummary.preExam2026_2.preExamEvet} / 200 <span class="text-base">(%38,0)</span>
           </div>
-          <div class="text-sm text-inkMuted mt-0.5">Git <code>{refSummary.preExam2026_2.commit}</code> · {refSummary.preExam2026_2.date}</div>
+          <div class="text-sm text-inkMuted mt-0.5">Sürüm <code>{refSummary.preExam2026_2.commit}</code> · {refSummary.preExam2026_2.date}</div>
         </div>
         <div class="reference-stat">
-          <div class="text-sm font-semibold text-inkMuted">2026/2 güncel katalog</div>
+          <div class="text-sm font-semibold text-inkMuted">2026/2, güncel sürüm</div>
           <div class="display text-2xl text-ink mt-1 tabular-nums">
             {refSummary.preExam2026_2.supportedCurrent} / 200 <span class="text-base text-teal">(%41,0)</span>
           </div>
-          <div class="text-sm text-inkMuted mt-0.5">{refSummary.preExam2026_2.preExamKismen + refSummary.preExam2026_2.preExamHayir} kart sınav sonrası güncellendi</div>
+          <div class="text-sm text-inkMuted mt-0.5">{refSummary.preExam2026_2.preExamKismen + refSummary.preExam2026_2.preExamHayir} soruda kart sınavdan sonra güncellendi</div>
         </div>
       </div>
-      <p class="mt-6 text-sm text-inkMuted leading-relaxed">Kayıtlar yapay zekâ destekli ön değerlendirmedir. Bağımsız hekim editör onayı tamamlanmamıştır.</p>
+      <p class="mt-6 text-sm text-inkMuted leading-relaxed">Bu sınıflandırma yapay zekâ destekli bir ön değerlendirme. Bağımsız hekim editör onayı henüz tamamlanmadı.</p>
     </div>
   </section>
 
@@ -106,19 +106,19 @@ const pageSchema = {
           <select id="ref-ders"><option value="">Tüm dersler</option>{refSummary.dersler.map((subject) => <option value={subject}>{subject}</option>)}</select>
         </div>
         <div>
-          <label for="ref-rozet">Eşleşme türü</label>
+          <label for="ref-rozet">Kart desteği</label>
           <select id="ref-rozet">
-            <option value="">Tüm eşleşmeler</option>
-            <option value="DESTEK">Çözüm desteği: doğrudan ve dolaylı</option>
+            <option value="">Hepsi</option>
+            <option value="DESTEK">Çözüm desteği (Doğrudan + Dolaylı)</option>
             <option value="DOGRUDAN">Doğrudan ({refSummary.overall.dogrudan})</option>
             <option value="DOLAYLI">Dolaylı ({refSummary.overall.dolayli})</option>
-            <option value="KONU">Yalnız konu ilişkili (587)</option>
-            <option value="YOK">Referans yok (87)</option>
+            <option value="KONU">Yalnız konu (587)</option>
+            <option value="YOK">Kart yok (87)</option>
           </select>
         </div>
       </div>
       <div class="ref-filter-bottom">
-        <div class="ref-pre-filter"><input id="ref-pre" type="checkbox" /><label for="ref-pre">Yalnız 2026/2 sınav öncesi katalogda bulunanlar</label></div>
+        <div class="ref-pre-filter"><input id="ref-pre" type="checkbox" /><label for="ref-pre">Yalnız 2026/2 sınavından önce destede olanlar</label></div>
         <button id="ref-reset" type="button" hidden class="text-link">Filtreleri temizle</button>
       </div>
     </search>
@@ -127,7 +127,7 @@ const pageSchema = {
       <p id="ref-load-status" role="status">Örnek kayıtlar aşağıda. Tüm kayıtlar yükleniyor.</p>
       <button id="ref-retry" type="button" hidden class="button-secondary">Yeniden dene</button>
     </div>
-    <noscript><p class="ref-no-script">Aşağıda sınav öncesi katalogdan 24 doğrudan eşleşme var. Tüm kayıtlarda arama ve filtreleme için JavaScript gerekir.</p></noscript>
+    <noscript><p class="ref-no-script">Aşağıda 24 Doğrudan kayıt var; hepsi sınavdan önce de destedeydi. Bütün kayıtlarda aramak ve filtrelemek için JavaScript gerekir.</p></noscript>
 
     <div class="ref-results-heading"><h2>Referans kayıtları</h2><p id="ref-status" aria-live="polite">24 örnek kayıt</p></div>
     <div id="ref-list" aria-busy="false">
@@ -136,11 +136,11 @@ const pageSchema = {
           <div class="ref-row-top"><p class="ref-row-meta">{row.sinav} · {row.qid.split('-')[1]} <span>{row.ders}</span></p><span class="ref-badge ref-badge-direct">Doğrudan</span></div>
           <h3>{row.olculenBilgi}</h3>
           {row.kartOzet && <p class="ref-row-summary"><strong>Kart özeti:</strong> {row.kartOzet}</p>}
-          <div class="ref-row-footer"><p>Sınav öncesi katalogda{row.cardId && <span> · {row.cardId}</span>}</p><a href="https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html" target="_blank" rel="noopener noreferrer">ÖSYM arşivi</a></div>
+          <div class="ref-row-footer"><p>Sınavdan önce destede vardı{row.cardId && <span> · {row.cardId}</span>}</p></div>
         </article>
       ))}
     </div>
-    <div id="ref-empty" hidden class="ref-empty"><p>Bu filtrelerle eşleşen kayıt yok.</p><p>Aramanı kısaltabilir veya filtreleri temizleyebilirsin.</p></div>
+    <div id="ref-empty" hidden class="ref-empty"><p>Bu filtrelerle eşleşen kayıt yok.</p><p>Aramayı kısalt ya da filtreleri temizle.</p></div>
     <button id="ref-more" type="button" hidden class="button-secondary ref-more">Daha fazla kayıt göster</button>
 
     <!-- Transparent disclosure: 6 post-exam edited 2026/2 notes + Methodology -->
@@ -148,17 +148,17 @@ const pageSchema = {
       <div class="min-w-0">
         <div class="section-num">2026/2 TUS</div>
         <h2 class="display text-lg text-ink mt-2">
-          Sınav sonrası güncellenen 6 kayıt
+          Sınavdan sonra güncellediğimiz 6 kayıt
         </h2>
         <p class="text-sm text-inkMuted mt-2 leading-relaxed">
-          23 Ağustos 2026 TUS'u için güncel katalogda 82 soru desteklidir; ancak sınavdan 2 gün önceki sürümde (<code>git a78ae1f</code>, 21 Ağustos 2026)
-          aşağıdaki 6 kaydın bilgisi kısmen vardı veya sonradan eklendi. Sınav öncesi çözüm desteği bu nedenle <strong>76/200 (%38,0)</strong>; güncel katalogdaki destek <strong>82/200 (%41,0)</strong>.
+          23 Ağustos 2026 TUS’unda kartların güncel sürümü 82 soruda çözüm desteği veriyor. Ama aşağıdaki 6 sorunun bilgisi sınavdan 2 gün önceki sürümde (<code>git a78ae1f</code>, 21 Ağustos 2026)
+          ya kısmen vardı ya da hiç yoktu, sonradan ekledik. Bu yüzden iki sayıyı ayrı veriyoruz. Sınavdan önceki sürümde çözüm desteği <strong>76/200 (%38,0)</strong>, güncel sürümde <strong>82/200 (%41,0)</strong>.
         </p>
         <ul class="mt-4 space-y-2 text-sm text-ink">
           {refSummary.preExam2026_2.postExamEdited.map((item) => (
             <li class="border-b border-lineLight py-3 flex flex-wrap items-start justify-between gap-3">
               <span>
-                <strong>{item.qid}</strong> ({item.ders}) — {item.olculenBilgi}
+                <strong>{item.qid}</strong> ({item.ders}): {item.olculenBilgi}
               </span>
               <span class="shrink-0 rounded-lg bg-gradeHardBg px-2 py-0.5 text-xs font-bold text-gradeHard">
                 {item.sinavOncesiSurumde === 'kismen' ? 'Kısmen vardı' : 'Sonradan eklendi'}
@@ -169,8 +169,8 @@ const pageSchema = {
       </div>
 
       <div class="min-w-0">
-        <div class="section-num">Değerlendirme yöntemi</div>
-        <h2 class="display text-lg text-ink mt-2">Eşleşmeler ne anlama geliyor?</h2>
+        <div class="section-num">Yöntem</div>
+        <h2 class="display text-lg text-ink mt-2">Doğrudan, Dolaylı ve yalnız konu ne demek?</h2>
         <dl class="mt-4 space-y-3 text-sm">
           <div>
             <dt class="font-bold text-gradeGood">Doğrudan (333 / 1.195)</dt>
@@ -178,15 +178,19 @@ const pageSchema = {
           </div>
           <div>
             <dt class="font-bold text-warm">Dolaylı (188 / 1.195)</dt>
-            <dd class="text-inkMuted mt-0.5">Kart doğru bilgiye götürür ancak tek küçük terim/klinik köprüsü gerekir; eksik adım satırda açıkça yazılır.</dd>
+            <dd class="text-inkMuted mt-0.5">Kart doğru bilgiye götürür ama arada küçük bir adım kalır (bir terim ya da klinik bağlantı). Eksik adımı kaydın içinde yazıyoruz.</dd>
           </div>
           <div>
-            <dt class="font-bold text-ink">Yalnız Konu İlişkili (587 / 1.195)</dt>
-            <dd class="text-inkMuted mt-0.5">Konuya dair kart vardır ancak sorudaki şıkları ayıran spesifik bilgi eksiktir. Hiçbir çözüm oranına katılmaz; yalnızca ayrı "Konu Kapsamı" ölçüsünde (%92,7) gösterilir.</dd>
+            <dt class="font-bold text-ink">Yalnız konu (587 / 1.195)</dt>
+            <dd class="text-inkMuted mt-0.5">Konunun kartı var ama şıkları ayıran bilgi eksik. Bunları çözüm desteğine saymıyoruz; yalnızca ayrı tuttuğumuz Konu Kapsamı ölçüsüne (%92,7) girer.</dd>
+          </div>
+          <div>
+            <dt class="font-bold text-ink">Kart yok (87 / 1.195)</dt>
+            <dd class="text-inkMuted mt-0.5">Soruyla ilgili kart bulunamadı. Hiçbir orana girmez.</dd>
           </div>
         </dl>
         <p class="mt-4 pt-4 border-t border-line text-sm text-inkMuted leading-relaxed">
-          Değerlendirme 26 Ekim 2026 tarihli katalog (<code>{refSummary.katalogCommit}</code>) üzerinde yapılan yapay zekâ destekli ön sınıflamadır; bağımsız hekim/editör onay süreci devam etmektedir. 2024/1–2026/1 sonuçları güncel kataloğun bu soruları karşılama oranını gösterir.
+          Sınıflandırmayı kartların 26 Ekim 2026 sürümü (<code>{refSummary.katalogCommit}</code>) üzerinde yaptık. Yapay zekâ destekli bir ön değerlendirmedir; bağımsız hekim editör onayı henüz tamamlanmadı. 2024/1–2026/1 sonuçları kartların bugünkü hâlinin o soruları ne kadar karşıladığını gösterir, sınav günündeki hâlini değil.
         </p>
       </div>
     </div>
@@ -219,12 +223,11 @@ const pageSchema = {
   if (root) {
     const pageSize = 30;
     const expectedCount = Number(root.dataset.refTotal);
-    const archiveUrl = 'https://www.osym.gov.tr/TR,15070/tus-cikmis-sorular.html';
     const badges = {
       DOGRUDAN: { label: 'Doğrudan', className: 'ref-badge-direct' },
       DOLAYLI: { label: 'Dolaylı', className: 'ref-badge-indirect' },
       KONU: { label: 'Yalnız konu', className: 'ref-badge-topic' },
-      YOK: { label: 'Referans yok', className: 'ref-badge-none' },
+      YOK: { label: 'Kart yok', className: 'ref-badge-none' },
     };
     let allRows: SearchRow[] = [];
     let filtered: SearchRow[] = [];
@@ -250,15 +253,15 @@ const pageSchema = {
 
     function renderRow(row: RefRow) {
       const meta = badges[row.rozet];
-      const timing = row.sinavOncesiSurumde === 'evet' ? 'Sınav öncesi katalogda'
-        : row.sinavOncesiSurumde === 'kismen' ? 'Sınav sonrası düzenlendi; öncesinde kısmen vardı'
-        : row.sinavOncesiSurumde === 'hayir' ? 'Sınav sonrası eklendi' : '';
+      const timing = row.sinavOncesiSurumde === 'evet' ? 'Sınavdan önce destede vardı'
+        : row.sinavOncesiSurumde === 'kismen' ? 'Sınavdan sonra düzenlendi; önce kısmen vardı'
+        : row.sinavOncesiSurumde === 'hayir' ? 'Sınavdan sonra eklendi' : '';
       return `<article class="reference-row">
         <div class="ref-row-top"><p class="ref-row-meta">${escape(row.sinav)} · ${escape(row.qid.split('-')[1])} <span>${escape(row.ders)}</span></p><span class="ref-badge ${meta.className}">${meta.label}</span></div>
         <h3>${escape(row.olculenBilgi)}</h3>
         ${row.eksikAdim ? `<p class="ref-row-bridge"><strong>Eksik adım:</strong> ${escape(row.eksikAdim)}</p>` : ''}
         ${row.kartOzet ? `<p class="ref-row-summary"><strong>Kart özeti:</strong> ${escape(row.kartOzet)}</p>` : ''}
-        <div class="ref-row-footer"><p>${escape(timing)}${row.cardId ? `${timing ? ' · ' : ''}${escape(row.cardId)}` : ''}</p><a href="${archiveUrl}" target="_blank" rel="noopener noreferrer">ÖSYM arşivi</a></div>
+        <div class="ref-row-footer"><p>${escape(timing)}${row.cardId ? `${timing ? ' · ' : ''}${escape(row.cardId)}` : ''}</p></div>
       </article>`;
     }
 

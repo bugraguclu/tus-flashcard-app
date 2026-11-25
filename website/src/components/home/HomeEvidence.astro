@@ -17,9 +17,9 @@ const branches = ref.bySubject
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
       <div class="max-w-2xl">
         <p class="kicker">Açık veri</p>
-        <h2 id="evidence-heading" class="display text-section tracking-tightest text-ink mt-3">Kartların çıkmış sorulara karşılığı</h2>
+        <h2 id="evidence-heading" class="display text-section tracking-tightest text-ink mt-3">Bu kartlar çıkmış soruların kaçını çözdürüyor?</h2>
         <p class="text-inkMuted mt-3 leading-relaxed">
-          Soruyu doğrudan çözdüren kartları, dolaylı kartlardan ve yalnızca konu kapsamından ayrı sayıyoruz; eksik dersleri de gösteriyoruz.
+          Üç şeyi ayrı sayıyoruz: soruyu doğrudan çözdüren kart, dolaylı yardım eden kart ve yalnızca konusu destede olan soru. Zayıf kaldığımız dersleri de saklamıyoruz.
         </p>
       </div>
       <a href="/referanslar/" class="shrink-0 inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark">{num(o.soru)} soruyu incele →</a>
@@ -45,7 +45,7 @@ const branches = ref.bySubject
       </div>
 
       <div class="kpi">
-        <dt>Son 6 TUS çözüm desteği</dt>
+        <dt>Son 6 TUS’ta çözüm desteği</dt>
         <dd class="kpi-value">{o.destek} / {num(o.soru)}</dd>
         <dd class="kpi-note">{pct(o.destekOran)} · {o.dogrudan} doğrudan, {o.dolayli} dolaylı</dd>
         <dd class="mt-auto pt-1">
@@ -61,7 +61,7 @@ const branches = ref.bySubject
       <div class="kpi">
         <dt>Konu kapsamı</dt>
         <dd class="kpi-value">{pct(o.konuKapsamiOran)}</dd>
-        <dd class="kpi-note">{num(o.konuKapsami)} / {num(o.soru)} sorunun konusu destede var</dd>
+        <dd class="kpi-note">{num(o.konuKapsami)} / {num(o.soru)} sorunun konusu destede geçiyor</dd>
         <dd class="mt-auto pt-1">
           <div class="meter" role="img" aria-label={`Konu kapsamı ${pct(o.konuKapsamiOran)}`}>
             <span style={`width: ${share(o.konuKapsami, o.soru)}`}></span>
@@ -112,8 +112,8 @@ const branches = ref.bySubject
     </div>
 
     <p class="mt-4 text-xs text-inkMuted leading-relaxed max-w-3xl">
-      Kaynak: son 6 TUS (2024/1–2026/2) ve <code>{ref.katalogCommit}</code> kataloğu. Sınıflandırma yapay zekâ destekli ön değerlendirmedir;
-      bağımsız hekim editör kontrolü sürüyor. ÖSYM soru metni yayımlanmaz.
+      Kaynak: son 6 TUS (2024/1–2026/2) ve <code>{ref.katalogCommit}</code> sürümündeki kartlar. Sınıflandırma yapay zekâ destekli bir ön değerlendirme;
+      bağımsız hekim editör kontrolü henüz bitmedi. ÖSYM soru metni yayımlamıyoruz.
     </p>
   </div>
 </section>

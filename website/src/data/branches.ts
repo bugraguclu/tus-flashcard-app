@@ -88,10 +88,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Anatomi',
     catalogCourseId: 'bka-anatomi',
     group: 'Temel Bilimler',
-    seoTitle: 'Anatomi TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Anatomi TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 78 Anatomi sorusu için 22/78 (%28,2) çözüm desteği, 72/78 (%92,3) konu kapsamı ve 477 kartlık BKA Anatomi destesi analizi.',
-    strongAreas: 'Geçen yapılar ve sınır listeleri, alt ekstremite ve beyin sapı arterleri kartları yüksek doğrulukta.',
+      'Anatomi TUS çıkmış soruları: son 6 sınavda 78 soru, 477 kartlık deste. Çözüm desteği 22/78 (%28,2), Konu Kapsamı 72/78 (%92,3). Ön değerlendirmedir.',
+    strongAreas: 'Geçen yapılar ve sınır listeleri, alt ekstremite ve beyin sapı arterleri kartları soruları iyi karşılıyor.',
     priorityGaps:
       'GİS anatomisi (bursa omentalis, omentumlar, vertebra düzeyleri), ürogenital boşluklar, periferik sinir hasar tabloları ve perine boşlukları.',
     examAllocation: {
@@ -106,10 +106,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Fizyoloji-Histoloji-Embriyoloji',
     catalogCourseId: 'bka-fhe',
     group: 'Temel Bilimler',
-    seoTitle: 'Fizyoloji-Histoloji-Embriyoloji TUS Analizi | TusAnkiM',
+    seoTitle: 'Fizyoloji-Histoloji-Embriyoloji TUS analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 90 FHE sorusu için 35/90 (%38,9) çözüm desteği, 87/90 (%96,7) konu kapsamı ve katalogdaki 597 kartlık FHE destesi analizi.',
-    strongAreas: 'Göz ve retina histolojisi, deri ve bağ dokusu ile gametogenez kartları güçlü çözüm desteği veriyor.',
+      'FHE TUS çıkmış soruları: son 6 sınavda 90 soru, 597 kartlık deste. Çözüm desteği 35/90 (%38,9), Konu Kapsamı 87/90 (%96,7). Ön değerlendirmedir.',
+    strongAreas: 'Göz ve retina histolojisi, deri ve bağ dokusu ile gametogenez kartları çözüme iyi destek veriyor.',
     priorityGaps:
       'Starling kuvvetleri ve ödem mekanizmaları, böbrek medullası ve GFR, otonom etki tablosu, elektrofizyoloji ile epitel/GİS ve üriner histolojisi.',
     examAllocation: {
@@ -124,10 +124,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Biyokimya',
     catalogCourseId: 'bka-biyokimya',
     group: 'Temel Bilimler',
-    seoTitle: 'Biyokimya TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Biyokimya TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 109 Biyokimya sorusu için 61/109 (%56,0) çözüm desteği, 101/109 (%92,7) konu kapsamı ve 602 kartlık Biyokimya destesi analizi.',
-    strongAreas: 'Nükleotid yolları, üre döngüsü ve kalıtsal metabolik hastalık–enzim eşleşmeleri yüksek isabet oranına sahip.',
+      'Biyokimya TUS çıkmış soruları: son 6 sınavda 109 soru, 602 kartlık deste. Çözüm desteği 61/109 (%56,0), Konu Kapsamı 101/109 (%92,7). Ön değerlendirmedir.',
+    strongAreas: 'Nükleotid yolları, üre döngüsü ve kalıtsal metabolik hastalık–enzim eşleşmesi kartları soruları sık karşılıyor.',
     priorityGaps:
       'Preanalitik laboratuvar hataları (EDTA, NaF, tüp kapak renkleri, ışık), fosforilasyonla enzim düzenlenmesi ve organ laboratuvar yorumları.',
     examAllocation: {
@@ -142,10 +142,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Mikrobiyoloji',
     catalogCourseId: 'bka-mikrobiyoloji',
     group: 'Temel Bilimler',
-    seoTitle: 'Mikrobiyoloji TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Mikrobiyoloji TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 108 Mikrobiyoloji sorusu için 60/108 (%55,6) çözüm desteği, 105/108 (%97,2) konu kapsamı ve 730 kartlık Mikrobiyoloji destesi analizi.',
-    strongAreas: 'Parazitoloji (10/12), mikoloji (9/13) ve temel viroloji sınıflama kartları yüksek doğrudan çözüm sağlıyor.',
+      'Mikrobiyoloji TUS çıkmış soruları: son 6 sınavda 108 soru, 730 kartlık deste. Çözüm desteği 60/108 (%55,6), Konu Kapsamı 105/108 (%97,2). Ön değerlendirmedir.',
+    strongAreas: 'Parazitoloji (10/12), mikoloji (9/13) ve temel viroloji sınıflama kartları çoğu soruda Doğrudan çözüm veriyor.',
     priorityGaps:
       'Genel mikrobiyoloji kuralları (kan kültürü saklama, eküvyon seçimi, besiyeri sınıflaması, biyogüvenlik düzeyleri, FMT) ve klinik ipucundan etkene giden ayırt edici kartlar.',
     examAllocation: {
@@ -160,10 +160,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Patoloji',
     catalogCourseId: 'bka-patoloji',
     group: 'Temel Bilimler',
-    seoTitle: 'Patoloji TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Patoloji TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 107 Patoloji sorusu için 51/107 (%47,7) çözüm desteği, 100/107 (%93,5) konu kapsamı ve 724 kartlık Patoloji destesi analizi.',
-    strongAreas: 'Testis germ hücreli tümörleri, glomerül hastalıkları ve lenfoma translokasyon kartları doğrudan çözüm sunuyor.',
+      'Patoloji TUS çıkmış soruları: son 6 sınavda 107 soru, 724 kartlık deste. Çözüm desteği 51/107 (%47,7), Konu Kapsamı 100/107 (%93,5). Ön değerlendirmedir.',
+    strongAreas: 'Testis germ hücreli tümörleri, glomerül hastalıkları ve lenfoma translokasyon kartları Doğrudan çözüm veriyor.',
     priorityGaps:
       'Genel patoloji (hücre hasarı, onarım, mediyatörler) ve ayırt edici histolojiden tanıya giden karşılaştırma kartları (FNH, aktinik keratoz, ARVC vb.).',
     examAllocation: {
@@ -178,10 +178,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Farmakoloji',
     catalogCourseId: 'bka-farmakoloji',
     group: 'Temel Bilimler',
-    seoTitle: 'Farmakoloji TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Farmakoloji TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 106 Farmakoloji sorusu için 60/106 (%56,6) çözüm desteği, 103/106 (%97,2) konu kapsamı ve 827 kartlık Farmakoloji destesi analizi.',
-    strongAreas: 'Biyolojik ajanlar, mekanizmadan ilaca gidiş ve CYP450 etkileşim kartları son 6 TUS’ta en yüksek çözüm oranına sahip.',
+      'Farmakoloji TUS çıkmış soruları: son 6 sınavda 106 soru, 827 kartlık deste. Çözüm desteği 60/106 (%56,6), Konu Kapsamı 103/106 (%97,2). Ön değerlendirmedir.',
+    strongAreas: 'Son 6 TUS’ta çözüm oranı en yüksek kartlar biyolojik ajanlar, mekanizmadan ilaca gidiş ve CYP450 etkileşimleri.',
     priorityGaps:
       'Bisfosfonatlar, ektoparazitikler, nazal dekonjestanlar, ilaç geliştirme fazları, benzodiazepin farmakokinetiği ve sınıf içi mekanizma/endikasyon karşılaştırmaları.',
     examAllocation: {
@@ -196,10 +196,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Dahiliye',
     catalogCourseId: 'bka-dahiliye',
     group: 'Klinik Bilimler',
-    seoTitle: 'Dahiliye TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Dahiliye TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 143 Dahiliye sorusu için 58/143 (%40,6) çözüm desteği, 130/143 (%90,9) konu kapsamı ve 1.183 kartlık Dahiliye destesi analizi.',
-    strongAreas: 'Romatoloji otoantikorları, endokrin dinamik testleri ve hepatoloji skorlama kartları istikrarlı destek veriyor.',
+      'Dahiliye TUS çıkmış soruları: son 6 sınavda 143 soru, 1.183 kartlık deste. Çözüm desteği 58/143 (%40,6), Konu Kapsamı 130/143 (%90,9). Ön değerlendirmedir.',
+    strongAreas: 'Romatoloji otoantikorları, endokrin dinamik testleri ve hepatoloji skorlama kartları sınavdan sınava düzenli destek veriyor.',
     priorityGaps:
       'Akut kardiyoloji yönetimi (STEMI, sağ ventrikül enfarktüsü), miyelom/MPN prognoz ve hedefe yönelik tedaviler ile tanıdan sonraki ilk tetkik/tedavi adımları.',
     examAllocation: {
@@ -214,10 +214,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Pediatri',
     catalogCourseId: 'bka-pediatri',
     group: 'Klinik Bilimler',
-    seoTitle: 'Pediatri TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Pediatri TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 148 Pediatri sorusu için 77/148 (%52,0) çözüm desteği, 139/148 (%93,9) konu kapsamı ve 1.506 kartlık Pediatri destesi analizi.',
-    strongAreas: 'Pediatrik kardiyoloji (%88), yenidoğan (%80) ve nefroloji (%79) alt desteleri klinik bilimler arasında öne çıkıyor.',
+      'Pediatri TUS çıkmış soruları: son 6 sınavda 148 soru, 1.506 kartlık deste. Çözüm desteği 77/148 (%52,0), Konu Kapsamı 139/148 (%93,9). Ön değerlendirmedir.',
+    strongAreas: 'Pediatrik kardiyoloji (%88), yenidoğan (%80) ve nefroloji (%79) alt desteleri klinik derslerin en iyileri arasında.',
     priorityGaps:
       'Çocuk psikiyatrisi ve DEHB, nadir genetik sendromlar, adölesan jinekolojisi, pediatrik romatoloji ve diyabetik ketoasidoz yönetim ayrıntıları.',
     examAllocation: {
@@ -232,10 +232,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Genel Cerrahi',
     catalogCourseId: 'bka-genel-cerrahi',
     group: 'Klinik Bilimler',
-    seoTitle: 'Genel Cerrahi TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Genel Cerrahi TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 120 Genel Cerrahi sorusu için 38/120 (%31,7) çözüm desteği, 104/120 (%86,7) konu kapsamı ve 742 kartlık Genel Cerrahi destesi analizi.',
-    strongAreas: 'Sınıflama/şema kartları, tiroit cerrahisi ve karın duvarı fıtıkları kartları doğrudan çözüm sunuyor.',
+      'Genel Cerrahi TUS çıkmış soruları: son 6 sınavda 120 soru, 742 kartlık deste. Çözüm desteği 38/120 (%31,7), Konu Kapsamı 104/120 (%86,7). Ön değerlendirmedir.',
+    strongAreas: 'Sınıflama ve şema kartları ile tiroit cerrahisi ve karın duvarı fıtıkları kartları Doğrudan çözüm veriyor.',
     priorityGaps:
       'Abdominal kompartman sendromu, travmaya metabolik yanıt, splenektomi endikasyonları ve komplikasyonları, safra taşı ileusu, SIRS eşikleri ve meme alt başlıkları.',
     examAllocation: {
@@ -250,10 +250,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Kadın Doğum',
     catalogCourseId: 'bka-kadin-dogum',
     group: 'Klinik Bilimler',
-    seoTitle: 'Kadın Doğum TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Kadın Doğum TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 60 Kadın Doğum sorusu için 21/60 (%35,0) çözüm desteği, 58/60 (%96,7) konu kapsamı ve 755 kartlık Kadın Doğum destesi analizi.',
-    strongAreas: 'Prenatal tarama testleri, hormon profilleri ve servikal preinvaziv lezyon yönetimi yüksek konu kapsamı sağlıyor.',
+      'Kadın Doğum TUS çıkmış soruları: son 6 sınavda 60 soru, 755 kartlık deste. Çözüm desteği 21/60 (%35,0), Konu Kapsamı 58/60 (%96,7). Ön değerlendirmedir.',
+    strongAreas: 'Prenatal tarama testleri, hormon profilleri ve servikal preinvaziv lezyon yönetiminde konu kapsamı yüksek.',
     priorityGaps:
       'Kontrasepsiyon yöntemlerinin kontrendikasyon ayrıntıları, doğum eylemi komplikasyonları (operatif doğum, TOLAC, atoni cerrahisi) ve HPV alt tipleri.',
     examAllocation: {
@@ -268,10 +268,10 @@ const BRANCH_META: BranchMeta[] = [
     name: 'Küçük Stajlar',
     catalogCourseId: 'bka-kucuk-stajlar',
     group: 'Klinik Bilimler',
-    seoTitle: 'Küçük Stajlar TUS Çıkmış Soru & Kart Analizi | TusAnkiM',
+    seoTitle: 'Küçük Stajlar TUS çıkmış soru ve kart analizi | TusAnkiM',
     seoDescription:
-      'Son 6 TUS’ta 126 Küçük Stajlar sorusu için 38/126 (%30,2) çözüm desteği, 109/126 (%86,5) konu kapsamı ve 626 kartlık Küçük Stajlar destesi analizi.',
-    strongAreas: 'Epidemiyoloji araştırma tipleri, anestezi farmakolojisi ve klasik “en sık” bilgi kartları güçlü destek veriyor.',
+      'Küçük Stajlar TUS çıkmış soruları: son 6 sınavda 126 soru, 626 kartlık deste. Çözüm desteği 38/126 (%30,2), Konu Kapsamı 109/126 (%86,5). Ön değerlendirmedir.',
+    strongAreas: 'Epidemiyoloji araştırma tipleri, anestezi farmakolojisi ve klasik “en sık” bilgi kartları iyi destek veriyor.',
     priorityGaps:
       'Klinik tablodan tanıya giden sorular: kafa travması hematomları, demans/parkinson-plus ayrımı, psikiyatri tanı ölçütleri, ortopedi isimli tabloları ve dermatoloji tanımları.',
     examAllocation: {

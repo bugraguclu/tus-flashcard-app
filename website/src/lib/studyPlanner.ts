@@ -92,7 +92,7 @@ export const PLANNER_PRESETS: PlannerPreset[] = [
     id: 'stajyer',
     title: 'Stajyer · 4.–5. sınıf',
     horizonLabel: '365 gün',
-    tip: 'Stajına paralel ilerle: haftada 1 mola günüyle düşük günlük yükte kal, son ay yalnız tekrar yap.',
+    tip: 'Stajınla birlikte ilerle. Haftada 1 gün mola ver, günlük kart sayını düşük tut, son ay yalnız tekrar yap.',
     href: '/yardim/fsrs/',
     linkLabel: 'Tekrar takvimi nasıl çalışır?',
     patch: {
@@ -148,7 +148,7 @@ export const PLANNER_PRESETS: PlannerPreset[] = [
     title: 'Son 4 ay',
     horizonLabel: '120 gün',
     examId: '2027-1',
-    tip: 'Yoğun son düzlük: ilk turu son 2 haftadan önce bitir, deneme haftalarında zorlandığın konuları filtrele.',
+    tip: 'Süre dar. İlk turu son 2 haftadan önce bitir, deneme haftalarında zorlandığın konuları filtrele.',
     href: '/yardim/filtrelenmis-deste/',
     linkLabel: 'Zayıf konuya odaklan',
     patch: {
@@ -598,7 +598,7 @@ function classifyVerdict(
       title: `Bu tempoyla sınava kadar ${formatTrInt(target.introduced)} / ${formatTrInt(target.remainingCards)} kart (%${seenPct}) açılır.`,
       detail: canFixPace
         ? `Tüm kartları ${finishDeadlinePhrase} bitirmek için ${cadenceText} en az ${recommendedPace} yeni kart gerekir.`
-        : `Seçili sürede tüm kartlar için günde ${recommendedPace} yeni kart gerekir. Süreyi uzatabilir veya kapsamı daraltabilirsin.`,
+        : `Seçili sürede tüm kartlar için günde ${recommendedPace} yeni kart gerekir. Süreyi uzat ya da daha az ders seç.`,
       fixAction: fallbackFix,
     };
   }
@@ -606,9 +606,9 @@ function classifyVerdict(
   if (input.mode === 'time' && !timeBudgetFits) {
     return {
       tone: 'warn',
-      badge: 'Süre bütçesi dar',
+      badge: 'Ayırdığın süre yetmiyor',
       title: `En düşük ${activePace} yeni kart/gün hızında bile ortalama ${formatDurationTr(target.avgMinutes)} gerekir.`,
-      detail: 'Hedef hatırlamayı %85’e çekerek veya yalnız seçili derslere odaklanarak günlük süreni düşürebilirsin.',
+      detail: 'Hedef hatırlamayı %85’e çekersen ya da daha az ders seçersen günlük süren kısalır.',
       fixAction:
         input.retention !== 85 ? { label: 'Hedef hatırlamayı %85 yap', patch: { retention: 85 } } : undefined,
     };
@@ -618,24 +618,24 @@ function classifyVerdict(
     return {
       tone: 'warn',
       badge: 'Yoğun tempo',
-      title: `İlk tur ${target.finishDay}. günde biter; tepe günde ~${formatDurationTr(target.peakMinutes)} gerekir.`,
+      title: `İlk tur ${target.finishDay}. günde biter; en yoğun günde ~${formatDurationTr(target.peakMinutes)} çalışman gerekir.`,
       detail:
         input.retention > 85
-          ? `Ortalama ${formatDurationTr(target.avgMinutes)}/gün yük oluşur. Süre kısıtlıysa hedef hatırlamayı %85’e indirerek tekrar yükünü ~%20 azaltabilirsin.`
-          : `Yüksek hız nedeniyle tepe yük ${formatTrInt(target.peakCards)} karta çıkar. Deneme haftalarında yeni kartı geçici durdurup yalnız tekrarları bitir.`,
+          ? `Günde ortalama ${formatDurationTr(target.avgMinutes)} çalışırsın. Zamanın darsa hedef hatırlamayı %85’e indir; tekrarların yaklaşık %20 azalır.`
+          : `Bu hızda en yoğun gün ${formatTrInt(target.peakCards)} karta çıkar. Deneme haftalarında yeni kart açmayı durdur, yalnız tekrarları bitir.`,
       fixAction:
-        input.retention > 85 ? { label: 'Yükü hafiflet (%85 hatırlama)', patch: { retention: 85 } } : undefined,
+        input.retention > 85 ? { label: 'Tekrarı azalt (%85 hatırlama)', patch: { retention: 85 } } : undefined,
     };
   }
 
   return {
     tone: 'good',
-    badge: 'Sürdürülebilir tempo',
+    badge: 'Plan sınava yetişiyor',
     title:
       target.reviewOnlyTailDays > 0
         ? `İlk tur ${target.finishDay}. günde biter; son ${target.reviewOnlyTailDays} gün yalnız tekrar ve denemeye kalır.`
         : `Tüm kartlar ${target.finishDay}. günde tamamlanır.`,
-    detail: `Ortalama ${formatTrInt(target.avgCards)} kart/gün (~${formatDurationTr(target.avgMinutes)}). Son günlerde günlük tekrar yükü ${formatTrInt(target.endDayCards)} karta (${formatDurationTr(target.endDayMinutes)}) kadar iner.`,
+    detail: `Günde ortalama ${formatTrInt(target.avgCards)} kart (~${formatDurationTr(target.avgMinutes)}). Son günlerde günlük tekrar sayın ${formatTrInt(target.endDayCards)} karta (${formatDurationTr(target.endDayMinutes)}) kadar iner.`,
   };
 }
 

@@ -39,14 +39,14 @@ const scoreBenchmarks = [
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 space-y-8">
     <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
       <div class="max-w-3xl">
-        <p class="guide-kicker">TUS Kaç Soru? · 11 ÖSYM Branşı</p>
+        <p class="guide-kicker">TUS kaç soru? · 11 ÖSYM branşı</p>
         <h2 id="branches-heading" class="display text-section tracking-tightest text-ink mt-3">
-          11 TUS branşında soru dağılımı, kart hacmi ve çalışma odağı
+          11 TUS branşında kaç soru çıkar, neye odaklanmalı?
         </h2>
         <p class="text-inkMuted mt-3 leading-relaxed">
-          TUS iki oturumda <strong>100 Temel Bilimler (6 ders) + 100 Klinik Bilimler (5 ders)</strong> olmak üzere toplam 200 sorudan oluşur.
-          Aşağıdaki tablo her dersin sınav soru aralığını, BKA TUS çekirdek kart sayısını, son 6 TUS’taki (2024/1–2026/2 · {num(refSummary.overall.soru)} soru)
-          çözüm desteğini ve ders bazlı çalışma odağını tek yerde gösterir.
+          TUS iki oturumda toplam 200 sorudur: <strong>100 Temel Bilimler (6 ders) + 100 Klinik Bilimler (5 ders)</strong>.
+          Tabloda her ders için sınavda kaç soru çıktığını, BKA TUS paketindeki kart sayısını, son 6 TUS’taki (2024/1–2026/2 · {num(refSummary.overall.soru)} soru)
+          çözüm desteğini ve neye odaklanman gerektiğini bulursun.
         </p>
       </div>
       <a href="/referanslar/" class="text-link shrink-0">{num(refSummary.overall.soru)} soruyu tek tek incele →</a>
@@ -54,15 +54,15 @@ const scoreBenchmarks = [
 
     <div class="guide-table-wrap" tabindex="0" role="region" aria-labelledby="branches-heading">
       <table class="guide-table">
-        <caption class="sr-only">11 ÖSYM TUS branşında oturum soru sayısı, BKA kart hacmi, son 6 TUS çözüm desteği, konu kapsamı ve çalışma stratejisi</caption>
+        <caption class="sr-only">11 ÖSYM TUS branşında sınav soru sayısı, BKA kart sayısı, son 6 TUS çözüm desteği, konu kapsamı ve çalışma odağı</caption>
         <thead>
           <tr>
-            <th scope="col">Branş (Grup)</th>
-            <th scope="col">Sınav Sorusu</th>
-            <th scope="col">BKA Kart / Alt Deste</th>
-            <th scope="col">Çözüm Desteği (Son 6 TUS)</th>
+            <th scope="col">Branş (grup)</th>
+            <th scope="col">Sınav sorusu</th>
+            <th scope="col">BKA kart / alt deste</th>
+            <th scope="col">Çözüm desteği (son 6 TUS)</th>
             <th scope="col">Konu Kapsamı</th>
-            <th scope="col">Çalışma Odağı</th>
+            <th scope="col">Çalışma odağı</th>
           </tr>
         </thead>
         <tbody>
@@ -74,16 +74,16 @@ const scoreBenchmarks = [
                 </a>
                 <span class="block text-xs font-normal text-inkMuted mt-0.5">{b.group} · {b.priorityTag}</span>
               </th>
-              <td data-col="Sınav Sorusu" class="tabular-nums whitespace-nowrap">{b.examQuestionsLabel}</td>
-              <td data-col="BKA Kart / Alt Deste" class="tabular-nums whitespace-nowrap">
+              <td data-col="Sınav sorusu" class="tabular-nums whitespace-nowrap">{b.examQuestionsLabel}</td>
+              <td data-col="BKA kart / alt deste" class="tabular-nums whitespace-nowrap">
                 {num(b.cards)} kart · {b.subdecks} alt deste
               </td>
-              <td data-col="Çözüm Desteği (Son 6 TUS)" class="tabular-nums whitespace-nowrap">
+              <td data-col="Çözüm desteği (son 6 TUS)" class="tabular-nums whitespace-nowrap">
                 <strong class="text-ink">{pct(b.destekOran)}</strong>
                 <span class="block text-xs text-inkMuted">{b.dogrudan} doğrudan + {b.dolayli} dolaylı / {b.soru}</span>
               </td>
               <td data-col="Konu Kapsamı" class="tabular-nums whitespace-nowrap">{pct(b.konuKapsamiOran)}</td>
-              <td data-col="Çalışma Odağı" class="guide-col-focus text-inkMuted leading-relaxed">{b.focus}</td>
+              <td data-col="Çalışma odağı" class="guide-col-focus text-inkMuted leading-relaxed">{b.focus}</td>
             </tr>
           ))}
         </tbody>
@@ -92,25 +92,24 @@ const scoreBenchmarks = [
 
     <div class="rounded-2xl border border-line bg-white p-5 sm:p-6 grid lg:grid-cols-12 gap-6 items-start">
       <div class="lg:col-span-7 space-y-2">
-        <h3 class="display text-lg text-ink">Bu tablo çalışma planına nasıl çevrilir?</h3>
+        <h3 class="display text-lg text-ink">Bu tabloyu çalışma planına nasıl çevirirsin?</h3>
         <p class="text-sm text-inkMuted leading-relaxed">
-          Son 6 TUS referans dağılımında <strong>Farmakoloji ({destekPct('Farmakoloji')})</strong>, <strong>Biyokimya ({destekPct('Biyokimya')})</strong>,
-          <strong>Mikrobiyoloji ({destekPct('Mikrobiyoloji')})</strong> ve <strong>Pediatri ({destekPct('Pediatri')})</strong> çekirdek kartlarla en yüksek doğrudan/dolaylı çözüm
-          desteğini verir; bu dersleri erken tura almak net tabanını hızlı sağlamlaştırır.
-          <strong>Anatomi ({destekPct('Anatomi')})</strong>, <strong>Küçük Stajlar ({destekPct('Küçük Stajlar')})</strong> ve <strong>Genel Cerrahi ({destekPct('Genel Cerrahi')})</strong> ise
-          kart tekrarına ek olarak görsel atlas, klinik algoritma ve çıkmış vaka soruları gerektirir.
+          Son 6 TUS’ta kartların en yüksek doğrudan ve dolaylı çözüm desteğini verdiği dersler <strong>Farmakoloji ({destekPct('Farmakoloji')})</strong>, <strong>Biyokimya ({destekPct('Biyokimya')})</strong>,
+          <strong>Mikrobiyoloji ({destekPct('Mikrobiyoloji')})</strong> ve <strong>Pediatri ({destekPct('Pediatri')})</strong>. Bu derslere erken başlarsan netin çabuk oturur.
+          <strong>Anatomi ({destekPct('Anatomi')})</strong>, <strong>Küçük Stajlar ({destekPct('Küçük Stajlar')})</strong> ve <strong>Genel Cerrahi ({destekPct('Genel Cerrahi')})</strong> derslerinde ise
+          kart tekrarı tek başına yetmez; görsel atlas, klinik algoritma ve çıkmış vaka sorusu da gerekir.
         </p>
       </div>
       <div class="lg:col-span-5 text-xs text-inkMuted leading-relaxed space-y-2 lg:border-l lg:border-lineLight lg:pl-6">
         <p>
-          <strong class="text-ink">Şeffaflık notu:</strong> Katalog 12 ders içerir (11 ÖSYM branşı + {karmaCourse ? `${num(karmaCourse.cards)} kartlık karma Deneme ve Soru` : 'karma Deneme ve Soru'});
-          referans oranları 11 resmî TUS branşı üzerinden, <code>{refSummary.katalogCommit}</code> sürümünde yapay zekâ destekli ön değerlendirmeyle
-          hesaplanmıştır. Bağımsız hekim editör kontrolü sürmektedir.
+          <strong class="text-ink">Şeffaflık notu:</strong> Katalogda 12 ders var (11 ÖSYM branşı + {karmaCourse ? `${num(karmaCourse.cards)} kartlık karma Deneme ve Soru` : 'karma Deneme ve Soru'}).
+          Referans oranlarını 11 resmî TUS branşı üzerinden, <code>{refSummary.katalogCommit}</code> sürümünde hesapladık.
+          Bu, yapay zekâ destekli bir ön değerlendirmedir; bağımsız hekim editör onayı henüz tamamlanmadı.
         </p>
         <p>
           <strong>2026/2 TUS ayrımı:</strong> Sınavdan 2 gün önceki sürümde (<code>{refSummary.preExam2026_2.commit}</code>)
-          <strong>{refSummary.preExam2026_2.preExamEvet}/200</strong>, güncel katalogda <strong>{refSummary.preExam2026_2.supportedCurrent}/200</strong> çözüm desteği ve
-          <strong>{refSummary.preExam2026_2.topicCoverage}/200</strong> konu kapsamı bulunur.
+          <strong>{refSummary.preExam2026_2.preExamEvet}/200</strong> çözüm desteği vardı. Güncel katalogda <strong>{refSummary.preExam2026_2.supportedCurrent}/200</strong> çözüm desteği ve
+          <strong>{refSummary.preExam2026_2.topicCoverage}/200</strong> konu kapsamı var.
         </p>
       </div>
     </div>
@@ -122,14 +121,14 @@ const scoreBenchmarks = [
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 space-y-8">
     <div class="grid lg:grid-cols-12 gap-8 items-start">
       <div class="lg:col-span-7 space-y-4">
-        <p class="guide-kicker">Puan Ağırlıkları &amp; Güncel Mevzuat</p>
+        <p class="guide-kicker">Puan ağırlıkları ve güncel mevzuat</p>
         <h2 id="scoring-heading" class="display text-section tracking-tightest text-ink">
           TUS puanı nasıl hesaplanır? Süre, baraj, yabancı dil ve %5 kesinti
         </h2>
         <p class="text-inkMuted leading-relaxed">
-          Her oturum <strong>100 soru ve 135 dakika</strong> sürer (Temel 135 dk + Klinik 135 dk = toplam 270 dk);
-          <strong>4 yanlış 1 doğruyu götürür</strong> ve standart puanlar o dönemin Türkiye ortalaması ile
-          standart sapması üzerinden ÖSYM tarafından hesaplanır. Resmî ağırlıklar çalışma önceliğini doğrudan belirler:
+          Her oturum <strong>100 soru ve 135 dakikadır</strong> (Temel 135 dk + Klinik 135 dk = toplam 270 dk).
+          <strong>4 yanlış 1 doğruyu götürür</strong>. ÖSYM standart puanları o dönemin Türkiye ortalamasına ve
+          standart sapmasına göre hesaplar. Hangi derse öncelik vereceğini resmî ağırlıklar belirler:
         </p>
 
         <dl class="grid sm:grid-cols-2 gap-4">
@@ -137,54 +136,54 @@ const scoreBenchmarks = [
             <dt class="text-sm font-semibold text-teal">Klinik Tıp Puanı (K)</dt>
             <dd class="display text-2xl text-ink mt-1.5">%50 Temel + %50 Klinik</dd>
             <dd class="text-xs text-inkMuted mt-1.5 leading-relaxed">
-              Dahiliye, Pediatri, Cerrahi, Dermatoloji, Radyoloji gibi tüm klinik uzmanlıklar için Temel Bilimler puanın tam yarısıdır.
+              Dahiliye, Pediatri, Cerrahi, Dermatoloji, Radyoloji gibi bütün klinik uzmanlıklarda puanının tam yarısı Temel Bilimlerden gelir.
             </dd>
           </div>
           <div class="rounded-2xl border border-line bg-surfaceSoft p-5">
             <dt class="text-sm font-semibold text-teal">Temel Tıp Puanı (T)</dt>
             <dd class="display text-2xl text-ink mt-1.5">%70 Temel + %30 Klinik</dd>
             <dd class="text-xs text-inkMuted mt-1.5 leading-relaxed">
-              Tıbbi Biyokimya, Mikrobiyoloji, Patoloji, Farmakoloji, Anatomi ve Fizyoloji hedeflerinde Temel netleri ana ağırlığı taşır.
+              Tıbbi Biyokimya, Mikrobiyoloji, Patoloji, Farmakoloji, Anatomi ya da Fizyoloji istiyorsan puanının çoğunu Temel netlerin belirler.
             </dd>
           </div>
         </dl>
 
         <ul class="space-y-2 text-sm text-inkMuted leading-relaxed list-disc pl-5">
-          <li><strong class="text-ink">45,000 puan barajı:</strong> Tercih yapabilmek için ilgili puan türünde (T veya K) en az 45 puan almak gerekir.</li>
-          <li><strong class="text-ink">Yabancı dil şartı (erken hallet):</strong> Son 5 yıl içinde geçerli YDS, e-YDS veya TIPDİL sınavlarından en az <strong>50 puan</strong> (veya ÖSYM eşdeğerliği) aranır; geçerliliği dolan veya sona bırakılan dil puanı yüksek TUS puanıyla yerleşmeyi engelleyebilir.</li>
-          <li><strong class="text-ink">%5 puan kesintisi (× 0,95):</strong> Uzmanlık eğitimine devam ederken sınava girenler, istifa edenler veya yerleşip süresi içinde başlamayanlar için takip eden ilk sınavda mesleki bilgi puanından %5 düşülür.</li>
+          <li><strong class="text-ink">45,000 puan barajı:</strong> Tercih yapabilmek için ilgili puan türünde (T veya K) en az 45 puan alman gerekir.</li>
+          <li><strong class="text-ink">Yabancı dil şartı (erken hallet):</strong> Son 5 yıl içinde geçerli YDS, e-YDS veya TIPDİL sınavlarından en az <strong>50 puan</strong> (veya ÖSYM eşdeğerliği) gerekir. Dil puanının süresi dolduysa ya da bunu sona bıraktıysan TUS puanın yüksek olsa bile yerleşemeyebilirsin.</li>
+          <li><strong class="text-ink">%5 puan kesintisi (× 0,95):</strong> Uzmanlık eğitimine devam ederken sınava girenlerin, istifa edenlerin ve yerleşip süresi içinde başlamayanların takip eden ilk sınavdaki mesleki bilgi puanından %5 düşülür.</li>
         </ul>
       </div>
 
       <div class="lg:col-span-5 rounded-2xl border border-line bg-surfaceSoft p-5 sm:p-6 space-y-4">
         <h3 class="display text-lg text-ink">%5 kesinti hedef neti nasıl değiştirir?</h3>
         <p class="text-sm text-inkMuted leading-relaxed">
-          Aşağıdaki satırlar son dönem dağılımlarına dayanan yaklaşık ±1,5 puanlık planlama rehberidir; resmî yerleştirme belgesi yerine geçmez.
-          Kendi doğru/yanlışlarınla anlık denemek için hesaplayıcıyı açabilirsin.
+          Aşağıdaki satırlar son dönem dağılımlarına dayanan yaklaşık değerlerdir (±1,5 puan). Planlama içindir, resmî yerleştirme belgesinin yerini tutmaz.
+          Kendi doğru ve yanlışlarınla denemek için hesaplayıcıyı aç.
         </p>
         <div class="guide-table-wrap" tabindex="0" role="region" aria-label="Hedef TUS Klinik puanına göre kesintisiz ve %5 kesintili yaklaşık net tablosu">
           <table class="guide-table guide-table-compact">
             <caption class="sr-only">Hedef TUS Klinik puanı için kesintisiz ve %5 kesintili yaklaşık toplam net karşılaştırması</caption>
             <thead>
               <tr>
-                <th scope="col">Hedef K Puanı</th>
-                <th scope="col">Kesintisiz Net</th>
-                <th scope="col">%5 Kesintiyle Gereken</th>
+                <th scope="col">Hedef K puanı</th>
+                <th scope="col">Kesintisiz net</th>
+                <th scope="col">%5 kesintiyle gereken</th>
               </tr>
             </thead>
             <tbody class="tabular-nums">
               {scoreBenchmarks.map((row) => (
                 <tr>
                   <th scope="row">{row.target}</th>
-                  <td data-col="Kesintisiz Net">{row.noPenaltyNet}</td>
-                  <td data-col="%5 Kesintiyle Gereken">{row.penaltyRaw} ({row.penaltyNet})</td>
+                  <td data-col="Kesintisiz net">{row.noPenaltyNet}</td>
+                  <td data-col="%5 kesintiyle gereken">{row.penaltyRaw} ({row.penaltyNet})</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <a href="/puan-hesapla/" class="button-primary w-full">
-          TUS Puan &amp; Hedef Net Hesaplayıcıyı Aç →
+          TUS puan ve hedef net hesaplayıcıyı aç →
         </a>
       </div>
     </div>

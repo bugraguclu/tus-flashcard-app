@@ -234,7 +234,7 @@ export function daysUntilExamIso(examDateIso: string, baseUtcMs: number): number
 }
 
 export function scopeDisplayLabel(scope: PlannerScope, courseCount: number): string {
-  if (scope === 'all') return 'Tüm BKA TUS Paketi (12 ders)';
+  if (scope === 'all') return 'Tüm BKA TUS paketi (12 ders)';
   if (scope === 'temel') return 'Temel Bilimler (6 ders)';
   if (scope === 'klinik') return 'Klinik Bilimler (5 ders)';
   return `Özel seçim (${courseCount} ders)`;
@@ -437,12 +437,12 @@ export function buildShareSummaryText(result: PlannerResult, startUtcMs?: number
 
   return [
     'TusAnkiM FSRS-6 Çalışma Planım',
-    `• Kapsam: ${scopeDisplayLabel(input.scope, result.activeCourses.length)} — ${formatTrInt(target.remainingCards)} kart`,
+    `• Kapsam: ${scopeDisplayLabel(input.scope, result.activeCourses.length)}, ${formatTrInt(target.remainingCards)} kart`,
     `• Süre: ${examLine}`,
     `• Günlük yeni kart: ${result.activePace} kart (${settings.cadenceLabel})`,
     `• İlk tur bitişi: ${finishLine}`,
-    `• Günlük ortalama yük: ${formatTrInt(target.avgCards)} kart (~${formatDurationTr(target.avgMinutes)})`,
-    `• Tepe günlük yük: ${formatTrInt(target.peakCards)} kart (~${formatDurationTr(target.peakMinutes)}, ${target.peakDay}. gün)`,
+    `• Günlük ortalama: ${formatTrInt(target.avgCards)} kart (~${formatDurationTr(target.avgMinutes)})`,
+    `• En yoğun gün: ${formatTrInt(target.peakCards)} kart (~${formatDurationTr(target.peakMinutes)}, ${target.peakDay}. gün)`,
     `• Sınav günü akılda kalan: ${formatTrPct(target.memorizedPct)} (${formatTrInt(target.memorized)} kart, FSRS-6 %${input.retention})`,
     '',
     'TusAnkiM / Anki Deste Seçenekleri:',

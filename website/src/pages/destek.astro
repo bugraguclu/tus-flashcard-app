@@ -17,31 +17,31 @@ const pageSchema = {
   ...dateModified(pageSources('destek')),
 };
 ---
-<Layout title="Destek ve İletişim | TusAnkiM" description="TusAnkiM için kurulum yardımı al, kart düzeltmesi öner veya teknik sorun bildir. E-posta ve GitHub destek kanallarına buradan ulaş." schema={[crumbs, pageSchema]}>
+<Layout title="Destek ve İletişim | TusAnkiM" description="TusAnkiM’de kurulumda takıldıysan, bir kartta hata gördüysen veya teknik bir sorun yaşıyorsan bize yaz. E-posta ve GitHub adreslerimiz burada." schema={[crumbs, pageSchema]}>
   <section class="site-container support-page">
     <a href="/yardim/" class="text-link">Kullanım kılavuzu</a>
     <h1>Nasıl yardımcı olabiliriz?</h1>
-    <p class="support-lead">Kurulum, kartlar ve kullanım soruların için bize yaz. Bir kartta düzeltme öneriyorsan kart kimliğini ve açıklamanı ekle.</p>
+    <p class="support-lead">Kurulumda, bir kartta ya da kullanımda takıldığın her şeyi yazabilirsin. Kart düzeltmesi öneriyorsan kartın kimliğini ve neyin yanlış olduğunu ekle.</p>
     <div class="support-options">
       <div>
-        <h2>E-posta ile ulaş</h2>
-        <p>Sorunu kısaca anlat. Teknik bir sorun yaşıyorsan cihazını ve uygulama sürümünü de ekle.</p>
+        <h2>E-posta yaz</h2>
+        <p>Sorunu birkaç cümleyle anlat. Teknik bir sorunsa cihazını ve uygulama sürümünü de yaz; daha hızlı çözeriz.</p>
         <a class="text-link" href={`mailto:${SITE.email}`}>{SITE.email}</a>
       </div>
       <div>
         <h2>Hata veya kart düzeltmesi bildir</h2>
-        <p>Kartın dersini, kimliğini ve düzeltilmesini istediğin bilgiyi paylaş. Mevcut bildirimleri de inceleyebilirsin.</p>
+        <p>Kartın dersini, kimliğini ve düzeltilmesini istediğin bilgiyi yaz. Daha önce bildirilenlere de bakabilirsin.</p>
         <a class="text-link" href={SITE.githubIssuesUrl} target="_blank" rel="noopener noreferrer">GitHub’da bildirim oluştur</a>
       </div>
     </div>
     <div class="support-help">
-      <h2>Fakültende birlikte keşfedelim</h2>
-      <p>Fakülte topluluğun, öğrenci temsilciliğin veya sosyal medya hesabın için TusAnkiM’i tanıtmak istiyorsan bize yaz. Birlikte bir demo oturumu ve kullanım içeriği planlayalım.</p>
-      <p>Topluluğunu, düşündüğün etkinliği ve erişim ihtiyacını paylaş. Ücretsiz erişim taleplerinin kapsamını ve süresini iletişim sırasında birlikte netleştirelim.</p>
+      <h2>Fakültende birlikte tanıtalım</h2>
+      <p>Fakülte topluluğunda, dönem temsilciliğinde ya da sosyal medya hesabında TusAnkiM’i anlatmak istersen bize yaz. Birlikte bir tanıtım oturumu ve kullanım içeriği planlarız.</p>
+      <p>Topluluğunu, aklındaki etkinliği ve kaç kişi için erişim istediğini yaz. Ücretsiz erişimin kapsamını ve süresini birlikte konuşuruz.</p>
       <a class="text-link" href={`mailto:${SITE.email}?subject=${encodeURIComponent('TusAnkiM iş birliği talebi')}`}>İş birliği için yaz</a>
     </div>
     <div class="support-help">
-      <h2>Yanıtı kılavuzda bulabilirsin</h2>
+      <h2>Belki cevabı kılavuzda vardır</h2>
       <nav aria-label="Destek rehberleri">
         <a class="text-link" href="/yardim/hizli-baslangic/">İlk çalışmaya başlama</a>
         <a class="text-link" href="/yardim/anki-ile-kullanma/">Anki destelerini aktarma</a>

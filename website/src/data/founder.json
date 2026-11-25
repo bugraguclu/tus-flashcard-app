@@ -2,30 +2,30 @@
   "kicker": "Hakkımızda",
   "name": "TusAnkiM",
   "role": "TUS için aralıklı tekrar",
-  "quote": "Kartları gör, hazırlama yaklaşımımızı tanı, günlük tekrar düzenini kur.",
+  "quote": "Önce kartlara bak, sonra nasıl hazırladığımızı oku. Güvenirsen günlük tekrarını burada kurarsın.",
   "letterTitle": "Neden TusAnkiM’i kurduk?",
   "letterParagraphs": [
-    "TusAnkiM, TUS hazırlığında kart tekrarını ve çalışma takibini bir araya getiren bağımsız bir uygulama. Hazır koleksiyondan çalışabilir, kendi kartlarını oluşturabilir ve kişisel Anki destelerini aktarabilirsin.",
-    "Uygulamayı iPhone için geliştiriyoruz; tarayıcıda da deneyebilirsin. Kartların, çalışma geçmişin ve kronometre kayıtların cihazında saklanır. Günlük tekrarını FSRS-6 planlar; kronometre ve çalışma takvimi çalıştığın süreyi takip etmene yardımcı olur.",
-    "Kartların TUS sorularıyla ilişkisini ayrıca yayımlıyoruz. Doğrudan ve dolaylı çözüm desteğini, yalnızca konu kapsamına giren eşleşmelerden ayırıyoruz. Bu kayıtlar yapay zekâ destekli bir ön değerlendirmedir; bağımsız hekim editör onayı henüz tamamlanmamıştır.",
-    "Kartları kullanmadan önce gerçek demo kartlarını inceleyebilmeni istiyoruz. Bir eksik veya hata gördüğünde kart kimliği ve açıklamanla bize ulaşabilirsin. Böylece hangi bilginin gözden geçirilmesi gerektiğini somut bir kayıt üzerinden paylaşabilirsin."
+    "TUS’a kartla hazırlanmak isteyen biri üç şeye takılıyor: hangi desteye güveneceğini bilemiyor, iPhone’da rahat çalışacağı bir uygulama bulmakta zorlanıyor ve ne kadar çalıştığını başka bir yerde tutuyor. TusAnkiM’i bu üçünü tek uygulamada çözmek için kurduk. Hazır koleksiyondan çalışabilir, kendi kartlarını yazabilir, kendi Anki destelerini getirebilirsin.",
+    "Uygulamayı iPhone için geliştiriyoruz; bugün tarayıcıdan da kullanabilirsin. Kartların, çalışma geçmişin ve kronometre kayıtların cihazında durur. Hangi kartı hangi gün tekrar edeceğini FSRS-6 hesaplar. Kronometre ve çalışma takvimi de o gün gerçekten ne kadar çalıştığını gösterir.",
+    "Kartların TUS sorularıyla ilişkisini ayrıca yayımlıyoruz, çünkü “kartlarımız iyi” demek yetmez. Soruyu doğrudan veya dolaylı çözdüren kartları, yalnızca konusu destede geçen sorulardan ayrı sayıyoruz. Bu kayıtlar yapay zekâ destekli bir ön değerlendirme; bağımsız hekim editör onayı henüz tamamlanmadı.",
+    "Bir şey ödemeden önce gerçek kartları görmeni istiyoruz. Bir eksik ya da hata görürsen kartın kimliğini ve neyin yanlış olduğunu bize yaz. Hangi bilgiye yeniden bakmamız gerektiğini böyle öğreniyoruz."
   ],
   "editorialPillars": [
     {
       "title": "Hazır koleksiyon",
-      "body": "12 derse ayrılmış 9.575 kart. Kendi tempona göre çalışabilir, kartlara kişisel notlarını ekleyebilirsin."
+      "body": "12 derse ayrılmış 9.575 kart. Kendi hızında çalışırsın; kartlara kendi notlarını da ekleyebilirsin."
     },
     {
       "title": "Sınav öncesi ve sonrası ayrı",
-      "body": "2026/2 TUS için sınav öncesi sürümde 76/200, güncel katalogda 82/200 çözüm desteği var. Sonradan güncellenen altı kayıt ayrıca gösterilir."
+      "body": "2026/2 TUS’ta sınavdan önceki sürüm 200 sorunun 76’sını destekliyordu (76/200). Bugünkü sürümde bu sayı 82/200. Sonradan güncellenen altı kaydı ayrıca işaretliyoruz."
     },
     {
-      "title": "İncelenebilir kayıtlar",
-      "body": "Referans sayfasında sınavı, dersi, ölçülen bilgiyi ve kart özetini inceleyebilirsin. ÖSYM soru metinleri ve şıkları yayımlanmaz."
+      "title": "Kayıtları kendin incelersin",
+      "body": "Referans sayfasında sınavı, dersi, sorunun ölçtüğü bilgiyi ve kartın özetini görürsün. ÖSYM soru metinlerini ve şıklarını yayımlamıyoruz."
     },
     {
-      "title": "Geri bildirim",
-      "body": "Eksik veya düzeltilmesi gereken bir bilgi gördüğünde kartın kimliğiyle birlikte bildirebilirsin."
+      "title": "Hata görürsen yaz",
+      "body": "Eksik ya da düzeltilmesi gereken bir bilgi görürsen kartın kimliğiyle birlikte bize bildir."
     }
   ]
 }

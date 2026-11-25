@@ -1,68 +1,68 @@
 {
-  "badge": "Fiyatlandırma ve Erişim",
-  "headline": "Ücretsiz başla, ihtiyacına göre seç.",
-  "subheadline": "Güncel betada TUS paketi ücretsiz açılır; ücretli seçenekler ve reklamlar henüz devrede değil. Planlanan model: ücretsiz kullanım (ara ara reklam), tüm 9.575 karta erişim ₺2.000, reklamları kaldırma ₺50. Her segmentte seçili demo sorularına doğrudan erişim olacak.",
+  "badge": "Fiyatlar ve erişim",
+  "headline": "Şimdi ücretsiz. Sonrası için üç seçenek",
+  "subheadline": "Beta sürümünde 9.575 kartlık TUS paketi ücretsiz; ücretli seçenekler ve reklamlar henüz devrede değil. İleride üç seçenek olacak: reklamlı ücretsiz kullanım, 9.575 kartın tamamı ₺2.000 ve reklamları kaldırma ₺50. Seçili demo soruları üçünde de açık kalacak.",
   "tiers": [
     {
       "id": "free",
-      "name": "Ücretsiz Erişim",
+      "name": "Ücretsiz",
       "badge": "Ara ara reklam",
       "price": "₺0",
-      "period": "Süresiz ücretsiz",
+      "period": "Süre sınırı yok",
       "highlight": false,
-      "summary": "Kendi destelerinle çalışma, FSRS-6, Kronometre ve seçili demo sorularına doğrudan erişim.",
+      "summary": "Kendi destelerinle çalışırsın. FSRS-6, Kronometre ve seçili demo soruları dahil.",
       "features": [
-        "Seçili demo sorularına doğrudan erişim",
-        "Ücretsiz kullanıcılar için ara ara reklam çıkacak (reklam sıklığı sonradan ayarlanacak)",
-        "Anki (.apkg / .colpkg) içe ve dışa aktarma",
-        "FSRS-6 tekrar zamanlayıcısı ve parametre optimizasyonu",
-        "Kronometre, Çalışma Takvimi ve otomatik yerel yedekleme"
+        "Seçili demo soruları açık",
+        "Ara ara reklam çıkacak; ne sıklıkta çıkacağını sonra belirleyeceğiz",
+        "Anki destelerini (.apkg / .colpkg) içe ve dışa aktarma",
+        "FSRS-6 tekrar takvimi ve kendi geçmişine göre ayarlama",
+        "Kronometre, Çalışma Takvimi ve cihazında otomatik yedek"
       ],
       "ctaLabel": "Betayı ücretsiz dene",
       "external": true
     },
     {
       "id": "full-access",
-      "name": "Tüm Kartlara Erişim",
-      "badge": "9.575 BKA TUS Kartı",
+      "name": "Tüm kartlar",
+      "badge": "9.575 BKA TUS kartı",
       "price": "₺2.000",
-      "period": "Tam kart arşivi",
+      "period": "Kart arşivinin tamamı",
       "highlight": true,
-      "summary": "9.575 kartlık BKA TUS koleksiyonunun tamamına erişim ve seçili demo sorularına doğrudan erişim.",
+      "summary": "9.575 kartlık BKA TUS koleksiyonunun tamamını açar.",
       "features": [
-        "Seçili demo sorularına doğrudan erişim dahil",
+        "Seçili demo soruları dahil",
         "9.575 kart · 7.721 not · 12 ders · 106 konu alt destesi",
-        "Her TUS dönemi sonrası güncellenen kart ve referans kayıtları",
-        "FSRS-6, Kronometre, Çalışma Takvimi ve yerel yedekleme",
-        "E-posta ve teknik destek"
+        "Kartları ve referans kayıtlarını her TUS döneminden sonra güncelliyoruz",
+        "FSRS-6, Kronometre, Çalışma Takvimi ve cihazında yedek",
+        "E-postayla teknik destek"
       ],
       "ctaLabel": "Betayı ücretsiz dene",
       "external": true
     },
     {
       "id": "ad-free",
-      "name": "Reklamları Kaldırma",
-      "badge": "Reklamsız deneyim",
+      "name": "Reklamsız",
+      "badge": "Reklamları kaldırır",
       "price": "₺50",
       "period": "Reklamsız kullanım",
       "highlight": false,
-      "summary": "Ücretsiz kullanıcılar için çıkacak ara ara reklamları kaldırır; seçili demo sorularına doğrudan erişim sunar.",
+      "summary": "Ücretsiz kullanımda çıkacak reklamları kaldırır; kendi destelerinle bölünmeden çalışırsın.",
       "features": [
-        "Seçili demo sorularına doğrudan erişim dahil",
-        "Ücretsiz kullanımda çıkacak reklamları tamamen kaldırır",
-        "Kişisel .apkg / .colpkg destelerle kesintisiz çalışma",
-        "FSRS-6, Kronometre ve Fotoğraf Düzenleyici tam erişim",
-        "Çevrimdışı yerel depolama ve otomatik yedekleme"
+        "Seçili demo soruları dahil",
+        "Ücretsiz kullanımdaki reklamların hepsini kaldırır",
+        "Kendi .apkg / .colpkg destelerinle kesintisiz çalışma",
+        "FSRS-6, Kronometre ve Fotoğraf Düzenleyici",
+        "İnternetsiz çalışma ve cihazında otomatik yedek"
       ],
       "ctaLabel": "Betayı ücretsiz dene",
       "external": true
     }
   ],
-  "transparencyNote": "Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır. Ücretli erişimin başlangıcı, ödeme koşulları ve reklam sıklığı devreye alınmadan önce açıklanacak. Kartların ve ilerlemen cihazında saklanır; otomatik cihaz eşitlemesi henüz yok, kendi destelerini dosyayla taşıyabilirsin.",
+  "transparencyNote": "Beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılıyor. Ücretli erişimin ne zaman başlayacağını, ödeme koşullarını ve reklam sıklığını devreye almadan önce duyuracağız. Kartların ve ilerlemen cihazında durur. Cihazlar arasında otomatik eşitleme henüz yok; kendi destelerini dosyayla taşıyabilirsin.",
   "clubProgram": {
-    "kicker": "Öğrenci Toplulukları",
+    "kicker": "Öğrenci toplulukları",
     "title": "Tıp kulüpleri ve dönem temsilcileriyle iş birliği",
-    "text": "Tıp fakültesi öğrenci toplulukları, çalışma grupları ve eğitim paylaşımı yapan hesaplar iş birliği talebi iletebilir; ücretsiz erişim gibi koşulları birlikte netleştiririz.",
+    "text": "Fakülte topluluğun, çalışma grubun veya eğitim paylaşan bir hesabın varsa bize yaz. Ücretsiz erişim gibi koşulları birlikte konuşuruz.",
     "cta": "Başvur"
   }
 }

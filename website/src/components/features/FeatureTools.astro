@@ -6,15 +6,15 @@ const tools = [
     id: 'fsrs',
     screen: 'fsrs',
     title: 'FSRS-6 tekrar takvimi',
-    description: 'Bir sonraki tekrar tarihini, kartın zorluğuna ve verdiğin yanıtlara göre hesaplar. Hedef hatırlama oranını deste seçeneklerinde belirleyebilirsin.',
+    description: 'Her kartın bir sonraki tekrar gününü, kartın sana ne kadar zor geldiğine ve verdiğin cevaplara bakarak hesaplar. Kartların yüzde kaçını hatırlamak istediğini deste seçeneklerinden sen belirlersin.',
     link: 'FSRS rehberi',
     href: '/yardim/fsrs/',
   },
   {
     id: 'anki',
     screen: 'import',
-    title: 'Kişisel Anki destelerini taşı',
-    description: 'Kendi .apkg ve .colpkg destelerini medyası ve tekrar geçmişiyle içe veya dışa aktar. Hazır TUS paketi dışa aktarılmaz.',
+    title: 'Kendi Anki destelerini getir',
+    description: 'Kendi .apkg ve .colpkg destelerini görselleri ve tekrar geçmişiyle birlikte içe al, istediğinde aynı biçimde dışa ver. Hazır TUS paketi dışa aktarılmaz.',
     link: 'Aktarım rehberi',
     href: '/yardim/anki-ile-kullanma/',
   },
@@ -24,15 +24,15 @@ const tools = [
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
     <div class="max-w-2xl">
       <h2 id="capabilities-heading" class="display text-section tracking-tightest text-ink">Araçlar</h2>
-      <p class="text-inkMuted mt-3 leading-relaxed">Tekrarlarını planla, çalışma süreni takip et ve kendi destelerini yanında taşı.</p>
+      <p class="text-inkMuted mt-3 leading-relaxed">Tekrarını planla, ne kadar çalıştığını gör, kendi destelerini yanında getir.</p>
     </div>
 
     <article id="kronometre" class="tool-feature scroll-mt-24 mt-8" aria-labelledby="stopwatch-heading">
       <div class="tool-feature-copy">
         <h3 id="stopwatch-heading" class="display text-subsection tracking-tightest text-ink">Kronometre ve çalışma takvimi</h3>
         <p class="text-inkMuted mt-3 leading-relaxed">
-          Konu okuma, soru çözme ve deneme sürelerini kaydet. Bu oturumları kart tekrarlarınla aynı takvimde gör.
-          Çalışma Planlama sihirbazıyla haftanı bloklara böl.
+          Konu okurken, soru çözerken, deneme yaparken süreyi başlat. Bu oturumlar kart tekrarlarınla aynı takvime düşer;
+          gün sonunda neye ne kadar zaman verdiğini görürsün. Çalışma Planlama ile haftanı bloklara bölebilirsin.
         </p>
         <a href="/yardim/kronometre/" class="tool-link">Kronometre rehberi</a>
       </div>
@@ -60,14 +60,14 @@ const tools = [
     <article class="tool-calculator mt-4" aria-labelledby="calculator-heading">
       <div>
         <h3 id="calculator-heading" class="display text-lg text-ink">TUS puan hesaplayıcı</h3>
-        <p class="text-inkMuted mt-1 leading-relaxed">Temel ve Klinik puanlarını netlerinden hesapla, %5 kesintiyi uygula veya hedef puanın için gereken neti bul.</p>
+        <p class="text-inkMuted mt-1 leading-relaxed">Netlerini gir, Temel ve Klinik puanını gör. Gerekiyorsa %5 kesintiyi uygula ya da hedef puanın için kaç net gerektiğine bak.</p>
       </div>
       <a href="/puan-hesapla/" class="tool-link">Puan hesapla</a>
     </article>
 
     <p class="mt-6 text-sm text-inkMuted leading-relaxed max-w-3xl">
-      <strong class="text-ink">Platform durumu.</strong> iPhone uygulaması geliştiriliyor. Web sürümü ücretsiz beta olarak aktif.
-      Otomatik bulut eşitleme, yerel Android uygulaması ve Tercih Simülasyonu geliştirme aşamasında.
+      <strong class="text-ink">Bugün ne var, ne yok?</strong> Web sürümü ücretsiz beta olarak açık. iPhone uygulamasını geliştiriyoruz.
+      Cihazlar arası otomatik eşitleme, Android uygulaması ve Tercih Simülasyonu henüz yok; üzerinde çalışıyoruz.
     </p>
   </div>
 </section>

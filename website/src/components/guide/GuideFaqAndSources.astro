@@ -24,10 +24,10 @@ const modLabel = formatTrDate(dateModified);
 const helpfulGuides = [
   { title: 'Hızlı başlangıç', text: 'Hazır TUS paketini aç, ilk desteni seç ve çalışmaya başla.', href: '/yardim/hizli-baslangic/' },
   { title: 'FSRS-6 tekrar takvimi', text: 'Hedef hatırlama oranı, öğrenme adımları ve optimizasyon.', href: '/yardim/fsrs/' },
-  { title: 'Deste seçenekleri', text: 'Günlük kart limitleri, Kolay günler ve sülük (leech) ayarı.', href: '/yardim/deste-secenekleri/' },
-  { title: 'Filtrelenmiş deste', text: 'Birikmiş kuyruğu parçalama ve sınav öncesi Önizleme modu.', href: '/yardim/filtrelenmis-deste/' },
+  { title: 'Deste seçenekleri', text: 'Günlük kart sınırları, Kolay günler ve sülük kart ayarı.', href: '/yardim/deste-secenekleri/' },
+  { title: 'Filtrelenmiş deste', text: 'Birikmiş kartları bölme ve sınav öncesi Önizleme modu.', href: '/yardim/filtrelenmis-deste/' },
   { title: 'Kronometre ve takvim', text: 'Konu, soru ve deneme oturumlarını tek takvimde takip et.', href: '/yardim/kronometre/' },
-  { title: 'Anki ile kullanma', text: 'Kişisel .apkg ve .colpkg destelerini medyasıyla taşı.', href: '/yardim/anki-ile-kullanma/' },
+  { title: 'Anki ile kullanma', text: 'Kendi .apkg ve .colpkg destelerini medyasıyla taşı.', href: '/yardim/anki-ile-kullanma/' },
 ];
 ---
 <!-- Guide FAQ Accordion (native details/summary, Expand/Collapse All) -->
@@ -39,7 +39,7 @@ const helpfulGuides = [
         TUS çalışması hakkında sık sorulan sorular
       </h2>
       <p class="text-sm text-inkMuted leading-relaxed">
-        TUS çalışma süresi, puan ağırlıkları, FSRS-6 hedef hatırlama, tekrar borcu ve 2027 sınav takvimi hakkında kısa yanıtlar.
+        Ne kadar çalışmalı, puan nasıl hesaplanır, hedef hatırlama kaç olmalı, tekrarlar birikince ne yapmalı, 2027 sınavları ne zaman? Kısa yanıtlar burada.
       </p>
       <div class="flex flex-wrap items-center gap-3 pt-1">
         <button
@@ -52,7 +52,7 @@ const helpfulGuides = [
           <span class="label-expand">Tüm yanıtları aç</span>
           <span class="label-collapse">Tüm yanıtları kapat</span>
         </button>
-        <a href="/sss/" class="text-link">Ürün ve fiyat SSS →</a>
+        <a href="/sss/" class="text-link">Ürün ve fiyat soruları →</a>
       </div>
     </div>
 
@@ -75,7 +75,7 @@ const helpfulGuides = [
     <div class="space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
         <div>
-          <p class="guide-kicker">Derinleştir</p>
+          <p class="guide-kicker">Daha fazlası</p>
           <h2 id="guide-sources-heading" class="display text-section tracking-tightest text-ink mt-2">
             İlgili kullanım rehberleri ve resmî kaynaklar
           </h2>
@@ -99,7 +99,7 @@ const helpfulGuides = [
 
     <div class="grid lg:grid-cols-12 gap-6 items-start">
       <div class="lg:col-span-7 rounded-2xl border border-line bg-surfaceSoft p-6 space-y-3">
-        <h3 class="display text-base text-ink">Doğrulanmış resmî ve akademik kaynaklar</h3>
+        <h3 class="display text-base text-ink">Resmî ve akademik kaynaklar</h3>
         <ul class="space-y-1 text-sm">
           {OFFICIAL_SOURCES.map((src) => (
             <li class="py-1 border-b border-lineLight last:border-b-0">
@@ -119,15 +119,15 @@ const helpfulGuides = [
 
       <aside class="lg:col-span-5 rounded-2xl border border-line bg-surfaceSoft p-6 space-y-4">
         <div class="space-y-2">
-          <h3 class="display text-base text-ink">Kapsam notu ve editöryal şeffaflık</h3>
+          <h3 class="display text-base text-ink">Bu rehberin sınırları</h3>
           <p class="text-xs text-inkMuted leading-relaxed">
-            Bu rehberdeki FSRS-6 süreleri, net aralıkları ve çalışma planları eğitim planlaması amaçlıdır; tıbbi tavsiye değildir
-            ve resmî ÖSYM kılavuzlarının yerine geçmez. Sınav tarihleri, baraj ve %5 kesinti uygulamaları için sınava gireceğin
-            dönemin güncel ÖSYM TUS Kılavuzu esas alınmalıdır.
+            Bu rehberdeki FSRS-6 süreleri, net aralıkları ve çalışma planları ders çalışmanı planlaman içindir. Tıbbi tavsiye değildir,
+            resmî ÖSYM kılavuzlarının yerini de tutmaz. Sınav tarihleri, baraj ve %5 kesinti için sınava gireceğin
+            dönemin güncel ÖSYM TUS Kılavuzu’na bak.
           </p>
           <p class="text-xs text-inkMuted leading-relaxed">
-            Son 6 TUS referans eşleştirmeleri yapay zekâ destekli ön değerlendirmedir; bağımsız hekim editör onayı sürmektedir.
-            Bir eksiklik veya düzeltme önerisi için <a href="/destek/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">Destek ve iletişim</a> sayfasından bize ulaşabilirsin.
+            Son 6 TUS referans eşleştirmeleri yapay zekâ destekli ön değerlendirmedir; bağımsız hekim editör onayı henüz tamamlanmadı.
+            Eksik ya da yanlış bir şey görürsen <a href="/destek/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">Destek ve iletişim</a> sayfasından bize yaz.
           </p>
         </div>
 
@@ -161,7 +161,7 @@ const helpfulGuides = [
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-14 sm:py-16 grid lg:grid-cols-12 gap-8 items-center">
     <div class="lg:col-span-8">
       <h2 id="guide-cta-bottom-heading" class="display text-section tracking-tightest">
-        Planını kurduysan bugün ilk 20 kartla başla.
+        Planını kurduysan bugün ilk 20 kartla başla
       </h2>
       <p class="mt-3 text-white/90 leading-relaxed max-w-2xl">
         Web uygulamasını ücretsiz aç, {num(catalog.totals.cards)} kartlık BKA TUS paketinden bir ders seç ve ilk tekrarını yap.
@@ -175,13 +175,13 @@ const helpfulGuides = [
         rel="noopener noreferrer"
         class="inline-flex items-center justify-center min-h-[3.25rem] px-7 rounded-lg bg-white text-teal text-[0.9375rem] font-semibold hover:bg-tint transition"
       >
-        Ücretsiz Başla ↗<span class="sr-only"> (yeni sekmede açılır)</span>
+        Ücretsiz başla ↗<span class="sr-only"> (yeni sekmede açılır)</span>
       </a>
       <a
         href="/calisma-plani/"
         class="inline-flex items-center justify-center min-h-[3.25rem] px-7 rounded-lg border border-white/60 text-white text-[0.9375rem] font-semibold hover:bg-white/10 transition"
       >
-        Kişisel FSRS-6 Planlayıcı
+        Kendi FSRS-6 planını kur
       </a>
     </div>
   </div>

@@ -4,13 +4,13 @@ import { WORKFLOW_STEPS } from '../../data/studyGuide';
 <section id="fsrs-ve-hacim" tabindex="-1" class="guide-section py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="fsrs-workflow-heading">
   <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 space-y-12">
     <div class="max-w-3xl">
-      <p class="guide-kicker">Aralıklı Tekrar &amp; Günlük Rutin</p>
+      <p class="guide-kicker">Aralıklı tekrar ve günlük rutin</p>
       <h2 id="fsrs-workflow-heading" class="display text-section tracking-tightest text-ink mt-3">
-        FSRS-6 aralıklı tekrar, günlük çalışma bütçesi ve deneme analizi
+        FSRS-6 ile aralıklı tekrar, günlük çalışma süresi ve deneme analizi
       </h2>
       <p class="text-inkMuted mt-3 leading-relaxed">
-        TUS hazırlığında amaç bütün günü karta gömmek değil, unutmayı önleyen tekrarları günde <strong>60–125 dakika</strong>
-        bandında tutup her gün <strong>2–4+ saati</strong> konu kavrama, çıkmış soru ve deneme analizine ayırmaktır.
+        TUS hazırlığında bütün günü karta gömmen gerekmez. Unutmayı önleyen tekrarlara günde <strong>60–125 dakika</strong> ayır;
+        her gün <strong>2–4+ saati</strong> konuyu anlamaya, çıkmış soruya ve deneme analizine bırak.
       </p>
     </div>
 
@@ -18,19 +18,18 @@ import { WORKFLOW_STEPS } from '../../data/studyGuide';
     <div class="grid lg:grid-cols-12 gap-8 items-start">
       <div class="lg:col-span-7 space-y-4">
         <h3 class="display text-subsection tracking-tightest text-ink">
-          Pasif okuma neden yetersiz kalır? FSRS-6 ve SM-2 farkı
+          Pasif okuma neden yetmez? FSRS-6 ile SM-2’nin farkı
         </h3>
         <p class="text-inkMuted leading-relaxed">
-          Konu kitabını fosforlu kalemle yeniden okumak beyne aşinalık (<em>tanıdıklık yanılsaması</em>) verir; ancak sınav sabahı
-          benzer iki şık arasındaki ince klinik ayrımı sıfırdan hatırlama gücünü zayıf artırır. Aktif hatırlama (<em>active recall</em>)
-          ve aralıklı tekrar birlikte çalıştığında bilgi tam unutulmak üzereyken tazelenir.
+          Konu kitabını fosforlu kalemle yeniden okuyunca konu tanıdık gelir. Ama sınav sabahı birbirine benzeyen iki şık arasındaki
+          ince klinik ayrımı kendin hatırlaman gerekir; yeniden okumak bu gücü pek artırmaz. Cevabı görmeden hatırlamaya çalışmak
+          (aktif hatırlama) ve aralıklı tekrar birlikte çalışır: bilgiyi tam unutmak üzereyken tazelersin.
         </p>
         <p class="text-inkMuted leading-relaxed">
-          Klasik SM-2 algoritması sabit kolaylık çarpanlarıyla çalışırken <strong>FSRS-6</strong>, her kartı üç değişkenli
-          <strong>DSR modeliyle</strong> izler: <strong>Kararlılık (Stability)</strong> (hatırlama olasılığının %100’den %90’a
-          düşme süresi), <strong>Zorluk (Difficulty)</strong> ve <strong>Hatırlanabilirlik (Retrievability)</strong>.
-          Yeterli tekrar biriktiğinde (yaklaşık 1.000 tekrar) TusAnkiM’de <strong>Parametreleri optimize et</strong> seçeneğiyle
-          zamanlama kendi hafıza eğrine uyarlanabilir.
+          Klasik SM-2 algoritması sabit kolaylık çarpanlarıyla çalışır. <strong>FSRS-6</strong> ise her kart için üç değeri ayrı izler:
+          <strong>kararlılık</strong> (hatırlama olasılığının %100’den %90’a düşmesi için geçen süre), <strong>zorluk</strong> ve
+          <strong>hatırlanabilirlik</strong>. Yaklaşık 1.000 tekrar biriktirdiğinde TusAnkiM’de <strong>Parametreleri optimize et</strong>
+          seçeneğiyle tekrar takvimini kendi hafızana göre ayarlayabilirsin.
         </p>
         <div class="flex flex-wrap gap-x-6 gap-y-1">
           <a href="/yardim/fsrs/" class="text-link">FSRS-6 ayar rehberi →</a>
@@ -39,24 +38,24 @@ import { WORKFLOW_STEPS } from '../../data/studyGuide';
       </div>
 
       <div class="lg:col-span-5 rounded-2xl border border-line bg-white p-5 sm:p-6 space-y-3">
-        <h3 class="display text-lg text-ink">Hedef hatırlama oranı seçimi</h3>
+        <h3 class="display text-lg text-ink">Hangi hedef hatırlama oranını seçmeli?</h3>
         <dl class="space-y-2.5 text-sm">
           <div class="rounded-xl bg-surfaceSoft border border-lineLight p-3.5">
-            <dt class="font-bold text-ink">%90 (0,90) — Varsayılan Denge</dt>
+            <dt class="font-bold text-ink">%90 (0,90) · Varsayılan</dt>
             <dd class="text-xs text-inkMuted mt-1 leading-relaxed">
-              Çoğu TUS adayı için en sağlıklı verim-süre dengesi. Günlük tekrarları sürdürülebilir bandda tutar.
+              Çoğu TUS adayı için kalıcılık ile günlük süre arasındaki en iyi denge. Günlük tekrar sayısı altından kalkılır düzeyde kalır.
             </dd>
           </div>
           <div class="rounded-xl bg-surfaceSoft border border-lineLight p-3.5">
-            <dt class="font-bold text-ink">%85 (0,85) — İntörnlük / Ağır Nöbet</dt>
+            <dt class="font-bold text-ink">%85 (0,85) · İntörnlük ve ağır nöbet</dt>
             <dd class="text-xs text-inkMuted mt-1 leading-relaxed">
-              Günlük tekrar baskısını belirgin azaltır; zamanı dar olan intörn ve aktif çalışan hekimler için uygundur.
+              Günlük tekrarı belirgin biçimde azaltır. Zamanı dar olan intörnlere ve çalışan hekimlere uygundur.
             </dd>
           </div>
           <div class="rounded-xl bg-warmTint border border-lineLight p-3.5">
-            <dt class="font-bold text-warm">%93–%95+ — Yüksek Yük Uyarısı</dt>
+            <dt class="font-bold text-warm">%93–%95+ · Dikkat, tekrar çok artar</dt>
             <dd class="text-xs text-inkMuted mt-1 leading-relaxed">
-              Hatırlamayı yalnızca birkaç puan artırırken tekrar aralıklarını daraltıp günlük süreyi hızla katlar.
+              Hatırlamayı yalnız birkaç puan artırır ama tekrar aralıklarını kısaltır ve günlük süreyi hızla katlar.
             </dd>
           </div>
         </dl>
@@ -70,7 +69,7 @@ import { WORKFLOW_STEPS } from '../../data/studyGuide';
           4 adımda TUS çalışma rutini ve zaman takibi
         </h3>
         <p class="text-inkMuted mt-2 leading-relaxed text-sm">
-          Kart tekrarını konu, soru ve deneme çalışmalarıyla aynı takvimde toplamak gerçek ilerlemeyi görünür kılar.
+          Kart tekrarını konu, soru ve deneme çalışmalarınla aynı takvimde görürsen ne kadar ilerlediğini anlarsın.
         </p>
       </div>
 
@@ -95,40 +94,40 @@ import { WORKFLOW_STEPS } from '../../data/studyGuide';
     <div class="pt-10 border-t border-line grid lg:grid-cols-12 gap-8 items-start">
       <div class="lg:col-span-5 space-y-3">
         <h3 class="display text-subsection tracking-tightest text-ink">
-          Deneme sınavı ne zaman ve nasıl analiz edilir?
+          Deneme sınavını ne zaman çözmeli, nasıl analiz etmeli?
         </h3>
         <p class="text-sm text-inkMuted leading-relaxed">
-          İlk turun yarısından itibaren 2 haftada bir, son 2 ayda ise haftada bir tam süreli (Temel + Klinik) deneme çözmek
-          zaman yönetimini ve yorgunluk direncini oturtur. Asıl net artışı denemeyi çözdüğün saatte değil, ertesi gün yaptığın
-          <strong>hata sınıflandırmasında</strong> gelir.
+          İlk turun yarısından sonra 2 haftada bir, son 2 ayda haftada bir tam süreli (Temel + Klinik) deneme çöz.
+          Zamanı kullanmayı öğrenir, yorgunluğa alışırsın. Netin denemeyi çözerken artmaz; ertesi gün yaptığın
+          <strong>hata sınıflandırmasıyla</strong> artar.
         </p>
         <p class="text-xs text-inkMuted leading-relaxed">
-          <strong class="text-ink">Platform notu:</strong> TusAnkiM iPhone için geliştirilmekte olup bugün web tarayıcıda (Mac, Windows, iPad, Android tarayıcı)
-          ücretsiz beta olarak çalışır. Kişisel desteler <code>.apkg</code> / <code>.colpkg</code> dosyalarıyla taşınır; hazır TUS paketi ve ilerlemesi dışa aktarılmaz.
-          Otomatik bulut eşitleme, yerel Android uygulaması ve Tercih Simülasyonu geliştirme aşamasındadır.
+          <strong class="text-ink">Platform notu:</strong> TusAnkiM iPhone için geliştiriliyor; bugün web tarayıcıda (Mac, Windows, iPad, Android tarayıcı)
+          ücretsiz beta olarak çalışır. Kendi destelerini <code>.apkg</code> / <code>.colpkg</code> dosyalarıyla taşırsın; hazır TUS paketi ve ilerlemesi dışa aktarılamaz.
+          Otomatik bulut eşitleme, Android uygulaması ve Tercih Simülasyonu henüz hazır değil; geliştiriyoruz.
         </p>
       </div>
 
       <div class="lg:col-span-7 grid sm:grid-cols-3 gap-4">
         <article class="rounded-2xl border border-line bg-white p-5 space-y-2">
-          <p class="text-sm font-semibold text-teal">Tip A · Bilgi Eksikliği</p>
+          <p class="text-sm font-semibold text-teal">Tip A · Bilgi eksiği</p>
           <p class="text-sm font-semibold text-ink">Konuyu hiç görmemişim</p>
           <p class="text-xs text-inkMuted leading-relaxed">
-            Hemen yeni kaynağa atlama; sorunun hangi dersten ve alt konudan geldiğini not al, sırası geldiğinde o alt desteyi aç.
+            Hemen yeni kaynağa atlama. Sorunun hangi dersten ve alt konudan geldiğini not al; sırası gelince o alt desteyi aç.
           </p>
         </article>
         <article class="rounded-2xl border border-line bg-white p-5 space-y-2">
-          <p class="text-sm font-semibold text-warm">Tip B · İki Şıkta Kalma</p>
+          <p class="text-sm font-semibold text-warm">Tip B · İki şıkta kalma</p>
           <p class="text-sm font-semibold text-ink">Çalıştım ama karıştırdım</p>
           <p class="text-xs text-inkMuted leading-relaxed">
-            <strong>En yüksek getirili hata grubudur.</strong> İki kavramı ayıran tek kritik bulguyu kısa kişisel karta çevir ve <code>deneme-yanlis</code> etiketiyle takip et.
+            <strong>En çok puan getiren hata grubu budur.</strong> İki kavramı ayıran tek bulguyu kısa bir karta yaz ve <code>deneme-yanlis</code> etiketiyle takip et.
           </p>
         </article>
         <article class="rounded-2xl border border-line bg-white p-5 space-y-2">
-          <p class="text-sm font-semibold text-inkMuted">Tip C · Dikkat &amp; Süre</p>
+          <p class="text-sm font-semibold text-inkMuted">Tip C · Dikkat ve süre</p>
           <p class="text-sm font-semibold text-ink">Soru kökünü yanlış okudum</p>
           <p class="text-xs text-inkMuted leading-relaxed">
-            Olumsuz kök (“değildir”, “en az olası”) ve süre baskısından kaynaklanır. Denemeleri Kronometre ile gerçek sınav saatinde ve sürede çöz.
+            Nedeni olumsuz soru kökleri (“değildir”, “en az olası”) ve süre baskısıdır. Denemeleri Kronometre ile gerçek sınav saatinde ve süresinde çöz.
           </p>
         </article>
       </div>

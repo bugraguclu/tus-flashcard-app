@@ -299,7 +299,7 @@ function mountPlanner(root: HTMLElement): void {
     if (kpiAvgMin) kpiAvgMin.textContent = `~${formatDurationTr(res.target.avgMinutes)} / gün (yeni + tekrar)`;
     if (kpiPeak) kpiPeak.textContent = formatTrInt(res.target.peakCards);
     if (kpiPeakSub) {
-      kpiPeakSub.textContent = `~${formatDurationTr(res.target.peakMinutes)} · ${res.target.peakDay}. günde tepe`;
+      kpiPeakSub.textContent = `~${formatDurationTr(res.target.peakMinutes)} · ${res.target.peakDay}. gün`;
     }
     if (kpiPct) kpiPct.textContent = formatTrPct(res.target.memorizedPct);
     if (kpiMem) {
@@ -324,7 +324,7 @@ function mountPlanner(root: HTMLElement): void {
     if (cmpTargetNote) {
       cmpTargetNote.textContent =
         res.target.finishDay !== null
-          ? `İlk tur ${res.target.finishDay}. günde biter; son gün yük ${formatDurationTr(res.target.endDayMinutes)}.`
+          ? `İlk tur ${res.target.finishDay}. günde biter; son gün ${formatDurationTr(res.target.endDayMinutes)} çalışırsın.`
           : `${res.input.days} günde ${formatTrInt(res.target.introduced)} kart açılır.`;
     }
     if (cmpMegaPct) cmpMegaPct.textContent = formatTrPct(res.mega.memorizedPct);
@@ -350,14 +350,14 @@ function mountPlanner(root: HTMLElement): void {
     if (phaseIntroLabel) {
       phaseIntroLabel.textContent =
         res.target.finishDay !== null
-          ? `1. Faz (Yeni + Tekrar): 1–${introSpan}. gün (${formatTrCalendarDate(baseUtc, introSpan)})`
-          : `1. Faz (Yeni + Tekrar): 1–${introSpan}. gün (ilk tur %${seenPct} açılır)`;
+          ? `1. faz (yeni + tekrar): 1–${introSpan}. gün (${formatTrCalendarDate(baseUtc, introSpan)})`
+          : `1. faz (yeni + tekrar): 1–${introSpan}. gün (ilk tur %${seenPct} açılır)`;
     }
     if (phaseTailLabel) {
       phaseTailLabel.textContent =
         tailSpan > 0
-          ? `2. Faz (Yalnız Tekrar + Deneme): ${introSpan + 1}–${res.input.days}. gün (${tailSpan} gün)`
-          : '2. Faz (Yalnız tekrar tamponu): 0 gün';
+          ? `2. faz (yalnız tekrar + deneme): ${introSpan + 1}–${res.input.days}. gün (${tailSpan} gün)`
+          : '2. faz (yalnız tekrar): 0 gün';
     }
 
     // Course roadmap

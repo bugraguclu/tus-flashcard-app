@@ -28,7 +28,7 @@ const pageSchema = {
 ---
 <Layout
   title="TUS Çalışma Planı ve Tempo Hesaplayıcı | TusAnkiM"
-  description={`Sınav tarihine, derslerine ve çalışma günlerine göre ${num(catalog.totals.cards)} TUS kartı için günlük yeni kart, tekrar yükü ve süreyi FSRS-6 simülasyonuyla hesapla.`}
+  description={`TUS çalışma planı hesaplayıcı: sınav tarihini, derslerini ve çalışma günlerini seç; ${num(catalog.totals.cards)} kart için günlük yeni kart, tekrar ve süreyi FSRS-6 ile gör.`}
   schema={[crumbs, pageSchema]}
 >
   <section class="page-intro bg-surface border-b border-line py-10 sm:py-14">
@@ -41,10 +41,10 @@ const pageSchema = {
       <div class="section-num">Çalışma araçları</div>
       <h1 class="display text-page-title tracking-tightest text-ink mt-2 max-w-3xl">TUS çalışma planı ve tempo hesaplayıcı</h1>
       <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
-        Sınava kalan süreyi, derslerini ve haftada kaç gün çalışacağını seç; günlük yeni kart, tekrar yükü ve ilk turun ne zaman biteceği anında hesaplanır.
+        Sınava kalan süreyi, derslerini ve haftada kaç gün çalışacağını seç. Günde kaç yeni kart açacağını, kaç tekrar çıkacağını ve ilk turun ne zaman biteceğini hemen görürsün.
       </p>
       <a href="/tus-calisma-rehberi/" class="text-link mt-2">
-        2027 sınav takvimi, 11 branş stratejisi ve sık yaşanan zorluklar için TUS Çalışma Rehberi →
+        TUS çalışma rehberi: 2027 sınav takvimi, 11 branş ve en sık yaşanan zorluklar →
       </a>
     </div>
   </section>

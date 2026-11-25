@@ -12,35 +12,35 @@ const o = ref.overall;
       <p class="kicker">Kısaca</p>
       <h2 id="kisaca-heading" class="display text-section tracking-tightest text-ink mt-3">TusAnkiM nedir?</h2>
       <p data-speakable class="mt-4 text-inkMuted leading-relaxed">
-        TusAnkiM, TUS'a (Tıpta Uzmanlık Sınavı) hazırlanan hekim ve tıp öğrencileri için Türkçe aralıklı tekrar uygulamasıdır.
-        {num(t.cards)} kartlık hazır BKA TUS paketini <span lang="en">FSRS-6</span> algoritmasıyla zamanlar; kartlar, tekrar geçmişi ve yedekler cihazda kalır.
-        Kart kalitesini son 6 TUS'un {num(o.soru)} sorusuyla açık veriyle ölçer.
+        TusAnkiM, TUS’a (Tıpta Uzmanlık Sınavı) hazırlanan hekimler ve tıp öğrencileri için Türkçe bir aralıklı tekrar uygulamasıdır.
+        İçinde {num(t.cards)} hazır kart var; hangi kartı hangi gün tekrar edeceğini <span lang="en">FSRS-6</span> hesaplar.
+        Kartların, tekrar geçmişin ve yedeklerin cihazında kalır. Kartların işe yarayıp yaramadığını da son 6 TUS’un {num(o.soru)} sorusu üzerinden açıkça gösteriyoruz.
       </p>
     </div>
     <dl class="lg:col-span-7 grid sm:grid-cols-2 gap-px rounded-2xl overflow-hidden border border-line bg-line reveal" style="--d: 80ms">
       <div class="bg-white p-5">
         <dt class="text-sm font-semibold text-inkMuted">Kimin için</dt>
-        <dd class="mt-1.5 text-sm text-ink leading-relaxed">Stajyer ve intörn tıp öğrencileri, TUS'a hazırlanan pratisyen hekimler.</dd>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">Stajyer ve intörn tıp öğrencileri ile TUS’a hazırlanan pratisyen hekimler.</dd>
       </div>
       <div class="bg-white p-5">
         <dt class="text-sm font-semibold text-inkMuted">Nerede çalışır</dt>
-        <dd class="mt-1.5 text-sm text-ink leading-relaxed">iPhone için geliştiriliyor; bugün web tarayıcıda (Mac, Windows, iPad, Android) ücretsiz beta olarak çalışır, çevrimdışı da açılır.</dd>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">iPhone uygulamasını geliştiriyoruz. Bugün Mac, Windows, iPad ve Android’de tarayıcıdan ücretsiz kullanabilirsin; internet yokken de açılır.</dd>
       </div>
       <div class="bg-white p-5">
         <dt class="text-sm font-semibold text-inkMuted">İçerik</dt>
-        <dd class="mt-1.5 text-sm text-ink leading-relaxed">{num(t.cards)} kart, {t.courses} ders, {t.topicSubdecks} konu alt destesi; kendi destelerini de ekleyebilirsin.</dd>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">{num(t.cards)} kart, {t.courses} ders, {t.topicSubdecks} konu alt destesi. Kendi destelerini de ekleyebilirsin.</dd>
       </div>
       <div class="bg-white p-5">
         <dt class="text-sm font-semibold text-inkMuted">Araçlar</dt>
-        <dd class="mt-1.5 text-sm text-ink leading-relaxed">Kronometre, Çalışma Takvimi, Çalışma Planlama ve TUS puan hesaplayıcı.</dd>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">Kronometre, Çalışma Takvimi, Çalışma Planlama ve TUS puan hesaplayıcısı.</dd>
       </div>
       <div class="bg-white p-5">
         <dt class="text-sm font-semibold text-inkMuted">Anki uyumu</dt>
-        <dd class="mt-1.5 text-sm text-ink leading-relaxed">Kişisel <code>.apkg</code> / <code>.colpkg</code> desteleri medya ve tekrar geçmişiyle içe ve dışa aktarılır.</dd>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">Kişisel <code>.apkg</code> / <code>.colpkg</code> destelerini görselleri ve tekrar geçmişiyle birlikte alır, aynı şekilde geri verir.</dd>
       </div>
       <div class="bg-white p-5">
         <dt class="text-sm font-semibold text-inkMuted">Kim hazırlıyor</dt>
-        <dd class="mt-1.5 text-sm text-ink leading-relaxed">TusAnkiM ekibi; Anki veya Ankitects ile bağlantısı olmayan bağımsız bir projedir.</dd>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">TusAnkiM ekibi. Bağımsız bir projeyiz; Anki veya Ankitects ile bağlantımız yok.</dd>
       </div>
     </dl>
   </div>
