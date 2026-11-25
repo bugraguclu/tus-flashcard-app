@@ -188,3 +188,17 @@ web-facing changes there:
   never on the closed sidebar.
 - Open an address that does not exist (e.g. `/bir-sey-yok`): the themed "Sayfa bulunamadı" page
   appears, and "Destelere dön" opens the deck list without leaving the bad address in history.
+
+For web control feedback, hover and Tab-focus a Study Calendar day, the Statistics week strip,
+the tag picker's standalone checkbox, a filter chip and Reset Card's draft switches. Tint and
+rings follow the visible shape, while calendar margins and whole-row switches remain usable.
+A mouse click must clear the keyboard ring; Space still toggles a focused standalone switch.
+See [control feedback verification](WEB_CONTROL_FEEDBACK_VERIFICATION.md) for browser evidence.
+Also check SearchField with a nonempty query, password show/hide, and the recorder's
+pause/resume/redo action: hover and keyboard rings follow their round controls. Space clears
+the query or activates the focused action; clicking the recorder caption still pauses/resumes.
+On a running stopwatch, Tab reaches the named note button once, skips the duplicate message row,
+and shows the complete focus ring beside the timeline node. Both pointer entry points still edit
+the note. In the card browser, Tab to a row's pencil: its ring circles the pencil inside the card,
+clear of the flag. In Add, Tab into a field: the field's row is ringed; Tab on to the next button:
+it is ringed too; click into a field: no ring.

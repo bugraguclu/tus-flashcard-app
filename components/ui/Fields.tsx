@@ -2,7 +2,9 @@ import React, { forwardRef, useState } from 'react';
 import { Platform, type StyleProp, StyleSheet, type TextInputProps, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Text, TextInput } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
+import { IconButton } from './Button';
 import { fieldRowProps } from './fieldRow';
+import { focusFaceProps } from './focusFace';
 import { CloseIcon, EyeIcon, EyeOffIcon, SearchIcon } from './icons';
 import { HIT_TARGET, Radius, Type } from './tokens';
 
@@ -103,14 +105,12 @@ export const PasswordField = forwardRef<TextInput, PasswordFieldProps>(function 
             {...props}
             secureTextEntry={!visible}
             accessory={(
-                <TouchableOpacity
-                    style={styles.accessory}
+                <IconButton
                     onPress={() => setVisible((current) => !current)}
-                    accessibilityRole="button"
                     accessibilityLabel={visible ? hideLabel : showLabel}
                 >
                     {visible ? <EyeOffIcon color={colors.textSecondary} /> : <EyeIcon color={colors.textSecondary} />}
-                </TouchableOpacity>
+                </IconButton>
             )}
         />
     );
@@ -156,7 +156,7 @@ export const SearchField = forwardRef<TextInput, SearchFieldProps>(function Sear
                     accessibilityRole="button"
                     accessibilityLabel={clearLabel}
                 >
-                    <View style={[styles.clearCircle, { backgroundColor: colors.borderLight }]}>
+                    <View {...focusFaceProps} style={[styles.clearCircle, { backgroundColor: colors.borderLight }]}>
                         <CloseIcon color={colors.textSecondary} size={16} />
                     </View>
                 </TouchableOpacity>
@@ -177,7 +177,6 @@ const styles = StyleSheet.create({
     multiline: { minHeight: 120, textAlignVertical: 'top', paddingTop: Spacing.md },
     withAccessory: { flexDirection: 'row', alignItems: 'center', borderRadius: Radius.control, borderWidth: 1 },
     inner: { flex: 1, minWidth: 0, borderWidth: 0, backgroundColor: 'transparent', paddingRight: 0 },
-    accessory: { width: HIT_TARGET, height: HIT_TARGET, alignItems: 'center', justifyContent: 'center' },
     labelled: { gap: Spacing.xs + 2 },
     label: { fontSize: FontSize.sm, fontWeight: '600' },
     search: {

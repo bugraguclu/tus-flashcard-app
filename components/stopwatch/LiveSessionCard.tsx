@@ -135,6 +135,8 @@ export default function LiveSessionCard({ live, focusMinutes, breakMinutes, onEd
                         style={local.messageRow}
                         onPress={onEditNote}
                         disabled={live.onBreak}
+                        focusable={false}
+                        aria-hidden
                         accessibilityElementsHidden
                         importantForAccessibility="no-hide-descendants"
                     >

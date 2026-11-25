@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appShortcutFor, axisForRole, coversLayer, isFocusNavigationKey, isShowingRoute, stepIndex } from './webKeyboardNavigation';
+import { appShortcutFor, axisForRole, coversLayer, FRAME_HANDOFF_MS, frameFocusRing, isFocusNavigationKey, isShowingRoute, stepIndex } from './webKeyboardNavigation';
 
 const press = (key: string, extra: Partial<Parameters<typeof appShortcutFor>[0]> = {}) => ({
     key,
@@ -104,5 +104,22 @@ describe('coversLayer', () => {
         expect(coversLayer(320, 240, 1280, 800)).toBe(false);
         expect(coversLayer(1280, 56, 1280, 800)).toBe(false);
         expect(coversLayer(100, 100, 0, 0)).toBe(false);
+    });
+});
+
+describe('frameFocusRing', () => {
+    const now = 10_000;
+    it('keeps the ring when Tab in the page moved focus into a field frame', () => {
+        expect(frameFocusRing('enter', now, now - 20, 0)).toBe('keep');
+    });
+    it('drops the ring when a press inside the frame (or a script) gave it focus', () => {
+        expect(frameFocusRing('enter', now, now - FRAME_HANDOFF_MS - 1, now - 5)).toBe('hide');
+        expect(frameFocusRing('enter', now, 0, 0)).toBe('hide');
+    });
+    it('shows the ring when Tab inside the frame moved focus out to the page', () => {
+        expect(frameFocusRing('leave', now, 0, now - FRAME_HANDOFF_MS - 1)).toBe('show');
+    });
+    it('leaves it to the press when a click in the page took focus from the frame', () => {
+        expect(frameFocusRing('leave', now, 0, now - 10)).toBe('keep');
     });
 });

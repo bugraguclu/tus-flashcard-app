@@ -4,6 +4,7 @@ import {
     appShortcutFor,
     axisForRole,
     coversLayer,
+    frameFocusRing,
     isFocusNavigationKey,
     stepIndex,
     type AppShortcut,
@@ -60,8 +61,13 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
         const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '');
         const showRing = () => { root.dataset.focusRing = 'on'; };
         const hideRing = () => { delete root.dataset.focusRing; };
+        // When the last press and the last Tab came out here: see onWindowBlur.
+        let pressedAt = 0;
+        let tabbedAt = 0;
+        const onPointerDown = () => { pressedAt = Date.now(); hideRing(); };
 
         const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Tab') tabbedAt = Date.now();
             if (isFocusNavigationKey(event.key)) showRing();
             if (event.defaultPrevented) return;
             const modal = topModal();
@@ -100,8 +106,42 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
         // parks focus on markers beside an open modal, which leave with it.
         let lastOutside: HTMLElement | null = null;
         let opener: HTMLElement | null = null;
+        // A card field's editor is a frame whose keys and presses stay in its own document. This
+        // document only sees the window lose focus as the frame takes it, and an element here take
+        // it back, so those decide the ring (`frameFocusRing`). A frame never matches :focus here
+        // either, so its field row (`fieldRowProps`) is marked to wear the ring.
+        let focusedFrame: HTMLIFrameElement | null = null;
+        // Whether this window has lost focus yet, and whether it has just come back from a frame.
+        let windowBlurred = false;
+        let backFromFrame = false;
+        const leaveFrame = () => {
+            focusedFrame?.closest('[data-field-row]')?.removeAttribute('data-frame-focus');
+            focusedFrame = null;
+            backFromFrame = false;
+        };
+        const onWindowBlur = (event: FocusEvent) => {
+            if (event.target !== window) return;
+            windowBlurred = true;
+            const active = document.activeElement;
+            if (!(active instanceof HTMLIFrameElement)) return;
+            focusedFrame = active;
+            active.closest('[data-field-row]')?.setAttribute('data-frame-focus', '');
+            if (frameFocusRing('enter', Date.now(), tabbedAt, pressedAt) === 'hide') hideRing();
+        };
+        // Back to this document, from a frame: one it saw take focus, or one that took it before
+        // this window ever lost it (a field focused as the screen opens). If nothing here takes
+        // focus straight after (a press on the page's background), the frame is simply left.
+        const onWindowFocus = (event: FocusEvent) => {
+            if (event.target !== window) return;
+            backFromFrame = focusedFrame !== null || !windowBlurred;
+            setTimeout(() => { if (backFromFrame) leaveFrame(); }, 0);
+        };
         const onFocusIn = (event: FocusEvent) => {
             const target = event.target;
+            if (backFromFrame && !(target instanceof HTMLIFrameElement)) {
+                leaveFrame();
+                if (frameFocusRing('leave', Date.now(), tabbedAt, pressedAt) === 'show') showRing();
+            }
             if (target instanceof HTMLElement) markClippedRing(target);
             // Once the browser has scrolled it in, clear of the window's edge and anything floating over it.
             if (target instanceof HTMLElement && root.dataset.focusRing) {
@@ -138,12 +178,17 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
         // The page's own handlers run first, so a screen that uses a key itself (the study
         // screen's answer keys, a text field's arrows) keeps it.
         window.addEventListener('keydown', onKeyDown);
-        window.addEventListener('pointerdown', hideRing, true);
+        window.addEventListener('pointerdown', onPointerDown, true);
         window.addEventListener('focusin', onFocusIn, true);
+        window.addEventListener('blur', onWindowBlur);
+        window.addEventListener('focus', onWindowFocus);
         return () => {
+            window.removeEventListener('blur', onWindowBlur);
+            window.removeEventListener('focus', onWindowFocus);
+            leaveFrame();
             window.removeEventListener('focusin', onFocusIn, true);
             window.removeEventListener('keydown', onKeyDown);
-            window.removeEventListener('pointerdown', hideRing, true);
+            window.removeEventListener('pointerdown', onPointerDown, true);
             observer.disconnect();
             window.removeEventListener('animationstart', focusNewModal, true);
             window.removeEventListener('animationend', focusNewModal, true);
@@ -159,9 +204,13 @@ export function useWebKeyboardNavigation({ ringColor, haloColor, onShortcut }: {
 // (`fieldRowProps`, lib/fieldRowFocus.ts) wears the ring on the row rather than on its input. A list
 // row whose main control is only part of it (`data-hover-row`, lib/webHover.ts) wears the ring on
 // the whole row, just inside its edge, instead of a box around the name alone.
-// A button whose visible shape is smaller than what it takes presses for (the dock's raised ＋ with
-// its caption under it) wears the ring on that shape, marked `data-focus-face`.
+// A control whose visible shape is smaller than its press area (a calendar day, a standalone
+// checkbox or the dock's raised ＋ with its caption) wears the ring on `data-focus-face`.
 const FOCUS_RING_CSS = `
+/* React Native Web's switch input covers a pill but has square corners of its own. */
+[data-switch] input[role="switch"] { border-radius: 9999px; }
+/* Its thumb has an independent focus halo; the shared keyboard ring is the sole indicator. */
+[data-switch] > div { box-shadow: none !important; }
 html:not([data-focus-ring]) :focus { outline: none !important; }
 html[data-focus-ring] :focus {
     outline: 2px solid var(--tus-focus-ring) !important;
@@ -173,8 +222,8 @@ html[data-focus-ring] :is([data-focus-inset], [data-focus-clipped]):focus {
     outline-offset: -2px !important;
     box-shadow: inset 0 0 0 4px var(--tus-focus-halo) !important;
 }
-html[data-focus-ring] :is(button, [role="button"]):focus:has([data-focus-face]) { outline: none !important; box-shadow: none !important; }
-html[data-focus-ring] :is(button, [role="button"]):focus [data-focus-face] {
+html[data-focus-ring] :is(button, [role="button"], [role="checkbox"], [role="radio"]):focus:has([data-focus-face]) { outline: none !important; box-shadow: none !important; }
+html[data-focus-ring] :is(button, [role="button"], [role="checkbox"], [role="radio"]):focus [data-focus-face] {
     outline: 2px solid var(--tus-focus-ring) !important;
     outline-offset: 2px !important;
     box-shadow: 0 0 0 2px var(--tus-focus-halo) !important;
@@ -183,7 +232,7 @@ html[data-focus-ring] [data-field-row] input:focus, html[data-focus-ring] [data-
     outline: none !important;
     box-shadow: none !important;
 }
-html[data-focus-ring] [data-field-row]:has(input:focus, textarea:focus) {
+html[data-focus-ring] [data-field-row]:is(:has(input:focus, textarea:focus), [data-frame-focus]) {
     outline: 2px solid var(--tus-focus-ring) !important;
     outline-offset: 2px !important;
     box-shadow: 0 0 0 2px var(--tus-focus-halo) !important;

@@ -22,6 +22,7 @@ import { editorFieldFontFamily } from '../lib/editorFieldStyle';
 import { isPlainFieldText, prepareEditorContent } from '../lib/richTextEditorContent';
 import { EditorFlushBarrier } from '../lib/editorFlushBarrier';
 import WebHtmlFrame from './WebHtmlFrame';
+import { fieldRowProps } from './ui/fieldRow';
 import {
     embeddedWebViewLayout,
     stableMeasuredHeight,
@@ -539,7 +540,8 @@ const RichTextEditor = forwardRef<RichTextEditorHandle, RichTextEditorProps>(fun
     }, []);
 
     return (
-        <View style={[styles.frame, { minHeight, height: frameHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]}>
+        // In a browser the focused field's ring goes round this frame, not the clipped iframe in it.
+        <View style={[styles.frame, { minHeight, height: frameHeight, borderColor: colors.border, backgroundColor: colors.bgCard }]} {...fieldRowProps}>
             {Platform.OS === 'web' ? (
                 <WebHtmlFrame
                     frameRef={iframeRef}

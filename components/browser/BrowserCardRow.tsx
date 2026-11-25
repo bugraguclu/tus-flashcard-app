@@ -23,6 +23,7 @@ import StarGlyph from '../StarGlyph';
 import CardsGlyph from '../CardsGlyph';
 import { ClockGlyph, PauseGlyph, PlayGlyph } from '../UiGlyphs';
 import { Button, IconButton } from '../ui/Button';
+import { focusFaceProps } from '../ui/focusFace';
 import { Checkbox } from '../ui/Choice';
 
 interface BrowserCardRowProps {
@@ -247,7 +248,11 @@ export function BrowserCardRow({
                             onPress={() => router.push(`/editor?cardId=${item.cardId}`)}
                             accessibilityLabel={isNotesMode ? l('Notu düzenle', 'Edit note') : l('Kartı düzenle', 'Edit card')}
                         >
-                            <PencilGlyph color={colors.textSecondary} size={20} />
+                            {/* The pencil's own 24-point slot is the face: in a browser the hover tint
+                                and focus ring circle it inside the card, clear of the flag under it. */}
+                            <View style={styles.editFace} {...focusFaceProps}>
+                                <PencilGlyph color={colors.textSecondary} size={20} />
+                            </View>
                         </IconButton>
                     )}
                     {item.noteMarked && (

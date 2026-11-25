@@ -9,6 +9,7 @@ import { menuOpenHaptic } from '../../lib/haptics';
 import { PopoverBackdrop, PopoverItem, PopoverModal, usePopoverProgress } from '../Popover';
 import PressableScale from '../PressableScale';
 import { Radius, Shadow } from './tokens';
+import { focusFaceProps } from './focusFace';
 
 /** The side of a floating button, in points. */
 export const FAB_SIZE = 56;
@@ -44,9 +45,6 @@ interface FabProps {
     style?: StyleProp<ViewStyle>;
 }
 
-/** In a browser, the mouse tint and keyboard focus ring of the button around a face go on the face (lib/webHover.ts). */
-const FOCUS_FACE_PROPS: object = Platform.OS === 'web' ? { dataSet: { focusFace: 'true' } } : {};
-
 /**
  * The floating button's face (its fill, corners, shadow and icon) for a control that wraps it in a
  * larger button: the dock's raised ＋, whose caption under it is part of the same button.
@@ -59,7 +57,7 @@ export function FabFace({ children, shape = 'rounded', color }: {
 }) {
     const colors = useThemeColors();
     return (
-        <View style={[styles.fab, shape === 'round' ? styles.round : styles.rounded, { backgroundColor: color ?? colors.accent }]} {...FOCUS_FACE_PROPS}>
+        <View style={[styles.fab, shape === 'round' ? styles.round : styles.rounded, { backgroundColor: color ?? colors.accent }]} {...focusFaceProps}>
             {children}
         </View>
     );
@@ -299,7 +297,7 @@ export function SpeedDialAction({ label, icon, onPress }: {
                     {label}
                 </Text>
             </View>
-            <View style={[styles.actionButton, { backgroundColor: colors.accent }]} {...FOCUS_FACE_PROPS}>{icon}</View>
+            <View style={[styles.actionButton, { backgroundColor: colors.accent }]} {...focusFaceProps}>{icon}</View>
         </TouchableOpacity>
     );
 }

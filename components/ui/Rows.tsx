@@ -28,6 +28,7 @@ export function AppSwitch({ value, onValueChange, disabled, accessibilityLabel, 
     }, [passive]);
     return (
         <Switch
+            {...(Platform.OS === 'web' ? { dataSet: { switch: 'true' } } : {})}
             ref={control as React.Ref<Switch>}
             value={value}
             onValueChange={onValueChange}

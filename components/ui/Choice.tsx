@@ -15,6 +15,7 @@ import { Text } from '../AppText';
 import { FontSize, Spacing, useThemeColors } from '../../constants/theme';
 import { MotionDuration, MotionEasing, NATIVE_DRIVER } from '../../constants/motion';
 import { useReduceMotion } from '../../hooks/useReduceMotion';
+import { focusFaceProps } from './focusFace';
 import { CheckIcon, CloseIcon, MinusIcon } from './icons';
 import { DISABLED_OPACITY, HIT_TARGET, Radius, Shadow, Type } from './tokens';
 
@@ -64,7 +65,7 @@ export function Chip({ label, selected = false, onPress, onRemove, removeLabel, 
             ]}
         >
             <TouchableOpacity
-                style={styles.chipBody}
+                style={[styles.chipBody, onRemove ? styles.chipBodySplit : styles.chipBodyWhole]}
                 onPress={onPress}
                 disabled={disabled || !onPress}
                 hitSlop={{ top: 6, bottom: 6 }}
@@ -245,6 +246,7 @@ export function Checkbox({ checked, mixed = false, onChange, accessibilityLabel,
     const filled = checked || mixed;
     const box = (
         <View
+            {...(onChange ? focusFaceProps : null)}
             style={[
                 styles.box,
                 { borderColor: filled ? colors.accent : colors.textMuted, backgroundColor: filled ? colors.accent : 'transparent' },
@@ -334,9 +336,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     chipBody: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, paddingHorizontal: Spacing.md, minHeight: 32, flexShrink: 1 },
+    chipBodyWhole: { borderRadius: Radius.pill },
+    chipBodySplit: { borderTopLeftRadius: Radius.pill, borderBottomLeftRadius: Radius.pill },
     chipText: { fontSize: FontSize.sm, fontWeight: '500' },
     chipTextSelected: { fontWeight: '600' },
-    chipRemove: { minHeight: 32, paddingRight: Spacing.sm + 2, paddingLeft: 0, justifyContent: 'center' },
+    chipRemove: { minHeight: 32, paddingRight: Spacing.sm + 2, paddingLeft: 0, justifyContent: 'center', borderTopRightRadius: Radius.pill, borderBottomRightRadius: Radius.pill },
     // A badge mostly sits in a row beside a title, where the row centres it; a column that should
     // not stretch it passes alignSelf.
     badge: { paddingVertical: Spacing.xxs },

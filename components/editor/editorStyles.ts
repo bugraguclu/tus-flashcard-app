@@ -185,7 +185,9 @@ export function createEditorStyles(colors: ColorScheme, inset = 0) {
         borderWidth: 1,
         borderColor: colors.border,
     },
-    fieldLabelRow: { minHeight: 40, marginTop: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    // Above the field frame under it, whose filled box would cover the lower edge of the pin's and
+    // attach button's web focus rings.
+    fieldLabelRow: { minHeight: 40, marginTop: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 1 },
     fieldName: { flex: 1, fontSize: FontSize.sm, fontWeight: '500', color: colors.textPrimary },
     fieldActions: { flexDirection: 'row', alignItems: 'center' },
     duplicateWarning: { marginTop: Spacing.xs },

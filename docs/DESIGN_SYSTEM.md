@@ -170,6 +170,15 @@ copy them; change them only on the owner's word.
 - Do not show or hide content on a field's focus alone: in a browser the press that moves focus
   away then lands on whatever slid under the pointer. Follow the software keyboard instead
   (`useKeyboardVisible`), as the Kronometre's course picker does.
+- A control with a visible face smaller than its press area spreads `focusFaceProps`
+  (`components/ui/focusFace.ts`) on that face. Web hover tint and the keyboard ring then follow
+  its corners while the full press area stays available; `StudyDayBox`, a standalone `Checkbox`
+  and the floating buttons use this, as do SearchField's clear circle and the recorder's round
+  secondary action above its caption, and the card browser's edit pencil. PasswordField uses the shared round `IconButton` for its
+  show/hide action. Mark only an interactive face: a passive checkbox inside
+  `CheckRow` stays unmarked so feedback covers the whole row. Split chips round the body and
+  remove action at their outer corners; `AppSwitch` gives its web input a pill shape and leaves
+  focus styling to the shared hook. See [web feedback verification](WEB_CONTROL_FEEDBACK_VERIFICATION.md).
 - `lib/designSystem.test.ts` counts what each file outside the kit still builds by hand: raw
   touchables, touchables with no 44-point target it can see, `Modal`, `TextInput` and `Switch`.
   `lib/designSystemAllowlist.json` holds today's counts; a file may lower them, never raise them,
@@ -183,3 +192,6 @@ copy them; change them only on the owner's word.
   backdrop is a pressable that covers the layer. Never draw a focus outline in a screen; never
   put a focusable control inside a row that takes the press (`AppSwitch passive` does this for
   `SwitchRow`).
+- A pointer shortcut that repeats a nearby named action must stay out of both web Tab order and
+  the accessibility tree, matching its native hidden-accessibility contract (the running
+  stopwatch's note message). Decorative timeline nodes must not paint over a control's ring.

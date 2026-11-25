@@ -104,6 +104,21 @@ export function isFocusNavigationKey(key: string): boolean {
         || key === 'Escape';
 }
 
+/** How close a Tab or press in the page must come before focus enters or leaves a field frame. */
+export const FRAME_HANDOFF_MS = 300;
+
+/**
+ * What the focus ring does as focus moves into or out of a same-origin frame (a card field's
+ * editor), whose own keys and presses the page never sees. Entering one shortly after a Tab in
+ * the page keeps the ring; otherwise a press inside the frame (or the screen's own call) put
+ * focus there and the ring goes. Leaving one with no press in the page just before was Tab
+ * inside the frame, so the ring shows.
+ */
+export function frameFocusRing(move: 'enter' | 'leave', now: number, tabbedAt: number, pressedAt: number): 'show' | 'hide' | 'keep' {
+    if (move === 'enter') return now - tabbedAt > FRAME_HANDOFF_MS ? 'hide' : 'keep';
+    return now - pressedAt > FRAME_HANDOFF_MS ? 'show' : 'keep';
+}
+
 /**
  * Whether an element of `width` × `height` inside a modal layer of `layerWidth` × `layerHeight`
  * is the layer's dimmed backdrop rather than a control: a pressable that covers the whole layer.

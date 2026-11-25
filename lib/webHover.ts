@@ -35,9 +35,9 @@ export const HOVER_TARGET_SELECTOR = [
 export const HOVER_ATTRIBUTE = 'data-tus-hover';
 
 /**
- * Marks the visible shape of a button that takes presses over a larger area (the dock's raised ＋
- * with its caption, a speed dial action with its name): the tint, and the keyboard focus ring
- * (hooks/useWebKeyboardNavigation.ts), go on that shape instead of the button's whole box.
+ * Marks the visible shape of a control that takes presses over a larger area (a calendar day,
+ * search-clear circle, or round recorder button with its caption): the tint and keyboard focus
+ * ring (hooks/useWebKeyboardNavigation.ts) go on that shape instead of the whole target.
  */
 export const FACE_ATTRIBUTE = 'data-focus-face';
 

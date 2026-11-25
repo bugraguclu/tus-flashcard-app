@@ -65,6 +65,8 @@ function createTimelineStyles(colors: ColorScheme) {
             bottom: 0,
             left: Spacing.md,
             justifyContent: 'center',
+            // Drawn after it, the timeline node would cover the right edge of this button's focus ring.
+            zIndex: 1,
         },
         sideButton: {
             width: 26,

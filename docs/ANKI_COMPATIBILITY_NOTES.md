@@ -660,6 +660,25 @@ enabled. The physical-device pass remains owner-deferred.
 
 **Next compatibility gate:** A listening pass with VoiceOver on macOS Safari of the same flows.
 
+**Control feedback refinement (2026-11-25):** Hover tint and keyboard rings follow the visible
+face when the press area is larger: `components/ui/focusFace.ts` marks `StudyDayBox`, floating
+buttons and standalone `Checkbox` boxes. Passive boxes inside `CheckRow` stay unmarked so the
+row keeps its feedback. Chips round the outer corners of their separate body/remove targets;
+`AppSwitch` rounds its web input and suppresses React Native Web's extra thumb focus halo, so
+one shared keyboard ring identifies the switch. Press areas, tab stops and choice behaviour
+stay the same. [Web control feedback verification](WEB_CONTROL_FEEDBACK_VERIFICATION.md)
+records the before/after views and browser checks; registry `w3c-aria-apg` remains the source.
+The follow-up audit also aligns SearchField's clear circle and the recorder's pause/resume/redo
+circle with their feedback, and uses the shared round IconButton for password show/hide. The
+field values, password AutoFill settings, recording lifecycle and full press targets are retained.
+The running stopwatch's message row now matches its native hidden-accessibility contract on web:
+it stays clickable but leaves Tab order and the accessibility tree, retaining the named note
+button as the single accessible action. That button's focus ring is painted above the decorative
+timeline node so the node cannot hide its right edge. The card browser's edit pencil wears its
+ring on its 24-point face, inside the card and clear of the flag. A card field's editor frame
+hides its keys and focus from the page, so `frameFocusRing` follows focus into and out of it: the
+field row wears the ring after Tab, a click into a field drops it, and Tab out shows it.
+
 ## iPhone study notifications
 
 **Status:** Implemented

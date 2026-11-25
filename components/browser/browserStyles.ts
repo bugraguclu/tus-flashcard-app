@@ -68,10 +68,12 @@ export function createBrowserStyles(colors: ColorScheme, inset = 0) {
         width: 24,
         flexShrink: 0,
         alignItems: 'center',
-        gap: Spacing.xxs,
+        // Room for the edit face's web focus ring above the marked star and the flag.
+        gap: Spacing.xs,
     },
     // The 44-point icon button, pulled in to the 24 points the pencil is given in the row.
     editBtn: { margin: -10 },
+    editFace: { width: 24, height: 24, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
     // The marked star, the flag and the suspended mark at the row's end.
     statusIcon: { width: 24, height: 18, alignItems: 'center', justifyContent: 'center' },
 

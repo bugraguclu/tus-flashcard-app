@@ -36,6 +36,7 @@ import { Button } from './ui/Button';
 import { ProgressBar } from './ui/Feedback';
 import { AppSheet } from './ui/Sheet';
 import { Radius } from './ui/tokens';
+import { focusFaceProps } from './ui/focusFace';
 
 interface AudioRecordModalProps {
     visible: boolean;
@@ -462,7 +463,7 @@ function RecorderSheet({ visible, onClose, onSaved, onDismissed }: RecorderSheet
                     ? l('Kayda devam et', 'Resume recording')
                     : l('Yeniden kaydet', 'Record again')}
         >
-            <View style={styles.secondaryCircle}>
+            <View style={styles.secondaryCircle} {...focusFaceProps}>
                 {phase === 'recording' ? <PauseIcon color={colors.textPrimary} size={20} />
                     : phase === 'paused' ? <View style={styles.resumeDot} />
                         : <RetakeIcon color={colors.textPrimary} size={22} />}

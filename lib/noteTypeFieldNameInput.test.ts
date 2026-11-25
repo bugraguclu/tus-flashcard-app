@@ -7,6 +7,8 @@ vi.mock('react-native', () => ({
     StyleSheet: { create: (styles: unknown) => styles },
     TextInput: 'TextInput',
 }));
+// This suite renders plain text fields; password accessory animation belongs to the UI kit.
+vi.mock('../components/ui/Button', () => ({ IconButton: 'IconButton' }));
 vi.mock('./db', () => ({ getDB: vi.fn(), dbUpsertFtsCard: vi.fn() }));
 import { FieldNameInput } from '../components/note-type/FieldNameInput';
 import { commitFieldRename } from './noteTypeEditor';

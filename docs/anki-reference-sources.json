@@ -18,7 +18,7 @@
       "priority": 3,
       "platform": "web keyboard interaction",
       "url": "https://www.w3.org/WAI/ARIA/apg/patterns/",
-      "useFor": ["menu, tabs and modal dialog keyboard patterns", "roving Tab stop of a segmented control", "focus return when a dialog closes; hooks/useWebKeyboardNavigation.ts", "Skip to main and stable main landmarks added to the existing live keyboard system; native opening focus is separately device-gated"]
+      "useFor": ["menu, tabs and modal dialog keyboard patterns", "roving Tab stop of a segmented control", "focus return when a dialog closes; hooks/useWebKeyboardNavigation.ts", "Skip to main and stable main landmarks added to the existing live keyboard system; native opening focus is separately device-gated", "visible-face focus feedback for calendar days, standalone checkboxes, search clear and recorder actions; rounded chip, switch and password-action feedback; components/ui/focusFace.ts and docs/WEB_CONTROL_FEEDBACK_VERIFICATION.md"]
     },
     {
       "id": "react-native-textinput-key-recording",

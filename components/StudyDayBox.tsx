@@ -6,6 +6,7 @@ import { StyleSheet, View, type ViewProps } from 'react-native';
 import { Text } from './AppText';
 import { FontSize, useThemeColors, type ColorScheme } from '../constants/theme';
 import { Radius } from './ui/tokens';
+import { focusFaceProps } from './ui/focusFace';
 
 const DAY_MS = 86400000;
 
@@ -73,6 +74,7 @@ export default function StudyDayBox({
 
     return (
         <View
+            {...focusFaceProps}
             {...viewProps}
             style={[
                 styles.box,
