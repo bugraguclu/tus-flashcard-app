@@ -289,11 +289,10 @@ a.branch-row:focus-visible { outline: 2px solid #0e7469; outline-offset: 2px; }
   background:
     radial-gradient(ellipse 60% 80% at 85% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 60%),
     linear-gradient(135deg, #0e7469 0%, #0b5e55 100%);
-  /* Cancel the footer's shared top margin so the band meets the footer. */
-  margin-block-end: -4rem;
 }
-@media (min-width: 1024px) {
-  .cta-band { margin-block-end: -5rem; }
+/* Remove the footer gap without pulling it over the band's bottom padding. */
+main:has(> .cta-band:last-child) + footer {
+  margin-block-start: 0;
 }
 
 /* ── Live card demo (LiveCardDemo.astro), from the previous home stylesheet ── */
