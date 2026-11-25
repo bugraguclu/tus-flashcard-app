@@ -91,6 +91,14 @@ you open it. Study reminders use the same language.
 **System**, **Light** or **Dark** (default: **Light**). **System** follows your iPhone's light/dark
 appearance. The chosen theme also applies to the keyboard, system sheets and the status bar.
 
+<a id="accent-colour"></a>
+### Accent colour
+
+The colour of buttons, the selected tab, switches and links. Pick one of nine ready colours
+(default: **Teal**) or set your own with **+**. The colour is adjusted to stay legible in the light
+and dark themes. Answer buttons, card states and charts keep their colours, because those colours
+carry meaning. This setting stays on the device; account sync does not carry it.
+
 <a id="text-size"></a>
 ### Text size
 

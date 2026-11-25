@@ -468,7 +468,7 @@ function ThemeGate({ children }: { children: React.ReactNode }) {
     }, [activeMode]);
 
     return (
-        <ThemeColorsProvider mode={activeMode}>
+        <ThemeColorsProvider mode={activeMode} accent={settings.accentColor}>
             <TextScaleProvider multiplier={textMultiplier}>{children}</TextScaleProvider>
         </ThemeColorsProvider>
     );

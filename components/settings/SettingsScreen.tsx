@@ -64,6 +64,7 @@ import ScreenHeader from '../ScreenHeader';
 import { Button, HelpButton } from '../ui/Button';
 import { Card, Divider, SectionLabel } from '../ui/Card';
 import { SegmentedControl } from '../ui/Choice';
+import { AccentColorSetting } from './AccentColorSetting';
 import { AppDialog } from '../ui/Dialog';
 import { EmptyState, LoadingState, Notice } from '../ui/Feedback';
 import { SearchField } from '../ui/Fields';
@@ -894,6 +895,9 @@ export default function SettingsScreen({ section: activeSection }: { section: Se
                         { value: 'dark' as const, label: l('Koyu', 'Dark') },
                     ]}
                 />
+            </Card>
+            <Card padded title={l('Vurgu rengi', 'Accent colour')}>
+                <AccentColorSetting value={settings.accentColor} onChange={(value) => updateSetting('accentColor', value)} />
             </Card>
             <Card padded title={l('Yazı boyutu', 'Text size')}>
                 <TextSizeSlider value={settings.textSizeLevel} onChange={(level) => updateSetting('textSizeLevel', level)} />

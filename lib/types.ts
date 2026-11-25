@@ -230,6 +230,8 @@ export type StudyNotificationThreshold = 0 | 10 | 25 | 50 | 75 | 100 | 150 | 200
 export interface AppSettings {
     language: AppLanguage;
     themeMode: ThemeMode;
+    /** The accent colour: a preset id or `#rrggbb` (lib/accentTheme.ts). Absent means the app's teal. */
+    accentColor?: string;
     /** App-wide text size: one of the four steps of the Settings slider. Cards keep `cardZoomPercent`. */
     textSizeLevel?: TextSizeLevel;
     keyBindings: KeyBindings;

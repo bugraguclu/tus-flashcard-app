@@ -1,5 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import { Platform, useColorScheme, type ColorSchemeName } from 'react-native';
+import { applyAccent } from '../lib/accentTheme';
 
 export type ColorScheme = typeof LightColors;
 export type ThemeMode = 'system' | 'light' | 'dark';
@@ -191,20 +192,23 @@ const ThemeIsDarkContext = createContext<boolean>(false);
 export function resolveThemeColors(
     mode: ThemeMode,
     systemScheme: ColorSchemeName,
+    accent?: string,
 ): { colors: ColorScheme; isDark: boolean } {
     const effective = mode === 'system' ? systemScheme : mode;
     const isDark = effective === 'dark';
-    return { colors: isDark ? DarkColors : LightColors, isDark };
+    return { colors: applyAccent(isDark ? DarkColors : LightColors, accent, isDark), isDark };
 }
 
 /**
  * Wraps the app and resolves the user's `themeMode` preference ('system' | 'light' | 'dark')
- * against the OS color scheme, feeding the result to useThemeColors() below. Must sit inside
- * AppProvider (needs the persisted setting) and outside anything that calls useThemeColors().
+ * against the OS color scheme and applies the chosen accent colour (lib/accentTheme.ts), feeding
+ * the result to useThemeColors() below. Must sit inside AppProvider (needs the persisted
+ * settings) and outside anything that calls useThemeColors().
  */
-export function ThemeColorsProvider({ mode, children }: { mode: ThemeMode; children: React.ReactNode }) {
+export function ThemeColorsProvider({ mode, accent, children }: { mode: ThemeMode; accent?: string; children: React.ReactNode }) {
     const systemScheme = useColorScheme();
-    const { colors, isDark } = resolveThemeColors(mode, systemScheme);
+    // One palette object per choice: every themed screen memoises its styles on it.
+    const { colors, isDark } = React.useMemo(() => resolveThemeColors(mode, systemScheme, accent), [accent, mode, systemScheme]);
     return React.createElement(
         ThemeIsDarkContext.Provider,
         { value: isDark },

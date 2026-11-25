@@ -92,6 +92,14 @@ uygulama Türkçe, başka bir dil ise İngilizce görünür. Uygulama ilk açıl
 **Sistem**, **Açık** veya **Koyu** (varsayılan: **Açık**). **Sistem**, iPhone'un açık/koyu görünüm
 ayarını izler. Seçtiğiniz tema klavyeye, sistem sayfalarına ve üstteki durum çubuğuna da uygulanır.
 
+<a id="accent-colour"></a>
+### Vurgu rengi
+
+Düğmelerin, seçili sekmenin, anahtarların ve bağlantıların rengi. Dokuz hazır renkten birini seçin
+(varsayılan: **Turkuaz**) veya **+** ile kendi renginizi belirleyin. Renk, açık ve koyu temada
+okunaklı kalacak şekilde ayarlanır. Yanıt düğmelerinin, kart durumlarının ve grafiklerin renkleri
+anlam taşıdığı için değişmez. Bu ayar cihazda kalır; hesap eşitlemesiyle taşınmaz.
+
 <a id="text-size"></a>
 ### Yazı boyutu
 

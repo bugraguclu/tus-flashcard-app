@@ -131,7 +131,7 @@ export const COLLECTION_SETTINGS = [
 
 /** Settings that stay on each device: display, gestures, keyboard, notifications, backups (§4.3). */
 export const DEVICE_SETTINGS = [
-    'themeMode', 'textSizeLevel', 'keyBindings', 'editorFontSize', 'editorCapitalizeSentences', 'editorToolbarVisible',
+    'themeMode', 'accentColor', 'textSizeLevel', 'keyBindings', 'editorFontSize', 'editorCapitalizeSentences', 'editorToolbarVisible',
     'editorToolbarScrollable', 'pasteClipboardImagesAsPng', 'newStudyScreenEnabled', 'studyFrameStyle', 'showAudioPlayButtons',
     'showAnswerFeedback', 'showAnswerButtons', 'showStudyTopBar', 'reviewerToolbarPosition', 'showToolsOverlayButton',
     'toolsOverlayPosition', 'focusTypeAnswer', 'showDeckTitle', 'centerCardContent', 'showRemainingTime', 'keepScreenOn',

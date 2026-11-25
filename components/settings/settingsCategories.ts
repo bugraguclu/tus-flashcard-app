@@ -31,9 +31,10 @@ export function settingsCategories(
 ): SettingsSearchCategory<SettingsSectionId>[] {
     return [
         {
-            id: 'general', title: l('Genel', 'General'), summary: l('Dil • Tema • Yazı boyutu • Düzenleme', 'Language • Theme • Text size • Editing'),
+            id: 'general', title: l('Genel', 'General'), summary: l('Dil • Tema • Vurgu rengi • Yazı boyutu • Düzenleme', 'Language • Theme • Accent colour • Text size • Editing'),
             settings: [
                 l('Uygulama metinleri', 'App text'),
+                l('Vurgu rengi', 'Accent colour'),
                 l('Yeni kartların destesi', 'Deck for new cards'),
                 l('Pano görsellerini PNG olarak yapıştır', 'Paste clipboard images as PNG'),
                 l('Yazarak cevap alanlarını devre dışı bırak', 'Never type answers'),

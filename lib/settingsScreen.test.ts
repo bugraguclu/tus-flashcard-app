@@ -92,7 +92,7 @@ vi.mock('expo-router', async () => {
 vi.mock('../constants/theme', () => {
     const colors = new Proxy({}, { get: () => '#000' });
     const sizes = new Proxy({}, { get: () => 8 });
-    return { useThemeColors: () => colors, BorderRadius: sizes, FontSize: sizes, Spacing: sizes, Shadows: new Proxy({}, { get: () => ({}) }) };
+    return { useThemeColors: () => colors, useIsDarkTheme: () => false, resolveThemeColors: () => ({ colors, isDark: false }), BorderRadius: sizes, FontSize: sizes, Spacing: sizes, Shadows: new Proxy({}, { get: () => ({}) }) };
 });
 vi.mock('../hooks/useI18n', () => ({ useI18n: () => ({ t: (key: string) => key, l: (tr: string, en: string) => (h.english ? en : tr) }) }));
 vi.mock('../hooks/useUnsavedChangesGuard', () => ({ useUnsavedChangesGuard: () => {} }));
