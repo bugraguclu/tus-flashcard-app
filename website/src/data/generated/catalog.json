@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-10-26",
-  "catalogShaShort": "7030ad699f7f",
+  "catalogShaShort": "7428ba681ef0",
   "totals": {
     "cards": 9575,
     "notes": 7721,
@@ -81,19 +81,19 @@
       "topTopics": [
         {
           "name": "Genel Farmakoloji ve Toksikoloji",
-          "cards": 121
+          "cards": 117
         },
         {
           "name": "Santral Sinir Sistemi İlaçları",
-          "cards": 95
+          "cards": 91
         },
         {
           "name": "Otonom Sinir Sistemi İlaçları",
-          "cards": 82
+          "cards": 84
         },
         {
           "name": "Antimikrobiyal İlaçlar",
-          "cards": 69
+          "cards": 70
         },
         {
           "name": "Kardiyovasküler İlaçlar",
@@ -197,15 +197,15 @@
       "topTopics": [
         {
           "name": "Bakteriyoloji",
-          "cards": 191
+          "cards": 192
         },
         {
           "name": "Viroloji",
-          "cards": 113
+          "cards": 112
         },
         {
           "name": "İmmünoloji",
-          "cards": 102
+          "cards": 101
         },
         {
           "name": "Parazitoloji",
@@ -227,11 +227,11 @@
       "topTopics": [
         {
           "name": "Genel Patoloji",
-          "cards": 117
+          "cards": 115
         },
         {
           "name": "Genital Sistem ve Meme Patolojisi",
-          "cards": 93
+          "cards": 90
         },
         {
           "name": "Gastrointestinal ve Karaciğer Patolojisi",
@@ -239,11 +239,11 @@
         },
         {
           "name": "Endokrin Patoloji",
-          "cards": 53
+          "cards": 52
         },
         {
           "name": "Nöropatoloji",
-          "cards": 42
+          "cards": 41
         }
       ]
     },
@@ -287,11 +287,11 @@
       "topTopics": [
         {
           "name": "Proteinler",
-          "cards": 211
+          "cards": 210
         },
         {
           "name": "Karbonhidratlar",
-          "cards": 91
+          "cards": 90
         },
         {
           "name": "Nükleik Asitler",
@@ -347,19 +347,19 @@
       "topTopics": [
         {
           "name": "Baş ve Boyun",
-          "cards": 136
+          "cards": 135
         },
         {
           "name": "Nöroanatomi",
           "cards": 88
         },
         {
-          "name": "Üst Ekstremite",
+          "name": "Alt Ekstremite",
           "cards": 46
         },
         {
-          "name": "Alt Ekstremite",
-          "cards": 46
+          "name": "Üst Ekstremite",
+          "cards": 45
         },
         {
           "name": "Toraks",

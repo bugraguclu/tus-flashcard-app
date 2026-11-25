@@ -1,0 +1,7649 @@
+{
+ "schema": "tusankim.catalog-editorial/v1",
+ "course": "Farmakoloji",
+ "date": "2026-10-17",
+ "originalReference": {
+  "gitRef": "a08dd99",
+  "sha256": "8aa5cab3881e79d4c397aabff85093cd099ca712fc40eecf788125dd310baa53"
+ },
+ "packageBeforeSha256": "7030ad699f7fd19b9f97ca666321133833bf3dfb47d8c1527bbae8b0e6fa0bd3",
+ "reviewedNotes": 669,
+ "reviewedCards": 827,
+ "boundaries": {
+  "cards": "74b2cd2b72adceb61b9f437cc121f5a2fe11040d92778d4523df68337d3416f1",
+  "revlog": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "graves": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "collection": "d77b2e5569583e7afdc18d6a8747fc488cef0cf907da5f8c66cf90104b61eff6",
+  "noteIdentity": "90984ca47dbdefd40db5c3b25a4c1d072925253cb109a90419604f7b597759fc",
+  "otherCourses": "ccd3397613f313dca5c7ed64723bf0e1be5f88055f4d05c78cce181158911f96"
+ },
+ "scope": [
+  {
+   "noteId": 1604658403534,
+   "guid": "i2zs..WE[N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604658420380,
+   "guid": "HAu#&AIY(2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604658517072,
+   "guid": "l`F`yz$LZ.",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604658572710,
+   "guid": "nBuD(q6=A`",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604658614777,
+   "guid": "p3ae!Ak)V*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604658697631,
+   "guid": "Hli-1!0v+P",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604658729642,
+   "guid": "O3&),#I*^`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604658776955,
+   "guid": "j?b[)Liog|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604658821190,
+   "guid": "ftpfM+$!)>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659073479,
+   "guid": "qu2KITg7jr",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604659182857,
+   "guid": "h@w2HxxY$W",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659293357,
+   "guid": "ClY]yV1t]i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659340261,
+   "guid": "Hk-.Ol2cg|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659401076,
+   "guid": "HL6LEiGmjh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659468504,
+   "guid": "b3[d4g,9$2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659543784,
+   "guid": "B][6$Sv.cj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604659672730,
+   "guid": "p<m6j`71>p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659703124,
+   "guid": "wjoAdO9o#[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659718564,
+   "guid": "N&Rz[=6I{9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659743392,
+   "guid": "H4bun-d?yI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659790627,
+   "guid": "EFI^g%[49a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659827245,
+   "guid": "DY)8}O)+;F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659867251,
+   "guid": "O#2%.u_&Pm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659918928,
+   "guid": "tWr3[Wl^2S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604659970884,
+   "guid": "y-Il3Ap]Gk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660052044,
+   "guid": "uEla.$tQ`t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660114281,
+   "guid": "e1UwGQ5O_$",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660153614,
+   "guid": "K(6Ak35]wU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660192048,
+   "guid": "Od,L66hlgd",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604660348352,
+   "guid": "O[)xA}ovW;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660413863,
+   "guid": "w3LF&%5<bV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660471791,
+   "guid": "Og;Ce)dAO?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660661154,
+   "guid": "g%T#[#mqZ.",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660714694,
+   "guid": "Q~rMzw:e/!",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660768713,
+   "guid": "MgrL}Mj6rC",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604660888878,
+   "guid": "uLbN06q8N@",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660925432,
+   "guid": "H2KNrZLN{b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604660951876,
+   "guid": "w=a~ENF4!4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661002784,
+   "guid": "EQTwGwSN:w",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661027936,
+   "guid": "MFk+[D.ny",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661058280,
+   "guid": "kk4/K3ksLA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661265183,
+   "guid": "M52?WY2]xA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661687102,
+   "guid": "A3DaCIAANe",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604661760984,
+   "guid": "oPTy=t(zT]",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661803396,
+   "guid": "cs2F*kwl@9",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661860469,
+   "guid": "nGi6,A6qi5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661930644,
+   "guid": "kUn`vG-hxX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661945097,
+   "guid": "eoq_morU%:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604661999012,
+   "guid": "iX0FmK-E<#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662098553,
+   "guid": "hKLXVbMg:{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604662169969,
+   "guid": "q-lq>uHg)u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662230357,
+   "guid": "e?XJhFLTb?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662262361,
+   "guid": "v>V0}qS-JT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662370749,
+   "guid": "ohZ8F`0KL4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662406814,
+   "guid": "v2.*9j[gjj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662479790,
+   "guid": "w=.MwaE%D&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662530425,
+   "guid": "Eu!SEJEMFR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662571307,
+   "guid": "M}fXRQZP%y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662611713,
+   "guid": "xsELf*{(Fo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604662629111,
+   "guid": "zj3R!EA:]b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604663891723,
+   "guid": "esM0P~5NCz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604663930737,
+   "guid": "s1_ibT_P}m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664022414,
+   "guid": "NhXi}8#&~{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664053617,
+   "guid": "e:.z+XAL+h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664108821,
+   "guid": "C,`_Xs!|U~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664154722,
+   "guid": "jog(%6[1w%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664214710,
+   "guid": "k6oVk-Mn>-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664292400,
+   "guid": "yo;/)xg16q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664363789,
+   "guid": "OLm_2m?z3s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604664397262,
+   "guid": "O4Qh2Bp=oD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664435588,
+   "guid": "j=`]=$?h?d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604664464928,
+   "guid": "N6N:$LJJMr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664525528,
+   "guid": "sO!i?gX>X2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664556223,
+   "guid": "uYf{>L*3.(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664584591,
+   "guid": "o.|<r@,591",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664665816,
+   "guid": "JJMYx|O[Bg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664711569,
+   "guid": "x)fV,/ds%s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664771576,
+   "guid": "qMUPyBLj7n",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604664795184,
+   "guid": "BhcHIgp)_r",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604664855480,
+   "guid": "m~/]Iq(VrL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665047093,
+   "guid": "ghXXEd2M[+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665194929,
+   "guid": "N+].x0Y%^;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665236360,
+   "guid": "ItA+R}W&m[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665341080,
+   "guid": "rIk$d!]N2{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665532053,
+   "guid": "G<)Atgi9-p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665569805,
+   "guid": "tle%+H3w(i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665668267,
+   "guid": "xyax(NC%Oa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665702981,
+   "guid": "c@0m6Pxy%e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665854041,
+   "guid": "H-O;fk9:#x",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665941345,
+   "guid": "D+Ls4pRyh%",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604665993718,
+   "guid": "rDo)A(K$;n",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666037559,
+   "guid": "~_nPud=(Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666089231,
+   "guid": "u3HHHDCsS+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666217564,
+   "guid": "uTTwx{Hf]3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666297767,
+   "guid": "PW%ur$&{?@",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666349412,
+   "guid": "vFdV%<*Sb0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666396597,
+   "guid": "d7|n|:Z2_F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666452733,
+   "guid": "lzEaq.Y-~D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666477710,
+   "guid": "?t]!P{!I.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666531980,
+   "guid": "u;DCT+{g+>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666570694,
+   "guid": "kw:VPXkD<;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604666638391,
+   "guid": "z_O<-&/k%?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604667983451,
+   "guid": "2X_ql+:&:",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668047298,
+   "guid": "bH&Kf=0Zon",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668148271,
+   "guid": "QyYIr=+#s|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668218197,
+   "guid": "G<M^^PZ:/j",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668263237,
+   "guid": "yjp3),g(.<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604668318973,
+   "guid": "GkeNR%OE)#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668342200,
+   "guid": "dyq:M_-7K~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668374008,
+   "guid": "BzDuEbQTzY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668415228,
+   "guid": "AY3iUdv9^b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668466631,
+   "guid": "|CJjZX:>e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668521348,
+   "guid": "H^Wb2^`A[|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668585971,
+   "guid": "seYt}BuG6r",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604668649061,
+   "guid": "d`Sxw]v]Y_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604673488719,
+   "guid": "C77v>B;99z",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604673562981,
+   "guid": "uMOD`/2KD-",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604673618935,
+   "guid": "e0R^B$B8($",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604673660250,
+   "guid": "Q~I+B{~h/`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604673893495,
+   "guid": "zCxjdZ{NeB",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604673924036,
+   "guid": "b/0xWOW`SM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604673964856,
+   "guid": "tIJKPin(+S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674033454,
+   "guid": "E8G[/!tnsy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674111739,
+   "guid": "psvBLD`f;M",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674169599,
+   "guid": "yW-(809rsZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674208179,
+   "guid": "jY<Tx;7ZML",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674240580,
+   "guid": "y:QF.XS5J]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674260304,
+   "guid": "go/|F:$,sz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674302732,
+   "guid": "Le,NIiSL@a",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674357441,
+   "guid": "xZjBZ@zf[[",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674390958,
+   "guid": "ipy5/Hho/{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674416441,
+   "guid": "yj1e}WtG?C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674576990,
+   "guid": "v^;QA]d5`!",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674633584,
+   "guid": "LXJ4[x1LZX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674660950,
+   "guid": "fhH,mSU_c`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674704666,
+   "guid": "BaGCibp-Qj",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674738850,
+   "guid": "G+^XMp;@x+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674802370,
+   "guid": "r<+!`;m}x,",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604674851692,
+   "guid": "ex.HCWj;j(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674865356,
+   "guid": "NzY=3=YAT6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674901522,
+   "guid": "OE9q?)+y~E",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604674992158,
+   "guid": "jO7dWs=_%4",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675045374,
+   "guid": "dou2S$(Dqh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675090086,
+   "guid": "OWrkg4}b-G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675139847,
+   "guid": "qe,=^UPJ3{",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675183386,
+   "guid": "k&zm/mP@{M",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675221849,
+   "guid": "dh!~[?ltH]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675286637,
+   "guid": "BN.FJt/2Wt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675342972,
+   "guid": "c^8z#mMHx{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675386076,
+   "guid": "yPk1xise=g",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675431688,
+   "guid": "q@rHYe([wy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675475976,
+   "guid": "nodq[BY88a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604675493292,
+   "guid": "Mb~*ro;`8B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604675563908,
+   "guid": "GrEk?A#y&=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604677986713,
+   "guid": "mJxe-IN$7/",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678233588,
+   "guid": "sx?&qEDftp",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678273384,
+   "guid": "qy)bB1T+Ro",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678344813,
+   "guid": "yL${!i3!yV",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678371552,
+   "guid": "Ew:c|brW&6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678403133,
+   "guid": "wbCMU_4FK>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678443542,
+   "guid": "P2t+DP?N$G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678475955,
+   "guid": "OQi=-6UFC^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678537729,
+   "guid": "yI#j6<[1Uc",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678561084,
+   "guid": "Pl*0*3LJ?{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678596380,
+   "guid": "FhC={tetyF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678637884,
+   "guid": "C99yl<W`W{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678777207,
+   "guid": "K?!h2?{mG2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678811575,
+   "guid": "!+evnt-si",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604678918838,
+   "guid": "C_R1KF_3bq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679016376,
+   "guid": "PFS:^%GH^f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679041854,
+   "guid": "IzheXl].[`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679086459,
+   "guid": "gp-X,?zO&c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679178702,
+   "guid": "[&X2PlzoK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679231221,
+   "guid": "lDii%#6kt`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679301656,
+   "guid": "gZ1hDsE09",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604679327077,
+   "guid": "D<LAjC|<=y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679361847,
+   "guid": "h8Y5V=&<A`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679425487,
+   "guid": "Hx76!PS^=O",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679491227,
+   "guid": "bFQ&_6j7gH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679705459,
+   "guid": "P{j+HbdY3C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679763045,
+   "guid": "e,lf|E%xX}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679790099,
+   "guid": "MCR{+4Efct",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679820354,
+   "guid": "g{A~<NRAR(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679866915,
+   "guid": "gq(5D_`Gdn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604679944365,
+   "guid": "nN`D]W)mr[",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604680075482,
+   "guid": "PpdshTrnkv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604680132754,
+   "guid": "b8a0uDOc(i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604680194276,
+   "guid": "n~o/n2<rQ-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604680218893,
+   "guid": "G|2!6>=LDS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604680266545,
+   "guid": "B$sEfzAZgp",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604680296365,
+   "guid": "cX,/(M=S2X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604680354222,
+   "guid": "Lzql&{$A[|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604680392251,
+   "guid": "pw^sQe!,BQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604680457857,
+   "guid": "IC7sNd*Q6v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732212255,
+   "guid": "Ad{mrfp]bN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732271208,
+   "guid": "A1peG8G[/<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732304214,
+   "guid": "kAUUmdq20w",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732366681,
+   "guid": "q#*/3WEX;#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732436356,
+   "guid": "l,W$;3XCd/",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732505495,
+   "guid": "06GYZ@jk^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732561765,
+   "guid": "K^Qq2~&jEh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732678036,
+   "guid": "RiQ0BM,v1~",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732732065,
+   "guid": "d8?4%krd@s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732768987,
+   "guid": "FaWtNL!GUc",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732798197,
+   "guid": "k0EWFh~6)0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732874861,
+   "guid": "uT9J_S,l!r",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732904720,
+   "guid": "Muu^KZF9~E",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604732974650,
+   "guid": "FcKzd&8oM*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733028338,
+   "guid": "Ce.lc3aroY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733044510,
+   "guid": "G{y+Z:{1t~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733086309,
+   "guid": "oyN0=vSsq!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733141646,
+   "guid": "sngt<7sZ{I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733203785,
+   "guid": "D0Wvbn7UO3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733270236,
+   "guid": "jzY:~)ven6",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733304654,
+   "guid": "li<4>aRx1@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733350997,
+   "guid": "EA6[v.H/(o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733393569,
+   "guid": ")ZSk$EHAO",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733427872,
+   "guid": "d$eWh}}G%e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733483080,
+   "guid": "oo!nsVX4/y",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733508091,
+   "guid": "JbmwlbIA-N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733564502,
+   "guid": "P)sYEXW-+2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604733622476,
+   "guid": "q0|h)c$B!C",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733673851,
+   "guid": "QU~j?!<r,d",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733730814,
+   "guid": "P59e{LO}7e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733779319,
+   "guid": "h#_S^;Auvz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733852471,
+   "guid": "MG2LC8[*|[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604733896704,
+   "guid": "e!~lz9f.9I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604733986077,
+   "guid": "pa@5a{5qR=",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734009527,
+   "guid": "gT4)t8b+!1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734067819,
+   "guid": "nYK`J~FGvJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604734128593,
+   "guid": "jAGmACY[)0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734169331,
+   "guid": "P,b+=,&G+.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734235843,
+   "guid": "GBs{n/|G5,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734275826,
+   "guid": "HTvf0Uv/N`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734451990,
+   "guid": "q+@Xa53e0s",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734489572,
+   "guid": "OA}?TzZp6Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734559913,
+   "guid": "C~xu51G&i)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604734608756,
+   "guid": "cz)Tf{n}{{",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734655737,
+   "guid": "QTs?:}2h23",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734727057,
+   "guid": "Oe7%bn,XWF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734840451,
+   "guid": "D?+/]vB:fU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734871914,
+   "guid": "h(>([GJb&|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604734941604,
+   "guid": "kO|2Qj;.Fy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604735002620,
+   "guid": "D0qo#bJuB@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735043578,
+   "guid": "GujHZ%llwC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604735105424,
+   "guid": "v?tve%?]8M",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735212632,
+   "guid": "leErj.dUw<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735236591,
+   "guid": "ONJJQCIcJ&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735290528,
+   "guid": "bQ}d{+LjKF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735336058,
+   "guid": "t90(qIvJH:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735398020,
+   "guid": "lTd{e:s+p(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735446522,
+   "guid": "N[=tbv)_xq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735498647,
+   "guid": "m]G?s`I+Nn",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604735532119,
+   "guid": "v(#4HZbs0?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735603215,
+   "guid": "K_h-VXybUp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735666177,
+   "guid": "E,DPF/]RUq",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735689810,
+   "guid": "bw()|alx|)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735743714,
+   "guid": "iMJ%Ml$d2Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735774363,
+   "guid": "gfLUr#Dw^A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735861028,
+   "guid": "BN$rQ<*_vK",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604735922068,
+   "guid": "l^0AMR*F0J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604735956639,
+   "guid": "K?/:wkY;s}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736119248,
+   "guid": "LIk!V#EE9D",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736167513,
+   "guid": "tJ:D,j%Rg}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736217908,
+   "guid": "vK%]W<b?*s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736256293,
+   "guid": "Ok69#.NP5K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736317738,
+   "guid": "Jn|il!UlJM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604736356459,
+   "guid": "e{X3r;Vh`C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736386989,
+   "guid": "BPhbTLl!=z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736412600,
+   "guid": "tVcm1]<02~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736479645,
+   "guid": "s/,J`Yg4vy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736586664,
+   "guid": "nz}jFi~ZxI",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736690331,
+   "guid": "O0`|D/jra,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736723740,
+   "guid": "dp_k7WJxdh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736752910,
+   "guid": "D4_U;hKuf+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736779731,
+   "guid": "JXe[|56$uK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736842748,
+   "guid": "IU7jKg~P%%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604736907302,
+   "guid": "xuApYAh1]Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604747625714,
+   "guid": "x<oSYrM^I)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604747748517,
+   "guid": "vdtFH3Pl.?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604747891292,
+   "guid": "hY_CCxMK2]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604747931213,
+   "guid": "q7<$z=`ALq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748011998,
+   "guid": "qSi$>Ws=Y^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748123327,
+   "guid": "NE8ZLE=:fA",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748238453,
+   "guid": "xD3be,N=~H",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748261295,
+   "guid": "u}58j7:E8_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748320803,
+   "guid": "Aw824Hb0fZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748429969,
+   "guid": "M[gar=2XL}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748465876,
+   "guid": "zGzE`!1!$c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748490998,
+   "guid": "j8#;q,*:tL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748570601,
+   "guid": "f#1|Bv7c`X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604748625512,
+   "guid": "q)RuCB$?WK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604748699158,
+   "guid": "nq8Y>Y2$fU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604748958484,
+   "guid": "Lr)@uv^fZ$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749013614,
+   "guid": "zU>l^EOSWZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749052645,
+   "guid": "nr1AQ~3t~G",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749115220,
+   "guid": "QNX;Chu_og",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749244563,
+   "guid": "qXhh#~RnQH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749280152,
+   "guid": "D+e*`%VQ_}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604749354875,
+   "guid": "p}I&+2<DzP",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749515726,
+   "guid": "P08@}w_+(=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749542266,
+   "guid": "PPJ|j^&-LO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749561916,
+   "guid": "sb,f8W#pSt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749593972,
+   "guid": "l)Lx|oO;/G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749612433,
+   "guid": "oK$,BHJGBn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749662021,
+   "guid": "r;Egji)v[U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749714861,
+   "guid": "coX4HrpT|`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749758676,
+   "guid": "FYSS+l}XWZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604749989489,
+   "guid": "i~7v{S/=*4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750048478,
+   "guid": "o)ScQ]MagC",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750080093,
+   "guid": "kvk$223E[c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750106885,
+   "guid": "I(1vw$vsta",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750128611,
+   "guid": "b@58`]D!mY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750152510,
+   "guid": "ezKsAedMv]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750221256,
+   "guid": "xR$x>vN0h<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750265160,
+   "guid": "C}sPzl%-O|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750337740,
+   "guid": "huBF~-iF6]",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750370391,
+   "guid": "I%FKd$sZRi",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750410252,
+   "guid": "t{[kwwZETm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750439749,
+   "guid": "sVqURsFVU(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750468970,
+   "guid": "HIT<.fjdSp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750512691,
+   "guid": "MIeP#*?{q&",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750558871,
+   "guid": "Q/2%MaVqCu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750600060,
+   "guid": "eTk+7FN3vD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750674107,
+   "guid": "my15_|7Gjz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750706413,
+   "guid": "l3XRA^=vz|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750788265,
+   "guid": "Q+OvwHhAH;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750865863,
+   "guid": "OO/&A,(C%)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604750897936,
+   "guid": "{k{#6n%#p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751081671,
+   "guid": "QfMJAMU>.d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751087175,
+   "guid": "NY}=c20]Fm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751125871,
+   "guid": "ol4^BmFy43",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751193957,
+   "guid": "rUbBne-!Ga",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751250211,
+   "guid": "OZ5q$8%D;u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751290928,
+   "guid": "zuyV|KI_,Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751532610,
+   "guid": "EHxo.>?o`#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751587332,
+   "guid": "JCmEqe]#Y,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751620513,
+   "guid": "nb&+K9;#I6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751729453,
+   "guid": "M*,iX2S8/S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751786433,
+   "guid": "I5PKb=I}zA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751818545,
+   "guid": "NAM-$i,.5Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604751970495,
+   "guid": "m34(=lHF67",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752207302,
+   "guid": "r0s)H?k&T3",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752230977,
+   "guid": "J}VXTjD.?v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752296667,
+   "guid": "CGbMk(_}1d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752330090,
+   "guid": "iMPh=SuYP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752409170,
+   "guid": "K<eC3~GP#8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752597494,
+   "guid": "bXr@&d@Y0t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752634763,
+   "guid": "Of>Kw.r_{A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752727322,
+   "guid": "ua6{e/%X.S",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752774340,
+   "guid": "uF@&_T-?kF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752821211,
+   "guid": "sdjKaliJ6c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752853895,
+   "guid": "cuI4&F}P;:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752952303,
+   "guid": "C1J~(:YU&Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604752987610,
+   "guid": "C:`qW>}u3C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604753014410,
+   "guid": "rC{E@M:bLT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604753049122,
+   "guid": "m>-5Dpg>(v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604753064296,
+   "guid": "y><!jP^jU>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604753226605,
+   "guid": "DX$nU*g/gT",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604753260593,
+   "guid": "l42O~Kq~Hm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755090299,
+   "guid": "Rd,rdlEeH9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755143890,
+   "guid": "sh,s<_S*mL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755225732,
+   "guid": "p9q3V/=ej{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755270644,
+   "guid": "zRbdX)XC:a",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755308873,
+   "guid": "K>6&6,wDUh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755342999,
+   "guid": "IZP8,Im$(]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755370272,
+   "guid": "ns]@}M=LVo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755439163,
+   "guid": "dhOdA1K@Ci",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755496656,
+   "guid": "nB42iu~DyS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755634500,
+   "guid": "r8Wo0EO{@^",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755792605,
+   "guid": "b:6c}!f?#G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755856335,
+   "guid": "DQNwueAM`]",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755881375,
+   "guid": "LoS_^=V~pj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755901989,
+   "guid": "p[WKCKI#ct",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604755935654,
+   "guid": "I8rza1RTgK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756008532,
+   "guid": "B+&nMa&%,4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604756048921,
+   "guid": "Ams<r!HKFT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756083860,
+   "guid": "MVOV;E^w!5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756106889,
+   "guid": "klf0jvIY2h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756178653,
+   "guid": "HI//Y{(n+j",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756253366,
+   "guid": "H6>ksJMj8=",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756282233,
+   "guid": "dml3@K38uB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756336543,
+   "guid": "q,8NO9`%X|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756357343,
+   "guid": "sg/I.vdz#R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604756396027,
+   "guid": "bIt<k6Q#+K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604756416870,
+   "guid": "xB[~)OJsxS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604756446311,
+   "guid": "lgBNWWktbH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756473434,
+   "guid": "lIu~z#x-H#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756492165,
+   "guid": "O}DJQq;o9s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756527335,
+   "guid": "QH9OmKJ1Z:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756552786,
+   "guid": "M,-Y?8O,yx",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604756625360,
+   "guid": "I.iUuP~}{m",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604756686655,
+   "guid": "MH1IdE|v0",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604756865361,
+   "guid": "Kk-wJGp1g&",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604756932888,
+   "guid": "Fj^]vjnr.-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604756972129,
+   "guid": "zLAtg@YpE.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757082477,
+   "guid": "i?MfAu<#fL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604757111763,
+   "guid": "E(X(}Xlb+,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757145079,
+   "guid": "g5Fmu3VA,o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757190905,
+   "guid": "hkG5buM[rX",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757249253,
+   "guid": "v?n,v0jh&W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757266954,
+   "guid": "u_,gx?otBb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757315646,
+   "guid": "qk9ptXAU<!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757342870,
+   "guid": "D*Pp;M]}3>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604757433700,
+   "guid": "vYNFa0r#L$",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604757516176,
+   "guid": "B<g?LdX<3]",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757574834,
+   "guid": "iJWo,!x/v?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757622904,
+   "guid": "J8H+5&IZ_s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757688226,
+   "guid": "QMGDgNsjer",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757815433,
+   "guid": "i[PfI@0+|n",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757853167,
+   "guid": "Op_*czD/t5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757879990,
+   "guid": "or1)+B;Ek6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604757908675,
+   "guid": "q*FA&z^(Qh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604758238632,
+   "guid": "Pq[7aX~7|h",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604758281071,
+   "guid": "e;1rP[)&Mk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604758369185,
+   "guid": "p]MS@15o3e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604758538433,
+   "guid": "kT!.CGboF6",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604758591245,
+   "guid": "DLjr`sBil3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604758626773,
+   "guid": "O0@`kjvb|S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604758670384,
+   "guid": "e%c,ctj[A9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604758728726,
+   "guid": "De5(R-*~5d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608620480684,
+   "guid": "Q<t7=`<+KW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608621368801,
+   "guid": "MIDF}=VOk%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608625023087,
+   "guid": "l!!;8{@p;B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608625241792,
+   "guid": "pjIo?w7I|f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608631333779,
+   "guid": "NGPw];ahu(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608632008611,
+   "guid": "e:`bHdf`(L",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608657673252,
+   "guid": "tq9vm/[+wA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608658053473,
+   "guid": "w=XajiX?lM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608658251950,
+   "guid": "nZr&){`r6Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608658409319,
+   "guid": "myc.0~(nyr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608658892916,
+   "guid": "jJK<vzH]0&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608659399188,
+   "guid": "t=rA(_9p&(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1608659793074,
+   "guid": "i6tL[%2quG",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1608659927425,
+   "guid": "P5Qgw!zv@~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608659967732,
+   "guid": "yWgl3N)GNs",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608660235625,
+   "guid": "t~*kk-Tl6D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608663540315,
+   "guid": "QRP]$x[wx%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608663958237,
+   "guid": "br#IiO2?.!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608664178015,
+   "guid": "LIjml~SfuN",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608664268739,
+   "guid": "prPP-dO?Id",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608664729067,
+   "guid": "N5Y}98WkiI",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608664861249,
+   "guid": "y2mW0N~,@t",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608665004782,
+   "guid": "qUoS/J%|x8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608665042584,
+   "guid": "QLlUr[ysOH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608665083134,
+   "guid": "w5!}QxXC?(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608665096018,
+   "guid": "lBQP8)w<Vb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608665271529,
+   "guid": "b%m`2x8W[1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608665328449,
+   "guid": "Ta4GlSGNv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608665566907,
+   "guid": "C=%Y#b$`6Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608665725214,
+   "guid": "J/w:Grd93R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608727638890,
+   "guid": "BW7AUaQ#-~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608727901341,
+   "guid": "K&`;y=JbII",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608728265812,
+   "guid": "J$M+|;=*LP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1608728882833,
+   "guid": "B:wxh%et._",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608729138837,
+   "guid": "f%2Kz>;J<a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608747953634,
+   "guid": "d_+bY!i_Sh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608748378569,
+   "guid": "e3#?/ua?#Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608748949673,
+   "guid": "yyz*!NJUQ.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608749491861,
+   "guid": "h}|PEFU7,w",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608749537214,
+   "guid": "BlaffN1k[1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608751225038,
+   "guid": "qoX+!ZCx*o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608751308103,
+   "guid": "yN}k3)q-l7",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608751399689,
+   "guid": "hJW[9CyqII",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608752144684,
+   "guid": "p0^Te%QIRG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608752428834,
+   "guid": "wCSnASuIUv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608752740301,
+   "guid": "k[W;a`=vE.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608813487716,
+   "guid": "dwG}*@jEIE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608814006761,
+   "guid": "q@V5pUv2$0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608814038344,
+   "guid": "g=+Q|t?Pr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608814176504,
+   "guid": "cE~+beBl]q",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608816097743,
+   "guid": "OaZ#1idNb]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608816143529,
+   "guid": "gVpwNi4xP6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608816387683,
+   "guid": "E#I.={Y{]2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608816523726,
+   "guid": "yxrnvR(b)k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608817714510,
+   "guid": "k=}%yk(T]^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608818260623,
+   "guid": "x@=P2~n}vm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608818516275,
+   "guid": "n[lO#46cK(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608818857336,
+   "guid": "h?E`4oEeK[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608819045594,
+   "guid": "pkSZ2xu.[<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608819271387,
+   "guid": "Lr+5Af?9V?",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608831042959,
+   "guid": "v[&,AkRa!9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608831329192,
+   "guid": "nXJ`;oJa%y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608831676771,
+   "guid": "uL[}A[~-8z",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608834313218,
+   "guid": "x!=!I_7*5{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608834430961,
+   "guid": "mBxYtqeo=*",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608834491693,
+   "guid": "eBgA:{.wS7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608834569742,
+   "guid": "i,{]~K(lr+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608834615843,
+   "guid": "IANo8*C#x7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613595785291,
+   "guid": "Fe<geesUGN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613831490561,
+   "guid": "fejTdFhoz;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613911950917,
+   "guid": "HNIQ`]a*(v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613920979209,
+   "guid": "t^~b+*n7Ai",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613921259938,
+   "guid": "Nrw:(j$;s,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613921536177,
+   "guid": "NXTKII6ELx",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613930573692,
+   "guid": "z(#Rx^l..<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613931859167,
+   "guid": "xpO}K[_,~I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613936325900,
+   "guid": "P(#VIqCOZ;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613936388057,
+   "guid": "Q?sJl.Iy@3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613936743724,
+   "guid": "A|wGw`%xYB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613937884962,
+   "guid": "J([*}?5Gc,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613999107327,
+   "guid": "JD.<xi`~w;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614000466962,
+   "guid": "v-E#&Ky/b3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614002129079,
+   "guid": "n@pngV4}8g",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614003274466,
+   "guid": "jSswS|n:V.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614003789166,
+   "guid": "FXOSm%MEd;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614020250001,
+   "guid": "j@U#i+<%G^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1614020434117,
+   "guid": "qtnh7JLcOW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614025174643,
+   "guid": "f7UAy4]y/p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614795122491,
+   "guid": "zVUM3jjJXG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615300795249,
+   "guid": "F7h*m_YhWU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617568171792,
+   "guid": "y^9U|#fP98",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617737927059,
+   "guid": "mGjAB26$^*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618092037722,
+   "guid": "mi0k5CWk=`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618782498605,
+   "guid": "6a&KjvLI<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620850998797,
+   "guid": "M,_bPw.fP5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621177827303,
+   "guid": "uRT8W3t%|f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621321020297,
+   "guid": "mMD{iPNBI1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621795919626,
+   "guid": "N:::lDV%d&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621891765724,
+   "guid": "b:9&{JnGa2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621955622745,
+   "guid": "gG,9T~yytZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621967391122,
+   "guid": "OO]&^C`I{2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621971052376,
+   "guid": "o,|*JWgcn-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621973964873,
+   "guid": "Nn2U4yH1s3",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621974927939,
+   "guid": "tVed$=d>,U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621975041128,
+   "guid": "PYky~_Y[1d",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621975663680,
+   "guid": "fT]iso&}C}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621975748360,
+   "guid": "G0$1PjWi8P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622018446901,
+   "guid": "nMZ8d2MLle",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622018891659,
+   "guid": "dV1u=XaT3;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622034330599,
+   "guid": "FHqM$n(@oW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622034566829,
+   "guid": "Ir.qD8R}D&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622034961852,
+   "guid": "gml[Md!AE[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622034987828,
+   "guid": "HeDucc}!Ye",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622035457651,
+   "guid": "Fp$*uv3/*^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622038995681,
+   "guid": "i{VM*sTk&T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622039938051,
+   "guid": "mog:N/2RjW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622040093160,
+   "guid": "MnVHF.mE1W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622040149632,
+   "guid": "F|+S_N#4kk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622040281740,
+   "guid": "pHpC6.pOWP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622040710761,
+   "guid": "fBz;p2-W6d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622041704973,
+   "guid": "doEw&U|K4^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622042041001,
+   "guid": "GLs<YUrz<K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622051735403,
+   "guid": "lnetFK<gvk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622055594480,
+   "guid": "M]vJj[d8V*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622095512714,
+   "guid": "f?SM]pi;6B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622114029339,
+   "guid": "O%h_B9-6dl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622116568885,
+   "guid": "A+J`DzQw!:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622119953089,
+   "guid": "O|r^X$%l1L",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622120591782,
+   "guid": "N)_MOJt+7Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622120792883,
+   "guid": "v^oD7;}0<(",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622121267249,
+   "guid": "t>o}nVukY*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622123038342,
+   "guid": "n+_L3}EeVF",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622125656039,
+   "guid": "bL@;cj7_U3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622126127844,
+   "guid": "rvcNav~!CJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622126370878,
+   "guid": "r~Wbh-_i:3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622126495091,
+   "guid": "z)i,j#XIpb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622126943962,
+   "guid": "yQG4qb@)R5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622127187709,
+   "guid": "lU;5j:+K^&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622127691113,
+   "guid": "gI8DOTtQxw",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622127972820,
+   "guid": "id!>$?2j@R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622128241050,
+   "guid": "gCQ4Th2GP,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622128363863,
+   "guid": "MzP-e!%+iV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622128422624,
+   "guid": "yY}Sn-_~F(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622128526492,
+   "guid": "b}0mKcrl;B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622146892555,
+   "guid": "wDS8_/yz3-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622148080122,
+   "guid": "DmOAD)]R?-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622148137528,
+   "guid": "ErcB|E~~8^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622148218801,
+   "guid": "x>bPMY|-g,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622150235011,
+   "guid": "Eo*%f1h*gr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622150650992,
+   "guid": "eXlo!KJ<U<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622150924970,
+   "guid": "nr>#:a@YUq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622406908926,
+   "guid": "Jx`bHK-@$|",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622445408692,
+   "guid": "BL!F}yi!e~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622470618098,
+   "guid": "wjq*qv@zBt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622473893994,
+   "guid": "b5v>@e!%,$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622820760020,
+   "guid": "y`XhYnxKz!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622924300110,
+   "guid": "pJFpFUfnj*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623092688198,
+   "guid": "N/dQSva%?O",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623615958465,
+   "guid": "Ne!tac;F#T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623616003600,
+   "guid": "f+KP9aw)M{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624108314551,
+   "guid": "un((k,+Yvm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624111418792,
+   "guid": "bq:J~}]V9q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624113779691,
+   "guid": "t+jkvh/o)1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624114310365,
+   "guid": "}G8C3{^Pq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624127606595,
+   "guid": "t{.|I]p#B&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624171626287,
+   "guid": "b1#|.Tl`Na",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624173469306,
+   "guid": "P}!WZ/-flT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624173842034,
+   "guid": "K^)vA}frJm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624177277163,
+   "guid": "wmkrU9,R>x",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624187349979,
+   "guid": "PT3O,@ls8P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624188510902,
+   "guid": "iuurG45<nj",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624191574925,
+   "guid": "rlw]vi#`<a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624192331801,
+   "guid": "Aa}0wkTl(t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625125579620,
+   "guid": "q]Kz_vqae1",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625141477614,
+   "guid": "B5@RtSaQha",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625234974131,
+   "guid": "x;ZZiG)rJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625346699326,
+   "guid": "l#Mb%[Ym7b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625385244116,
+   "guid": "e<nNa>]Lg&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625410518452,
+   "guid": "bJJ:Hr&CQ8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625493650689,
+   "guid": "j@X!<zH9xa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625493897947,
+   "guid": "m.pC`GV=_h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625513526708,
+   "guid": "kpNz~1u}QB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626295562286,
+   "guid": "j6@c:b9AzE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626295599448,
+   "guid": "QW<;I4c|{G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626519693103,
+   "guid": "ObKx>,8rcA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626519889047,
+   "guid": "yUqwbYl%.2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626560583277,
+   "guid": "m+{UuT-T*}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626707882948,
+   "guid": "O;>__JN/?i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626708592389,
+   "guid": "z+Obc_r#Ab",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626766771689,
+   "guid": "oM^@;Frd:J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626767273767,
+   "guid": "t4=aar)j$1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626767340901,
+   "guid": "f(}*(#k,0N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626769906427,
+   "guid": "wPRT/IXPQL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626844533870,
+   "guid": "Ny@i3,$uL;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626856090155,
+   "guid": "e$K>Rb/s|^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626879670544,
+   "guid": "Hk0OoCPG@]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626880165003,
+   "guid": "A-o%y/7zpz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626880283926,
+   "guid": "J3;9z=drhI",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626880744237,
+   "guid": "IY$p@7FZ%+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627373008336,
+   "guid": "m${`#ko>Od",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627373139641,
+   "guid": "z1,.AtQrE/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627373275463,
+   "guid": "KDQ7;F=z8-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627373326927,
+   "guid": "P1lqQ;!{Oi",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627373492693,
+   "guid": "wl{emf4_)L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627391110120,
+   "guid": "E)l|@I|&gM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627417208451,
+   "guid": "bJl[{rR)N5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627660408758,
+   "guid": "PQ5gF+;M|5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627967677629,
+   "guid": "kgJwBCVn,z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628013189913,
+   "guid": "k+(;Eo$d0e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628539876983,
+   "guid": "JMB!v)0#(?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628797142808,
+   "guid": "x<L]#&(b|r",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628832361784,
+   "guid": "kiIXj9*-mh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628839814482,
+   "guid": "w$ykur$L>(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628840111008,
+   "guid": "dX]`06NiR[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628840207046,
+   "guid": "DH}:8Gt}J}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628862729786,
+   "guid": "uU!]x}P3`}",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628868145011,
+   "guid": "xAmCG4w8DK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628869272603,
+   "guid": "lA3D>m_P;8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628869791521,
+   "guid": "c]K*V]yVmO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628879552015,
+   "guid": "fVt,ydo}D4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628879861295,
+   "guid": "QIsse)Lg~,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628880666190,
+   "guid": "H]4IK^Yy.<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628882272062,
+   "guid": "sa3h)7!|B5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628882345033,
+   "guid": "xUKUpX)q69",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628885644154,
+   "guid": "H?>!RE0x)J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628885915273,
+   "guid": "m/Nj2;ZTd>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628959059343,
+   "guid": "MXnx-ShrRS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628959134202,
+   "guid": "im}-t.]*)W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629095726395,
+   "guid": "E=RZ+!9hdP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629113067982,
+   "guid": "gpq0/sK~na",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629228402438,
+   "guid": "g7Y>Xq$l_v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629579286967,
+   "guid": "Qw)@N7wj79",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629666638946,
+   "guid": "eF+.78(]R^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629751872279,
+   "guid": "Ou;2Yv;@49",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629922363549,
+   "guid": "AV$fUeDgY&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630010533091,
+   "guid": "mTeF;5q[Kr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630068166746,
+   "guid": "EZQ,WqERK;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630501532743,
+   "guid": "b+4sI&aUm[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1630502220295,
+   "guid": "i0(4If6wU<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630503076765,
+   "guid": "h1!RiC%Kw!",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630503303087,
+   "guid": "oI_5VywnhX",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630504965737,
+   "guid": "mHSe|oLCQ7",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630505909439,
+   "guid": "vJIt#B#t|G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630506250778,
+   "guid": "l,dSx&;G4l",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1630507000147,
+   "guid": "P2rV_ovyuI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630507383853,
+   "guid": "I75g(r.ZHz",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1630508709143,
+   "guid": "u+-X>Y)!6[",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630509323352,
+   "guid": "q~>8R1OS&?",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  }
+ ],
+ "notes": [
+  {
+   "noteId": 1604658729642,
+   "guid": "O3&),#I*^`",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Geniş spektrumlu antibiyotikler → oral kontraseptiflerin etkisini {{c1::azaltır}}",
+     "after": "Enzim indükleyen antibiyotikler → oral kontraseptiflerin etkisini {{c1::azaltır}}"
+    },
+    "Extra": {
+     "before": "Güncel kılavuzlara göre oral kontraseptif etkinliğini klinik olarak anlamlı düzeyde azaltan antibiyotikler yalnızca enzim indükleyicilerdir (rifampisin, rifabutin).",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Arka yüzdeki mevcut düzeltme kısa niteleyici olarak ana ifadeye taşındı; geniş spektrum genellemesi kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604658821190,
+   "guid": "ftpfM+$!)>",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Tetrasiklin ve kinolonlar antasitteki katyonlarla şelat oluşturur; İNH'nin emilimi alüminyum hidroksitle azalır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604659073479,
+   "guid": "qu2KITg7jr",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Bağırsak epitelindeki P-glikoproteinin inhibisyonu ilaçların emilimini artırır.",
+     "after": "Bağırsak epitelinde P-glikoprotein inhibisyonu."
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604659293357,
+   "guid": "ClY]yV1t]i",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Referans biyolojik ilaca (ör. monoklonal antikor) yüksek benzerlik gösteren, klinik olarak anlamlı farkı bulunmayan ürün → {{c1::biyobenzer}}",
+     "after": "Referans biyolojik ilaca yüksek benzerlik gösteren, klinik olarak anlamlı farkı bulunmayan ürün → {{c1::biyobenzer}}"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604659543784,
+   "guid": "B][6$Sv.cj",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Pratikte dört yarı ömür sonunda tamamlanmış kabul edilir.",
+     "after": "4 × t<sub>1/2</sub>"
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604660192048,
+   "guid": "Od,L66hlgd",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Tamoksifen metabolizmasına CYP2C19 dahil birden çok enzim katılır; endoksifen oluşumunda CYP2D6 temel rol oynar. Enzim aktivitesinden her iki ilaç için koşulsuz klinik etkinlik artışı çıkarılamaz. Tamoksifende metabolit düzeyi ile klinik sonlanım aynı ölçüt değildir.",
+     "after": "İkisi de ön ilaçtır."
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604660471791,
+   "guid": "Og;Ce)dAO?",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Hızlı asetilleyen → hepatit eşlemesi, eski asetilhidrazin metabolit şemasıdır; güncel klinik risk sınıflaması olarak kullanılmaz. NAT2 yavaş asetilleyici fenotipi çalışmalarda daha yüksek hepatotoksisite riskiyle ilişkilidir; risk ilaç rejimi ve diğer hasta özelliklerinden de etkilenir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604661687102,
+   "guid": "A3DaCIAANe",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "fields": {
+    "Extra": {
+     "before": "EP3 reseptörü başlıca Gi ile eşleşir; bazı izoformları Gs ve Gq ile de eşleşebilir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Kişisel önem notu veya kullanıcı tarafından silinmiş ek açıklama kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604662098553,
+   "guid": "hKLXVbMg:{",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Yarı maksimal etkiye reseptörlerin yarısından azı işgal edilerek ulaşılır; maksimal etki için tüm reseptörlerin işgali gerekmez.",
+     "after": "Maksimal etki için tüm reseptörlerin işgali gerekmez."
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604664525528,
+   "guid": "sO!i?gX>X2",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Kolinerjik etkisi yoktur; kolinerjik mantar alkaloidi muskarindir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604664556223,
+   "guid": "uYf{>L*3.(",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c1::Amanitin}} → mantar toksini; ilk 6–24 saat belirti olmaz, ardından gastroenterit ve 3–5. günde fulminan karaciğer yetmezliği",
+     "after": "{{c1::Amanitin}} → mantar toksini; ilk 6–24 saat belirti olmaz, 3–5. günde fulminan karaciğer yetmezliği"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604664771576,
+   "guid": "qMUPyBLj7n",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Yüksek dozda atropin → deride vazodilatasyon (atropin flush); mekanizması bilinmemektedir.",
+     "after": "Yüksek doz atropin → deride vazodilatasyon."
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604665668267,
+   "guid": "xyax(NC%Oa",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Beta-2 selektif vazodilatör sempatomimetik / intermittan klodikasyonda kullanılan → {{c1::nilidrin}} <b>(etkinliği kanıtlanamadığı için ABD'de piyasadan çekildi)</b>",
+     "after": "Beta-2 selektif vazodilatör sempatomimetik / intermittan klodikasyonda kullanılan → {{c1::nilidrin}} <b>(ABD'de piyasadan çekilmiş)</b>"
+    }
+   },
+   "actions": [
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1604665702981,
+   "guid": "c@0m6Pxy%e",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Eski kaynaklarda direkt etkili alfa-1 agonisti olarak geçer; etki mekanizması tam bilinmemektedir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604665854041,
+   "guid": "H-O;fk9:#x",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Kalp yetmezliğinde alfa-1 blokörler önerilmez.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604666297767,
+   "guid": "PW%ur$&{?@",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Güncel kılavuzlarda SGLT2 inhibitörleri (dapagliflozin, empagliflozin) de mortaliteyi azaltan temel ilaçlar arasındadır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604666349412,
+   "guid": "vFdV%<*Sb0",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Alfa-1 blokörler arter ve venleri birlikte dilate eder; vazodilatör etkileri arteriyel direnç damarlarında daha belirgindir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604667983451,
+   "guid": "2X_ql+:&:",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Digoksini doku (iskelet kası) bağlanma yerlerinden ayıran klasik ilaç kinidindir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604668218197,
+   "guid": "G<M^^PZ:/j",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Karbonik anhidraz inhibitörlerinin endikasyonları → idrar {{c1::alkalinizasyonu}} (sistin taşlarında; {{c1::asidik}} maddelerin atılımını artırır; {{c1::aspirin}} zehirlenmesinde kullanılmaz)",
+     "after": "Karbonik anhidraz inhibitörlerinin etkisi → idrar {{c1::alkalinizasyonu}} ({{c1::asidik}} maddelerin atılımını artırır; {{c1::aspirin}} zehirlenmesinde kullanılmaz)"
+    },
+    "Extra": {
+     "before": "Eski kaynaklarda zayıf asit yapılı ilaçların zehirlenmelerinde de kullanıldığı yazılır; zehirlenmelerde idrar İV sodyum bikarbonatla alkalileştirilir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604668585971,
+   "guid": "seYt}BuG6r",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Eski kaynaklarda meme kanseri yaptığı yazılır; bu uyarı sıçan çalışmalarına dayanır, insanda meme kanseri riskini artırdığı gösterilmemiştir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604668649061,
+   "guid": "d`Sxw]v]Y_",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Eski kaynaklarda kistik fibrozis de sayılır; inhale amiloridin kistik fibroziste yararı gösterilmemiştir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604674111739,
+   "guid": "psvBLD`f;M",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Eski kaynaklarda DOPA dekarboksilaz inhibitörü olarak geçer; antihipertansif etkisi bu inhibisyona bağlı değildir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604674240580,
+   "guid": "y:QF.XS5J]",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c1::İsradipin}} → zayıf negatif kronotrop etkisi nedeniyle <b>refleks taşikardisi</b> az olan damar selektif kalsiyum kanal blokörü",
+     "after": "{{c1::İsradipin}} → <b>refleks taşikardisi</b> az olan damar selektif kalsiyum kanal blokörü"
+    },
+    "Extra": {
+     "before": "Eski kaynaklarda bradikardi yapan kalsiyum kanal blokörü olarak geçer; kronik kullanımda istirahat nabzı hafifçe artar.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604674302732,
+   "guid": "Le,NIiSL@a",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Eski kaynaklarda listede isradipin de geçer; isradipin bradikardi yapmaz, kronik kullanımda nabzı hafifçe artırır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604674416441,
+   "guid": "yj1e}WtG?C",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Peptid yapıdaki tek ACE inhibitörü <b>(klinik kullanıma girmedi)</b> → {{c1::teprotid (oral etkisiz, İV verilir)}}",
+     "after": "Peptid yapıdaki tek ACE inhibitörü <b>(klinik kullanıma girmedi)</b> → {{c1::teprotid (İV verilir)}}"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604674576990,
+   "guid": "v^;QA]d5`!",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c2::<b>Ön ilaç formuyla kullanılan ARB'ler (üç örnek):</b><br><br>{{c1::Kandesartan sileksetil}}<br>{{c1::Olmesartan medoksomil}}<br>{{c1::Azilsartan medoksomil}}::ön ilaç listesi arka yüzde}}<br><br>{{c1::<b>ABD ürün bilgilerine göre böbrek yetmezliğinde ve hafif–orta karaciğer yetmezliğinde rutin başlangıç dozu ayarı gerektirmeyen iki ARB örneği:</b><br><br>{{c2::Olmesartan}}, {{c2::azilsartan}}::doz ayarı listesi arka yüzde}}",
+     "after": "{{c2::<b>Ön ilaç formuyla kullanılan ARB'ler (üç örnek):</b><br><br>{{c1::Kandesartan sileksetil}}<br>{{c1::Olmesartan medoksomil}}<br>{{c1::Azilsartan medoksomil}}::ön ilaç listesi arka yüzde}}<br><br>{{c1::<b>Böbrek yetmezliğinde ve hafif–orta karaciğer yetmezliğinde rutin başlangıç dozu ayarı gerektirmeyen iki ARB örneği:</b><br><br>{{c2::Olmesartan}}, {{c2::azilsartan}}::doz ayarı listesi arka yüzde}}"
+    },
+    "Extra": {
+     "before": "Başlangıç dozu bilgisi tüm ülkelerin ürün bilgilerine veya her klinik duruma genellenmez. Azilsartan ağır karaciğer yetmezliğinde çalışılmamıştır. Volüm kaybı ve böbrek fonksiyonunun izlenmesi ayrıca değerlendirilir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Kaynak atfı kaldırıldı; böbrek/karaciğer yetmezliğinin kapsamı ve başlangıç dozu koşulu korundu."
+   ]
+  },
+  {
+   "noteId": 1604674802370,
+   "guid": "r<+!`;m}x,",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Arteriyoler vazodilatörler refleks taşikardi yaparak miyokard iskemisini artırır.",
+     "after": "Arteriyoler vazodilatörler → miyokard iskemisi."
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604675183386,
+   "guid": "k&zm/mP@{M",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Günümüzde aynı amaçla hipertonik sodyum bikarbonat kullanılır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604675386076,
+   "guid": "yPk1xise=g",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Dar spektrumlu antiaritmikler (3)<div><div><br></div><div>{{c1::Lidokain, meksiletin, morisizin (2007'de ABD'de piyasadan çekildi)}}</div></div>",
+     "after": "Dar spektrumlu antiaritmikler (3)<div><div><br></div><div>{{c1::Lidokain, meksiletin, morisizin (ABD'de piyasadan çekilmiş)}}</div></div>"
+    }
+   },
+   "actions": [
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1604675431688,
+   "guid": "q@rHYe([wy",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Güncel ilk tercih antidot hidroksokobalamindir; nitritler sodyum tiyosülfatla birlikte kullanılır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604678811575,
+   "guid": "!+evnt-si",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Oral faktör Xa inhibitörlerinin (-sabanlar) antidotu → {{c1::andeksanet alfa}} (2025'te ABD'de piyasadan çekildi)",
+     "after": "Oral faktör Xa inhibitörlerinin (-sabanlar) antidotu → {{c1::andeksanet alfa}} (ABD'de piyasadan çekilmiş)"
+    },
+    "Extra": {
+     "before": "FDA, tromboembolik olay artışı nedeniyle risklerinin yararını aştığına karar vermiştir; AB'de koşullu onayı sürmektedir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1604679301656,
+   "guid": "gZ1hDsE09",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Hepatit C trombositopenisinde kullanılan:<div><br></div><div><b>Eltrombopag</b></div><div><br></div><div>Daha yeni oral trombopoetin reseptör agonistleri: avatrombopag, lusutrombopag</div>",
+     "after": "Hepatit C trombositopenisinde kullanılan:<div><br></div><div><b>Eltrombopag</b></div>"
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604679327077,
+   "guid": "D<LAjC|<=y",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Etken maddesi albutrepenonakog alfadır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604679944365,
+   "guid": "nN`D]W)mr[",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Mifepriston gebeliğin sonlandırılmasında, ulipristal acil kontrasepsiyonda kullanılır.",
+     "after": "Mifepriston: gebeliğin sonlandırılması."
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604680075482,
+   "guid": "PpdshTrnkv",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kontrasepsiyon<div><br></div><div>Kombine preparatlar (transdermal bant / vajinal halka) → {{c1::etinil östradiol + norelgestromin / etonogestrel}}</div><div><br></div><div>Yalnız progestin içerenler → {{c1::noretindron / norgestrel / medroksiprogesteron}}</div>",
+     "after": "Kontrasepsiyon<div><br></div><div>Kombine preparatlar → {{c1::etinil östradiol + norelgestromin / etonogestrel}}</div><div><br></div><div>Yalnız progestin içerenler → {{c1::noretindron / norgestrel / medroksiprogesteron}}</div>"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604680132754,
+   "guid": "b8a0uDOc(i",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "ESHRE 2022 kılavuzu ağır yan etkileri nedeniyle danazolü önermez; ikinci basamakta GnRH antagonistleri de kullanılır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604680266545,
+   "guid": "B$sEfzAZgp",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Haftada bir uygulanan insülin ikodek (AB 2024, ABD 2026) degludekten daha uzun etkilidir; eski kaynaklarda en uzun etkili insülin olarak degludek geçer.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604680354222,
+   "guid": "Lzql&{$A[|",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Uzun etkili GLP-1 sentetik analogları (2)<div><br></div><div>{{c1::<div>Albiglutid (2018'de piyasadan çekildi)</div><div>Dulaglutid</div>}}<br></div>",
+     "after": "Uzun etkili GLP-1 sentetik analogları (2)<div><br></div><div>{{c1::<div>Albiglutid (piyasadan çekilmiş)</div><div>Dulaglutid</div>}}<br></div>"
+    },
+    "Extra": {
+     "before": "Haftada bir uygulanan diğer GLP-1 agonistleri: semaglutid, uzun salınımlı eksenatid (ABD ve AB'de piyasadan çekildi)",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1604680392251,
+   "guid": "pw^sQe!,BQ",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Liraglutid, dulaglutid ve semaglutidde böbrek yetmezliğinde doz ayarı gerekmez; eski kaynaklarda GFR &lt; 30 mL/dk tüm grup için kontrendikasyon olarak geçer.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604733203785,
+   "guid": "D0Wvbn7UO3",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "İnsomnia tedavisinde kullanılan atipik benzodiazepinler (3) → {{c1::zolpidem, zaleplon, eszopiklon}}",
+     "after": "İnsomnia tedavisinde kullanılan atipik benzodiazepinler (2 örnek) → {{c1::zolpidem, zaleplon}}"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen liste üyesi çıkarıldı; özgün liste kapsamı ve cloze numaraları korundu."
+   ]
+  },
+  {
+   "noteId": 1604733427872,
+   "guid": "d$eWh}}G%e",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Naltrekson/nalmefen kullanım alanları (3) → {{c1::morfin zehirlenmesi (nalmefen), alkol ve opioid bağımlılığı, obezite tedavisi (naltrekson + bupropion)}}",
+     "after": "Naltrekson/nalmefen kullanım alanları (3) → {{c1::morfin zehirlenmesi (nalmefen), alkol bağımlılığı, obezite tedavisi (naltrekson + bupropion)}}"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604733622476,
+   "guid": "q0|h)c$B!C",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Lityum kısmi membran depolarizasyonu yapar; depolarizan ve nondepolarizan blokajı uzatır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604733986077,
+   "guid": "pa@5a{5qR=",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Temel yaklaşım, blok kendiliğinden geçene kadar mekanik ventilasyonun sürdürülmesidir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604734009527,
+   "guid": "gT4)t8b+!1",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Gantaküryum onay almamış, deneysel bir nöromüsküler blokördür.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604734169331,
+   "guid": "P,b+=,&G+.",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "D2 parsiyel agonistliği yapan atipik antipsikotikler (2) → {{c1::aripiprazol, bifeprunoks}}",
+     "after": "D2 parsiyel agonistliği yapan atipik antipsikotikler (2) → {{c1::aripiprazol, bifeprunoks (deneysel)}}"
+    },
+    "Extra": {
+     "before": "Bifeprunoks onay almadı ve geliştirilmesi durduruldu; klinikte kullanılan diğer D2 parsiyel agonistleri breksipiprazol ve kariprazindir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  },
+  {
+   "noteId": 1604734235843,
+   "guid": "GBs{n/|G5,",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Nöroleptik malign sendrom tedavisi → {{c1::nöroleptik ilaç}} kesilir / {{c1::dantrolen, bromokriptin, L-DOPA}} verilir (3)",
+     "after": "Nöroleptik malign sendrom tedavisi → {{c1::nöroleptik ilaç}} kesilir / {{c1::bromokriptin, L-DOPA}} verilir (2 örnek)"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen liste üyesi çıkarıldı; özgün liste kapsamı ve cloze numaraları korundu."
+   ]
+  },
+  {
+   "noteId": 1604735002620,
+   "guid": "D0qo#bJuB@",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "İlk tercih sodyum bikarbonattır; lidokain ventriküler taşikardide dikkatle kullanılır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604735212632,
+   "guid": "leErj.dUw<",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Yarı ömrü en kısa SSRI fluvoksamindir; bazı kaynaklarda paroksetin olarak geçer.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604735236591,
+   "guid": "ONJJQCIcJ&",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "İlk trimesterde kardiyovasküler malformasyon riskini artırır; eski kaynaklarda kontrendike olarak geçer.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604735446522,
+   "guid": "N[=tbv)_xq",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Kabul gören mekanizma: toplayıcı kanalda ADH sinyali (cAMP) ve akuaporin-2 azalır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604735532119,
+   "guid": "v(#4HZbs0?",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Yeni antiepileptiklerden perampanelin yarı ömrü de yaklaşık 105 saattir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604735774363,
+   "guid": "gfLUr#Dw^A",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "K+ kanal aktivatörü antiepileptik → {{c1::ezogabin}} <b>(2017'de piyasadan çekildi)</b>",
+     "after": "K+ kanal aktivatörü antiepileptik → {{c1::ezogabin}} <b>(piyasadan çekilmiş)</b>"
+    }
+   },
+   "actions": [
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1604736119248,
+   "guid": "LIk!V#EE9D",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Güncel seçeneklere semaglutid (2,4 mg) ve tirzepatid de eklenmiştir.",
+     "after": ""
+    },
+    "Text": {
+     "before": "Obezite tedavisinde kullanılan ilaçlar<div><br></div><div>{{c1::Orlistat}}, {{c2::liraglutid}}, {{c3::lorkaserin}} <b>(5-HT2C agonisti; 2020'de piyasadan çekildi)</b>, {{c1::naltrekson}} + {{c2::bupropion}}, {{c3::fentermin}} + {{c1::topiramat}}</div>",
+     "after": "Obezite tedavisinde kullanılan ilaçlar<div><br></div><div>{{c1::Orlistat}}, {{c2::liraglutid}}, {{c3::lorkaserin}} <b>(5-HT2C agonisti; piyasadan çekilmiş)</b>, {{c1::naltrekson}} + {{c2::bupropion}}, {{c3::fentermin}} + {{c1::topiramat}}</div>"
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1604747748517,
+   "guid": "vdtFH3Pl.?",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Üçü de obezite tedavisinde piyasadan çekildi: fenfluramin 1997, sibutramin 2010, lorkaserin 2020.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604748011998,
+   "guid": "qSi$>Ws=Y^",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Yeni plazma kallikrein inhibitörleri: lanadelumab, berotralstat, sebetralstat",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604748490998,
+   "guid": "j8#;q,*:tL",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "İkisi de onay almadı; migrende onaylı CGRP reseptör antagonistleri (gepantlar) ubrogepant, rimegepant, atogepant ve zavegepanttır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604748625512,
+   "guid": "q)RuCB$?WK",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Hücre içi (nükleer) reseptörüyle bilinen başlıca PG'dir; prostasiklin (PGI2) de nükleer PPAR-δ'yı aktive edebilir.",
+     "after": "Hücre içi reseptörüyle bilinen başlıca prostaglandin."
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604748958484,
+   "guid": "Lr)@uv^fZ$",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "PGI2 analogları →<div><br></div><div>Antiagregan olarak kullanılanlar (2) → {{c1::epoprostenol, iloprost}}</div><div><br></div><div>Pulmoner HT'de kullanılanlar (3) → {{c1::epoprostenol, treprostinil, iloprost}}</div>",
+     "after": "PGI2 analogları →<div><br></div><div>Antiagregan olarak kullanılanlar (2) → {{c1::epoprostenol, iloprost}}</div><div><br></div><div>Pulmoner HT'de kullanılanlar (2 örnek) → {{c1::epoprostenol, treprostinil}}</div>"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen liste üyesi çıkarıldı; özgün liste kapsamı ve cloze numaraları korundu."
+   ]
+  },
+  {
+   "noteId": 1604749561916,
+   "guid": "sb,f8W#pSt",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Parasetamol de PDA'nın medikal kapatılmasında bir seçenektir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604749989489,
+   "guid": "i~7v{S/=*4",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Rekombinant CTLA-4 füzyon proteinleri (2) → {{c1::<b>abatasept</b> (RA), belatasept (böbrek nakli)}}",
+     "after": "Rekombinant CTLA-4 füzyon proteinleri (2) → {{c1::<b>abatasept</b>, belatasept}}"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604750468970,
+   "guid": "HIT<.fjdSp",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sefalosporinler (4) → {{c1::Listeria, C. difficile, enterokok, MRSA}} üzerine <b>etkisizdir</b>",
+     "after": "5. kuşak dışındaki sefalosporinler (4) → {{c1::Listeria, C. difficile, enterokok, MRSA}} üzerine <b>etkisizdir</b>"
+    },
+    "Extra": {
+     "before": "5. kuşak sefalosporinler (seftarolin, seftobiprol) MRSA'ya etkilidir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Ek açıklamadaki kuşak istisnası ana ifadeye kısa koşul olarak taşındı."
+   ]
+  },
+  {
+   "noteId": 1604751532610,
+   "guid": "EHxo.>?o`#",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "İzoniyazid ve etiyonamid de mikobakteri içinde aktifleşen ön ilaçlardır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604751620513,
+   "guid": "nb&+K9;#I6",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Aynı bölgeye bağlanan diğer oksazolidinon: tedizolid",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604751729453,
+   "guid": "M*,iX2S8/S",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Pirimetaminin kemik iliği baskılanmasını önlemek için tedaviye folinik asit (lökovorin) eklenir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604752207302,
+   "guid": "r0s)H?k&T3",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Hücre duvarı sentezini baskılayan tüberküloz ilaçları ve inhibe ettikleri enzimler<div><br></div><div>İNH → {{c1::enoil-açil taşıyıcı protein redüktaz (mikolik asit sentezi)}}</div><div><br></div><div>Etiyonamid → {{c1::İNH ile aynı}}</div><div><br></div><div>Sikloserin → {{c2::alanin rasemaz ve D-Ala-D-Ala ligaz (D-alanin analoğu)}}</div><div><br></div><div>Etambutol → {{c2::arabinozil transferaz}}</div>",
+     "after": "Hücre duvarı sentezini baskılayan tüberküloz ilaçları ve inhibe ettikleri enzimler<div><br></div><div>İNH → {{c1::enoil-açil taşıyıcı protein redüktaz (mikolik asit sentezi)}}</div><div><br></div><div>Etiyonamid → {{c1::İNH ile aynı}}</div><div><br></div><div>Sikloserin → {{c2::alanin rasemaz (D-alanin analoğu)}}</div><div><br></div><div>Etambutol → {{c2::arabinozil transferaz}}</div>"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen liste üyesi çıkarıldı; özgün liste kapsamı ve cloze numaraları korundu."
+   ]
+  },
+  {
+   "noteId": 1604752727322,
+   "guid": "ua6{e/%X.S",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Nöropati ve pankreatit mitokondriyal toksisiteye bağlı sınıf etkisidir; en çok didanozin ve stavudinle görülür.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604752774340,
+   "guid": "uF@&_T-?kF",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Delavirdin artık kullanılmaz; güncel kullanımdaki diğer NNRTİ'ler etravirin, rilpivirin ve doravirindir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604753064296,
+   "guid": "y><!jP^jU>",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Matürasyon inhibitörü HIV ilacı → {{c1::bevirimat}}",
+     "after": "Deneysel matürasyon inhibitörü HIV ilacı → {{c1::bevirimat}}"
+    },
+    "Extra": {
+     "before": "Bevirimat onay almamış deneysel bir ilaçtır; geliştirilmesi durdurulmuştur.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  },
+  {
+   "noteId": 1604753226605,
+   "guid": "DX$nU*g/gT",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Boseprevir, simeprevir ve ombitasvir piyasadan çekilmiştir; güncel NS3/4A inhibitörleri glekaprevir, grazoprevir ve voksilaprevir, diğer güncel NS5A inhibitörleri velpatasvir ve pibrentasvirdir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604753260593,
+   "guid": "l42O~Kq~Hm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Güncel kılavuzlarda ilk seçenekler entekavir, tenofovir ve pegile IFN alfadır; lamivudin, adefovir ve telbivudin direnç gelişimi nedeniyle önerilmez.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604755901989,
+   "guid": "p[WKCKI#ct",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Sığır kaynaklı pegademazın üretimi durdurulmuş, yerini rekombinant elapegademaz almıştır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604756357343,
+   "guid": "sg/I.vdz#R",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "PDGFRα'yı hedefleyen monoklonal antikor → {{c1::olaratumab}}",
+     "after": "Piyasadan çekilmiş, PDGFRα'yı hedefleyen monoklonal antikor → {{c1::olaratumab}}"
+    },
+    "Extra": {
+     "before": "Sarkom tedavisinde onaylanmıştı; faz 3 çalışmada yarar göstermediği için 2019'da piyasadan çekildi.",
+     "after": "Sarkom tedavisi"
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  },
+  {
+   "noteId": 1604756396027,
+   "guid": "bIt<k6Q#+K",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Melanom; 2018'de onaylanan üçüncü BRAF inhibitörü: enkorafenib",
+     "after": "Melanom"
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604756552786,
+   "guid": "M,-Y?8O,yx",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "RET, VEGFR ve EGFR'yi inhibe eden multikinaz inhibitörü → {{c1::vandetanib}}",
+     "after": "Multikinaz inhibitörü → {{c1::vandetanib}}"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604756865361,
+   "guid": "Kk-wJGp1g&",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Metastatik melanomda başlıca ipilimumab, nivolumab ve pembrolizumab kullanılır.",
+     "after": "Metastatik melanom"
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604756932888,
+   "guid": "Fj^]vjnr.-",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Multipl miyelom; oral proteazom inhibitörü: iksazomib",
+     "after": "Multipl miyelom"
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604756972129,
+   "guid": "zLAtg@YpE.",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "KLL endikasyonundaki ticari satışı 2012'de durduruldu; günümüzde MS tedavisinde kullanılır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1604757082477,
+   "guid": "i?MfAu<#fL",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c1::Efalizumab}} → anti-CD11a, psöriazis tedavisi <b>(2009'da PML riski nedeniyle piyasadan çekildi)</b>",
+     "after": "{{c1::Efalizumab}} → anti-CD11a, psöriazis tedavisi <b>(piyasadan çekilmiş)</b>"
+    }
+   },
+   "actions": [
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1604757249253,
+   "guid": "v?n,v0jh&W",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kolorektal kanserde kullanılan tam insan kaynaklı anti-EGFR antikoru → {{c1::panitumumab}}<div><br></div><div>Meme kanserinde HER2 dimerizasyonunu engelleyen antikor → {{c1::pertuzumab}}</div>",
+     "after": "Kolorektal kanserde kullanılan anti-EGFR antikoru → {{c1::panitumumab}}<div><br></div><div>Meme kanserinde HER2’yi hedefleyen antikor → {{c1::pertuzumab}}</div>"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604757342870,
+   "guid": "D*Pp;M]}3>",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Glasdegib de Hedgehog yolu (Smoothened) inhibitörüdür, AML'de kullanılır.",
+     "after": "Bazal hücreli karsinom"
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1604757622904,
+   "guid": "J8H+5&IZ_s",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Akut organ rejeksiyonu tedavisinde kullanılan anti-CD3 ilaç → {{c1::muromonab}} <b>(2010'da piyasadan çekildi)</b>",
+     "after": "Akut organ rejeksiyonu tedavisinde kullanılan anti-CD3 ilaç → {{c1::muromonab}} <b>(piyasadan çekilmiş)</b>"
+    }
+   },
+   "actions": [
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1604757815433,
+   "guid": "i[PfI@0+|n",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Psöriazis tedavisi<div><br></div><div>{{c1::Ustekinumab}}</div><div><br></div><div><b>IL-17 antagonistleri</b> (4) → {{c2::iksekizumab, sekukinumab, brodalumab, bimekizumab}}</div><div><br></div><div>PDE4 inhibitörü (IL-23'ü baskılar) → {{c1::apremilast}}</div><div><br></div><div>Sentetik D3 vitamini analoğu → {{c2::kalsipotriol}}</div>",
+     "after": "Psöriazis tedavisi<div><br></div><div>{{c1::Ustekinumab}}</div><div><br></div><div><b>IL-17 antagonistleri</b> (2 örnek) → {{c2::iksekizumab, sekukinumab}}</div><div><br></div><div>PDE4 inhibitörü (IL-23'ü baskılar) → {{c1::apremilast}}</div><div><br></div><div>Sentetik D3 vitamini analoğu → {{c2::kalsipotriol}}</div>"
+    },
+    "Extra": {
+     "before": "Brodalumab IL-17 reseptörünü (IL-17RA), bimekizumab hem IL-17A'yı hem IL-17F'yi bloke eder.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Sonradan eklenen liste üyesi çıkarıldı; özgün liste kapsamı ve cloze numaraları korundu."
+   ]
+  },
+  {
+   "noteId": 1604758238632,
+   "guid": "Pq[7aX~7|h",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "fields": {
+    "Text": {
+     "before": "Prokinetik ilaçlar<div><br></div><div>Tip 2 Cl kanalı aktivatörü → {{c1::lubiproston}}</div><div><br></div><div>Postoperatif ileusta kullanılan periferik mü opioid reseptör antagonisti → {{c1::alvimopan}}</div><div><br></div><div>5-HT4 agonistleri → {{c1::<b>sisaprid</b>}}, {{c2::prukaloprid}}, {{c1::tegaserod}}, {{c2::metoklopramid}}</div><div><br></div><div>Guanilat siklaz C agonizmasıyla CFTR aktivasyonu (2) → {{c3::<b>linaklotid</b>, plekanatid}}</div><div><br></div><div>CCK-A reseptör antagonisti (deneysel) → {{c4::deksloksiglumid}}</div><div><br></div><div>Ghrelin reseptör agonisti (deneysel) → {{c4::relamorelin}}</div>",
+     "after": "Prokinetik ilaçlar<div><br></div><div>Tip 2 Cl kanalı aktivatörü → {{c1::lubiproston}}</div><div><br></div><div>Periferik mü opioid reseptör antagonisti → {{c1::alvimopan}}</div><div><br></div><div>5-HT4 agonistleri → {{c1::<b>sisaprid</b>}}, {{c2::prukaloprid}}, {{c1::tegaserod}}, {{c2::metoklopramid}}</div><div><br></div><div>Guanilat siklaz C agonizmasıyla CFTR aktivasyonu (2) → {{c3::<b>linaklotid</b>, plekanatid}}</div><div><br></div><div>CCK-A reseptör antagonisti (deneysel) → {{c4::deksloksiglumid}}</div><div><br></div><div>Ghrelin reseptör agonisti (deneysel) → {{c4::relamorelin}}</div>"
+    },
+    "Extra": {
+     "before": "Sisaprid ölümcül aritmiler, tegaserod kardiyovasküler iskemik olaylar nedeniyle piyasadan çekilmiştir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1604758281071,
+   "guid": "e;1rP[)&Mk",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "CFTR işlevini artıran ilaçlar<div><br></div><div>Akciğer (4) → {{c1::ivakaftor, lumakaftor, tezakaftor, eleksakaftor}}</div><div><br></div><div>GİS → {{c1::linaklotid}}</div>",
+     "after": "CFTR işlevini artıran ilaçlar<div><br></div><div>Akciğer (2 örnek) → {{c1::ivakaftor, lumakaftor}}</div><div><br></div><div>GİS → {{c1::linaklotid}}</div>"
+    },
+    "Extra": {
+     "before": "İvakaftor CFTR potansiyatörü; lumakaftor, tezakaftor ve eleksakaftor CFTR düzelticisidir. 2024'te vanzakaftor-tezakaftor-deutivakaftor kombinasyonu da onaylanmıştır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Sonradan eklenen liste üyesi çıkarıldı; özgün liste kapsamı ve cloze numaraları korundu."
+   ]
+  },
+  {
+   "noteId": 1604758538433,
+   "guid": "kT!.CGboF6",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Antidiyareik ilaçlar<div><br></div><div>{{c1::Rasekadotril}} (enkefalinaz inhibitörü)</div><div><br></div><div>5-HT3 antagonizması (2) → {{c1::<b>alosetron</b>, silansetron}} → İBS tedavisi</div><div><br></div><div>CFTR <b>inhibitörü</b> → {{c2::<b>krofelemer</b>}} (antiretroviral tedavi alan HIV'li hastalarda diyare tedavisi)</div>",
+     "after": "Antidiyareik ilaçlar<div><br></div><div>{{c1::Rasekadotril}} (enkefalinaz inhibitörü)</div><div><br></div><div>5-HT3 antagonizması (2) → {{c1::<b>alosetron</b>, silansetron (deneysel)}} → İBS tedavisi</div><div><br></div><div>CFTR <b>inhibitörü</b> → {{c2::<b>krofelemer</b>}} (antiretroviral tedavi alan HIV'li hastalarda diyare tedavisi)</div>"
+    },
+    "Extra": {
+     "before": "Alosetron iskemik kolit riski nedeniyle yalnızca ağır, diyare baskın İBS'li kadınlarda kısıtlı olarak kullanılır; silansetron onay almamıştır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  },
+  {
+   "noteId": 1604758591245,
+   "guid": "DLjr`sBil3",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Ultra uzun etkili beta-2 agonistleri (3) → {{c1::indakaterol, olodaterol, vilanterol}}",
+     "after": "Ultra uzun etkili beta-2 agonistleri (2 örnek) → {{c1::indakaterol, olodaterol}}"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen liste üyesi çıkarıldı; özgün liste kapsamı ve cloze numaraları korundu."
+   ]
+  },
+  {
+   "noteId": 1604758670384,
+   "guid": "e%c,ctj[A9",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Mepolizumab ve reslizumab IL-5'i, benralizumab IL-5 reseptörünün alfa alt birimini bağlar. Aralık 2025'te IL-5'i bağlayan, altı ayda bir uygulanan depemokimab da onaylanmıştır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1608658251950,
+   "guid": "nZr&){`r6Z",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Güncel süre tablolarında oral izosorbid mononitrat (6–10 saat) ve transdermal nitrogliserin (8–10 saat) en uzun etkili formlardır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1608659927425,
+   "guid": "P5Qgw!zv@~",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Karaciğer toksisitesi nedeniyle AB'de onay almadı; ABD'deki ruhsatı 2019'da geri çekildi.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1608664729067,
+   "guid": "N5Y}98WkiI",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Barbitüratlar hormon sentezini bozmaz; enzim indüksiyonuyla tiroit hormonlarının karaciğerde yıkımını artırır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1608665042584,
+   "guid": "QLlUr[ysOH",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Mİ riski nedeniyle kullanımı kısıtlanmış, 2017'de piyasadan çekilmiştir. Eski kaynaklarda bu ikili etkiyi gösteren tek ajan olarak geçer; romosozumab da benzer ikili etki gösterir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1608814006761,
+   "guid": "q@V5pUv2$0",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Tümör lizis sendromunda kullanılan rekombinant ürat oksidaz (ürik asit → allantoin):<div><br></div><div>{{c1::Rasburikaz}}</div>",
+     "after": "Rekombinant ürat oksidaz (ürik asit → allantoin):<div><br></div><div>{{c1::Rasburikaz}}</div>"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1608814176504,
+   "guid": "cE~+beBl]q",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Fenilbutazon agranülositoz ve aplastik anemi riski nedeniyle gut tedavisinde artık kullanılmaz; benzbromaron hepatotoksisite nedeniyle birçok ülkede piyasadan çekilmiştir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1613595785291,
+   "guid": "Fe<geesUGN",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Etkinliği kanıtlanamadığı için ABD'de piyasadan çekilmiştir; klodikasyonda güncel ilaç silostazoldür.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1613936325900,
+   "guid": "P(#VIqCOZ;",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Rekombinant aktive protein C</b> türevi ajan:<div><br></div><div>{{c1::Drotrekogin alfa}}</div>",
+     "after": "Piyasadan çekilmiş <b>rekombinant aktive protein C</b> türevi ajan:<div><br></div><div>{{c1::Drotrekogin alfa}}</div>"
+    },
+    "Extra": {
+     "before": "Septik şokta mortalite yararı gösterilemediği için 2011'de piyasadan çekildi.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  },
+  {
+   "noteId": 1614002129079,
+   "guid": "n@pngV4}8g",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Güncel kılavuzlarda tiklerde ilk basamak davranışsal tedavidir; ilaç gerektiğinde aripiprazol ve alfa-2 agonistleri (klonidin, guanfasin) öne çıkar, pimozid QT uzaması riski nedeniyle EKG izlemi gerektirir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1617737927059,
+   "guid": "mGjAB26$^*",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Vankomisinin ürün bilgisi de RNA sentezini bozduğunu belirtir; ayırt edici özellik oritavansinin lipoglikopeptid olmasıdır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1621975748360,
+   "guid": "G0$1PjWi8P",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Kas tipi nikotinik reseptörleri alfa-bungarotoksin, otonom gangliondaki nöronal reseptörleri kappa-bungarotoksin bloke eder.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1622119953089,
+   "guid": "O|r^X$%l1L",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Klasik antiepileptiklerin çoğu CYP indüksiyonu yapar; CYP inhibisyonu yapanlar topiramat ve valproik asittir. Topiramat 200 mg/gün üzerindeki dozlarda CYP3A4 indüksiyonu yaparak oral kontraseptif etkinliğini azaltır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Kişisel önem notu veya kullanıcı tarafından silinmiş ek açıklama kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1622120792883,
+   "guid": "v^oD7;}0<(",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Text": {
+     "before": "Parkinson tedavisi<div><br></div><div><b>Ergot türevi olmayan dopamin agonistleri:</b></div><div><br></div><div><b>D3</b> reseptörü → {{c1::pramipeksol}}</div><div><br></div><div><b>D2</b> reseptörü → {{c1::ropinirol}}<br><br><b>Transdermal</b> kullanılan → {{c3::rotigotin}}<br><br><b>Subkutan</b> kullanılan → {{c3::apomorfin}}<br><br><b>Ergot türevi dopamin agonistleri:<br></b><br>{{c2::Bromokriptin}} (D2 reseptörü)<br><br>{{c2::Kabergolin}} (D2 reseptörü, uzun etkili)<br><br>Pergolid <b>(2007'de ABD'de piyasadan çekildi)</b>, lisurid<br></div>",
+     "after": "Parkinson tedavisi<div><br></div><div><b>Ergot türevi olmayan dopamin agonistleri:</b></div><div><br></div><div><b>D3</b> reseptörü → {{c1::pramipeksol}}</div><div><br></div><div><b>D2</b> reseptörü → {{c1::ropinirol}}<br><br><b>Transdermal</b> kullanılan → {{c3::rotigotin}}<br><br><b>Subkutan</b> kullanılan → {{c3::apomorfin}}<br><br><b>Ergot türevi dopamin agonistleri:<br></b><br>{{c2::Bromokriptin}} (D2 reseptörü)<br><br>{{c2::Kabergolin}} (D2 reseptörü, uzun etkili)<br><br>Pergolid <b>(ABD'de piyasadan çekilmiş)</b>, lisurid<br></div>"
+    }
+   },
+   "actions": [
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1624173842034,
+   "guid": "K^)vA}frJm",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "5-HT3 antagonistleriyle (ondansetron) birlikte kullanımı kontrendikedir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1624188510902,
+   "guid": "iuurG45<nj",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "fields": {
+    "Extra": {
+     "before": "İrinotekan S fazına özgüdür; etoposid başlıca S ve G2 fazlarında etkilidir. İlaçların faz ağırlıkları tek bir geçiş noktasında etkili oldukları anlamına gelmez.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1625125579620,
+   "guid": "q]Kz_vqae1",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Text": {
+     "before": "Nöromüsküler blokörlerin eliminasyon yerleri:<div><br><b>Spontan</b> → {{c3::atraküryum}}<br><br><b>Psödokolinesteraz</b> ile → {{c2::süksinilkolin}}, {{c2::mivaküryum}}<br><br><b>Böbrek + karaciğer</b> → {{c3::pipekuronyum}}<br><br></div><div><b>Karaciğer</b>:</div><div>Vekuronyum</div><div>{{c1::Rokuronyum}}</div><div>Rapakuronyum (2001'de piyasadan çekildi)</div><div><br></div><div><b>Böbrek</b>:</div><div>{{c1::Pankuronyum}} (%80)</div><div>Gallamin (%100)</div><div>Tübokürarin, metokürin</div><div>Doksaküryum<br></div>",
+     "after": "Nöromüsküler blokörlerin eliminasyon yerleri:<div><br><b>Spontan</b> → {{c3::atraküryum}}<br><br><b>Psödokolinesteraz</b> ile → {{c2::süksinilkolin}}, {{c2::mivaküryum}}<br><br><b>Böbrek + karaciğer</b> → {{c3::pipekuronyum}}<br><br></div><div><b>Karaciğer</b>:</div><div>Vekuronyum</div><div>{{c1::Rokuronyum}}</div><div>Rapakuronyum (piyasadan çekilmiş)</div><div><br></div><div><b>Böbrek</b>:</div><div>{{c1::Pankuronyum}} (%80)</div><div>Gallamin (%100)</div><div>Tübokürarin, metokürin</div><div>Doksaküryum<br></div>"
+    }
+   },
+   "actions": [
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1625141477614,
+   "guid": "B5@RtSaQha",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c1::Romidepsin}}:<div><br></div><div>Siklik depsipeptid yapıda, intravenöz kullanılan histon deasetilaz inhibitörü</div><div><br></div><div>Kutanöz T hücreli lenfoma tedavisi</div>",
+     "after": "{{c1::Romidepsin}}:<div><br></div><div>Histon deasetilaz inhibitörü</div><div><br></div><div>Kutanöz T hücreli lenfoma tedavisi</div>"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1625234974131,
+   "guid": "x;ZZiG)rJ",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Doğrudan beta-1 agonist etkisi zayıftır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1625493650689,
+   "guid": "j@X!<zH9xa",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Başlıca BPH'de kullanılır; alfa-1A seçiciliği nedeniyle kan basıncına etkisi azdır.",
+     "after": "Başlıca BPH’de kullanılır."
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1625493897947,
+   "guid": "m.pC`GV=_h",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Abareliks ABD'de piyasadan çekilmiştir; prostat kanserinde güncel seçenekler degareliks ve oral relugolikstir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1626880283926,
+   "guid": "J3;9z=drhI",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Hipnozoitlere etkili diğer ilaç: tafenokin",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1626880744237,
+   "guid": "IY$p@7FZ%+",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "DNA'ya interkale olan, kardiyotoksik olmayan antitümör antibiyotik:<div><br></div><div>{{c1::Daktinomisin}}</div>",
+     "after": "Kardiyotoksik olmayan antitümör antibiyotik:<div><br></div><div>{{c1::Daktinomisin}}</div>"
+    }
+   },
+   "actions": [
+    "Ana metindeki ek açıklama kısaltıldı; gerekli düzeltme korundu."
+   ]
+  },
+  {
+   "noteId": 1627373139641,
+   "guid": "z1,.AtQrE/",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Glokomda kullanılan <b>oral</b> karbonik anhidraz inhibitörleri:<div><br></div><div>Asetazolamid</div><div><br></div><div>{{c1::Metazolamid}}</div><div><br></div><div>{{c1::Diklorfenamid}}</div>",
+     "after": "Klasik glokom ilaç listesinde <b>oral</b> karbonik anhidraz inhibitörleri:<div><br></div><div>Asetazolamid</div><div><br></div><div>{{c1::Metazolamid}}</div><div><br></div><div>{{c1::Diklorfenamid}}</div>"
+    },
+    "Extra": {
+     "before": "Diklorfenamid günümüzde glokomda değil, primer periyodik paralizi tedavisinde kullanılır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  },
+  {
+   "noteId": 1627660408758,
+   "guid": "PQ5gF+;M|5",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Aynı gruptaki diğer inhibitörler: relebaktam, vaborbaktam, durlobaktam",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1628862729786,
+   "guid": "uU!]x}P3`}",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "fields": {
+    "Text": {
+     "before": "İmmün reseptör ajanları<br><br><u>Anti</u>-PD-L1: {{c3::<b>A</b>tezolizumab}}, {{c3::<b>A</b>velumab}}, durvalumab<br><br><u>Anti</u>-PD-1: {{c2::nivolumab}}, {{c2::pembrolizumab}}<br><br><u>Anti</u>-CTLA-4: {{c4::ipilimumab}}, tremelimumab<br><br><b>CD40</b> <u>aktivatörü</u>: {{c1::dasetuzumab}}<div><br></div><div><u>Anti</u>-<b>KIR</b>: {{c1::lirilumab}}</div><div><br></div><div><b>CD137</b> <u>aktivatörü</u>: {{c1::urelumab}}</div>",
+     "after": "İmmün reseptör ajanları<br><br><u>Anti</u>-PD-L1: {{c3::<b>A</b>tezolizumab}}, {{c3::<b>A</b>velumab}}, durvalumab<br><br><u>Anti</u>-PD-1: {{c2::nivolumab}}, {{c2::pembrolizumab}}<br><br><u>Anti</u>-CTLA-4: {{c4::ipilimumab}}, tremelimumab<br><br><b>CD40</b> <u>aktivatörü</u>: {{c1::dasetuzumab}} (deneysel)<div><br></div><div><u>Anti</u>-<b>KIR</b>: {{c1::lirilumab}} (deneysel)</div><div><br></div><div><b>CD137</b> <u>aktivatörü</u>: {{c1::urelumab}} (deneysel)</div>"
+    },
+    "Extra": {
+     "before": "Anti-PD-L1'lerden atezolizumab ve avelumab A ile başlar. Dasetuzumab, lirilumab ve urelumab onay almamış deneysel ajanlardır.",
+     "after": "Anti-PD-L1'lerden <b>A</b>tezolizumab ve <b>A</b>velumab A ile başlar."
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  },
+  {
+   "noteId": 1628868145011,
+   "guid": "xAmCG4w8DK",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "ALDH2*2 polimorfizmi (Doğu Asya kökenlilerde sık) nitrogliserin yanıtını baştan azaltır ve toleransı ağırlaştırır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1628879552015,
+   "guid": "fVt,ydo}D4",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Günümüzde ilk seçenek inhale nitrik oksittir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1628879861295,
+   "guid": "QIsse)Lg~,",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "KY'de hemodinamik düzelme sağlar, mortaliteyi azaltmaz.<div><br></div><div>Preparatı: ularitid</div>",
+     "after": "KY’de hemodinamik düzelme sağlar.<br>Preparatı: ularitid"
+    }
+   },
+   "actions": [
+    "Özgün ek bilginin kısa içeriği korundu; sonradan eklenen ayrıntılar çıkarıldı."
+   ]
+  },
+  {
+   "noteId": 1628882272062,
+   "guid": "sa3h)7!|B5",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Anti-amiloid</b> monoklonal antikor:<div><br></div><div>{{c1::Bapineuzumab}}</div>",
+     "after": "Denenmiş <b>anti-amiloid</b> monoklonal antikor:<div><br></div><div>{{c1::Bapineuzumab}}</div>"
+    },
+    "Extra": {
+     "before": "Bapineuzumab faz 3 çalışmalarında etkisiz bulunduğundan geliştirilmesi durduruldu. FDA onayı alan anti-amiloid antikorlar adukanumab (2024'te piyasadan çekildi), lekanemab ve donanemabdır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  },
+  {
+   "noteId": 1629751872279,
+   "guid": "Ou;2Yv;@49",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Alternatif tedaviler:<div><br></div><div>İn vitro immün fonksiyonları artırır, nezle tedavisi: {{c1::ekinezya}}</div><div><br></div><div>İmmünsüpresif ilaçların etkisini azaltan: {{c1::sarı kantaron}}</div><div><br></div><div>Kilo vermek, spor performansını artırmak: {{c1::efedra}} <b>(2004'te FDA yasakladı)</b></div>",
+     "after": "Alternatif tedaviler:<div><br></div><div>İn vitro immün fonksiyonları artırır, nezle tedavisi: {{c1::ekinezya}}</div><div><br></div><div>İmmünsüpresif ilaçların etkisini azaltan: {{c1::sarı kantaron}}</div><div><br></div><div>Kilo vermek, spor performansını artırmak: {{c1::efedra}} <b>(kullanımı yasaklanmış)</b></div>"
+    }
+   },
+   "actions": [
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1630501532743,
+   "guid": "b+4sI&aUm[",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Hematoloji ilaçları<br><br>Dalak tirozin kinaz (SYK) inhibitörü (İTP tedavisi) → {{c1::fostamatinib}}<br><br>HbS polimerizasyon inhibitörü (<b>or</b>ak hücreli anemi tedavisi) → {{c1::vokselot<b>or</b>}} <b>(2024'te piyasadan çekildi)</b><br><br>vWF antikoru (TTP tedavisi) → {{c1::kaplasizumab}}",
+     "after": "Hematoloji ilaçları<br><br>Dalak tirozin kinaz (SYK) inhibitörü (İTP tedavisi) → {{c1::fostamatinib}}<br><br>HbS polimerizasyon inhibitörü (<b>or</b>ak hücreli anemi tedavisi) → {{c1::vokselot<b>or</b>}} <b>(piyasadan çekilmiş)</b><br><br>vWF antikoru (TTP tedavisi) → {{c1::kaplasizumab}}"
+    }
+   },
+   "actions": [
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1630503303087,
+   "guid": "oI_5VywnhX",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Depresyon tedavisi<br><br>NMDA reseptörü nonkompetitif blokajı + <b>dirençli depresyonda</b> {{c1::intranazal}} kullanılan → {{c2::esketamin}}<br><br>{{c1::<b>Postpartum depresyon</b>}} tedavisinde İV kullanılan <b>GABA-A reseptörü</b> pozitif allosterik modülatörü (progesteron metaboliti) → breksanolon (allopregnanolon; <b>2024 sonunda piyasadan çekildi</b>)",
+     "after": "Depresyon tedavisi<br><br>NMDA reseptörü nonkompetitif blokajı + <b>dirençli depresyonda</b> {{c1::intranazal}} kullanılan → {{c2::esketamin}}<br><br>{{c1::<b>Postpartum depresyon</b>}} tedavisinde İV kullanılan <b>GABA-A reseptörü</b> pozitif allosterik modülatörü (progesteron metaboliti) → breksanolon (allopregnanolon; <b>piyasadan çekilmiş</b>)"
+    },
+    "Extra": {
+     "before": "Breksanolonun yerini aynı etki mekanizmasına sahip oral zuranolon (FDA 2023) almıştır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı.",
+    "Ana metindeki tarih/kurum ve yan gerekçe kaldırıldı; kısa kullanım durumu korundu."
+   ]
+  },
+  {
+   "noteId": 1630504965737,
+   "guid": "mHSe|oLCQ7",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Olsegepant ve telkagepant onay almamıştır; FDA onaylı gepantlar: ubrogepant, rimegepant, zavegepant, atogepant.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta bulunmayan arka yüz açıklaması kaldırıldı."
+   ]
+  },
+  {
+   "noteId": 1630506250778,
+   "guid": "l,dSx&;G4l",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "RA tedavisinde nonselektif <b>Janus kinaz</b> inhibitörleri: {{c1::tofasitinib}}, barisitinib ({{c2::lipid}} paneli takibi yapılmalı)<br><br>RA tedavisinde anti-IL-6 reseptör antikorları: {{c2::tosilizumab}}, sarilumab<br><br>SLE tedavisinde <b>CD22</b> antagonisti: {{c1::epratuzumab}}",
+     "after": "RA tedavisinde nonselektif <b>Janus kinaz</b> inhibitörleri: {{c1::tofasitinib}}, barisitinib ({{c2::lipid}} paneli takibi yapılmalı)<br><br>RA tedavisinde anti-IL-6 reseptör antikorları: {{c2::tosilizumab}}, sarilumab<br><br>SLE tedavisinde denenmiş <b>CD22</b> antagonisti: {{c1::epratuzumab}}"
+    },
+    "Extra": {
+     "before": "Epratuzumab faz 3 çalışmalarında etkisiz bulunup onay almamıştır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Kişisel önem notu veya kullanıcı tarafından silinmiş ek açıklama kaldırıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  },
+  {
+   "noteId": 1630507383853,
+   "guid": "I75g(r.ZHz",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Antiviraller</b><br><br>Kondilom tedavisinde {{c1::<b>TLR7</b>}} agonisti immünomodülatör: {{c2::imikimod}}<br><br><b>COVID-19</b> tedavisinde RNA bağımlı RNA polimeraz inhibitörü: {{c3::remdesivir}}<br><br>İnfluenza ve <b>COVID-19</b> tedavisinde RNA bağımlı RNA polimeraz inhibitörü: {{c3::favipiravir}}<br><br>Enterovirüs ve rinovirüs solunum yolu enfeksiyonlarında viral kapside bağlanan ajan: {{c2::plekonaril}}",
+     "after": "<b>Antiviraller</b><br><br>Kondilom tedavisinde {{c1::<b>TLR7</b>}} agonisti immünomodülatör: {{c2::imikimod}}<br><br><b>COVID-19</b> tedavisinde RNA bağımlı RNA polimeraz inhibitörü: {{c3::remdesivir}}<br><br>İnfluenza ve <b>COVID-19</b> tedavisinde RNA bağımlı RNA polimeraz inhibitörü: {{c3::favipiravir}}<br><br>Enterovirüs ve rinovirüs solunum yolu enfeksiyonlarında denenmiş, viral kapside bağlanan ajan: {{c2::plekonaril}}"
+    },
+    "Extra": {
+     "before": "Plekonaril onay almamış deneysel bir ilaçtır. Favipiravir FDA ve EMA onayı almamıştır; COVID-19'da randomize çalışmalarda hastaneye yatışı ve ölümü azaltmamıştır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Kişisel önem notu veya kullanıcı tarafından silinmiş ek açıklama kaldırıldı.",
+    "Çıkarılan açıklamanın gerekli kullanım koşulu ana metinde kısa niteleyici olarak korundu."
+   ]
+  }
+ ]
+}

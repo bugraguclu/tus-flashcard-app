@@ -138,7 +138,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Asellüler boğmaca aşısı inaktive pertussis toksini içerebilir; tek başına “toksoid aşı” diye sınıflandırılmaz."
+     "after": ""
     }
    },
    "changes": [
@@ -157,7 +157,21 @@
    ],
    "aiNote": "Ne: Toksoid listesinde difteri ve tetanoz bırakıldı, boğmaca için kısa ayrım yapıldı.\nNeden: Özgün üçlü liste boğmaca aşısının genel sınıflamasını yanlış öğretiyordu.\nNasıl: [TD1, YP1] Yanıt satırı korundu; yanlış üye silindi ve istisna Extra'da açıklandı.\nKaynak: CDC, ACIP Prevention of Pertussis, Tetanus, and Diphtheria with Vaccines in the United States (2018).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Asellüler boğmaca aşısı inaktive pertussis toksini içerebilir; tek başına “toksoid aşı” diye sınıflandırılmaz.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 3,
@@ -332,7 +346,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "HIV'de temel yaklaşım antiretroviral tedaviyle immün iyileşmedir; paromomisin tek başına güvenilir kür sağlamaz."
+     "after": ""
     }
    },
    "changes": [
@@ -357,7 +371,21 @@
    ],
    "aiNote": "Ne: Kriptosporidioz ilacı nitazoksanid olarak düzeltildi, immün yetmezlik ayrımı Extra'da verildi.\nNeden: Taslak paromomisini koşulsuz tedavi yanıtı olarak bırakıyordu.\nNasıl: [TD1, KS1, YP1] İki satır ve c1 korundu; yanlış ilaç yerine doğru bağlamlı yanıt yazıldı.\nKaynak: CDC, Treating Crypto (2025); NIH, Cryptosporidiosis HIV Opportunistic Infection Guidelines.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "HIV'de temel yaklaşım antiretroviral tedaviyle immün iyileşmedir; paromomisin tek başına güvenilir kür sağlamaz.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 8,
@@ -412,7 +440,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Dalak aspiratı daha duyarlı olabilir, ancak yaşamı tehdit eden kanama riski taşır."
+     "after": ""
     }
    },
    "changes": [
@@ -437,7 +465,21 @@
    ],
    "aiNote": "Ne: Kala-azar için güvenli invaziv örnek kemik iliği aspiratı olarak düzeltildi.\nNeden: Taslak yüksek duyarlılık ile işlem güvenliğini ayırmadan dalak biyopsisini öneriyordu.\nNasıl: [TD1, KS1, YP1] İki satır, kalın vurgu ve c1 yeri korundu; dalak nüansı Extra'da verildi.\nKaynak: CDC, Clinical Testing and Diagnosis for Leishmaniasis.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Dalak aspiratı daha duyarlı olabilir, ancak yaşamı tehdit eden kanama riski taşır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 10,
@@ -454,7 +496,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "D-arabinitol araştırılmış bir belirteçtir; rutin tanı testi değildir."
+     "after": ""
     }
    },
    "changes": [
@@ -479,7 +521,21 @@
    ],
    "aiNote": "Ne: “Mantar Seroloji” başlığı antijen ve metabolitleri kapsayacak biçimde düzeltildi; Aspergillus yanıtından mannitol çıkarıldı.\nNeden: Mannitolün insanlarda aspergilloz için yararlı tanı belirteci olduğu gösterilmemiştir; D-arabinitol de rutin Candida testi değildir.\nNasıl: [TD1, EK1, SN1, YP1] İki satır ve c1 dağılımı korundu; geçerli galaktomannan bilgisi bırakıldı, D-arabinitolün sınırı kısa arka yüz cümlesiyle belirtildi.\nKaynak: IDSA 2016 Aspergillosis Guideline (galaktomannan); Current Status of Nonculture Methods for Diagnosis of Invasive Fungal Infections (mannitol ve D-arabinitol).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "D-arabinitol araştırılmış bir belirteçtir; rutin tanı testi değildir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 11,
@@ -534,7 +590,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Etken Rhinosporidium seeberi, Mesomycetozoea grubundadır."
+     "after": ""
     }
    },
    "changes": [
@@ -559,7 +615,21 @@
    ],
    "aiNote": "Ne: Rinosporidiyozun “subkutan mikoz” olarak sınıflanması kaldırıldı; etkenin güncel grubu kısa arka yüz cümlesinde belirtildi.\nNeden: Rhinosporidium seeberi gerçek mantar değildir ve hastalık esas olarak burun gibi mukozalarda görülür.\nNasıl: [TD1, GN2, YP1] Kültür yapılamaması ve c1 yanıtı korundu; yanlış hastalık sınıfı değiştirildi.\nKaynak: CDC Emerging Infectious Diseases, Case Report of Nasal Rhinosporidiosis in South Africa (2024); Rhinosporidium seeberi: A Human Pathogen from a Novel Group (2000).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Etken Rhinosporidium seeberi, Mesomycetozoea grubundadır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 13,
@@ -696,7 +766,7 @@
     },
     "Extra": {
      "before": "Artemisin kullanılmaz&nbsp;",
-     "after": "WHO, komplike olmayan P. falciparum sıtmasında ilk trimester gebelikte artemeter-lumefantrini tercih edilen tedavi olarak önerir. Artemeter bir artemisinin türevidir; “artemisinin ilk trimesterde kullanılmaz” şeklindeki eski genel hüküm güncel değildir."
+     "after": ""
     }
    },
    "changes": [
@@ -732,6 +802,20 @@
     {
      "date": "2026-10-09",
      "previousAiNote": "Ne: İlk trimesterde tercih edilen tedavi artemeter-lumefantrin olarak güncellendi.\nNeden: Kinin-klindamisin eski ilk tercih şemasıdır.\nNasıl: [TD1, KS1, YP1] İki satır, kalın vurgular ve iki c1 korunarak ilaçlar düzeltildi.\nKaynak: WHO, Safety of artemisinin and non-artemisinin antimalarials in the first trimester of pregnancy (2024)."
+    }
+   ],
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "WHO, komplike olmayan P. falciparum sıtmasında ilk trimester gebelikte artemeter-lumefantrini tercih edilen tedavi olarak önerir. Artemeter bir artemisinin türevidir; “artemisinin ilk trimesterde kullanılmaz” şeklindeki eski genel hüküm güncel değildir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Eski yanlış hükmün yerine eklenen kaynak ve kılavuz karşılaştırması kaldırıldı; düzeltilmiş artemeter-lumefantrin cevabı korundu (kural 1, 2, 5, 7)."
+     ]
     }
    ]
   },
@@ -972,7 +1056,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Klinik evre, tek başına CD4 sayısıyla belirlenmez."
+     "after": ""
     }
    },
    "changes": [
@@ -1003,7 +1087,21 @@
    ],
    "aiNote": "Ne: Kişisel “AIDS geliyor” ve CD4 yaklaşımı yerine DSÖ klinik evre 3 yazıldı; üç bulgu oral kandidiyazis, oral tüylü lökoplaki ve pulmoner tüberküloz olarak belirtildi.\nNeden: Klinik evre 3 yalnız CD4 sayısına göre atanmaz; özgün mantar ve tüberküloz adları bulguları yeterince tanımlamıyordu.\nNasıl: [TD1, EK1, SN2, YP1] Üç cevap satırı, sayı, boşluk ve c1/c2 düzeni korundu; klinik evre ile bağışıklık sayısının ayrımı kısa arka yüz cümlesinde verildi.\nKaynak: DSÖ HIV klinik evre koşulları, WHO SMART Guidelines; DSÖ, HIV/AIDS fact sheet, ileri HIV hastalığı tanımı.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Klinik evre, tek başına CD4 sayısıyla belirlenmez.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 23,
@@ -1020,7 +1118,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Ayırıcı test negatif veya belirsizse HIV-1 RNA testi yapılır."
+     "after": ""
     }
    },
    "changes": [
@@ -1051,7 +1149,21 @@
    ],
    "aiNote": "Ne: HIV tarama ve doğrulama testleri güncel algoritmaya göre düzeltildi; takip belirteçleri korundu.\nNeden: Eski Western blot/p24 eşleştirmesi yanlış tanı sırası öğretiyordu.\nNasıl: [TD1, KS1, YP1] Tarama, doğrulama ve takip satırları ile cloze sırası korundu; RNA basamağı Extra'da kısaca belirtildi.\nKaynak: CDC, Laboratory Testing for the Diagnosis of HIV Infection: Updated Recommendations (2014); CDC STI Treatment Guidelines, HIV.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Ayırıcı test negatif veya belirsizse HIV-1 RNA testi yapılır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 24,
@@ -1068,7 +1180,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Gerçek zamanlı PCR hedef amplifikasyonudur; sinyal amplifikasyonu değildir."
+     "after": ""
     }
    },
    "changes": [
@@ -1093,7 +1205,21 @@
    ],
    "aiNote": "Ne: Gerçek zamanlı PCR yanlış sınıftan çıkarıldı; kalan amplifikasyon örnekleri korundu.\nNeden: Sinyal ve hedef çoğaltımını aynı kategoriye koymak yöntem bilgisini bozuyordu.\nNasıl: [TD1, KS1, YP1] Özgün üç bölüm ve cloze sırası sürdürüldü; düzeltme Extra'da tek cümleyle açıklandı.\nKaynak: Andras ve ark., Strategies for signal amplification in nucleic acid detection, Mol Biotechnol 2001, PMID 11697219.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Gerçek zamanlı PCR hedef amplifikasyonudur; sinyal amplifikasyonu değildir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 25,
@@ -1144,11 +1270,11 @@
    "fields": {
     "Text": {
      "before": "HIV Pfx:<div><br></div><div><b>Annesi gebelik boyunca Komb. ART kullanmış ve anne sütü alan bebek:</b></div><div><br></div><div>{{c1::6}} Hafta Oral {{c1::Zidovudin}} veya {{c1::Nevirapin}}</div><div><br></div><div><b>Daha önce tdv almayan HIV1 enf'lu</b>&nbsp;</div><div>anneye --&gt;<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c2::Travay sırasın}}da 1 kez</span></div><div>YD'a --&gt; {{c2::doğar doğmaz}} + {{c2::2}} + {{c2::6}}. günlerde {{c3::Nevirapin}}</div><div><br></div><div>Doğumdan itibaren {{c2::6}} Hf Oral {{c3::Zidovudin}}</div>",
-     "after": "HIV perinatal profilaksisi (NIH, 25 Haziran 2026)<div><br></div><div><b>Düşük risk (gebelikte kalıcı viral baskılanma):</b></div><div>{{c1::2 hafta zidovudin}}</div><div><br></div><div><b>Yüksek risk (doğuma yakın viremi veya anne tedavisiz):</b></div><div>Doğumda ≥37 gestasyon haftası ve ≥2 kg olan yüksek riskli yenidoğana {{c2::üçlü antiretroviral tedavi}}: {{c3::zidovudin + lamivudin + dolutegravir}} verilir</div><div><br></div><div><b>Emzirme:</b> Ek bebek profilaksisi maternal viral yük ve izleme göre belirlenir</div>"
+     "after": "HIV perinatal profilaksisi<div><br></div><div><b>Düşük risk (gebelikte kalıcı viral baskılanma):</b></div><div>{{c1::2 hafta zidovudin}}</div><div><br></div><div><b>Yüksek risk (doğuma yakın viremi veya anne tedavisiz):</b></div><div>Doğumda ≥37 gestasyon haftası ve ≥2 kg olan yüksek riskli yenidoğana {{c2::üçlü antiretroviral tedavi}}: {{c3::zidovudin + lamivudin + dolutegravir}} verilir</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Yüksek riskte üçlü rejim 2–6 hafta sürer. Üçlü rejim 6 haftadan önce biterse zidovudin tek başına toplam 6 haftaya tamamlanır. DTG doğumda ≥37 hafta ve ≥2 kg bebeklerdeki rejim içindir; daha küçük/prematüre bebeklerde üçüncü ilaç ve doz yaş/kiloya göre değişir. Emzirme sırasında profilaksi maternal viral yük ve izleme göre bireyselleştirilir."
+     "after": ""
     }
    },
    "changes": [
@@ -1190,6 +1316,26 @@
     {
      "date": "2026-10-09",
      "previousAiNote": "Ne: Perinatal HIV profilaksisi düşük/yüksek bulaş riskine göre güncellendi; emzirme ayrı satırda korundu.\nNeden: Taslağın tek doz nevirapin ve altı haftalık genel monoterapi şeması güncel öneri değildir.\nNasıl: [TD1, EK1, YP1] Geçersiz cloze dozları kaldırılıp doğru risk yanıtları c1/c2/c3 ile yazıldı; emzirme için tek şema uydurulmadı.\nKaynak: NIH, Antiretroviral Management of Infants with Perinatal or Breastfeeding Exposure to HIV (2026)."
+    }
+   ],
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "HIV perinatal profilaksisi (NIH, 25 Haziran 2026)<div><br></div><div><b>Düşük risk (gebelikte kalıcı viral baskılanma):</b></div><div>{{c1::2 hafta zidovudin}}</div><div><br></div><div><b>Yüksek risk (doğuma yakın viremi veya anne tedavisiz):</b></div><div>Doğumda ≥37 gestasyon haftası ve ≥2 kg olan yüksek riskli yenidoğana {{c2::üçlü antiretroviral tedavi}}: {{c3::zidovudin + lamivudin + dolutegravir}} verilir</div><div><br></div><div><b>Emzirme:</b> Ek bebek profilaksisi maternal viral yük ve izleme göre belirlenir</div>",
+       "after": "HIV perinatal profilaksisi<div><br></div><div><b>Düşük risk (gebelikte kalıcı viral baskılanma):</b></div><div>{{c1::2 hafta zidovudin}}</div><div><br></div><div><b>Yüksek risk (doğuma yakın viremi veya anne tedavisiz):</b></div><div>Doğumda ≥37 gestasyon haftası ve ≥2 kg olan yüksek riskli yenidoğana {{c2::üçlü antiretroviral tedavi}}: {{c3::zidovudin + lamivudin + dolutegravir}} verilir</div>"
+      },
+      "Extra": {
+       "before": "Yüksek riskte üçlü rejim 2–6 hafta sürer. Üçlü rejim 6 haftadan önce biterse zidovudin tek başına toplam 6 haftaya tamamlanır. DTG doğumda ≥37 hafta ve ≥2 kg bebeklerdeki rejim içindir; daha küçük/prematüre bebeklerde üçüncü ilaç ve doz yaş/kiloya göre değişir. Emzirme sırasında profilaksi maternal viral yük ve izleme göre bireyselleştirilir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Kart içindeki kurum/tarih kaynak atfı kaldırıldı (kural 1).",
+      "Ana metne eklenen emzirme izlem özeti kaldırıldı; risk temelli kısa cevaplar ve gerekli gestasyon/kilo koşulu korundu (kural 5, 7)."
+     ]
     }
    ]
   },
@@ -1246,7 +1392,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "IgD+ bellek B hücreleri de vardır; IgD tek başına bellek B hücresi belirteci değildir."
+     "after": ""
     }
    },
    "changes": [
@@ -1265,7 +1411,21 @@
    ],
    "aiNote": "Ne: IgD'nin naif olgun B hücrelerindeki yüzey ekspresyonu yazıldı; bellek alt grubuna kısa nüans eklendi.\nNeden: Taslak “hafıza B hücresinin ayrımında ve gelişiminde” diyerek yanlış genellemeyi büyütüyordu.\nNasıl: [TD1, YP1] Tek satır ve c1 korundu; bellek hücresi istisnası Extra'da yer aldı.\nKaynak: Functional analysis of human memory B-cell subpopulations, PMID 12921759; B-cell subpopulations in children, PMID 25505547.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "IgD+ bellek B hücreleri de vardır; IgD tek başına bellek B hücresi belirteci değildir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 29,
@@ -1282,7 +1442,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "C2 ve C4 lektin yolunda da kullanılır; yalnız klasik yola özgü değildir."
+     "after": ""
     }
    },
    "changes": [
@@ -1301,7 +1461,21 @@
    ],
    "aiNote": "Ne: Klasik yolun antikor ve C1q/C2/C4 bileşenleri korundu, özgüllük iddiası düzeltildi.\nNeden: Taslak “yalnız klasik yolda” iddiasını uzatarak sürdürüyordu.\nNasıl: [TD1, YP1] İki bilgi satırı, aradaki boşluk ve dört c1 korundu; lektin nüansı Extra'da verildi.\nKaynak: NCBI Bookshelf, Immunobiology, The Complement System and Innate Immunity.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "C2 ve C4 lektin yolunda da kullanılır; yalnız klasik yola özgü değildir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 30,
@@ -1470,7 +1644,7 @@
     },
     "Extra": {
      "before": "Fare İdrari",
-     "after": "Başlıca bulaş: enfekte hayvanların, özellikle kemirgenlerin idrarıyla kirlenen su veya toprak."
+     "after": "Kemirgen idrarıyla bulaşır."
     }
    },
    "changes": [
@@ -1489,7 +1663,21 @@
    ],
    "aiNote": "Ne: Mutlak bulaşmaz ifadesi çok nadir bulaşır olarak düzeltildi; hayvan idrarı kaynağı arka yüze geri alındı.\nNeden: Seyrek de olsa insandan insana bulaş belgelenmiştir.\nNasıl: [TD1, BÇ1] Özgün tek satır ve c1 korundu.\nKaynak: CDC Leptospirosis Factsheet for Clinicians.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Başlıca bulaş: enfekte hayvanların, özellikle kemirgenlerin idrarıyla kirlenen su veya toprak.",
+       "after": "Kemirgen idrarıyla bulaşır."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 35,
@@ -1506,7 +1694,7 @@
     },
     "Extra": {
      "before": "Fosfomisin --&gt; Sadece E. Coli için kullanılabilir&nbsp;",
-     "after": "CLSI fosfomisin disk difüzyon sınır değerleri E. coli idrar izolatları içindir."
+     "after": "Fosfomisin disk difüzyonu E. coli idrar izolatları için yorumlanır."
     }
    },
    "changes": [
@@ -1531,7 +1719,21 @@
    ],
    "aiNote": "Ne: Kolistin ve fosfomisin için disk difüzyon kısıtları birbirinden ayrıldı.\nNeden: Fosfomisinin disk difüzyonda hiçbir koşulda kullanılamayacağı iddiası yanlıştı.\nNasıl: [TD1, KS1, BÇ1] Üç satır ve iki c1 korundu.\nKaynak: CLSI AST News Update, 2019.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "CLSI fosfomisin disk difüzyon sınır değerleri E. coli idrar izolatları içindir.",
+       "after": "Fosfomisin disk difüzyonu E. coli idrar izolatları için yorumlanır."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 36,
@@ -1548,7 +1750,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Tam sürveyans olgu tanımında çoklu organ tutulumu da yer alır."
+     "after": ""
     }
    },
    "changes": [
@@ -1573,7 +1775,21 @@
    ],
    "aiNote": "Ne: Ateş, hipotansiyon, döküntü ve 1–2 haftalık deskuamasyon bulguları korundu.\nNeden: “Major kriterler” başlığı eksik listenin tam tanı seti sanılmasına yol açıyordu.\nNasıl: [EK1, KS1, YP1] Özgün dört bilgi satırı ve cloze sırası korundu; tam tanım sınırı Extra'ya kondu.\nKaynak: CDC, Toxic Shock Syndrome (Other Than Streptococcal), 1990 Case Definition.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Tam sürveyans olgu tanımında çoklu organ tutulumu da yer alır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 37,
@@ -1590,7 +1806,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "P. aeruginosa iki yaşından önce de edinilebilir; yaş ayrımı kesin eşik değildir."
+     "after": ""
     }
    },
    "changes": [
@@ -1626,6 +1842,20 @@
     {
      "date": "2026-10-09",
      "previousAiNote": "Ne: Kistik fibroziste etkenlerin yaşla ilişkisi kesin iki yaş sınırı olmadan verildi.\nNeden: Özgün kart ve reddedilen taslak Pseudomonas'ı iki yaş öncesi dışlıyordu.\nNasıl: [EK1, KS1, YP1] Altı yanıt, numaraları ve iki bölüm korundu; sınıra bir cümlelik nüans eklendi.\nKaynak: Cystic Fibrosis Foundation, Infant Care Clinical Care Guidelines, P. aeruginosa önerileri."
+    }
+   ],
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "P. aeruginosa iki yaşından önce de edinilebilir; yaş ayrımı kesin eşik değildir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
     }
    ]
   },
@@ -2012,7 +2242,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Nötrofil adezyonunda LFA-1 ve Mac-1 baskındır; VLA-4 bazı koşullarda katkıda bulunabilir."
+     "after": ""
     }
    },
    "changes": [
@@ -2031,7 +2261,21 @@
    ],
    "aiNote": "Ne: VLA-4'ün nötrofil adezyonunda mutlak etkisiz olduğu iddiası yumuşatıldı.\nNeden: Nötrofillerde VLA-4 aracılı adezyon deneysel olarak gösterilmiştir; ana yol β2 integrinlerdir.\nNasıl: [TD1, BÇ1] İki satır, kalın vurgular ve c1 korundu.\nKaynak: Waugh ve ark., Biophysical Journal 2009, PMID 19134480.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Nötrofil adezyonunda LFA-1 ve Mac-1 baskındır; VLA-4 bazı koşullarda katkıda bulunabilir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 49,
@@ -2086,7 +2330,7 @@
     },
     "Extra": {
      "before": "Bazı Aşklar Zigot Oluşturur",
-     "after": "Bazı Aşklar Zigot Oluşturur<div>Oospor, gerçek mantarlardan ayrı tutulan oomisetlerde görülür.</div>"
+     "after": "Bazı Aşklar Zigot Oluşturur"
     }
    },
    "changes": [
@@ -2105,7 +2349,21 @@
    ],
    "aiNote": "Ne: Başlık mantar benzeri canlıları da kapsayacak biçimde dar bir ekle düzeltildi; oosporun oomisetlere ait olduğu tek cümleyle belirtildi.\nNeden: Dört üyeli klasik listede oospor yer alır, ancak oomisetler güncel sınıflamada gerçek mantar değildir.\nNasıl: [TD2, EK1, YP1, YP3] Dört cevap, satır düzeni, c1/c2 dağılımı ve “Bazı Aşklar Zigot Oluşturur” anımsatıcısı korundu.\nKaynak: Medical Microbiology, General Concepts of Mycology (NCBI Bookshelf); American Phytopathological Society, Why are Oomycota not true Fungi?",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Bazı Aşklar Zigot Oluşturur<div>Oospor, gerçek mantarlardan ayrı tutulan oomisetlerde görülür.</div>",
+       "after": "Bazı Aşklar Zigot Oluşturur"
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 51,
@@ -2230,7 +2488,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Güncel ilk seçenek oral itrakonazoldür."
+     "after": ""
     }
    },
    "changes": [
@@ -2261,7 +2519,21 @@
    ],
    "aiNote": "Ne: Oral potasyum iyodür “klasik alternatif” olarak çerçevelendi; itrakonazolün güncel ilk seçenek olduğu kısa arka yüz cümlesine yazıldı.\nNeden: Kök potasyum iyodürü sporotrikozun olağan güncel tedavisi gibi gösteriyordu.\nNasıl: [TD2, GN2, YP1] Klasik yanıt ve c1 korundu; güncel tedavi yalnız gerekli niteleyici olarak eklendi.\nKaynak: CDC, Clinical Overview of Sporotrichosis (2024).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Güncel ilk seçenek oral itrakonazoldür.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 55,
@@ -2436,7 +2708,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Özel deney koşullarında psödohif oluşturabildiği bildirilmiştir."
+     "after": ""
     }
    },
    "changes": [
@@ -2455,7 +2727,21 @@
    ],
    "aiNote": "Ne: Mutlak “psödohif yapamayan” ifadesi rutin kültürle sınırlandı; deneysel istisna tek cümleyle belirtildi.\nNeden: C. glabrata azot kısıtlaması veya yüksek CO2 gibi koşullarda psödohif oluşturabilir.\nNasıl: [EK1, YP3, YP1] Öğrencinin rutin mikoloji ayırımı, kalın olumsuzluk ve c1 yanıtı korundu; yanlış mutlaklık nitelendi.\nKaynak: Candida glabrata displays pseudohyphal growth, PMID 10913876; Pseudohyphae formation in Candida glabrata due to CO2 exposure, PMID 28959796.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Özel deney koşullarında psödohif oluşturabildiği bildirilmiştir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 60,
@@ -2650,7 +2936,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Doğu/Batı at ensefaliti aşıları insan kullanımı için ruhsatlı değildir."
+     "after": ""
     }
    },
    "changes": [
@@ -2675,7 +2961,21 @@
    ],
    "aiNote": "Ne: İnaktif aşı listesinde Doğu/Batı at ensefaliti satırı veteriner kullanımıyla nitelendi; polio ve influenza için inaktif ürün belirtildi.\nNeden: At ensefaliti aşıları insan kullanımına ruhsatlı değildir; polio ve influenza için farklı aşı tipleri de vardır.\nNasıl: [EK1, KS1, YP1] Özgün altı cevap ve satır düzeni korundu; insan/veteriner ayrımı kısa niteleyiciyle yapıldı.\nKaynak: CDC, Eastern Equine Encephalitis Treatment and Prevention; CDC Emerging Infectious Diseases, inaktif at ensefaliti aşıları; CDC U.S. Vaccine Names.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Doğu/Batı at ensefaliti aşıları insan kullanımı için ruhsatlı değildir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 66,
@@ -2882,7 +3182,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Retrovirüsler pozitif polariteli RNA taşır, ancak Baltimore sınıf VI'da ayrı değerlendirilir."
+     "after": ""
     }
    },
    "changes": [
@@ -2907,7 +3207,21 @@
    ],
    "aiNote": "Ne: Altı virüs grubu açıldı; retrovirüslerin ayrı Baltimore sınıfında olduğu kısa arka yüz cümlesinde belirtildi.\nNeden: Yalnız “pozitif kutuplu RNA virüsleri” demek retrovirüsün ters transkripsiyon farkını gizliyordu.\nNasıl: [EK1, KS1, YP1] Altı satırın sırası, boşluk ve c1/c2/c3 dizilimi korundu; tasnif nitelemesi arka yüze sığdırıldı.\nKaynak: ICTV, Family Retroviridae, replikasyon bölümü; NCBI Bookshelf, Baltimore sınıflaması, sınıf VI.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Retrovirüsler pozitif polariteli RNA taşır, ancak Baltimore sınıf VI'da ayrı değerlendirilir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 72,
@@ -2958,7 +3272,7 @@
    "fields": {
     "Text": {
      "before": "Koksaki A Hast'ları (3)<div><br></div><div>{{c1::<div>Herpanjina</div><div>El Ayak Ağız Hast</div><div>Akut hemorajik konjunktivit</div>}}<br></div>",
-     "after": "Koksaki A virüslerinin yaptığı hastalıklar (3)<div><br></div><div>{{c1::<div>Herpanjina</div><div>El-ayak-ağız hastalığı</div><div>Akut hemorajik konjunktivit (A24 varyantı)</div>}}<br></div>"
+     "after": "Koksaki A virüslerinin yaptığı hastalıklar (3)<div><br></div><div>{{c1::<div>Herpanjina</div><div>El-ayak-ağız hastalığı</div><div>Akut hemorajik konjunktivit</div>}}<br></div>"
     }
    },
    "changes": [
@@ -2983,7 +3297,21 @@
    ],
    "aiNote": "Ne: Üç hastalık korunarak akut hemorajik konjunktivitin A24 varyantıyla ilişkisi belirtildi.\nNeden: Tüm Koksaki A tipleri bu göz hastalığını yapmaz; yanıt tür düzeyinde niteleme gerektiriyordu.\nNasıl: [EK1, KS1, YP1] Üç ayrı cevap satırı, sayı ve c1 korundu; niteleyici yalnız ilgili satıra eklendi.\nKaynak: CDC Emerging Infectious Diseases, Acute Hemorrhagic Conjunctivitis caused by Coxsackievirus A24 Variant (2003).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Koksaki A virüslerinin yaptığı hastalıklar (3)<div><br></div><div>{{c1::<div>Herpanjina</div><div>El-ayak-ağız hastalığı</div><div>Akut hemorajik konjunktivit (A24 varyantı)</div>}}<br></div>",
+       "after": "Koksaki A virüslerinin yaptığı hastalıklar (3)<div><br></div><div>{{c1::<div>Herpanjina</div><div>El-ayak-ağız hastalığı</div><div>Akut hemorajik konjunktivit</div>}}<br></div>"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 74,
@@ -3070,7 +3398,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "HBeAg negatifliği replikasyonu dışlamaz; prekor mutantlarında HBV DNA yüksek olabilir."
+     "after": ""
     }
    },
    "changes": [
@@ -3095,7 +3423,21 @@
    ],
    "aiNote": "Ne: Replikasyon belirteçleri korunup HBeAg için negatifliğin sınırı belirtildi.\nNeden: Taslaktaki “aktif replikasyon ve yüksek bulaştırıcılık” ifadesi her belirteç için aynı kesinlikte değildi.\nNasıl: [EK1, KS1, YP1] Özgün üç satır ve üç c1 yanıtı sürdürüldü; ek uyarı kısa tutuldu.\nKaynak: CDC, Hepatitis B surveillance guidance, HBeAg-negative precore mutants; AASLD Guidelines for Treatment of Chronic Hepatitis B.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "HBeAg negatifliği replikasyonu dışlamaz; prekor mutantlarında HBV DNA yüksek olabilir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 77,
@@ -3112,7 +3454,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Önceden aşılanmış kişiye kuduz immünoglobülini verilmez."
+     "after": ""
     }
    },
    "changes": [
@@ -3137,7 +3479,21 @@
    ],
    "aiNote": "Ne: Önceden aşılı kişide 0 ve 3. gün rapeli korundu, immünoglobülin verilmediği eklendi.\nNeden: Aşılı ve aşısız temaslıların pasif bağışıklama kararı farklıdır.\nNasıl: [EK1, YP1] İki satır ve c1 korundu; güvenlik ayrımı kısa Extra cümlesine alındı.\nKaynak: CDC, Rabies Post-exposure Prophylaxis Guidance.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Önceden aşılanmış kişiye kuduz immünoglobülini verilmez.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 78,
@@ -3150,7 +3506,7 @@
    "fields": {
     "Text": {
      "before": "TLR'ler<div><br></div><div>Gr+ Tanıyan ---&gt; {{c1::TLR-2}}</div><div><br></div><div>Gr- Tanıyan ---&gt; {{c1::TLR -4&nbsp;}}</div><div><b><br></b></div><div><b>Virus Tanıyanlar (3) ---&gt; {{c2::TLR 3 - 7 - 9}} --&gt; Endozomal</b></div>",
-     "after": "TLR'ler<div><br></div><div>Gram-pozitif bakteri bileşenleri → {{c1::TLR-2}}</div><div><br></div><div>Gram-negatif LPS → {{c1::TLR-4}}</div><div><b><br></b></div><div><b>Viral nükleik asitleri tanıyan endozomal TLR'ler (4) → {{c2::TLR-3, -7, -8, -9}}</b></div>"
+     "after": "TLR örnekleri<div><br></div><div>Gram-pozitif bakteri bileşenleri → {{c1::TLR-2}}</div><div><br></div><div>Gram-negatif LPS → {{c1::TLR-4}}</div><div><b><br></b></div><div><b>Viral nükleik asitleri tanıyan endozomal TLR'ler (3) → {{c2::TLR-3, -7, -9}}</b></div>"
     }
    },
    "changes": [
@@ -3175,7 +3531,23 @@
    ],
    "aiNote": "Ne: Endozomal viral nükleik asit reseptörlerine TLR-8 eklendi; Gram ilişkileri korundu.\nNeden: Taslak eksik üçlü listeyi sürdürmüş ve özgün satır ayrımlarını kaybetmişti.\nNasıl: [EK1, KS1, YP1] Dört reseptör aynı c2 içinde verildi; son satırın kalınlığı ve üç blok korundu.\nKaynak: Toll-Like Receptors in Antiviral Innate Immunity, PMC3943763.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "TLR'ler<div><br></div><div>Gram-pozitif bakteri bileşenleri → {{c1::TLR-2}}</div><div><br></div><div>Gram-negatif LPS → {{c1::TLR-4}}</div><div><b><br></b></div><div><b>Viral nükleik asitleri tanıyan endozomal TLR'ler (4) → {{c2::TLR-3, -7, -8, -9}}</b></div>",
+       "after": "TLR örnekleri<div><br></div><div>Gram-pozitif bakteri bileşenleri → {{c1::TLR-2}}</div><div><br></div><div>Gram-negatif LPS → {{c1::TLR-4}}</div><div><b><br></b></div><div><b>Viral nükleik asitleri tanıyan endozomal TLR'ler (3) → {{c2::TLR-3, -7, -9}}</b></div>"
+      }
+     },
+     "actions": [
+      "Özgün üç örnek korundu; yeni TLR-8 üyesi çıkarılırken liste örneklerle sınırlandı (kural 4, 7).",
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6).",
+      "Sonradan eklenen TLR-8 liste üyesi çıkarıldı; özgün üç üye ve c2 korundu (kural 4)."
+     ]
+    }
+   ]
   },
   {
    "order": 79,
@@ -3224,7 +3596,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "IL-6 pleiotropiktir; proinflamatuvar etkileri de vardır."
+     "after": ""
     }
    },
    "changes": [
@@ -3249,7 +3621,21 @@
    ],
    "aiNote": "Ne: Dörtlü liste korundu; IL-6'nın çift yönlü etkisi başlıkta ve Extra'da belirtildi.\nNeden: Taslak, IL-6'yı koşulsuz antiinflamatuvar gibi öğretiyordu.\nNasıl: [EK1, KS1, YP1] Dört sitokin aynı c1 içinde kaldı; yalnız gerekli niteleme eklendi.\nKaynak: NCBI Bookshelf, Interleukin-6; IL-6'nın pleiotropik pro ve antiinflamatuvar etkileri.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "IL-6 pleiotropiktir; proinflamatuvar etkileri de vardır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 81,
@@ -3370,11 +3756,11 @@
    "fields": {
     "Text": {
      "before": "Tetanoz Pfx<div><br></div><div>Temiz yara</div><div><br></div><div>&lt; 3 doz aşı/Kuşkulu: {{c1::Sadece Aşı}} - Ig {{c1::VERME}}</div><div><br></div><div>Tamamlanmış/ en az 3 aşı yapılmış/ sürüyor: Son {{c2::10}} yıldır Aşısızsa --&gt; {{c1::Aşı yap}} / Aşılı ise --&gt; Aşı {{c1::yapma}} - Ig {{c1::VERME}}</div><div><br></div><div><br></div><div>Kirli yara</div><div><br></div><div>\n&lt; 3 doz aşı/Kuşkulu: {{c3::Aşı + Ig}}<br></div><div><br></div><div>\nTamamlanmış/ en az 3 aşı yapılmış/ sürüyor: Son {{c2::5}} yıldır aşısızsa --&gt; {{c3::Aşı yap}} Ig {{c3::VERME}}<br></div><div><br></div><div><br></div><div><br></div><div><br></div>",
-     "after": "Tetanoz profilaksisi<div><br></div><div>Temiz küçük yara</div><div><br></div><div>&lt; 3 doz/öykü bilinmiyor: {{c1::Aşı yap}}; TIG {{c1::verme}}</div><div><br></div><div>≥ 3 doz: Son {{c2::10}} yılda aşı yoksa {{c1::aşı yap}}; varsa {{c1::yapma}}; TIG {{c1::verme}}</div><div><br></div><div>Kirli/büyük yara</div><div><br></div><div>&lt; 3 doz/öykü bilinmiyor: {{c3::Aşı + TIG}}</div><div><br></div><div>≥ 3 doz: Son {{c2::5}} yılda aşı yoksa {{c3::aşı yap}}; TIG {{c3::verme}}</div>"
+     "after": "HIV veya ağır immün yetmezliği olmayan kişide tetanoz profilaksisi<div><br></div><div>Temiz küçük yara</div><div><br></div><div>&lt; 3 doz/öykü bilinmiyor: {{c1::Aşı yap}}; TIG {{c1::verme}}</div><div><br></div><div>≥ 3 doz: Son {{c2::10}} yılda aşı yoksa {{c1::aşı yap}}; varsa {{c1::yapma}}; TIG {{c1::verme}}</div><div><br></div><div>Kirli/büyük yara</div><div><br></div><div>&lt; 3 doz/öykü bilinmiyor: {{c3::Aşı + TIG}}</div><div><br></div><div>≥ 3 doz: Son {{c2::5}} yılda aşı yoksa {{c3::aşı yap}}; TIG {{c3::verme}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Kirli/büyük yarada HIV veya ağır immün yetmezlik varsa aşı öyküsünden bağımsız TIG de verilir."
+     "after": ""
     }
    },
    "changes": [
@@ -3399,7 +3785,26 @@
    ],
    "aiNote": "Ne: Temiz ve kirli yara için 10/5 yıllık rapel eşikleri ile TIG kararları düzenlendi.\nNeden: Özgün mutlak “Ig verme” satırında ağır immün yetmezlik istisnası yoktu.\nNasıl: [EK1, KS1, YP1] İki yara bloğu ve cloze sırası sürdürüldü; istisna kısa Extra cümlesinde verildi.\nKaynak: CDC, Clinical Guidance for Wound Management to Prevent Tetanus (8 Eylül 2026).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Tetanoz profilaksisi<div><br></div><div>Temiz küçük yara</div><div><br></div><div>&lt; 3 doz/öykü bilinmiyor: {{c1::Aşı yap}}; TIG {{c1::verme}}</div><div><br></div><div>≥ 3 doz: Son {{c2::10}} yılda aşı yoksa {{c1::aşı yap}}; varsa {{c1::yapma}}; TIG {{c1::verme}}</div><div><br></div><div>Kirli/büyük yara</div><div><br></div><div>&lt; 3 doz/öykü bilinmiyor: {{c3::Aşı + TIG}}</div><div><br></div><div>≥ 3 doz: Son {{c2::5}} yılda aşı yoksa {{c3::aşı yap}}; TIG {{c3::verme}}</div>",
+       "after": "HIV veya ağır immün yetmezliği olmayan kişide tetanoz profilaksisi<div><br></div><div>Temiz küçük yara</div><div><br></div><div>&lt; 3 doz/öykü bilinmiyor: {{c1::Aşı yap}}; TIG {{c1::verme}}</div><div><br></div><div>≥ 3 doz: Son {{c2::10}} yılda aşı yoksa {{c1::aşı yap}}; varsa {{c1::yapma}}; TIG {{c1::verme}}</div><div><br></div><div>Kirli/büyük yara</div><div><br></div><div>&lt; 3 doz/öykü bilinmiyor: {{c3::Aşı + TIG}}</div><div><br></div><div>≥ 3 doz: Son {{c2::5}} yılda aşı yoksa {{c3::aşı yap}}; TIG {{c3::verme}}</div>"
+      },
+      "Extra": {
+       "before": "Kirli/büyük yarada HIV veya ağır immün yetmezlik varsa aşı öyküsünden bağımsız TIG de verilir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Arka yüz istisnası kaldırılırken TIG vermeme yanıtı uygun hasta kapsamıyla sınırlandı; ek klinik özet taşınmadı (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 85,
@@ -3416,7 +3821,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Güncel alternatif: tek doz KPA20; ardından PPA23 gerekmez. Seçim önceki aşılara ve yerel kılavuza bağlıdır."
+     "after": ""
     }
    },
    "changes": [
@@ -3441,7 +3846,21 @@
    ],
    "aiNote": "Ne: Klasik KPA13→PPA23 şeması sınırlandı, en az bir yıllık aralık ve KPA20 alternatifi belirtildi.\nNeden: Taslak eski iki doz şemasını bütün 65 yaş üstü bireyler için güncel tek seçenek gibi sunuyordu.\nNasıl: [TD2, GN1, YP1] İki satır ve iki c1 korundu; güncel alternatif kısa Extra cümlesinde verildi.\nKaynak: Türkiye EKMUD Erişkin Bağışıklama Rehberi 2025 özet tabloları; T.C. Sağlık Bakanlığı erişkin pnömokok aşı bilgisi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Güncel alternatif: tek doz KPA20; ardından PPA23 gerekmez. Seçim önceki aşılara ve yerel kılavuza bağlıdır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 86,
@@ -3458,7 +3877,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "IgA klasik yolu aktive etmez; agregat IgA alternatif yolla ilişkili olabilir."
+     "after": ""
     }
    },
    "changes": [
@@ -3483,7 +3902,21 @@
    ],
    "aiNote": "Ne: Klasik kompleman aktivasyonundan IgA çıkarıldı; ADCC'nin iki c1 cevabı ayrı tutuldu.\nNeden: Taslak iki cevabı birleştirmiş, IgA'yı klasik kompleman aktivatörü olarak göstermişti.\nNasıl: [TD1, KS1, BÇ1] Özgün cloze sırası ve blok aralıkları korundu.\nKaynak: NCBI Clinical Methods, Immunologic Tests, Complement bölümü.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "IgA klasik yolu aktive etmez; agregat IgA alternatif yolla ilişkili olabilir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 87,
@@ -3746,7 +4179,7 @@
     },
     "Extra": {
      "before": "Piridoksin ihtiyacı sebebiyle&nbsp;",
-     "after": "Piridoksal (B6 vitamini) veya sistein ihtiyacı nedeniyle; S. aureus etrafında satellitizm gösterir."
+     "after": "Piridoksal ihtiyacı nedeniyle."
     }
    },
    "changes": [
@@ -3765,7 +4198,21 @@
    ],
    "aiNote": "Ne: \"Abiotrophia Defecta\" → \"Abiotrophia defectiva\" düzeltildi; \"ÜRER\" ve \"ÜREMEZ\" küçük harfe çevrilip <b> içine alındı; Extra'daki B6 vitamini açıklaması tamamlandı.\nNeden: Tür epitinde yazım hatası ve büyük harf vardı; vurgu büyük harfle değil kalın fontla yapılmalıydı.\nNasıl: [YZ2, BÇ1, YP1] Besinsel varyant streptokokların B6 vitamini gereksinimi ve üreme davranışı ile c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Piridoksal (B6 vitamini) veya sistein ihtiyacı nedeniyle; S. aureus etrafında satellitizm gösterir.",
+       "after": "Piridoksal ihtiyacı nedeniyle."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 95,
@@ -3988,7 +4435,7 @@
    "fields": {
     "Text": {
      "before": "Corinebakt {{c2::Jeikeum}} --&gt; {{c1::Glikopeptidler&nbsp; }} dışında birçok Ab'e dirençli",
-     "after": "Corynebacterium {{c2::jeikeium}} → {{c1::glikopeptidler (vankomisin)}} dışında birçok antibiyotiğe dirençlidir"
+     "after": "Corynebacterium {{c2::jeikeium}} → {{c1::glikopeptidler}} dışında birçok antibiyotiğe dirençlidir"
     }
    },
    "changes": [
@@ -4013,7 +4460,21 @@
    ],
    "aiNote": "Ne: \"Corinebakt Jeikeum\" → \"Corynebacterium jeikeium\" düzeltildi; \"Ab'e\" → \"antibiyotiğe\" açıldı ve cümle tamamlandı.\nNeden: Cins ve tür adlarında yazım hataları vardı, tür epiti büyük harfle yazılmıştı ve kısaltma mevcuttu.\nNasıl: [YZ2, KS1, DB1, YP1] Çoklu antibiyotik direnci gösteren Corynebacterium jeikeium ve c1/c2 cloze düzeni korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Corynebacterium {{c2::jeikeium}} → {{c1::glikopeptidler (vankomisin)}} dışında birçok antibiyotiğe dirençlidir",
+       "after": "Corynebacterium {{c2::jeikeium}} → {{c1::glikopeptidler}} dışında birçok antibiyotiğe dirençlidir"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 102,
@@ -4216,7 +4677,7 @@
    "fields": {
     "Text": {
      "before": "Gonokok --&gt; 3 adet {{c1::OMP}} var&nbsp;<div><br></div><div>{{c1::Opa }} proteini --&gt; Adezyon</div><div><br></div><div>{{c1::Rmp }} proteini--&gt; Fagositoz önler&nbsp;</div>",
-     "after": "Neisseria gonorrhoeae dış membran proteinleri ({{c1::OMP}}):<div><br></div><div>{{c1::Opa}} proteini → adezyon</div><div><br></div><div>{{c1::Rmp}} proteini → fagositozu ve serum bakterisidal etkisini önler</div>"
+     "after": "Neisseria gonorrhoeae dış membran proteinleri ({{c1::OMP}}):<div><br></div><div>{{c1::Opa}} proteini → adezyon</div><div><br></div><div>{{c1::Rmp}} proteini → fagositozu önler</div>"
     }
    },
    "changes": [
@@ -4235,7 +4696,21 @@
    ],
    "aiNote": "Ne: \"Gonokok\" → \"Neisseria gonorrhoeae\" açıldı; başlık düzenlendi, \"Adezyon\" küçültüldü ve fagositoz ifadesi dil bilgisi açısından tamamlandı.\nNeden: Kök telgraf üslubundaydı ve cins adı kısaltılmıştı.\nNasıl: [KS1, DB1, BÇ1, YP1] Gonokok virulansında rol oynayan dış membran proteinleri (OMP, Opa, Rmp) ve c1 cloze yanıtları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Neisseria gonorrhoeae dış membran proteinleri ({{c1::OMP}}):<div><br></div><div>{{c1::Opa}} proteini → adezyon</div><div><br></div><div>{{c1::Rmp}} proteini → fagositozu ve serum bakterisidal etkisini önler</div>",
+       "after": "Neisseria gonorrhoeae dış membran proteinleri ({{c1::OMP}}):<div><br></div><div>{{c1::Opa}} proteini → adezyon</div><div><br></div><div>{{c1::Rmp}} proteini → fagositozu önler</div>"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 108,
@@ -4464,7 +4939,7 @@
    "fields": {
     "Text": {
      "before": "Tifo Klinik (4) --&gt; {{c1::ateş diskordans SplenoMeg Taş rose&nbsp;}}",
-     "after": "Tifonun klasik klinik bulguları (4) → {{c1::basamaklı ateş, nabız-ateş diskordansı, splenomegali, gül lekeleri (rose spots)}}"
+     "after": "Tifonun klasik klinik bulguları (4) → {{c1::basamaklı ateş, nabız-ateş diskordansı, splenomegali, gül lekeleri}}"
     }
    },
    "changes": [
@@ -4489,7 +4964,21 @@
    ],
    "aiNote": "Ne: \"Tifo Klinik (4)\" → \"Tifonun klasik klinik bulguları (4)\" yapıldı; yanıttaki kişisel kısaltmalar \"basamaklı ateş, nabız-ateş diskordansı, splenomegali, gül lekeleri (rose spots)\" olarak açıldı.\nNeden: Kök ve yanıt aşırı telgraf üslubundaydı; Fransızca \"taches rosées\" ifadesi \"Taş rose\" şeklinde bozuk yazılmıştı.\nNasıl: [KS1, SN1, YZ2, BÇ1, YP1] Tifonun 4 klasik klinik bulgusu profesyonel ders kitabı diline çevrildi; c1 cloze'u korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Tifonun klasik klinik bulguları (4) → {{c1::basamaklı ateş, nabız-ateş diskordansı, splenomegali, gül lekeleri (rose spots)}}",
+       "after": "Tifonun klasik klinik bulguları (4) → {{c1::basamaklı ateş, nabız-ateş diskordansı, splenomegali, gül lekeleri}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 115,
@@ -4566,7 +5055,7 @@
    "fields": {
     "Text": {
      "before": "AC vebasında insandan insana bulaş {{c1::olasıdır&nbsp;}}",
-     "after": "Akciğer vebasında (pnömonik veba) insandan insana damlacıkla bulaş {{c1::olasıdır}}"
+     "after": "Akciğer vebasında insandan insana damlacıkla bulaş {{c1::olasıdır}}"
     }
    },
    "changes": [
@@ -4585,7 +5074,21 @@
    ],
    "aiNote": "Ne: \"AC vebasında\" → \"Akciğer vebasında (pnömonik veba)\" açıldı; boşluk artığı temizlendi.\nNeden: \"AC\" kişisel kısaltmaydı ve pnömonik veba terimi eklendi.\nNasıl: [KS1, SN1, YP1] Pnömonik vebanın solunum yoluyla insandan insana bulaşabilen tek veba formu olması bilgisi ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Akciğer vebasında (pnömonik veba) insandan insana damlacıkla bulaş {{c1::olasıdır}}",
+       "after": "Akciğer vebasında insandan insana damlacıkla bulaş {{c1::olasıdır}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 118,
@@ -4598,7 +5101,7 @@
    "fields": {
     "Text": {
      "before": "Yersinia Psödotbc --&gt; {{c1::apandisit&nbsp; }} benzeri tablo",
-     "after": "Yersinia pseudotuberculosis → {{c1::apandisit}} benzeri tabloya (mezenterik lenfadenit) yol açar"
+     "after": "Yersinia pseudotuberculosis → {{c1::apandisit}} benzeri tabloya yol açar"
     }
    },
    "changes": [
@@ -4617,7 +5120,21 @@
    ],
    "aiNote": "Ne: \"Yersinia Psödotbc\" → \"Yersinia pseudotuberculosis\" düzeltildi; cümle mezenterik lenfadenit açıklamasıyla tamamlandı.\nNeden: Tür epitinde \"Psödotbc\" şeklinde bozuk kısaltma vardı.\nNasıl: [YZ2, KS1, BÇ1, YP1] Yalancı apandisite (mezenterik adenit) yol açan Yersinia pseudotuberculosis ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Yersinia pseudotuberculosis → {{c1::apandisit}} benzeri tabloya (mezenterik lenfadenit) yol açar",
+       "after": "Yersinia pseudotuberculosis → {{c1::apandisit}} benzeri tabloya yol açar"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 119,
@@ -4668,7 +5185,7 @@
    "fields": {
     "Text": {
      "before": "Balık oltası eline battı, midye elimi kesti --&gt; ağrılı vezikülobülloz yara&nbsp;<div><br></div><div>{{c1::Vibrio Vulnificus&nbsp;}}</div>",
-     "after": "Deniz ürünü teması (balık oltası batması, midye kesisi) sonrası ağrılı vezikülobüllöz yara ve sepsis → {{c1::Vibrio vulnificus}}"
+     "after": "Deniz ürünü teması (balık oltası batması, midye kesisi) sonrası ağrılı vezikülobüllöz yara → {{c1::Vibrio vulnificus}}"
     }
    },
    "changes": [
@@ -4693,7 +5210,21 @@
    ],
    "aiNote": "Ne: Kök vaka sorusu kalıbında düzenlendi, \"Vulnificus\" tür adı küçük harfe çevrildi.\nNeden: Kök birinci tekil şahıs konuşma dilindeydi (\"midye elimi kesti\") ve tür epiti büyük harfle yazılmıştı.\nNasıl: [SN2, YZ2, BÇ1, YP1] Deniz teması sonrası büllöz lezyon ve flegmon/sepsis tablosu yapan Vibrio vulnificus ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Deniz ürünü teması (balık oltası batması, midye kesisi) sonrası ağrılı vezikülobüllöz yara ve sepsis → {{c1::Vibrio vulnificus}}",
+       "after": "Deniz ürünü teması (balık oltası batması, midye kesisi) sonrası ağrılı vezikülobüllöz yara → {{c1::Vibrio vulnificus}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 121,
@@ -5184,7 +5715,7 @@
    "fields": {
     "Text": {
      "before": "Psödomonas Karbapenem direnci --&gt; {{c1::Porin değişikliği&nbsp;}}",
-     "after": "Pseudomonas aeruginosa'da karbapenem (özellikle imipenem) direncinin en sık mekanizması → {{c1::porin değişikliği (OprD kaybı)}}"
+     "after": "Pseudomonas aeruginosa'da karbapenem direncinin en sık mekanizması → {{c1::porin değişikliği}}"
     }
    },
    "changes": [
@@ -5209,7 +5740,22 @@
    ],
    "aiNote": "Ne: \"Psödomonas\" → \"Pseudomonas aeruginosa\" açıldı; kök ve cevap OprD porin kaybı paranteziyle netleştirildi.\nNeden: Cins adı Türkçe fonetikti ve direncin tipi açık belirtilmemişti.\nNasıl: [YZ2, SN1, BÇ1, YP1] P. aeruginosa'da imipenem direncine yol açan OprD porin mutasyonu/kaybı ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Pseudomonas aeruginosa'da karbapenem (özellikle imipenem) direncinin en sık mekanizması → {{c1::porin değişikliği (OprD kaybı)}}",
+       "after": "Pseudomonas aeruginosa'da karbapenem direncinin en sık mekanizması → {{c1::porin değişikliği}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6).",
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 136,
@@ -5362,7 +5908,7 @@
    "fields": {
     "Text": {
      "before": "Atipik mikobakteri - M.tbc Ayrımı ---&gt; {{c2::Niasin&nbsp;}}<div><br></div><div>Atipikler --&gt; {{c2::Niasin}} {{c1:: (-)&nbsp;}}</div>",
-     "after": "Atipik mikobakteriler ile Mycobacterium tuberculosis ayrımı → {{c2::niasin testi}}<div><br></div><div>Atipik mikobakteriler → {{c2::niasin}} {{c1::negatiftir}} (M. tuberculosis pozitiftir)</div>"
+     "after": "Atipik mikobakteriler ile Mycobacterium tuberculosis ayrımı → {{c2::niasin testi}}<div><br></div><div>Atipik mikobakteriler → {{c2::niasin}} {{c1::negatiftir}}</div>"
     }
    },
    "changes": [
@@ -5381,7 +5927,21 @@
    ],
    "aiNote": "Ne: \"M.tbc\" → \"Mycobacterium tuberculosis\" açıldı, \"(-)\" → \"negatiftir\" yapıldı, \"Niasin\" küçültüldü.\nNeden: Bakteri adı kısaltmalıydı ve test sonucu eksi işaretiyle verilmişti.\nNasıl: [KS1, DB1, BÇ1, YP1] M. tuberculosis'i atipik mikobakterilerden ayıran niasin testi ve dondurulmuş c1/c2 cloze düzeni korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Atipik mikobakteriler ile Mycobacterium tuberculosis ayrımı → {{c2::niasin testi}}<div><br></div><div>Atipik mikobakteriler → {{c2::niasin}} {{c1::negatiftir}} (M. tuberculosis pozitiftir)</div>",
+       "after": "Atipik mikobakteriler ile Mycobacterium tuberculosis ayrımı → {{c2::niasin testi}}<div><br></div><div>Atipik mikobakteriler → {{c2::niasin}} {{c1::negatiftir}}</div>"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 141,
@@ -5426,7 +5986,7 @@
    "fields": {
     "Text": {
      "before": "Spiroketler --&gt; Gr {{c1::Boyanmaz&nbsp;}}",
-     "after": "Spiroketler → Gram yöntemiyle {{c1::boyanmaz}} (ışık mikroskobunda görülemez)"
+     "after": "Spiroketler → Gram yöntemiyle {{c1::boyanmaz}}"
     }
    },
    "changes": [
@@ -5445,7 +6005,21 @@
    ],
    "aiNote": "Ne: \"Gr\" → \"Gram yöntemiyle\" açıldı; \"Boyanmaz\" küçültüldü ve açıklama netleştirildi.\nNeden: \"Gr\" kişisel kısaltmaydı ve cevap büyük harfle yazılmıştı.\nNasıl: [KS1, BÇ1, YP1] Çok ince yapıları nedeniyle spiroketlerin klasik Gram boyama ile saptanamaması kuralı ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Spiroketler → Gram yöntemiyle {{c1::boyanmaz}} (ışık mikroskobunda görülemez)",
+       "after": "Spiroketler → Gram yöntemiyle {{c1::boyanmaz}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 143,
@@ -6718,11 +7292,11 @@
    "fields": {
     "Text": {
      "before": "<b>Shigella sonnei</b> ile Ag'ik Çapraz Reax veren bakt:<div><br></div><div>{{c1::Plesiomonas shigelloides}}</div>",
-     "after": "Shigella sonnei somatik O antijeni ile antijenik çapraz reaksiyon veren oksidaz pozitif enterik bakteri:<br><br>{{c1::Plesiomonas shigelloides}}"
+     "after": "Shigella sonnei ile antijenik çapraz reaksiyon veren bakteri:<br><br>{{c1::Plesiomonas shigelloides}}"
     },
     "Extra": {
      "before": "GE - Sulu İshal yapar",
-     "after": "Gastroenterit ve sulu ishale yol açar; oksidaz pozitif tek enterik Enterobacterales üyesidir."
+     "after": "Gastroenterit ve sulu ishale yol açar."
     }
    },
    "changes": [
@@ -6741,7 +7315,26 @@
    ],
    "aiNote": "Ne: Kısaltmalar açıldı, Plesiomonas shigelloides ve Shigella sonnei antijenik benzerliği belirtildi, c1 cloze'u korundu.\nNeden: Kısaltmalar giderildi.\nNasıl: [KS1, BÇ1, YP1] Plesiomonas shigelloides antijenik çapraz reaksiyonu ve cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Shigella sonnei somatik O antijeni ile antijenik çapraz reaksiyon veren oksidaz pozitif enterik bakteri:<br><br>{{c1::Plesiomonas shigelloides}}",
+       "after": "Shigella sonnei ile antijenik çapraz reaksiyon veren bakteri:<br><br>{{c1::Plesiomonas shigelloides}}"
+      },
+      "Extra": {
+       "before": "Gastroenterit ve sulu ishale yol açar; oksidaz pozitif tek enterik Enterobacterales üyesidir.",
+       "after": "Gastroenterit ve sulu ishale yol açar."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8).",
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 181,
@@ -6918,7 +7511,7 @@
     },
     "Extra": {
      "before": "Tatlı bir spot çıkabilir, Proteusu herkes bilir marifet diğerlerinde",
-     "after": "Üreaz pozitif bakteriler magnezyum amonyum fosfat (strüvit) taşlarına yol açar"
+     "after": ""
     }
    },
    "changes": [
@@ -6937,7 +7530,21 @@
    ],
    "aiNote": "Ne: Tür kısaltmaları ve yazım hataları düzeltildi, Extra alanı bilgilendirici hale getirildi.\nNeden: Taksonomik yazım ve biçim standardı sağlandı.\nNasıl: [KS1, YZ1, BÇ1, YP1] Başlık, listeleme ve c1/c2 cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Üreaz pozitif bakteriler magnezyum amonyum fosfat (strüvit) taşlarına yol açar",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Kişisel önem notunun yerine eklenen etiket veya yeni özet kaldırıldı; ana soru ve varsa özgün görsel korundu (kural 2, 5, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 187,
@@ -7018,7 +7625,7 @@
     },
     "Extra": {
      "before": "Tanı: <b>Mikroskopik Agg. Testi</b>",
-     "after": "Tanı: Mikroskopik aglütinasyon testi (MAT)"
+     "after": "Tanı: Mikroskopik aglütinasyon testi"
     }
    },
    "changes": [
@@ -7037,7 +7644,21 @@
    ],
    "aiNote": "Ne: Tür epiteti bilimsel yazıma getirildi, kısaltmalar açıldı, \"tek\" niteleyicisi yumuşatıldı.\nNeden: Taksonomik yazım ve tıbbi doğruluk sağlandı.\nNasıl: [YZ1, KS1, BÇ1, YP1] İki satırlı yapı, boş satır, kalın vurgu ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Tanı: Mikroskopik aglütinasyon testi (MAT)",
+       "after": "Tanı: Mikroskopik aglütinasyon testi"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 190,
@@ -7890,7 +8511,7 @@
     },
     "Extra": {
      "before": "Serotiplendirmede kullanılır&nbsp;",
-     "after": "Serotiplendirmede kullanılır (Hekzon antijeni ise gruba/cinse özgüdür)."
+     "after": "Serotiplendirmede kullanılır."
     }
    },
    "changes": [
@@ -7909,7 +8530,21 @@
    ],
    "aiNote": "Ne: Kısaltmalar açıldı, hekzon antijeni ile karşılaştırma Extra'ya eklendi, iki c1 cloze'u korundu.\nNeden: Kısaltmalar giderildi.\nNasıl: [KS1, BÇ1, YP1] Adenovirüs fiber ve penton tipe özgü antijenleri ile c1 cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Serotiplendirmede kullanılır (Hekzon antijeni ise gruba/cinse özgüdür).",
+       "after": "Serotiplendirmede kullanılır."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 215,
@@ -7986,7 +8621,7 @@
    "fields": {
     "Text": {
      "before": "ParamiksoV'ler&nbsp;<div><br></div><div>HemAgg / Nöraminidaz / G glikoprotein</div><div><br></div><div>Kabakulak: {{c1::+ / + / -}}</div><div><br></div><div>Kızamık: {{c1::+ / - / -}}</div><div><br></div><div>Parainf: {{c1::+ / + / -}}</div><div><br></div><div>RSV: {{c1::- / - / +}}</div>",
-     "after": "Paramiksovirüsler yüzey glikoproteinleri:<div><br></div><div>Virüse göre tutunma proteinini belirt:<div><br></div><div>Kabakulak: {{c1::hemaglütinin + nöraminidaz}}</div><div><br></div><div>Kızamık: {{c1::hemaglütinin}}</div><div><br></div><div>RSV: {{c1::G glikoproteini}}</div><div><br></div><div>Metapnömovirüs: {{c1::G glikoproteini}}</div></div>"
+     "after": "Solunum yolu virüslerinin tutunma proteinleri:<div><br></div><div>Kabakulak: {{c1::hemaglütinin + nöraminidaz}}</div><div>Kızamık: {{c1::hemaglütinin}}</div><div>Parainfluenza: {{c1::hemaglütinin + nöraminidaz}}</div><div>RSV: {{c1::G glikoproteini}}</div>"
     }
    },
    "changes": [
@@ -8022,6 +8657,20 @@
     {
      "date": "2026-10-09",
      "previousAiNote": "Ne: Virüs adlarındaki kısaltmalar açıldı, glikoprotein adları standart yazıma getirildi.\nNeden: \"ParamiksoV\" ve \"MetapnömoV\" kişisel kısaltmalardı.\nNasıl: [KS1, YZ1, BÇ1, YP1] Altı satırlı liste düzeni, boş satırlar ve dört c1 yanıtı korundu."
+    }
+   ],
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Paramiksovirüsler yüzey glikoproteinleri:<div><br></div><div>Virüse göre tutunma proteinini belirt:<div><br></div><div>Kabakulak: {{c1::hemaglütinin + nöraminidaz}}</div><div><br></div><div>Kızamık: {{c1::hemaglütinin}}</div><div><br></div><div>RSV: {{c1::G glikoproteini}}</div><div><br></div><div>Metapnömovirüs: {{c1::G glikoproteini}}</div></div>",
+       "after": "Solunum yolu virüslerinin tutunma proteinleri:<div><br></div><div>Kabakulak: {{c1::hemaglütinin + nöraminidaz}}</div><div>Kızamık: {{c1::hemaglütinin}}</div><div>Parainfluenza: {{c1::hemaglütinin + nöraminidaz}}</div><div>RSV: {{c1::G glikoproteini}}</div>"
+      }
+     },
+     "actions": [
+      "Sonradan eklenen metapnömovirüs örneği çıkarıldı; onun yerine kaybolan özgün parainfluenza satırı geri getirildi. Yanlış aile genellemesi kısa başlıkla giderildi; c1 ve cevap gizliliği korundu (kural 4, 7)."
+     ]
     }
    ]
   },
@@ -8488,7 +9137,7 @@
    "fields": {
     "Text": {
      "before": "M. Tbc fagositozdan koruyan en önemli virulans faktörü:<div><br></div><div>{{c1::<b>Trehaloz dimikolat</b> (Kord Faktör)}}<br></div>",
-     "after": "Mycobacterium tuberculosis'i fagositozdan koruyan en önemli virülans faktörü:<br><br>{{c1::Trehaloz 6,6'-dimikolat (kord faktör)}}"
+     "after": "Mycobacterium tuberculosis'i fagositozdan koruyan en önemli virülans faktörü:<br><br>{{c1::Trehaloz dimikolat (kord faktör)}}"
     }
    },
    "changes": [
@@ -8513,7 +9162,21 @@
    ],
    "aiNote": "Ne: M. Tbc açıldı, kord faktörün kimyasal adı eklendi, c1 cloze'u korundu.\nNeden: Kısaltma giderildi.\nNasıl: [KS1, YZ2, BÇ1, YP1] M. tuberculosis kord faktörü ve c1 cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Mycobacterium tuberculosis'i fagositozdan koruyan en önemli virülans faktörü:<br><br>{{c1::Trehaloz 6,6'-dimikolat (kord faktör)}}",
+       "after": "Mycobacterium tuberculosis'i fagositozdan koruyan en önemli virülans faktörü:<br><br>{{c1::Trehaloz dimikolat (kord faktör)}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 232,
@@ -8686,7 +9349,7 @@
    "fields": {
     "Text": {
      "before": "Üremek için <b>Çikolata Agar</b> ve <b>30 C</b> Sıcaklığa ihtiyaç duyan MikoBakt:<div><br></div><div>M. {{c1::haemophilum}}</div>",
-     "after": "Üremek için çikolata agara (hemin gereksinimi) ve 30–32 °C inkübasyon sıcaklığına ihtiyaç duyan atipik mikobakteri:<br><br>Mycobacterium {{c1::haemophilum}}"
+     "after": "Üremek için çikolata agara ve 30–32 °C inkübasyon sıcaklığına ihtiyaç duyan atipik mikobakteri:<br><br>Mycobacterium {{c1::haemophilum}}"
     }
    },
    "changes": [
@@ -8711,7 +9374,21 @@
    ],
    "aiNote": "Ne: Mikobakteri kısaltması açıldı, hemin bağımlılığı belirtildi, c1 cloze'u korundu.\nNeden: Kısaltma ve terminoloji düzeltildi.\nNasıl: [KS1, YZ2, BÇ1, YP1] Mycobacterium haemophilum üreme özellikleri ve cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Üremek için çikolata agara (hemin gereksinimi) ve 30–32 °C inkübasyon sıcaklığına ihtiyaç duyan atipik mikobakteri:<br><br>Mycobacterium {{c1::haemophilum}}",
+       "after": "Üremek için çikolata agara ve 30–32 °C inkübasyon sıcaklığına ihtiyaç duyan atipik mikobakteri:<br><br>Mycobacterium {{c1::haemophilum}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 238,
@@ -9278,7 +9955,7 @@
    "fields": {
     "Text": {
      "before": "Strep Toksik Şok Send Tdv:<div><br></div><div>{{c1::Benz. Penisilin + Klindamisin}}</div>",
-     "after": "Streptokokkal toksik şok sendromu (Streptococcus pyogenes) tedavisi:<br><br>{{c1::Kristalize penisilin G + Klindamisin}} (klindamisin toksin üretimini baskılar)"
+     "after": "Streptokokkal toksik şok sendromu (Streptococcus pyogenes) tedavisi:<br><br>{{c1::Kristalize penisilin G + Klindamisin}}"
     }
    },
    "changes": [
@@ -9297,7 +9974,21 @@
    ],
    "aiNote": "Ne: Kısaltmalar açıldı, STSS tedavisinde kristalize penisilin G ve klindamisin netleştirildi, c1 cloze'u korundu.\nNeden: Kısaltma ve tedavi doğruluğu.\nNasıl: [KS1, YZ2, BÇ1, YP1] Streptokok toksik şok sendromu tedavisi ve cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Streptokokkal toksik şok sendromu (Streptococcus pyogenes) tedavisi:<br><br>{{c1::Kristalize penisilin G + Klindamisin}} (klindamisin toksin üretimini baskılar)",
+       "after": "Streptokokkal toksik şok sendromu (Streptococcus pyogenes) tedavisi:<br><br>{{c1::Kristalize penisilin G + Klindamisin}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 256,
@@ -9374,11 +10065,11 @@
    "fields": {
     "Text": {
      "before": "İster İnsan İster eşşek Isırığı tdv:<div><br></div><div>{{c1::Amoks Klav}}</div>",
-     "after": "İnsan ve hayvan ısırıklarında (Eikenella, Pasteurella) ampirik ilk seçenek antibiyotik profilaksisi ve tedavisi:<br><br>{{c1::Amoksisilin-klavulanat}}"
+     "after": "İnsan ve hayvan ısırıklarında ampirik ilk seçenek antibiyotik profilaksisi ve tedavisi:<br><br>{{c1::Amoksisilin-klavulanat}}"
     },
     "Extra": {
      "before": "Pastorella&nbsp;<div><br></div><div>Eikenella</div>",
-     "after": "İnsan ısırığında Eikenella corrodens, kedi ve köpek ısırığında Pasteurella multocida etkenleri hedeflenir."
+     "after": "Pasteurella<br>Eikenella"
     }
    },
    "changes": [
@@ -9403,7 +10094,26 @@
    ],
    "aiNote": "Ne: Sokak dili klinik terminolojiye uyarlandı, Amoksisilin-klavulanat tam yazıldı, c1 cloze'u korundu.\nNeden: Soru netliği ve kısaltma giderildi.\nNasıl: [SN1, KS1, BÇ1, YP1] Isırık yaraları tedavisi ve cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "İnsan ve hayvan ısırıklarında (Eikenella, Pasteurella) ampirik ilk seçenek antibiyotik profilaksisi ve tedavisi:<br><br>{{c1::Amoksisilin-klavulanat}}",
+       "after": "İnsan ve hayvan ısırıklarında ampirik ilk seçenek antibiyotik profilaksisi ve tedavisi:<br><br>{{c1::Amoksisilin-klavulanat}}"
+      },
+      "Extra": {
+       "before": "İnsan ısırığında Eikenella corrodens, kedi ve köpek ısırığında Pasteurella multocida etkenleri hedeflenir.",
+       "after": "Pasteurella<br>Eikenella"
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8).",
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 259,
@@ -9900,7 +10610,7 @@
     },
     "Extra": {
      "before": "Can yakan bir çıkmış!!!",
-     "after": "TUS sınavında çıkmış önemli soru"
+     "after": ""
     }
    },
    "changes": [
@@ -9919,7 +10629,21 @@
    ],
    "aiNote": "Ne: \"Res\" kısaltması açıldı, reseptör simgesi standart biçime getirildi, &nbsp; temizlendi.\nNeden: Terim standardı sağlandı.\nNasıl: [KS1, YZ1, BÇ1, YP1] İki satırlı yapı, boş satır ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "TUS sınavında çıkmış önemli soru",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Kişisel önem notunun yerine eklenen etiket veya yeni özet kaldırıldı; ana soru ve varsa özgün görsel korundu (kural 2, 5, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 275,
@@ -9936,7 +10660,7 @@
     },
     "Extra": {
      "before": "ÖNEMLİ!!! İlk 100 isteyenler özellikle!<br><img src=\"paste-0d04292ca096d958001c66dc7556687ae31f17b0.jpg\">",
-     "after": "Önemli bilgi<br><img src=\"paste-0d04292ca096d958001c66dc7556687ae31f17b0.jpg\">"
+     "after": "<img src=\"paste-0d04292ca096d958001c66dc7556687ae31f17b0.jpg\">"
     }
    },
    "changes": [
@@ -9955,7 +10679,21 @@
    ],
    "aiNote": "Ne: Kısaltmalar açıldı, all-caps vurgular düzeltildi, görsel etiketi korundu.\nNeden: Kısaltma ve biçim standardı sağlandı.\nNasıl: [KS1, YP3, BÇ1, YP1] Dört satırlı yapı, görsel etiketi ve iki c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Önemli bilgi<br><img src=\"paste-0d04292ca096d958001c66dc7556687ae31f17b0.jpg\">",
+       "after": "<img src=\"paste-0d04292ca096d958001c66dc7556687ae31f17b0.jpg\">"
+      }
+     },
+     "actions": [
+      "Kişisel önem notunun yerine eklenen etiket veya yeni özet kaldırıldı; ana soru ve varsa özgün görsel korundu (kural 2, 5, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 276,
@@ -9968,7 +10706,7 @@
    "fields": {
     "Text": {
      "before": "FcRes'e bağlanması için Epitop GEREKMEYEN:<div><br></div><div>Ig{{c1::E}}</div>",
-     "after": "Mast hücreleri ve bazofillerin Fc reseptörlerine (FcεRI) serbest hâlde (antijene bağlanmadan) tutunabilen immünoglobulin:<br><br>Ig{{c1::E}}"
+     "after": "Mast hücreleri ve bazofillerin Fc reseptörlerine serbest hâlde (antijene bağlanmadan) tutunabilen immünoglobulin:<br><br>Ig{{c1::E}}"
     }
    },
    "changes": [
@@ -9987,7 +10725,21 @@
    ],
    "aiNote": "Ne: Soru kökü netleştirildi, IgE'nin yüksek afiniteli FcεRI bağlanması açıklandı, c1 cloze'u korundu.\nNeden: Soru netliği ve biçim.\nNasıl: [SN1, BÇ1, YP1] IgE Fc reseptörü bağlanma özelliği ve cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Mast hücreleri ve bazofillerin Fc reseptörlerine (FcεRI) serbest hâlde (antijene bağlanmadan) tutunabilen immünoglobulin:<br><br>Ig{{c1::E}}",
+       "after": "Mast hücreleri ve bazofillerin Fc reseptörlerine serbest hâlde (antijene bağlanmadan) tutunabilen immünoglobulin:<br><br>Ig{{c1::E}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 277,
@@ -11618,7 +12370,7 @@
     },
     "Extra": {
      "before": "H<div>S</div><div>B</div><div>C</div><div>Para</div><div>Peni</div>",
-     "after": "H<div>S</div><div>B</div><div>C</div><div>Para</div><div>Peni</div><div>Sonuncunun eski adı Penicillium marneffei'dir.</div>"
+     "after": "H<div>S</div><div>B</div><div>C</div><div>Para</div><div>Peni</div>"
     }
    },
    "changes": [
@@ -11643,7 +12395,21 @@
    ],
    "aiNote": "Ne: Altı mantarın adları düzeltildi; “Penisilyum” yerine güncel Talaromyces marneffei adı, arka yüzde eski Penicillium marneffei adı yazıldı.\nNeden: Özgün listede dört cins adı yanlış veya Türkçe okunuşla yazılmıştı; son üyede yalnız eski cins kullanılıyordu.\nNasıl: [GN2, YZ1, YP1, YP3] Altı satır, c1/c2 sırası ve mevcut anımsatıcı korundu; eski adın anımsatıcıdaki “Peni” karşılığı arka yüzde açıklandı.\nKaynak: CDC, Talaromycosis Basics; CDC Emerging Infectious Diseases, Talaromyces marneffei (2021).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "H<div>S</div><div>B</div><div>C</div><div>Para</div><div>Peni</div><div>Sonuncunun eski adı Penicillium marneffei'dir.</div>",
+       "after": "H<div>S</div><div>B</div><div>C</div><div>Para</div><div>Peni</div>"
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 323,
@@ -12454,7 +13220,7 @@
    "fields": {
     "Text": {
      "before": "Albicans Dışı Candida Endokarditleri:<div><br></div><div><b>Lösemili</b> hasta: C. {{c1::tropicalis}}</div><div><br></div><div><b>Kİ TP Alıcıları:</b> C. {{c1::krusei}} - C. {{c1::lusitaniae}}</div><div><br></div><div><b>İV İlaç Bağımlıları:</b> C. {{c1::parapsilosis}}</div>",
-     "after": "Nonalbicans Candida türleri ile enfeksiyon/endokardit ilişkileri:<br><br>Lösemili nötropenik hasta → Candida {{c1::tropicalis}}<br>Kemik iliği nakli alıcıları → Candida {{c1::krusei}} ve Candida {{c1::lusitaniae}}<br>İntravenöz ilaç bağımlıları ve protez kapak → Candida {{c1::parapsilosis}}"
+     "after": "Nonalbicans Candida türleri ile enfeksiyon/endokardit ilişkileri:<br><br>Lösemili nötropenik hasta → Candida {{c1::tropicalis}}<br>Kemik iliği nakli alıcıları → Candida {{c1::krusei}} ve Candida {{c1::lusitaniae}}<br>İntravenöz ilaç bağımlıları → Candida {{c1::parapsilosis}}"
     }
    },
    "changes": [
@@ -12473,7 +13239,21 @@
    ],
    "aiNote": "Ne: Kısaltmalar açıldı, Candida türleri tam yazıldı, 4 adet c1 cloze'u korundu.\nNeden: Kısaltmalar giderildi.\nNasıl: [KS1, BÇ1, YP1] Non-albicans Candida enfeksiyonları ve c1 cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Nonalbicans Candida türleri ile enfeksiyon/endokardit ilişkileri:<br><br>Lösemili nötropenik hasta → Candida {{c1::tropicalis}}<br>Kemik iliği nakli alıcıları → Candida {{c1::krusei}} ve Candida {{c1::lusitaniae}}<br>İntravenöz ilaç bağımlıları ve protez kapak → Candida {{c1::parapsilosis}}",
+       "after": "Nonalbicans Candida türleri ile enfeksiyon/endokardit ilişkileri:<br><br>Lösemili nötropenik hasta → Candida {{c1::tropicalis}}<br>Kemik iliği nakli alıcıları → Candida {{c1::krusei}} ve Candida {{c1::lusitaniae}}<br>İntravenöz ilaç bağımlıları → Candida {{c1::parapsilosis}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 346,
@@ -13082,7 +13862,7 @@
    "fields": {
     "Text": {
      "before": "Entomoeba Histolitica Ayırıcı Tanısı&nbsp;<div><br></div><div>Entomoeba Coli --&gt; {{c1::morfoloji&nbsp; (8 çekirdekli)}} ile ayırım</div><div><br></div><div>E. dispar --&gt; {{c1::Seroloji }}&nbsp; ile ayrım</div>",
-     "after": "Entamoeba histolytica ayırıcı tanısı:<div><br></div><div>Entamoeba coli → {{c1::morfoloji (olgun kistte 8 çekirdek)}} ile ayrılır</div><div><br></div><div>Entamoeba dispar → {{c1::antijen arama / seroloji (veya PCR)}} ile ayrılır</div>"
+     "after": "Entamoeba histolytica ayırıcı tanısı:<div><br></div><div>Entamoeba coli → {{c1::morfoloji (olgun kistte 8 çekirdek)}} ile ayrılır</div><div><br></div><div>Entamoeba dispar → {{c1::türe özgü antijen testi / PCR}} ile ayrılır</div>"
     }
    },
    "changes": [
@@ -13101,7 +13881,21 @@
    ],
    "aiNote": "Ne: \"Entomoeba\" yazım hataları \"Entamoeba\" olarak düzeltildi; \"Histolitica\" ve \"Coli\" küçük harfe çevrildi; cümleler \"ile ayrılır\" şeklinde tamamlandı.\nNeden: Parazit cins ve tür adlarında harf hataları ve büyük harfler vardı.\nNasıl: [YZ2, DB1, BÇ1, YP1] E. histolytica'nın morfolojik olarak E. coli'den (8 çekirdekli kist) ve serolojik/moleküler olarak E. dispar'dan ayrımı ile c1 yanıtları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Entamoeba histolytica ayırıcı tanısı:<div><br></div><div>Entamoeba coli → {{c1::morfoloji (olgun kistte 8 çekirdek)}} ile ayrılır</div><div><br></div><div>Entamoeba dispar → {{c1::antijen arama / seroloji (veya PCR)}} ile ayrılır</div>",
+       "after": "Entamoeba histolytica ayırıcı tanısı:<div><br></div><div>Entamoeba coli → {{c1::morfoloji (olgun kistte 8 çekirdek)}} ile ayrılır</div><div><br></div><div>Entamoeba dispar → {{c1::türe özgü antijen testi / PCR}} ile ayrılır</div>"
+      }
+     },
+     "actions": [
+      "E. dispar ayrımında uzun seçenek eki yerine doğru kısa test yanıtı kullanıldı; yanlış seroloji karşılığı bırakılmadı (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 364,
@@ -14044,7 +14838,7 @@
     },
     "Extra": {
      "before": "ÇOK ÖNEMLİ. HELMİNTLERİN DİREKT ÖZETİ. Bunu anlamadan helmintleri anlamak imkansız.",
-     "after": "Helmint bulaş yollarının toplu özeti"
+     "after": ""
     }
    },
    "changes": [
@@ -14069,7 +14863,21 @@
    ],
    "aiNote": "Ne: Tür adlarındaki yazım hataları düzeltildi, kısaltmalar açıldı, &nbsp; temizlendi.\nNeden: Bilimsel adlandırma standardı sağlandı.\nNasıl: [YZ1, KS1, BÇ1, YP1] Dört ana grup, listeleme ve c1-c6 cloze yapısı eksiksiz korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Helmint bulaş yollarının toplu özeti",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Kişisel önem notunun yerine eklenen etiket veya yeni özet kaldırıldı; ana soru ve varsa özgün görsel korundu (kural 2, 5, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 390,
@@ -14926,7 +15734,7 @@
    "fields": {
     "Text": {
      "before": "Hep C çok mutant - değişken geni ----&gt; {{c1::E2 Geni&nbsp;}}",
-     "after": "HCV genomunda en fazla mutasyona uğrayan (hipervariabl) zarf geni → {{c1::E2 geni}}"
+     "after": "HCV genomunda en fazla mutasyona uğrayan zarf geni → {{c1::E2 geni}}"
     }
    },
    "changes": [
@@ -14951,7 +15759,21 @@
    ],
    "aiNote": "Ne: Kısaltma açıldı, HCV E2 geninin hipervariabilitesi standart terminolojiyle ifade edildi.\nNeden: Kısaltma giderildi.\nNasıl: [KS1, YZ2, BÇ1, YP1] HCV E2 geni hipervariabilitesi ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "HCV genomunda en fazla mutasyona uğrayan (hipervariabl) zarf geni → {{c1::E2 geni}}",
+       "after": "HCV genomunda en fazla mutasyona uğrayan zarf geni → {{c1::E2 geni}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 415,
@@ -15364,7 +16186,7 @@
    "fields": {
     "Text": {
      "before": "İnf A ve B tdv'si:<div><br></div><div><b>Viral RNA Transkripsiyon inh'ü: </b>{{c1::Baloksavir}}</div><div><br></div><div><b>iv Tek Doz İnf </b>olarak kullanılan Nöraminidaz inh'ü: {{c1::Peramivir}}</div>",
-     "after": "İnfluenza A ve B enfeksiyonlarının tedavisi:<br><br>Viral RNA transkripsiyon (kapsid ucu endonükleaz) inhibitörü → {{c1::Baloksavir marboksil}}<br>İntravenöz tek doz infüzyon olarak kullanılan nöraminidaz inhibitörü → {{c1::Peramivir}}"
+     "after": "İnfluenza A ve B enfeksiyonlarının tedavisi:<br><br>Viral RNA transkripsiyon inhibitörü → {{c1::Baloksavir marboksil}}<br>İntravenöz tek doz infüzyon olarak kullanılan nöraminidaz inhibitörü → {{c1::Peramivir}}"
     },
     "Extra": {
      "before": "Pfx'de kullanılmaz Sadece tedavi",
@@ -15393,7 +16215,21 @@
    ],
    "aiNote": "Ne: Kısaltmalar açıldı, etki mekanizmaları ve uygulama yolları belirtildi, iki adet c1 cloze'u korundu.\nNeden: Kısaltmalar giderildi.\nNasıl: [KS1, YZ2, BÇ1, YP1] Baloksavir ve Peramivir influenza endikasyonları ve cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "İnfluenza A ve B enfeksiyonlarının tedavisi:<br><br>Viral RNA transkripsiyon (kapsid ucu endonükleaz) inhibitörü → {{c1::Baloksavir marboksil}}<br>İntravenöz tek doz infüzyon olarak kullanılan nöraminidaz inhibitörü → {{c1::Peramivir}}",
+       "after": "İnfluenza A ve B enfeksiyonlarının tedavisi:<br><br>Viral RNA transkripsiyon inhibitörü → {{c1::Baloksavir marboksil}}<br>İntravenöz tek doz infüzyon olarak kullanılan nöraminidaz inhibitörü → {{c1::Peramivir}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 427,
@@ -15898,7 +16734,7 @@
     },
     "Extra": {
      "before": "Fena High Yield!!! İlk 100ler için özellikle",
-     "after": "Arbovirüsler eklembacaklılarla, robovirüsler kemirgenlerle bulaşır"
+     "after": ""
     }
    },
    "changes": [
@@ -15923,7 +16759,21 @@
    ],
    "aiNote": "Ne: Virüs aile kısaltmaları açıldı, terimler Türkçeleştirildi, span etiketleri temizlendi.\nNeden: Terim standardı ve HTML temizliği sağlandı.\nNasıl: [KS1, YZ1, YP4, BÇ1, YP1] Tüm alt gruplar, listeleme ve c1-c4 cloze yapısı eksiksiz korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Arbovirüsler eklembacaklılarla, robovirüsler kemirgenlerle bulaşır",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Kişisel önem notunun yerine eklenen etiket veya yeni özet kaldırıldı; ana soru ve varsa özgün görsel korundu (kural 2, 5, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 443,
@@ -16010,7 +16860,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Eozinofillerin fagositik kapasitesi sınırlıdır."
+     "after": ""
     }
    },
    "changes": [
@@ -16029,7 +16879,21 @@
    ],
    "aiNote": "Ne: Fagositik hücre listesi dört satırda korundu; eozinofilin sınırlı kapasitesi belirtildi.\nNeden: Eozinofil, nötrofil ve makrofaj kadar etkin bir fagosit gibi öğretilmemeli.\nNasıl: [SN1, YP1] Dört üye ve satır düzeni korundu; kısa nüans Extra'ya alındı.\nKaynak: NCBI Bookshelf, Immunobiology, eosinophil effector functions.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Eozinofillerin fagositik kapasitesi sınırlıdır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 446,
@@ -16176,7 +17040,7 @@
    "fields": {
     "Text": {
      "before": "IL {{c2::8}} --&gt; {{c1::Kemotx}}",
-     "after": "IL-{{c2::8}} (CXCL8) sitokininin temel etkisi → Nötrofiller için {{c1::kemotaksis}}"
+     "after": "IL-{{c2::8}} sitokininin temel etkisi → Nötrofiller için {{c1::kemotaksis}}"
     }
    },
    "changes": [
@@ -16201,7 +17065,21 @@
    ],
    "aiNote": "Ne: \"Kemotx\" kısaltması kemotaksis olarak açıldı, c2-c1 sıralaması korundu.\nNeden: Kısaltma giderildi.\nNasıl: [KS1, SN1, BÇ1, YP1] IL-8 kemotaksis etkisi ve c2-c1 cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "IL-{{c2::8}} (CXCL8) sitokininin temel etkisi → Nötrofiller için {{c1::kemotaksis}}",
+       "after": "IL-{{c2::8}} sitokininin temel etkisi → Nötrofiller için {{c1::kemotaksis}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 451,
@@ -16354,7 +17232,7 @@
    "fields": {
     "Text": {
      "before": "NK hc'de Fc Res {{c1::var}}&nbsp; Fagositoz {{c1::yapamaz&nbsp;}}",
-     "after": "NK hücresinde Fc reseptörü (CD16) {{c1::vardır}}; fagositoz {{c1::yapamaz}}."
+     "after": "NK hücresinde Fc reseptörü {{c1::vardır}}; fagositoz {{c1::yapamaz}}."
     }
    },
    "changes": [
@@ -16373,7 +17251,21 @@
    ],
    "aiNote": "Ne: NK hücresindeki CD16 ve fagositoz özelliği kısa biçimde belirtildi.\nNeden: Taslak gereksiz ADCC paranteziyle özgün kısa karşılaştırmayı uzatmıştı.\nNasıl: [KS1, YP1] İki c1 yanıtı ve tek satır korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "NK hücresinde Fc reseptörü (CD16) {{c1::vardır}}; fagositoz {{c1::yapamaz}}.",
+       "after": "NK hücresinde Fc reseptörü {{c1::vardır}}; fagositoz {{c1::yapamaz}}."
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 456,
@@ -17156,7 +18048,7 @@
    "fields": {
     "Text": {
      "before": "Kızılda Döküntü <b>Olmayan</b> yerler (3)<div><br></div><div>{{c1::<div>Ağız çevresi</div><div>Ayak tabanı</div><div>Avuç içi&nbsp;</div>}}<br></div>",
-     "after": "Kızılda döküntü <b>olmayan</b> bölgeler (3):<div><br></div><div>{{c1::<div>Ağız çevresi (perioral solukluk)</div><div>Ayak tabanı</div><div>Avuç içi</div>}}</div>"
+     "after": "Kızılda döküntü <b>olmayan</b> bölgeler (3):<div><br></div><div>{{c1::<div>Ağız çevresi</div><div>Ayak tabanı</div><div>Avuç içi</div>}}</div>"
     }
    },
    "changes": [
@@ -17169,7 +18061,21 @@
    ],
    "aiNote": "Ne: \"Döküntü\" ve \"Olmayan\" küçük harfe çevrildi, \"yerler\" → \"bölgeler\" yapıldı, ağız çevresine perioral solukluk eklendi.\nNeden: Başlık harfleri düzensizdi ve &nbsp; vardı.\nNasıl: [BÇ1, SN1, YP3, YP1] Kızıl döküntüsünün tutmadığı 3 klasik anatomik bölge, kalın \"olmayan\" vurgusu ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Kızılda döküntü <b>olmayan</b> bölgeler (3):<div><br></div><div>{{c1::<div>Ağız çevresi (perioral solukluk)</div><div>Ayak tabanı</div><div>Avuç içi</div>}}</div>",
+       "after": "Kızılda döküntü <b>olmayan</b> bölgeler (3):<div><br></div><div>{{c1::<div>Ağız çevresi</div><div>Ayak tabanı</div><div>Avuç içi</div>}}</div>"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 480,
@@ -17470,7 +18376,7 @@
    "fields": {
     "Text": {
      "before": "Vankomisin'e doğal dirençli Enterokok'lar:<div><br></div><div>Enterokok {{c1::gallinarum}}&nbsp;</div><div><br></div><div>Enterokok {{c1::cassaliflavus}}<br></div>",
-     "after": "Vankomisine vanC geni ile doğal (düşük düzey) dirençli Enterococcus türleri:<br><br>Enterococcus {{c1::gallinarum}}<br>Enterococcus {{c1::casseliflavus}}"
+     "after": "Vankomisine doğal dirençli Enterococcus türleri:<br><br>Enterococcus {{c1::gallinarum}}<br>Enterococcus {{c1::casseliflavus}}"
     }
    },
    "changes": [
@@ -17489,7 +18395,22 @@
    ],
    "aiNote": "Ne: Casseliflavus yazımı düzeltildi, vanC doğal direnci açıklandı, iki adet c1 cloze'u korundu.\nNeden: Yazım hatası ve terminoloji düzeltildi.\nNasıl: [YZ2, BÇ1, YP1] Enterococcus gallinarum ve casseliflavus doğal vankomisin direnci ve cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Vankomisine vanC geni ile doğal (düşük düzey) dirençli Enterococcus türleri:<br><br>Enterococcus {{c1::gallinarum}}<br>Enterococcus {{c1::casseliflavus}}",
+       "after": "Vankomisine doğal dirençli Enterococcus türleri:<br><br>Enterococcus {{c1::gallinarum}}<br>Enterococcus {{c1::casseliflavus}}"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6).",
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 491,
@@ -18268,11 +19189,11 @@
    "fields": {
     "Text": {
      "before": "Marsilya Ateşi etkeni:<div><br></div><div>R. {{c1::conorii}}&nbsp;</div>",
-     "after": "Marsilya ateşi (Akdeniz benekli ateşi / butonöz ateş) etkeni:<br><br>Rickettsia {{c1::conorii}}"
+     "after": "Marsilya ateşi etkeni:<br><br>Rickettsia {{c1::conorii}}"
     },
     "Extra": {
      "before": "Benekli ateş grubu<div><br></div><div>Kene ile bulaş</div>",
-     "after": "Benekli ateş grubu Rickettsia üyesidir; köpek kenesi (Rhipicephalus sanguineus) ile bulaşır ve siyah eskar (tache noire) oluşturur."
+     "after": "Benekli ateş grubundadır.<br>Kene ile bulaşır."
     }
    },
    "changes": [
@@ -18291,7 +19212,26 @@
    ],
    "aiNote": "Ne: Rickettsia conorii tam yazıldı, vektör ve eskar Extra'da açıklandı, c1 cloze'u korundu.\nNeden: Terminoloji ve biçim düzeltildi.\nNasıl: [YZ2, BÇ1, YP1] Marsilya ateşi Rickettsia conorii ve cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Marsilya ateşi (Akdeniz benekli ateşi / butonöz ateş) etkeni:<br><br>Rickettsia {{c1::conorii}}",
+       "after": "Marsilya ateşi etkeni:<br><br>Rickettsia {{c1::conorii}}"
+      },
+      "Extra": {
+       "before": "Benekli ateş grubu Rickettsia üyesidir; köpek kenesi (Rhipicephalus sanguineus) ile bulaşır ve siyah eskar (tache noire) oluşturur.",
+       "after": "Benekli ateş grubundadır.<br>Kene ile bulaşır."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8).",
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 518,
@@ -18470,7 +19410,7 @@
     },
     "Extra": {
      "before": "En iyi huylu Riketsiyoz",
-     "after": "Riketsiya çiçeği etkenidir, en hafif seyirli riketsiyozdur"
+     "after": "En hafif seyirli riketsiyozdur."
     }
    },
    "changes": [
@@ -18483,7 +19423,21 @@
    ],
    "aiNote": "Ne: Başlık akıcılaştırıldı, Extra alanı düzenlendi.\nNeden: Biçim ve imla standartlaştırıldı.\nNasıl: [BÇ1, YP1] İki satırlı yapı, boş satır, kalın vurgu ve c1 R. akari korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Riketsiya çiçeği etkenidir, en hafif seyirli riketsiyozdur",
+       "after": "En hafif seyirli riketsiyozdur."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 525,
@@ -18720,7 +19674,7 @@
    "fields": {
     "Text": {
      "before": "B. antracis <b>Spor Boyası:</b><div><br></div><div>{{c1::Malaşit Yeşili&nbsp;}}</div>",
-     "after": "B. anthracis <b>spor boyası:</b><div><br></div><div>{{c1::Malahit yeşili (Schaeffer-Fulton)}}</div>"
+     "after": "B. anthracis <b>spor boyası:</b><div><br></div><div>{{c1::Malahit yeşili}}</div>"
     }
    },
    "changes": [
@@ -18733,7 +19687,21 @@
    ],
    "aiNote": "Ne: Tür epiti ve boya adı imlası düzeltildi.\nNeden: Biyolojik yazım standardı sağlandı.\nNasıl: [YZ1, BÇ1, YP1] İki satırlı yapı, boş satır, kalın vurgu ve c1 Malahit yeşili korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "B. anthracis <b>spor boyası:</b><div><br></div><div>{{c1::Malahit yeşili (Schaeffer-Fulton)}}</div>",
+       "after": "B. anthracis <b>spor boyası:</b><div><br></div><div>{{c1::Malahit yeşili}}</div>"
+      }
+     },
+     "actions": [
+      "Ana metne sonradan eklenen açıklama veya parantez kaldırıldı (kural 3, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 534,
@@ -19296,7 +20264,7 @@
     },
     "Extra": {
      "before": "Kritik!!!",
-     "after": "Kritik bilgi"
+     "after": ""
     }
    },
    "changes": [
@@ -19309,7 +20277,21 @@
    ],
    "aiNote": "Ne: HTML debris ve span etiketleri temizlendi, oklar ve büyük harfler düzeltildi.\nNeden: Biçim ve HTML temizliği sağlandı.\nNasıl: [YP4, BÇ1, YP1] Beş satırlı yapı, boş satırlar, kalın vurgular ve c1/c2 cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Kritik bilgi",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Kişisel önem notunun yerine eklenen etiket veya yeni özet kaldırıldı; ana soru ve varsa özgün görsel korundu (kural 2, 5, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 554,
@@ -19714,7 +20696,7 @@
     },
     "Extra": {
      "before": "sadece yumurta olur dışkıda&nbsp;",
-     "after": "Proglotidler bağırsakta eridiği için dışkıda sadece yumurta görülür."
+     "after": "Dışkıda sadece yumurta görülür."
     }
    },
    "changes": [
@@ -19733,7 +20715,21 @@
    ],
    "aiNote": "Ne: \"Hymenolopsis\" yazım hatası \"Hymenolepis\" olarak düzeltildi, Extra alanı düzenlendi.\nNeden: Parazit cins adı doğru yazıldı.\nNasıl: [YZ2, BÇ1, YP1] Dışkıda proglotidi görülmeyen Hymenolepis nana ve c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Proglotidler bağırsakta eridiği için dışkıda sadece yumurta görülür.",
+       "after": "Dışkıda sadece yumurta görülür."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi veya ezber kodu korundu; eklenen açıklama, karşılaştırma ve kaynak dili çıkarıldı (kural 1, 2, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 567,
@@ -20032,7 +21028,7 @@
     },
     "Extra": {
      "before": "İlk 100",
-     "after": "Parazitlerin üreme şekilleri"
+     "after": ""
     }
    },
    "changes": [
@@ -20051,7 +21047,21 @@
    ],
    "aiNote": "Ne: Tür yazım hatası düzeltildi, all-caps vurgular küçük harfe çevrildi, Extra alanı düzenlendi.\nNeden: İmla ve biçim düzeltildi.\nNasıl: [YZ1, BÇ1, YP1] Üç grup, listeleme ve c1-c4 cloze yapısı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Parazitlerin üreme şekilleri",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Kişisel önem notunun yerine eklenen etiket veya yeni özet kaldırıldı; ana soru ve varsa özgün görsel korundu (kural 2, 5, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 577,
@@ -20576,5 +21586,22 @@
    "kisaltma": "H.inf",
    "acilim": "Haemophilus influenzae"
   }
- ]
+ ],
+ "editorialPolicy": {
+  "date": "2026-10-17",
+  "reviewedNotes": 587,
+  "reviewedCards": 730,
+  "changedNotes": 70,
+  "history": "docs/catalog-corrections/mikrobiyoloji-editorial.json",
+  "rules": [
+   "Kart içine kaynak adı, URL, sayfa veya kurum/yıl atfı yazılmaz.",
+   "Sonradan eklenen Ek bilgi / arka yüz açıklamaları kaldırılır.",
+   "Ana metindeki isteğe bağlı ek açıklamalar kaldırılır.",
+   "Yeni ilaç, örnek veya liste üyeleriyle kapsam genişletilmez.",
+   "Ek kılavuz ve klinik uygulama özeti yazılmaz.",
+   "Uzun karşılaştırma ve düzeltme gerekçesi karta taşınmaz.",
+   "Gerekli düzeltme kısa ve doğrudan ilgili ifadede yapılır.",
+   "Mevcut ezber kodları korunur."
+  ]
+ }
 }

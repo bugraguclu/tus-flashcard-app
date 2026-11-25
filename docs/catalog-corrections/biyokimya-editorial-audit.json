@@ -1,0 +1,4134 @@
+{
+ "schema": "tusankim.catalog-editorial/v1",
+ "date": "2026-10-17",
+ "course": "Biyokimya",
+ "originalReference": {
+  "gitRef": "a08dd99",
+  "path": "assets/catalog/bka-tus-complete.apkg"
+ },
+ "packageBeforeSha256": "79344b1e72cbf5dce93d7f21164d022cc88216a574ca10d9aaa22a9c18dc3e74",
+ "applied": false,
+ "reviewedNotes": 484,
+ "reviewedCards": 602,
+ "boundaries": {
+  "cards": "74b2cd2b72adceb61b9f437cc121f5a2fe11040d92778d4523df68337d3416f1",
+  "revlog": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "graves": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "collection": "d77b2e5569583e7afdc18d6a8747fc488cef0cf907da5f8c66cf90104b61eff6",
+  "noteIdentity": "90984ca47dbdefd40db5c3b25a4c1d072925253cb109a90419604f7b597759fc",
+  "otherCourses": "164384eb97d18318567b7889a0268a595b6774fe195cff4d36c57c21656a6259"
+ },
+ "scope": [
+  {
+   "noteId": 1604150952548,
+   "guid": "etC=vPm([(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151001963,
+   "guid": "f?McK4,4<R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151030426,
+   "guid": "A.YxmWQf9+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151065083,
+   "guid": "E1C?]?)imi",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151103142,
+   "guid": "Jy8p(s}DUW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151157414,
+   "guid": "H#l#^ZFGlC",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151196970,
+   "guid": "uJG48cH[=5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151319026,
+   "guid": "PruuL&6.@_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151419820,
+   "guid": "yyZwS:{Q=y",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151454632,
+   "guid": "io/ljeU0w}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151475860,
+   "guid": "bt$x-/hpfM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151497482,
+   "guid": "y_()H1dr2;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151513292,
+   "guid": "BwZ}WW(~G{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151540458,
+   "guid": "N^G#i2Ik0F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151763049,
+   "guid": "Im~Im`2yPN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151847449,
+   "guid": "j|xuBi[.#?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151872919,
+   "guid": "pABj2fdfj.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151919835,
+   "guid": "npUT5jD/q0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604151952319,
+   "guid": "bZEQ:ZfPz0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152059012,
+   "guid": "y4.]F)&)68",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152081677,
+   "guid": "HIDx~k)6?F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152144232,
+   "guid": "Cln{,enq#O",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152268349,
+   "guid": "Q[^44{rmEg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152382549,
+   "guid": "wYCS-[#1HK",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152424441,
+   "guid": "E&[rCX$2L_",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152499781,
+   "guid": "EuJkC%Zcrg",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152630128,
+   "guid": "Q_dux2u9xG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152662337,
+   "guid": "wHGf.:F9{m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152690537,
+   "guid": "vWt`)D9=O?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152806147,
+   "guid": "nn=(S*7BEW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152972622,
+   "guid": "tiypYzP[X<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604152992801,
+   "guid": "cWloT&W2A]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153034361,
+   "guid": "mS)WQ?8LHF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153046475,
+   "guid": "zH6A=[r!Pq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153128897,
+   "guid": "sR{b^&<LTG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153218461,
+   "guid": "N7D.YGN}r8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153279936,
+   "guid": "zw<6ErAsd!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153307336,
+   "guid": "p+a>#!)-jq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153338234,
+   "guid": "c]4k=PjeMo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153359699,
+   "guid": "GG>vJ-rc8&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153496425,
+   "guid": "q=/s}XX$>x",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153531315,
+   "guid": "CT[<Loc!xe",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153620791,
+   "guid": "cm7}gXXAac",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153648178,
+   "guid": "iikYs33V4%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153693572,
+   "guid": "G})T}20d4/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153764290,
+   "guid": "r2V#r5D0qr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153801658,
+   "guid": "etX`5ar-qh",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153927041,
+   "guid": "MLqQpcNaR.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604153999544,
+   "guid": "h`yg_gRbp!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604154028476,
+   "guid": "PW%#IYQ>OP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604154063962,
+   "guid": "BHzZ`_3GyS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604154161346,
+   "guid": "oQ>~Z;!H*%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604154192400,
+   "guid": "gEH?3an-k(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604154277839,
+   "guid": "HgZhM?dxW}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604154324337,
+   "guid": "lb>{e]AOB0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604154345137,
+   "guid": "qC0,?Yuzwx",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604154397570,
+   "guid": "mnGz1~A-3c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604154509944,
+   "guid": "Rhg{@VN*fJ",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604155901530,
+   "guid": "dDD#X9nL#F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604155927595,
+   "guid": "e#-X(C9_YT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604155976833,
+   "guid": "Oi+3^>6qSj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156021465,
+   "guid": "bc)o1PM*iI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156045313,
+   "guid": "iFwsy~2}Ec",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156070496,
+   "guid": "C>-W&;O~na",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156167185,
+   "guid": "QZL-LnQIEq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156222724,
+   "guid": "v*3-+k:>~i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156292245,
+   "guid": "IqcGqefV(<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156327794,
+   "guid": "I=~V:_/?7;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156381754,
+   "guid": "cXj(i7[!6Q",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156460967,
+   "guid": "EQg`Tp)-V",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156516896,
+   "guid": "uwp;RP9dqD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156527856,
+   "guid": "p=/8k^[>TP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156544946,
+   "guid": "z_zY.Ir`.Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156556432,
+   "guid": "1wiz9v@J2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156570380,
+   "guid": "MLt8v~n&2~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156783021,
+   "guid": "mJ_WN4{VSp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604156820738,
+   "guid": "nSsY8z(<nu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604159682974,
+   "guid": "i[T/T;h+<O",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604159799134,
+   "guid": "AxBT`m+JGJ",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604159833068,
+   "guid": "OuRF@c@[A{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604159858026,
+   "guid": "Q8NIamd_!Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604159884115,
+   "guid": "dC=TyH}9lg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604159904444,
+   "guid": "gO7^o26FS2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604159920586,
+   "guid": "pS5T4{%:(C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160003202,
+   "guid": "upNHJB7;kg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160033799,
+   "guid": "n!?6XqReo*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160169444,
+   "guid": "IV&yTGzFVx",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160263599,
+   "guid": "oww$:t4J=9",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160312647,
+   "guid": "p%~U!=(C>=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160406841,
+   "guid": "A#Y[GGGNDk",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160646610,
+   "guid": "QF-5{~aZ3&",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160759978,
+   "guid": "F7nxBe[aSu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160792094,
+   "guid": "bc7<T<)eN^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604160850336,
+   "guid": "qIAQSek3iK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604160954749,
+   "guid": "fFkPZ<%_gy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232043162,
+   "guid": "oX21j1R0`B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232073489,
+   "guid": "o9|gYY`7Oe",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232128793,
+   "guid": "f4~_~h/2NX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232183913,
+   "guid": "l[L2vU.3W3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232234335,
+   "guid": "Oj2tRSZ)Pg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232262271,
+   "guid": "Ebf7%aP7#~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232324607,
+   "guid": "DEU9AVbX6N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232447551,
+   "guid": "q~kewe,HeH",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604232492463,
+   "guid": "M->;EcC}hY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232522909,
+   "guid": "yL?aI}piS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232554066,
+   "guid": "gK6&SC8)ZJ",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232583538,
+   "guid": "JXf}?VXXLE",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232646295,
+   "guid": "l#B.f*MOuP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232687627,
+   "guid": "zUoekBaa6V",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232733161,
+   "guid": "qBib7+tFg;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232780155,
+   "guid": "b;~p9;Ub)T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232876826,
+   "guid": "zsId;5]<}j",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232898073,
+   "guid": "bND|4(O,jv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604232961813,
+   "guid": "Jy4+;+=^$y",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233047811,
+   "guid": "Cf-|hOj.nO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233099996,
+   "guid": "g|bdYbP5bI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233139635,
+   "guid": "Q`a4$Nr}3>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233194846,
+   "guid": "@G|Al-3qo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233479113,
+   "guid": "gv<6T;sB)w",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233505700,
+   "guid": "pn$ER)x1[",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233624607,
+   "guid": "ucu^D)t|0k",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233687488,
+   "guid": "A4BA4/R_H!",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233735674,
+   "guid": "H/Kw;DWBw^",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233789020,
+   "guid": "i/;@yVQC;k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233838901,
+   "guid": "E?j>HF*Rnn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233865452,
+   "guid": "Fb1u6P?KJ]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233948415,
+   "guid": "FQ7%V]~HYJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604233972993,
+   "guid": "nB9>65BufT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604235178248,
+   "guid": "bY^Id>AlYN",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604235272127,
+   "guid": "f/fEvLb#gw",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604235460636,
+   "guid": "b_cgM$aET4",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604235516944,
+   "guid": "qQ/^^LyY@6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604235547714,
+   "guid": "s0t%*kh6{u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604235575383,
+   "guid": "lGBrzHqN5I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604235679209,
+   "guid": "ubfZk)sYG,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604235838794,
+   "guid": "j%QsDGQ@)c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604235981411,
+   "guid": "sI,CnTI0h?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236009708,
+   "guid": "k9Py27oG>!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236045837,
+   "guid": "nDOp5:LuED",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236130685,
+   "guid": "q1r=BQa4.v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236221900,
+   "guid": "L5~YmK+y!w",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236289766,
+   "guid": "NU[RCfrG`y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604236358421,
+   "guid": "t1o{Z@p$}|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236443985,
+   "guid": "b88f6]qcn^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236483986,
+   "guid": "r)-A?Txz}&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236519279,
+   "guid": "e~!/><?Tvs",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236594638,
+   "guid": "Im60$L2BLU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236621872,
+   "guid": "B4N8V*A1JH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236664484,
+   "guid": "px]yftPc,K",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236697830,
+   "guid": "J3@|C#L(7H",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236820291,
+   "guid": "An9HAsCOiS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236849744,
+   "guid": "rZUb*MGtoo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604236957379,
+   "guid": "Br>[=>9%t`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604237021498,
+   "guid": "pz-(_$X;pZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604237175436,
+   "guid": "Jlb%QC-Tde",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607173611511,
+   "guid": "z3IoBCe=Hb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607173759229,
+   "guid": "D{7etOtT){",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607174045011,
+   "guid": "NW#@+/Jh{u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607174509878,
+   "guid": "dHPTXJRTzQ",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607174721746,
+   "guid": "h4N&NY:Tat",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607174945095,
+   "guid": "th-r/A!cn}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607175532343,
+   "guid": "jwzYlq2hy-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607191236052,
+   "guid": "jXF&>a**g>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607191497168,
+   "guid": "Fx07]70sGz",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607191554336,
+   "guid": "t#OY{f!I,&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607191603355,
+   "guid": "Oxn&@enSd;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607191639523,
+   "guid": "z}H<(5G9MC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607191692741,
+   "guid": "C2+f}@U1sE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607192515648,
+   "guid": "rm;-lTQ_|E",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607192705954,
+   "guid": "l}:Kn.E1hu",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607192909204,
+   "guid": "DR:Rt/]?Bz",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607192982321,
+   "guid": "K27]I{Sy_9",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607193293820,
+   "guid": "frncr~F2:S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607193620797,
+   "guid": "M>+9enueJI",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607193817282,
+   "guid": "cjumEHKn0P",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607193985358,
+   "guid": "KJxa-K!lbt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607194410337,
+   "guid": "oxSsNqjUZ#",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607194444859,
+   "guid": "N):z%4,&u.",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607194536229,
+   "guid": "cNC7mtHz>E",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607195489327,
+   "guid": "Mc$=kuLfF@",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607238064742,
+   "guid": "v=Uq4EF;@n",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607238212368,
+   "guid": "gaH|RnN:b0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607238413527,
+   "guid": "^2MD)zXZ}",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607238881764,
+   "guid": "cQ#qULbvP>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607239270276,
+   "guid": "nal_+|D|_i",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607239445274,
+   "guid": "nOj_(SZIb.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607240006799,
+   "guid": "H1w2+U~n;M",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607240283020,
+   "guid": "p3JoB50_vc",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607240459937,
+   "guid": "D#x,~LQRpW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607240609528,
+   "guid": "CE*?HAC5S~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607240738807,
+   "guid": "IGR$G8>LE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607241801491,
+   "guid": "rbV#5yfgCU",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607242245257,
+   "guid": "mYB6fpC^Xn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607251093097,
+   "guid": "jhdWWyVlb|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607252760298,
+   "guid": "Q/x5w3Xf[/",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607253754613,
+   "guid": "F$LbWTr$uf",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607254486054,
+   "guid": "LMh}HQF?/*",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607254598393,
+   "guid": "J%;D(PsiRT",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607254709083,
+   "guid": "ttf7ZaI~Hz",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607255080918,
+   "guid": "pC*sSo~;8}",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607263051935,
+   "guid": "K[%j0>M5E0",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607263110958,
+   "guid": "e5tRGTmX!7",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607263225809,
+   "guid": "B`OL]ofqfo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607263301070,
+   "guid": "w9F;u#<3BU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607263710653,
+   "guid": "!*-pYV#5[",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607275635294,
+   "guid": "hv`{C=$QhX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607276025421,
+   "guid": "vby8L[8sQ4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607276625490,
+   "guid": "h^r~-PPB0N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607277074299,
+   "guid": "ow-IZ9([SN",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607277535983,
+   "guid": "df%~b`_)=W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607280220392,
+   "guid": "O0HGA,fNX|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607283696038,
+   "guid": "y?z<;q(ZP9",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607283879079,
+   "guid": "wp&8NM5~/N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607283908830,
+   "guid": "eFm*!_NSpu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607284449377,
+   "guid": "mJ#^ghOifH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607285224180,
+   "guid": "jIvXo^TZ-<",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607286217836,
+   "guid": "kMQ1E6:9+a",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607286254336,
+   "guid": "nMI:*b)GA7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607286682456,
+   "guid": "g+b%,<f._p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610951607854,
+   "guid": "L*o6ow<1h5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610952004451,
+   "guid": "LsUV,mKx%G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610953331752,
+   "guid": "t4thy7kxc6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610954098451,
+   "guid": "o?~7v5Y~n0",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610966970495,
+   "guid": "P]!5g0LZi/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610971345842,
+   "guid": "ClE()dHJ+s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610974399276,
+   "guid": "Q|<k6J&_wn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610974646103,
+   "guid": "NU(+,W?Q=Z",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610975054228,
+   "guid": "KG|x@e[kPu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610976133713,
+   "guid": "Ee_#F@~zMq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1610981400380,
+   "guid": "ADe=]>cAL<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610981562551,
+   "guid": "OD.DO_2dB@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610983342727,
+   "guid": "yhSp$ZQqMn",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610985115298,
+   "guid": "Ot5jE}q_VN",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610985279791,
+   "guid": "vG7bRuIlRF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610985706463,
+   "guid": "A}*oQI)Ehc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610985791331,
+   "guid": "e[~%W+Op8(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1610997552702,
+   "guid": "Q--8V^rvrZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611003069022,
+   "guid": "z0(]nn}3k2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611004708511,
+   "guid": "F6.8@;RQE~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611004887633,
+   "guid": "Dp.d3j@wL!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611005363470,
+   "guid": "f$b/-0La3B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611005791572,
+   "guid": "QCB5zF>U1y",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611044283600,
+   "guid": "oUyp01$~JY",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611044338597,
+   "guid": "o%;Xww5.>7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611056848570,
+   "guid": "Q,Njrl+,xE",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611057324162,
+   "guid": "h9r_q,3gO1",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611057797283,
+   "guid": "g_cavvAl}y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611058549894,
+   "guid": "fAo%N;_v.h",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611058796968,
+   "guid": "c1QU%ut4ZI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611058912037,
+   "guid": "cAcF#PgUo/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611059131749,
+   "guid": "n0~6HeV.4p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611060717356,
+   "guid": "xhxm!}7ny]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611060866881,
+   "guid": "J6%y#tWx->",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611062082584,
+   "guid": "f^/r5waXt0",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611063629993,
+   "guid": "nq.D:9*M-W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611064220540,
+   "guid": "GiLV:P3GkY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1611065848424,
+   "guid": "pOZEf[7`t]",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1611065950969,
+   "guid": "x~(Wt,W7cf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611066062457,
+   "guid": "O+Yqa[w)up",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611066355007,
+   "guid": "H>aaj?<Sue",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1611080965263,
+   "guid": "F6DCNbkr>l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611081097048,
+   "guid": "P9MYRb-r6+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611082577849,
+   "guid": "sH_(pZJT)U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611088148790,
+   "guid": "m>?f4^lI=&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1611089897321,
+   "guid": "B9Lq0-0rhe",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611091357698,
+   "guid": "LOKmWci6,<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611145345061,
+   "guid": "K=?tgM*@v9",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611146496747,
+   "guid": "d/XB6WNA*h",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611146588795,
+   "guid": "e&f&A=;ILJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611146807259,
+   "guid": "wH|)?vc(pQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611153456871,
+   "guid": "oYlwS%qiIV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1611155167877,
+   "guid": "vy$+iLN;0`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611156046763,
+   "guid": "W/-5^_yg1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1611167700563,
+   "guid": "t?w&9^P8=[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611168764337,
+   "guid": "y~FY6d0>MG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611176375225,
+   "guid": "ginaSm$pU7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611210978215,
+   "guid": "CPP09DXR(.",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611211329572,
+   "guid": "nzP4D(&Nr,",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611211778247,
+   "guid": "r2,kUU?QT|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611212392722,
+   "guid": "Ax9I+eZi>-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611214067113,
+   "guid": "HYjf:N!4Uo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611215020830,
+   "guid": "q`!^gq9HQ6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611225253474,
+   "guid": "G/c,vZT9,K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611225460303,
+   "guid": "cBIa{i`r:9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611226760660,
+   "guid": "yeW4Oyae:>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611237603630,
+   "guid": "NW6`qI2b[|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611246793923,
+   "guid": "mO9W&@GakB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611253260121,
+   "guid": "f}8ItpUL;=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611253376669,
+   "guid": "o_zmRF<kvR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611253458998,
+   "guid": "NLG=HjZ|^h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611253604073,
+   "guid": "r&KR7x1xC+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611253678574,
+   "guid": "r?L!B}T@0}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611253903543,
+   "guid": "KW7Y.FiQai",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611254085449,
+   "guid": "IQmWT^t`Eu",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611254246933,
+   "guid": "F19np1WNH7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611254339119,
+   "guid": "xF_IJXf1vL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611254409451,
+   "guid": "hM{Kl[b6)6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614262454909,
+   "guid": "zk(k#6s&,{",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614262921880,
+   "guid": "z5C43s?!1/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615357636234,
+   "guid": "O_8|_<3?}2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617215169546,
+   "guid": "qhM.yt~>=w",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617215266577,
+   "guid": "N^w-7sLJZ3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617309761452,
+   "guid": "ohUI6+LgJH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617655647786,
+   "guid": "xxn}zbbL2r",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617737313633,
+   "guid": "HcmYQ:Mo8@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1617737418669,
+   "guid": "wb|jTiWd#8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618041603017,
+   "guid": "M6rj7NcNo}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1619906404710,
+   "guid": "J((3`Wc3Rg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620330895698,
+   "guid": "d7ZGC5y&=5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620513114851,
+   "guid": "cKXE_<I&.U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620818348180,
+   "guid": "rb;6s1i:VV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620819865381,
+   "guid": "G4((`O;q>8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620820238158,
+   "guid": "J61I_I0H*5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620824012278,
+   "guid": "c7JA?*Ky8f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620825817931,
+   "guid": "Mqlw6C&3zo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620826879841,
+   "guid": "NAD<nU%M>|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620830767954,
+   "guid": "beS!}6C5:.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620831105391,
+   "guid": "Q1&]0{eOvK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620831778810,
+   "guid": "K(=?<2DYpE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620832195204,
+   "guid": "H8]HJq`c(h",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620832321163,
+   "guid": "GCv-`??VcS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620833241951,
+   "guid": "Abo3vQFK.,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620833753648,
+   "guid": "l4,,]Kw7&L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620833967531,
+   "guid": "JrE;g?3K$#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620842605528,
+   "guid": "vT0uM2A/90",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620844328449,
+   "guid": "uDgn~uMeq$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620844704321,
+   "guid": "txhV4MflJj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620845353841,
+   "guid": "Q<%4/2C<?A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620846210188,
+   "guid": "yuAwNt%F*1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620847615558,
+   "guid": "wn*r_opDdd",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620847916848,
+   "guid": "k0MjhGd!e)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620848072169,
+   "guid": "o=97&V*Cvm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620848345615,
+   "guid": "oonSm&<J{#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620850077176,
+   "guid": "H$|1yMbQQ}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620852539431,
+   "guid": "IiU78T6ok^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620887489281,
+   "guid": "I?66w+]gKc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620887714552,
+   "guid": "l/n$&Wgs?W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620887891535,
+   "guid": "HeE:RFPU^t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620888001962,
+   "guid": "EQ&kuQq<mJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620894172175,
+   "guid": "MDN-j;;!a=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620905075146,
+   "guid": "f_**!Dux(7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620905357136,
+   "guid": "hruPn-zQa]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620906096930,
+   "guid": "d?3e;r?}^S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620908473288,
+   "guid": "biYfN0F`0D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620908679670,
+   "guid": "wari-f}@/.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620908876507,
+   "guid": "v-LD[#o(42",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620912688407,
+   "guid": "t2dX2_DY>)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620914130701,
+   "guid": "iYwM[.oQiD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620915239119,
+   "guid": "MUqqq3IE7_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620915479144,
+   "guid": "D]L-M|T6f!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620915986118,
+   "guid": "th17l4J!]m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620928956570,
+   "guid": "vjr5._R&~U",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620929019225,
+   "guid": "pILh9Y3E7P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620929885264,
+   "guid": "FZ.cZewNu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620930558065,
+   "guid": "kwHXPfDsz%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620932922995,
+   "guid": "AeFZw)u,8+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620933685258,
+   "guid": "g+@YPxMg+%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620934123234,
+   "guid": "INinijK6;j",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620934561789,
+   "guid": "w1Y#lv5,7`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620935499380,
+   "guid": "hH-IgOdHaX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620940166793,
+   "guid": "vOnz-yam{F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621176307691,
+   "guid": "O<w*[$5<gX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621424052877,
+   "guid": "ox7R:|Yb}s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621492969872,
+   "guid": "G`8@v4}O^>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621494832588,
+   "guid": "i9d^t*HF*+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621495627562,
+   "guid": "vL*+xjmg/3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621509065550,
+   "guid": "{nQtEOb6G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621509465930,
+   "guid": "NtK(=V#m`?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621520183706,
+   "guid": "KKP^@/su`]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621524327519,
+   "guid": "i]I}SD49rz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621524711431,
+   "guid": "t?~M/7vI}%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621607164901,
+   "guid": "oB!&.6EDpl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622387699402,
+   "guid": "w!3>,Wr6T(",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1623012319131,
+   "guid": "f.NEFTvCg7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623189652984,
+   "guid": "igek:&8Y-@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623740687583,
+   "guid": "n=#N=x-4*m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1623745839345,
+   "guid": "Qq$WronL`T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623755249054,
+   "guid": "g^=#BE0{8v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623756490155,
+   "guid": "g%pl8KBf>W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623759302988,
+   "guid": "y@jzWdH03Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1623759398155,
+   "guid": "od<+qTQxWe",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623760471404,
+   "guid": "Mz}0Y>O#3:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623762695361,
+   "guid": "O~D6F@IPW5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623762819399,
+   "guid": "Q?pqRDAnx3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623772068829,
+   "guid": "Mtez6s_a.1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624562979270,
+   "guid": "egz~^L0?A}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624869143645,
+   "guid": "s6XD[3eDi}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624878878251,
+   "guid": "G21:/,8U80",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624883037906,
+   "guid": "Cj%Zs72Gc^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624883738227,
+   "guid": "L1O-pqu2^+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624913343383,
+   "guid": "H}TO*^rPuk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624991510737,
+   "guid": "QuJ#O/=T9V",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625088058346,
+   "guid": "dZt+<N7q@>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625252659394,
+   "guid": "j}adwxN;e[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625580272837,
+   "guid": "MyAXiJ^SQ7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625819283163,
+   "guid": "b}c;+Z.b<#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626112822100,
+   "guid": "q270=h&M3_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626510788712,
+   "guid": "M79,n/pZ`k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626519988156,
+   "guid": "DUQ&9#bU%6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626524079227,
+   "guid": "L)4wpU:Km=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626559820712,
+   "guid": "}D$0H}cy7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626645052909,
+   "guid": "Q9<:grB,MK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626846195405,
+   "guid": "pi=4K?pcnA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626876265481,
+   "guid": "qbzI/|L=O^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626961832676,
+   "guid": "G:T^6rVygu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626980997096,
+   "guid": "zTtIS#Z/7x",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626983126388,
+   "guid": "Fh6|=&B;r&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627048476458,
+   "guid": "Grn~v|2`~y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627048579779,
+   "guid": "o}#[$>JUU>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627048706566,
+   "guid": "NvbiNC_a12",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627049060128,
+   "guid": "MuL7We+3_1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627049167699,
+   "guid": "Cr<k?|PASK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627068856230,
+   "guid": "hV2wK95+w%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627370588868,
+   "guid": "Nz)i8}DKn~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627370719261,
+   "guid": "mKl@hiaXcB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627370883606,
+   "guid": "Px,3$;8~,c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627507901647,
+   "guid": "CUTr#Fp<jj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627508297902,
+   "guid": "Or[EK.rI@N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628358636454,
+   "guid": "ykn!1{uQJF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628358752052,
+   "guid": "u+V-{aR]54",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628458085333,
+   "guid": "k*0.%Z[BpY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628628777695,
+   "guid": "bnugcW[c>*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628694880918,
+   "guid": "z(HHJ9,!90",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628698190977,
+   "guid": "iHWRYcCi[X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628699997439,
+   "guid": "HX^1i+Hi30",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628712988365,
+   "guid": "D`~@w5P|K#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628713913429,
+   "guid": "tiLhnD=r-f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628714921844,
+   "guid": "cwCACT${C?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628715092430,
+   "guid": "j;0{Xv1m$S",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628715144432,
+   "guid": "y@`<F!AkY~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628747250259,
+   "guid": "qN=yasw9h@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628752100707,
+   "guid": "yk-e=}N$o7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628754920606,
+   "guid": "l2bh!rQ~uZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628755326822,
+   "guid": "Q#RH5aG{l3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628767502458,
+   "guid": "d$oVGsJ*Qk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628767691602,
+   "guid": "w/&nk3{0Md",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628769889878,
+   "guid": "kC=MYG5os{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628770990664,
+   "guid": "dcKnT-QYwP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628771067839,
+   "guid": "z-7Ot2z]Ow",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628773596614,
+   "guid": "p=c{OcIPkr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628774129257,
+   "guid": "rHZNo,0rHL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628928200910,
+   "guid": "ur2?>+@gO[",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628958431560,
+   "guid": "tADcEEdJrt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628958665473,
+   "guid": "sivmXJd|W_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629141002020,
+   "guid": "yn.PQ;oCOp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629141352651,
+   "guid": "rHo^aFm?$/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629141532040,
+   "guid": "Ar:YAPac&!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629141623559,
+   "guid": "cv9A@9T2{j",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629141738349,
+   "guid": "jm(9aLb/(W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629141910116,
+   "guid": "m%Z+(m{~?R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629142052372,
+   "guid": "hbU4+N@i&z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629142140088,
+   "guid": "QZGzu+_XQ{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629142230049,
+   "guid": "6:S|iCe,|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629142325946,
+   "guid": "B$T8kmUsX7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629142641711,
+   "guid": "wmxx,rr(wh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629142805844,
+   "guid": "vI9Kp}UM*<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629143158281,
+   "guid": "d3$zVYJeI1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629143512951,
+   "guid": "N1#KB#qb&e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629143598429,
+   "guid": "cl1Hv)qp~,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629143770543,
+   "guid": "qDjypRk,;x",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629143953395,
+   "guid": "I424JV_7`1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629144429919,
+   "guid": "yJU>EN;=_`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629144527413,
+   "guid": "H--lA(bu@D",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629144798202,
+   "guid": "LREG{tVX1D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629145049796,
+   "guid": "Qvf&Qi?!c*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629175670171,
+   "guid": "MOsquS8?%B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629175891997,
+   "guid": "iY??Stp^/a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629175960443,
+   "guid": "y?@(6E05}t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629176265897,
+   "guid": "x!amCaCH=D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629176698650,
+   "guid": "v%&>6G.-_7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629176950983,
+   "guid": "NtjD4/QDE7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629228916976,
+   "guid": "x9eYa3KE(A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629322120984,
+   "guid": "P|>Bo@$v,}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629490505929,
+   "guid": "reoNWT:Xs(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629490678459,
+   "guid": "DV>/E>QR^(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629617428873,
+   "guid": "xi]0{d+Wz;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629667402241,
+   "guid": "q!0!g8,-4*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629810254230,
+   "guid": "lNI{#>m0<,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629810314657,
+   "guid": "iR_t@NHzaK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629812430610,
+   "guid": "lTLMhm~&OR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629812854116,
+   "guid": "Pz`x#KhA4I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630009553103,
+   "guid": "jZ$%sd%]@(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630097682899,
+   "guid": "sg:!*{[S_w",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630355716172,
+   "guid": "jnZC69}6:m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  }
+ ],
+ "notes": [
+  {
+   "noteId": 1620824012278,
+   "guid": "c7JA?*Ky8f",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Klasik sınıflamada <b>SSS'de glikojen birikimi </b>olan glikojen depo hastalığı:<div><br></div><div>Tip {{c1::8}}</div>",
+     "after": "<b>SSS'de glikojen birikimi </b>olan glikojen depo hastalığı:<div><br></div><div>Tip {{c1::8}}</div>"
+    }
+   },
+   "actions": [
+    "A/eksik temizlik: arka yüz silinirken bırakılan, özgün kartta olmayan genel \"klasik sınıflamada\" çekincesi kaldırıldı (kural 3, ortak karar)."
+   ]
+  },
+  {
+   "noteId": 1610952004451,
+   "guid": "LsUV,mKx%G",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Q döngüsü (kompleks III):<div><br></div><div>{{c1::Koenzim Q}} ile {{c1::sitokrom b}} arasında</div>",
+     "after": "Q döngüsü:<div><br></div><div>{{c1::Koenzim Q}} ile {{c1::sitokrom b}} arasında</div>"
+    }
+   },
+   "actions": [
+    "B: Sonradan eklenen konum parantezi \"(kompleks III)\" çıkarıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1620940166793,
+   "guid": "vOnz-yam{F",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Hücre içine alınan <b>insülinin disülfit bağlarını indirgeyerek yıkan enzim:</b><div><br></div><div>{{c1::Glutatyon-insülin transhidrogenaz}}</div>",
+     "after": "Hücre içine alınan <b>insülini yıkan enzim:</b><div><br></div><div>{{c1::Glutatyon-insülin transhidrogenaz}}</div>"
+    }
+   },
+   "actions": [
+    "B: Ön yüze eklenen mekanizma açıklaması (disülfit bağlarını indirgeyerek) çıkarıldı; düzeltilmiş enzim adı korundu (kural 3, 7)."
+   ]
+  },
+  {
+   "noteId": 1623740687583,
+   "guid": "n=#N=x-4*m",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Pirüvat dehidrogenaz enzim kompleksi içinde (E1)",
+     "after": "Pirüvat dehidrogenaz enzim kompleksi içinde"
+    }
+   },
+   "actions": [
+    "B: Özgün kısa arka yüze eklenen \"(E1)\" parantezi çıkarıldı (kural 3, 8)."
+   ]
+  }
+ ],
+ "noteRowsBefore": [
+  [
+   1620824012278,
+   "c7JA?*Ky8f",
+   1566160514431,
+   1792231183,
+   -1,
+   "",
+   "Klasik sınıflamada <b>SSS'de glikojen birikimi </b>olan glikojen depo hastalığı:<div><br></div><div>Tip {{c1::8}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Klasik sınıflamada SSS'de glikojen birikimi olan glikojen depo hastalığı:Tip {{c1::8}}",
+   248735479,
+   0,
+   ""
+  ],
+  [
+   1610952004451,
+   "LsUV,mKx%G",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Q döngüsü (kompleks III):<div><br></div><div>{{c1::Koenzim Q}} ile {{c1::sitokrom b}} arasında</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Q döngüsü (kompleks III):{{c1::Koenzim Q}} ile {{c1::sitokrom b}} arasında",
+   147316342,
+   0,
+   ""
+  ],
+  [
+   1620940166793,
+   "vOnz-yam{F",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Hücre içine alınan <b>insülinin disülfit bağlarını indirgeyerek yıkan enzim:</b><div><br></div><div>{{c1::Glutatyon-insülin transhidrogenaz}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Hücre içine alınan insülinin disülfit bağlarını indirgeyerek yıkan enzim:{{c1::Glutatyon-insülin transhidrogenaz}}",
+   738313359,
+   0,
+   ""
+  ],
+  [
+   1623740687583,
+   "n=#N=x-4*m",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Konjenital laktik asidozun en sık nedeni:<div><br></div><div>{{c1::Pirüvat dekarboksilaz}} enzim eksikliği</div>\u001fPirüvat dehidrogenaz enzim kompleksi içinde (E1)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Konjenital laktik asidozun en sık nedeni:{{c1::Pirüvat dekarboksilaz}} enzim eksikliği",
+   384131551,
+   0,
+   ""
+  ]
+ ],
+ "auditOf": "docs/catalog-corrections/biyokimya-editorial.json"
+}

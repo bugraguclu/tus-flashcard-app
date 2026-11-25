@@ -22,6 +22,15 @@ const followup = JSON.parse(readFileSync('docs/catalog-corrections/publish-front
 const allCourseFollowup = JSON.parse(readFileSync('docs/catalog-corrections/all-course-front-followup.json', 'utf8')) as {
     notes: { noteId: number; guid: string; ordinals: number[]; fields: Record<string, { after: string }>; questionChecks: { ordinal: number; absent: string[] }[] }[];
 };
+// Follow-up reports are immutable historical evidence. Later editorial changes
+// supersede only their affected fields in the current shipped asset.
+const editorialById = new Map(['farmakoloji', 'biyokimya', 'mikrobiyoloji', 'patoloji', 'anatomi'].flatMap(course => {
+    const editorial = JSON.parse(readFileSync(`docs/catalog-corrections/${course}-editorial.json`, 'utf8')) as {
+        notes: { noteId: number; fields: Record<string, { after: string }> }[];
+    };
+    return editorial.notes.map(entry => [entry.noteId, entry.fields] as const);
+}));
+const currentField = (id: number, name: string, historical: string) => editorialById.get(id)?.[name]?.after ?? historical;
 const normalizeQuestion = (text: string) => text.toLocaleLowerCase('tr-TR').replace(/ı/g, 'i').replace(/[.,:;()\[\]{}]/g, ' ').replace(/\s+/g, ' ').trim();
 const visibleQuestion = (id: number, ord = 1) => renderClozeQuestion(notes.get(id)!.fields.Text, ord).replace(/<[^>]*>/g, ' ');
 
@@ -84,7 +93,7 @@ describe('corrected catalog content in the shipped package', () => {
             expect(note.guid).toBe(entry.guid);
             expect(note.ords).toEqual(entry.ordinals);
             expect(extractClozeNumbers(note.fields.Text)).toEqual(entry.ordinals);
-            for (const [field, value] of Object.entries(entry.fields)) expect(note.fields[field]).toBe(value.after);
+            for (const [field, value] of Object.entries(entry.fields)) expect(note.fields[field]).toBe(currentField(entry.noteId, field, value.after));
             for (const ord of note.ords) {
                 expect(visibleQuestion(entry.noteId, ord)).not.toContain('{{c');
                 expect(renderClozeAnswer(note.fields.Text, ord)).not.toContain('{{c');
@@ -96,8 +105,9 @@ describe('corrected catalog content in the shipped package', () => {
         const first = visibleQuestion(1604674576990, 1);
         const second = visibleQuestion(1604674576990, 2);
         expect(first).toContain('Ön ilaç formuyla');
-        expect(first).not.toContain('ABD ürün bilgilerine');
-        expect(second).toContain('ABD ürün bilgilerine');
+        expect(first).not.toContain('başlangıç dozu');
+        expect(second).toContain('başlangıç dozu');
+        expect(second).not.toContain('ürün bilgilerine');
         expect(second).not.toContain('Ön ilaç formuyla');
         for (const question of [first, second]) expect(question).not.toMatch(/kandesartan|olmesartan|azilsartan/i);
         for (const ord of [1, 2]) expect(renderClozeAnswer(notes.get(1604674576990)!.fields.Text, ord)).toMatch(/Olmesartan/);
@@ -142,7 +152,7 @@ describe('corrected catalog content in the shipped package', () => {
             expect(note.guid).toBe(entry.guid);
             expect(note.ords).toEqual(entry.ordinals);
             expect(extractClozeNumbers(note.fields.Text)).toEqual(entry.ordinals);
-            for (const [field, value] of Object.entries(entry.fields)) expect(note.fields[field]).toBe(value.after);
+            for (const [field, value] of Object.entries(entry.fields)) expect(note.fields[field]).toBe(currentField(entry.noteId, field, value.after));
             for (const ord of entry.ordinals) {
                 expect(visibleQuestion(entry.noteId, ord)).not.toContain('{{c');
                 expect(renderClozeAnswer(note.fields.Text, ord)).not.toContain('{{c');
@@ -157,12 +167,13 @@ describe('corrected catalog content in the shipped package', () => {
         }
     });
 
-    it('includes the neonatal risk, gestational-age, weight and treatment-duration qualifiers', () => {
+    it('keeps neonatal risk and regimen scope while removing the later explanatory back', () => {
         const note = notes.get(1612006124088)!;
         expect(note.fields.Text).toContain('≥37 gestasyon haftası ve ≥2 kg');
         expect(note.fields.Text).toContain('Yüksek risk');
-        expect(note.fields.Extra).toContain('2–6 hafta');
-        expect(note.fields.Extra).toContain('toplam 6 haftaya');
+        expect(note.fields.Text).toContain('{{c1::2 hafta zidovudin}}');
+        expect(note.fields.Text).toContain('{{c3::zidovudin + lamivudin + dolutegravir}}');
+        expect(note.fields.Extra).toBe('');
         expect(notes.get(1627303087231)!.fields.Extra).not.toContain('Artemisin kullanılmaz');
     });
 

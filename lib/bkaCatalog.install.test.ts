@@ -14,6 +14,7 @@ import { createAppDb, type SyncDb } from '../test/sqljsHarness';
 
 const holder = vi.hoisted(() => ({
     db: null as any, SQL: null as any, failPackageRead: false, failReader: false, failMedia: false,
+    packageBytes: null as Uint8Array | null,
 }));
 
 vi.mock('./db', () => ({
@@ -35,6 +36,7 @@ vi.mock('./files', () => ({
     readUriBytes: async () => {
         // The web build downloads the package; this stands in for that download failing.
         if (holder.failPackageRead) throw new Error('Network request failed');
+        if (holder.packageBytes) return holder.packageBytes;
         return new Uint8Array(readFileSync('assets/catalog/bka-tus-complete.apkg'));
     },
 }));
@@ -164,6 +166,36 @@ function failNthWrite(db: SyncDb, pattern: RegExp, nth: number): void {
     };
 }
 
+type EditorialNote = { noteId: number; fields: Record<string, { before: string; after: string }> };
+const EDITORIAL_NOTES: EditorialNote[] = ['farmakoloji', 'biyokimya', 'mikrobiyoloji', 'patoloji', 'anatomi']
+    .flatMap((course) => (JSON.parse(readFileSync(
+        `docs/catalog-corrections/${course}-editorial.json`, 'utf8',
+    )) as { notes: EditorialNote[] }).notes);
+
+/** The bundled package with every editorial change undone: the package learners installed before it. */
+async function packageBeforeEditorial(): Promise<Uint8Array> {
+    const zip = await JSZip.loadAsync(readFileSync('assets/catalog/bka-tus-complete.apkg'));
+    const database = new holder.SQL.Database(await zip.file('collection.anki21')!.async('uint8array'));
+    const models = JSON.parse(database.exec('SELECT models FROM col')[0].values[0][0] as string) as
+        Record<string, { flds: { name: string }[] }>;
+    for (const note of EDITORIAL_NOTES) {
+        const [mid, flds] = database.exec('SELECT mid, flds FROM notes WHERE id = ?', [note.noteId])[0].values[0] as [number, string];
+        const names = models[String(mid)].flds.map((field) => field.name);
+        const values = flds.split('\x1f');
+        for (const [name, change] of Object.entries(note.fields)) values[names.indexOf(name)] = change.before;
+        database.run('UPDATE notes SET flds = ? WHERE id = ?', [values.join('\x1f'), note.noteId]);
+    }
+    zip.file('collection.anki21', database.export());
+    database.close();
+    return zip.generateAsync({ type: 'uint8array' });
+}
+
+const fieldsByName = (noteId: number): Record<string, string> => {
+    const note = getNote(noteId)!;
+    const names = getNoteType(note.noteTypeId)!.fields.map((field) => field.name);
+    return Object.fromEntries(names.map((name, index) => [name, note.fields[index]]));
+};
+
 const markOlderPackageInstalled = (db: SyncDb) => db.runSync(
     'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', 'bka_tus_catalog_package_v1', 'onceki-paketin-hash-i',
 );
@@ -180,6 +212,7 @@ beforeEach(() => {
     holder.failPackageRead = false;
     holder.failReader = false;
     holder.failMedia = false;
+    holder.packageBytes = null;
     db = holder.db;
     seedLearnerCollection(db);
 });
@@ -649,5 +682,39 @@ describe('BKA catalog beside the learner’s AnKing note types', () => {
         expect(imported.noteTypeId).not.toBe(catalogType.id);
         expect(getNoteType(imported.noteTypeId)).toMatchObject({ name: 'Cloze-AnKingMaster (Imported)', css: '.card { color: navy; }' });
         expect(getNoteType(imported.noteTypeId)?.catalogPack).toBeUndefined();
+    }, 120_000);
+
+    it('brings the editorial card simplifications to an older install and keeps a learner\'s own edit of one of those cards', async () => {
+        holder.packageBytes = await packageBeforeEditorial();
+        await installBkaCatalog();
+        const [studiedNote, editedNote] = EDITORIAL_NOTES;
+        for (const note of [studiedNote, editedNote]) {
+            for (const [name, change] of Object.entries(note.fields)) expect(fieldsByName(note.noteId)[name]).toBe(change.before);
+        }
+
+        // A card of one simplified note studied, another simplified note edited by the learner.
+        const [studied] = getCardsForNote(studiedNote.noteId);
+        saveAnkiCard({ ...studied, type: 2, queue: 2, due: 40, ivl: 15, reps: 5, lapses: 1 });
+        const [editedCard] = getCardsForNote(editedNote.noteId);
+        const learnerFields = [...getNote(editedNote.noteId)!.fields];
+        learnerFields[0] = `${learnerFields[0]} — kendi notum`;
+        updateTusCardByCardId(editedCard.id, {
+            question: learnerFields[0], answer: learnerFields[1] ?? '', fieldValues: learnerFields, tags: getNote(editedNote.noteId)!.tags,
+        });
+
+        // The corrected package ships; the install from the older one is now stale.
+        holder.packageBytes = null;
+        markOlderPackageInstalled(db);
+        const refreshed = await installBkaCatalog();
+
+        expect(refreshed.installed).toBe(true);
+        expect(refreshed.cards).toBe(BKA_CATALOG_EXPECTED.cards);
+        for (const note of EDITORIAL_NOTES.filter((entry) => entry !== editedNote)) {
+            const current = fieldsByName(note.noteId);
+            for (const [name, change] of Object.entries(note.fields)) expect(current[name]).toBe(change.after);
+        }
+        expect(getNote(editedNote.noteId)?.fields).toEqual(learnerFields);
+        expect(getAnkiCard(studied.id)).toMatchObject({ type: 2, queue: 2, due: 40, ivl: 15, reps: 5, lapses: 1 });
+        expect(learnerRowsIntact(db)).toEqual({ noteType: true, deck: true, note: true, card: true, config: true });
     }, 120_000);
 });

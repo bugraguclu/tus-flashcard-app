@@ -1,6 +1,6 @@
 {
   "generatedFrom": "assets/catalog/bka-tus-complete.apkg",
-  "sha256": "7030ad699f7fd19b9f97ca666321133833bf3dfb47d8c1527bbae8b0e6fa0bd3",
+  "sha256": "7428ba681ef026f805ac73796798054f2da82150a7b12c8b51017b2bfd7865a9",
   "noteTypes": [
     {
       "id": 1566160514431,
@@ -7739,7 +7739,7 @@
     "cards": 9575,
     "courses": 12,
     "topics": 106,
-    "ungroupedCards": 2610,
+    "ungroupedCards": 2625,
     "media": 49
   },
   "courses": [
@@ -7801,14 +7801,14 @@
         },
         {
           "name": "Baş ve Boyun",
-          "notes": 100,
-          "cards": 136,
+          "notes": 99,
+          "cards": 135,
           "deck": true
         },
         {
           "name": "Üst Ekstremite",
-          "notes": 40,
-          "cards": 46,
+          "notes": 39,
+          "cards": 45,
           "deck": true
         },
         {
@@ -7837,14 +7837,14 @@
         },
         {
           "name": "Sırt ve Omurga",
-          "notes": 14,
-          "cards": 16,
+          "notes": 15,
+          "cards": 17,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 71,
-          "cards": 75,
+          "notes": 72,
+          "cards": 76,
           "deck": false
         }
       ]
@@ -7937,14 +7937,14 @@
       "topics": [
         {
           "name": "Proteinler",
-          "notes": 154,
-          "cards": 211,
+          "notes": 153,
+          "cards": 210,
           "deck": true
         },
         {
           "name": "Karbonhidratlar",
-          "notes": 72,
-          "cards": 91,
+          "notes": 71,
+          "cards": 90,
           "deck": true
         },
         {
@@ -7967,8 +7967,8 @@
         },
         {
           "name": "Genel",
-          "notes": 122,
-          "cards": 139,
+          "notes": 124,
+          "cards": 141,
           "deck": false
         }
       ]
@@ -7990,14 +7990,14 @@
         },
         {
           "name": "Bakteriyoloji",
-          "notes": 157,
-          "cards": 191,
+          "notes": 158,
+          "cards": 192,
           "deck": true
         },
         {
           "name": "Viroloji",
-          "notes": 82,
-          "cards": 113,
+          "notes": 81,
+          "cards": 112,
           "deck": true
         },
         {
@@ -8014,14 +8014,14 @@
         },
         {
           "name": "İmmünoloji",
-          "notes": 78,
-          "cards": 102,
+          "notes": 77,
+          "cards": 101,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 86,
-          "cards": 96,
+          "notes": 87,
+          "cards": 97,
           "deck": false
         }
       ]
@@ -8037,32 +8037,32 @@
       "topics": [
         {
           "name": "Hematopatoloji",
-          "notes": 32,
-          "cards": 37,
+          "notes": 33,
+          "cards": 40,
           "deck": true
         },
         {
           "name": "Nöropatoloji",
-          "notes": 36,
-          "cards": 42,
+          "notes": 35,
+          "cards": 41,
           "deck": true
         },
         {
           "name": "Böbrek ve Üriner Sistem Patolojisi",
-          "notes": 30,
-          "cards": 37,
+          "notes": 29,
+          "cards": 34,
           "deck": true
         },
         {
           "name": "Genital Sistem ve Meme Patolojisi",
-          "notes": 78,
-          "cards": 93,
+          "notes": 77,
+          "cards": 90,
           "deck": true
         },
         {
           "name": "Endokrin Patoloji",
-          "notes": 46,
-          "cards": 53,
+          "notes": 45,
+          "cards": 52,
           "deck": true
         },
         {
@@ -8091,14 +8091,14 @@
         },
         {
           "name": "Genel Patoloji",
-          "notes": 86,
-          "cards": 117,
+          "notes": 82,
+          "cards": 115,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 183,
-          "cards": 208,
+          "notes": 190,
+          "cards": 215,
           "deck": false
         }
       ]
@@ -8114,20 +8114,20 @@
       "topics": [
         {
           "name": "Genel Farmakoloji ve Toksikoloji",
-          "notes": 93,
-          "cards": 121,
+          "notes": 90,
+          "cards": 117,
           "deck": true
         },
         {
           "name": "Otonom Sinir Sistemi İlaçları",
           "notes": 59,
-          "cards": 82,
+          "cards": 84,
           "deck": true
         },
         {
           "name": "Antimikrobiyal İlaçlar",
-          "notes": 56,
-          "cards": 69,
+          "notes": 55,
+          "cards": 70,
           "deck": true
         },
         {
@@ -8138,20 +8138,20 @@
         },
         {
           "name": "Santral Sinir Sistemi İlaçları",
-          "notes": 70,
-          "cards": 95,
+          "notes": 69,
+          "cards": 91,
           "deck": true
         },
         {
           "name": "Endokrin ve Metabolizma İlaçları",
           "notes": 18,
-          "cards": 21,
+          "cards": 20,
           "deck": true
         },
         {
           "name": "Otakoidler ve Antiinflamatuar İlaçlar",
-          "notes": 26,
-          "cards": 40,
+          "notes": 27,
+          "cards": 41,
           "deck": true
         },
         {
@@ -8162,14 +8162,14 @@
         },
         {
           "name": "Solunum ve Sindirim Sistemi İlaçları",
-          "notes": 7,
-          "cards": 7,
+          "notes": 8,
+          "cards": 8,
           "deck": true
         },
         {
           "name": "Genel",
-          "notes": 278,
-          "cards": 319,
+          "notes": 281,
+          "cards": 323,
           "deck": false
         }
       ]

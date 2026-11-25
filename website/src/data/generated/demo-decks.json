@@ -364,7 +364,7 @@
           "value": "\n\nTGF-beta\n\nPDGF\n\nReaktif oksijen ürünleri"
         }
       ],
-      "extra": "Uyarılmış İto hücreleri miyofibroblastlara dönüşerek kollajen sentezler ve hepatik fibrozise yol açar.",
+      "extra": "Miyofibroblastlara dönüşerek fibrozise yol açar.",
       "initialBucket": "review",
       "intervals": {
         "again": "10 dk",
@@ -623,151 +623,6 @@
       }
     },
     {
-      "id": "deck-mikrobiyoloji-2026-2-t056",
-      "deckId": "mikrobiyoloji",
-      "course": "Mikrobiyoloji",
-      "ders": "Mikrobiyoloji",
-      "topic": "2026/2 TUS · T056",
-      "sinav": "2026/2",
-      "qid": "2026/2-T056",
-      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
-      "olculenBilgi": "Tek iplikli (+) RNA, ikozahedral, zarfsız aile: Caliciviridae",
-      "cardId": "BKA-097210",
-      "activeCloze": 1,
-      "parts": [
-        {
-          "type": "text",
-          "value": "Pozitif polariteli RNA taşıyan virüs grupları\n\n"
-        },
-        {
-          "type": "cloze",
-          "index": 1,
-          "answer": "Pikornavirüsler"
-        },
-        {
-          "type": "text",
-          "value": "\n"
-        },
-        {
-          "type": "cloze",
-          "index": 2,
-          "answer": "Kalisivirüsler"
-        },
-        {
-          "type": "text",
-          "value": "\n"
-        },
-        {
-          "type": "cloze",
-          "index": 3,
-          "answer": "Flavivirüsler"
-        },
-        {
-          "type": "text",
-          "value": "\n"
-        },
-        {
-          "type": "cloze",
-          "index": 1,
-          "answer": "Togavirüsler"
-        },
-        {
-          "type": "text",
-          "value": "\n"
-        },
-        {
-          "type": "cloze",
-          "index": 2,
-          "answer": "Koronavirüsler"
-        },
-        {
-          "type": "text",
-          "value": "\n"
-        },
-        {
-          "type": "cloze",
-          "index": 3,
-          "answer": "Retrovirüsler"
-        }
-      ],
-      "extra": "Retrovirüsler pozitif polariteli RNA taşır, ancak Baltimore sınıf VI'da ayrı değerlendirilir.",
-      "initialBucket": "new",
-      "intervals": {
-        "again": "10 dk",
-        "hard": "1 gün",
-        "good": "3 gün",
-        "easy": "8 gün"
-      }
-    },
-    {
-      "id": "deck-mikrobiyoloji-2025-2-t056",
-      "deckId": "mikrobiyoloji",
-      "course": "Mikrobiyoloji",
-      "ders": "Mikrobiyoloji",
-      "topic": "2025/2 TUS · T056",
-      "sinav": "2025/2",
-      "qid": "2025/2-T056",
-      "verifiedLabel": "2025/2 TUS · Doğrudan",
-      "olculenBilgi": "SARS-CoV-2'ye etkili antiviral: remdesivir",
-      "cardId": "BKA-383853",
-      "activeCloze": 1,
-      "parts": [
-        {
-          "type": "text",
-          "value": "Antiviraller\n\nKondilom tedavisinde "
-        },
-        {
-          "type": "cloze",
-          "index": 1,
-          "answer": "TLR7"
-        },
-        {
-          "type": "text",
-          "value": " agonisti immünomodülatör: "
-        },
-        {
-          "type": "cloze",
-          "index": 2,
-          "answer": "imikimod"
-        },
-        {
-          "type": "text",
-          "value": "\n\nCOVID-19 tedavisinde RNA bağımlı RNA polimeraz inhibitörü: "
-        },
-        {
-          "type": "cloze",
-          "index": 3,
-          "answer": "remdesivir"
-        },
-        {
-          "type": "text",
-          "value": "\n\nİnfluenza ve COVID-19 tedavisinde RNA bağımlı RNA polimeraz inhibitörü: "
-        },
-        {
-          "type": "cloze",
-          "index": 3,
-          "answer": "favipiravir"
-        },
-        {
-          "type": "text",
-          "value": "\n\nEnterovirüs ve rinovirüs solunum yolu enfeksiyonlarında viral kapside bağlanan ajan: "
-        },
-        {
-          "type": "cloze",
-          "index": 2,
-          "answer": "plekonaril"
-        }
-      ],
-      "extra": "Plekonaril onay almamış deneysel bir ilaçtır. Favipiravir FDA ve EMA onayı almamıştır; COVID-19'da randomize çalışmalarda hastaneye yatışı ve ölümü azaltmamıştır.",
-      "initialBucket": "learning",
-      "intervals": {
-        "again": "10 dk",
-        "hard": "1 gün",
-        "good": "3 gün",
-        "easy": "8 gün"
-      }
-    },
-    {
       "id": "deck-mikrobiyoloji-2024-2-t054",
       "deckId": "mikrobiyoloji",
       "course": "Mikrobiyoloji",
@@ -782,7 +637,7 @@
       "parts": [
         {
           "type": "text",
-          "value": "İnsan ve hayvan ısırıklarında (Eikenella, Pasteurella) ampirik ilk seçenek antibiyotik profilaksisi ve tedavisi:\n\n"
+          "value": "İnsan ve hayvan ısırıklarında ampirik ilk seçenek antibiyotik profilaksisi ve tedavisi:\n\n"
         },
         {
           "type": "cloze",
@@ -790,7 +645,89 @@
           "answer": "Amoksisilin-klavulanat"
         }
       ],
-      "extra": "İnsan ısırığında Eikenella corrodens, kedi ve köpek ısırığında Pasteurella multocida etkenleri hedeflenir.",
+      "extra": "Pasteurella Eikenella",
+      "initialBucket": "new",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-mikrobiyoloji-2026-2-t052",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "ders": "Mikrobiyoloji",
+      "topic": "2026/2 TUS · T052",
+      "sinav": "2026/2",
+      "qid": "2026/2-T052",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Laktoz/üreaz/sitrat (+), hareketsiz enterik GNB: Klebsiella",
+      "cardId": "BKA-877338",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Hareketsiz enterobakteriler\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Klebsiella"
+        },
+        {
+          "type": "text",
+          "value": "\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Shigella"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-mikrobiyoloji-2026-2-t059",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "ders": "Mikrobiyoloji",
+      "topic": "2026/2 TUS · T059",
+      "sinav": "2026/2",
+      "qid": "2026/2-T059",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "Vezikül-fiyalid-konidyum zinciri olan küf: Aspergillus fumigatus",
+      "cardId": "BKA-986004",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Konidiyum, konidiyofor, vezikül ve sterigma içeren mantar: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Aspergillus"
+        },
+        {
+          "type": "text",
+          "value": "\n\nSporangiyum, sporangiyospor ve rizoit içeren mantar: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Zygomycetes"
+        }
+      ],
+      "extra": "",
       "initialBucket": "review",
       "intervals": {
         "again": "10 dk",
@@ -940,51 +877,6 @@
       }
     },
     {
-      "id": "deck-patoloji-2024-1-t065",
-      "deckId": "patoloji",
-      "course": "Patoloji",
-      "ders": "Patoloji",
-      "topic": "2024/1 TUS · T065",
-      "sinav": "2024/1",
-      "qid": "2024/1-T065",
-      "verifiedLabel": "2024/1 TUS · Doğrudan",
-      "olculenBilgi": "Tip 2 otoimmün hepatit otoantikoru: anti-LKM-1",
-      "cardId": "BKA-096954",
-      "activeCloze": 1,
-      "parts": [
-        {
-          "type": "text",
-          "value": "Otoimmün hepatit tipleri ve karakteristik otoantikorlar:\n\nTip 1 → "
-        },
-        {
-          "type": "cloze",
-          "index": 1,
-          "answer": "ANA ve ASMA"
-        },
-        {
-          "type": "text",
-          "value": " (+)\n\nTip 2 → "
-        },
-        {
-          "type": "cloze",
-          "index": 1,
-          "answer": "anti-LKM-1"
-        },
-        {
-          "type": "text",
-          "value": " (+)"
-        }
-      ],
-      "extra": "Tip 1 erişkinde (ANA, ASMA), tip 2 çocuklarda (anti-LKM-1) daha sıktır.",
-      "initialBucket": "learning",
-      "intervals": {
-        "again": "10 dk",
-        "hard": "1 gün",
-        "good": "3 gün",
-        "easy": "8 gün"
-      }
-    },
-    {
       "id": "deck-patoloji-2026-2-t079",
       "deckId": "patoloji",
       "course": "Patoloji",
@@ -1014,6 +906,78 @@
           "type": "cloze",
           "index": 1,
           "answer": "akciğer skuamöz hücreli karsinomu"
+        }
+      ],
+      "extra": "",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-patoloji-2026-2-t069",
+      "deckId": "patoloji",
+      "course": "Patoloji",
+      "ders": "Patoloji",
+      "topic": "2026/2 TUS · T069",
+      "sinav": "2026/2",
+      "qid": "2026/2-T069",
+      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
+      "olculenBilgi": "IgG4 ilişkili hastalık spektrumu",
+      "cardId": "BKA-963701",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "IgG4 ilişkili hastalıklar:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Mikulicz hastalığı"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Riedel"
+        },
+        {
+          "type": "text",
+          "value": " tiroiditi\nİdiyopatik "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "retroperitoneal fibrozis"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Otoimmün pankreatit"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Orbitanın"
+        },
+        {
+          "type": "text",
+          "value": " inflamatuvar psödotümörü"
         }
       ],
       "extra": "",
@@ -1090,65 +1054,6 @@
       }
     },
     {
-      "id": "deck-farmakoloji-2026-2-t090",
-      "deckId": "farmakoloji",
-      "course": "Farmakoloji",
-      "ders": "Farmakoloji",
-      "topic": "2026/2 TUS · T090",
-      "sinav": "2026/2",
-      "qid": "2026/2-T090",
-      "verifiedLabel": "2026/2 TUS · a78ae1f Doğrudan",
-      "olculenBilgi": "TNF-α inhibitörü olmayan biyolojik ajan (IL-17 blokörü)",
-      "cardId": "BKA-815433",
-      "activeCloze": 1,
-      "parts": [
-        {
-          "type": "text",
-          "value": "Psöriazis tedavisi\n\n"
-        },
-        {
-          "type": "cloze",
-          "index": 1,
-          "answer": "Ustekinumab"
-        },
-        {
-          "type": "text",
-          "value": "\n\nIL-17 antagonistleri (4) → "
-        },
-        {
-          "type": "cloze",
-          "index": 2,
-          "answer": "iksekizumab, sekukinumab, brodalumab, bimekizumab"
-        },
-        {
-          "type": "text",
-          "value": "\n\nPDE4 inhibitörü (IL-23'ü baskılar) → "
-        },
-        {
-          "type": "cloze",
-          "index": 1,
-          "answer": "apremilast"
-        },
-        {
-          "type": "text",
-          "value": "\n\nSentetik D3 vitamini analoğu → "
-        },
-        {
-          "type": "cloze",
-          "index": 2,
-          "answer": "kalsipotriol"
-        }
-      ],
-      "extra": "Brodalumab IL-17 reseptörünü (IL-17RA), bimekizumab hem IL-17A'yı hem IL-17F'yi bloke eder.",
-      "initialBucket": "learning",
-      "intervals": {
-        "again": "10 dk",
-        "hard": "1 gün",
-        "good": "3 gün",
-        "easy": "8 gün"
-      }
-    },
-    {
       "id": "deck-farmakoloji-2026-1-t095",
       "deckId": "farmakoloji",
       "course": "Farmakoloji",
@@ -1171,7 +1076,39 @@
           "answer": "vemurafenib, dabrafenib"
         }
       ],
-      "extra": "Melanom; 2018'de onaylanan üçüncü BRAF inhibitörü: enkorafenib",
+      "extra": "Melanom",
+      "initialBucket": "learning",
+      "intervals": {
+        "again": "10 dk",
+        "hard": "1 gün",
+        "good": "3 gün",
+        "easy": "8 gün"
+      }
+    },
+    {
+      "id": "deck-farmakoloji-2025-2-t095",
+      "deckId": "farmakoloji",
+      "course": "Farmakoloji",
+      "ders": "Farmakoloji",
+      "topic": "2025/2 TUS · T095",
+      "sinav": "2025/2",
+      "qid": "2025/2-T095",
+      "verifiedLabel": "2025/2 TUS · Doğrudan",
+      "olculenBilgi": "Multipl miyelomda proteazom inhibitörü",
+      "cardId": "BKA-932888",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Proteazom inhibitörleri (2) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "bortezomib, karfilzomib"
+        }
+      ],
+      "extra": "Multipl miyelom",
       "initialBucket": "review",
       "intervals": {
         "again": "10 dk",

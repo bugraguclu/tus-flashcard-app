@@ -237,11 +237,11 @@
    "fields": {
     "Text": {
      "before": "Ayakta&nbsp;<div><br></div><div>İnversiyon --&gt; {{c1::dış}} rotasyon</div><div><br></div><div>Eversiyon ---&gt; {{c1::iç}} rotasyon</div>",
-     "after": "Ayakta kapalı kinetik zincirde bacağın rotasyonu:<div><br></div><div>İnversiyon (supinasyon) → bacakta {{c1::dış}} rotasyon<div><br></div><div>Eversiyon (pronasyon) → bacakta {{c1::iç}} rotasyon</div></div>"
+     "after": "Ayakta kapalı kinetik zincirde bacağın rotasyonu:<div><br></div><div>İnversiyon → bacakta {{c1::dış}} rotasyon<div><br></div><div>Eversiyon → bacakta {{c1::iç}} rotasyon</div></div>"
     },
     "Extra": {
      "before": "",
-     "after": "Açık zincirde inversiyon mediale, eversiyon laterale baktırır."
+     "after": ""
     }
    },
    "changes": [
@@ -260,7 +260,26 @@
    ],
    "aiNote": "Ne: Kök \"Ayakta kapalı kinetik zincirde bacağın rotasyonu:\" olarak netleştirildi, oklar düzeltildi ve Extra'ya açık/kapalı zincir farkı eklendi.\nNeden: \"İnversiyon dış rotasyon, eversiyon iç rotasyon\" ifadesi ayak tabanı yönüyle çelişkili görünebilen eksik bir ifadeydi; tibia rotasyonunun kapalı zincir mekaniği olduğu açıklandı.\nNasıl: [EK1, SN1, BÇ1] Subtalar eklem pronasyon ve supinasyonunun tibia rotasyonuyla olan biyomekanik bağlantısı Gray's Anatomy ve Moore'a göre netleştirildi; c1 korundu.\nKaynak: Moore Clinically Oriented Anatomy (Foot and ankle biomechanics); Gray's Anatomy.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Ayakta kapalı kinetik zincirde bacağın rotasyonu:<div><br></div><div>İnversiyon (supinasyon) → bacakta {{c1::dış}} rotasyon<div><br></div><div>Eversiyon (pronasyon) → bacakta {{c1::iç}} rotasyon</div></div>",
+       "after": "Ayakta kapalı kinetik zincirde bacağın rotasyonu:<div><br></div><div>İnversiyon → bacakta {{c1::dış}} rotasyon<div><br></div><div>Eversiyon → bacakta {{c1::iç}} rotasyon</div></div>"
+      },
+      "Extra": {
+       "before": "Açık zincirde inversiyon mediale, eversiyon laterale baktırır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 6,
@@ -315,7 +334,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Incisura acetabuli'nin üzerini köprüleyerek foramen haline getirir."
+     "after": ""
     }
    },
    "changes": [
@@ -340,7 +359,21 @@
    ],
    "aiNote": "Ne: Soru kökü akıcı hâle getirildi, soru kökündeki acetabuli sızıntısı önlenerek detay Extra alanına alındı.\nNeden: Soru kökündeki \"incisura acetabuli\" ifadesi sorulan bağın adını açık ediyordu.\nNasıl: [YP2, DB1, BÇ1] Lig. transversum acetabuli'nin labrum acetabulare devamı olduğu doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Incisura acetabuli'nin üzerini köprüleyerek foramen haline getirir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 8,
@@ -473,11 +506,11 @@
    "fields": {
     "Text": {
      "before": "Rima glottidis'i açan kas ---&gt; M. {{c1::Cricoarytenoid pos}}",
-     "after": "Rima glottidis'i açan tek kas → m. {{c1::cricoarytenoideus posterior}} (m. posticus)"
+     "after": "Rima glottidis'i açan tek kas → m. {{c1::cricoarytenoideus posterior}}"
     },
     "Extra": {
      "before": "",
-     "after": "Vokal kordlara abduksiyon yaptıran tek larenks kasıdır."
+     "after": ""
     }
    },
    "changes": [
@@ -502,7 +535,26 @@
    ],
    "aiNote": "Ne: \"Cricoarytenoid pos\" → \"cricoarytenoideus posterior\" olarak açıldı, \"açan tek kas\" olduğu netleştirildi, eş anlamlısı parantezle eklendi ve Extra yazıldı.\nNeden: Kısaltma ve telgraf üslubu vardı; rima glottidis'i açan \"tek kas\" olma özelliği kritikti.\nNasıl: [EK1, KS1, BÇ1] Vokal kordları abduksiyona getiren tek kasın m. cricoarytenoideus posterior olduğu kuralı vurgulandı; c1 yanıtı yalın tutuldu.\nKaynak: Moore Clinically Oriented Anatomy (Larynx); Arıncı-Elhan Anatomi.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Rima glottidis'i açan tek kas → m. {{c1::cricoarytenoideus posterior}} (m. posticus)",
+       "after": "Rima glottidis'i açan tek kas → m. {{c1::cricoarytenoideus posterior}}"
+      },
+      "Extra": {
+       "before": "Vokal kordlara abduksiyon yaptıran tek larenks kasıdır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 12,
@@ -689,7 +741,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Gyrus temporalis superior'un arka kısmında (Brodmann 22. alan) yer alır."
+     "after": ""
     }
    },
    "changes": [
@@ -714,7 +766,21 @@
    ],
    "aiNote": "Ne: \"Wernicke: Temporal Lob\" notu akıcı soru köküne dönüştürüldü, sızıntı yapan gyrus detayı Extra alanına alındı.\nNeden: Parantez içi açıklamadaki \"temporalis\" kelimesi cloze 1 cevabını ele veriyordu.\nNasıl: [YP2, DB1, BÇ1] Wernicke merkezinin lobus temporalis'te olduğu doğrulandı; c1 korunarak gyrus detayı Extra alanına taşındı.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Gyrus temporalis superior'un arka kısmında (Brodmann 22. alan) yer alır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 17,
@@ -769,7 +835,7 @@
     },
     "Extra": {
      "before": "pisiforme bu kas tendonu içinde&nbsp;",
-     "after": "M. flexor digitorum profundus'un medial yarısı da uyarılır; os pisiforme bu kasın tendonu içindedir."
+     "after": "Os pisiforme bu kasın tendonu içindedir."
     }
    },
    "changes": [
@@ -794,7 +860,21 @@
    ],
    "aiNote": "Ne: Kök \"Ön kolda tamamen n. ulnaris tarafından innerve edilen tek kas:\" biçiminde düzeltildi, \"M. flex.\" → \"m. flexor\" açıldı ve Extra'ya m. flexor digitorum profundus ayrımı eklendi.\nNeden: M. flexor digitorum profundus'un medial yarısı da n. ulnaris tarafından uyarıldığı için \"tek kas\" ifadesi tıbben eksik ve yanıltıcıydı.\nNasıl: [EK1, KS1, BÇ1] Ön kol fleksör kas grubunda yalnızca m. flexor carpi ulnaris'in bütünüyle n. ulnaris tarafından innerve edildiği kuralı vurgulandı; c1 korundu.\nKaynak: Gray's Anatomy; Moore Clinically Oriented Anatomy (Forearm, anterior compartment).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "M. flexor digitorum profundus'un medial yarısı da uyarılır; os pisiforme bu kasın tendonu içindedir.",
+       "after": "Os pisiforme bu kasın tendonu içindedir."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 19,
@@ -877,7 +957,7 @@
    "fields": {
     "Text": {
      "before": "Lig. Splenorenale içinde,<div><br></div><div>{{c1::<div>Pankreas kuyruğu</div><div>A.V splenica</div>}}<br></div>",
-     "after": "Lig. splenorenale'nin (lienorenale) içinde bulunan yapılar:<div><br></div><div>{{c1::cauda pancreatis (pankreas kuyruğu)<br>a. ve v. splenica}}</div>"
+     "after": "Lig. splenorenale'nin içinde bulunan yapılar:<div><br></div><div>{{c1::cauda pancreatis<br>a. ve v. splenica}}</div>"
     }
    },
    "changes": [
@@ -896,7 +976,21 @@
    ],
    "aiNote": "Ne: \"A.V\" açıldı, pankreas kuyruğu Latince adıyla tamamlandı ve başlık düzenlendi.\nNeden: Kısaltma ve karmaşık HTML etiketleri mevcuttu.\nNasıl: [KS1, BÇ1] Dalak hilusu ile sol böbrek arasındaki lig. splenorenale içinden cauda pancreatis ile a. ve v. splenica'nın geçtiği doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Lig. splenorenale'nin (lienorenale) içinde bulunan yapılar:<div><br></div><div>{{c1::cauda pancreatis (pankreas kuyruğu)<br>a. ve v. splenica}}</div>",
+       "after": "Lig. splenorenale'nin içinde bulunan yapılar:<div><br></div><div>{{c1::cauda pancreatis<br>a. ve v. splenica}}</div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 22,
@@ -909,7 +1003,7 @@
    "fields": {
     "Text": {
      "before": "Radix Mesenteri'nin önden çaprazladığı yapılar&nbsp;<div><br></div><div>{{c1::Duo horizontal parça}}</div><div>{{c1::Aorta Abd.}}</div><div>{{c1::V. cava inf.&nbsp;}}</div><div>{{c1::Sağ üreter}}</div><div>{{c1::A.v testicularis / A.v ovarica dex}}</div><div>{{c1::Sağ psoas maj.}}</div>",
-     "after": "Radix mesenterii'nin önden çaprazladığı yapılar:<div><br></div><div>{{c1::pars horizontalis duodeni}}<div>{{c1::aorta abdominalis}}</div><div>{{c1::v. cava inferior}}</div><div>{{c1::sağ üreter}}</div><div>{{c1::a. ve v. testicularis (veya ovarica) dextra}}</div><div>{{c1::m. psoas major dexter}}</div></div>"
+     "after": "Radix mesenterii'nin önden çaprazladığı yapılar:<div><br></div><div>{{c1::pars horizontalis duodeni}}<div>{{c1::aorta abdominalis}}</div><div>{{c1::v. cava inferior}}</div><div>{{c1::sağ üreter}}</div><div>{{c1::a. ve v. testicularis dextra}}</div><div>{{c1::m. psoas major dexter}}</div></div>"
     }
    },
    "changes": [
@@ -928,7 +1022,21 @@
    ],
    "aiNote": "Ne: \"Duo\", \"Abd.\", \"A.v\", \"dex\" ve \"maj.\" kısaltmaları tam anatomik isimleriyle açıldı, büyük harfler düzenlendi.\nNeden: Kişisel kısaltmalar telgraf biçimindeydi.\nNasıl: [KS1, BÇ1] Radix mesenterii'nin L2'den sağ fossa iliaca'ya uzanırken çaprazladığı retroperitoneal yapılar doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Radix mesenterii'nin önden çaprazladığı yapılar:<div><br></div><div>{{c1::pars horizontalis duodeni}}<div>{{c1::aorta abdominalis}}</div><div>{{c1::v. cava inferior}}</div><div>{{c1::sağ üreter}}</div><div>{{c1::a. ve v. testicularis (veya ovarica) dextra}}</div><div>{{c1::m. psoas major dexter}}</div></div>",
+       "after": "Radix mesenterii'nin önden çaprazladığı yapılar:<div><br></div><div>{{c1::pars horizontalis duodeni}}<div>{{c1::aorta abdominalis}}</div><div>{{c1::v. cava inferior}}</div><div>{{c1::sağ üreter}}</div><div>{{c1::a. ve v. testicularis dextra}}</div><div>{{c1::m. psoas major dexter}}</div></div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 23,
@@ -1043,7 +1151,7 @@
    "fields": {
     "Text": {
      "before": "Üreteri ÖNDEN çaprazlayan yapılar:&nbsp;<div><br></div><div>O {{c1::ovaryan }} damarlar</div><div>D {{c2::ductus deferens}}</div><div>T {{c1::testikuler}} damarlar</div><div>U {{c2::uterin}} arter</div><div><br></div><div>Üreteri ARKADAN çaprazlayan yapılar:</div><div><br></div><div>E {{c1::External ilyak }} arter</div><div>G {{c2::Genitofemoral}} Sinir</div><div>O {{c1::Obturator}} arter</div>",
-     "after": "Üreteri önden çaprazlayan yapılar (ODTÜ):<br><br><br><b>O</b>: {{c1::Ovaryan}} damarlar (vasa ovarica)<br><b>D</b>: {{c2::Ductus deferens}}<br><b>T</b>: {{c1::Testiküler}} damarlar (vasa testicularia)<br><b>U</b>: {{c2::Uterin}} arter (a. uterina)<br><br><br>Üreteri arkadan çaprazlayan yapılar (EGO):<br><br><br><b>E</b>: {{c1::Eksternal iliyak}} arter (a. iliaca externa)<br><b>G</b>: {{c2::Genitofemoral}} sinir (n. genitofemoralis)<br><b>O</b>: {{c1::Obturator}} arter (a. obturatoria)"
+     "after": "Üreteri önden çaprazlayan yapılar (ODTÜ):<br><br><br><b>O</b>: {{c1::Ovaryan}} damarlar<br><b>D</b>: {{c2::Ductus deferens}}<br><b>T</b>: {{c1::Testiküler}} damarlar<br><b>U</b>: {{c2::Uterin}} arter<br><br><br>Üreteri arkadan çaprazlayan yapılar (EGO):<br><br><br><b>E</b>: {{c1::Eksternal iliyak}} arter<br><b>G</b>: {{c2::Genitofemoral}} sinir<br><b>O</b>: {{c1::Obturator}} arter"
     }
    },
    "changes": [
@@ -1062,7 +1170,21 @@
    ],
    "aiNote": "Ne: \"External ilyak\", \"ovaryan \", \"testikuler\" yazımları düzeltildi; büyük harf vurguları küçültüldü; ODTÜ ve EGO akrostiş yapısı korundu.\nNeden: İmla hataları, gereksiz all-caps vurgusu ve telgraf üslubu düzeltildi.\nNasıl: [YZ1, BÇ1] Üreterin ön ve arka komşulukları doğrulandı; c1 (4 adet) ve c2 (3 adet) cloze sayıları tam korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Üreteri önden çaprazlayan yapılar (ODTÜ):<br><br><br><b>O</b>: {{c1::Ovaryan}} damarlar (vasa ovarica)<br><b>D</b>: {{c2::Ductus deferens}}<br><b>T</b>: {{c1::Testiküler}} damarlar (vasa testicularia)<br><b>U</b>: {{c2::Uterin}} arter (a. uterina)<br><br><br>Üreteri arkadan çaprazlayan yapılar (EGO):<br><br><br><b>E</b>: {{c1::Eksternal iliyak}} arter (a. iliaca externa)<br><b>G</b>: {{c2::Genitofemoral}} sinir (n. genitofemoralis)<br><b>O</b>: {{c1::Obturator}} arter (a. obturatoria)",
+       "after": "Üreteri önden çaprazlayan yapılar (ODTÜ):<br><br><br><b>O</b>: {{c1::Ovaryan}} damarlar<br><b>D</b>: {{c2::Ductus deferens}}<br><b>T</b>: {{c1::Testiküler}} damarlar<br><b>U</b>: {{c2::Uterin}} arter<br><br><br>Üreteri arkadan çaprazlayan yapılar (EGO):<br><br><br><b>E</b>: {{c1::Eksternal iliyak}} arter<br><b>G</b>: {{c2::Genitofemoral}} sinir<br><b>O</b>: {{c1::Obturator}} arter"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 27,
@@ -1203,7 +1325,7 @@
    "fields": {
     "Text": {
      "before": "For. Epiploicum Sınırları:<div><br></div><div>Arka: {{c1::V. Cava İnf}}</div><div><br></div><div>Önde: {{c2::Lig. HepatoDuodenale}}</div><div><br></div><div>Alt: {{c1::Duo 1. Bölüm&nbsp;}}</div><div><br></div><div>Üst: {{c2::KC Lobus Caudatus}}</div>",
-     "after": "Foramen epiploicum (Winslow deliği) anatomik sınırları:<br><br><br>Arka sınır: {{c1::V. cava inferior}}<br><br><br>Ön sınır: {{c2::Lig. hepatoduodenale}}<br><br><br>Alt sınır: {{c1::Duodenum 1. parçası (pars superior)}}<br><br><br>Üst sınır: {{c2::Karaciğer lobus caudatus'u}}"
+     "after": "Foramen epiploicum anatomik sınırları:<br><br><br>Arka sınır: {{c1::V. cava inferior}}<br><br><br>Ön sınır: {{c2::Lig. hepatoduodenale}}<br><br><br>Alt sınır: {{c1::Duodenum 1. parçası (pars superior)}}<br><br><br>Üst sınır: {{c2::Karaciğer lobus caudatus'u}}"
     }
    },
    "changes": [
@@ -1222,7 +1344,21 @@
    ],
    "aiNote": "Ne: Kısaltmalar (\"For.\", \"İnf\", \"Duo\", \"KC\") tam adlarıyla yazıldı, CamelCase düzeltildi, Winslow eponimi eklendi.\nNeden: Aşırı telgraf kısaltmaları ve yazarın CamelCase alışkanlığı giderildi.\nNasıl: [YZ1, BÇ1] Foramen epiploicum'un dört anatomik sınırı doğrulandı; c1 (2 adet) ve c2 (2 adet) cloze sayıları tam korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Foramen epiploicum (Winslow deliği) anatomik sınırları:<br><br><br>Arka sınır: {{c1::V. cava inferior}}<br><br><br>Ön sınır: {{c2::Lig. hepatoduodenale}}<br><br><br>Alt sınır: {{c1::Duodenum 1. parçası (pars superior)}}<br><br><br>Üst sınır: {{c2::Karaciğer lobus caudatus'u}}",
+       "after": "Foramen epiploicum anatomik sınırları:<br><br><br>Arka sınır: {{c1::V. cava inferior}}<br><br><br>Ön sınır: {{c2::Lig. hepatoduodenale}}<br><br><br>Alt sınır: {{c1::Duodenum 1. parçası (pars superior)}}<br><br><br>Üst sınır: {{c2::Karaciğer lobus caudatus'u}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 32,
@@ -1299,7 +1435,7 @@
    "fields": {
     "Text": {
      "before": "Safra Kesesinin <b>yansıyan ağrısını</b> taşıyan sinir:<div><br></div><div>N. {{c1::Splanchnicus major}}</div>",
-     "after": "Safra kesesinin viseral yansıyan ağrısını taşıyan sinir:<br><br><br>N. {{c1::splanchnicus major}} (T7-T9)"
+     "after": "Safra kesesinin viseral yansıyan ağrısını taşıyan sinir:<br><br><br>N. {{c1::splanchnicus major}}"
     }
    },
    "changes": [
@@ -1318,7 +1454,21 @@
    ],
    "aiNote": "Ne: \"Safra Kesesinin yansıyan ağrısını taşıyan sinir:\" başlığı düzenlendi, sinir adı küçük harfe çevrildi.\nNeden: Baş harf ve telgraf üslubu giderildi.\nNasıl: [DB1, BÇ1] Safra kesesi viseral ağrısını taşıyan n. splanchnicus major (T7-T9 sempatik lifleri) doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Safra kesesinin viseral yansıyan ağrısını taşıyan sinir:<br><br><br>N. {{c1::splanchnicus major}} (T7-T9)",
+       "after": "Safra kesesinin viseral yansıyan ağrısını taşıyan sinir:<br><br><br>N. {{c1::splanchnicus major}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 35,
@@ -1331,7 +1481,7 @@
    "fields": {
     "Text": {
      "before": "A. pankreatica magna:<div><br></div><div>A. {{c1::Splenica}}'nın dalı&nbsp;</div>",
-     "after": "A. pancreatica magna hangi ana damarın dalıdır:<br><br><br>A. {{c1::splenica}}'nın (lienalis) dalıdır"
+     "after": "A. pancreatica magna hangi ana damarın dalıdır:<br><br><br>A. {{c1::splenica}}'nın dalıdır"
     }
    },
    "changes": [
@@ -1350,7 +1500,21 @@
    ],
    "aiNote": "Ne: \"pankreatica\" Latince \"pancreatica\" yapıldı, baş harf küçültüldü, soru kökü akıcı hâle getirildi.\nNeden: İmla hatası ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] A. pancreatica magna'nın a. splenica dalı olduğu doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "A. pancreatica magna hangi ana damarın dalıdır:<br><br><br>A. {{c1::splenica}}'nın (lienalis) dalıdır",
+       "after": "A. pancreatica magna hangi ana damarın dalıdır:<br><br><br>A. {{c1::splenica}}'nın dalıdır"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 36,
@@ -1363,7 +1527,7 @@
    "fields": {
     "Text": {
      "before": "<b>Bursa Omentalis:</b><div><br></div><div>{{c1::Recessus HepatoRenalis (Sağ SubHepatik Alan - Morison Kesesi)}} ile ilişkili&nbsp;</div>",
-     "after": "Bursa omentalis foramen omentale (Winslow) aracılığıyla hangi periton çıkmazı ile bağlantı kurar:<br><br><br>{{c1::Recessus hepatorenalis (sağ subhepatik alan - Morison kesesi)}}"
+     "after": "Bursa omentalis'in ilişkili olduğu periton çıkmazı:<br><br><br>{{c1::Recessus hepatorenalis (sağ subhepatik alan - Morison kesesi)}}"
     }
    },
    "changes": [
@@ -1382,7 +1546,21 @@
    ],
    "aiNote": "Ne: CamelCase yazımlar düzeltildi, soru kökü anatomik bağlantıyı açıkça belirtecek şekilde netleştirildi.\nNeden: CamelCase alışkanlığı ve telgraf başlığı giderildi.\nNasıl: [YZ1, BÇ1] Bursa omentalis ile foramen omentale aracılığıyla bağlanan recessus hepatorenalis doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Bursa omentalis foramen omentale (Winslow) aracılığıyla hangi periton çıkmazı ile bağlantı kurar:<br><br><br>{{c1::Recessus hepatorenalis (sağ subhepatik alan - Morison kesesi)}}",
+       "after": "Bursa omentalis'in ilişkili olduğu periton çıkmazı:<br><br><br>{{c1::Recessus hepatorenalis (sağ subhepatik alan - Morison kesesi)}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 37,
@@ -1427,7 +1605,7 @@
    "fields": {
     "Text": {
      "before": "Duo<div><br></div><div><b>Pars Sup:</b></div><div><b>Arka</b>: A. {{c1::GastroDuo}}</div><div><br></div><div><b>Pars İnf (Horizontalis)</b></div><div><b>Arka</b>: {{c1::VCI}}</div><div><b>Ön</b>: {{c1::Radix Mesenteri (A.V mesenterica sup)}}</div><div><br></div>",
-     "after": "Duodenum komşulukları:<div><br></div><div><b>Pars superior:</b></div><div><b>Arka</b>: A. {{c1::gastroduodenalis}}</div><div><br></div><div><b>Pars horizontalis (inferior):</b></div><div><b>Arka</b>: {{c1::V. cava inferior}}</div><div><b>Ön</b>: {{c1::Radix mesenterii (a. ve v. mesenterica superior)}}</div>"
+     "after": "Duodenum komşulukları:<div><br></div><div><b>Pars superior:</b></div><div><b>Arka</b>: A. {{c1::gastroduodenalis}}</div><div><br></div><div><b>Pars horizontalis (inferior):</b></div><div><b>Arka</b>: {{c1::V. cava inferior}}</div><div><b>Ön</b>: {{c1::Radix mesenterii}}</div>"
     }
    },
    "changes": [
@@ -1446,7 +1624,21 @@
    ],
    "aiNote": "Ne: Kısaltmalar Terminologia Anatomica biçiminde açıldı.\nNeden: Kısaltma ve biçim düzeltildi.\nNasıl: [KS1, YZ1, BÇ1, YP1] Pars superior ve pars horizontalis blokları ve üç c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Duodenum komşulukları:<div><br></div><div><b>Pars superior:</b></div><div><b>Arka</b>: A. {{c1::gastroduodenalis}}</div><div><br></div><div><b>Pars horizontalis (inferior):</b></div><div><b>Arka</b>: {{c1::V. cava inferior}}</div><div><b>Ön</b>: {{c1::Radix mesenterii (a. ve v. mesenterica superior)}}</div>",
+       "after": "Duodenum komşulukları:<div><br></div><div><b>Pars superior:</b></div><div><b>Arka</b>: A. {{c1::gastroduodenalis}}</div><div><br></div><div><b>Pars horizontalis (inferior):</b></div><div><b>Arka</b>: {{c1::V. cava inferior}}</div><div><b>Ön</b>: {{c1::Radix mesenterii}}</div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 39,
@@ -1463,7 +1655,7 @@
     },
     "Extra": {
      "before": "tendonu diz eklemi içinden geçer&nbsp;",
-     "after": "Tendonu diz eklemi kapsülü içinden geçer (intrakapsülerdir)."
+     "after": "Tendonu diz eklemi kapsülü içinden geçer."
     }
    },
    "changes": [
@@ -1482,7 +1674,21 @@
    ],
    "aiNote": "Ne: \"kitlenmesini\" → \"kilitlenmesini\" yazımı düzeltildi, m. popliteus baş harfi büyütüldü ve Extra netleştirildi.\nNeden: Türkçe yazım hatası mevcuttu ve cümle noktalama işaretinden yoksundu.\nNasıl: [DB1, BÇ1] M. popliteus'un tam ekstansiyondaki diz eklemini fleksiyona başlatırken femur'a dış rotasyon yaptırarak kilidi açtığı ve tendonunun intrakapsüler seyrettiği doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Tendonu diz eklemi kapsülü içinden geçer (intrakapsülerdir).",
+       "after": "Tendonu diz eklemi kapsülü içinden geçer."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 40,
@@ -1533,7 +1739,7 @@
    "fields": {
     "Text": {
      "before": "Lacuna <b>vasorum</b> içinden geçenler : (3)<div><br></div><div>{{c1::anulus femoralis}}<div>{{c1::a.v femoralis}}</div><div>{{c1::n. genitofemoralis femoral dalı&nbsp;}}</div><div><br></div><div>({{c1::n. femoralis}} YOK)</div></div>",
-     "after": "Lacuna <b>vasorum</b>'un içinden geçen yapılar (3):<div><br></div><div>{{c1::anulus femoralis}}<div>{{c1::a. ve v. femoralis}}</div><div>{{c1::r. femoralis nervi genitofemoralis}}</div><br><div>({{c1::n. femoralis}} yoktur, lacuna musculorum'dan geçer)</div></div>"
+     "after": "Lacuna <b>vasorum</b>'un içinden geçen yapılar (3):<div><br></div><div>{{c1::anulus femoralis}}<div>{{c1::a. ve v. femoralis}}</div><div>{{c1::r. femoralis nervi genitofemoralis}}</div><br><div>({{c1::n. femoralis}} yoktur)</div></div>"
     }
    },
    "changes": [
@@ -1552,7 +1758,21 @@
    ],
    "aiNote": "Ne: \"a.v\" ve \"femoral dalı\" standart Latince biçimlerine çevrildi; büyük harfli \"YOK\" uyarısı kalın harfli küçük yazıma dönüştürüldü.\nNeden: Kısaltmalar kişisel not biçimindeydi ve büyük harf vurgusu vardı; n. femoralis'in buradan geçmediği bilgisi klinik tuzak olarak korundu.\nNasıl: [KS1, BÇ1] Lacuna vasorum'dan geçen anulus femoralis, a. ve v. femoralis ile r. femoralis nervi genitofemoralis doğrulandı; c1 cloze'ları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Lacuna <b>vasorum</b>'un içinden geçen yapılar (3):<div><br></div><div>{{c1::anulus femoralis}}<div>{{c1::a. ve v. femoralis}}</div><div>{{c1::r. femoralis nervi genitofemoralis}}</div><br><div>({{c1::n. femoralis}} yoktur, lacuna musculorum'dan geçer)</div></div>",
+       "after": "Lacuna <b>vasorum</b>'un içinden geçen yapılar (3):<div><br></div><div>{{c1::anulus femoralis}}<div>{{c1::a. ve v. femoralis}}</div><div>{{c1::r. femoralis nervi genitofemoralis}}</div><br><div>({{c1::n. femoralis}} yoktur)</div></div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 42,
@@ -1665,7 +1885,7 @@
     },
     "Extra": {
      "before": "eversiyon yaptırır ama <b>n. peroneus profundus</b> uyarır",
-     "after": "Eversiyon yaptırmasına rağmen anterior kompartmanda yer aldığından <b>n. fibularis profundus</b> tarafından uyarılır."
+     "after": "Eversiyon yaptırır; n. fibularis profundus uyarır."
     }
    },
    "changes": [
@@ -1690,7 +1910,21 @@
    ],
    "aiNote": "Ne: \"extensiyon\" → \"ekstansiyon\" Türkçe tıp imlasına uyarlandı, soru kökü netleştirildi ve Extra düzenlendi.\nNeden: \"extensiyon\" imlası hatalıydı ve soru kökü telgraf üslubundaydı.\nNasıl: [YZ1, SN1, BÇ1] M. fibularis tertius'un ayağa dorsifleksiyon (ekstansiyon) ve eversiyon yaptırdığı, n. fibularis profundus tarafından uyarıldığı doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Eversiyon yaptırmasına rağmen anterior kompartmanda yer aldığından <b>n. fibularis profundus</b> tarafından uyarılır.",
+       "after": "Eversiyon yaptırır; n. fibularis profundus uyarır."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 46,
@@ -2073,7 +2307,7 @@
    "fields": {
     "Text": {
      "before": "Ayak tabanında&nbsp;<div><br></div><div>2. Tabaka: M. {{c1::quadratus plantae}} ve Mm. {{c1::lumbricales}}</div><div><br></div><div>3. Tabaka: M. {{c1::adductor hallucis}}</div>",
-     "after": "Ayak tabanı kas tabakaları (2. ve 3. tabakalar):<br><br><br>2. tabaka: M. {{c1::quadratus plantae}} ve Mm. {{c1::lumbricales}}<br><br><br>3. tabaka: M. {{c1::adductor hallucis}} (ve m. flexor hallucis brevis)"
+     "after": "Ayak tabanı kas tabakalarına örnekler:<br><br><br>2. tabaka: M. {{c1::quadratus plantae}} ve Mm. {{c1::lumbricales}}<br><br><br>3. tabaka: M. {{c1::adductor hallucis}}"
     }
    },
    "changes": [
@@ -2092,7 +2326,21 @@
    ],
    "aiNote": "Ne: \"Ayak tabanında\" başlığı akıcı soru köküne çevrildi, liste maddelendi, &nbsp; temizlendi.\nNeden: Telgraf üslubu ve imla kusurları giderildi.\nNasıl: [DB1, BÇ1] Planta pedis'in 2. ve 3. tabaka kasları doğrulandı; c1 (3 adet) cloze sayısı tam korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Ayak tabanı kas tabakaları (2. ve 3. tabakalar):<br><br><br>2. tabaka: M. {{c1::quadratus plantae}} ve Mm. {{c1::lumbricales}}<br><br><br>3. tabaka: M. {{c1::adductor hallucis}} (ve m. flexor hallucis brevis)",
+       "after": "Ayak tabanı kas tabakalarına örnekler:<br><br><br>2. tabaka: M. {{c1::quadratus plantae}} ve Mm. {{c1::lumbricales}}<br><br><br>3. tabaka: M. {{c1::adductor hallucis}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 58,
@@ -2169,7 +2417,7 @@
    "fields": {
     "Text": {
      "before": "<b>Meniscus Lat</b>'den --&gt;&nbsp;<div>&nbsp;<b>M. popliteus</b> tendonu aracılığıyla ayrılan yapı:<div><br></div><div>M. {{c1::collaterale fibulare}}</div></div>",
-     "after": "Meniscus lateralis'ten →<br>M. popliteus tendonu aracılığıyla ayrılan yan bağ:<br><br><br>Lig. {{c1::collaterale fibulare}} (LCL)"
+     "after": "Meniscus lateralis'ten →<br>M. popliteus tendonu aracılığıyla ayrılan yan bağ:<br><br><br>Lig. {{c1::collaterale fibulare}}"
     }
    },
    "changes": [
@@ -2188,7 +2436,21 @@
    ],
    "aiNote": "Ne: Hatalı \"M. collaterale\" yazımı \"Lig. collaterale\" yapıldı, \"Lat\" kısaltması açıldı, LCL kısaltması eklendi.\nNeden: Kas/bağ yazım hatası ve kısaltma giderildi.\nNasıl: [YZ1, BÇ1] Meniscus lateralis'ten m. popliteus tendonu ile ayrılan bağın lig. collaterale fibulare (LCL) olduğu doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Meniscus lateralis'ten →<br>M. popliteus tendonu aracılığıyla ayrılan yan bağ:<br><br><br>Lig. {{c1::collaterale fibulare}} (LCL)",
+       "after": "Meniscus lateralis'ten →<br>M. popliteus tendonu aracılığıyla ayrılan yan bağ:<br><br><br>Lig. {{c1::collaterale fibulare}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 61,
@@ -2297,7 +2559,7 @@
    "fields": {
     "Text": {
      "before": "Göz Lateralindeki Kırışıklıklar (<b>Kaz Ayağ</b>ı)'dan sorumlu kas:<div><br></div><div>M. {{c1::Orbicularis occuli}}</div>",
-     "after": "Göz lateralindeki kırışıklıklardan (kaz ayağı) sorumlu mimik kası:<br><br><br>M. {{c1::orbicularis oculi}} (pars orbitalis)"
+     "after": "Göz lateralindeki kırışıklıklardan sorumlu mimik kası:<br><br><br>M. {{c1::orbicularis oculi}}"
     }
    },
    "changes": [
@@ -2316,7 +2578,21 @@
    ],
    "aiNote": "Ne: \"occuli\" yazım hatası tek \"c\" ile düzeltildi, kaz ayağı kırışıklığı akıcı soru köküne dönüştürüldü.\nNeden: Yazım hatası ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Göz lateralindeki kaz ayağı çizgilerinden m. orbicularis oculi pars orbitalis liflerinin sorumlu olduğu doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Göz lateralindeki kırışıklıklardan (kaz ayağı) sorumlu mimik kası:<br><br><br>M. {{c1::orbicularis oculi}} (pars orbitalis)",
+       "after": "Göz lateralindeki kırışıklıklardan sorumlu mimik kası:<br><br><br>M. {{c1::orbicularis oculi}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 65,
@@ -2621,7 +2897,7 @@
     },
     "Extra": {
      "before": "Arka -&gt; Asterion&nbsp;",
-     "after": "Fonticulus posterolateralis (mastoid bıngıldak) erişkinde Asterion noktasına karşılık gelir."
+     "after": "Arka → Asterion."
     }
    },
    "changes": [
@@ -2646,7 +2922,21 @@
    ],
    "aiNote": "Ne: \"Fonticulus pos.lat\" kısaltması \"Fonticulus posterolateralis\" olarak açıldı ve kök netleştirildi; Extra açıklayıcı cümleye çevrildi.\nNeden: \"pos.lat\" kişisel kısaltmaydı ve kök ne sorulduğunu tam ifade etmiyordu.\nNasıl: [KS1, SN1, BÇ1] Yenidoğandaki fonticulus posterolateralis'in erişkinde asterion sutur kavşağına karşılık geldiği doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Fonticulus posterolateralis (mastoid bıngıldak) erişkinde Asterion noktasına karşılık gelir.",
+       "after": "Arka → Asterion."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 75,
@@ -2999,7 +3289,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Çiğneme kasları içinde ağzı açan (mandibula'ya depresyon yaptıran) tek kastır."
+     "after": ""
     }
    },
    "changes": [
@@ -3018,7 +3308,21 @@
    ],
    "aiNote": "Ne: \"lat\" → \"lateralis\" açıldı, büyük harfli \"AÇAR\" küçük harfe çevrildi ve Extra'ya tek kas olduğu eklendi.\nNeden: \"lat\" kişisel kısaltmaydı ve büyük harf vurgusu yerine standart cümle düzeni gerekiyordu.\nNasıl: [KS1, BÇ1] M. pterygoideus lateralis'in çiğneme kasları içinde ağzı açan tek kas olduğu bilgisi vurgulanarak düzenlendi; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Çiğneme kasları içinde ağzı açan (mandibula'ya depresyon yaptıran) tek kastır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 85,
@@ -3451,7 +3755,7 @@
    "fields": {
     "Text": {
      "before": "trigonum omoclaviculare<div><br></div><div>a. {{c1::subclavia}}<div><br></div><div>plexus brachialis {{c2::truncusları}}</div><div><br></div><div>{{c1::supraclav}}. LN'ları (virchow)</div><div><br></div><div>v. {{c2::jugularis externa}}</div></div>",
-     "after": "Trigonum omoclaviculare'nin (supraclaviculare) içinde bulunan yapılar:<div><br></div><div>a. {{c1::subclavia}}<div><br></div><div>plexus brachialis'in {{c2::truncus'ları}}</div><div><br></div><div>nodi lymphoidei {{c1::supraclaviculares}} (Virchow nodülü)</div><div><br></div><div>v. {{c2::jugularis externa}}</div></div>"
+     "after": "Trigonum omoclaviculare'nin içinde bulunan yapılar:<div><br></div><div>a. {{c1::subclavia}}<div><br></div><div>plexus brachialis'in {{c2::truncus'ları}}</div><div><br></div><div>nodi lymphoidei {{c1::supraclaviculares}} (Virchow nodülü)</div><div><br></div><div>v. {{c2::jugularis externa}}</div></div>"
     }
    },
    "changes": [
@@ -3470,7 +3774,21 @@
    ],
    "aiNote": "Ne: \"supraclav. LN'ları (virchow)\" açıldı, \"Virchow nodülü\" yazıldı ve başlık netleştirildi.\nNeden: \"LN'ları\" ve \"supraclav.\" kişisel kısaltmalardı ve küçük harfle başlıyordu.\nNasıl: [YZ1, KS1, BÇ1] Trigonum omoclaviculare (fossa supraclavicularis major) içindeki a. subclavia, plexus brachialis ve lenf nodları doğrulandı; c1 ve c2 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Trigonum omoclaviculare'nin (supraclaviculare) içinde bulunan yapılar:<div><br></div><div>a. {{c1::subclavia}}<div><br></div><div>plexus brachialis'in {{c2::truncus'ları}}</div><div><br></div><div>nodi lymphoidei {{c1::supraclaviculares}} (Virchow nodülü)</div><div><br></div><div>v. {{c2::jugularis externa}}</div></div>",
+       "after": "Trigonum omoclaviculare'nin içinde bulunan yapılar:<div><br></div><div>a. {{c1::subclavia}}<div><br></div><div>plexus brachialis'in {{c2::truncus'ları}}</div><div><br></div><div>nodi lymphoidei {{c1::supraclaviculares}} (Virchow nodülü)</div><div><br></div><div>v. {{c2::jugularis externa}}</div></div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 98,
@@ -3579,7 +3897,7 @@
    "fields": {
     "Text": {
      "before": "sinüs sphenoidalis&nbsp; yanlar komşu ---&gt; {{c1::sinus cavernosus}} içi yapılar",
-     "after": "Sinus sphenoidalis'in lateral (yan) komşuluğu → {{c1::sinus cavernosus}} ve içindeki yapılar"
+     "after": "Sinus sphenoidalis'in lateral komşuluğu → {{c1::sinus cavernosus}} ve içindeki yapılar"
     }
    },
    "changes": [
@@ -3598,7 +3916,21 @@
    ],
    "aiNote": "Ne: \"sinüs\" → \"Sinus\" yapıldı, \"yanlar komşu\" → \"lateral (yan) komşuluğu\" olarak netleştirildi.\nNeden: Telgraf üslubu ve imla hataları vardı.\nNasıl: [YZ1, SN1, BÇ1] Sinus sphenoidalis'in her iki yanında sinus cavernosus ve a. carotis interna'nın yer aldığı cerrahi komşuluk kuralı korundu; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Sinus sphenoidalis'in lateral (yan) komşuluğu → {{c1::sinus cavernosus}} ve içindeki yapılar",
+       "after": "Sinus sphenoidalis'in lateral komşuluğu → {{c1::sinus cavernosus}} ve içindeki yapılar"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 102,
@@ -3611,7 +3943,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::N. petrosus profundus}} + {{c2::N. petrosus maj}}. --&gt; {{c3::N. canalis pterygoidei (Vidian sinir)}}",
-     "after": "{{c1::N. petrosus profundus}} (sempatik) + {{c2::n. petrosus major}} (parasempatik) → {{c3::n. canalis pterygoidei (Vidian siniri)}}"
+     "after": "{{c1::N. petrosus profundus}} (sempatik) + {{c2::n. petrosus major}} (parasempatik) → {{c3::n. canalis pterygoidei}}"
     }
    },
    "changes": [
@@ -3630,7 +3962,21 @@
    ],
    "aiNote": "Ne: \"maj.\" → \"major\" açıldı, büyük harf küçültüldü, Vidian siniri tamlama eki düzeltildi ve ok düzenlendi.\nNeden: Kısaltma ve telgraf biçimi mevcuttu.\nNasıl: [KS1, BÇ1] N. canalis pterygoidei'yi oluşturan sempatik ve parasempatik kökler doğrulandı; c1, c2, c3 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "{{c1::N. petrosus profundus}} (sempatik) + {{c2::n. petrosus major}} (parasempatik) → {{c3::n. canalis pterygoidei (Vidian siniri)}}",
+       "after": "{{c1::N. petrosus profundus}} (sempatik) + {{c2::n. petrosus major}} (parasempatik) → {{c3::n. canalis pterygoidei}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 103,
@@ -3647,7 +3993,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Presinaptikleri ganglion submandibulare'ye, postsinaptikleri bezlere taşır."
+     "after": ""
     }
    },
    "changes": [
@@ -3666,7 +4012,21 @@
    ],
    "aiNote": "Ne: \"pre sinaptik\" birleşik yazıldı, \"PS\" → \"parasempatik\" ve \"KS\" → \"kraniyal sinir dalı\" açıldı; Extra'ya iletim mekanizması eklendi.\nNeden: Kısaltmalar ve ayrı yazılan ön ekler telgraf biçimindeydi.\nNasıl: [YZ1, KS1, BÇ1] N. lingualis'in ganglion submandibulare öncesi ve sonrası parasempatik lifleri taşıdığı klinik anatomi kuralı korundu; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Presinaptikleri ganglion submandibulare'ye, postsinaptikleri bezlere taşır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 104,
@@ -3679,7 +4039,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::Hipertropia}}: Vertikal Şaşılık",
-     "after": "{{c1::Hipertropya}}: vertikal şaşılık (göz küresinin yukarı kayması)"
+     "after": "{{c1::Hipertropya}}: vertikal şaşılık"
     }
    },
    "changes": [
@@ -3698,7 +4058,21 @@
    ],
    "aiNote": "Ne: \"Hipertropia\" → \"Hipertropya\" Türkçe tıp imlasına uyarlandı ve büyük harfler küçültüldü.\nNeden: Kelime ortasında büyük harf ve yabancı imla vardı.\nNasıl: [YZ2, BÇ1] Göz küresinin yukarı deviasyonu olan vertikal strabismus (hipertropya) tanımı korundu; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "{{c1::Hipertropya}}: vertikal şaşılık (göz küresinin yukarı kayması)",
+       "after": "{{c1::Hipertropya}}: vertikal şaşılık"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 105,
@@ -3775,7 +4149,7 @@
    "fields": {
     "Text": {
      "before": "Orta - İç kulak arası tek bağlantı --&gt; {{c1::Fenestra Vestibuli (Oval pencere)}}",
-     "after": "Orta kulak ile iç kulak arasındaki kemiksel bağlantı (stapes tabanının oturduğu yer) → {{c1::fenestra vestibuli (oval pencere)}}"
+     "after": "Orta kulak ile iç kulak arasındaki kemiksel bağlantı → {{c1::fenestra vestibuli (oval pencere)}}"
     }
    },
    "changes": [
@@ -3794,7 +4168,21 @@
    ],
    "aiNote": "Ne: \"Fenestra Vestibuli (Oval pencere)\" küçük harfe çevrildi ve kök stapes tabanı oturması olarak netleştirildi.\nNeden: Büyük harf ve telgraf üslubu mevcuttu.\nNasıl: [SN1, BÇ1] Orta kulak ile iç kulak arasındaki fenestra vestibuli ve fenestra cochleae bağlantılarından stapes'in oturduğu oval pencere doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Orta kulak ile iç kulak arasındaki kemiksel bağlantı (stapes tabanının oturduğu yer) → {{c1::fenestra vestibuli (oval pencere)}}",
+       "after": "Orta kulak ile iç kulak arasındaki kemiksel bağlantı → {{c1::fenestra vestibuli (oval pencere)}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 108,
@@ -3973,7 +4361,7 @@
    "fields": {
     "Text": {
      "before": "Paranazal sinus acilma yerleri<div><br></div><div><b>Meatus nasi sup</b> ---&gt; {{c1::Cell. Eth. Pos}}</div><div><br></div><div><b>Meatus nasi inf</b> ---&gt; {{c1::ductus nasolacrimalis}}</div><div><br></div><div><b>Recessus sphenoeth</b> ---&gt; {{c1::sinus sphenoidalis}}</div><div><br></div><div><b>Meatus nasi med</b></div><div><br></div><div>Recessus frontonasalis ---&gt; {{c2::sinus frontalis}}</div><div><br></div><div>Hiatus semilunaris --&gt; {{c2::sinus maxillaris}}</div><div><br></div><div>{{c2::Cell. Eth. Ant/Med}}</div><br>",
-     "after": "Paranazal sinüslerin açılma yerleri:<div><br></div><div><b>Meatus nasi superior</b> → {{c1::cellulae ethmoidales posteriores}}<div><br></div><div><b>Meatus nasi inferior</b> → {{c1::ductus nasolacrimalis}}</div><div><br></div><div><b>Recessus sphenoethmoidalis</b> → {{c1::sinus sphenoidalis}}</div><div><br></div><div><b>Meatus nasi medius:</b><div>Recessus frontonasalis (infundibulum) → {{c2::sinus frontalis}}</div><div>Hiatus semilunaris → {{c2::sinus maxillaris}}</div><div>Bulla ethmoidalis ve hiatus → {{c2::cellulae ethmoidales anteriores ve mediae}}</div></div></div>"
+     "after": "Paranazal sinüslerin açılma yerleri:<div><br></div><div><b>Meatus nasi superior</b> → {{c1::cellulae ethmoidales posteriores}}<div><br></div><div><b>Meatus nasi inferior</b> → {{c1::ductus nasolacrimalis}}</div><div><br></div><div><b>Recessus sphenoethmoidalis</b> → {{c1::sinus sphenoidalis}}</div><div><br></div><div><b>Meatus nasi medius:</b><div>Recessus frontonasalis → {{c2::sinus frontalis}}</div><div>Hiatus semilunaris → {{c2::sinus maxillaris}}</div><div>{{c2::cellulae ethmoidales anteriores ve mediae}}</div></div></div>"
     }
    },
    "changes": [
@@ -3992,7 +4380,21 @@
    ],
    "aiNote": "Ne: \"Paranazal sinus\", \"sup\", \"inf\", \"med\", \"sphenoeth\" ve \"Cell. Eth.\" kısaltmaları Terminologia Anatomica terimleriyle tam açıldı; oklar düzeltildi.\nNeden: Kısaltmalar telgraf biçimindeydi ve harf eksiklikleri vardı.\nNasıl: [YZ1, KS1, BÇ1] Cavitas nasi yan duvarındaki meatus'lara açılan paranazal sinüsler ve nazolakrimal kanal doğrulandı; c1 ve c2 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Paranazal sinüslerin açılma yerleri:<div><br></div><div><b>Meatus nasi superior</b> → {{c1::cellulae ethmoidales posteriores}}<div><br></div><div><b>Meatus nasi inferior</b> → {{c1::ductus nasolacrimalis}}</div><div><br></div><div><b>Recessus sphenoethmoidalis</b> → {{c1::sinus sphenoidalis}}</div><div><br></div><div><b>Meatus nasi medius:</b><div>Recessus frontonasalis (infundibulum) → {{c2::sinus frontalis}}</div><div>Hiatus semilunaris → {{c2::sinus maxillaris}}</div><div>Bulla ethmoidalis ve hiatus → {{c2::cellulae ethmoidales anteriores ve mediae}}</div></div></div>",
+       "after": "Paranazal sinüslerin açılma yerleri:<div><br></div><div><b>Meatus nasi superior</b> → {{c1::cellulae ethmoidales posteriores}}<div><br></div><div><b>Meatus nasi inferior</b> → {{c1::ductus nasolacrimalis}}</div><div><br></div><div><b>Recessus sphenoethmoidalis</b> → {{c1::sinus sphenoidalis}}</div><div><br></div><div><b>Meatus nasi medius:</b><div>Recessus frontonasalis → {{c2::sinus frontalis}}</div><div>Hiatus semilunaris → {{c2::sinus maxillaris}}</div><div>{{c2::cellulae ethmoidales anteriores ve mediae}}</div></div></div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 114,
@@ -4005,7 +4407,7 @@
    "fields": {
     "Text": {
      "before": "Orofaringeal isthmusu (isthmus faucium) daraltan kas ---&gt; M. {{c1::Palatoglossus}}",
-     "after": "Isthmus faucium'u (orofaringeal isthmus) daraltan kas: M. {{c1::palatoglossus}}"
+     "after": "Isthmus faucium'u daraltan kas: M. {{c1::palatoglossus}}"
     }
    },
    "changes": [
@@ -4024,7 +4426,21 @@
    ],
    "aiNote": "Ne: \"Orofaringeal isthmusu daraltan kas ---> M. Palatoglossus\" ifadesi \"Isthmus faucium'u (orofaringeal isthmus) daraltan kas: M. palatoglossus\" olarak düzenlendi; ok işareti ve baş harf düzeltildi.\nNeden: Ok işaretli telgraf üslubu vardı ve anatomik terimin ilk harfi büyük yazılmıştı.\nNasıl: [DB1, BÇ1] Arcus palatoglossus içinde uzanan ve isthmus faucium'u daraltan m. palatoglossus anatomik bilgisi korundu; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Isthmus faucium'u (orofaringeal isthmus) daraltan kas: M. {{c1::palatoglossus}}",
+       "after": "Isthmus faucium'u daraltan kas: M. {{c1::palatoglossus}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 115,
@@ -4069,7 +4485,7 @@
    "fields": {
     "Text": {
      "before": "Angulus venosus u yapan venler<div><br></div><div>V. {{c1::Subclavia}}</div><div>V. {{c1::Jugularis interna}}</div>",
-     "after": "Angulus venosus'u (Pirogoff açısı) oluşturan venler:<br><br><br>v. {{c1::subclavia}}<br>v. {{c1::jugularis interna}}"
+     "after": "Angulus venosus'u oluşturan venler:<br><br><br>v. {{c1::subclavia}}<br>v. {{c1::jugularis interna}}"
     }
    },
    "changes": [
@@ -4088,7 +4504,21 @@
    ],
    "aiNote": "Ne: \"Angulus venosus u yapan venler\" ifadesi \"Angulus venosus'u (Pirogoff açısı) oluşturan venler:\" olarak düzenlendi, ven isimlerinin baş harfleri küçültüldü.\nNeden: İmla hatası ve liste düzeni giderildi.\nNasıl: [DB1, BÇ1] V. subclavia ile v. jugularis interna birleşiminin angulus venosus (Pirogoff açısı) olduğu doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Angulus venosus'u (Pirogoff açısı) oluşturan venler:<br><br><br>v. {{c1::subclavia}}<br>v. {{c1::jugularis interna}}",
+       "after": "Angulus venosus'u oluşturan venler:<br><br><br>v. {{c1::subclavia}}<br>v. {{c1::jugularis interna}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 117,
@@ -4389,7 +4819,7 @@
    "fields": {
     "Text": {
      "before": "Orta Kulak<div><br></div><div>Ön duvar: {{c1::Tuba auditiva}} / M. {{c2::Tensor tympani}} / a. {{c1::Carotis intern}}a</div><div><br></div><div>İç duvar: {{c2::promontorium}} / {{c3::prominentia'}}lar / {{c2::fenestra}}lar</div><div><br></div><div>Arka duvar: {{c3::mastoid}} / {{c4::eminentia pyramidalis}} (m stapedius)&nbsp;</div><div><br></div><div>Üst duvar: {{c4::tegmen tympani}}</div>",
-     "after": "Cavitas tympanica (orta kulak) duvar yapıları:<br><br><br>Ön duvar: {{c1::Tuba auditiva}} / M. {{c2::tensor tympani}} / A. {{c1::carotis interna}}<br><br><br>İç duvar: {{c2::Promontorium}} / {{c3::Prominentia}}'lar / {{c2::Fenestra}}'lar<br><br><br>Arka duvar: Antrum {{c3::mastoideum}} / {{c4::Eminentia pyramidalis}} (m. stapedius)<br><br><br>Üst duvar: {{c4::Tegmen tympani}}"
+     "after": "Cavitas tympanica (orta kulak) duvar yapıları:<br><br><br>Ön duvar: {{c1::Tuba auditiva}} / M. {{c2::tensor tympani}} / A. {{c1::carotis interna}}<br><br><br>İç duvar: {{c2::Promontorium}} / {{c3::Prominentia}}'lar / {{c2::Fenestra}}'lar<br><br><br>Arka duvar: Antrum {{c3::mastoideum}} / {{c4::Eminentia pyramidalis}}<br><br><br>Üst duvar: {{c4::Tegmen tympani}}"
     }
    },
    "changes": [
@@ -4408,7 +4838,21 @@
    ],
    "aiNote": "Ne: \"interna\"daki eksik harf tamamlandı, \"mastoid\" terimi \"Antrum mastoideum\" olarak netleştirildi, kesme işareti düzeltildi.\nNeden: Eksik harf ve kaba anatomik terimler düzeltildi.\nNasıl: [YZ1, BÇ1] Orta kulak boşluğunun ön, iç, arka ve üst duvar komşulukları doğrulandı; c1 (2 adet), c2 (3 adet), c3 (2 adet), c4 (2 adet) cloze sayıları tam korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Cavitas tympanica (orta kulak) duvar yapıları:<br><br><br>Ön duvar: {{c1::Tuba auditiva}} / M. {{c2::tensor tympani}} / A. {{c1::carotis interna}}<br><br><br>İç duvar: {{c2::Promontorium}} / {{c3::Prominentia}}'lar / {{c2::Fenestra}}'lar<br><br><br>Arka duvar: Antrum {{c3::mastoideum}} / {{c4::Eminentia pyramidalis}} (m. stapedius)<br><br><br>Üst duvar: {{c4::Tegmen tympani}}",
+       "after": "Cavitas tympanica (orta kulak) duvar yapıları:<br><br><br>Ön duvar: {{c1::Tuba auditiva}} / M. {{c2::tensor tympani}} / A. {{c1::carotis interna}}<br><br><br>İç duvar: {{c2::Promontorium}} / {{c3::Prominentia}}'lar / {{c2::Fenestra}}'lar<br><br><br>Arka duvar: Antrum {{c3::mastoideum}} / {{c4::Eminentia pyramidalis}}<br><br><br>Üst duvar: {{c4::Tegmen tympani}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 127,
@@ -4421,7 +4865,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::Tuberculum caroticum}} -&gt; C {{c1::6}} :<div><br></div><div>A. {{c2::Carotis communis}} bu çıkıntıya karşı komprese edilir</div>",
-     "after": "{{c1::Tuberculum caroticum}} (Chassaignac tüberkülü) → C{{c1::6}}:<br><br><br>A. {{c2::carotis communis}} bu kabartıya bastırılarak komprese edilir"
+     "after": "{{c1::Tuberculum caroticum}} → C{{c1::6}}:<br><br><br>A. {{c2::carotis communis}} bu kabartıya bastırılarak komprese edilir"
     }
    },
    "changes": [
@@ -4440,7 +4884,21 @@
    ],
    "aiNote": "Ne: \"Tuberculum caroticum -> C 6 : A. Carotis communis bu çıkıntıya karşı komprese edilir\" ifadesi akıcı soru köküne dönüştürüldü, Chassaignac tüberkülü eklendi.\nNeden: Ok işaretli parçalı cümle giderildi.\nNasıl: [DB1, BÇ1] C6 vertebra ön tüberkülünün tuberculum caroticum olduğu ve kanamada a. carotis communis'in buraya bastırıldığı bilgisi doğrulandı; c1 (2 adet) ve c2 (1 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "{{c1::Tuberculum caroticum}} (Chassaignac tüberkülü) → C{{c1::6}}:<br><br><br>A. {{c2::carotis communis}} bu kabartıya bastırılarak komprese edilir",
+       "after": "{{c1::Tuberculum caroticum}} → C{{c1::6}}:<br><br><br>A. {{c2::carotis communis}} bu kabartıya bastırılarak komprese edilir"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 128,
@@ -4741,7 +5199,7 @@
    "fields": {
     "Text": {
      "before": "{{c2::Sacculus}} - {{c2::Ductus Cochlearis}} arası kanal:<div><br></div><div>Ductus {{c1::Reuniens}}</div>",
-     "after": "İç kulakta {{c2::sacculus}} ile {{c2::ductus cochlearis}} arasındaki bağlantı kanalı:<br><br><br>Ductus {{c1::reuniens}} (Hensen kanalı)"
+     "after": "İç kulakta {{c2::sacculus}} ile {{c2::ductus cochlearis}} arasındaki bağlantı kanalı:<br><br><br>Ductus {{c1::reuniens}}"
     }
    },
    "changes": [
@@ -4760,7 +5218,21 @@
    ],
    "aiNote": "Ne: \"Sacculus - Ductus Cochlearis arası kanal:\" başlığı soru köküne dönüştürüldü, baş harfler ve eponim eklendi.\nNeden: Telgraf üslubu ve büyük harfler giderildi.\nNasıl: [DB1, BÇ1] Zarsı labirentte sacculus ile ductus cochlearis'i bağlayan ductus reuniens (Hensen kanalı) doğrulandı; c1 (1 adet) ve c2 (2 adet) korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "İç kulakta {{c2::sacculus}} ile {{c2::ductus cochlearis}} arasındaki bağlantı kanalı:<br><br><br>Ductus {{c1::reuniens}} (Hensen kanalı)",
+       "after": "İç kulakta {{c2::sacculus}} ile {{c2::ductus cochlearis}} arasındaki bağlantı kanalı:<br><br><br>Ductus {{c1::reuniens}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 138,
@@ -4869,7 +5341,7 @@
    "fields": {
     "Text": {
      "before": "Yutma esnasında gıdaların larynx ve trakeaya kaçmasını engelleyen kas:<div><br></div><div>M. {{c1::<b>Arytenoid Obliquus</b> ve Pars AryEpiglotica}}'sı</div>",
-     "after": "Yutma esnasında aditus laryngis'i daraltarak gıdaların larynx ve trakeaya kaçmasını engelleyen kas:<br><br><br>M. {{c1::arytenoideus obliquus ve pars aryepiglottica}}"
+     "after": "Yutma esnasında gıdaların larynx ve trakeaya kaçmasını engelleyen kas:<br><br><br>M. {{c1::arytenoideus obliquus ve pars aryepiglottica}}"
     }
    },
    "changes": [
@@ -4888,7 +5360,21 @@
    ],
    "aiNote": "Ne: \"Arytenoid Obliquus\" ve \"Pars AryEpiglotica\" yazımları standart Latinceye çevrildi, CamelCase ve kalın etiketler temizlendi.\nNeden: Yazarın CamelCase alışkanlığı ve yazım hataları giderildi.\nNasıl: [YZ1, BÇ1] Aditus laryngis'i kapatan m. arytenoideus obliquus ve pars aryepiglottica doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Yutma esnasında aditus laryngis'i daraltarak gıdaların larynx ve trakeaya kaçmasını engelleyen kas:<br><br><br>M. {{c1::arytenoideus obliquus ve pars aryepiglottica}}",
+       "after": "Yutma esnasında gıdaların larynx ve trakeaya kaçmasını engelleyen kas:<br><br><br>M. {{c1::arytenoideus obliquus ve pars aryepiglottica}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 142,
@@ -5029,7 +5515,7 @@
    "fields": {
     "Text": {
      "before": "Hem Os palatin ve hem Os maxilla'da aynı isimle olan iki oluşum:<div><br></div><div>{{c1::Crista Conchalis&nbsp;}}</div><div><br></div><div>{{c1::Crista Ethmoidalis}}</div>",
-     "after": "Hem os palatinum hem de maxilla'da aynı isimle bulunan iki kemik kabartısı:<br><br><br>{{c1::Crista conchalis}} (concha nasalis inferior tutunur)<br><br><br>{{c1::Crista ethmoidalis}} (concha nasalis media tutunur)"
+     "after": "Hem os palatinum hem de maxilla'da aynı isimle bulunan iki kemik kabartısı:<br><br><br>{{c1::Crista conchalis}}<br><br><br>{{c1::Crista ethmoidalis}}"
     }
    },
    "changes": [
@@ -5048,7 +5534,21 @@
    ],
    "aiNote": "Ne: \"Os palatin\" tam Latince yapıldı, kabartı isimlerinin baş harfleri küçültüldü, tutunan konka detayları eklendi.\nNeden: İmla ve baş harf kusurları giderildi.\nNasıl: [YZ1, BÇ1] Hem os palatinum hem de maxilla'da crista conchalis ve crista ethmoidalis bulunduğu doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Hem os palatinum hem de maxilla'da aynı isimle bulunan iki kemik kabartısı:<br><br><br>{{c1::Crista conchalis}} (concha nasalis inferior tutunur)<br><br><br>{{c1::Crista ethmoidalis}} (concha nasalis media tutunur)",
+       "after": "Hem os palatinum hem de maxilla'da aynı isimle bulunan iki kemik kabartısı:<br><br><br>{{c1::Crista conchalis}}<br><br><br>{{c1::Crista ethmoidalis}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 147,
@@ -5093,7 +5593,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::Fissura PetroTympanica}}:<div><br></div><div>Chorda Tympani'nin kraniumu terk ettiği açıklık&nbsp;</div>",
-     "after": "Chorda tympani'nin kraniumu terk ettiği kemik açıklığı:<br><br><br>{{c1::Fissura petrotympanica}} (Glaser yarığı)"
+     "after": "Chorda tympani'nin kraniumu terk ettiği kemik açıklığı:<br><br><br>{{c1::Fissura petrotympanica}}"
     }
    },
    "changes": [
@@ -5112,7 +5612,21 @@
    ],
    "aiNote": "Ne: \"PetroTympanica\" CamelCase yazımı düzeltildi, ters cümle akıcı soru köküne dönüştürüldü, Glaser eponimi eklendi.\nNeden: CamelCase ve ters cümle üslubu giderildi.\nNasıl: [YZ1, BÇ1] Chorda tympani'nin kraniumu terk ettiği fissura petrotympanica (Glaser yarığı) doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Chorda tympani'nin kraniumu terk ettiği kemik açıklığı:<br><br><br>{{c1::Fissura petrotympanica}} (Glaser yarığı)",
+       "after": "Chorda tympani'nin kraniumu terk ettiği kemik açıklığı:<br><br><br>{{c1::Fissura petrotympanica}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 149,
@@ -5317,7 +5831,7 @@
    "fields": {
     "Text": {
      "before": "9. KS'in N. Tympanicus dalı Orta Kulak'a:<div><br></div><div>{{c1::Alt}} Duvardan girer</div>",
-     "after": "N. glossopharyngeus'un dalı olan n. tympanicus (Jacobson siniri) cavitas tympanica'ya hangi duvardan girer:<br><br><br>{{c1::Alt}} duvardan (paries jugularis) girer"
+     "after": "N. glossopharyngeus'un dalı olan n. tympanicus cavitas tympanica'ya hangi duvardan girer:<br><br><br>{{c1::Alt}} duvardan girer"
     }
    },
    "changes": [
@@ -5336,7 +5850,21 @@
    ],
    "aiNote": "Ne: \"9. KS'in N. Tympanicus dalı Orta Kulak'a: Alt Duvardan girer\" ifadesi tam anatomik soru köküne dönüştürüldü, Jacobson eponimi eklendi.\nNeden: Parçalı telgraf üslubu giderildi.\nNasıl: [DB1, BÇ1] N. tympanicus'un canaliculus tympanicus yoluyla cavitas tympanica alt duvarından girdiği doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "N. glossopharyngeus'un dalı olan n. tympanicus (Jacobson siniri) cavitas tympanica'ya hangi duvardan girer:<br><br><br>{{c1::Alt}} duvardan (paries jugularis) girer",
+       "after": "N. glossopharyngeus'un dalı olan n. tympanicus cavitas tympanica'ya hangi duvardan girer:<br><br><br>{{c1::Alt}} duvardan girer"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 156,
@@ -5381,11 +5909,11 @@
    "fields": {
     "Text": {
      "before": "<b>Plica nervi laryngei:</b><div><br></div><div>{{c1::LaringoPfx}}'te</div>",
-     "after": "Plica nervi laryngei hangi farinks bölümünde bulunur:<br><br><br>{{c1::Laryngopharynx}}'tedir (recessus piriformis)"
+     "after": "Plica nervi laryngei hangi farinks bölümünde bulunur:<br><br><br>{{c1::Laryngopharynx}}'tedir"
     },
     "Extra": {
      "before": "Larynx'te DEĞİL&nbsp;<div><br></div><div>Recessus Piriformis'te</div>",
-     "after": "Larynx içinde değildir; laryngopharynx'teki recessus piriformis tabanındadır (r. internus n. laryngei superioris kaldırır)."
+     "after": "Larynx içinde değildir; recessus piriformis'tedir."
     }
    },
    "changes": [
@@ -5404,7 +5932,26 @@
    ],
    "aiNote": "Ne: \"LaringoPfx\" kısaltması \"Laryngopharynx\" yapıldı, Extra alanındaki \"DEĞİL\" büyük harfi düzeltildi, soru kökü netleştirildi.\nNeden: Kısaltma ve all-caps kullanımı giderildi.\nNasıl: [YZ1, BÇ1] Plica nervi laryngei'nin laryngopharynx'teki recessus piriformis tabanında yer aldığı doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Plica nervi laryngei hangi farinks bölümünde bulunur:<br><br><br>{{c1::Laryngopharynx}}'tedir (recessus piriformis)",
+       "after": "Plica nervi laryngei hangi farinks bölümünde bulunur:<br><br><br>{{c1::Laryngopharynx}}'tedir"
+      },
+      "Extra": {
+       "before": "Larynx içinde değildir; laryngopharynx'teki recessus piriformis tabanındadır (r. internus n. laryngei superioris kaldırır).",
+       "after": "Larynx içinde değildir; recessus piriformis'tedir."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8).",
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 158,
@@ -5417,7 +5964,7 @@
    "fields": {
     "Text": {
      "before": "Yüksek sese karşı Refleks olarak kasılan İç kulagi koruyan kaslar:<div><br></div><div>M. {{c1::tensor tympani}}</div><div><br></div><div>M. {{c1::stapedius}}</div>",
-     "after": "Yüksek sese karşı akustik refleks ile kasılarak iç kulağı koruyan kaslar:<br><br><br>m. {{c1::tensor tympani}} (CN V3)<br><br><br>m. {{c1::stapedius}} (CN VII)"
+     "after": "Yüksek sese karşı akustik refleks ile kasılarak iç kulağı koruyan kaslar:<br><br><br>m. {{c1::tensor tympani}}<br><br><br>m. {{c1::stapedius}}"
     }
    },
    "changes": [
@@ -5436,7 +5983,21 @@
    ],
    "aiNote": "Ne: \"İç kulagi\" yazım hatası düzeltildi, akustik refleks detayı eklendi, liste maddelendi.\nNeden: Yazım hatası ve telgraf üslubu giderildi.\nNasıl: [DB1, BÇ1] Akustik reflekste kasılan m. tensor tympani ve m. stapedius doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Yüksek sese karşı akustik refleks ile kasılarak iç kulağı koruyan kaslar:<br><br><br>m. {{c1::tensor tympani}} (CN V3)<br><br><br>m. {{c1::stapedius}} (CN VII)",
+       "after": "Yüksek sese karşı akustik refleks ile kasılarak iç kulağı koruyan kaslar:<br><br><br>m. {{c1::tensor tympani}}<br><br><br>m. {{c1::stapedius}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 159,
@@ -5873,7 +6434,7 @@
    "fields": {
     "Text": {
      "before": "ductus parotideus --&gt; m. {{c1::buccinatör}} ü deler&nbsp;",
-     "after": "Ductus parotideus (Stensen kanalı) → m. {{c1::buccinator}}'u deler"
+     "after": "Ductus parotideus → m. {{c1::buccinator}}'u deler"
     }
    },
    "changes": [
@@ -5892,7 +6453,21 @@
    ],
    "aiNote": "Ne: \"buccinatör ü\" → \"buccinator'u\" olarak düzeltildi, baş harf büyütüldü ve ok düzenlendi.\nNeden: Türkçe tıp imlasında buccinator yazılır, ö harfi kullanılmaz ve ek kesme işaretiyle ayrılmalıdır.\nNasıl: [YZ1, BÇ1] Ductus parotideus'un m. buccinator'u delerek 2. üst molar diş hizasında vestibulum oris'e açıldığı doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Ductus parotideus (Stensen kanalı) → m. {{c1::buccinator}}'u deler",
+       "after": "Ductus parotideus → m. {{c1::buccinator}}'u deler"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 172,
@@ -6017,7 +6592,7 @@
     },
     "Extra": {
      "before": "Gıdaların kaldığı yer",
-     "after": "Gıdaların ve yabancı cisimlerin takılabildiği yerdir; mukoza altındaki sinir hasarlanabilir."
+     "after": "Gıdaların takılabildiği yerdir."
     }
    },
    "changes": [
@@ -6036,7 +6611,21 @@
    ],
    "aiNote": "Ne: \"Laringophx'te\" → \"Laryngopharynx'te\", \"sup r. internus\" → \"superior'un ramus internus'u\" olarak düzeltildi ve Extra netleştirildi.\nNeden: Terim yazım hatası ve kısaltmalar telgraf biçimindeydi.\nNasıl: [YZ1, KS1, BÇ1] Recessus piriformis mukozası altında plica nervi laryngei'yi oluşturan r. internus n. laryngei superioris doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Gıdaların ve yabancı cisimlerin takılabildiği yerdir; mukoza altındaki sinir hasarlanabilir.",
+       "after": "Gıdaların takılabildiği yerdir."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 176,
@@ -6091,7 +6680,7 @@
     },
     "Extra": {
      "before": "Histerektomide önemli",
-     "after": "Histerektomi sırasında yaralanma riski yüksek olan otonom pleksustur."
+     "after": "Histerektomide önemlidir."
     }
    },
    "changes": [
@@ -6110,7 +6699,21 @@
    ],
    "aiNote": "Ne: \"hipogastricus\" → \"hypogastricus\" ve \"sacrouterina\" tekil tamlama olarak \"sacrouterinum\" yapıldı; Extra netleştirildi.\nNeden: Latince terim imlası ve çoğul-tekil uyumsuzluğu vardı.\nNasıl: [YZ1, BÇ1] Lig. sacrouterinum içinde seyreden plexus hypogastricus inferior'un histerektomideki klinik önemi korundu; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Histerektomi sırasında yaralanma riski yüksek olan otonom pleksustur.",
+       "after": "Histerektomide önemlidir."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 178,
@@ -6127,7 +6730,7 @@
     },
     "Extra": {
      "before": "Koku ve tat duyusu",
-     "after": "Koku (CN I) ve tat (CN VII, IX, X) duyularını taşır."
+     "after": "Koku ve tat duyusu."
     }
    },
    "changes": [
@@ -6146,7 +6749,21 @@
    ],
    "aiNote": "Ne: Başlık kraniyal sinir lif tipi olarak netleştirildi, \"KS\" yerine uluslararası \"CN\" standardı getirildi ve Extra'ya duyular yazıldı.\nNeden: Telgraf üslubu mevcuttu ve soru kökü eksikti.\nNasıl: [SN1, BÇ1] Özel visseral afferent modalitenin koku ve tat duyularını taşıyan 1, 7, 9 ve 10. kraniyal sinirlerde bulunduğu doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Koku (CN I) ve tat (CN VII, IX, X) duyularını taşır.",
+       "after": "Koku ve tat duyusu."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 179,
@@ -6163,7 +6780,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Görme (CN II) ile işitme ve denge (CN VIII) duyularını taşır."
+     "after": ""
     }
    },
    "changes": [
@@ -6182,7 +6799,21 @@
    ],
    "aiNote": "Ne: Soru kökü tam cümleye dönüştürüldü, \"KS'ler\" yerine \"CN\" kullanıldı ve Extra'ya görme ile işitme-denge eklendi.\nNeden: Telgraf üslubu mevcuttu.\nNasıl: [SN1, BÇ1] Görme ve vestibülokoklear duyuları taşıyan 2 ve 8. kraniyal sinirlerin ÖSA lifleri teyit edildi; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Görme (CN II) ile işitme ve denge (CN VIII) duyularını taşır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 180,
@@ -6301,7 +6932,7 @@
     },
     "Extra": {
      "before": "Fasc. gracilis - cuneatus arası&nbsp;",
-     "after": "Fasciculus gracilis ile fasciculus cuneatus'u birbirinden ayırır; T6 altında fasciculus cuneatus bulunmadığı için bu oluk da yoktur."
+     "after": "Fasciculus gracilis ile fasciculus cuneatus'u ayırır."
     }
    },
    "changes": [
@@ -6326,7 +6957,21 @@
    ],
    "aiNote": "Ne: \"pos\" → \"posterior\" açıldı, \"T6 üstünde\" → \"T6 segmenti üzerinde\" netleştirildi ve Extra açıklandı.\nNeden: \"pos\" kısaltmaydı ve seviye tanımı telgraf biçimindeydi.\nNasıl: [KS1, SN1, BÇ1] Fasciculus cuneatus'un yalnızca T6 üzerinde bulunması nedeniyle sulcus intermedius posterior'un sadece T6 üzerinde yer aldığı anatomik gerçeği korundu; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Fasciculus gracilis ile fasciculus cuneatus'u birbirinden ayırır; T6 altında fasciculus cuneatus bulunmadığı için bu oluk da yoktur.",
+       "after": "Fasciculus gracilis ile fasciculus cuneatus'u ayırır."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 184,
@@ -6413,7 +7058,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Ramus communicans griseus ise tüm spinal sinirlerde (C1-Co) bulunur."
+     "after": ""
     }
    },
    "changes": [
@@ -6432,7 +7077,21 @@
    ],
    "aiNote": "Ne: \"comminicans alba\" tamlama hatası \"communicans albus\" olarak düzeltildi, segment aralığı bağlandı ve Extra'ya griseus karşılaştırması eklendi.\nNeden: Latince tamlama ve cinsiyet uyumu (ramus erildir: albus) bozuktu.\nNasıl: [YZ1, BÇ1] Ramus communicans albus'un medulla spinalis'in cornu laterale (T1-L2) sempatik çıkışına özgü olduğu doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Ramus communicans griseus ise tüm spinal sinirlerde (C1-Co) bulunur.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 187,
@@ -6449,7 +7108,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Postganglionik sempatik lifler içerir."
+     "after": ""
     }
    },
    "changes": [
@@ -6468,7 +7127,21 @@
    ],
    "aiNote": "Ne: \"saf sempatik sinirdir\" → \"saf sempatik lif taşıyan sinirdir\" olarak netleştirildi ve Extra eklendi.\nNeden: İfade akıcı hâle getirildi.\nNasıl: [DB1, BÇ1] N. petrosus profundus'un a. carotis interna kılıfından gelen postganglionik sempatik lifleri taşıdığı teyit edildi; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Postganglionik sempatik lifler içerir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 188,
@@ -6823,7 +7496,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Cartilago thyroidea'nın üst kenarı seviyesine karşılık gelir."
+     "after": ""
     }
    },
    "changes": [
@@ -6842,7 +7515,21 @@
    ],
    "aiNote": "Ne: \"Carotis bifurcatio seviyesi\" başlığı akıcı soru köküne dönüştürüldü, kıkırdak seviyesi detayı Extra alanına eklendi.\nNeden: Telgraf üslubu, ok işareti ve en dash eksikliği giderildi.\nNasıl: [SN1, DB1, BÇ1] Bifurcatio carotidis'in C3–C4 vertebra ve cartilago thyroidea üst kenarı seviyesi doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Cartilago thyroidea'nın üst kenarı seviyesine karşılık gelir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 199,
@@ -6855,7 +7542,7 @@
    "fields": {
     "Text": {
      "before": "V. Magna cerebri nin döküldüğü sinus ---&gt;&nbsp;<div><br></div><div>Sinus {{c1::rectus}}</div>",
-     "after": "V. magna cerebri'nin (Galen veni) döküldüğü dural sinüs:<br><br><br>Sinus {{c1::rectus}}"
+     "after": "V. magna cerebri'nin döküldüğü dural sinüs:<br><br><br>Sinus {{c1::rectus}}"
     }
    },
    "changes": [
@@ -6874,7 +7561,21 @@
    ],
    "aiNote": "Ne: \"V. Magna cerebri nin döküldüğü sinus ---> Sinus rectus\" ifadesi akıcı soru köküne dönüştürüldü, eponim paranteze eklendi, baş harf düzeltildi.\nNeden: Ok işaretli telgraf üslubu ve yazım hatası (\"nin\") giderildi.\nNasıl: [DB1, BÇ1] V. magna cerebri ile sinus sagittalis inferior'un birleşerek sinus rectus'a döküldüğü doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "V. magna cerebri'nin (Galen veni) döküldüğü dural sinüs:<br><br><br>Sinus {{c1::rectus}}",
+       "after": "V. magna cerebri'nin döküldüğü dural sinüs:<br><br><br>Sinus {{c1::rectus}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 200,
@@ -7015,7 +7716,7 @@
    "fields": {
     "Text": {
      "before": "Art. Sellaris--&gt; Rotasyon {{c1::VAR}}<div><br></div><div>Art. {{c1::CarpoMetacarpalis pollicis}}</div><div>Art. {{c2::Sternoclav}}</div><div>Art. {{c1::CalcaneoCuboidea}}</div><div>Art. {{c2::İncudomallearis}}</div>",
-     "after": "Art. sellaris (eyer tipi eklem — pasif rotasyon {{c1::vardır}}) örnekleri:<br><br><br>Art. {{c1::carpometacarpalis pollicis}}<br>Art. {{c2::sternoclavicularis}}<br>Art. {{c1::calcaneocuboidea}}<br>Art. {{c2::incudomallearis}}"
+     "after": "Art. sellaris (pasif rotasyon {{c1::vardır}}) örnekleri:<br><br><br>Art. {{c1::carpometacarpalis pollicis}}<br>Art. {{c2::sternoclavicularis}}<br>Art. {{c1::calcaneocuboidea}}<br>Art. {{c2::incudomallearis}}"
     }
    },
    "changes": [
@@ -7034,7 +7735,21 @@
    ],
    "aiNote": "Ne: \"VAR\" all-caps vurgusu \"vardır\" yapıldı, CamelCase yazımlar ve kısaltmalar standartlaştırıldı.\nNeden: All-caps vurgusu ve yazarın CamelCase alışkanlığı giderildi.\nNasıl: [YZ1, BÇ1] Sellar eklemlerin yapısı ve örnekleri (CMC 1, art. sternoclavicularis, art. calcaneocuboidea, art. incudomallearis) doğrulandı; c1 (3 adet) ve c2 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Art. sellaris (eyer tipi eklem — pasif rotasyon {{c1::vardır}}) örnekleri:<br><br><br>Art. {{c1::carpometacarpalis pollicis}}<br>Art. {{c2::sternoclavicularis}}<br>Art. {{c1::calcaneocuboidea}}<br>Art. {{c2::incudomallearis}}",
+       "after": "Art. sellaris (pasif rotasyon {{c1::vardır}}) örnekleri:<br><br><br>Art. {{c1::carpometacarpalis pollicis}}<br>Art. {{c2::sternoclavicularis}}<br>Art. {{c1::calcaneocuboidea}}<br>Art. {{c2::incudomallearis}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 205,
@@ -7047,7 +7762,7 @@
    "fields": {
     "Text": {
      "before": "Chopart Eklemi (Art. Tarsi Transversa)<div><br></div><div>Art. {{c1::CalcaneoCuboidea}}</div><div><br></div><div>Art. {{c1::TaloCalcaneoNavicularis}}</div>",
-     "after": "Chopart eklemini (art. tarsi transversa) oluşturan eklemler:<br><br><br>Art. {{c1::calcaneocuboidea}}<br><br><br>Art. {{c1::talocalcaneonavicularis}} (pars talonavicularis)"
+     "after": "Chopart eklemini (art. tarsi transversa) oluşturan eklemler:<br><br><br>Art. {{c1::calcaneocuboidea}}<br><br><br>Art. {{c1::talonavicularis}}"
     }
    },
    "changes": [
@@ -7066,7 +7781,21 @@
    ],
    "aiNote": "Ne: CamelCase \"CalcaneoCuboidea\" ve \"TaloCalcaneoNavicularis\" düzeltildi, başlık netleştirildi.\nNeden: Yazarın CamelCase yazım alışkanlığı giderildi.\nNasıl: [YZ1, BÇ1] Chopart eklemini oluşturan art. calcaneocuboidea ve art. talonavicularis doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Chopart eklemini (art. tarsi transversa) oluşturan eklemler:<br><br><br>Art. {{c1::calcaneocuboidea}}<br><br><br>Art. {{c1::talocalcaneonavicularis}} (pars talonavicularis)",
+       "after": "Chopart eklemini (art. tarsi transversa) oluşturan eklemler:<br><br><br>Art. {{c1::calcaneocuboidea}}<br><br><br>Art. {{c1::talonavicularis}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 206,
@@ -7207,7 +7936,7 @@
    "fields": {
     "Text": {
      "before": "Treves'in damarsız plikası:<div><br></div><div>Recessus {{c1::İlioCaecalis inf}}</div>",
-     "after": "Treves'in damarsız plikası (avasküler plika) hangi çıkmazın ön sınırıdır:<br><br><br>Recessus {{c1::ileocaecalis inferior}}"
+     "after": "Treves'in damarsız plikası hangi çıkmazın ön sınırıdır:<br><br><br>Recessus {{c1::ileocaecalis inferior}}"
     }
    },
    "changes": [
@@ -7226,7 +7955,21 @@
    ],
    "aiNote": "Ne: \"İlioCaecalis inf\" CamelCase ve kısaltması \"ileocaecalis inferior\" yapıldı, soru kökü netleştirildi.\nNeden: CamelCase alışkanlığı ve telgraf başlığı giderildi.\nNasıl: [YZ1, BÇ1] Plica ileocaecalis inferior'un (Treves'in avasküler plikası) recessus ileocaecalis inferior'un ön sınırını oluşturduğu doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Treves'in damarsız plikası (avasküler plika) hangi çıkmazın ön sınırıdır:<br><br><br>Recessus {{c1::ileocaecalis inferior}}",
+       "after": "Treves'in damarsız plikası hangi çıkmazın ön sınırıdır:<br><br><br>Recessus {{c1::ileocaecalis inferior}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 211,
@@ -7303,7 +8046,7 @@
    "fields": {
     "Text": {
      "before": "Cavernöz Sinüse açılan tek dural sinüs:<div><br></div><div>Sinus {{c1::SphenoParietalis}}</div>",
-     "after": "Sinus cavernosus'a doğrudan açılan tek dural sinüs:<br><br><br>Sinus {{c1::sphenoparietalis}} (Breschet sinüsü)"
+     "after": "Sinus cavernosus'a doğrudan açılan tek dural sinüs:<br><br><br>Sinus {{c1::sphenoparietalis}}"
     }
    },
    "changes": [
@@ -7322,7 +8065,21 @@
    ],
    "aiNote": "Ne: \"SphenoParietalis\" CamelCase yazımı düzeltildi, Türkçe \"Cavernöz Sinüse\" yerine standart Latince yazıldı, eponim eklendi.\nNeden: CamelCase alışkanlığı ve tutarsız terminoloji giderildi.\nNasıl: [YZ1, BÇ1] Sinus cavernosus'a doğrudan açılan tek dural sinüsün sinus sphenoparietalis olduğu doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Sinus cavernosus'a doğrudan açılan tek dural sinüs:<br><br><br>Sinus {{c1::sphenoparietalis}} (Breschet sinüsü)",
+       "after": "Sinus cavernosus'a doğrudan açılan tek dural sinüs:<br><br><br>Sinus {{c1::sphenoparietalis}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 214,
@@ -7367,7 +8124,7 @@
    "fields": {
     "Text": {
      "before": "Anulus femoralis iç sınırı--&gt; Lig. {{c1::Lacunare}}",
-     "after": "Anulus femoralis'in medial (iç) sınırı: Lig. {{c1::lacunare}} (Gimbernat bağı)"
+     "after": "Anulus femoralis'in medial (iç) sınırı: Lig. {{c1::lacunare}}"
     }
    },
    "changes": [
@@ -7386,7 +8143,21 @@
    ],
    "aiNote": "Ne: Ok işareti kaldırıldı, iki nokta eklendi, eponim paranteze eklendi, baş harf düzeltildi.\nNeden: Ok işaretli telgraf üslubu giderildi.\nNasıl: [DB1, BÇ1] Anulus femoralis'in medial sınırının lig. lacunare (Gimbernat) olduğu doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Anulus femoralis'in medial (iç) sınırı: Lig. {{c1::lacunare}} (Gimbernat bağı)",
+       "after": "Anulus femoralis'in medial (iç) sınırı: Lig. {{c1::lacunare}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 216,
@@ -7399,11 +8170,11 @@
    "fields": {
     "Text": {
      "before": "{{c1::C1}} spinal sinirin <b>dermatom alanı YOK</b>",
-     "after": "Spinal sinirler arasında dermatom alanı bulunmayan tek sinir: {{c1::C1}} spinal sinirinin dermatom alanı yoktur."
+     "after": "{{c1::C1}} spinal sinirinin dermatom alanı yoktur."
     },
     "Extra": {
      "before": "Deri dalı olmadığı için&nbsp;",
-     "after": "Deri dalı (ramus cutaneus) bulunmadığı için dermatom alanı yoktur."
+     "after": "Deri dalı yoktur."
     }
    },
    "changes": [
@@ -7422,7 +8193,26 @@
    ],
    "aiNote": "Ne: \"YOK\" all-caps vurgusu \"yoktur\" yapıldı, soru kökü netleştirildi, Extra alanı düzenlendi.\nNeden: All-caps kullanımı ve telgraf üslubu giderildi.\nNasıl: [DB1, BÇ1] C1 spinal sinirin arka kökünde duyu lifi bulunmadığından dermatom alanı olmadığı doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Spinal sinirler arasında dermatom alanı bulunmayan tek sinir: {{c1::C1}} spinal sinirinin dermatom alanı yoktur.",
+       "after": "{{c1::C1}} spinal sinirinin dermatom alanı yoktur."
+      },
+      "Extra": {
+       "before": "Deri dalı (ramus cutaneus) bulunmadığı için dermatom alanı yoktur.",
+       "after": "Deri dalı yoktur."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8).",
+      "Aynı soruyu yineleyen yeni giriş cümlesi çıkarıldı; özgün kısa soru-cevap korundu (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 217,
@@ -7531,7 +8321,7 @@
    "fields": {
     "Text": {
      "before": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">Planum&nbsp;{{c1::Supracristale}}: L4/5 (LP için kılavuz)</span>",
-     "after": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">L4 vertebra seviyesinde lumbal ponksiyon için kılavuz olan düzlem: Planum {{c1::supracristale}} (Jacoby çizgisi)</span>"
+     "after": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">L4 vertebra seviyesinde lumbal ponksiyon için kılavuz olan düzlem: Planum {{c1::supracristale}}</span>"
     }
    },
    "changes": [
@@ -7550,7 +8340,21 @@
    ],
    "aiNote": "Ne: Telgraf satırı akıcı soru köküne dönüştürüldü, &nbsp; temizlendi, Jacoby çizgisi eponimi eklendi.\nNeden: Telgraf üslubu ve &nbsp; giderildi.\nNasıl: [DB1, BÇ1] L4 seviyesinde crista iliaca'ların tepelerini birleştiren planum supracristale doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">L4 vertebra seviyesinde lumbal ponksiyon için kılavuz olan düzlem: Planum {{c1::supracristale}} (Jacoby çizgisi)</span>",
+       "after": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">L4 vertebra seviyesinde lumbal ponksiyon için kılavuz olan düzlem: Planum {{c1::supracristale}}</span>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 221,
@@ -7627,7 +8431,7 @@
    "fields": {
     "Text": {
      "before": "Bacağın<div><br></div><div><b>Aşırı Ext</b>: Lig. cruciatum {{c1::Ant}}</div><div><br></div><div><b>Aşırı Flex</b>: Lig. cruciatum {{c1::Pos}}</div><div><br></div><div>Önler</div>",
-     "after": "Dizde<br><br><br>Aşırı ekstansiyonu lig. cruciatum {{c1::anterius}} önler<br><br><br>Aşırı fleksiyonu lig. cruciatum {{c1::posterius}} önler<br><br><br>Çapraz bağlar aşırı hareketi sınırlar"
+     "after": "Dizde<br><br><br>Aşırı ekstansiyonu lig. cruciatum {{c1::anterius}} önler<br><br><br>Aşırı fleksiyonu lig. cruciatum {{c1::posterius}} önler"
     }
    },
    "changes": [
@@ -7646,7 +8450,21 @@
    ],
    "aiNote": "Ne: \"Aşırı Ext / Flex\" kısaltmaları açıldı, \"Ant / Pos\" tam Latince yapıldı, \"Önler\" telgraf kelimesi kaldırıldı.\nNeden: Telgraf üslubu ve kısaltmalar giderildi.\nNasıl: [YZ1, BÇ1] Diz ekleminde ACL'nin hiperekstansiyonu, PCL'nin hiperfleksiyonu önlediği doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Dizde<br><br><br>Aşırı ekstansiyonu lig. cruciatum {{c1::anterius}} önler<br><br><br>Aşırı fleksiyonu lig. cruciatum {{c1::posterius}} önler<br><br><br>Çapraz bağlar aşırı hareketi sınırlar",
+       "after": "Dizde<br><br><br>Aşırı ekstansiyonu lig. cruciatum {{c1::anterius}} önler<br><br><br>Aşırı fleksiyonu lig. cruciatum {{c1::posterius}} önler"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 224,
@@ -7691,7 +8509,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::Ovaryum}}:<div><br></div><div>Lig. Latum Uteri içinde DEĞİL&nbsp;</div>",
-     "after": "Lig. latum uteri içinde yer almayan dişi üreme organı:<br><br><br>{{c1::Ovarium}} (arka yaprağa tutunur)"
+     "after": "Lig. latum uteri içinde yer almayan dişi üreme organı:<br><br><br>{{c1::Ovarium}}"
     }
    },
    "changes": [
@@ -7710,7 +8528,21 @@
    ],
    "aiNote": "Ne: \"DEĞİL\" all-caps vurgusu kaldırıldı, soru kökü netleştirildi, mesovarium ile arka yaprağa tutunma detayı eklendi.\nNeden: All-caps kullanımı ve telgraf üslubu giderildi.\nNasıl: [DB1, BÇ1] Ovarium'un lig. latum uteri içinde yer almadığı, arka yaprağa tutunduğu doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Lig. latum uteri içinde yer almayan dişi üreme organı:<br><br><br>{{c1::Ovarium}} (arka yaprağa tutunur)",
+       "after": "Lig. latum uteri içinde yer almayan dişi üreme organı:<br><br><br>{{c1::Ovarium}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 226,
@@ -7723,7 +8555,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::Lat}}. Menisküs:<div><br></div><div>Daha Geniş Daha Hareketli</div>",
-     "after": "Daha hareketli olan ve neredeyse tam halka oluşturan menisküs:<br><br><br>Meniscus {{c1::lateralis}}"
+     "after": "Daha geniş ve daha hareketli olan menisküs:<br><br><br>Meniscus {{c1::lateralis}}"
     }
    },
    "changes": [
@@ -7742,7 +8574,21 @@
    ],
    "aiNote": "Ne: \"Lat. Menisküs: Daha Geniş Daha Hareketli\" telgraf ifadesi akıcı soru köküne çevrildi, Latince terim yazıldı.\nNeden: Kısaltma ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Meniscus lateralis'in LCL'ye tutunmadığı için meniscus medialis'e göre daha hareketli olduğu doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Daha hareketli olan ve neredeyse tam halka oluşturan menisküs:<br><br><br>Meniscus {{c1::lateralis}}",
+       "after": "Daha geniş ve daha hareketli olan menisküs:<br><br><br>Meniscus {{c1::lateralis}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 227,
@@ -8079,7 +8925,7 @@
    "fields": {
     "Text": {
      "before": "<b>Foramen İnterVentriculare:</b><div><br></div><div>V. {{c1::Thalamostriata sup}} - V. {{c1::Ant. Septi pellucidi}} birleştiği yer</div>",
-     "after": "Foramen interventriculare (Monro) hizasında birleşerek v. interna cerebri'yi oluşturan venler:<br><br><br>v. {{c1::thalamostriata superior}} + v. {{c1::anterior septi pellucidi}}"
+     "after": "Foramen interventriculare hizasında birleşerek v. interna cerebri'yi oluşturan venler:<br><br><br>v. {{c1::thalamostriata superior}} + v. {{c1::anterior septi pellucidi}}"
     }
    },
    "changes": [
@@ -8098,7 +8944,21 @@
    ],
    "aiNote": "Ne: CamelCase \"İnterVentriculare\" düzeltildi, kısaltmalar açıldı, Monro eponimi eklendi, özgün iki satır korundu.\nNeden: CamelCase alışkanlığı ve kısaltmalar giderildi.\nNasıl: [YZ1, BÇ1] Foramen interventriculare'de birleşerek v. interna cerebri'yi oluşturan v. thalamostriata superior ve v. anterior septi pellucidi doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Foramen interventriculare (Monro) hizasında birleşerek v. interna cerebri'yi oluşturan venler:<br><br><br>v. {{c1::thalamostriata superior}} + v. {{c1::anterior septi pellucidi}}",
+       "after": "Foramen interventriculare hizasında birleşerek v. interna cerebri'yi oluşturan venler:<br><br><br>v. {{c1::thalamostriata superior}} + v. {{c1::anterior septi pellucidi}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 238,
@@ -8111,7 +8971,7 @@
    "fields": {
     "Text": {
      "before": "<b>Schlemm Kanalları( Sinus Venosus Sclerae):</b><div><br></div><div>Vv. {{c1::Ciliares anteriores}}'lere drene olur</div>",
-     "after": "Sinus venosus sclerae'nin (Schlemm kanalı) drene olduğu venler:<br><br><br>Vv. {{c1::ciliares anteriores}} (ve episkleral venler)"
+     "after": "Sinus venosus sclerae'nin (Schlemm kanalı) drene olduğu venler:<br><br><br>Vv. {{c1::ciliares anteriores}}"
     }
    },
    "changes": [
@@ -8130,7 +8990,21 @@
    ],
    "aiNote": "Ne: \"Schlemm Kanalları( Sinus Venosus Sclerae):\" başlığı düzenlendi, baş harfler ve tamlama akıcı hâle getirildi.\nNeden: Bozuk parantez ve telgraf üslubu giderildi.\nNasıl: [DB1, BÇ1] Schlemm kanalının vv. ciliares anteriores'e drene olduğu doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Sinus venosus sclerae'nin (Schlemm kanalı) drene olduğu venler:<br><br><br>Vv. {{c1::ciliares anteriores}} (ve episkleral venler)",
+       "after": "Sinus venosus sclerae'nin (Schlemm kanalı) drene olduğu venler:<br><br><br>Vv. {{c1::ciliares anteriores}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 239,
@@ -8143,7 +9017,7 @@
    "fields": {
     "Text": {
      "before": "(ParaVertebral)Truncus Sympaticus'tan çıkan PostGang Semp Lifler --&gt; {{c1::Deri ve Eklerine}}<div><br></div><div>PreVertebral Gamg PostGang Semp Lifleri --&gt; {{c1::Vissera organlara&nbsp;}}</div><div><br></div><div>Gider</div>",
-     "after": "Sempatik postganglionik liflerin hedef dağılımları:<br><br><br>Paravertebral ganglionlardan (truncus sympathicus) çıkan lifler: {{c1::Deri ve eklerine}} (damarlar, ter bezleri) gider<br><br><br>Prevertebral ganglionlardan çıkan lifler: {{c1::Viseral organlara}} (iç organlar) gider"
+     "after": "Sempatik postganglionik liflerin hedef dağılımları:<br><br><br>Paravertebral ganglionlardan (truncus sympathicus) çıkan lifler: {{c1::Deri ve eklerine}} gider<br><br><br>Prevertebral ganglionlardan çıkan lifler: {{c1::Viseral organlara}} gider"
     }
    },
    "changes": [
@@ -8162,7 +9036,21 @@
    ],
    "aiNote": "Ne: CamelCase yazımlar düzeltildi, yazım hataları (\"Gamg\", \"Vissera\") giderildi, \"Gider\" yüklemi maddelere yedirildi.\nNeden: CamelCase alışkanlığı, yazım hataları ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Paravertebral liflerin deri ve eklerine, prevertebral liflerin iç organlara dağılımı doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Sempatik postganglionik liflerin hedef dağılımları:<br><br><br>Paravertebral ganglionlardan (truncus sympathicus) çıkan lifler: {{c1::Deri ve eklerine}} (damarlar, ter bezleri) gider<br><br><br>Prevertebral ganglionlardan çıkan lifler: {{c1::Viseral organlara}} (iç organlar) gider",
+       "after": "Sempatik postganglionik liflerin hedef dağılımları:<br><br><br>Paravertebral ganglionlardan (truncus sympathicus) çıkan lifler: {{c1::Deri ve eklerine}} gider<br><br><br>Prevertebral ganglionlardan çıkan lifler: {{c1::Viseral organlara}} gider"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 240,
@@ -8339,7 +9227,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "PICA sendromunda bulbus medialindeki bu yapılar korunur."
+     "after": ""
     }
    },
    "changes": [
@@ -8364,7 +9252,21 @@
    ],
    "aiNote": "Ne: \"Send.\" ve kısaltmalar tam Latince biçimleriyle açıldı; \"tutmaz\" telgraf ifadesi \"lezyona UĞRAMAYAN yapılar:\" olarak netleştirildi.\nNeden: Kısaltmalar, karmaşık HTML artıkları ve olumsuz telgraf ifadesi vardı.\nNasıl: [SN1, YZ1, BÇ1] Bulbus medialinde yer alan piramis (kortikospinal yol), n. hypoglossus ve lemniscus medialis'in Wallenberg sendromunda korunduğu klasik TUS kuralı vurgulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "PICA sendromunda bulbus medialindeki bu yapılar korunur.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 246,
@@ -8527,7 +9429,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Dejerine-Roussy talamik ağrı sendromu olarak bilinir."
+     "after": ""
     }
    },
    "changes": [
@@ -8546,7 +9448,21 @@
    ],
    "aiNote": "Ne: \"Hiperalji\" → \"hiperaljezi\" düzeltildi, büyük harfler küçültüldü ve Extra'ya Dejerine-Roussy sendromu eklendi.\nNeden: Terim yazım hatası ve cümle içi büyük harf vardı.\nNasıl: [YZ1, BÇ1] Talamus VPL/VPM çekirdek lezyonlarında karşı taraf anestezi ve ardından şiddetli talamik ağrı geliştiği doğrulandı; c1 ve c2 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Dejerine-Roussy talamik ağrı sendromu olarak bilinir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 251,
@@ -8677,7 +9593,7 @@
    "fields": {
     "Text": {
      "before": "Dura mater'in beslenmesi<div><br></div><div>A. {{c1::meningea med.&nbsp;}}<div><br></div><div>A. {{c2::ophtalmica&nbsp;}}</div><div><br></div><div>A. {{c1::pharyngea}} asc</div><div><br></div><div>A. {{c2::occipitalis}}</div><div><br></div><div>A. {{c1::vertebralis&nbsp;}}</div></div>",
-     "after": "Dura mater'i besleyen arterler:<div><br></div><div>a. {{c1::meningea media}}<div><br></div><div>a. {{c2::ophthalmica}} dalları (a. ethmoidalis anterior ve posterior)</div><div><br></div><div>a. {{c1::pharyngea ascendens}}</div><div><br></div><div>a. {{c2::occipitalis}}</div><div><br></div><div>a. {{c1::vertebralis}}</div></div>"
+     "after": "Dura mater'i besleyen arterler:<div><br></div><div>a. {{c1::meningea media}}<div><br></div><div>a. {{c2::ophthalmica}} dalları</div><div><br></div><div>a. {{c1::pharyngea ascendens}}</div><div><br></div><div>a. {{c2::occipitalis}}</div><div><br></div><div>a. {{c1::vertebralis}}</div></div>"
     }
    },
    "changes": [
@@ -8696,7 +9612,21 @@
    ],
    "aiNote": "Ne: \"ophtalmica\" harf hatası \"ophthalmica\" olarak düzeltildi; \"med.\" ve \"asc\" kısaltmaları açıldı, A. → a. yapıldı.\nNeden: Harf yanlışı, kısaltmalar ve baş harf uyumsuzluğu vardı.\nNasıl: [YZ1, KS1, BÇ1] Dura mater'i besleyen ana meningeal arterler ve dalları Terminologia Anatomica terimleriyle yazıldı; c1 ve c2 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Dura mater'i besleyen arterler:<div><br></div><div>a. {{c1::meningea media}}<div><br></div><div>a. {{c2::ophthalmica}} dalları (a. ethmoidalis anterior ve posterior)</div><div><br></div><div>a. {{c1::pharyngea ascendens}}</div><div><br></div><div>a. {{c2::occipitalis}}</div><div><br></div><div>a. {{c1::vertebralis}}</div></div>",
+       "after": "Dura mater'i besleyen arterler:<div><br></div><div>a. {{c1::meningea media}}<div><br></div><div>a. {{c2::ophthalmica}} dalları</div><div><br></div><div>a. {{c1::pharyngea ascendens}}</div><div><br></div><div>a. {{c2::occipitalis}}</div><div><br></div><div>a. {{c1::vertebralis}}</div></div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 255,
@@ -8901,7 +9831,7 @@
    "fields": {
     "Text": {
      "before": "BOS 4. Ventrikulden --&gt; Cisterna {{c1::cerebellomedullaris}}'e (en büyük cisterna)<div><br></div><div>Foramen {{c2::magendie (apertura mediana)}} yoluyla geçer</div>",
-     "after": "BOS'un 4. ventrikülden cisterna {{c1::cerebellomedullaris}}'e (cisterna magna) geçmesini sağlayan açıklık:<br><br><br>Foramen {{c2::magendie (apertura mediana)}}"
+     "after": "BOS'un 4. ventrikülden cisterna {{c1::cerebellomedullaris}}'e geçmesini sağlayan açıklık:<br><br><br>Foramen {{c2::magendie (apertura mediana)}}"
     }
    },
    "changes": [
@@ -8920,7 +9850,21 @@
    ],
    "aiNote": "Ne: \"BOS 4. Ventrikulden --> Cisterna cerebellomedullaris'e (en büyük cisterna) Foramen magendie (apertura mediana) yoluyla geçer\" ifadesi akıcı soru köküne çevrildi.\nNeden: Ok işaretli telgraf üslubu giderildi.\nNasıl: [DB1, BÇ1] 4. ventrikülden cisterna cerebellomedullaris'e orta hatta apertura mediana (foramen Magendie) ile geçiş olduğu doğrulandı; c1 ve c2 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "BOS'un 4. ventrikülden cisterna {{c1::cerebellomedullaris}}'e (cisterna magna) geçmesini sağlayan açıklık:<br><br><br>Foramen {{c2::magendie (apertura mediana)}}",
+       "after": "BOS'un 4. ventrikülden cisterna {{c1::cerebellomedullaris}}'e geçmesini sağlayan açıklık:<br><br><br>Foramen {{c2::magendie (apertura mediana)}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 262,
@@ -9225,7 +10169,7 @@
    "fields": {
     "Text": {
      "before": "Cisterna {{c1::Quadrigeminalis (Sup)}} &nbsp;içinde:<div><br></div><div>{{c2::Epifiz bezi}}</div><div>V. {{c2::Magna cerebri}}</div><div>A. {{c2::Cerebri Pos}}</div><div>N. {{c2::Trochlearis}}&nbsp;</div>",
-     "after": "Cisterna {{c1::quadrigeminalis (superior)}} içindeki oluşumlar:<br><br><br>{{c2::Corpus pineale (epifiz bezi)}}<br>v. {{c2::magna cerebri}} (Galen veni)<br>a. {{c2::cerebri posterior}}<br>n. {{c2::trochlearis}}"
+     "after": "Cisterna {{c1::quadrigeminalis (superior)}} içindeki oluşumlar:<br><br><br>{{c2::Corpus pineale}}<br>v. {{c2::magna cerebri}}<br>a. {{c2::cerebri posterior}}<br>n. {{c2::trochlearis}}"
     }
    },
    "changes": [
@@ -9244,7 +10188,21 @@
    ],
    "aiNote": "Ne: \"Cisterna Quadrigeminalis (Sup) içinde:\" başlığı \"Cisterna quadrigeminalis (superior) içindeki oluşumlar:\" yapıldı, kısaltmalar açıldı.\nNeden: Telgraf kısaltmaları ve baş harf hataları giderildi.\nNasıl: [YZ1, BÇ1] Cisterna quadrigeminalis içinde epifiz bezi, Galen veni, a. cerebri posterior dalları ve n. trochlearis'in yer aldığı doğrulandı; c1 (1 adet) ve c2 (4 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Cisterna {{c1::quadrigeminalis (superior)}} içindeki oluşumlar:<br><br><br>{{c2::Corpus pineale (epifiz bezi)}}<br>v. {{c2::magna cerebri}} (Galen veni)<br>a. {{c2::cerebri posterior}}<br>n. {{c2::trochlearis}}",
+       "after": "Cisterna {{c1::quadrigeminalis (superior)}} içindeki oluşumlar:<br><br><br>{{c2::Corpus pineale}}<br>v. {{c2::magna cerebri}}<br>a. {{c2::cerebri posterior}}<br>n. {{c2::trochlearis}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 272,
@@ -9257,7 +10215,7 @@
    "fields": {
     "Text": {
      "before": "Cisterna {{c2::Fossa Lateralis Cerebri}} içinde:<div><br></div><div>{{c1::A. Cerebri Med}} var</div>",
-     "after": "Cisterna {{c2::fossae lateralis cerebri}} (Sylvius sisternası) içinde bulunan arter:<br><br><br>{{c1::A. cerebri media}}"
+     "after": "Cisterna {{c2::fossae lateralis cerebri}} içinde bulunan arter:<br><br><br>{{c1::A. cerebri media}}"
     }
    },
    "changes": [
@@ -9276,7 +10234,21 @@
    ],
    "aiNote": "Ne: \"Cisterna Fossa Lateralis Cerebri içinde: A. Cerebri Med var\" ifadesi tam Latince soru köküne dönüştürüldü.\nNeden: Telgraf üslubu ve kısaltmalar düzeltildi.\nNasıl: [YZ1, BÇ1] Fossa lateralis cerebri (Sylvius) sisternası içinde a. cerebri media'nın (MCA) seyrettiği doğrulandı; c1 (1 adet) ve c2 (1 adet) korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Cisterna {{c2::fossae lateralis cerebri}} (Sylvius sisternası) içinde bulunan arter:<br><br><br>{{c1::A. cerebri media}}",
+       "after": "Cisterna {{c2::fossae lateralis cerebri}} içinde bulunan arter:<br><br><br>{{c1::A. cerebri media}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 273,
@@ -9289,7 +10261,7 @@
    "fields": {
     "Text": {
      "before": "PS Nuc'lar<div><br></div><div>3: {{c1::Edinger Westphal ( Nuc . Accs. N. Occu)}}</div><div><br></div><div>7: Nuc. {{c1::Salivatorius Sup}}</div><div><br></div><div>9: Nuc. {{c1::Salivatorius İnf}}</div><div><br></div><div>10: Nuc. {{c1::Pos(Dorsalis) N. Vagi}}</div>",
-     "after": "Kranyal sinirlerin parasempatik (GVE) nükleusları:<br><br><br>CN III: {{c1::Nucleus accessorius n. oculomotorii (Edinger-Westphal)}}<br><br><br>CN VII: Nucleus {{c1::salivatorius superior}}<br><br><br>CN IX: Nucleus {{c1::salivatorius inferior}}<br><br><br>CN X: Nucleus {{c1::posterior (dorsalis) n. vagi}}"
+     "after": "Kranyal sinirlerin parasempatik (GVE) nükleusları:<br><br><br>CN III: {{c1::Nucleus accessorius n. oculomotorii}}<br><br><br>CN VII: Nucleus {{c1::salivatorius superior}}<br><br><br>CN IX: Nucleus {{c1::salivatorius inferior}}<br><br><br>CN X: Nucleus {{c1::posterior (dorsalis) n. vagi}}"
     }
    },
    "changes": [
@@ -9308,7 +10280,21 @@
    ],
    "aiNote": "Ne: \"PS Nuc'lar\" başlığı tam Latince ve Türkçe ile yazıldı, kısaltmalar (\"Accs\", \"Occu\", \"Sup\", \"İnf\", \"Pos\") açıldı.\nNeden: Aşırı telgraf kısaltmaları ve bozuk parantez içi yazımlar giderildi.\nNasıl: [YZ1, BÇ1] 3, 7, 9 ve 10. kranyal sinirlerin parasempatik genel visseral efferent çekirdekleri doğrulandı; c1 (4 adet) cloze sayısı tam korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Kranyal sinirlerin parasempatik (GVE) nükleusları:<br><br><br>CN III: {{c1::Nucleus accessorius n. oculomotorii (Edinger-Westphal)}}<br><br><br>CN VII: Nucleus {{c1::salivatorius superior}}<br><br><br>CN IX: Nucleus {{c1::salivatorius inferior}}<br><br><br>CN X: Nucleus {{c1::posterior (dorsalis) n. vagi}}",
+       "after": "Kranyal sinirlerin parasempatik (GVE) nükleusları:<br><br><br>CN III: {{c1::Nucleus accessorius n. oculomotorii}}<br><br><br>CN VII: Nucleus {{c1::salivatorius superior}}<br><br><br>CN IX: Nucleus {{c1::salivatorius inferior}}<br><br><br>CN X: Nucleus {{c1::posterior (dorsalis) n. vagi}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 274,
@@ -9321,7 +10307,7 @@
    "fields": {
     "Text": {
      "before": "Nuc lezyonu <b>kontrlat</b> belirti veren KS:<div><br></div><div>{{c1::4}}. KS</div>",
-     "after": "Çekirdek lezyonu kontralateral (karşı taraf) belirti veren tek kranyal sinir:<br><br><br>{{c1::4}}. kranyal sinir (n. trochlearis)"
+     "after": "Çekirdek lezyonu kontralateral belirti veren tek kranyal sinir:<br><br><br>{{c1::4}}. kranyal sinir"
     }
    },
    "changes": [
@@ -9340,7 +10326,21 @@
    ],
    "aiNote": "Ne: \"Nuc lezyonu kontrlat belirti veren KS:\" başlığı \"Çekirdek lezyonu kontralateral (karşı taraf) belirti veren tek kranyal sinir:\" yapıldı.\nNeden: Telgraf kısaltmaları ve kaba başlık düzeltildi.\nNasıl: [DB1, BÇ1] Velum medullare superius'ta lifleri tam çapraz yapan n. trochlearis'in çekirdek lezyonunun kontralateral bulgu verdiği doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Çekirdek lezyonu kontralateral (karşı taraf) belirti veren tek kranyal sinir:<br><br><br>{{c1::4}}. kranyal sinir (n. trochlearis)",
+       "after": "Çekirdek lezyonu kontralateral belirti veren tek kranyal sinir:<br><br><br>{{c1::4}}. kranyal sinir"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 275,
@@ -9357,7 +10357,7 @@
     },
     "Extra": {
      "before": "Her bi tarafta 4 tane",
-     "after": "Her bir tarafta 4 adet (superior, inferior, medialis, lateralis)."
+     "after": "Her iki tarafta dörder adet."
     }
    },
    "changes": [
@@ -9376,7 +10376,21 @@
    ],
    "aiNote": "Ne: CamelCase \"BulboPontin\" küçük harfe çevrildi, telgraf sonu akıcı cümleye bağlandı, Extra alanı düzenlendi.\nNeden: Yazarın CamelCase alışkanlığı ve telgraf üslubu düzeltildi.\nNasıl: [YZ1, BÇ1] Fossa rhomboidea'da bulbo-pontin bileşkede her iki tarafta 4'er adet (toplam 8) vestibüler nükleus bulunduğu doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Her bir tarafta 4 adet (superior, inferior, medialis, lateralis).",
+       "after": "Her iki tarafta dörder adet."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 276,
@@ -9485,7 +10499,7 @@
    "fields": {
     "Text": {
      "before": "{{c1::43}} nolu Brodman --&gt; Tat merkezi<div><br></div><div>{{c1::Parietal}} lob<br></div>",
-     "after": "Primer tat merkezi (Brodmann alanı {{c1::43}}):<div><br></div><div>Lobus {{c1::parietalis}} (gyrus postcentralis)</div>"
+     "after": "Primer tat merkezi (Brodmann alanı {{c1::43}}):<div><br></div><div>Lobus {{c1::parietalis}}</div>"
     }
    },
    "changes": [
@@ -9504,7 +10518,21 @@
    ],
    "aiNote": "Ne: Kısaltma açıldı, Terminologia Anatomica yazımı sağlandı.\nNeden: Terminoloji ve anlatım düzeltildi.\nNasıl: [YZ1, BÇ1, YP1] İki satırlı yapı, boş satır ve iki c1 yanıtı korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Primer tat merkezi (Brodmann alanı {{c1::43}}):<div><br></div><div>Lobus {{c1::parietalis}} (gyrus postcentralis)</div>",
+       "after": "Primer tat merkezi (Brodmann alanı {{c1::43}}):<div><br></div><div>Lobus {{c1::parietalis}}</div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 280,
@@ -9773,7 +10801,7 @@
    "fields": {
     "Text": {
      "before": "<b>Tr. TectoSpinalis:</b><div><br></div><div>{{c1::Colliculus Sup}}'dan başlar&nbsp;</div><div><br></div><div>Decussatio Tegmentalis {{c1::Pos}} çaprazını yapar<br></div>",
-     "after": "Tractus tectospinalis'in başlangıcı ve yaptığı tegmental çapraz:<br><br><br>Başlangıç merkezi: {{c1::Colliculus superior}}<br><br><br>Yaptığı çapraz: Decussatio tegmentalis {{c1::posterior}} (Meynert çaprazı)"
+     "after": "Tractus tectospinalis'in başlangıcı ve yaptığı tegmental çapraz:<br><br><br>Başlangıç merkezi: {{c1::Colliculus superior}}<br><br><br>Yaptığı çapraz: Decussatio tegmentalis {{c1::posterior}}"
     }
    },
    "changes": [
@@ -9792,7 +10820,21 @@
    ],
    "aiNote": "Ne: CamelCase düzeltildi, kısaltmalar açıldı, Meynert çaprazı eponimi eklendi.\nNeden: CamelCase alışkanlığı ve kısaltmalar giderildi.\nNasıl: [YZ1, BÇ1] Tr. tectospinalis'in colliculus superior'dan başlayıp decussatio tegmentalis posterior'da çapraz yaptığı doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Tractus tectospinalis'in başlangıcı ve yaptığı tegmental çapraz:<br><br><br>Başlangıç merkezi: {{c1::Colliculus superior}}<br><br><br>Yaptığı çapraz: Decussatio tegmentalis {{c1::posterior}} (Meynert çaprazı)",
+       "after": "Tractus tectospinalis'in başlangıcı ve yaptığı tegmental çapraz:<br><br><br>Başlangıç merkezi: {{c1::Colliculus superior}}<br><br><br>Yaptığı çapraz: Decussatio tegmentalis {{c1::posterior}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 289,
@@ -9805,11 +10847,11 @@
    "fields": {
     "Text": {
      "before": "<b>Moritz Benedict </b>Send:<div><br></div><div>{{c1::Mesencephalon Tegmentum ve Nuc. Ruber}} Hasarı&nbsp;</div>",
-     "after": "Benedikt sendromunda (paramedian mezensefalik sendrom) etkilenen yapılar:<br><br><br>{{c1::Mesencephalon tegmentum'u ve nucleus ruber}} (ve CN III lifleri)"
+     "after": "Benedikt sendromunda etkilenen yapılar:<br><br><br>{{c1::Mesencephalon tegmentum'u ve nucleus ruber}}"
     },
     "Extra": {
      "before": "Kortikospinal tr etkilenmez",
-     "after": "Tractus corticospinalis tegmentumda olmadığı için bu sendromda etkilenmez."
+     "after": "Tractus corticospinalis etkilenmez."
     }
    },
    "changes": [
@@ -9828,7 +10870,26 @@
    ],
    "aiNote": "Ne: \"Moritz Benedict\" yazımı \"Benedikt sendromu\" yapıldı, tegmentum ve nuc. ruber standartlaştırıldı.\nNeden: Yazım hatası ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Benedikt sendromunda mesencephalon tegmentumu, nuc. ruber ve CN III hasarı doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Benedikt sendromunda (paramedian mezensefalik sendrom) etkilenen yapılar:<br><br><br>{{c1::Mesencephalon tegmentum'u ve nucleus ruber}} (ve CN III lifleri)",
+       "after": "Benedikt sendromunda etkilenen yapılar:<br><br><br>{{c1::Mesencephalon tegmentum'u ve nucleus ruber}}"
+      },
+      "Extra": {
+       "before": "Tractus corticospinalis tegmentumda olmadığı için bu sendromda etkilenmez.",
+       "after": "Tractus corticospinalis etkilenmez."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8).",
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 290,
@@ -9845,7 +10906,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Yüz venleri kapaksızdır; enfeksiyon retrograd yayılabilir."
+     "after": ""
     }
    },
    "changes": [
@@ -9864,7 +10925,21 @@
    ],
    "aiNote": "Ne: Kısaltmalar açıldı, ASCII oklar Unicode oklara dönüştürüldü, Extra alanına açıklama eklendi.\nNeden: Kısaltmalar, ASCII oklar ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Yüz venlerinden v. angularis ve plexus pterygoideus üzerinden kavernöz sinüse yayılım yolları doğrulandı; c1 (1 adet) ve c2 (1 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Yüz venleri kapaksızdır; enfeksiyon retrograd yayılabilir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 291,
@@ -9909,7 +10984,7 @@
    "fields": {
     "Text": {
      "before": "<b>Formatio Hipocampi:</b><div><br></div><div>HipoCampus</div><div>+</div><div>Gyrus {{c1::Dentatus}}</div><div>+&nbsp;</div><div>{{c1::Subiculum}}</div>",
-     "after": "Formatio hippocampi:<br><br><br>Hippocampus (cornu Ammonis)<br>+<br>Gyrus {{c1::dentatus}}<br>+<br>{{c1::Subiculum}}"
+     "after": "Formatio hippocampi:<br><br><br>Hippocampus<br>+<br>Gyrus {{c1::dentatus}}<br>+<br>{{c1::Subiculum}}"
     }
    },
    "changes": [
@@ -9928,7 +11003,21 @@
    ],
    "aiNote": "Ne: \"Hipocampi\" ve \"HipoCampus\" çift \"p\" ile düzeltildi, artı işaretleri kaldırılarak maddelendi.\nNeden: Yazım hatası ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Formatio hippocampi yapıları (hippocampus, gyrus dentatus, subiculum) doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Formatio hippocampi:<br><br><br>Hippocampus (cornu Ammonis)<br>+<br>Gyrus {{c1::dentatus}}<br>+<br>{{c1::Subiculum}}",
+       "after": "Formatio hippocampi:<br><br><br>Hippocampus<br>+<br>Gyrus {{c1::dentatus}}<br>+<br>{{c1::Subiculum}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 293,
@@ -10037,7 +11126,7 @@
    "fields": {
     "Text": {
      "before": "Pelvik splanknik sinirler (S2-4) ile aynı spinal segmentlerden lif içeren periferik sinir {{c1::N. pudendus}} tur&nbsp;",
-     "after": "Nn. splanchnici pelvici (S2-S4) ile aynı spinal segmentlerden kök alan periferik sinir → {{c1::n. pudendus}}"
+     "after": "Nn. splanchnici pelvici ile aynı spinal segmentlerden kök alan periferik sinir → {{c1::n. pudendus}}"
     }
    },
    "changes": [
@@ -10056,7 +11145,21 @@
    ],
    "aiNote": "Ne: \"Pelvik splanknik sinirler\" Latince terimine çevrildi, \"tur\" eki kaldırılıp okla bağlandı, baş harf küçültüldü.\nNeden: Türkçe-Latince karma üslup ve bitişik yazılan ek mevcuttu.\nNasıl: [YZ1, BÇ1] S2-S4 segmentlerinden çıkan parasempatik nn. splanchnici pelvici ile aynı seviyeden çıkan somatomotor ve somatosensitif n. pudendus eşleşmesi doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Nn. splanchnici pelvici (S2-S4) ile aynı spinal segmentlerden kök alan periferik sinir → {{c1::n. pudendus}}",
+       "after": "Nn. splanchnici pelvici ile aynı spinal segmentlerden kök alan periferik sinir → {{c1::n. pudendus}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 297,
@@ -10069,7 +11172,7 @@
    "fields": {
     "Text": {
      "before": "Bulbouretral bezlerin açıldığı bölüm:<div><br></div><div>Üretra pars {{c1::Spongiosa}}</div>",
-     "after": "Glandula bulbourethralis'in (Cowper bezi) kanallarının açıldığı üretra bölümü:<br><br><br>Pars {{c1::spongiosa}}"
+     "after": "Glandula bulbourethralis'in kanallarının açıldığı üretra bölümü:<br><br><br>Pars {{c1::spongiosa}}"
     }
    },
    "changes": [
@@ -10088,7 +11191,21 @@
    ],
    "aiNote": "Ne: \"Bulbouretral bezlerin açıldığı bölüm: Üretra pars Spongiosa\" ifadesi \"Glandula bulbourethralis'in (Cowper bezi) kanallarının açıldığı üretra bölümü: Pars spongiosa\" olarak düzenlendi.\nNeden: Standart anatomik terim ve eponim eklendi, baş harf düzeltildi.\nNasıl: [YZ1, BÇ1] Bezin kendisi spatium perinei profundum'da yer alırken kanallarının urethra pars spongiosa'ya (bulbus penis) açıldığı TUS bilgisi doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Glandula bulbourethralis'in (Cowper bezi) kanallarının açıldığı üretra bölümü:<br><br><br>Pars {{c1::spongiosa}}",
+       "after": "Glandula bulbourethralis'in kanallarının açıldığı üretra bölümü:<br><br><br>Pars {{c1::spongiosa}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 298,
@@ -10133,7 +11250,7 @@
    "fields": {
     "Text": {
      "before": "Anal kanalda her bir Columna Analis altında:<div><br></div><div>A.V. {{c1::Rectalis Sup}} uç dalı var</div>",
-     "after": "Anal kanalda her bir columna analis (Morgagni sütunu) altında yer alan damar dalları:<br><br><br>A. ve V. {{c1::rectalis superior}} uç dalları"
+     "after": "Anal kanalda her bir columna analis altında yer alan damar dalları:<br><br><br>A. ve V. {{c1::rectalis superior}} uç dalları"
     }
    },
    "changes": [
@@ -10152,7 +11269,21 @@
    ],
    "aiNote": "Ne: \"Columna Analis\" baş harfleri küçültüldü, \"Rectalis Sup\" kısaltması açıldı, Morgagni sütunu eponimi eklendi.\nNeden: Kısaltma ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Columnae anales submukozasında yer alan a. ve v. rectalis superior dalları doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Anal kanalda her bir columna analis (Morgagni sütunu) altında yer alan damar dalları:<br><br><br>A. ve V. {{c1::rectalis superior}} uç dalları",
+       "after": "Anal kanalda her bir columna analis altında yer alan damar dalları:<br><br><br>A. ve V. {{c1::rectalis superior}} uç dalları"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 300,
@@ -10229,7 +11360,7 @@
    "fields": {
     "Text": {
      "before": "M. Sfinkter Ani <b>Ext - İnt</b> sınırı:<div><br></div><div>{{c1::Linea Anocutanea}}</div>",
-     "after": "M. sphincter ani internus ile externus'un alt sınırını ayıran hat:<br><br><br>{{c1::Linea anocutanea}} (Hilton beyaz çizgisi)"
+     "after": "M. sphincter ani internus ile externus'un alt sınırını ayıran hat:<br><br><br>{{c1::Linea anocutanea}}"
     }
    },
    "changes": [
@@ -10248,7 +11379,21 @@
    ],
    "aiNote": "Ne: \"Sfinkter\" terimi \"sphincter\" yapıldı, kısaltmalar açıldı, Hilton çizgisi eponimi eklendi.\nNeden: İmla hatası ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] M. sphincter ani internus ile externus arasındaki sınır olan linea anocutanea doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "M. sphincter ani internus ile externus'un alt sınırını ayıran hat:<br><br><br>{{c1::Linea anocutanea}} (Hilton beyaz çizgisi)",
+       "after": "M. sphincter ani internus ile externus'un alt sınırını ayıran hat:<br><br><br>{{c1::Linea anocutanea}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 303,
@@ -10367,7 +11512,7 @@
     },
     "Extra": {
      "before": "Trigonum lumbale sup YOK",
-     "after": "Trigonum lumbale superius'un (Grynfelt) sınırına katılmaz."
+     "after": "Trigonum lumbale superius'un sınırına katılmaz."
     }
    },
    "changes": [
@@ -10386,7 +11531,21 @@
    ],
    "aiNote": "Ne: \"Lumbale İnf\" kısaltması açıldı, Extra alanındaki \"YOK\" büyük harfi akıcı cümleye dönüştürüldü.\nNeden: Kısaltma ve all-caps vurgusu giderildi.\nNasıl: [YZ1, BÇ1] M. latissimus dorsi'nin trigonum auscultationis ve trigonum lumbale inferius sınırlarına katıldığı doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Trigonum lumbale superius'un (Grynfelt) sınırına katılmaz.",
+       "after": "Trigonum lumbale superius'un sınırına katılmaz."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 307,
@@ -10403,7 +11562,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "A. vertebralis foramen magnum'dan geçer, v. vertebralis geçmez."
+     "after": ""
     }
    },
    "changes": [
@@ -10422,7 +11581,21 @@
    ],
    "aiNote": "Ne: \"GEÇMEZ\" all-caps vurgusu \"geçmez\" yapıldı, Extra alanına açıklama yazıldı.\nNeden: All-caps kullanımı ve telgraf üslubu giderildi.\nNasıl: [DB1, BÇ1] A. vertebralis foramen magnum'dan geçerken v. vertebralis'in geçmediği klasik bilgisi doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "A. vertebralis foramen magnum'dan geçer, v. vertebralis geçmez.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 308,
@@ -10603,7 +11776,7 @@
    "fields": {
     "Text": {
      "before": "sağ ac hilus (yukarıdan aşağı)<div><br></div><div><div>{{c1::BABV}}<br></div><b><div><b><br></b></div></b>{{c1::Bronkus lobaris sup}}<b><br></b><div>{{c1::a. pulmonalis}}</div><div>{{c1::bronchus principalis}}</div><div>{{c1::v. pulmonalis inf&nbsp;}}</div></div>",
-     "after": "Sağ akciğer hilusu'ndaki yapılar (yukarıdan aşağıya):<div><br></div><div>{{c1::BABV}}<div><br></div><div>{{c1::Bronchus lobaris superior}} (eparteriyel bronş)<div>{{c1::a. pulmonalis}}</div><div>{{c1::bronchus principalis dexter}} (hiparteriyel bronş)</div><div>{{c1::v. pulmonalis inferior}}</div></div></div>"
+     "after": "Sağ akciğer hilusu'ndaki yapılar (yukarıdan aşağıya):<div><br></div><div>{{c1::BABV}}<div><br></div><div>{{c1::Bronchus lobaris superior}}<div>{{c1::a. pulmonalis}}</div><div>{{c1::bronchus principalis dexter}}</div><div>{{c1::v. pulmonalis inferior}}</div></div></div>"
     }
    },
    "changes": [
@@ -10628,7 +11801,21 @@
    ],
    "aiNote": "Ne: \"sağ ac hilus\" → \"Sağ akciğer hilusu'ndaki yapılar\" açıldı; \"Bronkus\" → \"Bronchus\", \"sup\" → \"superior\", \"inf\" → \"inferior\" yapıldı ve div artıkları temizlendi.\nNeden: Kısaltmalar, karmaşık HTML artıkları ve imla hatası vardı; BABV akrostişi korundu.\nNasıl: [YP3, YZ1, KS1, BÇ1] Sağ hilus pulmonis'teki eparteriyel bronş, a. pulmonalis, ana bronş ve ven dizilimi doğrulandı; c1 cloze'ları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Sağ akciğer hilusu'ndaki yapılar (yukarıdan aşağıya):<div><br></div><div>{{c1::BABV}}<div><br></div><div>{{c1::Bronchus lobaris superior}} (eparteriyel bronş)<div>{{c1::a. pulmonalis}}</div><div>{{c1::bronchus principalis dexter}} (hiparteriyel bronş)</div><div>{{c1::v. pulmonalis inferior}}</div></div></div>",
+       "after": "Sağ akciğer hilusu'ndaki yapılar (yukarıdan aşağıya):<div><br></div><div>{{c1::BABV}}<div><br></div><div>{{c1::Bronchus lobaris superior}}<div>{{c1::a. pulmonalis}}</div><div>{{c1::bronchus principalis dexter}}</div><div>{{c1::v. pulmonalis inferior}}</div></div></div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 314,
@@ -10903,7 +12090,7 @@
    "fields": {
     "Text": {
      "before": "Sinus coronarius'a açılmayan kalp venleri<div><br></div><div>Vv. {{c1::cardiaca minimae}} ---&gt;&nbsp; {{c2::Tüm kalp boşluklarına a}}çılır<div><br></div><div>Vv. {{c1::ventriculi dextri ant.}} (Vv. card. ant)&nbsp; --&gt; {{c2::Direkt sağ atriuma}} açılır&nbsp;</div><div><br></div><div>V. {{c1::marginalis Dextra}} ----&gt; {{c2::sağ atriuma}} açılır&nbsp;</div></div>",
-     "after": "Sinus coronarius'a açılmayan kalp venleri ve açıldıkları yerler:<div><br></div><div>Vv. {{c1::cardiacae minimae}} (Thebesius venleri) → {{c2::tüm kalp boşluklarına}} açılır<div><br></div><div>Vv. {{c1::ventriculi dextri anteriores}} (vv. cardiacae anteriores) → {{c2::direkt sağ atriyuma}} açılır</div><div><br></div><div>V. {{c1::marginalis dextra}} → {{c2::direkt sağ atriyuma}} açılır</div></div>"
+     "after": "Sinus coronarius'a açılmayan kalp venleri ve açıldıkları yerler:<div><br></div><div>Vv. {{c1::cardiacae minimae}} → {{c2::tüm kalp boşluklarına}} açılır<div><br></div><div>Vv. {{c1::ventriculi dextri anteriores}} → {{c2::direkt sağ atriyuma}} açılır</div><div><br></div><div>V. {{c1::marginalis dextra}} → {{c2::direkt sağ atriyuma}} açılır</div></div>"
     }
    },
    "changes": [
@@ -10928,7 +12115,21 @@
    ],
    "aiNote": "Ne: \"cardiaca minimae\" çoğul tamlaması \"cardiacae minimae\" olarak düzeltildi, kısaltmalar açıldı, \"Tüm kalp boşluklarına a\" bölünmüş harfi \"tüm kalp boşluklarına\" olarak cloze içine alındı.\nNeden: Latince çoğul uyumu bozuktu ve cloze bölünerek \"a\" harfi dışarıda kalmıştı.\nNasıl: [YZ1, KS1, BÇ1] Sinus coronarius'a dökülmeyip doğrudan kardiyak odacıklara açılan venler ve açıldıkları boşluklar teyit edildi; c1 ve c2 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Sinus coronarius'a açılmayan kalp venleri ve açıldıkları yerler:<div><br></div><div>Vv. {{c1::cardiacae minimae}} (Thebesius venleri) → {{c2::tüm kalp boşluklarına}} açılır<div><br></div><div>Vv. {{c1::ventriculi dextri anteriores}} (vv. cardiacae anteriores) → {{c2::direkt sağ atriyuma}} açılır</div><div><br></div><div>V. {{c1::marginalis dextra}} → {{c2::direkt sağ atriyuma}} açılır</div></div>",
+       "after": "Sinus coronarius'a açılmayan kalp venleri ve açıldıkları yerler:<div><br></div><div>Vv. {{c1::cardiacae minimae}} → {{c2::tüm kalp boşluklarına}} açılır<div><br></div><div>Vv. {{c1::ventriculi dextri anteriores}} → {{c2::direkt sağ atriyuma}} açılır</div><div><br></div><div>V. {{c1::marginalis dextra}} → {{c2::direkt sağ atriyuma}} açılır</div></div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 323,
@@ -10941,7 +12142,7 @@
    "fields": {
     "Text": {
      "before": "Özofagus darlıkları<div><br></div><div>1-{{c1::Başlangıç}} (en dar)<div><br></div><div>2-{{c1::Arcus aorta}} çapraz</div><div><br></div><div>3- {{c1::Broncus principalis sinister}} çapraz</div><div><br></div><div>4- {{c1::Diaphragma}}</div></div>",
-     "after": "Özofagus darlıkları (4):<div><br></div><div>1- {{c1::Başlangıç}} (pharyngoesophageal bileşke, en dar yeri)<div><br></div><div>2- {{c1::Arcus aortae}} çaprazı</div><div><br></div><div>3- {{c1::Bronchus principalis sinister}} çaprazı</div><div><br></div><div>4- {{c1::Diaphragma}} (hiatus oesophageus)</div></div>"
+     "after": "Özofagus darlıkları (4):<div><br></div><div>1- {{c1::Başlangıç}} (en dar yeri)<div><br></div><div>2- {{c1::Arcus aortae}} çaprazı</div><div><br></div><div>3- {{c1::Bronchus principalis sinister}} çaprazı</div><div><br></div><div>4- {{c1::Diaphragma}}</div></div>"
     }
    },
    "changes": [
@@ -10960,7 +12161,21 @@
    ],
    "aiNote": "Ne: \"Arcus aorta\" → \"Arcus aortae\", \"Broncus\" → \"Bronchus\" yazıldı, darlık seviyeleri açıklayıcı parantezlerle netleştirildi.\nNeden: Latince tamlama eki (\"aortae\") ve harf hatası mevcuttu.\nNasıl: [YZ1, BÇ1] Özofagusun anatomik 4 darlığı ve en dar yerinin başlangıç yeri (C6) olduğu doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Özofagus darlıkları (4):<div><br></div><div>1- {{c1::Başlangıç}} (pharyngoesophageal bileşke, en dar yeri)<div><br></div><div>2- {{c1::Arcus aortae}} çaprazı</div><div><br></div><div>3- {{c1::Bronchus principalis sinister}} çaprazı</div><div><br></div><div>4- {{c1::Diaphragma}} (hiatus oesophageus)</div></div>",
+       "after": "Özofagus darlıkları (4):<div><br></div><div>1- {{c1::Başlangıç}} (en dar yeri)<div><br></div><div>2- {{c1::Arcus aortae}} çaprazı</div><div><br></div><div>3- {{c1::Bronchus principalis sinister}} çaprazı</div><div><br></div><div>4- {{c1::Diaphragma}}</div></div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 324,
@@ -10973,7 +12188,7 @@
    "fields": {
     "Text": {
      "before": "Lingula pulmonis ve İncisura cardiaca hangi ac lob una ait<div><br></div><div>{{c1::Sol}} AC {{c1::ÜST}} Lob</div>",
-     "after": "Lingula pulmonis ve incisura cardiaca'nın ait olduğu akciğer lobu:<div><br></div><div>{{c1::sol}} akciğerin {{c1::üst}} lobu (lobus superior)</div>"
+     "after": "Lingula pulmonis ve incisura cardiaca'nın ait olduğu akciğer lobu:<div><br></div><div>{{c1::sol}} akciğerin {{c1::üst}} lobu</div>"
     }
    },
    "changes": [
@@ -10992,7 +12207,21 @@
    ],
    "aiNote": "Ne: Soru kökü akıcı cümleye getirildi, \"ac\" → \"akciğerin\", \"ÜST Lob\" → \"üst lobu (lobus superior)\" yazıldı.\nNeden: Büyük harf karmaşası, kısaltma ve telgraf üslubu mevcuttu.\nNasıl: [KS1, BÇ1] Sol akciğer üst lobunun anterior kenarında yer alan incisura cardiaca ve altındaki lingula pulmonis doğrulandı; iki c1 cloze'u korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Lingula pulmonis ve incisura cardiaca'nın ait olduğu akciğer lobu:<div><br></div><div>{{c1::sol}} akciğerin {{c1::üst}} lobu (lobus superior)</div>",
+       "after": "Lingula pulmonis ve incisura cardiaca'nın ait olduğu akciğer lobu:<div><br></div><div>{{c1::sol}} akciğerin {{c1::üst}} lobu</div>"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 325,
@@ -11625,7 +12854,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Tuberositas radii'ye tutunan fleksör ve supinatör kas ise m. biceps brachii'dir."
+     "after": ""
     }
    },
    "changes": [
@@ -11644,7 +12873,21 @@
    ],
    "aiNote": "Ne: \"Tuberositas ulnaya\" kesme ve tamlama eki \"Tuberositas ulnae'ye\" düzeltildi, büyük harf küçültüldü ve Extra eklendi.\nNeden: Ek uyumu yanlışı ve kelime ortasında büyük harf mevcuttu.\nNasıl: [DB1, BÇ1] M. brachialis'in tuberositas ulnae ve processus coronoideus'a tutunan tek kas olduğu doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Tuberositas radii'ye tutunan fleksör ve supinatör kas ise m. biceps brachii'dir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 344,
@@ -11753,7 +12996,7 @@
    "fields": {
     "Text": {
      "before": "Art. Elipsoidea --&gt; Rotasyon {{c1::YOK}}<div><br></div><div>Art. {{c1::Radiocarpalis}}</div><div>Art. {{c1::Atlantooccipitalis}}</div><div>Art. {{c2::MetacarpoPh}}</div><div>Art. {{c2::MetatarsoPh}}</div>",
-     "after": "Art. ellipsoidea (iki eksenli eklem — aktif rotasyon {{c1::yoktur}}) örnekleri:<br><br><br>Art. {{c1::radiocarpalis}}<br>Art. {{c1::atlantooccipitalis}}<br>Artt. {{c2::metacarpophalangeae}}<br>Artt. {{c2::metatarsophalangeae}}"
+     "after": "Art. ellipsoidea (aktif rotasyon {{c1::yoktur}}) örnekleri:<br><br><br>Art. {{c1::radiocarpalis}}<br>Art. {{c1::atlantooccipitalis}}<br>Artt. {{c2::metacarpophalangeae}}<br>Artt. {{c2::metatarsophalangeae}}"
     }
    },
    "changes": [
@@ -11772,7 +13015,21 @@
    ],
    "aiNote": "Ne: \"YOK\" all-caps vurgusu \"yoktur\" yapıldı, \"MetacarpoPh\" ve \"MetatarsoPh\" kısaltmaları açıldı, liste maddelendi.\nNeden: All-caps vurgusu ve telgraf kısaltmaları düzeltildi.\nNasıl: [YZ1, BÇ1] Elipsoid eklemlerin iki eksenli olduğu, aktif rotasyon içermediği ve örnek eklemler doğrulandı; c1 (3 adet) ve c2 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Art. ellipsoidea (iki eksenli eklem — aktif rotasyon {{c1::yoktur}}) örnekleri:<br><br><br>Art. {{c1::radiocarpalis}}<br>Art. {{c1::atlantooccipitalis}}<br>Artt. {{c2::metacarpophalangeae}}<br>Artt. {{c2::metatarsophalangeae}}",
+       "after": "Art. ellipsoidea (aktif rotasyon {{c1::yoktur}}) örnekleri:<br><br><br>Art. {{c1::radiocarpalis}}<br>Art. {{c1::atlantooccipitalis}}<br>Artt. {{c2::metacarpophalangeae}}<br>Artt. {{c2::metatarsophalangeae}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 348,
@@ -11881,7 +13138,7 @@
    "fields": {
     "Text": {
      "before": "Pl. Brachialis <b>KÖKLERDEN</b> çıkan dallar<div><br></div><div>N. {{c1::Dorsalis Scapula}} (C3-4-5)</div><div><br></div><div>N. {{c1::Th. Longus}} (C5-6-7)</div>",
-     "after": "Plexus brachialis köklerinden (radices) doğrudan çıkan sinirler:<br><br><br>n. {{c1::dorsalis scapulae}} (C5)<br><br><br>n. {{c1::thoracicus longus}} (C5-C7)"
+     "after": "Plexus brachialis köklerinden (radices) doğrudan çıkan sinirler:<br><br><br>n. {{c1::dorsalis scapulae}}<br><br><br>n. {{c1::thoracicus longus}}"
     }
    },
    "changes": [
@@ -11900,7 +13157,21 @@
    ],
    "aiNote": "Ne: \"KÖKLERDEN\" büyük harfi küçültüldü, kısaltmalar tam Latinceye çevrildi, kök segmentleri güncellendi.\nNeden: All-caps kullanımı ve telgraf kısaltmaları giderildi.\nNasıl: [YZ1, BÇ1] Plexus brachialis köklerinden doğrudan çıkan sinirlerin n. dorsalis scapulae ve n. thoracicus longus olduğu doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Plexus brachialis köklerinden (radices) doğrudan çıkan sinirler:<br><br><br>n. {{c1::dorsalis scapulae}} (C5)<br><br><br>n. {{c1::thoracicus longus}} (C5-C7)",
+       "after": "Plexus brachialis köklerinden (radices) doğrudan çıkan sinirler:<br><br><br>n. {{c1::dorsalis scapulae}}<br><br><br>n. {{c1::thoracicus longus}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 352,
@@ -12137,7 +13408,7 @@
    "fields": {
     "Text": {
      "before": "Omuz ekleminde <b>Abdüksiyon</b> ile rahatlayan Ağrı:<div><br></div><div>{{c1::SubAcromial}} Bursit</div>",
-     "after": "Omuz ekleminde abduksiyon ile rahatlayabilen bursa enflamasyonu (Dawbarn belirtisi):<br><br><br>{{c1::Subakromiyal}} bursit (bursa subacromialis)"
+     "after": "Omuz ekleminde abduksiyon ile rahatlayabilen bursa enflamasyonu:<br><br><br>{{c1::Subakromiyal}} bursit"
     }
    },
    "changes": [
@@ -12156,7 +13427,21 @@
    ],
    "aiNote": "Ne: \"SubAcromial\" CamelCase düzeltildi, Dawbarn belirtisi detayı eklendi, başlık akıcı hâle getirildi.\nNeden: CamelCase alışkanlığı ve telgraf başlığı giderildi.\nNasıl: [YZ1, BÇ1] Omuz abduksiyonunda akromiyon altına çekilerek rahatlayan subakromiyal bursit bilgisi doğrulandı; c1 korundu. Özgün kartın bloklar arasındaki boş satırları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Omuz ekleminde abduksiyon ile rahatlayabilen bursa enflamasyonu (Dawbarn belirtisi):<br><br><br>{{c1::Subakromiyal}} bursit (bursa subacromialis)",
+       "after": "Omuz ekleminde abduksiyon ile rahatlayabilen bursa enflamasyonu:<br><br><br>{{c1::Subakromiyal}} bursit"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 360,
@@ -12333,7 +13618,7 @@
     },
     "Extra": {
      "before": "Vagina axillaris'i oluşturur&nbsp;",
-     "after": "Lateralde a. subclavia ve plexus brachialis'i sararak vagina axillaris'i oluşturur."
+     "after": "Vagina axillaris'i oluşturur."
     }
    },
    "changes": [
@@ -12352,7 +13637,21 @@
    ],
    "aiNote": "Ne: CamelCase yazımlar düzeltildi, parçalı ok işaretli cümle maddeli listeye çevrildi, Extra alanı akıcı hâle getirildi.\nNeden: CamelCase alışkanlığı ve ok işaretli telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Lamina prevertebralis'in sardığı m. longus capitis ve colli ile vagina axillaris ilişkisi doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Lateralde a. subclavia ve plexus brachialis'i sararak vagina axillaris'i oluşturur.",
+       "after": "Vagina axillaris'i oluşturur."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 366,
@@ -12365,7 +13664,7 @@
    "fields": {
     "Text": {
      "before": "Scapula'ya <b>Protraksiyon</b>:<div><br></div><div>M. {{c1::Serratus Ant}}</div><div><br></div><div>M. {{c1::Pectoralis Min}}</div>",
-     "after": "Scapula'ya protraksiyon (öne çekme) yaptıran başlıca kaslar:<br><br><br>m. {{c1::serratus anterior}}<br><br><br>m. {{c1::pectoralis minor}}"
+     "after": "Scapula'ya protraksiyon yaptıran başlıca kaslar:<br><br><br>m. {{c1::serratus anterior}}<br><br><br>m. {{c1::pectoralis minor}}"
     },
     "Extra": {
      "before": "Retraksiyon:<div><br></div><div>Trapazius - Romboidler</div>",
@@ -12388,7 +13687,21 @@
    ],
    "aiNote": "Ne: Kısaltmalar açıldı, imla hatası (\"Trapazius\" → \"trapezius\") düzeltildi, Extra alanı düzenlendi.\nNeden: Kısaltmalar, imla hatası ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] Scapula protraksiyonu yaptıran m. serratus anterior ve m. pectoralis minor doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Scapula'ya protraksiyon (öne çekme) yaptıran başlıca kaslar:<br><br><br>m. {{c1::serratus anterior}}<br><br><br>m. {{c1::pectoralis minor}}",
+       "after": "Scapula'ya protraksiyon yaptıran başlıca kaslar:<br><br><br>m. {{c1::serratus anterior}}<br><br><br>m. {{c1::pectoralis minor}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 367,
@@ -12501,7 +13814,7 @@
     },
     "Extra": {
      "before": "Köklerden çıkan dallar",
-     "after": "Her iki sinir de plexus brachialis'in doğrudan köklerinden (radices) çıkan dallardır."
+     "after": "Plexus brachialis köklerinden çıkan dallardır."
     }
    },
    "changes": [
@@ -12520,7 +13833,21 @@
    ],
    "aiNote": "Ne: \"Scalenius Med'u\" yazımı \"scalenus medius kasını\" yapıldı, \"Th Longus\" açıldı, Extra alanı akıcı hâle getirildi.\nNeden: İmla hatası, kısaltma ve telgraf üslubu giderildi.\nNasıl: [YZ1, BÇ1] M. scalenus medius'u delen n. dorsalis scapulae ve n. thoracicus longus doğrulandı; c1 (2 adet) korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Her iki sinir de plexus brachialis'in doğrudan köklerinden (radices) çıkan dallardır.",
+       "after": "Plexus brachialis köklerinden çıkan dallardır."
+      }
+     },
+     "actions": [
+      "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+     ]
+    }
+   ]
   },
   {
    "order": 371,
@@ -12563,7 +13890,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Caput tali'yi alttan destekler."
+     "after": ""
     }
    },
    "changes": [
@@ -12576,7 +13903,21 @@
    ],
    "aiNote": "Ne: \"Calcaneonaviculare\" baş harfi küçültüldü, yay ligament karşılığı eklendi ve Extra'ya medial longitudinal ark fonksiyonu eklendi.\nNeden: Büyük harf ve telgraf üslubu giderildi.\nNasıl: [BÇ1] Lig. calcaneonaviculare plantare'nin klasik eponim adı spring ligament bilgisi korundu; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Caput tali'yi alttan destekler.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 373,
@@ -12621,7 +13962,7 @@
    "fields": {
     "Text": {
      "before": "Ductus excretorius + Ductus deferens --&gt; {{c1::Ductus ejaculatorius}}",
-     "after": "Ductus excretorius (vesicula seminalis) + ductus deferens → {{c1::ductus ejaculatorius}}"
+     "after": "Ductus excretorius + ductus deferens → {{c1::ductus ejaculatorius}}"
     }
    },
    "changes": [
@@ -12634,7 +13975,21 @@
    ],
    "aiNote": "Ne: Ductus excretorius'un vesicula seminalis'e ait olduğu parantezle belirtildi, büyük harfler küçültüldü ve ok düzeltildi.\nNeden: Baş harf uyumsuzluğu ve telgraf oku mevcuttu.\nNasıl: [BÇ1] Ampulla ductus deferentis ile ductus excretorius'un birleşerek ductus ejaculatorius'u oluşturduğu doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Ductus excretorius (vesicula seminalis) + ductus deferens → {{c1::ductus ejaculatorius}}",
+       "after": "Ductus excretorius + ductus deferens → {{c1::ductus ejaculatorius}}"
+      }
+     },
+     "actions": [
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 375,
@@ -12677,7 +14032,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Superficiale median, profundum ulnar sinirle uyarılır."
+     "after": ""
     }
    },
    "changes": [
@@ -12690,7 +14045,21 @@
    ],
    "aiNote": "Ne: \"Flexor\" baş harfi küçültüldü, ok düzeltildi ve Extra'ya median/ulnar çift innervasyon detayları eklendi.\nNeden: Kelime ortasında büyük harf ve telgraf üslubu vardı.\nNasıl: [BÇ1] Tenar kaslardan m. flexor pollicis brevis'in hem n. medianus hem n. ulnaris tarafından uyarıldığı doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Superficiale median, profundum ulnar sinirle uyarılır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 377,
@@ -12767,11 +14136,11 @@
    "fields": {
     "Text": {
      "before": "Gyrus angularis {{c1::kortikal okuma}} merkezidir&nbsp;",
-     "after": "Gyrus angularis (Brodmann 39), {{c1::kortikal okuma}} merkezidir"
+     "after": "Gyrus angularis, {{c1::kortikal okuma}} merkezidir"
     },
     "Extra": {
      "before": "",
-     "after": "Lezyonunda aleksi ve Gerstmann sendromu görülür."
+     "after": ""
     }
    },
    "changes": [
@@ -12784,7 +14153,26 @@
    ],
    "aiNote": "Ne: Gyrus angularis'e Brodmann 39 alanı eklendi, virgül konularak &nbsp; temizlendi ve Extra'ya Gerstmann sendromu eklendi.\nNeden: Noktalama eksikliği vardı.\nNasıl: [BÇ1] Gyrus angularis'in dominant hemisferde yazılı kelimelerin görsel algısını işleyen kortikal okuma merkezi olduğu doğrulandı; c1 korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Gyrus angularis (Brodmann 39), {{c1::kortikal okuma}} merkezidir",
+       "after": "Gyrus angularis, {{c1::kortikal okuma}} merkezidir"
+      },
+      "Extra": {
+       "before": "Lezyonunda aleksi ve Gerstmann sendromu görülür.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 380,
@@ -13051,5 +14439,22 @@
    "kisaltma": "n.",
    "acilim": "nervi"
   }
- ]
+ ],
+ "editorialPolicy": {
+  "date": "2026-10-17",
+  "reviewedNotes": 381,
+  "reviewedCards": 477,
+  "changedNotes": 97,
+  "history": "docs/catalog-corrections/anatomi-editorial.json",
+  "rules": [
+   "Kart içine kaynak adı, URL, sayfa veya kurum/yıl atfı yazılmaz.",
+   "Sonradan eklenen Ek bilgi / arka yüz açıklamaları kaldırılır.",
+   "Ana metindeki isteğe bağlı ek açıklamalar kaldırılır.",
+   "Yeni ilaç, örnek veya liste üyeleriyle kapsam genişletilmez.",
+   "Ek kılavuz ve klinik uygulama özeti yazılmaz.",
+   "Uzun karşılaştırma ve düzeltme gerekçesi karta taşınmaz.",
+   "Gerekli düzeltme kısa ve doğrudan ilgili ifadede yapılır.",
+   "Mevcut ezber kodları korunur."
+  ]
+ }
 }

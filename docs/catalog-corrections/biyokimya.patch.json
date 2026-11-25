@@ -91,7 +91,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "LDH pıhtılaşma sırasında trombositlerden salındığı için serumda plazmadan yüksektir."
+     "after": ""
     }
    },
    "changes": [
@@ -116,7 +116,21 @@
    ],
    "aiNote": "Ne: LDH \"plazmada fazla bulunanlar\" listesinden çıkarıldı ve Extra'ya serumda yüksek olduğu nedeniyle birlikte yazıldı; \"&gt;\" işareti başlıktan kaldırıldı.\nNeden: LDH pıhtılaşma sırasında trombositlerden salındığı için serumda daha yüksektir; kart bu farkı ters yönde öğretiyordu. Total protein fibrinojen nedeniyle plazmada yüksektir.\nNasıl: [TD1, YP1, BÇ1] Yanlış üye listeden çıkarıldı, doğru yönü arka yüzde tek cümle olarak kaldı; c2 total protein ile sürdü. Ca ve Cl farkları küçük olsa da klasik listede yer aldığından korundu.\nKaynak: Tietz Textbook of Clinical Chemistry, örnek türleri (serum ve plazma farkları); Sharma ve ark. 2018, PubMed PMID 30078974 (LDH plazmada serumdan %8,5 düşük).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "LDH pıhtılaşma sırasında trombositlerden salındığı için serumda plazmadan yüksektir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 2,
@@ -341,7 +355,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Eski kaynaklarda transmembran protein olmadığı yazar; SDHC ve SDHD alt birimleri iç zarı boydan boya geçer."
+     "after": ""
     }
    },
    "changes": [
@@ -366,7 +380,21 @@
    ],
    "aiNote": "Ne: \"Komp 2 transmemb protein değil\" → \"Kompleks II transmembran alt birimler içerir\" yapıldı; Extra'ya eski kaynaklardaki \"transmembran protein değil\" bilgisi ve SDHC ile SDHD'nin iç zarı geçtiği yazıldı. \"Proton pompalamaz\" cevabı korundu.\nNeden: Kompleks II'nin kristal yapısı, iki hidrofilik alt birimin zara iç zarı geçen iki protein (SDHC, SDHD) aracılığıyla tutunduğunu gösterir; \"transmembran değil\" bilgisi yanlıştı.\nNasıl: [TD2, TD1, YP1] Güncel kaynaklarda savunulmayan eski bilgi yerine doğrusu öğretildi ve eski ifade Extra'da tek cümleyle adlandırıldı, çünkü öğrenci bu ifadeyle eski soru kitaplarında karşılaşabilir. Her iki satır aynı c1 numarasıyla kaldı; kompleks II'nin proton pompalamaması değişmedi.\nKaynak: Sun F ve ark. Crystal structure of mitochondrial respiratory membrane protein complex II. Cell 2005;121:1043–1057 (PubMed özeti); Lehninger Principles of Biochemistry, kompleks II (süksinat dehidrogenaz).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Eski kaynaklarda transmembran protein olmadığı yazar; SDHC ve SDHD alt birimleri iç zarı boydan boya geçer.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 9,
@@ -529,7 +557,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "GLUT-5 sitokalazin B'ye duyarsızdır."
+     "after": ""
     }
    },
    "changes": [
@@ -554,7 +582,21 @@
    ],
    "aiNote": "Ne: \"GLUT-5 İnh\" → \"GLUT-1–4 inhibitörü\" yapıldı ve Extra'ya \"GLUT-5 sitokalazin B'ye duyarsızdır.\" eklendi; \"Florhizin\" → \"Florizin\" düzeltildi.\nNeden: Kart sitokalazin B'yi GLUT-5 inhibitörü olarak öğretiyordu; GLUT-5 sitokalazin B'ye dirençli olmasıyla diğer GLUT'lardan ayrılır.\nNasıl: [TD1, EK3, YZ2] Cevap doğru olduğu için kökteki taşıyıcı adı düzeltildi; ayırıcı çizgi, florizin satırı ve c1 korundu.\nKaynak: Burant ve ark., J Biol Chem 1992 (GLUT5, sitokalazin B'ye duyarsız fruktoz taşıyıcısı); Lippincott Illustrated Reviews: Biochemistry, glukoz taşıyıcıları.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "GLUT-5 sitokalazin B'ye duyarsızdır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 14,
@@ -571,7 +613,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Adenozin deaminaz, adenozini inozine çevirir."
+     "after": ""
     }
    },
    "changes": [
@@ -602,7 +644,21 @@
    ],
    "aiNote": "Ne: AMP → IMP basamağının enzimi \"Adenozin Deaminaz (ADA)\" → \"AMP deaminaz\" yapıldı ve Extra'ya \"Adenozin deaminaz, adenozini inozine çevirir.\" yazıldı; son satırdaki ksantin oksidaz boşluğu c4'ten c3'e alındı.\nNeden: Kart AMP'nin IMP'ye adenozin deaminazla döndüğünü öğretiyordu; ADA'nın substratı adenozindir. Ksantin oksidaz birinci satırda c3 olarak açık kaldığından c4 kartı cevabını gösteriyordu.\nNasıl: [TD1, YP2, EK3] En küçük değişiklik olarak yalnız yanlış enzim adı değiştirildi, TUS'ta sık sorulan ADA'nın gerçek tepkimesi tek cümleyle Extra'ya alındı; satır düzeni, kalın yazılar ve c1–c4 numaraları korundu.\nKaynak: Harper's Illustrated Biochemistry, pürin katabolizması (AMP deaminaz, adenozin deaminaz, PNP, ksantin oksidaz); Lippincott Illustrated Reviews: Biochemistry, pürin nükleotidlerinin yıkımı.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Adenozin deaminaz, adenozini inozine çevirir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 15,
@@ -619,7 +675,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Diflorometilornitin (eflornitin) ornitin dekarboksilazı inhibe eder."
+     "after": ""
     }
    },
    "changes": [
@@ -650,7 +706,21 @@
    ],
    "aiNote": "Ne: OMP dekarboksilaz inhibitörü \"DiFloroMetil Ornitin\" → \"6-azaüridin\" düzeltildi ve diflorometilornitinin gerçek hedefi (ornitin dekarboksilaz) Extra'ya tek cümleyle yazıldı; enzim kısaltmaları açıldı, \"Leflunomit\" → \"Leflunomid\" oldu.\nNeden: Kart ornitin dekarboksilaz ile OMP dekarboksilazı karıştırıp DFMO'yu pirimidin sentezi inhibitörü olarak öğretiyordu; OMP dekarboksilazın klasik inhibitörü 6-azaüridindir.\nNasıl: [TD1, KS1, YZ2, YP3] Kök (OMP dekarboksilaz) pirimidin yolunun parçası olduğu için korunup cevap düzeltildi, yanlış ilaç silinmeden doğru hedefiyle arka yüze taşındı; 17 satırlık düzen, renk ve kalın etiketleri, c1, c2, c3 dağılımı korundu.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, pirimidin sentezi (leflunomid, 6-azaüridin); Katzung, eflornitin (ornitin dekarboksilaz inhibitörü).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Diflorometilornitin (eflornitin) ornitin dekarboksilazı inhibe eder.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 16,
@@ -663,11 +733,11 @@
    "fields": {
     "Text": {
      "before": "{{c1::Klindamisin}} ve {{c1::Eritromisin}}:<div><br></div><div>50S Ribozom alt birimine İrReversibl bağlanıp <b>TRANSLOKASYON'u</b> İnhibe eder</div><div><br></div><div>Translokasyon: {{c1::EF-2}} ve {{c1::GTP}} kullanılır&nbsp;</div>",
-     "after": "{{c1::Klindamisin}} ve {{c1::eritromisin}}:<div><br></div><div>50S ribozom alt birimine reversibl bağlanıp <b>translokasyonu</b> inhibe eder</div><div><br></div><div>Translokasyonda {{c1::EF-2}} ve {{c1::GTP}} kullanılır</div>"
+     "after": "{{c1::Klindamisin}} ve {{c1::eritromisin}}:<div><br></div><div>50S ribozom alt birimine reversibl bağlanıp <b>translokasyonu</b> inhibe eder</div><div><br></div><div>Bakteriyel translokasyonda {{c1::EF-G}} ve {{c1::GTP}} kullanılır</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Prokaryotlarda translokasyon faktörü EF-G'dir; EF-2 ökaryotik karşılığıdır."
+     "after": ""
     }
    },
    "changes": [
@@ -692,7 +762,26 @@
    ],
    "aiNote": "Ne: \"İrReversibl\" → \"reversibl\" düzeltildi; Extra'ya bakteride translokasyon faktörünün EF-G, EF-2'nin ökaryotik karşılık olduğu yazıldı; büyük harfli \"TRANSLOKASYON'u\" kalın küçük harf yapıldı.\nNeden: Eritromisin ve klindamisin 50S'ye geri dönüşümlü bağlanır; kart geri dönüşümsüz diyordu. EF-2 cevabı ökaryot için geçerlidir, bakteri bağlamında niteleyici gerekiyordu.\nNasıl: [TD1, EK1, YP1] Yanlış sıfat en küçük değişiklikle düzeltildi; EF-2 cevabı ve c1 korunup prokaryotik karşılık tek cümleyle arka yüze yazıldı.\nKaynak: Katzung, Basic & Clinical Pharmacology, makrolidler ve klindamisin (50S'ye geri dönüşümlü bağlanma); Lippincott Illustrated Reviews: Biochemistry, translokasyon (EF-G ve eEF-2).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "{{c1::Klindamisin}} ve {{c1::eritromisin}}:<div><br></div><div>50S ribozom alt birimine reversibl bağlanıp <b>translokasyonu</b> inhibe eder</div><div><br></div><div>Translokasyonda {{c1::EF-2}} ve {{c1::GTP}} kullanılır</div>",
+       "after": "{{c1::Klindamisin}} ve {{c1::eritromisin}}:<div><br></div><div>50S ribozom alt birimine reversibl bağlanıp <b>translokasyonu</b> inhibe eder</div><div><br></div><div>Bakteriyel translokasyonda {{c1::EF-G}} ve {{c1::GTP}} kullanılır</div>"
+      },
+      "Extra": {
+       "before": "Prokaryotlarda translokasyon faktörü EF-G'dir; EF-2 ökaryotik karşılığıdır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Arka yüzdeki prokaryot/ökaryot düzeltmesi doğrudan faktör adına işlendi (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 17,
@@ -907,7 +996,7 @@
    "fields": {
     "Text": {
      "before": "Kompleks 3: Sit {{c1::b}}<div><br></div><div>Kompleks 4: Sit {{c1::a - a3}}</div>",
-     "after": "Kompleks III: sitokrom {{c1::b, c1}}<div><br></div><div>Kompleks IV: sitokrom {{c1::a, a3}}</div>"
+     "after": "Kompleks III: sitokrom {{c1::b}}<div><br></div><div>Kompleks IV: sitokrom {{c1::a, a3}}</div>"
     }
    },
    "changes": [
@@ -932,7 +1021,21 @@
    ],
    "aiNote": "Ne: \"Sit\" → \"sitokrom\" açıldı, kompleks III cevabına \"c1\" eklendi ve kompleks numaraları Roma rakamıyla yazıldı.\nNeden: Kompleks III (sitokrom bc1) sitokrom b ile birlikte sitokrom c1 içerir; tek üyeli cevap eksikti. \"Sit\" sitozol diye de okunabiliyordu.\nNasıl: [EK2, KS1, YZ1] Eksik üye aynı c1 cevabının içine eklendi; kompleks IV'ün sitokrom a ve a3 içerdiği doğru olduğundan korundu. Kompleks numaraları kursta tek biçimde Roma rakamıyla yazıldı.\nKaynak: Lehninger Principles of Biochemistry, solunum zinciri (kompleks III: sitokrom bc1 kompleksi; kompleks IV: sitokrom a, a3).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Kompleks III: sitokrom {{c1::b, c1}}<div><br></div><div>Kompleks IV: sitokrom {{c1::a, a3}}</div>",
+       "after": "Kompleks III: sitokrom {{c1::b}}<div><br></div><div>Kompleks IV: sitokrom {{c1::a, a3}}</div>"
+      }
+     },
+     "actions": [
+      "Sonradan eklenen sitokrom c1 liste üyesi çıkarıldı; özgün sitokrom b ve ordinal korundu (kural 4)."
+     ]
+    }
+   ]
   },
   {
    "order": 23,
@@ -1113,11 +1216,11 @@
    "fields": {
     "Text": {
      "before": "Fibrinojenin aggrege olmasını engelleyen fibrinopeptidlerde bulunan yapılar: (3 Aa)<div><br></div><div>{{c1::Glu - Asp - Tyr}}</div><div><br></div>",
-     "after": "Fibrinojenin agrege olmasını engelleyen, fibrinopeptidlerde bulunan yapılar (3 amino asit):<div><br></div><div>{{c1::Glu, Asp, Tyr}}</div>"
+     "after": "Fibrinojenin agrege olmasını engelleyen, fibrinopeptidlerde bulunan yapılar (3 amino asit):<div><br></div><div>{{c1::Glu, Asp, Tyr-O-sülfat}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Tyr, fibrinopeptid B'de negatif yüklü tirozin O-sülfat olarak bulunur."
+     "after": ""
     }
    },
    "changes": [
@@ -1142,7 +1245,26 @@
    ],
    "aiNote": "Ne: \"3 Aa\" → \"3 amino asit\" açıldı, liste virgülle ayrıldı ve Extra'ya tirozinin fibrinopeptid B'de tirozin O-sülfat olarak bulunduğu yazıldı.\nNeden: Glu ve Asp yan zincirleri negatif yüklüdür, tirozin ise yükünü sülfat grubundan alır; niteleyici olmadan sıradan tirozin de kümelenmeyi önlüyormuş gibi okunuyordu.\nNasıl: [EK1, KS1, YP4] Üç üyeli cevap ve c1 korundu, sülfatlanma tek cümleyle arka yüze yazıldı; sondaki boş satır temizlendi.\nKaynak: Harper's Illustrated Biochemistry, hemostaz ve tromboz bölümü (fibrinopeptid A ve B'nin Asp, Glu ve tirozin O-sülfat kaynaklı negatif yükü).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Fibrinojenin agrege olmasını engelleyen, fibrinopeptidlerde bulunan yapılar (3 amino asit):<div><br></div><div>{{c1::Glu, Asp, Tyr}}</div>",
+       "after": "Fibrinojenin agrege olmasını engelleyen, fibrinopeptidlerde bulunan yapılar (3 amino asit):<div><br></div><div>{{c1::Glu, Asp, Tyr-O-sülfat}}</div>"
+      },
+      "Extra": {
+       "before": "Tyr, fibrinopeptid B'de negatif yüklü tirozin O-sülfat olarak bulunur.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Yeni arka yüz cümlesi kaldırılırken mevcut Tyr üyesinin gerekli sülfat niteliği yerinde düzeltildi (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 28,
@@ -1435,11 +1557,11 @@
    "fields": {
     "Text": {
      "before": "Proteinlere PostTranslasyonel Modifikasyon'da&nbsp;<div><br></div><div><b>Lipitler hangi Aa üzerine eklenir:</b></div><div><b><br></b></div><div>{{c1::Cys}}</div>",
-     "after": "Proteinlere posttranslasyonel modifikasyonda<div><br></div><div><b>Lipidler hangi amino asit üzerine eklenir:</b></div><div><b><br></b></div><div>{{c1::Cys}}</div>"
+     "after": "Protein izoprenilasyonunda lipidin bağlandığı amino asit:<div><br></div><div>{{c1::Cys}}</div>"
     },
     "Extra": {
      "before": "Mesela İzoPrenilasyon",
-     "after": "Örneğin izoprenilasyon ve palmitoilasyon; miristoil grubu ise N-ucundaki glisine eklenir."
+     "after": "Örneğin izoprenilasyon."
     }
    },
    "changes": [
@@ -1470,7 +1592,26 @@
    ],
    "aiNote": "Ne: Extra'daki \"Mesela İzoPrenilasyon\" notu \"Örneğin izoprenilasyon ve palmitoilasyon; miristoil grubu ise N-ucundaki glisine eklenir.\" olarak tamamlandı; \"Aa\", \"Lipitler\" ve \"PostTranslasyonel\" düzeltildi.\nNeden: Sistein cevabı prenilasyon ve palmitoilasyon için doğrudur; miristik asit N-terminal glisine eklendiği için niteleyicisiz kart yanıltıcıydı.\nNasıl: [EK1, KS1, YZ1] Cevap (Cys) ve c1 korundu; istisna yazarın mevcut Extra cümlesine eklenerek kurstaki \"proteinlere bağlanan yağ asitleri\" kartıyla tutarlı kılındı.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, posttranslasyonel modifikasyonlar (prenilasyon, palmitoilasyon, miristoilasyon).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Proteinlere posttranslasyonel modifikasyonda<div><br></div><div><b>Lipidler hangi amino asit üzerine eklenir:</b></div><div><b><br></b></div><div>{{c1::Cys}}</div>",
+       "after": "Protein izoprenilasyonunda lipidin bağlandığı amino asit:<div><br></div><div>{{c1::Cys}}</div>"
+      },
+      "Extra": {
+       "before": "Örneğin izoprenilasyon ve palmitoilasyon; miristoil grubu ise N-ucundaki glisine eklenir.",
+       "after": "Örneğin izoprenilasyon."
+      }
+     },
+     "actions": [
+      "Özgün örnek korundu; eklenen palmitoilasyon ve miristoilasyon karşılaştırması çıkarıldı (kural 4, 6).",
+      "Kapsam özgün izoprenilasyon örneğiyle sınırlandı; bütün lipidasyonlar için yanlış genelleme bırakılmadı (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 36,
@@ -1515,7 +1656,7 @@
    "fields": {
     "Text": {
      "before": "Zn Parmaklarda&nbsp;<div><br></div><div><b>Zn</b> --&gt;&nbsp;<span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Cys}} Aa'e bağlanır&nbsp;</span></div>",
-     "after": "Çinko parmaklarda<div><br></div><div><b>Zn</b> → <span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Cys}} (ve His) amino asitlerine bağlanır</span></div>"
+     "after": "Çinko parmaklarda<div><br></div><div><b>Zn</b> → <span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Cys}} amino asidine bağlanır</span></div>"
     }
    },
    "changes": [
@@ -1540,7 +1681,21 @@
    ],
    "aiNote": "Ne: \"Cys Aa'e bağlanır\" → \"Cys (ve His) amino asitlerine bağlanır\" yapıldı, \"Zn Parmaklarda\" → \"Çinko parmaklarda\" açıldı.\nNeden: En sık çinko parmak tipi (C2H2) çinkoyu iki sistein ve iki histidinle bağlar; kart histidini dışarıda bırakıyordu. \"Aa\" kişisel kısaltmaydı.\nNasıl: [EK1, KS1, YP3] Cys cevabı ve c1 korundu; histidin cloze dışında parantezle eklendi; span etiketi ve özellikleri olduğu gibi bırakıldı.\nKaynak: Lehninger Principles of Biochemistry, DNA bağlayan motifler (çinko parmak); Harper's Illustrated Biochemistry, transkripsiyon faktörlerinin DNA bağlayan alanları.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Çinko parmaklarda<div><br></div><div><b>Zn</b> → <span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Cys}} (ve His) amino asitlerine bağlanır</span></div>",
+       "after": "Çinko parmaklarda<div><br></div><div><b>Zn</b> → <span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Cys}} amino asidine bağlanır</span></div>"
+      }
+     },
+     "actions": [
+      "Sonradan eklenen His liste üyesi çıkarıldı; özgün Cys sorusu korundu (kural 4)."
+     ]
+    }
+   ]
   },
   {
    "order": 38,
@@ -1655,7 +1810,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Kastedilen FAD'lı aldehit oksidazdır; etanoldeki ALDH NAD+ kullanır."
+     "after": ""
     }
    },
    "changes": [
@@ -1686,7 +1841,21 @@
    ],
    "aiNote": "Ne: \"DH\" ve \"L-Aa\" açıldı, CamelCase düzeltildi ve Extra'ya aldehit dehidrogenaz satırının FAD ve molibdenli aldehit oksidazı kastettiğini söyleyen tek cümle eklendi.\nNeden: Etanol metabolizmasındaki aldehit dehidrogenaz NAD+ kullanır ve flavoprotein değildir; kartın sınıflaması yalnız Harper'ın aynı adla verdiği FAD'lı molibdenli enzim için geçerlidir.\nNasıl: [TD2, KS1, YP1] Kaynakta geçen sınıflama ve c1 cevabı korundu, karışıklığı önleyen niteleyici arka yüze yazıldı; ksantin oksidaz ve L-amino asit oksidazın flavoprotein olduğu doğrulandı.\nKaynak: Harper's Illustrated Biochemistry, biyolojik oksidasyon bölümü (flavoprotein oksidazlar).",
    "decision": null,
-   "editorNote": "\nCodex 09.10.2026: Aldehit satırındaki dehidrogenazı oksidaz olarak değiştir; mevcut cloze hedefi Aldehit korunur."
+   "editorNote": "\nCodex 09.10.2026: Aldehit satırındaki dehidrogenazı oksidaz olarak değiştir; mevcut cloze hedefi Aldehit korunur.",
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Kastedilen FAD'lı aldehit oksidazdır; etanoldeki ALDH NAD+ kullanır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 41,
@@ -1763,11 +1932,11 @@
    "fields": {
     "Text": {
      "before": "Zn kullanan enzimler<div><br></div><div><div>{{c1::LDH}}</div><div>{{c2::Karbonik Anhidraz}}</div><div>{{c1::DNA / RNA pol}}</div><div>{{c2::ALP}}</div><div>{{c1::SOD Sit}} formu</div></div>",
-     "after": "Zn kullanan enzimler (klasik liste)<div><br></div><div><div>{{c1::LDH}}</div><div>{{c2::Karbonik anhidraz}}</div><div>{{c1::DNA / RNA polimeraz}}</div><div>{{c2::ALP}}</div><div>{{c1::Sitozolik SOD}} formu</div></div>"
+     "after": "Zn kullanan enzimler<div><br></div><div><div>{{c2::Karbonik anhidraz}}</div><div>{{c1::DNA / RNA polimeraz}}</div><div>{{c2::ALP}}</div><div>{{c1::Sitozolik SOD}} formu</div></div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kaynaklarda LDH metal içermeyen bir enzim olarak geçer."
+     "after": ""
     }
    },
    "changes": [
@@ -1792,7 +1961,27 @@
    ],
    "aiNote": "Ne: Başlığa \"(klasik liste)\" eklendi, Extra'ya LDH'nin güncel kaynaklarda metal içermeyen enzim olduğu yazıldı; \"pol\" → \"polimeraz\" ve \"SOD Sit\" → \"Sitozolik SOD\" açıldı.\nNeden: LDH'nin çinko enzimi olduğu bilgisi eski bir bildirime dayanır ama TUS listelerinde sürer; \"pol\" ve \"Sit\" kişisel kısaltmalardı, \"Sit\" sitokrom diye de okunabiliyordu.\nNasıl: [TD2, KS1, YP1] Beklenen klasik cevap (LDH) silinmeden köke klasik çerçeve kondu, güncel görüş tek cümleyle arka yüze yazıldı; kurstaki \"Zn içeren enzimler\" kartı (1607285224180) ile aynı biçim. Satır düzeni ve c1/c2 dağılımı değişmedi.\nKaynak: Harper's Illustrated Biochemistry ve Lehninger, laktat dehidrogenaz (NAD+ bağımlı, kofaktör metal yok) ve çinko metaloenzimleri bölümleri.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Zn kullanan enzimler (klasik liste)<div><br></div><div><div>{{c1::LDH}}</div><div>{{c2::Karbonik anhidraz}}</div><div>{{c1::DNA / RNA polimeraz}}</div><div>{{c2::ALP}}</div><div>{{c1::Sitozolik SOD}} formu</div></div>",
+       "after": "Zn kullanan enzimler<div><br></div><div><div>{{c2::Karbonik anhidraz}}</div><div>{{c1::DNA / RNA polimeraz}}</div><div>{{c2::ALP}}</div><div>{{c1::Sitozolik SOD}} formu</div></div>"
+      },
+      "Extra": {
+       "before": "Güncel kaynaklarda LDH metal içermeyen bir enzim olarak geçer.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Kaynak/klasik liste açıklaması kaldırıldı; düzeltme doğrudan listeye işlendi (kural 1, 7).",
+      "Ön/arka çelişkisi kaldırıldı: NAD bağımlı insan LDH çinko listesinden çıkarıldı; kalan c1/c2 kartları korundu (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 44,
@@ -1805,11 +1994,11 @@
    "fields": {
     "Text": {
      "before": "Histidin - {{c1::Biotin}}:<div><br></div><div>İkise de <b>İmidazol</b> Halkası içerir&nbsp;</div>",
-     "after": "Histidin, {{c1::biyotin}}:<div><br></div><div>Klasik bilgiye göre ikisi de <b>imidazol</b> halkası içerir</div>"
+     "after": "Histidin: imidazol halkası<div><br></div><div>{{c1::Biyotin}}: imidazolidinon halkası</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Biyotindeki halka doymuş imidazolidinondur, aromatik imidazol değildir."
+     "after": ""
     }
    },
    "changes": [
@@ -1834,7 +2023,26 @@
    ],
    "aiNote": "Ne: Köke \"Klasik bilgiye göre\" eklendi, \"İkise\" → \"ikisi\" ve \"Biotin\" → \"biyotin\" düzeltildi; Extra'ya biyotin halkasının doymuş imidazolidinon halkası olduğu yazıldı.\nNeden: Biyotindeki halka imidazolün doymuş türevidir; iki molekülün aynı halkayı taşıdığı ifadesi kimyasal olarak tam doğru değildir ama TUS kaynaklarında bu eşleşme sorulur.\nNasıl: [TD2, YZ2, YP1] Klasik eşleşme ve c1 korunup klasik olarak çerçevelendi, yapısal ayrım tek cümleyle arka yüze yazıldı.\nKaynak: Harper's Illustrated Biochemistry, biyotin yapısı; Lehninger Principles of Biochemistry, histidin yan zinciri.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Histidin, {{c1::biyotin}}:<div><br></div><div>Klasik bilgiye göre ikisi de <b>imidazol</b> halkası içerir</div>",
+       "after": "Histidin: imidazol halkası<div><br></div><div>{{c1::Biyotin}}: imidazolidinon halkası</div>"
+      },
+      "Extra": {
+       "before": "Biyotindeki halka doymuş imidazolidinondur, aromatik imidazol değildir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Halka ayrımı kısa ilgili ifadede düzeltildi; klasik/güncel karşılaştırması kaldırıldı (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 45,
@@ -1991,7 +2199,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Güncel sınıflamada tip 8 ayrı bir hastalık olarak kullanılmaz; fosforilaz kinaz eksiklikleri tip 9 altında toplanır."
+     "after": ""
     }
    },
    "changes": [
@@ -2016,7 +2224,21 @@
    ],
    "aiNote": "Ne: Kök \"Klasik sınıflamada\" ile başlatıldı, \"Hast\" açıldı ve Extra'ya tip 8'in güncel sınıflamada kullanılmadığını söyleyen tek cümle eklendi.\nNeden: Tip 8, ilerleyici beyin dejenerasyonu ve beyinde glikojen birikimiyle tanımlanmış eski bir alt tiptir; güncel kaynaklar bu tipi ayrı saymaz, MeSH'te de X'e bağlı karaciğer fosforilaz kinaz eksikliği olarak geçer.\nNasıl: [TD2, KS1, YP1] TUS kitapları klasik cevabı beklediği için cevap (tip 8) ve c1 korundu, güncel görüş tek cümleyle Extra'ya yazıldı.\nKaynak: MeSH, Glycogen Storage Disease Type VIII (D006015); GSD VI ve IX kılavuzu (Genet Med 2019).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Güncel sınıflamada tip 8 ayrı bir hastalık olarak kullanılmaz; fosforilaz kinaz eksiklikleri tip 9 altında toplanır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 50,
@@ -2033,7 +2255,7 @@
     },
     "Extra": {
      "before": "ÖNEMLİ - Çıkmış",
-     "after": "Monoamin oksidaz (MAO) bakır değil FAD içerir; bakırlı olanlar amin oksidazlardır."
+     "after": ""
     }
    },
    "changes": [
@@ -2081,6 +2303,20 @@
     {
      "date": "2026-10-09",
      "previousAiNote": "Ne: Bakır listesindeki \"Monoamin Oksidaz\" → \"amin oksidaz\" yapıldı ve Extra'ya MAO'nun FAD içerdiği yazıldı; ribonükleotid redüktaz manganden demire taşındı; çinko satırındaki c2 cevabını açığa veren \"(Sitoplazmik)\" kaldırıldı ve kısaltmalar açıldı.\nNeden: MAO bir flavoenzimdir, insan ribonükleotid redüktazı demir kullanır; kart iki enzimi yanlış metalle öğretiyordu. Çinko satırındaki \"sitoplazmik\" sözcüğü c2 kartında cevabı gösteriyordu.\nNasıl: [TD1, YP2, YP1, KS1] Satır düzeni, yedi metal başlığı ve c1–c6 numaraları korundu; yanlış iki üye en küçük değişiklikle düzeltildi, sitoplazmik SOD'un hem bakır hem çinko taşıdığı bilgisi bakır satırındaki c2'de kaldı. Kişisel işaret taşıyan Extra yalnız düzeltme cümlesini taşıyacak biçimde yeniden yazıldı.\nKaynak: Harper's Illustrated Biochemistry, metalloenzimler ve monoamin oksidaz; Lehninger Principles of Biochemistry, ribonükleotid redüktazın demir-tirozil radikal mekanizması."
+    }
+   ],
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Monoamin oksidaz (MAO) bakır değil FAD içerir; bakırlı olanlar amin oksidazlardır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kişisel önem notunun yerine eklenen MAO gerekçesi kaldırıldı; düzeltilmiş liste korundu (kural 2, 7)."
+     ]
     }
    ]
   },
@@ -2137,11 +2373,11 @@
    "fields": {
     "Text": {
      "before": "Fosforile formda bir şekerin Taşıyıcısı:<div><br></div><div>GLUT {{c1::7}}</div>",
-     "after": "Klasik bilgiye göre fosforile bir şekerin taşıyıcısı:<div><br></div><div>GLUT {{c1::7}}</div>"
+     "after": "Glukoz 6-fosfatı sitozolden ER'ye taşıyan protein:<div><br></div><div>{{c1::Glukoz 6-fosfat translokazı}}</div>"
     },
     "Extra": {
      "before": "Sit'daki Glu 6P --&gt; ER'a taşır",
-     "after": "Sitozoldeki glukoz 6-fosfatı ER'ye taşır.<br>Güncel kaynaklarda bu taşıyıcı glukoz 6-fosfat translokazıdır (SLC37A4); GLUT7 bağırsakta glukoz ve fruktoz taşır."
+     "after": "Sitozoldeki glukoz 6-fosfatı ER'ye taşır."
     }
    },
    "changes": [
@@ -2166,7 +2402,26 @@
    ],
    "aiNote": "Ne: Kökün başına \"Klasik bilgiye göre\" eklendi, Extra'daki \"Sit'daki Glu 6P\" açıldı ve Extra'ya görevin güncel kaynaklarda glukoz 6-fosfat translokazına ait olduğu ile GLUT7'nin bağırsaktaki işlevi yazıldı.\nNeden: TUS kitapları GLUT7'yi ER'de glukoz 6-fosfat taşıyıcısı olarak öğretir; ancak bu klon doğrulanamamış, ER taşıyıcısının SLC37A4 olduğu gösterilmiştir.\nNasıl: [TD2, KS1, YP1] Sınavın beklediği klasik cevap (7) ve c1 korunup kökte klasik olarak çerçevelendi; güncel görüş Extra'ya tek cümleyle yazıldı, bu yüzden arka yüz 8'den yaklaşık 20 sözcüğe çıktı.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, glukoz 6-fosfataz sistemi ve GSD Ib; Li Q ve ark., Am J Physiol Gastrointest Liver Physiol 2004 (PMID 15033637, ince bağırsak GLUT7 / SLC2A7 klonlaması; PubMed özeti).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Klasik bilgiye göre fosforile bir şekerin taşıyıcısı:<div><br></div><div>GLUT {{c1::7}}</div>",
+       "after": "Glukoz 6-fosfatı sitozolden ER'ye taşıyan protein:<div><br></div><div>{{c1::Glukoz 6-fosfat translokazı}}</div>"
+      },
+      "Extra": {
+       "before": "Sitozoldeki glukoz 6-fosfatı ER'ye taşır.<br>Güncel kaynaklarda bu taşıyıcı glukoz 6-fosfat translokazıdır (SLC37A4); GLUT7 bağırsakta glukoz ve fruktoz taşır.",
+       "after": "Sitozoldeki glukoz 6-fosfatı ER'ye taşır."
+      }
+     },
+     "actions": [
+      "Özgün kısa taşıma bilgisi korundu; kaynak karşılaştırması kaldırıldı (kural 1, 6).",
+      "Arka yüzdeki taşıyıcı düzeltmesi doğrudan cevaba işlendi; GLUT7 karşılaştırması ve kaynak dili kaldırıldı (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 53,
@@ -2297,7 +2552,7 @@
     },
     "Extra": {
      "before": "Peroksizom --&gt; Plazmolojen",
-     "after": "Peroksizom → plazmalojen<div>Mitokondri de kardiyolipin sentezler.</div>"
+     "after": "Peroksizom → plazmalojen"
     }
    },
    "changes": [
@@ -2322,7 +2577,21 @@
    ],
    "aiNote": "Ne: \"DER\" → \"Düz endoplazmik retikulum\" açıldı, \"Plazmolojen\" → \"plazmalojen\" düzeltildi ve Extra'ya \"Mitokondri de kardiyolipin sentezler.\" eklendi.\nNeden: Fosfolipid sentezi yapan organellerden mitokondri listede yoktu; \"DER\" kişisel kısaltmaydı.\nNasıl: [EK1, KS1, YP1] Yazarın üç satırlık listesi ve c1 cevapları korundu, eksik organel cevabı değiştirmemek için tek cümleyle arka yüze yazıldı.\nKaynak: Harper's Illustrated Biochemistry, fosfoaçilgliserol sentezi (kardiyolipinin mitokondride sentezi).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Peroksizom → plazmalojen<div>Mitokondri de kardiyolipin sentezler.</div>",
+       "after": "Peroksizom → plazmalojen"
+      }
+     },
+     "actions": [
+      "Özgün kısa bilgi korundu; sonradan eklenen mitokondri/kardiyolipin bilgisi çıkarıldı (kural 2, 4)."
+     ]
+    }
+   ]
   },
   {
    "order": 57,
@@ -2423,7 +2692,7 @@
    "fields": {
     "Text": {
      "before": "Transkripsiyon:<div><br></div><div>RNA Pol'ın <b>Promoter'ı tanıması:</b> {{c1::Sigma}} Alt birim</div><div><br></div><div><b>Prokaryot Başlangıç Noktaları:</b></div><div><br></div><div>{{c2::Pridnow}} Kutusu&nbsp;</div><div>- {{c2::35}} dize</div><div><br></div><div><b>Ökaryot Başlangıç Noktaları:</b></div><div><br></div><div>{{c2::TATA}} Kutusu (-25 dize)</div><div>{{c2::CAAT}} Kutusu</div><div>{{c2::CG}} Zengin Bölge&nbsp;</div>",
-     "after": "Transkripsiyon:<div><br></div><div>RNA polimerazın <b>promotoru tanıması:</b> {{c1::sigma}} alt birimi</div><div><br></div><div><b>Prokaryot başlangıç noktaları:</b></div><div><br></div><div>{{c2::Pribnow}} kutusu (−10)</div><div>−{{c2::35}} dizisi</div><div><br></div><div><b>Ökaryot başlangıç noktaları:</b></div><div><br></div><div>{{c2::TATA}} kutusu (−25 dizisi)</div><div>{{c2::CAAT}} kutusu</div><div>{{c2::CG}} zengin bölge</div>"
+     "after": "Transkripsiyon:<div><br></div><div>RNA polimerazın <b>promotoru tanıması:</b> {{c1::sigma}} alt birimi</div><div><br></div><div><b>Prokaryot başlangıç noktaları:</b></div><div><br></div><div>{{c2::Pribnow}} kutusu</div><div>−{{c2::35}} dizisi</div><div><br></div><div><b>Ökaryot başlangıç noktaları:</b></div><div><br></div><div>{{c2::TATA}} kutusu (−25 dizisi)</div><div>{{c2::CAAT}} kutusu</div><div>{{c2::CG}} zengin bölge</div>"
     }
    },
    "changes": [
@@ -2454,7 +2723,21 @@
    ],
    "aiNote": "Ne: \"Pridnow\" → \"Pribnow\" düzeltilip yanına \"(−10)\" yazıldı; \"RNA Pol'ın Promoter'ı\" → \"RNA polimerazın promotoru\" ve \"- 35 dize\" → \"−35 dizisi\" yapıldı.\nNeden: Konum yazılmayınca alt satırdaki −35 dizisi Pribnow kutusunun yeri sanılabiliyordu; ad yanlış yazılmıştı ve satır başındaki \"-\" liste işareti gibi duruyordu.\nNasıl: [EK1, YZ2, KS1, YP1] Ökaryot satırındaki \"(−25 dizisi)\" gösterimine paralel olarak tek konum bilgisi eklendi; sigma alt birimi, TATA, CAAT, CG cevapları ve c1/c2 dağılımı korundu.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, prokaryotik promotor (−10 Pribnow kutusu ve −35 dizisi).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Transkripsiyon:<div><br></div><div>RNA polimerazın <b>promotoru tanıması:</b> {{c1::sigma}} alt birimi</div><div><br></div><div><b>Prokaryot başlangıç noktaları:</b></div><div><br></div><div>{{c2::Pribnow}} kutusu (−10)</div><div>−{{c2::35}} dizisi</div><div><br></div><div><b>Ökaryot başlangıç noktaları:</b></div><div><br></div><div>{{c2::TATA}} kutusu (−25 dizisi)</div><div>{{c2::CAAT}} kutusu</div><div>{{c2::CG}} zengin bölge</div>",
+       "after": "Transkripsiyon:<div><br></div><div>RNA polimerazın <b>promotoru tanıması:</b> {{c1::sigma}} alt birimi</div><div><br></div><div><b>Prokaryot başlangıç noktaları:</b></div><div><br></div><div>{{c2::Pribnow}} kutusu</div><div>−{{c2::35}} dizisi</div><div><br></div><div><b>Ökaryot başlangıç noktaları:</b></div><div><br></div><div>{{c2::TATA}} kutusu (−25 dizisi)</div><div>{{c2::CAAT}} kutusu</div><div>{{c2::CG}} zengin bölge</div>"
+      }
+     },
+     "actions": [
+      "Sonradan eklenen konum parantezi çıkarıldı (kural 3)."
+     ]
+    }
+   ]
   },
   {
    "order": 60,
@@ -2543,11 +2826,11 @@
    "fields": {
     "Text": {
      "before": "<b>UV ışın</b> etkisiyle olan DNA Hasarı:<div><br></div><div>{{c1::Siklobütan Pirimidin Dimerleri}}</div><div><br></div><div>Tamiri:</div><div><br></div><div>Tek basamak - Direkt: {{c2::<b>Fotolyaz</b>}}</div><div><br></div><div>Diğer: {{c2::<b>UV'ye özgün ABC EksiNükleaz</b>}}</div>",
-     "after": "<b>UV ışını</b> etkisiyle oluşan DNA hasarı:<div><br></div><div>{{c1::Siklobütan pirimidin dimerleri}}</div><div><br></div><div>Tamiri:</div><div><br></div><div>Tek basamakta, doğrudan: {{c2::<b>Fotoliyaz</b>}}</div><div><br></div><div>Diğer: {{c2::<b>UV'ye özgü ABC eksinükleaz</b>}}</div>"
+     "after": "Bakterilerde <b>UV ışını</b> etkisiyle oluşan DNA hasarı:<div><br></div><div>{{c1::Siklobütan pirimidin dimerleri}}</div><div><br></div><div>Tamiri:</div><div><br></div><div>Tek basamakta, doğrudan: {{c2::<b>Fotoliyaz</b>}}</div><div><br></div><div>Diğer: {{c2::<b>UV'ye özgü ABC eksinükleaz</b>}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Fotoliyaz insanda bulunmaz; insanda bu hasar nükleotid eksizyon tamiriyle onarılır."
+     "after": ""
     }
    },
    "changes": [
@@ -2572,7 +2855,26 @@
    ],
    "aiNote": "Ne: Extra'ya fotoliyazın insanda bulunmadığını söyleyen tek cümle eklendi; \"özgün\" → \"özgü\", \"Fotolyaz\" → \"Fotoliyaz\" düzeltildi.\nNeden: Kart doğrudan onarımı tür belirtmeden veriyordu, oysa insanda pirimidin dimerleri yalnız nükleotid eksizyon tamiriyle onarılır; \"özgün\" sözcüğü \"özgü\" anlamında yanlış kullanılmıştı.\nNasıl: [EK3, YZ2, YP1] Prokaryot onarım yolları ve c1/c2 dağılımı korundu, insan için geçerli istisna arka yüze yazıldı.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, DNA onarımı bölümü (UV hasarı, UvrABC eksinükleaz, nükleotid eksizyon tamiri).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "<b>UV ışını</b> etkisiyle oluşan DNA hasarı:<div><br></div><div>{{c1::Siklobütan pirimidin dimerleri}}</div><div><br></div><div>Tamiri:</div><div><br></div><div>Tek basamakta, doğrudan: {{c2::<b>Fotoliyaz</b>}}</div><div><br></div><div>Diğer: {{c2::<b>UV'ye özgü ABC eksinükleaz</b>}}</div>",
+       "after": "Bakterilerde <b>UV ışını</b> etkisiyle oluşan DNA hasarı:<div><br></div><div>{{c1::Siklobütan pirimidin dimerleri}}</div><div><br></div><div>Tamiri:</div><div><br></div><div>Tek basamakta, doğrudan: {{c2::<b>Fotoliyaz</b>}}</div><div><br></div><div>Diğer: {{c2::<b>UV'ye özgü ABC eksinükleaz</b>}}</div>"
+      },
+      "Extra": {
+       "before": "Fotoliyaz insanda bulunmaz; insanda bu hasar nükleotid eksizyon tamiriyle onarılır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Fotoliyaz/ABC onarımının bağlamı kısa soru koşuluyla belirtildi; insan karşılaştırması karta eklenmedi (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 63,
@@ -2693,11 +2995,11 @@
    "fields": {
     "Text": {
      "before": "{{c1::Leigh}} Hast--&gt; <b>Sit C Oksidaz</b> Akt Bzk<div><br></div><div>{{c1::Leber'in Her. Optik Nöropati}}--&gt; <b>NADH DH</b> bzk</div><div><br></div><div>{{c1::MELAS}}--&gt; <b>NADH DH</b> ve <b>Lösin Taşıyan tRNA</b> bzk</div><div><br></div><div>{{c1::Alpers}} Hast--&gt; mtDNA kodlayan <b>DNA Pol Gama</b> Bzk</div>",
-     "after": "{{c1::Leigh}} hastalığı → <b>sitokrom c oksidaz</b> aktivite bozukluğu<div><br></div><div>{{c1::Leber herediter optik nöropatisi}} → <b>NADH dehidrogenaz</b> bozukluğu</div><div><br></div><div>{{c1::MELAS}} → <b>NADH dehidrogenaz</b> ve <b>lösin taşıyan tRNA</b> bozukluğu</div><div><br></div><div>{{c1::Alpers}} hastalığı → mtDNA'yı kopyalayan <b>DNA polimeraz gama</b> bozukluğu</div>"
+     "after": "{{c1::Leigh}} hastalığı → <b>sitokrom c oksidaz</b> aktivite bozukluğuyla görülebilir<div><br></div><div>{{c1::Leber herediter optik nöropatisi}} → <b>NADH dehidrogenaz</b> bozukluğu</div><div><br></div><div>{{c1::MELAS}} → <b>NADH dehidrogenaz</b> ve <b>lösin taşıyan tRNA</b> bozukluğu</div><div><br></div><div>{{c1::Alpers}} hastalığı → mtDNA'yı kopyalayan <b>DNA polimeraz gama</b> bozukluğu</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Leigh sendromu heterojendir; kompleks I ve PDH kusurları da neden olur."
+     "after": ""
     }
    },
    "changes": [
@@ -2728,7 +3030,26 @@
    ],
    "aiNote": "Ne: \"mtDNA kodlayan DNA Pol Gama\" → \"mtDNA'yı kopyalayan DNA polimeraz gama\" yapıldı, kısaltmalar açıldı ve Extra'ya Leigh sendromunun heterojen olduğunu söyleyen bir cümle eklendi.\nNeden: POLG çekirdekte kodlanan, mtDNA'yı replike eden enzimdir; ayrıca Leigh sendromu tek bir enzim kusuruna bağlı değildir ve kart onu yalnız sitokrom oksidazla eşliyordu.\nNasıl: [TD1, EK1, KS1, YP1] Dört satırın düzeni, kalınlar ve c1 cevapları korundu; LHON ve MELAS eşleşmeleri (kompleks I, MT-TL1) doğru olduğundan değiştirilmedi, Leigh için klasik eşleşme kökte bırakılıp niteleyici Extra'ya yazıldı.\nKaynak: Harper's Illustrated Biochemistry ve Lippincott Illustrated Reviews: Biochemistry, mitokondriyal hastalıklar.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "{{c1::Leigh}} hastalığı → <b>sitokrom c oksidaz</b> aktivite bozukluğu<div><br></div><div>{{c1::Leber herediter optik nöropatisi}} → <b>NADH dehidrogenaz</b> bozukluğu</div><div><br></div><div>{{c1::MELAS}} → <b>NADH dehidrogenaz</b> ve <b>lösin taşıyan tRNA</b> bozukluğu</div><div><br></div><div>{{c1::Alpers}} hastalığı → mtDNA'yı kopyalayan <b>DNA polimeraz gama</b> bozukluğu</div>",
+       "after": "{{c1::Leigh}} hastalığı → <b>sitokrom c oksidaz</b> aktivite bozukluğuyla görülebilir<div><br></div><div>{{c1::Leber herediter optik nöropatisi}} → <b>NADH dehidrogenaz</b> bozukluğu</div><div><br></div><div>{{c1::MELAS}} → <b>NADH dehidrogenaz</b> ve <b>lösin taşıyan tRNA</b> bozukluğu</div><div><br></div><div>{{c1::Alpers}} hastalığı → mtDNA'yı kopyalayan <b>DNA polimeraz gama</b> bozukluğu</div>"
+      },
+      "Extra": {
+       "before": "Leigh sendromu heterojendir; kompleks I ve PDH kusurları da neden olur.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Arka yüz kaldırılırken Leigh hastalığı tek bir kusura eşitlenmedi; yeni neden listesi eklenmedi (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 67,
@@ -2783,11 +3104,11 @@
    "fields": {
     "Text": {
      "before": "Diskoid HDL ----&gt; {{c1::LCAT}} enzimi ile {{c2::Kolesterolleri}} ---&gt; &nbsp;{{c2::Kol. Esteri}} yapar ---&gt; HDL 3 olur<div><br></div><div>LCAT akt'u --&gt; {{c2::Apo A1}}<br><div><br></div><div>HDL 3 kolesterol almaya devam eder büyür ---&gt; HDL 2 -----&gt; &nbsp;{{c1::CETP}} enzimi ( Apo {{c1::D}} ) ile diger Liproteinlerden {{c3::TG}} ve {{c3::PL}} alır / {{c3::Kol. Esteri}} verir&nbsp;</div><div><br></div><div>HDL 2 ---- {{c1::Hepatik Lipaz}} ---&gt; HDL 3</div><div><br></div><div><br></div></div>",
-     "after": "Diskoid HDL → {{c1::LCAT}} enzimi ile {{c2::kolesterolleri}} → {{c2::kolesterol esteri}} yapar → HDL3 olur<div><br></div><div>LCAT aktivatörü → {{c2::Apo A1}}<br><div><br></div><div>HDL3 kolesterol almaya devam eder, büyür → HDL2 → {{c1::CETP}} (klasik olarak Apo {{c1::D}}) ile diğer lipoproteinlerden {{c3::TG}} ve {{c3::PL}} alır, {{c2::kolesterol esteri}} verir</div><div><br></div><div>HDL2 (enzim: {{c1::hepatik lipaz}}) → HDL3</div></div>"
+     "after": "Diskoid HDL → {{c1::LCAT}} enzimi ile {{c2::kolesterolleri}} → {{c2::kolesterol esteri}} yapar → HDL3 olur<div><br></div><div>LCAT aktivatörü → {{c2::Apo A1}}<br><div><br></div><div>HDL3 kolesterol almaya devam eder, büyür → HDL2 → {{c1::CETP}} ile diğer lipoproteinlerden {{c3::TG}} ve {{c3::PL}} alır, {{c2::kolesterol esteri}} verir</div><div><br></div><div>HDL2 (enzim: {{c1::hepatik lipaz}}) → HDL3</div></div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kaynaklarda apo D, CETP'den ayrı bir lipokalin proteinidir."
+     "after": ""
     }
    },
    "changes": [
@@ -2824,7 +3145,26 @@
    ],
    "aiNote": "Ne: \"CETP enzimi ( Apo D )\" → \"CETP (klasik olarak Apo D)\" yapıldı ve Extra'ya apo D'nin ayrı bir lipokalin olduğu yazıldı; üçüncü satırdaki kolesterol esteri boşluğu c3'ten c2'ye alındı, \"Kol. Esteri\", \"akt'u\" ve \"Liproteinlerden\" düzeltildi.\nNeden: CETP = apo D eşleşmesi güncel kaynaklarda geçerli değildir ve CETP enzim değil transfer proteinidir; kolesterol esteri birinci satırda c2 olarak açık kaldığından c3 kartı cevabını gösteriyordu.\nNasıl: [TD2, YP2, KS1] Klasik TUS eşleşmesi silinmedi, \"klasik olarak\" diye çerçevelendi ve güncel bilgi tek cümleyle Extra'ya yazıldı; sızıntı ordinali birleştirerek giderildi, satır sırası ve boş satırlar korundu.\nKaynak: Harper's Illustrated Biochemistry, lipoprotein metabolizması (HDL döngüsü, CETP, hepatik lipaz); Lippincott Illustrated Reviews: Biochemistry, HDL metabolizması.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Diskoid HDL → {{c1::LCAT}} enzimi ile {{c2::kolesterolleri}} → {{c2::kolesterol esteri}} yapar → HDL3 olur<div><br></div><div>LCAT aktivatörü → {{c2::Apo A1}}<br><div><br></div><div>HDL3 kolesterol almaya devam eder, büyür → HDL2 → {{c1::CETP}} (klasik olarak Apo {{c1::D}}) ile diğer lipoproteinlerden {{c3::TG}} ve {{c3::PL}} alır, {{c2::kolesterol esteri}} verir</div><div><br></div><div>HDL2 (enzim: {{c1::hepatik lipaz}}) → HDL3</div></div>",
+       "after": "Diskoid HDL → {{c1::LCAT}} enzimi ile {{c2::kolesterolleri}} → {{c2::kolesterol esteri}} yapar → HDL3 olur<div><br></div><div>LCAT aktivatörü → {{c2::Apo A1}}<br><div><br></div><div>HDL3 kolesterol almaya devam eder, büyür → HDL2 → {{c1::CETP}} ile diğer lipoproteinlerden {{c3::TG}} ve {{c3::PL}} alır, {{c2::kolesterol esteri}} verir</div><div><br></div><div>HDL2 (enzim: {{c1::hepatik lipaz}}) → HDL3</div></div>"
+      },
+      "Extra": {
+       "before": "Güncel kaynaklarda apo D, CETP'den ayrı bir lipokalin proteinidir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "CETP ile Apo D özdeşliği silindi; açıklama kaldırılırken yanlış eşleştirme bırakılmadı (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 69,
@@ -2837,11 +3177,11 @@
    "fields": {
     "Text": {
      "before": "Siklohekzimid ---X {{c1::Ökaryot 60S Peptidil Transferaz}}",
-     "after": "Klasik bilgiye göre sikloheksimid {{c1::ökaryotik 60S peptidil transferaz}} enzimini inhibe eder"
+     "after": "Sikloheksimid, ökaryotik 60S alt biriminde {{c1::translokasyonu}} inhibe eder."
     },
     "Extra": {
      "before": "",
-     "after": "Güncel çalışmalara göre 60S alt biriminin E bölgesine bağlanarak translokasyonu engeller."
+     "after": ""
     }
    },
    "changes": [
@@ -2866,7 +3206,26 @@
    ],
    "aiNote": "Ne: \"---X\" işareti \"inhibe eder\" diye yazıldı, kök \"Klasik bilgiye göre\" ile başlatıldı ve Extra'ya E bölgesine bağlanıp translokasyonu engellediği yazıldı; \"Siklohekzimid\" → \"sikloheksimid\" oldu.\nNeden: Peptidil transferaz inhibisyonu TUS kitaplarında klasik cevap olarak sürse de güncel yapısal çalışmalar asıl etkinin translokasyon blokajı olduğunu gösterir.\nNasıl: [TD2, YZ1, SN2] Kursun diğer kartlarıyla uyumlu klasik cevap c1'de korundu, güncel mekanizma tek cümleyle Extra'ya yazıldı; ilaç adı kursta kullanılan \"sikloheksimid\" yazımına uyduruldu.\nKaynak: Schneider-Poetsch T ve ark. Inhibition of eukaryotic translation elongation by cycloheximide and lactimidomycin. Nat Chem Biol 2010;6:209–217 (PubMed özeti); Harper's Illustrated Biochemistry, protein sentezi inhibitörleri.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Klasik bilgiye göre sikloheksimid {{c1::ökaryotik 60S peptidil transferaz}} enzimini inhibe eder",
+       "after": "Sikloheksimid, ökaryotik 60S alt biriminde {{c1::translokasyonu}} inhibe eder."
+      },
+      "Extra": {
+       "before": "Güncel çalışmalara göre 60S alt biriminin E bölgesine bağlanarak translokasyonu engeller.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Arka yüzdeki mekanizma düzeltmesi doğrudan kısa cevaba işlendi; eski/klasik karşılaştırması kaldırıldı (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 70,
@@ -2879,11 +3238,11 @@
    "fields": {
     "Text": {
      "before": "Zn içeren enzimler:<div><br></div><div>{{c1::LDH}}</div><div>{{c2::Karbonik Anhidraz}}</div><div>{{c1::DNA RNA pol}}</div><div>{{c2::ALP}}</div><div>{{c1::SOD}}&nbsp;</div>",
-     "after": "Zn içeren enzimler (klasik liste):<div><br></div><div>{{c1::LDH}}</div><div>{{c2::Karbonik anhidraz}}</div><div>{{c1::DNA ve RNA polimeraz}}</div><div>{{c2::ALP}}</div><div>{{c1::SOD}}</div>"
+     "after": "Zn içeren enzimler:<div><br></div><div>{{c2::Karbonik anhidraz}}</div><div>{{c1::DNA ve RNA polimeraz}}</div><div>{{c2::ALP}}</div><div>{{c1::SOD}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "Güncel kaynaklarda LDH metal içermeyen bir enzim olarak geçer."
+     "after": ""
     }
    },
    "changes": [
@@ -2908,7 +3267,27 @@
    ],
    "aiNote": "Ne: Başlığa \"(klasik liste)\" eklendi, Extra'ya LDH'nin güncel kaynaklarda metal içermeyen enzim olduğu yazıldı; \"DNA RNA pol\" → \"DNA ve RNA polimeraz\" açıldı.\nNeden: Laktat dehidrogenaz NAD+ bağımlı, metal içermeyen bir enzimdir; çinko içerdiği bilgisi eski bir bildirime dayanır ama Türkçe TUS listelerinde sürer.\nNasıl: [TD2, KS1, YP1] Beklenen klasik cevap (LDH) silinmeden köke klasik çerçeve kondu, güncel görüş tek cümleyle arka yüze yazıldı; karbonik anhidraz, ALP, DNA/RNA polimeraz ve SOD (Cu/Zn) doğru olduğundan korundu.\nKaynak: Harper's Illustrated Biochemistry ve Lehninger, laktat dehidrogenaz (NAD+ bağımlı, kofaktör metal yok) ve çinko metaloenzimleri bölümleri.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Zn içeren enzimler (klasik liste):<div><br></div><div>{{c1::LDH}}</div><div>{{c2::Karbonik anhidraz}}</div><div>{{c1::DNA ve RNA polimeraz}}</div><div>{{c2::ALP}}</div><div>{{c1::SOD}}</div>",
+       "after": "Zn içeren enzimler:<div><br></div><div>{{c2::Karbonik anhidraz}}</div><div>{{c1::DNA ve RNA polimeraz}}</div><div>{{c2::ALP}}</div><div>{{c1::SOD}}</div>"
+      },
+      "Extra": {
+       "before": "Güncel kaynaklarda LDH metal içermeyen bir enzim olarak geçer.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "Kaynak/klasik liste açıklaması kaldırıldı; düzeltme doğrudan listeye işlendi (kural 1, 7).",
+      "Ön/arka çelişkisi kaldırıldı: NAD bağımlı insan LDH çinko listesinden çıkarıldı; kalan c1/c2 kartları korundu (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 71,
@@ -2921,11 +3300,11 @@
    "fields": {
     "Text": {
      "before": "<b>Hem NAD+ Hem NADP+</b> kullanabilen enzimler:<div><br></div><div>{{c1::Glu DH}}</div><div>{{c1::İzositrat DH}}</div>",
-     "after": "<b>Hem NAD+ hem NADP+</b> kullanabilen enzimler:<div><br></div><div>{{c1::Glutamat dehidrogenaz}}</div><div>{{c1::İzositrat dehidrogenaz}}</div>"
+     "after": "<b>NAD+ ve NADP+</b> kullanan formları bulunan enzimler:<div><br></div><div>{{c1::Glutamat dehidrogenaz}}</div><div>{{c1::İzositrat dehidrogenaz}}</div>"
     },
     "Extra": {
      "before": "",
-     "after": "İzositrat dehidrogenazın NAD+ ve NADP+ kullanan formları ayrı izoenzimlerdir."
+     "after": ""
     }
    },
    "changes": [
@@ -2950,7 +3329,26 @@
    ],
    "aiNote": "Ne: \"Glu DH\" ve \"İzositrat DH\" açıldı; Extra'ya izositrat dehidrogenazın NAD+ ve NADP+ kullanan formlarının ayrı izoenzimler olduğu yazıldı.\nNeden: Kart iki enzimi aynı şekilde sunuyordu; oysa tek bir enzim molekülü olarak iki koenzimi de kullanan glutamat dehidrogenazdır, izositrat dehidrogenazda koenzim tercihi izoenzime göre değişir.\nNasıl: [EK1, KS1, YP1] Klasik iki üyeli liste ve c1 korundu, niteleyici tek cümleyle arka yüze yazıldı; \"Glu\" burada glutamat olarak açıldı.\nKaynak: Harper's Illustrated Biochemistry, sitrik asit döngüsü (izositrat dehidrogenaz izoenzimleri) ve amino asit azotu (glutamat dehidrogenaz).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "<b>Hem NAD+ hem NADP+</b> kullanabilen enzimler:<div><br></div><div>{{c1::Glutamat dehidrogenaz}}</div><div>{{c1::İzositrat dehidrogenaz}}</div>",
+       "after": "<b>NAD+ ve NADP+</b> kullanan formları bulunan enzimler:<div><br></div><div>{{c1::Glutamat dehidrogenaz}}</div><div>{{c1::İzositrat dehidrogenaz}}</div>"
+      },
+      "Extra": {
+       "before": "İzositrat dehidrogenazın NAD+ ve NADP+ kullanan formları ayrı izoenzimlerdir.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+      "İzoenzim ayrımını uzun açıklama yerine kısa soru koşulu ifade ediyor (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 72,
@@ -4597,7 +4995,7 @@
    "fields": {
     "Text": {
      "before": "HbF'de:<div><br></div><div>{{c1::His}} yerine --&gt; {{c1::Ser}} var</div>",
-     "after": "HbF'nin gama zincirinde (143. konum):<div><br></div><div>{{c1::His}} yerine {{c1::Ser}} bulunur</div>"
+     "after": "HbF'de:<div><br></div><div>{{c1::His}} yerine {{c1::Ser}} bulunur</div>"
     }
    },
    "changes": [
@@ -4616,7 +5014,21 @@
    ],
    "aiNote": "Ne: Kök \"HbF'nin gama zincirinde (143. konum):\" yapıldı ve gereksiz ok kaldırılıp yüklem \"bulunur\" oldu.\nNeden: \"HbF'de\" hangi zincirin hangi konumunun sorulduğunu söylemiyordu; HbF'de pek çok amino asit farkı vardır.\nNasıl: [SN1, TD3, BÇ1] Beta zincirinin 143. konumundaki His'in gama zincirinde Ser olduğu ve 2,3-BPG bağlanmasını azalttığı doğrulandı; cevaplar ve c1 korundu.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, fetal hemoglobin ve 2,3-BPG bağlanması.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "HbF'nin gama zincirinde (143. konum):<div><br></div><div>{{c1::His}} yerine {{c1::Ser}} bulunur</div>",
+       "after": "HbF'de:<div><br></div><div>{{c1::His}} yerine {{c1::Ser}} bulunur</div>"
+      }
+     },
+     "actions": [
+      "Sonradan eklenen zincir/konum açıklaması kaldırıldı; özgün kısa His/Ser sorusu korundu (kural 3)."
+     ]
+    }
+   ]
   },
   {
    "order": 118,
@@ -5633,7 +6045,7 @@
     },
     "Extra": {
      "before": "",
-     "after": "Güncel sınıflamada kifoskolyotik tip olarak adlandırılır."
+     "after": ""
     }
    },
    "changes": [
@@ -5658,7 +6070,21 @@
    ],
    "aiNote": "Ne: \"Lys OH Eks\" → \"Lizil hidroksilaz eksikliği\" açıldı, \"Ehler Danlos\" → \"Ehlers-Danlos\" yazıldı ve Extra'ya güncel adı veren tek cümle eklendi.\nNeden: Kısaltma yazarın notuydu; tip 6, 1997 ve 2017 sınıflamalarında kifoskolyotik tip olarak adlandırılır.\nNasıl: [GN2, KS1, YP1] TUS'ta sorulan klasik numara (tip 6) ve c1 korundu, güncel ad yalnız Extra'ya yazıldı.\nKaynak: Malfait ve ark., Am J Med Genet C 2017 (Ehlers-Danlos sendromlarının uluslararası sınıflaması).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Güncel sınıflamada kifoskolyotik tip olarak adlandırılır.",
+       "after": ""
+      }
+     },
+     "actions": [
+      "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+     ]
+    }
+   ]
   },
   {
    "order": 149,
@@ -10717,7 +11143,7 @@
     },
     "Extra": {
      "before": "Sit'da Karbomoil Fosfat çok artıyor&nbsp;",
-     "after": "Sitozolde karbamoil fosfat artar ve pirimidin sentez yoluna girer."
+     "after": "Sitozolde karbamoil fosfat artar."
     }
    },
    "changes": [
@@ -10742,7 +11168,21 @@
    ],
    "aiNote": "Ne: \"HiperNH3\", \"Eks\" ve \"Sit'da\" kısaltmaları açıldı, \"Transkarbomoilaz\" → \"transkarbamoilaz\" düzeltildi; c1 cevabı korundu.\nNeden: Kişisel kısaltmalar ve \"karbomoil\" harf hatası mevcuttu.\nNasıl: [KS1, YZ1, BÇ1, YP1, YP4] Sekonder orotik asidüri mekanizması standartlaştırıldı, c1 ordinali ve Extra içeriği korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Extra": {
+       "before": "Sitozolde karbamoil fosfat artar ve pirimidin sentez yoluna girer.",
+       "after": "Sitozolde karbamoil fosfat artar."
+      }
+     },
+     "actions": [
+      "Özgün kısa bilgi tutuldu; sonradan eklenen yol açıklaması çıkarıldı (kural 2, 6)."
+     ]
+    }
+   ]
   },
   {
    "order": 297,
@@ -14201,7 +14641,7 @@
    "fields": {
     "Text": {
      "before": "Peptidil Transferaz --&gt; {{c1::rRNA}} yapıda&nbsp;<div><br></div><div><b>Prokaryotik&nbsp;<span style=\"color: var(--field-fg); background: var(--field-bg);\">Peptidil Transferaz</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b>&nbsp;inh'ü</b>:</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Kloramfenikol}}</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b><span style=\"color: var(--field-fg); background: var(--field-bg);\">Ökaryotik Peptidil Transferaz</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b>&nbsp;inh'ü</b>:</span>&nbsp;&nbsp;<br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Sikloheksimid}}</span></div>\n",
-     "after": "Peptidil transferaz → {{c1::rRNA}} yapıda<div><br></div><div><b>Prokaryotik <span style=\"color: var(--field-fg); background: var(--field-bg);\">peptidil transferaz</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b> inhibitörü</b>:</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Kloramfenikol}}</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b><span style=\"color: var(--field-fg); background: var(--field-bg);\">Ökaryotik peptidil transferaz</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b> inhibitörü</b>:</span><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Sikloheksimid}}</span></div>"
+     "after": "Peptidil transferaz → {{c1::rRNA}} yapıda<div><br></div><div><b>Prokaryotik <span style=\"color: var(--field-fg); background: var(--field-bg);\">peptidil transferaz</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b> inhibitörü</b>:</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Kloramfenikol}}</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b><span style=\"color: var(--field-fg); background: var(--field-bg);\">Ökaryotik translokasyon</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b> inhibitörü</b>:</span><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Sikloheksimid}}</span></div>"
     },
     "Extra": {
      "before": "Enerji HARCAMAZ",
@@ -14224,7 +14664,21 @@
    ],
    "aiNote": "Ne: \"inh'ü\" → \"inhibitörü\" açıldı; Extra'daki \"Enerji HARCAMAZ\" notu öznesi belli bir cümle oldu ve büyük harfli sözcük kalın küçük harf yapıldı.\nNeden: \"inh\" inhibitör ve inhibisyon olarak okunabiliyordu; Extra'daki not neyin enerji harcamadığını söylemiyordu.\nNasıl: [KS1, SN2, TD3] Peptit bağı enerjisinin aminoasil-tRNA bağından geldiği, tepkimenin GTP harcamadığı doğrulandı; kloramfenikol ve sikloheksimid cevapları, renk span'ları ve c1 korundu.\nKaynak: Lippincott Illustrated Reviews: Biochemistry, protein sentezi (peptidil transferaz bir ribozimdir).",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "Peptidil transferaz → {{c1::rRNA}} yapıda<div><br></div><div><b>Prokaryotik <span style=\"color: var(--field-fg); background: var(--field-bg);\">peptidil transferaz</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b> inhibitörü</b>:</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Kloramfenikol}}</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b><span style=\"color: var(--field-fg); background: var(--field-bg);\">Ökaryotik peptidil transferaz</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b> inhibitörü</b>:</span><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Sikloheksimid}}</span></div>",
+       "after": "Peptidil transferaz → {{c1::rRNA}} yapıda<div><br></div><div><b>Prokaryotik <span style=\"color: var(--field-fg); background: var(--field-bg);\">peptidil transferaz</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b> inhibitörü</b>:</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Kloramfenikol}}</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b><span style=\"color: var(--field-fg); background: var(--field-bg);\">Ökaryotik translokasyon</span></b><span style=\"color: var(--field-fg); background: var(--field-bg);\"><b> inhibitörü</b>:</span><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">{{c1::Sikloheksimid}}</span></div>"
+      }
+     },
+     "actions": [
+      "İlişkili sikloheksimid sorusu aynı mekanizmayla düzeltildi; ilaç ve c1 korundu (kural 7)."
+     ]
+    }
+   ]
   },
   {
    "order": 397,
@@ -15101,7 +15555,7 @@
    "fields": {
     "Text": {
      "before": "<b>Ubikutin --&gt;&nbsp;</b><span style=\"color: var(--field-fg); background: var(--field-bg);\">C terminali {{c1::</span><span style=\"background: var(--field-bg);\"><font color=\"#ff3b30\">Gly</font></span><span style=\"color: var(--field-fg); background: var(--field-bg);\">}} ile</span><div><br></div><div>Yıkılacak Proteinin <b><font color=\"#ff3b30\">Lys Epsilon N</font></b> grubuna bağlanır (<span style=\"color: var(--field-fg); background: var(--field-bg);\">Non Alfa Peptid Bağı)</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">-------------</span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">\nYıkılacak Protein N Terminal 'de {{c2::</span><span style=\"background: var(--field-bg);\"><font color=\"#ff3b30\">Met - Ser</font></span><span style=\"color: var(--field-fg); background: var(--field-bg);\">}} olması Ubikutillenmeyi GECİKTİRİR<br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\"><br></span></div><div><span style=\"color: var(--field-fg); background: var(--field-bg);\">\n\n<span style=\"color: var(--field-fg); background: var(--field-bg);\">Yıkılacak Protein N Terminal 'de {{c2::</span><span style=\"background: var(--field-bg);\"><font color=\"#ff3b30\">Asp - Arg</font></span><span style=\"color: var(--field-fg); background: var(--field-bg);\">}} olması Ubikutillenmeyi HIZLANDIRIR</span><br></span></div>\n",
-     "after": "<b>Ubikitin →</b> C terminalindeki {{c1::<font color=\"#ff3b30\">Gly</font>}} ile<div><br></div><div>Yıkılacak proteinin <b><font color=\"#ff3b30\">Lys epsilon-amino</font></b> grubuna bağlanır (alfa olmayan peptid bağı: izopeptid)</div><div>-------------</div><div>Yıkılacak proteinin N terminalinde {{c2::<font color=\"#ff3b30\">Met, Ser</font>}} olması ubikitinlenmeyi <b>geciktirir</b><br></div><div><br></div><div>Yıkılacak proteinin N terminalinde {{c2::<font color=\"#ff3b30\">Asp, Arg</font>}} olması ubikitinlenmeyi <b>hızlandırır</b><br></div>"
+     "after": "<b>Ubikitin →</b> C terminalindeki {{c1::<font color=\"#ff3b30\">Gly</font>}} ile<div><br></div><div>Yıkılacak proteinin <b><font color=\"#ff3b30\">Lys epsilon-amino</font></b> grubuna bağlanır (alfa olmayan peptid bağı)</div><div>-------------</div><div>Yıkılacak proteinin N terminalinde {{c2::<font color=\"#ff3b30\">Met, Ser</font>}} olması ubikitinlenmeyi <b>geciktirir</b><br></div><div><br></div><div>Yıkılacak proteinin N terminalinde {{c2::<font color=\"#ff3b30\">Asp, Arg</font>}} olması ubikitinlenmeyi <b>hızlandırır</b><br></div>"
     }
    },
    "changes": [
@@ -15126,7 +15580,21 @@
    ],
    "aiNote": "Ne: \"Ubikutin\" → \"Ubikitin\", \"Lys Epsilon N\" → \"Lys epsilon-amino\" ve \"Non Alfa Peptid Bağı\" → \"alfa olmayan peptid bağı: izopeptid\" yazıldı; büyük harfli fiiller kalın küçük harf oldu.\nNeden: Protein adı yanlış yazılmıştı; \"Epsilon N\" ve \"Non Alfa\" kişisel ve yarı İngilizce ifadelerdi.\nNasıl: [YZ2, KS1, YP3, YP1] Ubikitinin C uçtaki glisinle hedef lizinin epsilon-amino grubuna izopeptid bağıyla bağlandığı ve N-uç kuralında Met ve Ser'in kararlı, Asp ve Arg'ın kararsızlaştırıcı olduğu doğrulandı; kırmızı renkler, ayraç çizgisi ve c1, c2 cevapları korundu.",
    "decision": null,
-   "editorNote": null
+   "editorNote": null,
+   "editorialHistory": [
+    {
+     "date": "2026-10-17",
+     "fields": {
+      "Text": {
+       "before": "<b>Ubikitin →</b> C terminalindeki {{c1::<font color=\"#ff3b30\">Gly</font>}} ile<div><br></div><div>Yıkılacak proteinin <b><font color=\"#ff3b30\">Lys epsilon-amino</font></b> grubuna bağlanır (alfa olmayan peptid bağı: izopeptid)</div><div>-------------</div><div>Yıkılacak proteinin N terminalinde {{c2::<font color=\"#ff3b30\">Met, Ser</font>}} olması ubikitinlenmeyi <b>geciktirir</b><br></div><div><br></div><div>Yıkılacak proteinin N terminalinde {{c2::<font color=\"#ff3b30\">Asp, Arg</font>}} olması ubikitinlenmeyi <b>hızlandırır</b><br></div>",
+       "after": "<b>Ubikitin →</b> C terminalindeki {{c1::<font color=\"#ff3b30\">Gly</font>}} ile<div><br></div><div>Yıkılacak proteinin <b><font color=\"#ff3b30\">Lys epsilon-amino</font></b> grubuna bağlanır (alfa olmayan peptid bağı)</div><div>-------------</div><div>Yıkılacak proteinin N terminalinde {{c2::<font color=\"#ff3b30\">Met, Ser</font>}} olması ubikitinlenmeyi <b>geciktirir</b><br></div><div><br></div><div>Yıkılacak proteinin N terminalinde {{c2::<font color=\"#ff3b30\">Asp, Arg</font>}} olması ubikitinlenmeyi <b>hızlandırır</b><br></div>"
+      }
+     },
+     "actions": [
+      "Özgün açıklama korundu; eklenen izopeptid parantez uzantısı kaldırıldı (kural 3)."
+     ]
+    }
+   ]
   },
   {
    "order": 423,
@@ -17003,5 +17471,22 @@
   "sourceReviewStage": "claim-scope-review-pending",
   "sourceIdentityCorrections": 4,
   "appliedPackageSha256": "5fadd886944365e6e67b6f1b99fd1d89b13f49e916eb7a63789e87312e9990b7"
+ },
+ "editorialPolicy": {
+  "date": "2026-10-17",
+  "reviewedNotes": 484,
+  "reviewedCards": 602,
+  "changedNotes": 29,
+  "history": "docs/catalog-corrections/biyokimya-editorial.json",
+  "rules": [
+   "Kart içine kaynak adı, URL, sayfa veya kurum/yıl atfı yazılmaz.",
+   "Sonradan eklenen Ek bilgi / arka yüz açıklamaları kaldırılır.",
+   "Ana metindeki isteğe bağlı ek açıklamalar kaldırılır.",
+   "Yeni ilaç, örnek veya liste üyeleriyle kapsam genişletilmez.",
+   "Ek kılavuz ve klinik uygulama özeti yazılmaz.",
+   "Uzun karşılaştırma ve düzeltme gerekçesi karta taşınmaz.",
+   "Gerekli düzeltme kısa ve doğrudan ilgili ifadede yapılır.",
+   "Mevcut ezber kodları korunur."
+  ]
  }
 }

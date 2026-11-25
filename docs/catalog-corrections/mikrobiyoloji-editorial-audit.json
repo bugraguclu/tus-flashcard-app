@@ -1,0 +1,6124 @@
+{
+ "schema": "tusankim.catalog-editorial/v1",
+ "date": "2026-10-17",
+ "course": "Mikrobiyoloji",
+ "originalReference": {
+  "gitRef": "a08dd99",
+  "path": "assets/catalog/bka-tus-complete.apkg"
+ },
+ "packageBeforeSha256": "79344b1e72cbf5dce93d7f21164d022cc88216a574ca10d9aaa22a9c18dc3e74",
+ "applied": false,
+ "reviewedNotes": 587,
+ "reviewedCards": 730,
+ "boundaries": {
+  "cards": "74b2cd2b72adceb61b9f437cc121f5a2fe11040d92778d4523df68337d3416f1",
+  "revlog": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "graves": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "collection": "d77b2e5569583e7afdc18d6a8747fc488cef0cf907da5f8c66cf90104b61eff6",
+  "noteIdentity": "90984ca47dbdefd40db5c3b25a4c1d072925253cb109a90419604f7b597759fc",
+  "otherCourses": "93553e42342502ba121ed47ef87dfcc3fb60b41388a3c46d78df1559498d033b"
+ },
+ "scope": [
+  {
+   "noteId": 1604238909834,
+   "guid": "Rc<shZ`MJS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604238952177,
+   "guid": "EM@(~c>>H_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604238995196,
+   "guid": "n<HT{L/42P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604239019884,
+   "guid": "gAflp9!h_S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239126570,
+   "guid": "Fb@sc+8$3W",
+   "ordinals": [
+    1,
+    2,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239176823,
+   "guid": "HAbg}>v%HZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239192123,
+   "guid": "Nld9[#aHxy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239250061,
+   "guid": "hc|A(F+VCt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239318397,
+   "guid": "kL439^xLb5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239393073,
+   "guid": "bS.*Iu#k8P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239475647,
+   "guid": "l<_q<tB*<B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239596649,
+   "guid": "e,}*C/0/5H",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239720008,
+   "guid": "O8/~Qh[DeC",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239754560,
+   "guid": "Nswpihz~6:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239788090,
+   "guid": "ePF.&Tj,$8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239836733,
+   "guid": "OgcfId~1,v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239897149,
+   "guid": "K^yzV|yMf;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239928715,
+   "guid": "C@%|&)HcIw",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604239982740,
+   "guid": "A$nr9[DMlv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240009285,
+   "guid": "d_uJ)(1G7r",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240075926,
+   "guid": "O`s=Xt,iz9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604240160166,
+   "guid": "lXE&#9qm>Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604240273325,
+   "guid": "k9p-{9IGc4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604240380468,
+   "guid": "i!Yj&Wjt>-",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240418694,
+   "guid": "t{kk|t>78H",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240485002,
+   "guid": "y)I5_L)w%C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240500496,
+   "guid": "uA3N0B:S<]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240547143,
+   "guid": "llpMDxm|<R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240591703,
+   "guid": "NK%6lsjJG%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240661785,
+   "guid": "Ki=?rL](&U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240700117,
+   "guid": "JFl}<C3~K8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240721460,
+   "guid": "Peney*D.f=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240780825,
+   "guid": "G1)h+ulAzE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240807332,
+   "guid": "g(1xau%g|_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240854604,
+   "guid": "GgC3(rU|l}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240901023,
+   "guid": "k^S}Ylng~l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240932411,
+   "guid": "O{.wqqbgeP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604240959512,
+   "guid": "LaUyx!B_Y:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604241023605,
+   "guid": "JDUcav7vaH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604241052371,
+   "guid": "r+#_v~3]:K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604241242709,
+   "guid": "xO^4<}SuD_",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604265671712,
+   "guid": "fq,]#ln@&Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604265717453,
+   "guid": "CK?LzE@k.,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604265740871,
+   "guid": "KA2,~d%b@O",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604265824673,
+   "guid": "y+w)^BVj]W",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604265868291,
+   "guid": "gA{85fX0so",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604265903326,
+   "guid": "c~D*wXGNyG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604265958188,
+   "guid": "Lomp7aOhp.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266011275,
+   "guid": "gdp.C}?jzL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266094838,
+   "guid": "w.=YBH=2XB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604266127781,
+   "guid": "qj2<v6PdeP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266181112,
+   "guid": "LL(<jq9;?#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266319660,
+   "guid": "H#GT[KmeO;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266339071,
+   "guid": "o+yzH/{G$e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266407511,
+   "guid": "Jukq]ZYxe1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266459492,
+   "guid": "KHWCDvy|hQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266496084,
+   "guid": "L|P*CX4=Q}",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266538134,
+   "guid": "sXJBrU9fYo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266617024,
+   "guid": "hrYOXp/y,F",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266647942,
+   "guid": "xo$$azYb[k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266701004,
+   "guid": "Bx6~{3~=KH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604266755050,
+   "guid": "w6pI3:*nE4",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604300195313,
+   "guid": "d_]yB:c-;e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604300443463,
+   "guid": "lupdaGI:D/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604300645426,
+   "guid": "mf~VF:CC,k",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604300724517,
+   "guid": ";J*z3Z]MJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604300771925,
+   "guid": "Kt3yO~lsmB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604300844795,
+   "guid": "Q(vT.!a)0o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604300892979,
+   "guid": "q}KpErrw+8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604300922276,
+   "guid": "l9TUzpeE4M",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604300952610,
+   "guid": "l70Y_j,bi~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604301068248,
+   "guid": "L!]&_u!J|h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604301087497,
+   "guid": "oQ{IwZBM&v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604301918486,
+   "guid": "xTPvUw~$8y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604301976733,
+   "guid": "igmhKpg<|>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604302008403,
+   "guid": "vstB|r3=-x",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604302118636,
+   "guid": "t_TQy[P%M{",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604302192599,
+   "guid": "n)OEt7Rmr5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604302213161,
+   "guid": "E=}y-.)+:?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604302243235,
+   "guid": "ltUSVc3?!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604302268728,
+   "guid": "qMn>tR?DhS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604302348060,
+   "guid": "M_eyS;^g$-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604302375379,
+   "guid": "f--J(,*|i4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604302491934,
+   "guid": "jD_O<<y=#D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303083859,
+   "guid": "M7`#Yn;+yX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303135977,
+   "guid": "bUfH`/|*tN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303180854,
+   "guid": "yYZ=ut09vA",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303205157,
+   "guid": "xOnWL{S&lt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303271369,
+   "guid": "x!$SqqAZK,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303339235,
+   "guid": "AX68{$x6=}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303401240,
+   "guid": "xIUp$zc6N&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303440248,
+   "guid": "q]eSEcXTJK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303505886,
+   "guid": "EhEH;WB_$F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303607219,
+   "guid": "sT~G1!V[1A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303660505,
+   "guid": "M^T4X]{#kf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303724494,
+   "guid": "Q*z~HvnJNX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303913663,
+   "guid": "gn[|.l/Hfm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604303943829,
+   "guid": "hy<ZA9<&q#",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604304043759,
+   "guid": "Pt%.u=4d@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604304091110,
+   "guid": "n1{H4Y]Q{K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604304224525,
+   "guid": "yMH0z0cjpc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604304357985,
+   "guid": "OlJWc3Qor;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604304393746,
+   "guid": "w}uxAT]]*{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604304453469,
+   "guid": "rc:alGBW4X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604304596696,
+   "guid": "L6yUW#N=7s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604304724850,
+   "guid": "DUIe0`9mZA",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604305108277,
+   "guid": "dNAVVuI`VJ",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604305150157,
+   "guid": "A!%R}7ep6J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604305202294,
+   "guid": "f^-b()mR4]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604305615155,
+   "guid": "b!j$.H%e7Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604306129647,
+   "guid": "iRX/mk3%!c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604306416907,
+   "guid": "cG,|CFI,3l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604307382326,
+   "guid": "lnEDC`PIq*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604307433837,
+   "guid": "x)UvMS{D79",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604312678796,
+   "guid": "G|FH&{F7|]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604312699622,
+   "guid": "mcGE`lo~-B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604312763605,
+   "guid": "OqR_c2*w+9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604312813339,
+   "guid": "tkzlk>-_a^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604312852395,
+   "guid": "lLHPWbv_a`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604312869438,
+   "guid": "lqRsbcW:7w",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604312909877,
+   "guid": "HoO%E1tI!i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604312952508,
+   "guid": "og_MEI.y+b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604313261504,
+   "guid": "if:~eZqkjd",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604314098403,
+   "guid": "OP[m(Z_Bh(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604314233998,
+   "guid": "L..1T]<U2)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604314267834,
+   "guid": "wW7M37_Z=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604314326814,
+   "guid": "E46kM<{/,S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604314451475,
+   "guid": "qkhX2gp9/=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604314513445,
+   "guid": "rk;8kt0=i@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604314718563,
+   "guid": "BG$M$/wJt*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604314811143,
+   "guid": "Oy(q>y$r{-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604314859399,
+   "guid": "PhPJE|cM.p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604315551971,
+   "guid": "eM8M5kt%>Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604315603365,
+   "guid": "FakbR4rX<h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604315968652,
+   "guid": "qZxe|}xd<^",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604316084721,
+   "guid": "fuyv!+n:Ny",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604316121484,
+   "guid": "u^.3K,dhxA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604316202754,
+   "guid": "tj&_4ma6PD",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604316428338,
+   "guid": "r|>tBEIRd?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604316575703,
+   "guid": "L@:FKLH(^g",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604317714562,
+   "guid": "MgiC!}h$EM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604317740641,
+   "guid": "ucA&S%c,O6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604317828409,
+   "guid": "Ku/s:EG3h5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604318108981,
+   "guid": "K{*;<[/AF}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604318188923,
+   "guid": "OzerQ4,A63",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604318215997,
+   "guid": "w,~bv&{5T!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604318246470,
+   "guid": "x?G`0XxA[[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604318335132,
+   "guid": "O6;FS=g2)K",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604318421426,
+   "guid": "v#0nRj9^(X",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604318730868,
+   "guid": "OEGTq?buJ`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604318749922,
+   "guid": "wVP_%Y!=LW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604338905056,
+   "guid": "wRj2P)w|Mu",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604338997009,
+   "guid": "BG*JjXJSyD",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604339042679,
+   "guid": "m~5}<[,cyj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339071560,
+   "guid": "hi6p`-Iw&@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339266352,
+   "guid": "B;U%yY9.aM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339307941,
+   "guid": "l^A{nM?iSP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339329308,
+   "guid": "Ir1=+D{C1m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339367271,
+   "guid": "CzQ@]O-5Jc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339454868,
+   "guid": "GM50rG5*t?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339498164,
+   "guid": "B{[1vb7V.`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339540452,
+   "guid": "f%-!3B;JSK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339611070,
+   "guid": "QeSq&{JS]=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339656268,
+   "guid": "C`:pUE1IM0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339718998,
+   "guid": "Pg/p:c_?2v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339760690,
+   "guid": "Bpa^qNg,Q2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339827186,
+   "guid": "mYV%-Jmb&]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339845451,
+   "guid": "Iv[(hyI3tU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339915529,
+   "guid": "Mc#${rI^X^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339932109,
+   "guid": "PwzD2d`bc<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339960377,
+   "guid": "nWO{ZlfP7!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604339983657,
+   "guid": "raGc{cYcT4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340051257,
+   "guid": "t=F)X{O62",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604340108251,
+   "guid": "n4PHs[D*yC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340142409,
+   "guid": "h^9Wo_u+85",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340210744,
+   "guid": "E&v(gcUS7J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340226160,
+   "guid": "q!Y.m9a#J^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340305055,
+   "guid": "y#iZRZI_kC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340330451,
+   "guid": "Jzkl@;/c=S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340388033,
+   "guid": "yPb`3jpJ8*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340399894,
+   "guid": "QOC:KseEW?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340417862,
+   "guid": "u6u(MvXSTT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340436505,
+   "guid": "paJQ/;NX:N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340507622,
+   "guid": "bcz+Lq3}L{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340526062,
+   "guid": "Cswirb_5<8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604340563439,
+   "guid": "QxK,om7MIe",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604340723705,
+   "guid": "iRas(V:+v5",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604340920860,
+   "guid": "JQI|g(4>!l",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604341013420,
+   "guid": "mqj|zOR7xk",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341062437,
+   "guid": "lSP=Ts^BtX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341105770,
+   "guid": "z.V^ls8e({",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341160437,
+   "guid": "MmMcF4$?nS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341199926,
+   "guid": "C[[C>GI-e#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341223643,
+   "guid": "Dx8kunH5h5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341271331,
+   "guid": "DC[1Kdfif!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341347113,
+   "guid": "QD+W66Rh#H",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341364613,
+   "guid": "im3,P#M$B]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341448196,
+   "guid": "LS*K@$R;VT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341483128,
+   "guid": "Bc;<?ti96=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341541611,
+   "guid": "F9(I%BYgzU",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341580010,
+   "guid": "Kh0dhs):&3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341608418,
+   "guid": "B55VCGVK;+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341637903,
+   "guid": "jPXqTM!o4H",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341706168,
+   "guid": "Dr-`!?]%g>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604341774546,
+   "guid": "ns%W=hn.su",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604342936115,
+   "guid": "QoqN*f8$V+",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604342986922,
+   "guid": "CasS3pAa}E",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343041780,
+   "guid": "i:#?Qmu19s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343097210,
+   "guid": "ic4<PzLM`-",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343138992,
+   "guid": "d4:Zrf>E0T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343224711,
+   "guid": "m1jl?k.)@G",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343259159,
+   "guid": "e<vru-?`(/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343303503,
+   "guid": "A}Kv8AbX`D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343328824,
+   "guid": "yPlSh1$dBF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343383358,
+   "guid": "z/Ihr)#B(z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343454656,
+   "guid": "Nw2^[jG9)q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343487480,
+   "guid": "xG)W)A+Ae=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343501037,
+   "guid": "gQsy4;4E;=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343546253,
+   "guid": "o+V1fjZ`Z=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343586709,
+   "guid": "t#WZ)roB+Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343615309,
+   "guid": "F>1![-E:SA",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343692629,
+   "guid": "zUWc;L@W`?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343794915,
+   "guid": "ICV9jT5<P9",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343854534,
+   "guid": "v).@GrZe0m",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343916970,
+   "guid": "D:2L>&{<?;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604343958611,
+   "guid": "H&tYK~6{6|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604344016565,
+   "guid": "eWl}E$cECt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604344082669,
+   "guid": "qZ,7*hS.FV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604344277033,
+   "guid": "h{FiOzBkBt",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604344305291,
+   "guid": "I7:yBt8:ai",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604344333442,
+   "guid": "fbrH[zZyJt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604344755928,
+   "guid": "FF[@:uOJ9.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604344831712,
+   "guid": "u&kuI4|c65",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604344880829,
+   "guid": "d(uRm8R_tD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604344908679,
+   "guid": "Nu3/^=f{J8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345019365,
+   "guid": "HlyLAv02Wm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345085639,
+   "guid": "GO[R#D?aS,",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345098286,
+   "guid": "b2|;RmI+|(",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345145119,
+   "guid": ".9Rb]M`gx",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345164691,
+   "guid": "ptLTRLWLg5",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345244627,
+   "guid": "da{[b7n|~X",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345262390,
+   "guid": "Ep%^-bhNog",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345278740,
+   "guid": "zAhhW^Y18c",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345315244,
+   "guid": "E|,aaLz%]h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345351710,
+   "guid": "ADz8_I;N6]",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345363765,
+   "guid": "sPmkK2>eST",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345379309,
+   "guid": "CqLBe@D+?b",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345400683,
+   "guid": "sI:58%,XZm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345440381,
+   "guid": "QMspMJ|(M:",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345512076,
+   "guid": "cftt|OYc7/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345593361,
+   "guid": "c&EJkKTae/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345682784,
+   "guid": "jn(@JsLq4y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345735075,
+   "guid": "BH.=*[5x=i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345773115,
+   "guid": "yG9CMJ<jHc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345839250,
+   "guid": "F67@xj:A+4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345890762,
+   "guid": "xf+ZE/&XQp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345923623,
+   "guid": "J$dy]9*;;u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345954722,
+   "guid": "cQ8^`PBKFm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604345986055,
+   "guid": "FE-S6,48>A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604346047168,
+   "guid": "fZd>`ZafwU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604346077065,
+   "guid": "L%ID]5Y/_i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604346225248,
+   "guid": "g|pDOL6b8M",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604346258032,
+   "guid": "dN0|}T.L]I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607326184252,
+   "guid": "p8jcy4e)~F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607326462303,
+   "guid": "wL.(Y[VAFJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607326698308,
+   "guid": "mD}ZD>6JXw",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607326802467,
+   "guid": "g7K#p`8q,%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607326994797,
+   "guid": "o8#YMZ[z%I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607327193381,
+   "guid": "s&,ZeGz`R{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607327270728,
+   "guid": "lO(T6+n24N",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607327361215,
+   "guid": "C7k~.yu$6>",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607340574110,
+   "guid": "du_/O[^}D=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607340715450,
+   "guid": "wA6%%Ip>E0",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607350918573,
+   "guid": "jH5|Z{>y+9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607350999476,
+   "guid": "p|iq[3p8E(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607351457666,
+   "guid": "n#-|KGPeB9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607351687269,
+   "guid": "I2<~i4nlZf",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607351714921,
+   "guid": "InY&?6?XTG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607351801882,
+   "guid": "l5mLZv+;:l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607351926661,
+   "guid": "tqq[d9Ml;T",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607352022989,
+   "guid": "Jh`}lkr}C]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607352195568,
+   "guid": "l7OeIZQj+$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607352515753,
+   "guid": "tRgy*6A:yz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607352727125,
+   "guid": "u5<4-WqU.X",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607366713956,
+   "guid": "mKm/Ac?O7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607366758788,
+   "guid": "srp#_b5Mt!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607366801007,
+   "guid": "Jx&I421K4A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607367188016,
+   "guid": "uuD^{+4Fij",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607367497528,
+   "guid": "yMR<q(;n=Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607367639743,
+   "guid": "ryB|OByT`U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607367760516,
+   "guid": "k%?jANFscW",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607369309754,
+   "guid": "Q2)Su^-z_L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607369881765,
+   "guid": "FbJL06y8}Z",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607372205029,
+   "guid": "QFNw4Jinth",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607375744303,
+   "guid": "l7[)est#D-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607375877338,
+   "guid": "nyx&IcD5$;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607376088849,
+   "guid": "m/0*`InlO4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607409538930,
+   "guid": "x3ns5M?%wM",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607409936409,
+   "guid": "PT0zcEQD/m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607417004644,
+   "guid": "w[hwq}TsDP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607417152497,
+   "guid": "F{bBp*kY)*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607417340236,
+   "guid": "b9-3}}?56d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607417739385,
+   "guid": "NhTs/hS)#h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607417779540,
+   "guid": "G`Q;D(/{Oy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607417846625,
+   "guid": "uvksjwon>b",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607425206135,
+   "guid": "LYMEj|9mW=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607425408353,
+   "guid": "xi+NEcpO~",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607425486097,
+   "guid": "toJ2&8.q.e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607425720679,
+   "guid": "I21gzP1vkJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607427354965,
+   "guid": "OJa}9#6y:f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607427500237,
+   "guid": "O7o|Y!LCIt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607427611825,
+   "guid": "hB%.~jQ62c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607429216480,
+   "guid": "x0[7.XgQH+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607429409775,
+   "guid": "N{gGqs%x}3",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607429592363,
+   "guid": "NT):D!xN{e",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607429648283,
+   "guid": "uRZ]3VMif}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607429840264,
+   "guid": "XO%Rs<>lH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607430039744,
+   "guid": "dgcLuwGqhG",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607430141544,
+   "guid": "A3Qr,U*AXk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607430986004,
+   "guid": "yR]a9|)(?m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607437839895,
+   "guid": "nI)VeK/Lgp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1607438416170,
+   "guid": "D?q4g//7<D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607438647677,
+   "guid": "N,^X[m_]~{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607438859014,
+   "guid": "z{=BOgCkpO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607439070386,
+   "guid": "z&,Nqh8h:R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607440456971,
+   "guid": "f$xzBn6KmB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607441264802,
+   "guid": "ElWD4->]NH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607442228088,
+   "guid": "iX>$+oLi;f",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607442897224,
+   "guid": "m8Ixg?%@cO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607451480432,
+   "guid": "gh#;-5;v!?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607452935815,
+   "guid": "Hv?vD:VBl4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607454775572,
+   "guid": "HKdi?4R.JL",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607455189450,
+   "guid": "Eh02ni#7YY",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607455536719,
+   "guid": "L%nLf}=g)O",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1607456084519,
+   "guid": "ntFDFSl-,A",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611728313579,
+   "guid": "m*r_4l1nJ|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611731903865,
+   "guid": "At.h5V)Fk9",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611733247381,
+   "guid": "GZ%/D-L+9]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611747406330,
+   "guid": "Ml)FpQergo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611752519641,
+   "guid": "bI6BG^J@J7",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611752581336,
+   "guid": "sCefoLz.Nv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611820349939,
+   "guid": "OZ^-YGe_Ln",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611822104115,
+   "guid": "F,#aD5dxA(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1611833124291,
+   "guid": "b$[~`8Uy,T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611864439826,
+   "guid": "QTQPyZSS@s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611864498836,
+   "guid": "OVLitbfGkI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611864688844,
+   "guid": "feQ6]9=Iq*",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611864893117,
+   "guid": "xH&qo!F-]k",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611905036049,
+   "guid": "C[fYV-q@Nv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611907554596,
+   "guid": "IN/pBzS5!(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611909891157,
+   "guid": "L|yMU|t>4/",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611919457357,
+   "guid": "ELl[_N[fyA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611993722654,
+   "guid": "JNf&_1J3iS",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611993802568,
+   "guid": "rPh?~1*#/m",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1611995046444,
+   "guid": "jVrCrzz-=n",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612000302833,
+   "guid": "Q@6[<YN=(=",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612001322084,
+   "guid": "E.Bg0V{Wz2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612006124088,
+   "guid": "Q0S+c17K0<",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612006463857,
+   "guid": "J#y0/d>~MI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612017897855,
+   "guid": "l{j(d1KBSU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612031801993,
+   "guid": "o9WB=Ib~b|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612032400201,
+   "guid": "d)XF|byJY^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612033699700,
+   "guid": "eu5AOCve<?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612037282147,
+   "guid": "FGI|IqpxoR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612086883961,
+   "guid": "o,z.Wwiqc+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612087277202,
+   "guid": "wkVUfhzakA",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612088394391,
+   "guid": "lWL<z928d)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612094494313,
+   "guid": "LFc^5D9xli",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612094989572,
+   "guid": "GRH05^G=7S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612098006652,
+   "guid": "vQVE>B&)pW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612099490539,
+   "guid": "y`o-VBxCpo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1612099604992,
+   "guid": "jp@|dU.p%Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614335835713,
+   "guid": "MJ7RQ{+&z5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614341952724,
+   "guid": "gnyF0ZHi{o",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614342170031,
+   "guid": "N}DSzqM=h0",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614670005092,
+   "guid": "JJRw^6*V(A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1614751776147,
+   "guid": "mi`)1~4|z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615358635747,
+   "guid": "BJwEgg[SLa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617215366143,
+   "guid": "p?dns6pIn9",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617282001974,
+   "guid": "t*{{3b*z7l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1617571751674,
+   "guid": "Bh<5}D[7(i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617737513311,
+   "guid": "y~}<WH_kGm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617737593773,
+   "guid": "k-`y[VJms-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617801497236,
+   "guid": "O=nDAzH#[+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618041198573,
+   "guid": "szUcx-}#G0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618583068906,
+   "guid": "v^NyfZYtU3",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618958445301,
+   "guid": "A=&PW<7zDH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620511626698,
+   "guid": "CBSP876G@`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620511710747,
+   "guid": "E(W<?~VJmM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620851537183,
+   "guid": "kG^2UEXP3`",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620851639610,
+   "guid": "rz/b+#!w|K",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620853997706,
+   "guid": "PBnA&*L7Il",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621029196867,
+   "guid": "ueyT1f.6>1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621109557574,
+   "guid": "OMT;Hel/Pj",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621153327646,
+   "guid": "rQnM2(;+d{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621277621225,
+   "guid": "P9=_a/R;h/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621280267406,
+   "guid": "QQc/]:V_d#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621280394880,
+   "guid": "rJq>z4JZ(d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621281282971,
+   "guid": "d!=SN96h2d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621281556417,
+   "guid": "vwaEpEPHm/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621281641472,
+   "guid": "x|80=R^/Q=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621282060724,
+   "guid": "H5jxO7gCS3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621282736471,
+   "guid": "r{TgS]WLrm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621283893609,
+   "guid": "p$vneagE{y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621317094200,
+   "guid": "ef?JFB0*e5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621317196889,
+   "guid": "cm{JV}]{7{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621318575672,
+   "guid": "vFF,`_u}i^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621318631823,
+   "guid": "pTkY2H_|fZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621318995265,
+   "guid": "PpyA!excIM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621319605393,
+   "guid": "Ke*;&~{GWW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621320038984,
+   "guid": "Dqs:d7uE~G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621320092141,
+   "guid": "FhX>{1vep`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621320717999,
+   "guid": "pH*_XR.MUv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621339007631,
+   "guid": "l`]_iE&shZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621340194972,
+   "guid": "G#p=a/#0]p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621341821938,
+   "guid": "G{4c[lB]|6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621362448516,
+   "guid": "LO#)qbAHUa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621362937847,
+   "guid": "E_XyrbJLZ}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621363534569,
+   "guid": "L5hDS0I;zW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621363999692,
+   "guid": "H7rKxemsCo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621364212654,
+   "guid": "AlWrr>ALnq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621412997715,
+   "guid": "h{,R>vW0gc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621423799081,
+   "guid": "d9^12W-N>(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621426547346,
+   "guid": "PXwnG0*Ls<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621426781174,
+   "guid": "hoR**Aw8TJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621427143168,
+   "guid": "IAdqC:hE_n",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621427908687,
+   "guid": "o2[BqDyR-N",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621434107499,
+   "guid": "tN]d_g<dTn",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621434920943,
+   "guid": "sOkQU<93ed",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621435120317,
+   "guid": "JfYi`.Ourg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621435194825,
+   "guid": "A|3)EFX0[W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621437693944,
+   "guid": "LvSF2$g5Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621437965632,
+   "guid": "o7AcwtoGp0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621438556938,
+   "guid": "Ak9g-k9*tV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621438729656,
+   "guid": "nf^CBa5u(Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621445345219,
+   "guid": "xfp?id(njd",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621445535138,
+   "guid": "BH)EH!Xk5L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621446574788,
+   "guid": "pPrz:~HQ(",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621447606200,
+   "guid": "g3E5~_8c^W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621448549413,
+   "guid": "u.qhZLZ*+D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621449974749,
+   "guid": "x/k{0!2[:z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621450006766,
+   "guid": "hhB]0c4tIs",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621452496629,
+   "guid": "N0-m7~Jjq4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621453786066,
+   "guid": "l__js|zD|y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621454566782,
+   "guid": "rpQ2&GJO*O",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621772873811,
+   "guid": "AeD6oO{DfP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621774196747,
+   "guid": "IJ185AoSpe",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621774293467,
+   "guid": "HNyD.)sxI(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621775951616,
+   "guid": "Qph0^Xt/<E",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621776118503,
+   "guid": "xUlj57<mhC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621779052217,
+   "guid": "d40If;lq{j",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621781435144,
+   "guid": "rztOzR&1&,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1621782583889,
+   "guid": "I3}sBdbz+O",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621923700715,
+   "guid": "t;t}YjrO0@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621947602060,
+   "guid": "FDyB;cjETi",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623415028496,
+   "guid": "vI)kcFOMu>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623416018502,
+   "guid": "cX*V*WaQC2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623416189256,
+   "guid": "u{[MQfu;},",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623418175639,
+   "guid": "fxLtgx%&Z6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623418663038,
+   "guid": "G^Q,WpfhH~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623419387480,
+   "guid": "A|:&bwC@`u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623421417905,
+   "guid": "K[Fo8(!bbD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623422031976,
+   "guid": "oGQ>KKbO|G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1623422226534,
+   "guid": "F;6PZb)7/X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1623422405294,
+   "guid": ",n0BSRCJ&",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623423845491,
+   "guid": "j6*8`duKQ]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623425340921,
+   "guid": "b~tNgO8b@a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623485188540,
+   "guid": "q74e3QSh&8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623486009358,
+   "guid": "M/lq(AtkLK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623509252863,
+   "guid": "rXa0l]u.yD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623509396018,
+   "guid": "L8Ek||V`ce",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623510297305,
+   "guid": "guC-V<@Ct{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623511422046,
+   "guid": "l(Fn^m*P>3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623512426425,
+   "guid": "bo8PyTYAqw",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1623568559705,
+   "guid": "m+H8iyt,O3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623568749937,
+   "guid": "kS>jx!F%:k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623569131980,
+   "guid": "r*lP.)9o1u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623582110793,
+   "guid": "kgIOG2_5c4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623582453431,
+   "guid": "d`&@.U,%=K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623586496190,
+   "guid": "g1TM=SL/No",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624307431018,
+   "guid": "Q_@?u88US@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624874039362,
+   "guid": "Hqk`V2h.wf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624874138152,
+   "guid": "C3J]xGQ}9b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624969639555,
+   "guid": "xs;5]W]?]s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624975752833,
+   "guid": "hah0fG}|lr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624979904557,
+   "guid": "F/)+.(7vsC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624991075403,
+   "guid": "h2zwiIHKsn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625088176538,
+   "guid": "GMw6sP6y~P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625088344099,
+   "guid": "F|DLfxbQOX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625384980083,
+   "guid": "Mmhi,-Vh!2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625410246759,
+   "guid": "cru*|Q6uvz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625580349319,
+   "guid": "nf<q;>o=aF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625580363785,
+   "guid": "jQIh00RoUE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626590626696,
+   "guid": "O87l$dfh`7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626590863733,
+   "guid": "s7kmEoxD?Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626591840121,
+   "guid": "rpYc|FfQ+6",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626592230017,
+   "guid": "Qf(sN4VipP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626592419782,
+   "guid": "gQT~J!](lG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626593176246,
+   "guid": "C#b+};Ppt)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626593352541,
+   "guid": "Bvmnn/jmE)",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626593504305,
+   "guid": "p_8R~_5:CG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626593896054,
+   "guid": "DDsTi:*[wv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626594517177,
+   "guid": "Mb8QjscX`]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626611108939,
+   "guid": "sa1t@h=:)A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626611905479,
+   "guid": "Q`F$E13ef9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626612077087,
+   "guid": "U;QNM8E1C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626612366683,
+   "guid": "NSZn6J<Q%C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626613035665,
+   "guid": "k9IgoDrHBz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626613088372,
+   "guid": "y-q*DNWh@;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626613166926,
+   "guid": "w^v[GYoTNa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626613445722,
+   "guid": "QAy~&ghZL_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626614014054,
+   "guid": "dsLBN,?[rd",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626616244338,
+   "guid": "fPKNHL.QAv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626616462074,
+   "guid": "Bn6,]s!!(G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626616826941,
+   "guid": "K483gZe.kb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626617404452,
+   "guid": "oJs8R!KC:T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626646490677,
+   "guid": "t[-jW`{M;0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626899156780,
+   "guid": "t@DmA4SL0b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627240212901,
+   "guid": "j$l/u;d/t~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627240500778,
+   "guid": "D}}.teMEJc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627303087231,
+   "guid": "E`gIZ*+g5p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627303256799,
+   "guid": "A#4,aOYU>L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627372028303,
+   "guid": "s0P:LR;fkU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627658629334,
+   "guid": "githiWShEG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627658755458,
+   "guid": "n;{29y&!Uf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628286261044,
+   "guid": "bs#we(qoJz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628286281944,
+   "guid": "I$j^y^0V~8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628286333264,
+   "guid": "l9LO4Q$8N1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628357924373,
+   "guid": "Lr[dlyHC|l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628358089098,
+   "guid": "t[q,6D[PD0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628458217939,
+   "guid": "uXopug``uJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628458284888,
+   "guid": "Q,lYKlAi^T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628579717077,
+   "guid": "GNdk-e[w(L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628602436439,
+   "guid": "s%L(:!7[^i",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628605309275,
+   "guid": "MD/Z96t294",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628611263979,
+   "guid": "r#riELr)g1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628659847204,
+   "guid": "w$`f@))e~`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628661448563,
+   "guid": "PC0B@>(0+.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628678992771,
+   "guid": "z534eq<,)M",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628684022897,
+   "guid": "oqqK,%M1]d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628684789644,
+   "guid": "d`YUYYrCVh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628684984781,
+   "guid": "jeg[ryBLew",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628802358589,
+   "guid": "Ww#^X!U-s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628887401548,
+   "guid": "zSA[6Z2N#u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629123621008,
+   "guid": "6~}y^QL2?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629123711638,
+   "guid": "r4n%1G9Ic0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629123946673,
+   "guid": "POpVTr}[mf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629124306179,
+   "guid": "l^lld_bt7w",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629124532583,
+   "guid": "gd&CjgF~S/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629124667165,
+   "guid": "fg8rdo9<cq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629124846056,
+   "guid": "n+/bs1cMSZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629124983022,
+   "guid": "Ns^y2^Z?QF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629125041033,
+   "guid": "C|e!/cl|Y!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629125224626,
+   "guid": "p/og|LL[ZD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629125270352,
+   "guid": "L/:mB}>2qC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629125360221,
+   "guid": "uT0BU1MsiV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629125541243,
+   "guid": "o*]Dm=%>/t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629125686314,
+   "guid": "NN&{@}k0v$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629125806829,
+   "guid": "xX2]+a#Fu!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629125930741,
+   "guid": "kaU3e9No:R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629126121121,
+   "guid": "w6`9)@E-Li",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629126309174,
+   "guid": "r-N*mNs)X}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629126389819,
+   "guid": "H&Pn6`^<?S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629126483451,
+   "guid": "gz:VX=_:{4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629126717711,
+   "guid": "h4Sqmerd8H",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629128118966,
+   "guid": "w~JZ%nZoY$",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629128272638,
+   "guid": "tQvm*^`E+*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629128534892,
+   "guid": "DS%G:tr)+}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629128621554,
+   "guid": "pUm@qR:L%Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629128737217,
+   "guid": "LHYOH7=+`_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629128796445,
+   "guid": "N3D[u@ZP2^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629128913356,
+   "guid": "ibl~|_@*~?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629128984933,
+   "guid": "G!wdAt}m)9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629129085415,
+   "guid": "m)x+K)iNd*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629129354125,
+   "guid": "qxoBJNmkfm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629129436564,
+   "guid": "DYQ*ckX;dN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629129673205,
+   "guid": "JT.oR8)dZl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629129775447,
+   "guid": "fbfVO~:Gq/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629129975043,
+   "guid": "Puw=.z2s6x",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629130108113,
+   "guid": "x(Ol6,==vk",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629130162708,
+   "guid": "y0*I/Fs$K6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629130347971,
+   "guid": "L!&xH5gMdq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629130655466,
+   "guid": "xCcmOAbdV^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629130790935,
+   "guid": "PD+<(J?dOr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1629228680819,
+   "guid": "gf+>Y/j3~t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629636010453,
+   "guid": "{M5Hjn?qd",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630076210161,
+   "guid": "Exj|*rgl92",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": false
+  }
+ ],
+ "notes": [
+  {
+   "noteId": 1604301068248,
+   "guid": "L!]&_u!J|h",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Tifonun klasik klinik bulguları (4) → {{c1::basamaklı ateş, nabız-ateş diskordansı, splenomegali, gül lekeleri}}",
+     "after": "Tifonun klinik bulguları (4) → {{c1::basamaklı ateş, nabız-ateş diskordansı, splenomegali, gül lekeleri}}"
+    }
+   },
+   "actions": [
+    "A: Önceki turun eklediği genel \"klasik\" çekincesi kaldırıldı (kural 3; ortak karar)."
+   ]
+  },
+  {
+   "noteId": 1604339718998,
+   "guid": "Pg/p:c_?2v",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kutanöz sporotrikozun klasik alternatif tedavisi → {{c1::oral potasyum iyodür}}",
+     "after": "Kutanöz sporotrikozun alternatif tedavisi → {{c1::oral potasyum iyodür}}"
+    }
+   },
+   "actions": [
+    "A: Önceki turun eklediği genel \"klasik\" çekincesi kaldırıldı (kural 3; ortak karar)."
+   ]
+  },
+  {
+   "noteId": 1623416018502,
+   "guid": "cX*V*WaQC2",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "65 yaş ve üzeri erişkinlerde klasik ardışık pnömokok aşı şeması:<div><br></div><div>Önce {{c1::KPA13 (konjuge aşı)}}</div><div><br></div><div>En az 1 yıl sonra {{c1::PPA23 (polisakkarit aşı)}}</div>",
+     "after": "65 yaş ve üzeri erişkinlerde ardışık pnömokok aşı şeması:<div><br></div><div>Önce {{c1::KPA13 (konjuge aşı)}}</div><div><br></div><div>En az 1 yıl sonra {{c1::PPA23 (polisakkarit aşı)}}</div>"
+    }
+   },
+   "actions": [
+    "A: Önceki turun eklediği genel \"klasik\" çekincesi kaldırıldı (kural 3; ortak karar)."
+   ]
+  },
+  {
+   "noteId": 1604343958611,
+   "guid": "H&tYK~6{6|",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "HBV replikasyon göstergeleri<div><br></div><div>{{c1::HBV DNA}}<div>{{c1::DNA polimeraz}}</div><div>{{c1::HBeAg (pozitifse)}}</div></div>",
+     "after": "HBV replikasyon göstergeleri<div><br></div><div>{{c1::HBV DNA}}<div>{{c1::DNA polimeraz}}</div><div>{{c1::HBeAg}}</div></div>"
+    }
+   },
+   "actions": [
+    "A: Silinen arka yüz açıklamasına bağlı eklenmiş \"(pozitifse)\" çekincesi ana metinden kaldırıldı (kural 3, 6)."
+   ]
+  },
+  {
+   "noteId": 1629125270352,
+   "guid": "L/:mB}>2qC",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Fosfomisin disk difüzyonu E. coli idrar izolatları için yorumlanır.",
+     "after": "Fosfomisin → yalnız E. coli için kullanılabilir."
+    }
+   },
+   "actions": [
+    "A: Kaynak (CLSI) kökenli \"idrar izolatları\" genişletmesi çıkarıldı; özgün kısa arka yüz geri getirildi (kural 1, 8)."
+   ]
+  },
+  {
+   "noteId": 1604302375379,
+   "guid": "f--J(,*|i4",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Helicobacter pylori tanısında ve eradikasyon takibinde en duyarlı non-invaziv test → {{c1::üre solunum testi}}",
+     "after": "Helicobacter pylori tanısında en duyarlı non-invaziv test → {{c1::üre solunum testi}}"
+    }
+   },
+   "actions": [
+    "B: Ana metne eklenen kullanım alanı (eradikasyon takibi) kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604303401240,
+   "guid": "xIUp$zc6N&",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Brucella serolojisinde (Wright testi) {{c1::prozon}} fenomeni → antikor fazlalığı nedeniyle agglütinasyon olmaz ve test yalancı negatif çıkar<div><br></div><div>Çözüm → {{c1::serumun dilüe edilmesi}}</div>",
+     "after": "Brucella serolojisinde {{c1::prozon}} fenomeni → antikor fazlalığı nedeniyle agglütinasyon olmaz ve test yalancı negatif çıkar<div><br></div><div>Çözüm → {{c1::serumun dilüe edilmesi}}</div>"
+    }
+   },
+   "actions": [
+    "B: Ana metne sonradan eklenen yan bilgi parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604303913663,
+   "guid": "gn[|.l/Hfm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Atipik mikobakteriler (Runyon sınıflaması):<div><br></div><div>Fotokromojenler (2) → {{c1::M. kansasii, M. marinum (Kansas - Marina ışıl ışıl parlar)}}</div><div><br></div><div>Skotokromojenler → {{c2::M. scrofulaceum (hem ışıkta hem karanlıkta pigment)}}</div><div><br></div><div>Non-kromojenler → {{c1::MAC (MAC mattır)}}</div><div><br></div><div>Hızlı üreyenler → {{c2::M. fortuitum}}</div>",
+     "after": "Atipik mikobakteriler:<div><br></div><div>Fotokromojenler (2) → {{c1::M. kansasii, M. marinum (Kansas - Marina ışıl ışıl parlar)}}</div><div><br></div><div>Skotokromojenler → {{c2::M. scrofulaceum (hem ışıkta hem karanlıkta pigment)}}</div><div><br></div><div>Non-kromojenler → {{c1::MAC (MAC mattır)}}</div><div><br></div><div>Hızlı üreyenler → {{c2::M. fortuitum}}</div>"
+    }
+   },
+   "actions": [
+    "B: Ana metne sonradan eklenen yan bilgi parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604304043759,
+   "guid": "Pt%.u=4d@",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Leprada köpük hücreleri (Virchow hücreleri):<div><br></div><div>Tüberküloid leprada → {{c1::yoktur}}</div><div><br></div><div>Lepramatöz leprada → {{c1::vardır}}</div>",
+     "after": "Leprada köpük hücreleri:<div><br></div><div>Tüberküloid leprada → {{c1::yoktur}}</div><div><br></div><div>Lepramatöz leprada → {{c1::vardır}}</div>"
+    }
+   },
+   "actions": [
+    "B: Ana metne sonradan eklenen yan bilgi parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604304224525,
+   "guid": "yMH0z0cjpc",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sifiliz serolojisi:<div><br></div><div><b>N</b>on-treponemal testler (2) → {{c1::VDRL, RPR}}</div><div><br></div><div>Kullanım alanları (3) → {{c1::tarama testi, tedavi takibi, <b>N</b>örosifiliz tanısı (BOS-VDRL)}}</div>",
+     "after": "Sifiliz serolojisi:<div><br></div><div><b>N</b>on-treponemal testler (2) → {{c1::VDRL, RPR}}</div><div><br></div><div>Kullanım alanları (3) → {{c1::tarama testi, tedavi takibi, <b>N</b>örosifiliz tanısı}}</div>"
+    }
+   },
+   "actions": [
+    "B: Ana metne sonradan eklenen yan bilgi parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604304357985,
+   "guid": "OlJWc3Qor;",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sifiliz serolojisi:<div><br></div><div>Treponemal testler (4) → {{c1::FTA-ABS, MHA-TP, TP-PA, EIA}}</div><div><br></div><div>Kullanım alanları (3) → {{c1::en erken pozitifleşen, en özgül (doğrulama), konjenital enfeksiyon tanısı}}</div>",
+     "after": "Sifiliz serolojisi:<div><br></div><div>Treponemal testler (4) → {{c1::FTA-ABS, MHA-TP, TP-PA, EIA}}</div><div><br></div><div>Kullanım alanları (3) → {{c1::en erken pozitifleşen, en özgül, konjenital enfeksiyon tanısı}}</div>"
+    }
+   },
+   "actions": [
+    "B: Ana metne sonradan eklenen yan bilgi parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604304393746,
+   "guid": "w}uxAT]]*{",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Jarisch-Herxheimer reaksiyonunun klasik görüldüğü durumlar (2) → {{c1::tifo, sifiliz}}",
+     "after": "Jarisch-Herxheimer reaksiyonunun görüldüğü durumlar (2) → {{c1::tifo, sifiliz}}"
+    }
+   },
+   "actions": [
+    "B: Önceki turun eklediği genel \"klasik\" çekincesi kaldırıldı (kural 3; ortak karar)."
+   ]
+  },
+  {
+   "noteId": 1604306129647,
+   "guid": "iRX/mk3%!c",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Dışkıda yalancı parazitliğe (psödoparazitizm) yol açan etkenler (2) → {{c1::Fasciola hepatica, Dicrocoelium dendriticum}}",
+     "after": "Dışkıda yalancı parazitliğe yol açan etkenler (2) → {{c1::Fasciola hepatica, Dicrocoelium dendriticum}}"
+    }
+   },
+   "actions": [
+    "B: Ana metne sonradan eklenen yan bilgi parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604307382326,
+   "guid": "lnEDC`PIq*",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Periferik kan yayması bulgularından sıtma etkenini belirle:<div><br></div><div>Muz (hilal) şekilli gametosit → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Maurer lekeleri → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Walkman kulaklığı manzarası (eritrositte birden fazla taşlı yüzük) → {{c1::Plasmodium falciparum}}</div>",
+     "after": "Periferik kan yayması bulgularından sıtma etkenini belirle:<div><br></div><div>Muz şekilli gametosit → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Maurer lekeleri → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Walkman kulaklığı manzarası (eritrositte birden fazla taşlı yüzük) → {{c1::Plasmodium falciparum}}</div>"
+    }
+   },
+   "actions": [
+    "B: Ana metne sonradan eklenen yan bilgi parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604339915529,
+   "guid": "Mc#${rI^X^",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Paracoccidioides enfeksiyonunun klasik triadı →<div><br></div><div>{{c1::<div>Pulmoner lezyonlar</div><div>Diş kaybına yol açabilen ağız lezyonları</div><div>Servikal lenfadenopati</div>}}<br></div>",
+     "after": "Paracoccidioides enfeksiyonunun triadı →<div><br></div><div>{{c1::<div>Pulmoner lezyonlar</div><div>Diş kaybına yol açabilen ağız lezyonları</div><div>Servikal lenfadenopati</div>}}<br></div>"
+    }
+   },
+   "actions": [
+    "B: Önceki turun eklediği genel \"klasik\" çekincesi kaldırıldı (kural 3; ortak karar)."
+   ]
+  },
+  {
+   "noteId": 1604340563439,
+   "guid": "QxK,om7MIe",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Klasik segmentli RNA virüsü grupları (4)<div><br></div><div>{{c1::<div>Arenavirüsler</div><div>Bunyavirüsler</div><div>Ortomiksovirüsler</div><div>Reovirüsler</div>}}<br></div>",
+     "after": "Segmentli RNA virüsü grupları (4)<div><br></div><div>{{c1::<div>Arenavirüsler</div><div>Bunyavirüsler</div><div>Ortomiksovirüsler</div><div>Reovirüsler</div>}}<br></div>"
+    }
+   },
+   "actions": [
+    "B: Önceki turun eklediği genel \"klasik\" çekincesi kaldırıldı (kural 3; ortak karar)."
+   ]
+  },
+  {
+   "noteId": 1604343259159,
+   "guid": "e<vru-?`(/",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Akut hemorajik konjunktivitin iki klasik enterovirüs etkeninden biri → {{c1::enterovirüs tip 70}}",
+     "after": "Akut hemorajik konjunktivitin etkenlerinden biri → {{c1::enterovirüs tip 70}}"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen 'iki klasik enterovirüs' açıklaması ve genel klasik çekincesi kaldırıldı; 'etkenlerinden biri' korundu (kural 3, 7)."
+   ]
+  },
+  {
+   "noteId": 1604345440381,
+   "guid": "QMspMJ|(M:",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Tip 1 interferonlar olan IFN-{{c1::alfa ve beta}} → {{c2::NK}} hücrelerini uyarır (virüslere erken doğal yanıt)",
+     "after": "IFN-{{c1::alfa ve beta}} → {{c2::NK}} hücrelerini uyarır (virüslere erken doğal yanıt)"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen ve cevabı ima eden 'Tip 1 interferonlar olan' ifadesi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604345954722,
+   "guid": "cQ8^`PBKFm",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Klasik kompleman yolağını aktive edemeyen (C1q bağlamayan) IgG alt sınıfı → IgG{{c1::4}}",
+     "after": "Klasik kompleman yolağını aktive edemeyen IgG alt sınıfı → IgG{{c1::4}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen mekanizma parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1607327361215,
+   "guid": "C7k~.yu$6>",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Bakteri kromozomuna entegre {{c1::profaj}} içeren bakteri → {{c2::Lizojenik}} bakteri olarak adlandırılır",
+     "after": "{{c1::Profaj}} içeren bakteri → {{c2::Lizojenik}} bakteri olarak adlandırılır"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen 'bakteri kromozomuna entegre' açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1607350999476,
+   "guid": "p|iq[3p8E(",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Filtrelerden geçebilen hücre duvarsız bakteriler<div><br></div><div>{{c1::Mikoplazma}}</div><div><br></div><div>{{c1::L-form bakteriler}}</div>",
+     "after": "Filtrelerden geçebilen bakteriler<div><br></div><div>{{c1::Mikoplazma}}</div><div><br></div><div>{{c1::L-form bakteriler}}</div>"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen 'hücre duvarsız' açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1607417152497,
+   "guid": "F{bBp*kY)*",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Weil hastalığı (ikterohemorajik leptospiroz) etkeni → {{c1::Leptospira interrogans (serovar Icterohaemorrhagiae)}}",
+     "after": "Weil hastalığı etkeni → {{c1::Leptospira interrogans (serovar Icterohaemorrhagiae)}}"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1607417739385,
+   "guid": "NhTs/hS)#h",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Enfekte eritrositlerde Schüffner granülleri oluşturan sıtma (Plasmodium) etkenleri (2):<br><br>Plasmodium {{c1::vivax}} ve Plasmodium {{c1::ovale}}",
+     "after": "Schüffner granülleri oluşturan sıtma (Plasmodium) etkenleri (2):<br><br>Plasmodium {{c1::vivax}} ve Plasmodium {{c1::ovale}}"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen 'enfekte eritrositlerde' açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1607429216480,
+   "guid": "x0[7.XgQH+",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Eşeyli evresi bilinmeyen mantarlar için kullanılan eski yapay grup:<div><br></div><div>{{c1::Deuteromycetes}}</div>",
+     "after": "Eşeyli evresi bilinmeyen mantar grubu:<div><br></div><div>{{c1::Deuteromycetes}}</div>"
+    }
+   },
+   "actions": [
+    "Kısa düzeltme korundu, eklenen 'eski yapay grup' açıklaması kaldırıldı (kural 3, 7)."
+   ]
+  },
+  {
+   "noteId": 1607451480432,
+   "guid": "gh#;-5;v!?",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Akut hemorajik konjunktivitin klasik etkenlerinden biri:<div><br></div><div>{{c1::Enterovirüs 70}}</div>",
+     "after": "Akut hemorajik konjunktivitin etkenlerinden biri:<div><br></div><div>{{c1::Enterovirüs 70}}</div>"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen genel 'klasik' çekincesi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1611909891157,
+   "guid": "L|yMU|t>4/",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Mammarenavirüsler (LCMV/Lassa):</b><div><br></div><div>Tek iplikli 2 parçalı RNA virüsü</div><div><br></div><div>{{c1::Ambisense}} RNA:<div>{{c1::iki segmentin her birinde karşıt yönlerde kodlanan genler}}</div><div><br></div><div><b>Kum (arena)</b> şeklinde {{c1::işlevsel olmayan ribozomları}} vardır</div><div><br></div><div>{{c2::Lenfositer koryomenenjit virüsü (LCMV)}} ve {{c2::Lassa ateşi virüsü}}</div></div>",
+     "after": "<b>Arenavirüsler:</b><div><br></div><div>Tek iplikli 2 parçalı RNA virüsü</div><div><br></div><div>{{c1::Ambisense}} RNA:<div>{{c1::iki segmentin her birinde karşıt yönlerde kodlanan genler}}</div><div><br></div><div><b>Kum (arena)</b> şeklinde {{c1::işlevsel olmayan ribozomları}} vardır</div><div><br></div><div>{{c2::Lenfositer koryomenenjit virüsü (LCMV)}} ve {{c2::Lassa ateşi virüsü}}</div></div>"
+    }
+   },
+   "actions": [
+    "Başlıktaki eklenen '(LCMV/Lassa)' parantezi c2 cevabını ön yüzde açıyordu; özgün başlığa (ArenaV) dönüldü (kural 3, 7)."
+   ]
+  },
+  {
+   "noteId": 1620851639610,
+   "guid": "rz/b+#!w|K",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Çevresel faktörlerin regüle ettiği bakteriyel toksin sentezleri:<br><br>Demir (Fe) varlığında sentezlenemeyen toksin → {{c1::Difteri}} toksini<br>Kalsiyum (Ca) varlığında sentezlenen toksin → {{c2::Tetanospazmin}}<br>Kalsiyum (Ca) varlığında sentezlenemeyen toksin → {{c1::Yersinia}} toksinleri (Yop)<br>Ortam ozmolaritesine bağlı sentezlenen toksin → {{c2::Kolerajen}} (kolera toksini)",
+     "after": "Çevresel faktörlerin regüle ettiği bakteriyel toksin sentezleri:<br><br>Demir (Fe) varlığında sentezlenemeyen toksin → {{c1::Difteri}} toksini<br>Kalsiyum (Ca) varlığında sentezlenen toksin → {{c2::Tetanospazmin}}<br>Kalsiyum (Ca) varlığında sentezlenemeyen toksin → {{c1::Yersinia}} toksinleri<br>Ortam ozmolaritesine bağlı sentezlenen toksin → {{c2::Kolerajen}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen '(Yop)' ve '(kolera toksini)' parantezleri kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1621319605393,
+   "guid": "Ke*;&~{GWW",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Hücre içi yaşamı kolaylaştıran V ve W virülans antijenlerine sahip bakteri:<br><br>{{c1::Yersinia pestis}}",
+     "after": "V ve W virülans antijenlerine sahip bakteri:<br><br>{{c1::Yersinia pestis}}"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen mekanizma açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1621364212654,
+   "guid": "AlWrr>ALnq",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Adenovirüs kapsid antijenleri:<br><br>Cinse (gruba) özgü antijen → {{c1::Hekzon}}<br>Tipe (serotipe) özgü antijen → {{c1::Penton ve fiber}}",
+     "after": "Adenovirüs kapsid antijenleri:<br><br>Cinse özgü antijen → {{c1::Hekzon}}<br>Tipe özgü antijen → {{c1::Penton ve fiber}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama parantezleri kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1621437693944,
+   "guid": "LvSF2$g5Z",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Serebral toksoplazmozda (Toxoplasma gondii) beyin biyopsisinde en değerli tanı yöntemi:<br><br>Beyin biyopsi örneğinde taşizoitleri gösteren → {{c1::İmmünoperoksidaz boyama}}",
+     "after": "Serebral toksoplazmozda beyin biyopsisinde en değerli tanı yöntemi:<br><br>{{c1::İmmünoperoksidaz boyama}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen etken adı parantezi ve 'taşizoitleri gösteren' açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1621775951616,
+   "guid": "Qph0^Xt/<E",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Gram-pozitif çomak olmasına rağmen yapısında lipopolisakkarit (LPS benzeri endotoksin) taşıyan bakteri:<br><br>{{c1::Listeria monocytogenes}}",
+     "after": "Gram-pozitif çomak olmasına rağmen yapısında lipopolisakkarit (LPS) taşıyan bakteri:<br><br>{{c1::Listeria monocytogenes}}"
+    }
+   },
+   "actions": [
+    "Parantezdeki eklenen 'benzeri endotoksin' açıklaması kaldırıldı, kısaltma korundu (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1623416189256,
+   "guid": "u{[MQfu;},",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Şarbon sporu soluyan</b> kişiye temas sonrası profilaksi:<div><br></div><div>Uygun hastada {{c1::şarbon aşısı}} +</div><div><br></div><div>60 güne kadar {{c1::doksisiklin / siprofloksasin}}</div>",
+     "after": "<b>Şarbon sporu soluyan</b> kişiye temas sonrası profilaksi:<div><br></div><div>{{c1::Şarbon aşısı}} +</div><div><br></div><div>60 gün {{c1::doksisiklin / siprofloksasin}}</div>"
+    }
+   },
+   "actions": [
+    "Kısa tıbbi düzeltme (aşı) korundu; eklenen 'uygun hastada' ve 'güne kadar' uygulama ayrıntıları kaldırıldı (kural 3, 5)."
+   ]
+  },
+  {
+   "noteId": 1623419387480,
+   "guid": "A|:&bwC@`u",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Çocuklarda tekrarlayan akut otitis media ve efüzyonlu otitlerin sık etkeni olan beta-laktamaz pozitif bakteri:<br><br>{{c1::Moraxella catarrhalis}}",
+     "after": "Çocuklarda tekrarlayan akut otitis media ve efüzyonlu otitlerin sık etkenlerinden biri:<br><br>{{c1::Moraxella catarrhalis}}"
+    }
+   },
+   "actions": [
+    "Eklenen 'beta-laktamaz pozitif' bilgisi kaldırıldı; 'en sık' düzeltmesi 'sık etkenlerinden biri' olarak kısa tutuldu (kural 3, 7)."
+   ]
+  },
+  {
+   "noteId": 1624307431018,
+   "guid": "Q_@?u88US@",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "CD4 &lt;50/mm³ olup etkili ART almayan HIV hastasında, MAC dışlandıktan sonra profilaksi:<div><br></div><div>Haftalık {{c1::azitromisin}}</div>",
+     "after": "AIDS'te MAC profilaksisi:<div><br></div><div>Haftalık {{c1::azitromisin}}</div>"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen kılavuz/uygulama koşulları (CD4 eşiği, ART, MAC dışlama) kaldırıldı (kural 5)."
+   ]
+  },
+  {
+   "noteId": 1626591840121,
+   "guid": "rpYc|FfQ+6",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Difteri (Corynebacterium diphtheriae) temaslılarında profilaksi:<br><br>Kemoprofilaksi: Tek doz {{c1::Benzatin penisilin G}} veya oral {{c1::Eritromisin}} (7–10 gün)<br>Aşılama: Son {{c2::5}} yıl içinde aşılanmamışsa → Tek doz rapel aşı",
+     "after": "Difteri temaslılarında profilaksi:<br><br>Kemoprofilaksi: Tek doz {{c1::Benzatin penisilin G}} veya oral {{c1::Eritromisin}} (7–10 gün)<br>Aşılama: Son {{c2::5}} yıl içinde aşılanmamışsa → Tek doz rapel aşı"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen etken adı parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1626592419782,
+   "guid": "gQT~J!](lG",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Basilli dizanteri (Shigella gastroenteriti) tedavisi:<br><br>Erişkinlerde ilk seçenek → Siprofloksasin veya Doksisiklin<br>Çocuklarda ilk seçenek → Azitromisin veya {{c1::üçüncü kuşak sefalosporin (Seftriakson)}}",
+     "after": "Shigella tedavisi:<br><br>Erişkinlerde → Siprofloksasin veya Doksisiklin<br>Çocuklarda → Azitromisin veya {{c1::üçüncü kuşak sefalosporin (Seftriakson)}}"
+    }
+   },
+   "actions": [
+    "Eklenen eş ad parantezi ve 'ilk seçenek' tedavi etiketleri kaldırıldı (kural 3, 5)."
+   ]
+  },
+  {
+   "noteId": 1626613088372,
+   "guid": "y-q*DNWh@;",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Babesiyoz (Babesia microti) tedavisinde ilk seçenek kombinasyon:<br><br>{{c1::Atovakuon}} + {{c1::Azitromisin}}",
+     "after": "Babesiyoz tedavisi:<br><br>{{c1::Atovakuon}} + {{c1::Azitromisin}}"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen etken parantezi ve 'ilk seçenek kombinasyon' ifadesi kaldırıldı (kural 3, 5)."
+   ]
+  },
+  {
+   "noteId": 1626617404452,
+   "guid": "oJs8R!KC:T",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Dirençli ve refrakter sitomegalovirüs (CMV) tedavisinde kullanılan UL97 kinaz inhibitörü:<br><br>{{c1::Maribavir}}",
+     "after": "Dirençli sitomegalovirüs (CMV) tedavisinde kullanılan UL97 kinaz inhibitörü:<br><br>{{c1::Maribavir}}"
+    },
+    "Extra": {
+     "before": "Viral kapsidin toplanmasını ve nükleustan çıkışını engeller.",
+     "after": "Viral kapsidin toplanmasını engeller."
+    }
+   },
+   "actions": [
+    "Eklenen 've refrakter' ifadesi ve arka yüzdeki 'nükleustan çıkış' eklentisi kaldırıldı; özgün kısa arka yüz bilgisi korundu (kural 2, 3, 8)."
+   ]
+  },
+  {
+   "noteId": 1628458217939,
+   "guid": "uXopug``uJ",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Klamidya dış membranı:</b><div><br></div><div><b>Enfektif cisimciğin stabilitesine katkı veren sisteinden zengin protein:</b> {{c1::OmcB (OMP2)}}</div><div><br></div><div><b>C. trachomatis serovar ayrımında kullanılan protein:</b> {{c1::MOMP (OmpA)}}</div>",
+     "after": "<b>Klamidya dış membranı:</b><div><br></div><div><b>Enfektif cisimciğin stabilitesine katkı veren sisteinden zengin protein:</b> {{c1::OMP2}}</div><div><br></div><div><b>C. trachomatis serovar ayrımında kullanılan protein:</b> {{c1::MOMP}}</div>"
+    }
+   },
+   "actions": [
+    "Cevaba eklenen eş adlar (OmcB, OmpA) kaldırıldı (kural 3, 4)."
+   ]
+  },
+  {
+   "noteId": 1628678992771,
+   "guid": "z534eq<,)M",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Rickettsia türleri:</b><div><br></div><div>{{c1::Fosfolipaz A}} ile fagozom membranını eritip sitoplazmaya geçerler</div>",
+     "after": "<b>Rickettsia türleri:</b><div><br></div><div>{{c1::Fosfolipaz A}} ile fagozomu parçalar</div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen 'sitoplazmaya geçerler' açıklaması kaldırıldı, özgün ifadeye dönüldü (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1629125360221,
+   "guid": "uT0BU1MsiV",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Bakteriyel antibiyotik duyarlılık besiyerinde bakteri inokülasyon yoğunluğu ölçütü:<br><br>Rutin bakteriler için → McFarland {{c1::0,5}} bulanıklık standardı<br>Streptococcus pneumoniae (Pnömokok) için → McFarland {{c1::1}} bulanıklık standardı",
+     "after": "Bakteriyel antibiyotik duyarlılık besiyerinde bakteri inokülasyon yoğunluğu ölçütü:<br><br>Rutin bakteriler için → McFarland {{c1::0,5}}<br>Pnömokok için → McFarland {{c1::1}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen 'bulanıklık standardı' açıklamaları ve tür adı eklentisi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1629128272638,
+   "guid": "tQvm*^`E+*",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "İmmünokompetan bireylerde kronik granülomatöz fungal sinüzit, baş ağrısı ve progresif yüz şişliği etkeni küf mantarı:<br><br>{{c1::Aspergillus flavus}}",
+     "after": "Kronik yavaş seyirli sinüzit, kronik baş ağrısı, progresif yüz şişliği ve görme bozukluğu etkeni:<br><br>{{c1::Aspergillus flavus}}"
+    }
+   },
+   "actions": [
+    "Eklenen 'immünokompetan', 'granülomatöz fungal', 'küf mantarı' açıklamaları kaldırıldı; silinmiş özgün 'görme bozukluğu' bulgusu geri getirildi (kural 3, 8)."
+   ]
+  },
+  {
+   "noteId": 1604339498164,
+   "guid": "B{[1vb7V.`",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Dermatofit enfeksiyonlarında kullanılan klasik sistemik ilaç → {{c1::griseofulvin}}",
+     "after": "Dermatofit enfeksiyonlarında kullanılan sistemik ilaç → {{c1::griseofulvin}}"
+    }
+   },
+   "actions": [
+    "Ana metne sonradan eklenen \"klasik\" kaynak niteleyicisi kaldırıldı (kural 1, 3)."
+   ]
+  }
+ ],
+ "noteRowsBefore": [
+  [
+   1604301068248,
+   "L!]&_u!J|h",
+   1566160514431,
+   1792235392,
+   -1,
+   " Bakteri ",
+   "Tifonun klasik klinik bulguları (4) → {{c1::basamaklı ateş, nabız-ateş diskordansı, splenomegali, gül lekeleri}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Tifonun klasik klinik bulguları (4) → {{c1::basamaklı ateş, nabız-ateş diskordansı, splenomegali, gül lekeleri}}",
+   3652574184,
+   0,
+   ""
+  ],
+  [
+   1604339718998,
+   "Pg/p:c_?2v",
+   1566160514431,
+   1792235392,
+   -1,
+   " Mantar ",
+   "Kutanöz sporotrikozun klasik alternatif tedavisi → {{c1::oral potasyum iyodür}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kutanöz sporotrikozun klasik alternatif tedavisi → {{c1::oral potasyum iyodür}}",
+   43433558,
+   0,
+   ""
+  ],
+  [
+   1623416018502,
+   "cX*V*WaQC2",
+   1566160514431,
+   1792235392,
+   -1,
+   "",
+   "65 yaş ve üzeri erişkinlerde klasik ardışık pnömokok aşı şeması:<div><br></div><div>Önce {{c1::KPA13 (konjuge aşı)}}</div><div><br></div><div>En az 1 yıl sonra {{c1::PPA23 (polisakkarit aşı)}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "65 yaş ve üzeri erişkinlerde klasik ardışık pnömokok aşı şeması:Önce {{c1::KPA13 (konjuge aşı)}}En az 1 yıl sonra {{c1::PPA23 (polisakkarit aşı)}}",
+   3477967723,
+   0,
+   ""
+  ],
+  [
+   1604343958611,
+   "H&tYK~6{6|",
+   1566160514431,
+   1792235392,
+   -1,
+   " Virüs ",
+   "HBV replikasyon göstergeleri<div><br></div><div>{{c1::HBV DNA}}<div>{{c1::DNA polimeraz}}</div><div>{{c1::HBeAg (pozitifse)}}</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "HBV replikasyon göstergeleri{{c1::HBV DNA}}{{c1::DNA polimeraz}}{{c1::HBeAg (pozitifse)}}",
+   1824496803,
+   0,
+   ""
+  ],
+  [
+   1629125270352,
+   "L/:mB}>2qC",
+   1566160514431,
+   1792235392,
+   -1,
+   "",
+   "Disk difüzyon testinde kısıtlı değerlendirilen antibiyotikler:<div><br></div><div>{{c1::Kolistin}}: disk difüzyon önerilmez</div><div>{{c1::Fosfomisin}}: yalnız belirli tür ve örnekler için yorumlanır</div>\u001fFosfomisin disk difüzyonu E. coli idrar izolatları için yorumlanır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Disk difüzyon testinde kısıtlı değerlendirilen antibiyotikler:{{c1::Kolistin}}: disk difüzyon önerilmez{{c1::Fosfomisin}}: yalnız belirli tür ve örnekler için yorumlanır",
+   2217376944,
+   0,
+   ""
+  ],
+  [
+   1604302375379,
+   "f--J(,*|i4",
+   1566160514431,
+   1791463152,
+   -1,
+   " Bakteri ",
+   "Helicobacter pylori tanısında ve eradikasyon takibinde en duyarlı non-invaziv test → {{c1::üre solunum testi}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Helicobacter pylori tanısında ve eradikasyon takibinde en duyarlı non-invaziv test → {{c1::üre solunum testi}}",
+   2432326435,
+   0,
+   ""
+  ],
+  [
+   1604303401240,
+   "xIUp$zc6N&",
+   1566160514431,
+   1791463152,
+   -1,
+   " Bakteri ",
+   "Brucella serolojisinde (Wright testi) {{c1::prozon}} fenomeni → antikor fazlalığı nedeniyle agglütinasyon olmaz ve test yalancı negatif çıkar<div><br></div><div>Çözüm → {{c1::serumun dilüe edilmesi}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Brucella serolojisinde (Wright testi) {{c1::prozon}} fenomeni → antikor fazlalığı nedeniyle agglütinasyon olmaz ve test yalancı negatif çıkarÇözüm → {{c1::serumun dilüe edilmesi}}",
+   4271968397,
+   0,
+   ""
+  ],
+  [
+   1604303913663,
+   "gn[|.l/Hfm",
+   1566160514431,
+   1791463152,
+   -1,
+   " Bakteri ",
+   "Atipik mikobakteriler (Runyon sınıflaması):<div><br></div><div>Fotokromojenler (2) → {{c1::M. kansasii, M. marinum (Kansas - Marina ışıl ışıl parlar)}}</div><div><br></div><div>Skotokromojenler → {{c2::M. scrofulaceum (hem ışıkta hem karanlıkta pigment)}}</div><div><br></div><div>Non-kromojenler → {{c1::MAC (MAC mattır)}}</div><div><br></div><div>Hızlı üreyenler → {{c2::M. fortuitum}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Atipik mikobakteriler (Runyon sınıflaması):Fotokromojenler (2) → {{c1::M. kansasii, M. marinum (Kansas - Marina ışıl ışıl parlar)}}Skotokromojenler → {{c2::M. scrofulaceum (hem ışıkta hem karanlıkta pigment)}}Non-kromojenler → {{c1::MAC (MAC mattır)}}Hızlı üreyenler → {{c2::M. fortuitum}}",
+   244788428,
+   0,
+   ""
+  ],
+  [
+   1604304043759,
+   "Pt%.u=4d@",
+   1566160514431,
+   1791463152,
+   -1,
+   " Bakteri ",
+   "Leprada köpük hücreleri (Virchow hücreleri):<div><br></div><div>Tüberküloid leprada → {{c1::yoktur}}</div><div><br></div><div>Lepramatöz leprada → {{c1::vardır}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Leprada köpük hücreleri (Virchow hücreleri):Tüberküloid leprada → {{c1::yoktur}}Lepramatöz leprada → {{c1::vardır}}",
+   2982356450,
+   0,
+   ""
+  ],
+  [
+   1604304224525,
+   "yMH0z0cjpc",
+   1566160514431,
+   1791463152,
+   -1,
+   " Bakteri ",
+   "Sifiliz serolojisi:<div><br></div><div><b>N</b>on-treponemal testler (2) → {{c1::VDRL, RPR}}</div><div><br></div><div>Kullanım alanları (3) → {{c1::tarama testi, tedavi takibi, <b>N</b>örosifiliz tanısı (BOS-VDRL)}}</div>\u001f<b>N</b>on -treponemal --&gt; <b>N</b>öro Sifiliz&nbsp;\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sifiliz serolojisi:Non-treponemal testler (2) → {{c1::VDRL, RPR}}Kullanım alanları (3) → {{c1::tarama testi, tedavi takibi, Nörosifiliz tanısı (BOS-VDRL)}}",
+   1022497366,
+   0,
+   ""
+  ],
+  [
+   1604304357985,
+   "OlJWc3Qor;",
+   1566160514431,
+   1791463152,
+   -1,
+   " Bakteri ",
+   "Sifiliz serolojisi:<div><br></div><div>Treponemal testler (4) → {{c1::FTA-ABS, MHA-TP, TP-PA, EIA}}</div><div><br></div><div>Kullanım alanları (3) → {{c1::en erken pozitifleşen, en özgül (doğrulama), konjenital enfeksiyon tanısı}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sifiliz serolojisi:Treponemal testler (4) → {{c1::FTA-ABS, MHA-TP, TP-PA, EIA}}Kullanım alanları (3) → {{c1::en erken pozitifleşen, en özgül (doğrulama), konjenital enfeksiyon tanısı}}",
+   671958843,
+   0,
+   ""
+  ],
+  [
+   1604304393746,
+   "w}uxAT]]*{",
+   1566160514431,
+   1791463152,
+   -1,
+   " Bakteri ",
+   "Jarisch-Herxheimer reaksiyonunun klasik görüldüğü durumlar (2) → {{c1::tifo, sifiliz}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Jarisch-Herxheimer reaksiyonunun klasik görüldüğü durumlar (2) → {{c1::tifo, sifiliz}}",
+   3785597265,
+   0,
+   ""
+  ],
+  [
+   1604306129647,
+   "iRX/mk3%!c",
+   1566160514431,
+   1791463152,
+   -1,
+   " Parazit ",
+   "Dışkıda yalancı parazitliğe (psödoparazitizm) yol açan etkenler (2) → {{c1::Fasciola hepatica, Dicrocoelium dendriticum}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Dışkıda yalancı parazitliğe (psödoparazitizm) yol açan etkenler (2) → {{c1::Fasciola hepatica, Dicrocoelium dendriticum}}",
+   1382364013,
+   0,
+   ""
+  ],
+  [
+   1604307382326,
+   "lnEDC`PIq*",
+   1566160514431,
+   1791542171,
+   -1,
+   " Parazit ",
+   "Periferik kan yayması bulgularından sıtma etkenini belirle:<div><br></div><div>Muz (hilal) şekilli gametosit → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Maurer lekeleri → {{c1::Plasmodium falciparum}}</div><div><br></div><div>Walkman kulaklığı manzarası (eritrositte birden fazla taşlı yüzük) → {{c1::Plasmodium falciparum}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Periferik kan yayması bulgularından sıtma etkenini belirle:Muz (hilal) şekilli gametosit → {{c1::Plasmodium falciparum}}Maurer lekeleri → {{c1::Plasmodium falciparum}}Walkman kulaklığı manzarası (eritrositte birden fazla taşlı yüzük) → {{c1::Plasmodium falciparum}}",
+   1943958399,
+   0,
+   ""
+  ],
+  [
+   1604339915529,
+   "Mc#${rI^X^",
+   1566160514431,
+   1791463152,
+   -1,
+   " Mantar ",
+   "Paracoccidioides enfeksiyonunun klasik triadı →<div><br></div><div>{{c1::<div>Pulmoner lezyonlar</div><div>Diş kaybına yol açabilen ağız lezyonları</div><div>Servikal lenfadenopati</div>}}<br></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Paracoccidioides enfeksiyonunun klasik triadı →{{c1::Pulmoner lezyonlarDiş kaybına yol açabilen ağız lezyonlarıServikal lenfadenopati}}",
+   977884641,
+   0,
+   ""
+  ],
+  [
+   1604340563439,
+   "QxK,om7MIe",
+   1566160514431,
+   1791463152,
+   -1,
+   " Virüs ",
+   "Klasik segmentli RNA virüsü grupları (4)<div><br></div><div>{{c1::<div>Arenavirüsler</div><div>Bunyavirüsler</div><div>Ortomiksovirüsler</div><div>Reovirüsler</div>}}<br></div>\u001fA<div>B</div><div>O</div><div>R</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Klasik segmentli RNA virüsü grupları (4){{c1::ArenavirüslerBunyavirüslerOrtomiksovirüslerReovirüsler}}",
+   3256189970,
+   0,
+   ""
+  ],
+  [
+   1604343259159,
+   "e<vru-?`(/",
+   1566160514431,
+   1791463152,
+   -1,
+   " Virüs ",
+   "Akut hemorajik konjunktivitin iki klasik enterovirüs etkeninden biri → {{c1::enterovirüs tip 70}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Akut hemorajik konjunktivitin iki klasik enterovirüs etkeninden biri → {{c1::enterovirüs tip 70}}",
+   1392755070,
+   0,
+   ""
+  ],
+  [
+   1604345440381,
+   "QMspMJ|(M:",
+   1566160514431,
+   1791463152,
+   -1,
+   " İmmünoloji ",
+   "Tip 1 interferonlar olan IFN-{{c1::alfa ve beta}} → {{c2::NK}} hücrelerini uyarır (virüslere erken doğal yanıt)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Tip 1 interferonlar olan IFN-{{c1::alfa ve beta}} → {{c2::NK}} hücrelerini uyarır (virüslere erken doğal yanıt)",
+   4129401249,
+   0,
+   ""
+  ],
+  [
+   1604345954722,
+   "cQ8^`PBKFm",
+   1566160514431,
+   1791463152,
+   -1,
+   " İmmünoloji ",
+   "Klasik kompleman yolağını aktive edemeyen (C1q bağlamayan) IgG alt sınıfı → IgG{{c1::4}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Klasik kompleman yolağını aktive edemeyen (C1q bağlamayan) IgG alt sınıfı → IgG{{c1::4}}",
+   3632530423,
+   0,
+   ""
+  ],
+  [
+   1607327361215,
+   "C7k~.yu$6>",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Bakteri kromozomuna entegre {{c1::profaj}} içeren bakteri → {{c2::Lizojenik}} bakteri olarak adlandırılır\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Bakteri kromozomuna entegre {{c1::profaj}} içeren bakteri → {{c2::Lizojenik}} bakteri olarak adlandırılır",
+   402658368,
+   0,
+   ""
+  ],
+  [
+   1607350999476,
+   "p|iq[3p8E(",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Filtrelerden geçebilen hücre duvarsız bakteriler<div><br></div><div>{{c1::Mikoplazma}}</div><div><br></div><div>{{c1::L-form bakteriler}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Filtrelerden geçebilen hücre duvarsız bakteriler{{c1::Mikoplazma}}{{c1::L-form bakteriler}}",
+   1519760756,
+   0,
+   ""
+  ],
+  [
+   1607417152497,
+   "F{bBp*kY)*",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Weil hastalığı (ikterohemorajik leptospiroz) etkeni → {{c1::Leptospira interrogans (serovar Icterohaemorrhagiae)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Weil hastalığı (ikterohemorajik leptospiroz) etkeni → {{c1::Leptospira interrogans (serovar Icterohaemorrhagiae)}}",
+   2899271099,
+   0,
+   ""
+  ],
+  [
+   1607417739385,
+   "NhTs/hS)#h",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Enfekte eritrositlerde Schüffner granülleri oluşturan sıtma (Plasmodium) etkenleri (2):<br><br>Plasmodium {{c1::vivax}} ve Plasmodium {{c1::ovale}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Enfekte eritrositlerde Schüffner granülleri oluşturan sıtma (Plasmodium) etkenleri (2):Plasmodium {{c1::vivax}} ve Plasmodium {{c1::ovale}}",
+   1734673829,
+   0,
+   ""
+  ],
+  [
+   1607429216480,
+   "x0[7.XgQH+",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Eşeyli evresi bilinmeyen mantarlar için kullanılan eski yapay grup:<div><br></div><div>{{c1::Deuteromycetes}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Eşeyli evresi bilinmeyen mantarlar için kullanılan eski yapay grup:{{c1::Deuteromycetes}}",
+   1769302631,
+   0,
+   ""
+  ],
+  [
+   1607451480432,
+   "gh#;-5;v!?",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Akut hemorajik konjunktivitin klasik etkenlerinden biri:<div><br></div><div>{{c1::Enterovirüs 70}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Akut hemorajik konjunktivitin klasik etkenlerinden biri:{{c1::Enterovirüs 70}}",
+   3650478424,
+   0,
+   ""
+  ],
+  [
+   1611909891157,
+   "L|yMU|t>4/",
+   1566160514431,
+   1791546393,
+   -1,
+   "",
+   "<b>Mammarenavirüsler (LCMV/Lassa):</b><div><br></div><div>Tek iplikli 2 parçalı RNA virüsü</div><div><br></div><div>{{c1::Ambisense}} RNA:<div>{{c1::iki segmentin her birinde karşıt yönlerde kodlanan genler}}</div><div><br></div><div><b>Kum (arena)</b> şeklinde {{c1::işlevsel olmayan ribozomları}} vardır</div><div><br></div><div>{{c2::Lenfositer koryomenenjit virüsü (LCMV)}} ve {{c2::Lassa ateşi virüsü}}</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Mammarenavirüsler (LCMV/Lassa):Tek iplikli 2 parçalı RNA virüsü{{c1::Ambisense}} RNA:{{c1::iki segmentin her birinde karşıt yönlerde kodlanan genler}}Kum (arena) şeklinde {{c1::işlevsel olmayan ribozomları}} vardır{{c2::Lenfositer koryomenenjit virüsü (LCMV)}} ve {{c2::Lassa ateşi virüsü}}",
+   540039695,
+   0,
+   ""
+  ],
+  [
+   1620851639610,
+   "rz/b+#!w|K",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Çevresel faktörlerin regüle ettiği bakteriyel toksin sentezleri:<br><br>Demir (Fe) varlığında sentezlenemeyen toksin → {{c1::Difteri}} toksini<br>Kalsiyum (Ca) varlığında sentezlenen toksin → {{c2::Tetanospazmin}}<br>Kalsiyum (Ca) varlığında sentezlenemeyen toksin → {{c1::Yersinia}} toksinleri (Yop)<br>Ortam ozmolaritesine bağlı sentezlenen toksin → {{c2::Kolerajen}} (kolera toksini)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Çevresel faktörlerin regüle ettiği bakteriyel toksin sentezleri:Demir (Fe) varlığında sentezlenemeyen toksin → {{c1::Difteri}} toksiniKalsiyum (Ca) varlığında sentezlenen toksin → {{c2::Tetanospazmin}}Kalsiyum (Ca) varlığında sentezlenemeyen toksin → {{c1::Yersinia}} toksinleri (Yop)Ortam ozmolaritesine bağlı sentezlenen toksin → {{c2::Kolerajen}} (kolera toksini)",
+   398835557,
+   0,
+   ""
+  ],
+  [
+   1621319605393,
+   "Ke*;&~{GWW",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Hücre içi yaşamı kolaylaştıran V ve W virülans antijenlerine sahip bakteri:<br><br>{{c1::Yersinia pestis}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Hücre içi yaşamı kolaylaştıran V ve W virülans antijenlerine sahip bakteri:{{c1::Yersinia pestis}}",
+   124357497,
+   0,
+   ""
+  ],
+  [
+   1621364212654,
+   "AlWrr>ALnq",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Adenovirüs kapsid antijenleri:<br><br>Cinse (gruba) özgü antijen → {{c1::Hekzon}}<br>Tipe (serotipe) özgü antijen → {{c1::Penton ve fiber}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Adenovirüs kapsid antijenleri:Cinse (gruba) özgü antijen → {{c1::Hekzon}}Tipe (serotipe) özgü antijen → {{c1::Penton ve fiber}}",
+   1432772199,
+   0,
+   ""
+  ],
+  [
+   1621437693944,
+   "LvSF2$g5Z",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Serebral toksoplazmozda (Toxoplasma gondii) beyin biyopsisinde en değerli tanı yöntemi:<br><br>Beyin biyopsi örneğinde taşizoitleri gösteren → {{c1::İmmünoperoksidaz boyama}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Serebral toksoplazmozda (Toxoplasma gondii) beyin biyopsisinde en değerli tanı yöntemi:Beyin biyopsi örneğinde taşizoitleri gösteren → {{c1::İmmünoperoksidaz boyama}}",
+   3932922259,
+   0,
+   ""
+  ],
+  [
+   1621775951616,
+   "Qph0^Xt/<E",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Gram-pozitif çomak olmasına rağmen yapısında lipopolisakkarit (LPS benzeri endotoksin) taşıyan bakteri:<br><br>{{c1::Listeria monocytogenes}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Gram-pozitif çomak olmasına rağmen yapısında lipopolisakkarit (LPS benzeri endotoksin) taşıyan bakteri:{{c1::Listeria monocytogenes}}",
+   3876904651,
+   0,
+   ""
+  ],
+  [
+   1623416189256,
+   "u{[MQfu;},",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Şarbon sporu soluyan</b> kişiye temas sonrası profilaksi:<div><br></div><div>Uygun hastada {{c1::şarbon aşısı}} +</div><div><br></div><div>60 güne kadar {{c1::doksisiklin / siprofloksasin}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Şarbon sporu soluyan kişiye temas sonrası profilaksi:Uygun hastada {{c1::şarbon aşısı}} +60 güne kadar {{c1::doksisiklin / siprofloksasin}}",
+   1107069430,
+   0,
+   ""
+  ],
+  [
+   1623419387480,
+   "A|:&bwC@`u",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Çocuklarda tekrarlayan akut otitis media ve efüzyonlu otitlerin sık etkeni olan beta-laktamaz pozitif bakteri:<br><br>{{c1::Moraxella catarrhalis}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Çocuklarda tekrarlayan akut otitis media ve efüzyonlu otitlerin sık etkeni olan beta-laktamaz pozitif bakteri:{{c1::Moraxella catarrhalis}}",
+   680699381,
+   0,
+   ""
+  ],
+  [
+   1624307431018,
+   "Q_@?u88US@",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "CD4 &lt;50/mm³ olup etkili ART almayan HIV hastasında, MAC dışlandıktan sonra profilaksi:<div><br></div><div>Haftalık {{c1::azitromisin}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "CD4 <50/mm³ olup etkili ART almayan HIV hastasında, MAC dışlandıktan sonra profilaksi:Haftalık {{c1::azitromisin}}",
+   4276743887,
+   0,
+   ""
+  ],
+  [
+   1626591840121,
+   "rpYc|FfQ+6",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Difteri (Corynebacterium diphtheriae) temaslılarında profilaksi:<br><br>Kemoprofilaksi: Tek doz {{c1::Benzatin penisilin G}} veya oral {{c1::Eritromisin}} (7–10 gün)<br>Aşılama: Son {{c2::5}} yıl içinde aşılanmamışsa → Tek doz rapel aşı\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Difteri (Corynebacterium diphtheriae) temaslılarında profilaksi:Kemoprofilaksi: Tek doz {{c1::Benzatin penisilin G}} veya oral {{c1::Eritromisin}} (7–10 gün)Aşılama: Son {{c2::5}} yıl içinde aşılanmamışsa → Tek doz rapel aşı",
+   3623620394,
+   0,
+   ""
+  ],
+  [
+   1626592419782,
+   "gQT~J!](lG",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Basilli dizanteri (Shigella gastroenteriti) tedavisi:<br><br>Erişkinlerde ilk seçenek → Siprofloksasin veya Doksisiklin<br>Çocuklarda ilk seçenek → Azitromisin veya {{c1::üçüncü kuşak sefalosporin (Seftriakson)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Basilli dizanteri (Shigella gastroenteriti) tedavisi:Erişkinlerde ilk seçenek → Siprofloksasin veya DoksisiklinÇocuklarda ilk seçenek → Azitromisin veya {{c1::üçüncü kuşak sefalosporin (Seftriakson)}}",
+   1356096991,
+   0,
+   ""
+  ],
+  [
+   1626613088372,
+   "y-q*DNWh@;",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Babesiyoz (Babesia microti) tedavisinde ilk seçenek kombinasyon:<br><br>{{c1::Atovakuon}} + {{c1::Azitromisin}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Babesiyoz (Babesia microti) tedavisinde ilk seçenek kombinasyon:{{c1::Atovakuon}} + {{c1::Azitromisin}}",
+   3611280761,
+   0,
+   ""
+  ],
+  [
+   1626617404452,
+   "oJs8R!KC:T",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Dirençli ve refrakter sitomegalovirüs (CMV) tedavisinde kullanılan UL97 kinaz inhibitörü:<br><br>{{c1::Maribavir}}\u001fViral kapsidin toplanmasını ve nükleustan çıkışını engeller.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Dirençli ve refrakter sitomegalovirüs (CMV) tedavisinde kullanılan UL97 kinaz inhibitörü:{{c1::Maribavir}}",
+   3551066467,
+   0,
+   ""
+  ],
+  [
+   1628458217939,
+   "uXopug``uJ",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Klamidya dış membranı:</b><div><br></div><div><b>Enfektif cisimciğin stabilitesine katkı veren sisteinden zengin protein:</b> {{c1::OmcB (OMP2)}}</div><div><br></div><div><b>C. trachomatis serovar ayrımında kullanılan protein:</b> {{c1::MOMP (OmpA)}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Klamidya dış membranı:Enfektif cisimciğin stabilitesine katkı veren sisteinden zengin protein: {{c1::OmcB (OMP2)}}C. trachomatis serovar ayrımında kullanılan protein: {{c1::MOMP (OmpA)}}",
+   437257586,
+   0,
+   ""
+  ],
+  [
+   1628678992771,
+   "z534eq<,)M",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Rickettsia türleri:</b><div><br></div><div>{{c1::Fosfolipaz A}} ile fagozom membranını eritip sitoplazmaya geçerler</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Rickettsia türleri:{{c1::Fosfolipaz A}} ile fagozom membranını eritip sitoplazmaya geçerler",
+   1022026355,
+   0,
+   ""
+  ],
+  [
+   1629125360221,
+   "uT0BU1MsiV",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Bakteriyel antibiyotik duyarlılık besiyerinde bakteri inokülasyon yoğunluğu ölçütü:<br><br>Rutin bakteriler için → McFarland {{c1::0,5}} bulanıklık standardı<br>Streptococcus pneumoniae (Pnömokok) için → McFarland {{c1::1}} bulanıklık standardı\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Bakteriyel antibiyotik duyarlılık besiyerinde bakteri inokülasyon yoğunluğu ölçütü:Rutin bakteriler için → McFarland {{c1::0,5}} bulanıklık standardıStreptococcus pneumoniae (Pnömokok) için → McFarland {{c1::1}} bulanıklık standardı",
+   847102687,
+   0,
+   ""
+  ],
+  [
+   1629128272638,
+   "tQvm*^`E+*",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "İmmünokompetan bireylerde kronik granülomatöz fungal sinüzit, baş ağrısı ve progresif yüz şişliği etkeni küf mantarı:<br><br>{{c1::Aspergillus flavus}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "İmmünokompetan bireylerde kronik granülomatöz fungal sinüzit, baş ağrısı ve progresif yüz şişliği etkeni küf mantarı:{{c1::Aspergillus flavus}}",
+   1672782338,
+   0,
+   ""
+  ],
+  [
+   1604339498164,
+   "B{[1vb7V.`",
+   1566160514431,
+   1791463152,
+   -1,
+   " Mantar ",
+   "Dermatofit enfeksiyonlarında kullanılan klasik sistemik ilaç → {{c1::griseofulvin}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Dermatofit enfeksiyonlarında kullanılan klasik sistemik ilaç → {{c1::griseofulvin}}",
+   3352397442,
+   0,
+   ""
+  ]
+ ],
+ "auditOf": "docs/catalog-corrections/mikrobiyoloji-editorial.json"
+}

@@ -1,0 +1,7002 @@
+{
+ "schema": "tusankim.catalog-editorial/v1",
+ "date": "2026-10-17",
+ "course": "Patoloji",
+ "originalReference": {
+  "gitRef": "a08dd99",
+  "path": "assets/catalog/bka-tus-complete.apkg"
+ },
+ "packageBeforeSha256": "79344b1e72cbf5dce93d7f21164d022cc88216a574ca10d9aaa22a9c18dc3e74",
+ "applied": false,
+ "reviewedNotes": 609,
+ "reviewedCards": 724,
+ "boundaries": {
+  "cards": "74b2cd2b72adceb61b9f437cc121f5a2fe11040d92778d4523df68337d3416f1",
+  "revlog": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "graves": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "collection": "d77b2e5569583e7afdc18d6a8747fc488cef0cf907da5f8c66cf90104b61eff6",
+  "noteIdentity": "90984ca47dbdefd40db5c3b25a4c1d072925253cb109a90419604f7b597759fc",
+  "otherCourses": "67d8d83a500b9ac781de0b2657c3ad72a01fd64bb1e473f6a7fc747a9bbcd0a9"
+ },
+ "scope": [
+  {
+   "noteId": 1604384166475,
+   "guid": "JtL{Cg;;gd",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604384235054,
+   "guid": "nre.rBAY11",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604384362733,
+   "guid": "EMV:[[>p=",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604384534707,
+   "guid": "s$^`.(#D9Z",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604384743065,
+   "guid": "Lc!P6yq0T3",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604385068256,
+   "guid": "hw<Qc/GdKN",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604385208095,
+   "guid": "MtLpnZAe5[",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604385375549,
+   "guid": "n^nj&;l&gj",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604385430245,
+   "guid": "I;wjD4]W]K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604385529205,
+   "guid": "BLFwW8//=`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604385552439,
+   "guid": "clUoD3Q$8y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604385591588,
+   "guid": "Mm-.~U^[dF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604385667973,
+   "guid": "wiThSEys,U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604385737717,
+   "guid": "P`-7x_;:hC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604386094368,
+   "guid": "w6ub4*rAgU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604386416721,
+   "guid": "K@-9PXP_Pc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604386731904,
+   "guid": "M=F5`KOymv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604387646219,
+   "guid": "Fvv_>VPy(W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604388055957,
+   "guid": "Pcy$y/NU:2",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604388113505,
+   "guid": "PGu):5r$s0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604388301667,
+   "guid": "A)PDwgd1]]",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604388346258,
+   "guid": "O:)%Q1!jH7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604388645099,
+   "guid": "iapqhE^VV}",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604388713384,
+   "guid": "IsRh}F#l{U",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604388883555,
+   "guid": "CogXu|=bU<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604388904471,
+   "guid": "h,j@|Yao+o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604388963701,
+   "guid": "s%!!uGYt}@",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604389059651,
+   "guid": "J4)~*Hrs$&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604389128784,
+   "guid": "tI:^;G8BYH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604389189383,
+   "guid": "piTMs!Y<qH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604389262201,
+   "guid": "OR%5-T/389",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604389368258,
+   "guid": "Df8>nxU,G[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604389424408,
+   "guid": "Hhe|lNfk/<",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604389574475,
+   "guid": "coJU1kS<Zu",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604389643480,
+   "guid": "fJ=/Z^Dg3_",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604389807636,
+   "guid": "r7[F,LCvBo",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604390000049,
+   "guid": "G:9C9MCxZa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604390292097,
+   "guid": "xRiF~R+j^^",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604390919198,
+   "guid": "J+_?G2^2f[",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604391175223,
+   "guid": "z&oMu6Fo-2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604391220085,
+   "guid": "Bt!g-?Q.;W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604400271329,
+   "guid": "K-p%IVd_-1",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604400446433,
+   "guid": "iN8Q7x[#]O",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604400474691,
+   "guid": "IxEVF(h0vF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604400549547,
+   "guid": "v,Xw;ezbV@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604400570400,
+   "guid": "vKoGu.)-%Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604400593152,
+   "guid": "G!q7t;<t,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604400644490,
+   "guid": "u!jCUi?z:P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604405937273,
+   "guid": "b1{yCCA{hs",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604434761014,
+   "guid": "k~k6LUD<g6",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604434810029,
+   "guid": "M^E(ipPK`7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604434853555,
+   "guid": "i<<1{]:pGR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604434944108,
+   "guid": "B727RC1srT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604434974196,
+   "guid": "NX0<)Pq6B(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604435006090,
+   "guid": "orbjAHp4F6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604435113795,
+   "guid": "i-<=#znR%2",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604435152275,
+   "guid": "GgG)k&S.dn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604470293471,
+   "guid": "L!`Hb25t[=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604470484719,
+   "guid": "krNrkQE!$i",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604470510973,
+   "guid": "d.tU;y_o:&",
+   "ordinals": [
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604470825969,
+   "guid": "B_nh4Mp0Hh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604470858232,
+   "guid": "MVHepk~JOQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604470888552,
+   "guid": "l?ZRq}6F72",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604471002219,
+   "guid": "g_}^-^uHFr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604471175248,
+   "guid": "i=k$J80T7t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604471389759,
+   "guid": "deJsa/M,7*",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604471454839,
+   "guid": "mGpEz$6mo!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604471589413,
+   "guid": "g<)Qx*35_u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604471621497,
+   "guid": "C.[#[!T]n7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604471783193,
+   "guid": "ky2I}ahf,i",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604471872355,
+   "guid": "LS~/Z)hfm(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604471977358,
+   "guid": "wv$bIs01s0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472017550,
+   "guid": "bq8-HI>J1j",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472157319,
+   "guid": "QC%:AnfSWV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472183444,
+   "guid": "l!TSL]GtaB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472230732,
+   "guid": "oOix4*,:R$",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472262705,
+   "guid": "v/NrH#PmO8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472439551,
+   "guid": "b=b6iH8@-A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472489896,
+   "guid": "roS#,,=P.4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472562961,
+   "guid": "qdfNv$8~1$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472674579,
+   "guid": "H[vaY+NSai",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472745519,
+   "guid": "u!>Yn`}I{q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604472812823,
+   "guid": "DmG#uAyrUs",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604473108281,
+   "guid": "ka8=QP-f<a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604473187778,
+   "guid": "m);9e+lJ<e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484168162,
+   "guid": "DLB/KB18OO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484231609,
+   "guid": "o!J=Lqyd9`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484278412,
+   "guid": "nX[9QM!L6Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484295738,
+   "guid": "FG|;w_os{5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484352055,
+   "guid": "j0q%-Qmr`2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484377108,
+   "guid": "BN)>x`GNfN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484416297,
+   "guid": "d_XW*DnA7Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484431190,
+   "guid": "E/e?SMuMgR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484451458,
+   "guid": "FOg)w:r5#)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484499685,
+   "guid": "FPz*~$b92F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484527612,
+   "guid": "Ff1XJj@!4(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484561216,
+   "guid": "dD|A7q#tE6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484598552,
+   "guid": "Rca-+ng1>v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484782631,
+   "guid": "A:])IT3KlJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604484928324,
+   "guid": "x2=4ogDe56",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604485072448,
+   "guid": "gWxlQWGDZR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604485113108,
+   "guid": "HhYi,1,(cg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604485231094,
+   "guid": "Mwa#!tE#@F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604485255491,
+   "guid": "f1AEAbd,h7",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604485272694,
+   "guid": "oU5#2wO+%[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604485672134,
+   "guid": "wlbBEA$r?O",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604485815308,
+   "guid": "j/qrhiuCoi",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604485911038,
+   "guid": "B?%|aL6St&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604486052409,
+   "guid": "Fg$8`$E[ZK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604486174871,
+   "guid": "O$491FK{Jy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604486518250,
+   "guid": "gQS;ip7UYW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604486545422,
+   "guid": "vBt%4_90][",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604486740829,
+   "guid": "pP%)5~MZn:",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604486946362,
+   "guid": "AH~}/y6G[_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604487027605,
+   "guid": "mu`_VHp0FA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604487062588,
+   "guid": "p9=|sNg$wq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604487096954,
+   "guid": "ziU@v5[[(f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604487847021,
+   "guid": "f=yyR1dnge",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604487947072,
+   "guid": "n{l~x~233;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488001675,
+   "guid": "k~L->8(vR.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488035552,
+   "guid": "e3dM^f9<Ul",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488135831,
+   "guid": "o8-IC$sFK,",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488148844,
+   "guid": "pLrg4k0~De",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488193115,
+   "guid": "EGw/#zCtqJ",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488232351,
+   "guid": "yk}|R1qOpW",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488351849,
+   "guid": "M;jg%i0[9w",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488502089,
+   "guid": "bf+|[n*8Gd",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488535293,
+   "guid": "ve9bWdL?L9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488547228,
+   "guid": "E-03CGI+bL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488588507,
+   "guid": "C&iUGEKQbq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488680070,
+   "guid": "gVTHLpS6A1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488787875,
+   "guid": "m<I}joJ+%q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604488970084,
+   "guid": "n=/@k&[51M",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604489011845,
+   "guid": "C<WB{uf8nh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604489319143,
+   "guid": "mcYq7)8D]L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604558681127,
+   "guid": "Eqcw`<JV/I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604558718414,
+   "guid": "pySED$<L&=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604558743556,
+   "guid": "kMg.22i#5Y",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604558820456,
+   "guid": "mwCBnNmB_)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559022863,
+   "guid": "j~D9T-m&&X",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559056683,
+   "guid": "r%vDFY6]cT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559123991,
+   "guid": "Ae1<thxNd,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559181682,
+   "guid": "IAc:VMAjGR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559265558,
+   "guid": "dET=Ar28+R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559311592,
+   "guid": "mtiBggHXR]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559391407,
+   "guid": "nVvY5nvQ/:",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559412841,
+   "guid": "c.ebFRRie[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559541500,
+   "guid": "tvm[=0%0pI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559577124,
+   "guid": "F_Si~IHZFb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559672730,
+   "guid": "ie~Fdm)V<j",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559855516,
+   "guid": "f.3))f{@Dd",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559884317,
+   "guid": "o:/:#qT|6t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559911118,
+   "guid": "B$.N5ZL{4a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604559964656,
+   "guid": "p^N1zSO~r<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560022769,
+   "guid": "wJCzD%>O~)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560162892,
+   "guid": "L9%O}anh.P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560291964,
+   "guid": "o:L;oiVx%=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560400448,
+   "guid": "tb5ye_%U0R",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560471739,
+   "guid": "CT].Z$?}z$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560523018,
+   "guid": "FCT!zoJJj]",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560542924,
+   "guid": "QIabbn^u4{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560590056,
+   "guid": "C0a4@s7a&:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560717404,
+   "guid": "Q@au3<A!K2",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560961621,
+   "guid": "zirB61_$]&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604560985221,
+   "guid": "i:D8@)4LK-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604561026130,
+   "guid": "jqgmA|A},y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604561095933,
+   "guid": "N~j3:LLh#J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604561127120,
+   "guid": "Ih9reiYtM}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604561163805,
+   "guid": "KGaXi,N@kN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604561207720,
+   "guid": "maX|v1[/Pq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604561229721,
+   "guid": "b|GD*L;gF~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604561472052,
+   "guid": "i-xnzdA2;0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604562196070,
+   "guid": "tk-w3#k=u.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604562339650,
+   "guid": "zB<@%N;f1u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604562372572,
+   "guid": "kW^~(!q*Tg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604562401191,
+   "guid": "si}vMZ,YUn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604562546901,
+   "guid": "rmZXs91jjl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604563376054,
+   "guid": "Nd[}K(}$)<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604563474692,
+   "guid": "Dj&[B_ZBtI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604563486965,
+   "guid": "Pyi!UloEg0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604563745361,
+   "guid": "dvXgWT-x<6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604564005111,
+   "guid": "kfHn<6~j,7",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604564053426,
+   "guid": "AS_mck9`,*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604564127904,
+   "guid": "w)o_qqmm;B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604564155183,
+   "guid": "t_&zP^Oy`X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604564626404,
+   "guid": "zV0v/Z+kJF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575408775,
+   "guid": "z:2H<Z(*Gu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575553381,
+   "guid": "p,ntGD/:5@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575610383,
+   "guid": "y4j*ca5O(g",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604575640171,
+   "guid": "u*CxOQsc?>",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575671489,
+   "guid": "v]x~nw3R6s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575697764,
+   "guid": "LMq(lpiaX$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575731886,
+   "guid": "uFMbT5_Xth",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575792544,
+   "guid": "nof>v=lHBr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575839996,
+   "guid": "q$vYXBxJS&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575880601,
+   "guid": "zh8~8|whA)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575893126,
+   "guid": "w4lmwI}(Nc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575942684,
+   "guid": "ybU/(;bFE$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575977086,
+   "guid": "nOs8$vWKCQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604575997767,
+   "guid": "t?X<[h~5*A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576064324,
+   "guid": "Lc]:wH[JeN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576080298,
+   "guid": "l6vmb=|>,)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576110759,
+   "guid": "jP_1F&Iquu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576131913,
+   "guid": "ICpKte-0`K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576162588,
+   "guid": "Pi*~ksTFOq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576215041,
+   "guid": "FfzZr^zfh3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576238071,
+   "guid": "c`-vtZa`cH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576251993,
+   "guid": "F(33DS8DC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576295110,
+   "guid": "fJxq}n}W{3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576331156,
+   "guid": "OPeX{sqrWn",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576347412,
+   "guid": "dh>-/z7Z/X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576394534,
+   "guid": "D6]n[NqCy_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576464142,
+   "guid": "E:[)[Sh]77",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576576749,
+   "guid": "tpGt;q(XK,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576628661,
+   "guid": "xy^g-kiU7x",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576644738,
+   "guid": "nrhts&}@!%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576678245,
+   "guid": "KsJ3Q_Fe=m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576707479,
+   "guid": "l{9Y^sLJ5L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576893945,
+   "guid": "yuTNLY[Q:k",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576931638,
+   "guid": "uL]wBii*?U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604576946736,
+   "guid": "QV[RveY+VF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604577037580,
+   "guid": "haM3$VdEWc",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604577070572,
+   "guid": "Hh77Bp,.L`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604577123751,
+   "guid": "f`k7B*K?*+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604577160124,
+   "guid": "lE{[!DHv99",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604577206283,
+   "guid": "gK:mU0y.<}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604577219216,
+   "guid": "f(*:}dx@=p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604577276107,
+   "guid": "Ns)seFxOhl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578035585,
+   "guid": "OU:LW]TFtm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578141382,
+   "guid": "It)v)-|~~m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578177418,
+   "guid": "c!T[k*totk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578220396,
+   "guid": "h1s5V.&!}S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578261875,
+   "guid": "oqb>QM=gs}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578304315,
+   "guid": "O_bp+qX`O!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578334061,
+   "guid": "ysd`-:HNS|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604578410222,
+   "guid": "zzw>w%HZ=Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578432677,
+   "guid": "k9iFaWIB$3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578473700,
+   "guid": "z~o;4jV!6V",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578539303,
+   "guid": "tNkj$ka&>.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578562598,
+   "guid": "kcnF?61juW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578629879,
+   "guid": "Avjn`uwC_0",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578647723,
+   "guid": "d:5Zga8Rj1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578663443,
+   "guid": "o{xi$94jq0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578721051,
+   "guid": "LA>]zH)YIz",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578785722,
+   "guid": "jD$606K<VT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578856014,
+   "guid": "nP/xhkpdtO",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578909444,
+   "guid": "Ol1kxB3FW=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604578954796,
+   "guid": "viaU_]Wfm$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579032901,
+   "guid": "e~VS?BK{@v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579123040,
+   "guid": ")&Lg}:K#x",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579171056,
+   "guid": "BV,BX{FEXR",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579224240,
+   "guid": "b,~6l6Oi3C",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579318784,
+   "guid": "zOBt3@a|[S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579351225,
+   "guid": "m%4xu!Rwkt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579385372,
+   "guid": "G/7W!4!Tbe",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579425217,
+   "guid": "mmlB[/:[K4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579452701,
+   "guid": "h]m!v%<Gis",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604579513968,
+   "guid": "F6!t?8.k}H",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598146407,
+   "guid": "CBS#hA**to",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598186692,
+   "guid": "c]2rh4{s@.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598239364,
+   "guid": "E7{9T2l,wS",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598407653,
+   "guid": "b(@v2(V(~X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598452209,
+   "guid": "G2.2$q6zS3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598487452,
+   "guid": "l/o9TQ+xrt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598518643,
+   "guid": "oT2lyPv6[{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598568460,
+   "guid": "f!7A7CCjP[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598618965,
+   "guid": "QeJ]w)z^Rk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598643550,
+   "guid": "g|wfa@6Zp;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598710599,
+   "guid": "Nk74rPR`5p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598761448,
+   "guid": "F,4]gcuIVt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604598773613,
+   "guid": "CR<6Tu6|zy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598905126,
+   "guid": "BF::sF!:VR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598952057,
+   "guid": "Bn>afn.G#D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604598981605,
+   "guid": "ffI2U2QE;L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599010810,
+   "guid": "K7NUYfCz5f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599022875,
+   "guid": "d}D&aV-YOK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599097999,
+   "guid": "PH&mABa__v",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599133089,
+   "guid": "RfV~R+$P2N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599163866,
+   "guid": "QoV7Vvo4EL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599237627,
+   "guid": "An1wP/-+4A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599274146,
+   "guid": "vWyknYBSXV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599342540,
+   "guid": "oAl;B2|?II",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599377089,
+   "guid": "kO3vwaU+t-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599395081,
+   "guid": "Is{yDseuSg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599510831,
+   "guid": "hUc/hn|rgB",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599541770,
+   "guid": "D]nwwI;J&%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599596534,
+   "guid": "vsmFUeH>}P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599632686,
+   "guid": "qtqv}XtAh6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599654702,
+   "guid": "keby!=:;eH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599731963,
+   "guid": "cnY)yqA~A6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599789969,
+   "guid": "BuUQMIx86a",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599807745,
+   "guid": "lksKhxGQ_|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604599962102,
+   "guid": "CC<)|I@(yp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600012640,
+   "guid": "q(O*}*0sYc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600046271,
+   "guid": "v4N861L#OG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600061912,
+   "guid": "C]JyuYOZk?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600090957,
+   "guid": "Qatx;>09G)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600118620,
+   "guid": "muSZg%R?t(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600151226,
+   "guid": "CD*7{r;>VY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600172215,
+   "guid": "ft=>Gl/[:&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600232445,
+   "guid": "_^^B0QD=g",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600290258,
+   "guid": "MtpjN/A{|X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600379732,
+   "guid": "MbrH(mJ8h^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600435665,
+   "guid": "MkTw[Y;IP0",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600453122,
+   "guid": "xAl+UjM(Z~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600471640,
+   "guid": "gaQ{}X8FnM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600502619,
+   "guid": "cl9!C]zmdj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600553819,
+   "guid": "F*vS?dIDyk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600580476,
+   "guid": "n~mZN0,zPv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604600609889,
+   "guid": "E8JQ<+SL`Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600636824,
+   "guid": "q@zeC;*tL]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600680902,
+   "guid": "OMk`ELuMqf",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600735493,
+   "guid": "EXCD?+=HWd",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600782949,
+   "guid": "A6rEbaj).~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600800207,
+   "guid": "hb233Kr3-&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600841848,
+   "guid": "ued;L:qiea",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600864611,
+   "guid": "mqHy/wl9QH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600912277,
+   "guid": "FUz#,}Ux;u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600946840,
+   "guid": "E;pO`kXeHw",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604600980060,
+   "guid": "~E`{~*$(-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601006283,
+   "guid": "Ej9wDVUU;U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601034484,
+   "guid": "mOCj]&xCVJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601070266,
+   "guid": "Eg3ARQrJe>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601088857,
+   "guid": "mjCHmG(=h~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601117660,
+   "guid": "pc$U9l.ni%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601142225,
+   "guid": "ltAwMzPPM`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601891632,
+   "guid": "AJ2@yK7k>X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601920181,
+   "guid": "t!0llKJoeD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601934936,
+   "guid": "AQb6ytzHi9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601958465,
+   "guid": "mV}-l$w&dC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604601988488,
+   "guid": "dy#<ebUq):",
+   "ordinals": [
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602022492,
+   "guid": "bl+lCV)hO3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602043556,
+   "guid": "ze440N=`9E",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602082967,
+   "guid": "l8hTYdIg;1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602173456,
+   "guid": "KR$ijT;LO$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602252071,
+   "guid": "PC}9:0Pm>U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602279193,
+   "guid": "xJ9l.!T]t.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602303313,
+   "guid": "K7Ko:8!|V_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602325032,
+   "guid": "CL4s`FO+EZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602349930,
+   "guid": "O{kzf*I^Y/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602393576,
+   "guid": "fB<~CUo8;*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602408918,
+   "guid": "gG~{K/kl;+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602449402,
+   "guid": "o#gRhB7Ckv",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602469766,
+   "guid": "fw|c6gLLkz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602524387,
+   "guid": "HH$gS7#OHm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604602563223,
+   "guid": "yk%KeItP&1",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608036036179,
+   "guid": "Ny{*L5i*7a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608036157387,
+   "guid": "F2%HgR/i;(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608036187495,
+   "guid": "c)A_G#M)`C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608036319516,
+   "guid": "Q}{X5$I=Y0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608040361208,
+   "guid": "JD4[P4!9Ew",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608040570600,
+   "guid": "l{<,|Vn{ZF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608041061475,
+   "guid": "cYmXlW!L<c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608041129897,
+   "guid": "O%Z5Qy8+~!",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608041801311,
+   "guid": "IbTa&#o({m",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608042351423,
+   "guid": "j?9c#Cc#DG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1608046041817,
+   "guid": "JAL*#&GJqD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1608055572518,
+   "guid": "s?;82IGs#s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1608055982863,
+   "guid": "Jd=6Mb^eZ%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608056261615,
+   "guid": "mur]S`G+DN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608056414801,
+   "guid": "f(]H$wy1ie",
+   "ordinals": [
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608056746472,
+   "guid": "HHwQjt0dGJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608061200999,
+   "guid": "D[{(tjk>Ny",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608061814522,
+   "guid": "J]{fVoHrMt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608062327462,
+   "guid": "qKF<w*])WB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608102925670,
+   "guid": "JH,&h,FB9K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608103782501,
+   "guid": "N8%Ybtn&2`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608105265205,
+   "guid": "MUv{OuUCpI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608105497634,
+   "guid": "ytYA7{{Kz~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1608105815693,
+   "guid": "q8;6I]Txou",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608112611339,
+   "guid": "K/{6&ikpr}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608127355445,
+   "guid": "EcG@m8F[f^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608127556939,
+   "guid": "OJRV}2<o}w",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608129565337,
+   "guid": "BO!_,#:yEN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608130341972,
+   "guid": "ocjL~eYtkh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1608131196024,
+   "guid": "bPq3{fJ[n8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608131422561,
+   "guid": "OxB4$j!K)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608132641570,
+   "guid": "bL_M0.`_OM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608144080492,
+   "guid": "dIkbzVjjxC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1608144367476,
+   "guid": "QvH2(^WyAX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612796334441,
+   "guid": "heH`#gs34H",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612893777032,
+   "guid": "Pg4(D~Ao0J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612961785563,
+   "guid": "z+Z3:>Bd]a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612982539968,
+   "guid": "ePK1eaF~Tp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612982589436,
+   "guid": "A&jt<I,vwo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612985121984,
+   "guid": "jtJBgl;w$C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612986962713,
+   "guid": "JH,yY~`+vk",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1612987160184,
+   "guid": "p*vO<;>U#b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613052840300,
+   "guid": "fohF(Am40!",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613053576094,
+   "guid": "HY%*FV+9Iq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613054135127,
+   "guid": "w3[RC3)v1Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613068314196,
+   "guid": "e;JeNhreOf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613111196265,
+   "guid": "kK!_|gv]cb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613136626054,
+   "guid": "d>XP)M#cf2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613139938812,
+   "guid": "sk)JlQNyJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613140983295,
+   "guid": "JK:8m9VpmT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1613141319319,
+   "guid": "AY*-Mjs127",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617111373164,
+   "guid": "t^YkkJEZ/W",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1617111735433,
+   "guid": "iDN=F$95Iw",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617123864188,
+   "guid": "Fg]?[.lPZg",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1617123916669,
+   "guid": "Bi#8[0Z^$|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617124003564,
+   "guid": "N=_rR&?JM4",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617124143231,
+   "guid": "hZuJ&X7OJ9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617124238976,
+   "guid": "nvV.H$a]lg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617124323612,
+   "guid": "g6x^*-S(1C",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617124411541,
+   "guid": "kueZDg~jB4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617124531351,
+   "guid": "xx0=EEw>7S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617124657395,
+   "guid": "Li?-r^m5Qe",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617124744443,
+   "guid": "y~Tf9$W$Gz",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1617124826519,
+   "guid": "MbWN1!+VD`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617124896943,
+   "guid": "k57y<`gvh}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617125705472,
+   "guid": "f,/|1ImRpe",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617125833702,
+   "guid": "AMkw9+a[j+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1617128529187,
+   "guid": "hT-8@]n*82",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617133021600,
+   "guid": "vH.|+{0*:2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617133150258,
+   "guid": "H>K93!=>lV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617133404583,
+   "guid": "LeAct.k=R:",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617282289011,
+   "guid": "eUeFNV4l4`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1617282601509,
+   "guid": "d(p(w.{b{@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617348223145,
+   "guid": "wNzdy+Aq`3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617349744491,
+   "guid": "B+~b$O?e4r",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617349866410,
+   "guid": "DgSr^!G[h,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617374254907,
+   "guid": "It.*N{{+%(",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617568680117,
+   "guid": "ir{2PV$)D0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617568813408,
+   "guid": "Cgk^%eo63A",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617615782624,
+   "guid": "Jyu~[64:Kq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617616009365,
+   "guid": "i*gSa,xJi*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617655012887,
+   "guid": "iF*uYYRXk6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617737784661,
+   "guid": "nClxn^$BT/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617743250001,
+   "guid": "kvn&9E3e4n",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617743416275,
+   "guid": "fL*J;YHv&J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617743426843,
+   "guid": "m?aAvddf.T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618092176052,
+   "guid": "m(0s&t9ttW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618874546749,
+   "guid": "KCh2gmU+3q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618874892231,
+   "guid": "Ku+a[Dapv3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620164839117,
+   "guid": "mjX7ORB7/v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620240165584,
+   "guid": "j`_p_EJHpH",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620242619131,
+   "guid": "s>#`Z~+8v/",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620297751057,
+   "guid": "J[yAK;E]EL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620297976039,
+   "guid": "EJei?HKZC!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620298884378,
+   "guid": "bEUJ3akq+P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620299847124,
+   "guid": "t6uud-jQ*s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620300325642,
+   "guid": "txZGRg1fW2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620304216366,
+   "guid": "hnhG<6hzH_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620305969272,
+   "guid": "z$@DCJE]>z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620306071094,
+   "guid": "w~uSt7L+An",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620306721699,
+   "guid": "ML;Jc-hNHG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620310074656,
+   "guid": "L}Pyr~0:AC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620310170143,
+   "guid": "tpuRW{<t0*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620310715594,
+   "guid": "NT[f9xYF}k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620311036074,
+   "guid": "f4^Yk._hRf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620311270122,
+   "guid": "FAe/KQ=@+p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620311690356,
+   "guid": "H2gY1#19F<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620324810432,
+   "guid": "e8<)j*Q={n",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620325655420,
+   "guid": "C9OSo_,((k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620334948197,
+   "guid": "x!_LV9CC}#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620338186664,
+   "guid": "RdFp}mk`Az",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620369027703,
+   "guid": "As>gw$(]+x",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620370270471,
+   "guid": "tp@N*LZrqB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620370992751,
+   "guid": "d%.7Y2x}YB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620371338806,
+   "guid": "poflq4Fvh#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620372469388,
+   "guid": "iWUPU1EKY9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620372614114,
+   "guid": "-y&aQr}0g",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620374819182,
+   "guid": "zqSj?GqN=p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620375052980,
+   "guid": "g#0)mBD6}o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620376039674,
+   "guid": "k}FiB[6E)/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620385668252,
+   "guid": "LIz#u]y2}M",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620385709252,
+   "guid": "QaglpYf*@]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620386001561,
+   "guid": "orm}mrtV)Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620386851831,
+   "guid": "jfhQuc2C=:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620387297641,
+   "guid": "rFQ)QlTn`e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620388463847,
+   "guid": "r&|7(jVba/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620389073096,
+   "guid": "m^f/;&W1=+",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620389332465,
+   "guid": "ruP=IcfVL5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620389703899,
+   "guid": "dO3^{fR}J}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620393347192,
+   "guid": "z~h!YX-sRg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620394648049,
+   "guid": "x3/[(]@{Ci",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620394863996,
+   "guid": "Q!Czw%Hi]D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620395037287,
+   "guid": "O0e4hRQd<y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620401606745,
+   "guid": "o`dx1],pl4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620401845932,
+   "guid": "OTe~WYKvY?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620416563037,
+   "guid": "JiDcE7z$N]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620416727282,
+   "guid": "pTe2o#D<^a",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620425106728,
+   "guid": "MOK25+gIay",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620511923483,
+   "guid": "qKk,us<Xrj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620512477330,
+   "guid": "BAUF!Z}{G~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1620850657864,
+   "guid": "IQ#YXL50%0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1620852113765,
+   "guid": "u@Rl9Cr9pI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621183709559,
+   "guid": "tK>|4DQ=F+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621184116959,
+   "guid": "g[O,u0s{{q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621425022266,
+   "guid": "Ixd6sN[v~1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621714718716,
+   "guid": "hd~4/}]y{o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621795123574,
+   "guid": "dMj>.iSf#u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1621795617874,
+   "guid": "NN45!=n:#B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622190783818,
+   "guid": "l(4;SD5F>g",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622275945809,
+   "guid": "Erw/$;2P0V",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622388620957,
+   "guid": "b95=)_<[>V",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622388945741,
+   "guid": "wRu4$HlUfX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622491676502,
+   "guid": "y?!-H+=DDl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622492118390,
+   "guid": "g9rYMw$GGF",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622492236665,
+   "guid": "C)Sg#!R*ad",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622717307844,
+   "guid": "nh737_Ix<~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622718111836,
+   "guid": "MpL*-y<XEN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622821810050,
+   "guid": "dT%_9|2$Q^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622924665587,
+   "guid": "Nol~rE(h3u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622924748183,
+   "guid": "o?G86T:gYf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623093383472,
+   "guid": "Ck#}s.6=`4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623189946070,
+   "guid": "oM>0`1C=.F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623190089564,
+   "guid": "b[&Dz8T0Dr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623266180227,
+   "guid": "z-7NDPepQu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623615819739,
+   "guid": "PoP(+ue.eW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623699734597,
+   "guid": ":*MXQcp#c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624004533368,
+   "guid": "LC:(z!CEnm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624309168022,
+   "guid": "r_w)[:K&E1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624387484926,
+   "guid": "P$ymCn59x2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624387774199,
+   "guid": "BnZ7g_6&NA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624737006075,
+   "guid": "spU1qAh1hK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624915381343,
+   "guid": "IT{2S*>Fv0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624999029274,
+   "guid": "ba/z2u+@c|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624999130490,
+   "guid": "q-h8{vp=O:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625087956679,
+   "guid": "K#C&rgYNv#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625213946786,
+   "guid": "B^z?OJ.MQe",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625237145102,
+   "guid": "l}m0]x{UQq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625237568266,
+   "guid": "l:Q+Ikse>~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625238469386,
+   "guid": "D6~]%}9GIB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625238898375,
+   "guid": "y:jNcDyf1T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625241854824,
+   "guid": "o:l|^LHtq2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625242082067,
+   "guid": "m9:jXjWx*R",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625242314418,
+   "guid": "if(-e<I2/n",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625242377334,
+   "guid": "K(f&]Tb-9R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625254665350,
+   "guid": "PPXo[09ez{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625385111457,
+   "guid": "sJDsUJfw8k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625482523128,
+   "guid": "u<[`HaSk#M",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625514288275,
+   "guid": "J4m]5i<S[p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625515634190,
+   "guid": "hdr;F^S~f[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625520300987,
+   "guid": "I5pRULSzM5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625569964638,
+   "guid": "u;rBK^wt$p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625595892368,
+   "guid": "hR!,F:]tc[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625684727339,
+   "guid": "Kj;Lz0D:-D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626204761777,
+   "guid": "K}&yBSCDV/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626206536074,
+   "guid": "iyLKP?:,ql",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626511033747,
+   "guid": "BL*lQEl@jb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626511375885,
+   "guid": "nD/Pwu;|rV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626560903893,
+   "guid": "p0xmh6Tz}.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626846499592,
+   "guid": "b[60a7^+($",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626855999514,
+   "guid": "r?;Kx&65Fs",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626876488331,
+   "guid": "muaX]?5J}R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626876595532,
+   "guid": "q1/^@4sgQ1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626986549493,
+   "guid": "yq^.(AV~nb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626986874927,
+   "guid": "cp[i|5a]m-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626987053079,
+   "guid": "p}$6<K[!KI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626987130249,
+   "guid": "b87qxsuk+j",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627224929188,
+   "guid": "C&/L:P>+6t",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627372760193,
+   "guid": "r+]9/[,:{c",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627392132565,
+   "guid": "pyv%adQ&7r",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627508830686,
+   "guid": "dK}6l~^@)",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627508940308,
+   "guid": "vO{82,`kG`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627656938031,
+   "guid": "k%EwRodxpl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627656999685,
+   "guid": "AZu-LIP:;k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627657116049,
+   "guid": "Q_?O88yR1@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627815469053,
+   "guid": "C`]g$sZj3K",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627817278146,
+   "guid": "y@Juc?HrY|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627817854902,
+   "guid": "Ij;xq*c8lu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627822517511,
+   "guid": "z3fh@t,oFA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627823535802,
+   "guid": "ib(gI>J4/(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627823744091,
+   "guid": "hp}d,f*o)`",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627824503962,
+   "guid": "zU$eRS![[(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627824652079,
+   "guid": "i^ZYo+N(!j",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627824776379,
+   "guid": "zWZV}A`Ear",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627825195466,
+   "guid": "D]z:yrg=hx",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627829195989,
+   "guid": "IIeck$8Y@N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627830152347,
+   "guid": "LO:bKe([h1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627831194305,
+   "guid": "IQR$?TJ=q&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627844262182,
+   "guid": "b42(YSW1Gl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627844765987,
+   "guid": "m^}U1LpN{~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627966863847,
+   "guid": "ACUb_f_VU-",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627966944869,
+   "guid": "v/}f9-hpfV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628023901032,
+   "guid": "r5:6A=y=jo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628024095565,
+   "guid": "yEUG@:)$F%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628184936039,
+   "guid": "wE!5e*Dm*n",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628372282587,
+   "guid": "mr&eJ&Np`l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628704232976,
+   "guid": "J=87-dRiBm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628704462868,
+   "guid": "hi1!%xUuJm",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628704644384,
+   "guid": "M]V|/~2pa.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628704792505,
+   "guid": "y]q^;FdPv,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628704860043,
+   "guid": "d#8r1DmRn-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629099667787,
+   "guid": "izzSDiqaja",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629185492208,
+   "guid": "CD7*{G[@83",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629212608979,
+   "guid": "pYZ,s0ol)*",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629213863482,
+   "guid": "dxZoLI>r:f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629229512813,
+   "guid": "us(L5I*Q(V",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629750205546,
+   "guid": "QZ~toKkgGu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629750335801,
+   "guid": "C[lm^Dyzoy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629750503523,
+   "guid": "K3u3w*<[QU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629919613367,
+   "guid": "xI*H.&jgy_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630010673774,
+   "guid": "b#AKY5L4oa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630011057989,
+   "guid": "NGfgD!kv4b",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1630168047268,
+   "guid": "BC_5__!;b&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630168179757,
+   "guid": "JEYU51<BE;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630168408957,
+   "guid": "Q%DRw;CV,P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630168476392,
+   "guid": "v;3Q~v>2Cy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630168520911,
+   "guid": "C7A0:^JU+S",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1630168590180,
+   "guid": "N`(l|8*M)s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1630356147022,
+   "guid": "MoE}<7A?cc",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630356249879,
+   "guid": "OC{*qEgfAo",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630525279658,
+   "guid": "sAXW|vd!n",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630525876701,
+   "guid": "FC@FU7L|L0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630526026053,
+   "guid": "dL(J1>=IeJ",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630526133511,
+   "guid": "G*e$E|:%R(",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  }
+ ],
+ "notes": [
+  {
+   "noteId": 1604385208095,
+   "guid": "MtLpnZAe5[",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Apoptozun ekstrinsik yolu<div><br></div><div>{{c1::FasL}} → {{c1::Fas}} → {{c2::FADD}} aktivasyonu → kaspaz-{{c2::8}} aktivasyonu</div>",
+     "after": "Apoptozun ekstrinsik yolu<div><br></div><div>{{c1::FasL}} → {{c1::Fas (CD95)}} → {{c2::FADD}} aktivasyonu → kaspaz-{{c2::8}} aktivasyonu</div>"
+    }
+   },
+   "actions": [
+    "Özgün \"CD-95\" eş adı geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604386731904,
+   "guid": "M=F5`KOymv",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Faktör XII işlevleri<div><br></div><div>Kinin sistemi → {{c1::kallikrein}} oluşumu</div><div><br></div><div>Koagülasyon kaskadı</div><div><br></div><div>Fibrinolitik sistem → {{c1::kallikreinin plazminojeni aktive etmesi}} → plazmin</div><div><br></div><div>Kompleman sistemi → {{c1::C3a ve C5a}} oluşumu</div>",
+     "after": "Faktör XII (Hageman faktörü) işlevleri<div><br></div><div>Kinin sistemi → {{c1::kallikrein}} oluşumu</div><div><br></div><div>Koagülasyon kaskadı</div><div><br></div><div>Fibrinolitik sistem → {{c1::kallikreinin plazminojeni aktive etmesi}} → plazmin</div><div><br></div><div>Kompleman sistemi → {{c1::C3a ve C5a}} oluşumu</div>"
+    }
+   },
+   "actions": [
+    "Özgün \"Hageman faktörü\" eş adı geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604389128784,
+   "guid": "tI:^;G8BYH",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "X'e bağlı lenfoproliferatif sendrom →<div><br></div><div>Lenfosit aktive edici sinyal molekülü {{c1::SLAM ilişkili protein (SAP)}} defekti</div>",
+     "after": "X'e bağlı lenfoproliferatif sendrom (Duncan hastalığı) →<div><br></div><div>Lenfosit aktive edici sinyal molekülü {{c1::SLAM ilişkili protein (SAP)}} defekti</div>"
+    }
+   },
+   "actions": [
+    "Özgün \"Duncan hastalığı\" eş adı geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604472439551,
+   "guid": "b=b6iH8@-A",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Mikozis fungoideste serebriform nükleuslu T lenfositi → {{c1::Lutzner hücresi}}",
+     "after": "Mikozis fungoideste serebriform nükleuslu T lenfositi → {{c1::Lutzner (Sézary) hücresi}}"
+    }
+   },
+   "actions": [
+    "Özgün \"Sézary\" adı geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604560961621,
+   "guid": "zirB61_$]&",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Beyin iskemisinde görülen ilk histopatolojik bulgu → {{c1::kırmızı nöron}}",
+     "after": "Beyin iskemisinde görülen ilk histopatolojik bulgu → {{c1::kırmızı nöron (akut nöronal hasar)}}"
+    }
+   },
+   "actions": [
+    "Özgün \"akut nöronal hasar\" parantezi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604560985221,
+   "guid": "i:D8@)4LK-",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kırmızı nöron gelişim süresi → {{c1::İlk 12–24}} saat",
+     "after": "Kırmızı nöron (akut nöronal hasar) gelişim süresi → {{c1::İlk 12–24}} saat"
+    }
+   },
+   "actions": [
+    "Özgün \"akut nöronal hasar\" parantezi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604576215041,
+   "guid": "FfzZr^zfh3",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Parkinson hastalığında substantia nigrada → {{c1::depigmentasyon}} izlenir",
+     "after": "Parkinson hastalığında substantia nigrada → {{c1::depigmentasyon (nöromelanin kaybı)}} izlenir"
+    }
+   },
+   "actions": [
+    "Özgün \"nöromelanin kaybı\" parantezi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604579385372,
+   "guid": "G/7W!4!Tbe",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Prostat kanserinden koruyuculuğu kanıtlanmamış diyet etkenleri (3) →<div>{{c1::<div>Likopen<div>Soya ürünleri<div>D vitamini</div></div></div>}}</div>",
+     "after": "Prostat kanserinden koruyuculuğu kanıtlanmamış diyet etkenleri (3) →<div>{{c1::<div>Likopen (domateste)<div>Soya ürünleri<div>D vitamini</div></div></div>}}</div>"
+    }
+   },
+   "actions": [
+    "Özgün \"domateste bol\" bilgisi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604598146407,
+   "guid": "CBS#hA**to",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sigara içen kadınlarda laktifer duktus skuamöz metaplazisi ve keratin tıkacıyla gelişen lezyon → {{c1::periduktal mastit}}",
+     "after": "Sigara içen kadınlarda laktifer duktus skuamöz metaplazisi ve keratin tıkacıyla gelişen lezyon → {{c1::periduktal mastit (Zuska hastalığı)}}"
+    }
+   },
+   "actions": [
+    "Özgün \"Zuska hastalığı\" eş adı geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604598952057,
+   "guid": "Bn>afn.G#D",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Karsinomatöz menenjit yapma eğilimi belirgin meme karsinomu → {{c1::invaziv lobüler karsinom}}",
+     "after": "Karsinomatöz menenjit (BOS'a metastaz) yapma eğilimi belirgin meme karsinomu → {{c1::invaziv lobüler karsinom}}"
+    }
+   },
+   "actions": [
+    "Özgün \"BOS'a metastaz\" parantezi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604599654702,
+   "guid": "keby!=:;eH",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Vertebra gövdelerinin osteokondrozu → {{c1::Scheuermann hastalığı}}",
+     "after": "Vertebra gövdelerinin osteokondrozu (avasküler nekrozu) → {{c1::Scheuermann hastalığı}}"
+    }
+   },
+   "actions": [
+    "Özgün \"avasküler nekroz\" ifadesi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604600864611,
+   "guid": "mqHy/wl9QH",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Miyotonik distrofide kas biyopsisinde görülen karakteristik bulgu → {{c1::halka lifleri}}",
+     "after": "Miyotonik distrofide kas biyopsisinde görülen karakteristik bulgu → {{c1::halka lifleri (ring fiber)}}"
+    }
+   },
+   "actions": [
+    "Özgün \"ring fiber\" terimi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604602022492,
+   "guid": "bl+lCV)hO3",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Dermiste yuvalanma göstermeyen ve stromal fibrozis içeren melanositik lezyon → {{c1::mavi nevüs}}",
+     "after": "Dermiste yuvalanma göstermeyen ve stromal fibrozis içeren melanositik lezyon → {{c1::mavi nevüs (blue nevüs)}}"
+    }
+   },
+   "actions": [
+    "Özgün \"blue nevüs\" terimi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1629750503523,
+   "guid": "K3u3w*<[QU",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Çocukluk çağında en sık görülen meme karsinomu:<div><br></div><div>{{c1::Sekretuar}} tip</div>",
+     "after": "Çocukluk çağında en sık görülen meme karsinomu:<div><br></div><div>{{c1::Sekretuar (jüvenil)}} tip</div>"
+    }
+   },
+   "actions": [
+    "Özgün \"jüvenil\" eş adı geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1604599510831,
+   "guid": "hUc/hn|rgB",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kemik Paget hastalığında (osteitis deformans) patognomonik bulgu ve evreler:<div><br></div><div>Patognomonik bulgu → {{c1::mozaik}} patern<div><br></div><div>1) {{c2::Osteoklastik}} evre (litik)</div><div>2) {{c2::Mikst}} evre</div><div>3) {{c2::Osteoblastik}} evre (osteosklerotik)</div></div>",
+     "after": "Kemik Paget hastalığında (osteitis deformans) patognomonik bulgu ve evreler:<div><br></div><div>Patognomonik bulgu → {{c1::mozaik}} patern<div><br></div><div>1) {{c2::Osteoklastik}} evre (litik)</div><div>2) {{c2::Mikst}} evre (osteoblastik + osteoklastik)</div><div>3) {{c2::Osteoblastik}} evre (osteosklerotik)</div></div>"
+    }
+   },
+   "actions": [
+    "Özgün \"(OsteoB+K)\" bilgisi ana metne geri getirildi; açıklama Extra silinirken kaybolmuştu (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1623190089564,
+   "guid": "b[&Dz8T0Dr",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Metabolizma enzimi olup mutasyonunda <b>paraganglioma</b> gelişebilen gen:<div><br></div><div>{{c1::SDH (süksinat dehidrogenaz)}} gen ailesi</div>",
+     "after": "Metabolizma enzimi olup mutasyonunda anjiyogenez artışı ile <b>paraganglioma</b> gelişebilen gen:<div><br></div><div>{{c1::SDH (süksinat dehidrogenaz)}} gen ailesi</div>"
+    }
+   },
+   "actions": [
+    "Özgün kartın anjiyogenez bilgisi önceki turun kısa düzeltilmiş hâliyle geri getirildi (kural 7, 8)."
+   ]
+  },
+  {
+   "noteId": 1626855999514,
+   "guid": "r?;Kx&65Fs",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "",
+     "after": "Fibröz displazi → osteosarkoma dönüşür.<br>Dev hücreli kemik tümörü → malign dev hücreli kemik tümörüne dönüşür."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi (malign dönüşüm) geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1626986874927,
+   "guid": "cp[i|5a]m-",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "",
+     "after": "Atipi yoktur."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisinin doğru kısmı geri getirildi; \"malignite riski artar\" hükmü önceki turun düzeltmesine uygun olarak dışarıda kaldı (kural 7, 8)."
+   ]
+  },
+  {
+   "noteId": 1626987130249,
+   "guid": "b87qxsuk+j",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "",
+     "after": "Kolon karsinomuyla daha ilişkilidir."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1630356249879,
+   "guid": "OC{*qEgfAo",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Büyük granüler lenfositik lösemi:<div><br></div><div>T hücreli varyant: {{c1::iyi}}</div><div><br></div><div>Kronik NK hücreli varyant: {{c1::iyi}}</div>",
+     "after": "Büyük granüler lenfositik lösemide prognoz:<div><br></div><div>T hücreli varyant: {{c1::iyi}}</div><div><br></div><div>Kronik NK hücreli varyant: {{c1::iyi}}</div>"
+    }
+   },
+   "actions": [
+    "Özgün \"Prognoz\" başlığı silinince neyin \"iyi\" olduğu belirsizleşmişti; başlığa geri alındı (kural 7, 8)."
+   ]
+  },
+  {
+   "noteId": 1618092176052,
+   "guid": "m(0s&t9ttW",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Histopatolojisinde Dut benzeri eozinofilik granüler cisimcikler izlenen beyin tümörü:<div><br></div><div>{{c1::Pilositik astrositom}}</div>",
+     "after": "Histopatolojisinde dut benzeri eozinofilik granüler cisimcikler izlenen beyin tümörü:<div><br></div><div>{{c1::Pilositik astrositom}}</div>"
+    }
+   },
+   "actions": [
+    "Silme sonrası cümle içinde kalan büyük harf düzeltildi (kural 7)."
+   ]
+  },
+  {
+   "noteId": 1604561163805,
+   "guid": "KGaXi,N@kN",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Transtentoryal herniasyonda basıya uğrayarak iskemiye yol açan damar → {{c1::posterior serebral arter (a. cerebri posterior)}}",
+     "after": "Transtentoryal herniasyonda basıya uğrayarak iskemiye yol açan damar → {{c1::posterior serebral arter}}"
+    }
+   },
+   "actions": [
+    "Ana metne sonradan eklenen Latince ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1620512477330,
+   "guid": "BAUF!Z}{G~",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Karaciğerde <b>İto hücrelerini (hepatik stellat hücreler)</b> uyararak aktive eden sitokinler:<div><br></div><div>{{c1::TNF-alfa}}</div><div><br></div><div>IL-{{c1::17}}</div><div><br></div><div>TGF-beta</div><div><br></div><div>PDGF</div><div><br></div><div>Reaktif oksijen ürünleri</div>",
+     "after": "Karaciğerde <b>İto hücrelerini</b> uyararak aktive eden sitokinler:<div><br></div><div>{{c1::TNF-alfa}}</div><div><br></div><div>IL-{{c1::17}}</div><div><br></div><div>TGF-beta</div><div><br></div><div>PDGF</div><div><br></div><div>Reaktif oksijen ürünleri</div>"
+    }
+   },
+   "actions": [
+    "Ana metne sonradan eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1627824776379,
+   "guid": "zWZV}A`Ear",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Adrenokortikal tümörlerde:<br><br><b>Adenom ve karsinomda görülebilenler:</b><br>{{c1::PRKAR1A}} mutasyonu<br>{{c1::β-katenin}} (CTNNB1) değişikliği<br>MEN1 ilişkisi<br><br><b>Karsinomla daha güçlü ilişkili:</b><br>TP53 değişikliği",
+     "after": "Adrenokortikal tümörlerde:<br><br><b>Adenom ve karsinomda görülebilenler:</b><br>{{c1::PRKAR1A}} mutasyonu<br>{{c1::β-katenin}} değişikliği<br>MEN1 ilişkisi<br><br><b>Karsinomla daha güçlü ilişkili:</b><br>TP53 değişikliği"
+    }
+   },
+   "actions": [
+    "Ana metne sonradan eklenen gen sembolü parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1630168476392,
+   "guid": "v;3Q~v>2Cy",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Oral skuamöz hücreli karsinom</b> gelişiminde klasik moleküler sıra:<div><br></div><div>{{c1::p16 kaybı → TP53 değişikliği → siklin D1 artışı}}</div>",
+     "after": "<b>Oral skuamöz hücreli karsinom</b> gelişiminde moleküler sıra:<div><br></div><div>{{c1::p16 kaybı → TP53 değişikliği → siklin D1 artışı}}</div>"
+    }
+   },
+   "actions": [
+    "ORIG'de olmayan genel \"klasik\" çekincesi kaldırıldı (kural 3, 7)."
+   ]
+  },
+  {
+   "noteId": 1625482523128,
+   "guid": "u<[`HaSk#M",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Etiyolojiye spesifik değildir ancak postviral zeminlerde sık görülür.",
+     "after": "Spesifik değildir."
+    }
+   },
+   "actions": [
+    "Genişletilmiş arka yüz özgün kısa hâline indirildi (kural 2, 8)."
+   ]
+  },
+  {
+   "noteId": 1604388346258,
+   "guid": "O:)%Q1!jH7",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Tip 3 hipersensitivite<div><br></div><div>{{c1::ANCA ilişkili vaskülitler}} pauci-immündür; tip 3 mekanizma {{c1::immün kompleks vaskülitlerinde}} görülür.</div>",
+     "after": "Tip 3 hipersensitivite<div><br></div><div>{{c1::ANCA ilişkili vaskülitler}} dışındaki {{c1::immün kompleks}} vaskülitleri</div>"
+    }
+   },
+   "actions": [
+    "Eklenen 'pauci-immün' gerekçe cümlesi kaldırıldı; 'immün kompleks vaskülitleri' kısa düzeltmesi özgün kalıpta korundu (kural 6, 7)."
+   ]
+  },
+  {
+   "noteId": 1604389189383,
+   "guid": "piTMs!Y<qH",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Paroksismal noktürnal hemoglobinüri (PNH) → {{c1::DAF (CD55) ve CD59}} eksikliği",
+     "after": "Paroksismal noktürnal hemoglobinüri (PNH) → {{c1::DAF ve CD59}} eksikliği"
+    }
+   },
+   "actions": [
+    "Eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604435006090,
+   "guid": "orbjAHp4F6",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Gençlerde spontan pnömotoraks yapan amfizem → {{c1::distal asiner (paraseptal)}} amfizem",
+     "after": "Gençlerde spontan pnömotoraks yapan amfizem → {{c1::distal asiner}} amfizem"
+    }
+   },
+   "actions": [
+    "Eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604484377108,
+   "guid": "BN)>x`GNfN",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Warthin tümörünün histopatolojisi:<div><br></div><div>{{c1::Lenfoid folikül}} içeren stroma ve kistik boşlukları döşeyen {{c1::çift sıra}} onkositik epitel</div>",
+     "after": "Warthin tümörünün histopatolojisi:<div><br></div><div>{{c1::Lenfoid folikül}} ve {{c1::çift sıra}} epitel içerir</div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen stroma/kistik boşluk/onkositik tanımı kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604485072448,
+   "guid": "gWxlQWGDZR",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Mide MALT lenfomasında karakteristik translokasyon ve belirteçler:<div><br></div><div>Translokasyon → t{{c1::(11;18)}}<div><br></div><div>B hücre belirteçleri → CD{{c1::19 / 20 / 43}} (+)</div></div>",
+     "after": "Mide MALT lenfomasında karakteristik translokasyon ve belirteçler:<div><br></div><div>Translokasyon → t{{c1::(11;18)}}<div><br></div><div>Belirteçler → CD{{c1::19 / 20 / 43}} (+)</div></div>"
+    }
+   },
+   "actions": [
+    "Eklenen 'B hücre' nitelemesi kaldırıldı; CD43 B hücre belirteci olarak yanıltıcıydı (kural 3, 7)."
+   ]
+  },
+  {
+   "noteId": 1604486946362,
+   "guid": "AH~}/y6G[_",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Hepatit B enfeksiyonunda histopatolojik bulgular:<div><br></div><div>Sitoplazmada HBsAg birikimi → {{c1::buzlu cam}} görünümü<div><br></div><div>Nükleusta HBcAg birikimi → {{c1::kumlu}} nükleus görünümü</div></div>",
+     "after": "Hepatit B enfeksiyonunda histopatolojik bulgular:<div><br></div><div>HBsAg → {{c1::buzlu cam}} görünümü<div><br></div><div>HBcAg → {{c1::kumlu}} görünüm</div></div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen hücre içi yerleşim açıklamaları kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604487027605,
+   "guid": "mu`_VHp0FA",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kronik hepatit C histopatolojisinde karakteristik bulgular:<div><br></div><div>{{c1::Yağlı}} değişiklik (steatoz)</div><div>{{c1::Safra kanalı}} hasarı ve proliferasyonu</div><div>Portal alanda {{c1::lenfoid agregat}} ve foliküller</div>",
+     "after": "Kronik hepatit C histopatolojisinde karakteristik bulgular:<div><br></div><div>{{c1::Yağlı}} değişiklik (steatoz)</div><div>{{c1::Safra kanalı}} proliferasyonu</div><div>Portal alanda {{c1::lenfoid agregat}}</div>"
+    }
+   },
+   "actions": [
+    "Listeye eklenen 'hasar' ve 'foliküller' bulguları kaldırıldı (kural 3, 4)."
+   ]
+  },
+  {
+   "noteId": 1604488001675,
+   "guid": "k~L->8(vR.",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Hemokromatoziste demir birikiminin ilk başladığı yer → {{c1::periportal (zon 1)}} hepatositler",
+     "after": "Hemokromatoziste demir birikiminin ilk başladığı yer → {{c1::periportal}} hepatositler"
+    }
+   },
+   "actions": [
+    "Eklenen zon parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604558681127,
+   "guid": "Eqcw`<JV/I",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Membranöz glomerülonefritte histopatolojik bulgular:<div><br></div><div>Elektron mikroskopisinde {{c1::subepitelyal}} immün birikimler ve gümüşlemede {{c1::diken-kubbe (spike and dome)}} görünümü</div>",
+     "after": "Membranöz glomerülonefritte histopatolojik bulgular:<div><br></div><div>{{c1::Subepitelyal}} birikim ve {{c1::diken-kubbe (spike and dome)}} görünümü</div>"
+    }
+   },
+   "actions": [
+    "Eklenen elektron mikroskopisi/gümüşleme yöntem açıklamaları kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604559056683,
+   "guid": "r%vDFY6]cT",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Patogenezinde C3 nefritik faktör (C3NeF) bulunan glomerülonefrit → {{c1::MPGN tip 2 (dense depozit hastalığı)}}",
+     "after": "Patogenezinde C3 nefritik faktör (C3NeF) bulunan glomerülonefrit → {{c1::MPGN tip 2}}"
+    }
+   },
+   "actions": [
+    "Eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604559541500,
+   "guid": "tvm[=0%0pI",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "İnflamasyon olmadan bazal membranı kalınlaştıran hastalık → {{c1::diyabetes mellitus (diyabetik nefropati)}}",
+     "after": "İnflamasyon olmadan bazal membranı kalınlaştıran hastalık → {{c1::diyabetes mellitus}}"
+    }
+   },
+   "actions": [
+    "Eklenen açıklama parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604560400448,
+   "guid": "tb5ye_%U0R",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Bilateral - multifokal - {{c2::trizomi 7 ve 17}} ilişkili - {{c2::MET}} mutasyonu görülen böbrek kanseri → {{c1::papiller}} renal hücreli karsinom",
+     "after": "Bilateral - multifokal - {{c2::trizomi}} ilişkili - {{c2::MET}} mutasyonu görülen böbrek kanseri → {{c1::papiller}} renal hücreli karsinom"
+    }
+   },
+   "actions": [
+    "Cevaba eklenen kromozom ayrıntısı kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604561095933,
+   "guid": "N~j3:LLh#J",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Yaşlanmayla birlikte beyinde biriken PAS (+) poliglukozan cisimcikleri → {{c1::corpora amylacea}}",
+     "after": "Yaşlanmayla birlikte beyinde biriken PAS (+) cisimcikler → {{c1::corpora amylacea}}"
+    }
+   },
+   "actions": [
+    "Eklenen yapı/mekanizma nitelemesi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604575977086,
+   "guid": "nOs8$vWKCQ",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Bilateral optik nörit ve spinal kord demiyelinizasyonu ile karakterize hastalık → {{c1::nöromiyelitis optika (Devic hastalığı)}}",
+     "after": "Bilateral optik nörit ve spinal kord demiyelinizasyonu ile karakterize hastalık → {{c1::nöromiyelitis optika}}"
+    }
+   },
+   "actions": [
+    "Eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604576064324,
+   "guid": "Lc]:wH[JeN",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Alzheimer hastalığının majör mikroskobik bulguları → {{c1::senil plaklar (nöritik plaklar)}} ve {{c1::nörofibriler yumaklar (tangles)}}",
+     "after": "Alzheimer hastalığının majör mikroskobik bulguları → {{c1::senil plaklar}} ve {{c1::nörofibriler yumaklar (tangles)}}"
+    }
+   },
+   "actions": [
+    "Eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604578721051,
+   "guid": "LA>]zH)YIz",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Over fibromu ile ilişkili sendromlar:<div><br></div><div><div>{{c1::Meigs}} sendromu → ({{c2::asit}}, {{c2::hidrotoraks}}, {{c2::overde}} fibrom triadı)</div><div><br></div><div>{{c1::Bazal hücreli nevüs}} sendromu (Gorlin sendromu)</div></div>",
+     "after": "Over fibromu ile ilişkili sendromlar:<div><br></div><div><div>{{c1::Meigs}} sendromu → ({{c2::asit}}, {{c2::hidrotoraks}}, {{c2::overde}} fibrom triadı)</div><div><br></div><div>{{c1::Bazal hücreli nevüs}} sendromu</div></div>"
+    }
+   },
+   "actions": [
+    "Eklenen eş ad parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604579123040,
+   "guid": ")&Lg}:K#x",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Germ hücrelerinin farklılaşma yönüne göre tümörler:<div><br></div><div>Farklılaşmamış (undiferansiye) → {{c1::seminom}}</div><div><br></div><div>Somatik dokular → {{c2::teratom}}</div><div><br></div><div>Endoderm (ekstraembriyonik) → {{c1::endodermal sinüs tümörü (yolk sac)}}</div><div><br></div><div>Embriyonik pluripotent kök hücre → {{c2::embriyonal karsinom}}</div><div><br></div><div>Trofoblast → {{c1::koryokarsinom}}</div>",
+     "after": "Germ hücrelerinin farklılaşma yönüne göre tümörler:<div><br></div><div>Farklılaşmamış (undiferansiye) → {{c1::seminom}}</div><div><br></div><div>Somatik dokular → {{c2::teratom}}</div><div><br></div><div>Endoderm → {{c1::endodermal sinüs tümörü}}</div><div><br></div><div>Embriyonik pluripotent kök hücre → {{c2::embriyonal karsinom}}</div><div><br></div><div>Trofoblast → {{c1::koryokarsinom}}</div>"
+    }
+   },
+   "actions": [
+    "Eklenen 'ekstraembriyonik' ve eş ad parantezleri kaldırıldı; embriyonal karsinom düzeltmesi korundu (kural 3, 7)."
+   ]
+  },
+  {
+   "noteId": 1604600553819,
+   "guid": "F*vS?dIDyk",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Travma sonrası hızlı büyüyen ağrılı kitle ve biyopside aktif fibroblastik proliferasyon gösteren lezyon → {{c1::nodüler fasiit}}",
+     "after": "Travma sonrası ağrılı kitle ve biyopside fibroblastik proliferasyon gösteren lezyon → {{c1::nodüler fasiit}}"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen 'hızlı büyüyen' ve 'aktif' nitelemeleri kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604601988488,
+   "guid": "dy#<ebUq):",
+   "ordinals": [
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Derin dermis, damar ve adneks çevrelerine yayılım gösterebilen benign melanositik lezyon → {{c2::konjenital}} nevüs",
+     "after": "Damar ve sinir çevrelerine yayılım gösterebilen benign melanositik lezyon → {{c2::konjenital}} nevüs"
+    }
+   },
+   "actions": [
+    "Eklenen derin dermis/adneks ayrıntısı kaldırıldı; özgün 'sinir' bilgisi geri getirildi (kural 3, 8)."
+   ]
+  },
+  {
+   "noteId": 1604602173456,
+   "guid": "KR$ijT;LO$",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Malign melanomda prognostik ölçüm yöntemleri:<div><br></div><div>Breslow ölçümü → milimetrik {{c1::tümör kalınlığı}}</div><div><br></div><div>Clark sınıflaması → anatomik katmanlara göre {{c1::invazyon derinliği}}</div>",
+     "after": "Malign melanomda prognostik ölçüm yöntemleri:<div><br></div><div>Breslow ölçümü → {{c1::tümör kalınlığı}}</div><div><br></div><div>Clark sınıflaması → {{c1::invazyon derinliği}}</div>"
+    }
+   },
+   "actions": [
+    "Eklenen ölçüm yöntemi açıklamaları kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604602252071,
+   "guid": "PC}9:0Pm>U",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Malign melanomda Clark invazyon düzeyleri:<div><br></div><div>Düzey 1 → {{c1::sadece epidermis (in situ)}}</div><div><br></div><div>Düzey 2 → {{c1::papiller dermis invazyonu}}</div><div><br></div><div>Düzey 3 → {{c1::papiller dermisi tamamen dolduran invazyon}}</div><div><br></div><div>Düzey 4 → {{c1::retiküler dermis invazyonu}}</div><div><br></div><div>Düzey 5 → {{c1::subkutan yağ dokusu invazyonu}}</div>",
+     "after": "Malign melanomda Clark invazyon düzeyleri:<div><br></div><div>Düzey 1 → {{c1::sadece epidermis}}</div><div><br></div><div>Düzey 2 → {{c1::papiller dermis invazyonu}}</div><div><br></div><div>Düzey 3 → {{c1::papiller dermisi tamamen dolduran invazyon}}</div><div><br></div><div>Düzey 4 → {{c1::retiküler dermis invazyonu}}</div><div><br></div><div>Düzey 5 → {{c1::subkutan yağ dokusu invazyonu}}</div>"
+    }
+   },
+   "actions": [
+    "Eklenen açıklama parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1604602563223,
+   "guid": "yk%KeItP&1",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c2::MSH2 ve MLH1}} gen mutasyonu sonucu sebase deri tümörleri ve iç organ kanserleri ile seyreden sendrom → {{c1::Muir-Torre sendromu}}",
+     "after": "{{c2::MSH2 ve MLH1}} gen mutasyonu sonucu sebase deri tümörleri ile seyreden sendrom → {{c1::Muir-Torre sendromu}}"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen iç organ kanseri bilgisi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1608036319516,
+   "guid": "Q}{X5$I=Y0",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Normal serum kalsiyum düzeyinde hasarlı veya nekrotik dokuya kalsiyum çökmesi → {{c1::distrofik}} kalsifikasyon",
+     "after": "Hasarlı veya nekrotik dokuya kalsiyum çökmesi → {{c1::distrofik}} kalsifikasyon"
+    }
+   },
+   "actions": [
+    "Eklenen serum kalsiyum açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1608041801311,
+   "guid": "IbTa&#o({m",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "fields": {
+    "Text": {
+     "before": "Hücre döngüsü siklin, CDK ve inhibitör eşleşmeleri:<div><br></div><div>Siklin {{c1::D}} → CDK {{c2::4/6}} ({{c5::{{c4::G1-S}}::ilişkili yanıt arka yüzde}} geçişi; inhibitörler: p{{c3::16, 15, 18, 19}})</div><div><br></div><div>Siklin {{c1::E}} → CDK {{c2::2}} ({{c4::{{c5::G1-S}}}} geçişi)</div><div><br></div><div>Siklin {{c1::A}} → CDK {{c2::2 ve 1}} ({{c4::S}} fazı)</div><div><br></div><div>Siklin {{c1::B}} → CDK {{c2::1}} ({{c4::G2-M}} geçişi)</div><div><br></div><div>Geniş spektrumlu CDK inhibitörleri: p{{c3::{{c5::21::ilişkili yanıt arka yüzde}}, 27, 57}}</div><div><br></div><div>TP53 → {{c5::p21}} aracılığıyla siklus duraklaması yaptırır</div><div><br></div><div>RB: {{c4::{{c5::G1-S}}::ilişkili yanıt arka yüzde}} geçişinin temel kontrol noktasıdır</div>",
+     "after": "Hücre döngüsü siklin, CDK ve inhibitör eşleşmeleri:<div><br></div><div>Siklin {{c1::D}} → CDK {{c2::4/6}} ({{c5::{{c4::G1-S}}::ilişkili yanıt arka yüzde}} geçişi; inhibitörler: p{{c3::16, 15, 18, 19}})</div><div><br></div><div>Siklin {{c1::E}} → CDK {{c2::2}}</div><div><br></div><div>Siklin {{c1::A}} → CDK {{c2::2 ve 1}} ({{c4::S}} fazı)</div><div><br></div><div>Siklin {{c1::B}} → CDK {{c2::1}} ({{c4::G2-M}} geçişi)</div><div><br></div><div>Geniş spektrumlu CDK inhibitörleri: p{{c3::{{c5::21::ilişkili yanıt arka yüzde}}, 27, 57}}</div><div><br></div><div>TP53 → {{c5::p21}} aracılığıyla siklus duraklaması yaptırır</div><div><br></div><div>RB: {{c4::{{c5::G1-S}}::ilişkili yanıt arka yüzde}} geçişinin temel kontrol noktasıdır</div>"
+    }
+   },
+   "actions": [
+    "Siklin E satırına sonradan eklenen G1-S geçişi parantezi kaldırıldı; CDK düzeltmeleri korundu (kural 3, 4)."
+   ]
+  },
+  {
+   "noteId": 1608055572518,
+   "guid": "s?;82IGs#s",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Sistemik miliyer tüberkülozda yayılım pulmoner venler ve sistemik arterler yoluyla gerçekleşir.",
+     "after": "Sistemik miliyer tüberkülozda yayılım pulmoner venler yoluyla gerçekleşir."
+    }
+   },
+   "actions": [
+    "Özgün Extra'da olmayan 'sistemik arterler' eklemesi çıkarıldı; özgün kısa bilgi korundu (kural 2, 8)."
+   ]
+  },
+  {
+   "noteId": 1608144367476,
+   "guid": "QvH2(^WyAX",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Dermatitis herpetiformis immünofloresan inceleme bulgusu → dermal papillalarda {{c1::granüler}} IgA birikimi",
+     "after": "Dermatitis herpetiformis immünofloresan inceleme bulgusu → {{c1::granüler}} IgA birikimi"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen lokalizasyon ayrıntısı kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1613141319319,
+   "guid": "AY*-Mjs127",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Adrenal kortekste aldosteron inhibitörü tedavisi sonrası izlenebilen <b>spironolakton cisimcikleri</b> görülen antite:<div><br></div><div>{{c1::Conn sendromu}}</div>",
+     "after": "Adrenal kortekste <b>spironolakton cisimcikleri</b> görülen antite:<div><br></div><div>{{c1::Conn sendromu}}</div>"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen mekanizma açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1617124003564,
+   "guid": "N=_rR&?JM4",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Akciğer adenokarsinom öncülü lezyonlar:</b><div><br></div><div>Boyut &le; {{c1::5}} mm → {{c2::Atipik adenomatöz hiperplazi}}</div><div><br></div><div>Boyut {{c1::5}} mm – {{c1::3}} cm (saf lepidik) → {{c2::Adenokarsinoma in situ}}</div>",
+     "after": "<b>Akciğer adenokarsinom öncülü lezyonlar:</b><div><br></div><div>Boyut &le; {{c1::5}} mm → {{c2::Atipik adenomatöz hiperplazi}}</div><div><br></div><div>Boyut {{c1::5}} mm – {{c1::3}} cm → {{c2::Adenokarsinoma in situ}}</div>"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen '(saf lepidik)' parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1617124323612,
+   "guid": "g6x^*-S(1C",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c1::Nöroendokrin kökenli olmayan büyük hücreli}} akciğer karsinomu tanısı:<div><br></div><div>Adenokarsinom, skuamöz hücreli karsinom ve nöroendokrin tipler ekarte edilerek konulur</div>",
+     "after": "{{c1::Nöroendokrin kökenli olmayan büyük hücreli}} akciğer karsinomu tanısı:<div><br></div><div>Diğer tipler ekarte edilerek konulur</div>"
+    }
+   },
+   "actions": [
+    "Özgün 'diğer tipler' ifadesine eklenen tip listesi kaldırıldı (kural 4)."
+   ]
+  },
+  {
+   "noteId": 1617133150258,
+   "guid": "H>K93!=>lV",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Renal hücreli karsinomda</b> histolojik derecelendirme:<div><br></div><div>Klasik sistem: {{c1::Fuhrman}} derecelendirme sistemi</div><div><br></div><div>Temel kriter: {{c1::Çekirdek anaplazisi}} ve nükleol belirginliği</div>",
+     "after": "<b>Renal hücreli karsinomda</b> histolojik derecelendirme:<div><br></div><div>{{c1::Fuhrman}} derecelendirme sistemi</div><div><br></div><div>Temel kriter: {{c1::Çekirdek anaplazisi}}</div>"
+    }
+   },
+   "actions": [
+    "Genel 'klasik' çekincesi ve özgünde olmayan nükleol kriteri kaldırıldı (kural 3, 4)."
+   ]
+  },
+  {
+   "noteId": 1617133404583,
+   "guid": "LeAct.k=R:",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Mesanenin proliferatif ve metaplastik lezyonları:</b><div><br></div><div>Lamina propriaya doğru ürotel proliferasyonu: {{c1::von Brunn adaları}}</div><div><br></div><div>von Brunn adalarının merkezinin kistikleşmesi: {{c1::sistitis sistika}}</div><div><br></div><div>Kist epitelinin kolumnar mukus üreten epitele dönüşmesi: {{c1::sistitis glandularis}}</div><div><br></div><div>Ürotelyumun tübüler epitelle yer değiştirmesi: {{c2::nefrojenik metaplazi}}</div><div><br></div><div>Kronik irritasyon veya şistozomiyaziste görülen lezyon: {{c2::skuamöz metaplazi}}</div>",
+     "after": "<b>Mesanenin proliferatif ve metaplastik lezyonları:</b><div><br></div><div>Lamina propriaya doğru ürotel proliferasyonu: {{c1::von Brunn adaları}}</div><div><br></div><div>von Brunn adalarının merkezinin kistikleşmesi: {{c1::sistitis sistika}}</div><div><br></div><div>Kist epitelinin kolumnar mukus üreten epitele dönüşmesi: {{c1::sistitis glandularis}}</div><div><br></div><div>Ürotelyumun tübüler epitelle yer değiştirmesi: {{c2::nefrojenik metaplazi}}</div><div><br></div><div>Şistozomiyaziste görülen lezyon: {{c2::skuamöz metaplazi}}</div>"
+    }
+   },
+   "actions": [
+    "Özgünde olmayan 'kronik irritasyon' eklemesi kaldırıldı (kural 4)."
+   ]
+  },
+  {
+   "noteId": 1617655012887,
+   "guid": "iF*uYYRXk6",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>Sertoli-Leydig hücreli tümör özellikleri:</b><div><br></div><div>En sık görülen genetik anomali: {{c1::DICER1}} mutasyonu</div><div><br></div><div>Virilizasyona yol açan salgısı: {{c1::DHEA}}</div>",
+     "after": "<b>Sertoli-Leydig hücreli tümör özellikleri:</b><div><br></div><div>En sık görülen genetik anomali: {{c1::DICER1}} mutasyonu</div><div><br></div><div>Salgısı: {{c1::DHEA}}</div>"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen klinik etki açıklaması kaldırıldı; Sertoli-Leydig düzeltmesi korundu (kural 3, 7)."
+   ]
+  },
+  {
+   "noteId": 1620299847124,
+   "guid": "t6uud-jQ*s",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kemik iliği transplantasyonu sonrası akut graft-versus-host hastalığı (GVHH) klasik süresi:<div><br></div><div>İlk {{c1::90}} gün</div>",
+     "after": "Kemik iliği transplantasyonu sonrası akut graft-versus-host hastalığı (GVHH) süresi:<div><br></div><div>İlk {{c1::90}} gün</div>"
+    }
+   },
+   "actions": [
+    "Genel 'klasik' çekincesi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1620311036074,
+   "guid": "f4^Yk._hRf",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Epstein-Barr virüsü (EBV) onkogenez mekanizmaları:<div><br></div><div>{{c1::LMP-1}} → <b>CD40</b> reseptörünü taklit ederek <b>NF-&kappa;B</b> ve <b>JAK-STAT</b> yolaklarını aktive eder, otonom B hücresi proliferasyonu başlatır.</div><div><br></div><div>{{c1::LMP-1}} → <b>BCL2</b> aktivasyonu ile apoptozu engeller.</div><div><br></div><div>{{c1::EBNA-2}} → <b>Siklin D</b> aktivasyonu sağlar.</div>",
+     "after": "Epstein-Barr virüsü (EBV) onkogenez mekanizmaları:<div><br></div><div>{{c1::LMP-1}} → <b>CD40</b> reseptörünü taklit ederek <b>NF-&kappa;B</b> ve <b>JAK-STAT</b> yolaklarını aktive eder, otonom B hücresi proliferasyonu başlatır.</div><div><br></div><div>{{c1::LMP-1}} → <b>BCL2</b> aktivasyonu sağlar.</div><div><br></div><div>{{c1::EBNA-2}} → <b>Siklin D</b> aktivasyonu sağlar.</div>"
+    }
+   },
+   "actions": [
+    "BCL2 satırına eklenen mekanizma açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1620372469388,
+   "guid": "iWUPU1EKY9",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kolon biyopsisinde lümeni <b>yıldız şeklinde (testere dişi) kriptler</b> izlenen benign lezyon:<div><br></div><div>{{c1::Hiperplastik}} polip</div>",
+     "after": "Kolon biyopsisinde lümeni <b>yıldız şeklinde kriptler</b> izlenen benign lezyon:<div><br></div><div>{{c1::Hiperplastik}} polip</div>"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen '(testere dişi)' parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1620372614114,
+   "guid": "-y&aQr}0g",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<b>İntrahepatik portal ven dallarının tıkanması</b> sonucu gerçek nekroz olmaksızın gelişen konjestif lezyon:<div><br></div><div>{{c1::Zahn}} infarktı</div>",
+     "after": "<b>İntrahepatik portal ven dallarının tıkanması</b> sonucu oluşan lezyon:<div><br></div><div>{{c1::Zahn}} infarktı</div>"
+    }
+   },
+   "actions": [
+    "Ön yüze eklenen patogenez açıklaması kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1622718111836,
+   "guid": "MpL*-y<XEN",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Folliküler lenfomada WHO derecelendirmesi (grade 1–3) hangi kriter esas alınarak yapılır?<div><br></div><div>Büyük büyütme alanındaki {{c1::sentroblast sayısı}}</div>",
+     "after": "Folliküler lenfomada WHO derecelendirmesi hangi kriter esas alınarak yapılır?<div><br></div><div>Büyük büyütme alanındaki {{c1::sentroblast sayısı}}</div>"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen derece aralığı parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1623093383472,
+   "guid": "Ck#}s.6=`4",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "35 yaşından genç bireylerde görülen agresif hipofiz adenomlarında en sık ilişkili gen mutasyonu:<div><br></div><div>{{c1::AIP}} mutasyonu</div>",
+     "after": "35 yaşından genç bireylerde görülen hipofiz adenomlarında en sık ilişkili gen mutasyonu:<div><br></div><div>{{c1::AIP}} mutasyonu</div>"
+    }
+   },
+   "actions": [
+    "Özgünde olmayan 'agresif' nitelemesi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1623699734597,
+   "guid": ":*MXQcp#c",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Meme karsinomunda hormonal tedaviye yanıtı belirleyen <b>en önemli prediktif faktör:</b><div><br></div><div>{{c1::Hormon reseptör pozitifliği}}</div>",
+     "after": "Meme karsinomunda <b>en önemli prediktif faktör:</b><div><br></div><div>{{c1::Hormon reseptör pozitifliği}}</div>"
+    }
+   },
+   "actions": [
+    "Prediktif faktör tanımını açıklayan ekleme kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1625213946786,
+   "guid": "B^z?OJ.MQe",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "fields": {
+    "Text": {
+     "before": "Akut ve kronik viral hepatitlerin histopatolojik farkları:<div><br></div><div><b>Akut hepatitte belirgin olan bulgular:</b></div><div>- {{c2::Apoptotik cisimler}}</div><div>- Portal inflamasyon {{c1::az veya yoktur}}</div><div>- {{c2::Balonsu dejenerasyon}}</div><div>- {{c1::Kolestaz}}</div><div><br></div><div><b>Kronik hepatite özgü bulgular:</b></div><div>- Arayüz hepatiti</div><div>- {{c4::<b>Buzlu cam</b>}} hücreleri ({{c3::HBsAg}} birikimi)</div><div>- {{c4::<b>Kumlu</b>}} nükleus ({{c3::HBcAg}} birikimi)</div><div>- <b>Fibrozis</b></div>",
+     "after": "Akut ve kronik viral hepatitlerin histopatolojik farkları:<div><br></div><div><b>Akut hepatitte belirgin olan bulgular:</b></div><div>- {{c2::Apoptotik cisimler}}</div><div>- Portal inflamasyon {{c1::az veya yoktur}}</div><div>- {{c2::Balonsu dejenerasyon}}</div><div>- {{c1::Kolestaz}}</div><div><br></div><div><b>Kronik hepatite özgü bulgular:</b></div><div>- Arayüz hepatiti (eski adı: güve yeniği)</div><div>- {{c4::<b>Buzlu cam</b>}} hücreleri ({{c3::HBsAg}} birikimi)</div><div>- {{c4::<b>Kumlu</b>}} nükleus ({{c3::HBcAg}} birikimi)</div><div>- <b>Fibrozis</b></div>"
+    }
+   },
+   "actions": [
+    "Özgün eski ad bilgisi geri getirildi (kural 8)."
+   ]
+  },
+  {
+   "noteId": 1626511033747,
+   "guid": "BL*lQEl@jb",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Tümör subepitelyal stromasında <b>kambiyum tabakası</b> varlığı:<div><br></div><div>Bulunan: {{c1::Rabdomiyosarkom (botriyoid tip)}}</div><div><br></div><div>Bulunmayan: {{c1::Rabdomiyom}}</div>",
+     "after": "<b>Kambiyum tabakası</b> varlığı:<div><br></div><div>Bulunan: {{c1::Rabdomiyosarkom}}</div><div><br></div><div>Bulunmayan: {{c1::Rabdomiyom}}</div>"
+    }
+   },
+   "actions": [
+    "Sonradan eklenen lokalizasyon açıklaması ve '(botriyoid tip)' parantezi kaldırıldı (kural 3)."
+   ]
+  },
+  {
+   "noteId": 1630356147022,
+   "guid": "MoE}<7A?cc",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Piyon topu megakaryosit → {{c1::MDS}}<div><br></div><div>Döhle cisimciği → {{c1::MDS}} dahil farklı durumlarda görülebilir</div><div><br></div><div>Deniz mavisi histiyosit → {{c1::KML}} dahil yüksek hücre döngülü hastalıklar</div>",
+     "after": "Piyon topu megakaryosit → {{c1::MDS}}<div><br></div><div>Döhle cisimciği → {{c1::MDS}} dahil farklı durumlarda görülebilir</div><div><br></div><div>Deniz mavisi histiyosit → {{c1::KML}}</div>"
+    }
+   },
+   "actions": [
+    "Deniz mavisi histiyosit satırına eklenen genişletici açıklama kaldırıldı; Döhle satırındaki kısa düzeltme korundu (kural 3, 7)."
+   ]
+  }
+ ],
+ "noteRowsBefore": [
+  [
+   1604385208095,
+   "MtLpnZAe5[",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Apoptozun ekstrinsik yolu<div><br></div><div>{{c1::FasL}} → {{c1::Fas}} → {{c2::FADD}} aktivasyonu → kaspaz-{{c2::8}} aktivasyonu</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Apoptozun ekstrinsik yolu{{c1::FasL}} → {{c1::Fas}} → {{c2::FADD}} aktivasyonu → kaspaz-{{c2::8}} aktivasyonu",
+   1659581426,
+   0,
+   ""
+  ],
+  [
+   1604386731904,
+   "M=F5`KOymv",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Faktör XII işlevleri<div><br></div><div>Kinin sistemi → {{c1::kallikrein}} oluşumu</div><div><br></div><div>Koagülasyon kaskadı</div><div><br></div><div>Fibrinolitik sistem → {{c1::kallikreinin plazminojeni aktive etmesi}} → plazmin</div><div><br></div><div>Kompleman sistemi → {{c1::C3a ve C5a}} oluşumu</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Faktör XII işlevleriKinin sistemi → {{c1::kallikrein}} oluşumuKoagülasyon kaskadıFibrinolitik sistem → {{c1::kallikreinin plazminojeni aktive etmesi}} → plazminKompleman sistemi → {{c1::C3a ve C5a}} oluşumu",
+   4264629257,
+   0,
+   ""
+  ],
+  [
+   1604389128784,
+   "tI:^;G8BYH",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "X'e bağlı lenfoproliferatif sendrom →<div><br></div><div>Lenfosit aktive edici sinyal molekülü {{c1::SLAM ilişkili protein (SAP)}} defekti</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "X'e bağlı lenfoproliferatif sendrom →Lenfosit aktive edici sinyal molekülü {{c1::SLAM ilişkili protein (SAP)}} defekti",
+   837106065,
+   0,
+   ""
+  ],
+  [
+   1604472439551,
+   "b=b6iH8@-A",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Mikozis fungoideste serebriform nükleuslu T lenfositi → {{c1::Lutzner hücresi}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Mikozis fungoideste serebriform nükleuslu T lenfositi → {{c1::Lutzner hücresi}}",
+   298410581,
+   0,
+   ""
+  ],
+  [
+   1604560961621,
+   "zirB61_$]&",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Beyin iskemisinde görülen ilk histopatolojik bulgu → {{c1::kırmızı nöron}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Beyin iskemisinde görülen ilk histopatolojik bulgu → {{c1::kırmızı nöron}}",
+   3117902158,
+   0,
+   ""
+  ],
+  [
+   1604560985221,
+   "i:D8@)4LK-",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Kırmızı nöron gelişim süresi → {{c1::İlk 12–24}} saat\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kırmızı nöron gelişim süresi → {{c1::İlk 12–24}} saat",
+   1296927030,
+   0,
+   ""
+  ],
+  [
+   1604576215041,
+   "FfzZr^zfh3",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Parkinson hastalığında substantia nigrada → {{c1::depigmentasyon}} izlenir\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Parkinson hastalığında substantia nigrada → {{c1::depigmentasyon}} izlenir",
+   3735902125,
+   0,
+   ""
+  ],
+  [
+   1604579385372,
+   "G/7W!4!Tbe",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Prostat kanserinden koruyuculuğu kanıtlanmamış diyet etkenleri (3) →<div>{{c1::<div>Likopen<div>Soya ürünleri<div>D vitamini</div></div></div>}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Prostat kanserinden koruyuculuğu kanıtlanmamış diyet etkenleri (3) →{{c1::LikopenSoya ürünleriD vitamini}}",
+   3310017949,
+   0,
+   ""
+  ],
+  [
+   1604598146407,
+   "CBS#hA**to",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Sigara içen kadınlarda laktifer duktus skuamöz metaplazisi ve keratin tıkacıyla gelişen lezyon → {{c1::periduktal mastit}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sigara içen kadınlarda laktifer duktus skuamöz metaplazisi ve keratin tıkacıyla gelişen lezyon → {{c1::periduktal mastit}}",
+   3477767691,
+   0,
+   ""
+  ],
+  [
+   1604598952057,
+   "Bn>afn.G#D",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Karsinomatöz menenjit yapma eğilimi belirgin meme karsinomu → {{c1::invaziv lobüler karsinom}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Karsinomatöz menenjit yapma eğilimi belirgin meme karsinomu → {{c1::invaziv lobüler karsinom}}",
+   135199938,
+   0,
+   ""
+  ],
+  [
+   1604599654702,
+   "keby!=:;eH",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Vertebra gövdelerinin osteokondrozu → {{c1::Scheuermann hastalığı}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Vertebra gövdelerinin osteokondrozu → {{c1::Scheuermann hastalığı}}",
+   3262086185,
+   0,
+   ""
+  ],
+  [
+   1604600864611,
+   "mqHy/wl9QH",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Miyotonik distrofide kas biyopsisinde görülen karakteristik bulgu → {{c1::halka lifleri}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Miyotonik distrofide kas biyopsisinde görülen karakteristik bulgu → {{c1::halka lifleri}}",
+   1628927381,
+   0,
+   ""
+  ],
+  [
+   1604602022492,
+   "bl+lCV)hO3",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Dermiste yuvalanma göstermeyen ve stromal fibrozis içeren melanositik lezyon → {{c1::mavi nevüs}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Dermiste yuvalanma göstermeyen ve stromal fibrozis içeren melanositik lezyon → {{c1::mavi nevüs}}",
+   3657277808,
+   0,
+   ""
+  ],
+  [
+   1629750503523,
+   "K3u3w*<[QU",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Çocukluk çağında en sık görülen meme karsinomu:<div><br></div><div>{{c1::Sekretuar}} tip</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Çocukluk çağında en sık görülen meme karsinomu:{{c1::Sekretuar}} tip",
+   683676636,
+   0,
+   ""
+  ],
+  [
+   1604599510831,
+   "hUc/hn|rgB",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Kemik Paget hastalığında (osteitis deformans) patognomonik bulgu ve evreler:<div><br></div><div>Patognomonik bulgu → {{c1::mozaik}} patern<div><br></div><div>1) {{c2::Osteoklastik}} evre (litik)</div><div>2) {{c2::Mikst}} evre</div><div>3) {{c2::Osteoblastik}} evre (osteosklerotik)</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kemik Paget hastalığında (osteitis deformans) patognomonik bulgu ve evreler:Patognomonik bulgu → {{c1::mozaik}} patern1) {{c2::Osteoklastik}} evre (litik)2) {{c2::Mikst}} evre3) {{c2::Osteoblastik}} evre (osteosklerotik)",
+   3373531711,
+   0,
+   ""
+  ],
+  [
+   1623190089564,
+   "b[&Dz8T0Dr",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Metabolizma enzimi olup mutasyonunda <b>paraganglioma</b> gelişebilen gen:<div><br></div><div>{{c1::SDH (süksinat dehidrogenaz)}} gen ailesi</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Metabolizma enzimi olup mutasyonunda paraganglioma gelişebilen gen:{{c1::SDH (süksinat dehidrogenaz)}} gen ailesi",
+   2879836093,
+   0,
+   ""
+  ],
+  [
+   1626855999514,
+   "r?;Kx&65Fs",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "<b>Radyoterapiden genellikle kaçınılan</b> kemik lezyonları:<div><br></div><div>{{c1::Fibröz displazi}}</div><div><br></div><div>{{c1::Dev hücreli kemik tümörü}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Radyoterapiden genellikle kaçınılan kemik lezyonları:{{c1::Fibröz displazi}}{{c1::Dev hücreli kemik tümörü}}",
+   1701226838,
+   0,
+   ""
+  ],
+  [
+   1626986874927,
+   "cp[i|5a]m-",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "{{c1::Nesidioblastozis}}:<div><br></div><div>Duktuloinsüler kompleks oluşturan, duktuslarla ilişkili <b>pankreatik beta hücresi hiperplazisi</b></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "{{c1::Nesidioblastozis}}:Duktuloinsüler kompleks oluşturan, duktuslarla ilişkili pankreatik beta hücresi hiperplazisi",
+   1014965234,
+   0,
+   ""
+  ],
+  [
+   1626987130249,
+   "b87qxsuk+j",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "<b>Mikrosatellit instabilitesi</b> görülebilen pankreas karsinomu:<div><br></div><div>{{c1::Medüller}} karsinom</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Mikrosatellit instabilitesi görülebilen pankreas karsinomu:{{c1::Medüller}} karsinom",
+   3107192368,
+   0,
+   ""
+  ],
+  [
+   1630356249879,
+   "OC{*qEgfAo",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Büyük granüler lenfositik lösemi:<div><br></div><div>T hücreli varyant: {{c1::iyi}}</div><div><br></div><div>Kronik NK hücreli varyant: {{c1::iyi}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Büyük granüler lenfositik lösemi:T hücreli varyant: {{c1::iyi}}Kronik NK hücreli varyant: {{c1::iyi}}",
+   4083050258,
+   0,
+   ""
+  ],
+  [
+   1618092176052,
+   "m(0s&t9ttW",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Histopatolojisinde Dut benzeri eozinofilik granüler cisimcikler izlenen beyin tümörü:<div><br></div><div>{{c1::Pilositik astrositom}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Histopatolojisinde Dut benzeri eozinofilik granüler cisimcikler izlenen beyin tümörü:{{c1::Pilositik astrositom}}",
+   2067556307,
+   0,
+   ""
+  ],
+  [
+   1604561163805,
+   "KGaXi,N@kN",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Transtentoryal herniasyonda basıya uğrayarak iskemiye yol açan damar → {{c1::posterior serebral arter (a. cerebri posterior)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Transtentoryal herniasyonda basıya uğrayarak iskemiye yol açan damar → {{c1::posterior serebral arter (a. cerebri posterior)}}",
+   1591027374,
+   0,
+   ""
+  ],
+  [
+   1620512477330,
+   "BAUF!Z}{G~",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Karaciğerde <b>İto hücrelerini (hepatik stellat hücreler)</b> uyararak aktive eden sitokinler:<div><br></div><div>{{c1::TNF-alfa}}</div><div><br></div><div>IL-{{c1::17}}</div><div><br></div><div>TGF-beta</div><div><br></div><div>PDGF</div><div><br></div><div>Reaktif oksijen ürünleri</div>\u001fMiyofibroblastlara dönüşerek fibrozise yol açar.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Karaciğerde İto hücrelerini (hepatik stellat hücreler) uyararak aktive eden sitokinler:{{c1::TNF-alfa}}IL-{{c1::17}}TGF-betaPDGFReaktif oksijen ürünleri",
+   3230924128,
+   0,
+   ""
+  ],
+  [
+   1627824776379,
+   "zWZV}A`Ear",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "Adrenokortikal tümörlerde:<br><br><b>Adenom ve karsinomda görülebilenler:</b><br>{{c1::PRKAR1A}} mutasyonu<br>{{c1::β-katenin}} (CTNNB1) değişikliği<br>MEN1 ilişkisi<br><br><b>Karsinomla daha güçlü ilişkili:</b><br>TP53 değişikliği\u001fTP53 değişikliği maligniteyle ilişkilidir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Adrenokortikal tümörlerde:Adenom ve karsinomda görülebilenler:{{c1::PRKAR1A}} mutasyonu{{c1::β-katenin}} (CTNNB1) değişikliğiMEN1 ilişkisiKarsinomla daha güçlü ilişkili:TP53 değişikliği",
+   3924055689,
+   0,
+   ""
+  ],
+  [
+   1630168476392,
+   "v;3Q~v>2Cy",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "<b>Oral skuamöz hücreli karsinom</b> gelişiminde klasik moleküler sıra:<div><br></div><div>{{c1::p16 kaybı → TP53 değişikliği → siklin D1 artışı}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Oral skuamöz hücreli karsinom gelişiminde klasik moleküler sıra:{{c1::p16 kaybı → TP53 değişikliği → siklin D1 artışı}}",
+   1041733163,
+   0,
+   ""
+  ],
+  [
+   1625482523128,
+   "u<[`HaSk#M",
+   1566160514431,
+   1792239126,
+   -1,
+   "",
+   "<b>Makronodüler siroz:</b><div><br></div><div>{{c1::Postviral}} siroz için karakteristiktir.</div>\u001fEtiyolojiye spesifik değildir ancak postviral zeminlerde sık görülür.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Makronodüler siroz:{{c1::Postviral}} siroz için karakteristiktir.",
+   2664075329,
+   0,
+   ""
+  ],
+  [
+   1604388346258,
+   "O:)%Q1!jH7",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Tip 3 hipersensitivite<div><br></div><div>{{c1::ANCA ilişkili vaskülitler}} pauci-immündür; tip 3 mekanizma {{c1::immün kompleks vaskülitlerinde}} görülür.</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Tip 3 hipersensitivite{{c1::ANCA ilişkili vaskülitler}} pauci-immündür; tip 3 mekanizma {{c1::immün kompleks vaskülitlerinde}} görülür.",
+   206562609,
+   0,
+   ""
+  ],
+  [
+   1604389189383,
+   "piTMs!Y<qH",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Paroksismal noktürnal hemoglobinüri (PNH) → {{c1::DAF (CD55) ve CD59}} eksikliği\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Paroksismal noktürnal hemoglobinüri (PNH) → {{c1::DAF (CD55) ve CD59}} eksikliği",
+   2697671331,
+   0,
+   ""
+  ],
+  [
+   1604435006090,
+   "orbjAHp4F6",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Gençlerde spontan pnömotoraks yapan amfizem → {{c1::distal asiner (paraseptal)}} amfizem\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Gençlerde spontan pnömotoraks yapan amfizem → {{c1::distal asiner (paraseptal)}} amfizem",
+   3238548239,
+   0,
+   ""
+  ],
+  [
+   1604484377108,
+   "BN)>x`GNfN",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Warthin tümörünün histopatolojisi:<div><br></div><div>{{c1::Lenfoid folikül}} içeren stroma ve kistik boşlukları döşeyen {{c1::çift sıra}} onkositik epitel</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Warthin tümörünün histopatolojisi:{{c1::Lenfoid folikül}} içeren stroma ve kistik boşlukları döşeyen {{c1::çift sıra}} onkositik epitel",
+   1444846509,
+   0,
+   ""
+  ],
+  [
+   1604485072448,
+   "gWxlQWGDZR",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Mide MALT lenfomasında karakteristik translokasyon ve belirteçler:<div><br></div><div>Translokasyon → t{{c1::(11;18)}}<div><br></div><div>B hücre belirteçleri → CD{{c1::19 / 20 / 43}} (+)</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Mide MALT lenfomasında karakteristik translokasyon ve belirteçler:Translokasyon → t{{c1::(11;18)}}B hücre belirteçleri → CD{{c1::19 / 20 / 43}} (+)",
+   923705430,
+   0,
+   ""
+  ],
+  [
+   1604486946362,
+   "AH~}/y6G[_",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Hepatit B enfeksiyonunda histopatolojik bulgular:<div><br></div><div>Sitoplazmada HBsAg birikimi → {{c1::buzlu cam}} görünümü<div><br></div><div>Nükleusta HBcAg birikimi → {{c1::kumlu}} nükleus görünümü</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Hepatit B enfeksiyonunda histopatolojik bulgular:Sitoplazmada HBsAg birikimi → {{c1::buzlu cam}} görünümüNükleusta HBcAg birikimi → {{c1::kumlu}} nükleus görünümü",
+   1537784683,
+   0,
+   ""
+  ],
+  [
+   1604487027605,
+   "mu`_VHp0FA",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Kronik hepatit C histopatolojisinde karakteristik bulgular:<div><br></div><div>{{c1::Yağlı}} değişiklik (steatoz)</div><div>{{c1::Safra kanalı}} hasarı ve proliferasyonu</div><div>Portal alanda {{c1::lenfoid agregat}} ve foliküller</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kronik hepatit C histopatolojisinde karakteristik bulgular:{{c1::Yağlı}} değişiklik (steatoz){{c1::Safra kanalı}} hasarı ve proliferasyonuPortal alanda {{c1::lenfoid agregat}} ve foliküller",
+   1672431755,
+   0,
+   ""
+  ],
+  [
+   1604488001675,
+   "k~L->8(vR.",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Hemokromatoziste demir birikiminin ilk başladığı yer → {{c1::periportal (zon 1)}} hepatositler\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Hemokromatoziste demir birikiminin ilk başladığı yer → {{c1::periportal (zon 1)}} hepatositler",
+   1731051752,
+   0,
+   ""
+  ],
+  [
+   1604558681127,
+   "Eqcw`<JV/I",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Membranöz glomerülonefritte histopatolojik bulgular:<div><br></div><div>Elektron mikroskopisinde {{c1::subepitelyal}} immün birikimler ve gümüşlemede {{c1::diken-kubbe (spike and dome)}} görünümü</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Membranöz glomerülonefritte histopatolojik bulgular:Elektron mikroskopisinde {{c1::subepitelyal}} immün birikimler ve gümüşlemede {{c1::diken-kubbe (spike and dome)}} görünümü",
+   871974100,
+   0,
+   ""
+  ],
+  [
+   1604559056683,
+   "r%vDFY6]cT",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Patogenezinde C3 nefritik faktör (C3NeF) bulunan glomerülonefrit → {{c1::MPGN tip 2 (dense depozit hastalığı)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Patogenezinde C3 nefritik faktör (C3NeF) bulunan glomerülonefrit → {{c1::MPGN tip 2 (dense depozit hastalığı)}}",
+   1047450032,
+   0,
+   ""
+  ],
+  [
+   1604559541500,
+   "tvm[=0%0pI",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "İnflamasyon olmadan bazal membranı kalınlaştıran hastalık → {{c1::diyabetes mellitus (diyabetik nefropati)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "İnflamasyon olmadan bazal membranı kalınlaştıran hastalık → {{c1::diyabetes mellitus (diyabetik nefropati)}}",
+   1364846947,
+   0,
+   ""
+  ],
+  [
+   1604560400448,
+   "tb5ye_%U0R",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Bilateral - multifokal - {{c2::trizomi 7 ve 17}} ilişkili - {{c2::MET}} mutasyonu görülen böbrek kanseri → {{c1::papiller}} renal hücreli karsinom\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Bilateral - multifokal - {{c2::trizomi 7 ve 17}} ilişkili - {{c2::MET}} mutasyonu görülen böbrek kanseri → {{c1::papiller}} renal hücreli karsinom",
+   2450417015,
+   0,
+   ""
+  ],
+  [
+   1604561095933,
+   "N~j3:LLh#J",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Yaşlanmayla birlikte beyinde biriken PAS (+) poliglukozan cisimcikleri → {{c1::corpora amylacea}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Yaşlanmayla birlikte beyinde biriken PAS (+) poliglukozan cisimcikleri → {{c1::corpora amylacea}}",
+   354178354,
+   0,
+   ""
+  ],
+  [
+   1604575977086,
+   "nOs8$vWKCQ",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Bilateral optik nörit ve spinal kord demiyelinizasyonu ile karakterize hastalık → {{c1::nöromiyelitis optika (Devic hastalığı)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Bilateral optik nörit ve spinal kord demiyelinizasyonu ile karakterize hastalık → {{c1::nöromiyelitis optika (Devic hastalığı)}}",
+   2646920448,
+   0,
+   ""
+  ],
+  [
+   1604576064324,
+   "Lc]:wH[JeN",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Alzheimer hastalığının majör mikroskobik bulguları → {{c1::senil plaklar (nöritik plaklar)}} ve {{c1::nörofibriler yumaklar (tangles)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Alzheimer hastalığının majör mikroskobik bulguları → {{c1::senil plaklar (nöritik plaklar)}} ve {{c1::nörofibriler yumaklar (tangles)}}",
+   3179161091,
+   0,
+   ""
+  ],
+  [
+   1604578721051,
+   "LA>]zH)YIz",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Over fibromu ile ilişkili sendromlar:<div><br></div><div><div>{{c1::Meigs}} sendromu → ({{c2::asit}}, {{c2::hidrotoraks}}, {{c2::overde}} fibrom triadı)</div><div><br></div><div>{{c1::Bazal hücreli nevüs}} sendromu (Gorlin sendromu)</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Over fibromu ile ilişkili sendromlar:{{c1::Meigs}} sendromu → ({{c2::asit}}, {{c2::hidrotoraks}}, {{c2::overde}} fibrom triadı){{c1::Bazal hücreli nevüs}} sendromu (Gorlin sendromu)",
+   196743903,
+   0,
+   ""
+  ],
+  [
+   1604579123040,
+   ")&Lg}:K#x",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Germ hücrelerinin farklılaşma yönüne göre tümörler:<div><br></div><div>Farklılaşmamış (undiferansiye) → {{c1::seminom}}</div><div><br></div><div>Somatik dokular → {{c2::teratom}}</div><div><br></div><div>Endoderm (ekstraembriyonik) → {{c1::endodermal sinüs tümörü (yolk sac)}}</div><div><br></div><div>Embriyonik pluripotent kök hücre → {{c2::embriyonal karsinom}}</div><div><br></div><div>Trofoblast → {{c1::koryokarsinom}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Germ hücrelerinin farklılaşma yönüne göre tümörler:Farklılaşmamış (undiferansiye) → {{c1::seminom}}Somatik dokular → {{c2::teratom}}Endoderm (ekstraembriyonik) → {{c1::endodermal sinüs tümörü (yolk sac)}}Embriyonik pluripotent kök hücre → {{c2::embriyonal karsinom}}Trofoblast → {{c1::koryokarsinom}}",
+   1877205501,
+   0,
+   ""
+  ],
+  [
+   1604600553819,
+   "F*vS?dIDyk",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Travma sonrası hızlı büyüyen ağrılı kitle ve biyopside aktif fibroblastik proliferasyon gösteren lezyon → {{c1::nodüler fasiit}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Travma sonrası hızlı büyüyen ağrılı kitle ve biyopside aktif fibroblastik proliferasyon gösteren lezyon → {{c1::nodüler fasiit}}",
+   114829103,
+   0,
+   ""
+  ],
+  [
+   1604601988488,
+   "dy#<ebUq):",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Derin dermis, damar ve adneks çevrelerine yayılım gösterebilen benign melanositik lezyon → {{c2::konjenital}} nevüs\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Derin dermis, damar ve adneks çevrelerine yayılım gösterebilen benign melanositik lezyon → {{c2::konjenital}} nevüs",
+   2229526808,
+   0,
+   ""
+  ],
+  [
+   1604602173456,
+   "KR$ijT;LO$",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Malign melanomda prognostik ölçüm yöntemleri:<div><br></div><div>Breslow ölçümü → milimetrik {{c1::tümör kalınlığı}}</div><div><br></div><div>Clark sınıflaması → anatomik katmanlara göre {{c1::invazyon derinliği}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Malign melanomda prognostik ölçüm yöntemleri:Breslow ölçümü → milimetrik {{c1::tümör kalınlığı}}Clark sınıflaması → anatomik katmanlara göre {{c1::invazyon derinliği}}",
+   1020818901,
+   0,
+   ""
+  ],
+  [
+   1604602252071,
+   "PC}9:0Pm>U",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Malign melanomda Clark invazyon düzeyleri:<div><br></div><div>Düzey 1 → {{c1::sadece epidermis (in situ)}}</div><div><br></div><div>Düzey 2 → {{c1::papiller dermis invazyonu}}</div><div><br></div><div>Düzey 3 → {{c1::papiller dermisi tamamen dolduran invazyon}}</div><div><br></div><div>Düzey 4 → {{c1::retiküler dermis invazyonu}}</div><div><br></div><div>Düzey 5 → {{c1::subkutan yağ dokusu invazyonu}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Malign melanomda Clark invazyon düzeyleri:Düzey 1 → {{c1::sadece epidermis (in situ)}}Düzey 2 → {{c1::papiller dermis invazyonu}}Düzey 3 → {{c1::papiller dermisi tamamen dolduran invazyon}}Düzey 4 → {{c1::retiküler dermis invazyonu}}Düzey 5 → {{c1::subkutan yağ dokusu invazyonu}}",
+   297026681,
+   0,
+   ""
+  ],
+  [
+   1604602563223,
+   "yk%KeItP&1",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "{{c2::MSH2 ve MLH1}} gen mutasyonu sonucu sebase deri tümörleri ve iç organ kanserleri ile seyreden sendrom → {{c1::Muir-Torre sendromu}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "{{c2::MSH2 ve MLH1}} gen mutasyonu sonucu sebase deri tümörleri ve iç organ kanserleri ile seyreden sendrom → {{c1::Muir-Torre sendromu}}",
+   3916868104,
+   0,
+   ""
+  ],
+  [
+   1608036319516,
+   "Q}{X5$I=Y0",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Normal serum kalsiyum düzeyinde hasarlı veya nekrotik dokuya kalsiyum çökmesi → {{c1::distrofik}} kalsifikasyon\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Normal serum kalsiyum düzeyinde hasarlı veya nekrotik dokuya kalsiyum çökmesi → {{c1::distrofik}} kalsifikasyon",
+   3654936453,
+   0,
+   ""
+  ],
+  [
+   1608041801311,
+   "IbTa&#o({m",
+   1566160514431,
+   1791542171,
+   -1,
+   "",
+   "Hücre döngüsü siklin, CDK ve inhibitör eşleşmeleri:<div><br></div><div>Siklin {{c1::D}} → CDK {{c2::4/6}} ({{c5::{{c4::G1-S}}::ilişkili yanıt arka yüzde}} geçişi; inhibitörler: p{{c3::16, 15, 18, 19}})</div><div><br></div><div>Siklin {{c1::E}} → CDK {{c2::2}} ({{c4::{{c5::G1-S}}}} geçişi)</div><div><br></div><div>Siklin {{c1::A}} → CDK {{c2::2 ve 1}} ({{c4::S}} fazı)</div><div><br></div><div>Siklin {{c1::B}} → CDK {{c2::1}} ({{c4::G2-M}} geçişi)</div><div><br></div><div>Geniş spektrumlu CDK inhibitörleri: p{{c3::{{c5::21::ilişkili yanıt arka yüzde}}, 27, 57}}</div><div><br></div><div>TP53 → {{c5::p21}} aracılığıyla siklus duraklaması yaptırır</div><div><br></div><div>RB: {{c4::{{c5::G1-S}}::ilişkili yanıt arka yüzde}} geçişinin temel kontrol noktasıdır</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Hücre döngüsü siklin, CDK ve inhibitör eşleşmeleri:Siklin {{c1::D}} → CDK {{c2::4/6}} ({{c5::{{c4::G1-S}}::ilişkili yanıt arka yüzde}} geçişi; inhibitörler: p{{c3::16, 15, 18, 19}})Siklin {{c1::E}} → CDK {{c2::2}} ({{c4::{{c5::G1-S}}}} geçişi)Siklin {{c1::A}} → CDK {{c2::2 ve 1}} ({{c4::S}} fazı)Siklin {{c1::B}} → CDK {{c2::1}} ({{c4::G2-M}} geçişi)Geniş spektrumlu CDK inhibitörleri: p{{c3::{{c5::21::ilişkili yanıt arka yüzde}}, 27, 57}}TP53 → {{c5::p21}} aracılığıyla siklus duraklaması yaptırırRB: {{c4::{{c5::G1-S}}::ilişkili yanıt arka yüzde}} geçişinin temel kontrol noktasıdır",
+   1139397315,
+   0,
+   ""
+  ],
+  [
+   1608055572518,
+   "s?;82IGs#s",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Miliyer pulmoner tüberkülozda basilin akciğer içi yayılma yolu → {{c1::pulmoner arter dalları}}\u001fSistemik miliyer tüberkülozda yayılım pulmoner venler ve sistemik arterler yoluyla gerçekleşir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Miliyer pulmoner tüberkülozda basilin akciğer içi yayılma yolu → {{c1::pulmoner arter dalları}}",
+   2403765636,
+   0,
+   ""
+  ],
+  [
+   1608144367476,
+   "QvH2(^WyAX",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Dermatitis herpetiformis immünofloresan inceleme bulgusu → dermal papillalarda {{c1::granüler}} IgA birikimi\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Dermatitis herpetiformis immünofloresan inceleme bulgusu → dermal papillalarda {{c1::granüler}} IgA birikimi",
+   831117782,
+   0,
+   ""
+  ],
+  [
+   1613141319319,
+   "AY*-Mjs127",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Adrenal kortekste aldosteron inhibitörü tedavisi sonrası izlenebilen <b>spironolakton cisimcikleri</b> görülen antite:<div><br></div><div>{{c1::Conn sendromu}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Adrenal kortekste aldosteron inhibitörü tedavisi sonrası izlenebilen spironolakton cisimcikleri görülen antite:{{c1::Conn sendromu}}",
+   2887988988,
+   0,
+   ""
+  ],
+  [
+   1617124003564,
+   "N=_rR&?JM4",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Akciğer adenokarsinom öncülü lezyonlar:</b><div><br></div><div>Boyut &le; {{c1::5}} mm → {{c2::Atipik adenomatöz hiperplazi}}</div><div><br></div><div>Boyut {{c1::5}} mm – {{c1::3}} cm (saf lepidik) → {{c2::Adenokarsinoma in situ}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Akciğer adenokarsinom öncülü lezyonlar:Boyut ≤ {{c1::5}} mm → {{c2::Atipik adenomatöz hiperplazi}}Boyut {{c1::5}} mm – {{c1::3}} cm (saf lepidik) → {{c2::Adenokarsinoma in situ}}",
+   2392864668,
+   0,
+   ""
+  ],
+  [
+   1617124323612,
+   "g6x^*-S(1C",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "{{c1::Nöroendokrin kökenli olmayan büyük hücreli}} akciğer karsinomu tanısı:<div><br></div><div>Adenokarsinom, skuamöz hücreli karsinom ve nöroendokrin tipler ekarte edilerek konulur</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "{{c1::Nöroendokrin kökenli olmayan büyük hücreli}} akciğer karsinomu tanısı:Adenokarsinom, skuamöz hücreli karsinom ve nöroendokrin tipler ekarte edilerek konulur",
+   1711049302,
+   0,
+   ""
+  ],
+  [
+   1617133150258,
+   "H>K93!=>lV",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Renal hücreli karsinomda</b> histolojik derecelendirme:<div><br></div><div>Klasik sistem: {{c1::Fuhrman}} derecelendirme sistemi</div><div><br></div><div>Temel kriter: {{c1::Çekirdek anaplazisi}} ve nükleol belirginliği</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Renal hücreli karsinomda histolojik derecelendirme:Klasik sistem: {{c1::Fuhrman}} derecelendirme sistemiTemel kriter: {{c1::Çekirdek anaplazisi}} ve nükleol belirginliği",
+   2263607160,
+   0,
+   ""
+  ],
+  [
+   1617133404583,
+   "LeAct.k=R:",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Mesanenin proliferatif ve metaplastik lezyonları:</b><div><br></div><div>Lamina propriaya doğru ürotel proliferasyonu: {{c1::von Brunn adaları}}</div><div><br></div><div>von Brunn adalarının merkezinin kistikleşmesi: {{c1::sistitis sistika}}</div><div><br></div><div>Kist epitelinin kolumnar mukus üreten epitele dönüşmesi: {{c1::sistitis glandularis}}</div><div><br></div><div>Ürotelyumun tübüler epitelle yer değiştirmesi: {{c2::nefrojenik metaplazi}}</div><div><br></div><div>Kronik irritasyon veya şistozomiyaziste görülen lezyon: {{c2::skuamöz metaplazi}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Mesanenin proliferatif ve metaplastik lezyonları:Lamina propriaya doğru ürotel proliferasyonu: {{c1::von Brunn adaları}}von Brunn adalarının merkezinin kistikleşmesi: {{c1::sistitis sistika}}Kist epitelinin kolumnar mukus üreten epitele dönüşmesi: {{c1::sistitis glandularis}}Ürotelyumun tübüler epitelle yer değiştirmesi: {{c2::nefrojenik metaplazi}}Kronik irritasyon veya şistozomiyaziste görülen lezyon: {{c2::skuamöz metaplazi}}",
+   3479566704,
+   0,
+   ""
+  ],
+  [
+   1617655012887,
+   "iF*uYYRXk6",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>Sertoli-Leydig hücreli tümör özellikleri:</b><div><br></div><div>En sık görülen genetik anomali: {{c1::DICER1}} mutasyonu</div><div><br></div><div>Virilizasyona yol açan salgısı: {{c1::DHEA}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sertoli-Leydig hücreli tümör özellikleri:En sık görülen genetik anomali: {{c1::DICER1}} mutasyonuVirilizasyona yol açan salgısı: {{c1::DHEA}}",
+   1339107545,
+   0,
+   ""
+  ],
+  [
+   1620299847124,
+   "t6uud-jQ*s",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Kemik iliği transplantasyonu sonrası akut graft-versus-host hastalığı (GVHH) klasik süresi:<div><br></div><div>İlk {{c1::90}} gün</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kemik iliği transplantasyonu sonrası akut graft-versus-host hastalığı (GVHH) klasik süresi:İlk {{c1::90}} gün",
+   971334737,
+   0,
+   ""
+  ],
+  [
+   1620311036074,
+   "f4^Yk._hRf",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Epstein-Barr virüsü (EBV) onkogenez mekanizmaları:<div><br></div><div>{{c1::LMP-1}} → <b>CD40</b> reseptörünü taklit ederek <b>NF-&kappa;B</b> ve <b>JAK-STAT</b> yolaklarını aktive eder, otonom B hücresi proliferasyonu başlatır.</div><div><br></div><div>{{c1::LMP-1}} → <b>BCL2</b> aktivasyonu ile apoptozu engeller.</div><div><br></div><div>{{c1::EBNA-2}} → <b>Siklin D</b> aktivasyonu sağlar.</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Epstein-Barr virüsü (EBV) onkogenez mekanizmaları:{{c1::LMP-1}} → CD40 reseptörünü taklit ederek NF-κB ve JAK-STAT yolaklarını aktive eder, otonom B hücresi proliferasyonu başlatır.{{c1::LMP-1}} → BCL2 aktivasyonu ile apoptozu engeller.{{c1::EBNA-2}} → Siklin D aktivasyonu sağlar.",
+   1173077018,
+   0,
+   ""
+  ],
+  [
+   1620372469388,
+   "iWUPU1EKY9",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Kolon biyopsisinde lümeni <b>yıldız şeklinde (testere dişi) kriptler</b> izlenen benign lezyon:<div><br></div><div>{{c1::Hiperplastik}} polip</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kolon biyopsisinde lümeni yıldız şeklinde (testere dişi) kriptler izlenen benign lezyon:{{c1::Hiperplastik}} polip",
+   243498771,
+   0,
+   ""
+  ],
+  [
+   1620372614114,
+   "-y&aQr}0g",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<b>İntrahepatik portal ven dallarının tıkanması</b> sonucu gerçek nekroz olmaksızın gelişen konjestif lezyon:<div><br></div><div>{{c1::Zahn}} infarktı</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "İntrahepatik portal ven dallarının tıkanması sonucu gerçek nekroz olmaksızın gelişen konjestif lezyon:{{c1::Zahn}} infarktı",
+   954034787,
+   0,
+   ""
+  ],
+  [
+   1622718111836,
+   "MpL*-y<XEN",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Folliküler lenfomada WHO derecelendirmesi (grade 1–3) hangi kriter esas alınarak yapılır?<div><br></div><div>Büyük büyütme alanındaki {{c1::sentroblast sayısı}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Folliküler lenfomada WHO derecelendirmesi (grade 1–3) hangi kriter esas alınarak yapılır?Büyük büyütme alanındaki {{c1::sentroblast sayısı}}",
+   3201092217,
+   0,
+   ""
+  ],
+  [
+   1623093383472,
+   "Ck#}s.6=`4",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "35 yaşından genç bireylerde görülen agresif hipofiz adenomlarında en sık ilişkili gen mutasyonu:<div><br></div><div>{{c1::AIP}} mutasyonu</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "35 yaşından genç bireylerde görülen agresif hipofiz adenomlarında en sık ilişkili gen mutasyonu:{{c1::AIP}} mutasyonu",
+   1901235742,
+   0,
+   ""
+  ],
+  [
+   1623699734597,
+   ":*MXQcp#c",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Meme karsinomunda hormonal tedaviye yanıtı belirleyen <b>en önemli prediktif faktör:</b><div><br></div><div>{{c1::Hormon reseptör pozitifliği}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Meme karsinomunda hormonal tedaviye yanıtı belirleyen en önemli prediktif faktör:{{c1::Hormon reseptör pozitifliği}}",
+   205852078,
+   0,
+   ""
+  ],
+  [
+   1625213946786,
+   "B^z?OJ.MQe",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Akut ve kronik viral hepatitlerin histopatolojik farkları:<div><br></div><div><b>Akut hepatitte belirgin olan bulgular:</b></div><div>- {{c2::Apoptotik cisimler}}</div><div>- Portal inflamasyon {{c1::az veya yoktur}}</div><div>- {{c2::Balonsu dejenerasyon}}</div><div>- {{c1::Kolestaz}}</div><div><br></div><div><b>Kronik hepatite özgü bulgular:</b></div><div>- Arayüz hepatiti</div><div>- {{c4::<b>Buzlu cam</b>}} hücreleri ({{c3::HBsAg}} birikimi)</div><div>- {{c4::<b>Kumlu</b>}} nükleus ({{c3::HBcAg}} birikimi)</div><div>- <b>Fibrozis</b></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Akut ve kronik viral hepatitlerin histopatolojik farkları:Akut hepatitte belirgin olan bulgular:- {{c2::Apoptotik cisimler}}- Portal inflamasyon {{c1::az veya yoktur}}- {{c2::Balonsu dejenerasyon}}- {{c1::Kolestaz}}Kronik hepatite özgü bulgular:- Arayüz hepatiti- {{c4::Buzlu cam}} hücreleri ({{c3::HBsAg}} birikimi)- {{c4::Kumlu}} nükleus ({{c3::HBcAg}} birikimi)- Fibrozis",
+   937333880,
+   0,
+   ""
+  ],
+  [
+   1626511033747,
+   "BL*lQEl@jb",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Tümör subepitelyal stromasında <b>kambiyum tabakası</b> varlığı:<div><br></div><div>Bulunan: {{c1::Rabdomiyosarkom (botriyoid tip)}}</div><div><br></div><div>Bulunmayan: {{c1::Rabdomiyom}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Tümör subepitelyal stromasında kambiyum tabakası varlığı:Bulunan: {{c1::Rabdomiyosarkom (botriyoid tip)}}Bulunmayan: {{c1::Rabdomiyom}}",
+   4182372626,
+   0,
+   ""
+  ],
+  [
+   1630356147022,
+   "MoE}<7A?cc",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Piyon topu megakaryosit → {{c1::MDS}}<div><br></div><div>Döhle cisimciği → {{c1::MDS}} dahil farklı durumlarda görülebilir</div><div><br></div><div>Deniz mavisi histiyosit → {{c1::KML}} dahil yüksek hücre döngülü hastalıklar</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Piyon topu megakaryosit → {{c1::MDS}}Döhle cisimciği → {{c1::MDS}} dahil farklı durumlarda görülebilirDeniz mavisi histiyosit → {{c1::KML}} dahil yüksek hücre döngülü hastalıklar",
+   2785783960,
+   0,
+   ""
+  ]
+ ],
+ "auditOf": "docs/catalog-corrections/patoloji-editorial.json"
+}

@@ -1,0 +1,6040 @@
+{
+ "schema": "tusankim.catalog-editorial/v1",
+ "date": "2026-10-17",
+ "course": "Anatomi",
+ "originalReference": {
+  "gitRef": "a08dd99",
+  "path": "assets/catalog/bka-tus-complete.apkg"
+ },
+ "packageBeforeSha256": "888f90384ca5be65d4571e74e73b04752bb7bc36ce4f752d78e28964a6a2fb2f",
+ "reviewedNotes": 381,
+ "reviewedCards": 477,
+ "boundaries": {
+  "cards": "74b2cd2b72adceb61b9f437cc121f5a2fe11040d92778d4523df68337d3416f1",
+  "revlog": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "graves": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "collection": "d77b2e5569583e7afdc18d6a8747fc488cef0cf907da5f8c66cf90104b61eff6",
+  "noteIdentity": "90984ca47dbdefd40db5c3b25a4c1d072925253cb109a90419604f7b597759fc",
+  "otherCourses": "6ef07da35fcda6aa6b044e31b0c07d980b10cf264d911ef5b1bc54bf4bb91e79"
+ },
+ "scope": [
+  {
+   "noteId": 1603894413174,
+   "guid": "HdCS4B6RYj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894443512,
+   "guid": "uIt`rN,)F9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894481006,
+   "guid": "zh5s*sL4b6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894494855,
+   "guid": "u|/~Y>}cd/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894600617,
+   "guid": "K%e6R|4Hh",
+   "ordinals": [
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894658972,
+   "guid": "bHyBC?0.}G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894717964,
+   "guid": "t8]/eUvAmu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894759699,
+   "guid": "QRN)F(pli@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894774359,
+   "guid": "i%Qof*S8m+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894841863,
+   "guid": "nva(nv/B#d",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1603894896572,
+   "guid": "oB_foTE}V1",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603894983049,
+   "guid": "j/^$%rx:Z~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895037570,
+   "guid": "m~T[gIDUo!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895108367,
+   "guid": "E)|[FY/T}@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1603895152992,
+   "guid": "un[h?:LbyP",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1603895223238,
+   "guid": "FXwfInm{!5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895278981,
+   "guid": "G84FH>;OL(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895318776,
+   "guid": "eh.q=$|0s4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895338706,
+   "guid": "FCC9:)&R|:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895390384,
+   "guid": "E]~qK$tQA&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895433620,
+   "guid": "Lzkk(o0:hi",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895516253,
+   "guid": "F&/,[w6<8D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1603895587778,
+   "guid": "cexp6ci4h8",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895651927,
+   "guid": "z]aenoZRC?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895685094,
+   "guid": "lk&W2Cs)@P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895703757,
+   "guid": "oclAa+]Q~]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895733188,
+   "guid": "Kjs`UJ5+R0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895749222,
+   "guid": "kFJC^[39o}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895763869,
+   "guid": "b?Q24Jx{O5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895845803,
+   "guid": "Iaz,46%qly",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895881122,
+   "guid": "D6Gz48r;0J",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603895954564,
+   "guid": "N^@!ZwB`#Q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896002089,
+   "guid": "Gb6?Cjp{C+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896052525,
+   "guid": "QvcFHOhy=3",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896109269,
+   "guid": "oS!+={`+zS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896204692,
+   "guid": "QP*IE&c1i4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1603896285500,
+   "guid": "Ee0HMv[k/P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896346903,
+   "guid": "Q*W]{t[sM,",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896415050,
+   "guid": "pgeFiX@HwV",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896449646,
+   "guid": "o>dE[^H}vD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896481991,
+   "guid": "K-(O4cuy?]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896511755,
+   "guid": "pwf#Dp]m)o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896597537,
+   "guid": "P~S7EO_.hE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896671632,
+   "guid": "CO}N%HM>Du",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896692722,
+   "guid": "swAi&m+}ic",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896711367,
+   "guid": "fA;(??j4ZM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896732751,
+   "guid": "b%vI_TdJsQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896786611,
+   "guid": "mrn+(xPWAG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896808060,
+   "guid": "Nfh5J~5A-X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896865748,
+   "guid": "JJ#NWS3vC~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896924005,
+   "guid": "Q[GT,!yjj)",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603896973295,
+   "guid": "q)@T^bGQ:X",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897064972,
+   "guid": "y+7DPY6ZT9",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897124415,
+   "guid": "c|uKqbGC!c",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897175050,
+   "guid": "A&2<qh/U{J",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897223235,
+   "guid": "qMZv%DXZLf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897333566,
+   "guid": "qG]Ord.I{$",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897417854,
+   "guid": "ALAAi:Lwh&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897448582,
+   "guid": "c3sF{Pma.>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897528594,
+   "guid": "r+-NJJ<BP/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897539165,
+   "guid": "H9V|#+2n-[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897558013,
+   "guid": "bjoyV$2UEF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897575550,
+   "guid": "c1_+)Q-mPn",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897705607,
+   "guid": "z`bMG$K2DA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897744233,
+   "guid": "A4}(`4a}D|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897863305,
+   "guid": "hg?_l?%abG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897887418,
+   "guid": "c)kENHHm/k",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897908198,
+   "guid": "Q,`:ZKVw-|",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897939841,
+   "guid": "~%X7L3ku~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603897952088,
+   "guid": "PqtUBx#CrZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603898007655,
+   "guid": "wVhe@,bu8r",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603898031864,
+   "guid": "FSsn>_K!?%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603898141130,
+   "guid": "kbZl?q}_%?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921203246,
+   "guid": "G:%xVh<IPU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921285286,
+   "guid": "CFKNslUS+]",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921327095,
+   "guid": "CiRcXU;r82",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921379790,
+   "guid": "D)MHK#8I|j",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921476318,
+   "guid": "HeBP7ictRJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921500068,
+   "guid": "h3ba%c{<f6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921515764,
+   "guid": "gVTh%,(;&(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921647084,
+   "guid": "IW,dm!fsF:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1603921703363,
+   "guid": "G+X4%JB^#0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921786579,
+   "guid": "DUuI[L&;>*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921832771,
+   "guid": "ezh|GD086,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603921859956,
+   "guid": "IchvPn%oId",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603922009290,
+   "guid": "Q`njgZ,b7^",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603922134378,
+   "guid": "Otu0[o`9k)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603922171697,
+   "guid": "Gq_0PDwIIF",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1603922232707,
+   "guid": "g:*^vl-@,P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604006825983,
+   "guid": "oT$ql&)8jS",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604006849666,
+   "guid": "e}mvxv<Y^U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604006892121,
+   "guid": "e(VT+SHQG}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604006927628,
+   "guid": "mvC6f@UeU!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604006995619,
+   "guid": "IA;Wj48+~;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007020058,
+   "guid": "tbBh|K70{=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007084129,
+   "guid": "F}~C#uSGIJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007204178,
+   "guid": "QDUv!(QQ/Y",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007243112,
+   "guid": "bLUIz6K>L-",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007270431,
+   "guid": "L3qYA|Sb$B",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007295505,
+   "guid": "h5vW/+EV>u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007389513,
+   "guid": "i9?-krOEea",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007467455,
+   "guid": "b@d!myLU]q",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007527295,
+   "guid": "DG&^DOAc-%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604007634111,
+   "guid": "B:PfL1$F@g",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007711510,
+   "guid": "Dvv5)$ipC]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007800800,
+   "guid": "vQ<%FA$jj/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007846566,
+   "guid": "Oum%+RmNjq",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007899342,
+   "guid": "k9ARZZY`P6",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007934909,
+   "guid": "DvKO/O3|h,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604007999885,
+   "guid": "w{?7i/;_12",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008054660,
+   "guid": "Cz.rh5M&=!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008099726,
+   "guid": "pAMdsNC,z;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008143876,
+   "guid": "cC=LFl8O`@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008209851,
+   "guid": "yMfX{5*n<Y",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1604008251748,
+   "guid": "c?kKXW]3>l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008341819,
+   "guid": "A[[5]y5%uW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008401482,
+   "guid": "QgTBz$Dy3R",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008456524,
+   "guid": "o$ok?d5!T*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008523213,
+   "guid": "z39:c;ZY}1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008612797,
+   "guid": "rk9]*|`hu&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008659996,
+   "guid": "G5/rx|.:|~",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008740515,
+   "guid": "euB<;5QMp%",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008793993,
+   "guid": "bF^z@44X8`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008841600,
+   "guid": "ujxA5f[&i)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008859330,
+   "guid": "Kys40Y#~_F",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008944666,
+   "guid": "d>YHi0kAE1",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604008978760,
+   "guid": "IkO>`3Pu@D",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604009014880,
+   "guid": "zO&1;%,W;H",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604009053633,
+   "guid": "B%~]9Bd^~#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604009102192,
+   "guid": "Q05D&1:L~s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604009166527,
+   "guid": "l/OD&.qavM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1604009207151,
+   "guid": "JdRQ|Vu}02",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606371007243,
+   "guid": "c(MMI6Mb1`",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606371176485,
+   "guid": "n1)4NN4D&7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606371629770,
+   "guid": "c5Bh0O6aaX",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606372154440,
+   "guid": "Oj%#~_+ihE",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606372353480,
+   "guid": "FpWpfezq%N",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606372792220,
+   "guid": "K&G7%QE^Lj",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606373302561,
+   "guid": "LH*~>3mi~X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606373382530,
+   "guid": "g7[CYD/&Ag",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606373492666,
+   "guid": "z-i`+b(-fK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606374592758,
+   "guid": "crRKu0<{iG",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606376356054,
+   "guid": "Bb:,{;/L+2",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606376514740,
+   "guid": "q>#,e9awxT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606376734202,
+   "guid": "eF<xyhPee[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606377426810,
+   "guid": "Andc!`mWO7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606377538656,
+   "guid": "z+]LMV1W#s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606378140391,
+   "guid": "oaVI=N>HBg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606393715846,
+   "guid": "fLVk0NN,9D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606394591418,
+   "guid": "p06[xHpY=6",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606395343856,
+   "guid": "Jck!(L)f|@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606396325352,
+   "guid": "zwqlIf:<Mt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606396356850,
+   "guid": "r~7G#<Qhm@",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606396447523,
+   "guid": "wRde<P$v}H",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606399644775,
+   "guid": "Bv0]8<;#X{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606399850210,
+   "guid": "K^nR@|<E%X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606400050891,
+   "guid": "Lm*q}pZ#6Y",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606400673116,
+   "guid": "O4(r5$vd}?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606401213894,
+   "guid": "me0SpV(+Pq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606466088781,
+   "guid": "m%+)n066oZ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606474648032,
+   "guid": "n/q!iOUU8h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606476782709,
+   "guid": "iizJZXcwNm",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606477594101,
+   "guid": "wzhkC7hgxf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606477725224,
+   "guid": "hh^[z[$u3[",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606477827342,
+   "guid": "s4QO(+u~*)",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606479971655,
+   "guid": "BQs`|5uxgh",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606480126098,
+   "guid": "w%%8wojc-D",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606481564886,
+   "guid": "KS9;_V?]bf",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606484558396,
+   "guid": "dON#}h=nak",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606484733538,
+   "guid": "QgP.KYK4^2",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606484879862,
+   "guid": "hQjqOs=.9m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606484966950,
+   "guid": "O2}=:a>Y>l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606485145180,
+   "guid": "f:>wc;7y+L",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606485571979,
+   "guid": "lcuKS%^0rj",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606485824631,
+   "guid": "jX3|7TvGxD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606486127687,
+   "guid": "t^K@B)A2s!",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606486181524,
+   "guid": "wZ^|qO@Z!5",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1606486474242,
+   "guid": "g[{:0xSB)$",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606486985280,
+   "guid": "MXs1Bb%h.V",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606487003441,
+   "guid": "QTU`yB/6!I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606487052467,
+   "guid": "cw~ph7Y-cP",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606487758194,
+   "guid": "qz<.n60;$b",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606488136168,
+   "guid": "eW*d`%L-Bo",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1606488985301,
+   "guid": "gXAgQ9jx_7",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609006816187,
+   "guid": "kzK|<q:Ma.",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609006901768,
+   "guid": "u]@f}]-1~_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609007140806,
+   "guid": "ziCd>OK)O/",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609007446959,
+   "guid": "bSa#@h)~oT",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609008341248,
+   "guid": "G&+kGuF+Qt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1609008499738,
+   "guid": "Cic[>(YBvh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609008614260,
+   "guid": "H>.SbKWomb",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609008718349,
+   "guid": "rD<V:TPrB0",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609008819014,
+   "guid": "eR-PCv[lUN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609010282315,
+   "guid": "q<}MKK,U$8",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609010475255,
+   "guid": "m!F?9_^n<)",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609010567205,
+   "guid": "Ojm1$WKdrg",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609011092823,
+   "guid": "s^QM6M(McU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609011815088,
+   "guid": "GtcwaJzADX",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609012556143,
+   "guid": "eAI$8w/isb",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609013574012,
+   "guid": "kFgXW@V(Ww",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609013624540,
+   "guid": "ni1eV.fQDK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609052803244,
+   "guid": "PyQ,>Kfk{*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609053002018,
+   "guid": "oqLo<#)%=s",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609053265496,
+   "guid": "K3W_v$n<)h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609053885758,
+   "guid": "BP)r`+U?[U",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609054496400,
+   "guid": "s,PMjR|>H5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609055088196,
+   "guid": "D+?_O|c(g(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609056257244,
+   "guid": "AnY$7(e:M{",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609066436194,
+   "guid": "uQU5}+]qVy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609066621834,
+   "guid": "pa8h+]-xe9",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609066710731,
+   "guid": "A)dy}S[G[t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609069238305,
+   "guid": "MZU@XO.^Nm",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609074582073,
+   "guid": "g;ukhQHzz=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609074807631,
+   "guid": "MBIHk<&o{7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609075331023,
+   "guid": "F}KPJBLQy3",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1609075931777,
+   "guid": "M->H&5xQP&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609076168156,
+   "guid": "Qwj!d8@{1u",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609077045532,
+   "guid": "KUK0!vB(t;",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609077632416,
+   "guid": "KUBW7#*oBb",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609080024375,
+   "guid": "n8zR@MX5D-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609093735405,
+   "guid": "k]J&,xiVH_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609094053935,
+   "guid": "o1GcTboV#M",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1609095319960,
+   "guid": "xrX-U&_ksL",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609095727952,
+   "guid": "L:KXD6wtI3",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609098853685,
+   "guid": "N:%EuW<jE)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609099037581,
+   "guid": "cfAX63z)$i",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609099103026,
+   "guid": "M]A^!Ux(4.",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609099344227,
+   "guid": "n)t-etP=w;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609099390270,
+   "guid": "G-1doLfo]!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609099857518,
+   "guid": "wxD_O__SOQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609100031963,
+   "guid": "mDIpJR?JEs",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609100192678,
+   "guid": "C}1mzQjf?X",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609100282230,
+   "guid": "L?S.$<*8qV",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609101737514,
+   "guid": "Ag3pJ8G#wl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609102147356,
+   "guid": "m?}9z$0|Ei",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609137905717,
+   "guid": "xN<E4JFs9P",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609148725060,
+   "guid": "sK&zpipcYw",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1609149082516,
+   "guid": "p$?>_`Nn}n",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609149645105,
+   "guid": "bk}Sbj$Z][",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609166763519,
+   "guid": "gz-79f5ltM",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609167178426,
+   "guid": "Bu@xyH((oa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609168426435,
+   "guid": "tFqePhKc,0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609181880199,
+   "guid": "m#uan-f`WN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609182004271,
+   "guid": "A$ZxN:Ex*q",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609184614929,
+   "guid": "DI|!3[3BOR",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609184769947,
+   "guid": "QId0+B/(uE",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609185109258,
+   "guid": "E88Yc`LW3X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609185760909,
+   "guid": "!rrB9uB_Y",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609226407620,
+   "guid": "B$?5gbPr)l",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609227997686,
+   "guid": "b0@|%PFo`o",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609228848941,
+   "guid": "nOMK;=k>pD",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609241476825,
+   "guid": "g?4wB9QVaK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609243698112,
+   "guid": "IHE7@IIVrt",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609244787001,
+   "guid": "l]g,GOab!?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609245256497,
+   "guid": "j?*jcmyGPy",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609245555274,
+   "guid": "g-wl8gmug6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609245807369,
+   "guid": "P-^l4/r>|G",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609246457398,
+   "guid": "QIt4TM!.w>",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609247082589,
+   "guid": "jkHL|;<^]t",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609248251097,
+   "guid": "jJ(Nh@(vMr",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609271242846,
+   "guid": "t|-}e`w2p5",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609273090151,
+   "guid": "uK%DR@2m[b",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1609273240935,
+   "guid": "i6^PSG1Zne",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609273833502,
+   "guid": "tV~yrE64aI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609276923065,
+   "guid": "G@ES`MQ?W[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609310669901,
+   "guid": "KlqdiUy_`1",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609310905619,
+   "guid": "MskK(_dIc/",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1609360296771,
+   "guid": "VsWSdUcI[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615357051878,
+   "guid": "QFAXzxLTlB",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615357096565,
+   "guid": "zezfca|@0)",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615816246228,
+   "guid": "obQTs]tuoQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615968923004,
+   "guid": "Fnt;WA[I-8",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615968957593,
+   "guid": "ds]xklsY^#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1615969367873,
+   "guid": "J@[Bv>G2ah",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615977655788,
+   "guid": "ed%2eU/C*&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615977750293,
+   "guid": "r?eI,Sf4<V",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615977847834,
+   "guid": "PYyraeq^40",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615977904283,
+   "guid": "EE_Py),}du",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615979080085,
+   "guid": "KsmY!BCGw%",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615979144805,
+   "guid": "i{b#w)wPgq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615979563941,
+   "guid": "Oh^q5K}BAa",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1615979901082,
+   "guid": "QrwrkgCwQ-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617737041708,
+   "guid": "d;X]x[k#bU",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1617801081898,
+   "guid": "H$14rhX$OQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618091211344,
+   "guid": "un2{V7vOD=",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1618783071985,
+   "guid": "K#C!`KMsEI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1619194120088,
+   "guid": "F]]CP.|ql!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622010356566,
+   "guid": "sldld64Zvu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622010532717,
+   "guid": "wC^n3koBUu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622010628935,
+   "guid": "P@z+{udumw",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622010690287,
+   "guid": "AZ^KCVp]N!",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622189022772,
+   "guid": "NuOlDc9otN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622275434098,
+   "guid": "oM+mauXfA{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622301062107,
+   "guid": "~&zd8^_4}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622302237186,
+   "guid": "t#B8`fYLpI",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622302750208,
+   "guid": "E=jT`T8@{e",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622303404335,
+   "guid": "JY4EX`/A[X",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622303437191,
+   "guid": "s,PlMx2f}p",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622303971561,
+   "guid": "nb.J(jI1o[",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622304053207,
+   "guid": "i@,*EFsdTh",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622304182331,
+   "guid": "sQ?_7,bmo.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622372156912,
+   "guid": "nsd6wu8Tc]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1622375306853,
+   "guid": "Os$$(:QQ0m",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622379560602,
+   "guid": "u8a+k4=Ih~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622380317207,
+   "guid": "gB&4%xMys:",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1622583516351,
+   "guid": "DWyXd_`_Ws",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1623525565329,
+   "guid": "zG;LrI-GQ>",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624005005577,
+   "guid": "E-m{vJo7hf",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624005158564,
+   "guid": "tdWVs.Kd@_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624005481952,
+   "guid": "HI0Z8C-e,E",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624126756946,
+   "guid": "eRB=z!%~m~",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624127066564,
+   "guid": "vm1Q[Ljt7v",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624127158222,
+   "guid": "H)Q2n)8BN}",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624127231212,
+   "guid": "wxZP|<Wkor",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624127343338,
+   "guid": "pO)Y2P{Y|,",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624563303684,
+   "guid": "C|]R[jdqj<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624637018664,
+   "guid": "DaxJZ29Oti",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624637095915,
+   "guid": "glvU;m0y{I",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1624637409437,
+   "guid": "jr.iyH[nTV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1624644269544,
+   "guid": "h#ewF:zgm{",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625166562598,
+   "guid": "Q&NQlKi-6T",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625213397650,
+   "guid": "M2IC,hwpw+",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625234418802,
+   "guid": "t0je%zm3.f",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625234601035,
+   "guid": "L9:Ax+c>?H",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625346967700,
+   "guid": "C&(z}jID?5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625347125515,
+   "guid": "i1o.I|0+cu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625347514789,
+   "guid": "k3tk|#m3yQ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625384574147,
+   "guid": "zf/*}:f(*4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625409732645,
+   "guid": "H-@)J==IXW",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625409788252,
+   "guid": "Lmjo*1;BNJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625482042964,
+   "guid": "DmeRF#9XFu",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625580116719,
+   "guid": "cx!GbyZV2*",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625665040771,
+   "guid": "KV(eaWCIP?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1625684829711,
+   "guid": "s#/[T,+TC_",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1625685166709,
+   "guid": "Q=_tmq%)JA",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626524682672,
+   "guid": "B9zAy5-{JV",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626524826438,
+   "guid": "qQxO*,2snN",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626524919666,
+   "guid": "u|&uC$k?ZS",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1626525118959,
+   "guid": "JcO9lV}F@Z",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626722947806,
+   "guid": "BsCAPQhOpl",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626765502447,
+   "guid": "GS/=aE(4NM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626875644091,
+   "guid": "vA2<Cld~D0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1626961739678,
+   "guid": "D@<gs]@9Cp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627047104138,
+   "guid": "Q62/A#`.P0",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627300074203,
+   "guid": "PZeuzf&AZj",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627390680263,
+   "guid": "z{:s@z0Eo(",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627399882159,
+   "guid": "d/V!{K?Uo5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627400393858,
+   "guid": "KX%4lA;spC",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627400574380,
+   "guid": "PgBr:lkls7",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627408887084,
+   "guid": "ncN9r5[+#h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627409755284,
+   "guid": "rb_vjgoJMM",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627736765778,
+   "guid": "dQTMDIex5u",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627736869707,
+   "guid": "c[QI>BXm7a",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627737067647,
+   "guid": "f`%.J[^:1L",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627737149252,
+   "guid": "O^v|opuiyq",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627737416772,
+   "guid": "wL#.>3qaHK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627967988630,
+   "guid": "x&VKv@@&@<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1627968128663,
+   "guid": "c{>Eq,J>e]",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1627984965103,
+   "guid": "o~c<Fc3roY",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628371713658,
+   "guid": "N,1G0ZV!%R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628372025567,
+   "guid": "Fm.svZhE9R",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628703626588,
+   "guid": "tU9e*`YbRp",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628703742535,
+   "guid": "o&X~(K^~@5",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628703902198,
+   "guid": "vsE=NNLv[<",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628938779713,
+   "guid": "gdqN4rZkf(",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628940253280,
+   "guid": "HR]~O)/q,W",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628942793271,
+   "guid": "jGGHe@CQJ.",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628947897534,
+   "guid": "qgqk%ISbBK",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628948410631,
+   "guid": "J|^g75.Wr6",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": false
+  },
+  {
+   "noteId": 1628953151397,
+   "guid": "i=nG>xypa&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1628964300127,
+   "guid": "L@up:|i3^;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629004791703,
+   "guid": "u||2nxZC<",
+   "ordinals": [
+    1,
+    2
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629006481796,
+   "guid": "h1><=w0[T&",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629008147917,
+   "guid": "c&1OCHAlgB",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629014486495,
+   "guid": "AU137+0CZ#",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629026049209,
+   "guid": "f,+n)qGv)4",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629095464909,
+   "guid": "e7aw6kFw8h",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629731366730,
+   "guid": "D^jSa9]sO-",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629790011594,
+   "guid": "KxE=4`)A/?",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1629920748054,
+   "guid": "Lp}D}B+Kgg",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  },
+  {
+   "noteId": 1630512514822,
+   "guid": "lf:.xK59nJ",
+   "ordinals": [
+    1
+   ],
+   "originalExtraEmpty": true
+  }
+ ],
+ "notes": [
+  {
+   "noteId": 1603894841863,
+   "guid": "nva(nv/B#d",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Fonticulus posterolateralis (mastoid bıngıldak) erişkinde Asterion noktasına karşılık gelir.",
+     "after": "Arka → Asterion."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1603895152992,
+   "guid": "un[h?:LbyP",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Tendonu diz eklemi kapsülü içinden geçer (intrakapsülerdir).",
+     "after": "Tendonu diz eklemi kapsülü içinden geçer."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1603895516253,
+   "guid": "F&/,[w6<8D",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "M. flexor digitorum profundus'un medial yarısı da uyarılır; os pisiforme bu kasın tendonu içindedir.",
+     "after": "Os pisiforme bu kasın tendonu içindedir."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1603895845803,
+   "guid": "Iaz,46%qly",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Lacuna <b>vasorum</b>'un içinden geçen yapılar (3):<div><br></div><div>{{c1::anulus femoralis}}<div>{{c1::a. ve v. femoralis}}</div><div>{{c1::r. femoralis nervi genitofemoralis}}</div><br><div>({{c1::n. femoralis}} yoktur, lacuna musculorum'dan geçer)</div></div>",
+     "after": "Lacuna <b>vasorum</b>'un içinden geçen yapılar (3):<div><br></div><div>{{c1::anulus femoralis}}<div>{{c1::a. ve v. femoralis}}</div><div>{{c1::r. femoralis nervi genitofemoralis}}</div><br><div>({{c1::n. femoralis}} yoktur)</div></div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603896204692,
+   "guid": "QP*IE&c1i4",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Eversiyon yaptırmasına rağmen anterior kompartmanda yer aldığından <b>n. fibularis profundus</b> tarafından uyarılır.",
+     "after": "Eversiyon yaptırır; n. fibularis profundus uyarır."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1603896449646,
+   "guid": "o>dE[^H}vD",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Ductus parotideus (Stensen kanalı) → m. {{c1::buccinator}}'u deler",
+     "after": "Ductus parotideus → m. {{c1::buccinator}}'u deler"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603896481991,
+   "guid": "K-(O4cuy?]",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Çiğneme kasları içinde ağzı açan (mandibula'ya depresyon yaptıran) tek kastır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1603897175050,
+   "guid": "A&2<qh/U{J",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Trigonum omoclaviculare'nin (supraclaviculare) içinde bulunan yapılar:<div><br></div><div>a. {{c1::subclavia}}<div><br></div><div>plexus brachialis'in {{c2::truncus'ları}}</div><div><br></div><div>nodi lymphoidei {{c1::supraclaviculares}} (Virchow nodülü)</div><div><br></div><div>v. {{c2::jugularis externa}}</div></div>",
+     "after": "Trigonum omoclaviculare'nin içinde bulunan yapılar:<div><br></div><div>a. {{c1::subclavia}}<div><br></div><div>plexus brachialis'in {{c2::truncus'ları}}</div><div><br></div><div>nodi lymphoidei {{c1::supraclaviculares}} (Virchow nodülü)</div><div><br></div><div>v. {{c2::jugularis externa}}</div></div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603897558013,
+   "guid": "bjoyV$2UEF",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sinus sphenoidalis'in lateral (yan) komşuluğu → {{c1::sinus cavernosus}} ve içindeki yapılar",
+     "after": "Sinus sphenoidalis'in lateral komşuluğu → {{c1::sinus cavernosus}} ve içindeki yapılar"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603897705607,
+   "guid": "z`bMG$K2DA",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sağ akciğer hilusu'ndaki yapılar (yukarıdan aşağıya):<div><br></div><div>{{c1::BABV}}<div><br></div><div>{{c1::Bronchus lobaris superior}} (eparteriyel bronş)<div>{{c1::a. pulmonalis}}</div><div>{{c1::bronchus principalis dexter}} (hiparteriyel bronş)</div><div>{{c1::v. pulmonalis inferior}}</div></div></div>",
+     "after": "Sağ akciğer hilusu'ndaki yapılar (yukarıdan aşağıya):<div><br></div><div>{{c1::BABV}}<div><br></div><div>{{c1::Bronchus lobaris superior}}<div>{{c1::a. pulmonalis}}</div><div>{{c1::bronchus principalis dexter}}</div><div>{{c1::v. pulmonalis inferior}}</div></div></div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603898141130,
+   "guid": "kbZl?q}_%?",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sinus coronarius'a açılmayan kalp venleri ve açıldıkları yerler:<div><br></div><div>Vv. {{c1::cardiacae minimae}} (Thebesius venleri) → {{c2::tüm kalp boşluklarına}} açılır<div><br></div><div>Vv. {{c1::ventriculi dextri anteriores}} (vv. cardiacae anteriores) → {{c2::direkt sağ atriyuma}} açılır</div><div><br></div><div>V. {{c1::marginalis dextra}} → {{c2::direkt sağ atriyuma}} açılır</div></div>",
+     "after": "Sinus coronarius'a açılmayan kalp venleri ve açıldıkları yerler:<div><br></div><div>Vv. {{c1::cardiacae minimae}} → {{c2::tüm kalp boşluklarına}} açılır<div><br></div><div>Vv. {{c1::ventriculi dextri anteriores}} → {{c2::direkt sağ atriyuma}} açılır</div><div><br></div><div>V. {{c1::marginalis dextra}} → {{c2::direkt sağ atriyuma}} açılır</div></div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603921647084,
+   "guid": "IW,dm!fsF:",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Gıdaların ve yabancı cisimlerin takılabildiği yerdir; mukoza altındaki sinir hasarlanabilir.",
+     "after": "Gıdaların takılabildiği yerdir."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1603921703363,
+   "guid": "G+X4%JB^#0",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Özofagus darlıkları (4):<div><br></div><div>1- {{c1::Başlangıç}} (pharyngoesophageal bileşke, en dar yeri)<div><br></div><div>2- {{c1::Arcus aortae}} çaprazı</div><div><br></div><div>3- {{c1::Bronchus principalis sinister}} çaprazı</div><div><br></div><div>4- {{c1::Diaphragma}} (hiatus oesophageus)</div></div>",
+     "after": "Özofagus darlıkları (4):<div><br></div><div>1- {{c1::Başlangıç}} (en dar yeri)<div><br></div><div>2- {{c1::Arcus aortae}} çaprazı</div><div><br></div><div>3- {{c1::Bronchus principalis sinister}} çaprazı</div><div><br></div><div>4- {{c1::Diaphragma}}</div></div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603921859956,
+   "guid": "IchvPn%oId",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Lig. splenorenale'nin (lienorenale) içinde bulunan yapılar:<div><br></div><div>{{c1::cauda pancreatis (pankreas kuyruğu)<br>a. ve v. splenica}}</div>",
+     "after": "Lig. splenorenale'nin içinde bulunan yapılar:<div><br></div><div>{{c1::cauda pancreatis<br>a. ve v. splenica}}</div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603922009290,
+   "guid": "Q`njgZ,b7^",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Radix mesenterii'nin önden çaprazladığı yapılar:<div><br></div><div>{{c1::pars horizontalis duodeni}}<div>{{c1::aorta abdominalis}}</div><div>{{c1::v. cava inferior}}</div><div>{{c1::sağ üreter}}</div><div>{{c1::a. ve v. testicularis (veya ovarica) dextra}}</div><div>{{c1::m. psoas major dexter}}</div></div>",
+     "after": "Radix mesenterii'nin önden çaprazladığı yapılar:<div><br></div><div>{{c1::pars horizontalis duodeni}}<div>{{c1::aorta abdominalis}}</div><div>{{c1::v. cava inferior}}</div><div>{{c1::sağ üreter}}</div><div>{{c1::a. ve v. testicularis dextra}}</div><div>{{c1::m. psoas major dexter}}</div></div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603922134378,
+   "guid": "Otu0[o`9k)",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Ductus excretorius (vesicula seminalis) + ductus deferens → {{c1::ductus ejaculatorius}}",
+     "after": "Ductus excretorius + ductus deferens → {{c1::ductus ejaculatorius}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1603922232707,
+   "guid": "g:*^vl-@,P",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Histerektomi sırasında yaralanma riski yüksek olan otonom pleksustur.",
+     "after": "Histerektomide önemlidir."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1604006825983,
+   "guid": "oT$ql&)8jS",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Koku (CN I) ve tat (CN VII, IX, X) duyularını taşır.",
+     "after": "Koku ve tat duyusu."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1604006849666,
+   "guid": "e}mvxv<Y^U",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Görme (CN II) ile işitme ve denge (CN VIII) duyularını taşır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604007527295,
+   "guid": "DG&^DOAc-%",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Fasciculus gracilis ile fasciculus cuneatus'u birbirinden ayırır; T6 altında fasciculus cuneatus bulunmadığı için bu oluk da yoktur.",
+     "after": "Fasciculus gracilis ile fasciculus cuneatus'u ayırır."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1604007711510,
+   "guid": "Dvv5)$ipC]",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "PICA sendromunda bulbus medialindeki bu yapılar korunur.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604007999885,
+   "guid": "w{?7i/;_12",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Dejerine-Roussy talamik ağrı sendromu olarak bilinir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604008251748,
+   "guid": "c?kKXW]3>l",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Gyrus angularis (Brodmann 39), {{c1::kortikal okuma}} merkezidir",
+     "after": "Gyrus angularis, {{c1::kortikal okuma}} merkezidir"
+    },
+    "Extra": {
+     "before": "Lezyonunda aleksi ve Gerstmann sendromu görülür.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1604008401482,
+   "guid": "QgTBz$Dy3R",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Dura mater'i besleyen arterler:<div><br></div><div>a. {{c1::meningea media}}<div><br></div><div>a. {{c2::ophthalmica}} dalları (a. ethmoidalis anterior ve posterior)</div><div><br></div><div>a. {{c1::pharyngea ascendens}}</div><div><br></div><div>a. {{c2::occipitalis}}</div><div><br></div><div>a. {{c1::vertebralis}}</div></div>",
+     "after": "Dura mater'i besleyen arterler:<div><br></div><div>a. {{c1::meningea media}}<div><br></div><div>a. {{c2::ophthalmica}} dalları</div><div><br></div><div>a. {{c1::pharyngea ascendens}}</div><div><br></div><div>a. {{c2::occipitalis}}</div><div><br></div><div>a. {{c1::vertebralis}}</div></div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1604008523213,
+   "guid": "z39:c;ZY}1",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Ramus communicans griseus ise tüm spinal sinirlerde (C1-Co) bulunur.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604008612797,
+   "guid": "rk9]*|`hu&",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Postganglionik sempatik lifler içerir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604008659996,
+   "guid": "G5/rx|.:|~",
+   "ordinals": [
+    1,
+    2,
+    3
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c1::N. petrosus profundus}} (sempatik) + {{c2::n. petrosus major}} (parasempatik) → {{c3::n. canalis pterygoidei (Vidian siniri)}}",
+     "after": "{{c1::N. petrosus profundus}} (sempatik) + {{c2::n. petrosus major}} (parasempatik) → {{c3::n. canalis pterygoidei}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1604008740515,
+   "guid": "euB<;5QMp%",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Nn. splanchnici pelvici (S2-S4) ile aynı spinal segmentlerden kök alan periferik sinir → {{c1::n. pudendus}}",
+     "after": "Nn. splanchnici pelvici ile aynı spinal segmentlerden kök alan periferik sinir → {{c1::n. pudendus}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1604008793993,
+   "guid": "bF^z@44X8`",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Presinaptikleri ganglion submandibulare'ye, postsinaptikleri bezlere taşır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1604008841600,
+   "guid": "ujxA5f[&i)",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c1::Hipertropya}}: vertikal şaşılık (göz küresinin yukarı kayması)",
+     "after": "{{c1::Hipertropya}}: vertikal şaşılık"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1604009102192,
+   "guid": "Q05D&1:L~s",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Orta kulak ile iç kulak arasındaki kemiksel bağlantı (stapes tabanının oturduğu yer) → {{c1::fenestra vestibuli (oval pencere)}}",
+     "after": "Orta kulak ile iç kulak arasındaki kemiksel bağlantı → {{c1::fenestra vestibuli (oval pencere)}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606371007243,
+   "guid": "c(MMI6Mb1`",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Tuberositas radii'ye tutunan fleksör ve supinatör kas ise m. biceps brachii'dir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1606373302561,
+   "guid": "LH*~>3mi~X",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Caput tali'yi alttan destekler.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1606376734202,
+   "guid": "eF<xyhPee[",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Superficiale median, profundum ulnar sinirle uyarılır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1606378140391,
+   "guid": "oaVI=N>HBg",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Ayakta kapalı kinetik zincirde bacağın rotasyonu:<div><br></div><div>İnversiyon (supinasyon) → bacakta {{c1::dış}} rotasyon<div><br></div><div>Eversiyon (pronasyon) → bacakta {{c1::iç}} rotasyon</div></div>",
+     "after": "Ayakta kapalı kinetik zincirde bacağın rotasyonu:<div><br></div><div>İnversiyon → bacakta {{c1::dış}} rotasyon<div><br></div><div>Eversiyon → bacakta {{c1::iç}} rotasyon</div></div>"
+    },
+    "Extra": {
+     "before": "Açık zincirde inversiyon mediale, eversiyon laterale baktırır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606394591418,
+   "guid": "p06[xHpY=6",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Paranazal sinüslerin açılma yerleri:<div><br></div><div><b>Meatus nasi superior</b> → {{c1::cellulae ethmoidales posteriores}}<div><br></div><div><b>Meatus nasi inferior</b> → {{c1::ductus nasolacrimalis}}</div><div><br></div><div><b>Recessus sphenoethmoidalis</b> → {{c1::sinus sphenoidalis}}</div><div><br></div><div><b>Meatus nasi medius:</b><div>Recessus frontonasalis (infundibulum) → {{c2::sinus frontalis}}</div><div>Hiatus semilunaris → {{c2::sinus maxillaris}}</div><div>Bulla ethmoidalis ve hiatus → {{c2::cellulae ethmoidales anteriores ve mediae}}</div></div></div>",
+     "after": "Paranazal sinüslerin açılma yerleri:<div><br></div><div><b>Meatus nasi superior</b> → {{c1::cellulae ethmoidales posteriores}}<div><br></div><div><b>Meatus nasi inferior</b> → {{c1::ductus nasolacrimalis}}</div><div><br></div><div><b>Recessus sphenoethmoidalis</b> → {{c1::sinus sphenoidalis}}</div><div><br></div><div><b>Meatus nasi medius:</b><div>Recessus frontonasalis → {{c2::sinus frontalis}}</div><div>Hiatus semilunaris → {{c2::sinus maxillaris}}</div><div>{{c2::cellulae ethmoidales anteriores ve mediae}}</div></div></div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606395343856,
+   "guid": "Jck!(L)f|@",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Rima glottidis'i açan tek kas → m. {{c1::cricoarytenoideus posterior}} (m. posticus)",
+     "after": "Rima glottidis'i açan tek kas → m. {{c1::cricoarytenoideus posterior}}"
+    },
+    "Extra": {
+     "before": "Vokal kordlara abduksiyon yaptıran tek larenks kasıdır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2).",
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606396447523,
+   "guid": "wRde<P$v}H",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Lingula pulmonis ve incisura cardiaca'nın ait olduğu akciğer lobu:<div><br></div><div>{{c1::sol}} akciğerin {{c1::üst}} lobu (lobus superior)</div>",
+     "after": "Lingula pulmonis ve incisura cardiaca'nın ait olduğu akciğer lobu:<div><br></div><div>{{c1::sol}} akciğerin {{c1::üst}} lobu</div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606399644775,
+   "guid": "Bv0]8<;#X{",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Isthmus faucium'u (orofaringeal isthmus) daraltan kas: M. {{c1::palatoglossus}}",
+     "after": "Isthmus faucium'u daraltan kas: M. {{c1::palatoglossus}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606474648032,
+   "guid": "n/q!iOUU8h",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Cartilago thyroidea'nın üst kenarı seviyesine karşılık gelir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1606477594101,
+   "guid": "wzhkC7hgxf",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Angulus venosus'u (Pirogoff açısı) oluşturan venler:<br><br><br>v. {{c1::subclavia}}<br>v. {{c1::jugularis interna}}",
+     "after": "Angulus venosus'u oluşturan venler:<br><br><br>v. {{c1::subclavia}}<br>v. {{c1::jugularis interna}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606479971655,
+   "guid": "BQs`|5uxgh",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Üreteri önden çaprazlayan yapılar (ODTÜ):<br><br><br><b>O</b>: {{c1::Ovaryan}} damarlar (vasa ovarica)<br><b>D</b>: {{c2::Ductus deferens}}<br><b>T</b>: {{c1::Testiküler}} damarlar (vasa testicularia)<br><b>U</b>: {{c2::Uterin}} arter (a. uterina)<br><br><br>Üreteri arkadan çaprazlayan yapılar (EGO):<br><br><br><b>E</b>: {{c1::Eksternal iliyak}} arter (a. iliaca externa)<br><b>G</b>: {{c2::Genitofemoral}} sinir (n. genitofemoralis)<br><b>O</b>: {{c1::Obturator}} arter (a. obturatoria)",
+     "after": "Üreteri önden çaprazlayan yapılar (ODTÜ):<br><br><br><b>O</b>: {{c1::Ovaryan}} damarlar<br><b>D</b>: {{c2::Ductus deferens}}<br><b>T</b>: {{c1::Testiküler}} damarlar<br><b>U</b>: {{c2::Uterin}} arter<br><br><br>Üreteri arkadan çaprazlayan yapılar (EGO):<br><br><br><b>E</b>: {{c1::Eksternal iliyak}} arter<br><b>G</b>: {{c2::Genitofemoral}} sinir<br><b>O</b>: {{c1::Obturator}} arter"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606480126098,
+   "guid": "w%%8wojc-D",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Glandula bulbourethralis'in (Cowper bezi) kanallarının açıldığı üretra bölümü:<br><br><br>Pars {{c1::spongiosa}}",
+     "after": "Glandula bulbourethralis'in kanallarının açıldığı üretra bölümü:<br><br><br>Pars {{c1::spongiosa}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606484879862,
+   "guid": "hQjqOs=.9m",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "V. magna cerebri'nin (Galen veni) döküldüğü dural sinüs:<br><br><br>Sinus {{c1::rectus}}",
+     "after": "V. magna cerebri'nin döküldüğü dural sinüs:<br><br><br>Sinus {{c1::rectus}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606485145180,
+   "guid": "f:>wc;7y+L",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "BOS'un 4. ventrikülden cisterna {{c1::cerebellomedullaris}}'e (cisterna magna) geçmesini sağlayan açıklık:<br><br><br>Foramen {{c2::magendie (apertura mediana)}}",
+     "after": "BOS'un 4. ventrikülden cisterna {{c1::cerebellomedullaris}}'e geçmesini sağlayan açıklık:<br><br><br>Foramen {{c2::magendie (apertura mediana)}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1606488985301,
+   "guid": "gXAgQ9jx_7",
+   "ordinals": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "fields": {
+    "Text": {
+     "before": "Cavitas tympanica (orta kulak) duvar yapıları:<br><br><br>Ön duvar: {{c1::Tuba auditiva}} / M. {{c2::tensor tympani}} / A. {{c1::carotis interna}}<br><br><br>İç duvar: {{c2::Promontorium}} / {{c3::Prominentia}}'lar / {{c2::Fenestra}}'lar<br><br><br>Arka duvar: Antrum {{c3::mastoideum}} / {{c4::Eminentia pyramidalis}} (m. stapedius)<br><br><br>Üst duvar: {{c4::Tegmen tympani}}",
+     "after": "Cavitas tympanica (orta kulak) duvar yapıları:<br><br><br>Ön duvar: {{c1::Tuba auditiva}} / M. {{c2::tensor tympani}} / A. {{c1::carotis interna}}<br><br><br>İç duvar: {{c2::Promontorium}} / {{c3::Prominentia}}'lar / {{c2::Fenestra}}'lar<br><br><br>Arka duvar: Antrum {{c3::mastoideum}} / {{c4::Eminentia pyramidalis}}<br><br><br>Üst duvar: {{c4::Tegmen tympani}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609007140806,
+   "guid": "ziCd>OK)O/",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "{{c1::Tuberculum caroticum}} (Chassaignac tüberkülü) → C{{c1::6}}:<br><br><br>A. {{c2::carotis communis}} bu kabartıya bastırılarak komprese edilir",
+     "after": "{{c1::Tuberculum caroticum}} → C{{c1::6}}:<br><br><br>A. {{c2::carotis communis}} bu kabartıya bastırılarak komprese edilir"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609010475255,
+   "guid": "m!F?9_^n<)",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Art. ellipsoidea (iki eksenli eklem — aktif rotasyon {{c1::yoktur}}) örnekleri:<br><br><br>Art. {{c1::radiocarpalis}}<br>Art. {{c1::atlantooccipitalis}}<br>Artt. {{c2::metacarpophalangeae}}<br>Artt. {{c2::metatarsophalangeae}}",
+     "after": "Art. ellipsoidea (aktif rotasyon {{c1::yoktur}}) örnekleri:<br><br><br>Art. {{c1::radiocarpalis}}<br>Art. {{c1::atlantooccipitalis}}<br>Artt. {{c2::metacarpophalangeae}}<br>Artt. {{c2::metatarsophalangeae}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609010567205,
+   "guid": "Ojm1$WKdrg",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Art. sellaris (eyer tipi eklem — pasif rotasyon {{c1::vardır}}) örnekleri:<br><br><br>Art. {{c1::carpometacarpalis pollicis}}<br>Art. {{c2::sternoclavicularis}}<br>Art. {{c1::calcaneocuboidea}}<br>Art. {{c2::incudomallearis}}",
+     "after": "Art. sellaris (pasif rotasyon {{c1::vardır}}) örnekleri:<br><br><br>Art. {{c1::carpometacarpalis pollicis}}<br>Art. {{c2::sternoclavicularis}}<br>Art. {{c1::calcaneocuboidea}}<br>Art. {{c2::incudomallearis}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609011092823,
+   "guid": "s^QM6M(McU",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Chopart eklemini (art. tarsi transversa) oluşturan eklemler:<br><br><br>Art. {{c1::calcaneocuboidea}}<br><br><br>Art. {{c1::talocalcaneonavicularis}} (pars talonavicularis)",
+     "after": "Chopart eklemini (art. tarsi transversa) oluşturan eklemler:<br><br><br>Art. {{c1::calcaneocuboidea}}<br><br><br>Art. {{c1::talonavicularis}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609066621834,
+   "guid": "pa8h+]-xe9",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Plexus brachialis köklerinden (radices) doğrudan çıkan sinirler:<br><br><br>n. {{c1::dorsalis scapulae}} (C5)<br><br><br>n. {{c1::thoracicus longus}} (C5-C7)",
+     "after": "Plexus brachialis köklerinden (radices) doğrudan çıkan sinirler:<br><br><br>n. {{c1::dorsalis scapulae}}<br><br><br>n. {{c1::thoracicus longus}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609080024375,
+   "guid": "n8zR@MX5D-",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Treves'in damarsız plikası (avasküler plika) hangi çıkmazın ön sınırıdır:<br><br><br>Recessus {{c1::ileocaecalis inferior}}",
+     "after": "Treves'in damarsız plikası hangi çıkmazın ön sınırıdır:<br><br><br>Recessus {{c1::ileocaecalis inferior}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609099857518,
+   "guid": "wxD_O__SOQ",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sinus cavernosus'a doğrudan açılan tek dural sinüs:<br><br><br>Sinus {{c1::sphenoparietalis}} (Breschet sinüsü)",
+     "after": "Sinus cavernosus'a doğrudan açılan tek dural sinüs:<br><br><br>Sinus {{c1::sphenoparietalis}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609100192678,
+   "guid": "C}1mzQjf?X",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Cisterna {{c1::quadrigeminalis (superior)}} içindeki oluşumlar:<br><br><br>{{c2::Corpus pineale (epifiz bezi)}}<br>v. {{c2::magna cerebri}} (Galen veni)<br>a. {{c2::cerebri posterior}}<br>n. {{c2::trochlearis}}",
+     "after": "Cisterna {{c1::quadrigeminalis (superior)}} içindeki oluşumlar:<br><br><br>{{c2::Corpus pineale}}<br>v. {{c2::magna cerebri}}<br>a. {{c2::cerebri posterior}}<br>n. {{c2::trochlearis}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609100282230,
+   "guid": "L?S.$<*8qV",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Cisterna {{c2::fossae lateralis cerebri}} (Sylvius sisternası) içinde bulunan arter:<br><br><br>{{c1::A. cerebri media}}",
+     "after": "Cisterna {{c2::fossae lateralis cerebri}} içinde bulunan arter:<br><br><br>{{c1::A. cerebri media}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609101737514,
+   "guid": "Ag3pJ8G#wl",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Kranyal sinirlerin parasempatik (GVE) nükleusları:<br><br><br>CN III: {{c1::Nucleus accessorius n. oculomotorii (Edinger-Westphal)}}<br><br><br>CN VII: Nucleus {{c1::salivatorius superior}}<br><br><br>CN IX: Nucleus {{c1::salivatorius inferior}}<br><br><br>CN X: Nucleus {{c1::posterior (dorsalis) n. vagi}}",
+     "after": "Kranyal sinirlerin parasempatik (GVE) nükleusları:<br><br><br>CN III: {{c1::Nucleus accessorius n. oculomotorii}}<br><br><br>CN VII: Nucleus {{c1::salivatorius superior}}<br><br><br>CN IX: Nucleus {{c1::salivatorius inferior}}<br><br><br>CN X: Nucleus {{c1::posterior (dorsalis) n. vagi}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609137905717,
+   "guid": "xN<E4JFs9P",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Çekirdek lezyonu kontralateral (karşı taraf) belirti veren tek kranyal sinir:<br><br><br>{{c1::4}}. kranyal sinir (n. trochlearis)",
+     "after": "Çekirdek lezyonu kontralateral belirti veren tek kranyal sinir:<br><br><br>{{c1::4}}. kranyal sinir"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609148725060,
+   "guid": "sK&zpipcYw",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Her bir tarafta 4 adet (superior, inferior, medialis, lateralis).",
+     "after": "Her iki tarafta dörder adet."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1609166763519,
+   "guid": "gz-79f5ltM",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "İç kulakta {{c2::sacculus}} ile {{c2::ductus cochlearis}} arasındaki bağlantı kanalı:<br><br><br>Ductus {{c1::reuniens}} (Hensen kanalı)",
+     "after": "İç kulakta {{c2::sacculus}} ile {{c2::ductus cochlearis}} arasındaki bağlantı kanalı:<br><br><br>Ductus {{c1::reuniens}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609228848941,
+   "guid": "nOMK;=k>pD",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Anulus femoralis'in medial (iç) sınırı: Lig. {{c1::lacunare}} (Gimbernat bağı)",
+     "after": "Anulus femoralis'in medial (iç) sınırı: Lig. {{c1::lacunare}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609245256497,
+   "guid": "j?*jcmyGPy",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Anal kanalda her bir columna analis (Morgagni sütunu) altında yer alan damar dalları:<br><br><br>A. ve V. {{c1::rectalis superior}} uç dalları",
+     "after": "Anal kanalda her bir columna analis altında yer alan damar dalları:<br><br><br>A. ve V. {{c1::rectalis superior}} uç dalları"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609247082589,
+   "guid": "jkHL|;<^]t",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Yutma esnasında aditus laryngis'i daraltarak gıdaların larynx ve trakeaya kaçmasını engelleyen kas:<br><br><br>M. {{c1::arytenoideus obliquus ve pars aryepiglottica}}",
+     "after": "Yutma esnasında gıdaların larynx ve trakeaya kaçmasını engelleyen kas:<br><br><br>M. {{c1::arytenoideus obliquus ve pars aryepiglottica}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609271242846,
+   "guid": "t|-}e`w2p5",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Text": {
+     "before": "Foramen epiploicum (Winslow deliği) anatomik sınırları:<br><br><br>Arka sınır: {{c1::V. cava inferior}}<br><br><br>Ön sınır: {{c2::Lig. hepatoduodenale}}<br><br><br>Alt sınır: {{c1::Duodenum 1. parçası (pars superior)}}<br><br><br>Üst sınır: {{c2::Karaciğer lobus caudatus'u}}",
+     "after": "Foramen epiploicum anatomik sınırları:<br><br><br>Arka sınır: {{c1::V. cava inferior}}<br><br><br>Ön sınır: {{c2::Lig. hepatoduodenale}}<br><br><br>Alt sınır: {{c1::Duodenum 1. parçası (pars superior)}}<br><br><br>Üst sınır: {{c2::Karaciğer lobus caudatus'u}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1609273090151,
+   "guid": "uK%DR@2m[b",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Spinal sinirler arasında dermatom alanı bulunmayan tek sinir: {{c1::C1}} spinal sinirinin dermatom alanı yoktur.",
+     "after": "{{c1::C1}} spinal sinirinin dermatom alanı yoktur."
+    },
+    "Extra": {
+     "before": "Deri dalı (ramus cutaneus) bulunmadığı için dermatom alanı yoktur.",
+     "after": "Deri dalı yoktur."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8).",
+    "Aynı soruyu yineleyen yeni giriş cümlesi çıkarıldı; özgün kısa soru-cevap korundu (kural 7)."
+   ]
+  },
+  {
+   "noteId": 1609276923065,
+   "guid": "G@ES`MQ?W[",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Primer tat merkezi (Brodmann alanı {{c1::43}}):<div><br></div><div>Lobus {{c1::parietalis}} (gyrus postcentralis)</div>",
+     "after": "Primer tat merkezi (Brodmann alanı {{c1::43}}):<div><br></div><div>Lobus {{c1::parietalis}}</div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1615968923004,
+   "guid": "Fnt;WA[I-8",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Hem os palatinum hem de maxilla'da aynı isimle bulunan iki kemik kabartısı:<br><br><br>{{c1::Crista conchalis}} (concha nasalis inferior tutunur)<br><br><br>{{c1::Crista ethmoidalis}} (concha nasalis media tutunur)",
+     "after": "Hem os palatinum hem de maxilla'da aynı isimle bulunan iki kemik kabartısı:<br><br><br>{{c1::Crista conchalis}}<br><br><br>{{c1::Crista ethmoidalis}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1615977655788,
+   "guid": "ed%2eU/C*&",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Ayak tabanı kas tabakaları (2. ve 3. tabakalar):<br><br><br>2. tabaka: M. {{c1::quadratus plantae}} ve Mm. {{c1::lumbricales}}<br><br><br>3. tabaka: M. {{c1::adductor hallucis}} (ve m. flexor hallucis brevis)",
+     "after": "Ayak tabanı kas tabakalarına örnekler:<br><br><br>2. tabaka: M. {{c1::quadratus plantae}} ve Mm. {{c1::lumbricales}}<br><br><br>3. tabaka: M. {{c1::adductor hallucis}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1617737041708,
+   "guid": "d;X]x[k#bU",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Chorda tympani'nin kraniumu terk ettiği kemik açıklığı:<br><br><br>{{c1::Fissura petrotympanica}} (Glaser yarığı)",
+     "after": "Chorda tympani'nin kraniumu terk ettiği kemik açıklığı:<br><br><br>{{c1::Fissura petrotympanica}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1618091211344,
+   "guid": "un2{V7vOD=",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">L4 vertebra seviyesinde lumbal ponksiyon için kılavuz olan düzlem: Planum {{c1::supracristale}} (Jacoby çizgisi)</span>",
+     "after": "<span style=\"color: var(--field-fg); background: var(--field-bg);\">L4 vertebra seviyesinde lumbal ponksiyon için kılavuz olan düzlem: Planum {{c1::supracristale}}</span>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1619194120088,
+   "guid": "F]]CP.|ql!",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Gyrus temporalis superior'un arka kısmında (Brodmann 22. alan) yer alır.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1622010532717,
+   "guid": "wC^n3koBUu",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Meniscus lateralis'ten →<br>M. popliteus tendonu aracılığıyla ayrılan yan bağ:<br><br><br>Lig. {{c1::collaterale fibulare}} (LCL)",
+     "after": "Meniscus lateralis'ten →<br>M. popliteus tendonu aracılığıyla ayrılan yan bağ:<br><br><br>Lig. {{c1::collaterale fibulare}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1622303404335,
+   "guid": "JY4EX`/A[X",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Omuz ekleminde abduksiyon ile rahatlayabilen bursa enflamasyonu (Dawbarn belirtisi):<br><br><br>{{c1::Subakromiyal}} bursit (bursa subacromialis)",
+     "after": "Omuz ekleminde abduksiyon ile rahatlayabilen bursa enflamasyonu:<br><br><br>{{c1::Subakromiyal}} bursit"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1622303971561,
+   "guid": "nb.J(jI1o[",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Dizde<br><br><br>Aşırı ekstansiyonu lig. cruciatum {{c1::anterius}} önler<br><br><br>Aşırı fleksiyonu lig. cruciatum {{c1::posterius}} önler<br><br><br>Çapraz bağlar aşırı hareketi sınırlar",
+     "after": "Dizde<br><br><br>Aşırı ekstansiyonu lig. cruciatum {{c1::anterius}} önler<br><br><br>Aşırı fleksiyonu lig. cruciatum {{c1::posterius}} önler"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1622379560602,
+   "guid": "u8a+k4=Ih~",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Lig. latum uteri içinde yer almayan dişi üreme organı:<br><br><br>{{c1::Ovarium}} (arka yaprağa tutunur)",
+     "after": "Lig. latum uteri içinde yer almayan dişi üreme organı:<br><br><br>{{c1::Ovarium}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1624005481952,
+   "guid": "HI0Z8C-e,E",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Safra kesesinin viseral yansıyan ağrısını taşıyan sinir:<br><br><br>N. {{c1::splanchnicus major}} (T7-T9)",
+     "after": "Safra kesesinin viseral yansıyan ağrısını taşıyan sinir:<br><br><br>N. {{c1::splanchnicus major}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1624126756946,
+   "guid": "eRB=z!%~m~",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Daha hareketli olan ve neredeyse tam halka oluşturan menisküs:<br><br><br>Meniscus {{c1::lateralis}}",
+     "after": "Daha geniş ve daha hareketli olan menisküs:<br><br><br>Meniscus {{c1::lateralis}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1624127231212,
+   "guid": "wxZP|<Wkor",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Göz lateralindeki kırışıklıklardan (kaz ayağı) sorumlu mimik kası:<br><br><br>M. {{c1::orbicularis oculi}} (pars orbitalis)",
+     "after": "Göz lateralindeki kırışıklıklardan sorumlu mimik kası:<br><br><br>M. {{c1::orbicularis oculi}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1625213397650,
+   "guid": "M2IC,hwpw+",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Incisura acetabuli'nin üzerini köprüleyerek foramen haline getirir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1625234418802,
+   "guid": "t0je%zm3.f",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Trigonum lumbale superius'un (Grynfelt) sınırına katılmaz.",
+     "after": "Trigonum lumbale superius'un sınırına katılmaz."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1625234601035,
+   "guid": "L9:Ax+c>?H",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "N. glossopharyngeus'un dalı olan n. tympanicus (Jacobson siniri) cavitas tympanica'ya hangi duvardan girer:<br><br><br>{{c1::Alt}} duvardan (paries jugularis) girer",
+     "after": "N. glossopharyngeus'un dalı olan n. tympanicus cavitas tympanica'ya hangi duvardan girer:<br><br><br>{{c1::Alt}} duvardan girer"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1625409732645,
+   "guid": "H-@)J==IXW",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "A. vertebralis foramen magnum'dan geçer, v. vertebralis geçmez.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1625409788252,
+   "guid": "Lmjo*1;BNJ",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "A. pancreatica magna hangi ana damarın dalıdır:<br><br><br>A. {{c1::splenica}}'nın (lienalis) dalıdır",
+     "after": "A. pancreatica magna hangi ana damarın dalıdır:<br><br><br>A. {{c1::splenica}}'nın dalıdır"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1625580116719,
+   "guid": "cx!GbyZV2*",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Bursa omentalis foramen omentale (Winslow) aracılığıyla hangi periton çıkmazı ile bağlantı kurar:<br><br><br>{{c1::Recessus hepatorenalis (sağ subhepatik alan - Morison kesesi)}}",
+     "after": "Bursa omentalis'in ilişkili olduğu periton çıkmazı:<br><br><br>{{c1::Recessus hepatorenalis (sağ subhepatik alan - Morison kesesi)}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1625684829711,
+   "guid": "s#/[T,+TC_",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Plica nervi laryngei hangi farinks bölümünde bulunur:<br><br><br>{{c1::Laryngopharynx}}'tedir (recessus piriformis)",
+     "after": "Plica nervi laryngei hangi farinks bölümünde bulunur:<br><br><br>{{c1::Laryngopharynx}}'tedir"
+    },
+    "Extra": {
+     "before": "Larynx içinde değildir; laryngopharynx'teki recessus piriformis tabanındadır (r. internus n. laryngei superioris kaldırır).",
+     "after": "Larynx içinde değildir; recessus piriformis'tedir."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8).",
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1626524682672,
+   "guid": "B9zAy5-{JV",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Yüksek sese karşı akustik refleks ile kasılarak iç kulağı koruyan kaslar:<br><br><br>m. {{c1::tensor tympani}} (CN V3)<br><br><br>m. {{c1::stapedius}} (CN VII)",
+     "after": "Yüksek sese karşı akustik refleks ile kasılarak iç kulağı koruyan kaslar:<br><br><br>m. {{c1::tensor tympani}}<br><br><br>m. {{c1::stapedius}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1627047104138,
+   "guid": "Q62/A#`.P0",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "M. sphincter ani internus ile externus'un alt sınırını ayıran hat:<br><br><br>{{c1::Linea anocutanea}} (Hilton beyaz çizgisi)",
+     "after": "M. sphincter ani internus ile externus'un alt sınırını ayıran hat:<br><br><br>{{c1::Linea anocutanea}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1627400393858,
+   "guid": "KX%4lA;spC",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Lateralde a. subclavia ve plexus brachialis'i sararak vagina axillaris'i oluşturur.",
+     "after": "Vagina axillaris'i oluşturur."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1627400574380,
+   "guid": "PgBr:lkls7",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Scapula'ya protraksiyon (öne çekme) yaptıran başlıca kaslar:<br><br><br>m. {{c1::serratus anterior}}<br><br><br>m. {{c1::pectoralis minor}}",
+     "after": "Scapula'ya protraksiyon yaptıran başlıca kaslar:<br><br><br>m. {{c1::serratus anterior}}<br><br><br>m. {{c1::pectoralis minor}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1627409755284,
+   "guid": "rb_vjgoJMM",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Tractus tectospinalis'in başlangıcı ve yaptığı tegmental çapraz:<br><br><br>Başlangıç merkezi: {{c1::Colliculus superior}}<br><br><br>Yaptığı çapraz: Decussatio tegmentalis {{c1::posterior}} (Meynert çaprazı)",
+     "after": "Tractus tectospinalis'in başlangıcı ve yaptığı tegmental çapraz:<br><br><br>Başlangıç merkezi: {{c1::Colliculus superior}}<br><br><br>Yaptığı çapraz: Decussatio tegmentalis {{c1::posterior}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1627968128663,
+   "guid": "c{>Eq,J>e]",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Benedikt sendromunda (paramedian mezensefalik sendrom) etkilenen yapılar:<br><br><br>{{c1::Mesencephalon tegmentum'u ve nucleus ruber}} (ve CN III lifleri)",
+     "after": "Benedikt sendromunda etkilenen yapılar:<br><br><br>{{c1::Mesencephalon tegmentum'u ve nucleus ruber}}"
+    },
+    "Extra": {
+     "before": "Tractus corticospinalis tegmentumda olmadığı için bu sendromda etkilenmez.",
+     "after": "Tractus corticospinalis etkilenmez."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8).",
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1627984965103,
+   "guid": "o~c<Fc3roY",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Duodenum komşulukları:<div><br></div><div><b>Pars superior:</b></div><div><b>Arka</b>: A. {{c1::gastroduodenalis}}</div><div><br></div><div><b>Pars horizontalis (inferior):</b></div><div><b>Arka</b>: {{c1::V. cava inferior}}</div><div><b>Ön</b>: {{c1::Radix mesenterii (a. ve v. mesenterica superior)}}</div>",
+     "after": "Duodenum komşulukları:<div><br></div><div><b>Pars superior:</b></div><div><b>Arka</b>: A. {{c1::gastroduodenalis}}</div><div><br></div><div><b>Pars horizontalis (inferior):</b></div><div><b>Arka</b>: {{c1::V. cava inferior}}</div><div><b>Ön</b>: {{c1::Radix mesenterii}}</div>"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1628948410631,
+   "guid": "J|^g75.Wr6",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Her iki sinir de plexus brachialis'in doğrudan köklerinden (radices) çıkan dallardır.",
+     "after": "Plexus brachialis köklerinden çıkan dallardır."
+    }
+   },
+   "actions": [
+    "Özgün kısa arka yüz bilgisi korundu; eklenen kas/sinir listesi, klinik açıklama veya mekanizma çıkarıldı (kural 2, 4, 5, 6, 8)."
+   ]
+  },
+  {
+   "noteId": 1628964300127,
+   "guid": "L@up:|i3^;",
+   "ordinals": [
+    1,
+    2
+   ],
+   "fields": {
+    "Extra": {
+     "before": "Yüz venleri kapaksızdır; enfeksiyon retrograd yayılabilir.",
+     "after": ""
+    }
+   },
+   "actions": [
+    "Özgün kartta olmayan arka yüz açıklaması kaldırıldı (kural 2)."
+   ]
+  },
+  {
+   "noteId": 1629006481796,
+   "guid": "h1><=w0[T&",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Formatio hippocampi:<br><br><br>Hippocampus (cornu Ammonis)<br>+<br>Gyrus {{c1::dentatus}}<br>+<br>{{c1::Subiculum}}",
+     "after": "Formatio hippocampi:<br><br><br>Hippocampus<br>+<br>Gyrus {{c1::dentatus}}<br>+<br>{{c1::Subiculum}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1629026049209,
+   "guid": "f,+n)qGv)4",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Foramen interventriculare (Monro) hizasında birleşerek v. interna cerebri'yi oluşturan venler:<br><br><br>v. {{c1::thalamostriata superior}} + v. {{c1::anterior septi pellucidi}}",
+     "after": "Foramen interventriculare hizasında birleşerek v. interna cerebri'yi oluşturan venler:<br><br><br>v. {{c1::thalamostriata superior}} + v. {{c1::anterior septi pellucidi}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1629790011594,
+   "guid": "KxE=4`)A/?",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sinus venosus sclerae'nin (Schlemm kanalı) drene olduğu venler:<br><br><br>Vv. {{c1::ciliares anteriores}} (ve episkleral venler)",
+     "after": "Sinus venosus sclerae'nin (Schlemm kanalı) drene olduğu venler:<br><br><br>Vv. {{c1::ciliares anteriores}}"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  },
+  {
+   "noteId": 1629920748054,
+   "guid": "Lp}D}B+Kgg",
+   "ordinals": [
+    1
+   ],
+   "fields": {
+    "Text": {
+     "before": "Sempatik postganglionik liflerin hedef dağılımları:<br><br><br>Paravertebral ganglionlardan (truncus sympathicus) çıkan lifler: {{c1::Deri ve eklerine}} (damarlar, ter bezleri) gider<br><br><br>Prevertebral ganglionlardan çıkan lifler: {{c1::Viseral organlara}} (iç organlar) gider",
+     "after": "Sempatik postganglionik liflerin hedef dağılımları:<br><br><br>Paravertebral ganglionlardan (truncus sympathicus) çıkan lifler: {{c1::Deri ve eklerine}} gider<br><br><br>Prevertebral ganglionlardan çıkan lifler: {{c1::Viseral organlara}} gider"
+    }
+   },
+   "actions": [
+    "Ana metne eklenen açıklama, parantez, yeni örnek veya liste üyesi çıkarıldı (kural 3, 4, 6)."
+   ]
+  }
+ ],
+ "noteRowsBefore": [
+  [
+   1603894841863,
+   "nva(nv/B#d",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Fonticulus posterolateralis'in kapandığı kraniyometrik nokta → {{c1::Asterion}}\u001fFonticulus posterolateralis (mastoid bıngıldak) erişkinde Asterion noktasına karşılık gelir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Fonticulus posterolateralis'in kapandığı kraniyometrik nokta → {{c1::Asterion}}",
+   1337907002,
+   0,
+   ""
+  ],
+  [
+   1603895152992,
+   "un[h?:LbyP",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "M. popliteus, diz ekleminin {{c1::ekstansiyonda}} kilitlenmesini çözer\u001fTendonu diz eklemi kapsülü içinden geçer (intrakapsülerdir).\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "M. popliteus, diz ekleminin {{c1::ekstansiyonda}} kilitlenmesini çözer",
+   3062038630,
+   0,
+   ""
+  ],
+  [
+   1603895516253,
+   "F&/,[w6<8D",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Ön kolda tamamen n. ulnaris tarafından innerve edilen tek kas:<div><br></div><div>{{c1::m. flexor carpi ulnaris}}</div>\u001fM. flexor digitorum profundus'un medial yarısı da uyarılır; os pisiforme bu kasın tendonu içindedir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Ön kolda tamamen n. ulnaris tarafından innerve edilen tek kas:{{c1::m. flexor carpi ulnaris}}",
+   3341631518,
+   0,
+   ""
+  ],
+  [
+   1603895845803,
+   "Iaz,46%qly",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Lacuna <b>vasorum</b>'un içinden geçen yapılar (3):<div><br></div><div>{{c1::anulus femoralis}}<div>{{c1::a. ve v. femoralis}}</div><div>{{c1::r. femoralis nervi genitofemoralis}}</div><br><div>({{c1::n. femoralis}} yoktur, lacuna musculorum'dan geçer)</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Lacuna vasorum'un içinden geçen yapılar (3):{{c1::anulus femoralis}}{{c1::a. ve v. femoralis}}{{c1::r. femoralis nervi genitofemoralis}}({{c1::n. femoralis}} yoktur, lacuna musculorum'dan geçer)",
+   3567816183,
+   0,
+   ""
+  ],
+  [
+   1603896204692,
+   "QP*IE&c1i4",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "M. fibularis (peroneus) tertius'un ayağa yaptırdığı hareketler → {{c1::ekstansiyon ve eversiyon}}\u001fEversiyon yaptırmasına rağmen anterior kompartmanda yer aldığından <b>n. fibularis profundus</b> tarafından uyarılır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "M. fibularis (peroneus) tertius'un ayağa yaptırdığı hareketler → {{c1::ekstansiyon ve eversiyon}}",
+   703161493,
+   0,
+   ""
+  ],
+  [
+   1603896449646,
+   "o>dE[^H}vD",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Ductus parotideus (Stensen kanalı) → m. {{c1::buccinator}}'u deler\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Ductus parotideus (Stensen kanalı) → m. {{c1::buccinator}}'u deler",
+   865927953,
+   0,
+   ""
+  ],
+  [
+   1603896481991,
+   "K-(O4cuy?]",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "M. pterygoideus lateralis → ağzı {{c1::açar}}\u001fÇiğneme kasları içinde ağzı açan (mandibula'ya depresyon yaptıran) tek kastır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "M. pterygoideus lateralis → ağzı {{c1::açar}}",
+   4044938728,
+   0,
+   ""
+  ],
+  [
+   1603897175050,
+   "A&2<qh/U{J",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Trigonum omoclaviculare'nin (supraclaviculare) içinde bulunan yapılar:<div><br></div><div>a. {{c1::subclavia}}<div><br></div><div>plexus brachialis'in {{c2::truncus'ları}}</div><div><br></div><div>nodi lymphoidei {{c1::supraclaviculares}} (Virchow nodülü)</div><div><br></div><div>v. {{c2::jugularis externa}}</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Trigonum omoclaviculare'nin (supraclaviculare) içinde bulunan yapılar:a. {{c1::subclavia}}plexus brachialis'in {{c2::truncus'ları}}nodi lymphoidei {{c1::supraclaviculares}} (Virchow nodülü)v. {{c2::jugularis externa}}",
+   1851616509,
+   0,
+   ""
+  ],
+  [
+   1603897558013,
+   "bjoyV$2UEF",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Sinus sphenoidalis'in lateral (yan) komşuluğu → {{c1::sinus cavernosus}} ve içindeki yapılar\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sinus sphenoidalis'in lateral (yan) komşuluğu → {{c1::sinus cavernosus}} ve içindeki yapılar",
+   3479337119,
+   0,
+   ""
+  ],
+  [
+   1603897705607,
+   "z`bMG$K2DA",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Sağ akciğer hilusu'ndaki yapılar (yukarıdan aşağıya):<div><br></div><div>{{c1::BABV}}<div><br></div><div>{{c1::Bronchus lobaris superior}} (eparteriyel bronş)<div>{{c1::a. pulmonalis}}</div><div>{{c1::bronchus principalis dexter}} (hiparteriyel bronş)</div><div>{{c1::v. pulmonalis inferior}}</div></div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sağ akciğer hilusu'ndaki yapılar (yukarıdan aşağıya):{{c1::BABV}}{{c1::Bronchus lobaris superior}} (eparteriyel bronş){{c1::a. pulmonalis}}{{c1::bronchus principalis dexter}} (hiparteriyel bronş){{c1::v. pulmonalis inferior}}",
+   2964922405,
+   0,
+   ""
+  ],
+  [
+   1603898141130,
+   "kbZl?q}_%?",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Sinus coronarius'a açılmayan kalp venleri ve açıldıkları yerler:<div><br></div><div>Vv. {{c1::cardiacae minimae}} (Thebesius venleri) → {{c2::tüm kalp boşluklarına}} açılır<div><br></div><div>Vv. {{c1::ventriculi dextri anteriores}} (vv. cardiacae anteriores) → {{c2::direkt sağ atriyuma}} açılır</div><div><br></div><div>V. {{c1::marginalis dextra}} → {{c2::direkt sağ atriyuma}} açılır</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sinus coronarius'a açılmayan kalp venleri ve açıldıkları yerler:Vv. {{c1::cardiacae minimae}} (Thebesius venleri) → {{c2::tüm kalp boşluklarına}} açılırVv. {{c1::ventriculi dextri anteriores}} (vv. cardiacae anteriores) → {{c2::direkt sağ atriyuma}} açılırV. {{c1::marginalis dextra}} → {{c2::direkt sağ atriyuma}} açılır",
+   2386008592,
+   0,
+   ""
+  ],
+  [
+   1603921647084,
+   "IW,dm!fsF:",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Laryngopharynx'te <b>recessus piriformis</b> mukozası altından {{c1::n. laryngeus superior'un ramus internus'u}} geçer\u001fGıdaların ve yabancı cisimlerin takılabildiği yerdir; mukoza altındaki sinir hasarlanabilir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Laryngopharynx'te recessus piriformis mukozası altından {{c1::n. laryngeus superior'un ramus internus'u}} geçer",
+   786802346,
+   0,
+   ""
+  ],
+  [
+   1603921703363,
+   "G+X4%JB^#0",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Özofagus darlıkları (4):<div><br></div><div>1- {{c1::Başlangıç}} (pharyngoesophageal bileşke, en dar yeri)<div><br></div><div>2- {{c1::Arcus aortae}} çaprazı</div><div><br></div><div>3- {{c1::Bronchus principalis sinister}} çaprazı</div><div><br></div><div>4- {{c1::Diaphragma}} (hiatus oesophageus)</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Özofagus darlıkları (4):1- {{c1::Başlangıç}} (pharyngoesophageal bileşke, en dar yeri)2- {{c1::Arcus aortae}} çaprazı3- {{c1::Bronchus principalis sinister}} çaprazı4- {{c1::Diaphragma}} (hiatus oesophageus)",
+   690309952,
+   0,
+   ""
+  ],
+  [
+   1603921859956,
+   "IchvPn%oId",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Lig. splenorenale'nin (lienorenale) içinde bulunan yapılar:<div><br></div><div>{{c1::cauda pancreatis (pankreas kuyruğu)<br>a. ve v. splenica}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Lig. splenorenale'nin (lienorenale) içinde bulunan yapılar:{{c1::cauda pancreatis (pankreas kuyruğu)a. ve v. splenica}}",
+   3178778480,
+   0,
+   ""
+  ],
+  [
+   1603922009290,
+   "Q`njgZ,b7^",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Radix mesenterii'nin önden çaprazladığı yapılar:<div><br></div><div>{{c1::pars horizontalis duodeni}}<div>{{c1::aorta abdominalis}}</div><div>{{c1::v. cava inferior}}</div><div>{{c1::sağ üreter}}</div><div>{{c1::a. ve v. testicularis (veya ovarica) dextra}}</div><div>{{c1::m. psoas major dexter}}</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Radix mesenterii'nin önden çaprazladığı yapılar:{{c1::pars horizontalis duodeni}}{{c1::aorta abdominalis}}{{c1::v. cava inferior}}{{c1::sağ üreter}}{{c1::a. ve v. testicularis (veya ovarica) dextra}}{{c1::m. psoas major dexter}}",
+   3759594653,
+   0,
+   ""
+  ],
+  [
+   1603922134378,
+   "Otu0[o`9k)",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Ductus excretorius (vesicula seminalis) + ductus deferens → {{c1::ductus ejaculatorius}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Ductus excretorius (vesicula seminalis) + ductus deferens → {{c1::ductus ejaculatorius}}",
+   3100561479,
+   0,
+   ""
+  ],
+  [
+   1603922232707,
+   "g:*^vl-@,P",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Plexus hypogastricus inferior (pelvicus), {{c1::lig. sacrouterinum}} içindedir\u001fHisterektomi sırasında yaralanma riski yüksek olan otonom pleksustur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Plexus hypogastricus inferior (pelvicus), {{c1::lig. sacrouterinum}} içindedir",
+   1214581688,
+   0,
+   ""
+  ],
+  [
+   1604006825983,
+   "oT$ql&)8jS",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Özel visseral afferent (ÖVA) lif içeren kraniyal sinirler (4):<div><br></div><div>{{c1::CN I, VII, IX ve X}}</div>\u001fKoku (CN I) ve tat (CN VII, IX, X) duyularını taşır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Özel visseral afferent (ÖVA) lif içeren kraniyal sinirler (4):{{c1::CN I, VII, IX ve X}}",
+   3471244957,
+   0,
+   ""
+  ],
+  [
+   1604006849666,
+   "e}mvxv<Y^U",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Özel somatik afferent (ÖSA) lif içeren kraniyal sinirler (2) → {{c1::CN II ve VIII}}\u001fGörme (CN II) ile işitme ve denge (CN VIII) duyularını taşır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Özel somatik afferent (ÖSA) lif içeren kraniyal sinirler (2) → {{c1::CN II ve VIII}}",
+   1636338993,
+   0,
+   ""
+  ],
+  [
+   1604007527295,
+   "DG&^DOAc-%",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Sulcus intermedius posterior sadece {{c1::T6 segmenti üzerinde}} bulunur\u001fFasciculus gracilis ile fasciculus cuneatus'u birbirinden ayırır; T6 altında fasciculus cuneatus bulunmadığı için bu oluk da yoktur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sulcus intermedius posterior sadece {{c1::T6 segmenti üzerinde}} bulunur",
+   196625523,
+   0,
+   ""
+  ],
+  [
+   1604007711510,
+   "Dvv5)$ipC]",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Lateral medüller sendromda (Wallenberg sendromu) lezyona UĞRAMAYAN yapılar:<div><br></div><div>{{c1::tractus corticospinalis anterior ve lateralis<br>n. hypoglossus<br>lemniscus medialis}}</div>\u001fPICA sendromunda bulbus medialindeki bu yapılar korunur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Lateral medüller sendromda (Wallenberg sendromu) lezyona UĞRAMAYAN yapılar:{{c1::tractus corticospinalis anterior ve lateralisn. hypoglossuslemniscus medialis}}",
+   1966110908,
+   0,
+   ""
+  ],
+  [
+   1604007999885,
+   "w{?7i/;_12",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Talamus lezyonlarında {{c1::tüm somatik duyular kontralateral}} kaybolur; belli bir süre sonra {{c2::hiperestezi}} veya {{c2::hiperaljezi}} gelişir\u001fDejerine-Roussy talamik ağrı sendromu olarak bilinir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Talamus lezyonlarında {{c1::tüm somatik duyular kontralateral}} kaybolur; belli bir süre sonra {{c2::hiperestezi}} veya {{c2::hiperaljezi}} gelişir",
+   2510591336,
+   0,
+   ""
+  ],
+  [
+   1604008251748,
+   "c?kKXW]3>l",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Gyrus angularis (Brodmann 39), {{c1::kortikal okuma}} merkezidir\u001fLezyonunda aleksi ve Gerstmann sendromu görülür.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Gyrus angularis (Brodmann 39), {{c1::kortikal okuma}} merkezidir",
+   3604030489,
+   0,
+   ""
+  ],
+  [
+   1604008401482,
+   "QgTBz$Dy3R",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Dura mater'i besleyen arterler:<div><br></div><div>a. {{c1::meningea media}}<div><br></div><div>a. {{c2::ophthalmica}} dalları (a. ethmoidalis anterior ve posterior)</div><div><br></div><div>a. {{c1::pharyngea ascendens}}</div><div><br></div><div>a. {{c2::occipitalis}}</div><div><br></div><div>a. {{c1::vertebralis}}</div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Dura mater'i besleyen arterler:a. {{c1::meningea media}}a. {{c2::ophthalmica}} dalları (a. ethmoidalis anterior ve posterior)a. {{c1::pharyngea ascendens}}a. {{c2::occipitalis}}a. {{c1::vertebralis}}",
+   1429942657,
+   0,
+   ""
+  ],
+  [
+   1604008523213,
+   "z39:c;ZY}1",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Ramus communicans albus sadece {{c1::T1-L2}} segmentleri arasında bulunur\u001fRamus communicans griseus ise tüm spinal sinirlerde (C1-Co) bulunur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Ramus communicans albus sadece {{c1::T1-L2}} segmentleri arasında bulunur",
+   55936289,
+   0,
+   ""
+  ],
+  [
+   1604008612797,
+   "rk9]*|`hu&",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "N. petrosus profundus, saf {{c1::sempatik}} lif taşıyan sinirdir\u001fPostganglionik sempatik lifler içerir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "N. petrosus profundus, saf {{c1::sempatik}} lif taşıyan sinirdir",
+   3350128149,
+   0,
+   ""
+  ],
+  [
+   1604008659996,
+   "G5/rx|.:|~",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "{{c1::N. petrosus profundus}} (sempatik) + {{c2::n. petrosus major}} (parasempatik) → {{c3::n. canalis pterygoidei (Vidian siniri)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "{{c1::N. petrosus profundus}} (sempatik) + {{c2::n. petrosus major}} (parasempatik) → {{c3::n. canalis pterygoidei (Vidian siniri)}}",
+   110226382,
+   0,
+   ""
+  ],
+  [
+   1604008740515,
+   "euB<;5QMp%",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Nn. splanchnici pelvici (S2-S4) ile aynı spinal segmentlerden kök alan periferik sinir → {{c1::n. pudendus}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Nn. splanchnici pelvici (S2-S4) ile aynı spinal segmentlerden kök alan periferik sinir → {{c1::n. pudendus}}",
+   1216120505,
+   0,
+   ""
+  ],
+  [
+   1604008793993,
+   "bF^z@44X8`",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Hem presinaptik hem postsinaptik parasempatik lif taşıyan kraniyal sinir dalı → {{c1::n. lingualis}}\u001fPresinaptikleri ganglion submandibulare'ye, postsinaptikleri bezlere taşır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Hem presinaptik hem postsinaptik parasempatik lif taşıyan kraniyal sinir dalı → {{c1::n. lingualis}}",
+   1327092160,
+   0,
+   ""
+  ],
+  [
+   1604008841600,
+   "ujxA5f[&i)",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "{{c1::Hipertropya}}: vertikal şaşılık (göz küresinin yukarı kayması)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "{{c1::Hipertropya}}: vertikal şaşılık (göz küresinin yukarı kayması)",
+   3633345703,
+   0,
+   ""
+  ],
+  [
+   1604009102192,
+   "Q05D&1:L~s",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Orta kulak ile iç kulak arasındaki kemiksel bağlantı (stapes tabanının oturduğu yer) → {{c1::fenestra vestibuli (oval pencere)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Orta kulak ile iç kulak arasındaki kemiksel bağlantı (stapes tabanının oturduğu yer) → {{c1::fenestra vestibuli (oval pencere)}}",
+   2653685203,
+   0,
+   ""
+  ],
+  [
+   1606371007243,
+   "c(MMI6Mb1`",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Tuberositas ulnae'ye tutunan tek kas → {{c1::m. brachialis}}\u001fTuberositas radii'ye tutunan fleksör ve supinatör kas ise m. biceps brachii'dir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Tuberositas ulnae'ye tutunan tek kas → {{c1::m. brachialis}}",
+   294252100,
+   0,
+   ""
+  ],
+  [
+   1606373302561,
+   "LH*~>3mi~X",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Spring ligament (yay ligament) → lig. {{c1::calcaneonaviculare plantare}}\u001fCaput tali'yi alttan destekler.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Spring ligament (yay ligament) → lig. {{c1::calcaneonaviculare plantare}}",
+   2027506051,
+   0,
+   ""
+  ],
+  [
+   1606376734202,
+   "eF<xyhPee[",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Çift sinirli el kası → m. {{c1::flexor pollicis brevis}}\u001fSuperficiale median, profundum ulnar sinirle uyarılır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Çift sinirli el kası → m. {{c1::flexor pollicis brevis}}",
+   2404566599,
+   0,
+   ""
+  ],
+  [
+   1606378140391,
+   "oaVI=N>HBg",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Ayakta kapalı kinetik zincirde bacağın rotasyonu:<div><br></div><div>İnversiyon (supinasyon) → bacakta {{c1::dış}} rotasyon<div><br></div><div>Eversiyon (pronasyon) → bacakta {{c1::iç}} rotasyon</div></div>\u001fAçık zincirde inversiyon mediale, eversiyon laterale baktırır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Ayakta kapalı kinetik zincirde bacağın rotasyonu:İnversiyon (supinasyon) → bacakta {{c1::dış}} rotasyonEversiyon (pronasyon) → bacakta {{c1::iç}} rotasyon",
+   775694035,
+   0,
+   ""
+  ],
+  [
+   1606394591418,
+   "p06[xHpY=6",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Paranazal sinüslerin açılma yerleri:<div><br></div><div><b>Meatus nasi superior</b> → {{c1::cellulae ethmoidales posteriores}}<div><br></div><div><b>Meatus nasi inferior</b> → {{c1::ductus nasolacrimalis}}</div><div><br></div><div><b>Recessus sphenoethmoidalis</b> → {{c1::sinus sphenoidalis}}</div><div><br></div><div><b>Meatus nasi medius:</b><div>Recessus frontonasalis (infundibulum) → {{c2::sinus frontalis}}</div><div>Hiatus semilunaris → {{c2::sinus maxillaris}}</div><div>Bulla ethmoidalis ve hiatus → {{c2::cellulae ethmoidales anteriores ve mediae}}</div></div></div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Paranazal sinüslerin açılma yerleri:Meatus nasi superior → {{c1::cellulae ethmoidales posteriores}}Meatus nasi inferior → {{c1::ductus nasolacrimalis}}Recessus sphenoethmoidalis → {{c1::sinus sphenoidalis}}Meatus nasi medius:Recessus frontonasalis (infundibulum) → {{c2::sinus frontalis}}Hiatus semilunaris → {{c2::sinus maxillaris}}Bulla ethmoidalis ve hiatus → {{c2::cellulae ethmoidales anteriores ve mediae}}",
+   977712114,
+   0,
+   ""
+  ],
+  [
+   1606395343856,
+   "Jck!(L)f|@",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Rima glottidis'i açan tek kas → m. {{c1::cricoarytenoideus posterior}} (m. posticus)\u001fVokal kordlara abduksiyon yaptıran tek larenks kasıdır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Rima glottidis'i açan tek kas → m. {{c1::cricoarytenoideus posterior}} (m. posticus)",
+   3669466403,
+   0,
+   ""
+  ],
+  [
+   1606396447523,
+   "wRde<P$v}H",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Lingula pulmonis ve incisura cardiaca'nın ait olduğu akciğer lobu:<div><br></div><div>{{c1::sol}} akciğerin {{c1::üst}} lobu (lobus superior)</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Lingula pulmonis ve incisura cardiaca'nın ait olduğu akciğer lobu:{{c1::sol}} akciğerin {{c1::üst}} lobu (lobus superior)",
+   2357074904,
+   0,
+   ""
+  ],
+  [
+   1606399644775,
+   "Bv0]8<;#X{",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Isthmus faucium'u (orofaringeal isthmus) daraltan kas: M. {{c1::palatoglossus}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Isthmus faucium'u (orofaringeal isthmus) daraltan kas: M. {{c1::palatoglossus}}",
+   595296192,
+   0,
+   ""
+  ],
+  [
+   1606474648032,
+   "n/q!iOUU8h",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Bifurcatio carotidis'in omurga seviyesi: C{{c1::3–4}} vertebra hizasındadır\u001fCartilago thyroidea'nın üst kenarı seviyesine karşılık gelir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Bifurcatio carotidis'in omurga seviyesi: C{{c1::3–4}} vertebra hizasındadır",
+   1429875248,
+   0,
+   ""
+  ],
+  [
+   1606477594101,
+   "wzhkC7hgxf",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Angulus venosus'u (Pirogoff açısı) oluşturan venler:<br><br><br>v. {{c1::subclavia}}<br>v. {{c1::jugularis interna}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Angulus venosus'u (Pirogoff açısı) oluşturan venler:v. {{c1::subclavia}}v. {{c1::jugularis interna}}",
+   602096209,
+   0,
+   ""
+  ],
+  [
+   1606479971655,
+   "BQs`|5uxgh",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Üreteri önden çaprazlayan yapılar (ODTÜ):<br><br><br><b>O</b>: {{c1::Ovaryan}} damarlar (vasa ovarica)<br><b>D</b>: {{c2::Ductus deferens}}<br><b>T</b>: {{c1::Testiküler}} damarlar (vasa testicularia)<br><b>U</b>: {{c2::Uterin}} arter (a. uterina)<br><br><br>Üreteri arkadan çaprazlayan yapılar (EGO):<br><br><br><b>E</b>: {{c1::Eksternal iliyak}} arter (a. iliaca externa)<br><b>G</b>: {{c2::Genitofemoral}} sinir (n. genitofemoralis)<br><b>O</b>: {{c1::Obturator}} arter (a. obturatoria)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Üreteri önden çaprazlayan yapılar (ODTÜ):O: {{c1::Ovaryan}} damarlar (vasa ovarica)D: {{c2::Ductus deferens}}T: {{c1::Testiküler}} damarlar (vasa testicularia)U: {{c2::Uterin}} arter (a. uterina)Üreteri arkadan çaprazlayan yapılar (EGO):E: {{c1::Eksternal iliyak}} arter (a. iliaca externa)G: {{c2::Genitofemoral}} sinir (n. genitofemoralis)O: {{c1::Obturator}} arter (a. obturatoria)",
+   2801827648,
+   0,
+   ""
+  ],
+  [
+   1606480126098,
+   "w%%8wojc-D",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Glandula bulbourethralis'in (Cowper bezi) kanallarının açıldığı üretra bölümü:<br><br><br>Pars {{c1::spongiosa}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Glandula bulbourethralis'in (Cowper bezi) kanallarının açıldığı üretra bölümü:Pars {{c1::spongiosa}}",
+   3695114103,
+   0,
+   ""
+  ],
+  [
+   1606484879862,
+   "hQjqOs=.9m",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "V. magna cerebri'nin (Galen veni) döküldüğü dural sinüs:<br><br><br>Sinus {{c1::rectus}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "V. magna cerebri'nin (Galen veni) döküldüğü dural sinüs:Sinus {{c1::rectus}}",
+   2946622014,
+   0,
+   ""
+  ],
+  [
+   1606485145180,
+   "f:>wc;7y+L",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "BOS'un 4. ventrikülden cisterna {{c1::cerebellomedullaris}}'e (cisterna magna) geçmesini sağlayan açıklık:<br><br><br>Foramen {{c2::magendie (apertura mediana)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "BOS'un 4. ventrikülden cisterna {{c1::cerebellomedullaris}}'e (cisterna magna) geçmesini sağlayan açıklık:Foramen {{c2::magendie (apertura mediana)}}",
+   2683483109,
+   0,
+   ""
+  ],
+  [
+   1606488985301,
+   "gXAgQ9jx_7",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Cavitas tympanica (orta kulak) duvar yapıları:<br><br><br>Ön duvar: {{c1::Tuba auditiva}} / M. {{c2::tensor tympani}} / A. {{c1::carotis interna}}<br><br><br>İç duvar: {{c2::Promontorium}} / {{c3::Prominentia}}'lar / {{c2::Fenestra}}'lar<br><br><br>Arka duvar: Antrum {{c3::mastoideum}} / {{c4::Eminentia pyramidalis}} (m. stapedius)<br><br><br>Üst duvar: {{c4::Tegmen tympani}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Cavitas tympanica (orta kulak) duvar yapıları:Ön duvar: {{c1::Tuba auditiva}} / M. {{c2::tensor tympani}} / A. {{c1::carotis interna}}İç duvar: {{c2::Promontorium}} / {{c3::Prominentia}}'lar / {{c2::Fenestra}}'larArka duvar: Antrum {{c3::mastoideum}} / {{c4::Eminentia pyramidalis}} (m. stapedius)Üst duvar: {{c4::Tegmen tympani}}",
+   3300222603,
+   0,
+   ""
+  ],
+  [
+   1609007140806,
+   "ziCd>OK)O/",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "{{c1::Tuberculum caroticum}} (Chassaignac tüberkülü) → C{{c1::6}}:<br><br><br>A. {{c2::carotis communis}} bu kabartıya bastırılarak komprese edilir\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "{{c1::Tuberculum caroticum}} (Chassaignac tüberkülü) → C{{c1::6}}:A. {{c2::carotis communis}} bu kabartıya bastırılarak komprese edilir",
+   2966502239,
+   0,
+   ""
+  ],
+  [
+   1609010475255,
+   "m!F?9_^n<)",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Art. ellipsoidea (iki eksenli eklem — aktif rotasyon {{c1::yoktur}}) örnekleri:<br><br><br>Art. {{c1::radiocarpalis}}<br>Art. {{c1::atlantooccipitalis}}<br>Artt. {{c2::metacarpophalangeae}}<br>Artt. {{c2::metatarsophalangeae}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Art. ellipsoidea (iki eksenli eklem — aktif rotasyon {{c1::yoktur}}) örnekleri:Art. {{c1::radiocarpalis}}Art. {{c1::atlantooccipitalis}}Artt. {{c2::metacarpophalangeae}}Artt. {{c2::metatarsophalangeae}}",
+   846447047,
+   0,
+   ""
+  ],
+  [
+   1609010567205,
+   "Ojm1$WKdrg",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Art. sellaris (eyer tipi eklem — pasif rotasyon {{c1::vardır}}) örnekleri:<br><br><br>Art. {{c1::carpometacarpalis pollicis}}<br>Art. {{c2::sternoclavicularis}}<br>Art. {{c1::calcaneocuboidea}}<br>Art. {{c2::incudomallearis}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Art. sellaris (eyer tipi eklem — pasif rotasyon {{c1::vardır}}) örnekleri:Art. {{c1::carpometacarpalis pollicis}}Art. {{c2::sternoclavicularis}}Art. {{c1::calcaneocuboidea}}Art. {{c2::incudomallearis}}",
+   4129417379,
+   0,
+   ""
+  ],
+  [
+   1609011092823,
+   "s^QM6M(McU",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Chopart eklemini (art. tarsi transversa) oluşturan eklemler:<br><br><br>Art. {{c1::calcaneocuboidea}}<br><br><br>Art. {{c1::talocalcaneonavicularis}} (pars talonavicularis)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Chopart eklemini (art. tarsi transversa) oluşturan eklemler:Art. {{c1::calcaneocuboidea}}Art. {{c1::talocalcaneonavicularis}} (pars talonavicularis)",
+   959433433,
+   0,
+   ""
+  ],
+  [
+   1609066621834,
+   "pa8h+]-xe9",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Plexus brachialis köklerinden (radices) doğrudan çıkan sinirler:<br><br><br>n. {{c1::dorsalis scapulae}} (C5)<br><br><br>n. {{c1::thoracicus longus}} (C5-C7)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Plexus brachialis köklerinden (radices) doğrudan çıkan sinirler:n. {{c1::dorsalis scapulae}} (C5)n. {{c1::thoracicus longus}} (C5-C7)",
+   398836594,
+   0,
+   ""
+  ],
+  [
+   1609080024375,
+   "n8zR@MX5D-",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Treves'in damarsız plikası (avasküler plika) hangi çıkmazın ön sınırıdır:<br><br><br>Recessus {{c1::ileocaecalis inferior}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Treves'in damarsız plikası (avasküler plika) hangi çıkmazın ön sınırıdır:Recessus {{c1::ileocaecalis inferior}}",
+   1455027155,
+   0,
+   ""
+  ],
+  [
+   1609099857518,
+   "wxD_O__SOQ",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Sinus cavernosus'a doğrudan açılan tek dural sinüs:<br><br><br>Sinus {{c1::sphenoparietalis}} (Breschet sinüsü)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sinus cavernosus'a doğrudan açılan tek dural sinüs:Sinus {{c1::sphenoparietalis}} (Breschet sinüsü)",
+   38707330,
+   0,
+   ""
+  ],
+  [
+   1609100192678,
+   "C}1mzQjf?X",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Cisterna {{c1::quadrigeminalis (superior)}} içindeki oluşumlar:<br><br><br>{{c2::Corpus pineale (epifiz bezi)}}<br>v. {{c2::magna cerebri}} (Galen veni)<br>a. {{c2::cerebri posterior}}<br>n. {{c2::trochlearis}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Cisterna {{c1::quadrigeminalis (superior)}} içindeki oluşumlar:{{c2::Corpus pineale (epifiz bezi)}}v. {{c2::magna cerebri}} (Galen veni)a. {{c2::cerebri posterior}}n. {{c2::trochlearis}}",
+   4186169773,
+   0,
+   ""
+  ],
+  [
+   1609100282230,
+   "L?S.$<*8qV",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Cisterna {{c2::fossae lateralis cerebri}} (Sylvius sisternası) içinde bulunan arter:<br><br><br>{{c1::A. cerebri media}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Cisterna {{c2::fossae lateralis cerebri}} (Sylvius sisternası) içinde bulunan arter:{{c1::A. cerebri media}}",
+   1637128919,
+   0,
+   ""
+  ],
+  [
+   1609101737514,
+   "Ag3pJ8G#wl",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Kranyal sinirlerin parasempatik (GVE) nükleusları:<br><br><br>CN III: {{c1::Nucleus accessorius n. oculomotorii (Edinger-Westphal)}}<br><br><br>CN VII: Nucleus {{c1::salivatorius superior}}<br><br><br>CN IX: Nucleus {{c1::salivatorius inferior}}<br><br><br>CN X: Nucleus {{c1::posterior (dorsalis) n. vagi}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Kranyal sinirlerin parasempatik (GVE) nükleusları:CN III: {{c1::Nucleus accessorius n. oculomotorii (Edinger-Westphal)}}CN VII: Nucleus {{c1::salivatorius superior}}CN IX: Nucleus {{c1::salivatorius inferior}}CN X: Nucleus {{c1::posterior (dorsalis) n. vagi}}",
+   209785337,
+   0,
+   ""
+  ],
+  [
+   1609137905717,
+   "xN<E4JFs9P",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Çekirdek lezyonu kontralateral (karşı taraf) belirti veren tek kranyal sinir:<br><br><br>{{c1::4}}. kranyal sinir (n. trochlearis)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Çekirdek lezyonu kontralateral (karşı taraf) belirti veren tek kranyal sinir:{{c1::4}}. kranyal sinir (n. trochlearis)",
+   1169360309,
+   0,
+   ""
+  ],
+  [
+   1609148725060,
+   "sK&zpipcYw",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Beyin sapında, {{c1::bulbo-pontin bileşkede}} her iki tarafta dörder adet olmak üzere toplam {{c1::8}} adet vestibüler çekirdek bulunur.\u001fHer bir tarafta 4 adet (superior, inferior, medialis, lateralis).\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Beyin sapında, {{c1::bulbo-pontin bileşkede}} her iki tarafta dörder adet olmak üzere toplam {{c1::8}} adet vestibüler çekirdek bulunur.",
+   4214736280,
+   0,
+   ""
+  ],
+  [
+   1609166763519,
+   "gz-79f5ltM",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "İç kulakta {{c2::sacculus}} ile {{c2::ductus cochlearis}} arasındaki bağlantı kanalı:<br><br><br>Ductus {{c1::reuniens}} (Hensen kanalı)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "İç kulakta {{c2::sacculus}} ile {{c2::ductus cochlearis}} arasındaki bağlantı kanalı:Ductus {{c1::reuniens}} (Hensen kanalı)",
+   1026401443,
+   0,
+   ""
+  ],
+  [
+   1609228848941,
+   "nOMK;=k>pD",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Anulus femoralis'in medial (iç) sınırı: Lig. {{c1::lacunare}} (Gimbernat bağı)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Anulus femoralis'in medial (iç) sınırı: Lig. {{c1::lacunare}} (Gimbernat bağı)",
+   615566389,
+   0,
+   ""
+  ],
+  [
+   1609245256497,
+   "j?*jcmyGPy",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Anal kanalda her bir columna analis (Morgagni sütunu) altında yer alan damar dalları:<br><br><br>A. ve V. {{c1::rectalis superior}} uç dalları\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Anal kanalda her bir columna analis (Morgagni sütunu) altında yer alan damar dalları:A. ve V. {{c1::rectalis superior}} uç dalları",
+   3128232101,
+   0,
+   ""
+  ],
+  [
+   1609247082589,
+   "jkHL|;<^]t",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Yutma esnasında aditus laryngis'i daraltarak gıdaların larynx ve trakeaya kaçmasını engelleyen kas:<br><br><br>M. {{c1::arytenoideus obliquus ve pars aryepiglottica}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Yutma esnasında aditus laryngis'i daraltarak gıdaların larynx ve trakeaya kaçmasını engelleyen kas:M. {{c1::arytenoideus obliquus ve pars aryepiglottica}}",
+   1817525343,
+   0,
+   ""
+  ],
+  [
+   1609271242846,
+   "t|-}e`w2p5",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Foramen epiploicum (Winslow deliği) anatomik sınırları:<br><br><br>Arka sınır: {{c1::V. cava inferior}}<br><br><br>Ön sınır: {{c2::Lig. hepatoduodenale}}<br><br><br>Alt sınır: {{c1::Duodenum 1. parçası (pars superior)}}<br><br><br>Üst sınır: {{c2::Karaciğer lobus caudatus'u}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Foramen epiploicum (Winslow deliği) anatomik sınırları:Arka sınır: {{c1::V. cava inferior}}Ön sınır: {{c2::Lig. hepatoduodenale}}Alt sınır: {{c1::Duodenum 1. parçası (pars superior)}}Üst sınır: {{c2::Karaciğer lobus caudatus'u}}",
+   4025991954,
+   0,
+   ""
+  ],
+  [
+   1609273090151,
+   "uK%DR@2m[b",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Spinal sinirler arasında dermatom alanı bulunmayan tek sinir: {{c1::C1}} spinal sinirinin dermatom alanı yoktur.\u001fDeri dalı (ramus cutaneus) bulunmadığı için dermatom alanı yoktur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Spinal sinirler arasında dermatom alanı bulunmayan tek sinir: {{c1::C1}} spinal sinirinin dermatom alanı yoktur.",
+   1117771429,
+   0,
+   ""
+  ],
+  [
+   1609276923065,
+   "G@ES`MQ?W[",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Primer tat merkezi (Brodmann alanı {{c1::43}}):<div><br></div><div>Lobus {{c1::parietalis}} (gyrus postcentralis)</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Primer tat merkezi (Brodmann alanı {{c1::43}}):Lobus {{c1::parietalis}} (gyrus postcentralis)",
+   1241658837,
+   0,
+   ""
+  ],
+  [
+   1615968923004,
+   "Fnt;WA[I-8",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Hem os palatinum hem de maxilla'da aynı isimle bulunan iki kemik kabartısı:<br><br><br>{{c1::Crista conchalis}} (concha nasalis inferior tutunur)<br><br><br>{{c1::Crista ethmoidalis}} (concha nasalis media tutunur)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Hem os palatinum hem de maxilla'da aynı isimle bulunan iki kemik kabartısı:{{c1::Crista conchalis}} (concha nasalis inferior tutunur){{c1::Crista ethmoidalis}} (concha nasalis media tutunur)",
+   2598425620,
+   0,
+   ""
+  ],
+  [
+   1615977655788,
+   "ed%2eU/C*&",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Ayak tabanı kas tabakaları (2. ve 3. tabakalar):<br><br><br>2. tabaka: M. {{c1::quadratus plantae}} ve Mm. {{c1::lumbricales}}<br><br><br>3. tabaka: M. {{c1::adductor hallucis}} (ve m. flexor hallucis brevis)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Ayak tabanı kas tabakaları (2. ve 3. tabakalar):2. tabaka: M. {{c1::quadratus plantae}} ve Mm. {{c1::lumbricales}}3. tabaka: M. {{c1::adductor hallucis}} (ve m. flexor hallucis brevis)",
+   1525694357,
+   0,
+   ""
+  ],
+  [
+   1617737041708,
+   "d;X]x[k#bU",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Chorda tympani'nin kraniumu terk ettiği kemik açıklığı:<br><br><br>{{c1::Fissura petrotympanica}} (Glaser yarığı)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Chorda tympani'nin kraniumu terk ettiği kemik açıklığı:{{c1::Fissura petrotympanica}} (Glaser yarığı)",
+   78701892,
+   0,
+   ""
+  ],
+  [
+   1618091211344,
+   "un2{V7vOD=",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "<span style=\"color: var(--field-fg); background: var(--field-bg);\">L4 vertebra seviyesinde lumbal ponksiyon için kılavuz olan düzlem: Planum {{c1::supracristale}} (Jacoby çizgisi)</span>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "L4 vertebra seviyesinde lumbal ponksiyon için kılavuz olan düzlem: Planum {{c1::supracristale}} (Jacoby çizgisi)",
+   873502382,
+   0,
+   ""
+  ],
+  [
+   1619194120088,
+   "F]]CP.|ql!",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Wernicke duyusal konuşma merkezinin bulunduğu beyin lobu: Lobus {{c1::temporalis}}\u001fGyrus temporalis superior'un arka kısmında (Brodmann 22. alan) yer alır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Wernicke duyusal konuşma merkezinin bulunduğu beyin lobu: Lobus {{c1::temporalis}}",
+   4148177554,
+   0,
+   ""
+  ],
+  [
+   1622010532717,
+   "wC^n3koBUu",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Meniscus lateralis'ten →<br>M. popliteus tendonu aracılığıyla ayrılan yan bağ:<br><br><br>Lig. {{c1::collaterale fibulare}} (LCL)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Meniscus lateralis'ten →M. popliteus tendonu aracılığıyla ayrılan yan bağ:Lig. {{c1::collaterale fibulare}} (LCL)",
+   3479240075,
+   0,
+   ""
+  ],
+  [
+   1622303404335,
+   "JY4EX`/A[X",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Omuz ekleminde abduksiyon ile rahatlayabilen bursa enflamasyonu (Dawbarn belirtisi):<br><br><br>{{c1::Subakromiyal}} bursit (bursa subacromialis)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Omuz ekleminde abduksiyon ile rahatlayabilen bursa enflamasyonu (Dawbarn belirtisi):{{c1::Subakromiyal}} bursit (bursa subacromialis)",
+   2068412421,
+   0,
+   ""
+  ],
+  [
+   1622303971561,
+   "nb.J(jI1o[",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Dizde<br><br><br>Aşırı ekstansiyonu lig. cruciatum {{c1::anterius}} önler<br><br><br>Aşırı fleksiyonu lig. cruciatum {{c1::posterius}} önler<br><br><br>Çapraz bağlar aşırı hareketi sınırlar\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "DizdeAşırı ekstansiyonu lig. cruciatum {{c1::anterius}} önlerAşırı fleksiyonu lig. cruciatum {{c1::posterius}} önlerÇapraz bağlar aşırı hareketi sınırlar",
+   537024934,
+   0,
+   ""
+  ],
+  [
+   1622379560602,
+   "u8a+k4=Ih~",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Lig. latum uteri içinde yer almayan dişi üreme organı:<br><br><br>{{c1::Ovarium}} (arka yaprağa tutunur)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Lig. latum uteri içinde yer almayan dişi üreme organı:{{c1::Ovarium}} (arka yaprağa tutunur)",
+   1127693392,
+   0,
+   ""
+  ],
+  [
+   1624005481952,
+   "HI0Z8C-e,E",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Safra kesesinin viseral yansıyan ağrısını taşıyan sinir:<br><br><br>N. {{c1::splanchnicus major}} (T7-T9)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Safra kesesinin viseral yansıyan ağrısını taşıyan sinir:N. {{c1::splanchnicus major}} (T7-T9)",
+   117343411,
+   0,
+   ""
+  ],
+  [
+   1624126756946,
+   "eRB=z!%~m~",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Daha hareketli olan ve neredeyse tam halka oluşturan menisküs:<br><br><br>Meniscus {{c1::lateralis}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Daha hareketli olan ve neredeyse tam halka oluşturan menisküs:Meniscus {{c1::lateralis}}",
+   1690943829,
+   0,
+   ""
+  ],
+  [
+   1624127231212,
+   "wxZP|<Wkor",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Göz lateralindeki kırışıklıklardan (kaz ayağı) sorumlu mimik kası:<br><br><br>M. {{c1::orbicularis oculi}} (pars orbitalis)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Göz lateralindeki kırışıklıklardan (kaz ayağı) sorumlu mimik kası:M. {{c1::orbicularis oculi}} (pars orbitalis)",
+   2449036271,
+   0,
+   ""
+  ],
+  [
+   1625213397650,
+   "M2IC,hwpw+",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Art. coxae'de (kalça eklemi) labrum acetabulare'nin devamı olan bağ:<br><br><br>Lig. {{c1::transversum acetabuli}}\u001fIncisura acetabuli'nin üzerini köprüleyerek foramen haline getirir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Art. coxae'de (kalça eklemi) labrum acetabulare'nin devamı olan bağ:Lig. {{c1::transversum acetabuli}}",
+   2205175802,
+   0,
+   ""
+  ],
+  [
+   1625234418802,
+   "t0je%zm3.f",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "M. latissimus dorsi'nin sınırına katıldığı anatomik üçgenler:<br><br><br>Trigonum {{c1::auscultationis}} (oskültasyon üçgeni)<br><br><br>Trigonum {{c1::lumbale inferius}} (Petit üçgeni)\u001fTrigonum lumbale superius'un (Grynfelt) sınırına katılmaz.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "M. latissimus dorsi'nin sınırına katıldığı anatomik üçgenler:Trigonum {{c1::auscultationis}} (oskültasyon üçgeni)Trigonum {{c1::lumbale inferius}} (Petit üçgeni)",
+   755006537,
+   0,
+   ""
+  ],
+  [
+   1625234601035,
+   "L9:Ax+c>?H",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "N. glossopharyngeus'un dalı olan n. tympanicus (Jacobson siniri) cavitas tympanica'ya hangi duvardan girer:<br><br><br>{{c1::Alt}} duvardan (paries jugularis) girer\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "N. glossopharyngeus'un dalı olan n. tympanicus (Jacobson siniri) cavitas tympanica'ya hangi duvardan girer:{{c1::Alt}} duvardan (paries jugularis) girer",
+   3896123908,
+   0,
+   ""
+  ],
+  [
+   1625409732645,
+   "H-@)J==IXW",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Foramen magnum'dan geçmeyen vertebral damar:<br><br><br>Vena vertebralis foramen magnum'dan {{c1::geçmez}}\u001fA. vertebralis foramen magnum'dan geçer, v. vertebralis geçmez.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Foramen magnum'dan geçmeyen vertebral damar:Vena vertebralis foramen magnum'dan {{c1::geçmez}}",
+   451640163,
+   0,
+   ""
+  ],
+  [
+   1625409788252,
+   "Lmjo*1;BNJ",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "A. pancreatica magna hangi ana damarın dalıdır:<br><br><br>A. {{c1::splenica}}'nın (lienalis) dalıdır\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "A. pancreatica magna hangi ana damarın dalıdır:A. {{c1::splenica}}'nın (lienalis) dalıdır",
+   3583015905,
+   0,
+   ""
+  ],
+  [
+   1625580116719,
+   "cx!GbyZV2*",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Bursa omentalis foramen omentale (Winslow) aracılığıyla hangi periton çıkmazı ile bağlantı kurar:<br><br><br>{{c1::Recessus hepatorenalis (sağ subhepatik alan - Morison kesesi)}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Bursa omentalis foramen omentale (Winslow) aracılığıyla hangi periton çıkmazı ile bağlantı kurar:{{c1::Recessus hepatorenalis (sağ subhepatik alan - Morison kesesi)}}",
+   282188141,
+   0,
+   ""
+  ],
+  [
+   1625684829711,
+   "s#/[T,+TC_",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Plica nervi laryngei hangi farinks bölümünde bulunur:<br><br><br>{{c1::Laryngopharynx}}'tedir (recessus piriformis)\u001fLarynx içinde değildir; laryngopharynx'teki recessus piriformis tabanındadır (r. internus n. laryngei superioris kaldırır).\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Plica nervi laryngei hangi farinks bölümünde bulunur:{{c1::Laryngopharynx}}'tedir (recessus piriformis)",
+   2388187950,
+   0,
+   ""
+  ],
+  [
+   1626524682672,
+   "B9zAy5-{JV",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Yüksek sese karşı akustik refleks ile kasılarak iç kulağı koruyan kaslar:<br><br><br>m. {{c1::tensor tympani}} (CN V3)<br><br><br>m. {{c1::stapedius}} (CN VII)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Yüksek sese karşı akustik refleks ile kasılarak iç kulağı koruyan kaslar:m. {{c1::tensor tympani}} (CN V3)m. {{c1::stapedius}} (CN VII)",
+   1568263052,
+   0,
+   ""
+  ],
+  [
+   1627047104138,
+   "Q62/A#`.P0",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "M. sphincter ani internus ile externus'un alt sınırını ayıran hat:<br><br><br>{{c1::Linea anocutanea}} (Hilton beyaz çizgisi)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "M. sphincter ani internus ile externus'un alt sınırını ayıran hat:{{c1::Linea anocutanea}} (Hilton beyaz çizgisi)",
+   3614220125,
+   0,
+   ""
+  ],
+  [
+   1627400393858,
+   "KX%4lA;spC",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Lamina prevertebralis:<br><br><br>Prevertebral kasları →<br><br><br>M. {{c1::longus capitis}} ve m. {{c1::longus colli}}<br><br><br>sarar\u001fLateralde a. subclavia ve plexus brachialis'i sararak vagina axillaris'i oluşturur.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Lamina prevertebralis:Prevertebral kasları →M. {{c1::longus capitis}} ve m. {{c1::longus colli}}sarar",
+   3742928773,
+   0,
+   ""
+  ],
+  [
+   1627400574380,
+   "PgBr:lkls7",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Scapula'ya protraksiyon (öne çekme) yaptıran başlıca kaslar:<br><br><br>m. {{c1::serratus anterior}}<br><br><br>m. {{c1::pectoralis minor}}\u001fRetraksiyon yaptıranlar: M. trapezius ve mm. rhomboidei.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Scapula'ya protraksiyon (öne çekme) yaptıran başlıca kaslar:m. {{c1::serratus anterior}}m. {{c1::pectoralis minor}}",
+   3483882681,
+   0,
+   ""
+  ],
+  [
+   1627409755284,
+   "rb_vjgoJMM",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Tractus tectospinalis'in başlangıcı ve yaptığı tegmental çapraz:<br><br><br>Başlangıç merkezi: {{c1::Colliculus superior}}<br><br><br>Yaptığı çapraz: Decussatio tegmentalis {{c1::posterior}} (Meynert çaprazı)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Tractus tectospinalis'in başlangıcı ve yaptığı tegmental çapraz:Başlangıç merkezi: {{c1::Colliculus superior}}Yaptığı çapraz: Decussatio tegmentalis {{c1::posterior}} (Meynert çaprazı)",
+   382181172,
+   0,
+   ""
+  ],
+  [
+   1627968128663,
+   "c{>Eq,J>e]",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Benedikt sendromunda (paramedian mezensefalik sendrom) etkilenen yapılar:<br><br><br>{{c1::Mesencephalon tegmentum'u ve nucleus ruber}} (ve CN III lifleri)\u001fTractus corticospinalis tegmentumda olmadığı için bu sendromda etkilenmez.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Benedikt sendromunda (paramedian mezensefalik sendrom) etkilenen yapılar:{{c1::Mesencephalon tegmentum'u ve nucleus ruber}} (ve CN III lifleri)",
+   3648030959,
+   0,
+   ""
+  ],
+  [
+   1627984965103,
+   "o~c<Fc3roY",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Duodenum komşulukları:<div><br></div><div><b>Pars superior:</b></div><div><b>Arka</b>: A. {{c1::gastroduodenalis}}</div><div><br></div><div><b>Pars horizontalis (inferior):</b></div><div><b>Arka</b>: {{c1::V. cava inferior}}</div><div><b>Ön</b>: {{c1::Radix mesenterii (a. ve v. mesenterica superior)}}</div>\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Duodenum komşulukları:Pars superior:Arka: A. {{c1::gastroduodenalis}}Pars horizontalis (inferior):Arka: {{c1::V. cava inferior}}Ön: {{c1::Radix mesenterii (a. ve v. mesenterica superior)}}",
+   2516670877,
+   0,
+   ""
+  ],
+  [
+   1628948410631,
+   "J|^g75.Wr6",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "M. scalenus medius kasının gövdesini delerek geçen sinirler:<br><br><br>n. {{c1::thoracicus longus}}<br><br><br>n. {{c1::dorsalis scapulae}}\u001fHer iki sinir de plexus brachialis'in doğrudan köklerinden (radices) çıkan dallardır.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "M. scalenus medius kasının gövdesini delerek geçen sinirler:n. {{c1::thoracicus longus}}n. {{c1::dorsalis scapulae}}",
+   207778899,
+   0,
+   ""
+  ],
+  [
+   1628964300127,
+   "L@up:|i3^;",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Yüz enfeksiyonlarının sinus cavernosus'a yayılma yolları:<br><br><br>1. yol: V. {{c1::labialis superior}} → V. angularis → V. supraorbitalis → V. ophthalmica superior → Sinus cavernosus<br><br><br>2. yol: V. facialis → V. {{c2::profunda faciei}} → Plexus pterygoideus → Sinus cavernosus\u001fYüz venleri kapaksızdır; enfeksiyon retrograd yayılabilir.\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Yüz enfeksiyonlarının sinus cavernosus'a yayılma yolları:1. yol: V. {{c1::labialis superior}} → V. angularis → V. supraorbitalis → V. ophthalmica superior → Sinus cavernosus2. yol: V. facialis → V. {{c2::profunda faciei}} → Plexus pterygoideus → Sinus cavernosus",
+   1442830407,
+   0,
+   ""
+  ],
+  [
+   1629006481796,
+   "h1><=w0[T&",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Formatio hippocampi:<br><br><br>Hippocampus (cornu Ammonis)<br>+<br>Gyrus {{c1::dentatus}}<br>+<br>{{c1::Subiculum}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Formatio hippocampi:Hippocampus (cornu Ammonis)+Gyrus {{c1::dentatus}}+{{c1::Subiculum}}",
+   2171424862,
+   0,
+   ""
+  ],
+  [
+   1629026049209,
+   "f,+n)qGv)4",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Foramen interventriculare (Monro) hizasında birleşerek v. interna cerebri'yi oluşturan venler:<br><br><br>v. {{c1::thalamostriata superior}} + v. {{c1::anterior septi pellucidi}}\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Foramen interventriculare (Monro) hizasında birleşerek v. interna cerebri'yi oluşturan venler:v. {{c1::thalamostriata superior}} + v. {{c1::anterior septi pellucidi}}",
+   1473683421,
+   0,
+   ""
+  ],
+  [
+   1629790011594,
+   "KxE=4`)A/?",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Sinus venosus sclerae'nin (Schlemm kanalı) drene olduğu venler:<br><br><br>Vv. {{c1::ciliares anteriores}} (ve episkleral venler)\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sinus venosus sclerae'nin (Schlemm kanalı) drene olduğu venler:Vv. {{c1::ciliares anteriores}} (ve episkleral venler)",
+   48283333,
+   0,
+   ""
+  ],
+  [
+   1629920748054,
+   "Lp}D}B+Kgg",
+   1566160514431,
+   1791463152,
+   -1,
+   "",
+   "Sempatik postganglionik liflerin hedef dağılımları:<br><br><br>Paravertebral ganglionlardan (truncus sympathicus) çıkan lifler: {{c1::Deri ve eklerine}} (damarlar, ter bezleri) gider<br><br><br>Prevertebral ganglionlardan çıkan lifler: {{c1::Viseral organlara}} (iç organlar) gider\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f\u001f",
+   "Sempatik postganglionik liflerin hedef dağılımları:Paravertebral ganglionlardan (truncus sympathicus) çıkan lifler: {{c1::Deri ve eklerine}} (damarlar, ter bezleri) giderPrevertebral ganglionlardan çıkan lifler: {{c1::Viseral organlara}} (iç organlar) gider",
+   775078807,
+   0,
+   ""
+  ]
+ ],
+ "sourceEvidence": [
+  {
+   "topic": "Chopart eklem kapsamı",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11026982/",
+   "supports": "Anatomik çalışmada talonaviküler ve kalkaneokuboid bileşenler; uzun parantez yerine doğrudan talonavicularis cevabı."
+  }
+ ]
+}

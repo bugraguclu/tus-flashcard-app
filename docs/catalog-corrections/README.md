@@ -1,5 +1,29 @@
 # BKA TUS kart düzeltmeleri
 
+## 25 Kasım 2026 — beş dersin editoryal sadeleştirmesi pakette
+
+17 Ekim'de hazırlanan beş ders turu (Farmakoloji 122, Patoloji 124, Anatomi 97,
+Mikrobiyoloji 70, Biyokimya 29 — toplam **442 not**) dağıtılan pakete alındı. Kartlara
+sonradan eklenmiş açıklamalar ve kaynak/tarih notları kaldırıldı, gereken düzeltmeler
+kartın kendi metnine işlendi. Yalnız bu 442 notun `Text`/`Extra` alanları (ve `sfld`,
+`csum`, `mod`) değişti; kartlar, kimlikler, medya, `col` ve diğer 7.279 not eski paketle
+bayt bayt aynıdır. Metin değişince 25 kart başka konu alt destesine düşer (manifestteki
+konu sayıları).
+
+- Alan kayıtları: `<ders>-editorial.json` (önce/sonra, kapsam ve sınır özetleri);
+  `scripts/apply-catalog-editorial.py` bunları sırayla uygular ve kimlik, medya, cloze
+  ordinali ile diğer dersleri doğrular.
+- Ders yamalarının (`biyokimya`, `mikrobiyoloji`, `patoloji`, `anatomi` ve Farmakoloji
+  JSON'u) `after` alanları paketle eşleşir.
+- Paket güncellenince kurulu katalog yenilenir: çalışma ilerlemesi ve öğrencinin kendi
+  düzenlediği alanlar korunur (`lib/bkaCatalog.install.test.ts`).
+- Ders Excel çalışma kitapları bu değişikliğe alınmadı (dosya meta verisi kişisel bilgi
+  taşıyor); depodaki Farmakoloji Excel'i eski alanları gösterir. `*-editorial.md`
+  dosyalarındaki Excel ve "tüm dersler önce/sonra" bağlantıları depoda olmayan çalışma
+  dosyalarını gösterir; güncel kaynak JSON kayıtlarıdır.
+- Pediatri, Dahiliye, Deneme ve Soru, FHE, Genel Cerrahi, Kadın Doğum ve Küçük Stajlar
+  için aynı tur uygulanmadı.
+
 Bu dizin, paketle gelen BKA TUS kataloğunun (`assets/catalog/bka-tus-complete.apkg`) ders ders
 önerilen kart düzeltmelerini tutar. Dosyalar `scripts/apply-all-catalog-patches.py` ile özgün pakete
 (`package.sha256`) uygulanır; ardından `.tuspack` ve `bka-manifest.json` yeniden üretilir.
