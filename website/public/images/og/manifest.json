@@ -31,7 +31,15 @@
     "title": "Sıkça sorulan sorular",
     "sha256": "8f08e20939536fe90a3387dcd679a9b97d4ee7c891eba974790af98779259137"
   },
-  "/images/og/kurucu.png": {
+  "/images/og/ozellikler.png": {
+    "title": "TusAnkiM özellikleri",
+    "sha256": "df8de48f756226cdfa78119976a7da93ad8e7bfa77aa58b50fae483036317a09"
+  },
+  "/images/og/fiyatlar.png": {
+    "title": "Fiyatlar ve erişim",
+    "sha256": "1fdf59d1591a84bcf456ec144a9195bbc9890f4582a5e141b0abc6b346babf49"
+  },
+  "/images/og/hakkimizda.png": {
     "title": "Neden TusAnkiM’i kurduk?",
     "sha256": "16ccac59fe9884e9d4b1b524787aa730b7ad369a7658541ceb4e0f77b1786283"
   },

@@ -1,0 +1,24 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageIntro from '../components/PageIntro.astro';
+import PricingTiers from '../components/pricing/PricingTiers.astro';
+import offer from '../data/offer.json';
+import { breadcrumbList } from '../lib/schema';
+import { dateModified, pageSources } from '../lib/lastmod';
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [{ name: 'Ana Sayfa', path: '/' }, { name: 'Fiyatlar', path: '/fiyatlar' }]);
+const pageSchema = {
+  '@context': 'https://schema.org', '@type': 'WebPage', url: origin + '/fiyatlar/',
+  name: 'TusAnkiM fiyatlar ve erişim', inLanguage: 'tr-TR', about: { '@id': origin + '/#application' },
+  ...dateModified(pageSources('fiyatlar')),
+};
+---
+<Layout
+  title="Fiyatlar ve Erişim | TusAnkiM"
+  description="TusAnkiM betada ücretsiz. Planlanan model: ücretsiz kullanım, tüm kartlara erişim ₺2.000, reklamları kaldırma ₺50; ücretli seçenekler henüz devrede değil."
+  schema={[crumbs, pageSchema]}
+>
+  <PageIntro crumb="Fiyatlar" label={offer.badge} title={offer.headline} lead={offer.subheadline} />
+  <PricingTiers />
+</Layout>

@@ -255,6 +255,12 @@
   .branch-row { grid-template-columns: 13rem minmax(0, 1fr) 4.25rem; }
   .branch-row .segbar { grid-column: auto; grid-row: auto; }
 }
+a.branch-row:focus-visible { outline: 2px solid #0e7469; outline-offset: 2px; }
+.branch-columns { display: grid; column-gap: 2.5rem; }
+@media (min-width: 1024px) {
+  .branch-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .branch-columns .branch-row { grid-template-columns: 11rem minmax(0, 1fr) 3.5rem; }
+}
 @media (hover: hover) and (pointer: fine) {
   .branch-row:hover .branch-name { color: #0e7469; text-decoration: underline; text-underline-offset: 3px; }
 }

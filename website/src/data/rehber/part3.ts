@@ -122,7 +122,7 @@ export const REHBER_PART_3: RehberArticle[] = [
       { label: 'Hızlı başlangıç rehberi (21 kılavuz)', href: '/yardim/hizli-baslangic/' },
       { label: 'Destek ve İletişim', href: '/destek/' },
       { label: 'Sıkça Sorulan Sorular', href: '/sss/' },
-      { label: 'Hakkımızda', href: '/kurucu/' },
+      { label: 'Hakkımızda', href: '/hakkimizda/' },
     ],
     keywords: 'tusankim ücretsiz mi fiyat 2000 tl 50 tl reklam kaldırma demo iphone web',
   },

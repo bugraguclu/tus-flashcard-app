@@ -1,0 +1,75 @@
+---
+import catalog from '../../data/generated/catalog.json';
+import ref from '../../data/generated/references-summary.json';
+import { num } from '../../lib/format';
+
+const reasons = [
+  {
+    title: 'Kaynağı belli kartlar',
+    text: `${num(catalog.totals.cards)} kart, son 6 TUS’un ${num(ref.overall.soru)} sorusuyla tek tek eşleştirildi.`,
+    href: '/referanslar/',
+    link: 'Referansları incele',
+  },
+  {
+    title: 'Tekrar zamanı hesaplı',
+    text: 'FSRS-6, her kartın bir sonraki tekrarını verdiğin yanıtlara göre planlar.',
+    href: '/ozellikler/#fsrs',
+    link: 'FSRS-6 nasıl çalışır',
+  },
+  {
+    title: 'Çalışman tek yerde',
+    text: 'Kronometre, Çalışma Takvimi ve kendi Anki destelerin aynı uygulamada; internetsiz de çalışır.',
+    href: '/ozellikler/#kronometre',
+    link: 'Araçları gör',
+  },
+] as const;
+---
+<section id="neden-tusankim" class="scroll-mt-24 py-14 sm:py-20 bg-white border-b border-line" aria-labelledby="why-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 reveal">
+      <div>
+        <p class="kicker">Özellikler</p>
+        <h2 id="why-heading" class="display text-section tracking-tightest text-ink mt-3">Neden TusAnkiM?</h2>
+      </div>
+      <a href="/ozellikler/" class="shrink-0 inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark">Tüm özellikler →</a>
+    </div>
+    <ul role="list" class="mt-8 grid md:grid-cols-3 gap-4">
+      {reasons.map((reason, i) => (
+        <li class="reveal" style={`--d: ${i * 60}ms`}>
+          <a href={reason.href} class="lift why-card">
+            <h3 class="display text-lg text-ink">{reason.title}</h3>
+            <p class="text-inkMuted mt-2 leading-relaxed">{reason.text}</p>
+            <span class="why-link">{reason.link} →</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .why-card {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    border: 1px solid #dde1e4;
+    border-radius: 1.25rem;
+    background: #f8faf9;
+  }
+  .why-card p { flex: 1; }
+  .why-link {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 2.75rem;
+    margin-block-start: 0.5rem;
+    color: #0e7469;
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .why-card:hover { border-color: #0e7469; }
+    .why-card:hover .why-link { text-decoration: underline; text-underline-offset: 0.25em; }
+  }
+  .why-card:focus-visible { outline: 2px solid #0e7469; outline-offset: 2px; }
+</style>

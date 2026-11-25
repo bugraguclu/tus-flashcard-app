@@ -1,40 +1,64 @@
 ---
-import { SITE, LEGAL_PAGES } from '../config';
-import { FOOTER_CONTENT_IDS, FOOTER_LEGAL_IDS, page, link } from '../data/pages';
-const contentLinks = FOOTER_CONTENT_IDS.map(page).filter((p) => p.published);
+import { SITE, LEGAL_PAGES, SOCIAL } from '../config';
+import { NAV_GROUPS, FOOTER_LEGAL_IDS, page, link } from '../data/pages';
+const groups = NAV_GROUPS.map((group) => ({
+  ...group,
+  items: group.items.map((item) => page(item.id)).filter((p) => p.published),
+}));
 const legalLinks = FOOTER_LEGAL_IDS.map(page).filter((p) => p.published);
+const instagram = SOCIAL.find((social) => social.icon === 'instagram');
 ---
 <footer class="site-footer">
   <div class="footer-inner">
-    <div class="footer-top">
-      <a class="footer-brand" href="/">TusAnkiM</a>
-      <nav aria-label="Diğer bağlantılar">
-        <a href="/tus-calisma-rehberi/">TUS Çalışma Rehberi</a>
-        <a href="/calisma-plani/">Çalışma Planı</a>
-        <a href="/kurucu/">Hakkımızda</a>
-        <a href="/sss/">Sıkça sorulan sorular</a>
-        <a href="https://www.instagram.com/tusankim/" target="_blank" rel="noopener noreferrer">Instagram</a>
-        <a href={`mailto:${SITE.email}`}>E-posta</a>
+    <div class="footer-grid">
+      <div class="footer-about">
+        <a class="footer-brand" href="/">TusAnkiM</a>
+        <p>{SITE.tagline}</p>
+      </div>
+      {groups.map((group) => (
+        <nav aria-labelledby={`footer-${group.id}`}>
+          <h2 id={`footer-${group.id}`}>{group.label}</h2>
+          <ul role="list">
+            {group.items.map((item) => <li><a href={link(item.path)}>{item.footerLabel ?? item.navLabel}</a></li>)}
+          </ul>
+        </nav>
+      ))}
+      <nav aria-labelledby="footer-kurumsal">
+        <h2 id="footer-kurumsal">Kurumsal</h2>
+        <ul role="list">
+          <li><a href="/hakkimizda/">Hakkımızda</a></li>
+          {instagram && <li><a href={instagram.url} target="_blank" rel="noopener noreferrer">Instagram</a></li>}
+          <li><a href={`mailto:${SITE.email}`}>E-posta</a></li>
+        </ul>
       </nav>
     </div>
-    <nav class="footer-content" aria-label="TUS içerikleri">{contentLinks.map((p) => <a href={link(p.path)}>{p.footerLabel ?? p.navLabel}</a>)}</nav>
     <p class="footer-disclaimer">{SITE.disclaimer}</p>
     <div class="footer-bottom">
       <span>© {new Date().getFullYear()} TusAnkiM</span>
-      {LEGAL_PAGES && <nav aria-label="Yasal bağlantılar">{legalLinks.map((p) => <a href={link(p.path)}>{p.navLabel}</a>)}</nav>}
+      {LEGAL_PAGES && <nav aria-label="Yasal bağlantılar">{legalLinks.map((p) => <a href={link(p.path)}>{p.footerLabel ?? p.navLabel}</a>)}</nav>}
     </div>
   </div>
 </footer>
 <style>
   .site-footer { border-top: 1px solid #dde1e4; background: #fff; color: #596166; }
-  .footer-inner { width: min(1120px, calc(100% - 3rem)); margin-inline: auto; padding-block: 2rem; }
-  .footer-top, .footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 2rem; }
+  .footer-inner { width: min(1120px, calc(100% - 3rem)); margin-inline: auto; padding-block: 2.5rem 2rem; }
+  .footer-grid { display: grid; grid-template-columns: 1.3fr repeat(4, minmax(0, 1fr)); gap: 2rem; }
   .footer-brand { color: #24292c; font-size: 1.125rem; font-weight: 600; }
-  nav { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; }
+  .footer-about p { margin-top: .25rem; font-size: .875rem; line-height: 1.6; }
+  h2 { color: #24292c; font-size: .8125rem; font-weight: 600; margin-bottom: .25rem; }
   a { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; }
+  li a { min-height: 2.25rem; }
   a:hover { color: #0e7469; }
-  .footer-content { margin-top: .5rem; padding-top: .5rem; border-top: 1px solid #e9ecee; }
-  .footer-disclaimer { font-size: .8125rem; line-height: 1.75; margin-block: 1rem; }
-  .footer-bottom { border-top: 1px solid #e9ecee; padding-top: 1rem; font-size: .8125rem; }
-  @media (max-width: 600px) { .footer-inner { width: calc(100% - 2.5rem); } .footer-top, .footer-bottom { align-items: flex-start; flex-direction: column; } }
+  .footer-disclaimer { font-size: .8125rem; line-height: 1.75; margin-block: 1.5rem 1rem; padding-top: 1rem; border-top: 1px solid #e9ecee; }
+  .footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 2rem; border-top: 1px solid #e9ecee; padding-top: 1rem; font-size: .8125rem; }
+  .footer-bottom nav { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; }
+  @media (max-width: 900px) {
+    .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .footer-about { grid-column: 1 / -1; }
+  }
+  @media (max-width: 600px) {
+    .footer-inner { width: calc(100% - 2.5rem); }
+    li a { min-height: 2.75rem; }
+    .footer-bottom { align-items: flex-start; flex-direction: column; }
+  }
 </style>

@@ -4,10 +4,10 @@ import founder from '../data/founder.json';
 import { breadcrumbList } from '../lib/schema';
 import { dateModified, pageSources } from '../lib/lastmod';
 const origin = new URL(Astro.site!).origin;
-const crumbs = breadcrumbList(origin, [{ name: 'Ana Sayfa', path: '/' }, { name: 'Hakkımızda', path: '/kurucu' }]);
+const crumbs = breadcrumbList(origin, [{ name: 'Ana Sayfa', path: '/' }, { name: 'Hakkımızda', path: '/hakkimizda' }]);
 const pageSchema = {
-  '@context': 'https://schema.org', '@type': 'AboutPage', url: origin + '/kurucu/',
-  name: 'TusAnkiM hakkında', description: founder.quote, inLanguage: 'tr-TR', ...dateModified(pageSources('kurucu')),
+  '@context': 'https://schema.org', '@type': 'AboutPage', url: origin + '/hakkimizda/',
+  name: 'TusAnkiM hakkında', description: founder.quote, inLanguage: 'tr-TR', ...dateModified(pageSources('hakkimizda')),
 };
 ---
 <Layout title="Hakkımızda | TusAnkiM" description="TusAnkiM’in çalışma yaklaşımı, hazır kart koleksiyonu ve TUS referanslarının değerlendirme yöntemi." schema={[crumbs, pageSchema]}>

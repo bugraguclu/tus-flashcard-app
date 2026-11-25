@@ -52,6 +52,11 @@
   ],
   "redirects": [
     {
+      "source": "/kurucu{/}?",
+      "destination": "/hakkimizda/",
+      "permanent": true
+    },
+    {
       "source": "/",
       "has": [{ "type": "query", "key": "deck" }],
       "destination": "/uygulama/",

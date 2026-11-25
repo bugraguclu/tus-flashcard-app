@@ -12,11 +12,13 @@
 - [TUS Taban Puanları ve Kontenjan](https://tusankim.com/tus-taban-puanlari-ve-kontenjan/): ÖSYM 2025/1–2026/2 yerleştirme verileri; uzmanlık dallarına göre en düşük–en yüksek puan, doluluk ve kontenjan.
 - [TUS Spot Bilgiler](https://tusankim.com/tus-spot-bilgiler/): PDF spot listeleri yerine aktif hatırlama; 12 ders, 106 alt deste ve canlı demo kartları.
 - [TUS İçin AnkiMobile Alternatifi](https://tusankim.com/tus-icin-ankimobile-alternatifi/): iPhone ve web için .apkg/.colpkg uyumlu, FSRS-6'lı bağımsız alternatifin karşılaştırması.
-- [TUS Rehber Yazıları](https://tusankim.com/rehber/): 2027 takvimi, intörn ve son 1 ay programı, puan hesabı, FSRS-6 ve günlük kart sayısı üzerine 8 yazı.
+- [TUS Yazıları](https://tusankim.com/rehber/): 2027 takvimi, intörn ve son 1 ay programı, puan hesabı, FSRS-6 ve günlük kart sayısı üzerine 8 yazı.
 - [Kartları Tablette Dene](https://tusankim.com/kart-denemesi/): 11 dersten 44 kartlık tarayıcı içi deste listesi ve çalışma ekranı demosu.
 - [Yardım Merkezi (21 Rehber)](https://tusankim.com/yardim/): Kurulum, FSRS-6, Deste Seçenekleri, Filtrelenmiş Deste, Kronometre, İstatistikler, Anki aktarım ve yedekleme kılavuzları.
 - [Sıkça Sorulan Sorular](https://tusankim.com/sss/): Ürün, referans yöntemi, ücretsiz beta, 3 segmentli erişim modeli ve cihazlar hakkında yanıtlar.
-- [Hakkımızda](https://tusankim.com/kurucu/): TusAnkiM hazırlama yaklaşımı ve editöryal ilkeler.
+- [Özellikler](https://tusankim.com/ozellikler/): FSRS-6 tekrar takvimi, Kronometre, Çalışma Takvimi, kayıpsız Anki aktarımı ve puan hesaplayıcı.
+- [Fiyatlar ve Erişim](https://tusankim.com/fiyatlar/): Güncel betada ücretsiz erişim ve planlanan 3 segmentli model; ücretli seçenekler henüz devrede değil.
+- [Hakkımızda](https://tusankim.com/hakkimizda/): TusAnkiM hazırlama yaklaşımı ve editöryal ilkeler.
 
 ## Tam Metin Özeti
 - [llms-full.txt](https://tusankim.com/llms-full.txt): Doğrulanmış rakamlar, 11 branş tablosu, FSRS-6 simülasyon değerleri ve TUS çalışma rehberi özeti.

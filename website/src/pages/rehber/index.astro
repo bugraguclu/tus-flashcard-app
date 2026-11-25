@@ -16,7 +16,7 @@ const modLabel = formatTrDate(modDate);
 
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
-  { name: 'Rehberler', path: '/rehber' },
+  { name: 'TUS Yazıları', path: '/rehber' },
 ]);
 
 const colSchema = collectionPage(origin, {
@@ -44,17 +44,17 @@ const colSchema = collectionPage(origin, {
           <li class="inline-flex items-center">
             <span aria-hidden="true" class="mx-2">/</span>
             <a href="/rehber/" aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
-              Rehber
+              TUS Yazıları
             </a>
           </li>
         </ol>
       </nav>
 
       <h1 class="display text-page-title tracking-tightest text-ink max-w-3xl">
-        TUS Çalışma Rehberleri
+        TUS Yazıları
       </h1>
       <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
-        TUS puanı, 2027 sınav takvimi, FSRS-6 algoritması, kart hacmi ve sık yapılan çalışma hataları üzerine veri ve resmî kaynak temelli {REHBER_ARTICLES.length} temel rehber.
+        TUS puanı, 2027 sınav takvimi, FSRS-6 algoritması, kart hacmi ve sık yapılan çalışma hataları üzerine veri ve resmî kaynaklara dayanan {REHBER_ARTICLES.length} kısa yazı.
       </p>
       <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
         <span>
@@ -62,7 +62,7 @@ const colSchema = collectionPage(origin, {
         </span>
         <span>
           Hazırlayan:{' '}
-          <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+          <a href="/hakkimizda/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
             TusAnkiM
           </a>
         </span>

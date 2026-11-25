@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PageIntro from '../components/PageIntro.astro';
+import FeatureSummary from '../components/features/FeatureSummary.astro';
+import FeatureTools from '../components/features/FeatureTools.astro';
+import '../styles/home.css';
+import catalog from '../data/generated/catalog.json';
+import { SITE } from '../config';
+import { breadcrumbList } from '../lib/schema';
+import { dateModified, pageSources } from '../lib/lastmod';
+import { num } from '../lib/format';
+
+const origin = new URL(Astro.site!).origin;
+const crumbs = breadcrumbList(origin, [{ name: 'Ana Sayfa', path: '/' }, { name: 'Özellikler', path: '/ozellikler' }]);
+const pageSchema = {
+  '@context': 'https://schema.org', '@type': 'WebPage', url: origin + '/ozellikler/',
+  name: 'TusAnkiM özellikleri', inLanguage: 'tr-TR', about: { '@id': origin + '/#application' },
+  ...dateModified(pageSources('ozellikler')),
+};
+---
+<Layout
+  title="Özellikler: FSRS-6, Kronometre, Anki | TusAnkiM"
+  description={`TusAnkiM’de ${num(catalog.totals.cards)} hazır TUS kartı, FSRS-6 tekrar takvimi, Kronometre, Çalışma Takvimi ve kayıpsız Anki aktarımı bir arada.`}
+  schema={[crumbs, pageSchema]}
+>
+  <PageIntro
+    crumb="Özellikler"
+    label="Ürün"
+    title="TusAnkiM neler yapar?"
+    lead="Hazır TUS kartları, tekrar takvimi, çalışma süresi takibi ve kendi Anki destelerin aynı uygulamada."
+  >
+    <a href={SITE.webAppUrl} target="_blank" rel="noopener noreferrer" class="button-primary mt-5">Ücretsiz dene<span class="sr-only"> (yeni sekmede açılır)</span></a>
+  </PageIntro>
+  <FeatureSummary />
+  <FeatureTools />
+</Layout>

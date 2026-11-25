@@ -60,16 +60,28 @@ export function verifySearchOutput({ dist, htmlFiles, check }) {
   const elements = (homeMarkup.match(/<[a-z][a-z0-9-]*(?=[\s>])/gi) || []).length;
   const bytes = Buffer.byteLength(home);
   check(elements < 1300, `home: ${elements} elements exceeds the 1,300 element budget`);
-  // The landing page (hero, proof, demo, study pace, references, tools, access, usage, FAQ)
-  // shares a 72 KB static HTML budget (about 13 KB gzipped).
-  check(bytes < 72000, `home: ${bytes} bytes exceeds the 72 KB HTML budget`);
+  // The landing page (hero, tablet demo, reasons, evidence, plan, access and FAQ)
+  // shares an 80 KB static HTML budget. The tablet demo's deck tree is about 24 KB of it;
+  // its cards load from /data/demo-decks.json, never inside the page.
+  check(bytes < 80000, `home: ${bytes} bytes exceeds the 80 KB HTML budget`);
   check(!/\bdata-cards=|\bdata-fsrs=/.test(home), 'home: bulk demo/simulation JSON was embedded again');
-  check(home.includes('data-cards-url="/data/demo-cards.json"'), 'home: missing external demo data URL');
+  check(home.includes('data-decks-url="/data/demo-decks.json"') && home.includes('data-demo-simulator'), 'home: missing the tablet demo and its external deck data URL');
   check(home.includes('data-demo-retry'), 'home: external demo failure needs a retry action');
   check(home.includes('href="/sss/"'), 'home: missing link to full FAQ');
-  for (const id of ['ekosistem', 'fsrs', 'kronometre', 'anki', 'neden-tusankim', 'fiyatlandirma', 'kullanim']) {
-    check(homeMarkup.includes(`id="${id}"`), `home: missing requested product section #${id}`);
+  // The home page stays a short overview; the detail lives on its own pages.
+  for (const id of ['demo-bolumu', 'neden-tusankim', 'referans-ozet', 'calisma-plani', 'fiyatlandirma', 'sss']) {
+    check(homeMarkup.includes(`id="${id}"`), `home: missing overview section #${id}`);
   }
+  for (const href of ['/ozellikler/', '/fiyatlar/', '/referanslar/', '/hakkimizda/']) {
+    check(homeMarkup.includes(`href="${href}"`), `home: missing link to ${href}`);
+  }
+  check((homeMarkup.match(/<section\b/g) || []).length <= 8, 'home: too many sections; move detail to a sub-page');
+  const features = markup(read('ozellikler/index.html'));
+  for (const id of ['fsrs', 'kronometre', 'anki', 'kisaca']) {
+    check(features.includes(`id="${id}"`), `ozellikler: missing feature section #${id}`);
+  }
+  const pricing = markup(read('fiyatlar/index.html'));
+  check(pricing.includes('₺2.000') && pricing.includes('₺50') && /henüz devrede değil/.test(pricing), 'fiyatlar: tiers or beta note missing');
   for (const file of htmlFiles) {
     const visible = markup(fs.readFileSync(file, 'utf8'));
     check(!/href="https?:\/\/(?:wa\.me|api\.whatsapp\.com)\//i.test(visible), `${path.relative(dist, file)}: disabled WhatsApp link was rendered`);

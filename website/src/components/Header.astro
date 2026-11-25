@@ -1,10 +1,14 @@
 ---
 import { SITE } from '../config';
-import { NAV_IDS, page, link } from '../data/pages';
+import { NAV_GROUPS, NAV_LINK_IDS, page, link } from '../data/pages';
 import SiteSearch from './SiteSearch.astro';
 const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
-const navItems = NAV_IDS.map(page);
 const isCurrent = (path: string) => currentPath === path || currentPath.startsWith(path + '/');
+const groups = NAV_GROUPS.map((group) => {
+  const items = group.items.map((item) => ({ ...page(item.id), hint: item.hint })).filter((p) => p.published);
+  return { ...group, items, active: items.some((item) => isCurrent(item.path)) };
+});
+const links = NAV_LINK_IDS.map(page);
 ---
 <header class="site-header">
   <div class="site-container header-inner">
@@ -13,7 +17,37 @@ const isCurrent = (path: string) => currentPath === path || currentPath.startsWi
       <span>TusAnkiM</span>
     </a>
     <nav aria-label="Ana menü" class="desktop-nav">
-      {navItems.map((item) => <a href={link(item.path)} class="nav-link" aria-current={isCurrent(item.path) ? 'page' : undefined}>{item.navLabel}</a>)}
+      <ul role="list" class="nav-list">
+        {groups.map((group) => (
+          <li class="nav-group" data-nav-group>
+            <button
+              type="button"
+              class="nav-trigger"
+              aria-expanded="false"
+              aria-controls={`nav-panel-${group.id}`}
+              data-active={group.active ? '' : undefined}
+            >
+              {group.label}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            <div id={`nav-panel-${group.id}`} class="nav-panel" hidden>
+              <ul role="list">
+                {group.items.map((item) => (
+                  <li>
+                    <a href={link(item.path)} aria-current={isCurrent(item.path) ? 'page' : undefined}>
+                      <strong>{item.navLabel}</strong>
+                      <span>{item.hint}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </li>
+        ))}
+        {links.map((item) => (
+          <li><a href={link(item.path)} class="nav-trigger" aria-current={isCurrent(item.path) ? 'page' : undefined}>{item.navLabel}</a></li>
+        ))}
+      </ul>
     </nav>
     <div class="header-actions">
       <button id="site-search-open" type="button" aria-label="Sitede ara" aria-haspopup="dialog" aria-controls="site-search" aria-keyshortcuts="Control+K Meta+K" hidden>
@@ -34,9 +68,18 @@ const isCurrent = (path: string) => currentPath === path || currentPath.startsWi
     </button>
   </div>
   <nav aria-label="Mobil menü">
-    <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>Ana sayfa</a>
-    {navItems.map((item) => <a href={link(item.path)} aria-current={isCurrent(item.path) ? 'page' : undefined}>{item.navLabel}</a>)}
-    <a href="/destek/">Destek ve iletişim</a>
+    <a href="/" class="drawer-link" aria-current={currentPath === '/' ? 'page' : undefined}>Ana sayfa</a>
+    {groups.map((group) => (
+      <details class="drawer-group" open={group.active}>
+        <summary>{group.label}</summary>
+        <ul role="list">
+          {group.items.map((item) => (
+            <li><a href={link(item.path)} aria-current={isCurrent(item.path) ? 'page' : undefined}>{item.navLabel}</a></li>
+          ))}
+        </ul>
+      </details>
+    ))}
+    {links.map((item) => <a href={link(item.path)} class="drawer-link" aria-current={isCurrent(item.path) ? 'page' : undefined}>{item.navLabel}</a>)}
   </nav>
   <a href={SITE.webAppUrl} target="_blank" rel="noopener noreferrer" class="button-primary drawer-action">Uygulamayı dene</a>
 </dialog>
@@ -46,12 +89,47 @@ const isCurrent = (path: string) => currentPath === path || currentPath.startsWi
   .header-inner { display: flex; align-items: center; justify-content: space-between; gap: clamp(.75rem, 2vw, 2rem); height: var(--site-header-height); }
   .brand { display: inline-flex; align-items: center; gap: .625rem; min-height: 2.75rem; font-size: 1.125rem; font-weight: 600; letter-spacing: -.035em; }
   .brand img { width: 2.25rem; height: 2.25rem; object-fit: contain; }
-  .desktop-nav { display: flex; align-items: center; gap: clamp(.875rem, 1.8vw, 1.75rem); margin-left: auto; }
-  .desktop-nav a { display: inline-flex; align-items: center; min-height: 2.75rem; font-size: .875rem; color: #596166; white-space: nowrap; }
-  .desktop-nav a:hover { color: #0e7469; }
+  .desktop-nav { margin-left: auto; }
+  .nav-list { display: flex; align-items: center; gap: clamp(.25rem, 1vw, .75rem); }
+  .nav-group { position: relative; }
+  .nav-trigger {
+    display: inline-flex; align-items: center; gap: .3rem; width: auto; height: auto; min-height: 2.75rem;
+    padding-inline: .625rem; border-radius: .5rem; font-size: .875rem; color: #596166; white-space: nowrap;
+  }
+  .nav-trigger svg { transition: rotate 150ms cubic-bezier(.23, 1, .32, 1); }
+  .nav-trigger[aria-expanded="true"] svg { rotate: 180deg; }
+  .nav-trigger[aria-expanded="true"], .nav-trigger[data-active], .nav-trigger[aria-current="page"] { color: #0e7469; }
+  .nav-trigger[data-active], .nav-trigger[aria-current="page"] { font-weight: 600; }
+  .nav-trigger:focus-visible, .nav-panel a:focus-visible { outline: 2px solid #0e7469; outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) {
+    .nav-trigger:hover { color: #0e7469; background: #f3f8f7; }
+  }
+  .nav-panel {
+    position: absolute; top: calc(100% + .375rem); left: 50%; translate: -50% 0; z-index: 50;
+    width: 20rem; padding: .5rem; background: #fff; border: 1px solid #dde1e4; border-radius: .875rem;
+    box-shadow: 0 1rem 2.5rem #16332e1f; transform-origin: top center;
+  }
+  .nav-panel a { display: grid; gap: .125rem; padding: .625rem .75rem; border-radius: .5rem; min-height: 2.75rem; }
+  .nav-panel strong { font-size: .9375rem; font-weight: 600; color: #24292c; }
+  .nav-panel span { font-size: .8125rem; color: #596166; line-height: 1.4; }
+  .nav-panel a[aria-current="page"] { background: #eaf5f2; }
+  .nav-panel a[aria-current="page"] strong { color: #0e7469; }
+  @media (hover: hover) and (pointer: fine) {
+    .nav-panel a:hover { background: #f3f8f7; }
+    .nav-panel a:hover strong { color: #0e7469; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .nav-panel:not([hidden]) { animation: nav-panel-enter 180ms cubic-bezier(.23, 1, .32, 1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-trigger svg { transition: none; }
+    .nav-panel:not([hidden]) { animation: nav-panel-fade 150ms ease-out; }
+  }
+  @keyframes nav-panel-enter { from { opacity: 0; scale: .95; } }
+  @keyframes nav-panel-fade { from { opacity: 0; } }
   .header-actions { display: flex; align-items: center; gap: .5rem; }
   .header-actions .button-primary { white-space: nowrap; }
-  button { display: grid; place-items: center; flex: 0 0 2.75rem; width: 2.75rem; height: 2.75rem; border-radius: .5rem; }
+  .header-actions button, .drawer-heading button { display: grid; place-items: center; flex: 0 0 2.75rem; width: 2.75rem; height: 2.75rem; border-radius: .5rem; }
   #mobile-nav-open { display: none; }
   #site-search-open { color: #344344; }
   #site-search-open:focus-visible { background: #eaf5f2; color: #0e7469; }
@@ -93,11 +171,20 @@ const isCurrent = (path: string) => currentPath === path || currentPath.startsWi
   @keyframes drawer-backdrop-enter { from { opacity: 0; } }
   .drawer-heading { display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid #dde1e4; }
   .drawer-heading h2 { font-weight: 600; font-size: 1.125rem; letter-spacing: -.03em; }
-  .mobile-drawer nav { padding-block: 1rem 2rem; }
-  .mobile-drawer nav a { display: flex; align-items: center; min-height: 3.5rem; border-bottom: 1px solid #e9ecee; font-size: 1rem; }
+  .mobile-drawer nav { padding-block: .5rem 2rem; }
+  .drawer-link, .drawer-group summary { display: flex; align-items: center; min-height: 3.5rem; border-bottom: 1px solid #e9ecee; font-size: 1rem; }
+  .drawer-group summary { justify-content: space-between; cursor: pointer; list-style: none; font-weight: 500; }
+  .drawer-group summary::-webkit-details-marker { display: none; }
+  .drawer-group summary::after {
+    content: ""; width: .5rem; height: .5rem; margin-right: .375rem;
+    border-right: 2px solid #596166; border-bottom: 2px solid #596166; rotate: 45deg; translate: 0 -.125rem;
+  }
+  .drawer-group[open] summary::after { rotate: 225deg; translate: 0 .125rem; }
+  .drawer-group ul { padding-block: .25rem .5rem; border-bottom: 1px solid #e9ecee; }
+  .drawer-group li a { display: flex; align-items: center; min-height: 2.75rem; padding-left: .875rem; font-size: .9375rem; color: #3b4246; }
   .mobile-drawer [aria-current="page"] { color: #0e7469; font-weight: 600; }
   .drawer-action { width: 100%; }
-  @media (max-width: 800px) {
+  @media (max-width: 860px) {
     .header-inner { gap: .5rem; }
     .header-actions { gap: .25rem; }
     .desktop-nav { display: none; }
@@ -112,6 +199,38 @@ const isCurrent = (path: string) => currentPath === path || currentPath.startsWi
   }
 </style>
 <script>
+  // Desktop menu groups: a click opens one panel, Escape, a click elsewhere or
+  // moving focus out of the group closes it.
+  const groups = [...document.querySelectorAll<HTMLElement>('[data-nav-group]')];
+  const parts = groups.map((group) => ({
+    group,
+    trigger: group.querySelector<HTMLButtonElement>('button')!,
+    panel: group.querySelector<HTMLElement>('.nav-panel')!,
+  }));
+  const setOpen = (part: (typeof parts)[number], open: boolean) => {
+    part.trigger.setAttribute('aria-expanded', String(open));
+    part.panel.hidden = !open;
+  };
+  const closeAll = (except?: (typeof parts)[number]) => parts.forEach((part) => { if (part !== except) setOpen(part, false); });
+  parts.forEach((part) => {
+    part.trigger.addEventListener('click', () => {
+      const open = part.trigger.getAttribute('aria-expanded') !== 'true';
+      closeAll(part);
+      setOpen(part, open);
+    });
+    part.group.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || part.panel.hidden) return;
+      setOpen(part, false);
+      part.trigger.focus();
+    });
+    part.group.addEventListener('focusout', (event) => {
+      if (!part.group.contains(event.relatedTarget as Node | null)) setOpen(part, false);
+    });
+  });
+  document.addEventListener('click', (event) => {
+    if (!(event.target as Element).closest('[data-nav-group]')) closeAll();
+  });
+
   const navOpen = document.getElementById('mobile-nav-open') as HTMLButtonElement;
   const navClose = document.getElementById('mobile-nav-close') as HTMLButtonElement;
   const navDialog = document.getElementById('mobile-nav-dialog') as HTMLDialogElement;
@@ -135,5 +254,8 @@ const isCurrent = (path: string) => currentPath === path || currentPath.startsWi
     navDialog.addEventListener('pointerdown', (event) => { pressedOutside = outside(event); });
     navDialog.addEventListener('pointerup', (event) => { if (pressedOutside && outside(event)) navDialog.close(); });
   }
-  matchMedia('(min-width: 801px)').addEventListener('change', (event) => { if (event.matches && navDialog.open) navDialog.close(); });
+  matchMedia('(min-width: 861px)').addEventListener('change', (event) => {
+    if (event.matches && navDialog.open) navDialog.close();
+    if (!event.matches) closeAll();
+  });
 </script>

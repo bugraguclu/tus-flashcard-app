@@ -1,0 +1,47 @@
+---
+import catalog from '../../data/generated/catalog.json';
+import ref from '../../data/generated/references-summary.json';
+import { num } from '../../lib/format';
+
+const t = catalog.totals;
+const o = ref.overall;
+---
+<section id="kisaca" class="scroll-mt-24 bg-surfaceSoft border-b border-line" aria-labelledby="kisaca-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 sm:py-16 grid lg:grid-cols-12 gap-8 lg:gap-12">
+    <div class="lg:col-span-5 reveal">
+      <p class="kicker">Kısaca</p>
+      <h2 id="kisaca-heading" class="display text-section tracking-tightest text-ink mt-3">TusAnkiM nedir?</h2>
+      <p data-speakable class="mt-4 text-inkMuted leading-relaxed">
+        TusAnkiM, TUS'a (Tıpta Uzmanlık Sınavı) hazırlanan hekim ve tıp öğrencileri için Türkçe aralıklı tekrar uygulamasıdır.
+        {num(t.cards)} kartlık hazır BKA TUS paketini <span lang="en">FSRS-6</span> algoritmasıyla zamanlar; kartlar, tekrar geçmişi ve yedekler cihazda kalır.
+        Kart kalitesini son 6 TUS'un {num(o.soru)} sorusuyla açık veriyle ölçer.
+      </p>
+    </div>
+    <dl class="lg:col-span-7 grid sm:grid-cols-2 gap-px rounded-2xl overflow-hidden border border-line bg-line reveal" style="--d: 80ms">
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Kimin için</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">Stajyer ve intörn tıp öğrencileri, TUS'a hazırlanan pratisyen hekimler.</dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Nerede çalışır</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">iPhone için geliştiriliyor; bugün web tarayıcıda (Mac, Windows, iPad, Android) ücretsiz beta olarak çalışır, çevrimdışı da açılır.</dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">İçerik</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">{num(t.cards)} kart, {t.courses} ders, {t.topicSubdecks} konu alt destesi; kendi destelerini de ekleyebilirsin.</dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Araçlar</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">Kronometre, Çalışma Takvimi, Çalışma Planlama ve TUS puan hesaplayıcı.</dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Anki uyumu</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">Kişisel <code>.apkg</code> / <code>.colpkg</code> desteleri medya ve tekrar geçmişiyle içe ve dışa aktarılır.</dd>
+      </div>
+      <div class="bg-white p-5">
+        <dt class="text-xs font-bold uppercase tracking-wider text-inkMuted">Kim hazırlıyor</dt>
+        <dd class="mt-1.5 text-sm text-ink leading-relaxed">TusAnkiM ekibi; Anki veya Ankitects ile bağlantısı olmayan bağımsız bir projedir.</dd>
+      </div>
+    </dl>
+  </div>
+</section>

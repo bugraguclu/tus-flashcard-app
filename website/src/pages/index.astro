@@ -1,13 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import LiveCardDemo from '../components/LiveCardDemo.astro';
+import TabletDemo from '../components/TabletDemo.astro';
 import HomeHero from '../components/home/HomeHero.astro';
-import HomeProof from '../components/home/HomeProof.astro';
+import HomeWhy from '../components/home/HomeWhy.astro';
+import HomeEvidence from '../components/home/HomeEvidence.astro';
 import HomePlan from '../components/home/HomePlan.astro';
-import HomeReferences from '../components/home/HomeReferences.astro';
-import HomeTools from '../components/home/HomeTools.astro';
-import HomeAccess from '../components/home/HomeAccess.astro';
-import HomeTrust from '../components/home/HomeTrust.astro';
+import HomeClose from '../components/home/HomeClose.astro';
 import '../styles/home.css';
 
 import { appScreens } from '../data/appScreens';
@@ -45,12 +43,13 @@ const homeSchema = [
       cssSelector: ['#hero-title', '[data-speakable]'],
     },
     significantLink: [
+      origin + '/ozellikler/',
       origin + '/tus-calisma-rehberi/',
       origin + '/calisma-plani/',
       origin + '/referanslar/',
       origin + '/puan-hesapla/',
-      origin + '/yardim/fsrs/',
-      origin + '/yardim/anki-ile-kullanma/',
+      origin + '/fiyatlar/',
+      origin + '/yardim/',
     ],
     ...dateModified(pageSources('home')),
   },
@@ -95,27 +94,28 @@ const homeSchema = [
   schema={homeSchema}
 >
   <HomeHero />
-  <HomeProof />
   <section id="demo-bolumu" class="home-demo scroll-mt-24 py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="demo-section-heading">
-    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-      <div class="lg:col-span-5 reveal">
-        <p class="kicker">Canlı deneme</p>
-        <h2 id="demo-section-heading" class="display text-section tracking-tightest text-ink mt-3">Kartları burada dene.</h2>
-        <p class="text-inkMuted mt-3 leading-relaxed">
-          11 dersten gerçek kartlar. Boşluğu tahmin et, cevabı aç ve ne kadar kolay hatırladığını işaretle; uygulamadaki tekrar akışı aynen böyle işler.
-        </p>
-        <a href="/kart-denemesi/" class="text-link">Deste listesiyle birlikte tablette dene →</a>
+    <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 reveal">
+        <div class="max-w-2xl">
+          <p class="kicker">Canlı deneme</p>
+          <h2 id="demo-section-heading" class="display text-section tracking-tightest text-ink mt-3">Uygulamadaymış gibi çöz.</h2>
+          <p class="text-inkMuted mt-3 leading-relaxed">
+            11 dersten gerçek kartlar. Bir deste seç, cevabı tahmin et, aç ve ne kadar kolay hatırladığını işaretle; uygulamadaki tekrar böyle işler.
+          </p>
+        </div>
+        <a href="/kart-denemesi/" class="shrink-0 inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark">Tam ekranda dene →</a>
       </div>
-      <div class="lg:col-span-7 min-w-0">
-        <LiveCardDemo />
+      <div class="mt-8 min-w-0">
+        <TabletDemo />
       </div>
+      <a class="text-link" href={appScreens.question.src}>Uygulamadaki gerçek çalışma ekranını gör</a>
     </div>
   </section>
+  <HomeWhy />
+  <HomeEvidence />
   <HomePlan />
-  <HomeReferences />
-  <HomeTools />
-  <HomeAccess />
-  <HomeTrust />
+  <HomeClose />
 </Layout>
 
 <script>

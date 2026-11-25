@@ -20,15 +20,14 @@ export const PAGES: PageEntry[] = [
     published: true,
     sitemap: true,
     sources: [
-      'website/src/pages/index.astro', 'website/src/components/LiveCardDemo.astro',
-      'website/src/components/home/HomeHero.astro', 'website/src/components/home/HomeProof.astro',
-      'website/src/components/home/HomePlan.astro', 'website/src/components/home/HomeReferences.astro',
-      'website/src/components/home/HomeTools.astro', 'website/src/components/home/HomeAccess.astro',
-      'website/src/components/home/HomeTrust.astro',
+      'website/src/pages/index.astro', 'website/src/components/TabletDemo.astro',
+      'website/src/components/home/HomeHero.astro', 'website/src/components/home/HomeWhy.astro',
+      'website/src/components/home/HomeEvidence.astro', 'website/src/components/home/HomePlan.astro',
+      'website/src/components/home/HomeClose.astro',
       'website/src/styles/home.css', 'website/src/data/faqs.json',
       'website/src/lib/studyPlanner.ts', 'website/src/lib/studyPlannerTypes.ts',
       'website/src/data/generated/fsrs-planner.json', 'website/src/data/exams.json',
-      'website/src/data/founder.json', 'website/src/config.ts', 'website/src/data/offer.json',
+      'website/src/config.ts',
       'website/src/data/generated/catalog.json', 'website/src/data/generated/demo-cards.json',
       'website/src/data/generated/references-summary.json',
     ],
@@ -56,9 +55,9 @@ export const PAGES: PageEntry[] = [
   {
     id: 'rehber',
     path: '/rehber',
-    title: 'TUS Çalışma Rehberleri',
-    navLabel: 'Rehber Yazıları',
-    footerLabel: 'TUS Çalışma Rehberleri (8 Yazı)',
+    title: 'TUS Yazıları',
+    navLabel: 'TUS Yazıları',
+    footerLabel: 'TUS Yazıları',
     published: true,
     sitemap: true,
     sources: [
@@ -174,7 +173,7 @@ export const PAGES: PageEntry[] = [
     id: 'kart-denemesi',
     path: '/kart-denemesi',
     title: 'Kartları Tablette Dene',
-    navLabel: 'Kart Denemesi',
+    navLabel: 'Kartları Dene',
     footerLabel: 'Kartları Tablette Dene',
     published: true,
     sitemap: true,
@@ -185,21 +184,45 @@ export const PAGES: PageEntry[] = [
     ],
   },
   {
-    id: 'kurucu',
-    path: '/kurucu',
+    id: 'ozellikler',
+    path: '/ozellikler',
+    title: 'TusAnkiM Özellikleri',
+    navLabel: 'Özellikler',
+    footerLabel: 'Özellikler',
+    published: true,
+    sitemap: true,
+    sources: [
+      'website/src/pages/ozellikler.astro', 'website/src/components/features/FeatureTools.astro',
+      'website/src/components/features/FeatureSummary.astro',
+      'website/src/data/generated/catalog.json', 'website/src/data/generated/references-summary.json',
+    ],
+  },
+  {
+    id: 'fiyatlar',
+    path: '/fiyatlar',
+    title: 'Fiyatlar ve Erişim',
+    navLabel: 'Fiyatlar',
+    footerLabel: 'Fiyatlar',
+    published: true,
+    sitemap: true,
+    sources: ['website/src/pages/fiyatlar.astro', 'website/src/components/pricing/PricingTiers.astro', 'website/src/data/offer.json', 'website/src/config.ts'],
+  },
+  {
+    id: 'hakkimizda',
+    path: '/hakkimizda',
     title: 'Hakkımızda',
     navLabel: 'Hakkımızda',
     footerLabel: 'Hakkımızda',
     published: true,
     sitemap: true,
-    sources: ['website/src/pages/kurucu.astro', 'website/src/data/founder.json'],
+    sources: ['website/src/pages/hakkimizda.astro', 'website/src/data/founder.json'],
   },
   {
     id: 'yardim',
     path: '/yardim',
     title: 'Yardım Merkezi',
-    navLabel: 'Yardım',
-    footerLabel: 'Kullanım Kılavuzu (21 Rehber)',
+    navLabel: 'Yardım Merkezi',
+    footerLabel: 'Yardım Merkezi',
     published: true,
     sitemap: true,
     sources: ['website/src/pages/yardim/index.astro', 'website/src/components/HelpSearch.astro', 'website/src/lib/helpDocs.ts',
@@ -219,8 +242,8 @@ export const PAGES: PageEntry[] = [
     id: 'destek',
     path: '/destek',
     title: 'Destek ve İletişim',
-    navLabel: 'Destek',
-    footerLabel: 'Destek ve İletişim',
+    navLabel: 'İletişim',
+    footerLabel: 'İletişim',
     published: LEGAL_PAGES,
     sitemap: LEGAL_PAGES,
     sources: ['website/src/pages/destek.astro'],
@@ -247,10 +270,50 @@ export const PAGES: PageEntry[] = [
   },
 ];
 
-export const NAV_IDS = ['calisma-rehberi', 'referanslar', 'puan', 'yardim', 'sss'] as const;
-export const FOOTER_DISCOVER_IDS = ['calisma-rehberi', 'calisma-plani', 'referanslar', 'puan', 'kurucu', 'yardim', 'sss', 'destek'] as const;
-export const FOOTER_CONTENT_IDS = ['rehber', 'cikmis-sorular', 'taban-puanlari', 'spot-bilgiler', 'ankimobile-alternatifi'] as const;
-export const FOOTER_LEGAL_IDS = ['gizlilik', 'kosullar', 'destek'] as const;
+export interface NavGroup {
+  id: string;
+  label: string;
+  items: { id: string; hint: string }[];
+}
+
+/** One menu for the header, the mobile drawer and the footer. */
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    id: 'urun',
+    label: 'Ürün',
+    items: [
+      { id: 'ozellikler', hint: 'FSRS-6, Kronometre, Anki aktarımı' },
+      { id: 'kart-denemesi', hint: 'Gerçek kartları tablette çöz' },
+      { id: 'referanslar', hint: 'Kartların çıkmış sorulara karşılığı' },
+      { id: 'fiyatlar', hint: 'Betada ücretsiz, planlanan model' },
+      { id: 'ankimobile-alternatifi', hint: 'AnkiMobile ile karşılaştırma' },
+    ],
+  },
+  {
+    id: 'tus-hazirlik',
+    label: 'TUS Hazırlık',
+    items: [
+      { id: 'calisma-rehberi', hint: '2027 takvimi, tempo ve branş stratejisi' },
+      { id: 'calisma-plani', hint: 'Günlük kart ve süre hesabı' },
+      { id: 'puan', hint: 'Netlerinden Temel ve Klinik puan' },
+      { id: 'taban-puanlari', hint: 'Uzmanlık dallarının taban puanları' },
+      { id: 'cikmis-sorular', hint: 'Son 6 TUS’ta branş dağılımı' },
+      { id: 'spot-bilgiler', hint: 'Spot bilgiyi aktif tekrara çevir' },
+      { id: 'rehber', hint: 'Plan, FSRS ve son ay yazıları' },
+    ],
+  },
+  {
+    id: 'destek',
+    label: 'Destek',
+    items: [
+      { id: 'yardim', hint: 'Uygulamanın kullanım kılavuzu' },
+      { id: 'sss', hint: 'Erişim, cihazlar ve kartlar' },
+      { id: 'destek', hint: 'E-posta ve hata bildirimi' },
+    ],
+  },
+];
+export const NAV_LINK_IDS = ['hakkimizda'] as const;
+export const FOOTER_LEGAL_IDS = ['gizlilik', 'kosullar'] as const;
 
 export const page = (id: string): PageEntry => {
   const found = PAGES.find((p) => p.id === id);

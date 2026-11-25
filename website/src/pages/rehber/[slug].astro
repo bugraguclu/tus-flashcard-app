@@ -30,7 +30,7 @@ const modLabel = formatTrDate(modDate);
 
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
-  { name: 'Rehber', path: '/rehber' },
+  { name: 'TUS Yazıları', path: '/rehber' },
   { name: article.questionH1, path: pagePath },
 ]);
 
@@ -65,7 +65,7 @@ const articleSchema = {
           </li>
           <li class="inline-flex items-center">
             <span aria-hidden="true" class="mx-2">/</span>
-            <a href="/rehber/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Rehber</a>
+            <a href="/rehber/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">TUS Yazıları</a>
           </li>
           <li class="inline-flex items-center">
             <span aria-hidden="true" class="mx-2">/</span>
@@ -89,7 +89,7 @@ const articleSchema = {
         </span>
         <span>
           Hazırlayan:{' '}
-          <a href="/kurucu/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
+          <a href="/hakkimizda/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
             TusAnkiM
           </a>
         </span>
@@ -182,7 +182,7 @@ const articleSchema = {
         ))}
       </ul>
       <p class="mt-3 pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed">
-        Hazırlayan: <a href="/kurucu/" class="font-semibold text-teal underline hover:text-tealDark">TusAnkiM</a> ·
+        Hazırlayan: <a href="/hakkimizda/" class="font-semibold text-teal underline hover:text-tealDark">TusAnkiM</a> ·
         Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
       </p>
     </section>

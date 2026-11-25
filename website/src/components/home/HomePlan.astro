@@ -2,7 +2,6 @@
 import catalog from '../../data/generated/catalog.json';
 import {
   DEFAULT_PLANNER_INPUT,
-  MEGA_DECK_CARDS,
   PLANNER_PRESETS,
   formatDurationTr,
   runPlanner,
@@ -10,80 +9,56 @@ import {
 import { num } from '../../lib/format';
 
 const cards = num(catalog.totals.cards);
-const megaCards = num(MEGA_DECK_CARDS);
 const mezunPreset = PLANNER_PRESETS.find((preset) => preset.id === 'mezun');
 if (!mezunPreset) throw new Error('Missing mezun preset in PLANNER_PRESETS');
 const mezunSim = runPlanner({ ...DEFAULT_PLANNER_INPUT, ...mezunPreset.patch });
 
-const highlights = [
-  {
-    kicker: '4 Profil · FSRS-6 Eğrisi',
-    tone: 'teal',
-    title: `Stajyer, İntörn, Mezun, Son 4 Ay & ${cards} vs ${megaCards} Kart`,
-    text: `Günde ${mezunSim.activePace} yeni kartla ilk tur ${mezunSim.target.finishDay ?? mezunSim.input.days}. günde biter (~${formatDurationTr(mezunSim.target.avgMinutes)}/gün ort.); mega deste karşılaştırması ve 4 profil tablosu.`,
-    href: '/tus-calisma-rehberi/#tempo-ve-profiller',
-  },
-  {
-    kicker: '2027 Takvimi & 11 Branş',
-    tone: 'warm',
-    title: 'ÖSYM Sınav Tarihleri, Branş Ağırlıkları & %5 Kesinti',
-    text: '27 Mart ve 22 Ağustos 2027 takvimi, 11 branşta soru ve kart dağılımı, Temel/Klinik puan katsayıları.',
-    href: '/tus-calisma-rehberi/#brans-stratejisi',
-  },
-  {
-    kicker: 'TUS Pratiği · 7 Zorluk',
-    tone: 'teal',
-    title: 'Tekrar Yığılması, Nöbet Düzeni ve Deneme Platosu',
-    text: 'Okuduğunu unutma, tekrar borcu, Temel–Klinik dengesi ve son 30 gün paniği için somut çözüm adımları.',
-    href: '/tus-calisma-rehberi/#zorluklar',
-  },
+const paceSentence = `Günde ${mezunSim.activePace} yeni kartla ilk tur ${mezunSim.target.finishDay ?? mezunSim.input.days}. günde biter (~${formatDurationTr(mezunSim.target.avgMinutes)}/gün ort.)`;
+const tools = [
+  { title: 'Çalışma planı', text: 'Sınav tarihine göre günlük yeni kart ve tekrar süresi.', href: '/calisma-plani/' },
+  { title: 'TUS çalışma rehberi', text: '2027 takvimi, 4 aday profili ve 11 branş stratejisi.', href: '/tus-calisma-rehberi/' },
+  { title: 'Puan hesapla', text: 'Netlerinden Temel ve Klinik puanını, %5 kesintiyle.', href: '/puan-hesapla/' },
 ] as const;
 ---
 <section id="calisma-plani" class="scroll-mt-24 py-14 sm:py-20 bg-white border-b border-line" aria-labelledby="plan-heading">
-  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
-    <div class="rounded-3xl border border-line bg-surfaceSoft p-6 sm:p-8 lg:p-10 grid lg:grid-cols-12 gap-8 items-center">
-      <div class="lg:col-span-6 space-y-4 reveal">
-        <p class="kicker">TUS Çalışma Rehberi · Çalışma Temposu</p>
-        <h2 id="plan-heading" class="display text-section tracking-tightest text-ink">
-          Sınava kaç gün var? Planını ve çalışma stratejini tek rehberde kur.
-        </h2>
-        <p class="text-inkMuted leading-relaxed">
-          4 aday profili için <span lang="en">FSRS-6</span> tempo tablosu, {cards} çekirdek kart ile {megaCards} kartlık mega deste kıyası,
-          2027 ÖSYM takvimi, 11 branş çalışma odağı ve TUS adaylarının en çok zorlandığı 7 alana somut çözümler
-          artık <strong>TUS Çalışma Rehberi</strong> sayfasında.
-        </p>
-        <div class="pt-1 flex flex-wrap gap-3">
-          <a
-            href="/tus-calisma-rehberi/"
-            class="inline-flex items-center justify-center min-h-[3rem] px-6 rounded-full bg-teal text-white text-sm font-semibold hover:bg-tealDark transition"
-          >
-            TUS Çalışma Rehberini Oku →
-          </a>
-          <a
-            href="/calisma-plani/"
-            class="inline-flex items-center justify-center min-h-[3rem] px-6 rounded-full border border-line bg-white text-ink text-sm font-semibold hover:border-tealGraphic hover:text-teal transition"
-          >
-            Kişisel FSRS-6 Planlayıcı
-          </a>
-        </div>
-      </div>
-
-      <ul role="list" class="lg:col-span-6 grid gap-3 reveal" style="--d: 60ms">
-        {highlights.map((item) => (
-          <li>
-            <a href={item.href} class="lift block rounded-2xl border border-line bg-white p-4 sm:p-5">
-              <p class:list={[
-                'text-xs font-bold uppercase tracking-wider',
-                item.tone === 'warm' ? 'text-warm' : 'text-teal',
-              ]}>
-                {item.kicker}
-              </p>
-              <h3 class="display text-base text-ink mt-1">{item.title}</h3>
-              <p class="text-xs sm:text-sm text-inkMuted mt-1 leading-relaxed">{item.text}</p>
-            </a>
-          </li>
-        ))}
-      </ul>
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+    <div class="lg:col-span-5 reveal">
+      <p class="kicker">TUS hazırlık</p>
+      <h2 id="plan-heading" class="display text-section tracking-tightest text-ink mt-3">Sınava kalan güne göre planla.</h2>
+      <p class="text-inkMuted mt-3 leading-relaxed">
+        Mezun profilinde {cards} kartla örnek: {paceSentence}. Kendi tarihin ve çalışma günlerinle saniyeler içinde hesapla.
+      </p>
     </div>
+    <ul role="list" class="lg:col-span-7 grid gap-3 reveal" style="--d: 60ms">
+      {tools.map((tool) => (
+        <li>
+          <a href={tool.href} class="lift plan-link">
+            <span>
+              <strong class="display text-base text-ink">{tool.title}</strong>
+              <span class="block text-sm text-inkMuted mt-0.5">{tool.text}</span>
+            </span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+          </a>
+        </li>
+      ))}
+    </ul>
   </div>
 </section>
+
+<style>
+  .plan-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-block-size: 4.5rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid #dde1e4;
+    border-radius: 1rem;
+    color: #596166;
+  }
+  .plan-link:focus-visible { outline: 2px solid #0e7469; outline-offset: 2px; }
+  @media (hover: hover) and (pointer: fine) {
+    .plan-link:hover { border-color: #0e7469; color: #0e7469; }
+  }
+</style>

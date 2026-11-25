@@ -1,0 +1,119 @@
+---
+import catalog from '../../data/generated/catalog.json';
+import ref from '../../data/generated/references-summary.json';
+import { num, pct, share } from '../../lib/format';
+import { getBranchByName } from '../../data/branches';
+
+const t = catalog.totals;
+const o = ref.overall;
+const pre = ref.preExam2026_2;
+const konuYalniz = o.konuKapsami - o.destek;
+const branches = ref.bySubject
+  .map((s) => ({ name: s.ders, slug: getBranchByName(s.ders)?.slug, summary: s, konuYalniz: s.konuKapsami - s.destek }))
+  .sort((a, b) => b.summary.destekOran - a.summary.destekOran);
+---
+<section id="referans-ozet" class="scroll-mt-24 py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="evidence-heading">
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 reveal">
+      <div class="max-w-2xl">
+        <p class="kicker">Açık veri</p>
+        <h2 id="evidence-heading" class="display text-section tracking-tightest text-ink mt-3">Kartların çıkmış sorulara karşılığı</h2>
+        <p class="text-inkMuted mt-3 leading-relaxed">
+          Soruyu doğrudan çözdüren kartları, dolaylı kartlardan ve yalnızca konu kapsamından ayrı sayıyoruz; eksik dersleri de gösteriyoruz.
+        </p>
+      </div>
+      <a href="/referanslar/" class="shrink-0 inline-flex items-center min-h-[2.75rem] text-sm font-semibold text-teal underline underline-offset-4 hover:text-tealDark">{num(o.soru)} soruyu incele →</a>
+    </div>
+
+    <dl id="ekosistem" class="kpi-grid mt-8">
+      <div class="kpi reveal">
+        <dt>Hazır kart</dt>
+        <dd class="kpi-value">{num(t.cards)}</dd>
+        <dd class="kpi-note">{t.courses} ders · {t.topicSubdecks} konu alt destesi</dd>
+        <dd class="mt-auto pt-1">
+          <div class="segbar grow" role="img" aria-label={`Temel Bilimler ${num(t.temelCards)}, Klinik Bilimler ${num(t.klinikCards)}, Deneme ve Soru ${num(t.karmaCards)} kart`}>
+            <span class="seg-temel" style={`flex: ${t.temelCards} 0 0%`}></span>
+            <span class="seg-klinik" style={`flex: ${t.klinikCards} 0 0%`}></span>
+            <span class="seg-karma" style={`flex: ${t.karmaCards} 0 0%`}></span>
+          </div>
+          <p class="legend mt-2" aria-hidden="true">
+            <span><i class="seg-temel"></i>Temel</span>
+            <span><i class="seg-klinik"></i>Klinik</span>
+            <span><i class="seg-karma"></i>Karma</span>
+          </p>
+        </dd>
+      </div>
+
+      <div class="kpi reveal" style="--d: 60ms">
+        <dt>Son 6 TUS çözüm desteği</dt>
+        <dd class="kpi-value">{o.destek} / {num(o.soru)}</dd>
+        <dd class="kpi-note">{pct(o.destekOran)} · {o.dogrudan} doğrudan, {o.dolayli} dolaylı</dd>
+        <dd class="mt-auto pt-1">
+          <div class="segbar grow" role="img" aria-label={`${o.dogrudan} doğrudan, ${o.dolayli} dolaylı, ${konuYalniz} yalnız konu, ${o.yok} karşılıksız soru`}>
+            <span class="seg-direct" style={`flex: ${o.dogrudan} 0 0%`}></span>
+            <span class="seg-indirect" style={`flex: ${o.dolayli} 0 0%`}></span>
+            <span class="seg-topic" style={`flex: ${konuYalniz} 0 0%`}></span>
+            <span class="seg-none" style={`flex: ${o.yok} 0 0%`}></span>
+          </div>
+        </dd>
+      </div>
+
+      <div class="kpi reveal" style="--d: 120ms">
+        <dt>Konu kapsamı</dt>
+        <dd class="kpi-value">{pct(o.konuKapsamiOran)}</dd>
+        <dd class="kpi-note">{num(o.konuKapsami)} / {num(o.soru)} sorunun konusu destede var</dd>
+        <dd class="mt-auto pt-1">
+          <div class="meter grow" role="img" aria-label={`Konu kapsamı ${pct(o.konuKapsamiOran)}`}>
+            <span style={`width: ${share(o.konuKapsami, o.soru)}`}></span>
+          </div>
+        </dd>
+      </div>
+
+      <div class="kpi reveal" style="--d: 180ms">
+        <dt>2026/2 sınav öncesi</dt>
+        <dd class="kpi-value">{pre.preExamEvet}/200</dd>
+        <dd class="kpi-note">Sınavdan 2 gün önceki sürüm <code>{pre.commit}</code> · bugün {pre.supportedCurrent}/200</dd>
+        <dd class="mt-auto pt-1">
+          <div class="meter grow" role="img" aria-label={`Sınav öncesi sürümde 200 sorunun ${pre.preExamEvet} tanesine çözüm desteği`}>
+            <span style={`width: ${share(pre.preExamEvet, 200)}`}></span>
+          </div>
+        </dd>
+      </div>
+    </dl>
+
+    <div class="mt-10 rounded-2xl border border-line bg-white p-5 sm:p-7">
+      <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+        <h3 class="display text-lg text-ink">Ders ders çözüm desteği</h3>
+        <p class="legend">
+          <span><i class="seg-direct"></i>Doğrudan</span>
+          <span><i class="seg-indirect"></i>Dolaylı</span>
+          <span><i class="seg-topic"></i>Yalnız konu</span>
+          <span><i class="seg-none"></i>Karşılıksız</span>
+        </p>
+      </div>
+      <ul role="list" class="branch-columns mt-4">
+        {branches.map((b) => (
+          <li><a href={b.slug ? `/referanslar/${b.slug}/` : '/referanslar/'} class="branch-row">
+            <span class="branch-name text-sm font-semibold">{b.name}</span>
+            <span
+              class="segbar grow"
+              role="img"
+              aria-label={`${b.summary.soru} sorunun ${b.summary.dogrudan} doğrudan, ${b.summary.dolayli} dolaylı, ${b.konuYalniz} yalnız konu`}
+            >
+              <span class="seg-direct" style={`flex: ${b.summary.dogrudan} 0 0%`}></span>
+              <span class="seg-indirect" style={`flex: ${b.summary.dolayli} 0 0%`}></span>
+              <span class="seg-topic" style={`flex: ${b.konuYalniz} 0 0%`}></span>
+              <span class="seg-none" style={`flex: ${b.summary.yok} 0 0%`}></span>
+            </span>
+            <span class="text-right text-sm font-bold tabular-nums text-ink">{pct(b.summary.destekOran)}</span>
+          </a></li>
+        ))}
+      </ul>
+    </div>
+
+    <p class="mt-4 text-xs text-inkMuted leading-relaxed max-w-3xl">
+      Kaynak: son 6 TUS (2024/1–2026/2) ve <code>{ref.katalogCommit}</code> kataloğu. Sınıflandırma yapay zekâ destekli ön değerlendirmedir;
+      bağımsız hekim editör kontrolü sürüyor. ÖSYM soru metni yayımlanmaz.
+    </p>
+  </div>
+</section>

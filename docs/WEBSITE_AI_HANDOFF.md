@@ -4,6 +4,31 @@
 >
 > **Kısa sözleşme:** `website/AGENTS.md` · **Kök uygulama sözleşmesi:** `AGENTS.md`
 
+## 24 Kasım 2026 — Kısa ana sayfa, kategorili menü, yeni alt sayfalar
+
+- Ana sayfa 11 bölümden 6'ya indi (masaüstü ~8.400 px → ~4.700 px): Hero, canlı kart
+  denemesi (`#demo-bolumu`), Neden TusAnkiM (`HomeWhy`), kartların çıkmış sorulara
+  karşılığı (`HomeEvidence`: 4 KPI + tıklanabilir 11 branş satırı, tam tablo
+  `/referanslar/` üzerinde), plan yönlendirmesi (`HomePlan`) ve erişim + 3 soru + son
+  çağrı (`HomeClose`). 76/200 – 82/200 – `a78ae1f` ayrımı KPI'da korunur.
+- Canlı deneme bölümü, tek kartlık `LiveCardDemo` yerine yeniden tablet çerçeveli
+  `TabletDemo`'yu gösterir (deste listesi + çalışma ekranı, kartlar
+  `/data/demo-decks.json`'dan). Ana sayfa HTML bütçesi bunun için 72 KB'tan 80 KB'a
+  çıktı (~77 KB). `LiveCardDemo.astro` ve `demo-cards.json` şimdilik kullanılmıyor.
+- Ayrıntı kendi sayfasına taşındı: `/ozellikler/` (Kısaca tanım listesi + Kronometre,
+  FSRS-6, Anki aktarımı, puan hesaplayıcı; `components/features/`) ve `/fiyatlar/`
+  (3 segment + kulüp programı; `components/pricing/PricingTiers.astro`). Kullanım
+  rehberleri bölümü kaldırıldı (`/yardim/` karşılıyor); kurucu yazısı `/hakkimizda/`'da.
+- Menü tek kaynaktan: `pages.ts` `NAV_GROUPS` (Ürün · TUS Hazırlık · Destek) +
+  `NAV_LINK_IDS` (Hakkımızda). Masaüstünde açılır paneller (Escape, dış tıklama ve odak
+  çıkışı kapatır), mobilde gruplu `<details>` çekmece, footer'da 4 sütun.
+- URL: yalnız `/kurucu/` → `/hakkimizda/` (kök `vercel.json`, 301). Dün yayına giren
+  anahtar kelime slug'larına ve `/rehber/`'e dokunulmadı; `/rehber/` görünür adı
+  "TUS Yazıları" oldu ki Çalışma Rehberi ve Yardım Merkezi'yle karışmasın.
+- `verify-search-output.mjs` artık kısa ana sayfa sözleşmesini (6 bölüm kimliği, alt
+  sayfa bağlantıları, en fazla 8 `<section>`) ve yeni sayfaların içeriğini denetler;
+  `verify-site.mjs` 60 HTML / 59 sitemap URL'si bekler.
+
 ## 23 Kasım 2026 — SEO/GEO sayfaları ve 3 segmentli erişim canlı sitede
 
 - `tusbud_landing_page` (`d510c840`) dalındaki içerik, sahibinin onayıyla güncel siteye
@@ -198,7 +223,7 @@ Ana Expo / React Native uygulamasından tamamen izole, sıfır çalışma zaman�
 | `/` | `website/src/pages/index.astro` | Ana sayfa: Hero, 4'lü doğrulanmış kanıt şeridi (Belif `.stat-row`), 2027 TUS canlı geri sayım, 11 derslik kayıt gerektirmeyen canlı kart demosu (`#demo`), sınav/ders bazlı referans çubukları (`#referans-ozet`), gerçek `FSRS-6` günlük çalışma dozu simülatörü (`#calisma-dozu`), TUS ekosistemi, `StoryBands` (FSRS-6 / Kronometre / Anki uyumu), Fotoğraf Düzenleyici & Görsel Gizleme `BeforeAfter` kaydırıcı, Kurucu özeti, `PRICING_MODE` kontrollü fiyatlandırma & karşılaştırma tablosu, okul/kulüp ücretsiz hesap çağrısı, Instagram kullanım rayı, `SHOW_SPONSORS` kontrollü sponsorluk bandı, 7/24 WhatsApp bandı + kayan düğme, sekmeli SSS. |
 | `/referanslar/` | `website/src/pages/referanslar.astro` | Son 6 TUS (`2024/1–2026/2`, **1.195 soru**) için JSON destekli (`public/data/references.json`) canlı referans gezgini. Sınav, 11 ders, rozet (`Doğrudan`/`Dolaylı`/`Yalnız Konu`/`Yok`), sınav öncesi `git a78ae1f` süzgeci, serbest metin arama, URL query senkronu ve sınav sonrası güncellenen 6 sorunun şeffaf açıklaması. |
 | `/puan-hesapla/` | `website/src/pages/puan-hesapla.astro` | İnteraktif TUS Puan & Hedef Net Hesaplayıcı (Temel 100 + Klinik 100, 4 yanlış 1 doğru, güncel yönetmelik **`%5 Puan Kesintisi Uygula`** anahtarı, Temel `%70/%30` ve Klinik `%50/%50` ağırlık, 45 baraj kontrolü, tersine hedef puan net planlayıcı + 4 adımlı TUS tercih rehberi). |
-| `/kurucu/` | `website/src/pages/kurucu.astro` | Kurucumuzun yazısı, 4 editöryal kalite standardı ve veri kaynağı `website/src/data/founder.json`. |
+| `/hakkimizda/` (eski `/kurucu/`, 301) | `website/src/pages/hakkimizda.astro` | Kurucumuzun yazısı, 4 editöryal kalite standardı ve veri kaynağı `website/src/data/founder.json`. |
 | `/sss/` | `website/src/pages/sss.astro` | Kategorili, sekmeli ve anlık aramalı tam SSS sayfası (`website/src/data/faqs.json`). |
 | `/yardim/` & `/yardim/[slug]/` | `website/src/pages/yardim/` | Kök depodaki `docs/user-guide/tr/*.md` (**21 Türkçe kılavuz**) dosyalarını derleme anında otomatik HTML'e dönüştüren yardım merkezi (`website/src/lib/helpDocs.ts`). Markdown içi görece `.md` linkleri otomatik `/yardim/<slug>/` rotalarına çevrilir. |
 | `/gizlilik/`, `/kullanim-kosullari/`, `/destek/` | `website/src/pages/{gizlilik,kullanim-kosullari,destek}.astro` | KVKK / gizlilik, kullanım koşulları ve 7/24 WhatsApp + e-posta destek sayfaları. |

@@ -44,7 +44,9 @@ const requiredFiles = [
   'kart-denemesi/index.html',
   'referanslar/index.html',
   'puan-hesapla/index.html',
-  'kurucu/index.html',
+  'hakkimizda/index.html',
+  'ozellikler/index.html',
+  'fiyatlar/index.html',
   'sss/index.html',
   'yardim/index.html',
   'yardim/tusankim-nedir/index.html',
@@ -83,7 +85,7 @@ for (const svgFile of files.filter((f) => f.endsWith('.svg'))) {
 
 // 4. Audit every HTML page
 const htmlFiles = files.filter((f) => f.endsWith('.html'));
-check(htmlFiles.length === 58, `Expected 58 HTML pages (18 core + 8 rehber + 11 branş + 21 help guides), got ${htmlFiles.length}`);
+check(htmlFiles.length === 60, `Expected 60 HTML pages (20 core + 8 rehber + 11 branş + 21 help guides), got ${htmlFiles.length}`);
 
 const forbiddenText = [
   { re: /7\s*gün[^<.]{0,80}iade|koşulsuz\s+iade|iade\s+garantisi/i, label: 'Removed refund promise' },
@@ -200,7 +202,7 @@ for (const hf of htmlFiles) {
 // 5. Verify sitemap.xml
 const sitemap = fs.readFileSync(path.join(DIST, 'sitemap.xml'), 'utf8');
 const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-check(locs.length === 57, `sitemap.xml expected 57 URLs (17 pages + 8 rehber + 11 branş + 21 help guides), found ${locs.length}`);
+check(locs.length === 59, `sitemap.xml expected 59 URLs (19 pages + 8 rehber + 11 branş + 21 help guides), found ${locs.length}`);
 check(!locs.some((u) => u.includes('/404')), 'sitemap.xml must not include 404');
 check(locs.every((u) => u.startsWith('https://tusankim.com/') && u.endsWith('/')), 'All sitemap URLs must use https://tusankim.com/ and trailing slash');
 
@@ -224,11 +226,10 @@ check(!/Cloze-AnKingMaster|<img|<script|"reaId"/i.test(refRaw), 'dist/data/refer
 
 // 8. Round 2 regression checks (ARIA, TUS regulation accuracy, contrast, keyboard, tap targets)
 const indexHtml = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
-check(indexHtml.includes('for="demo-subject"') && indexHtml.includes('id="demo-subject"'), 'index.html: demo subject picker needs an associated label');
 // Home keeps the working demo and separates pre-exam/current reference evidence.
 check(indexHtml.includes('1.195') && indexHtml.includes('1.108'), 'index.html: missing reference totals');
 check(indexHtml.includes('76/200') && indexHtml.includes('82/200') && indexHtml.includes('a78ae1f'), 'index.html: missing pre-exam/current reference distinction');
-check(indexHtml.includes('data-demo-prev') && indexHtml.includes('data-demo-next'), 'index.html: missing demo navigation');
+check(indexHtml.includes('data-demo-simulator') && !indexHtml.includes('data-demo-payload'), 'index.html: missing the tablet demo, or its card JSON was embedded in the page');
 check(indexHtml.includes('href="/kart-denemesi/"') && indexHtml.includes('href="/calisma-plani/"') && indexHtml.includes('href="/tus-calisma-rehberi/"'), 'index.html: missing links to the tablet demo, study planner, and TUS study guide');
 check(!indexHtml.includes('data-cd-announce'), 'index.html: removed countdown returned');
 
