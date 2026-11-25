@@ -250,23 +250,4 @@ const faqSchema = {
       { capture: true },
     );
   }
-
-  // 3. Progressive reveal / chart stroke draw (never hides content without JS; respects Reduce Motion)
-  const revealTargets = document.querySelectorAll<HTMLElement>('.guide-reveal, .guide-chart');
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!reduceMotion && 'IntersectionObserver' in window && revealTargets.length) {
-    let first = true;
-    const revealIo = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          if (!first) entry.target.classList.add('is-in');
-          revealIo.unobserve(entry.target);
-        }
-        first = false;
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
-    );
-    revealTargets.forEach((el) => revealIo.observe(el));
-  }
 </script>

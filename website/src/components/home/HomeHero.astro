@@ -13,7 +13,7 @@ const trust = ['Güncel beta ücretsiz, kart bilgisi gerekmez', 'Hesap açmadan 
       <div>
         <p class="kicker">TUS için aralıklı tekrar</p>
         <h1 id="hero-title" class="hero-title display tracking-tightest text-ink mt-4">
-          {cards} TUS kartıyla <em>planlı tekrar.</em>
+          {cards} TUS kartıyla <em>planlı tekrar</em>
         </h1>
         <p data-speakable class="mt-5 text-base sm:text-lg text-inkMuted leading-relaxed max-w-xl">
           Çıkmış sınavlardan süzülen kartları <span lang="en" class="whitespace-nowrap">FSRS-6</span> ile çalış.
@@ -25,26 +25,21 @@ const trust = ['Güncel beta ücretsiz, kart bilgisi gerekmez', 'Hesap açmadan 
             href={SITE.webAppUrl}
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center justify-center min-h-[3.25rem] px-7 rounded-full bg-teal text-white text-[0.9375rem] font-semibold hover:bg-tealDark transition"
+            class="button-primary home-cta"
           >
             Ücretsiz başla<span class="sr-only"> (yeni sekmede açılır)</span>
           </a>
           <a
             href="#demo-bolumu"
-            class="inline-flex items-center justify-center min-h-[3.25rem] px-7 rounded-full border border-line bg-white text-ink text-[0.9375rem] font-semibold hover:border-tealGraphic hover:text-teal transition"
+            class="button-secondary home-cta"
           >
             Kartları burada dene
           </a>
         </div>
       </div>
 
-      <ul role="list" class="hero-perks mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-inkMuted">
-        {trust.map((item) => (
-          <li class="inline-flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14998a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg>
-            {item}
-          </li>
-        ))}
+      <ul role="list" class="hero-perks mt-6 grid gap-1 text-sm text-inkMuted">
+        {trust.map((item) => <li>{item}</li>)}
       </ul>
     </div>
 

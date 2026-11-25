@@ -16,19 +16,14 @@ import offer from '../../data/offer.json';
             <span class="text-sm text-inkMuted">{tier.period}</span>
           </p>
           <p class="text-sm text-inkMuted mt-3 leading-relaxed">{tier.summary}</p>
-          <ul role="list" class="mt-5 space-y-2 flex-1">
-            {tier.features.map((feat) => (
-              <li class="flex items-start gap-2.5 text-sm text-ink">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0e7469" stroke-width="2.2" class="shrink-0 mt-1" aria-hidden="true"><path d="M5 13l4 4L19 7" /></svg>
-                <span>{feat}</span>
-              </li>
-            ))}
+          <ul class="mt-5 space-y-2 flex-1 list-disc pl-5 marker:text-inkMuted">
+            {tier.features.map((feat) => <li class="text-sm text-ink">{feat}</li>)}
           </ul>
           <a
             href={SITE.webAppUrl}
             target="_blank"
             rel="noopener noreferrer"
-            class={`mt-6 inline-flex items-center justify-center w-full min-h-[3rem] rounded-full text-sm font-semibold transition ${tier.highlight ? 'bg-teal text-white hover:bg-tealDark' : 'border border-line bg-surfaceSoft text-ink hover:border-teal hover:text-teal'}`}
+            class={`mt-6 inline-flex items-center justify-center w-full min-h-[3rem] rounded-lg text-sm font-semibold transition ${tier.highlight ? 'bg-teal text-white hover:bg-tealDark' : 'border border-line bg-surfaceSoft text-ink hover:border-teal hover:text-teal'}`}
           >
             {tier.ctaLabel}<span class="sr-only"> (yeni sekmede açılır)</span>
           </a>

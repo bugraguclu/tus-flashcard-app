@@ -54,10 +54,10 @@ const presetCards = PLANNER_PRESETS.map((preset) => {
             style={`--d: ${i * 55}ms`}
           >
             <div class="flex items-center justify-between gap-2 min-h-[1.5rem]">
-              <p class="text-xs font-bold uppercase tracking-wider text-inkMuted">{preset.title}</p>
+              <p class="text-sm font-semibold text-inkMuted">{preset.title}</p>
               {preset.examId && (
                 <span
-                  class="rounded-full bg-warmTint px-2 py-0.5 text-[11px] font-bold text-warm tabular-nums whitespace-nowrap shrink-0"
+                  class="text-[11px] font-bold text-warm tabular-nums whitespace-nowrap shrink-0"
                   data-exam-days-badge={preset.examId}
                   data-badge-style="full"
                   hidden
@@ -106,7 +106,7 @@ const presetCards = PLANNER_PRESETS.map((preset) => {
     <div class="planner-studio mt-10 rounded-3xl border border-line bg-surfaceSoft p-4 sm:p-6 lg:p-8">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-6 border-b border-line">
         <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-teal">İnteraktif Kart &amp; Tekrar Hesaplayıcı</p>
+          <p class="text-sm font-semibold text-teal">İnteraktif Kart &amp; Tekrar Hesaplayıcı</p>
           <h3 id="planner-studio-heading" class="display text-subsection tracking-tightest text-ink mt-1">
             Kişisel <span lang="en">FSRS-6</span> Tempo ve Plan Oluşturucu
           </h3>

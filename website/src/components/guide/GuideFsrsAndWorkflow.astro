@@ -78,7 +78,7 @@ import { WORKFLOW_STEPS } from '../../data/studyGuide';
         {WORKFLOW_STEPS.map((item) => (
           <li class="rounded-2xl border border-line bg-white p-5 flex flex-col justify-between">
             <div>
-              <p class="text-xs font-bold uppercase tracking-wider text-teal">Adım {item.step}</p>
+              <p class="text-sm font-semibold text-teal">Adım {item.step}</p>
               <h4 class="display text-base text-ink mt-1.5 leading-snug">{item.name}</h4>
               <p class="text-xs font-semibold text-ink mt-2">{item.summary}</p>
               <p class="text-xs text-inkMuted mt-2 leading-relaxed">{item.detail}</p>
@@ -111,21 +111,21 @@ import { WORKFLOW_STEPS } from '../../data/studyGuide';
 
       <div class="lg:col-span-7 grid sm:grid-cols-3 gap-4">
         <article class="rounded-2xl border border-line bg-white p-5 space-y-2">
-          <p class="text-xs font-bold uppercase tracking-wider text-teal">Tip A · Bilgi Eksikliği</p>
+          <p class="text-sm font-semibold text-teal">Tip A · Bilgi Eksikliği</p>
           <p class="text-sm font-semibold text-ink">Konuyu hiç görmemişim</p>
           <p class="text-xs text-inkMuted leading-relaxed">
             Hemen yeni kaynağa atlama; sorunun hangi dersten ve alt konudan geldiğini not al, sırası geldiğinde o alt desteyi aç.
           </p>
         </article>
         <article class="rounded-2xl border border-line bg-white p-5 space-y-2">
-          <p class="text-xs font-bold uppercase tracking-wider text-warm">Tip B · İki Şıkta Kalma</p>
+          <p class="text-sm font-semibold text-warm">Tip B · İki Şıkta Kalma</p>
           <p class="text-sm font-semibold text-ink">Çalıştım ama karıştırdım</p>
           <p class="text-xs text-inkMuted leading-relaxed">
             <strong>En yüksek getirili hata grubudur.</strong> İki kavramı ayıran tek kritik bulguyu kısa kişisel karta çevir ve <code>deneme-yanlis</code> etiketiyle takip et.
           </p>
         </article>
         <article class="rounded-2xl border border-line bg-white p-5 space-y-2">
-          <p class="text-xs font-bold uppercase tracking-wider text-inkMuted">Tip C · Dikkat &amp; Süre</p>
+          <p class="text-sm font-semibold text-inkMuted">Tip C · Dikkat &amp; Süre</p>
           <p class="text-sm font-semibold text-ink">Soru kökünü yanlış okudum</p>
           <p class="text-xs text-inkMuted leading-relaxed">
             Olumsuz kök (“değildir”, “en az olası”) ve süre baskısından kaynaklanır. Denemeleri Kronometre ile gerçek sınav saatinde ve sürede çöz.

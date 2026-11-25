@@ -3,21 +3,9 @@
 
 /* Shared section utilities used on /tus-calisma-rehberi/ */
 .kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #0e7469;
-}
-.kicker::before {
-  content: "";
-  inline-size: 0.375rem;
-  block-size: 0.375rem;
-  border-radius: 999px;
-  background: currentColor;
 }
 .kicker-warm { color: #a3430a; }
 
@@ -50,19 +38,8 @@
   border-radius: 0.2rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .reveal.is-in {
-    animation: planner-reveal-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms) backwards;
-  }
-}
-@keyframes planner-reveal-in {
-  from { opacity: 0; translate: 0 14px; }
-}
-
 .cta-band {
-  background:
-    radial-gradient(ellipse 60% 80% at 85% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 60%),
-    linear-gradient(135deg, #0e7469 0%, #0b5e55 100%);
+  background: #0e7469;
   /* Cancel the footer's shared top margin so the band meets the footer. */
   margin-block-end: -4rem;
 }
@@ -88,16 +65,15 @@
 /* Stage preset cards */
 .preset-card {
   position: relative;
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease;
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
 .preset-card:has([data-preset-btn][aria-pressed="true"]) {
   border-color: #0e7469;
   background-color: #f4fbf9;
-  box-shadow: 0 0 0 1px #0e7469, 0 14px 30px -20px rgba(14, 116, 105, 0.45);
+  box-shadow: 0 0 0 1px #0e7469;
 }
 @media (hover: hover) and (pointer: fine) {
   .preset-card:hover {
-    transform: translateY(-2px);
     border-color: #14998a;
   }
 }
@@ -107,7 +83,7 @@
   justify-content: center;
   min-block-size: 2.75rem;
   padding: 0.5rem 0.875rem;
-  border-radius: 999px;
+  border-radius: 0.5rem;
   border: 1px solid #0e7469;
   background: #ffffff;
   color: #0e7469;

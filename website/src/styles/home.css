@@ -1,29 +1,16 @@
 /* Home page sections. Tokens mirror tailwind.config.mjs (AA-verified). */
 
-/* ── Section kicker: small dot + caps line above a heading ─────────────── */
+/* ── Section kicker: one plain line above a heading ────────────────────── */
 .kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #0e7469;
-}
-.kicker::before {
-  content: "";
-  inline-size: 0.375rem;
-  block-size: 0.375rem;
-  border-radius: 999px;
-  background: currentColor;
 }
 .kicker-warm { color: #a3430a; }
 
 /* The app screens retain their own UI and colors inside a shared product stage. */
-.home-product-hero {
-  background: linear-gradient(155deg, #f3f8f7, #fff 60%);
-}
+.home-product-hero { background: #fff; }
+.home-cta { min-block-size: 3.25rem; padding-inline: 1.75rem; font-size: 0.9375rem; }
 .hero-layout {
   display: grid;
   align-items: center;
@@ -46,7 +33,6 @@
 .hero-title em {
   display: block;
   font-style: normal;
-  color: #0e7469;
 }
 .hero-product {
   inline-size: 100%;
@@ -59,11 +45,9 @@
   grid-template-columns: repeat(20, minmax(0, 1fr));
   align-items: center;
   padding: clamp(0.9rem, 3vw, 2.25rem);
-  border: 1px solid #cfe2dd;
-  border-radius: clamp(1.25rem, 3vw, 2rem);
-  background:
-    radial-gradient(ellipse at 23% 20%, #f5fbf9 0%, transparent 62%),
-    linear-gradient(132deg, #e6f1ee, #d3e5e0);
+  border: 1px solid #dde1e4;
+  border-radius: 1rem;
+  background: #f3f5f6;
 }
 .hero-device {
   grid-row: 1;
@@ -71,7 +55,7 @@
   padding: clamp(0.2rem, 0.45vw, 0.38rem);
   border-radius: clamp(0.85rem, 1.8vw, 1.45rem);
   background: #253432;
-  box-shadow: 0 1rem 2.25rem -0.8rem #13393270, 0 0 0 1px #182d2914;
+  box-shadow: 0 0 0 1px #182d2914;
 }
 .hero-device img {
   display: block;
@@ -136,16 +120,12 @@
   }
 }
 
-@keyframes hero-in {
-  from { opacity: 0; translate: 0 14px; }
-}
-
 /* ── KPI tiles with meters (hairline grid) ───────────────────────────────── */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
   border: 1px solid #dde1e4;
-  border-radius: 1.25rem;
+  border-radius: 0.75rem;
   overflow: hidden;
   background: #ffffff;
 }
@@ -159,10 +139,8 @@
   box-shadow: 1px 1px 0 0 #e9ecee;
 }
 .kpi dt {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  font-weight: 600;
   color: #596166;
 }
 .kpi-value {
@@ -170,7 +148,7 @@
   font-size: clamp(1.625rem, 3.2vw, 2.125rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
-  color: #0e7469;
+  color: #24292c;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -229,16 +207,6 @@
   border-radius: 0.2rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .grow.is-in > span,
-  .grow.is-in.meter > span {
-    animation: grow-x 0.6s cubic-bezier(0.23, 1, 0.32, 1) backwards;
-  }
-}
-@keyframes grow-x {
-  from { scale: 0 1; }
-}
-
 /* ── Branch rows (reference coverage per subject) ───────────────────────── */
 .branch-row {
   display: grid;
@@ -265,31 +233,12 @@ a.branch-row:focus-visible { outline: 2px solid #0e7469; outline-offset: 2px; }
   .branch-row:hover .branch-name { color: #0e7469; text-decoration: underline; text-underline-offset: 3px; }
 }
 
-/* ── Cards that lift on real hover only ─────────────────────────────────── */
-.lift {
-  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
-}
-@media (hover: hover) and (pointer: fine) {
-  .lift:hover {
-    transform: translateY(-2px);
-    border-color: #14998a;
-    box-shadow: 0 14px 30px -18px rgba(14, 116, 105, 0.45);
-  }
-}
-
-/* ── Scroll reveal (JS adds .is-in; content stays visible without JS) ───── */
-@media (prefers-reduced-motion: no-preference) {
-  .reveal.is-in {
-    animation: hero-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms) backwards;
-  }
-}
-
 /* ── Final call-to-action band ──────────────────────────────────────────── */
-.cta-band {
-  background:
-    radial-gradient(ellipse 60% 80% at 85% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 60%),
-    linear-gradient(135deg, #0e7469 0%, #0b5e55 100%);
-}
+.cta-band { background: #0e7469; }
+.cta-band .button-primary { background: #fff; color: #0e7469; }
+.cta-band .button-primary:hover { background: #e4f4f1; }
+.cta-band .button-secondary { background: transparent; color: #fff; border-color: rgba(255, 255, 255, 0.6); }
+.cta-band .button-secondary:hover { background: rgba(255, 255, 255, 0.1); border-color: #fff; }
 /* Remove the footer gap without pulling it over the band's bottom padding. */
 main:has(> .cta-band:last-child) + footer {
   margin-block-start: 0;

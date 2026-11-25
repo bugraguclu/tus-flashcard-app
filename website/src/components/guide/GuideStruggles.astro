@@ -19,7 +19,7 @@ import { TUS_STRUGGLES } from '../../data/studyGuide';
         <article class="rounded-2xl border border-line bg-surfaceSoft p-6 flex flex-col justify-between gap-4">
           <div class="space-y-3">
             <p class:list={[
-              'text-xs font-bold uppercase tracking-wider',
+              'text-sm font-semibold',
               item.tone === 'warm' ? 'text-warm' : 'text-teal',
             ]}>
               Zorluk {item.number} · {item.tag}
@@ -29,7 +29,7 @@ import { TUS_STRUGGLES } from '../../data/studyGuide';
               <strong class="text-ink">Neden yaşanır?</strong> {item.why}
             </p>
             <div class="pt-1">
-              <p class="text-xs font-bold uppercase tracking-wider text-ink mb-2">Somut çözüm adımları</p>
+              <p class="text-sm font-semibold text-ink mb-2">Somut çözüm adımları</p>
               <ol class="space-y-1.5 text-sm text-inkMuted leading-relaxed list-decimal pl-5">
                 {item.steps.map((step) => (
                   <li>{step}</li>

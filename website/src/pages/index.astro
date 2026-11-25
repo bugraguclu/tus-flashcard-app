@@ -96,10 +96,10 @@ const homeSchema = [
   <HomeHero />
   <section id="demo-bolumu" class="home-demo scroll-mt-24 py-14 sm:py-20 bg-surfaceSoft border-b border-line" aria-labelledby="demo-section-heading">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 reveal">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div class="max-w-2xl">
           <p class="kicker">Canlı deneme</p>
-          <h2 id="demo-section-heading" class="display text-section tracking-tightest text-ink mt-3">Uygulamadaymış gibi çöz.</h2>
+          <h2 id="demo-section-heading" class="display text-section tracking-tightest text-ink mt-3">Uygulamadaymış gibi çöz</h2>
           <p class="text-inkMuted mt-3 leading-relaxed">
             11 dersten gerçek kartlar. Bir deste seç, cevabı tahmin et, aç ve ne kadar kolay hatırladığını işaretle; uygulamadaki tekrar böyle işler.
           </p>
@@ -118,24 +118,3 @@ const homeSchema = [
   <HomeClose />
 </Layout>
 
-<script>
-  // Reveal sections once as they scroll into view. Content is visible without JS,
-  // elements already on screen at load are left alone, and Reduce Motion skips it all.
-  const targets = document.querySelectorAll<HTMLElement>('.reveal, .grow');
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!reduce && 'IntersectionObserver' in window && targets.length) {
-    let first = true;
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          if (!first) entry.target.classList.add('is-in');
-          io.unobserve(entry.target);
-        }
-        first = false;
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
-    );
-    targets.forEach((el) => io.observe(el));
-  }
-</script>

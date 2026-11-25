@@ -4,6 +4,19 @@
 >
 > **Kısa sözleşme:** `website/AGENTS.md` · **Kök uygulama sözleşmesi:** `AGENTS.md`
 
+## 25 Kasım 2026 — Sade görünüm (tüm sayfalar)
+
+- Sahibinin uygulamada ve diğer projelerinde verdiği "yapay görünmesin" kararları siteye
+  uygulandı. Yeni bölümlerde de geçerli kurallar: bölüm üstü etiket düz küçük yazıdır
+  (nokta, büyük harf ve harf aralığı yok); gradyan, parlama ve kart gölgesi yok; düğmeler
+  `.button-primary` / `.button-secondary` köşesindedir (hap biçimi yok); renkli zeminli
+  rozet yerine düz renkli yazı; süs tiki yok; başlık sonunda nokta yok; kaydırınca belirme,
+  çubuk büyümesi ve üzerine gelince yükselme animasyonu yok.
+- Ana sayfa: tek renk hero başlığı, düz hero ve son çağrı zemini, kutusuz "Neden TusAnkiM"
+  sütunları, çizgili plan bağlantıları, çerçevesiz Erişim metni, siyah KPI sayıları.
+- Uygulama ekranını taklit eden `components/demo/` ve içerik menüsündeki bölüm
+  bağlantıları bilerek değiştirilmedi.
+
 ## 24 Kasım 2026 — Kısa ana sayfa, kategorili menü, yeni alt sayfalar
 
 - Ana sayfa 11 bölümden 6'ya indi (masaüstü ~8.400 px → ~4.700 px): Hero, canlı kart

@@ -29,7 +29,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
 >
   <!-- 1. Planning Mode -->
   <fieldset class="space-y-2">
-    <legend class="text-xs font-bold uppercase tracking-wider text-ink">1. Planlama Yöntemi</legend>
+    <legend class="text-sm font-semibold text-ink">1. Planlama Yöntemi</legend>
     <div class="grid grid-cols-2 gap-2 items-stretch">
       <div>
         <input
@@ -59,7 +59,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
   <!-- 2. Target Exam / Horizon -->
   <div class="space-y-2.5 pt-4 border-t border-lineLight">
     <div class="flex items-baseline justify-between gap-2">
-      <label for="plan-days" class="text-xs font-bold uppercase tracking-wider text-ink">
+      <label for="plan-days" class="text-sm font-semibold text-ink">
         2. Sınava Kalan Süre
       </label>
       <span class="display text-lg text-teal tabular-nums" data-days-val>{initial.input.days} gün</span>
@@ -76,7 +76,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
         >
           <span>{exam.shortName}</span>
           <span
-            class="rounded-full bg-tint px-1.5 py-0.5 text-[11px] font-bold text-teal tabular-nums"
+            class="text-[11px] font-bold text-teal tabular-nums"
             data-exam-days-badge={exam.id}
             hidden
           ></span>
@@ -140,7 +140,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
 
   <!-- 3. Study Scope & Course Picker -->
   <fieldset class="space-y-2.5 pt-4 border-t border-lineLight">
-    <legend class="text-xs font-bold uppercase tracking-wider text-ink">3. Çalışma Kapsamı</legend>
+    <legend class="text-sm font-semibold text-ink">3. Çalışma Kapsamı</legend>
     <div class="grid grid-cols-2 gap-2 items-stretch">
       <div>
         <input type="radio" id="scope-all" name="plan-scope" value="all" class="visually-hidden" checked />
@@ -212,7 +212,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
   <!-- 4a. Daily New Cards Pace (Exam mode) -->
   <div class="space-y-2 pt-4 border-t border-lineLight" data-pace-block>
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <label for="plan-pace" class="text-xs font-bold uppercase tracking-wider text-ink">
+      <label for="plan-pace" class="text-sm font-semibold text-ink">
         4. Günlük Yeni Kart Hızı
       </label>
       <span class="display text-lg text-teal tabular-nums" data-pace-val>
@@ -243,7 +243,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
         data-rec-pace-btn
         data-rec-pace-value={String(initial.recommendedPace)}
         hidden={initial.recommendedPace === initial.input.newPerDay}
-        class="inline-flex items-center min-h-[2.75rem] px-3.5 rounded-full bg-tint text-xs font-bold text-teal hover:bg-teal hover:text-white transition cursor-pointer"
+        class="inline-flex items-center min-h-[2.75rem] px-3.5 rounded-lg bg-tint text-xs font-bold text-teal hover:bg-teal hover:text-white transition cursor-pointer"
       >
         Önerilen: {initial.recommendedPace} yeni/gün
       </button>
@@ -253,7 +253,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
   <!-- 4b. Daily Time Budget (Time-Budget mode) -->
   <div class="space-y-2 pt-4 border-t border-lineLight" data-budget-block hidden>
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <label for="plan-budget" class="text-xs font-bold uppercase tracking-wider text-ink">
+      <label for="plan-budget" class="text-sm font-semibold text-ink">
         4. Günlük Kart Süre Bütçen
       </label>
       <span class="display text-lg text-teal tabular-nums" data-budget-val>
@@ -286,7 +286,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
   <!-- 5–7. Weekly Cadence, Buffer Days & Target Retention -->
   <div class="space-y-4 pt-4 border-t border-lineLight">
     <fieldset class="space-y-2">
-      <legend class="text-xs font-bold uppercase tracking-wider text-ink">
+      <legend class="text-sm font-semibold text-ink">
         5. Haftalık Yeni Kart Düzeni
       </legend>
       <div class="grid grid-cols-3 gap-2 items-stretch">
@@ -317,7 +317,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
     </fieldset>
 
     <fieldset class="space-y-2">
-      <legend class="text-xs font-bold uppercase tracking-wider text-ink">
+      <legend class="text-sm font-semibold text-ink">
         6. Sınav Öncesi Yalnız Tekrar Tamponu
       </legend>
       <div class="grid grid-cols-4 gap-2 items-stretch">
@@ -345,7 +345,7 @@ const defaultBudgetStyle = `--attr-min:${PLANNER_LIMITS.minBudgetMin};--attr-max
     </fieldset>
 
     <fieldset class="space-y-2">
-      <legend class="text-xs font-bold uppercase tracking-wider text-ink">
+      <legend class="text-sm font-semibold text-ink">
         7. <span lang="en">FSRS-6</span> Hedef Hatırlama Oranı
       </legend>
       <div class="grid grid-cols-3 gap-2 items-stretch">
