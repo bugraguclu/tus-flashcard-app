@@ -13,7 +13,7 @@
     "data:build": "node scripts/build-data.mjs",
     "data": "npm run data:build",
     "build": "astro check && astro build",
-    "verify": "node --experimental-strip-types --test scripts/gitDates.test.ts scripts/helpReading.test.ts scripts/guideSearch.test.ts && node scripts/test-study-planner.mjs && node scripts/verify-site.mjs",
+    "verify": "node --experimental-strip-types --test scripts/gitDates.test.ts scripts/helpReading.test.ts scripts/guideSearch.test.ts && node scripts/test-study-planner.mjs && node --experimental-strip-types scripts/verify-site.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "data:fsrs": "node scripts/precompute-fsrs.mjs",

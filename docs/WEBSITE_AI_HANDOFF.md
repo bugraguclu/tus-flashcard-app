@@ -2,7 +2,26 @@
 
 > **Amaç:** Bu doküman, `website/` dizinindeki TusAnkiM tanıtım ve ürün web sitesinde **neyin, neden ve nasıl** yapıldığını başka yapay zekâ ajanlarının (Claude, Codex, Gemini, Antigravity vb.) ve geliştiricilerin tek seferde anlayıp kırmadan geliştirebilmesi için hazırlanmıştır.
 >
-> **Kısa sözleşme:** `website/AGENTS.md` · **Kök uygulama sözleşmesi:** `AGENTS.md`
+> **Kısa sözleşme:** `website/AGENTS.md` · **İçerik & kanıt sözleşmesi:** `docs/WEBSITE_CONTENT_RULES.md` · **Kök uygulama sözleşmesi:** `AGENTS.md`
+
+## 26 Kasım 2026 — TUS Yazıları 8 → 20 yazı ve arka plan içerik sözleşmesi
+
+- `/rehber/` kütüphanesi 8 yazıdan **20 yazıya** çıktı (`part4.ts`–`part7.ts`): TUS tercihi, yabancı
+  dil şartı, TUS’a 2 ay kala, sınav günü, hangi dersten kaç soru, ders ders kart desteği, ek
+  yerleştirme, %5 puan kesintisi, 135 dakika süre yönetimi, son hafta ve son 3 gün, başvuru, deneme
+  analizi. Taslaktaki ayrı “2027 duyuruları” yazısı canlıdaki `2027-tus-tarihleri-ve-calisma-plani`
+  ile aynı aramayı hedeflediği için onun SSS’sine katıldı.
+- Görünüm 25 Kasım sade görünümüne uyar: hap/çip yok, renkli zeminli kutu yok, tablo yalnızca
+  `border-y`. `/rehber/` 5 konu başlığına bölünür (`Sınav ve Takvim`, `Tercih ve Yerleştirme`,
+  `Çalışma Planı`, `Ders ve Soru Analizi`, `FSRS-6 ve Uygulama`) ve üstte düz metin konu listesi
+  vardır; JavaScript filtre yoktur.
+- Yazı sayfası: `#hizli-cevap` (`SpeakableSpecification`), okuma süresi, görünür tablo başlığı,
+  isteğe bağlı `.faq` akordeonu + `FAQPage` JSON-LD. Her yazı kendi `published` / `updated`
+  tarihini taşır; `datePublished`, `dateModified` ve sitemap `lastmod` bu alanlardan gelir. Bir yazının
+  metnini değiştiren `updated` alanını o güne çeker.
+- Kurallar, kanıt kayıt defteri ve bilinen yanlışlar listesi `docs/WEBSITE_CONTENT_RULES.md`
+  içindedir; `verify-rehber-content.mjs` bunları `npm run verify` içinde denetler. `verify-site.mjs`
+  **72 HTML / 71 sitemap URL’si** bekler.
 
 ## 25 Kasım 2026 — Sade görünüm (tüm sayfalar)
 

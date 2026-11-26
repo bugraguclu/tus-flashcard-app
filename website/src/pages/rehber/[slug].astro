@@ -1,9 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { REHBER_ARTICLES, type RehberArticle } from '../../data/rehber/index';
+import {
+  REHBER_ARTICLES,
+  estimateReadingMinutes,
+  type RehberArticle,
+} from '../../data/rehber/index';
 import { inlineHtml } from '../../lib/richtext';
-import { breadcrumbList } from '../../lib/schema';
-import { effectiveDate, formatTrDate } from '../../lib/lastmod';
+import { breadcrumbList, faqPage } from '../../lib/schema';
+import { formatTrDate } from '../../lib/lastmod';
 
 export function getStaticPaths() {
   return REHBER_ARTICLES.map((article) => ({
@@ -19,14 +23,10 @@ interface Props {
 const { article } = Astro.props;
 const origin = new URL(Astro.site!).origin;
 const pagePath = `/rehber/${article.slug}`;
-const modDate = effectiveDate([
-  'website/src/pages/rehber/[slug].astro',
-  'website/src/data/rehber/index.ts',
-  'website/src/data/rehber/part1.ts',
-  'website/src/data/rehber/part2.ts',
-  'website/src/data/rehber/part3.ts',
-]);
+// Each article carries its own dates, so editing one article does not re-date the other twenty.
+const modDate = article.updated;
 const modLabel = formatTrDate(modDate);
+const readMinutes = estimateReadingMinutes(article);
 
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
@@ -41,20 +41,40 @@ const articleSchema = {
   '@type': 'Article',
   headline: article.questionH1,
   description: article.seoDescription,
+  articleSection: article.category,
   inLanguage: 'tr-TR',
   url: origin + pagePath + '/',
+  image: `${origin}/images/og/rehber/${article.slug}.png`,
+  datePublished: article.published,
   dateModified: modDate,
   author: authorOrg,
-  citation: article.sources.map((s) => s.url),
-  publisher: { '@id': origin + '/#organization' },
+  citation: article.sources.map((s) => (s.url.startsWith('/') ? origin + s.url : s.url)),
+  publisher: authorOrg,
+  speakable: {
+    '@type': 'SpeakableSpecification',
+    cssSelector: ['#hizli-cevap'],
+  },
 };
+
+const schemas: Record<string, unknown>[] = [crumbs, articleSchema];
+if (article.faq?.length) {
+  schemas.push(
+    faqPage(
+      origin,
+      pagePath,
+      article.faq.map((item) => ({ question: item.q, answer: item.a })),
+    ),
+  );
+}
+
+const related = article.relatedLinks;
 ---
 <Layout
   title={article.seoTitle}
   description={article.seoDescription}
   ogType="article"
   modifiedTime={modDate}
-  schema={[crumbs, articleSchema]}
+  schema={schemas}
 >
   <section class="bg-surface border-b border-line py-8 sm:py-12">
     <div class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10">
@@ -70,15 +90,13 @@ const articleSchema = {
           <li class="inline-flex items-center">
             <span aria-hidden="true" class="mx-2">/</span>
             <a href={pagePath + '/'} aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
-              Yazı {String(article.order).padStart(2, '0')}
+              {article.category}
             </a>
           </li>
         </ol>
       </nav>
 
-      <p class="text-xs font-semibold text-teal">
-        TUS yazısı {String(article.order).padStart(2, '0')} / {REHBER_ARTICLES.length}
-      </p>
+      <p class="text-xs font-semibold text-teal">{article.category}</p>
       <h1 class="display text-page-title tracking-tightest text-ink mt-2">
         {article.questionH1}
       </h1>
@@ -87,6 +105,7 @@ const articleSchema = {
         <span>
           Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
         </span>
+        <span>{readMinutes} dk okuma</span>
         <span>
           Hazırlayan:{' '}
           <a href="/hakkimizda/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
@@ -98,18 +117,16 @@ const articleSchema = {
   </section>
 
   <article class="max-w-3xl mx-auto px-5 sm:px-6 lg:px-10 py-10 space-y-10">
-    <!-- Part 2: Direct <=50-word answer -->
-    <div class="border-t border-line pt-5">
-      <p class="text-base sm:text-lg text-ink leading-relaxed font-semibold">
-        {article.directAnswer}
-      </p>
+    <!-- Part 2: Direct answer, marked for search and voice assistants -->
+    <div id="hizli-cevap" class="border-t border-line pt-5">
+      <p class="text-base sm:text-lg text-ink leading-relaxed font-semibold" set:html={inlineHtml(article.directAnswer)} />
     </div>
 
     <!-- Part 3: Neden böyle sanılıyor? -->
     <section class="help-prose" aria-labelledby="misconception-heading">
       <h2 id="misconception-heading">Neden böyle sanılıyor?</h2>
       {article.whyMisconceived.map((p) => (
-        <p>{p}</p>
+        <p set:html={inlineHtml(p)} />
       ))}
     </section>
 
@@ -120,14 +137,15 @@ const articleSchema = {
         <p set:html={inlineHtml(p)} />
       ))}
 
+      <p id="guide-table-caption" class="mt-6 text-sm text-inkMuted">{article.table.caption}</p>
       <div
-        class="help-table-wrap border-y border-line mt-6"
+        class="help-table-wrap border-y border-line mt-2"
         tabindex="0"
         role="region"
         aria-labelledby="guide-table-caption"
       >
         <table>
-          <caption id="guide-table-caption" class="sr-only">{article.table.caption}</caption>
+          <caption class="sr-only">{article.table.caption}</caption>
           <thead>
             <tr>
               {article.table.headers.map((h) => (
@@ -153,33 +171,53 @@ const articleSchema = {
       <h2 id="action-heading">Ne yapmalısın?</h2>
       <ol>
         {article.actionSteps.map((step) => (
-          <li>{step}</li>
+          <li set:html={inlineHtml(step)} />
         ))}
       </ol>
     </section>
 
+    <!-- Part 5b: Sık sorulan sorular (native accordion + FAQPage JSON-LD) -->
+    {article.faq && article.faq.length > 0 && (
+      <section class="border-t border-line pt-5" aria-labelledby="article-faq-heading">
+        <h2 id="article-faq-heading" class="display text-base text-ink">Sık sorulan sorular</h2>
+        <div class="faq mt-2">
+          {article.faq.map((item) => (
+            <details>
+              <summary><span>{item.q}</span></summary>
+              <div class="faq-answer">
+                <p set:html={inlineHtml(item.a)} />
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+    )}
+
     <!-- Part 6: Sınır uyarısı -->
     <section class="border-t border-line pt-5" aria-labelledby="boundary-heading">
       <h2 id="boundary-heading" class="display text-base text-ink">Sınır uyarısı</h2>
-      <p class="mt-2 text-sm text-inkMuted leading-relaxed">{article.boundaryNote}</p>
+      <p class="mt-2 text-sm text-inkMuted leading-relaxed" set:html={inlineHtml(article.boundaryNote)} />
     </section>
 
     <!-- Part 7: Kaynaklar -->
     <section class="border-t border-line pt-5" aria-labelledby="sources-heading">
       <h2 id="sources-heading" class="display text-base text-ink">Kaynaklar</h2>
       <ul class="mt-3 space-y-1 text-sm">
-        {article.sources.map((src) => (
-          <li>
-            <a
-              href={src.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline underline-offset-2 hover:text-tealDark"
-            >
-              {src.label} ({src.publisher}) ↗
-            </a>
-          </li>
-        ))}
+        {article.sources.map((src) => {
+          const external = /^https?:\/\//.test(src.url);
+          return (
+            <li>
+              <a
+                href={src.url}
+                target={external ? '_blank' : undefined}
+                rel={external ? 'noopener noreferrer' : undefined}
+                class="inline-flex items-center min-h-[2.75rem] py-1.5 text-teal underline underline-offset-2 hover:text-tealDark"
+              >
+                {src.label} ({src.publisher}){external ? ' ↗' : ''}
+              </a>
+            </li>
+          );
+        })}
       </ul>
       <p class="mt-3 pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed">
         Hazırlayan: <a href="/hakkimizda/" class="font-semibold text-teal underline hover:text-tealDark">TusAnkiM</a> ·
@@ -191,16 +229,12 @@ const articleSchema = {
     <nav aria-label="İlgili yazılar ve araçlar" class="pt-6 border-t border-line">
       <h2 class="display text-base text-ink">İlgili yazılar ve araçlar</h2>
       <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-0">
-        {article.relatedLinks.map((lnk) => (
+        {related.map((lnk) => (
           <li>
-            <a
-              href={lnk.href}
-              class="text-link"
-            >
-              {lnk.label} →
-            </a>
+            <a href={lnk.href} class="text-link">{lnk.label} →</a>
           </li>
         ))}
+        <li><a href="/rehber/" class="text-link">Tüm TUS yazıları →</a></li>
       </ul>
     </nav>
   </article>

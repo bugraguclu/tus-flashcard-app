@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verifySearchOutput } from './verify-search-output.mjs';
 import { verifyBrandOutput } from './verify-brand-output.mjs';
+import { verifyRehberContent } from './verify-rehber-content.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WEBSITE_ROOT = path.resolve(__dirname, '..');
@@ -85,7 +86,7 @@ for (const svgFile of files.filter((f) => f.endsWith('.svg'))) {
 
 // 4. Audit every HTML page
 const htmlFiles = files.filter((f) => f.endsWith('.html'));
-check(htmlFiles.length === 60, `Expected 60 HTML pages (20 core + 8 rehber + 11 branş + 21 help guides), got ${htmlFiles.length}`);
+check(htmlFiles.length === 72, `Expected 72 HTML pages (20 core + 20 rehber + 11 branş + 21 help guides), got ${htmlFiles.length}`);
 
 const forbiddenText = [
   { re: /7\s*gün[^<.]{0,80}iade|koşulsuz\s+iade|iade\s+garantisi/i, label: 'Removed refund promise' },
@@ -202,7 +203,7 @@ for (const hf of htmlFiles) {
 // 5. Verify sitemap.xml
 const sitemap = fs.readFileSync(path.join(DIST, 'sitemap.xml'), 'utf8');
 const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-check(locs.length === 59, `sitemap.xml expected 59 URLs (19 pages + 8 rehber + 11 branş + 21 help guides), found ${locs.length}`);
+check(locs.length === 71, `sitemap.xml expected 71 URLs (19 pages + 20 rehber + 11 branş + 21 help guides), found ${locs.length}`);
 check(!locs.some((u) => u.includes('/404')), 'sitemap.xml must not include 404');
 check(locs.every((u) => u.startsWith('https://tusankim.com/') && u.endsWith('/')), 'All sitemap URLs must use https://tusankim.com/ and trailing slash');
 
@@ -327,6 +328,7 @@ check(refHtml.includes('for="ref-pre"'), 'referanslar: checkbox label must expli
 
 verifySearchOutput({ dist: DIST, htmlFiles, check });
 verifyBrandOutput({ dist: DIST, htmlFiles, check });
+verifyRehberContent({ dist: DIST, check });
 
 if (failures.length) {
   console.error(`[verify-site] FAILED (${failures.length} issues):`);

@@ -4,6 +4,9 @@ export const REHBER_PART_2: RehberArticle[] = [
   {
     slug: 'tus-puani-nasil-hesaplanir',
     order: 4,
+    published: '2026-11-21',
+    updated: '2026-11-26',
+    category: 'Sınav ve Takvim',
     tone: 'Markasız',
     questionH1: 'TUS puanı nasıl hesaplanır? %5 kesinti ve 45 barajı',
     seoTitle: 'TUS puanı nasıl hesaplanır? %5 kesinti kuralı | TusAnkiM',
@@ -60,7 +63,7 @@ export const REHBER_PART_2: RehberArticle[] = [
       },
       {
         label: 'TusAnkiM — TUS çıkmış soru analizi (son 6 sınav, 1.195 soru)',
-        url: 'https://tusankim.com/tus-cikmis-sorular-ve-analiz/',
+        url: '/tus-cikmis-sorular-ve-analiz/',
         publisher: 'TusAnkiM',
       },
     ],
@@ -74,6 +77,9 @@ export const REHBER_PART_2: RehberArticle[] = [
   {
     slug: '2027-tus-tarihleri-ve-calisma-plani',
     order: 5,
+    published: '2026-11-21',
+    updated: '2026-11-26',
+    category: 'Sınav ve Takvim',
     tone: 'Markasız',
     questionH1: '2027 TUS tarihleri neler, kalan güne göre nasıl çalışılır?',
     seoTitle: '2027 TUS tarihleri ve kalan güne göre plan | TusAnkiM',
@@ -109,12 +115,30 @@ export const REHBER_PART_2: RehberArticle[] = [
       'Kronometre ve Çalışma Planı ile kart tekrarını, deneme çözmeyi ve konu okumayı aynı haftalık hedefe bağla.',
       'Sınavdan 30 gün önce yeni kart açmayı azalt. Yalnızca vadesi gelen tekrarlara ve yanlış soru analizine geç.',
     ],
+    faq: [
+      {
+        q: '2027 TUS ne zaman?',
+        a: 'ÖSYM 2027 takvimine göre 2027-TUS 1. dönem 27 Mart 2027’de, 2. dönem 22 Ağustos 2027’de yapılacak. Başvurular 2–10 Şubat ve 5–13 Temmuz 2027’de alınacak.',
+      },
+      {
+        q: '2027 TUS geç başvuru günü ne zaman?',
+        a: 'Geç başvuru tek gündür: 1. dönem için 17 Şubat 2027, 2. dönem için 22 Temmuz 2027. Ücret %50 fazla alınır ve aynı gün ödenir.',
+      },
+      {
+        q: '2027 TUS tercih tarihleri belli mi?',
+        a: 'Hayır. Tercih ve ek yerleştirme tarihleri yıllık takvimde yer almaz, sonuçlardan sonra ÖSYM duyurusuyla ilan edilir. 2026-TUS 2. dönemde tercih sonuçtan 2 hafta sonra, ek tercih yerleştirmeden 5 hafta sonra açıldı.',
+      },
+      {
+        q: 'Takvimdeki sonuç tarihleri değişebilir mi?',
+        a: 'Evet. Takvimdeki sonuç tarihleri planlanan tarihlerdir. ÖSYM değişikliği osym.gov.tr üzerinden duyurur.',
+      },
+    ],
     boundaryNote:
       '2027 sınav, başvuru ve sonuç tarihleri ÖSYM takvimine göre verildi. ÖSYM olağanüstü durumlarda tarihleri değiştirebilir. Güncel duyurular için her zaman osym.gov.tr adresine bak.',
     sources: [
       {
-        label: 'ÖSYM Resmî Portal ve Sınav Takvimi',
-        url: 'https://www.osym.gov.tr/',
+        label: 'ÖSYM 2027 Yılı Sınav Takvimi (28 Ekim 2026)',
+        url: 'https://dokuman.osym.gov.tr/web/2026/10/osym-2027-yili-sinav-takvimi-7d09wi-28090734.pdf',
         publisher: 'ÖSYM',
       },
       {
@@ -132,7 +156,8 @@ export const REHBER_PART_2: RehberArticle[] = [
       { label: 'TUS puan ve hedef net hesaplayıcı', href: '/puan-hesapla/' },
       { label: 'TUS’ta kaç kart çalışılmalı?', href: '/rehber/tusta-kac-kart-calisilmali/' },
       { label: 'Kronometre ve çalışma takvimi rehberi', href: '/yardim/kronometre/' },
+      { label: 'TUS başvurusu nasıl yapılır?', href: '/rehber/tus-basvurusu-nasil-yapilir/' },
     ],
-    keywords: '2027 tus tarihleri başvuru takvimi mart ağustos çalışma planı',
+    keywords: '2027 tus ne zaman 2027 tus tarihleri başvuru takvimi mart ağustos çalışma planı',
   },
 ];

@@ -29,14 +29,8 @@ export const GET: APIRoute = async ({ site }) => {
   ]);
   const branchEntries = getBranches().map((b) => ({ path: `/referanslar/${b.slug}`, lastmod: branchMod }));
 
-  const rehberMod = newest([
-    'website/src/pages/rehber/[slug].astro',
-    'website/src/data/rehber/index.ts',
-    'website/src/data/rehber/part1.ts',
-    'website/src/data/rehber/part2.ts',
-    'website/src/data/rehber/part3.ts',
-  ]);
-  const rehberEntries = REHBER_ARTICLES.map((r) => ({ path: `/rehber/${r.slug}`, lastmod: rehberMod }));
+  // Each article's own `updated` date, matching its Article dateModified.
+  const rehberEntries = REHBER_ARTICLES.map((r) => ({ path: `/rehber/${r.slug}`, lastmod: r.updated }));
 
   const all = [...staticEntries, ...helpEntries, ...branchEntries, ...rehberEntries];
 

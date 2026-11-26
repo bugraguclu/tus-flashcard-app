@@ -66,6 +66,10 @@ export const PAGES: PageEntry[] = [
       'website/src/data/rehber/part1.ts',
       'website/src/data/rehber/part2.ts',
       'website/src/data/rehber/part3.ts',
+      'website/src/data/rehber/part4.ts',
+      'website/src/data/rehber/part5.ts',
+      'website/src/data/rehber/part6.ts',
+      'website/src/data/rehber/part7.ts',
     ],
   },
   {
@@ -299,7 +303,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { id: 'taban-puanlari', hint: 'Uzmanlık dallarının taban puanları' },
       { id: 'cikmis-sorular', hint: 'Son 6 TUS’ta branş dağılımı' },
       { id: 'spot-bilgiler', hint: 'Spot bilgiyi aktif tekrara çevir' },
-      { id: 'rehber', hint: 'Plan, FSRS ve son ay yazıları' },
+      { id: 'rehber', hint: 'Tercih, dil şartı, sınav günü ve plan' },
     ],
   },
   {

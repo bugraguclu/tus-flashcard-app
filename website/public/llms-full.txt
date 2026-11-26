@@ -66,3 +66,30 @@
 5. Kaynak dağınıklığı ve pasif okuma → Tek ana kaynak + bitirilebilir çekirdek deste + aktif hatırlama.
 6. 55–65 puan deneme platosu → 3’lü hata sınıflandırması (Bilgi / İki şık / Dikkat) + etiketli kişisel yanlış kartları.
 7. Son 30–60 gün paniği → Son 14–30 gün yeni kartsız tampon + Filtrelenmiş Deste Önizleme modu.
+
+## 4. TUS Yazıları Kütüphanesi (https://tusankim.com/rehber/ — 20 Yazı)
+- **Sınav ve Takvim (5 yazı):**
+  - https://tusankim.com/rehber/2027-tus-tarihleri-ve-calisma-plani/
+  - https://tusankim.com/rehber/tus-basvurusu-nasil-yapilir/
+  - https://tusankim.com/rehber/tus-sinav-gunu-ne-goturulur/
+  - https://tusankim.com/rehber/tus-sinavinda-sure-yonetimi/
+  - https://tusankim.com/rehber/tus-puani-nasil-hesaplanir/
+- **Tercih ve Yerleştirme (4 yazı):**
+  - https://tusankim.com/rehber/tus-tercihi-nasil-yapilir/
+  - https://tusankim.com/rehber/tus-yabanci-dil-sarti/
+  - https://tusankim.com/rehber/tus-ek-yerlestirme-nedir/
+  - https://tusankim.com/rehber/tus-yuzde-5-puan-kesintisi/
+- **Çalışma Planı (5 yazı):**
+  - https://tusankim.com/rehber/tusa-2-ay-kala-ne-yapmali/
+  - https://tusankim.com/rehber/tus-son-hafta-ve-son-3-gun/
+  - https://tusankim.com/rehber/tus-deneme-analizi-ve-hata-defteri/
+  - https://tusankim.com/rehber/5-sinif-intorn-son-1-ay-tus-programi/
+  - https://tusankim.com/rehber/tus-calisirken-dogru-bilinen-7-yanlis/
+- **Ders ve Soru Analizi (2 yazı):**
+  - https://tusankim.com/rehber/tus-hangi-dersten-kac-soru-cikar/
+  - https://tusankim.com/rehber/tus-ders-ders-kart-destegi/
+- **FSRS-6 ve Uygulama (4 yazı):**
+  - https://tusankim.com/rehber/tusta-kac-kart-calisilmali/
+  - https://tusankim.com/rehber/tus-icin-fsrs-6-nedir/
+  - https://tusankim.com/rehber/tus-icin-anki-uyumlu-sistem/
+  - https://tusankim.com/rehber/tusankim-ucretsiz-mi-nasil-kullanilir/

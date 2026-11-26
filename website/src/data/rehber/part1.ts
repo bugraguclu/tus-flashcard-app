@@ -4,6 +4,9 @@ export const REHBER_PART_1: RehberArticle[] = [
   {
     slug: 'tusta-kac-kart-calisilmali',
     order: 1,
+    published: '2026-11-21',
+    updated: '2026-11-26',
+    category: 'FSRS-6 ve Uygulama',
     tone: 'Markalı',
     questionH1: 'TUS’ta kaç kart çalışılmalı? 9.575 mi, 30.000 mi?',
     seoTitle: 'TUS’ta kaç kart çalışılmalı? Mega deste kıyası | TusAnkiM',
@@ -53,7 +56,7 @@ export const REHBER_PART_1: RehberArticle[] = [
       },
       {
         label: 'TusAnkiM — TUS çıkmış soru analizi (son 6 sınav, 1.195 soru)',
-        url: 'https://tusankim.com/tus-cikmis-sorular-ve-analiz/',
+        url: '/tus-cikmis-sorular-ve-analiz/',
         publisher: 'TusAnkiM',
       },
     ],
@@ -68,6 +71,9 @@ export const REHBER_PART_1: RehberArticle[] = [
   {
     slug: 'tus-icin-fsrs-6-nedir',
     order: 2,
+    published: '2026-11-21',
+    updated: '2026-11-25',
+    category: 'FSRS-6 ve Uygulama',
     tone: 'Yumuşak',
     questionH1: 'TUS için FSRS-6 nedir, neden %20–30 daha az tekrar yaptırır?',
     seoTitle: 'TUS için FSRS-6 nedir? SM-2’den farkı | TusAnkiM',
@@ -137,6 +143,9 @@ export const REHBER_PART_1: RehberArticle[] = [
   {
     slug: 'tus-icin-anki-uyumlu-sistem',
     order: 3,
+    published: '2026-11-21',
+    updated: '2026-11-25',
+    category: 'FSRS-6 ve Uygulama',
     tone: 'Yumuşak',
     questionH1: 'TUS için Anki uyumlu sistem nasıl kullanılır?',
     seoTitle: 'TUS için Anki uyumlu sistem nasıl kullanılır? | TusAnkiM',

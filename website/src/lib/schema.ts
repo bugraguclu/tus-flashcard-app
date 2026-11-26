@@ -54,3 +54,23 @@ export const collectionPage = (
     })),
   },
 });
+
+export const faqPage = (
+  origin: string,
+  path: string,
+  items: { question: string; answer: string }[],
+) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  '@id': absUrl(origin, path) + '#faq',
+  url: absUrl(origin, path),
+  inLanguage: 'tr-TR',
+  mainEntity: items.map((item) => ({
+    '@type': 'Question',
+    name: item.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.answer,
+    },
+  })),
+});

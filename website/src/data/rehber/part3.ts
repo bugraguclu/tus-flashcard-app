@@ -4,6 +4,9 @@ export const REHBER_PART_3: RehberArticle[] = [
   {
     slug: 'tus-calisirken-dogru-bilinen-7-yanlis',
     order: 6,
+    published: '2026-11-21',
+    updated: '2026-11-26',
+    category: 'Çalışma Planı',
     tone: 'Markasız',
     questionH1: 'TUS çalışırken doğru bilinen 7 yanlış nedir?',
     seoTitle: 'TUS çalışırken doğru bilinen 7 yanlış | TusAnkiM',
@@ -50,7 +53,7 @@ export const REHBER_PART_3: RehberArticle[] = [
       },
       {
         label: 'TusAnkiM — TUS çıkmış soru analizi (son 6 sınav, 1.195 soru)',
-        url: 'https://tusankim.com/tus-cikmis-sorular-ve-analiz/',
+        url: '/tus-cikmis-sorular-ve-analiz/',
         publisher: 'TusAnkiM',
       },
       {
@@ -69,6 +72,9 @@ export const REHBER_PART_3: RehberArticle[] = [
   {
     slug: 'tusankim-ucretsiz-mi-nasil-kullanilir',
     order: 7,
+    published: '2026-11-21',
+    updated: '2026-11-26',
+    category: 'FSRS-6 ve Uygulama',
     tone: 'Markalı',
     questionH1: 'TusAnkiM ücretsiz mi, iPhone’da ve web’de nasıl kullanılır?',
     seoTitle: 'TusAnkiM ücretsiz mi? Fiyatlar ve kullanım | TusAnkiM',
@@ -129,6 +135,9 @@ export const REHBER_PART_3: RehberArticle[] = [
   {
     slug: '5-sinif-intorn-son-1-ay-tus-programi',
     order: 8,
+    published: '2026-11-23',
+    updated: '2026-11-26',
+    category: 'Çalışma Planı',
     tone: 'Markasız',
     questionH1: '5. sınıf, intörn ve son 1 ay için TUS çalışma programı nasıl kurulur?',
     seoTitle: '5. sınıf, intörn ve son 1 ay TUS programı | TusAnkiM',
@@ -177,7 +186,7 @@ export const REHBER_PART_3: RehberArticle[] = [
       },
       {
         label: 'TusAnkiM — TUS çıkmış soru analizi (son 6 sınav, 1.195 soru)',
-        url: 'https://tusankim.com/tus-cikmis-sorular-ve-analiz/',
+        url: '/tus-cikmis-sorular-ve-analiz/',
         publisher: 'TusAnkiM',
       },
     ],

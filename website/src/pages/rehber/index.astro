@@ -1,36 +1,51 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { REHBER_ARTICLES } from '../../data/rehber/index';
+import {
+  GUIDE_CATEGORIES,
+  REHBER_ARTICLES,
+  estimateReadingMinutes,
+} from '../../data/rehber/index';
 import { breadcrumbList, collectionPage } from '../../lib/schema';
-import { effectiveDate, formatTrDate } from '../../lib/lastmod';
+import { effectiveDate, formatTrDate, pageSources } from '../../lib/lastmod';
 
 const origin = new URL(Astro.site!).origin;
-const modDate = effectiveDate([
-  'website/src/pages/rehber/index.astro',
-  'website/src/data/rehber/index.ts',
-  'website/src/data/rehber/part1.ts',
-  'website/src/data/rehber/part2.ts',
-  'website/src/data/rehber/part3.ts',
-]);
+// Same sources the sitemap reads for /rehber/ (pages.ts), so the two dates always agree.
+const modDate = effectiveDate(pageSources('rehber'));
 const modLabel = formatTrDate(modDate);
+
+const CATEGORY_IDS: Record<string, string> = {
+  'Sınav ve Takvim': 'sinav-ve-takvim',
+  'Tercih ve Yerleştirme': 'tercih-ve-yerlestirme',
+  'Çalışma Planı': 'calisma-plani',
+  'Ders ve Soru Analizi': 'ders-ve-soru-analizi',
+  'FSRS-6 ve Uygulama': 'fsrs-6-ve-uygulama',
+};
+
+const groups = GUIDE_CATEGORIES.map((cat) => ({
+  cat,
+  id: CATEGORY_IDS[cat],
+  articles: REHBER_ARTICLES.filter((a) => a.category === cat),
+})).filter((g) => g.articles.length > 0);
 
 const crumbs = breadcrumbList(origin, [
   { name: 'Ana Sayfa', path: '/' },
   { name: 'TUS Yazıları', path: '/rehber' },
 ]);
 
+const pageTitle = 'TUS yazıları: takvim, tercih, plan ve FSRS-6 | TusAnkiM';
+const pageDescription = `TUS başvurusu, sınav günü, tercih, %5 kesinti, yabancı dil şartı, soru dağılımı, son 2 ay planı ve FSRS-6 üzerine ÖSYM kılavuzuna dayanan ${REHBER_ARTICLES.length} yazı.`;
+
 const colSchema = collectionPage(origin, {
   path: '/rehber',
-  name: 'TUS çalışma rehberleri: puan, takvim, FSRS-6 | TusAnkiM',
-  description:
-    'TUS puanının hesabı, 2027 TUS tarihleri, FSRS-6, kaç kart çalışılacağı ve Anki uyumlu çalışma üzerine kısa yazılar.',
+  name: pageTitle,
+  description: pageDescription,
   items: REHBER_ARTICLES.map((a) => ({ name: a.questionH1, path: `/rehber/${a.slug}` })),
   dateModified: modDate,
 });
 ---
 <Layout
-  title="TUS çalışma rehberleri: puan, takvim, FSRS-6 | TusAnkiM"
-  description="TUS çalışma rehberleri: doğru bilinen yanlışlar, 5. sınıf, intörn ve son 1 ay programı, 2027 takvimi, puan hesabı ve FSRS-6 üzerine 8 kısa, kaynaklı yazı."
+  title={pageTitle}
+  description={pageDescription}
   modifiedTime={modDate}
   schema={[crumbs, colSchema]}
 >
@@ -54,7 +69,7 @@ const colSchema = collectionPage(origin, {
         TUS Yazıları
       </h1>
       <p class="text-inkMuted mt-3 max-w-2xl leading-relaxed">
-        TUS puanı, 2027 sınav takvimi, FSRS-6, kaç kart çalışılacağı ve sık yapılan çalışma hataları üzerine {REHBER_ARTICLES.length} kısa yazı. Hepsi veriye ve resmî kaynaklara dayanır.
+        Başvurudan tercihe, sınav gününden son iki aya kadar {REHBER_ARTICLES.length} kısa yazı. Her biri ÖSYM kılavuzuna, Resmî Gazete'ye ya da açık verimize dayanır.
       </p>
       <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-inkMuted">
         <span>
@@ -67,44 +82,57 @@ const colSchema = collectionPage(origin, {
           </a>
         </span>
       </div>
+      <nav aria-label="Konular" class="mt-6">
+        <ul class="flex flex-wrap gap-x-5 gap-y-0 text-sm" data-rehber-topics>
+          {groups.map((g) => (
+            <li>
+              <a href={`#${g.id}`} class="text-link">{g.cat} ({g.articles.length})</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   </section>
 
-  <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12">
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-8">
-      {REHBER_ARTICLES.map((art) => (
-        <a
-          href={`/rehber/${art.slug}/`}
-          class="border-t border-line pt-5 hover:border-tealGraphic transition flex flex-col justify-between"
-        >
-          <div>
-            <div class="flex items-center justify-between gap-2 text-[11px] font-bold text-teal">
-              <span>Yazı {String(art.order).padStart(2, '0')}</span>
-            </div>
-            <h2 class="display text-base text-ink mt-2 leading-snug">{art.questionH1}</h2>
-            <p class="text-xs sm:text-sm text-inkMuted mt-2.5 leading-relaxed">{art.directAnswer}</p>
-          </div>
-          <span class="mt-5 inline-flex items-center text-xs font-semibold text-teal">
-            Yazıyı oku →
-          </span>
-        </a>
-      ))}
-    </div>
+  <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-14">
+    {groups.map((g) => (
+      <section id={g.id} aria-labelledby={`${g.id}-heading`} class="scroll-mt-24">
+        <h2 id={`${g.id}-heading`} class="display text-xl text-ink tracking-tight">{g.cat}</h2>
+        <div class="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-8">
+          {g.articles.map((art) => (
+            <a
+              href={`/rehber/${art.slug}/`}
+              class="border-t border-line pt-5 hover:border-tealGraphic transition flex flex-col justify-between"
+            >
+              <div>
+                <h3 class="display text-base text-ink leading-snug">{art.questionH1}</h3>
+                <p class="text-xs sm:text-sm text-inkMuted mt-2.5 leading-relaxed">{art.directAnswer.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')}</p>
+              </div>
+              <span class="mt-5 inline-flex items-center gap-3 text-xs font-semibold text-teal">
+                Yazıyı oku →
+                <span class="font-normal text-inkMuted">{estimateReadingMinutes(art)} dk</span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
 
-    <aside class="mt-12 border-t border-line pt-5 text-sm text-inkMuted leading-relaxed">
-      <h2 class="display text-base text-ink">Kılavuzlar, araçlar ve referanslar</h2>
+    <aside class="border-t border-line pt-5 text-sm text-inkMuted leading-relaxed">
+      <h2 class="display text-base text-ink">Araçlar ve referanslar</h2>
       <p class="mt-2">
-        Uygulamanın ekranlarını adım adım{' '}
-        <a href="/yardim/" class="font-semibold text-teal underline hover:text-tealDark">21 Türkçe yardım rehberi</a>{' '}
-        anlatır. Çıkmış soruların dağılımına{' '}
+        Kalan güne göre günlük yükü{' '}
+        <a href="/calisma-plani/" class="font-semibold text-teal underline hover:text-tealDark">çalışma planı aracı</a>,
+        netlerinden puanını{' '}
+        <a href="/puan-hesapla/" class="font-semibold text-teal underline hover:text-tealDark">puan hesaplayıcı</a>{' '}
+        çıkarır. Çıkmış soruların dağılımına{' '}
         <a href="/tus-cikmis-sorular-ve-analiz/" class="font-semibold text-teal underline hover:text-tealDark">TUS çıkmış sorular analizinden</a>{' '}
-        ve <a href="/referanslar/" class="font-semibold text-teal underline hover:text-tealDark">11 ÖSYM TUS branşının referans cetvelinden</a>{' '}
-        bakabilirsin. Diğer araçlar ve sayfalar:{' '}
+        ve <a href="/referanslar/" class="font-semibold text-teal underline hover:text-tealDark">11 dersin referans cetvelinden</a>{' '}
+        bakabilirsin. Diğer sayfalar:{' '}
         <a href="/tus-taban-puanlari-ve-kontenjan/" class="font-semibold text-teal underline hover:text-tealDark">TUS taban puanları</a>,{' '}
-        <a href="/yardim/kronometre/" class="font-semibold text-teal underline hover:text-tealDark">TUS kronometresi ve çalışma takvimi</a>,{' '}
         <a href="/tus-spot-bilgiler/" class="font-semibold text-teal underline hover:text-tealDark">TUS spot bilgiler</a> ve{' '}
-        <a href="/tus-icin-ankimobile-alternatifi/" class="font-semibold text-teal underline hover:text-tealDark">AnkiMobile alternatifi</a>.
+        <a href="/yardim/" class="font-semibold text-teal underline hover:text-tealDark">21 yardım rehberi</a>.
       </p>
     </aside>
-  </section>
+  </div>
 </Layout>

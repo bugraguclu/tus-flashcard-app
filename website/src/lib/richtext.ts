@@ -8,6 +8,7 @@ const MD_LINK = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
 const SAFE_HREF = /^(?:\/(?!\/)|#|https?:\/\/|mailto:)/i;
 const STRONG = /\*\*(?=\S)([^*\n]+?)(?<=\S)\*\*/g;
 const EM = /\*(?=\S)([^*\n]+?)(?<=\S)\*/g;
+const CODE = /`([^`\n]+)`/g;
 
 const siteHref = (href: string): string => {
   if (!href.startsWith('/') || href.startsWith('//')) return href;
@@ -30,7 +31,10 @@ function renderLinks(escaped: string): string {
 }
 
 const emphasise = (escaped: string) =>
-  escaped.replace(STRONG, '<strong>$1</strong>').replace(EM, '<em>$1</em>');
+  escaped
+    .replace(CODE, '<code>$1</code>')
+    .replace(STRONG, '<strong>$1</strong>')
+    .replace(EM, '<em>$1</em>');
 
 /** Wrap English technical terms inside Turkish uppercase kickers so CSS text-transform keeps dotless I. */
 const LATIN_TERMS = /\b(FSRS-6|FSRS|Anki|AnkiMobile|Image Occlusion|Cloze|iPhone|Web|WhatsApp|Instagram|SQLite|Git)\b/g;

@@ -7,6 +7,10 @@ import { getHelpArticles } from '../src/lib/helpDocs.ts';
 import { REHBER_PART_1 } from '../src/data/rehber/part1.ts';
 import { REHBER_PART_2 } from '../src/data/rehber/part2.ts';
 import { REHBER_PART_3 } from '../src/data/rehber/part3.ts';
+import { REHBER_PART_4 } from '../src/data/rehber/part4.ts';
+import { REHBER_PART_5 } from '../src/data/rehber/part5.ts';
+import { REHBER_PART_6 } from '../src/data/rehber/part6.ts';
+import { REHBER_PART_7 } from '../src/data/rehber/part7.ts';
 
 // Technical derivatives of the existing brand assets; no generated imagery.
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -86,7 +90,7 @@ for (const article of getHelpArticles()) {
 for (const [slug, name] of Object.entries(REFERENCE_BRANCHES)) {
   covers[`referanslar/${slug}`] = await fitTitle(`${name} TUS referansları`);
 }
-for (const article of [...REHBER_PART_1, ...REHBER_PART_2, ...REHBER_PART_3]) {
+for (const article of [...REHBER_PART_1, ...REHBER_PART_2, ...REHBER_PART_3, ...REHBER_PART_4, ...REHBER_PART_5, ...REHBER_PART_6, ...REHBER_PART_7]) {
   covers[`rehber/${article.slug}`] = await fitTitle(article.seoTitle.replace(/\s*\|\s*TusAnkiM$/, ''));
 }
 const markData = (await sharp(mark).resize(108, 108).png().toBuffer()).toString('base64');
