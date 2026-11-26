@@ -7,6 +7,13 @@ const screenshot = (file: string, alt: string) => ({
   alt,
 });
 
+export const heroDevicesImage = {
+  src: '/images/uygulama/hero-telefon-pc.webp',
+  width: 1600,
+  height: 1074,
+  alt: 'TusAnkiM telefon ve bilgisayar ekranları. Solda iPhone’da Desteler ekranı, sağda MacBook Pro’da Farmakoloji çalışma kartı ve FSRS tekrar düğmeleri.',
+} as const;
+
 export const appScreens = {
   decks: screenshot('desteler', 'Desteler ekranı. Temel ve Klinik Bilimler desteleri, yeni kart ve tekrar sayıları.'),
   answer: screenshot('kart-cevap', 'Çalışma ekranı. Farmakoloji kartının yanıtı ve tekrar aralıklarıyla birlikte Tekrar, Zor, İyi ve Kolay düğmeleri.'),

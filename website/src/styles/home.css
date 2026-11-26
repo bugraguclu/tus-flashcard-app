@@ -18,7 +18,7 @@
   padding-block: clamp(2.25rem, 5vw, 4.5rem);
 }
 @media (min-width: 900px) {
-  .hero-layout { grid-template-columns: minmax(0, 0.93fr) minmax(0, 1fr); }
+  .hero-layout { grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr); }
 }
 @media (max-width: 899px) {
   .hero-copy-group { display: contents; }
@@ -36,88 +36,25 @@
 }
 .hero-product {
   inline-size: 100%;
-  max-inline-size: 34rem;
+  max-inline-size: 38rem;
   margin-inline: auto;
 }
 .hero-product-stage {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(20, minmax(0, 1fr));
-  align-items: center;
-  padding: clamp(0.9rem, 3vw, 2.25rem);
+  overflow: hidden;
   border: 1px solid #dde1e4;
   border-radius: 1rem;
-  background: #f3f5f6;
+  background: #e4f0ed;
 }
-.hero-device {
-  grid-row: 1;
-  min-inline-size: 0;
-  padding: clamp(0.2rem, 0.45vw, 0.38rem);
-  border-radius: clamp(0.85rem, 1.8vw, 1.45rem);
-  background: #253432;
-  box-shadow: 0 0 0 1px #182d2914;
-}
-.hero-device img {
+.hero-product-stage img {
   display: block;
   inline-size: 100%;
   block-size: auto;
-  border-radius: clamp(0.65rem, 1.4vw, 1.1rem);
-}
-.hero-device-decks {
-  grid-column: 1 / 11;
-  align-self: start;
-}
-.hero-device-answer {
-  grid-column: 10 / -1;
-  z-index: 1;
-  margin-block-start: clamp(1.25rem, 4vw, 3.25rem);
 }
 .hero-product figcaption {
   margin-block-start: 0.75rem;
   color: #596166;
   font-size: 0.8125rem;
   text-align: center;
-}
-
-/* Photo bezel from Mobile FIRST (commercial use):
-   https://www.webmobilefirst.com/en/mockups/apple-iphone-18-pro-2026/ */
-@media (max-width: 639px) {
-  .hero-device {
-    position: relative;
-    aspect-ratio: 389 / 800;
-    padding: 0;
-    border-radius: 0;
-    background: none;
-    box-shadow: none;
-    filter: drop-shadow(0 0.65rem 0.65rem #13393242);
-  }
-
-  .hero-device::before,
-  .hero-device::after {
-    content: "";
-    position: absolute;
-  }
-
-  /* Match the transparent opening, leaving space above the app for the camera. */
-  .hero-device::before {
-    inset: 1.5% 4.1%;
-    border-radius: 16% / 7.4%;
-    background: #fff;
-  }
-
-  .hero-device-answer::before { background: #f0f2f3; }
-
-  .hero-device::after {
-    inset: 0;
-    background: url('/images/uygulama/iphone-18-pro.webp') center / contain no-repeat;
-  }
-
-  .hero-device img {
-    position: absolute;
-    inset: 8.2% 4.35% auto;
-    inline-size: 91.3%;
-    border-radius: 0;
-  }
 }
 
 /* ── KPI tiles with meters (hairline grid) ───────────────────────────────── */

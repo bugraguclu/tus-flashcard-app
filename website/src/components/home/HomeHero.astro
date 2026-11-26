@@ -1,6 +1,6 @@
 ---
-import AppScreenshot from '../AppScreenshot.astro';
 import catalog from '../../data/generated/catalog.json';
+import { heroDevicesImage } from '../../data/appScreens';
 import { SITE } from '../../config';
 import { num } from '../../lib/format';
 
@@ -45,12 +45,14 @@ const trust = ['Beta ücretsiz, kart bilgisi istemiyoruz', 'Hesap açmadan başl
 
     <figure class="hero-product">
       <div class="hero-product-stage">
-        <div class="hero-device hero-device-decks">
-          <AppScreenshot screen="decks" loading="eager" />
-        </div>
-        <div class="hero-device hero-device-answer">
-          <AppScreenshot screen="answer" loading="eager" fetchpriority="high" />
-        </div>
+        <img
+          src={heroDevicesImage.src}
+          width={heroDevicesImage.width}
+          height={heroDevicesImage.height}
+          alt={heroDevicesImage.alt}
+          fetchpriority="high"
+          decoding="async"
+        />
       </div>
       <figcaption>Ekranlar web uygulamasından; içindekiler örnek kartlar.</figcaption>
     </figure>
