@@ -23,6 +23,27 @@
   içindedir; `verify-rehber-content.mjs` bunları `npm run verify` içinde denetler. `verify-site.mjs`
   **72 HTML / 71 sitemap URL’si** bekler.
 
+
+## 27 Kasım 2026 — Gereksiz bağlantıların kaldırılması
+
+- Canlı `tusankim.vercel.app` sitesinin 59 sayfası `origin/master` (`d65bb531`)
+  kaynağıyla eşleştirildi. 27 sayfada 83 bağlantı kaldırıldı: 46 hazırlayan bağlantısı
+  düz yazar adına dönüştü; 24 mevcut-sayfa breadcrumb bağlantısı `aria-current="page"`
+  taşıyan metin oldu; çıkmış soru tablosundaki 11 yinelenen “Branş analizi” bağlantısı,
+  ana sayfa demosunun altındaki ham ekran görüntüsü bağlantısı ve AnkiMobile alternatif
+  sayfasındaki düğmenin hemen üstünde yinelenen uygulama bağlantısı kaldırıldı.
+- Eski, şu anda kullanılmayan `LiveCardDemo` bileşenindeki aynı ham görsel bağlantısı da
+  kaldırıldı. Şemanın görsel dosyası ve `localResource` kontrolü korunur; görünür ham
+  görsel bağlantısını zorunlu kılan eski kontrol kaldırıldı.
+- Astro build/check: 0 hata, 0 uyarı, 0 ipucu. Website verify: 60 HTML, 59 sitemap URL,
+  89 arama girdisi ve 1.195 referans kaydı geçti. Kök `npm run quality`: 4.069 test geçti,
+  5 atlandı; TypeScript, yardım içeriği ve iOS yapılandırma kontrolleri başarılı.
+- Tarayıcıda masaüstü tablo, 390px mobil analiz/branş/puan/yazı düzenleri, branş adına
+  tıklayarak ayrıntıya geçiş ve demo deste/cevap/değerlendirme akışı kontrol edildi.
+  Bu değişiklik iPhone uygulamasına dokunmaz; fiziksel iPhone testi yapılmadı.
+- Tekrarlanan deneme çağrıları, ayrı tam ekran demo bağlantıları ve içerik sonu ilgili
+  araç listeleri kullanıcı kararı bekler. Bu kayıt canlıya dağıtım yapıldığı anlamına gelmez.
+
 ## 25 Kasım 2026 — Sade görünüm (tüm sayfalar)
 
 - Sahibinin uygulamada ve diğer projelerinde verdiği "yapay görünmesin" kararları siteye

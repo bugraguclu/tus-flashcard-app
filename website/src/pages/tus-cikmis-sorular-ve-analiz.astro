@@ -50,9 +50,9 @@ const pre = refSummary.preExam2026_2;
           </li>
           <li class="inline-flex items-center">
             <span aria-hidden="true" class="mx-2">/</span>
-            <a href="/tus-cikmis-sorular-ve-analiz/" aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
+            <span aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
               TUS Çıkmış Sorular ve Analiz
-            </a>
+            </span>
           </li>
         </ol>
       </nav>
@@ -71,9 +71,7 @@ const pre = refSummary.preExam2026_2;
         </span>
         <span>
           Hazırlayan:{' '}
-          <a href="/hakkimizda/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
-            TusAnkiM
-          </a>
+          <span class="font-semibold text-ink">TusAnkiM</span>
         </span>
       </div>
     </div>
@@ -169,7 +167,6 @@ const pre = refSummary.preExam2026_2;
               <th scope="col" class="py-3.5 px-4 tabular-nums">Çözüm Desteği</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Konu Kapsamı</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Katalog kartı</th>
-              <th scope="col" class="py-3.5 px-4">Detay</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-lineLight tabular-nums">
@@ -191,14 +188,6 @@ const pre = refSummary.preExam2026_2;
                   <td class="py-3 px-4 font-semibold text-teal">%{fmtDec1(b.summary.destekOran)}</td>
                   <td class="py-3 px-4 text-ink">%{fmtDec1(b.summary.konuKapsamiOran)}</td>
                   <td class="py-3 px-4 text-inkMuted">{fmtInt(b.catalogCourse.cards)}</td>
-                  <td class="py-3 px-4 whitespace-nowrap">
-                    <a
-                      href={`/referanslar/${b.slug}/`}
-                      class="inline-flex items-center min-h-[2.75rem] text-xs font-semibold text-teal underline hover:text-tealDark"
-                    >
-                      Branş analizi →
-                    </a>
-                  </td>
                 </tr>
               );
             })}

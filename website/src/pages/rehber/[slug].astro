@@ -89,9 +89,9 @@ const related = article.relatedLinks;
           </li>
           <li class="inline-flex items-center">
             <span aria-hidden="true" class="mx-2">/</span>
-            <a href={pagePath + '/'} aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
+            <span aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
               {article.category}
-            </a>
+            </span>
           </li>
         </ol>
       </nav>
@@ -108,9 +108,7 @@ const related = article.relatedLinks;
         <span>{readMinutes} dk okuma</span>
         <span>
           Hazırlayan:{' '}
-          <a href="/hakkimizda/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
-            TusAnkiM
-          </a>
+          <span class="font-semibold text-ink">TusAnkiM</span>
         </span>
       </div>
     </div>
@@ -220,7 +218,7 @@ const related = article.relatedLinks;
         })}
       </ul>
       <p class="mt-3 pt-3 border-t border-lineLight text-xs text-inkMuted leading-relaxed">
-        Hazırlayan: <a href="/hakkimizda/" class="font-semibold text-teal underline hover:text-tealDark">TusAnkiM</a> ·
+        Hazırlayan: <span class="font-semibold text-ink">TusAnkiM</span> ·
         Son güncelleme: <time datetime={modDate} class="font-semibold text-ink">{modLabel}</time>
       </p>
     </section>

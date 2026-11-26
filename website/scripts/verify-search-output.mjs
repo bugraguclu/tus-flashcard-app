@@ -91,7 +91,6 @@ export function verifySearchOutput({ dist, htmlFiles, check }) {
   const app = byType(schemas(home, 'home'), 'SoftwareApplication');
   check(Boolean(app?.publisher?.['@id'] && app?.featureList?.length && app?.softwareHelp?.url), 'home: incomplete application metadata');
   localResource(app?.screenshot, 'home screenshot');
-  check(homeMarkup.includes(`href="${new URL(app?.screenshot ?? 'https://tusankim.com/').pathname}"`), 'home: screenshot must be accessible to visitors');
   check(app?.offers?.price === 0 && app?.offers?.priceCurrency === 'TRY', 'home: current free beta offer must be 0 TRY');
   const launchNote = decode(homeMarkup.replace(/<[^>]+>/g, ' ')).match(/Planlanan lansman:[^.]+\.[^.]+\./)?.[0];
   check(/beta/i.test(app?.offers?.name ?? ''), 'home: current offer must explicitly name beta access');

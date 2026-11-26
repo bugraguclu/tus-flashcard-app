@@ -86,9 +86,9 @@ const COMPARISON_ROWS = [
           </li>
           <li class="inline-flex items-center">
             <span aria-hidden="true" class="mx-2">/</span>
-            <a href="/tus-icin-ankimobile-alternatifi/" aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
+            <span aria-current="page" class="inline-flex items-center min-h-[2.75rem] py-2 text-ink font-semibold">
               AnkiMobile Alternatifi
-            </a>
+            </span>
           </li>
         </ol>
       </nav>
@@ -108,9 +108,7 @@ const COMPARISON_ROWS = [
         </span>
         <span>
           Hazırlayan:{' '}
-          <a href="/hakkimizda/" class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark">
-            TusAnkiM
-          </a>
+          <span class="font-semibold text-ink">TusAnkiM</span>
         </span>
       </div>
     </div>
@@ -206,16 +204,7 @@ const COMPARISON_ROWS = [
         <h2 class="display text-lg text-ink">Android, Mac veya Windows’ta nasıl kullanırım?</h2>
         <p class="text-sm text-inkMuted leading-relaxed">
           Tarayıcıdan. TusAnkiM’in <strong>iPhone</strong> uygulaması geliştiriliyor; Android uygulaması henüz yok, üzerinde çalışıyoruz.
-          Bugün Android telefonda, iPad’de, bilgisayarda ve iPhone Safari’de kurulum yapmadan{' '}
-          <a
-            href={SITE.webAppUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="font-semibold text-teal underline underline-offset-2 hover:text-tealDark"
-          >
-            web uygulamasını (tusankim.vercel.app/uygulama) ↗
-          </a>{' '}
-          açabilirsin. <code>.apkg</code>/<code>.colpkg</code> destelerin tarayıcının deposunda, kendi cihazında durur. Seçili demo sorularını da orada denersin.
+          Bugün Android telefonda, iPad’de, bilgisayarda ve iPhone Safari’de kurulum yapmadan web uygulamasını açabilirsin. <code>.apkg</code>/<code>.colpkg</code> destelerin tarayıcının deposunda, kendi cihazında durur. Seçili demo sorularını da orada denersin.
         </p>
         <div class="flex flex-wrap gap-3 pt-2">
           <a
