@@ -226,7 +226,7 @@ giriş budur; kenar çubuğundaki **Yardım** düğmesi (`components/Sidebar.tsx
 | help.settings.about.description | Grup açıklaması, `:1598` | açıklama | Sürüm {version} • Anki paketleriyle çalışan, verilerini cihazınızda tutan bağımsız bir kart uygulaması. Anki veya Ankitects ile bağlantılı değildir. | Version {version} • An independent flashcard app that works with Anki packages and keeps its data on your device. Not affiliated with Anki or Ankitects. | Mevcut — koru |
 | help.settings.about.help | Yeni ilk satır, `:1599` üstü | bağlantı satırı → `/help` | Yardım ve kullanım kılavuzu | Help and user guide | Yeni |
 | help.settings.about.privacy | `:1599` | bağlantı satırı ↗ | Gizlilik politikası | Privacy Policy | Mevcut — koru |
-| help.settings.about.terms | Gizlilik satırının altı (yeni) → `https://bugraguclu.github.io/tus-flashcard-app/terms.html` | bağlantı satırı ↗ | Kullanım koşulları | Terms of Use | Yeni (`docs/terms.html` var ama uygulamadan bağlantısı yok) |
+| help.settings.about.terms | Gizlilik satırının altı (yeni) → `https://tusankim.vercel.app/kullanim-kosullari/` | bağlantı satırı ↗ | Kullanım koşulları | Terms of Use | Yeni (`docs/terms.html` var ama uygulamadan bağlantısı yok) |
 | help.settings.about.support | `:1600` | bağlantı satırı ↗ | Destek | Support | Mevcut — koru |
 
 ---
