@@ -38,7 +38,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
   modifiedTime={modDate}
   schema={[crumbs, colSchema]}
 >
-  <section class="bg-surfaceSoft border-b border-line py-10 sm:py-14">
+  <section class="bg-white border-b border-line py-10 sm:py-14">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
       <nav aria-label="Sayfa konumu" class="mb-3">
         <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
@@ -90,22 +90,22 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
         </p>
       </div>
 
-      <div class="mt-6 grid md:grid-cols-3 gap-5">
-        <div class="rounded-2xl border border-line bg-surfaceSoft p-5 space-y-2">
+      <div class="mt-6 grid md:grid-cols-3 gap-x-10 gap-y-8">
+        <div class="border-t border-line pt-5 space-y-2">
           <div class="text-xs font-bold text-teal">01 · İpucu olmadan hatırlama</div>
           <h3 class="display text-base text-ink">Cevabı gizle, önce kendin hatırla</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
             Boşluk doldurma kartı kritik ayrımı gizler; örneğin ilk tetkiki, özgül antikoru ya da anatomik seviyeyi. Önce sen yanıtlarsın, sonra kontrol edersin.
           </p>
         </div>
-        <div class="rounded-2xl border border-line bg-surfaceSoft p-5 space-y-2">
+        <div class="border-t border-line pt-5 space-y-2">
           <div class="text-xs font-bold text-teal">02 · FSRS-6 ile %20–30 daha az tekrar</div>
           <h3 class="display text-base text-ink">Unutmak üzereyken karşına çıkar</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
             İyi bildiğin spotları haftalarca erteler, karıştırdıklarını daha sık sorar. Günde 60 yeni kartla 9.575 kart 160 günde biter.
           </p>
         </div>
-        <div class="rounded-2xl border border-line bg-surfaceSoft p-5 space-y-2">
+        <div class="border-t border-line pt-5 space-y-2">
           <div class="text-xs font-bold text-teal">03 · Her seçenekte demo soruları</div>
           <h3 class="display text-base text-ink">Kurmadan önce ya da uygulamada dene</h3>
           <p class="text-xs sm:text-sm text-inkMuted leading-relaxed">
@@ -158,7 +158,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
         </div>
       </div>
 
-      <div class="grid md:grid-cols-2 gap-5">
+      <div class="grid md:grid-cols-2 gap-x-10 gap-y-8">
         {demoCards.map((card, idx) => {
           const activeCloze = card.activeCloze ?? 1;
           const qNum = card.qid.split('-')[1] || card.qid;
@@ -168,7 +168,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
               id={`spot-${idx + 1}`}
               data-spot-card
               data-spot-group={card.test}
-              class="rounded-2xl border border-line bg-white p-6 flex flex-col justify-between gap-4"
+              class="border-t border-line pt-5 flex flex-col justify-between gap-4"
             >
               <div class="space-y-3">
                 <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-inkMuted">
@@ -246,7 +246,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
       </div>
 
       <div
-        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        class="overflow-x-auto border-y border-line"
         tabindex="0"
         role="region"
         aria-labelledby="catalog-spot-caption"
@@ -256,7 +256,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
             BKA TUS kataloğundaki 9.575 kartın 12 derse, 7.721 nota ve 106 alt desteye dağılımı
           </caption>
           <thead>
-            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+            <tr class="border-b border-line text-xs font-semibold text-inkMuted">
               <th scope="col" class="py-3.5 px-4">Ders</th>
               <th scope="col" class="py-3.5 px-4">Grup</th>
               <th scope="col" class="py-3.5 px-4 tabular-nums">Kart</th>
@@ -286,7 +286,7 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
     </div>
 
     <!-- 4 · Direct Demo Access Across All 3 Segments + Cross-Links -->
-    <div class="rounded-2xl border border-line bg-tint p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <div class="border-t border-line pt-5 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
       <div class="max-w-2xl space-y-2">
         <h2 class="display text-lg text-ink">Demo soruları hangi seçenekte açık?</h2>
         <p class="text-sm text-inkMuted leading-relaxed">
@@ -305,19 +305,19 @@ const klinikCount = demoCards.filter((c) => c.test === 'Klinik').length;
         </a>
         <a
           href="/referanslar/"
-          class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+          class="text-link"
         >
           1.195 referans kanıtı →
         </a>
         <a
           href="/yardim/kronometre/"
-          class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+          class="text-link"
         >
           TUS kronometresi ve takvim →
         </a>
         <a
           href="/tus-cikmis-sorular-ve-analiz/"
-          class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+          class="text-link"
         >
           Çıkmış soru dağılımı →
         </a>

@@ -43,7 +43,7 @@ html:has(.guide-toc-bar) {
   flex-shrink: 0;
   min-block-size: 2.75rem;
   padding-inline: 0.875rem;
-  border-radius: 999px;
+  border-radius: 0.5rem;
   border: 1px solid transparent;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -127,8 +127,7 @@ html:has(.guide-toc-bar) {
   overflow-x: auto;
   max-inline-size: 100%;
   container-type: inline-size;
-  border-radius: 1rem;
-  border: 1px solid #dde1e4;
+  border-block: 1px solid #dde1e4;
   background: #ffffff;
 }
 
@@ -143,7 +142,7 @@ html:has(.guide-toc-bar) {
   position: sticky;
   inset-block-start: 0;
   z-index: 2;
-  background: #f8f9fa;
+  background: #ffffff;
   border-bottom: 1px solid #dde1e4;
   padding: 0.75rem 0.875rem;
   text-align: left;
@@ -221,8 +220,7 @@ html:has(.guide-toc-bar) {
 
   .guide-table:not(.guide-table-compact) tbody tr {
     background: #ffffff;
-    border: 1px solid #dde1e4;
-    border-radius: 0.75rem;
+    border-bottom: 1px solid #dde1e4;
     overflow: hidden;
     margin-block-end: 0.75rem;
   }
@@ -278,8 +276,7 @@ html:has(.guide-toc-bar) {
 
   .guide-table-compact tbody tr {
     background: #ffffff;
-    border: 1px solid #dde1e4;
-    border-radius: 0.75rem;
+    border-bottom: 1px solid #dde1e4;
     overflow: hidden;
     margin-block-end: 0.625rem;
   }

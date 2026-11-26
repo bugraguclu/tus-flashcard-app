@@ -18,9 +18,9 @@ import exams from '../../data/exams.json';
       </a>
     </div>
 
-    <ul role="list" class="lg:col-span-8 grid sm:grid-cols-2 gap-4">
+    <ul role="list" class="lg:col-span-8 grid sm:grid-cols-2 gap-x-10 gap-y-8">
       {exams.exams.map((e, i) => (
-        <li class="guide-reveal rounded-2xl border border-line bg-surfaceSoft p-5 sm:p-6 flex flex-col justify-between" style={`--d: ${i * 60}ms`}>
+        <li class="guide-reveal border-t border-line pt-5 flex flex-col justify-between" style={`--d: ${i * 60}ms`}>
           <div>
             <div class="flex items-start justify-between gap-3">
               <h3 class="display text-lg text-ink">{e.name}</h3>

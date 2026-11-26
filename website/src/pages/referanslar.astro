@@ -33,7 +33,7 @@ const pageSchema = {
   description="TUS referansları: son 6 sınavın 1.195 sorusunu kartlarla karşılaştırdık. Doğrudan, Dolaylı ve Konu Kapsamı ayrı; 2026/2 için sınav öncesi sürüm de var."
   schema={[crumbs, pageSchema]}
 >
-  <section class="page-intro bg-surface border-b border-line py-10 sm:py-14">
+  <section class="page-intro bg-white border-b border-line py-10 sm:py-14">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-6">
       <nav aria-label="Sayfa konumu" class="flex flex-wrap items-center gap-y-1 text-sm text-inkMuted mb-3">
         <a href="/" class="inline-flex items-center min-h-[2.75rem] py-2 hover:text-teal transition">Ana Sayfa</a>
@@ -160,7 +160,7 @@ const pageSchema = {
               <span>
                 <strong>{item.qid}</strong> ({item.ders}): {item.olculenBilgi}
               </span>
-              <span class="shrink-0 rounded-lg bg-gradeHardBg px-2 py-0.5 text-xs font-bold text-gradeHard">
+              <span class="shrink-0 text-xs font-bold text-gradeHard">
                 {item.sinavOncesiSurumde === 'kismen' ? 'Kısmen vardı' : 'Sonradan eklendi'}
               </span>
             </li>
@@ -384,7 +384,7 @@ const pageSchema = {
 <style is:global>
   .reference-explorer { padding-block: 3rem 4rem; }
   .reference-explorer > h2, .ref-results-heading h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: -.02em; }
-  .ref-filters { margin-top: 1.25rem; padding: 1.5rem; background: #f8f9fa; border: 1px solid #dde1e4; border-radius: .75rem; }
+  .ref-filters { margin-top: 1.25rem; padding-block: 1.25rem; border-block: 1px solid #dde1e4; }
   .ref-filters label { display: flex; align-items: center; min-height: 2rem; font-size: .875rem; font-weight: 500; }
   .ref-filters input[type="search"], .ref-filters select { width: 100%; min-height: 2.875rem; padding: .625rem .75rem; background-color: #fff; color: #24292c; border: 1px solid #dde1e4; border-radius: .5rem; font-size: 1rem; }
   .ref-selects { display: grid; grid-template-columns: .8fr 1fr 1.2fr; gap: 1rem; margin-top: 1rem; }
@@ -401,11 +401,11 @@ const pageSchema = {
   .ref-row-top { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: .5rem 1rem; }
   .ref-row-meta { color: #596166; font-size: .875rem; line-height: 1.75; font-variant-numeric: tabular-nums; }
   .ref-row-meta span { margin-left: .75rem; }
-  .ref-badge { display: inline-block; font-size: .8125rem; line-height: 1.5; font-weight: 500; border-radius: .375rem; padding: .25rem .625rem; }
-  .ref-badge-direct { color: #156d3e; background: #e6f4ec; }
-  .ref-badge-indirect { color: #8c4c07; background: #fcf1e3; }
-  .ref-badge-topic { color: #596166; background: #f3f5f6; }
-  .ref-badge-none { color: #596166; background: #f3f5f6; }
+  .ref-badge { display: inline-block; font-size: .8125rem; line-height: 1.5; font-weight: 600; }
+  .ref-badge-direct { color: #156d3e; }
+  .ref-badge-indirect { color: #8c4c07; }
+  .ref-badge-topic { color: #596166; }
+  .ref-badge-none { color: #596166; }
   .reference-row h3 { font-size: 1.0625rem; font-weight: 600; line-height: 1.65; margin-top: .75rem; }
   .ref-row-summary, .ref-row-bridge { color: #596166; font-size: 1rem; line-height: 1.85; margin-top: .625rem; }
   .ref-row-summary strong, .ref-row-bridge strong { font-weight: 500; color: #24292c; }

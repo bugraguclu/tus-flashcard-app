@@ -77,7 +77,7 @@ const COMPARISON_ROWS = [
   modifiedTime={modDate}
   schema={[crumbs, articleSchema]}
 >
-  <section class="bg-surfaceSoft border-b border-line py-10 sm:py-14">
+  <section class="bg-white border-b border-line py-10 sm:py-14">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
       <nav aria-label="Sayfa konumu" class="mb-3">
         <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
@@ -118,7 +118,7 @@ const COMPARISON_ROWS = [
 
   <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12 space-y-12">
     <!-- Independence & Transparency Callout -->
-    <div class="rounded-2xl border-l-4 border-teal bg-tint p-5 sm:p-6">
+    <div class="border-t border-line pt-5">
       <p class="text-sm sm:text-base text-ink leading-relaxed font-semibold">
         {SITE.disclaimer} Anki çok iyi bir yazılım; masaüstü sürümü açık kaynak ve arkasında büyük bir topluluk var. Bu sayfa hangi durumda AnkiMobile’ın,
         hangi durumda TusAnkiM’in sana daha uygun olduğunu artısıyla eksisiyle gösterir.
@@ -136,7 +136,7 @@ const COMPARISON_ROWS = [
       </p>
 
       <div
-        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        class="overflow-x-auto border-y border-line"
         tabindex="0"
         role="region"
         aria-labelledby="anki-comp-caption"
@@ -146,7 +146,7 @@ const COMPARISON_ROWS = [
             AnkiMobile Flashcards ile TusAnkiM’in fiyat, Anki dosyası desteği, tekrar algoritması ve platform karşılaştırması
           </caption>
           <thead>
-            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+            <tr class="border-b border-line text-xs font-semibold text-inkMuted">
               <th scope="col" class="py-3.5 px-5">Ölçüt</th>
               <th scope="col" class="py-3.5 px-5">AnkiMobile Flashcards (resmî iOS uygulaması)</th>
               <th scope="col" class="py-3.5 px-5 text-teal">TusAnkiM (bağımsız, iPhone ve web)</th>
@@ -171,8 +171,8 @@ const COMPARISON_ROWS = [
         TusAnkiM ücretli mi?
       </h2>
       <p class="text-sm text-inkMuted leading-relaxed">Şu an ücretsiz. Güncel beta sürümünde ücretli seçenekler ve reklamlar henüz devrede değil; TUS paketi ücretsiz açılır. Abonelik yok; planlanan üç seçenek şöyle.</p>
-      <div class="grid md:grid-cols-3 gap-5">
-        <div class="rounded-2xl border border-line bg-surfaceSoft p-6 space-y-2">
+      <div class="grid md:grid-cols-3 gap-x-10 gap-y-8">
+        <div class="border-t border-line pt-5 space-y-2">
           <div class="text-xs font-bold text-teal">Seçenek 1 · ₺0</div>
           <h3 class="display text-lg text-ink">Ücretsiz kullanım</h3>
           <p class="text-sm text-inkMuted leading-relaxed">
@@ -181,7 +181,7 @@ const COMPARISON_ROWS = [
             sıklığını sonra belirleyeceğiz.
           </p>
         </div>
-        <div class="rounded-2xl border-2 border-teal bg-white p-6 space-y-2">
+        <div class="border-t-2 border-ink pt-5 space-y-2">
           <div class="text-xs font-bold text-teal">Seçenek 2 · ₺2.000</div>
           <h3 class="display text-lg text-ink">Tüm kartlar</h3>
           <p class="text-sm text-inkMuted leading-relaxed">
@@ -189,7 +189,7 @@ const COMPARISON_ROWS = [
             Seçili demo soruları da açık. Arşiv 160 günde bitirilebilir.
           </p>
         </div>
-        <div class="rounded-2xl border border-line bg-surfaceSoft p-6 space-y-2">
+        <div class="border-t border-line pt-5 space-y-2">
           <div class="text-xs font-bold text-teal">Seçenek 3 · ₺50</div>
           <h3 class="display text-lg text-ink">Reklamları kaldırma</h3>
           <p class="text-sm text-inkMuted leading-relaxed">
@@ -201,8 +201,8 @@ const COMPARISON_ROWS = [
     </div>
 
     <!-- Android & Desktop Web Preview Bridge + Honest Limitations -->
-    <div class="grid lg:grid-cols-2 gap-6 pt-6 border-t border-line">
-      <div class="rounded-2xl border border-line bg-white p-6 space-y-3">
+    <div class="grid lg:grid-cols-2 gap-x-10 gap-y-8">
+      <div class="border-t border-line pt-5 space-y-3">
         <h2 class="display text-lg text-ink">Android, Mac veya Windows’ta nasıl kullanırım?</h2>
         <p class="text-sm text-inkMuted leading-relaxed">
           Tarayıcıdan. TusAnkiM’in <strong>iPhone</strong> uygulaması geliştiriliyor; Android uygulaması henüz yok, üzerinde çalışıyoruz.
@@ -235,7 +235,7 @@ const COMPARISON_ROWS = [
         </div>
       </div>
 
-      <div class="rounded-2xl border border-line bg-surfaceSoft p-6 space-y-3">
+      <div class="border-t border-line pt-5 space-y-3">
         <h2 class="display text-lg text-ink">AnkiMobile ne zaman daha iyi seçim?</h2>
         <ul class="space-y-2 text-sm text-inkMuted list-disc pl-5 leading-relaxed">
           <li>
@@ -255,7 +255,7 @@ const COMPARISON_ROWS = [
     </div>
 
     <!-- Sources & Related Links -->
-    <div class="rounded-2xl border border-line bg-white p-6 space-y-3">
+    <div class="border-t border-line pt-5 space-y-3">
       <h2 class="display text-base text-ink">Kaynaklar ve ilgili rehberler</h2>
       <div class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
         <a
@@ -275,17 +275,17 @@ const COMPARISON_ROWS = [
           ACM KDD ’22: FSRS aralıklı tekrar optimizasyonu ↗
         </a>
       </div>
-      <nav aria-label="İlgili sayfalar" class="pt-3 border-t border-lineLight flex flex-wrap gap-2.5">
-        <a href="/yardim/anki-ile-kullanma/" class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition">
+      <nav aria-label="İlgili sayfalar" class="pt-3 border-t border-lineLight flex flex-wrap gap-x-5 gap-y-0">
+        <a href="/yardim/anki-ile-kullanma/" class="text-link">
           Anki ile birlikte kullanma kılavuzu →
         </a>
-        <a href="/rehber/tus-icin-anki-uyumlu-sistem/" class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition">
+        <a href="/rehber/tus-icin-anki-uyumlu-sistem/" class="text-link">
           TUS için Anki uyumlu sistem rehberi →
         </a>
-        <a href="/yardim/kronometre/" class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition">
+        <a href="/yardim/kronometre/" class="text-link">
           TUS kronometresi ve çalışma takvimi →
         </a>
-        <a href="/referanslar/" class="inline-flex items-center min-h-[2.75rem] px-4 rounded-lg border border-line bg-surfaceSoft text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition">
+        <a href="/referanslar/" class="text-link">
           Son 6 TUS referans kanıtları →
         </a>
       </nav>

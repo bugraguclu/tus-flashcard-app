@@ -34,7 +34,7 @@ const colSchema = collectionPage(origin, {
   modifiedTime={modDate}
   schema={[crumbs, colSchema]}
 >
-  <section class="bg-surface border-b border-line py-10 sm:py-14">
+  <section class="bg-white border-b border-line py-10 sm:py-14">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
       <nav aria-label="Sayfa konumu" class="mb-3">
         <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
@@ -71,11 +71,11 @@ const colSchema = collectionPage(origin, {
   </section>
 
   <section class="max-w-content mx-auto px-5 sm:px-6 lg:px-10 py-12">
-    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-8">
       {REHBER_ARTICLES.map((art) => (
         <a
           href={`/rehber/${art.slug}/`}
-          class="rounded-2xl border border-line bg-white p-6 hover:border-tealGraphic transition flex flex-col justify-between"
+          class="border-t border-line pt-5 hover:border-tealGraphic transition flex flex-col justify-between"
         >
           <div>
             <div class="flex items-center justify-between gap-2 text-[11px] font-bold text-teal">
@@ -91,7 +91,7 @@ const colSchema = collectionPage(origin, {
       ))}
     </div>
 
-    <aside class="mt-12 rounded-2xl border border-line bg-surfaceSoft p-6 text-sm text-inkMuted leading-relaxed">
+    <aside class="mt-12 border-t border-line pt-5 text-sm text-inkMuted leading-relaxed">
       <h2 class="display text-base text-ink">Kılavuzlar, araçlar ve referanslar</h2>
       <p class="mt-2">
         Uygulamanın ekranlarını adım adım{' '}

@@ -60,7 +60,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
   modifiedTime={modDate}
   schema={[crumbs, datasetSchema]}
 >
-  <section class="bg-surface border-b border-line py-10 sm:py-14">
+  <section class="bg-white border-b border-line py-10 sm:py-14">
     <div class="max-w-content mx-auto px-5 sm:px-6 lg:px-10">
       <nav aria-label="Sayfa konumu" class="mb-3">
         <ol class="flex flex-wrap items-center gap-y-1 text-xs text-inkMuted">
@@ -103,8 +103,8 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
         </span>
       </div>
 
-      <div class="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div class="rounded-2xl border border-line bg-white p-4">
+      <div class="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8">
+        <div class="border-t border-line pt-5">
           <div class="text-xs font-semibold text-inkMuted">Çözüm desteği (6 sınav)</div>
           <div class="display text-2xl text-teal mt-1 tabular-nums">
             {branch.summary.destek} / {branch.summary.soru}{' '}
@@ -114,7 +114,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
             {branch.summary.dogrudan} Doğrudan + {branch.summary.dolayli} Dolaylı
           </div>
         </div>
-        <div class="rounded-2xl border border-line bg-white p-4">
+        <div class="border-t border-line pt-5">
           <div class="text-xs font-semibold text-inkMuted">Konu Kapsamı</div>
           <div class="display text-2xl text-ink mt-1 tabular-nums">
             {branch.summary.konuKapsami} / {branch.summary.soru}{' '}
@@ -124,7 +124,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
             {branch.summary.konu} yalnız konu · {branch.summary.yok} kart yok
           </div>
         </div>
-        <div class="rounded-2xl border border-line bg-white p-4">
+        <div class="border-t border-line pt-5">
           <div class="text-xs font-semibold text-inkMuted">Destedeki kart sayısı</div>
           <div class="display text-2xl text-ink mt-1 tabular-nums">
             {fmtNum(branch.catalogCourse.cards)} kart
@@ -133,7 +133,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
             {fmtNum(branch.catalogCourse.notes)} not · {branch.catalogCourse.topicSubdecks} konu alt destesi
           </div>
         </div>
-        <div class="rounded-2xl border border-line bg-white p-4">
+        <div class="border-t border-line pt-5">
           <div class="text-xs font-semibold text-inkMuted">Destenin adı</div>
           <div class="display text-2xl text-ink mt-1">
             {branch.catalogCourseName}
@@ -167,7 +167,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
       </div>
 
       <div
-        class="overflow-x-auto rounded-2xl border border-line bg-white"
+        class="overflow-x-auto border-y border-line"
         tabindex="0"
         role="region"
         aria-labelledby="branch-exam-caption"
@@ -177,7 +177,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
             {branch.name} için 2024/1–2026/2 arasındaki 6 TUS’un sonuç tablosu
           </caption>
           <thead>
-            <tr class="border-b border-line bg-surfaceSoft text-xs font-semibold text-inkMuted">
+            <tr class="border-b border-line text-xs font-semibold text-inkMuted">
               <th scope="col" class="py-3.5 px-4 sm:px-5">Sınav</th>
               <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Soru</th>
               <th scope="col" class="py-3.5 px-4 sm:px-5 tabular-nums">Doğrudan</th>
@@ -217,7 +217,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
     </div>
 
     <!-- Question distribution & current scope intent -->
-    <div class="rounded-2xl border border-line bg-white p-6 sm:p-8 space-y-6">
+    <div class="border-t border-line pt-5 space-y-6">
       <div>
         <h2 class="display text-section tracking-tightest text-ink">
           TUS’ta kaç {branch.name} sorusu çıkıyor, kartlar kaçını karşılıyor?
@@ -227,8 +227,8 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
         </p>
       </div>
 
-      <div class="grid lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-5 rounded-2xl border border-line bg-surfaceSoft p-5 space-y-3">
+      <div class="grid lg:grid-cols-12 gap-x-10 gap-y-8">
+        <div class="lg:col-span-5 border-t border-line pt-5 space-y-3">
           <h3 class="display text-base text-ink">Sınavdaki soru sayısı</h3>
           <p class="text-sm text-ink leading-relaxed">
             {branch.name}, {branch.examAllocation.sessionTotal} soruluk {branch.group} testinde{' '}
@@ -251,7 +251,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
           </div>
         </div>
 
-        <div class="lg:col-span-7 rounded-2xl border border-line bg-surfaceSoft p-5 space-y-3">
+        <div class="lg:col-span-7 border-t border-line pt-5 space-y-3">
           <h3 class="display text-base text-ink">Konusu var ama kartla çözülmeyen sorular</h3>
           <p class="text-sm text-ink leading-relaxed">
             {branch.name} sorularında çözüm desteği{' '}
@@ -282,8 +282,8 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
     </div>
 
     <!-- Strengths, gaps & catalog subdecks -->
-    <div class="grid lg:grid-cols-12 gap-6">
-      <div class="lg:col-span-7 rounded-2xl border border-line bg-surfaceSoft p-6 space-y-5">
+    <div class="grid lg:grid-cols-12 gap-x-10 gap-y-8">
+      <div class="lg:col-span-7 border-t border-line pt-5 space-y-5">
         <h2 class="display text-lg text-ink">Kartların iyi olduğu ve eksik kaldığı konular</h2>
         <div>
           <h3 class="text-sm font-semibold text-gradeGood">İyi karşılanan konular</h3>
@@ -304,7 +304,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
         </div>
       </div>
 
-      <div class="lg:col-span-5 rounded-2xl border border-line bg-white p-6">
+      <div class="lg:col-span-5 border-t border-line pt-5">
         <h2 class="display text-lg text-ink">En çok kartı olan konular ({branch.catalogCourseName})</h2>
         <p class="text-xs text-inkMuted mt-1">
           {branch.catalogCourse.topicSubdecks} konu alt destesinden en kalabalık {branch.catalogCourse.topTopics.length} tanesi:
@@ -341,7 +341,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
 
       <div class="space-y-3">
         {branch.samples.map((r) => (
-          <article class="rounded-2xl border border-line bg-white p-4 sm:p-5">
+          <article class="border-t border-line pt-5">
             <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
               <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                 <span class="font-bold text-ink tabular-nums">
@@ -367,7 +367,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
               </p>
             )}
             {r.kartOzet && (
-              <p class="mt-2 rounded-xl bg-surfaceSoft px-3.5 py-2.5 text-xs sm:text-sm text-inkMuted leading-relaxed border border-lineLight">
+              <p class="mt-2 text-xs sm:text-sm text-inkMuted leading-relaxed">
                 <strong class="text-ink font-semibold">Kart özeti:</strong> {r.kartOzet}
               </p>
             )}
@@ -380,12 +380,12 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
     <div class="pt-8 border-t border-line grid lg:grid-cols-12 gap-8 items-start">
       <div class="lg:col-span-8">
         <h2 class="display text-lg text-ink">Diğer 10 TUS branşı (çözüm desteği)</h2>
-        <ul class="mt-4 flex flex-wrap gap-2">
+        <ul class="mt-4 flex flex-wrap gap-x-5 gap-y-0">
           {siblings.map((sib) => (
             <li>
               <a
                 href={`/referanslar/${sib.slug}/`}
-                class="inline-flex items-center min-h-[2.75rem] px-3.5 rounded-lg border border-line bg-white text-xs font-semibold text-ink hover:border-tealGraphic hover:text-teal transition"
+                class="text-link"
               >
                 {sib.name} ({fmtPct(sib.summary.destekOran)})
               </a>
@@ -394,7 +394,7 @@ const siblings = all.filter((b) => b.slug !== branch.slug);
         </ul>
       </div>
 
-      <aside class="lg:col-span-4 rounded-2xl border border-line bg-surfaceSoft p-5 text-xs text-inkMuted leading-relaxed">
+      <aside class="lg:col-span-4 border-t border-line pt-5 text-xs text-inkMuted leading-relaxed">
         <h2 class="display text-sm text-ink">Bu veriler ne için?</h2>
         <p class="mt-2">
           Veriler yalnızca TUS hazırlığı içindir; klinik kararın ya da resmî ÖSYM kılavuzunun yerini tutmaz. Sınıflandırma ön değerlendirmedir, hekim editör onayı henüz tamamlanmadı.

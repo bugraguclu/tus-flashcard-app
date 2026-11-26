@@ -14,8 +14,12 @@
   çubuk büyümesi ve üzerine gelince yükselme animasyonu yok.
 - Ana sayfa: tek renk hero başlığı, düz hero ve son çağrı zemini, kutusuz "Neden TusAnkiM"
   sütunları, çizgili plan bağlantıları, çerçevesiz Erişim metni, siyah KPI sayıları.
-- Uygulama ekranını taklit eden `components/demo/` ve içerik menüsündeki bölüm
-  bağlantıları bilerek değiştirilmedi.
+- Alt sayfalar (ikinci tur): bilgi kartı yerine üstü çizgili kutusuz blok
+  (`border-t border-line pt-5`, ızgarada `gap-x-10 gap-y-8`); tablo çerçevesi yerine yalnız
+  üst ve alt çizgi (`border-y`), gri başlık satırı yok; sol şeritli renkli not kutusu yok;
+  ilgili sayfa bağlantıları çerçeveli çip değil `.text-link`; sayfa girişleri beyaz zeminli.
+  Kutu içinde kutu kurma; çerçeve yalnız form alanı ve seçim düğmesi gibi denetimlerde kalır.
+- Uygulama ekranını taklit eden `components/demo/` bilerek değiştirilmedi.
 
 ## 24 Kasım 2026 — Kısa ana sayfa, kategorili menü, yeni alt sayfalar
 

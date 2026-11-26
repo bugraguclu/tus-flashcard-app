@@ -109,9 +109,9 @@ const xTicks = [1, 60, 120, 180];
     </div>
 
     <!-- 4 Candidate Stage Cards (migrated from HomePlan.astro and synced with PLANNER_PRESETS) -->
-    <ol role="list" class="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <ol role="list" class="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-8">
       {presetCards.map(({ preset, sim, plannerUrl }, i) => (
-        <li class="guide-reveal rounded-2xl border border-line bg-white p-5 flex flex-col" style={`--d: ${i * 50}ms`}>
+        <li class="guide-reveal border-t border-line pt-5 flex flex-col" style={`--d: ${i * 50}ms`}>
           <p class="text-sm font-semibold text-inkMuted">{preset.title}</p>
           <h3 class="display text-lg text-ink mt-1.5">{preset.horizonLabel}</h3>
           <p class="mt-4 flex items-baseline gap-1.5">
@@ -214,7 +214,7 @@ const xTicks = [1, 60, 120, 180];
         </dl>
       </div>
 
-      <figure class="lg:col-span-7 rounded-2xl border border-line bg-white p-4 sm:p-6">
+      <figure class="lg:col-span-7 border-t border-line pt-5">
         <figcaption class="flex flex-wrap items-center justify-between gap-2 text-sm">
           <span class="font-semibold text-ink">Günlük kart sayısı (yeni + tekrar · {H} gün, {P} yeni/gün)</span>
           <span class="guide-legend">

@@ -42,7 +42,7 @@ const tools = [
       </div>
     </article>
 
-    <div class="mt-4 grid sm:grid-cols-2 gap-4">
+    <div class="mt-8 grid sm:grid-cols-2 gap-x-10 gap-y-8">
       {tools.map((tool) => (
         <article id={tool.id} class="tool-card scroll-mt-24" aria-labelledby={`${tool.id}-heading`}>
           <div class="tool-card-stage">
@@ -57,7 +57,7 @@ const tools = [
       ))}
     </div>
 
-    <article class="tool-calculator mt-4" aria-labelledby="calculator-heading">
+    <article class="tool-calculator mt-8" aria-labelledby="calculator-heading">
       <div>
         <h3 id="calculator-heading" class="display text-lg text-ink">TUS puan hesaplayıcı</h3>
         <p class="text-inkMuted mt-1 leading-relaxed">Netlerini gir, Temel ve Klinik puanını gör. Gerekiyorsa %5 kesintiyi uygula ya da hedef puanın için kaç net gerektiğine bak.</p>
@@ -73,20 +73,11 @@ const tools = [
 </section>
 
 <style>
-  .tool-feature, .tool-card, .tool-calculator {
-    border: 1px solid #dde1e4;
-    border-radius: 1.25rem;
-    overflow: hidden;
-    background: #fff;
-  }
+  .tool-feature { display: grid; gap: 0 2.5rem; }
 
-  .tool-feature {
-    display: grid;
-  }
+  .tool-feature-copy, .tool-card-copy { padding-block: 1.25rem; }
 
-  .tool-feature-copy, .tool-card-copy, .tool-calculator {
-    padding: clamp(1.25rem, 3vw, 2rem);
-  }
+  .tool-calculator { padding-block: 1.25rem; border-block: 1px solid #dde1e4; }
 
   .tool-feature-copy { align-self: center; }
 
@@ -99,6 +90,7 @@ const tools = [
     max-block-size: 22.5rem;
     overflow: hidden;
     background: #f3f5f6;
+    border-radius: 0.75rem;
   }
 
   .tool-feature-stage :global(img), .tool-card-stage :global(img) {
@@ -122,10 +114,10 @@ const tools = [
     block-size: clamp(16rem, 25vw, 18rem);
     overflow: hidden;
     padding: 1.25rem 1rem 0;
-    background: #edf3f6;
+    background: #f3f5f6;
+    border-radius: 0.75rem;
   }
 
-  .tool-card:first-child .tool-card-stage { background: #eaf4f0; }
   .tool-card-stage :global(img) { inline-size: min(100%, 17rem); }
   .tool-card-copy { display: flex; flex: 1; flex-direction: column; align-items: flex-start; }
 
