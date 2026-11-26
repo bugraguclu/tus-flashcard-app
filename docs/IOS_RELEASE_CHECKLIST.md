@@ -13,6 +13,12 @@ npm run quality
 This validates TypeScript, the deterministic test suite, the Anki source registry, and native
 iOS configuration. A web export is the fast full-bundle regression and runs in CI.
 
+For source/link changes, also run `npm run verify:sources` and
+`node scripts/verify-app-store-pages.mjs`. For medical bibliography identity changes, run
+`npm run verify:catalog-citations`. These are live network checks; they report inaccessible
+or missing targets rather than making offline app startup depend on them. The full
+`npm run verify:app-store:live` additionally requires the publisher's real legal identity.
+
 ## Targeted live-test ladder
 
 Run only the row touched by the change, plus the release smoke below for a release candidate.

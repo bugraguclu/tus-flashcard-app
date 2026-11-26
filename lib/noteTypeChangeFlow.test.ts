@@ -1,5 +1,5 @@
 // Browser "Change Note Type": cards with no counterpart in the new type are removed only after
-// the learner agrees. https://docs.ankiweb.net/browsing.html#changing-the-note-type
+// the learner agrees. https://docs.ankiweb.net/manual/browsing#notes
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';

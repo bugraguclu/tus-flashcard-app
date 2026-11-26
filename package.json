@@ -28,7 +28,9 @@
     "share:lan": "node scripts/share-expo-go.mjs --lan",
     "share:ngrok": "node scripts/share-expo-go.mjs --ngrok",
     "build:help": "node scripts/build-help-content.mjs",
-    "check:help": "node scripts/build-help-content.mjs --check"
+    "check:help": "node scripts/build-help-content.mjs --check",
+    "verify:sources": "node scripts/verify-reference-sources.mjs",
+    "verify:catalog-citations": "node scripts/verify-catalog-citations.mjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

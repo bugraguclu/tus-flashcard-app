@@ -1,6 +1,6 @@
 # Anki compatibility baseline
 
-Last reviewed: 2026-11-23
+Last reviewed: 2026-11-27
 
 TusAnkiM is an independent Anki alternative with local-first storage and iPhone as its sole
 release target; web is a local/CI regression target, also published as a browser preview, not a
@@ -10,14 +10,24 @@ in `docs/anki-reference-sources.json`.
 
 ## Source hierarchy
 
-Use the [Anki manual](https://docs.ankiweb.net/intro.html) for product semantics and the
-[AnkiMobile manual](https://docs.ankimobile.net/) for iOS interactions. Resolve unclear low-level
+Use the [Anki manual](https://docs.ankiweb.net/manual/intro) for product semantics and the
+[AnkiMobile manual](https://docs.ankiweb.net/ankimobile/intro) for iOS interactions. Resolve unclear low-level
 behaviour against [Anki source](https://github.com/ankitects/anki). Use
 [AnkiDroid source](https://github.com/ankidroid/Anki-Android) only for Android-specific behaviour.
-The URLs supplied with a trailing `-` are not the canonical repositories; the links above are.
 
 This MIT project must not copy GPL/AGPL implementation. Behavioural compatibility must be
 independently implemented and protected by tests.
+
+Source verification (2026-11-27): `npm run verify:sources` checks every registry URL,
+URLs embedded in `useFor`, and the app's three public legal links. It requires HTTP 200,
+rejects error/challenge pages and HTML redirect stubs, and verifies exact HTML fragments.
+GitHub file references are checked at the raw endpoint for the same revision. All 196 distinct
+URLs passed. The registry contains 198 unique source IDs; the duplicate filtered-deck-dialog
+entry was merged without dropping its purposes. `npm run quality` checks IDs, HTTPS URLs
+and nonempty purposes offline; the separate live check never blocks offline app use.
+`npm run verify:sources -- --manuals` additionally scans official manual citations in tracked
+app code, tests and engineering documents; all 356 distinct URLs passed. This source
+maintenance changes no capability status or scheduling/package behavior.
 
 ## Capability matrix
 

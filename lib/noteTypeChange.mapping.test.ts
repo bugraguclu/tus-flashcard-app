@@ -1,5 +1,5 @@
 // Anki's default Change Note Type mapping, derived from behaviour:
-// https://docs.ankiweb.net/browsing.html#changing-the-note-type
+// https://docs.ankiweb.net/manual/browsing#notes
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';

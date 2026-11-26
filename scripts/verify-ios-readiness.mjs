@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hasLegalIdentityPlaceholders } from './legal-identity.mjs';
+import { validateSourceRegistry } from './referenceAudit.ts';
 
 const app = JSON.parse(fs.readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo;
 const eas = JSON.parse(fs.readFileSync(new URL('../eas.json', import.meta.url), 'utf8'));
@@ -114,11 +115,7 @@ requireValue(declaredTypes.has('com.tusankim.apkg'), 'iOS Files hand-off is miss
 requireValue(declaredTypes.has('com.tusankim.colpkg'), 'iOS Files hand-off is missing .colpkg');
 requireValue(documentTypes.every((entry) => entry.CFBundleTypeRole === 'Viewer'), 'Imported iOS files must use the Viewer role');
 
-requireValue(sources.schemaVersion === 1, 'Unsupported Anki source-registry version');
-requireValue(Array.isArray(sources.sources) && sources.sources.length >= 4, 'Anki source registry is incomplete');
-for (const source of sources.sources ?? []) {
-    requireValue(/^https:\/\//.test(source.url ?? ''), `Invalid source URL: ${source.id ?? 'unknown'}`);
-}
+failures.push(...validateSourceRegistry(sources));
 for (const doc of sources.requiredDocs ?? []) {
     requireValue(fs.existsSync(new URL(`../${doc}`, import.meta.url)), `Missing required compatibility document: ${doc}`);
 }

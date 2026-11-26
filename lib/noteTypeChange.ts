@@ -1,4 +1,4 @@
-/** Independently derived name-first mapping; https://docs.ankiweb.net/browsing.html#changing-the-note-type */
+/** Independently derived name-first mapping; https://docs.ankiweb.net/manual/browsing#notes */
 import { translateActive } from './i18n';
 import type { NoteType } from './models';
 

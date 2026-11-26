@@ -1,4 +1,4 @@
-// Behavioral reference only: https://docs.ankiweb.net/filtered-decks.html#creating-a-filtered-deck
+// Behavioral reference only: https://docs.ankiweb.net/manual/filtered-decks#creating-manually
 // Rebuilding a filtered deck first returns its own cards home, so the "no matching cards" check
 // that guards Build/Rebuild and Custom Study must count them as gatherable again.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';

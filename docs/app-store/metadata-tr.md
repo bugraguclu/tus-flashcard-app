@@ -19,6 +19,7 @@
 > alınmadı (DNS kaydı yok). Bu yüzden canlı sitenin `tusankim.vercel.app` rotaları kullanılır;
 > üçü 25 Kasım 2026'da HTTP 200 döndürdü. Alan adı bağlanınca adresler `tusankim.com`'a
 > taşınabilir. Gönderim öncesinde `npm run verify:app-store:live` çalıştırılmalıdır.
+> Uygulama ve canlı kontrol aynı `lib/legalLinks.ts` sabitlerini kullanır.
 
 ## Promosyon metni (170 karakter sınırı)
 

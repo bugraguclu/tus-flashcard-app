@@ -1,6 +1,6 @@
 // Anki shows Unbury on a filtered deck that has buried cards, and a card in a filtered deck belongs
 // to that deck rather than to its home deck (https://docs.ankiweb.net/filtered-decks.html,
-// https://docs.ankiweb.net/studying.html#burying). Here a filtered deck's membership is virtual.
+// https://docs.ankiweb.net/manual/studying#siblings-and-burying). Here a filtered deck's membership is virtual.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';

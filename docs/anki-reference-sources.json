@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastVerified": "2026-11-22",
+  "lastVerified": "2026-11-27",
   "product": "TusAnkiM",
   "sources": [
     {
@@ -31,28 +31,28 @@
       "id": "anki-manual",
       "priority": 1,
       "platform": "cross-platform behavior",
-      "url": "https://docs.ankiweb.net/intro.html",
+      "url": "https://docs.ankiweb.net/manual/intro",
       "useFor": ["studying", "reviewer keyboard shortcuts", "web main-window shortcuts (D, A, B, T) and Add with Ctrl/Cmd+Enter", "scheduler semantics", "deck options", "search", "templates", "import/export", "backups", "exporting stored snapshots"]
     },
     {
       "id": "anki-manual-empty-cards",
       "priority": 1,
       "platform": "cross-platform card generation and maintenance behavior",
-      "url": "https://docs.ankiweb.net/templates/generation.html#card-generation--deletion",
+      "url": "https://docs.ankiweb.net/manual/templates/generation#card-generation-%26-deletion",
       "useFor": ["empty card detection", "blank front card generation", "safe card-only deletion", "preserving notes and sibling cards"]
     },
     {
       "id": "anki-manual-browsing-find-replace",
       "priority": 2,
       "platform": "cross-platform browser note tools",
-      "url": "https://docs.ankiweb.net/browsing.html#find-and-replace",
+      "url": "https://docs.ankiweb.net/manual/browsing#find-and-replace",
       "useFor": ["Find and Replace: In field/tags, selected notes only, ignore case, regular expressions"]
     },
     {
       "id": "anki-manual-browsing-find-duplicates",
       "priority": 2,
       "platform": "cross-platform browser note tools",
-      "url": "https://docs.ankiweb.net/browsing.html#finding-duplicates",
+      "url": "https://docs.ankiweb.net/manual/browsing#finding-duplicates",
       "useFor": ["Find Duplicates by field with an optional search; Tag Duplicates"]
     },
     {
@@ -80,7 +80,7 @@
       "id": "anki-manual-mathjax",
       "priority": 2,
       "platform": "card rendering",
-      "url": "https://docs.ankiweb.net/math.html#mathjax",
+      "url": "https://docs.ankiweb.net/manual/math#mathjax",
       "useFor": ["MathJax delimiters \\(…\\) and \\[…\\], chemistry with mhchem"]
     },
     {
@@ -115,21 +115,21 @@
       "id": "mathjax-3.2.2-package",
       "priority": 2,
       "platform": "card rendering",
-      "url": "https://www.npmjs.com/package/mathjax/v/3.2.2",
+      "url": "https://registry.npmjs.org/mathjax/3.2.2",
       "useFor": ["vendored es5/tex-svg-full.js, Apache-2.0"]
     },
     {
       "id": "anki-26.09.3-fsrs-evaluate-oracle",
       "priority": 2,
       "platform": "cross-platform FSRS",
-      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/scheduler/fsrs/params.rs",
+      "url": "https://github.com/ankitects/anki/blob/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/scheduler/fsrs/params.rs",
       "useFor": ["evaluate_params_legacy (AGPL, behaviour only; outputs from scripts/anki-oracle/gen_evaluate.py)", "lib/fsrsEvaluate.test.ts"]
     },
     {
       "id": "anki-26.09.3-fsrs-simulator",
       "priority": 2,
       "platform": "cross-platform FSRS",
-      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/scheduler/fsrs/simulator.rs",
+      "url": "https://github.com/ankitects/anki/blob/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/scheduler/fsrs/simulator.rs",
       "useFor": ["simulator inputs, defaults and card conversion, with ts/routes/deck-options/SimulatorModal.svelte (AGPL, behaviour only; outputs from scripts/anki-oracle/gen_simulate.py)", "lib/fsrsSimulator.test.ts"]
     },
     {
@@ -150,7 +150,7 @@
       "id": "anki-manual-manage-note-types",
       "priority": 1,
       "platform": "cross-platform note type management",
-      "url": "https://docs.ankiweb.net/editing.html#adding-a-note-type",
+      "url": "https://docs.ankiweb.net/manual/editing#adding-a-note-type",
       "useFor": ["Add Note Type offers stock types and clones of existing types, then asks for a name", "Delete removes a note type with all its notes and cards", "cloze note types can add, remove and reorder fields", "local deletion safety: refuse read-only tabs before backup, await durable commit and restore only affected rows on failure; noteTypeDeletion.test.ts"]
     },
     {
@@ -164,63 +164,63 @@
       "id": "anki-manual-check-database",
       "priority": 1,
       "platform": "cross-platform collection maintenance behavior",
-      "url": "https://docs.ankiweb.net/files.html#checking-your-collection",
+      "url": "https://docs.ankiweb.net/manual/files#checking-your-collection",
       "useFor": ["database integrity check", "rebuilding internal structures", "collection optimization", "what a repair pass is expected to fix"]
     },
     {
       "id": "anki-manual-text-import",
       "priority": 1,
       "platform": "cross-platform text import behavior",
-      "url": "https://docs.ankiweb.net/importing/text-files.html",
+      "url": "https://docs.ankiweb.net/manual/importing/text-files",
       "useFor": ["first-field duplicate updates", "duplicate match scope", "deck directives (the File Headers table still says #deck: and #notetype: preset only an existing deck or note type; Anki 25.07+ creates a missing #deck: deck, see anki-source-csv-metadata)", "deck columns", "GUID columns", "field separator override", "allow HTML in fields", "field mapping", "tag all notes", "tag updated notes"]
     },
     {
       "id": "anki-manual-editing",
       "priority": 1,
       "platform": "cross-platform note/card semantics",
-      "url": "https://docs.ankiweb.net/editing.html",
+      "url": "https://docs.ankiweb.net/manual/editing",
       "useFor": ["adding notes", "generated cards", "note fields", "editing notes", "field formatting and media attachments", "paper-clip attachment of audio, images and video, and recording from the microphone (Editing Features); lib/attachmentKind.test.ts", "shared note fields versus independent sibling card deck placement", "the Add screen clears every field but the sticky ones after a note is added and stays open for the next (Adding Cards, sticky fields); lib/editorDraft.test.ts"]
     },
     {
       "id": "anki-manual-collection-packages",
       "priority": 1,
       "platform": "cross-platform collection package behavior",
-      "url": "https://docs.ankiweb.net/exporting.html#collection-colpkg",
+      "url": "https://docs.ankiweb.net/manual/exporting#collection-colpkg",
       "useFor": ["colpkg collection replacement", "collection package scheduling", "replacement media semantics"]
     },
     {
       "id": "anki-manual-deck-options",
       "priority": 1,
       "platform": "cross-platform deck-option behavior",
-      "url": "https://docs.ankiweb.net/deck-options.html",
+      "url": "https://docs.ankiweb.net/manual/deck-options",
       "useFor": ["presets", "rename current preset", "separate subdeck presets", "save to all subdecks", "daily limits", "deliberate TusAnkiM divergence: uncapped daily new cards with preserved package limit metadata", "learning and lapse steps", "display order", "burying", "audio", "timers", "auto advance", "easy days", "SM-2 advanced settings"]
     },
     {
       "id": "anki-manual-preferences",
       "priority": 1,
       "platform": "cross-platform preferences",
-      "url": "https://docs.ankiweb.net/preferences.html",
+      "url": "https://docs.ankiweb.net/manual/preferences",
       "useFor": ["timebox time limit", "learn ahead limit", "reviewer preferences"]
     },
     {
       "id": "anki-manual-tts",
       "priority": 1,
       "platform": "cross-platform text-to-speech behavior",
-      "url": "https://docs.ankiweb.net/templates/fields.html#text-to-speech-for-individual-fields",
+      "url": "https://docs.ankiweb.net/manual/templates/fields#text-to-speech-for-individual-fields",
       "useFor": ["TTS template tags", "TTS language", "ordered voice preferences", "speech speed", "multi-field TTS"]
     },
     {
       "id": "anki-manual-typed-answer",
       "priority": 1,
       "platform": "cross-platform typed-answer behavior",
-      "url": "https://docs.ankiweb.net/templates/fields.html#checking-your-answer",
+      "url": "https://docs.ankiweb.net/manual/templates/fields#checking-your-answer",
       "useFor": ["typed-answer template marker", "Enter to reveal", "typed-answer diff", "#typeans styling"]
     },
     {
       "id": "anki-manual-styling-night-mode",
       "priority": 1,
       "platform": "cross-platform card styling",
-      "url": "https://docs.ankiweb.net/templates/styling.html#night-mode",
+      "url": "https://docs.ankiweb.net/manual/templates/styling#night-mode",
       "useFor": ["nightMode card class", "note-type night-mode rules", "nightMode and night_mode on the card page's body as well as the card (cardPageBodyTag, lib/cardPageDefaults.test.ts)"]
     },
     {
@@ -243,7 +243,7 @@
       "id": "anki-manual-filtered-decks",
       "priority": 1,
       "platform": "cross-platform filtered-deck behavior",
-      "url": "https://docs.ankiweb.net/filtered-decks.html",
+      "url": "https://docs.ankiweb.net/manual/filtered-decks",
       "useFor": ["filtered deck creation", "filtered deck gather order", "second filter", "rescheduling", "home decks", "excluded cards"]
     },
     {
@@ -257,63 +257,63 @@
       "id": "ankimobile-manual",
       "priority": 1,
       "platform": "iOS and iPadOS UX",
-      "url": "https://docs.ankimobile.net/",
+      "url": "https://docs.ankiweb.net/ankimobile/intro",
       "useFor": ["deck list", "rename deck", "reviewer", "study tools", "gestures", "notifications", "file hand-off", "accessibility"]
     },
     {
       "id": "ankimobile-study-tools",
       "priority": 1,
       "platform": "iOS and iPadOS reviewer actions",
-      "url": "https://docs.ankimobile.net/study-tools.html",
+      "url": "https://docs.ankiweb.net/ankimobile/study-tools",
       "useFor": ["Add action", "study tools actions", "assigning actions to taps/swipes/top bar", "frequent actions"]
     },
     {
       "id": "ankimobile-editing",
       "priority": 1,
       "platform": "iOS and iPadOS note/card editing",
-      "url": "https://docs.ankimobile.net/editing.html",
+      "url": "https://docs.ankiweb.net/ankimobile/editing",
       "useFor": ["Add action destination", "add notes", "note type and deck selectors", "return from editing to study", "iPhone note-field editing and formatting controls"]
     },
     {
       "id": "ankimobile-deck-list",
       "priority": 1,
       "platform": "iOS and iPadOS deck list",
-      "url": "https://docs.ankimobile.net/deck-list.html",
+      "url": "https://docs.ankiweb.net/ankimobile/deck-list",
       "useFor": ["tapping a deck switches to study mode", "deck actions kept off the tap target", "deck count categories; TusAnkiM column layout is product-specific", "short tap remains study; a 450 ms deck-name hold reuses TusAnkiM drag/reorder, a product-specific gesture; lib/deckNameButton.test.ts and lib/deckDropTarget.test.ts"]
     },
     {
       "id": "ankimobile-study-screen",
       "priority": 1,
       "platform": "iOS and iPadOS reviewer layout",
-      "url": "https://docs.ankimobile.net/study-screen.html",
+      "url": "https://docs.ankiweb.net/ankimobile/study-screen",
       "useFor": ["remaining counts at the bottom of the study screen", "count visibility; TusAnkiM title/time toolbar layout is product-specific", "answer buttons in the bottom area", "next times above the answer buttons", "tap anywhere to show the answer"]
     },
     {
       "id": "ankimobile-preferences",
       "priority": 1,
       "platform": "iOS and iPadOS preferences",
-      "url": "https://docs.ankimobile.net/preferences.html",
+      "url": "https://docs.ankiweb.net/ankimobile/preferences",
       "useFor": ["review feedback", "tools overlay", "typed answers", "nine-zone question and answer taps", "interactive tap pass-through", "swipes", "general settings", "TusAnkiM-specific settings responsiveness: display/control/audio/notification changes retain the live queue; lib/studyDataSettings.test.ts, lib/appContextIsolation.test.ts, lib/settingsScreen.test.ts", "study notifications", "media maintenance"]
     },
     {
       "id": "ankimobile-tts",
       "priority": 1,
       "platform": "iOS and iPadOS text-to-speech",
-      "url": "https://docs.ankimobile.net/tts.html",
+      "url": "https://docs.ankiweb.net/ankimobile/tts",
       "useFor": ["iOS system voices", "Enhanced voice installation", "TTS mute-switch behavior"]
     },
     {
       "id": "ankimobile-url-schemes",
       "priority": 1,
       "platform": "iOS and iPadOS automation",
-      "url": "https://docs.ankimobile.net/url-schemes.html",
+      "url": "https://docs.ankiweb.net/ankimobile/url-schemes",
       "useFor": ["x-callback-url", "add-note automation", "browser search automation", "Shortcuts interoperability"]
     },
     {
       "id": "anki-manual-browsing",
       "priority": 1,
       "platform": "cross-platform browser behavior",
-      "url": "https://docs.ankiweb.net/browsing.html#table-modes",
+      "url": "https://docs.ankiweb.net/manual/browsing#table-modes",
       "useFor": ["card and note table modes", "selection scope", "browser row semantics", "row context for the local question/answer preview opened from a thumbnail (TusAnkiM-specific UI; no Anki parity claim)", "Notes-mode row aggregation and first-card semantics", "flag filtering", "rows matching the active search", "Change Deck out of a filtered deck", "Due column New #N for new cards", "Deck column naming the home deck of a filtered card", "App-specific contextual filter-count presentation uses the same live search scope; lib/browserFilterCounts.test.ts"]
     },
     {
@@ -391,7 +391,7 @@
       "id": "anki-manual-styling-scroll",
       "priority": 1,
       "platform": "cross-platform reviewer behavior",
-      "url": "https://docs.ankiweb.net/templates/styling.html#fading-and-scrolling",
+      "url": "https://docs.ankiweb.net/manual/templates/styling#fading-and-scrolling",
       "useFor": ["automatic scroll to the answer", "moving or removing id=answer"]
     },
     {
@@ -553,14 +553,14 @@
       "id": "ankidroid-manual-typed-answer",
       "priority": 3,
       "platform": "Android typed-answer presentation reference",
-      "url": "https://docs.ankidroid.org/manual.html#type-in-the-answer-feature",
+      "url": "https://docs.ankidroid.org/manual.html#typeInAnswer",
       "useFor": ["in-card versus separate typed-answer input", "typed-answer focus preference"]
     },
     {
       "id": "ankidroid-manual-notifications",
       "priority": 3,
       "platform": "Android notification behavior reference",
-      "url": "https://docs.ankidroid.org/manual.html#notifications",
+      "url": "https://docs.ankidroid.org/manual.html#_notifications",
       "useFor": ["due-card notification thresholds", "Android vibration", "Android notification LED"]
     },
     {
@@ -700,13 +700,13 @@
       "id": "anki-remaining-queue-reviewer",
       "priority": 3,
       "platform": "cross-platform queue, filtered-deck and reviewer semantics",
-      "url": "https://docs.ankiweb.net/deck-options.html#lapses",
+      "url": "https://docs.ankiweb.net/manual/deck-options#lapses",
       "useFor": [
         "New interval applied with review fuzz on lapse and on a failed relearning step; lib/schedulerLapse.test.ts",
-        "interday learning subject to the review limit in deck-list counts; https://docs.ankiweb.net/deck-options.html#daily-limits; lib/deckListCounts.test.ts",
+        "interday learning subject to the review limit in deck-list counts; https://docs.ankiweb.net/manual/deck-options#daily-limits; lib/deckListCounts.test.ts",
         "learning cards moved into a filtered deck take the gather position as due; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/filtered/card.rs; lib/filteredSessionRemaining.test.ts",
-        "collection-wide undo cleared behind a change it cannot undo; https://docs.ankiweb.net/studying.html#editing-and-more; lib/reviewerUndoSafety.test.ts",
-        "audio tags of one side played in sequence; https://docs.ankiweb.net/templates/fields.html#text-to-speech; lib/reviewerAvSequence.test.ts",
+        "collection-wide undo cleared behind a change it cannot undo; https://docs.ankiweb.net/manual/studying#editing-and-more; lib/reviewerUndoSafety.test.ts",
+        "audio tags of one side played in sequence; https://docs.ankiweb.net/manual/templates/fields#text-to-speech-for-individual-fields; lib/reviewerAvSequence.test.ts",
         "Interrupt current audio when answering, off: the playing sound file finishes and the new side's audio follows it (clear_queue_and_maybe_interrupt); https://github.com/ankitects/anki/blob/main/qt/aqt/sound.py; lib/reviewerCarriedSound.test.ts",
         "answer button time spans, seconds under a minute and the learn-ahead '<' prefix; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/timespan.rs; lib/schedulerLapse.test.ts, lib/sm2AnkiParity.test.ts"
       ]
@@ -877,7 +877,7 @@
       "id": "permutation-0.4.1",
       "priority": 3,
       "platform": "Rust crate Anki uses to visit cards by review count",
-      "url": "https://docs.rs/permutation/0.4.1/permutation/fn.sort_unstable_by_key.html",
+      "url": "https://docs.rs/permutation/0.4.1/permutation/permutation/fn.sort_unstable_by_key.html",
       "license": "MIT; behavior reference",
       "useFor": ["sort_unstable_by_key over card indices", "apply_slice_in_place gathers cards in sorted order"]
     },
@@ -958,7 +958,10 @@
         "a new deck's searches scoped to the current deck (is:due, second filter is:new, unchecked); empty with a filtered deck current; https://github.com/ankitects/anki/blob/main/rslib/src/scheduler/filtered/mod.rs",
         "a deck saved with one filter offers the second at Random and 20 cards",
         "retrievability orders listed only while FSRS is on",
-        "an empty search builds from the whole collection and is saved as deck:*; https://github.com/ankitects/anki/blob/main/rslib/src/search/parser.rs"
+        "an empty search builds from the whole collection and is saved as deck:*; https://github.com/ankitects/anki/blob/main/rslib/src/search/parser.rs",
+        "one dialog creates and edits a filtered deck: Build for a new deck, Rebuild for an existing one",
+        "an initial search supplied by the caller fills the first filter",
+        "retrievability orders offered only with FSRS on, a saved one shown as Random"
       ]
     },
     {
@@ -969,14 +972,7 @@
       "license": "AGPL-3.0-or-later; behavior reference only",
       "useFor": ["createFilteredDeck opens the filtered deck dialog over the browser with the browser's current search as the first filter (with Alt, as the second)"]
     },
-    {
-      "id": "anki-source-filtered-deck-dialog",
-      "priority": 3,
-      "platform": "desktop filtered deck dialog",
-      "url": "https://github.com/ankitects/anki/blob/main/qt/aqt/filtered_deck.py",
-      "license": "AGPL-3.0-or-later; behavior reference only",
-      "useFor": ["one dialog creates and edits a filtered deck: Build for a new deck, Rebuild for an existing one", "an initial search supplied by the caller fills the first filter", "retrievability orders offered only with FSRS on, a saved one shown as Random"]
-    },
+
     {
       "id": "anki-source-browser-sort",
       "priority": 3,
@@ -1148,7 +1144,7 @@
       "id": "anki-ai1-deletion-history",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/stats.html",
+      "url": "https://docs.ankiweb.net/manual/stats",
       "useFor": [
         "retain deleted-card revlog in lifetime collection statistics",
         "transactional deletion and conflict-safe local undo"
@@ -1158,7 +1154,7 @@
       "id": "anki-ai1-card-generation",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "url": "https://docs.ankiweb.net/manual/templates/generation",
       "useFor": [
         "editing adds cards without automatic deletion",
         "multi-field cloze ordinals and preserving cardless notes",
@@ -1170,7 +1166,7 @@
       "id": "anki-ai1-empty-card-preservation",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "url": "https://docs.ankiweb.net/manual/templates/generation",
       "useFor": [
         "explicit empty-card deletion",
         "default preservation of the last card",
@@ -1181,7 +1177,7 @@
       "id": "anki-ai1-editor-source",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/editing.html#html-editing",
+      "url": "https://docs.ankiweb.net/manual/editing#editing-features",
       "useFor": [
         "source HTML is stored independently of the safe editor view",
         "preserve bracketed sound markers and imported links/math/styles"
@@ -1191,7 +1187,7 @@
       "id": "anki-ai1-deck-names",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "url": "https://docs.ankiweb.net/manual/getting-started#decks",
       "useFor": [
         "normalized hierarchy component names",
         "case-insensitive creation lookup and case-exact legacy subtree mutation",
@@ -1202,7 +1198,7 @@
       "id": "anki-ai1-template-rules",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "url": "https://docs.ankiweb.net/manual/templates/generation",
       "useFor": [
         "field-name reference updates",
         "field-based generation ignoring literal content",
@@ -1227,7 +1223,7 @@
       "id": "anki-ai1-editor-type-memory",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/editing.html",
+      "url": "https://docs.ankiweb.net/manual/editing",
       "useFor": [
         "last successful Add note type per deck and collection",
         "fallback when a remembered note type is no longer available"
@@ -1249,7 +1245,7 @@
       "id": "anki-ai1-central-card-deletion",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/stats.html",
+      "url": "https://docs.ankiweb.net/manual/stats",
       "useFor": [
         "one transactional card-row deletion primitive",
         "retain deleted-card history and record only real deleted IDs"
@@ -1259,7 +1255,7 @@
       "id": "anki-ai1-deletion-hardening",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "url": "https://docs.ankiweb.net/manual/getting-started#decks",
       "useFor": [
         "keep the default destination deck available",
         "restore deleted deck state and local board settings",
@@ -1280,7 +1276,7 @@
       "id": "anki-ai1-template-special-fields",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/templates/fields.html",
+      "url": "https://docs.ankiweb.net/manual/templates/fields",
       "useFor": [
         "real fields shadow special field names",
         "stock typed-answer back uses Front",
@@ -1293,7 +1289,7 @@
       "id": "anki-ai1-note-mutation-preflight",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/browsing.html#changing-the-note-type",
+      "url": "https://docs.ankiweb.net/manual/browsing#notes",
       "useFor": [
         "preflight all unmapped cards in a bulk type change",
         "require explicit destructive confirmation",
@@ -1304,7 +1300,7 @@
       "id": "anki-ai1-deep-deck-paths",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "url": "https://docs.ankiweb.net/manual/getting-started#decks",
       "useFor": [
         "normalize deep deck paths without repeated per-ancestor database reads"
       ]
@@ -1313,7 +1309,7 @@
       "id": "anki-manual-default-deck-hidden",
       "priority": 1,
       "platform": "cross-platform deck list",
-      "url": "https://docs.ankiweb.net/getting-started.html#decks",
+      "url": "https://docs.ankiweb.net/manual/getting-started#decks",
       "useFor": [
         "the deck list hides the Default deck while it holds no cards and other decks exist; one with subdecks stays; lib/deckListFirstRun.test.ts"
       ]
@@ -1322,7 +1318,7 @@
       "id": "anki-ai1-clozeless-warning",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/editing.html#cloze-deletion",
+      "url": "https://docs.ankiweb.net/manual/editing#cloze-deletion",
       "useFor": [
         "warn before retaining a clozeless note",
         "create first card only after the user elects to keep the note",
@@ -1333,7 +1329,7 @@
       "id": "anki-ai1-cardless-note-repair",
       "priority": 1,
       "platform": "cross-platform notes, cards and decks",
-      "url": "https://docs.ankiweb.net/templates/generation.html",
+      "url": "https://docs.ankiweb.net/manual/templates/generation",
       "useFor": [
         "retain note text during database repair",
         "recreate the first card of a readable cardless note",
@@ -1349,7 +1345,7 @@
         "rename a field once with its final name",
         "local editor adaptation: preserve unsaved values and pins with a stable local identity through rename/reorder, excluded from Anki export; noteTypeEditor.test.ts and noteTypeValidation.test.ts",
         "refuse a field name another field already uses, ignoring case",
-        "Fields dialog refuses names starting with #, ^ or / and names containing : { } \" ; template save errors for unknown fields, unclosed sections, no front field and missing cloze (https://docs.ankiweb.net/templates/errors.html)"
+        "Fields dialog refuses names starting with #, ^ or / and names containing : { } \" ; template save errors for unknown fields, unclosed sections, no front field and missing cloze (https://docs.ankiweb.net/manual/templates/errors)"
       ],
       "license": "AGPL-3.0-or-later; behavior reference only; independently implemented"
     },
@@ -1357,7 +1353,7 @@
       "id": "anki-ai2-undo-and-day-learning",
       "priority": 1,
       "platform": "cross-platform reviewer and scheduling",
-      "url": "https://docs.ankiweb.net/studying.html#undo",
+      "url": "https://docs.ankiweb.net/manual/studying#editing-and-more",
       "useFor": [
         "reviewer operation delta undo without resurrecting deleted rows; ai2Safety.test.ts",
         "deck-options day boundaries: interday due stays a day number; Grade Now resumes scheduling"
@@ -1367,7 +1363,7 @@
       "id": "anki-ai2-filter-search",
       "priority": 1,
       "platform": "cross-platform filtered search",
-      "url": "https://docs.ankiweb.net/searching.html",
+      "url": "https://docs.ankiweb.net/manual/searching",
       "useFor": [
         "quoted key:value terms, wildcard decks, note/card/field/nid/introduced searches; ai2FilteredSearch.test.ts"
       ]
@@ -1376,7 +1372,7 @@
       "id": "anki-ai2-filter-membership",
       "priority": 1,
       "platform": "cross-platform filtered deck lifecycle",
-      "url": "https://docs.ankiweb.net/filtered-decks.html#home-decks",
+      "url": "https://docs.ankiweb.net/manual/filtered-decks#home-decks",
       "useFor": [
         "fixed build membership, reservations, Empty/Rebuild, second-term exclusions, home due counters/presets and physical odue materialization/undo; ai2Filtered.test.ts",
         "documented local virtual membership divergence from did/odid/odue movement"
@@ -1386,7 +1382,7 @@
       "id": "anki-ai2-classic-early-and-labels",
       "priority": 1,
       "platform": "cross-platform classic scheduling",
-      "url": "https://docs.ankiweb.net/filtered-decks.html#reviewing-ahead",
+      "url": "https://docs.ankiweb.net/manual/filtered-decks#reviewing-ahead",
       "useFor": [
         "zero-elapsed early review only in filtered contexts; due-based elapsed days",
         "answer labels use the same deterministic fuzz and load balancer as scheduling; ai2Scheduling.test.ts"
@@ -1396,7 +1392,7 @@
       "id": "anki-ai2-queue-limits-and-bury",
       "priority": 1,
       "platform": "cross-platform study queue",
-      "url": "https://docs.ankiweb.net/deck-options.html",
+      "url": "https://docs.ankiweb.net/manual/deck-options",
       "useFor": [
         "interday learning shares review limits; learn-ahead counts; deck gathering in deck-list order (newCardDeckOrder.test.ts); in-memory sibling suppression without slot loss; full lightweight review-key gather before limits; answer-time intraday/interday/review/new bury priority",
         "documented product divergence: unlimited new cards, 200-card gather window, fixed 1:1 new/review mix; ai2Queue.test.ts"
@@ -1406,7 +1402,7 @@
       "id": "anki-ai2-reviewer-audio-and-focus",
       "priority": 1,
       "platform": "iPhone reviewer audio and auto advance",
-      "url": "https://docs.ankiweb.net/deck-options.html#audio",
+      "url": "https://docs.ankiweb.net/manual/deck-options#audio",
       "useFor": [
         "manual replay question then answer; skip question; automatic answer excludes FrontSide audio",
         "auto advance yields to reviewer focus and modal interaction without losing accumulated side time; reviewerAudio.test.ts, reviewerTimers.test.ts and reviewerDwellTimer.test.ts"
@@ -1416,7 +1412,7 @@
       "id": "tus-ai2-catalog-student-state",
       "priority": 1,
       "platform": "local catalog product policy",
-      "url": "https://docs.ankiweb.net/studying.html",
+      "url": "https://docs.ankiweb.net/manual/studying",
       "useFor": [
         "study progress separated from catalog content ownership; trial existing-card scheduling only",
         "ai2CatalogStudy.test.ts verifies study/tag deltas and rejects generic note saves, content/identity/new-card mutation"
@@ -1426,7 +1422,7 @@
       "id": "anki-ai3-transfer-safety",
       "priority": 1,
       "platform": "cross-platform interchange semantics",
-      "url": "https://docs.ankiweb.net/importing/packaged-decks.html",
+      "url": "https://docs.ankiweb.net/manual/importing/packaged-decks",
       "useFor": [
         "GUID update conflicts skip incoming cards",
         "duplicate re-import repairs missing media; rename fixups preserve author update timestamps",
@@ -1437,7 +1433,7 @@
       "id": "anki-ai3-backup-safety",
       "priority": 1,
       "platform": "cross-platform backup behavior",
-      "url": "https://docs.ankiweb.net/backups.html",
+      "url": "https://docs.ankiweb.net/manual/backups",
       "useFor": [
         "30-minute backup default",
         "today/yesterday and daily/weekly/monthly retention",
@@ -1449,7 +1445,7 @@
       "id": "anki-ai3-shared-search",
       "priority": 1,
       "platform": "cross-platform browser and filtered search",
-      "url": "https://docs.ankiweb.net/searching.html",
+      "url": "https://docs.ankiweb.net/manual/searching",
       "useFor": [
         "one evaluator for browser and filtered searches",
         "all-field substring search without metadata, including incomplete note-type field lists",
@@ -1485,7 +1481,7 @@
       "id": "anki-transfer-search-language",
       "priority": 1,
       "platform": "cross-platform search syntax",
-      "url": "https://docs.ankiweb.net/searching.html",
+      "url": "https://docs.ankiweb.net/manual/searching",
       "useFor": [
         "field searches match the whole field; * and _ wildcards and their backslash escapes; front:, front:_*, front:*, fr*:, field:re:, field:nc:",
         "plain text reads stored field HTML plus the formatting-free sort field; entities searched as written",
@@ -1511,8 +1507,8 @@
         "Anki 26.09.3 result IDs and errors, recorded in test/fixtures/anki-26.09-search.json by scripts/anki-oracle/search_parity.py",
         "local safety differences: reject nested unbounded regex repetition; serialize literal Custom Study names and adapt legacy relearn state terms without rewriting quoted text; searchSafety.test.ts and customStudy.test.ts",
         "Boolean grammar, plain and regex text, case folding and name scopes, due and preview-repeat states, original due for prop:due",
-        "Ctrl/Cmd-click joins a browser filter to the whole current query; https://docs.ankiweb.net/browsing.html#search-tool",
-        "AnkiMobile browsing/filter interactions; https://docs.ankimobile.net/editing.html#browsing"
+        "Ctrl/Cmd-click joins a browser filter to the whole current query; https://docs.ankiweb.net/manual/browsing#search-tool",
+        "AnkiMobile browsing/filter interactions; https://docs.ankiweb.net/ankimobile/editing#browsing"
       ]
     },
     {
@@ -1543,7 +1539,7 @@
       "id": "anki-manual-check-media",
       "priority": 1,
       "platform": "cross-platform media maintenance",
-      "url": "https://docs.ankiweb.net/media.html#checking-media",
+      "url": "https://docs.ankiweb.net/manual/media#checking-media",
       "useFor": ["unused and missing media report", "files starting with _ are kept", "unused files go to a trash that can be restored; lib/mediaCheck.test.ts"]
     },
     {
@@ -1590,7 +1586,7 @@
       "id": "anki-manual-notetype-save-card-generation",
       "priority": 1,
       "platform": "cross-platform card generation and maintenance behavior",
-      "url": "https://docs.ankiweb.net/templates/generation.html#card-generation--deletion",
+      "url": "https://docs.ankiweb.net/manual/templates/generation#card-generation-%26-deletion",
       "useFor": ["saving a note type whose front changed or that gained a card type gives its notes the cards they are missing", "no other note-type save creates a card (fields added or moved, fields no front shows renamed or removed, names, backs, styling); measured in Anki 26.09.3 by scripts/anki-oracle/notetype_card_generation.py", "a generated card joins its siblings' home deck; Anki uses the Default deck when they are split, TusAnkiM the note's first card"]
     },
     {
@@ -1605,7 +1601,7 @@
       "id": "anki-manual-image-occlusion",
       "priority": 1,
       "platform": "cross-platform note/card semantics",
-      "url": "https://docs.ankiweb.net/editing.html#image-occlusion",
+      "url": "https://docs.ankiweb.net/manual/editing#image-occlusion",
       "useFor": [
         "Image Occlusion notes: masks, groups, Hide All, Guess One and Hide One, Guess One",
         "the Header and Back Extra fields beside the masks"
@@ -1629,7 +1625,7 @@
       "id": "anki-26.09.3-browser-order-oracle",
       "priority": 2,
       "platform": "browser Change Deck, Reposition and Reset, measured against Anki 26.09.3",
-      "url": "https://github.com/ankitects/anki/tree/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/scheduler/new.rs",
+      "url": "https://github.com/ankitects/anki/blob/29bb700b951e3f0c0cb69b77c0180fc1fe33e6ba/rslib/src/scheduler/new.rs",
       "license": "AGPL-3.0-or-later; behavior reference only; outputs recorded from Anki 26.09.3 on 2026-10-30 by scripts/anki-oracle/browser_order.py",
       "useFor": [
         "Card::set_deck returns a card held by a filtered deck home (odid/odue cleared, original due) before moving it; lib/changeDeckFiltered.test.ts",

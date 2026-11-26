@@ -2,7 +2,7 @@
  * The browser's "Change Note Type" action: count the cards the conversion would remove, ask
  * before removing any, then convert. Cards whose template has a counterpart in the new type keep
  * their scheduling; the rest are removed with their review history retained.
- * https://docs.ankiweb.net/browsing.html#changing-the-note-type
+ * https://docs.ankiweb.net/manual/browsing#notes
  */
 import { formatCount, type SupportedLocale } from './i18n';
 import { changeNotesTypeUndoable, getNoteTypeChangeDeletionCount, type NoteTypeChangeResult } from './noteTypeStore';

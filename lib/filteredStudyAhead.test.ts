@@ -1,7 +1,7 @@
 // "⚡ Beklemeden çalış" (study now) in a filtered deck or a Custom Study session: the learning cards
 // the deck holds back on a step or a preview delay are dealt at once, as in a regular deck.
 // Behaviour reference: https://docs.ankiweb.net/filtered-decks.html and the learn ahead limit,
-// https://docs.ankiweb.net/preferences.html#learn-ahead-limit
+// https://docs.ankiweb.net/manual/preferences#scheduler
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';

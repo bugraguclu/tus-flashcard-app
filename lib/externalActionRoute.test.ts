@@ -1,5 +1,5 @@
 // Behaviour reference: AnkiMobile's x-callback add-note request
-// (https://docs.ankimobile.net/url-schemes.html): type, deck and fld<Name> values open the Add
+// (https://docs.ankiweb.net/ankimobile/url-schemes): type, deck and fld<Name> values open the Add
 // screen. TusAnkiM refuses one it cannot serve with its reason, so the learner can be told.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';

@@ -2,7 +2,7 @@
 // Independently derived behaviour:
 // https://docs.ankiweb.net/deck-options.html#daily-limits (interday learning is subject to the
 // review limit; "limits start from top") and
-// https://docs.ankiweb.net/deck-options.html#learn-ahead-limit
+// https://docs.ankiweb.net/manual/preferences#scheduler
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';

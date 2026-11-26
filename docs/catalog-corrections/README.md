@@ -165,3 +165,23 @@ Ardından tüm derslere genişletilen takipte 141 not / 328 kart daha düzeltild
 [son rapor](all-course-front-followup.md). Farmakoloji çalışma kitabındaki güncel
 alanlar ve mevcut takip sekmelerinin ilgili kayıtları eşitlendi; önceki denetim
 metinleri tarihsel kanıt olarak korundu. `npm run quality`: 156 dosya / 1.659 test.
+
+## Kaynak bağlantıları ve kimlik kontrolü — 27 Kasım 2026
+
+`npm run verify:catalog-citations`, bu dizindeki güncel JSON atıflarını NCBI ESummary ile
+kontrol eder; tarihsel `before` alanlarını güncel onay saymaz. Kontrol edilen 234 PubMed ve
+120 PMC kimliğinin tamamında yayın/kitap başlığı bulundu. `gemini-followup-sources.json`
+içindeki 25 PubMed değiştirme kaydının başlıkları NCBI kayıtlarıyla eşleşti. Yayın varlığı ve
+başlık eşleşmesi, bütün kart iddialarına tıbbi onay veya tam metnin okunmuş olduğu anlamına gelmez;
+yukarıdaki açık kaynak incelemeleri sürer. Bazı yayıncılar otomatik erişimi 403/robot kontrolüyle
+engellediğinden bu adreslerin tam metin erişimi doğrulanmış sayılmaz.
+
+`deneme-ve-soru.patch.json` içindeki iki 404 kaynak düzeltildi:
+
+- Not `1622361536939`: sıtma profilaksisi için CDC Yellow Book'un Malaria bölümü
+  (`Prevention` / `Chemoprophylaxis`); tedavi sayfası profilaksi kaynağı yerine kullanılmadı.
+- Not `1621108922950`: aynı Helena QuickGel CK Vis prosedürünün `Pro134Rev5.pdf`
+  belgesi, üreticinin güncel `wp-content/uploads/2025/12/` adresine taşındı.
+
+Her iki hedef HTTP 200 döndürüyor; CDC bölümü ve CK prosedürünün kimliği kontrol edildi.
+Bu değişiklikler yalnız denetim atıflarını günceller; dağıtılan katalog alanları aynı kalır.

@@ -1,6 +1,6 @@
 // Saving a note type creates the cards its notes are now missing, as Anki does when a front
 // template changes or a card type is added, and never removes, moves or reschedules a card
-// (https://docs.ankiweb.net/templates/generation.html#card-generation--deletion). The cases follow
+// (https://docs.ankiweb.net/manual/templates/generation#card-generation-%26-deletion). The cases follow
 // Anki 26.09.3 as probed by scripts/anki-oracle/notetype_card_generation.py: no other save starts
 // it, the new card joins its siblings' home deck, shares a new sibling's position or takes a fresh
 // one, a note without cards gets none, and a cloze note gets a card only for a cloze number that

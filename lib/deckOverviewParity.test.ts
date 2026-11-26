@@ -1,4 +1,4 @@
-// Deck overview: https://docs.ankiweb.net/studying.html#overview-screen (description, Unbury)
+// Deck overview: https://docs.ankiweb.net/manual/studying#study-overview (description, Unbury)
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';

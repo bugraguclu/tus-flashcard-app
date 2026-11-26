@@ -1,4 +1,4 @@
-// Behaviour reference: https://docs.ankiweb.net/templates/fields.html#text-to-speech
+// Behaviour reference: https://docs.ankiweb.net/manual/templates/fields#text-to-speech-for-individual-fields
 import { describe, expect, it, vi } from 'vitest';
 import { AvSequencer, avPlaybackOrder, type AvTimers } from './reviewerAvSequence';
 

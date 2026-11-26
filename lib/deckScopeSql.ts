@@ -1,7 +1,7 @@
 /**
  * SQL for "the cards of these decks", read the way Anki's `deck:` search reads a deck: a card
  * belongs to the deck it is in and, while an imported filtered deck holds it, to its home deck as
- * well (`c.did IN … OR c.odid IN …`, https://docs.ankiweb.net/searching.html#decks).
+ * well (`c.did IN … OR c.odid IN …`, https://docs.ankiweb.net/manual/searching#tags-decks-cards-and-notes).
  *
  * Only imported filtered decks hold cards physically (this app's own are virtual), so the card
  * blob is read for the cards in those decks alone; SQLite builds the filtered-deck list once per

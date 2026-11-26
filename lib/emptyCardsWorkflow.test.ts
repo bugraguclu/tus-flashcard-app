@@ -1,6 +1,6 @@
 // Empty Cards deletes only behind a restorable safety backup, the way Repair and Reset do
 // (lib/maintenanceWorkflow.ts, lib/resetWorkflow.ts). Keep Notes follows Anki's Empty Cards
-// tool (https://docs.ankiweb.net/templates/generation.html#card-generation--deletion, source
+// tool (https://docs.ankiweb.net/manual/templates/generation#card-generation-%26-deletion, source
 // anki-manual-empty-cards): a note whose every card is empty keeps its first card.
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
@@ -133,7 +133,7 @@ describe('deleting empty cards (real SQLite)', () => {
     });
 
     // Anki's Empty Cards with "Keep notes with no valid cards" off removes the notes it leaves
-    // without cards (https://docs.ankiweb.net/templates/generation.html#card-generation--deletion).
+    // without cards (https://docs.ankiweb.net/manual/templates/generation#card-generation-%26-deletion).
     it('deletes a note left without cards, with its grave, when Keep Notes is off', async () => {
         const deckId = createDeck('Cards').id;
         const { note, cards } = createNote(reversed, ['Front', 'Back'], deckId);

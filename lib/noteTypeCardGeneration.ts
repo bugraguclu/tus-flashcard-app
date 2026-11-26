@@ -2,7 +2,7 @@
  * The cards a note type's notes gain when the type changes. Anki creates the cards its notes are
  * now missing whenever a note type is saved with a changed front template or a new card type, and
  * leaves the cards that became empty to Empty Cards
- * (https://docs.ankiweb.net/templates/generation.html#card-generation--deletion). The details
+ * (https://docs.ankiweb.net/manual/templates/generation#card-generation-%26-deletion). The details
  * follow Anki 26.09.3 as scripts/anki-oracle/notetype_card_generation.py prints them: only a
  * changed front or a new card type starts it, the card joins its siblings' home deck, shares a
  * new sibling's position or takes a fresh one for its note, a note without cards gets none, and a

@@ -1,4 +1,4 @@
-// Independently derived behavior: https://docs.ankiweb.net/studying.html#undo
+// Independently derived behavior: https://docs.ankiweb.net/manual/studying#editing-and-more
 // Queue units: https://docs.ankiweb.net/deck-options.html#day-boundaries
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';

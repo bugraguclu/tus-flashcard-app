@@ -5,7 +5,7 @@ import { getDbSetting, setDbSetting } from './dbSettings';
  * Settings › General › "Add new cards to: current deck" still means that deck after the app is
  * reopened. The in-memory study scope starts empty on every launch; this row is what the editor
  * falls back to until a deck is chosen again.
- * https://docs.ankiweb.net/editing.html#adding-cards
+ * https://docs.ankiweb.net/manual/editing#adding-cards-and-notes
  */
 const CURRENT_DECK_KEY = 'tus_current_deck_v1';
 

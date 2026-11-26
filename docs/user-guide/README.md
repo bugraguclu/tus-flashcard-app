@@ -136,7 +136,7 @@ Hakkında ve bilgi sayfalarındaki **Daha fazla bilgi** bağlantılarıdır.
 <a id="web-sitesinde-nerede"></a>
 ## 4. Web sitesinde nerede?
 
-Web sitesi GitHub Pages'te yayımlanan sitedir: `https://bugraguclu.github.io/tus-flashcard-app/`.
+Web sitesi Vercel'de yayımlanır: `https://tusankim.vercel.app/`.
 Bugün yalnızca dört yasal sayfa vardır (`docs/index.html`, `privacy.html`, `support.html`,
 `terms.html`) ve `.github/workflows/pages.yml` bunları yalnızca yasal kimlik bilgileri
 doldurulduğunda yayımlar. Yardım sayfaları da aynı yayınla, aynı koşulla çıkar.

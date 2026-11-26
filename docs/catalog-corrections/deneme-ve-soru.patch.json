@@ -8143,7 +8143,7 @@
      "rationale": "Tek başına atovakuon standart profilaksi değildir; seçim bölge ve kişiye bağlıdır."
     }
    ],
-   "aiNote": "Ne: Doksisiklin yanıtı korundu; atovakuon kombinasyonuyla yazıldı.\nNeden: Profilaksi ilacının seçimi bölgesel direnç ve kontrendikasyonlara bağlıdır.\nNasıl: [TD1, KS1] CDC seyahat profilaksisi tablosu kontrol edildi.\nKaynak: https://www.cdc.gov/malaria/hcp/drug-malaria/atovaquone-proguanil.html",
+   "aiNote": "Ne: Doksisiklin yanıtı korundu; atovakuon kombinasyonuyla yazıldı.\nNeden: Profilaksi ilacının seçimi bölgesel direnç ve kontrendikasyonlara bağlıdır.\nNasıl: [TD1, KS1] CDC seyahat profilaksisi tablosu kontrol edildi.\nKaynak: https://www.cdc.gov/yellow-book/hcp/travel-associated-infections-diseases/malaria.html",
    "decision": null,
    "editorNote": null
   },
@@ -22358,7 +22358,7 @@
      "rationale": ""
     }
    ],
-   "aiNote": "Ne: Üç CK izoenziminin sırası ve c1 yanıtları korundu.\nNeden: Özgün kartın ok ve boşluk biçimi temizlendi.\nNasıl: [YP1, YZ1] Elektroforez yönü ve satır sırası korundu.\nKaynak: https://www.helena.com/Procedures/Pro134Rev5.pdf",
+   "aiNote": "Ne: Üç CK izoenziminin sırası ve c1 yanıtları korundu.\nNeden: Özgün kartın ok ve boşluk biçimi temizlendi.\nNasıl: [YP1, YZ1] Elektroforez yönü ve satır sırası korundu.\nKaynak: https://www.helena.com/wp-content/uploads/2025/12/Pro134Rev5.pdf",
    "decision": null,
    "editorNote": null
   },

@@ -1,6 +1,6 @@
 // What an answer writes: Anki keeps no ease on a card that has not graduated (factor 0), and
 // treats tags case-insensitively, so a "Leech" tag from another client is the leech tag.
-// https://docs.ankiweb.net/deck-options.html#leech-action
+// https://docs.ankiweb.net/manual/deck-options#leeches
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import initSqlJs from 'sql.js';
 import { createAppDb, type SyncDb } from '../test/sqljsHarness';

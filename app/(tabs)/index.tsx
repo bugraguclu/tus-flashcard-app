@@ -1838,7 +1838,7 @@ export default function StudyScreen() {
      * `router.navigate()` pushes a second deck list over the reviewer in Expo Router, which keeps
      * the reviewer mounted underneath and grows the stack on every round trip; `dismissTo` pops
      * back to the list at the root of this stack, or replaces the reviewer when there is none.
-     * https://docs.ankimobile.net/study-screen.html
+     * https://docs.ankiweb.net/ankimobile/study-screen
      */
     const handleReturnToDecks = useCallback(() => router.dismissTo('/decks'), [router]);
     const openDeckPicker = useCallback(() => setDeckPickerVisible(true), []);

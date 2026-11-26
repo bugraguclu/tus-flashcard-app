@@ -1,4 +1,4 @@
-// Source fields and sound markers: https://docs.ankiweb.net/editing.html#html-editing
+// Source fields and sound markers: https://docs.ankiweb.net/manual/editing#editing-features
 import { describe, expect, it } from 'vitest';
 import { prepareEditorContent, EDITOR_SOURCE_RESTORE_SCRIPT } from './richTextEditorContent';
 const restoreEditorSource = new Function('html', 'preserved', EDITOR_SOURCE_RESTORE_SCRIPT + '; return restoreEditorSource(html, preserved);');
