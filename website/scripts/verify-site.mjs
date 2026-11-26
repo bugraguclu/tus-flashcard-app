@@ -320,7 +320,7 @@ check(puanHtml.includes('%5 Puan Kesintisi Kuralı'), 'puan-hesapla: missing %5 
 check(!puanHtml.includes('%2 Puan Kesintisi'), 'puan-hesapla: stale %2 Puan Kesintisi found');
 check(puanHtml.includes('id="puan-kesinti"'), 'puan-hesapla: missing interactive #puan-kesinti checkbox');
 check(puanHtml.includes('data-score-warn role="alert"'), 'puan-hesapla: validation warning must carry role="alert"');
-check(puanHtml.includes('Temel puanı: %70 Temel + %30 Klinik; Klinik puanı: %50 Temel + %50 Klinik'), 'puan-hesapla: missing accurate weight footnote');
+check(puanHtml.includes('Klinik puanı: %40 Temel + %60 Klinik; Temel puanı: %60 Temel + %40 Klinik'), 'puan-hesapla: missing accurate weight footnote');
 
 const refHtml = fs.readFileSync(path.join(DIST, 'referanslar/index.html'), 'utf8');
 check(refHtml.includes('for="ref-pre"'), 'referanslar: checkbox label must explicitly associate via for="ref-pre"');

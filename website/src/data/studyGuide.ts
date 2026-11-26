@@ -223,7 +223,7 @@ export const TUS_STRUGGLES: StruggleItem[] = [
     tone: 'teal',
     title: 'Klinik istiyorsun diye Temel Bilimleri sona bırakmak (ya da tam tersi)',
     why:
-      'Klinik branş isteyen adayların çoğu zamanını Dahiliye, Pediatri ve Genel Cerrahiye verir, 6 Temel dersi sona bırakır. Ama ÖSYM Klinik Tıp Puanını %50 Temel + %50 Klinik ağırlığıyla hesaplar. Temel netin düşerse Klinik puanın da aynı ölçüde düşer.',
+      'Klinik branş isteyen adayların çoğu zamanını Dahiliye, Pediatri ve Genel Cerrahiye verir, 6 Temel dersi sona bırakır. Ama ÖSYM Klinik Tıp Puanını %40 Temel + %60 Klinik ağırlığıyla hesaplar. Temel netin düşerse Klinik puanın da düşer.',
     steps: [
       'Temel ve Klinik çalışmalarını Kronometre’de ders ders kaydet. Çalışma Takvimi ve analiz ekranında haftalık Temel/Klinik dağılımına bak.',
       `İlk turda son 6 TUS’ta çözüm desteği yüksek olan derslerle başla: Farmakoloji (${destekPct('Farmakoloji')}), Biyokimya (${destekPct('Biyokimya')}), Mikrobiyoloji (${destekPct('Mikrobiyoloji')}) ve Pediatri (${destekPct('Pediatri')}).`,
@@ -368,7 +368,7 @@ export const GUIDE_FAQS: GuideFaq[] = [
   },
   {
     q: 'TUS kaç soru, kaç dakika? Puan nasıl hesaplanır, Temel Bilimler Klinik puanını nasıl etkiler?',
-    a: 'TUS aynı gün iki oturumda yapılır ve toplam 200 sorudur: 100 Temel Bilimler (135 dakika) ve 100 Klinik Bilimler (135 dakika), toplam 270 dakika. 4 yanlış 1 doğruyu götürür. ÖSYM katsayılarına göre Temel Tıp Puanı (T) = %70 Temel + %30 Klinik, Klinik Tıp Puanı (K) = %50 Temel + %50 Klinik. Yani Klinik branş istesen bile puanının yarısı 6 Temel Bilimler dersinden gelir.',
+    a: 'TUS aynı gün iki oturumda yapılır ve toplam 200 sorudur: 100 Temel Bilimler (135 dakika) ve 100 Klinik Bilimler (135 dakika), toplam 270 dakika. 4 yanlış 1 doğruyu götürür. ÖSYM katsayılarına göre Klinik Tıp Puanı (K) = %40 Temel + %60 Klinik, Temel Tıp Puanı (T) = %60 Temel + %40 Klinik. Yani Klinik branş istesen bile puanının %40’ı 6 Temel Bilimler dersinden gelir.',
   },
   {
     q: 'TUS’ta %5 puan kesintisi kimlere uygulanır ve net hedefini nasıl değiştirir?',
@@ -455,7 +455,7 @@ export const GUIDE_SEARCH_ENTRIES: WebsiteSearchEntry[] = [
   {
     type: 'Sayfa',
     title: 'TUS puan ağırlıkları, 45 barajı, YDS ve %5 kesinti',
-    sub: 'Temel (%70/%30) ve Klinik (%50/%50) ağırlıkları, 4 yanlış 1 doğru, YDS/TIPDİL 50 şartı ve %5 kesinti etkisi.',
+    sub: 'Klinik (%40/%60) ve Temel (%60/%40) ağırlıkları, 4 yanlış 1 doğru, YDS/TIPDİL 50 şartı ve %5 kesinti etkisi.',
     url: '/tus-calisma-rehberi/#puan-ve-mevzuat',
     terms: 'tus puan hesaplama %5 kesinti baraj 45 yds tipdil temel klinik ağırlık net',
   },

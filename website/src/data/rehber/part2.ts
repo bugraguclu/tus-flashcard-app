@@ -8,17 +8,17 @@ export const REHBER_PART_2: RehberArticle[] = [
     questionH1: 'TUS puanı nasıl hesaplanır? %5 kesinti ve 45 barajı',
     seoTitle: 'TUS puanı nasıl hesaplanır? %5 kesinti kuralı | TusAnkiM',
     seoDescription:
-      'TUS puanı nasıl hesaplanır? 4 yanlış 1 doğruyu götürür. Temel puanı %70 Temel + %30 Klinik, Klinik puanı %50 + %50. 45 barajı ve %5 kesinti kuralı.',
+      'TUS puanı nasıl hesaplanır? 4 yanlış 1 doğruyu götürür. Klinik puanı %40 Temel + %60 Klinik, Temel puanı %60 + %40. 45 barajı ve %5 kesinti kuralı.',
     directAnswer:
-      'TUS’ta Temel ve Klinik oturumların her biri 100 sorudur ve 4 yanlış 1 doğruyu götürür. Temel Tıp Puanı %70 Temel + %30 Klinik, Klinik Tıp Puanı %50 Temel + %50 Klinik standart puanla hesaplanır. Yerleşmek için 45 puan barajını ve yabancı dil şartını geçmen gerekir; yönetmelikteki durumlarda puanından %5 kesilir.',
+      'TUS’ta Temel ve Klinik oturumların her biri 100 sorudur ve 4 yanlış 1 doğruyu götürür. Klinik Tıp Puanı %40 Temel + %60 Klinik, Temel Tıp Puanı %60 Temel + %40 Klinik standart puanla hesaplanır. Yerleşmek için 45 puan barajını ve yabancı dil şartını geçmen gerekir; yönetmelikteki durumlarda puanından %5 kesilir.',
     whyMisconceived: [
-      'Adaylar sıkça Klinik TUS puanını yalnızca Klinik netin belirlediğini düşünür. Oysa Klinik puanın yarısı (%50) Temel Bilimler standart puanından gelir. Yüksek puanlarda asıl farkı da bu yarı açar.',
+      'Adaylar sıkça Klinik TUS puanını yalnızca Klinik netin belirlediğini düşünür. Oysa Klinik puanın %40’ı Temel Bilimler standart puanından gelir. Yüksek puanlarda farkı çoğu zaman bu pay açar.',
       'İkinci yanılgı kesinti oranıdır. Uzmanlık eğitimine devam edenler, istifa edenler ve yerleşip süresi içinde başlamayanlar için oran hâlâ eski mevzuattaki gibi %2 sanılır. Yürürlükteki yönetmelikte ilk sınavda kesinti %5’tir.',
       'Üçüncüsü, deneme sonrası internetteki hesaplayıcılardan çıkan tahmini puanı kesin puan sanmaktır. Gerçek yerleştirme puanını ÖSYM belirler; her dönemin Türkiye ortalamasına, standart sapmasına ve iptal edilen sorulara bakar.',
     ],
     truthParagraphs: [
-      '[ÖSYM TUS genel bilgi ve kılavuzlarına](https://www.osym.gov.tr/TR,14991/tipta-uzmanlik-egitimi-giris-sinavi.html) göre sınav iki oturumdur. Temel Tıp Bilimleri Testi 100 sorudur: Anatomi, Fizyoloji-Histoloji-Embriyoloji, Biyokimya, Mikrobiyoloji, Patoloji ve Farmakoloji. Klinik Tıp Bilimleri Testi de 100 sorudur: Dahiliye, Pediatri, Genel Cerrahi, Kadın Doğum ve Küçük Stajlar. İki testte de ham netin, doğru sayından yanlış sayının dörtte biri çıkarılarak bulunur. Soru dağılımı örneklerine [ÖSYM’nin yayımladığı çıkmış sorulardan](/tus-cikmis-sorular-ve-analiz/) bakabilirsin.',
-      'Ham netler, sınava giren adayların ortalaması ve standart sapmasıyla ayrı ayrı standart puana çevrilir. Temel Tıp Puanı için Temel standart puanı 0,7, Klinik standart puanı 0,3 ile çarpılır. Klinik Tıp Puanı için iki alan eşit sayılır: 0,5 + 0,5. Bir örnek verelim. Temel’de 65 doğru 20 yanlış (60,00 net), Klinik’te 68 doğru 18 yanlış (63,50 net) yapan adayın toplam neti 123,50’dir. Son dönem katsayılarıyla bu aday yaklaşık 63,1 Klinik ve 62,7 Temel puan alır. İki puan türünde de 45,000 tercih barajını geçer.',
+      '[ÖSYM’nin 2026-TUS 2. Dönem Başvuru Kılavuzu’na](https://dokuman.osym.gov.tr/web/2026/7/basvuru-kilavuzu-rn15c8-30102957.pdf) göre sınav iki oturumdur. Temel Tıp Bilimleri Testi 100 sorudur: Anatomi, Fizyoloji-Histoloji-Embriyoloji, Biyokimya, Mikrobiyoloji, Patoloji ve Farmakoloji. Klinik Tıp Bilimleri Testi de 100 sorudur: Dahiliye, Pediatri, Genel Cerrahi, Kadın Doğum ve Küçük Stajlar. İki testte de ham netin, doğru sayından yanlış sayının dörtte biri çıkarılarak bulunur. Soru dağılımı örneklerine [ÖSYM’nin yayımladığı çıkmış sorulardan](/tus-cikmis-sorular-ve-analiz/) bakabilirsin.',
+      'Ham netler her test için ayrı ayrı, ortalaması 50 ve standart sapması 10 olan standart puana çevrilir. Kılavuza göre Klinik Tıp Puanı için Temel standart puanı 0,4, Klinik standart puanı 0,6 ile çarpılır. Temel Tıp Puanı için tersi geçerlidir: Temel 0,6, Klinik 0,4. Çıkan ağırlıklı puanlar, en yükseği 85 olacak şekilde K ve T puanına dönüştürülür. Bir örnek verelim. Temel’de 65 doğru 20 yanlış (60,00 net), Klinik’te 68 doğru 18 yanlış (63,50 net) yapan adayın toplam neti 123,50’dir. Hesaplayıcımızın tahminiyle bu aday yaklaşık 63,3 Klinik ve 62,9 Temel puan alır. İki puan türünde de 45,000 tercih barajını geçer.',
       'Kesinti kuralı [Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği’nde](https://www.resmigazete.gov.tr/eskiler/2022/09/20220903-2.htm) yazar; oranı %2’den %5’e [16 Mayıs 2024 tarihli değişiklik](https://www.resmigazete.gov.tr/eskiler/2024/05/20240516-1.htm) çıkardı. Kesinti üç durumda uygulanır: bir uzmanlık programında okurken sınava girersen, eğitimden istifa edersen ya da ÖSYM seni yerleştirdiği hâlde süresi içinde göreve başlamazsan. Takip eden ilk sınavında mesleki bilgi puanından %5 kesilir (× 0,95). Örneğin 65,0 hesaplanan ham klinik puan kesintiden sonra 61,75’e iner. Kesinti varken 65 net puan hedefliyorsan yaklaşık 68,4 ham puana, yani yaklaşık 143 toplam nete çıkman gerekir.',
       'Tercihte yalnızca puanın belirleyici olmaz; sıralaman ve kontenjan dağılımı da sonucu etkiler. Tercih yapabilmek için son 5 yıl içinde YDS, e-YDS, TIPDİL veya ÖSYM’nin eşdeğer saydığı bir sınavdan en az 50 yabancı dil puanı almış olman gerekir. 30 tercihin başına en çok istediğin programları, ortasına sıralamana uyan gerçekçi seçenekleri, sonuna güvenli tercihleri yaz.',
     ],
@@ -27,15 +27,15 @@ export const REHBER_PART_2: RehberArticle[] = [
       headers: ['Bileşen', 'Kural / oran', 'Dayanağı ve etkisi'],
       rows: [
         ['Ham net hesabı', 'Doğru − (Yanlış / 4)', '100 Temel + 100 Klinik, toplam 200 soru üzerinden hesaplanır'],
-        ['Temel Tıp Puanı (T)', '%70 Temel + %30 Klinik', 'Temel bilimler uzmanlık alanlarının tercihinde kullanılır'],
-        ['Klinik Tıp Puanı (K)', '%50 Temel + %50 Klinik', 'Klinik branşlarda puanın yarısını Temel netin belirler'],
+        ['Temel Tıp Puanı (T)', '%60 Temel + %40 Klinik', 'Temel bilimler uzmanlık alanlarının tercihinde kullanılır'],
+        ['Klinik Tıp Puanı (K)', '%40 Temel + %60 Klinik', 'Klinik branşlarda puanın %40’ını Temel netin belirler'],
         ['Tercih barajı', '45,000 puan', 'İlgili puan türünde 45’in altı tercih hakkı vermez'],
         ['Puan kesintisi', '%5 kesinti (× 0,95)', 'Uzmanlığa devam, istifa veya yerleşip başlamama sonrası ilk sınavda'],
         ['Yabancı dil şartı', 'En az 50 puan (son 5 yıl)', 'YDS / TIPDİL / ÖSYM eşdeğer belgesi olmadan tercih yapılmaz'],
       ],
     },
     actionSteps: [
-      'Klinik branş hedefliyorsan Temel Bilimleri ihmal etme. Klinik puanının %50’si Temel netinden gelir.',
+      'Klinik branş hedefliyorsan Temel Bilimleri ihmal etme. Klinik puanının %40’ı Temel netinden gelir.',
       'Deneme netlerini TUS Puan Hesaplayıcıya girerken, daha önce yerleştiysen veya istifa ettiysen %5 kesinti seçeneğini işaretle.',
       'Sonuç açıklanınca 30 tercihlik listeni yalnızca ham puana göre yapma. O dönemin kontenjan dağılımına ve kendi sıralamana bak.',
       'Yabancı dil belgenin 5 yıllık geçerlilik süresini başvuru takviminden önce ÖSYM sisteminden kontrol et.',
@@ -44,8 +44,8 @@ export const REHBER_PART_2: RehberArticle[] = [
       'Buradaki formül ve katsayılar genel bilgidir. Dönemin ortalaması, standart sapması ve iptal edilen sorular resmî sonucu değiştirebilir. Kesin kurallar için her dönem yayımlanan güncel ÖSYM TUS Kılavuzu’na ve Resmî Gazete’deki mevzuata bak.',
     sources: [
       {
-        label: 'ÖSYM — Tıpta Uzmanlık Eğitimi Giriş Sınavı (TUS) Genel Bilgiler ve Kılavuzlar',
-        url: 'https://www.osym.gov.tr/TR,14991/tipta-uzmanlik-egitimi-giris-sinavi.html',
+        label: 'ÖSYM — 2026-TUS 2. Dönem Başvuru Kılavuzu (4. Değerlendirme İşlemleri)',
+        url: 'https://dokuman.osym.gov.tr/web/2026/7/basvuru-kilavuzu-rn15c8-30102957.pdf',
         publisher: 'ÖSYM',
       },
       {
@@ -87,7 +87,7 @@ export const REHBER_PART_2: RehberArticle[] = [
       'Oysa süre kısaldıkça yeni içerik ile tekrar arasındaki denge değişir. Günlük yeni kart sayına ve tekrar süresine ölçülebilir bir sınır koymazsan son ayda tekrarlar yığılır.',
     ],
     truthParagraphs: [
-      '[ÖSYM resmî sınav takviminde](https://www.osym.gov.tr/) 2027 için iki TUS dönemi var. 2027-TUS 1. Dönem sınavı 27 Mart 2027’de; başvuru 2–10 Şubat 2027, sonuç 22 Nisan 2027. 2027-TUS 2. Dönem sınavı 22 Ağustos 2027’de; başvuru 5–13 Temmuz 2027, sonuç 16 Eylül 2027. Tercih ve başvuru kuralları için [ÖSYM TUS kılavuzlarını](https://www.osym.gov.tr/TR,14991/tipta-uzmanlik-egitimi-giris-sinavi.html) izle. Yabancı dil şartını (en az 50 YDS/TIPDİL) sonuç döneminden önce hazır et.',
+      '[ÖSYM resmî sınav takviminde](https://www.osym.gov.tr/) 2027 için iki TUS dönemi var. 2027-TUS 1. Dönem sınavı 27 Mart 2027’de; başvuru 2–10 Şubat 2027, sonuç 22 Nisan 2027. 2027-TUS 2. Dönem sınavı 22 Ağustos 2027’de; başvuru 5–13 Temmuz 2027, sonuç 16 Eylül 2027. Tercih ve başvuru kuralları için [ÖSYM TUS kılavuzlarını](https://www.osym.gov.tr/SinavGrubu/Menu/1889) izle. Yabancı dil şartını (en az 50 YDS/TIPDİL) sonuç döneminden önce hazır et.',
       'Kalan gün sayını [FSRS-6 algoritma şartnamesine](https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm) dayanan %90 hatırlama simülasyonuyla eşleştirdik. 9.575 kartta günde 40 yeni kart açarsan bütün kartlar 240 günde biter; 270 günlük dönemde günlük ortalaman 298 kart (93 dk) olur. Günde 60 yeni kartla yeni kartlar 160 günde biter. Bu tempoda 180 günlük ortalama 388 kart (124 dk/gün), 270 günlük ortalama 331 karttır (102 dk/gün). 270. günde günlük süre 50 dakikaya iner.',
       'Sınavına 120 gün kaldıysa 9.575 kartın tamamını günde 80 yeni kartla 120. günde bitirebilirsin. Bu yolda 120 günlük ortalama 473 kart (157 dk/gün), en yoğun gün 206 dakikadır. Denemeye zaman bırakmak için tek gruba odaklanmak çoğu zaman daha gerçekçidir. Temel Bilimler (3.957 kart) günde 40 yeni kartla 99 günde biter; 120 günlük ortalama 71 dk, en yoğun gün 98 dk. Günde 60 yeni kartla 66 günde biter; ortalama 75 dk, en yoğun gün 132 dk. Klinik Bilimler (4.812 kart) günde 60 yeni kartla 81 günde biter; 120 günlük ortalama 89 dk, en yoğun gün 138 dk. Tek bir derse odaklanan yaklaşık 800 kartlık çalışma günde 40 yeni kartla 20 günde biter; 120 günlük ortalaması 52 karttır (16 dk/gün).',
     ],
@@ -118,8 +118,8 @@ export const REHBER_PART_2: RehberArticle[] = [
         publisher: 'ÖSYM',
       },
       {
-        label: 'ÖSYM — Tıpta Uzmanlık Eğitimi Giriş Sınavı (TUS) Duyuruları',
-        url: 'https://www.osym.gov.tr/TR,14991/tipta-uzmanlik-egitimi-giris-sinavi.html',
+        label: 'ÖSYM — Tıpta Uzmanlık Eğitimi Giriş Sınavı (TUS) sayfası',
+        url: 'https://www.osym.gov.tr/SinavGrubu/Menu/1889',
         publisher: 'ÖSYM',
       },
       {

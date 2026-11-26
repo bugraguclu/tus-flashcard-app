@@ -40,8 +40,8 @@
 
 ### TUS Sınav Yapısı, Puan Ağırlıkları ve Mevzuat
 - 200 soru (100 Temel Bilimler · 135 dakika + 100 Klinik Bilimler · 135 dakika = toplam 270 dakika), 4 yanlış 1 doğruyu götürür.
-- **Temel Tıp Puanı (T):** %70 Temel + %30 Klinik.
-- **Klinik Tıp Puanı (K):** %50 Temel + %50 Klinik.
+- **Temel Tıp Puanı (T):** %60 Temel + %40 Klinik.
+- **Klinik Tıp Puanı (K):** %40 Temel + %60 Klinik.
 - **Barajlar:** İlgili puan türünde 45,000 puan; son 5 yıl içinde YDS / e-YDS / TIPDİL en az 50 puan.
 - **%5 Puan Kesintisi (× 0,95):** Tıpta ve Diş Hekimliğinde Uzmanlık Eğitimi Yönetmeliği uyarınca uzmanlığa devam eden, istifa eden veya yerleşip başlamayan adaylar için takip eden ilk sınavda uygulanır.
 
@@ -61,7 +61,7 @@
 ### TUS Adaylarının En Çok Zorlandığı 7 Alan
 1. 11 branşta uzun süreli kalıcılık (“okuduğumu unutuyorum”) → Cloze + FSRS-6 (%90) + Genç/Olgun hatırlama takibi.
 2. Günlük tekrar yığılması (tekrar borcu / kuyruk krizi) → Yeni kartı 0’a çekme, %85–%90 hedef hatırlama, Filtrelenmiş Deste 100’lük bloklar, Kolay günler, sülük (`leech`) sadeleştirme.
-3. Temel–Klinik dengesi → Klinik puanın %50 Temel ağırlığı + Kronometre ders bazlı analiz.
+3. Temel–Klinik dengesi → Klinik puanın %40 Temel ağırlığı + Kronometre ders bazlı analiz.
 4. İntörnlük, nöbet ve tükenmişlik → Haftada 5–6 aktif yeni-kart günü, nöbette yalnızca tekrar, 50/10 blok hatırlatıcı.
 5. Kaynak dağınıklığı ve pasif okuma → Tek ana kaynak + bitirilebilir çekirdek deste + aktif hatırlama.
 6. 55–65 puan deneme platosu → 3’lü hata sınıflandırması (Bilgi / İki şık / Dikkat) + etiketli kişisel yanlış kartları.
