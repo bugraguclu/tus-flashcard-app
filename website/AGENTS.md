@@ -16,7 +16,7 @@ Read `../docs/WEBSITE_AI_HANDOFF.md` before modifying this directory. This file 
    - Never use `#858d92`, `#b85010`, or `text-ink/45` for text. Keep `teal` (`#0e7469`), `warm` (`#a3430a`), `gradeEasy` (`#205b94`), and `inkMuted` (`#596166`).
    - Keep `<details>/<summary>` free of nested headings, native `<dialog>` free of redundant `role="dialog"` / `aria-modal`, `hidden="until-found"` panels padded only on `.tabpanel-inner`, and mobile touch targets `>= 44px`.
    - Never call vertical `scrollIntoView()` on initial load (keep `scrollY === 0` on boot).
-6. **TUS regulation accuracy**: Maintain current `%5` puan kesintisi and Temel (`%70/%30`) / Klinik (`%50/%50`) weights on `/puan-hesapla/`.
+6. **TUS regulation accuracy**: Maintain current `%5` puan kesintisi and the ÖSYM guide's weights (§4.2: Temel puanı = 0,6 T + 0,4 K; Klinik puanı = 0,4 T + 0,6 K) on `/puan-hesapla/`.
 
 ## Required Verification
 ```bash
