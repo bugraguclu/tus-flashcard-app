@@ -1,6 +1,7 @@
 import { getDB } from './db';
 import { getDbSetting, setDbSetting } from './dbSettings';
 import { ACCOUNT_INSTALL_MARKER_KEY, ACCOUNT_PROMPT_RESOLVED_KEY } from './accountSession';
+import { STARTER_DEMO_TAG } from './starterDemoDecks';
 
 /*
  * The account's own bookkeeping in the collection's settings table. Only flags live here; the
@@ -30,7 +31,12 @@ export function markAccountPromptResolved(): void {
 /** Whether the learner already has anything of their own here. When unsure, assume they do. */
 export function collectionHasNotes(): boolean {
     try {
-        const row = getDB().getFirstSync<{ found: number }>('SELECT EXISTS(SELECT 1 FROM notes) AS found');
+        // First-run starter demo cards carry the `tus-deneme` tag; they shouldn't hide the
+        // one-time welcome page on a brand-new installation.
+        const row = getDB().getFirstSync<{ found: number }>(
+            'SELECT EXISTS(SELECT 1 FROM notes WHERE tags != ?) AS found',
+            ` ${STARTER_DEMO_TAG} `,
+        );
         return Boolean(row?.found);
     } catch {
         return true;

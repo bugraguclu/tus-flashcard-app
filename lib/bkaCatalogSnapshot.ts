@@ -20,7 +20,45 @@ export const BKA_TRIAL_CARDS_PER_SUBDECK = 30;
 
 export const BKA_CATALOG_ROOT_DECK_ID = 8_000_000_000_000;
 const SUBDECK_ID_BASE = 8_000_000_000_000;
+const GROUP_DECK_ID_BASE = 8_050_000_000_000;
 const DECK_CONFIG_ID_BASE = 8_100_000_000_000;
+
+export const BKA_CATALOG_BASIC_GROUP = 'Temel Bilimler';
+export const BKA_CATALOG_CLINICAL_GROUP = 'Klinik Bilimler';
+
+const BASIC_SCIENCE_COURSES = new Set([
+    'Anatomi',
+    'FHE',
+    'Biyokimya',
+    'Mikrobiyoloji',
+    'Patoloji',
+    'Farmakoloji',
+]);
+
+const CLINICAL_SCIENCE_COURSES = new Set([
+    'Dahiliye',
+    'Pediatri',
+    'Genel Cerrahi',
+    'Küçük Stajlar',
+    'Kadın Doğum',
+]);
+
+export type BkaCatalogScienceGroup = typeof BKA_CATALOG_BASIC_GROUP | typeof BKA_CATALOG_CLINICAL_GROUP;
+
+/** Which top-level science group a BKA course belongs to, or null for standalone decks like Deneme ve Soru. */
+export function bkaCatalogCourseGroup(courseName: string): BkaCatalogScienceGroup | null {
+    const clean = courseName.replace(/\s+BKA$/, '');
+    if (BASIC_SCIENCE_COURSES.has(clean)) return BKA_CATALOG_BASIC_GROUP;
+    if (CLINICAL_SCIENCE_COURSES.has(clean)) return BKA_CATALOG_CLINICAL_GROUP;
+    return null;
+}
+
+/** Full deck path for a BKA course under the catalog root. */
+export function bkaCatalogCoursePath(rootDeckName: string, courseName: string): string {
+    const clean = courseName.replace(/\s+BKA$/, '');
+    const group = bkaCatalogCourseGroup(clean);
+    return group ? `${rootDeckName}::${group}::${clean}` : `${rootDeckName}::${clean}`;
+}
 
 export const BKA_CATALOG_EXPECTED = {
     notes: BKA_MANIFEST.totals.notes,
@@ -216,19 +254,23 @@ function mapDeckConfig(source: SourceDeckConfig, catalogId: number, rootDeckName
     };
 }
 
-function assertSnapshot(snapshot: BkaCatalogSnapshot): void {
-    const courseDecks = snapshot.decks.filter((deck) => deck.name.split('::').length === 2);
-    const topicDecks = snapshot.decks.filter((deck) => deck.name.split('::').length === 3);
+function assertSnapshot(snapshot: BkaCatalogSnapshot, courseDeckIds: ReadonlySet<number>, groupDeckIds: ReadonlySet<number>): void {
+    const courseDecks = snapshot.decks.filter((deck) => courseDeckIds.has(deck.id));
+    const groupDecks = snapshot.decks.filter((deck) => groupDeckIds.has(deck.id));
+    const topicDecks = snapshot.decks.filter(
+        (deck) => deck.id !== BKA_CATALOG_ROOT_DECK_ID && !courseDeckIds.has(deck.id) && !groupDeckIds.has(deck.id),
+    );
     if (
         snapshot.notes.length !== BKA_CATALOG_EXPECTED.notes
         || snapshot.cards.length !== BKA_CATALOG_EXPECTED.cards
+        || groupDecks.length !== 2
         || courseDecks.length !== BKA_CATALOG_EXPECTED.courseDecks
         || topicDecks.length !== BKA_CATALOG_EXPECTED.topicDecks
         || snapshot.noteTypes.length !== BKA_CATALOG_EXPECTED.noteTypes
     ) {
         throw new Error(
             `BKA paket bütünlüğü hatası: ${snapshot.notes.length} not, ${snapshot.cards.length} kart, `
-            + `${courseDecks.length} ders destesi, ${topicDecks.length} konu destesi, `
+            + `${groupDecks.length} grup destesi, ${courseDecks.length} ders destesi, ${topicDecks.length} konu destesi, `
             + `${snapshot.noteTypes.length} not türü. Koleksiyon değiştirilmedi.`,
         );
     }
@@ -280,33 +322,66 @@ export function readBkaCatalog(
         .filter((deck) => Number(deck.id) !== 1 && deck.name !== 'Default')
         .sort((left, right) => Number(left.id) - Number(right.id));
 
+    const nowSec = Math.floor(Date.now() / 1000);
     const rootDeck: Deck = {
         id: BKA_CATALOG_ROOT_DECK_ID,
         name: rootDeckName,
         sortOrder: 0,
         configId: defaultConfigId,
-        mod: Math.floor(Date.now() / 1000),
+        mod: nowSec,
         usn: -1,
         description: '',
-        collapsed: true,
+        // Open on the two TUS science groups (Temel Bilimler / Klinik Bilimler) and Deneme ve Soru.
+        collapsed: false,
         isFiltered: false,
         catalogPack: BKA_CATALOG_PACK,
     };
 
-    const courseDecks: Deck[] = sourceDecks.map((deck, index) => ({
-        id: Number(deck.id),
-        name: `${rootDeckName}::${String(deck.name).replace(/\s+BKA$/, '')}`,
-        sortOrder: index,
-        configId: configIdBySourceId.get(Number(deck.conf ?? 1)) ?? defaultConfigId,
-        mod: Number(deck.mod ?? 0),
-        usn: Number(deck.usn ?? -1),
-        description: deck.desc ?? '',
-        // Over a hundred curated children exist; the deck list opens on the 12 courses and the
-        // learner expands only the one they need.
-        collapsed: true,
-        isFiltered: false,
-        catalogPack: BKA_CATALOG_PACK,
-    }));
+    const groupDecks: Deck[] = [
+        {
+            id: GROUP_DECK_ID_BASE + 1,
+            name: `${rootDeckName}::${BKA_CATALOG_BASIC_GROUP}`,
+            sortOrder: 0,
+            configId: defaultConfigId,
+            mod: nowSec,
+            usn: -1,
+            description: '',
+            collapsed: false,
+            isFiltered: false,
+            catalogPack: BKA_CATALOG_PACK,
+        },
+        {
+            id: GROUP_DECK_ID_BASE + 2,
+            name: `${rootDeckName}::${BKA_CATALOG_CLINICAL_GROUP}`,
+            sortOrder: 1,
+            configId: defaultConfigId,
+            mod: nowSec,
+            usn: -1,
+            description: '',
+            collapsed: true,
+            isFiltered: false,
+            catalogPack: BKA_CATALOG_PACK,
+        },
+    ];
+
+    const courseDecks: Deck[] = sourceDecks.map((deck, index) => {
+        const cleanName = String(deck.name).replace(/\s+BKA$/, '');
+        const group = bkaCatalogCourseGroup(cleanName);
+        return {
+            id: Number(deck.id),
+            name: bkaCatalogCoursePath(rootDeckName, cleanName),
+            // Standalone decks (Deneme ve Soru) sit after Temel Bilimler (0) and Klinik Bilimler (1).
+            sortOrder: group ? index : 2 + index,
+            configId: configIdBySourceId.get(Number(deck.conf ?? 1)) ?? defaultConfigId,
+            mod: Number(deck.mod ?? 0),
+            usn: Number(deck.usn ?? -1),
+            description: deck.desc ?? '',
+            // Over a hundred curated children exist; courses stay collapsed until the learner opens one.
+            collapsed: true,
+            isFiltered: false,
+            catalogPack: BKA_CATALOG_PACK,
+        };
+    });
 
     const subjects: UserSubject[] = sourceDecks.map((deck) => {
         const course = BKA_MANIFEST.courses.find((entry) => entry.sourceDeckId === Number(deck.id));
@@ -418,8 +493,9 @@ export function readBkaCatalog(
 
     const usedDeckIds = new Set(cards.map((card) => card.deckId));
     const usedSubdecks = subdecks.filter((deck) => usedDeckIds.has(deck.id));
-    const usedCourseDeckIds = new Set(cards.map((card) => card.sourceDeckId));
+    const usedCourseDeckIds = new Set(cards.map((card) => card.sourceDeckId).filter((id): id is number => id !== undefined));
     const usedCourseDecks = courseDecks.filter((deck) => usedCourseDeckIds.has(deck.id));
+    const groupDeckIds = new Set(groupDecks.map((deck) => deck.id));
     for (const subject of subjects) {
         const usedTopics = new Set(notes
             .filter((note) => note.catalogSubject === subject.id)
@@ -432,13 +508,13 @@ export function readBkaCatalog(
     const snapshot: BkaCatalogSnapshot = {
         rootDeckName,
         noteTypes,
-        decks: [rootDeck, ...usedCourseDecks, ...usedSubdecks],
+        decks: [rootDeck, ...groupDecks, ...usedCourseDecks, ...usedSubdecks],
         deckConfigs,
         notes,
         cards,
         subjects,
     };
-    assertSnapshot(snapshot);
+    assertSnapshot(snapshot, usedCourseDeckIds, groupDeckIds);
     return snapshot;
 }
 

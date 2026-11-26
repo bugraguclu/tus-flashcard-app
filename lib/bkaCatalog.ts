@@ -54,22 +54,32 @@ import {
 
 // Reading the package into a snapshot lives in its own module; this one installs it.
 export {
+    BKA_CATALOG_BASIC_GROUP,
+    BKA_CATALOG_CLINICAL_GROUP,
     BKA_CATALOG_DEFAULT_ROOT_DECK,
     BKA_CATALOG_EXPECTED,
     BKA_CATALOG_PACK,
     BKA_CATALOG_ROOT_DECK_ID,
     BKA_TRIAL_CARDS_PER_SUBDECK,
     BKA_TRIAL_DEFAULT_ROOT_DECK,
+    bkaCatalogCourseGroup,
+    bkaCatalogCoursePath,
     buildBkaTrialCatalog,
     readBkaCatalog,
     scoreBkaTrialCard,
 } from './bkaCatalogSnapshot';
-export type { BkaCatalogSnapshot } from './bkaCatalogSnapshot';
+export type { BkaCatalogScienceGroup, BkaCatalogSnapshot } from './bkaCatalogSnapshot';
 
 export const BKA_CATALOG_INSTALL_KEY = CATALOG_INSTALL_KEY;
 export type BkaCatalogTier = 'trial' | 'full';
 const ROOT_DECK_NAME_KEY = 'bka_tus_catalog_root_deck_v5';
 const SEPARATE_TRIAL_LAYOUT_KEY = 'bka_tus_separate_trial_deck_v1';
+/**
+ * Layout marker for the Temel Bilimler / Klinik Bilimler course grouping under TUS Kartları.
+ * An install written by an older build (12 flat courses directly under the root) refreshes once
+ * while keeping study progress and learner edits.
+ */
+const TREE_LAYOUT_KEY = 'bka_tus_catalog_tree_layout_v2';
 /**
  * Hash of the package the installed cards came from. A content correction ships as a new
  * package, and a learner who already installed the old one has to end up with the corrected
@@ -402,6 +412,7 @@ function replaceInstalledCatalog(
         writeSetting(ROOT_DECK_NAME_KEY, snapshot.rootDeckName);
         writeSetting(BKA_CATALOG_INSTALL_KEY, tier);
         writeSetting(PACKAGE_VERSION_KEY, BKA_MANIFEST.sha256);
+        writeSetting(TREE_LAYOUT_KEY, 'true');
         if (tier === 'trial') writeSetting(SEPARATE_TRIAL_LAYOUT_KEY, 'true');
         else {
             getDB().runSync('DELETE FROM settings WHERE key = ?', PROGRESS_KEY);
@@ -426,8 +437,9 @@ async function installBkaCatalogTier(tier: BkaCatalogTier): Promise<BkaCatalogIn
     // Cards installed from an older package are refreshed rather than left in place. The
     // reinstall below restores study progress and keeps the learner's edited fields/cards.
     const hasCurrentPackage = readSetting(PACKAGE_VERSION_KEY) === BKA_MANIFEST.sha256;
+    const hasCurrentTreeLayout = readSetting(TREE_LAYOUT_KEY) === 'true';
     if (currentTier === tier && installedCards > 0 && !hasLegacyTrialWrapper && hasSeparateTrialLayout
-        && hasCurrentPackage) {
+        && hasCurrentPackage && hasCurrentTreeLayout) {
         return {
             installed: false,
             rootDeckName: getBkaCatalogRootDeckName(),
@@ -656,6 +668,7 @@ export function uninstallBkaCatalog(): BkaCatalogRemovalResult {
         removeCatalogSubjects();
         db.runSync('DELETE FROM settings WHERE key = ?', BKA_CATALOG_INSTALL_KEY);
         db.runSync('DELETE FROM settings WHERE key = ?', PACKAGE_VERSION_KEY);
+        db.runSync('DELETE FROM settings WHERE key = ?', TREE_LAYOUT_KEY);
         db.runSync('DELETE FROM settings WHERE key = ?', ROOT_DECK_NAME_KEY);
         return stored;
     });

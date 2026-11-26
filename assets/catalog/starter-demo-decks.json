@@ -1,0 +1,1444 @@
+{
+  "cards": [
+    {
+      "id": "deck-anatomi-2026-2-t005",
+      "deckId": "anatomi",
+      "course": "Anatomi",
+      "topic": "2026/2 TUS · T005",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Dura mater ve arachnoid mater spinalis'in sonlandığı vertebra seviyesi:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "S2"
+        },
+        {
+          "type": "text",
+          "value": " vertebra seviyesinde sonlanır"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-anatomi-2025-2-t002",
+      "deckId": "anatomi",
+      "course": "Anatomi",
+      "topic": "2025/2 TUS · T002",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "El üzerine düşme sonrası akromiyoklaviküler eklem çıkığında kopabilen bağ:\n\nLig. "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "coracoclaviculare"
+        }
+      ],
+      "extra": "Özellikle trapezoid parça etkilenebilir."
+    },
+    {
+      "id": "deck-anatomi-2026-1-t001",
+      "deckId": "anatomi",
+      "course": "Anatomi",
+      "topic": "2026/1 TUS · T001",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Longitudinal ayak arkını destekleyen en önemli kas → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "m. tibialis posterior"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-anatomi-2026-1-t004",
+      "deckId": "anatomi",
+      "course": "Anatomi",
+      "topic": "2026/1 TUS · T004",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Truncus coeliacus’a bası yapabilen diyafram bağı:\n\nLig. arcuatum "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "medianum"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-fhe-2026-2-t016",
+      "deckId": "fhe",
+      "course": "FHE",
+      "topic": "2026/2 TUS · T016",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Deri bazal membranına (hemidesmozomlara) karşı lineer IgG antikor "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "büllöz pemfigoidde"
+        },
+        {
+          "type": "text",
+          "value": " görülür"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-fhe-2026-2-t025",
+      "deckId": "fhe",
+      "course": "FHE",
+      "topic": "2026/2 TUS · T025",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Derin inspiryumda "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "pulmoner kapağın"
+        },
+        {
+          "type": "text",
+          "value": " kapanması gecikir"
+        }
+      ],
+      "extra": "Sağ kalbe venöz dönüşün artmasıyla pulmoner kapak geç kapanır; S2 çiftleşir."
+    },
+    {
+      "id": "deck-fhe-2026-1-t028",
+      "deckId": "fhe",
+      "course": "FHE",
+      "topic": "2026/1 TUS · T028",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Poiseuille denklemine göre vasküler direnç (R) = "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "(8 · viskozite (η) · damar uzunluğu (L)) / (π · r4)"
+        }
+      ],
+      "extra": "R vasküler direnci, η kan viskozitesini, L damar uzunluğunu, r damar yarıçapını temsil eder."
+    },
+    {
+      "id": "deck-fhe-2026-1-t019",
+      "deckId": "fhe",
+      "course": "FHE",
+      "topic": "2026/1 TUS · T019",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Karaciğerde İto hücrelerini (hepatik stellat hücreler) uyararak aktive eden sitokinler:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "TNF-alfa"
+        },
+        {
+          "type": "text",
+          "value": "\n\nIL-"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "17"
+        },
+        {
+          "type": "text",
+          "value": "\n\nTGF-beta\n\nPDGF\n\nReaktif oksijen ürünleri"
+        }
+      ],
+      "extra": "Uyarılmış İto hücreleri miyofibroblastlara dönüşerek kollajen sentezler ve hepatik fibrozise yol açar."
+    },
+    {
+      "id": "deck-biyokimya-2026-2-t033",
+      "deckId": "biyokimya",
+      "course": "Biyokimya",
+      "topic": "2026/2 TUS · T033",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Pirimidin yıkımı:\n\nUrasil ve sitozin →\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Beta-alanin"
+        },
+        {
+          "type": "text",
+          "value": "\n\nTimin →\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Beta-aminoizobütirat"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-biyokimya-2026-2-t041",
+      "deckId": "biyokimya",
+      "course": "Biyokimya",
+      "topic": "2026/2 TUS · T041",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Cilt biyopsisiyle tanı konabilen nefrit → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Alport"
+        },
+        {
+          "type": "text",
+          "value": "\n\nBiyopsi → "
+        },
+        {
+          "type": "cloze",
+          "index": 12,
+          "answer": "tip 4 kollajen alfa-5 zinciri"
+        },
+        {
+          "type": "text",
+          "value": " boyanması yok"
+        }
+      ],
+      "extra": "Bulgu X'e bağlı (COL4A5) formda görülür; kadın taşıyıcılarda mozaik boyanma olur, otozomal formlarda cilt biyopsisi normaldir."
+    },
+    {
+      "id": "deck-biyokimya-2025-2-t040",
+      "deckId": "biyokimya",
+      "course": "Biyokimya",
+      "topic": "2025/2 TUS · T040",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "AFP"
+        },
+        {
+          "type": "text",
+          "value": " > 400 ng/mL + BT'de "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "hipervasküler"
+        },
+        {
+          "type": "text",
+          "value": " kitle → doğrudan HCC tanısı (biyopsiye gerek yok)\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Kalsitonin"
+        },
+        {
+          "type": "text",
+          "value": " > 200 pg/mL + tiroit "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "nodülü"
+        },
+        {
+          "type": "text",
+          "value": " → doğrudan medüller tiroit kanseri tanısı"
+        }
+      ],
+      "extra": "Güncel AASLD ve EASL ölçütlerinde sirotik hastada HCC tanısı AFP'den bağımsız olarak dinamik BT/MR'de arteriyel fazda kontrastlanma ve geç fazda yıkanma (washout) bulgusuyla konur."
+    },
+    {
+      "id": "deck-biyokimya-2025-1-t032",
+      "deckId": "biyokimya",
+      "course": "Biyokimya",
+      "topic": "2025/1 TUS · T032",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Vernal konjonktivit → tip "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "1"
+        },
+        {
+          "type": "text",
+          "value": " hipersensitivite reaksiyonu özellikleri taşır ama hastaların yaklaşık yarısında öncesinde duyarlanma "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "gösterilemez"
+        },
+        {
+          "type": "text",
+          "value": " ("
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "yalnız IgE aracılı değildir"
+        },
+        {
+          "type": "text",
+          "value": ")"
+        }
+      ],
+      "extra": "IgE aracılı (tip 1) reaksiyona Th2 lenfosit aracılı (tip 4) inflamasyon eşlik eder; hastaların yaklaşık yarısında deri prik testi ve spesifik IgE negatiftir."
+    },
+    {
+      "id": "deck-mikrobiyoloji-2026-2-t050",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "topic": "2026/2 TUS · T050",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Clostridium perfringens özellikleri:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Çift"
+        },
+        {
+          "type": "text",
+          "value": " zonlu hemoliz\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Sütü"
+        },
+        {
+          "type": "text",
+          "value": " pıhtılaştırması\nTers "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "CAMP pozitifliği"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-mikrobiyoloji-2026-2-t056",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "topic": "2026/2 TUS · T056",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Pozitif polariteli RNA taşıyan virüs grupları\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Pikornavirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Kalisivirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Flavivirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Togavirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Koronavirüsler"
+        },
+        {
+          "type": "text",
+          "value": "\n"
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Retrovirüsler"
+        }
+      ],
+      "extra": "Retrovirüsler pozitif polariteli RNA taşır, ancak Baltimore sınıf VI'da ayrı değerlendirilir."
+    },
+    {
+      "id": "deck-mikrobiyoloji-2025-2-t056",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "topic": "2025/2 TUS · T056",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Antiviraller\n\nKondilom tedavisinde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "TLR7"
+        },
+        {
+          "type": "text",
+          "value": " agonisti immünomodülatör: "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "imikimod"
+        },
+        {
+          "type": "text",
+          "value": "\n\nCOVID-19 tedavisinde RNA bağımlı RNA polimeraz inhibitörü: "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "remdesivir"
+        },
+        {
+          "type": "text",
+          "value": "\n\nİnfluenza ve COVID-19 tedavisinde RNA bağımlı RNA polimeraz inhibitörü: "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "favipiravir"
+        },
+        {
+          "type": "text",
+          "value": "\n\nEnterovirüs ve rinovirüs solunum yolu enfeksiyonlarında viral kapside bağlanan ajan: "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "plekonaril"
+        }
+      ],
+      "extra": "Plekonaril onay almamış deneysel bir ilaçtır. Favipiravir FDA ve EMA onayı almamıştır; COVID-19'da randomize çalışmalarda hastaneye yatışı ve ölümü azaltmamıştır."
+    },
+    {
+      "id": "deck-mikrobiyoloji-2024-2-t054",
+      "deckId": "mikrobiyoloji",
+      "course": "Mikrobiyoloji",
+      "topic": "2024/2 TUS · T054",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "İnsan ve hayvan ısırıklarında (Eikenella, Pasteurella) ampirik ilk seçenek antibiyotik profilaksisi ve tedavisi:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Amoksisilin-klavulanat"
+        }
+      ],
+      "extra": "İnsan ısırığında Eikenella corrodens, kedi ve köpek ısırığında Pasteurella multocida etkenleri hedeflenir."
+    },
+    {
+      "id": "deck-patoloji-2026-2-t067",
+      "deckId": "patoloji",
+      "course": "Patoloji",
+      "topic": "2026/2 TUS · T067",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Germ hücreli neoplazi in situ (GCNIS) zemininden gelişmeyen testis tümörleri (3):\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Spermatositik"
+        },
+        {
+          "type": "text",
+          "value": " tümör\nPrepubertal "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "yolk sac"
+        },
+        {
+          "type": "text",
+          "value": " tümörü\nPrepubertal "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "teratom"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-patoloji-2024-2-t068",
+      "deckId": "patoloji",
+      "course": "Patoloji",
+      "topic": "2024/2 TUS · T068",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Pulmoner emboli Wells skorlaması\n\nPredispozan ("
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "geçirilmiş VTE"
+        },
+        {
+          "type": "text",
+          "value": " 1,5 / "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "cerrahi - immobilizasyon"
+        },
+        {
+          "type": "text",
+          "value": " öyküsü 1,5 / "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "kanser"
+        },
+        {
+          "type": "text",
+          "value": " varlığı 1)\n\nSemptom ("
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "hemoptizi"
+        },
+        {
+          "type": "text",
+          "value": " 1)\n\nBulgu ("
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "kalp hızı"
+        },
+        {
+          "type": "text",
+          "value": " > 100 1,5 / "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "DVT"
+        },
+        {
+          "type": "text",
+          "value": " bulguları 3)\n\nKlinik karar ("
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "alternatif tanı PE'den daha az olası"
+        },
+        {
+          "type": "text",
+          "value": " 3)"
+        }
+      ],
+      "extra": "> 4 → PE olası (yüksek risk) → doğrudan BT anjiyografi; ≤ 4 → D-dimer"
+    },
+    {
+      "id": "deck-patoloji-2024-1-t065",
+      "deckId": "patoloji",
+      "course": "Patoloji",
+      "topic": "2024/1 TUS · T065",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Otoimmün hepatit tipleri ve karakteristik otoantikorlar:\n\nTip 1 → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "ANA ve ASMA"
+        },
+        {
+          "type": "text",
+          "value": " (+)\n\nTip 2 → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "anti-LKM-1"
+        },
+        {
+          "type": "text",
+          "value": " (+)"
+        }
+      ],
+      "extra": "Tip 1 erişkinde (ANA, ASMA), tip 2 çocuklarda (anti-LKM-1) daha sıktır."
+    },
+    {
+      "id": "deck-patoloji-2026-2-t079",
+      "deckId": "patoloji",
+      "course": "Patoloji",
+      "topic": "2026/2 TUS · T079",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Paraneoplastik sendromlar:\n\nHipoglisemi → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "fibrosarkom"
+        },
+        {
+          "type": "text",
+          "value": "\n\nHiperkalsemi → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "akciğer skuamöz hücreli karsinomu"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-farmakoloji-2026-2-t094",
+      "deckId": "farmakoloji",
+      "course": "Farmakoloji",
+      "topic": "2026/2 TUS · T094",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Esas olarak Gram negatif aerob basillere etkili antibiyotikler (3) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "aztreonam, polimiksin, aminoglikozidler"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-farmakoloji-2026-2-t091",
+      "deckId": "farmakoloji",
+      "course": "Farmakoloji",
+      "topic": "2026/2 TUS · T091",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Gut'ta ürik asidi artırdığı için önerilmeyen ilaçlar (4) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "aspirin, siklosporin, tiyazidler, niasin"
+        }
+      ],
+      "extra": "Kardiyovasküler korunma için kullanılan düşük doz aspirin gut nedeniyle kesilmez."
+    },
+    {
+      "id": "deck-farmakoloji-2026-2-t090",
+      "deckId": "farmakoloji",
+      "course": "Farmakoloji",
+      "topic": "2026/2 TUS · T090",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Psöriazis tedavisi\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Ustekinumab"
+        },
+        {
+          "type": "text",
+          "value": "\n\nIL-17 antagonistleri (4) → "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "iksekizumab, sekukinumab, brodalumab, bimekizumab"
+        },
+        {
+          "type": "text",
+          "value": "\n\nPDE4 inhibitörü (IL-23'ü baskılar) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "apremilast"
+        },
+        {
+          "type": "text",
+          "value": "\n\nSentetik D3 vitamini analoğu → "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "kalsipotriol"
+        }
+      ],
+      "extra": "Brodalumab IL-17 reseptörünü (IL-17RA), bimekizumab hem IL-17A'yı hem IL-17F'yi bloke eder."
+    },
+    {
+      "id": "deck-farmakoloji-2026-1-t095",
+      "deckId": "farmakoloji",
+      "course": "Farmakoloji",
+      "topic": "2026/1 TUS · T095",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Mutant BRAF inhibitörleri (2) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "vemurafenib, dabrafenib"
+        }
+      ],
+      "extra": "Melanom; 2018'de onaylanan üçüncü BRAF inhibitörü: enkorafenib"
+    },
+    {
+      "id": "deck-dahiliye-2026-2-k004",
+      "deckId": "dahiliye",
+      "course": "Dahiliye",
+      "topic": "2026/2 TUS · K004",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Silikozis → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "tüberküloz, mantar"
+        },
+        {
+          "type": "text",
+          "value": " enfeksiyonlarının sıklığı artar"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-dahiliye-2026-1-k017",
+      "deckId": "dahiliye",
+      "course": "Dahiliye",
+      "topic": "2026/1 TUS · K017",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Fetal parvovirüs B19 enfeksiyonunun kardiyak etkileri → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "miyokardite bağlı konjenital kalp bloğu ve hidrops"
+        }
+      ],
+      "extra": "Otoimmün konjenital kalp bloğu ise maternal anti-Ro/SSA ve anti-La/SSB antikorlarına bağlıdır (maternal SLE, Sjögren sendromu)."
+    },
+    {
+      "id": "deck-dahiliye-2026-1-k007",
+      "deckId": "dahiliye",
+      "course": "Dahiliye",
+      "topic": "2026/1 TUS · K007",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Karsinoid sendrom\n\nEn sık kalp tutulumu:\n\nGenel cerrahi kaynaklarına göre: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "pulmoner darlık"
+        },
+        {
+          "type": "text",
+          "value": "\n\nDahiliye kaynaklarına göre: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "triküspit yetmezliği"
+        }
+      ],
+      "extra": "Ekokardiyografik serilerde karsinoid kalp hastalığının en sık lezyonu triküspit yetmezliğidir; pulmoner kapak darlığı ve yetmezliği de sık eşlik eder."
+    },
+    {
+      "id": "deck-dahiliye-2025-2-k019",
+      "deckId": "dahiliye",
+      "course": "Dahiliye",
+      "topic": "2025/2 TUS · K019",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Altitudinal görme alanı defekti:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Anterior iskemik optik nöropati"
+        }
+      ],
+      "extra": "Arteritik anterior iskemik optik nöropati:Temporal arterit, SLE Nonarteritik: HT ve DM"
+    },
+    {
+      "id": "deck-pediatri-2026-2-k037",
+      "deckId": "pediatri",
+      "course": "Pediatri",
+      "topic": "2026/2 TUS · K037",
+      "activeCloze": 2,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Bruton ("
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "X'e bağlı infantil agamaglobulinemi"
+        },
+        {
+          "type": "text",
+          "value": ") → tanı koydurucu bulguları → tonsiller "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "hipoplazik"
+        },
+        {
+          "type": "text",
+          "value": " / LAP ve splenomegali "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "yok"
+        },
+        {
+          "type": "text",
+          "value": " / CD19-20 "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "azalmış"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-pediatri-2026-2-k036",
+      "deckId": "pediatri",
+      "course": "Pediatri",
+      "topic": "2026/2 TUS · K036",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Anne sütünün kontrendike olduğu durumlar\n\nEn kesin → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "galaktozemi"
+        },
+        {
+          "type": "text",
+          "value": "\n\nCMV enfeksiyonu (klasik bilgi): prematürelerde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "kontrendike"
+        },
+        {
+          "type": "text",
+          "value": " / termlerde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "verilir"
+        }
+      ],
+      "extra": "AAP'ye göre CMV pozitif annenin sütü prematürede de kesin kontrendike değildir; çok düşük doğum ağırlıklı bebekte sütün dondurulması veya pastörizasyonu bulaş riskini azaltır."
+    },
+    {
+      "id": "deck-pediatri-2026-2-k057",
+      "deckId": "pediatri",
+      "course": "Pediatri",
+      "topic": "2026/2 TUS · K057",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Yenidoğanda café au lait lekeleriyle giden başlıca sendromlar (3) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "NF1, Fanconi anemisi, McCune-Albright sendromu"
+        }
+      ],
+      "extra": "Diğer nedenler: Legius sendromu, tüberoz skleroz, Bloom sendromu, Russell-Silver sendromu."
+    },
+    {
+      "id": "deck-pediatri-2026-2-k043",
+      "deckId": "pediatri",
+      "course": "Pediatri",
+      "topic": "2026/2 TUS · K043",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "VZV temas:\n\nAşılanmamış > 12 ay: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "3–5"
+        },
+        {
+          "type": "text",
+          "value": " gün içinde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "aşı"
+        },
+        {
+          "type": "text",
+          "value": "\n\n< 12 ay: "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "96"
+        },
+        {
+          "type": "text",
+          "value": " saat içinde "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "VZIG"
+        }
+      ],
+      "extra": "Güncel öneride VZIG temastan sonra 10 gün içinde verilebilir ve yalnız yüksek riskli gruplara (immün yetmezlik, gebe, annesi doğum çevresinde su çiçeği geçiren yenidoğan, hastanede yatan prematüre) önerilir."
+    },
+    {
+      "id": "deck-genel-cerrahi-2026-2-k075",
+      "deckId": "genel-cerrahi",
+      "course": "Genel Cerrahi",
+      "topic": "2026/2 TUS · K075",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "PPI tedavisine yanıtsız belirtiler + baryumlu grafide halkalı görünüm (kedi kuyruğunu andıran yuvarlak çizgiler):\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Eozinofilik özofajit"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-genel-cerrahi-2026-2-k080",
+      "deckId": "genel-cerrahi",
+      "course": "Genel Cerrahi",
+      "topic": "2026/2 TUS · K080",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "ERCP sonrası pankreatitin risk faktörleri:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Genç"
+        },
+        {
+          "type": "text",
+          "value": " yaş\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Kadın"
+        },
+        {
+          "type": "text",
+          "value": " cinsiyet\n\nFazla kontrast verilmesi\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Normal"
+        },
+        {
+          "type": "text",
+          "value": " safra yolları"
+        }
+      ],
+      "extra": "Riski azaltmak için: Rektal indometazin Geçici pankreatik stent"
+    },
+    {
+      "id": "deck-genel-cerrahi-2026-1-k065",
+      "deckId": "genel-cerrahi",
+      "course": "Genel Cerrahi",
+      "topic": "2026/1 TUS · K065",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Yanıklı hastanın yanık merkezine sevk endikasyonları\n\n> %"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "10"
+        },
+        {
+          "type": "text",
+          "value": " 2. derece yanık\n\nHerhangi bir 3. derece yanık\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Yüz, el, ayak, genital bölge, perine ve büyük eklem"
+        },
+        {
+          "type": "text",
+          "value": " yanıkları (6), genişliğine bakmadan"
+        }
+      ],
+      "extra": "Elektrik, kimyasal ve inhalasyon yanıkları da sevk gerektirir."
+    },
+    {
+      "id": "deck-genel-cerrahi-2024-2-k072",
+      "deckId": "genel-cerrahi",
+      "course": "Genel Cerrahi",
+      "topic": "2024/2 TUS · K072",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Tiroit bezinin posterior süspansuar ligamanının özel adı:\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Berry"
+        },
+        {
+          "type": "text",
+          "value": " ligamanı"
+        }
+      ],
+      "extra": "Rekürren laringeal sinir en çok Berry ligamanı seviyesinde yaralanır."
+    },
+    {
+      "id": "deck-kucuk-stajlar-2026-2-k083",
+      "deckId": "kucuk-stajlar",
+      "course": "Küçük Stajlar",
+      "topic": "2026/2 TUS · K083",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Pulmoner sekestrasyon özellikleri:\n\nHava yolundan "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "bağımsızdır"
+        },
+        {
+          "type": "text",
+          "value": "\n\nDoğrudan "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "aorttan"
+        },
+        {
+          "type": "text",
+          "value": " beslenir\n\n"
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Tekrarlayan"
+        },
+        {
+          "type": "text",
+          "value": " akciğer enfeksiyonlarına yol açar"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-kucuk-stajlar-2026-1-k030",
+      "deckId": "kucuk-stajlar",
+      "course": "Küçük Stajlar",
+      "topic": "2026/1 TUS · K030",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Anne ölüm oranı (maternal mortality ratio) → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "belirli dönemde anne ölümleri / aynı dönemde canlı doğumlar × 100.000"
+        }
+      ],
+      "extra": "WHO anne ölüm oranını kadın nüfusuna göre hesaplanan anne ölüm hızından ayırır. Anne ölümü gebelik sırasında veya sona ermesinden sonraki 42 gün içinde, gebelikle ilişkili ya da gebelikle ağırlaşan nedenlere bağlı ölümdür; tesadüfi nedenler dışlanır. Bu oran yalnız indirekt yöntemle hesaplanan tek ölçüt değildir."
+    },
+    {
+      "id": "deck-kucuk-stajlar-2026-1-k032",
+      "deckId": "kucuk-stajlar",
+      "course": "Küçük Stajlar",
+      "topic": "2026/1 TUS · K032",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Bupivakaine bağlı, ciddi lokal anestezik sistemik toksisitesinde erken değerlendirilen kurtarma tedavisi → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "İV lipid emülsiyonu"
+        }
+      ],
+      "extra": "ASRA 2020 v1.1: ciddi LASTta %20 lipid emülsiyonu erken düşünülür; arrestin resüsitasyona dirençli olmasını beklemek gerekmez. Hava yolu, konvülziyon kontrolü ve LASTa uygun resüsitasyon eş zamanlı değerlendirilir; bu tek satır tüm doz algoritması değildir."
+    },
+    {
+      "id": "deck-kucuk-stajlar-2026-1-k035",
+      "deckId": "kucuk-stajlar",
+      "course": "Küçük Stajlar",
+      "topic": "2026/1 TUS · K035",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "Stauffer"
+        },
+        {
+          "type": "text",
+          "value": " sendromu → RCC'de karaciğer metastazı olmadan karaciğer fonksiyon bozukluğu gelişmesi"
+        }
+      ],
+      "extra": "Paraneoplastik bir sendromdur (ALP yüksekliği, PT uzaması, hepatosplenomegali); nefrektomi sonrası düzelir."
+    },
+    {
+      "id": "deck-kadin-dogum-2026-2-k095",
+      "deckId": "kadin-dogum",
+      "course": "Kadın Doğum",
+      "topic": "2026/2 TUS · K095",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "β-hCG > "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "3510"
+        },
+        {
+          "type": "text",
+          "value": " mIU/mL iken transvajinal USG'de intrauterin kese görülmüyorsa → ektopik gebelik düşünülür"
+        }
+      ],
+      "extra": "Connolly ve ark. (2013) çalışmasında 3510 mIU/mL, canlı intrauterin gebelikte kesenin transvajinal USG'de görülmesi için %99 olasılık eşiğidir; %100 kesinlik sınırı değildir. Bu düzeyin üzerinde kese görülmemesi tek başına gebeliğin canlılığını veya yerini kesinleştirmez; klinik değerlendirme, seri β-hCG ve tekrar USG gerekir. Klasik diskriminatuar zon 1500–2000 mIU/mL olarak anılır."
+    },
+    {
+      "id": "deck-kadin-dogum-2026-1-k094",
+      "deckId": "kadin-dogum",
+      "course": "Kadın Doğum",
+      "topic": "2026/1 TUS · K094",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Anormal uterin kanamanın (AUK) "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "PALM-COEIN"
+        },
+        {
+          "type": "text",
+          "value": " sınıflaması\n\nP "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Polip"
+        },
+        {
+          "type": "text",
+          "value": "\nA "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Adenomyozis"
+        },
+        {
+          "type": "text",
+          "value": "\nL "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Leiomyom"
+        },
+        {
+          "type": "text",
+          "value": "\nM "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "Malignansi"
+        },
+        {
+          "type": "text",
+          "value": " ve "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "hiperplazi"
+        },
+        {
+          "type": "text",
+          "value": "\n\nC "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Koagülopati"
+        },
+        {
+          "type": "text",
+          "value": "\nO "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Ovulatuar disfonksiyon"
+        },
+        {
+          "type": "text",
+          "value": " (anovulasyon)\nE "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "Endometrial"
+        },
+        {
+          "type": "text",
+          "value": " nedenler\nI "
+        },
+        {
+          "type": "cloze",
+          "index": 3,
+          "answer": "İatrojenik"
+        },
+        {
+          "type": "text",
+          "value": "\nN Başka şekilde sınıflandırılmamış (eski: henüz sınıflandırılmamış)"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-kadin-dogum-2025-2-k097",
+      "deckId": "kadin-dogum",
+      "course": "Kadın Doğum",
+      "topic": "2025/2 TUS · K097",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "Prolaktinomaya bağlı hiperprolaktinemide ilk tercih tedavi → "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "medikal (kabergolin)"
+        }
+      ],
+      "extra": ""
+    },
+    {
+      "id": "deck-kadin-dogum-2025-2-k093",
+      "deckId": "kadin-dogum",
+      "course": "Kadın Doğum",
+      "topic": "2025/2 TUS · K093",
+      "activeCloze": 1,
+      "parts": [
+        {
+          "type": "text",
+          "value": "2. trimester tarama testleri → 15–21. haftada "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "AFP"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "E3"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "hCG"
+        },
+        {
+          "type": "text",
+          "value": " (üçlü test) + "
+        },
+        {
+          "type": "cloze",
+          "index": 1,
+          "answer": "inhibin A"
+        },
+        {
+          "type": "text",
+          "value": " (dörtlü test) → risk yüksekse → "
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "amniyosentez"
+        },
+        {
+          "type": "text",
+          "value": " ("
+        },
+        {
+          "type": "cloze",
+          "index": 2,
+          "answer": "15"
+        },
+        {
+          "type": "text",
+          "value": ". haftadan sonra) yapılır"
+        }
+      ],
+      "extra": ""
+    }
+  ]
+}

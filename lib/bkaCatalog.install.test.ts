@@ -235,7 +235,7 @@ describe('BKA catalog installation', () => {
         expect(trial.cards).toBeGreaterThan(0);
         expect(trial.cards).toBeLessThan(BKA_CATALOG_EXPECTED.cards);
         expect(db.getFirstSync('SELECT id FROM decks WHERE name = ?', `${trial.rootDeckName}::Deneme`)).toBeNull();
-        expect(db.getFirstSync('SELECT id FROM decks WHERE name = ?', `${trial.rootDeckName}::Anatomi`)).not.toBeNull();
+        expect(db.getFirstSync('SELECT id FROM decks WHERE name = ?', `${trial.rootDeckName}::Temel Bilimler::Anatomi`)).not.toBeNull();
         expect(learnerRowsIntact(db)).toEqual({ noteType: true, deck: true, note: true, card: true, config: true });
 
         const lockedCatalogNote = getAllNotes().find((note) => note.catalogPack === 'bka-tus')!;
@@ -287,7 +287,7 @@ describe('BKA catalog installation', () => {
         const migrated = await installBkaTrialCatalog();
         expect(migrated.installed).toBe(true);
         expect(db.getFirstSync('SELECT id FROM decks WHERE name = ?', legacyWrapper.name)).toBeNull();
-        expect(db.getFirstSync('SELECT id FROM decks WHERE name = ?', `${trial.rootDeckName}::Anatomi`)).not.toBeNull();
+        expect(db.getFirstSync('SELECT id FROM decks WHERE name = ?', `${trial.rootDeckName}::Temel Bilimler::Anatomi`)).not.toBeNull();
         expect(db.getFirstSync<{ reps: number; ivl: number }>(
             'SELECT reps, ivl FROM anki_cards WHERE id = ?', sampleCard.id,
         )).toMatchObject({ reps: 4, ivl: 12 });
@@ -312,7 +312,7 @@ describe('BKA catalog installation', () => {
         expect(migrated.installed).toBe(true);
         expect(migrated.rootDeckName).toBe('TUS Deneme');
         expect(db.getFirstSync('SELECT id FROM decks WHERE name = ?', BKA_CATALOG_DEFAULT_ROOT_DECK)).toBeNull();
-        expect(db.getFirstSync('SELECT id FROM decks WHERE name = ?', 'TUS Deneme::Anatomi')).not.toBeNull();
+        expect(db.getFirstSync('SELECT id FROM decks WHERE name = ?', 'TUS Deneme::Temel Bilimler::Anatomi')).not.toBeNull();
         expect(learnerRowsIntact(db)).toEqual({ noteType: true, deck: true, note: true, card: true, config: true });
     }, 120_000);
 
@@ -361,7 +361,7 @@ describe('BKA catalog installation', () => {
         // Full access allows normal deck use. If the learner moved one of their own cards into
         // the paid tree, a refund/re-lock must recover it instead of deleting it with that tree.
         const catalogDeck = db.getFirstSync<{ id: number }>(
-            'SELECT id FROM decks WHERE name = ?', `${install.rootDeckName}::Anatomi`,
+            'SELECT id FROM decks WHERE name = ?', `${install.rootDeckName}::Temel Bilimler::Anatomi`,
         )!;
         const learnerCard = JSON.parse(db.getFirstSync<{ data: string }>(
             'SELECT data FROM anki_cards WHERE id = ?', LEARNER.cardId,
@@ -454,7 +454,7 @@ describe('BKA catalog installation', () => {
         };
         saveDeckConfig(tunedPreset);
         saveDeckConfig({ ...DEFAULT_DECK_CONFIG, id: 77, name: 'Benim ayarım', newPerDay: 5 });
-        const course = getDeckByName(`${BKA_CATALOG_DEFAULT_ROOT_DECK}::Pediatri`)!;
+        const course = getDeckByName(`${BKA_CATALOG_DEFAULT_ROOT_DECK}::Klinik Bilimler::Pediatri`)!;
         saveDeck({ ...course, configId: 77, newLimit: 3, reviewLimit: 40, desiredRetention: 0.8 });
         saveDeck({ ...root, collapsed: false });
 
@@ -636,7 +636,7 @@ describe('BKA catalog beside the learner’s AnKing note types', () => {
 
         const install = await installBkaCatalog();
         expect(rows()).toEqual(before);
-        const catalogAnatomy = getDeckByName(`${install.rootDeckName}::Anatomi`)!;
+        const catalogAnatomy = getDeckByName(`${install.rootDeckName}::Temel Bilimler::Anatomi`)!;
         expect(catalogAnatomy.id).not.toBe(anatomyId);
         expect(catalogAnatomy.configId).not.toBe(presetId);
         expect(getAnkiCard(LEARNER.cardId)?.deckId).toBe(anatomyId);
@@ -646,7 +646,7 @@ describe('BKA catalog beside the learner’s AnKing note types', () => {
         markOlderPackageInstalled(db);
         await installBkaCatalog();
         expect(rows()).toEqual(before);
-        expect(getDeckByName(`${install.rootDeckName}::Anatomi`)?.id).toBe(catalogAnatomy.id);
+        expect(getDeckByName(`${install.rootDeckName}::Temel Bilimler::Anatomi`)?.id).toBe(catalogAnatomy.id);
         uninstallBkaCatalog();
         expect(rows()).toEqual(before);
         expect(getAnkiCard(LEARNER.cardId)?.deckId).toBe(anatomyId);

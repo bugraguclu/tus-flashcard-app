@@ -7,11 +7,14 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('expo-asset', () => ({ Asset: { fromModule: vi.fn() } }));
 
 import {
+    BKA_CATALOG_BASIC_GROUP,
+    BKA_CATALOG_CLINICAL_GROUP,
     BKA_CATALOG_DEFAULT_ROOT_DECK,
     BKA_CATALOG_EXPECTED,
     BKA_CATALOG_PACK,
     BKA_TRIAL_CARDS_PER_SUBDECK,
     BKA_TRIAL_DEFAULT_ROOT_DECK,
+    bkaCatalogCoursePath,
     buildBkaTrialCatalog,
     readBkaCatalog,
     scoreBkaTrialCard,
@@ -69,11 +72,24 @@ describe('bundled BKA catalog', () => {
         expect(Object.keys(JSON.parse(await zip.file('media')!.async('text')))).toHaveLength(BKA_CATALOG_EXPECTED.media);
         expect(snapshot.cards.every((card) => card.type === 0 && card.queue === 0)).toBe(true);
 
-        // The whole catalog hangs off one lockable root deck: root → 12 courses → author subdecks.
+        // The whole catalog hangs off one lockable root deck:
+        // root → (Temel Bilimler | Klinik Bilimler) → courses → author subdecks, plus Deneme ve Soru.
         const roots = snapshot.decks.filter((deck) => !deck.name.includes('::'));
-        const courses = snapshot.decks.filter((deck) => deck.name.split('::').length === 2);
-        const topics = snapshot.decks.filter((deck) => deck.name.split('::').length === 3);
+        const groups = snapshot.decks.filter((deck) => (
+            deck.name === `${BKA_CATALOG_DEFAULT_ROOT_DECK}::${BKA_CATALOG_BASIC_GROUP}`
+            || deck.name === `${BKA_CATALOG_DEFAULT_ROOT_DECK}::${BKA_CATALOG_CLINICAL_GROUP}`
+        ));
+        const courseIdSet = new Set(BKA_MANIFEST.courses.map((course) => course.sourceDeckId));
+        const courses = snapshot.decks.filter((deck) => courseIdSet.has(deck.id));
+        const groupIdSet = new Set(groups.map((deck) => deck.id));
+        const topics = snapshot.decks.filter(
+            (deck) => deck.name.includes('::') && !courseIdSet.has(deck.id) && !groupIdSet.has(deck.id),
+        );
         expect(roots.map((deck) => deck.name)).toEqual([BKA_CATALOG_DEFAULT_ROOT_DECK]);
+        expect(groups.map((deck) => deck.name)).toEqual([
+            `${BKA_CATALOG_DEFAULT_ROOT_DECK}::${BKA_CATALOG_BASIC_GROUP}`,
+            `${BKA_CATALOG_DEFAULT_ROOT_DECK}::${BKA_CATALOG_CLINICAL_GROUP}`,
+        ]);
         expect(courses).toHaveLength(BKA_CATALOG_EXPECTED.courseDecks);
         expect(topics).toHaveLength(BKA_CATALOG_EXPECTED.topicDecks);
         expect(snapshot.decks.every((deck) => deck.catalogPack === BKA_CATALOG_PACK)).toBe(true);
@@ -96,7 +112,9 @@ describe('bundled BKA catalog', () => {
         for (const card of snapshot.cards) {
             if (card.deckId === card.sourceDeckId) continue;
             const note = noteById.get(card.noteId)!;
-            const [, courseName, topicName] = topicById.get(card.deckId)!.split('::');
+            const segments = topicById.get(card.deckId)!.split('::');
+            const topicName = segments[segments.length - 1];
+            const courseName = segments[segments.length - 2];
             const sourceDeckName = `${courseName} BKA`;
             expect(note.catalogTopic).toBe(topicName);
             expect(
@@ -109,7 +127,8 @@ describe('bundled BKA catalog', () => {
         expect(ungrouped).toHaveLength(BKA_MANIFEST.totals.ungroupedCards);
         for (const card of ungrouped.slice(0, 200)) {
             const note = noteById.get(card.noteId)!;
-            const sourceDeckName = `${courseById.get(card.sourceDeckId!)!.split('::')[1]} BKA`;
+            const courseParts = courseById.get(card.sourceDeckId!)!.split('::');
+            const sourceDeckName = `${courseParts[courseParts.length - 1]} BKA`;
             expect(classifyBkaTopicByTag(sourceDeckName, note.tags)).toBeNull();
             expect(classifyBkaTopicByContent(sourceDeckName, note.fields.join(' '))).toBeNull();
         }
@@ -246,7 +265,8 @@ describe('bundled BKA catalog', () => {
                     ))).toHaveLength(topic.cards);
                     continue;
                 }
-                const deck = snapshot.decks.find((entry) => entry.name === `${BKA_CATALOG_DEFAULT_ROOT_DECK}::${course.name}::${topic.name}`);
+                const expectedTopicPath = `${bkaCatalogCoursePath(BKA_CATALOG_DEFAULT_ROOT_DECK, course.name)}::${topic.name}`;
+                const deck = snapshot.decks.find((entry) => entry.name === expectedTopicPath);
                 expect(deck, `manifest topic ${course.name}::${topic.name} missing from catalog`).toBeDefined();
                 expect(snapshot.cards.filter((card) => card.deckId === deck!.id)).toHaveLength(topic.cards);
             }

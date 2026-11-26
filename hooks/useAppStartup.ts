@@ -27,6 +27,7 @@ import {
 import { getSearchIndexCards } from '../lib/noteManager';
 import { migrateLegacyCardStatesToAnki, migrateLegacyCustomCardsToAnki } from '../lib/legacyMigration';
 import { removeLegacyBkaInstall } from '../lib/bkaCatalog';
+import { seedStarterDemoDecksIfFresh } from '../lib/starterDemoDecks';
 import { invalidateSubjectsCache } from '../lib/subjects';
 import {
     observeStartupRun,
@@ -118,6 +119,11 @@ async function runStartupCore(): Promise<void> {
             console.log(`[App] Legacy card state migration: ${migrationResult.migratedCards} migrated, ${migrationResult.skippedCards} skipped.`);
             await clearLegacyCardStates();
         }
+    }
+
+    const starterSeed = seedStarterDemoDecksIfFresh();
+    if (starterSeed.seeded) {
+        console.log(`[App] Starter demo decks seeded: ${starterSeed.decksCreated} decks, ${starterSeed.cardsCreated} cards.`);
     }
 
     if (Platform.OS !== 'web') {
